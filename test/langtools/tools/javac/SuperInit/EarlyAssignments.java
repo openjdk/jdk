@@ -89,4 +89,55 @@ public class EarlyAssignments {
             }
         }
     }
+
+    public static class Inner4 {
+        public int x;
+
+        public Inner4() {
+            x = 0;                              // OK
+            x = x + 1;                          // FAIL - illegal early access
+            super();
+        }
+
+        public Inner4(int a) {
+            this.x = 0;                         // OK
+            this.x = this.x + 1;                // FAIL - illegal early access
+            super();
+        }
+
+        public Inner4(char a) {
+            Inner4.this.x = 0;                  // OK
+            Inner4.this.x = Inner4.this.x + 1;  // FAIL - illegal early access
+            super();
+        }
+    }
+
+    public static class Inner5 extends Inner4 {
+        public int y;
+
+        public Inner5() {
+            y = x + 1;                          // FAIL - illegal early access
+            super();
+        }
+
+        public Inner5(int a) {
+            this.y = x + 1;                     // FAIL - illegal early access
+            super();
+        }
+
+        public Inner5(char a) {
+            Inner5.this.y = x + 1;              // FAIL - illegal early access
+            super();
+        }
+
+        public Inner5(short a) {
+            y = super.x + 1;                    // FAIL - illegal early access
+            super();
+        }
+
+        public Inner5(float a) {
+            y = Inner5.this.x + 1;              // FAIL - illegal early access
+            super();
+        }
+    }
 }
