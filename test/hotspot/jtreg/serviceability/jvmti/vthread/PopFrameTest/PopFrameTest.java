@@ -144,7 +144,9 @@ public class PopFrameTest {
                 throwFailed("Main #B.2: expected JVMTI_ERROR_NONE");
             }
             log("Main #B.2: got expected JVMTI_ERROR_NONE");
+            notifyAtBreakpoint(); // needed to reset the native state
             resumeThread(testTaskThread);
+
             ensureAtBreakpoint();
             notifyAtBreakpoint();
 
