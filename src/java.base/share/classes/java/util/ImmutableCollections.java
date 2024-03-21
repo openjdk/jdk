@@ -916,13 +916,11 @@ class ImmutableCollections {
         @Override
         @SuppressWarnings("unchecked")
         public void forEach(Consumer<? super E> action) {
-            Objects.requireNonNull(action);
-            if (REVERSE && e1 != EMPTY) {
-                action.accept((E) e1);
-            }
-            action.accept(e0);
-            if (!REVERSE && e1 != EMPTY) {
-                action.accept((E) e1);
+            if (e1 == EMPTY) {
+                action.accept(e0); // implicit null check
+            } else {
+                action.accept(REVERSE ? (E)e1 : e0); // implicit null check
+                action.accept(REVERSE ? e0 : (E)e1);
             }
         }
 
