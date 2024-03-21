@@ -2361,12 +2361,32 @@ class LIR_List: public CompilationResourceObj {
   void update_crc32(LIR_Opr crc, LIR_Opr val, LIR_Opr res)  { append(new LIR_OpUpdateCRC32(crc, val, res)); }
 
   void instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, LIR_Opr tmp4, bool fast_check, CodeEmitInfo* info_for_patch, ciMethod* profiled_method, int profiled_bci);
+  void instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3,
+                  bool fast_check, CodeEmitInfo* info_for_patch, ciMethod* profiled_method, int profiled_bci) {
+    instanceof(result, object, klass, tmp1, tmp2, tmp3, LIR_Opr::illegalOpr(),
+               fast_check, info_for_patch, profiled_method, profiled_bci);
+  }
+
   void store_check(LIR_Opr object, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, LIR_Opr tmp4, CodeEmitInfo* info_for_exception, ciMethod* profiled_method, int profiled_bci);
+  void store_check(LIR_Opr object, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3,
+                   CodeEmitInfo* info_for_exception, ciMethod* profiled_method, int profiled_bci) {
+    store_check(object, array, tmp1, tmp2, tmp3, LIR_Opr::illegalOpr(),
+                info_for_exception, profiled_method, profiled_bci);
+  }
 
   void checkcast (LIR_Opr result, LIR_Opr object, ciKlass* klass,
                   LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, LIR_Opr tmp4, bool fast_check,
                   CodeEmitInfo* info_for_exception, CodeEmitInfo* info_for_patch, CodeStub* stub,
                   ciMethod* profiled_method, int profiled_bci);
+  void checkcast (LIR_Opr result, LIR_Opr object, ciKlass* klass,
+                  LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check,
+                  CodeEmitInfo* info_for_exception, CodeEmitInfo* info_for_patch, CodeStub* stub,
+                  ciMethod* profiled_method, int profiled_bci){
+    checkcast(result, object, klass, tmp1, tmp2, tmp3, LIR_Opr::illegalOpr(), fast_check,
+              info_for_exception, info_for_patch, stub,
+              profiled_method, profiled_bci);
+  }
+
   // MethodData* profiling
   void profile_call(ciMethod* method, int bci, ciMethod* callee, LIR_Opr mdo, LIR_Opr recv, LIR_Opr t1, ciKlass* cha_klass) {
     append(new LIR_OpProfileCall(method, bci, callee, mdo, recv, t1, cha_klass));
