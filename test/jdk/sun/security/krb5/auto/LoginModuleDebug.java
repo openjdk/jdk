@@ -38,7 +38,7 @@ public class LoginModuleDebug {
         if (args.length == 0) {
             // debug option set to true
             ProcessTools.executeTestJava("LoginModuleDebug",
-                            "debug", "true")
+                            "debug", "true+timestamp")
                     .stdoutShouldBeEmpty()
                     .stderrShouldContain("krb5loginmodule:");
             // debug option set to false

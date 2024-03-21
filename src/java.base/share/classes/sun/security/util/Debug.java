@@ -78,7 +78,7 @@ public class Debug {
                 int commaIndex = args.indexOf(',', beginIndex);
                 if (commaIndex == -1) commaIndex = args.length();
                 threadInfoAll = args.substring(beginIndex, commaIndex).contains("+thread");;
-                timeStampInfoAll = args.substring(beginIndex, commaIndex).contains("+timestamp");;
+                timeStampInfoAll = args.substring(beginIndex, commaIndex).contains("+timestamp");
             }
         }
     }
@@ -116,7 +116,7 @@ public class Debug {
         System.err.println("+timestamp can be appended to any of above options to print");
         System.err.println("              a timestamp for that debug option");
         System.err.println("+thread can be appended to any of above options to print");
-        System.err.println("              thread information for that debug option");
+        System.err.println("              thread and caller information for that debug option");
         System.err.println();
         System.err.println("The following can be used with access:");
         System.err.println();
@@ -175,18 +175,22 @@ public class Debug {
     {
         if (isOn(option)) {
             Debug d = new Debug();
-            d.prefix = prefix;
-            d.printThreadDetails = getConfigInfo(option, "+thread");
-            d.printDateTime = getConfigInfo(option, "+timestamp");
-            if (d.printDateTime && !dateTimeFormatInitialized) {
-                // trigger loading of Locale service impl now to avoid
-                // possible bootstrap recursive class load issue
-                FormatHolder.DATE_TIME_FORMATTER.format(Instant.now());
-                dateTimeFormatInitialized = true;
-            }
+            d.configureOptions(option, prefix, false);
             return d;
         } else {
             return null;
+        }
+    }
+
+    private void configureOptions(String option, String prefix, boolean ofInstance){
+        this.prefix = prefix;
+        printThreadDetails = getConfigInfo(option, "+thread", ofInstance);
+        printDateTime = getConfigInfo(option, "+timestamp", ofInstance);
+        if (printDateTime && !dateTimeFormatInitialized) {
+            // trigger loading of Locale service impl now to avoid
+            // possible bootstrap recursive class load issue
+            FormatHolder.DATE_TIME_FORMATTER.format(Instant.now());
+            dateTimeFormatInitialized = true;
         }
     }
 
@@ -198,22 +202,28 @@ public class Debug {
                         .findFirst().orElse("unknown caller"));
     }
 
-    private static boolean getConfigInfo(String option, String extraInfoOption) {
+    // parse an option string to determine if extra details
+    // (like thread and timestamp) should be printed
+    private static boolean getConfigInfo(String option, String extraInfoOption, boolean ofInstance) {
         // args is converted to lower case for the most part via marshal method
         int beginIndex;
         String subOpt;
-        // treat "all" as special case,
-        if (timeStampInfoAll && extraInfoOption.equals("+timestamp")) {
-            return true;
+        // treat "all" as special case, only used for java.security.debug property
+        if (!ofInstance) {
+            if (timeStampInfoAll && extraInfoOption.equals("+timestamp")) {
+                return true;
+            }
+            if (threadInfoAll && extraInfoOption.equals("+thread")) {
+                return true;
+            }
         }
-        if (threadInfoAll && extraInfoOption.equals("+thread")) {
-            return true;
-        }
+        // for java.security.debug mode, we use the args string.
+        String propString = ofInstance ? option : args;
         try {
-            beginIndex = args.lastIndexOf(option) + option.length();
-            int commaIndex = args.indexOf(',', beginIndex);
-            if (commaIndex == -1) commaIndex = args.length();
-            subOpt = args.substring(beginIndex, commaIndex);
+            beginIndex = propString.lastIndexOf(option) + option.length();
+            int commaIndex = propString.indexOf(',', beginIndex);
+            if (commaIndex == -1) commaIndex = propString.length();
+            subOpt = propString.substring(beginIndex, commaIndex);
         } catch (IndexOutOfBoundsException e) {
             // no sub option
             return false;
@@ -235,14 +245,14 @@ public class Debug {
      * String property = settings.get("login");
      * Debug debug = Debug.of("login", property);
      * }
-     * @param option the debug option name
+     * @param prefix the debug option name
      * @param property debug setting for this option
      * @return a new Debug object if the property is true
      */
-    public static Debug of(String option, String property) {
-        if ("true".equalsIgnoreCase(property)) {
+    public static Debug of(String prefix, String property) {
+        if (property != null && property.toLowerCase(Locale.ROOT).startsWith("true")) {
             Debug d = new Debug();
-            d.prefix = option;
+            d.configureOptions(property, prefix, true);
             return d;
         }
         return null;
