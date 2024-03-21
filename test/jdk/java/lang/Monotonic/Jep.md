@@ -256,12 +256,12 @@ class Bar {
     }
 }
 ```
-Calling `logger()` multiple times yields the same value from each invocation.
+
 This is similar in spirit to the holder-class idiom, and offers the same
 performance, constant-folding, and thread-safety characteristics, but is simpler
 and incurs a lower static footprint since no additional class is required.
 
-In case a monotonic value cannot be not pre-bound as in the example above, it is possible
+In case a monotonic value cannot be pre-bound as in the example above, it is possible
 to compute and bind an absent value on-demand as shown in this example:
 
 ```
@@ -276,10 +276,12 @@ class Bar {
     }
 }
 ```
-
+Calling `logger()` multiple times yields the same value from each invocation.
 `Monotonic::computeIfAbsent` can invoke the value supplier several times if called
 from a plurality  of threads but only one witness value is ever exposed to the 
-outside world. To also guarantee the value supplier is invoked *at most once*,
+outside world. 
+
+To also guarantee the value supplier is invoked *at most once*,
 even though invoked by several threads, there is a convenience method, located 
 in the utility class `Monotonics`, providing precisely that:
 
@@ -302,8 +304,8 @@ In the example above, the supplier is invoked at most once per
 loading of the containing class `Bar` (`Bar`, in turn, can be loaded at
 most once into any given `ClassLoader`). 
 
-A value supplier may return `null` which will be considered the bound value. Null-averse applications
-can also use `Monotonic<Optional<V>>`.
+A value supplier may return `null` which will be considered the bound value.
+Null-averse applications can also use `Monotonic<Optional<V>>`.
 
 ### Monotonic Collections
 
@@ -312,20 +314,20 @@ object only creates the *holder* for the value), this (small) initialization cos
 to be paid for each field of type `Monotonic` declared by the class. As a result, the class static 
 and/or instance initializer will keep growing with the number of `Monotonic` fields, thus degrading performance.
 
-To handle these cases, the Monotonic Value API provides a construct that allows the creation of a lazy
-*`List` of `Monotonic` elements*. Such a `List` is a list whose elements are evaluated independently
-before a particular element is first accessed. Lists of Monotonic values are objects of type `List<Monotonic>`.
+To handle these cases, the Monotonic Value API provides constructs that allow the creation and handling of a
+*`List` of `Monotonic` elements*. Such a `List` is a list whose elements are created lazily on demand
+before a particular element is first accessed. Lists of monotonic values are objects of type `List<Monotonic>`.
 Consequently, each element in the list enjoys the same properties as a `Monotonic` but may require less resources.
 
 Like a `Monotonic` object, a `List<Monotonic>` object is created via a factory method by providing a size
-of the List:
+of the desired List:
 
 ```
 static <V> List<Monotonic<V>> ofList(int size) { ... }
 ```
 
 This allows for improving the handling of lists with monotonic values and enables a much better
-implementation of the Fibonacci class mentioned above:
+implementation of the `Fibonacci` class mentioned earlier:
 
 ```
 class Fibonacci {
@@ -399,8 +401,9 @@ class MapDemo {
 }
 ```
 
-Correspondingly, a general `Function` can be memoized via a backing `Map` of `Monotonic` values, thereby ensuring the
-resulting value for each input parameter is computed as most once even in a multi-threaded environment.
+Correspondingly to memoized suppliers and int-functions, a general `Function` can also be memoized
+via a backing `Map` of `Monotonic` values, thereby ensuring the resulting value for each input 
+parameter is computed as most once even in a multi-threaded environment.
 Here is an example of how such a memoized function can be used:
 
 ```
@@ -419,13 +422,13 @@ class MapDemo2 {
     }
 }
 ```
-It should be noted that only the enumerated collection of keys given at creation time are valid
-inputs to the memoized function.
+It should be noted that only the enumerated collection of keys given at creation time
+constitutes valid inputs to the memoized function.
 
 ### Safety
 
-Binding a monotonic value is an atomic operation, e.g. calling `Monotonic::computeIfAbsent` or 
-`Monotonic::bind`, either results in successfully initializing the monotonic to a value, or fails
+Binding a monotonic value is an atomic, non-blocking operation, e.g. calling `Monotonic::computeIfAbsent`
+or `Monotonic::bind`, either results in successfully initializing the monotonic to a value, or fails
 with an exception. This is true regardless of whether the monotonic value is accessed by a single
 thread, or concurrently, by multiple threads. 
 
