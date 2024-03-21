@@ -4318,20 +4318,23 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
       klass_node = _gvn.transform(cast);
     }
 
-    // Bail out if either start or end is negative.
+    // Bail out if start is negative.
     generate_negative_guard(start, bailout, &start);
-    generate_negative_guard(end,   bailout, &end);
 
     Node* length = end;
     if (_gvn.type(start) != TypeInt::ZERO) {
       length = _gvn.transform(new SubINode(end, start));
     }
 
-    // Bail out if length is negative.
+    // Bail out if length is negative (i.e., if start > end).
     // Without this the new_array would throw
     // NegativeArraySizeException but IllegalArgumentException is what
     // should be thrown
     generate_negative_guard(length, bailout, &length);
+
+    // Bail out if start is larger than the original length
+    Node* orig_tail = _gvn.transform(new SubINode(orig_length, start));
+    generate_negative_guard(orig_tail, bailout, &orig_tail);
 
     if (bailout->req() > 1) {
       PreserveJVMState pjvms(this);
@@ -4342,8 +4345,7 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
 
     if (!stopped()) {
       // How many elements will we copy from the original?
-      // The answer is MinI(orig_length - start, length).
-      Node* orig_tail = _gvn.transform(new SubINode(orig_length, start));
+      // The answer is MinI(orig_tail, length).
       Node* moved = generate_min_max(vmIntrinsics::_min, orig_tail, length);
 
       // Generate a direct call to the right arraycopy function(s).
@@ -4391,7 +4393,7 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
       if (!stopped()) {
         newcopy = new_array(klass_node, length, 0);  // no arguments to push
 
-        ArrayCopyNode* ac = ArrayCopyNode::make(this, true, original, start, newcopy, intcon(0), moved, true, false,
+        ArrayCopyNode* ac = ArrayCopyNode::make(this, true, original, start, newcopy, intcon(0), moved, true, true,
                                                 load_object_klass(original), klass_node);
         if (!is_copyOfRange) {
           ac->set_copyof(validated);
