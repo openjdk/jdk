@@ -77,9 +77,8 @@ public class bug4137282 {
                 }
             });
 
-        Container content = frame.getContentPane();
-        content.add(b, BorderLayout.NORTH);
-        content.add(sp, BorderLayout.CENTER);
+        frame.add(b, BorderLayout.NORTH);
+        frame.add(sp, BorderLayout.CENTER);
         frame.pack();
         return frame;
     }
