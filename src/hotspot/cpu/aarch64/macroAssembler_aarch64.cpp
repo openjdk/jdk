@@ -3949,7 +3949,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     add(table2, table0, 2*256*sizeof(juint));
     add(table3, table0, 3*256*sizeof(juint));
 
-  if (UseNeon) {
+    { // Neon code start
       cmp(len, (u1)64);
       br(Assembler::LT, L_by16);
       eor(v16, T16B, v16, v16);
@@ -4081,7 +4081,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
       update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, true);
 
       add(len, len, 32);
-  }
+    } // Neon code end
 
   BIND(L_by16);
     subs(len, len, 16);

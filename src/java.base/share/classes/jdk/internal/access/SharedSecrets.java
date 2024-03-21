@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.security.ProtectionDomain;
 import java.security.Signature;
+import javax.security.auth.x500.X500Principal;
 
 /** A repository of "shared secrets", which are a mechanism for
     calling implementation-private methods in another package without
@@ -89,6 +90,7 @@ public class SharedSecrets {
     private static JavaSecuritySpecAccess javaSecuritySpecAccess;
     private static JavaxCryptoSealedObjectAccess javaxCryptoSealedObjectAccess;
     private static JavaxCryptoSpecAccess javaxCryptoSpecAccess;
+    private static JavaxSecurityAccess javaxSecurityAccess;
     private static JavaTemplateAccess javaTemplateAccess;
 
     public static void setJavaUtilCollectionAccess(JavaUtilCollectionAccess juca) {
@@ -513,6 +515,19 @@ public class SharedSecrets {
         if (access == null) {
             ensureClassInitialized(SealedObject.class);
             access = javaxCryptoSealedObjectAccess;
+        }
+        return access;
+    }
+
+    public static void setJavaxSecurityAccess(JavaxSecurityAccess jsa) {
+        javaxSecurityAccess = jsa;
+    }
+
+    public static JavaxSecurityAccess getJavaxSecurityAccess() {
+        var access = javaxSecurityAccess;
+        if (access == null) {
+            ensureClassInitialized(X500Principal.class);
+            access = javaxSecurityAccess;
         }
         return access;
     }

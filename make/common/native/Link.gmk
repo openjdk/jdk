@@ -133,11 +133,6 @@ define CreateDynamicLibraryOrExecutable
   ifeq ($$($1_TYPE), LIBRARY)
     # Generating a dynamic library.
     $1_EXTRA_LDFLAGS += $$(call SET_SHARED_LIBRARY_NAME,$$($1_BASENAME))
-
-    # Create loadmap on AIX. Helps in diagnosing some problems.
-    ifneq ($(COMPILER_BINDCMD_FILE_FLAG), )
-      $1_EXTRA_LDFLAGS += $(COMPILER_BINDCMD_FILE_FLAG)$$($1_OBJECT_DIR)/$$($1_NOSUFFIX).loadmap
-    endif
   endif
 
   $1_VARDEPS := $$($1_LD) $$($1_SYSROOT_LDFLAGS) $$($1_LDFLAGS) \

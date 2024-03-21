@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,12 +107,6 @@ class InstanceRefKlass: public InstanceKlass {
   // is only done if the closure provides a ReferenceProcessor.
   template <typename T, class OopClosureType, class Contains>
   static void oop_oop_iterate_discovery(oop obj, ReferenceType type, OopClosureType* closure, Contains& contains);
-
-  // Used for a special case in G1 where the closure needs to be applied
-  // to the discovered field. Reference discovery is also done if the
-  // closure provides a ReferenceProcessor.
-  template <typename T, class OopClosureType, class Contains>
-  static void oop_oop_iterate_discovered_and_discovery(oop obj, ReferenceType type, OopClosureType* closure, Contains& contains);
 
   // Apply the closure to all fields. No reference discovery is done.
   template <typename T, class OopClosureType, class Contains>
