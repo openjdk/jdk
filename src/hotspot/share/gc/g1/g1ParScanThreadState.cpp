@@ -35,7 +35,6 @@
 #include "gc/g1/g1YoungGCAllocationFailureInjector.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/partialArrayTaskStepper.inline.hpp"
-#include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "memory/allocation.inline.hpp"
@@ -56,7 +55,6 @@
 
 G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
                                            G1RedirtyCardsQueueSet* rdcqs,
-                                           PreservedMarks* preserved_marks,
                                            uint worker_id,
                                            uint num_workers,
                                            G1CollectionSet* collection_set,
@@ -86,7 +84,6 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _numa(g1h->numa()),
     _obj_alloc_stat(nullptr),
     ALLOCATION_FAILURE_INJECTOR_ONLY(_allocation_failure_inject_counter(0) COMMA)
-    _preserved_marks(preserved_marks),
     _evacuation_failed_info(),
     _evac_failure_regions(evac_failure_regions),
     _evac_failure_enqueued_cards(0)
@@ -211,8 +208,8 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
   }
 
   markWord m = obj->mark();
-  if (m.is_marked()) {
-    obj = cast_to_oop(m.decode_pointer());
+  if (m.is_forwarded()) {
+    obj = obj->forwardee(m);
   } else {
     obj = do_copy_to_survivor_space(region_attr, obj, m);
   }
@@ -577,7 +574,6 @@ G1ParScanThreadState* G1ParScanThreadStateSet::state_for_worker(uint worker_id) 
   if (_states[worker_id] == nullptr) {
     _states[worker_id] =
       new G1ParScanThreadState(_g1h, rdcqs(),
-                               _preserved_marks_set.get(worker_id),
                                worker_id,
                                _num_workers,
                                _collection_set,
@@ -636,7 +632,7 @@ NOINLINE
 oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, size_t word_sz, bool cause_pinned) {
   assert(_g1h->is_in_cset(old), "Object " PTR_FORMAT " should be in the CSet", p2i(old));
 
-  oop forward_ptr = old->forward_to_atomic(old, m, memory_order_relaxed);
+  oop forward_ptr = old->forward_to_self_atomic(m, memory_order_relaxed);
   if (forward_ptr == nullptr) {
     // Forward-to-self succeeded. We are the "owner" of the object.
     HeapRegion* r = _g1h->heap_region_containing(old);
@@ -648,8 +644,6 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     // Mark the failing object in the marking bitmap and later use the bitmap to handle
     // evacuation failure recovery.
     _g1h->mark_evac_failure_object(_worker_id, old, word_sz);
-
-    _preserved_marks->push_if_necessary(old, m);
 
     ContinuationGCSupport::transform_stack_chunk(old);
 
@@ -708,14 +702,12 @@ G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
     _g1h(g1h),
     _collection_set(collection_set),
     _rdcqs(G1BarrierSet::dirty_card_queue_set().allocator()),
-    _preserved_marks_set(true /* in_c_heap */),
     _states(NEW_C_HEAP_ARRAY(G1ParScanThreadState*, num_workers, mtGC)),
     _rdc_buffers(NEW_C_HEAP_ARRAY(BufferNodeList, num_workers, mtGC)),
     _surviving_young_words_total(NEW_C_HEAP_ARRAY(size_t, collection_set->young_region_length() + 1, mtGC)),
     _num_workers(num_workers),
     _flushed(false),
     _evac_failure_regions(evac_failure_regions) {
-  _preserved_marks_set.init(num_workers);
   for (uint i = 0; i < num_workers; ++i) {
     _states[i] = nullptr;
     _rdc_buffers[i] = BufferNodeList();
@@ -728,5 +720,4 @@ G1ParScanThreadStateSet::~G1ParScanThreadStateSet() {
   FREE_C_HEAP_ARRAY(G1ParScanThreadState*, _states);
   FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_total);
   FREE_C_HEAP_ARRAY(BufferNodeList, _rdc_buffers);
-  _preserved_marks_set.reclaim();
 }

@@ -259,7 +259,6 @@ public class TestGCLogMessages {
 
     LogMessageWithLevel exhFailureMessages[] = new LogMessageWithLevel[] {
         new LogMessageWithLevel("Recalculate Used Memory", Level.DEBUG),
-        new LogMessageWithLevel("Restore Preserved Marks", Level.DEBUG),
         new LogMessageWithLevel("Restore Evacuation Failed Regions", Level.DEBUG),
         new LogMessageWithLevel("Process Evacuation Failed Regions", Level.DEBUG),
         new LogMessageWithLevel("Evacuation Failed Regions", Level.DEBUG),

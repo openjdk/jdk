@@ -87,7 +87,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     UpdateDerivedPointers,
 #endif
     EagerlyReclaimHumongousObjects,
-    RestorePreservedMarks,
     ProcessEvacuationFailedRegions,
     ResetMarkingState,
     NoteStartOfMark,
