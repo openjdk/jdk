@@ -1317,6 +1317,11 @@ class ImmutableCollections {
                 public Iterator<Map.Entry<K,V>> iterator() {
                     return new MapNIterator();
                 }
+
+                @Override
+                public void clear() {
+                    throw uoe();
+                }
             };
         }
 

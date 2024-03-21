@@ -501,6 +501,11 @@ public class MapFactories {
         assertEquals(kvh1.toString(), sie.toString());
     }
 
+    @Test(expectedExceptions=UnsupportedOperationException.class)
+    public void immutableEntrySetClearDisallowed() {
+        Map.of().entrySet().clear();
+    }
+
     // Map.Entry::copyOf tests
 
     @Test(expectedExceptions=NullPointerException.class)
