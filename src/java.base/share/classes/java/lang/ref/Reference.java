@@ -570,16 +570,27 @@ public abstract sealed class Reference<T>
 
      *
      * @apiNote
-     * Reference processing or finalization may occur whenever the virtual machine detects that no
-     * reference to an object will ever be stored in the heap: The garbage
-     * collector may reclaim an object even if the fields of that object are
-     * still in use, so long as the object has otherwise become unreachable.
-     * This may have surprising and undesirable effects in cases such as the
-     * following example in which the bookkeeping associated with a class is
+     * Reference processing or finalization may occur when the virtual machine
+     * detects that there is no further need for an object. The garbage collector
+     * may reclaim an object even if values from that object's fields are still
+     * in use, or while a method on the object is still running, so long as the
+     * object has otherwise become unreachable.
+     * <p>
+     * This may have surprising and undesirable effects, in particular when using
+     * a Cleaner or finalizer for cleanup. If an object becomes unreachable while
+     * a method on the object is running, it can lead to a race between the
+     * program thread running the method and the cleanup thread running the
+     * Cleaner or finalizer. For instance, the cleanup thread could cleanup the
+     * resource, followed by the program thread (still running the method)
+     * attempting to access the now-already-freed resource.
+     * {@code reachabilityFence} can prevent this race by ensuring that the
+     * object remains strongly reachable.
+     * <p>
+     * The following is an example in which the bookkeeping associated with a class is
      * managed through array indices.  Here, method {@code action} uses a
      * {@code reachabilityFence} to ensure that the {@code Resource} object is
      * not reclaimed before bookkeeping on an associated
-     * {@code ExternalResource} has been performed; in particular here, to
+     * {@code ExternalResource} has been performed; specifically, to
      * ensure that the array slot holding the {@code ExternalResource} is not
      * nulled out in method {@link Object#finalize}, which may otherwise run
      * concurrently.
@@ -590,18 +601,18 @@ public abstract sealed class Reference<T>
      *
      *   int myIndex;
      *   Resource(...) {
-     *     myIndex = ...
+     *     this.myIndex = ...
      *     externalResourceArray[myIndex] = ...;
      *     ...
      *   }
      *   protected void finalize() {
-     *     externalResourceArray[myIndex] = null;
+     *     externalResourceArray[this.myIndex] = null;
      *     ...
      *   }
      *   public void action() {
      *     try {
      *       // ...
-     *       int i = myIndex;
+     *       int i = this.myIndex; // last use of 'this' Resource in action()
      *       Resource.update(externalResourceArray[i]);
      *     } finally {
      *       Reference.reachabilityFence(this);
@@ -612,17 +623,17 @@ public abstract sealed class Reference<T>
      *   }
      * }}</pre>
      *
-     * Here, the invocation of {@code reachabilityFence} is nonintuitively
+     * The invocation of {@code reachabilityFence} is
      * placed <em>after</em> the call to {@code update}, to ensure that the
      * array slot is not nulled out by {@link Object#finalize} before the
      * update, even if the call to {@code action} was the last use of this
-     * object.  This might be the case if, for example a usage in a user program
+     * object.  This might be the case if, for example, a usage in a user program
      * had the form {@code new Resource().action();} which retains no other
-     * reference to this {@code Resource}.  While probably overkill here,
-     * {@code reachabilityFence} is placed in a {@code finally} block to ensure
-     * that it is invoked across all paths in the method.  In a method with more
-     * complex control paths, you might need further precautions to ensure that
-     * {@code reachabilityFence} is encountered along all of them.
+     * reference to this {@code Resource}.  The
+     * {@code reachabilityFence} call is placed in a {@code finally} block to ensure
+     * that it is invoked across all paths in the method. A more complex method
+     * might need further precautions to ensure that
+     * {@code reachabilityFence} is encountered along all code paths.
      *
      * <p> It is sometimes possible to better encapsulate use of
      * {@code reachabilityFence}.  Continuing the above example, if it were
@@ -649,7 +660,7 @@ public abstract sealed class Reference<T>
      * blocks.  (Further, such blocks must not include infinite loops, or
      * themselves be unreachable, which fall into the corner case exceptions to
      * the "in general" disclaimer.)  However, method {@code reachabilityFence}
-     * remains a better option in cases where this approach is not as efficient,
+     * remains a better option in cases where synchronization is not as efficient,
      * desirable, or possible; for example because it would encounter deadlock.
      *
      * @param ref the reference to the object to keep strongly reachable. If
