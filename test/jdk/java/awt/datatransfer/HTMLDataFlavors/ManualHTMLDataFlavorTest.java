@@ -113,26 +113,25 @@ public class ManualHTMLDataFlavorTest {
     }
 
     static final String INSTRUCTIONS = """
-        1) The test contains a drop-aware panel with a red background,
-        2) Open some page in a browser, select some text,
-           Drag and drop it on the red panel,
-           IMPORTANT NOTE: the page should be stored locally.,
-           otherwise for instance iexplore can prohibit drag and drop from,
-           the browser to other applications because of,
-           the protected mode restrictions.,
-           On Mac OS X do NOT use Safari, it does not provide the needed DataFlavor,
-        3) Check the data in the output area of this window,
-        5) The output should not contain information that any of,
-           flavors is not present in the system clipboard,
-        6) The output should contain data in three different formats,
-           provided by the system clipboard,
-            - Data after the "ALL:" marker should include the data,
-              from the "SELECTION:" marker",
-            - Data after the "FRAGMENT" marker should include the data,
-              from the "SELECTION:" marker and may be some closing,
-              tags could be added to the mark-up,
-            - Data after the "SELECTION:" marker should correspond,
-              to the data selected in the browser,
+        1) The test contains a drop-aware panel with a red background.
+        2) Open some page in a browser, select some text.
+           Drag and drop it on the red panel.
+           IMPORTANT NOTE: the page should be stored locally.
+           Otherwise for instance Internet Explorer may prohibit drag and drop from
+           the browser to other applications because of protected mode restrictions.
+           On MacOS do NOT use Safari, it does not provide the needed DataFlavor.
+        3) Check the data in the output area of this window.
+        5) The output should not contain information that any of
+           flavors is not present in the system clipboard.
+        6) The output should contain data in three different formats
+           provided by the system clipboard.
+            - Data after the "ALL:" marker should include the data
+              from the "SELECTION:" marker".
+            - Data after the "FRAGMENT" marker should include the data
+              from the "SELECTION:" marker and may be some closing
+              tags could be added to the mark-up.
+            - Data after the "SELECTION:" marker should correspond
+              to the data selected in the browser.
         7) If the above requirements are met, the test is passed.
     """;
 
