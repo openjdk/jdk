@@ -49,6 +49,7 @@ import java.lang.classfile.constantpool.*;
 import java.lang.constant.ConstantDescs;
 import java.lang.reflect.AccessFlag;
 import jdk.internal.classfile.impl.BoundAttribute;
+import jdk.internal.classfile.impl.Util;
 
 /**
  * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/classFileParser.cpp">hotspot/share/classfile/classFileParser.cpp</a>
@@ -206,6 +207,13 @@ public record ParserVerifier(ClassModel classModel) {
             }
             case CharacterRangeTableAttribute cra -> 2 + 14 * cra.characterRangeTable().size();
             case CodeAttribute ca -> {
+                MethodModel mm = (MethodModel)ae;
+                if (mm.flags().has(AccessFlag.NATIVE) || mm.flags().has(AccessFlag.ABSTRACT)) {
+                    errors.add(new VerifyError("Code attribute in native or abstract %s".formatted(toString(ae))));
+                }
+                if (ca.maxLocals() < Util.maxLocals(mm.flags().flagsMask(), mm.methodTypeSymbol())) {
+                    errors.add(new VerifyError("Arguments can't fit into locals in %s".formatted(toString(ae))));
+                }
                 int l = 12 + ca.codeLength() + 8 * ca.exceptionHandlers().size();
                 for (var caa : ca.attributes()) {
                     l += 6 + ((BoundAttribute)caa).payloadLen();

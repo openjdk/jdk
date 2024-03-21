@@ -150,7 +150,7 @@ class VerifierSelfTest {
                             SyntheticAttribute.of()))
                     .withField("/", CD_int, 0)
                     .withField("/", CD_int, 0)
-                    .withMethod("m", MTD_void, 0, mb -> patch(mb,
+                    .withMethod("m", MTD_void, ClassFile.ACC_ABSTRACT, mb -> patch(mb,
                             AnnotationDefaultAttribute.of(AnnotationValue.ofInt(0)),
                             DeprecatedAttribute.of(),
                             ExceptionsAttribute.ofSymbols(CD_Exception),
@@ -258,6 +258,7 @@ class VerifierSelfTest {
                 Multiple Signature attributes in method ParserVerificationTestClass::m()
                 Wrong Signature attribute length in method ParserVerificationTestClass::m()
                 Wrong Synthetic attribute length in method ParserVerificationTestClass::m()
+                Code attribute in native or abstract method ParserVerificationTestClass::m()
                 Wrong CharacterRangeTable attribute length in Code attribute for method ParserVerificationTestClass::m()
                 Wrong LineNumberTable attribute length in Code attribute for method ParserVerificationTestClass::m()
                 Wrong LocalVariableTable attribute length in Code attribute for method ParserVerificationTestClass::m()
