@@ -33,7 +33,7 @@ import java.util.Random;
  * @bug 8323220
  * @summary Test loop invariant code motion of add/sub through reassociation
  * @library /test/lib /
- * @run driver compiler.c2.loopopts.InvariantCodeMotionReassociateAddSub
+ * @run main compiler.c2.loopopts.InvariantCodeMotionReassociateAddSub
  */
 public class InvariantCodeMotionReassociateAddSub {
     private static final Random RANDOM = Utils.getRandomInstance();
