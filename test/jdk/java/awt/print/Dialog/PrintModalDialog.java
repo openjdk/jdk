@@ -28,7 +28,7 @@
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Pass if dialogs are modal.
- * @run main PrintModalDialog
+ * @run main/manual PrintModalDialog
  */
 
 import java.awt.Color;
