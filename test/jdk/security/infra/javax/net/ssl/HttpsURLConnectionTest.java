@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8320362
- * @summary Verifies successfull connection to external server with
+ * @summary Verifies successful connection to external server with
  *          KEYCHAINSTORE-ROOT trust store
  * @library /test/lib
  * @requires os.family == "mac"
