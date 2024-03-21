@@ -483,6 +483,31 @@ public abstract class DateFormat extends Format {
     public static final int DEFAULT = MEDIUM;
 
     /**
+     * A DateFormat style.
+     * {@code Style} is an enum which corresponds to the DateFormat style
+     * constants. Use {@code getValue()} to retrieve the associated int style
+     * value.
+     */
+    enum Style {
+
+        FULL(DateFormat.FULL),
+        LONG(DateFormat.LONG),
+        MEDIUM(DateFormat.MEDIUM),
+        SHORT(DateFormat.SHORT),
+        DEFAULT(DateFormat.MEDIUM);
+
+        private final int value;
+
+        Style(int value){
+            this.value = value;
+        }
+
+        int getValue() {
+            return value;
+        }
+    }
+
+    /**
      * Gets the time formatter with the default formatting style
      * for the default {@link java.util.Locale.Category#FORMAT FORMAT} locale.
      * <p>This is equivalent to calling
@@ -937,6 +962,7 @@ public abstract class DateFormat extends Format {
          *        be used, but {@code -1} should be used for values
          *        that don't correspond to legal {@code Calendar} values
          */
+        @SuppressWarnings("this-escape")
         protected Field(String name, int calendarField) {
             super(name);
             this.calendarField = calendarField;

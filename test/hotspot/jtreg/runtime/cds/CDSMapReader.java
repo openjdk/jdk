@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,6 +175,10 @@ public class CDSMapReader {
     //  - final 'key' 'Ljava/lang/Object;' @16 0x00000007ffc68260 (0xfff8d04c) java.lang.String
     static Pattern oopFieldPattern2 = Pattern.compile(" - [^']* '([^']+)'.*@([0-9]+) 0x([0-9a-f]+) [(]0x([0-9a-f]+)[)] (.*)");
 
+    // (injected module_entry)
+    //  - injected 'module_entry' 'J' @16 0 (0x0000000000000000)
+    static Pattern moduleEntryPattern = Pattern.compile("- injected 'module_entry' 'J' @[0-9]+[ ]+([0-9]+)");
+
     private static Matcher match(String line, Pattern pattern) {
         Matcher m = pattern.matcher(line);
         if (m.find()) {
@@ -218,6 +222,11 @@ public class CDSMapReader {
                         heapObject.addOopField(m.group(1), m.group(2), m.group(3), m.group(4));
                     } else if ((m = match(line, oopFieldPattern1)) != null) {
                         heapObject.addOopField(m.group(1), m.group(2), m.group(3), null);
+                    } else if ((m = match(line, moduleEntryPattern)) != null) {
+                        String value = m.group(1);
+                        if (!value.equals("0")) {
+                            throw new RuntimeException("module_entry should be 0 but found: " + line);
+                        }
                     }
                 }
             }

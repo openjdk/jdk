@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -61,10 +61,9 @@ ifeq ($(call isTargetOs, linux), true)
       SRC := $(TOPDIR)/src/$(MODULE)/unix/native/launcher, \
       INCLUDE_FILES := jexec.c, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKEXE) \
-          -I$(TOPDIR)/src/$(MODULE)/share/native/libjli, \
+      CFLAGS := -I$(TOPDIR)/src/$(MODULE)/share/native/libjli, \
       CFLAGS_linux := -fPIC, \
-      LDFLAGS := $(LDFLAGS_JDKEXE), \
+      LD_SET_ORIGIN := false, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
   ))
 
@@ -73,14 +72,15 @@ endif
 
 ################################################################################
 
-ifeq ($(call isTargetOs, macosx aix linux), true)
+ifeq ($(call isTargetOsType, unix), true)
   $(eval $(call SetupJdkExecutable, BUILD_JSPAWNHELPER, \
       NAME := jspawnhelper, \
       SRC := $(TOPDIR)/src/$(MODULE)/unix/native/jspawnhelper, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKEXE) -I$(TOPDIR)/src/$(MODULE)/unix/native/libjava, \
+      CFLAGS := $(VERSION_CFLAGS) \
+          -I$(TOPDIR)/src/$(MODULE)/unix/native/libjava, \
       EXTRA_OBJECT_FILES := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjava/childproc$(OBJ_SUFFIX), \
-      LDFLAGS := $(LDFLAGS_JDKEXE), \
+      LD_SET_ORIGIN := false, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
   ))
 

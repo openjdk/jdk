@@ -61,91 +61,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
 
-class ScavengeHelper {
-  DefNewGeneration* _young_gen;
-  HeapWord*         _young_gen_end;
-public:
-  ScavengeHelper(DefNewGeneration* young_gen) :
-    _young_gen(young_gen),
-    _young_gen_end(young_gen->reserved().end()) {}
-
-  bool is_in_young_gen(void* p) const {
-    return p < _young_gen_end;
-  }
-
-  template <typename T, typename Func>
-  void try_scavenge(T* p, Func&& f) {
-    T heap_oop = RawAccess<>::oop_load(p);
-    // Should we copy the obj?
-    if (!CompressedOops::is_null(heap_oop)) {
-      oop obj = CompressedOops::decode_not_null(heap_oop);
-      if (is_in_young_gen(obj)) {
-        assert(!_young_gen->to()->is_in_reserved(obj), "Scanning field twice?");
-        oop new_obj = obj->is_forwarded() ? obj->forwardee()
-                                          : _young_gen->copy_to_survivor_space(obj);
-        RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
-
-        // callback
-        f(new_obj);
-      }
-    }
-  }
-};
-
-class InHeapScanClosure : public BasicOopIterateClosure {
-  ScavengeHelper _helper;
-protected:
-  bool is_in_young_gen(void* p) const {
-    return _helper.is_in_young_gen(p);
-  }
-
-  template <typename T, typename Func>
-  void try_scavenge(T* p, Func&& f) {
-    _helper.try_scavenge(p, f);
-  }
-
-  InHeapScanClosure(DefNewGeneration* young_gen) :
-    BasicOopIterateClosure(young_gen->ref_processor()),
-    _helper(young_gen) {}
-};
-
-class OffHeapScanClosure : public OopClosure {
-  ScavengeHelper _helper;
-protected:
-  bool is_in_young_gen(void* p) const {
-    return _helper.is_in_young_gen(p);
-  }
-
-  template <typename T, typename Func>
-  void try_scavenge(T* p, Func&& f) {
-    _helper.try_scavenge(p, f);
-  }
-
-  OffHeapScanClosure(DefNewGeneration* young_gen) :  _helper(young_gen) {}
-};
-
-class OldGenScanClosure : public InHeapScanClosure {
-  CardTableRS* _rs;
-
-  template <typename T>
-  void do_oop_work(T* p) {
-    assert(!is_in_young_gen(p), "precondition");
-
-    try_scavenge(p, [&] (oop new_obj) {
-      // If p points to a younger generation, mark the card.
-      if (is_in_young_gen(new_obj)) {
-        _rs->inline_write_ref_field_gc(p);
-      }
-    });
-  }
-public:
-  OldGenScanClosure(DefNewGeneration* g) : InHeapScanClosure(g),
-    _rs(SerialHeap::heap()->rem_set()) {}
-
-  void do_oop(oop* p)       { do_oop_work(p); }
-  void do_oop(narrowOop* p) { do_oop_work(p); }
-};
-
 class PromoteFailureClosure : public InHeapScanClosure {
   template <typename T>
   void do_oop_work(T* p) {
@@ -420,9 +335,9 @@ void DefNewGeneration::compute_space_boundaries(uintx minimum_eden_size,
   char *to_end     = to_start   + survivor_size;
 
   assert(to_end == _virtual_space.high(), "just checking");
-  assert(Space::is_aligned(eden_start), "checking alignment");
-  assert(Space::is_aligned(from_start), "checking alignment");
-  assert(Space::is_aligned(to_start),   "checking alignment");
+  assert(is_aligned(eden_start, SpaceAlignment), "checking alignment");
+  assert(is_aligned(from_start, SpaceAlignment), "checking alignment");
+  assert(is_aligned(to_start, SpaceAlignment),   "checking alignment");
 
   MemRegion edenMR((HeapWord*)eden_start, (HeapWord*)from_start);
   MemRegion fromMR((HeapWord*)from_start, (HeapWord*)to_start);
@@ -785,11 +700,19 @@ void DefNewGeneration::collect(bool   full,
   {
     StrongRootsScope srs(0);
     RootScanClosure root_cl{this};
-    CLDScanClosure cld_scan_closure{this};
+    CLDScanClosure cld_cl{this};
 
-    heap->young_process_roots(&root_cl,
-                              &old_gen_cl,
-                              &cld_scan_closure);
+    MarkingCodeBlobClosure code_cl(&root_cl,
+                                   CodeBlobToOopClosure::FixRelocations,
+                                   false /* keepalive_nmethods */);
+
+    heap->process_roots(SerialHeap::SO_ScavengeCodeCache,
+                        &root_cl,
+                        &cld_cl,
+                        &cld_cl,
+                        &code_cl);
+
+    _old_gen->scan_old_to_young_refs();
   }
 
   // "evacuate followers".
@@ -939,6 +862,9 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
       handle_promotion_failure(old);
       return old;
     }
+
+    ContinuationGCSupport::transform_stack_chunk(obj);
+
     new_obj_is_tenured = true;
   } else {
     // Prefetch beyond obj

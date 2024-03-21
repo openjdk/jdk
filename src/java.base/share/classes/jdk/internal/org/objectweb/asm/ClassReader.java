@@ -205,6 +205,7 @@ public class ClassReader {
       * @param classFileOffset the offset in byteBuffer of the first byte of the ClassFile to be read.
       * @param classFileLength the length in bytes of the ClassFile to be read.
       */
+    @SuppressWarnings("this-escape")
     public ClassReader(
             final byte[] classFileBuffer,
             final int classFileOffset,
