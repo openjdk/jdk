@@ -793,6 +793,22 @@ public class PKCS11 {
     public native void C_EncryptInit(long hSession, CK_MECHANISM pMechanism,
             long hKey) throws PKCS11Exception;
 
+    /**
+     * C_EncryptInitWithIvBitsMech initializes an encryption operation.
+     * (Encryption and decryption)
+     *
+     * @param hSession the session's handle
+     *         (PKCS#11 param: CK_SESSION_HANDLE hSession)
+     * @param pMechanism the encryption mechanism
+     *         (PKCS#11 param: CK_MECHANISM_PTR pMechanism)
+     * @param hKey the handle of the encryption key
+     *         (PKCS#11 param: CK_OBJECT_HANDLE hKey)
+     * @exception PKCS11Exception If function returns other value than CKR_OK.
+     * @preconditions
+     * @postconditions
+     */
+    public native void C_EncryptInitWithIvBitsMech(long hSession, CK_MECHANISM pMechanism,
+            long hKey) throws PKCS11Exception;
 
     /**
      * C_Encrypt encrypts single-part data.
@@ -887,6 +903,22 @@ public class PKCS11 {
     public native void C_DecryptInit(long hSession, CK_MECHANISM pMechanism,
             long hKey) throws PKCS11Exception;
 
+    /**
+     * C_DecryptInitWithIvBitsMech initializes a decryption operation.
+     * (Encryption and decryption)
+     *
+     * @param hSession the session's handle
+     *         (PKCS#11 param: CK_SESSION_HANDLE hSession)
+     * @param pMechanism the decryption mechanism
+     *         (PKCS#11 param: CK_MECHANISM_PTR pMechanism)
+     * @param hKey the handle of the decryption key
+     *         (PKCS#11 param: CK_OBJECT_HANDLE hKey)
+     * @exception PKCS11Exception If function returns other value than CKR_OK.
+     * @preconditions
+     * @postconditions
+     */
+    public native void C_DecryptInitWithIvBitsMech(long hSession, CK_MECHANISM pMechanism,
+            long hKey) throws PKCS11Exception;
 
     /**
      * C_Decrypt decrypts encrypted data in a single part.

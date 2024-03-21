@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -454,12 +454,32 @@ final class P11AEADCipher extends CipherSpi {
             if (session == null) {
                 session = token.getOpSession();
             }
+
+            /*
+             * Check if PKCS11 spec version is 2.40 and above.
+             * If so, we need to send CK_GCM_PARAMS structure with IV bits for AES GCM.
+             * the call to C_EncryptInitWithIvBitsMech will update GCM structure, with
+             * additional field ulvIV bits and then invoke C_EncryptInit
+             */
+            CK_VERSION cryptokiVersion = token.p11.C_GetInfo().cryptokiVersion;
+            boolean useNormativeMech = cryptokiVersion.major > 2 ||
+                    (cryptokiVersion.major == 2  && cryptokiVersion.minor >= 40);
             if (encrypt) {
-                token.p11.C_EncryptInit(session.id(), mechWithParams,
-                    p11KeyID);
+                if(useNormativeMech && type == Transformation.AES_GCM) {
+                    token.p11.C_EncryptInitWithIvBitsMech(session.id(), mechWithParams,
+                        p11KeyID);
+                } else {
+                    token.p11.C_EncryptInit(session.id(), mechWithParams,
+                        p11KeyID);
+                }
             } else {
-                token.p11.C_DecryptInit(session.id(), mechWithParams,
-                    p11KeyID);
+                if(useNormativeMech && type == Transformation.AES_GCM) {
+                    token.p11.C_DecryptInitWithIvBitsMech(session.id(), mechWithParams,
+                        p11KeyID);
+                } else {
+                    token.p11.C_DecryptInit(session.id(), mechWithParams,
+                        p11KeyID);
+                }
             }
         } catch (PKCS11Exception e) {
             p11Key.releaseKeyID();
