@@ -52,7 +52,7 @@ public class TestMismatch {
         }
         return segment;
     }
-/*
+
     @Test(dataProvider = "slices", expectedExceptions = IndexOutOfBoundsException.class)
     public void testNegativeSrcFromOffset(MemorySegment s1, MemorySegment s2) {
         MemorySegment.mismatch(s1, -1, 0, s2, 0, 0);
@@ -277,7 +277,7 @@ public class TestMismatch {
                 }
             }
         }
-    }*/
+    }
 
     @Test
     public void testSameSegment() {
