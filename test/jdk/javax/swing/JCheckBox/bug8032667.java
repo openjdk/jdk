@@ -22,7 +22,6 @@
  */
 
 import java.awt.BorderLayout;
-import java.awt.Canvas;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -32,6 +31,7 @@ import java.awt.image.BufferedImage;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 
 /* @test
  * @bug 8032667
@@ -75,7 +75,7 @@ public class bug8032667 {
 
         final Image image1 = getImage(getCheckBox("Deselected", false));
         final Image image2 = getImage(getCheckBox("Selected", true));
-        Canvas canvas = new Canvas() {
+        JPanel panel = new JPanel() {
             @Override
             public void paint(Graphics g) {
                 super.paint(g);
@@ -84,7 +84,7 @@ public class bug8032667 {
                         scaledWidth, scaledHeight, this);
             }
         };
-        frame.getContentPane().add(canvas, BorderLayout.CENTER);
+        frame.getContentPane().add(panel, BorderLayout.CENTER);
         return frame;
     }
 
