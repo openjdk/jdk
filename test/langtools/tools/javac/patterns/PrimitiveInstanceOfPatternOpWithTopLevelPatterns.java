@@ -26,10 +26,10 @@
  * @bug 8304487 8325257
  * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Preview)
  * @enablePreview
- * @compile PrimitiveInstanceOfTypeComparisonOp.java
- * @run main/othervm PrimitiveInstanceOfTypeComparisonOp
+ * @compile PrimitiveInstanceOfPatternOpWithTopLevelPatterns.java
+ * @run main/othervm PrimitiveInstanceOfPatternOpWithTopLevelPatterns
  */
-public class PrimitiveInstanceOfTypeComparisonOp {
+public class PrimitiveInstanceOfPatternOpWithTopLevelPatterns {
     public static final int qualI = 42;
 
     public static void main(String[] args) {
@@ -60,7 +60,7 @@ public class PrimitiveInstanceOfTypeComparisonOp {
 
     public static boolean identityPrimitiveConversion() {
         int i = 42;
-        return i instanceof int;
+        return i instanceof int ii;
     }
 
     public static boolean wideningPrimitiveConversion() {
@@ -68,61 +68,61 @@ public class PrimitiveInstanceOfTypeComparisonOp {
         short s = (short) 42;
         char c = 'a';
 
-        return b instanceof int && s instanceof int && c instanceof int;
+        return b instanceof int bb && s instanceof int ss && c instanceof int cc;
     }
 
     public static boolean narrowingPrimitiveConversion() {
         long l_within_int_range = 42L;
         long l_outside_int_range = 999999999999999999L;
 
-        return l_within_int_range instanceof int && !(l_outside_int_range instanceof int);
+        return l_within_int_range instanceof int lw && !(l_outside_int_range instanceof int lo);
     }
 
     public static boolean wideningAndNarrowingPrimitiveConversion() {
         byte b = (byte) 42;
         byte b2 = (byte) -42;
         char c = (char) 42;
-        return b instanceof char && c instanceof byte && !(b2 instanceof char);
+        return b instanceof char bb && c instanceof byte cc && !(b2 instanceof char b2b);
     }
 
     public static boolean boxingConversion() {
         int i = 42;
 
-        return i instanceof Integer;
+        return i instanceof Integer ii;
     }
 
     public static boolean boxingAndWideningReferenceConversion() {
         int i = 42;
-        return i instanceof Object &&
-                i instanceof Number &&
-                i instanceof Comparable;
+        return i instanceof Object io &&
+                i instanceof Number in &&
+                i instanceof Comparable cc;
     }
 
     public static boolean unboxing() {
         Integer i = Integer.valueOf(1);
-        return i instanceof int;
+        return i instanceof int ii;
     }
 
     public static boolean unboxingWithObject() {
         Object o1 = (int) 42;
         Object o2 = (byte) 42;
 
-        return o1 instanceof int &&
-                o2 instanceof byte &&
-                !(o1 instanceof byte &&
-                !(o2 instanceof int));
+        return o1 instanceof int o1o &&
+                o2 instanceof byte o2o &&
+                !(o1 instanceof byte o1b &&
+                        !(o2 instanceof int o2b ));
     }
 
     public static <T extends Integer> boolean wideningReferenceConversionUnboxing(T i) {
-        return i instanceof int;
+        return i instanceof int ii;
     }
 
     public static <T extends Byte> boolean wideningReferenceConversionUnboxing2(T i) {
-        return i instanceof byte;
+        return i instanceof byte bb;
     }
 
     public static <T extends Integer> boolean wideningReferenceConversionUnboxingAndWideningPrimitive(T i) {
-        return i instanceof double;
+        return i instanceof double ii;
     }
 
     public static boolean unboxingAndWideningPrimitiveExact() {
@@ -130,14 +130,14 @@ public class PrimitiveInstanceOfTypeComparisonOp {
         Short s = Short.valueOf((short)42);
         Character c = Character.valueOf('a');
 
-        return (b instanceof int) && (s instanceof int) && (c instanceof int);
+        return (b instanceof int bb) && (s instanceof int ss) && (c instanceof int cc);
     }
 
     public static boolean unboxingAndWideningPrimitiveNotExact() {
         int smallestIntNotRepresentable = 16777217; // 2^24 + 1
         Integer i = Integer.valueOf(smallestIntNotRepresentable);
 
-        return i instanceof float;
+        return i instanceof float ii;
     }
 
     public static boolean unboxingWhenNullAndWideningPrimitive() {
@@ -145,13 +145,13 @@ public class PrimitiveInstanceOfTypeComparisonOp {
         Short s = null;
         Character c = null;
 
-        return !(b instanceof int) && !(s instanceof int) && !(c instanceof int);
+        return !(b instanceof int bb) && !(s instanceof int ss) && !(c instanceof int cc);
     }
 
     public static boolean narrowingAndUnboxing() {
         Number n = Byte.valueOf((byte) 42);
 
-        return n instanceof byte;
+        return n instanceof byte nn;
     }
 
     public record P(int i) { }
@@ -165,14 +165,14 @@ public class PrimitiveInstanceOfTypeComparisonOp {
 
     public static int meth() {return 42;}
     public static boolean exprMethod() {
-        return meth() instanceof int;
+        return meth() instanceof int ii;
     }
 
     public class A1 {
         public static int i = 42;
     }
     public static boolean exprStaticallyQualified() {
-        return A1.i instanceof int;
+        return A1.i instanceof int ii;
     }
 
     static void assertEquals(boolean expected, boolean actual) {
