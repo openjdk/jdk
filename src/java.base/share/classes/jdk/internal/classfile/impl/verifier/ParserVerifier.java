@@ -36,6 +36,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.AttributedElement;
+import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassFileElement;
@@ -159,12 +160,12 @@ public record ParserVerifier(ClassModel classModel) {
             if (!methods.add(m.methodName().stringValue() + m.methodType().stringValue())) {
                 errors.add(new VerifyError("Duplicate method name %s with signature %s in %s".formatted(m.methodName().stringValue(), m.methodType().stringValue(), toString(classModel))));
             }
-            if (classModel.majorVersion() >= ClassFile.JAVA_7_VERSION
-                    && m.methodName().equalsString(CLASS_INIT_NAME)
+            if (m.methodName().equalsString(CLASS_INIT_NAME)
                     && !m.flags().has(AccessFlag.STATIC)) {
                 errors.add(new VerifyError("Method <clinit> is not static in %s".formatted(toString(classModel))));
             }
-            if (m.methodName().equalsString(INIT_NAME) && classModel.flags().has(AccessFlag.INTERFACE)) {
+            if (classModel.flags().has(AccessFlag.INTERFACE)
+                    && m.methodName().equalsString(INIT_NAME)) {
                 errors.add(new VerifyError("Interface cannot have a method named <init> in %s".formatted(toString(classModel))));
             }
             verifyMethodName(m.methodName().stringValue());
@@ -252,8 +253,18 @@ public record ParserVerifier(ClassModel classModel) {
             case LocalVariableTypeTableAttribute lvta -> 2 + 10 * lvta.localVariableTypes().size();
             case MethodParametersAttribute mpa -> 1 + 4 * mpa.parameters().size();
             case NestHostAttribute nha -> 2;
-            case NestMembersAttribute nma -> 2 + 2 * nma.nestMembers().size();
-            case PermittedSubclassesAttribute psa -> 2 + 2 * psa.permittedSubclasses().size();
+            case NestMembersAttribute nma -> {
+                if (ae.findAttribute(Attributes.NEST_HOST).isPresent()) {
+                    errors.add(new VerifyError("Conflicting NestHost and NestMembers attributes in %s".formatted(toString(ae))));
+                }
+                yield 2 + 2 * nma.nestMembers().size();
+            }
+            case PermittedSubclassesAttribute psa -> {
+                if (classModel.flags().has(AccessFlag.FINAL)) {
+                    errors.add(new VerifyError("PermittedSubclasses attribute in final %s".formatted(toString(ae))));
+                }
+                yield 2 + 2 * psa.permittedSubclasses().size();
+            }
             case RecordAttribute ra -> {
                 int l = 2;
                 for (var rc : ra.components()) {

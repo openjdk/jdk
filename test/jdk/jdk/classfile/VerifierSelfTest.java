@@ -99,7 +99,7 @@ class VerifierSelfTest {
         var cd_test = ClassDesc.of("ParserVerificationTestClass");
         var indexes = new Object[9];
         var clm = cc.parse(cc.build(cd_test, clb -> {
-            clb.withFlags(ClassFile.ACC_INTERFACE);
+            clb.withFlags(ClassFile.ACC_INTERFACE | ClassFile.ACC_FINAL);
             var cp = clb.constantPool();
             var ce_valid = cp.classEntry(cd_test);
             var ce_invalid = cp.classEntry(cp.utf8Entry("invalid.class.name"));
@@ -150,7 +150,7 @@ class VerifierSelfTest {
                             SyntheticAttribute.of()))
                     .withField("/", CD_int, 0)
                     .withField("/", CD_int, 0)
-                    .withMethod("m", MTD_void, ClassFile.ACC_ABSTRACT, mb -> patch(mb,
+                    .withMethod("m", MTD_void, ClassFile.ACC_ABSTRACT | ClassFile.ACC_STATIC, mb -> patch(mb,
                             AnnotationDefaultAttribute.of(AnnotationValue.ofInt(0)),
                             DeprecatedAttribute.of(),
                             ExceptionsAttribute.ofSymbols(CD_Exception),
@@ -208,9 +208,13 @@ class VerifierSelfTest {
                 Wrong InnerClasses attribute length in class ParserVerificationTestClass
                 Multiple NestHost attributes in class ParserVerificationTestClass
                 Wrong NestHost attribute length in class ParserVerificationTestClass
+                Conflicting NestHost and NestMembers attributes in class ParserVerificationTestClass
                 Multiple NestMembers attributes in class ParserVerificationTestClass
+                Conflicting NestHost and NestMembers attributes in class ParserVerificationTestClass
                 Wrong NestMembers attribute length in class ParserVerificationTestClass
+                PermittedSubclasses attribute in final class ParserVerificationTestClass
                 Multiple PermittedSubclasses attributes in class ParserVerificationTestClass
+                PermittedSubclasses attribute in final class ParserVerificationTestClass
                 Wrong PermittedSubclasses attribute length in class ParserVerificationTestClass
                 Multiple Record attributes in class ParserVerificationTestClass
                 Wrong Record attribute length in class ParserVerificationTestClass
