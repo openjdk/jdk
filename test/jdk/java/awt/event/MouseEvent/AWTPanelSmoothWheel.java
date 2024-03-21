@@ -39,6 +39,7 @@ import java.awt.event.MouseWheelEvent;
 
 public class AWTPanelSmoothWheel {
     private static int wheelEventCount = 0;
+    private static int hiResWheelCount = 0;
     private static final String INSTRUCTIONS = """
             <html>
             <body>
@@ -46,20 +47,24 @@ public class AWTPanelSmoothWheel {
             please press PASS if this is not the case.<br> <br>
 
             Place the mouse cursor above the green panel and rotate the mouse wheel,
-            the test will print all mouse wheel event messages into the logging panel
-            below the instruction window.<br> <br>
+            the test will print mouse wheel event messages in the format
+            <b> [Event#, WheelRotation, PreciseWheelRotation]</b> into the logging
+            panel below the instruction window.<br> <br>
+
+            A hi-res mouse is one which produces MouseWheelEvents having
+            <b>preciseWheelRotation &lt 1.</b> <br>
+            When preciseWheelRotation adds up to 1,wheelRotation becomes 1. <br>
+            You should see a few events where preciseWheelRotation < 1 & wheelRotation = 0
+            followed by a event where preciseWheelRotation = 1 & wheelRotation = 1.<br> <br>
 
             Check if the test works OK when the mouse wheel is rotated very slow.<br> <br>
-
-            This is a semi-automated test, when 5 or more MouseWheelEvents with
-            <br><b> scrollType=WHEEL_UNIT_SCROLL and wheelRotation != 0 </b> <br>
-            are recorded, the test automatically passes.<br>
-            The events are also logged in the logging panel
-            for user reference.<br> <br>
+            Please press PASS if above is true, else FAIL. <br> <br>
 
             <hr>
-            PS: If you don't see events with scrollType=WHEEL_UNIT_SCROLL,
-            then the mouse doesn't support high-resolution scrolling.<br> <br>
+            PS: If you don't see events with preciseWheelRotation < 1,
+            then the mouse doesn't support high-resolution scrolling.
+            A warning is shown in the logging area if you are not using a hi-res mouse.
+            <br> <br>
             </body>
             </html>
             """;
@@ -68,8 +73,9 @@ public class AWTPanelSmoothWheel {
         PassFailJFrame.builder()
                 .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
-                .rows(18)
+                .rows(20)
                 .columns(50)
+                .testTimeOut(10)
                 .logArea(10)
                 .testUI(AWTPanelSmoothWheel::createUI)
                 .build()
@@ -81,13 +87,17 @@ public class AWTPanelSmoothWheel {
         Panel panel = new Panel();
         panel.setBackground(Color.GREEN);
         panel.addMouseWheelListener(e -> {
-            PassFailJFrame.log(e.toString());
-            if (e.getScrollType() == MouseWheelEvent.WHEEL_UNIT_SCROLL
-                    && e.getWheelRotation() != 0) {
-                wheelEventCount++;
-            }
-            if (wheelEventCount > 5) {
-                PassFailJFrame.forcePass();
+            if (e.getScrollType() == MouseWheelEvent.WHEEL_UNIT_SCROLL) {
+                PassFailJFrame.log("WheelEvent#"+ ++wheelEventCount
+                        + " --- Wheel Rotation: " + e.getWheelRotation()
+                        + " --- Precise Wheel Rotation: "
+                        + String.format("%.2f", e.getPreciseWheelRotation()));
+                if (e.getPreciseWheelRotation() < 1) {
+                    hiResWheelCount++;
+                }
+                if (wheelEventCount >= 5 && hiResWheelCount == 0) {
+                    PassFailJFrame.log("WARNING !!! You might not be using a high-res mouse.");
+                }
             }
         });
         frame.setSize (400, 200);
