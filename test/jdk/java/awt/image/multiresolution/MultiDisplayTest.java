@@ -23,7 +23,6 @@
 
 import java.awt.Color;
 import java.awt.Dialog;
-import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.Frame;
 import java.awt.Graphics;
@@ -73,12 +72,13 @@ public class MultiDisplayTest {
              translucent windows appearing on the 2nd (non-active) display
              and Mission Control behavior.
 
-             Close the windows.
+             Close the Child & Parent windows.
 
-             In case if no issues occur please push "Pass", otherwise "Fail"
+             In case if no issues occur please push "Pass", otherwise "Fail".
             """;
 
-    private static final int W = 200, H = 200;
+    private static final int W = 200;
+    private static final int H = 200;
 
     private static final BaseMultiResolutionImage IMG =
         new BaseMultiResolutionImage(new BufferedImage[]{
@@ -130,10 +130,6 @@ public class MultiDisplayTest {
 
     private static class ParentFrame extends Frame {
         public ParentFrame() {
-            EventQueue.invokeLater(this::CreateUI);
-        }
-
-        private void CreateUI() {
             addWindowListener(new WindowAdapter() {
                 @Override
                 public void windowClosing(WindowEvent e) { dispose(); }
@@ -154,10 +150,6 @@ public class MultiDisplayTest {
     private static class ChildDialog extends Dialog {
         public ChildDialog(Frame f) {
             super(f);
-            EventQueue.invokeLater(this::CreateUI);
-        }
-
-        private void CreateUI() {
             addWindowListener(new WindowAdapter() {
                 @Override
                 public void windowClosing(WindowEvent e) { dispose(); }
