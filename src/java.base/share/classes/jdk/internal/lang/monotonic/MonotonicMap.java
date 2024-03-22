@@ -29,7 +29,6 @@ import jdk.internal.vm.annotation.Stable;
 
 import java.util.AbstractMap;
 import java.util.AbstractSet;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -248,7 +247,7 @@ public final class MonotonicMap<K, V>
         return monotonic.bindIfUnbound(newValue);
     }
 
-    public static <K, V> Function<K, V> asMemoized(Collection<? extends K> keys,
+    public static <K, V> Function<K, V> asFunction(Set<? extends K> keys,
                                                    Function<? super K, ? extends V> mapper) {
         Map<K, Monotonic<V>> map = Monotonic.ofMap(keys);
         Function<K, V> guardedMapper = new Function<>() {

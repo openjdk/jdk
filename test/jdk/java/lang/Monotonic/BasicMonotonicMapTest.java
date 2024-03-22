@@ -36,6 +36,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -57,7 +58,7 @@ final class BasicMonotonicMapTest {
 
     @BeforeEach
     void setup() {
-        map = Monotonic.ofMap(Arrays.asList(KEYS));
+        map = Monotonic.ofMap(Set.of(KEYS));
     }
 
     @Test

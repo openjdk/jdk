@@ -153,8 +153,9 @@ public final class Monotonics {
 
     /**
      * {@return a wrapped, thread-safe, memoized {@linkplain Function} backed by a
-     * new map with the {@code keys} and of empty monotonic elements where the memoized
-     * values are obtained by invoking the provided {@code mapper} at most once per key}
+     * new map with the set of {@code keys} and of empty monotonic elements where the
+     * memoized values are obtained by invoking the provided {@code mapper} at most
+     * once per key}
      * <p>
      * The returned memoized {@linkplain Function} is equivalent to
      * the following {@linkplain Function}:
@@ -176,11 +177,11 @@ public final class Monotonics {
      *                   in the backing map)
      * @see Monotonic#ofMap(Set)
      */
-    public static <T, R> Function<T, R> asFunction(Collection<? extends T> keys,
+    public static <T, R> Function<T, R> asFunction(Set<? extends T> keys,
                                                    Function<? super T, ? extends R> mapper) {
         Objects.requireNonNull(keys);
         Objects.requireNonNull(mapper);
-        return MonotonicMap.asMemoized(keys, mapper);
+        return MonotonicMap.asFunction(keys, mapper);
     }
 
 }
