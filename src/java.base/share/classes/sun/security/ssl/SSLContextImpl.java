@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1468,11 +1468,11 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
             AlgorithmConstraints constraints;
             if (ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
                 if (session instanceof ExtendedSSLSession extSession) {
-                    String[][] peerSupportedSignAlgsNamedGroups =
-                            extSession.getLocalSupportedSignatureAlgorithmsNamedGroups();
+                    String[] peerSupportedSignAlgs =
+                            extSession.getLocalSupportedSignatureAlgorithms();
 
                     constraints = SSLAlgorithmConstraints.forSocket(
-                                    sslSocket, peerSupportedSignAlgsNamedGroups, true);
+                                    sslSocket, peerSupportedSignAlgs, true);
                 } else {
                     constraints =
                             SSLAlgorithmConstraints.forSocket(sslSocket, true);
@@ -1506,11 +1506,11 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
             AlgorithmConstraints constraints;
             if (ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
                 if (session instanceof ExtendedSSLSession extSession) {
-                    String[][] peerSupportedSignAlgsNamedGroups =
-                            extSession.getLocalSupportedSignatureAlgorithmsNamedGroups();
+                    String[] peerSupportedSignAlgs =
+                            extSession.getLocalSupportedSignatureAlgorithms();
 
                     constraints = SSLAlgorithmConstraints.forEngine(
-                                    engine, peerSupportedSignAlgsNamedGroups, true);
+                                    engine, peerSupportedSignAlgs, true);
                 } else {
                     constraints =
                             SSLAlgorithmConstraints.forEngine(engine, true);
