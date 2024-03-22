@@ -343,27 +343,14 @@ static char cpu_arch[] = "ppc64";
 #error Add appropriate cpu_arch setting
 #endif
 
-// Wrap the function "vmgetinfo" which is not available on older OS releases.
-static int checked_vmgetinfo(void *out, int command, int arg) {
-  if (os::Aix::on_pase() && os::Aix::os_version_short() < 0x0601) {
-    guarantee(false, "cannot call vmgetinfo on AS/400 older than V6R1");
-  }
-  return ::vmgetinfo(out, command, arg);
-}
-
 // Given an address, returns the size of the page backing that address.
 size_t os::Aix::query_pagesize(void* addr) {
-
-  if (os::Aix::on_pase() && os::Aix::os_version_short() < 0x0601) {
-    // AS/400 older than V6R1: no vmgetinfo here, default to 4K
-    return 4*K;
-  }
-
   vm_page_info pi;
   pi.addr = (uint64_t)addr;
-  if (checked_vmgetinfo(&pi, VM_PAGE_INFO, sizeof(pi)) == 0) {
+  if (::vmgetinfo(&pi, VM_PAGE_INFO, sizeof(pi)) == 0) {
     return pi.pagesize;
   } else {
+    trcVerbose("vmgetinfo(VM_PAGE_INFO) failed (errno: %d)", errno);
     assert(false, "vmgetinfo failed to retrieve page size");
     return 4*K;
   }
@@ -465,7 +452,7 @@ static void query_multipage_support() {
   {
     const int MAX_PAGE_SIZES = 4;
     psize_t sizes[MAX_PAGE_SIZES];
-    const int num_psizes = checked_vmgetinfo(sizes, VMINFO_GETPSIZES, MAX_PAGE_SIZES);
+    const int num_psizes = ::vmgetinfo(sizes, VMINFO_GETPSIZES, MAX_PAGE_SIZES);
     if (num_psizes == -1) {
       trcVerbose("vmgetinfo(VMINFO_GETPSIZES) failed (errno: %d)", errno);
       trcVerbose("disabling multipage support.");
