@@ -344,7 +344,7 @@ void ShenandoahRegionPartitions::dump_bitmap_all() const {
 #ifdef _LP64
   log_info(gc)("%6s: %18s %18s %18s", "index", "Mutator Bits", "Collector Bits", "NotFree Bits");
 #else
-  log_infl(gc)("%6s: %10s %10s %10s", "index", "Mutator Bits", "Collector Bits", "NotFree Bits");
+  log_info(gc)("%6s: %10s %10s %10s", "index", "Mutator Bits", "Collector Bits", "NotFree Bits");
 #endif
   dump_bitmap_range(0, _max-1);
 }
