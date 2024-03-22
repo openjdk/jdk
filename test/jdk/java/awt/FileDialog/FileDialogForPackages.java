@@ -21,14 +21,10 @@
  * questions.
  */
 
-import java.awt.BorderLayout;
-import java.awt.Button;
 import java.awt.FileDialog;
 import java.awt.Frame;
 import java.lang.reflect.InvocationTargetException;
-import javax.swing.JFrame;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
+import javax.swing.JButton;
 
 /*
  * @test
@@ -41,36 +37,23 @@ import javax.swing.JTextArea;
 */
 
 public class FileDialogForPackages {
-    private static final String APPLICATIONS_FOLDER = "/Applications";
 
-    private static volatile Button showBtn;
-    private static volatile FileDialog fd;
-
-    private static JFrame initialize() {
+    private static JButton initialize() {
         System.setProperty("apple.awt.use-file-dialog-packages", "true");
 
-        JFrame frame = new JFrame("Packages File Dialog Test Frame");
-        frame.setLayout(new BorderLayout());
-        JTextArea textOutput = new JTextArea(8, 30);
-        textOutput.setLineWrap(true);
-        JScrollPane textScrollPane = new JScrollPane(textOutput);
-        frame.add(textScrollPane, BorderLayout.CENTER);
-
-        fd = new FileDialog(new Frame(), "Open");
+        FileDialog fd = new FileDialog((Frame) null, "Open");
+        String APPLICATIONS_FOLDER = "/Applications";
         fd.setDirectory(APPLICATIONS_FOLDER);
 
-        showBtn = new Button("Show File Dialog");
+        JButton showBtn = new JButton("Show File Dialog");
         showBtn.addActionListener(e -> {
             fd.setVisible(true);
             String output = fd.getFile();
             if (output != null) {
-                textOutput.append(output + " is selected\n");
-                textOutput.setCaretPosition(textOutput.getText().length());
+                PassFailJFrame.log(output + " is selected\n");
             }
         });
-        frame.add(showBtn, BorderLayout.NORTH);
-        frame.pack();
-        return frame;
+        return showBtn;
     }
 
     public static void main(String[] args) throws InterruptedException,
@@ -88,7 +71,8 @@ public class FileDialogForPackages {
                 .instructions(instructions)
                 .rows((int) instructions.lines().count() + 1)
                 .columns(40)
-                .testUI(FileDialogForPackages::initialize)
+                .logArea(8)
+                .splitUIBottom(FileDialogForPackages::initialize)
                 .build()
                 .awaitAndCheck();
     }
