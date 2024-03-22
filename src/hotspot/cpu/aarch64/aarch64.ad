@@ -3636,7 +3636,7 @@ encode %{
         __ code()->shared_stub_to_interp_for(_method, call - __ begin());
       } else {
         // Emit stub for static call
-        address stub = CompiledStaticCall::emit_to_interp_stub(masm, call);
+        address stub = CompiledDirectCall::emit_to_interp_stub(masm, call);
         if (stub == nullptr) {
           ciEnv::current()->record_failure("CodeCache is full");
           return;

@@ -227,7 +227,8 @@ class AbstractAssembler : public ResourceObj  {
   bool isByte(int x) const             { return 0 <= x && x < 0x100; }
   bool isShiftCount(int x) const       { return 0 <= x && x < 32; }
 
-  // Instruction boundaries (required when emitting relocatable values).
+  // Mark instruction boundaries, this is required when emitting relocatable values.
+  // Basically, all instructions that directly or indirectly use Assembler::emit_data* methods.
   class InstructionMark: public StackObj {
    private:
     AbstractAssembler* _assm;
