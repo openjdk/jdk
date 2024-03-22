@@ -26,7 +26,7 @@
  * @bug 8131019 8169561 8261450
  * @summary Test JavadocFormatter
  * @library /tools/lib
- * @modules jdk.compiler/jdk.internal.shellsupport.doc
+ * @modules jdk.jshell/jdk.internal.shellsupport.doc
  * @run testng JavadocFormatterTest
  */
 
