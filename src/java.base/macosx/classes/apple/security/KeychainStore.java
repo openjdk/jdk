@@ -42,12 +42,72 @@ import sun.security.util.*;
 import sun.security.x509.*;
 
 /**
- * This class provides the keystore implementation referred to as "KeychainStore".
- * It uses the current user's keychain as its backing storage, and does NOT support
- * a file-based implementation.
+ * This class provides the keystore implementations referred to as
+ * "KeychainStore" and "KeychainStore-ROOT".
+ * They use the current user's and system root keychains accordingly
+ * as their backing storage, and does NOT support a file-based
+ * implementation.
  */
 
-public final class KeychainStore extends KeyStoreSpi {
+abstract sealed class KeychainStore extends KeyStoreSpi {
+
+    /**
+     * Current user's keychain
+     */
+    public static final class USER extends KeychainStore {
+        public USER() {
+            super("USER");
+        }
+
+    }
+
+    /**
+     * System root read-only keychain
+     *
+     */
+    public static final class ROOT extends KeychainStore {
+        public ROOT() {
+            super("ROOT");
+        }
+
+        /**
+         * Delete operation is not permitted for trusted anchors
+         */
+        public void engineDeleteEntry(String alias)
+                throws KeyStoreException
+        {
+            throw new KeyStoreException("Trusted entry <" + alias + "> can not be removed");
+        }
+
+        /**
+         * Changes are not permitted for trusted anchors
+         */
+        public void engineSetKeyEntry(String alias, Key key, char[] password,
+                                      Certificate[] chain)
+                throws KeyStoreException
+        {
+            throw new KeyStoreException("Trusted entry <" + alias + "> can not be modified");
+        }
+
+        /**
+         * Changes are not permitted for trusted anchors
+         */
+        public void engineSetKeyEntry(String alias, byte[] key,
+                                      Certificate[] chain)
+                throws KeyStoreException
+        {
+            throw new KeyStoreException("Trusted entry <" + alias + "> can not be modified");
+        }
+
+        /**
+         * Changes are not permitted for trusted anchors
+         */
+        public void engineStore(OutputStream stream, char[] password)
+                throws IOException, NoSuchAlgorithmException, CertificateException
+        {
+            // do nothing, no changes allowed
+        }
+    }
 
     // Private keys and their supporting certificate chains
     // If a key came from the keychain it has a SecKeyRef and one or more
@@ -137,6 +197,7 @@ public final class KeychainStore extends KeyStoreSpi {
         }
     }
 
+    private final String storeName;
 
     /**
      * Verify the Apple provider in the constructor.
@@ -144,7 +205,9 @@ public final class KeychainStore extends KeyStoreSpi {
      * @exception SecurityException if fails to verify
      * its own integrity
      */
-    public KeychainStore() { }
+    private KeychainStore(String name) {
+        this.storeName = name;
+    }
 
     /**
      * Returns the key associated with the given alias, using the given
@@ -761,7 +824,7 @@ public final class KeychainStore extends KeyStoreSpi {
             }
 
             entries.clear();
-            _scanKeychain();
+            _scanKeychain(storeName);
             if (debug != null) {
                 debug.println("KeychainStore load entry count: " +
                         entries.size());
@@ -769,7 +832,7 @@ public final class KeychainStore extends KeyStoreSpi {
         }
     }
 
-    private native void _scanKeychain();
+    private native void _scanKeychain(String name);
 
     /**
      * Callback method from _scanKeychain.  If a trusted certificate is found,
@@ -807,7 +870,7 @@ public final class KeychainStore extends KeyStoreSpi {
             // Check whether a certificate with same alias already exists and is the same
             // If yes, we can return here - the existing entry must have the same
             // properties and trust settings
-            if (entries.contains(alias.toLowerCase(Locale.ROOT))) {
+            if (entries.containsKey(alias.toLowerCase(Locale.ROOT))) {
                 int uniqueVal = 1;
                 String originalAlias = alias;
                 var co = entries.get(alias.toLowerCase(Locale.ROOT));
