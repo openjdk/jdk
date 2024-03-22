@@ -28,19 +28,6 @@ include Modules.gmk
 include ProcessMarkdown.gmk
 include ToolsJdk.gmk
 
-# Tell the compiler not to export any functions unless declared so in
-# the source code. On Windows, this is the default and cannot be changed.
-# On Mac, we have always exported all symbols, probably due to oversight
-# and/or misunderstanding. To emulate this, don't hide any symbols
-# by default.
-# Also provide an override for non-conformant libraries.
-ifeq ($(TOOLCHAIN_TYPE), gcc)
-  LAUNCHER_CFLAGS += -fvisibility=hidden
-  LDFLAGS_JDKEXE += -Wl,--exclude-libs,ALL
-else ifeq ($(TOOLCHAIN_TYPE), clang)
-  LAUNCHER_CFLAGS += -fvisibility=hidden
-endif
-
 LAUNCHER_SRC := $(TOPDIR)/src/java.base/share/native/launcher
 LAUNCHER_CFLAGS += -I$(TOPDIR)/src/java.base/share/native/launcher \
     -I$(TOPDIR)/src/java.base/share/native/libjli \
@@ -155,17 +142,14 @@ define SetupBuildLauncherBody
       NAME := $1, \
       EXTRA_FILES := $$($1_EXTRA_FILES), \
       OPTIMIZATION := $$($1_OPTIMIZATION), \
-      CFLAGS := $$(CFLAGS_JDKEXE) \
-          $$(LAUNCHER_CFLAGS) \
+      CFLAGS := $$(LAUNCHER_CFLAGS) \
           $$(VERSION_CFLAGS) \
           -DLAUNCHER_NAME='"$$(LAUNCHER_NAME)"' \
           -DPROGNAME='"$1"' \
           $$($1_CFLAGS), \
       CFLAGS_windows := $$($1_CFLAGS_windows), \
       DISABLED_WARNINGS_gcc := unused-function, \
-      LDFLAGS := $$(LDFLAGS_JDKEXE) \
-          $$(call SET_EXECUTABLE_ORIGIN) \
-          $$($1_LDFLAGS), \
+      LDFLAGS := $$($1_LDFLAGS), \
       LDFLAGS_linux := $$(call SET_EXECUTABLE_ORIGIN,/../lib) \
           -L$(call FindLibDirForModule, java.base), \
       LDFLAGS_macosx := $$(call SET_EXECUTABLE_ORIGIN,/../lib) \

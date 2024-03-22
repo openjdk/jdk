@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8029661
+ * @bug 8029661 8325164
  * @summary Test TLS 1.2
  * @modules java.base/sun.security.internal.spec
  *          java.base/sun.security.util
@@ -412,6 +412,18 @@ public final class FipsModeTLS12 extends SecmodTest {
             ssle = sslCtx.createSSLEngine("localhost", 443);
             ssle.setUseClientMode(client);
             SSLParameters sslParameters = ssle.getSSLParameters();
+            // verify that FFDHE named groups are available
+            boolean ffdheAvailable = Arrays.stream(sslParameters.getNamedGroups())
+                    .anyMatch(ng -> ng.startsWith("ffdhe"));
+            if (!ffdheAvailable) {
+                throw new RuntimeException("No FFDHE named groups available");
+            }
+            // verify that ECDHE named groups are available
+            boolean ecdheAvailable = Arrays.stream(sslParameters.getNamedGroups())
+                    .anyMatch(ng -> ng.startsWith("secp"));
+            if (!ecdheAvailable) {
+                throw new RuntimeException("No ECDHE named groups available");
+            }
             ssle.setSSLParameters(sslParameters);
 
             return ssle;
@@ -426,28 +438,6 @@ public final class FipsModeTLS12 extends SecmodTest {
         //  1. SunPKCS11 (with an NSS FIPS mode backend)
         //  2. SUN (to handle X.509 certificates)
         //  3. SunJSSE (for a TLS engine)
-        //
-        // RSASSA-PSS algorithm is not currently supported in SunPKCS11
-        // but in SUN provider. As a result, it can be negotiated by the
-        // TLS engine. The problem is that SunPKCS11 keys are sensitive
-        // in FIPS mode and cannot be used in a SUN algorithm (conversion
-        // fails as plain values cannot be extracted).
-        //
-        // To workaround this issue, we disable RSASSA-PSS algorithm for
-        // TLS connections. Once JDK-8222937 is fixed, this workaround can
-        // (and should) be removed.
-        //
-        // On a final note, the list of disabled TLS algorithms
-        // (jdk.tls.disabledAlgorithms) has to be updated at this point,
-        // before it is read in sun.security.ssl.SSLAlgorithmConstraints
-        // class initialization.
-        String disabledAlgorithms =
-                Security.getProperty("jdk.tls.disabledAlgorithms");
-        if (disabledAlgorithms.length() > 0) {
-            disabledAlgorithms += ", ";
-        }
-        disabledAlgorithms += "RSASSA-PSS";
-        Security.setProperty("jdk.tls.disabledAlgorithms", disabledAlgorithms);
 
         if (initSecmod() == false) {
             return;
