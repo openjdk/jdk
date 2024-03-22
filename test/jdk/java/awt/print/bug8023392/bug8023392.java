@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,23 @@
  */
 
 /*
-  test
-  @bug 8023392 8259232
-  @summary Swing text components printed with spaces between chars
-  @key printer
-  @run applet/manual=yesno bug8023392.html
-*/
+ * @test
+ * @bug 8023392 8259232
+ * @key printer
+ * @modules java.desktop/sun.swing
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @summary Swing text components printed with spaces between chars
+ * @run main/manual bug8023392
+ */
 
-import javax.swing.*;
-import javax.swing.border.LineBorder;
-import java.applet.Applet;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.font.TextAttribute;
@@ -43,25 +49,49 @@ import java.awt.print.PrinterJob;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
 
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.border.LineBorder;
 
-public class bug8023392 extends Applet {
-    static final String[] instructions = {
-        "Please select the RadioButton for applet size labeled \"variable\" radiobutton in test harness window.",
-        "A Frame containing several pairs of labels ((a) and (b)) is displayed.",
-        "Labels of each pair look the same and are left-aligned (with spaces ",
-        "between chars).",
-        "1. Hit the print button.",
-        "2. Select any available printer (printing to file is also fine).",
-        "3. Look at the printing result (paper, PDF, PS, etc.):",
-        "   The (a) and (b) labels should look almost the same and the (a) labels",
-        "   shouldn't appear as if they are stretched along X axis."};
+import sun.swing.SwingUtilities2;
 
-    public void init() {
-        this.setLayout(new BorderLayout());
-        add(new SimplePrint2(), BorderLayout.CENTER);
+public class bug8023392 {
+    private static final String INSTRUCTIONS =
+            """
+             A Frame containing several pairs of labels (a) and (b) is displayed.
+             Labels of each pair look the same and are left-aligned (with spaces
+             between chars).
+             1. Hit the print button.
+             2. Select any available printer (printing to file is also fine).
+             3. Look at the printing result (paper, PDF, PS, etc.):
+                 The (a) and (b) labels should look almost the same and the (a)
+                 labels shouldn't appear as if they are stretched along X axis.
+            """;
 
-        Sysout.createDialogWithInstructions(instructions);
+    public static void main(String[] args) throws Exception {
+        PassFailJFrame
+                .builder()
+                .title("bug8023392 Test Instructions")
+                .instructions(INSTRUCTIONS)
+                .rows((int) INSTRUCTIONS.lines().count() + 2)
+                .columns(40)
+                .testUI(bug8023392::init)
+                .build()
+                .awaitAndCheck();
+    }
 
+    public static JFrame init() {
+        JFrame frame = new JFrame("Test Window");
+        frame.setLayout(new BorderLayout());
+        frame.add(new SimplePrint2(), BorderLayout.CENTER);
+        frame.pack();
+        return frame;
     }
 
     public static class SimplePrint2 extends JPanel
@@ -69,7 +99,6 @@ public class bug8023392 extends Applet {
         JLabel label1;
         JLabel label2;
         JButton printButton;
-
 
         public SimplePrint2() {
             setLayout(new BorderLayout());
@@ -84,7 +113,7 @@ public class bug8023392 extends Applet {
                 String s = "3a) a b c d e                                     ";
                 @Override
                 protected void paintComponent(Graphics g) {
-                    sun.swing.SwingUtilities2.drawChars(this, g, s.toCharArray(),
+                    SwingUtilities2.drawChars(this, g, s.toCharArray(),
                             0, s.length(), 0, 15);
                 }
             });
@@ -92,7 +121,7 @@ public class bug8023392 extends Applet {
                 String s = "3b) a b c d e";
                 @Override
                 protected void paintComponent(Graphics g) {
-                    sun.swing.SwingUtilities2.drawChars(this, g, s.toCharArray(),
+                    SwingUtilities2.drawChars(this, g, s.toCharArray(),
                             0, s.length(), 0, 15);
                 }
             });
@@ -107,7 +136,7 @@ public class bug8023392 extends Applet {
                 }
                 @Override
                 protected void paintComponent(Graphics g) {
-                    sun.swing.SwingUtilities2.drawString(this, g, it, 0, 15);
+                    SwingUtilities2.drawString(this, g, it, 0, 15);
                 }
             });
 
@@ -122,7 +151,7 @@ public class bug8023392 extends Applet {
                 }
                 @Override
                 protected void paintComponent(Graphics g) {
-                    sun.swing.SwingUtilities2.drawString(this, g, it, 0, 15);
+                    SwingUtilities2.drawString(this, g, it, 0, 15);
                 }
             });
 
@@ -159,6 +188,8 @@ public class bug8023392 extends Applet {
                     job.print();
                 } catch (PrinterException ex) {
                     ex.printStackTrace();
+                    String msg = "PrinterException: " + ex.getMessage();
+                    PassFailJFrame.forceFail(msg);
                 }
             }
         }
@@ -178,110 +209,3 @@ public class bug8023392 extends Applet {
         }
     }
 }
-
-
-/**
- * *************************************************
- * Standard Test Machinery
- * DO NOT modify anything below -- it's a standard
- * chunk of code whose purpose is to make user
- * interaction uniform, and thereby make it simpler
- * to read and understand someone else's test.
- * **************************************************
- */
-class Sysout {
-    private static TestDialog dialog;
-
-    public static void createDialogWithInstructions(String[] instructions) {
-        dialog = new TestDialog(new Frame(), "Instructions");
-        dialog.printInstructions(instructions);
-        dialog.show();
-        println("Any messages for the tester will display here.");
-    }
-
-    public static void createDialog() {
-        dialog = new TestDialog(new Frame(), "Instructions");
-        String[] defInstr = {"Instructions will appear here. ", ""};
-        dialog.printInstructions(defInstr);
-        dialog.show();
-        println("Any messages for the tester will display here.");
-    }
-
-
-    public static void printInstructions(String[] instructions) {
-        dialog.printInstructions(instructions);
-    }
-
-
-    public static void println(String messageIn) {
-        dialog.displayMessage(messageIn);
-    }
-
-}// Sysout  class
-
-
-class TestDialog extends Dialog {
-
-    TextArea instructionsText;
-    TextArea messageText;
-    int maxStringLength = 80;
-
-    //DO NOT call this directly, go through Sysout
-    public TestDialog(Frame frame, String name) {
-        super(frame, name);
-        int scrollBoth = TextArea.SCROLLBARS_BOTH;
-        instructionsText = new TextArea("", 15, maxStringLength, scrollBoth);
-        add("North", instructionsText);
-
-        messageText = new TextArea("", 5, maxStringLength, scrollBoth);
-        add("South", messageText);
-
-        pack();
-
-        show();
-    }// TestDialog()
-
-    //DO NOT call this directly, go through Sysout
-    public void printInstructions(String[] instructions) {
-        //Clear out any current instructions
-        instructionsText.setText("");
-
-        //Go down array of instruction strings
-
-        String printStr, remainingStr;
-        for (int i = 0; i < instructions.length; i++) {
-            //chop up each into pieces maxSringLength long
-            remainingStr = instructions[i];
-            while (remainingStr.length() > 0) {
-                //if longer than max then chop off first max chars to print
-                if (remainingStr.length() >= maxStringLength) {
-                    //Try to chop on a word boundary
-                    int posOfSpace = remainingStr.
-                            lastIndexOf(' ', maxStringLength - 1);
-
-                    if (posOfSpace <= 0) posOfSpace = maxStringLength - 1;
-
-                    printStr = remainingStr.substring(0, posOfSpace + 1);
-                    remainingStr = remainingStr.substring(posOfSpace + 1);
-                }
-                //else just print
-                else {
-                    printStr = remainingStr;
-                    remainingStr = "";
-                }
-
-                instructionsText.append(printStr + "\n");
-
-            }// while
-
-        }// for
-
-    }//printInstructions()
-
-    //DO NOT call this directly, go through Sysout
-    public void displayMessage(String messageIn) {
-        messageText.append(messageIn + "\n");
-    }
-
-}// TestDialog  class
-
