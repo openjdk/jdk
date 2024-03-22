@@ -1455,8 +1455,12 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
   if (!x->klass()->is_loaded() || UseCompressedClassPointers) {
     tmp3 = new_register(objectType);
   }
+  LIR_Opr tmp4 = LIR_OprFact::illegalOpr;
+  if (HashSecondarySupers) {
+    tmp4 = new_register(addressType);
+  }
   __ checkcast(reg, obj.result(), x->klass(),
-               new_register(objectType), new_register(objectType), tmp3,
+               new_register(objectType), new_register(objectType), tmp3, tmp4,
                x->direct_compare(), info_for_exception, patching_info, stub,
                x->profiled_method(), x->profiled_bci());
 }
@@ -1477,8 +1481,12 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
   if (!x->klass()->is_loaded() || UseCompressedClassPointers) {
     tmp3 = new_register(objectType);
   }
+  LIR_Opr tmp4 = LIR_OprFact::illegalOpr;
+  if (HashSecondarySupers) {
+    tmp4 = new_register(addressType);
+  }
   __ instanceof(reg, obj.result(), x->klass(),
-                new_register(objectType), new_register(objectType), tmp3,
+                new_register(objectType), new_register(objectType), tmp3, tmp4,
                 x->direct_compare(), patching_info, x->profiled_method(), x->profiled_bci());
 }
 

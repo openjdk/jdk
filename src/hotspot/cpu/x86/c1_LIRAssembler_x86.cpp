@@ -33,6 +33,7 @@
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciInstance.hpp"
+#include "compiler/compileTask.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -78,7 +79,7 @@ const Register SHIFT_count = rcx;   // where count for shift operations must be
 #define __ _masm->
 
 
-static void select_different_registers(Register preserve,
+ void select_different_registers(Register preserve,
                                        Register extra,
                                        Register &tmp1,
                                        Register &tmp2) {
@@ -1653,6 +1654,10 @@ void LIR_Assembler::type_profile_helper(Register mdo,
   }
 }
 
+void poo() {
+  asm("nop");
+}
+
 void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, Label* failure, Label* obj_is_null) {
   // we always need a stub for the failure case.
   CodeStub* stub = op->stub();
@@ -1686,7 +1691,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   } else if (obj == klass_RInfo) {
     klass_RInfo = dst;
   }
-  if (k->is_loaded() && !UseCompressedClassPointers) {
+  if (k->is_loaded() && !UseCompressedClassPointers && !HashSecondarySupers) {
     select_different_registers(obj, dst, k_RInfo, klass_RInfo);
   } else {
     Rtmp1 = op->tmp3()->as_register();
@@ -1755,17 +1760,24 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ load_klass(klass_RInfo, obj, tmp_load_klass);
     if (k->is_loaded()) {
       // See if we get an immediate positive hit
+      if ((juint)in_bytes(Klass::secondary_super_cache_offset()) != k->super_check_offset()) {
 #ifdef _LP64
       __ cmpptr(k_RInfo, Address(klass_RInfo, k->super_check_offset()));
 #else
       __ cmpklass(Address(klass_RInfo, k->super_check_offset()), k->constant_encoding());
 #endif // _LP64
-      if ((juint)in_bytes(Klass::secondary_super_cache_offset()) != k->super_check_offset()) {
         __ jcc(Assembler::notEqual, *failure_target);
         // successful cast, fall through to profile or jump
       } else {
         // See if we get an immediate positive hit
-        __ jcc(Assembler::equal, *success_target);
+        if (UseSecondarySuperCache) {
+#ifdef _LP64
+      __ cmpptr(k_RInfo, Address(klass_RInfo, k->super_check_offset()));
+#else
+      __ cmpklass(Address(klass_RInfo, k->super_check_offset()), k->constant_encoding());
+#endif // _LP64
+          __ jcc(Assembler::equal, *success_target);
+        }
         // check for self
 #ifdef _LP64
         __ cmpptr(klass_RInfo, k_RInfo);
@@ -1773,6 +1785,64 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
         __ cmpklass(klass_RInfo, k->constant_encoding());
 #endif // _LP64
         __ jcc(Assembler::equal, *success_target);
+
+#ifdef _LP64
+        if (HashSecondarySupers) {
+          __ block_comment("hashed check_klass_subtype_slow_path {");
+
+          Klass *super_klass = (Klass*)(k->constant_encoding());
+          const Register r_sub_klass = klass_RInfo;
+          const Register r_super_klass = k_RInfo;
+          const Register r_array_index = rscratch1;
+
+          assert_different_registers(r_sub_klass, r_super_klass, Rtmp1, rscratch1);
+
+          // __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, poo)));
+          __ movq(r_array_index, Address(r_sub_klass, Klass::bitmap_offset()));
+
+          // First check the bitmap to see if super_klass might be present. If
+          // the bit is zero, we are certain that super_klass is not one of
+          // the secondary supers.
+          u1 bit = super_klass->hash_slot();
+          {
+            // NB: If the count in a x86 shift instruction is 0, the flags are
+            // not affected, so we do a testq instead.
+            int shift_count = Klass::SEC_HASH_MASK - bit;
+            if (shift_count != 0) {
+              __ salq(r_array_index, shift_count);
+            } else {
+              __ testq(r_array_index, r_array_index);
+            }
+          }  // We test the MSB of r_array_index, i.e. its sign bit
+          __ jcc(Assembler::positive, *failure);
+
+          // Get the first array index that can contain super_klass into r_array_index.
+          if (bit != 0) {
+            __ popcntq(r_array_index, r_array_index);
+          } else {
+            __ movl(r_array_index, (u1)1);
+          }
+
+          // We will consult the secondary-super array.
+          __ movptr(Rtmp1, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
+
+          // We're asserting that the first word in an Array<Klass*> is the
+          // length, and the second word is the first word of the data. If
+          // that ever changes, r_array_base will have to be adjusted here.
+          assert(Array<Klass*>::base_offset_in_bytes() == wordSize, "Adjust this code");
+          assert(Array<Klass*>::length_offset_in_bytes() == 0, "Adjust this code");
+
+          __ cmpq(r_super_klass, Address(Rtmp1, r_array_index, Address::times_8));
+          __ jcc(Assembler::equal, *success);
+
+          // Is there another entry to check? Consult the bitmap again.
+          __ movq(Rtmp1, Address(r_sub_klass, Klass::bitmap_offset()));
+          __ btq(Rtmp1, (bit + 1) & Klass::SEC_HASH_MASK);
+          __ jcc(Assembler::carryClear, *failure);
+
+          __ block_comment("} hashed check_klass_subtype_slow_path");
+        }
+#endif // LP64
 
         __ push(klass_RInfo);
 #ifdef _LP64
