@@ -21,16 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 5024549
- * @key printer
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
- * @summary Pass if dialogs are modal.
- * @run main/manual PrintModalDialog
- */
-
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
@@ -40,6 +30,16 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterJob;
 
 import javax.swing.JButton;
+
+/*
+ * @test
+ * @bug 5024549
+ * @key printer
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @summary Pass if dialogs are modal.
+ * @run main/manual PrintModalDialog
+ */
 
 public class PrintModalDialog {
     private static JButton jButton1;
