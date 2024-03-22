@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,11 +212,11 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             if (isExtSession &&
                     ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
                 ExtendedSSLSession extSession = (ExtendedSSLSession)session;
-                String[][] localSupportedSignAlgsNamedGroups =
-                        extSession.getLocalSupportedSignatureAlgorithmsNamedGroups();
+                String[] localSupportedSignAlgs =
+                        extSession.getLocalSupportedSignatureAlgorithms();
 
                 constraints = SSLAlgorithmConstraints.forSocket(
-                                sslSocket, localSupportedSignAlgsNamedGroups, false);
+                                sslSocket, localSupportedSignAlgs, false);
             } else {
                 constraints = SSLAlgorithmConstraints.forSocket(sslSocket, false);
             }
@@ -266,11 +266,11 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             if (isExtSession &&
                     ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
                 ExtendedSSLSession extSession = (ExtendedSSLSession)session;
-                String[][] localSupportedSignAlgsNamedGroups =
-                        extSession.getLocalSupportedSignatureAlgorithmsNamedGroups();
+                String[] localSupportedSignAlgs =
+                        extSession.getLocalSupportedSignatureAlgorithms();
 
                 constraints = SSLAlgorithmConstraints.forEngine(
-                                engine, localSupportedSignAlgsNamedGroups, false);
+                                engine, localSupportedSignAlgs, false);
             } else {
                 constraints = SSLAlgorithmConstraints.forEngine(engine, false);
             }
