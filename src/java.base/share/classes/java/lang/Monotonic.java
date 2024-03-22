@@ -30,7 +30,6 @@ import jdk.internal.lang.monotonic.MonotonicImpl;
 import jdk.internal.lang.monotonic.MonotonicList;
 import jdk.internal.lang.monotonic.MonotonicMap;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -122,7 +121,7 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
      *
      * @param supplier to be used for computing a value
      * @return the current (pre-existing or computed) value
-     * @see Monotonics#asMemoized(Supplier)
+     * @see Monotonics#asSupplier(Supplier)
      */
     V computeIfUnbound(Supplier<? extends V> supplier);
 

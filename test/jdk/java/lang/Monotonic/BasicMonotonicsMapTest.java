@@ -106,7 +106,7 @@ final class BasicMonotonicsMapTest {
     void asMemoized() {
         CountingFunction<String, Integer> function = new CountingFunction<>(FUNCTION);
 
-        Function<String, Integer> memoized = Monotonics.asMemoized(Arrays.asList(KEYS), function);
+        Function<String, Integer> memoized = Monotonics.asFunction(Arrays.asList(KEYS), function);
         for (int j = 0; j < 2; j++) {
             for (String key:KEYS) {
                 assertEquals(FUNCTION.apply(key), memoized.apply(key));
@@ -126,8 +126,8 @@ final class BasicMonotonicsMapTest {
                 Arguments.of("computeIfAbsent(M, K, null)",  asListConsumer(m -> Monotonics.computeIfUnbound(m, KEY, null))),
                 Arguments.of("computeIfAbsent(M, null, M)",  asListConsumer(m -> Monotonics.computeIfUnbound(m, null, FUNCTION))),
                 Arguments.of("computeIfAbsent(null, K, M)",  asListConsumer(m -> Monotonics.computeIfUnbound(null, KEY, FUNCTION))),
-                Arguments.of("asMemoized(i, null, b)",       asListConsumer(m -> Monotonics.asMemoized(Arrays.asList(KEYS), null))),
-                Arguments.of("asMemoized(null, M, b)",       asListConsumer(m -> Monotonics.asMemoized(null, FUNCTION)))
+                Arguments.of("asMemoized(i, null, b)",       asListConsumer(m -> Monotonics.asFunction(Arrays.asList(KEYS), null))),
+                Arguments.of("asMemoized(null, M, b)",       asListConsumer(m -> Monotonics.asFunction(null, FUNCTION)))
         );
     }
 

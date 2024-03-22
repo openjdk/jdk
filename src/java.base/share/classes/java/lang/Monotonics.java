@@ -26,27 +26,26 @@ public final class Monotonics {
     private Monotonics() {}
 
     /**
-     * If no value {@linkplain Monotonic#isBound() is bound} for the provided
-     * {@code monotonic}, attempts to compute and bind a new (nullable) value in a
-     * separate fresh background thread using the provided {@code supplier}.
-     *
+     * {@return a new Monotonic with an unbound value where the returned monotonic's
+     * value is computed in a separate fresh background thread using the provided
+     * (@code supplier}}
      * <p>
      * If the supplier throws an (unchecked) exception, the exception is ignored, and no
      * value is bound.
      *
+     * @param <V>      the value type to bind
      * @param supplier to be used for computing a value
-     * @return the provided {@code monotonic}
+     * @see Monotonic#of
      */
-    public static <V> Monotonic<V> computeInBackground(Monotonic<V> monotonic,
-                                                       Supplier<? extends V> supplier) {
-        if (!monotonic.isBound()) {
-            Thread.ofVirtual()
-                    .start(() -> {
-                        try {
-                            monotonic.computeIfUnbound(supplier);
-                        } catch (Exception _) {}
-                    });
-        }
+    public static <V> Monotonic<V> ofBackground(Supplier<? extends V> supplier) {
+        Objects.requireNonNull(supplier);
+        Monotonic<V> monotonic = Monotonic.of();
+        Thread.ofVirtual()
+                .start(() -> {
+                    try {
+                        monotonic.computeIfUnbound(supplier);
+                    } catch (Exception _) {}
+                });
         return monotonic;
     }
 
@@ -119,7 +118,7 @@ public final class Monotonics {
      * @param <V>        the type of the value to memoize
      * @see Monotonic#computeIfUnbound(Supplier)
      */
-    public static <V> Supplier<V> asMemoized(Supplier<? extends V> supplier) {
+    public static <V> Supplier<V> asSupplier(Supplier<? extends V> supplier) {
         Objects.requireNonNull(supplier);
         return MonotonicImpl.asMemoized(supplier);
     }
@@ -146,8 +145,8 @@ public final class Monotonics {
      *               Monotonic elements in the backing list)
      * @see Monotonic#ofList(int)
      */
-    public static <R> IntFunction<R> asMemoized(int size,
-                                                IntFunction<? extends R> mapper) {
+    public static <R> IntFunction<R> asIntFunction(int size,
+                                                   IntFunction<? extends R> mapper) {
         Objects.requireNonNull(mapper);
         return MonotonicList.asMemoized(size, mapper);
     }
@@ -177,7 +176,7 @@ public final class Monotonics {
      *                   in the backing map)
      * @see Monotonic#ofMap(Set)
      */
-    public static <T, R> Function<T, R> asMemoized(Collection<? extends T> keys,
+    public static <T, R> Function<T, R> asFunction(Collection<? extends T> keys,
                                                    Function<? super T, ? extends R> mapper) {
         Objects.requireNonNull(keys);
         Objects.requireNonNull(mapper);

@@ -93,7 +93,7 @@ final class JepDemo {
     class Bar4 {
         // 1. Declare a memoized (cached) Supplier (backed by an
         //    internal monotonic value) that is invoked at most once
-        private static final Supplier<Logger> LOGGER = Monotonics.asMemoized(
+        private static final Supplier<Logger> LOGGER = Monotonics.asSupplier(
                         () -> Logger.getLogger("com.foo.Bar"));
 
         static Logger logger() {
@@ -146,7 +146,7 @@ final class JepDemo {
         private final IntFunction<Integer> numCache;
 
         public Fibonacci3(int upperBound) {
-            numCache = Monotonics.asMemoized(upperBound, this::number);
+            numCache = Monotonics.asIntFunction(upperBound, this::number);
         }
 
         public int number(int n) {
@@ -174,7 +174,7 @@ final class JepDemo {
 
         // 1. Declare a memoized (cached) function backed by a monotonic map
         private static final Function<String, Logger> LOGGERS =
-                Monotonics.asMemoized(
+                Monotonics.asFunction(
                         Set.of("com.foo.Bar", "com.foo.Baz"),
                         Logger::getLogger);
 

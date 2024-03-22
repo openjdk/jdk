@@ -102,7 +102,7 @@ final class BasicMonotonicsListTest {
     void asMemoized() {
         CountingIntFunction<Integer> function = new CountingIntFunction<>(FUNCTION);
 
-        IntFunction<Integer> memoized = Monotonics.asMemoized(SIZE, function);
+        IntFunction<Integer> memoized = Monotonics.asIntFunction(SIZE, function);
         for (int j = 0; j < 2; j++) {
             for (int i = 0; i < SIZE; i++) {
                 assertEquals(i, memoized.apply(i));
@@ -121,7 +121,7 @@ final class BasicMonotonicsListTest {
         return Stream.of(
                 Arguments.of("computeIfAbsent(L, i, null)",  asListConsumer(l -> Monotonics.computeIfUnbound(l, 0, null))),
                 Arguments.of("computeIfAbsent(null, i, M)",  asListConsumer(l -> Monotonics.computeIfUnbound(null, 0, i -> i))),
-                Arguments.of("asMemoized(i, null, b)",       asListConsumer(l -> Monotonics.asMemoized(SIZE, null)))
+                Arguments.of("asMemoized(i, null, b)",       asListConsumer(l -> Monotonics.asIntFunction(SIZE, null)))
         );
     }
 
