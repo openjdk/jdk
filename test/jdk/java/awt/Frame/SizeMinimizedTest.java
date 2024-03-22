@@ -88,13 +88,7 @@ public class SizeMinimizedTest {
 
         frame2 = new Frame("frame2");
         frame2.setSize(100, 100);
-        frame2.setLocation(50, 50);
-        PassFailJFrame.addTestWindow(frame1);
-        PassFailJFrame.addTestWindow(frame2);
-        PassFailJFrame.positionTestWindow(frame1,
-                PassFailJFrame.Position.HORIZONTAL);
-        PassFailJFrame.positionTestWindow(frame2,
-                PassFailJFrame.Position.VERTICAL);
+        frame2.setLocation(150, 50);
         frame1.setVisible(true);
         frame2.setVisible(true);
         List<Frame> frameList = new ArrayList<>();
