@@ -4283,8 +4283,6 @@ void StubGenerator::aesgcm_avx512(Register in, Register len, Register ct, Regist
 
     // Pre-increment counter for next operation
     __ vpaddd(CTR_BLOCKx, CTR_BLOCKx, ADDBE_1234, Assembler::AVX_128bit);
-    // Shuffle counter and save the updated value
-    __ vpshufb(CTR_BLOCKx, CTR_BLOCKx, SHUF_MASK, Assembler::AVX_512bit);
     __ movdqu(Address(counter, 0), CTR_BLOCKx);
     // Load ghash lswap mask
     __ movdqu(xmm24, ExternalAddress(ghash_long_swap_mask_addr()), rbx /*rscratch*/);
