@@ -46,7 +46,7 @@ public class FileDialogOpenDirTest {
 
         JButton open = new JButton("Open File Dialog");
         open.addActionListener(e -> {
-            new FileDialog((Frame) null).show();
+            new FileDialog((Frame) null).setVisible(true);
         });
 
         return open;
