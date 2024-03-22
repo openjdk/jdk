@@ -67,7 +67,7 @@ public class JaWSTest implements ActionListener, Runnable {
                             buttonLocation.y + button.getHeight()/2);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            if (!worker.dialogFinished.await(5, TimeUnit.SECONDS)) {
+            if (!dialogFinished.await(5, TimeUnit.SECONDS)) {
                 throw new RuntimeException("Dialog thread is blocked");
             }
         } finally {
