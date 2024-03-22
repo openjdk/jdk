@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1482,16 +1482,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     }
 
     /**
-     * Gets a two-dimensional array of supported signature algorithm names
-     * and their associated named groups (if available) that the local side
-     * is willing to verify.
-     */
-    @Override
-    public String[][] getLocalSupportedSignatureAlgorithmsNamedGroups() {
-        return SignatureScheme.getAlgorithmNamesNamedGroups(localSupportedSignAlgs);
-    }
-
-    /**
      * Gets an array of supported signature schemes that the local side is
      * willing to verify.
      */
@@ -1506,15 +1496,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     @Override
     public String[] getPeerSupportedSignatureAlgorithms() {
         return SignatureScheme.getAlgorithmNames(peerSupportedSignAlgs);
-    }
-
-    /**
-     * Gets a two-dimensional array of supported signature algorithms and their
-     * associated named groups (if available) that the peer is able to verify.
-     */
-    @Override
-    public String[][] getPeerSupportedSignatureAlgorithmsNamedGroups() {
-        return SignatureScheme.getAlgorithmNamesNamedGroups(peerSupportedSignAlgs);
     }
 
     /**
