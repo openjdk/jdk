@@ -113,7 +113,7 @@ public class refType001 {
                 public void run() {
 
                     boolean isConnected = true;
-                    boolean eventsReceived = false;
+                    boolean allEventsReceived = false;
                     // handle events until debugee is disconnected
                     while (isConnected) {
                         EventSet eventSet = null;
@@ -201,14 +201,15 @@ public class refType001 {
                                               }
 
                                               // Check that all expected ClassPrepareEvent are received
-                                              if (!eventsReceived) {
-                                                  eventsReceived = true;
+                                              if (!allEventsReceived) {
+                                                  allEventsReceived = true;
                                                   for (int i = 0; i < checkedTypes.length; i++) {
                                                       if (checkedTypes[i][2] == "0") {
-                                                          eventsReceived = false;
+                                                          allEventsReceived = false;
+                                                          break;
                                                       }
                                                   }
-                                                  if (eventsReceived) {
+                                                  if (allEventsReceived) {
                                                       eventsReceivedLatch.countDown();
                                                   }
                                               }
