@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@ import java.security.Key;
 import java.util.Set;
 import javax.net.ssl.*;
 import sun.security.util.DisabledAlgorithmConstraints;
-import sun.security.util.KeyUtil;
-
 import static sun.security.util.DisabledAlgorithmConstraints.*;
 
 /**
@@ -116,12 +114,11 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
 
     static SSLAlgorithmConstraints forSocket(
             SSLSocket socket,
-            String[][] supportedAlgorithmsNamedGroups,
+            String[] supportedAlgorithms,
             boolean withDefaultCertPathConstraints) {
         return new SSLAlgorithmConstraints(
                 nullIfDefault(getUserSpecifiedConstraints(socket)),
-                new SupportedSignatureAlgorithmConstraints(
-                supportedAlgorithmsNamedGroups),
+                new SupportedSignatureAlgorithmConstraints(supportedAlgorithms),
                 withDefaultCertPathConstraints);
     }
 
@@ -141,12 +138,11 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
 
     static SSLAlgorithmConstraints forEngine(
             SSLEngine engine,
-            String[][] supportedAlgorithmsNamedGroups,
+            String[] supportedAlgorithms,
             boolean withDefaultCertPathConstraints) {
         return new SSLAlgorithmConstraints(
                 nullIfDefault(getUserSpecifiedConstraints(engine)),
-                new SupportedSignatureAlgorithmConstraints(
-                supportedAlgorithmsNamedGroups),
+                new SupportedSignatureAlgorithmConstraints(supportedAlgorithms),
                 withDefaultCertPathConstraints);
     }
 
@@ -277,49 +273,17 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
         return permitted;
     }
 
-    @Override
-    public final boolean permits(Set<CryptoPrimitive> primitives, Key key,
-            String currSigAlg) {
-        boolean permitted = true;
-
-        if (peerSpecifiedConstraints != null) {
-            permitted = peerSpecifiedConstraints.permits(
-                    primitives, key, currSigAlg);
-        }
-
-        if (permitted && userSpecifiedConstraints != null) {
-            permitted = userSpecifiedConstraints.permits(
-                    primitives, key, currSigAlg);
-        }
-
-        if (permitted) {
-            permitted = tlsDisabledAlgConstraints.permits(
-                    primitives, key);
-        }
-
-        if (permitted && enabledX509DisabledAlgConstraints) {
-            permitted = x509DisabledAlgConstraints.permits(
-                    primitives, key);
-        }
-
-        return permitted;
-    }
-
 
     private static class SupportedSignatureAlgorithmConstraints
                                     implements AlgorithmConstraints {
-        /*
-         * supported signature algorithms and the associated named
-         * groups (if available)
-         */
-        private final String[][] supportedAlgorithmsNamedGroups;
+        // supported signature algorithms
+        private final String[] supportedAlgorithms;
 
-        SupportedSignatureAlgorithmConstraints(String[][] supportedAlgorithmsNamedGroups) {
-            if (supportedAlgorithmsNamedGroups != null) {
-                this.supportedAlgorithmsNamedGroups =
-                        supportedAlgorithmsNamedGroups.clone();
+        SupportedSignatureAlgorithmConstraints(String[] supportedAlgorithms) {
+            if (supportedAlgorithms != null) {
+                this.supportedAlgorithms = supportedAlgorithms.clone();
             } else {
-                this.supportedAlgorithmsNamedGroups = null;
+                this.supportedAlgorithms = null;
             }
         }
 
@@ -337,8 +301,8 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
                         "No cryptographic primitive specified");
             }
 
-            if (supportedAlgorithmsNamedGroups == null ||
-                        supportedAlgorithmsNamedGroups.length == 0) {
+            if (supportedAlgorithms == null ||
+                        supportedAlgorithms.length == 0) {
                 return false;
             }
 
@@ -348,8 +312,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
                 algorithm = algorithm.substring(0, position);
             }
 
-            for (String[] entry : supportedAlgorithmsNamedGroups) {
-                String supportedAlgorithm = entry[0];
+            for (String supportedAlgorithm : supportedAlgorithms) {
                 if (algorithm.equalsIgnoreCase(supportedAlgorithm)) {
                     return true;
                 }
@@ -361,39 +324,6 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
         @Override
         public final boolean permits(Set<CryptoPrimitive> primitives, Key key) {
             return true;
-        }
-
-        @Override
-        public final boolean permits(Set<CryptoPrimitive> primitives, Key key,
-                String currSigAlg) {
-
-            for (String[] entry : supportedAlgorithmsNamedGroups) {
-                String supportedAlgorithm = entry[0];
-                String namedGroup = entry[1];
-                boolean hasCurve = false;
-                if (supportedAlgorithm == currSigAlg) {
-                    if (namedGroup == null) {
-                        return true;
-                    }
-                    for (String curve : KeyUtil.getNamedCurveFromKey(key)) {
-                        hasCurve = true;
-
-                        if (curve == namedGroup) {
-                            return true;
-                        } else {
-                            // there are more than one curves
-                            continue;
-                        }
-                    }
-                    if (hasCurve) {
-                        return false;
-                    } else {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
         }
 
         @Override
