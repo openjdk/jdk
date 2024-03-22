@@ -60,9 +60,14 @@ protected:
           intended_value = true;
           set_bit_index++;
         }
+      } else {
+        // If we've exhausted set_bits array, there should be no more set_bits
+        BitMapAssertEqual(is_set, false);
+        BitMapAssertEqual(set_bit_index, num_set_bits);
       }
       BitMapAssertEqual(is_set, intended_value);
     }
+    BitMapAssertEqual(set_bit_index, num_set_bits);
 
     // Check that bits_at(array_idx) matches intended value for every valid array_idx value
     set_bit_index = 0;
@@ -170,7 +175,6 @@ protected:
 
     // Confirm that find_next_consecutive_bits() works for each cluster size known to have at least one match
     for (ssize_t cluster_size = 1; cluster_size <= longest_run; cluster_size++) {
-
       // Verify that find_next_consecutive_bits() works
       ssize_t bit_idx = 0;
       ssize_t probe_point = 0;
@@ -188,7 +192,8 @@ protected:
         }
         if (cluster_found) {
           ssize_t next_expected_cluster = set_bits[bit_idx];
-          probe_point = bm.find_next_consecutive_bits(cluster_size, probe_point);
+          ssize_t orig_probe_point = probe_point;
+          probe_point = bm.find_next_consecutive_bits(cluster_size, orig_probe_point);
           BitMapAssertEqual(next_expected_cluster, probe_point);
           probe_point++;
           bit_idx++;
@@ -392,25 +397,41 @@ public:
     ssize_t set_bits_5[12] = { 140, 142, 1021, 1022, 1023, 1051, 1280, 1281, 1282, 1300, 1301, 1302 };
     verifyBitMapState(bm_large, LARGE_BITMAP_SIZE, set_bits_5, 12);
 
+    // Look for large island of contiguous surrounded by smaller islands of contiguous
+    bm_large.set_bit(1024);
+    bm_large.set_bit(1025);  // size-5 island from 1021 to 1025
+    bm_large.set_bit(1027);
+    bm_large.set_bit(1028);
+    bm_large.set_bit(1029);
+    bm_large.set_bit(1030);
+    bm_large.set_bit(1031);
+    bm_large.set_bit(1032);  // size-6 island from 1027 to 1032
+    bm_large.set_bit(1034);
+    bm_large.set_bit(1035);
+    bm_large.set_bit(1036);  // size-3 island from 1034 to 1036
+    ssize_t set_bits_6[23] = {  140,  142, 1021, 1022, 1023, 1024, 1025, 1027, 1028, 1029, 1030,
+                               1031, 1032, 1034, 1035, 1036, 1051, 1280, 1281, 1282, 1300, 1301, 1302 };
+    verifyBitMapState(bm_large, LARGE_BITMAP_SIZE, set_bits_6, 23);
+
     // Test that entire bitmap word (from 1024 to 1088) is 1's
-    ssize_t set_bits_6[11+65];
-    set_bits_6[0] = 140;
-    set_bits_6[1] = 142;
-    set_bits_6[2] = 1021;
-    set_bits_6[3] = 1022;
-    set_bits_6[4] = 1023;
+    ssize_t set_bits_7[76];
+    set_bits_7[0] = 140;
+    set_bits_7[1] = 142;
+    set_bits_7[2] = 1021;
+    set_bits_7[3] = 1022;
+    set_bits_7[4] = 1023;
     size_t bit_idx = 5;
     for (ssize_t i = 1024; i <= 1088; i++) {
       bm_large.set_bit(i);
-      set_bits_6[bit_idx++] = i;
+      set_bits_7[bit_idx++] = i;
     }
-    set_bits_6[bit_idx++] = 1280;
-    set_bits_6[bit_idx++] = 1281;
-    set_bits_6[bit_idx++] = 1282;
-    set_bits_6[bit_idx++] = 1300;
-    set_bits_6[bit_idx++] = 1301;
-    set_bits_6[bit_idx++] = 1302;
-    verifyBitMapState(bm_large, LARGE_BITMAP_SIZE, set_bits_6, bit_idx);
+    set_bits_7[bit_idx++] = 1280;
+    set_bits_7[bit_idx++] = 1281;
+    set_bits_7[bit_idx++] = 1282;
+    set_bits_7[bit_idx++] = 1300;
+    set_bits_7[bit_idx++] = 1301;
+    set_bits_7[bit_idx++] = 1302;
+    verifyBitMapState(bm_large, LARGE_BITMAP_SIZE, set_bits_7, bit_idx);
 
     // Test clear_all()
     bm_small.clear_all();
