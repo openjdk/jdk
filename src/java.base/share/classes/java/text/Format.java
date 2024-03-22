@@ -238,9 +238,6 @@ public abstract class Format implements Serializable, Cloneable {
     /**
      * Parses text from the beginning of the given string to produce an object.
      *
-     * @implNote This implementation is equivalent to calling {@code parseObject(source,
-     * new ParsePosition(0)} and throwing a {@code ParseException} if parsing fails,
-     * instead of returning {@code null}.
      * @param source A {@code String}, to be parsed from the beginning.
      * @return An {@code Object} parsed from the string.
      * @throws ParseException if parsing fails
