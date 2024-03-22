@@ -72,7 +72,7 @@ public class MonotonicListBenchmark {
 
     @Benchmark
     public Integer staticMonotonic() {
-        return MONOTONIC_LIST.get(8).get();
+        return MONOTONIC_LIST.get(8).orThrow();
     }
 
     @Benchmark
@@ -82,7 +82,7 @@ public class MonotonicListBenchmark {
 
     @Benchmark
     public Integer instanceMonotonic() {
-        return referenceList.get(8).get();
+        return referenceList.get(8).orThrow();
     }
 
     @Benchmark
@@ -92,7 +92,7 @@ public class MonotonicListBenchmark {
 
     @Benchmark
     public Integer instanceWrapped() {
-        return wrappedList.get(8).get();
+        return wrappedList.get(8).orThrow();
     }
 
     private static List<Monotonic<Integer>> initMono(List<Monotonic<Integer>> list) {

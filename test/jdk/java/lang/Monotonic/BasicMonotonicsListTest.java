@@ -57,13 +57,13 @@ final class BasicMonotonicsListTest {
 
     @Test
     void listComputeIfAbsent() {
-        Integer v = Monotonics.computeIfAbsent(list, INDEX, FUNCTION);
+        Integer v = Monotonics.computeIfUnbound(list, INDEX, FUNCTION);
         assertEquals(INDEX, v);
         for (int i = 0; i < SIZE; i++) {
             Monotonic<Integer> m = list.get(i);
             if (i == INDEX) {
                 assertTrue(m.isBound());
-                assertEquals(INDEX, m.get());
+                assertEquals(INDEX, m.orThrow());
             } else {
                 assertFalse(m.isBound());
             }
@@ -72,13 +72,13 @@ final class BasicMonotonicsListTest {
 
     @Test
     void listComputeIfAbsentNull() {
-        Integer v = Monotonics.computeIfAbsent(list, INDEX, i -> null);
+        Integer v = Monotonics.computeIfUnbound(list, INDEX, i -> null);
         assertNull(v);
         for (int i = 0; i < SIZE; i++) {
             Monotonic<Integer> m = list.get(i);
             if (i == INDEX) {
                 assertTrue(m.isBound());
-                assertNull(m.get());
+                assertNull(m.orThrow());
             } else {
                 assertFalse(m.isBound());
             }
@@ -88,7 +88,7 @@ final class BasicMonotonicsListTest {
     @Test
     void listComputeIfAbsentThrows() {
         assertThrows(UnsupportedOperationException.class, () ->
-                Monotonics.computeIfAbsent(list, INDEX, i -> {
+                Monotonics.computeIfUnbound(list, INDEX, i -> {
                     throw new UnsupportedOperationException();
                 })
         );
@@ -119,8 +119,8 @@ final class BasicMonotonicsListTest {
 
     private static Stream<Arguments> nullOperations() {
         return Stream.of(
-                Arguments.of("computeIfAbsent(L, i, null)",  asListConsumer(l -> Monotonics.computeIfAbsent(l, 0, null))),
-                Arguments.of("computeIfAbsent(null, i, M)",  asListConsumer(l -> Monotonics.computeIfAbsent(null, 0, i -> i))),
+                Arguments.of("computeIfAbsent(L, i, null)",  asListConsumer(l -> Monotonics.computeIfUnbound(l, 0, null))),
+                Arguments.of("computeIfAbsent(null, i, M)",  asListConsumer(l -> Monotonics.computeIfUnbound(null, 0, i -> i))),
                 Arguments.of("asMemoized(i, null, b)",       asListConsumer(l -> Monotonics.asMemoized(SIZE, null)))
         );
     }

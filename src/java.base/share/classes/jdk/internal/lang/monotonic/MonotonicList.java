@@ -124,15 +124,15 @@ public final class MonotonicList<V>
         return new MonotonicList<>(size);
     }
 
-    public static <V> V computeIfAbsent(List<Monotonic<V>> list,
-                                        int index,
-                                        IntFunction<? extends V> mapper) {
+    public static <V> V computeIfUnbound(List<Monotonic<V>> list,
+                                         int index,
+                                         IntFunction<? extends V> mapper) {
         Monotonic<V> monotonic = list.get(index);
         if (monotonic.isBound()) {
-            return monotonic.get();
+            return monotonic.orThrow();
         }
         V newValue = mapper.apply(index);
-        return monotonic.bindIfAbsent(newValue);
+        return monotonic.bindIfUnbound(newValue);
     }
 
     public static <V> IntFunction<V> asMemoized(int size,
@@ -144,7 +144,7 @@ public final class MonotonicList<V>
                 Monotonic<V> monotonic = list.get(value);
                 synchronized (monotonic) {
                     if (monotonic.isBound()) {
-                        return monotonic.get();
+                        return monotonic.orThrow();
                     }
                 }
                 return mapper.apply(value);
@@ -153,7 +153,7 @@ public final class MonotonicList<V>
         return new IntFunction<>() {
             @Override
             public V apply(int value) {
-                return computeIfAbsent(list, value, guardedMapper);
+                return computeIfUnbound(list, value, guardedMapper);
             }
         };
     }

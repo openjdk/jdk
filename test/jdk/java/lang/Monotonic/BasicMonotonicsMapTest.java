@@ -61,13 +61,13 @@ final class BasicMonotonicsMapTest {
 
     @Test
     void listComputeIfAbsent() {
-        Integer v = Monotonics.computeIfAbsent(map, KEY, FUNCTION);
+        Integer v = Monotonics.computeIfUnbound(map, KEY, FUNCTION);
         assertEquals(EXPECTED, v);
         for (String key: KEYS) {
             Monotonic<Integer> m = map.get(key);
             if (key.equals(KEY)) {
                 assertTrue(m.isBound());
-                assertEquals(EXPECTED, m.get());
+                assertEquals(EXPECTED, m.orThrow());
             } else {
                 assertFalse(m.isBound());
             }
@@ -76,13 +76,13 @@ final class BasicMonotonicsMapTest {
 
     @Test
     void listComputeIfAbsentNull() {
-        Integer v = Monotonics.computeIfAbsent(map, KEY, i -> null);
+        Integer v = Monotonics.computeIfUnbound(map, KEY, i -> null);
         assertNull(v);
         for (String key: KEYS) {
             Monotonic<Integer> m = map.get(key);
             if (key.equals(KEY)) {
                 assertTrue(m.isBound());
-                assertNull(m.get());
+                assertNull(m.orThrow());
             } else {
                 assertFalse(m.isBound());
             }
@@ -92,7 +92,7 @@ final class BasicMonotonicsMapTest {
     @Test
     void listComputeIfAbsentThrows() {
         assertThrows(UnsupportedOperationException.class, () ->
-                Monotonics.computeIfAbsent(map, KEY, i -> {
+                Monotonics.computeIfUnbound(map, KEY, i -> {
                     throw new UnsupportedOperationException();
                 })
         );
@@ -123,9 +123,9 @@ final class BasicMonotonicsMapTest {
 
     private static Stream<Arguments> nullOperations() {
         return Stream.of(
-                Arguments.of("computeIfAbsent(M, K, null)",  asListConsumer(m -> Monotonics.computeIfAbsent(m, KEY, null))),
-                Arguments.of("computeIfAbsent(M, null, M)",  asListConsumer(m -> Monotonics.computeIfAbsent(m, null, FUNCTION))),
-                Arguments.of("computeIfAbsent(null, K, M)",  asListConsumer(m -> Monotonics.computeIfAbsent(null, KEY, FUNCTION))),
+                Arguments.of("computeIfAbsent(M, K, null)",  asListConsumer(m -> Monotonics.computeIfUnbound(m, KEY, null))),
+                Arguments.of("computeIfAbsent(M, null, M)",  asListConsumer(m -> Monotonics.computeIfUnbound(m, null, FUNCTION))),
+                Arguments.of("computeIfAbsent(null, K, M)",  asListConsumer(m -> Monotonics.computeIfUnbound(null, KEY, FUNCTION))),
                 Arguments.of("asMemoized(i, null, b)",       asListConsumer(m -> Monotonics.asMemoized(Arrays.asList(KEYS), null))),
                 Arguments.of("asMemoized(null, M, b)",       asListConsumer(m -> Monotonics.asMemoized(null, FUNCTION)))
         );

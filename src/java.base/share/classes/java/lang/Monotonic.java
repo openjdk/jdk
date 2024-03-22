@@ -37,7 +37,6 @@ import java.util.Objects;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import static jdk.internal.javac.PreviewFeature.*;
 
@@ -46,7 +45,7 @@ import static jdk.internal.javac.PreviewFeature.*;
  * <p>
  * Monotonic values are eligible for constant folding and other optimizations by the JVM.
  * <p>
- * The state of a monotonic value can only go from <em>absent</em> to <em>bound</em> and
+ * The state of a monotonic value can only go from <em>unbound</em> to <em>bound</em> and
  * consequently, a value can only be bound at most once.
  *
  * @implSpec The implementation of this interface is thread-safe, atomic, and non-blocking.
@@ -58,12 +57,12 @@ import static jdk.internal.javac.PreviewFeature.*;
 public sealed interface Monotonic<V> permits MonotonicImpl {
 
     /**
-     * {@return the (nullable) value if bound, otherwise throws
+     * {@return the bound value (nullable) if bound, otherwise throws
      * {@code NoSuchElementException}}
      *
-     * @throws NoSuchElementException if no value is present
+     * @throws NoSuchElementException if no value is bound
      */
-    V get();
+    V orThrow();
 
     /**
      * {@return {@code true} if a value is bound, otherwise {@code false}}
@@ -80,7 +79,7 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
     void bindOrThrow(V value);
 
     /**
-     * If no value is present, binds the monotonic value to the provided (nullable)
+     * If no value is bound, binds the monotonic value to the provided (nullable)
      * {@code value}, returning the (pre-existing or newly bound) value.
      * <p>
      * If several threads invoke this method simultaneously, only one thread will succeed
@@ -89,7 +88,7 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
      * @param value to bind
      * @return the bound value
      */
-    V bindIfAbsent(V value);
+    V bindIfUnbound(V value);
 
     /**
      * If no value {@linkplain #isBound() is bound}, attempts to compute and bind a
@@ -102,14 +101,14 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
      * lazily computed value or memoized result, as in:
      *
      * <pre> {@code
-     * Value witness = monotonic.computeIfAbsent(Value::new);
+     * Value witness = monotonic.computeIfUnbound(Value::new);
      * }</pre>
      *
      * @implSpec The implementation logic is equivalent to the following steps for this
      * {@code monotonic}:
      *
      * <pre> {@code
-     * if (monotonic.isPresent()) {
+     * if (monotonic.isBound()) {
      *     return monotonic.get();
      * } else {
      *     V newValue = supplier.get();
@@ -118,21 +117,19 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
      * }
      * }</pre>
      * Except it is atomic, thread-safe and will only return the same witness value
-     * regardless if invoked by several threads.
-     *
-     * <p>
-     * The implementation guarantees the provided {@code supplier} is invoked once
-     * (if successful) even if invoked from several threads.
+     * regardless if invoked by several threads. However, the provided {@code supplier}
+     * may be invoked several times if invoked from several threads 
      *
      * @param supplier to be used for computing a value
      * @return the current (pre-existing or computed) value
+     * @see Monotonics#asMemoized(Supplier)
      */
-    V computeIfAbsent(Supplier<? extends V> supplier);
+    V computeIfUnbound(Supplier<? extends V> supplier);
 
     // Factories
 
     /**
-     * {@return a fresh Monotonic with an absent value}
+     * {@return a fresh Monotonic with an unbound value}
      *
      * @param <V> the value type to bind
      */
@@ -142,7 +139,7 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
 
     /**
      * {@return a new unmodifiable, shallowly immutable, thread-safe, lazy, non-blocking
-     * {@linkplain List } of {@code size} distinct absent monotonic values}
+     * {@linkplain List } of {@code size} fresh distinct unbound monotonic values}
      * <p>
      * The returned {@code List} is equivalent to the following List:
      * {@snippet lang=java :
@@ -169,8 +166,8 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
     /**
      * {@return a new unmodifiable, shallowly immutable, thread-safe, value-lazy,
      * non-blocking {@linkplain Map } where the {@linkplain java.util.Map#keySet() keys}
-     * contains precisely the distinct provided {@code keys} and where the values are
-     * distinct absent monotonic values}
+     * contains precisely the distinct provided set of {@code keys} and where the
+     * values are fresh distinct unbound monotonic values}
      * <p>
      * The returned {@code Map} is equivalent to the following Map:
      * {@snippet lang=java :
@@ -189,8 +186,7 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
      * @param <V>  the value type for the Monotonic values in this map
      * @see Map#of()
      */
-    // Set
-    static <K, V> Map<K, Monotonic<V>> ofMap(Collection<? extends K> keys) {
+    static <K, V> Map<K, Monotonic<V>> ofMap(Set<? extends K> keys) {
         Objects.requireNonNull(keys);
         // Checks for null keys and removes any duplicates
         Object[] keyArray = Set.copyOf(keys)

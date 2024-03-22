@@ -237,15 +237,15 @@ public final class MonotonicMap<K, V>
         return new MonotonicMap<>(keys);
     }
 
-    public static <K, V> V computeIfAbsent(Map<K, Monotonic<V>> map,
-                                           K key,
-                                           Function<? super K, ? extends V> mapper) {
+    public static <K, V> V computeIfUnbound(Map<K, Monotonic<V>> map,
+                                            K key,
+                                            Function<? super K, ? extends V> mapper) {
         Monotonic<V> monotonic = monotonicOrThrow(map, key);
         if (monotonic.isBound()) {
-            return monotonic.get();
+            return monotonic.orThrow();
         }
         V newValue = mapper.apply(key);
-        return monotonic.bindIfAbsent(newValue);
+        return monotonic.bindIfUnbound(newValue);
     }
 
     public static <K, V> Function<K, V> asMemoized(Collection<? extends K> keys,
@@ -258,7 +258,7 @@ public final class MonotonicMap<K, V>
                 Monotonic<V> monotonic = monotonicOrThrow(map, key);
                 synchronized (monotonic) {
                     if (monotonic.isBound()) {
-                        return monotonic.get();
+                        return monotonic.orThrow();
                     }
                 }
                 return mapper.apply(key);
@@ -268,7 +268,7 @@ public final class MonotonicMap<K, V>
         return new Function<>() {
             @Override
             public V apply(K key) {
-                return computeIfAbsent(map, key, guardedMapper);
+                return computeIfUnbound(map, key, guardedMapper);
             }
         };
     }

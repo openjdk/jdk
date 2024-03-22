@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -25,6 +26,31 @@ public final class Monotonics {
     private Monotonics() {}
 
     /**
+     * If no value {@linkplain Monotonic#isBound() is bound} for the provided
+     * {@code monotonic}, attempts to compute and bind a new (nullable) value in a
+     * separate fresh background thread using the provided {@code supplier}.
+     *
+     * <p>
+     * If the supplier throws an (unchecked) exception, the exception is ignored, and no
+     * value is bound.
+     *
+     * @param supplier to be used for computing a value
+     * @return the provided {@code monotonic}
+     */
+    public static <V> Monotonic<V> computeInBackground(Monotonic<V> monotonic,
+                                                       Supplier<? extends V> supplier) {
+        if (!monotonic.isBound()) {
+            Thread.ofVirtual()
+                    .start(() -> {
+                        try {
+                            monotonic.computeIfUnbound(supplier);
+                        } catch (Exception _) {}
+                    });
+        }
+        return monotonic;
+    }
+
+    /**
      * If no value {@linkplain Monotonic#isBound()} for the provided {@code index}
      * in the provided {@code list}, attempts to compute and bind a value using the
      * provided {@code mapper}, returning the (pre-existing or newly bound) value.
@@ -36,17 +62,17 @@ public final class Monotonics {
      * @param index  to inspect
      * @param mapper to be used for computing a value
      * @param <V>    the value type for the Monotonic elements in the list
-     * @return the current (existing or computed) present monotonic value
+     * @return the current (existing or computed) bound monotonic value
      * @throws IndexOutOfBoundsException if the provided {@code index} is less than
      *                                  zero or equal or greater than the list.size()
      */
-    public static <V> V computeIfAbsent(List<Monotonic<V>> list,
-                                        int index,
-                                        IntFunction<? extends V> mapper) {
+    public static <V> V computeIfUnbound(List<Monotonic<V>> list,
+                                         int index,
+                                         IntFunction<? extends V> mapper) {
         Objects.requireNonNull(list);
         Objects.checkIndex(index, list.size());
         Objects.requireNonNull(mapper);
-        return MonotonicList.computeIfAbsent(list, index, mapper);
+        return MonotonicList.computeIfUnbound(list, index, mapper);
     }
 
     /**
@@ -62,17 +88,17 @@ public final class Monotonics {
      * @param mapper to be used for computing a value
      * @param <K>    the type of keys maintained by the map
      * @param <V>    the value type for the Monotonic elements in the map
-     * @return the current (existing or computed) present monotonic value
+     * @return the current (existing or computed) bound monotonic value
      * @throws IllegalArgumentException if no association exists for the provided
      *                                  {@code key}.
      */
-    public static <K, V> V computeIfAbsent(Map<K, Monotonic<V>> map,
-                                           K key,
-                                           Function<? super K, ? extends V> mapper) {
+    public static <K, V> V computeIfUnbound(Map<K, Monotonic<V>> map,
+                                            K key,
+                                            Function<? super K, ? extends V> mapper) {
         Objects.requireNonNull(map);
         Objects.requireNonNull(key);
         Objects.requireNonNull(mapper);
-        return MonotonicMap.computeIfAbsent(map, key, mapper);
+        return MonotonicMap.computeIfUnbound(map, key, mapper);
     }
 
     /**
@@ -83,7 +109,7 @@ public final class Monotonics {
      * The returned memoized {@code Supplier} is equivalent to the following supplier:
      * {@snippet lang=java :
      * Monotonic<V> monotonic = Monotonic.of();
-     * Supplier<V> memoized = () -> monotonic.computeIfAbsent(supplier);
+     * Supplier<V> memoized = () -> monotonic.computeIfUnbound(supplier);
      * }
      * except it promises the provided {@code supplier} is invoked once even
      * though the returned memoized Supplier is invoked simultaneously
@@ -91,7 +117,7 @@ public final class Monotonics {
      *
      * @param supplier   to be used for computing a value
      * @param <V>        the type of the value to memoize
-     * @see Monotonic#computeIfAbsent(Supplier)
+     * @see Monotonic#computeIfUnbound(Supplier)
      */
     public static <V> Supplier<V> asMemoized(Supplier<? extends V> supplier) {
         Objects.requireNonNull(supplier);
@@ -108,7 +134,7 @@ public final class Monotonics {
      *
      * {@snippet lang = java:
      * List<Monotonic<R>> list = Monotonic.ofList(size);
-     * IntFunction<R> memoized = index -> computeIfAbsent(list, index, mapper);
+     * IntFunction<R> memoized = index -> computeIfUnbound(list, index, mapper);
      *}
      * except it promises the provided {@code mapper} is invoked only once per index
      * even though the returned memoized IntFunction is invoked simultaneously by several
@@ -136,7 +162,7 @@ public final class Monotonics {
      *
      * {@snippet lang = java:
      * Map<T, Monotonic<R>> map = Monotonic.ofMap(keys);
-     * Function<T, R> memoized = key -> computeIfAbsent(map, key, mapper);
+     * Function<T, R> memoized = key -> computeIfUnbound(map, key, mapper);
      *}
      * except it promises the provided {@code mapper} is invoked only once per key
      * even though the returned memoized Function is invoked simultaneously by several
@@ -149,7 +175,7 @@ public final class Monotonics {
      *                   the backing map)
      * @param <R>        the type of the result of the function (and the Monotonic values
      *                   in the backing map)
-     * @see Monotonic#ofMap(Collection)
+     * @see Monotonic#ofMap(Set)
      */
     public static <T, R> Function<T, R> asMemoized(Collection<? extends T> keys,
                                                    Function<? super T, ? extends R> mapper) {

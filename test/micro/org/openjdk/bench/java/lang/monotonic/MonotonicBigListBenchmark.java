@@ -75,7 +75,7 @@ public class MonotonicBigListBenchmark {
     public int instanceMonotonicEager() {
         int sum = 0;
         for (int i = 0; i < monotonicEager.size(); i++) {
-            sum += monotonicEager.get(i).get();
+            sum += monotonicEager.get(i).orThrow();
         }
         return sum;
     }
@@ -84,7 +84,7 @@ public class MonotonicBigListBenchmark {
     public int instanceMonotonicLazy() {
         int sum = 0;
         for (int i = 0; i < monotonicLazy.size(); i++) {
-            sum += monotonicLazy.get(i).get();
+            sum += monotonicLazy.get(i).orThrow();
         }
         return sum;
     }
@@ -102,7 +102,7 @@ public class MonotonicBigListBenchmark {
     public int staticMonotonicEager() {
         int sum = 0;
         for (int i = 0; i < MONOTONIC_EAGER.size(); i++) {
-            sum += MONOTONIC_EAGER.get(i).get();
+            sum += MONOTONIC_EAGER.get(i).orThrow();
         }
         return sum;
     }
@@ -111,7 +111,7 @@ public class MonotonicBigListBenchmark {
     public int staticMonotonicLazy() {
         int sum = 0;
         for (int i = 0; i < MONOTONIC_LAZY.size(); i++) {
-            sum += MONOTONIC_LAZY.get(i).get();
+            sum += MONOTONIC_LAZY.get(i).orThrow();
         }
         return sum;
     }

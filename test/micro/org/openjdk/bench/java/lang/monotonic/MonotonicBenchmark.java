@@ -53,7 +53,7 @@ public class MonotonicBenchmark {
 
     @Benchmark
     public int staticMonotonic() {
-        return MONOTONIC.get();
+        return MONOTONIC.orThrow();
     }
 
     @Benchmark
@@ -72,7 +72,7 @@ public class MonotonicBenchmark {
 
     @Benchmark
     public int instanceMonotonic() {
-        return monotonic.get();
+        return monotonic.orThrow();
     }
 
     @Benchmark

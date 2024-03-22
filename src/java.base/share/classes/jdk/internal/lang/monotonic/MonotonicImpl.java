@@ -56,7 +56,7 @@ public final class MonotonicImpl<V> implements Monotonic<V> {
 
     @ForceInline
     @Override
-    public V get() {
+    public V orThrow() {
         // Optimistically try plain semantics first
         Object v = value;
         if (v != null) {
@@ -79,22 +79,22 @@ public final class MonotonicImpl<V> implements Monotonic<V> {
     public void bindOrThrow(V value) {
         Object v = toObject(value);
         if (caeValue(v) != null) {
-            throw new IllegalStateException("A value is already bound: " + get());
+            throw new IllegalStateException("A value is already bound: " + orThrow());
         }
     }
 
     @ForceInline
     @Override
-    public V bindIfAbsent(V value) {
+    public V bindIfUnbound(V value) {
         if (isBound()) {
-           return get();
+           return orThrow();
         }
         return caeWitness(value);
     }
 
     @ForceInline
     @Override
-    public V computeIfAbsent(Supplier<? extends V> supplier) {
+    public V computeIfUnbound(Supplier<? extends V> supplier) {
         // Optimistically try plain semantics first
         Object v = value;
         if (v != null) {
@@ -118,7 +118,7 @@ public final class MonotonicImpl<V> implements Monotonic<V> {
     public String toString() {
         return "Monotonic" +
                 (isBound()
-                        ? "[" + get() + "]"
+                        ? "[" + orThrow() + "]"
                         : ".unbound");
     }
 
@@ -163,7 +163,7 @@ public final class MonotonicImpl<V> implements Monotonic<V> {
             public V get() {
                 synchronized (monotonic) {
                     if (monotonic.isBound()) {
-                        return monotonic.get();
+                        return monotonic.orThrow();
                     }
                 }
                 return supplier.get();
@@ -172,7 +172,7 @@ public final class MonotonicImpl<V> implements Monotonic<V> {
         return new Supplier<>() {
             @Override
             public V get() {
-                return monotonic.computeIfAbsent(guardedSupplier);
+                return monotonic.computeIfUnbound(guardedSupplier);
             }
         };
     }

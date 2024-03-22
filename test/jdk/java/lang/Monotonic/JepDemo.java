@@ -56,7 +56,7 @@ final class JepDemo {
 
         static Logger logger() {
             // 3. Access the monotonic value with as-declared-final performance
-            return LOGGER.get();
+            return LOGGER.orThrow();
         }
 
     }
@@ -69,7 +69,7 @@ final class JepDemo {
         static Logger logger() {
             // 2. Access the monotonic value with as-declared-final performance
             //    (evaluation made before the first access)
-            return LOGGER.computeIfAbsent( () -> Logger.getLogger("com.foo.Bar") );
+            return LOGGER.computeIfUnbound( () -> Logger.getLogger("com.foo.Bar") );
         }
     }
 
@@ -80,7 +80,7 @@ final class JepDemo {
 
         // 2. Declare a memoized (cached) Supplier backed by the monotonic value
         private static final Supplier<Logger> LOGGER = () -> MONOTONIC
-                .computeIfAbsent( () -> Logger.getLogger("com.foo.Bar") );
+                .computeIfUnbound( () -> Logger.getLogger("com.foo.Bar") );
 
         static Logger logger() {
             // 2. Access the memoized value with as-declared-final performance
@@ -115,8 +115,8 @@ final class JepDemo {
         public int number(int n) {
             return (n < 2)
                     ? n
-                    : Monotonics.computeIfAbsent(numberCache, n -1 , this::number)
-                    + Monotonics.computeIfAbsent(numberCache, n - 2, this::number);
+                    : Monotonics.computeIfUnbound(numberCache, n -1 , this::number)
+                    + Monotonics.computeIfUnbound(numberCache, n - 2, this::number);
         }
 
     }
@@ -129,7 +129,7 @@ final class JepDemo {
         public Fibonacci2(int upperBound) {
             List<Monotonic<Integer>> monotonicList = Monotonic.ofList(upperBound);
             numCache =
-                    i -> Monotonics.computeIfAbsent(monotonicList, i, this::number);
+                    i -> Monotonics.computeIfUnbound(monotonicList, i, this::number);
         }
 
         public int number(int n) {
@@ -165,7 +165,7 @@ final class JepDemo {
                 Monotonic.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
 
         static Logger logger(String name) {
-            return Monotonics.computeIfAbsent(LOGGERS, name, Logger::getLogger);
+            return Monotonics.computeIfUnbound(LOGGERS, name, Logger::getLogger);
         }
     }
 

@@ -199,22 +199,21 @@ Furthermore, the class holder idiom (see above) is clearly insufficient in this 
 the number of required holder classes is *statically unbounded* - it depends on the value of 
 the construction parameter `upperBound`.
 
-There is an internal annotation in the JDK `jdk.internal.vm.annotation.@Stable` which is only considered
-by the JVM for _JDK internal code_ and that is used to mark scalar and array variables whose values or
-elements will  change *at most once*. This annotation is powerful and often crucial to achieving optimal
-internal performance, but it is also easy to misuse: further updating a `@Stable` field after its initial
-update will result in undefined behavior, as the JIT compiler might have *already* constant-folded the now
-overwritten field value. 
+What we are missing -- in all cases -- is a way to *promise* that a constant will be initialized
+by the time it is used, with a value that is computed at most once. Such a mechanism would give 
+the Java runtime maximum opportunity to stage and optimize its computation, thus avoiding the penalties
+(static footprint, loss of runtime optimizations) that plague the workarounds shown above. Moreover, 
+such a mechanism should gracefully scale to handle collections of constant values, while retaining
+efficient computer resource management.
 
-What we are missing -- in all cases -- is a way to *promise* that a constant
-will be initialized by the time it is used, with a value that is computed at
-most once. Such a mechanism would give the Java runtime maximum opportunity to
-stage and optimize its computation, thus avoiding the penalties (static
-footprint, loss of runtime optimizations) that plague the workarounds shown
-above. Moreover, such a mechanism should gracefully scale to handle collections of
-constant values, while retaining efficient computer resource management. This may be
-achieved by providing a *safe* and *efficient* value wrapper around the `@Stable` annotation.
-
+The attentive reader might have noticed the similarity between what is proposed here and the JDK internal
+annotation`jdk.internal.vm.annotation.@Stable`. This annotation is used by *JDK code* to mark scalar and
+array variables whose values or elements will change *at most once*. This annotation is powerful and often
+crucial to achieving optimal performance, but it is also easy to misuse: further updating a `@Stable` field
+after its initial update will result in undefined behavior, as the JIT compiler might have *already* 
+constant-folded the (now overwritten) field value. In other words, what we are after is a *safe* and *efficient*
+wrapper around the `@Stable` mechanism - in the form of a new Java SE API which might be enjoyed by
+_all_ 3rd party Java code (and not the JDK alone).
 
 ## Description
 
@@ -242,9 +241,9 @@ The [Monotonic Value API](https://cr.openjdk.org/~pminborg/computed-constant/api
 ### Monotonic Value
 
 A _monotonic value_ is a holder object that is bound at most once whereby it
-goes from "absent" to "bound". It is expressed as an object of type `Monotonic`,
+goes from "unbound" to "bound". It is expressed as an object of type `Monotonic`,
 which, like `Future`, is a holder for some computation that may or may not have occurred yet.
-Fresh (absent) `Monotonic` instances are created via the factory method `Monotonic::of`:
+Fresh (unbound) `Monotonic` instances are created via the factory method `Monotonic::of`:
 
 ```
 class Bar {
@@ -258,7 +257,7 @@ class Bar {
     
     static Logger logger() {
         // 3. Access the monotonic value with as-declared-final performance
-        return LOGGER.get();
+        return LOGGER.orThrow();
     }
 }
 ```
@@ -276,7 +275,7 @@ A monotonic value may be bound to `null` which then will be considered its bound
 Null-averse applications can also use `Monotonic<Optional<V>>`.
 
 In case a monotonic value cannot be pre-bound as in the example above, it is possible
-to compute and bind an absent value on-demand as shown in this example:
+to compute and bind an unbound value on-demand as shown in this example:
 
 ```
 class Bar {
@@ -286,12 +285,12 @@ class Bar {
     static Logger logger() {
         // 2. Access the monotonic value with as-declared-final performance
         //    (evaluation made before the first access)
-        return LOGGER.computeIfAbsent( () -> Logger.getLogger("com.foo.Bar") );
+        return LOGGER.computeIfUnbound( () -> Logger.getLogger("com.foo.Bar") );
     }
 }
 ```
 Calling `logger()` multiple times yields the same value from each invocation.
-`Monotonic::computeIfAbsent` can invoke the value supplier several times if called
+`Monotonic::computeIfUnbound` can invoke the value supplier several times if called
 from a plurality of threads but only one witness value is ever exposed to the 
 outside world. 
 
@@ -333,8 +332,8 @@ class Fibonacci {
     public int number(int n) {
         return (n < 2)
                 ? n
-                : Monotonics.computeIfAbsent(numberCache, n -1 , this::number)
-                + Monotonics.computeIfAbsent(numberCache, n - 2, this::number);
+                : Monotonics.computeIfUnbound(numberCache, n -1 , this::number)
+                + Monotonics.computeIfUnbound(numberCache, n - 2, this::number);
     }
 
 }
@@ -368,7 +367,7 @@ class MapDemo {
             Monotonic.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
 
     static Logger logger(String name) {
-        return Monotonics.computeIfAbsent(LOGGERS, name, Logger::getLogger);
+        return Monotonics.computeIfUnbound(LOGGERS, name, Logger::getLogger);
     }
 }
 ```

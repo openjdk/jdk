@@ -55,64 +55,64 @@ final class BasicMonotonicTest {
     @Test
     void unbound() {
         assertFalse(m.isBound());
-        assertThrows(NoSuchElementException.class, m::get);
+        assertThrows(NoSuchElementException.class, m::orThrow);
     }
 
     void bind() {
         m.bindOrThrow(FIRST);
         assertTrue(m.isBound());
-        assertEquals(FIRST, m.get());
+        assertEquals(FIRST, m.orThrow());
         assertThrows(IllegalStateException.class, () -> m.bindOrThrow(SECOND));
         assertTrue(m.isBound());
-        assertEquals(FIRST, m.get());
+        assertEquals(FIRST, m.orThrow());
     }
 
     @Test
     void bindIfAbsent() {
-        Integer i = m.bindIfAbsent(FIRST);
+        Integer i = m.bindIfUnbound(FIRST);
         assertTrue(m.isBound());
         assertEquals(FIRST, i);
-        assertEquals(FIRST, m.get());
+        assertEquals(FIRST, m.orThrow());
 
-        assertEquals(FIRST, m.bindIfAbsent(FIRST));
-        assertEquals(FIRST, m.bindIfAbsent(SECOND));
-        assertEquals(FIRST, m.bindIfAbsent(null));
+        assertEquals(FIRST, m.bindIfUnbound(FIRST));
+        assertEquals(FIRST, m.bindIfUnbound(SECOND));
+        assertEquals(FIRST, m.bindIfUnbound(null));
     }
 
     @Test
     void bindIfAbsentNull() {
-        Integer i = m.bindIfAbsent(null);
+        Integer i = m.bindIfUnbound(null);
         assertTrue(m.isBound());
         assertNull(i);
-        assertNull(m.get());
+        assertNull(m.orThrow());
 
-        assertNull(m.bindIfAbsent(null));
-        assertNull(m.bindIfAbsent(FIRST));
-        assertNull(m.bindIfAbsent(SECOND));
+        assertNull(m.bindIfUnbound(null));
+        assertNull(m.bindIfUnbound(FIRST));
+        assertNull(m.bindIfUnbound(SECOND));
     }
 
     @Test
     void computeIfAbsent() {
-        m.computeIfAbsent(() -> FIRST);
-        assertEquals(FIRST, m.get());
+        m.computeIfUnbound(() -> FIRST);
+        assertEquals(FIRST, m.orThrow());
 
         Supplier<Integer> throwingSupplier = () -> {
             throw new UnsupportedOperationException();
         };
-        assertDoesNotThrow(() -> m.computeIfAbsent(throwingSupplier));
+        assertDoesNotThrow(() -> m.computeIfUnbound(throwingSupplier));
 
         var m2 = Monotonic.of();
-        m2.computeIfAbsent(() -> FIRST);
-        assertEquals(FIRST, m2.get());
+        m2.computeIfUnbound(() -> FIRST);
+        assertEquals(FIRST, m2.orThrow());
     }
 
     @Test
     void computeIfAbsentNull() {
         CountingSupplier<Integer> c = new CountingSupplier<>(() -> null);
-        m.computeIfAbsent(c);
-        assertNull(m.get());
+        m.computeIfUnbound(c);
+        assertNull(m.orThrow());
         assertEquals(1, c.cnt());
-        m.computeIfAbsent(c);
+        m.computeIfUnbound(c);
         assertEquals(1, c.cnt());
     }
 
@@ -120,7 +120,7 @@ final class BasicMonotonicTest {
     void memoized() {
         CountingSupplier<Integer> cSup = new CountingSupplier<>(() -> FIRST);
         Monotonic<Integer> m3 = Monotonic.of();
-        Supplier<Integer> memoized = () -> m3.computeIfAbsent(cSup);
+        Supplier<Integer> memoized = () -> m3.computeIfUnbound(cSup);
         assertEquals(FIRST, memoized.get());
         // Make sure the original supplier is not invoked more than once
         assertEquals(FIRST, memoized.get());
