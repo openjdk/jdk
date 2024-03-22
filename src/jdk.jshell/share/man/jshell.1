@@ -124,8 +124,8 @@ Specifies the root modules to resolve in addition to the initial module.
 \f[V]-C\f[R]\f[I]flag\f[R]
 passes \f[I]flag\f[R] to the Java compiler inside JShell.
 For example, \f[V]-C-Xlint\f[R] enables all the recommended lint
-warnings, and \f[V]-C--release=N\f[R] has the effect of passing
-\f[V]--release=N\f[R].
+warnings, and \f[V]-C--release=<N>\f[R] compiles for Java SE N, as if
+--release N was specified.
 .TP
 \f[V]--class-path\f[R] \f[I]path\f[R]
 Specifies the directories and archives that are searched to locate class
@@ -190,7 +190,7 @@ Nonstandard options are subject to change without notice.
 \f[V]-J\f[R]\f[I]flag\f[R]
 passes \f[I]flag\f[R] to the runtime system, but has no effect on the
 execution of code snippets.
-To specify options that affect the execution of code snippets, use
+To specify flags that affect the execution of code snippets, use
 \f[V]-R\f[R]\f[I]flag\f[R].
 Alternatively, use \f[V]-J\f[R]\f[I]flag\f[R] with
 \f[V]--execution local\f[R].
