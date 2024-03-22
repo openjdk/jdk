@@ -190,6 +190,13 @@ Nonstandard options are subject to change without notice.
 Provides a flag to pass to the runtime system.
 To pass more than one flag, provide an instance of this option for each
 flag or flag argument needed.
+\f[I]Note:\f[R] this will pass the flag to the main JShell runtime
+system, which is typically distinct from the runtime system that runs
+the JShell code snippets.
+To affect the runtime system running the JShell code snippets, use
+\f[V]-R*flag*\f[R].
+Alternativelly, run the code snippets in the same runtime system as
+JShell using \f[V]--execution local\f[R].
 .TP
 \f[V]--module-path\f[R] \f[I]modulepath\f[R]
 Specifies where to find application modules.
@@ -209,6 +216,7 @@ entering \f[V]--feedback concise\f[R].
 .TP
 \f[V]-R\f[R]\f[I]flag\f[R]
 Provides a flag to pass to the remote runtime system.
+This remote system is by default used to run JShell code snippets.
 To pass more than one flag, provide an instance of this option for each
 flag or flag argument to pass.
 .TP
