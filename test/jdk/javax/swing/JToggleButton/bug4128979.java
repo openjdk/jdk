@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,6 @@
  * questions.
  */
 
-/* @test
-   @bug 4128979
-   @requires (os.family == "windows")
-   @summary Tests that background changes correctly in WinLF for JToggleButton when pressed
-   @key headful
-   @run applet/manual=yesno bug4128979.html
-*/
-
-import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
-import javax.swing.Icon;
-import javax.swing.JApplet;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JToggleButton;
-import javax.swing.JToolBar;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.WindowConstants;
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.ComponentOrientation;
@@ -50,35 +28,60 @@ import java.awt.Container;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
 
-public class bug4128979 extends JApplet {
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.Icon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JToggleButton;
+import javax.swing.JToolBar;
+import javax.swing.UIManager;
 
-    public static void main(String[] args) {
-        JApplet applet = new bug4128979();
-        applet.init();
-        applet.start();
+import jtreg.SkippedException;
+import sun.awt.OSInfo;
 
-        JFrame frame = new JFrame("Test window");
-        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        frame.setLayout(new BorderLayout());
-        frame.add(applet, BorderLayout.CENTER);
-        frame.setSize(600, 240);
-        frame.setVisible(true);
+/* @test
+ * @bug 4128979
+ * @requires (os.family == "windows")
+ * @modules java.desktop/sun.awt
+ * @library /java/awt/regtesthelpers /test/lib
+ * @build PassFailJFrame jtreg.SkippedException
+ * @summary Tests that background changes correctly in WinLF for JToggleButton when pressed
+ * @run main/manual bug4128979
+ */
+
+public class bug4128979 {
+    private static final String INSTRUCTIONS = """
+            When the test starts, toggle buttons are visible in three rows
+            two of which are toolbars.
+
+            Press these buttons, their background color must change
+            to half tones between the button background colors and the ToggleButton
+            highlight color (it is shown in the square below).
+
+            If the background color does not change correctly for at least one button,
+            the test fails.""";
+
+    public static void main(String[] args) throws Exception {
+        if (OSInfo.getOSType() != OSInfo.OSType.WINDOWS) {
+            throw new SkippedException("This test is for Windows only");
+        }
+        UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel");
+        PassFailJFrame.builder()
+                .title("JToggleButton Instructions")
+                .instructions(INSTRUCTIONS)
+                .rows(15)
+                .columns(60)
+                .testUI(bug4128979::createAndShowUI)
+                .build()
+                .awaitAndCheck();
     }
 
-    public void init() {
-        try {
-            UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel");
-        } catch (UnsupportedLookAndFeelException e) {
-            JOptionPane.showMessageDialog(this,
-                    "This test requires Windows look and feel, so just press Pass\n as "+
-                    " this look and feel is unsupported on this platform.",
-                    "Unsupported LF", JOptionPane.ERROR_MESSAGE);
-            return;
-        } catch (Exception e) {
-            throw new RuntimeException("Couldn't set look and feel");
-        }
+    public static JFrame createAndShowUI() {
+        JFrame frame = new JFrame("JToggleButton's Background Color Test");
+        frame.setLayout(new FlowLayout());
 
-        setLayout(new FlowLayout());
         JPanel p = new JPanel();
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
 
@@ -113,8 +116,11 @@ public class bug4128979 extends JApplet {
                 return 50;
             }
         });
-        add(p);
-        add(label);
+
+        frame.getContentPane().add(p);
+        frame.getContentPane().add(label);
+        frame.setSize(600, 250);
+        return frame;
     }
 
     static void addButtons(Container c) {
