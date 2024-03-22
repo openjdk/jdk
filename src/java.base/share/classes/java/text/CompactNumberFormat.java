@@ -1507,14 +1507,18 @@ public final class CompactNumberFormat extends NumberFormat {
      * A {@code CompactNumberFormat} can match
      * the default prefix/suffix to a compact prefix/suffix interchangeably.
      * <p>
+     * Parsing can be done in either a strict or lenient manner, by default it is lenient.
+     * <p>
      * Parsing fails when <b>lenient</b>, if the prefix and/or suffix are non-empty
      * and cannot be found due to parsing ending early, or the first character
      * after the prefix cannot be parsed.
      * <p>
      * Parsing fails when <b>strict</b>, if in {@code text},
      * <ul>
-     *   <li> The default or a compact prefix is not found, for example: "{@code $}"
-     *   <li> The default or a compact suffix is not found, for example: "{@code K}"
+     *   <li> The default or a compact prefix is not found. For example, the {@code
+     *   Locale.US} currency format prefix: "{@code $}"
+     *   <li> The default or a compact suffix is not found. For example, a {@code Locale.US}
+     *   {@link NumberFormat.Style#SHORT} compact suffix: "{@code K}"
      *   <li> {@link #isGroupingUsed()} returns {@code false}, and the grouping
      *   symbol is found
      *   <li> {@link #isGroupingUsed()} returns {@code true}, and {@link
@@ -1726,7 +1730,7 @@ public final class CompactNumberFormat extends NumberFormat {
                 status, gotPositive, gotNegative, num);
 
         if (multiplier.longValue() == -1L) {
-            if (isStrict()) {
+            if (parseStrict) {
                 // When strict, if -1L was returned, index should be
                 // reset to the original index to ensure failure
                 pos.index = oldStart;
@@ -1913,7 +1917,7 @@ public final class CompactNumberFormat extends NumberFormat {
         if (prefix.equals(matchedPrefix)
                 || matchedPrefix.equals(defaultPrefix)) {
             // Suffix must match exactly when strict
-            return isStrict() ? matchAffix(text, position, suffix, defaultSuffix, matchedSuffix)
+            return parseStrict ? matchAffix(text, position, suffix, defaultSuffix, matchedSuffix)
                     && text.length() == position + suffix.length()
                     : matchAffix(text, position, suffix, defaultSuffix, matchedSuffix);
         }
@@ -1965,7 +1969,7 @@ public final class CompactNumberFormat extends NumberFormat {
                 matchedPosIndex = compactIndex;
                 matchedPosSuffix = positiveSuffix;
                 gotPos = true;
-                if (isStrict()) {
+                if (parseStrict) {
                     // when strict, exit early with exact match, same for negative
                     break;
                 }
@@ -1978,7 +1982,7 @@ public final class CompactNumberFormat extends NumberFormat {
                 matchedNegIndex = compactIndex;
                 matchedNegSuffix = negativeSuffix;
                 gotNeg = true;
-                if (isStrict()) {
+                if (parseStrict) {
                     break;
                 }
             }
@@ -1994,7 +1998,7 @@ public final class CompactNumberFormat extends NumberFormat {
                     positiveSuffix, 0, positiveSuffix.length());
             boolean endsWithPosSuffix = containsPosSuffix && text.length() ==
                     position + positiveSuffix.length();
-            if (isStrict() ? endsWithPosSuffix : containsPosSuffix) {
+            if (parseStrict ? endsWithPosSuffix : containsPosSuffix) {
                 // Matches the default positive prefix
                 matchedPosSuffix = positiveSuffix;
                 gotPos = true;
@@ -2003,7 +2007,7 @@ public final class CompactNumberFormat extends NumberFormat {
                     negativeSuffix, 0, negativeSuffix.length());
             boolean endsWithNegSuffix = containsNegSuffix && text.length() ==
                     position + negativeSuffix.length();
-            if (isStrict() ? endsWithNegSuffix : containsNegSuffix) {
+            if (parseStrict ? endsWithNegSuffix : containsNegSuffix) {
                 // Matches the default negative suffix
                 matchedNegSuffix = negativeSuffix;
                 gotNeg = true;
@@ -2121,7 +2125,7 @@ public final class CompactNumberFormat extends NumberFormat {
         decimalFormat.setGroupingSize(getGroupingSize());
         decimalFormat.setGroupingUsed(isGroupingUsed());
         decimalFormat.setParseIntegerOnly(isParseIntegerOnly());
-        decimalFormat.setStrict(isStrict());
+        decimalFormat.setStrict(parseStrict);
 
         try {
             defaultDecimalFormat = new DecimalFormat(decimalPattern, symbols);
@@ -2361,10 +2365,29 @@ public final class CompactNumberFormat extends NumberFormat {
         super.setParseIntegerOnly(value);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @see #setStrict(boolean)
+     * @see #parse(String, ParsePosition)
+     * @since 23
+     */
+    @Override
+    public boolean isStrict() {
+        return parseStrict;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see #setStrict(boolean)
+     * @see #parse(String, ParsePosition)
+     * @since 23
+     */
     @Override
     public void setStrict(boolean strict) {
         decimalFormat.setStrict(strict);
-        super.setStrict(strict);
+        parseStrict = strict; // don't call super, default is UOE
     }
 
     /**

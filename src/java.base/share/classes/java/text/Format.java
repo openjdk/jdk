@@ -106,6 +106,9 @@ import java.io.Serializable;
  * </pre>
  * </blockquote>
  *
+ * <p> Subclasses may also consider implementing leniency when parsing.
+ * The definition of leniency should be delegated to the subclass.
+ *
  * <p>
  * And finally subclasses may define a set of constants to identify the various
  * fields in the formatted output. These constants are used to create a FieldPosition
@@ -222,8 +225,6 @@ public abstract class Format implements Serializable, Cloneable {
      * changed, the error index of {@code pos} is set to the index of
      * the character where the error occurred, and {@code null} is returned.
      *
-     * @apiNote Subclasses may consider implementing leniency when parsing.
-     *          The definition of leniency should be delegated to the subclass.
      * @param source the {@code String} to parse
      * @param pos A {@code ParsePosition} object with index and error
      *            index information as described above.

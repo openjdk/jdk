@@ -101,8 +101,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * <ul>
  * <li> {@link #setParseIntegerOnly(boolean)}; when true, will only return the
  * integer portion of the number parsed from the String.
- * <li> {@link #setStrict(boolean)}; when true, parsing will be done strictly.
- * See the {@link ##leniency Leniency Section}
+ * <li> {@link #setStrict(boolean)}, (only if overriden and implemented); when
+ * true, parsing will be done strictly. See the {@link ##leniency Leniency Section}
  * <li> {@link #setMinimumFractionDigits}; Use to adjust the expected digits when
  * formatting. Use any of the other minimum/maximum or fraction/integer setter methods
  * in the same manner.
@@ -148,17 +148,20 @@ import java.util.concurrent.atomic.AtomicLong;
  * </ol>
  *
  * <h2><a id="leniency">Leniency</a></h2>
- * {@code NumberFormat} can parse both strictly and leniently. By default, parsing
- * is lenient, and leniency can be adjusted using {@link #setStrict(boolean)}. Lenient
- * parsing should be used when attempting to parse a number out of a String
- * that contains non-expected values. For example, parsing the number {@code 1000}
- * out of the String "1,000 people". Strict parsing should be used when
- * attempting to ensure a String adheres exactly to the locale's conventions, and
- * can thus serve to validate input. For example, successfully parsing the number
- * {@code 1000.55} out of the String "1.000,55" confirms the String
- * adhered to the {@link Locale#GERMAN German} numerical conventions. See the
- * {@link #parse(String, ParsePosition)} method for further details on behavioral
- * differences between leniency modes.
+ * {@code NumberFormat} by default, parses leniently. Subclasses may consider
+ * implementing strict parsing by utilizing the protected {@link #parseStrict} field
+ * as well as overriding and providing implementations for the optional {@link
+ * #isStrict()} and {@link #setStrict(boolean)} methods.
+ * <p>
+ * Lenient parsing should be used when attempting to parse a number
+ * out of a String that contains non-numerical or non-format related values.
+ * For example, using a {@link Locale#US} currency format to parse the number
+ * {@code 1000} out of the String "$1000 was paid".
+ * <p>
+ * Strict parsing should be used when attempting to ensure a String adheres exactly
+ * to a locale's conventions, and can thus serve to validate input. For example, successfully
+ * parsing the number {@code 1000.55} out of the String "1.000,55" confirms the String
+ * exactly adhered to the {@link Locale#GERMANY} numerical conventions.
  *
  * <h3><a id="synchronization">Synchronization</a></h3>
  * {@code NumberFormat} is not synchronized.
@@ -271,8 +274,6 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * {@inheritDoc}
-     * <p>
-     * Parsing can be done in either a strict or lenient manner, by default it is lenient.
      *
      * @implSpec This implementation is equivalent to calling {@code parse(source,
      *           pos)}.
@@ -388,7 +389,6 @@ public abstract class NumberFormat extends Format  {
      * <p>
      * This method will return a Long if possible (e.g., within the range [Long.MIN_VALUE,
      * Long.MAX_VALUE] and with no decimals), otherwise a Double.
-     * Parsing can be done in either a strict or lenient manner, by default it is lenient.
      *
      * @param source the {@code String} to parse
      * @param parsePosition A {@code ParsePosition} object with index and error
@@ -408,11 +408,7 @@ public abstract class NumberFormat extends Format  {
      * <p>
      * This method will return a Long if possible (e.g., within the range [Long.MIN_VALUE,
      * Long.MAX_VALUE] and with no decimals), otherwise a Double.
-     * Parsing can be done in either a strict or lenient manner, by default it is lenient.
      *
-     * @implNote This is equivalent to calling {@code parse(source,
-     * new ParsePosition(0)} and throwing a {@code ParseException} if parsing fails,
-     * instead of returning {@code null}.
      * @param source A {@code String}, to be parsed from the beginning.
      * @return A {@code Number} parsed from the string.
      * @throws ParseException if parsing fails
@@ -461,27 +457,36 @@ public abstract class NumberFormat extends Format  {
      * {@return {@code true} if this format will parse numbers strictly;
      * {@code false} otherwise}
      *
+     * @implSpec The default implementation always throws {@code
+     * UnsupportedOperationException}. Subclasses should override this method
+     * when implementing strict parsing.
+     * @throws    UnsupportedOperationException if the implementation of this
+     *            method does not support this operation
      * @see ##leniency Leniency Section
      * @see #setStrict(boolean)
      * @since 23
      */
     public boolean isStrict() {
-        return parseStrict;
+        throw new UnsupportedOperationException();
     }
 
     /**
      * Change the leniency value for parsing. Parsing can either be strict or lenient,
      * by default it is lenient.
      *
+     * @implSpec The default implementation always throws {@code
+     * UnsupportedOperationException}. Subclasses should override this method
+     * when implementing strict parsing.
      * @param strict {@code true} if parsing should be done strictly;
      *               {@code false} otherwise
+     * @throws    UnsupportedOperationException if the implementation of this
+     *            method does not support this operation
      * @see ##leniency Leniency Section
      * @see #isStrict()
      * @since 23
      */
     public void setStrict(boolean strict) {
-        // setStrict method over setLenient, as the default behavior is lenient
-        parseStrict = strict;
+        throw new UnsupportedOperationException();
     }
 
     //============== Locale Stuff =====================
@@ -1206,13 +1211,15 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * True if this {@code NumberFormat} will parse numbers with strict leniency.
+     * Subclasses should utilize this field in their own implementations to
+     * achieve strict parsing.
      *
      * @serial
      * @since 23
      * @see #setStrict(boolean)
      * @see #isStrict()
      */
-    private boolean parseStrict = false;
+    protected boolean parseStrict = false;
 
     // new fields for 1.2.  byte is too small for integer digits.
 
