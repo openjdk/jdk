@@ -349,6 +349,15 @@ public final class CompactNumberFormat extends NumberFormat {
     private String pluralRules = "";
 
     /**
+     * True if this {@code CompactNumberFormat} will parse numbers with strict
+     * leniency.
+     *
+     * @serial
+     * @since 23
+     */
+    private boolean parseStrict = false;
+
+    /**
      * The map for plural rules that maps LDML defined tags (e.g. "one") to
      * its rule.
      */
@@ -2447,7 +2456,8 @@ public final class CompactNumberFormat extends NumberFormat {
                 && roundingMode.equals(other.roundingMode)
                 && pluralRules.equals(other.pluralRules)
                 && groupingSize == other.groupingSize
-                && parseBigDecimal == other.parseBigDecimal;
+                && parseBigDecimal == other.parseBigDecimal
+                && parseStrict == other.parseStrict;
     }
 
     /**

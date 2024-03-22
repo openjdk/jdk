@@ -3106,7 +3106,8 @@ public class DecimalFormat extends NumberFormat {
             && maximumFractionDigits == other.maximumFractionDigits
             && minimumFractionDigits == other.minimumFractionDigits
             && roundingMode == other.roundingMode
-            && symbols.equals(other.symbols);
+            && symbols.equals(other.symbols)
+            && parseStrict == other.parseStrict;
     }
 
     /**
@@ -4290,6 +4291,15 @@ public class DecimalFormat extends NumberFormat {
      * @since 1.2
      */
     private boolean useExponentialNotation;  // Newly persistent in the Java 2 platform v.1.2
+
+    /**
+     * True if this {@code DecimalFormat} will parse numbers with strict
+     * leniency.
+     *
+     * @serial
+     * @since 23
+     */
+    private boolean parseStrict = false;
 
     /**
      * FieldPositions describing the positive prefix String. This is

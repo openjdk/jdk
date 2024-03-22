@@ -149,9 +149,9 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * <h2><a id="leniency">Leniency</a></h2>
  * {@code NumberFormat} by default, parses leniently. Subclasses may consider
- * implementing strict parsing by utilizing the protected {@link #parseStrict} field
- * as well as overriding and providing implementations for the optional {@link
- * #isStrict()} and {@link #setStrict(boolean)} methods.
+ * implementing strict parsing and as such, overriding and providing
+ * implementations for the optional {@link #isStrict()} and {@link
+ * #setStrict(boolean)} methods.
  * <p>
  * Lenient parsing should be used when attempting to parse a number
  * out of a String that contains non-numerical or non-format related values.
@@ -785,13 +785,12 @@ public abstract class NumberFormat extends Format  {
             return false;
         }
         NumberFormat other = (NumberFormat) obj;
-        return (maximumIntegerDigits == other.maximumIntegerDigits
+        return maximumIntegerDigits == other.maximumIntegerDigits
             && minimumIntegerDigits == other.minimumIntegerDigits
             && maximumFractionDigits == other.maximumFractionDigits
             && minimumFractionDigits == other.minimumFractionDigits
             && groupingUsed == other.groupingUsed
-            && parseIntegerOnly == other.parseIntegerOnly
-            && parseStrict == other.parseStrict);
+            && parseIntegerOnly == other.parseIntegerOnly;
     }
 
     /**
@@ -1208,18 +1207,6 @@ public abstract class NumberFormat extends Format  {
      * @see #isParseIntegerOnly
      */
     private boolean parseIntegerOnly = false;
-
-    /**
-     * True if this {@code NumberFormat} will parse numbers with strict leniency.
-     * Subclasses should utilize this field in their own implementations to
-     * achieve strict parsing.
-     *
-     * @serial
-     * @since 23
-     * @see #setStrict(boolean)
-     * @see #isStrict()
-     */
-    protected boolean parseStrict = false;
 
     // new fields for 1.2.  byte is too small for integer digits.
 
