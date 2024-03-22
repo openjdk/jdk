@@ -54,6 +54,11 @@ public class FileDialogOpenDirTest {
 
     public static void main(String[] args) throws InterruptedException,
             InvocationTargetException {
+        String toolkit = Toolkit.getDefaultToolkit().getClass().getName();
+        if (!toolkit.equals("sun.awt.X11.XToolkit")) {
+            throw new SkippedException("Test is not designed for toolkit " + toolkit);
+        }
+
         String curdir = System.getProperty("user.dir");
         String instructions = """
                         Click the \"Open File Dialog\" button below to open FileDialog.
@@ -61,11 +66,6 @@ public class FileDialogOpenDirTest {
                         $curdir,
                         If so press Pass, otherwise press Fail
                         """.replace("$curdir", curdir);
-
-        String toolkit = Toolkit.getDefaultToolkit().getClass().getName();
-        if (!toolkit.equals("sun.awt.X11.XToolkit")) {
-            throw new SkippedException("Test is not designed for toolkit " + toolkit);
-        }
 
         PassFailJFrame.builder()
                 .title("Directory File Dialog Test Instructions")
