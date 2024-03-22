@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,9 @@ import java.lang.invoke.MethodHandles;
 import java.lang.management.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
 import javax.management.MBeanRegistrationException;
-import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import javax.management.RuntimeOperationsException;
 import java.security.AccessController;
@@ -398,163 +396,6 @@ public class ManagementFactoryHelper {
                 return pool.getMemoryUsed();
             }
         };
-    }
-
-    private static HotspotRuntime hsRuntimeMBean = null;
-    private static HotspotClassLoading hsClassMBean = null;
-    private static HotspotThread hsThreadMBean = null;
-    private static HotspotCompilation hsCompileMBean = null;
-    private static HotspotMemory hsMemoryMBean = null;
-
-    /**
-     * This method is for testing only.
-     */
-    public static synchronized HotspotRuntimeMBean getHotspotRuntimeMBean() {
-        if (hsRuntimeMBean == null) {
-            hsRuntimeMBean = new HotspotRuntime(jvm);
-        }
-        return hsRuntimeMBean;
-    }
-
-    /**
-     * This method is for testing only.
-     */
-    public static synchronized HotspotClassLoadingMBean getHotspotClassLoadingMBean() {
-        if (hsClassMBean == null) {
-            hsClassMBean = new HotspotClassLoading(jvm);
-        }
-        return hsClassMBean;
-    }
-
-    /**
-     * This method is for testing only.
-     */
-    public static synchronized HotspotThreadMBean getHotspotThreadMBean() {
-        if (hsThreadMBean == null) {
-            hsThreadMBean = new HotspotThread(jvm);
-        }
-        return hsThreadMBean;
-    }
-
-    /**
-     * This method is for testing only.
-     */
-    public static synchronized HotspotMemoryMBean getHotspotMemoryMBean() {
-        if (hsMemoryMBean == null) {
-            hsMemoryMBean = new HotspotMemory(jvm);
-        }
-        return hsMemoryMBean;
-    }
-
-    /**
-     * This method is for testing only.
-     */
-    public static synchronized HotspotCompilationMBean getHotspotCompilationMBean() {
-        if (hsCompileMBean == null) {
-            hsCompileMBean = new HotspotCompilation(jvm);
-        }
-        return hsCompileMBean;
-    }
-
-    /**
-     * Registers a given MBean if not registered in the MBeanServer;
-     * otherwise, just return.
-     */
-    @SuppressWarnings("removal")
-    private static void addMBean(MBeanServer mbs, Object mbean, String mbeanName) {
-        try {
-            final ObjectName objName = Util.newObjectName(mbeanName);
-
-            // inner class requires these fields to be final
-            final MBeanServer mbs0 = mbs;
-            final Object mbean0 = mbean;
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                public Void run() throws MBeanRegistrationException,
-                                         NotCompliantMBeanException {
-                    try {
-                        mbs0.registerMBean(mbean0, objName);
-                        return null;
-                    } catch (InstanceAlreadyExistsException e) {
-                        // if an instance with the object name exists in
-                        // the MBeanServer ignore the exception
-                    }
-                    return null;
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            throw new RuntimeException(e.getException());
-        }
-    }
-
-    private static final String HOTSPOT_CLASS_LOADING_MBEAN_NAME =
-        "sun.management:type=HotspotClassLoading";
-
-    private static final String HOTSPOT_COMPILATION_MBEAN_NAME =
-        "sun.management:type=HotspotCompilation";
-
-    private static final String HOTSPOT_MEMORY_MBEAN_NAME =
-        "sun.management:type=HotspotMemory";
-
-    private static final String HOTSPOT_RUNTIME_MBEAN_NAME =
-        "sun.management:type=HotspotRuntime";
-
-    private static final String HOTSPOT_THREAD_MBEAN_NAME =
-        "sun.management:type=HotspotThreading";
-
-    static void registerInternalMBeans(MBeanServer mbs) {
-        // register all internal MBeans if not registered
-        // No exception is thrown if a MBean with that object name
-        // already registered
-        addMBean(mbs, getHotspotClassLoadingMBean(),
-            HOTSPOT_CLASS_LOADING_MBEAN_NAME);
-        addMBean(mbs, getHotspotMemoryMBean(),
-            HOTSPOT_MEMORY_MBEAN_NAME);
-        addMBean(mbs, getHotspotRuntimeMBean(),
-            HOTSPOT_RUNTIME_MBEAN_NAME);
-        addMBean(mbs, getHotspotThreadMBean(),
-            HOTSPOT_THREAD_MBEAN_NAME);
-
-        // CompilationMBean may not exist
-        if (getCompilationMXBean() != null) {
-            addMBean(mbs, getHotspotCompilationMBean(),
-                HOTSPOT_COMPILATION_MBEAN_NAME);
-        }
-    }
-
-    @SuppressWarnings("removal")
-    private static void unregisterMBean(MBeanServer mbs, String mbeanName) {
-        try {
-            final ObjectName objName = Util.newObjectName(mbeanName);
-
-            // inner class requires these fields to be final
-            final MBeanServer mbs0 = mbs;
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                public Void run() throws MBeanRegistrationException,
-                                           RuntimeOperationsException  {
-                    try {
-                        mbs0.unregisterMBean(objName);
-                    } catch (InstanceNotFoundException e) {
-                        // ignore exception if not found
-                    }
-                    return null;
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            throw new RuntimeException(e.getException());
-        }
-    }
-
-    static void unregisterInternalMBeans(MBeanServer mbs) {
-        // unregister all internal MBeans
-        unregisterMBean(mbs, HOTSPOT_CLASS_LOADING_MBEAN_NAME);
-        unregisterMBean(mbs, HOTSPOT_MEMORY_MBEAN_NAME);
-        unregisterMBean(mbs, HOTSPOT_RUNTIME_MBEAN_NAME);
-        unregisterMBean(mbs, HOTSPOT_THREAD_MBEAN_NAME);
-
-        // CompilationMBean may not exist
-        if (getCompilationMXBean() != null) {
-            unregisterMBean(mbs, HOTSPOT_COMPILATION_MBEAN_NAME);
-        }
     }
 
     public static boolean isThreadSuspended(int state) {
