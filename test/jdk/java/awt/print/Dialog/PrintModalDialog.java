@@ -64,7 +64,7 @@ public class PrintModalDialog {
                 .builder()
                 .title("PrintModalDialog Instructions")
                 .instructions(INSTRUCTIONS)
-                .rows(20)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(40)
                 .splitUIBottom(PrintModalDialog::createAndShowGUI)
                 .build()
