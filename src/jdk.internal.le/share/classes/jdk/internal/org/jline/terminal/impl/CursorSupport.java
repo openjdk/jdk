@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author or authors.
+ * Copyright (c) 2002-2016, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -8,16 +8,16 @@
  */
 package jdk.internal.org.jline.terminal.impl;
 
-import jdk.internal.org.jline.terminal.Cursor;
-import jdk.internal.org.jline.terminal.Terminal;
-import jdk.internal.org.jline.utils.Curses;
-import jdk.internal.org.jline.utils.InfoCmp;
-
 import java.io.IOError;
 import java.io.IOException;
 import java.util.function.IntConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import jdk.internal.org.jline.terminal.Cursor;
+import jdk.internal.org.jline.terminal.Terminal;
+import jdk.internal.org.jline.utils.Curses;
+import jdk.internal.org.jline.utils.InfoCmp;
 
 public class CursorSupport {
 
@@ -105,5 +105,4 @@ public class CursorSupport {
             throw new IOError(e);
         }
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author or authors.
+ * Copyright (c) 2002-2016, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -14,8 +14,7 @@ public class ClosedException extends IOException {
 
     private static final long serialVersionUID = 3085420657077696L;
 
-    public ClosedException() {
-    }
+    public ClosedException() {}
 
     public ClosedException(String message) {
         super(message);

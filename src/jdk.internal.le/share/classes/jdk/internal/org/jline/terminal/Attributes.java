@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author or authors.
+ * Copyright (c) 2002-2016, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -43,63 +43,65 @@ public class Attributes {
      * Input flags - software input processing
      */
     public enum InputFlag {
-        IGNBRK,       /* ignore BREAK condition */
-        BRKINT,       /* map BREAK to SIGINTR */
-        IGNPAR,       /* ignore (discard) parity errors */
-        PARMRK,       /* mark parity and framing errors */
-        INPCK,        /* enable checking of parity errors */
-        ISTRIP,       /* strip 8th bit off chars */
-        INLCR,        /* map NL into CR */
-        IGNCR,        /* ignore CR */
-        ICRNL,        /* map CR to NL (ala CRMOD) */
-        IXON,         /* enable output flow control */
-        IXOFF,        /* enable input flow control */
-        IXANY,        /* any char will restart after stop */
-        IMAXBEL,      /* ring bell on input queue full */
-        IUTF8         /* maintain state for UTF-8 VERASE */
+        IGNBRK, /* ignore BREAK condition */
+        BRKINT, /* map BREAK to SIGINTR */
+        IGNPAR, /* ignore (discard) parity errors */
+        PARMRK, /* mark parity and framing errors */
+        INPCK, /* enable checking of parity errors */
+        ISTRIP, /* strip 8th bit off chars */
+        INLCR, /* map NL into CR */
+        IGNCR, /* ignore CR */
+        ICRNL, /* map CR to NL (ala CRMOD) */
+        IXON, /* enable output flow control */
+        IXOFF, /* enable input flow control */
+        IXANY, /* any char will restart after stop */
+        IMAXBEL, /* ring bell on input queue full */
+        IUTF8, /* maintain state for UTF-8 VERASE */
+
+        INORMEOL /* normalize end-of-line */
     }
 
     /*
      * Output flags - software output processing
      */
     public enum OutputFlag {
-        OPOST,       /* enable following output processing */
-        ONLCR,       /* map NL to CR-NL (ala CRMOD) */
-        OXTABS,      /* expand tabs to spaces */
-        ONOEOT,      /* discard EOT's (^D) on output) */
-        OCRNL,       /* map CR to NL on output */
-        ONOCR,       /* no CR output at column 0 */
-        ONLRET,      /* NL performs CR function */
-        OFILL,       /* use fill characters for delay */
-        NLDLY,       /* \n delay */
-        TABDLY,      /* horizontal tab delay */
-        CRDLY,       /* \r delay */
-        FFDLY,       /* form feed delay */
-        BSDLY,       /* \b delay */
-        VTDLY,       /* vertical tab delay */
-        OFDEL        /* fill is DEL, else NUL */
+        OPOST, /* enable following output processing */
+        ONLCR, /* map NL to CR-NL (ala CRMOD) */
+        OXTABS, /* expand tabs to spaces */
+        ONOEOT, /* discard EOT's (^D) on output) */
+        OCRNL, /* map CR to NL on output */
+        ONOCR, /* no CR output at column 0 */
+        ONLRET, /* NL performs CR function */
+        OFILL, /* use fill characters for delay */
+        NLDLY, /* \n delay */
+        TABDLY, /* horizontal tab delay */
+        CRDLY, /* \r delay */
+        FFDLY, /* form feed delay */
+        BSDLY, /* \b delay */
+        VTDLY, /* vertical tab delay */
+        OFDEL /* fill is DEL, else NUL */
     }
 
     /*
      * Control flags - hardware control of terminal
      */
     public enum ControlFlag {
-        CIGNORE,          /* ignore control flags */
-        CS5,              /* 5 bits    (pseudo) */
-        CS6,              /* 6 bits */
-        CS7,              /* 7 bits */
-        CS8,              /* 8 bits */
-        CSTOPB,           /* send 2 stop bits */
-        CREAD,            /* enable receiver */
-        PARENB,           /* parity enable */
-        PARODD,           /* odd parity, else even */
-        HUPCL,            /* hang up on last close */
-        CLOCAL,           /* ignore modem status lines */
-        CCTS_OFLOW,       /* CTS flow control of output */
-        CRTS_IFLOW,       /* RTS flow control of input */
-        CDTR_IFLOW,       /* DTR flow control of input */
-        CDSR_OFLOW,       /* DSR flow control of output */
-        CCAR_OFLOW        /* DCD flow control of output */
+        CIGNORE, /* ignore control flags */
+        CS5, /* 5 bits    (pseudo) */
+        CS6, /* 6 bits */
+        CS7, /* 7 bits */
+        CS8, /* 8 bits */
+        CSTOPB, /* send 2 stop bits */
+        CREAD, /* enable receiver */
+        PARENB, /* parity enable */
+        PARODD, /* odd parity, else even */
+        HUPCL, /* hang up on last close */
+        CLOCAL, /* ignore modem status lines */
+        CCTS_OFLOW, /* CTS flow control of output */
+        CRTS_IFLOW, /* RTS flow control of input */
+        CDTR_IFLOW, /* DTR flow control of input */
+        CDSR_OFLOW, /* DSR flow control of output */
+        CCAR_OFLOW /* DCD flow control of output */
     }
 
     /*
@@ -110,23 +112,23 @@ public class Attributes {
      * input flag.
      */
     public enum LocalFlag {
-        ECHOKE,           /* visual erase for line kill */
-        ECHOE,            /* visually erase chars */
-        ECHOK,            /* echo NL after line kill */
-        ECHO,             /* enable echoing */
-        ECHONL,           /* echo NL even if ECHO is off */
-        ECHOPRT,          /* visual erase mode for hardcopy */
-        ECHOCTL,          /* echo control chars as ^(Char) */
-        ISIG,             /* enable signals INTR, QUIT, [D]SUSP */
-        ICANON,           /* canonicalize input lines */
-        ALTWERASE,        /* use alternate WERASE algorithm */
-        IEXTEN,           /* enable DISCARD and LNEXT */
-        EXTPROC,          /* external processing */
-        TOSTOP,           /* stop background jobs from output */
-        FLUSHO,           /* output being flushed (state) */
-        NOKERNINFO,       /* no kernel output from VSTATUS */
-        PENDIN,           /* XXX retype pending input (state) */
-        NOFLSH            /* don't flush after interrupt */
+        ECHOKE, /* visual erase for line kill */
+        ECHOE, /* visually erase chars */
+        ECHOK, /* echo NL after line kill */
+        ECHO, /* enable echoing */
+        ECHONL, /* echo NL even if ECHO is off */
+        ECHOPRT, /* visual erase mode for hardcopy */
+        ECHOCTL, /* echo control chars as ^(Char) */
+        ISIG, /* enable signals INTR, QUIT, [D]SUSP */
+        ICANON, /* canonicalize input lines */
+        ALTWERASE, /* use alternate WERASE algorithm */
+        IEXTEN, /* enable DISCARD and LNEXT */
+        EXTPROC, /* external processing */
+        TOSTOP, /* stop background jobs from output */
+        FLUSHO, /* output being flushed (state) */
+        NOKERNINFO, /* no kernel output from VSTATUS */
+        PENDIN, /* XXX retype pending input (state) */
+        NOFLSH /* don't flush after interrupt */
     }
 
     final EnumSet<InputFlag> iflag = EnumSet.noneOf(InputFlag.class);
@@ -135,9 +137,9 @@ public class Attributes {
     final EnumSet<LocalFlag> lflag = EnumSet.noneOf(LocalFlag.class);
     final EnumMap<ControlChar, Integer> cchars = new EnumMap<>(ControlChar.class);
 
-    public Attributes() {
-    }
+    public Attributes() {}
 
+    @SuppressWarnings("this-escape")
     public Attributes(Attributes attr) {
         copy(attr);
     }
@@ -310,13 +312,12 @@ public class Attributes {
 
     @Override
     public String toString() {
-        return "Attributes[" +
-                "lflags: " + append(lflag) + ", " +
-                "iflags: " + append(iflag) + ", " +
-                "oflags: " + append(oflag) + ", " +
-                "cflags: " + append(cflag) + ", " +
-                "cchars: " + append(EnumSet.allOf(ControlChar.class), this::display) +
-                "]";
+        return "Attributes[" + "lflags: "
+                + append(lflag) + ", " + "iflags: "
+                + append(iflag) + ", " + "oflags: "
+                + append(oflag) + ", " + "cflags: "
+                + append(cflag) + ", " + "cchars: "
+                + append(EnumSet.allOf(ControlChar.class), this::display) + "]";
     }
 
     private String display(ControlChar c) {
@@ -345,5 +346,4 @@ public class Attributes {
     private <T extends Enum<T>> String append(EnumSet<T> set, Function<T, String> toString) {
         return set.stream().map(toString).collect(Collectors.joining(" "));
     }
-
 }

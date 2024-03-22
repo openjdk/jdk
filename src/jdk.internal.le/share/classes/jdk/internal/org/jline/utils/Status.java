@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2019, the original author or authors.
+ * Copyright (c) 2002-2019, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -8,18 +8,19 @@
  */
 package jdk.internal.org.jline.utils;
 
-import java.util.Objects;
-import java.util.Collections;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+
+import jdk.internal.org.jline.terminal.Size;
 import jdk.internal.org.jline.terminal.Terminal;
 import jdk.internal.org.jline.terminal.impl.AbstractTerminal;
 import jdk.internal.org.jline.utils.InfoCmp.Capability;
-import jdk.internal.org.jline.terminal.Size;
 
 public class Status {
 
-    protected final AbstractTerminal terminal;
+    protected final Terminal terminal;
     protected final boolean supported;
     protected List<AttributedString> oldLines = Collections.emptyList();
     protected List<AttributedString> linesToRestore = Collections.emptyList();
@@ -35,18 +36,16 @@ public class Status {
     }
 
     public static Status getStatus(Terminal terminal, boolean create) {
-        return terminal instanceof AbstractTerminal
-                ? ((AbstractTerminal) terminal).getStatus(create)
-                : null;
+        return terminal instanceof AbstractTerminal ? ((AbstractTerminal) terminal).getStatus(create) : null;
     }
 
-
-    public Status(AbstractTerminal terminal) {
+    @SuppressWarnings("this-escape")
+    public Status(Terminal terminal) {
         this.terminal = Objects.requireNonNull(terminal, "terminal can not be null");
         this.supported = terminal.getStringCapability(Capability.change_scroll_region) != null
-            && terminal.getStringCapability(Capability.save_cursor) != null
-            && terminal.getStringCapability(Capability.restore_cursor) != null
-            && terminal.getStringCapability(Capability.cursor_address) != null;
+                && terminal.getStringCapability(Capability.save_cursor) != null
+                && terminal.getStringCapability(Capability.restore_cursor) != null
+                && terminal.getStringCapability(Capability.cursor_address) != null;
         if (supported) {
             char borderChar = '\u2700';
             AttributedStringBuilder bb = new AttributedStringBuilder();
@@ -128,8 +127,8 @@ public class Status {
         if (oldLines.equals(lines) && !force) {
             return;
         }
-        int statusSize = lines.size() + (lines.size() == 0 ? 0 : border);
-        int nb = statusSize - oldLines.size() - (oldLines.size() == 0 ? 0 : border);
+        int statusSize = lines.size() + (lines.isEmpty() ? 0 : border);
+        int nb = statusSize - oldLines.size() - (oldLines.isEmpty() ? 0 : border);
         if (nb > 0) {
             for (int i = 0; i < nb; i++) {
                 terminal.puts(Capability.cursor_down);
@@ -146,7 +145,7 @@ public class Status {
                 terminal.puts(Capability.clr_eol);
             }
         }
-        if (border == 1 && lines.size() > 0) {
+        if (border == 1 && !lines.isEmpty()) {
             terminal.puts(Capability.cursor_address, rows - statusSize, 0);
             borderString.columnSubSequence(0, columns).print(terminal);
         }
@@ -154,7 +153,8 @@ public class Status {
             terminal.puts(Capability.cursor_address, rows - lines.size() + i, 0);
             if (lines.get(i).length() > columns) {
                 AttributedStringBuilder asb = new AttributedStringBuilder();
-                asb.append(lines.get(i).substring(0, columns - 3)).append("...", new AttributedStyle(AttributedStyle.INVERSE));
+                asb.append(lines.get(i).substring(0, columns - 3))
+                        .append("...", new AttributedStyle(AttributedStyle.INVERSE));
                 asb.toAttributedString().columnSubSequence(0, columns).print(terminal);
             } else {
                 lines.get(i).columnSubSequence(0, columns).print(terminal);
@@ -191,4 +191,8 @@ public class Status {
         return oldLines.size() + border;
     }
 
+    @Override
+    public String toString() {
+        return "Status[" + "supported=" + supported + ']';
+    }
 }

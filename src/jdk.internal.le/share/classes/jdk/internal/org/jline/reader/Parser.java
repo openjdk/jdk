@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2021, the original author or authors.
+ * Copyright (c) 2002-2021, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -35,7 +35,7 @@ public interface Parser {
 
     default String getCommand(final String line) {
         String out;
-        Pattern  patternCommand = Pattern.compile("^\\s*" + REGEX_VARIABLE + "=(" + REGEX_COMMAND + ")(\\s+|$)");
+        Pattern patternCommand = Pattern.compile("^\\s*" + REGEX_VARIABLE + "=(" + REGEX_COMMAND + ")(\\s+|$)");
         Matcher matcher = patternCommand.matcher(line);
         if (matcher.find()) {
             out = matcher.group(1);
@@ -50,7 +50,7 @@ public interface Parser {
 
     default String getVariable(final String line) {
         String out = null;
-        Pattern  patternCommand = Pattern.compile("^\\s*(" + REGEX_VARIABLE + ")\\s*=[^=~].*");
+        Pattern patternCommand = Pattern.compile("^\\s*(" + REGEX_VARIABLE + ")\\s*=[^=~].*");
         Matcher matcher = patternCommand.matcher(line);
         if (matcher.find()) {
             out = matcher.group(1);

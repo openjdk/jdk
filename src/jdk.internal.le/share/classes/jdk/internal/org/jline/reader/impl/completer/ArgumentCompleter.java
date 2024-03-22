@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2019, the original author or authors.
+ * Copyright (c) 2002-2019, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -29,8 +29,7 @@ import jdk.internal.org.jline.reader.ParsedLine;
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  * @since 2.3
  */
-public class ArgumentCompleter implements Completer
-{
+public class ArgumentCompleter implements Completer {
     private final List<Completer> completers = new ArrayList<>();
 
     private boolean strict = true;
@@ -108,12 +107,12 @@ public class ArgumentCompleter implements Completer
         // if we are beyond the end of the completers, just use the last one
         if (line.wordIndex() >= completers.size()) {
             completer = completers.get(completers.size() - 1);
-        }
-        else {
+        } else {
             completer = completers.get(line.wordIndex());
         }
 
-        // ensure that all the previous completers are successful before allowing this completer to pass (only if strict).
+        // ensure that all the previous completers are successful before allowing this completer to pass (only if
+        // strict).
         for (int i = strictCommand ? 0 : 1; isStrict() && (i < line.wordIndex()); i++) {
             int idx = i >= completers.size() ? (completers.size() - 1) : i;
             if (idx == 0 && !strictCommand) {
