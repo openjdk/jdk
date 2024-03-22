@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,25 @@
  * questions.
  */
 
-import java.awt.*;
+import java.awt.Button;
+import java.awt.Canvas;
+import java.awt.Checkbox;
+import java.awt.CheckboxGroup;
+import java.awt.Choice;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Label;
+import java.awt.List;
+import java.awt.Point;
+import java.awt.Scrollbar;
+import java.awt.TextArea;
+import java.awt.TextField;
+import java.awt.Toolkit;
+import java.awt.Frame;
+import java.awt.FlowLayout;
 import java.awt.image.BufferedImage;
 import java.lang.ref.PhantomReference;
 import java.lang.ref.ReferenceQueue;
