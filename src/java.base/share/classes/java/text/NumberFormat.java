@@ -156,7 +156,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Lenient parsing should be used when attempting to parse a number
  * out of a String that contains non-numerical or non-format related values.
  * For example, using a {@link Locale#US} currency format to parse the number
- * {@code 1000} out of the String "$1000 was paid".
+ * {@code 1000} out of the String "$1,000.00 was paid".
  * <p>
  * Strict parsing should be used when attempting to ensure a String adheres exactly
  * to a locale's conventions, and can thus serve to validate input. For example, successfully
