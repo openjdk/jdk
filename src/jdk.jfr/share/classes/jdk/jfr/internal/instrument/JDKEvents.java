@@ -187,6 +187,7 @@ public final class JDKEvents {
             t.memoryLimit = containerMetrics.getMemoryLimit();
             t.swapMemoryLimit = containerMetrics.getMemoryAndSwapLimit();
             t.hostTotalMemory = JVM.hostTotalMemory();
+            t.hostTotalSwapMemory = JVM.hostTotalSwapMemory();
             t.commit();
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -715,7 +715,7 @@ void ShenandoahHeap::post_initialize() {
     _safepoint_workers->set_initialize_gclab();
   }
 
-  JFR_ONLY(ShenandoahJFRSupport::register_jfr_type_serializers());
+  JFR_ONLY(ShenandoahJFRSupport::register_jfr_type_serializers();)
 }
 
 ShenandoahHeuristics* ShenandoahHeap::heuristics() {
@@ -1314,7 +1314,12 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
     bool plab_alloc = false;
     size_t requested_bytes = req.size() * HeapWordSize;
     HeapWord* result = nullptr;
-    ShenandoahHeapLocker locker(lock());
+
+    // If we are dealing with mutator allocation, then we may need to block for safepoint.
+    // We cannot block for safepoint for GC allocations, because there is a high chance
+    // we are already running at safepoint or from stack watermark machinery, and we cannot
+    // block again.
+    ShenandoahHeapLocker locker(lock(), req.is_mutator_alloc());
     Thread* thread = Thread::current();
 
     if (mode()->is_generational()) {

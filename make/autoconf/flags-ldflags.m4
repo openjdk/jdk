@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -86,14 +86,9 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
         -Wl,-bernotok -Wl,-bdatapsize:64k -Wl,-btextpsize:64k -Wl,-bstackpsize:64k"
       BASIC_LDFLAGS_JVM_ONLY="$BASIC_LDFLAGS_JVM_ONLY -Wl,-lC_r -Wl,-bbigtoc"
     fi
-  elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    BASIC_LDFLAGS="-b64 -brtl -bnorwexec -bnolibpath -bnoexpall -bernotok -btextpsize:64K \
-        -bdatapsize:64K -bstackpsize:64K"
-    # libjvm.so has gotten too large for normal TOC size; compile with qpic=large and link with bigtoc
-    BASIC_LDFLAGS_JVM_ONLY="-Wl,-lC_r -bbigtoc"
 
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    BASIC_LDFLAGS="-nologo -opt:ref"
+    BASIC_LDFLAGS="-opt:ref"
     BASIC_LDFLAGS_JDK_ONLY="-incremental:no"
     BASIC_LDFLAGS_JVM_ONLY="-opt:icf,8 -subsystem:windows"
   fi
@@ -118,14 +113,6 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
       if test x$DEBUG_LEVEL = xrelease; then
         DEBUGLEVEL_LDFLAGS_JDK_ONLY="$DEBUGLEVEL_LDFLAGS_JDK_ONLY -Wl,-O1"
       fi
-    fi
-
-  elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
-    # Hotspot now overflows its 64K TOC (currently only for debug),
-    # so we build with '-qpic=large -bbigtoc'.
-    if test "x$DEBUG_LEVEL" != xrelease; then
-      DEBUGLEVEL_LDFLAGS_JVM_ONLY="$DEBUGLEVEL_LDFLAGS_JVM_ONLY -bbigtoc"
     fi
 
   elif test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then

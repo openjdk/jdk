@@ -1449,7 +1449,7 @@ bool ObjectMonitor::check_owner(TRAPS) {
 static inline bool is_excluded(const Klass* monitor_klass) {
   assert(monitor_klass != nullptr, "invariant");
   NOT_JFR_RETURN_(false);
-  JFR_ONLY(return vmSymbols::jfr_chunk_rotation_monitor() == monitor_klass->name());
+  JFR_ONLY(return vmSymbols::jfr_chunk_rotation_monitor() == monitor_klass->name();)
 }
 
 static void post_monitor_wait_event(EventJavaMonitorWait* event,

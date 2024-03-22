@@ -27,7 +27,6 @@
 
 #include "gc/serial/cSpaceCounters.hpp"
 #include "gc/serial/generation.hpp"
-#include "gc/shared/gcStats.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/space.hpp"
 #include "utilities/macros.hpp"
@@ -71,6 +70,10 @@ class TenuredGeneration: public Generation {
   GenerationCounters* _gen_counters;
   CSpaceCounters*     _space_counters;
 
+  // Avg amount promoted; used for avoiding promotion undo
+  // This class does not update deviations if the sample is zero.
+  AdaptivePaddedNoZeroDevAverage*   _avg_promoted;
+
   // Attempt to expand the generation by "bytes".  Expand by at a
   // minimum "expand_bytes".  Return true if some amount (not
   // necessarily the full "bytes") was done.
@@ -80,7 +83,8 @@ class TenuredGeneration: public Generation {
   void shrink(size_t bytes);
 
   void compute_new_size_inner();
- public:
+
+public:
   void compute_new_size();
 
   TenuredSpace* space() const { return _the_space; }
@@ -97,6 +101,12 @@ class TenuredGeneration: public Generation {
   MemRegion used_region() const { return space()->used_region(); }
   MemRegion prev_used_region() const { return _prev_used_region; }
   void save_used_region()   { _prev_used_region = used_region(); }
+
+  // Returns true if this generation cannot be expanded further
+  // without a GC.
+  bool is_maximal_no_gc() const {
+    return _virtual_space.uncommitted_size() == 0;
+  }
 
   HeapWord* block_start(const void* p) const;
 
@@ -148,11 +158,11 @@ class TenuredGeneration: public Generation {
   // Performance Counter support
   void update_counters();
 
-  virtual void record_spaces_top();
+  void record_spaces_top();
 
   // Statistics
 
-  virtual void update_gc_stats(Generation* current_generation, bool full);
+  void update_gc_stats(Generation* current_generation, bool full);
 
   // Returns true if promotions of the specified amount are
   // likely to succeed without a promotion failure.

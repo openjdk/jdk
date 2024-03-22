@@ -94,7 +94,7 @@ public:
   }
 };
 
-template<ShenandoahGenerationType GENERATION>
+template <ShenandoahGenerationType GENERATION>
 class ShenandoahFinalMarkingTask : public WorkerTask {
 private:
   ShenandoahConcurrentMark* _cm;
@@ -139,7 +139,7 @@ ShenandoahConcurrentMark::ShenandoahConcurrentMark(ShenandoahGeneration* generat
   ShenandoahMark(generation) {}
 
 // Mark concurrent roots during concurrent phases
-template<ShenandoahGenerationType GENERATION>
+template <ShenandoahGenerationType GENERATION>
 class ShenandoahMarkConcurrentRootsTask : public WorkerTask {
 private:
   SuspendibleThreadSetJoiner          _sts_joiner;
@@ -157,7 +157,7 @@ public:
   void work(uint worker_id);
 };
 
-template<ShenandoahGenerationType GENERATION>
+template <ShenandoahGenerationType GENERATION>
 ShenandoahMarkConcurrentRootsTask<GENERATION>::ShenandoahMarkConcurrentRootsTask(ShenandoahObjToScanQueueSet* qs,
                                                                                  ShenandoahObjToScanQueueSet* old,
                                                                                  ShenandoahReferenceProcessor* rp,
@@ -171,7 +171,7 @@ ShenandoahMarkConcurrentRootsTask<GENERATION>::ShenandoahMarkConcurrentRootsTask
   assert(!ShenandoahHeap::heap()->has_forwarded_objects(), "Not expected");
 }
 
-template<ShenandoahGenerationType GENERATION>
+template <ShenandoahGenerationType GENERATION>
 void ShenandoahMarkConcurrentRootsTask<GENERATION>::work(uint worker_id) {
   ShenandoahConcurrentWorkerSession worker_session(worker_id);
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);

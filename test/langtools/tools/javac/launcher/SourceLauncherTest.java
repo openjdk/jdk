@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,12 +51,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
 import java.util.Properties;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import com.sun.tools.javac.launcher.SourceLauncher;
 import com.sun.tools.javac.launcher.Fault;
@@ -534,10 +531,9 @@ public class SourceLauncherTest extends TestRunner {
         List<String> log = new JavaTask(tb)
                 .vmOptions("--enable-preview")
                 .className(base.resolve("HelloWorld.java").toString())
-                .run(Task.Expect.FAIL)
-                .getOutputLines(Task.OutputKind.STDERR);
-        log = log.stream().filter(s->!s.matches("^Picked up .*JAVA.*OPTIONS:.*")).collect(Collectors.toList());
-        checkEqual("stderr", log, List.of("error: --enable-preview must be used with --source"));
+                .run(Task.Expect.SUCCESS)
+                .getOutputLines(Task.OutputKind.STDOUT);
+        checkEqual("stdout", log, List.of("Hello World! []"));
     }
 
     @Test

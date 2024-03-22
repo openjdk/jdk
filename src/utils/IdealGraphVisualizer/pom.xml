@@ -30,7 +30,9 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-<project xmlns="https://maven.apache.org/POM/4.0.0" xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.sun.hotspot.igv</groupId>
     <artifactId>IdealGraphVisualizer-parent</artifactId>
@@ -41,7 +43,7 @@
         <pluginManagement>
             <plugins>
                 <plugin>
-                    <groupId>org.apache.netbeans.utilities</groupId>
+                    <groupId>org.codehaus.mojo</groupId>
                     <artifactId>nbm-maven-plugin</artifactId>
                     <version>${nbmmvnplugin.version}</version>
                     <extensions>true</extensions>
@@ -55,8 +57,7 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${mvncompilerplugin.version}</version>
                     <configuration>
-                        <source>1.8</source>
-                        <target>1.8</target>
+                        <release>17</release>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -111,8 +112,8 @@
     <properties>
         <netbeans.version>RELEASE200</netbeans.version>
         <swinglayouts.version>1.0.2</swinglayouts.version>
-        <nbmmvnplugin.version>14.0</nbmmvnplugin.version>
-        <mvncompilerplugin.version>3.11.0</mvncompilerplugin.version>
+        <nbmmvnplugin.version>3.7</nbmmvnplugin.version>
+        <mvncompilerplugin.version>3.12.1</mvncompilerplugin.version>
         <mvnjarplugin.version>3.3.0</mvnjarplugin.version>
         <mvnenforcerplugin.version>3.4.1</mvnenforcerplugin.version>
         <junit.version>4.13.2</junit.version>
