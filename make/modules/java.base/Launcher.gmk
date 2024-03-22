@@ -63,7 +63,7 @@ ifeq ($(call isTargetOs, linux), true)
       OPTIMIZATION := LOW, \
       CFLAGS := -I$(TOPDIR)/src/$(MODULE)/share/native/libjli, \
       CFLAGS_linux := -fPIC, \
-      LDFLAGS := $(LDFLAGS_JDKEXE), \
+      LD_SET_ORIGIN := false, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
   ))
 
@@ -80,7 +80,7 @@ ifeq ($(call isTargetOsType, unix), true)
       CFLAGS := $(VERSION_CFLAGS) \
           -I$(TOPDIR)/src/$(MODULE)/unix/native/libjava, \
       EXTRA_OBJECT_FILES := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjava/childproc$(OBJ_SUFFIX), \
-      LDFLAGS := $(LDFLAGS_JDKEXE), \
+      LD_SET_ORIGIN := false, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
   ))
 

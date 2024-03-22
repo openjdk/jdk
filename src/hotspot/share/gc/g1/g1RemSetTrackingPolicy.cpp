@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
@@ -119,7 +120,7 @@ void G1RemSetTrackingPolicy::update_after_rebuild(HeapRegion* r) {
                                     "remset occ %zu "
                                     "size %zu)",
                                     r->hrm_index(),
-                                    p2i(r->top_at_mark_start()),
+                                    p2i(cm->top_at_mark_start(r)),
                                     cm->live_bytes(r->hrm_index()),
                                     r->rem_set()->occupied(),
                                     r->rem_set()->mem_size());

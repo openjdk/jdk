@@ -50,8 +50,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBMLIB_IMAGE, \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(BUILD_LIBMLIB_CFLAGS), \
     DISABLED_WARNINGS_gcc := unused-function, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(JDKLIB_LIBS), \
     LIBS_unix := $(LIBM) $(LIBDL), \
 ))
@@ -145,7 +143,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     DISABLED_WARNINGS_clang_TransformHelper.c := sign-compare, \
     DISABLED_WARNINGS_microsoft := 4244 4996, \
     DISABLED_WARNINGS_microsoft_awt_Toolkit.cpp := 4267, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_macosx := -L$(INSTALL_LIBRARIES_HERE), \
     LDFLAGS_windows := -delayload:user32.dll -delayload:gdi32.dll \
         -delayload:shell32.dll -delayload:winmm.dll \
@@ -266,10 +263,8 @@ ifeq ($(call isTargetOs, windows macosx), false)
         DISABLED_WARNINGS_clang_aix_gtk3_interface.c := parentheses logical-op-parentheses, \
         DISABLED_WARNINGS_clang_aix_sun_awt_X11_GtkFileDialogPeer.c := parentheses, \
         DISABLED_WARNINGS_clang_aix_awt_InputMethod.c := sign-compare, \
-        LDFLAGS := $(LDFLAGS_JDKLIB) \
-            $(call SET_SHARED_LIBRARY_ORIGIN) \
-            -L$(INSTALL_LIBRARIES_HERE), \
-        LIBS :=  $(X_LIBS) $(LIBAWT_XAWT_LIBS), \
+        LDFLAGS := -L$(INSTALL_LIBRARIES_HERE), \
+        LIBS := $(X_LIBS) $(LIBAWT_XAWT_LIBS), \
         STATIC_LIB_EXCLUDE_OBJS := $(LIBAWT_XAWT_STATIC_EXCLUDE_OBJS), \
     ))
 
@@ -317,8 +312,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
     HEADERS_FROM_SRC := $(LIBLCMS_HEADERS_FROM_SRC), \
     DISABLED_WARNINGS_gcc := format-nonliteral type-limits stringop-truncation, \
     DISABLED_WARNINGS_clang := format-nonliteral, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
     LIBS_unix := -lawt -ljvm -ljava $(LCMS_LIBS) $(LIBM), \
     LIBS_windows := $(WIN_AWT_LIB) $(WIN_JAVA_LIB), \
@@ -359,8 +352,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVAJPEG, \
     DISABLED_WARNINGS_gcc_imageioJPEG.c := clobbered array-bounds, \
     DISABLED_WARNINGS_gcc_jcmaster.c := implicit-fallthrough, \
     DISABLED_WARNINGS_gcc_jdphuff.c := shift-negative-value, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(LIBJPEG_LIBS) $(JDKLIB_LIBS), \
     LIBS_windows := $(WIN_JAVA_LIB) jvm.lib, \
 ))
@@ -409,8 +400,6 @@ ifeq ($(call isTargetOs, windows macosx), false)
       EXTRA_HEADER_DIRS := $(LIBAWT_HEADLESS_EXTRA_HEADER_DIRS), \
       DISABLED_WARNINGS_gcc_X11Renderer.c := unused-function, \
       DISABLED_WARNINGS_gcc_X11SurfaceData.c := unused-function, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
       LIBS_unix := -lawt -ljvm -ljava, \
       LIBS_linux := $(LIBM) $(LIBDL), \
@@ -450,8 +439,6 @@ else
       EXTRA_HEADER_DIRS := $(BUILD_LIBFREETYPE_HEADER_DIRS), \
       DISABLED_WARNINGS_microsoft := 4267 4244 4996, \
       DISABLED_WARNINGS_gcc := dangling-pointer stringop-overflow, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
   ))
 
   TARGETS += $(BUILD_LIBFREETYPE)
@@ -560,9 +547,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
     DISABLED_WARNINGS_CXX_gcc := $(HARFBUZZ_DISABLED_WARNINGS_CXX_gcc), \
     DISABLED_WARNINGS_clang := $(HARFBUZZ_DISABLED_WARNINGS_clang), \
     DISABLED_WARNINGS_microsoft := $(HARFBUZZ_DISABLED_WARNINGS_microsoft), \
-    LDFLAGS := $(subst -Xlinker -z -Xlinker defs,, \
-        $(subst -Wl$(COMMA)-z$(COMMA)defs,,$(LDFLAGS_JDKLIB))) $(LDFLAGS_CXX_JDK) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
+    LDFLAGS := $(LDFLAGS_CXX_JDK), \
+    LDFLAGS_FILTER_OUT :=-Wl$(COMMA)-z$(COMMA)defs, \
     LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
     LDFLAGS_aix := -Wl$(COMMA)-berok, \
     LIBS := $(BUILD_LIBFONTMANAGER_FONTLIB), \
@@ -611,7 +597,7 @@ ifeq ($(call isTargetOs, windows), true)
       CFLAGS := $(LIBJAWT_CFLAGS), \
       CXXFLAGS := $(LIBJAWT_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBJAWT_EXTRA_HEADER_DIRS), \
-      LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK), \
+      LDFLAGS := $(LDFLAGS_CXX_JDK), \
       LIBS := $(JDKLIB_LIBS) $(KERNEL32_LIB) advapi32.lib $(WIN_AWT_LIB), \
   ))
 
@@ -657,8 +643,6 @@ else # not windows
       EXTRA_HEADER_DIRS := \
           include \
           common/awt, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
       LDFLAGS_macosx := -Wl$(COMMA)-rpath$(COMMA)@loader_path, \
       LIBS_unix := $(JAWT_LIBS) $(JDKLIB_LIBS), \
@@ -811,8 +795,6 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_microsoft_splashscreen_impl.c := 4018 4267 4244, \
       DISABLED_WARNINGS_microsoft_splashscreen_png.c := 4267, \
       DISABLED_WARNINGS_microsoft_splashscreen_sys.c := 4267 4244, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_macosx := -L$(INSTALL_LIBRARIES_HERE), \
       LDFLAGS_windows := -delayload:user32.dll, \
       LIBS := $(JDKLIB_LIBS) $(LIBSPLASHSCREEN_LIBS) $(LIBZ_LIBS) \
@@ -878,9 +860,7 @@ ifeq ($(call isTargetOs, macosx), true)
       DISABLED_WARNINGS_clang_OGLBufImgOps.c := format-nonliteral, \
       DISABLED_WARNINGS_clang_OGLPaints.c := format-nonliteral, \
       DISABLED_WARNINGS_clang_PrinterView.m := enum-conversion, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN) \
-          -L$(INSTALL_LIBRARIES_HERE), \
+      LDFLAGS := -L$(INSTALL_LIBRARIES_HERE), \
       LIBS := -lawt -lmlib_image -losxapp -ljvm $(LIBM) \
           -framework Accelerate \
           -framework ApplicationServices \
@@ -943,10 +923,8 @@ ifeq ($(call isTargetOs, macosx), true)
           libosxapp, \
       DISABLED_WARNINGS_clang_AquaFileView.m := deprecated-declarations sign-compare, \
       DISABLED_WARNINGS_clang_ScreenMenu.m := deprecated-declarations, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN) \
-          -Wl$(COMMA)-rpath$(COMMA)@loader_path \
-          -L$(INSTALL_LIBRARIES_HERE), \
+      APPEND_LDFLAGS := -Wl$(COMMA)-rpath$(COMMA)@loader_path, \
+      LDFLAGS := -L$(INSTALL_LIBRARIES_HERE), \
       LIBS := -lawt -losxapp -lawt_lwawt \
           -framework Cocoa \
           -framework Metal \

@@ -149,9 +149,7 @@ define SetupBuildLauncherBody
           $$($1_CFLAGS), \
       CFLAGS_windows := $$($1_CFLAGS_windows), \
       DISABLED_WARNINGS_gcc := unused-function, \
-      LDFLAGS := $$(LDFLAGS_JDKEXE) \
-          $$(call SET_EXECUTABLE_ORIGIN) \
-          $$($1_LDFLAGS), \
+      LDFLAGS := $$($1_LDFLAGS), \
       LDFLAGS_linux := $$(call SET_EXECUTABLE_ORIGIN,/../lib) \
           -L$(call FindLibDirForModule, java.base), \
       LDFLAGS_macosx := $$(call SET_EXECUTABLE_ORIGIN,/../lib) \
