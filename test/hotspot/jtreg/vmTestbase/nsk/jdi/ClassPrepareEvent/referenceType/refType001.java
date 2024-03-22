@@ -114,7 +114,7 @@ public class refType001 {
 
                     boolean isConnected = true;
                     boolean allEventsReceived = false;
-                    // handle events until debugee is disconnected
+                    // handle events until debuggee is disconnected
                     while (isConnected) {
                         EventSet eventSet = null;
                         try {
@@ -200,10 +200,12 @@ public class refType001 {
                                                    }
                                               }
 
-                                              // Check that all expected ClassPrepareEvent are received
+                                              // Check that all expected ClassPrepareEvent(s) are received.
                                               if (!allEventsReceived) {
                                                   allEventsReceived = true;
                                                   for (int i = 0; i < checkedTypes.length; i++) {
+                                                      // checkedTypes[i][2] is "0" initially,
+                                                      // "1" after corresponding ClassPrepareEvent is received.
                                                       if (checkedTypes[i][2] == "0") {
                                                           allEventsReceived = false;
                                                           break;
