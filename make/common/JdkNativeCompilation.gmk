@@ -187,6 +187,11 @@ define SetupJdkLibraryBody
   # Add the module specific java header dir
   $1_SRC_HEADER_FLAGS += $$(addprefix -I, $$(call GetJavaHeaderDir, $$(MODULE)))
 
+  $1_JDK_LIBS += $$($1_JDK_LIBS_$$(OPENJDK_TARGET_OS))
+  $1_JDK_LIBS += $$($1_JDK_LIBS_$$(OPENJDK_TARGET_OS_TYPE))
+  # Prepend JDK libs before external libs
+  $1_LIBS := $$($1_JDK_LIBS) $$($1_LIBS)
+
   ifneq ($$($1_EXTRA_HEADER_DIRS), )
     $1_PROCESSED_EXTRA_HEADER_DIRS := $$(foreach dir, $$($1_EXTRA_HEADER_DIRS), \
         $$(call ProcessDir, $$(dir)))
@@ -272,6 +277,11 @@ define SetupJdkExecutableBody
       -D"JDK_FTYPE=0x1L" \
       -I$(TOPDIR)/src/java.base/windows/native/common \
       $$($1_EXTRA_RCFLAGS)
+
+  $1_JDK_LIBS += $$($1_JDK_LIBS_$$(OPENJDK_TARGET_OS))
+  $1_JDK_LIBS += $$($1_JDK_LIBS_$$(OPENJDK_TARGET_OS_TYPE))
+  # Prepend JDK libs before external libs
+  $1_LIBS := $$($1_JDK_LIBS) $$($1_LIBS)
 
   ifneq ($$($1_DEFAULT_CFLAGS), false)
     # Set the default flags first to be able to override
