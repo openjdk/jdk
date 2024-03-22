@@ -10070,7 +10070,7 @@ void MacroAssembler::arrays_equals(bool is_array_equ, Register ary1,
   if (expand_ary2) {
     // There are no "vector" operations for bytes to shorts
     movzbl(chr, Address(ary2, limit, Address::times_1));
-    cmpl(chr, Address(ary1, limit, Address::times_2));
+    cmpw(Address(ary1, limit, Address::times_2), chr);
     jccb(Assembler::notEqual, FALSE_LABEL);
     addptr(limit, 1);
     jcc(Assembler::notZero, COMPARE_VECTORS);

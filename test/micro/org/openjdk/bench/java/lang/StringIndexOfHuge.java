@@ -62,12 +62,15 @@ public class StringIndexOfHuge {
   private String searchStringHuge;
   private String searchStringHuge16;
 
+  private String searchNoMatch;
+  private String searchNoMatch16;
+
   @Setup
   public void setup() {
     dataString = "ngdflsoscargfdgf";
     dataString16 = "ngdfilso\u01facargfd\u01eef";
     dataStringHuge = (("A".repeat(32) + "B".repeat(32)).repeat(16) + "X").repeat(2) + "bB";
-    dataStringHuge16 = (("A".repeat(32) + "B".repeat(32)).repeat(16) + "\u01fe").repeat(2) + "\u01eeB";
+    dataStringHuge16 = "\u01de" + (("A".repeat(32) + "B".repeat(32)).repeat(16) + "\u01fe").repeat(2) + "\u01eeB";
     earlyMatchString = dataStringHuge.substring(0, 34);
     earlyMatchString16 = dataStringHuge16.substring(0, 34);
     midMatchString = dataStringHuge.substring(dataStringHuge.length() / 2 - 16, dataStringHuge.length() / 2 + 32);
@@ -82,6 +85,9 @@ public class StringIndexOfHuge {
 
     searchStringHuge = "capaapapapasdkajdlkajskldjaslkajdlkajskldjaslkjdlkasjdsalk";
     searchStringHuge16 = "capaapapapasdkajdlka\u01feskldjaslkajdlkajskldjaslkjdlkasjdsalk";
+
+    searchNoMatch = "XYXyxYxy".repeat(22);
+    searchNoMatch16 = "\u01ab\u01ba\u01cb\u01bc\u01de\u01ed\u01fa\u01af".repeat(22);
   }
 
 
@@ -103,7 +109,7 @@ public class StringIndexOfHuge {
 
   @Benchmark
   public int searchHugeNoMatch() {
-      return dataStringHuge.indexOf(searchStringHuge);
+      return dataStringHuge.indexOf(searchNoMatch);
   }
 
   @Benchmark
@@ -158,7 +164,7 @@ public class StringIndexOfHuge {
 
   @Benchmark
   public int search16HugeNoMatch() {
-    return dataStringHuge16.indexOf(searchStringHuge);
+    return dataStringHuge16.indexOf(searchNoMatch);
   }
 
   @Benchmark
@@ -213,7 +219,7 @@ public class StringIndexOfHuge {
 
   @Benchmark
   public int search16HugeNoMatch16() {
-    return dataStringHuge16.indexOf(searchStringHuge16);
+    return dataStringHuge16.indexOf(searchNoMatch16);
   }
 
   @Benchmark

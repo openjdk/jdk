@@ -1204,15 +1204,13 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
   Node* result = nullptr;
   bool call_opt_stub = (StubRoutines::_string_indexof_array[ae] != nullptr);
 
-  if (!call_opt_stub) {
-    if (ae == StrIntrinsicNode::UU || ae == StrIntrinsicNode::UL) {
-      // Divide src size by 2 if String is UTF16 encoded
-      src_count = _gvn.transform(new RShiftINode(src_count, intcon(1)));
-    }
-    if (ae == StrIntrinsicNode::UU) {
-      // Divide substring size by 2 if String is UTF16 encoded
-      tgt_count = _gvn.transform(new RShiftINode(tgt_count, intcon(1)));
-    }
+  if (ae == StrIntrinsicNode::UU || ae == StrIntrinsicNode::UL) {
+    // Divide src size by 2 if String is UTF16 encoded
+    src_count = _gvn.transform(new RShiftINode(src_count, intcon(1)));
+  }
+  if (ae == StrIntrinsicNode::UU) {
+    // Divide substring size by 2 if String is UTF16 encoded
+    tgt_count = _gvn.transform(new RShiftINode(tgt_count, intcon(1)));
   }
 
   if (call_opt_stub) {
