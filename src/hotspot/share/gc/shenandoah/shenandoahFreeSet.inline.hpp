@@ -31,10 +31,17 @@
 inline ssize_t ShenandoahSimpleBitMap::find_next_set_bit(ssize_t start_idx, ssize_t boundary_idx) const {
   assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
   assert((boundary_idx > start_idx) && (boundary_idx <= _num_bits), "precondition");
+#undef KELVIN_INLINE_DEBUG
+#ifdef KELVIN_INLINE_DEBUG
+  printf("find_next_set_bit(" SSIZE_FORMAT ", " SSIZE_FORMAT ")\n", start_idx, boundary_idx);
+#endif
   do {
     size_t array_idx = start_idx >> LogBitsPerWord;
     uintx bit_number = start_idx & right_n_bits(LogBitsPerWord);
     uintx element_bits = _bitmap[array_idx];
+#ifdef KELVIN_INLINE_DEBUG
+    uintx orig_element_bits = element_bits;
+#endif
     if (bit_number > 0) {
       uintx mask_out = right_n_bits(bit_number);
       element_bits &= ~mask_out;
@@ -44,12 +51,23 @@ inline ssize_t ShenandoahSimpleBitMap::find_next_set_bit(ssize_t start_idx, ssiz
       uintx aligned = element_bits >> bit_number;
       uintx first_set_bit = count_trailing_zeros<uintx>(aligned);
       ssize_t candidate_result = (array_idx * BitsPerWord) + bit_number + first_set_bit;
+#ifdef KELVIN_INLINE_DEBUG
+      printf(" find_next_set_bit(), orig_bits: " SIZE_FORMAT_X ", bits: " SIZE_FORMAT_X ", aligned: " SIZE_FORMAT_X
+             ", first_set_bit: " SIZE_FORMAT ", returning candidate: " SSIZE_FORMAT "\n",
+             orig_element_bits, element_bits, aligned, first_set_bit, candidate_result);
+#endif
       return (candidate_result < boundary_idx)? candidate_result: boundary_idx;
     } else {
       // Next bit is not here.  Try the next array element
       start_idx += BitsPerWord - bit_number;
+#ifdef KELVIN_INLINE_DEBUG
+      printf(" find_next_set_bit() is not here, trying next element, start_idx: " SSIZE_FORMAT "\n", start_idx);
+#endif
     }
   } while (start_idx < boundary_idx);
+#ifdef KELVIN_INLINE_DEBUG
+  printf(" find_next_set_bit() returning failure: " SSIZE_FORMAT "\n", boundary_idx);
+#endif
   return boundary_idx;
 }
 
@@ -61,10 +79,16 @@ inline ssize_t ShenandoahSimpleBitMap::find_next_set_bit(ssize_t start_idx) cons
 inline ssize_t ShenandoahSimpleBitMap::find_prev_set_bit(ssize_t last_idx, ssize_t boundary_idx) const {
   assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
   assert((boundary_idx >= -1) && (boundary_idx < last_idx), "precondition");
+#ifdef KELVIN_INLINE_DEBUG
+  printf("find_prev_set_bit(" SSIZE_FORMAT ", " SSIZE_FORMAT ")\n", last_idx, boundary_idx);
+#endif
   do {
     ssize_t array_idx = last_idx >> LogBitsPerWord;
     uintx bit_number = last_idx & right_n_bits(LogBitsPerWord);
     uintx element_bits = _bitmap[array_idx];
+#ifdef KELVIN_INLINE_DEBUG
+    uintx orig_element_bits = element_bits;
+#endif
     if (bit_number < BitsPerWord - 1){
       uintx mask_in = right_n_bits(bit_number + 1);
       element_bits &= mask_in;
@@ -74,12 +98,23 @@ inline ssize_t ShenandoahSimpleBitMap::find_prev_set_bit(ssize_t last_idx, ssize
       uintx aligned = element_bits << (BitsPerWord - (bit_number + 1));
       uintx first_set_bit = count_leading_zeros<uintx>(aligned);
       ssize_t candidate_result = array_idx * BitsPerWord + (bit_number - first_set_bit);
+#ifdef KELVIN_INLINE_DEBUG
+      printf(" find_prev_set_bit(), orig_bits: " SIZE_FORMAT_X ", bits: " SIZE_FORMAT_X ", aligned: " SIZE_FORMAT_X
+             ", first_set_bit: " SIZE_FORMAT ", returning candidate: " SSIZE_FORMAT "\n",
+             orig_element_bits, element_bits, aligned, first_set_bit, candidate_result);
+#endif
       return (candidate_result > boundary_idx)? candidate_result: boundary_idx;
     } else {
       // Next bit is not here.  Try the previous array element
       last_idx -= (bit_number + 1);
+#ifdef KELVIN_INLINE_DEBUG
+      printf(" find_next_set_bit() is not here, trying prev element, las_idx: " SSIZE_FORMAT "\n", last_idx);
+#endif
     }
   } while (last_idx > boundary_idx);
+#ifdef KELVIN_INLINE_DEBUG
+  printf(" find_prev_set_bit() returning failure: " SSIZE_FORMAT "\n", boundary_idx);
+#endif
   return boundary_idx;
 }
 

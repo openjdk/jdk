@@ -392,6 +392,26 @@ public:
     ssize_t set_bits_5[12] = { 140, 142, 1021, 1022, 1023, 1051, 1280, 1281, 1282, 1300, 1301, 1302 };
     verifyBitMapState(bm_large, LARGE_BITMAP_SIZE, set_bits_5, 12);
 
+    // Test that entire bitmap word (from 1024 to 1088) is 1's
+    ssize_t set_bits_6[11+65];
+    set_bits_6[0] = 140;
+    set_bits_6[1] = 142;
+    set_bits_6[2] = 1021;
+    set_bits_6[3] = 1022;
+    set_bits_6[4] = 1023;
+    size_t bit_idx = 5;
+    for (ssize_t i = 1024; i <= 1088; i++) {
+      bm_large.set_bit(i);
+      set_bits_6[bit_idx++] = i;
+    }
+    set_bits_6[bit_idx++] = 1280;
+    set_bits_6[bit_idx++] = 1281;
+    set_bits_6[bit_idx++] = 1282;
+    set_bits_6[bit_idx++] = 1300;
+    set_bits_6[bit_idx++] = 1301;
+    set_bits_6[bit_idx++] = 1302;
+    verifyBitMapState(bm_large, LARGE_BITMAP_SIZE, set_bits_6, bit_idx);
+
     // Test clear_all()
     bm_small.clear_all();
     bm_large.clear_all();
