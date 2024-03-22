@@ -3847,7 +3847,7 @@ public class Resolve {
 
         // Check assumptions
         Assert.check(env.info.ctorPrologue);
-        Assert.check((v.flags() & STATIC) == 0);
+        Assert.check((v.flags_field & STATIC) == 0);
 
         // The symbol must appear in the LHS of an assignment statement
         if (!env.tree.hasTag(ASSIGN))
