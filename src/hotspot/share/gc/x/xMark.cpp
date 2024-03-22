@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,15 +287,10 @@ void XMark::follow_array_object(objArrayOop obj, bool finalizable) {
 }
 
 void XMark::follow_object(oop obj, bool finalizable) {
-  if (ContinuationGCSupport::relativize_stack_chunk(obj)) {
-    // Loom doesn't support mixing of finalizable marking and strong marking of
-    // stack chunks. See: RelativizeDerivedOopClosure.
+  if (obj->is_stackChunk()) {
     XMarkBarrierOopClosure<false /* finalizable */> cl;
     obj->oop_iterate(&cl);
-    return;
-  }
-
-  if (finalizable) {
+  } else if (finalizable) {
     XMarkBarrierOopClosure<true /* finalizable */> cl;
     obj->oop_iterate(&cl);
   } else {
