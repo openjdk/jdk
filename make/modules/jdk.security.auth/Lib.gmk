@@ -26,15 +26,15 @@
 include LibCommon.gmk
 
 ################################################################################
+## Build libjaas
+################################################################################
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJAAS, \
     NAME := jaas, \
     OPTIMIZATION := LOW, \
-    LIBS_windows := netapi32.lib user32.lib mpr.lib advapi32.lib $(JDKLIB_LIBS), \
+    LIBS_windows := advapi32.lib mpr.lib netapi32.lib user32.lib, \
 ))
 
 $(BUILD_LIBJAAS): $(call FindLib, java.base, java)
 
 TARGETS += $(BUILD_LIBJAAS)
-
-################################################################################
