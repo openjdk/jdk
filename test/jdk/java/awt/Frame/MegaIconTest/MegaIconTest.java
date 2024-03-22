@@ -45,7 +45,6 @@ import java.net.URL;
 /*
  * @test
  * @bug 4175560
- * @key headful
  * @summary Test use of user-defined icons
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame

@@ -26,7 +26,6 @@ import java.awt.Frame;
 /*
  * @test
  * @bug 4172782
- * @key headful
  * @summary Test if non-resizable frame is minimizable
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
