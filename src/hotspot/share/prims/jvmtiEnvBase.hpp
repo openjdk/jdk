@@ -593,21 +593,22 @@ public:
 };
 
 // HandshakeClosure to get current contended monitor. It is used for both platform and virtual threads.
-class GetCurrentContendedMonitorClosure : public JvmtiHandshakeClosure {
+class GetCurrentContendedMonitorClosure : public JvmtiUnitedHandshakeClosure {
 private:
-  JavaThread *_calling_thread;
   JvmtiEnv *_env;
+  JavaThread *_calling_thread;
   jobject *_owned_monitor_ptr;
-  bool _is_virtual;
 
 public:
-  GetCurrentContendedMonitorClosure(JavaThread* calling_thread, JvmtiEnv *env, jobject *mon_ptr, bool is_virtual)
-    : JvmtiHandshakeClosure("GetCurrentContendedMonitor"),
-      _calling_thread(calling_thread),
+  GetCurrentContendedMonitorClosure(JvmtiEnv *env,
+                                    JavaThread* calling_thread,
+                                    jobject *owned_monitor_ptr)
+    : JvmtiUnitedHandshakeClosure("GetCurrentContendedMonitor"),
       _env(env),
-      _owned_monitor_ptr(mon_ptr),
-      _is_virtual(is_virtual) {}
+      _calling_thread(calling_thread),
+      _owned_monitor_ptr(owned_monitor_ptr) {}
   void do_thread(Thread *target);
+  void do_vthread(Handle target_h);
 };
 
 // HandshakeClosure to get stack trace.
