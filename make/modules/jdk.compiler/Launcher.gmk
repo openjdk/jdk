@@ -30,9 +30,9 @@ include LauncherCommon.gmk
 ################################################################################
 
 $(eval $(call SetupBuildLauncher, javac, \
-   MAIN_CLASS := com.sun.tools.javac.Main, \
-   JAVA_ARGS := --add-modules ALL-DEFAULT, \
-   CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS, \
+    MAIN_CLASS := com.sun.tools.javac.Main, \
+    JAVA_ARGS := --add-modules ALL-DEFAULT, \
+    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS, \
 ))
 
 ################################################################################

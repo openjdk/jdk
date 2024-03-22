@@ -60,8 +60,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJDWP, \
     DISABLED_WARNINGS_clang_inStream.c := sometimes-uninitialized, \
     DISABLED_WARNINGS_clang_log_messages.c := format-nonliteral, \
     EXTRA_HEADER_DIRS := \
-      include \
-      libjdwp/export, \
+        include \
+        libjdwp/export, \
     JDK_LIBS := $(JDKLIB_LIBS), \
     LIBS_linux := $(LIBDL), \
     LIBS_macosx := -liconv, \

@@ -155,8 +155,8 @@ define SetupBuildLauncherBody
       JDK_LIBS_macosx := -ljli, \
       JDK_LIBS_aix := -ljli_static, \
       JDK_LIBS_windows := \
-        $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib \
-        $$($1_WINDOWS_JLI_LIB), \
+          $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib \
+          $$($1_WINDOWS_JLI_LIB), \
       LIBS := $$($1_LIBS), \
       LIBS_unix := $(LIBZ_LIBS), \
       LIBS_linux := $(LIBDL) -lpthread, \
