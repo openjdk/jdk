@@ -75,8 +75,10 @@ private:
   intptr_t* _parent_cont_fastpath;
 #ifdef _LP64
   int64_t   _parent_held_monitor_count;
+  int64_t   _parent_jni_monitor_count;
 #else
   int32_t   _parent_held_monitor_count;
+  int32_t   _parent_jni_monitor_count;
 #endif
   uint _pin_count;
 
@@ -89,12 +91,14 @@ public:
   static ByteSize pin_count_offset(){ return byte_offset_of(ContinuationEntry, _pin_count); }
   static ByteSize parent_cont_fastpath_offset()      { return byte_offset_of(ContinuationEntry, _parent_cont_fastpath); }
   static ByteSize parent_held_monitor_count_offset() { return byte_offset_of(ContinuationEntry, _parent_held_monitor_count); }
+  static ByteSize parent_jni_monitor_count_offset()  { return byte_offset_of(ContinuationEntry, _parent_jni_monitor_count); }
 
 public:
   static size_t size() { return align_up((int)sizeof(ContinuationEntry), 2*wordSize); }
 
   ContinuationEntry* parent() const { return _parent; }
   int64_t parent_held_monitor_count() const { return (int64_t)_parent_held_monitor_count; }
+  int64_t parent_jni_monitor_count() const { return (int64_t)_parent_jni_monitor_count; }
 
   static address entry_pc() { return _return_pc; }
   intptr_t* entry_sp() const { return (intptr_t*)this; }
