@@ -40,6 +40,7 @@ import java.util.stream.Stream;
 import javax.security.auth.Subject;
 
 public class LoginModuleDebug {
+    static final String DATE_REGEX = "\\d{4}-\\d{2}-\\d{2}";
 
     private static Stream<Arguments> patternMatches() {
         return Stream.of(
@@ -62,16 +63,16 @@ public class LoginModuleDebug {
                 Arguments.of("debug",
                         "true+thread",
                         "krb5loginmodule\\[.*\\|main|\\.*java.*]:",
-                        "UTC]"),
+                        "\\|" + DATE_REGEX + ".*\\]:"),
                 // timestamp info only
                 Arguments.of("debug",
                         "true+timestamp",
-                        "krb5loginmodule\\[.*UTC\\]",
+                        "krb5loginmodule\\[" + DATE_REGEX + ".*\\]",
                         "\\|main\\]:"),
                 // both thread and timestamp
                 Arguments.of("debug",
                         "true+timestamp+thread",
-                        "krb5loginmodule\\[.*\\|main\\|.*UTC\\]:",
+                        "krb5loginmodule\\[.*\\|main|" + DATE_REGEX + ".*\\]:",
                         "krb5loginmodule:")
         );
     }
@@ -80,7 +81,14 @@ public class LoginModuleDebug {
     @MethodSource("patternMatches")
     public void shouldContain(String value, String key, String expected, String notExpected) throws Exception {
         OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
-                "-Duser.timezone=UTC",
+                "LoginModuleDebug",
+                value, key);
+        outputAnalyzer.shouldHaveExitValue(0)
+                .shouldMatch(expected)
+                .shouldNotMatch(notExpected);
+        // let's also run with java debug property enabled
+        outputAnalyzer = ProcessTools.executeTestJava(
+                "-Djava.security.debug=all",
                 "LoginModuleDebug",
                 value, key);
         outputAnalyzer.shouldHaveExitValue(0)

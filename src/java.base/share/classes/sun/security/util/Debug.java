@@ -50,7 +50,8 @@ public class Debug {
     private static String args;
     private static boolean threadInfoAll;
     private static boolean timeStampInfoAll;
-    private static boolean dateTimeFormatInitialized;
+    private static final String TIMESTAMP_OPTION = "+timestamp";
+    private static final String THREAD_OPTION = "+thread";
 
     static {
         args = GetPropertyAction.privilegedGetProperty("java.security.debug");
@@ -77,14 +78,13 @@ public class Debug {
                 int beginIndex = args.lastIndexOf("all") + "all".length();
                 int commaIndex = args.indexOf(',', beginIndex);
                 if (commaIndex == -1) commaIndex = args.length();
-                threadInfoAll = args.substring(beginIndex, commaIndex).contains("+thread");
-                timeStampInfoAll = args.substring(beginIndex, commaIndex).contains("+timestamp");
+                threadInfoAll = args.substring(beginIndex, commaIndex).contains(THREAD_OPTION);
+                timeStampInfoAll = args.substring(beginIndex, commaIndex).contains(TIMESTAMP_OPTION);
             }
         }
     }
 
-    public static void Help()
-    {
+    public static void Help() {
         System.err.println();
         System.err.println("all           turn on all debugging");
         System.err.println("access        print all checkPermission results");
@@ -162,8 +162,7 @@ public class Debug {
      * option is set. Set the prefix to be the same as option.
      */
 
-    public static Debug getInstance(String option)
-    {
+    public static Debug getInstance(String option) {
         return getInstance(option, option);
     }
 
@@ -171,26 +170,14 @@ public class Debug {
      * Get a Debug object corresponding to whether or not the given
      * option is set. Set the prefix to prefix.
      */
-    public static Debug getInstance(String option, String prefix)
-    {
+    public static Debug getInstance(String option, String prefix) {
         if (isOn(option)) {
             Debug d = new Debug();
-            d.configureOptions(option, prefix, false);
+            d.prefix = prefix;
+            d.configureExtras(option);
             return d;
         } else {
             return null;
-        }
-    }
-
-    private void configureOptions(String option, String prefix, boolean ofInstance){
-        this.prefix = prefix;
-        printThreadDetails = getConfigInfo(option, "+thread", ofInstance);
-        printDateTime = getConfigInfo(option, "+timestamp", ofInstance);
-        if (printDateTime && !dateTimeFormatInitialized) {
-            // trigger loading of Locale service impl now to avoid
-            // possible bootstrap recursive class load issue
-            FormatHolder.DATE_TIME_FORMATTER.format(Instant.now());
-            dateTimeFormatInitialized = true;
         }
     }
 
@@ -202,41 +189,30 @@ public class Debug {
                         .findFirst().orElse("unknown caller"));
     }
 
-    // parse an option string to determine if extra details
-    // (like thread and timestamp) should be printed
-    private static boolean getConfigInfo(String option,
-                                         String extraInfoOption,
-                                         boolean ofInstance) {
-        // args is converted to lower case for the most part via marshal method
-        int beginIndex;
-        String subOpt;
+    // parse an option string to determine if extra details,
+    // like thread and timestamp, should be printed
+    private void configureExtras(String option) {
         // treat "all" as special case, only used for java.security.debug property
-        if (!ofInstance) {
-            if (timeStampInfoAll && extraInfoOption.equals("+timestamp")) {
-                return true;
-            }
-            if (threadInfoAll && extraInfoOption.equals("+thread")) {
-                return true;
-            }
+        this.printDateTime = timeStampInfoAll;
+        this.printThreadDetails = threadInfoAll;
+
+        if (printDateTime && printThreadDetails) {
+            // nothing left to configure
+            return;
         }
 
-        // for Debug instances derived from the 'of' method, simply check
-        // the option string for occurrence of the extra option
-        if (ofInstance) {
-            return option.contains(extraInfoOption);
-        }
-
-        // for java.security.debug mode, use the args string.
+        // args is converted to lower case for the most part via marshal method
+        String subOpt = "";
         try {
-            beginIndex = args.lastIndexOf(option) + option.length();
+            int beginIndex = args.lastIndexOf(option) + option.length();
             int commaIndex = args.indexOf(',', beginIndex);
             if (commaIndex == -1) commaIndex = args.length();
             subOpt = args.substring(beginIndex, commaIndex);
         } catch (IndexOutOfBoundsException e) {
             // no sub option
-            return false;
         }
-        return subOpt.contains(extraInfoOption);
+        printDateTime = printDateTime || subOpt.contains(TIMESTAMP_OPTION);
+        printThreadDetails = printThreadDetails || subOpt.contains(THREAD_OPTION);
     }
 
     /**
@@ -253,6 +229,12 @@ public class Debug {
      * String property = settings.get("login");
      * Debug debug = Debug.of("login", property);
      * }
+     *
+     * +timestamp string can be appended to property value
+     * to print timestamp information. (e.g. true+timestamp)
+     * +thread string can be appended to property value
+     * to print thread and caller information. (e.g. true+thread)
+     *
      * @param prefix the debug option name
      * @param property debug setting for this option
      * @return a new Debug object if the property is true
@@ -260,7 +242,9 @@ public class Debug {
     public static Debug of(String prefix, String property) {
         if (property != null && property.toLowerCase(Locale.ROOT).startsWith("true")) {
             Debug d = new Debug();
-            d.configureOptions(property, prefix, true);
+            d.prefix = prefix;
+            d.printThreadDetails = property.contains(THREAD_OPTION);
+            d.printDateTime = property.contains(TIMESTAMP_OPTION);
             return d;
         }
         return null;
@@ -270,8 +254,7 @@ public class Debug {
      * True if the system property "security.debug" contains the
      * string "option".
      */
-    public static boolean isOn(String option)
-    {
+    public static boolean isOn(String option) {
         if (args == null)
             return false;
         else {
@@ -294,8 +277,7 @@ public class Debug {
      * created from the call to getInstance.
      */
 
-    public void println(String message)
-    {
+    public void println(String message) {
         System.err.println(prefix + extraInfo() + ": " + message);
     }
 
@@ -303,8 +285,7 @@ public class Debug {
      * print a message to stderr that is prefixed with the prefix
      * created from the call to getInstance and obj.
      */
-    public void println(Object obj, String message)
-    {
+    public void println(Object obj, String message) {
         System.err.println(prefix + extraInfo() + " [" + obj.getClass().getSimpleName() +
                 "@" + System.identityHashCode(obj) + "]: "+message);
     }
@@ -313,8 +294,7 @@ public class Debug {
      * print a blank line to stderr that is prefixed with the prefix.
      */
 
-    public void println()
-    {
+    public void println() {
         System.err.println(prefix + extraInfo() + ":");
     }
 
@@ -322,8 +302,7 @@ public class Debug {
      * print a message to stderr that is prefixed with the prefix.
      */
 
-    public void println(String prefix, String message)
-    {
+    public void println(String prefix, String message) {
         System.err.println(prefix + extraInfo() + ": " + message);
     }
 
@@ -466,10 +445,9 @@ public class Debug {
 
     // Holder class to break cyclic dependency seen during build
     private static class FormatHolder {
-        private static final String PATTERN = "yyyy-MM-dd kk:mm:ss.SSS z";
+        private static final String PATTERN = "yyyy-MM-dd kk:mm:ss.SSS";
         private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter
                 .ofPattern(PATTERN, Locale.ENGLISH)
                 .withZone(ZoneId.systemDefault());
     }
-
 }

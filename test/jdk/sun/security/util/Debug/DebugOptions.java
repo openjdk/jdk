@@ -42,6 +42,8 @@ import jdk.test.lib.process.ProcessTools;
 
 public class DebugOptions {
 
+    static final String DATE_REGEX = "\\d{4}-\\d{2}-\\d{2}";
+
     private static Stream<Arguments> patternMatches() {
         return Stream.of(
                 // no extra info present
@@ -50,55 +52,57 @@ public class DebugOptions {
                         "properties\\["),
                 // thread info only
                 Arguments.of("properties+thread",
-                        "properties\\[.*\\|main|\\.*java.*]:",
-                        "UTC]"),
+                        "properties\\[.*\\|main\\|.*java.*]:",
+                        "properties\\[" + DATE_REGEX),
                 // timestamp info only
                 Arguments.of("properties+timestamp",
-                        "properties\\[.*UTC\\]",
+                        "properties\\[" + DATE_REGEX + ".*\\]",
                         "\\|main\\]:"),
                 // both thread and timestamp
                 Arguments.of("properties+timestamp+thread",
-                        "properties\\[.*\\|main\\|.*UTC\\]:",
+                        "properties\\[.*\\|main|" + DATE_REGEX + ".*\\]:",
                         "properties:"),
                 // flip the arguments of previous test
                 Arguments.of("properties+thread+timestamp",
-                        "properties\\[.*\\|main\\|.*UTC\\]:",
+                        "properties\\[.*\\|main|" + DATE_REGEX + ".*\\]:",
                         "properties:"),
                 // comma not valid separator, ignore extra info printing request
                 Arguments.of("properties,thread,timestamp",
                         "properties:",
-                        "properties\\[.*\\|main\\|.*UTC\\]:"),
+                        "properties\\[.*\\|main|" + DATE_REGEX + ".*\\]:"),
                 // no extra info for keystore debug prints
                 Arguments.of("properties+thread+timestamp,keystore",
-                        "properties\\[.*\\|main\\|.*UTC\\]:",
+                        "properties\\[.*\\|main|" + DATE_REGEX + ".*\\]:",
                         "keystore\\["),
                 // flip arguments around in last test - same outcome expected
                 Arguments.of("keystore,properties+thread+timestamp",
-                        "properties\\[.*\\|main\\|.*UTC\\]:",
+                        "properties\\[.*\\|main|" + DATE_REGEX + ".*\\]:",
                         "keystore\\["),
                 // turn on thread info for both keystore and properties components
                 Arguments.of("keystore+thread,properties+thread",
-                        "properties\\[.*\\|main.*\\Rkeystore\\[.*\\|main|.*\\]:",
-                        "UTC]"),
+                        "properties\\[.*\\|main|.*\\Rkeystore\\[.*\\|main|.*\\]:",
+                        "\\|" + DATE_REGEX + ".*\\]:"),
                 // same as above with erroneous comma at end of string. same output expected
                 Arguments.of("keystore+thread,properties+thread,",
-                        "properties\\[.*\\|main.*\\Rkeystore\\[.*\\|main|.*\\]:",
-                        "UTC]"),
+                        "properties\\[.*\\|main|.*\\Rkeystore\\[.*\\|main|.*\\]:",
+                        "\\|" + DATE_REGEX + ".*\\]:"),
                 // turn on thread info for properties and timestamp for keystore
                 Arguments.of("keystore+timestamp,properties+thread",
-                        "properties\\[.*\\|main|.*\\Rkeystore\\[.*UTC\\]:",
-                        "properties\\[.*UTC\\]:"),
+                        "properties\\[.*\\|main|.*\\Rkeystore\\[" + DATE_REGEX + ".*\\]:",
+                        "properties\\[.*\\|" + DATE_REGEX + ".*\\]:"),
                 // turn on thread info for all components
                 Arguments.of("all+thread",
                         "properties\\[.*\\|main.*((.*\\R)*)keystore\\[.*\\|main.*java.*\\]:",
-                        "properties\\[.*UTC\\]:"),
+                        "properties\\[" + DATE_REGEX + ".*\\]:"),
                 // turn on thread info and timestamp for all components
                 Arguments.of("all+thread+timestamp",
-                        "properties\\[.*\\|main.*UTC\\]((.*\\R)*)keystore\\[.*\\|main.*UTC\\]:",
+                        "properties\\[.*\\|main.*\\|" + DATE_REGEX +
+                                ".*\\]((.*\\R)*)keystore\\[.*\\|main.*\\|" + DATE_REGEX + ".*\\]:",
                         "properties:"),
                 // all decorator option should override other component options
                 Arguments.of("all+thread+timestamp,properties",
-                        "properties\\[.*\\|main.*UTC\\]((.*\\R)*)keystore\\[.*\\|main.*UTC\\]:",
+                        "properties\\[.*\\|main.*\\|" + DATE_REGEX +
+                                ".*\\]((.*\\R)*)keystore\\[.*\\|main.*\\|" + DATE_REGEX + ".*\\]:",
                         "properties:")
         );
     }
@@ -107,7 +111,6 @@ public class DebugOptions {
     @MethodSource("patternMatches")
     public void shouldContain(String params, String expected, String notExpected) throws Exception {
         OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
-                "-Duser.timezone=UTC",
                 "-Djava.security.debug=" + params,
                 "DebugOptions"
         );
