@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8075545 8210406
+ * @bug 8075545 8210406 8174269
  * @summary Check whether RuntimePermission("localeServiceProvider") is
  *          handled correctly.
  * @library providersrc/foobarutils
@@ -35,11 +35,11 @@
  * @run main/othervm PermissionTest
  * @run main/othervm/fail/java.security.policy=dummy.policy
  *                        -Djava.security.manager
- *                        -Djava.locale.providers=JRE,SPI
+ *                        -Djava.locale.providers=CLDR,SPI
  *                        PermissionTest
  * @run main/othervm/java.security.policy=localeServiceProvider.policy
  *                   -Djava.security.manager
- *                   -Djava.locale.providers=JRE,SPI
+ *                   -Djava.locale.providers=CLDR,SPI
  *                   PermissionTest
  */
 

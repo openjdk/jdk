@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,7 +210,7 @@
   develop(bool, StressLinearScan, false,                                    \
           "scramble block order used by LinearScan (stress test)")          \
                                                                             \
-  product(bool, TimeLinearScan, false,                                      \
+  develop(bool, TimeLinearScan, false,                                      \
           "detailed timing of LinearScan phases")                           \
                                                                             \
   develop(bool, TimeEachLinearScan, false,                                  \
