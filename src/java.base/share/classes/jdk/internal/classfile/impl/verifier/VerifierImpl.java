@@ -41,6 +41,11 @@ import jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType;
 import static jdk.internal.classfile.impl.verifier.VerificationFrame.FLAG_THIS_UNINIT;
 
 /**
+ * VerifierImpl performs selected checks and verifications of the class file
+ * format according to {@jvms 4.8 Format Checking},
+ * {@jvms 4.9 Constraints on Java Virtual Machine code},
+ * {@jvms 4.10 Verification of class Files} and {@jvms 6.5 Instructions}
+ *
  * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/java.base/share/native/include/classfile_constants.h.template">java.base/share/native/include/classfile_constants.h.template</a>
  * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/verifier.hpp">hotspot/share/classfile/verifier.hpp</a>
  * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/verifier.cpp">hotspot/share/classfile/verifier.cpp</a>

@@ -53,6 +53,9 @@ import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.Util;
 
 /**
+ * ParserVerifier performs selected checks of the class file format according to
+ * {@jvms 4.8 Format Checking}
+ *
  * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/classFileParser.cpp">hotspot/share/classfile/classFileParser.cpp</a>
  */
 public record ParserVerifier(ClassModel classModel) {
