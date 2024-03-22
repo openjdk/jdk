@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,6 +142,7 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
         private final Integrator<A, T, R> integrator; // Optimization: reuse
         private A state;
         private boolean proceed = true;
+        private boolean downstreamProceed = true;
 
         GatherSink(Gatherer<T, A, R> gatherer, Sink<R> sink) {
             this.gatherer = gatherer;
@@ -173,12 +174,12 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
 
         @Override
         public boolean cancellationRequested() {
-            return cancellationRequested(proceed);
+            return cancellationRequested(proceed && downstreamProceed);
         }
 
         private boolean cancellationRequested(boolean knownProceed) {
             // Highly performance sensitive
-            return !(knownProceed && (!sink.cancellationRequested() || (proceed = false)));
+            return !(knownProceed && (!sink.cancellationRequested() || (downstreamProceed = false)));
         }
 
         @Override
@@ -194,12 +195,12 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
 
         @Override
         public boolean isRejecting() {
-            return !proceed;
+            return !downstreamProceed;
         }
 
         @Override
         public boolean push(R r) {
-            var p = proceed;
+            var p = downstreamProceed;
             if (p)
                 sink.accept(r);
             return !cancellationRequested(p);

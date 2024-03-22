@@ -26,16 +26,17 @@
 include LibCommon.gmk
 
 ################################################################################
+## Build libmanagement_agent
+################################################################################
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT_AGENT, \
     NAME := management_agent, \
     OPTIMIZATION := LOW, \
-    LIBS := $(JDKLIB_LIBS), \
-    LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib, \
+    JDK_LIBS := $(JDKLIB_LIBS), \
+    JDK_LIBS_windows := $(WIN_JAVA_LIB), \
+    LIBS_windows := advapi32.lib, \
 ))
 
 $(BUILD_LIBMANAGEMENT_AGENT): $(call FindLib, java.base, java)
 
 TARGETS += $(BUILD_LIBMANAGEMENT_AGENT)
-
-################################################################################
