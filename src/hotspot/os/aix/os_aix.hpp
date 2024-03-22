@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,13 +101,6 @@ class os::Aix {
     return _on_pase ? true : false;
   }
 
-  // Function returns true if we run on AIX, false if we run on OS/400
-  // (pase).
-  static bool on_aix() {
-    assert(_on_pase != -1, "not initialized");
-    return _on_pase ? false : true;
-  }
-
   // Get 4 byte AIX kernel version number:
   // highest 2 bytes: Version, Release
   // if available: lowest 2 bytes: Tech Level, Service Pack.
@@ -128,11 +121,6 @@ class os::Aix {
   // Convenience method: returns true if running on PASE V5R4 or older.
   static bool on_pase_V5R4_or_older() {
     return on_pase() && os_version_short() <= 0x0504;
-  }
-
-  // Convenience method: returns true if running on AIX 5.3 or older.
-  static bool on_aix_53_or_older() {
-    return on_aix() && os_version_short() <= 0x0503;
   }
 
   // Returns true if we run in SPEC1170 compliant mode (XPG_SUS_ENV=ON).

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,10 +147,10 @@ public final class SourceLauncher {
         ProgramDescriptor program = ProgramDescriptor.of(ProgramFileObject.of(file));
         RelevantJavacOptions options = RelevantJavacOptions.of(program, runtimeArgs);
         MemoryContext context = new MemoryContext(out, program, options);
-        List<String> names = context.compileProgram();
+        context.compileProgram();
 
         String[] mainArgs = Arrays.copyOfRange(args, 1, args.length);
-        var appClass = execute(names, mainArgs, context);
+        var appClass = execute(context, mainArgs);
 
         return new Result(appClass, context.getNamesOfCompiledClasses());
     }
@@ -184,20 +184,20 @@ public final class SourceLauncher {
      * Invokes the {@code main} method of a program class, using a class loader that
      * will load recently compiled classes from memory.
      *
-     * @param topLevelClassNames the names of classes in the program compilation unit
      * @param mainArgs the arguments for the {@code main} method
      * @param context the context for the class to be executed
      * @throws Fault if there is a problem finding or invoking the {@code main} method
      * @throws InvocationTargetException if the {@code main} method throws an exception
      */
-    private Class<?> execute(List<String> topLevelClassNames, String[] mainArgs, MemoryContext context)
+    private Class<?> execute(MemoryContext context, String[] mainArgs)
             throws Fault, InvocationTargetException {
         System.setProperty("jdk.launcher.sourcefile", context.getSourceFileAsString());
         ClassLoader parentLoader = ClassLoader.getSystemClassLoader();
+        ProgramDescriptor program = context.getProgramDescriptor();
 
         // 1. Find a main method in the first class and if there is one - invoke it
         Class<?> firstClass;
-        String firstClassName = topLevelClassNames.getFirst();
+        String firstClassName = program.qualifiedTypeNames().getFirst();
         try {
             ClassLoader loader = context.newClassLoaderFor(parentLoader, firstClassName);
             firstClass = Class.forName(firstClassName, false, loader);
@@ -208,10 +208,14 @@ public final class SourceLauncher {
         Method mainMethod = MethodFinder.findMainMethod(firstClass);
         if (mainMethod == null) {
             // 2. If the first class doesn't have a main method, look for a class with a matching name
-            var compilationUnitName = context.getProgramDescriptor().fileObject().getFile().getFileName().toString();
+            var compilationUnitName = program.fileObject().getFile().getFileName().toString();
             assert compilationUnitName.endsWith(".java");
-            var expectedName = compilationUnitName.substring(0, compilationUnitName.length() - 5);
-            var actualName = topLevelClassNames.stream()
+            var expectedSimpleName = compilationUnitName.substring(0, compilationUnitName.length() - 5);
+            var expectedPackageName = program.packageName().orElse("");
+            var expectedName = expectedPackageName.isEmpty()
+                    ? expectedSimpleName
+                    : expectedPackageName + '.' + expectedSimpleName;
+            var actualName = program.qualifiedTypeNames().stream()
                     .filter(name -> name.equals(expectedName))
                     .findFirst()
                     .orElseThrow(() -> new Fault(Errors.CantFindClass(expectedName)));
