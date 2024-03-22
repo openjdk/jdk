@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,15 +269,12 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
                         null, null, -1, PKIXReason.INVALID_KEY_USAGE);
                 }
             }
-
-            if (!constraints.permits(primitives, currPubKey, currSigAlg)) {
+            if (!constraints.permits(primitives, currPubKey)) {
                 throw new CertPathValidatorException(
                     "Algorithm constraints check failed on " +
                         currPubKey.getAlgorithm() + " key with size of " +
                         sun.security.util.KeyUtil.getKeySize(currPubKey) +
-                        "bits" + " and with " +
-                        sun.security.util.KeyUtil.printNamedCurvesFromKey(currPubKey) +
-                        " named groups",
+                        "bits",
                     null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
             }
         }
