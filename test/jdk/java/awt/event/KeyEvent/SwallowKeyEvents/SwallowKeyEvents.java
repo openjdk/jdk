@@ -35,6 +35,7 @@ import test.java.awt.regtesthelpers.Util;
   @key headful
   @bug 7154072 7161320
   @summary Tests that key events with modifiers are not swallowed.
+  @requires (os.family != "windows")
   @library /java/awt/regtesthelpers
   @library /test/lib
   @modules java.desktop/sun.awt
