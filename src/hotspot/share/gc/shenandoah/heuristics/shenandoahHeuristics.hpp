@@ -80,9 +80,6 @@ protected:
 
   RegionData* _region_data;
 
-  uint _degenerated_cycles_in_a_row;
-  uint _successful_cycles_in_a_row;
-
   double _cycle_start;
   double _last_cycle_end;
 

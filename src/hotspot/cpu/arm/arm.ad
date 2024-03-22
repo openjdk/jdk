@@ -859,25 +859,14 @@ uint BoxLockNode::size(PhaseRegAlloc *ra_) const {
 #define R_RTEMP "R_R12"
 void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   st->print_cr("\nUEP:");
-  if (UseCompressedClassPointers) {
-    st->print_cr("\tLDR_w " R_RTEMP ",[R_R0 + oopDesc::klass_offset_in_bytes]\t! Inline cache check");
-    st->print_cr("\tdecode_klass " R_RTEMP);
-  } else {
-    st->print_cr("\tLDR   " R_RTEMP ",[R_R0 + oopDesc::klass_offset_in_bytes]\t! Inline cache check");
-  }
+  st->print_cr("\tLDR   " R_RTEMP ",[R_R0 + oopDesc::klass_offset_in_bytes]\t! Inline cache check");
   st->print_cr("\tCMP   " R_RTEMP ",R_R8" );
   st->print   ("\tB.NE  SharedRuntime::handle_ic_miss_stub");
 }
 #endif
 
 void MachUEPNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
-  Register iCache  = reg_to_register_object(Matcher::inline_cache_reg_encode());
-  assert(iCache == Ricklass, "should be");
-  Register receiver = R0;
-
-  __ load_klass(Rtemp, receiver);
-  __ cmp(Rtemp, iCache);
-  __ jump(SharedRuntime::get_ic_miss_stub(), relocInfo::runtime_call_type, noreg, ne);
+  __ ic_check(InteriorEntryAlignment);
 }
 
 uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
@@ -987,7 +976,7 @@ bool Matcher::match_rule_supported(int opcode) {
   return true;  // Per default match rules are supported.
 }
 
-bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
   return match_rule_supported_vector(opcode, vlen, bt);
 }
 
@@ -1059,7 +1048,7 @@ int Matcher::min_vector_size(const BasicType bt) {
   return 8/type2aelembytes(bt);
 }
 
-int Matcher::superword_max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size_auto_vectorization(const BasicType bt) {
   return Matcher::max_vector_size(bt);
 }
 
@@ -1226,7 +1215,7 @@ encode %{
       emit_call_reloc(masm, as_MachCall(), $meth, rspec);
 
       // Emit stubs for static call.
-      address stub = CompiledStaticCall::emit_to_interp_stub(masm);
+      address stub = CompiledDirectCall::emit_to_interp_stub(masm);
       if (stub == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
@@ -1724,56 +1713,6 @@ operand immI0() %{
   interface(CONST_INTER);
 %}
 
-// Integer Immediate: the value 1
-operand immI_1() %{
-  predicate(n->get_int() == 1);
-  match(ConI);
-  op_cost(0);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Integer Immediate: the value 2
-operand immI_2() %{
-  predicate(n->get_int() == 2);
-  match(ConI);
-  op_cost(0);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Integer Immediate: the value 3
-operand immI_3() %{
-  predicate(n->get_int() == 3);
-  match(ConI);
-  op_cost(0);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Integer Immediate: the value 4
-operand immI_4() %{
-  predicate(n->get_int() == 4);
-  match(ConI);
-  op_cost(0);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Integer Immediate: the value 8
-operand immI_8() %{
-  predicate(n->get_int() == 8);
-  match(ConI);
-  op_cost(0);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // Int Immediate non-negative
 operand immU31()
 %{
@@ -1898,27 +1837,6 @@ operand limmU31() %{
 operand limmIn() %{
   predicate(is_limmI(~n->get_int()));
   match(ConI);
-  op_cost(0);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-
-// Long Immediate: the value FF
-operand immL_FF() %{
-  predicate( n->get_long() == 0xFFL );
-  match(ConL);
-  op_cost(0);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Long Immediate: the value FFFF
-operand immL_FFFF() %{
-  predicate( n->get_long() == 0xFFFFL );
-  match(ConL);
   op_cost(0);
 
   format %{ %}

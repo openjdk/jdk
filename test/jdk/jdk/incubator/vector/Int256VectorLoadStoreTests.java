@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,7 +248,8 @@ public class Int256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static IntVector fromArray(int[] a, int i) {
-        return IntVector.fromArray(SPECIES, a, i);
+        // Tests the species method and the equivalent vector method it defers to
+        return (IntVector) SPECIES.fromArray(a, i);
     }
 
     @DontInline
@@ -268,7 +269,8 @@ public class Int256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static IntVector fromMemorySegment(MemorySegment a, int i, ByteOrder bo) {
-        return IntVector.fromMemorySegment(SPECIES, a, i, bo);
+        // Tests the species method and the equivalent vector method it defers to
+        return (IntVector) SPECIES.fromMemorySegment(a, i, bo);
     }
 
     @DontInline

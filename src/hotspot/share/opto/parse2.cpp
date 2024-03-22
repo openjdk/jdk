@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1354,21 +1354,6 @@ bool Parse::seems_never_taken(float prob) const {
   return prob < PROB_MIN;
 }
 
-// True if the comparison seems to be the kind that will not change its
-// statistics from true to false.  See comments in adjust_map_after_if.
-// This question is only asked along paths which are already
-// classified as untaken (by seems_never_taken), so really,
-// if a path is never taken, its controlling comparison is
-// already acting in a stable fashion.  If the comparison
-// seems stable, we will put an expensive uncommon trap
-// on the untaken path.
-bool Parse::seems_stable_comparison() const {
-  if (C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if)) {
-    return false;
-  }
-  return true;
-}
-
 //-------------------------------repush_if_args--------------------------------
 // Push arguments of an "if" bytecode back onto the stack by adjusting _sp.
 inline int Parse::repush_if_args() {
@@ -1572,7 +1557,8 @@ bool Parse::path_is_suitable_for_uncommon_trap(float prob) const {
   if (!UseInterpreter) {
     return false;
   }
-  return (seems_never_taken(prob) && seems_stable_comparison());
+  return seems_never_taken(prob) &&
+         !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
 }
 
 void Parse::maybe_add_predicate_after_if(Block* path) {
@@ -2778,6 +2764,7 @@ void Parse::do_one_bytecode() {
   }
 
 #ifndef PRODUCT
+  if (failing()) { return; }
   constexpr int perBytecode = 6;
   if (C->should_print_igv(perBytecode)) {
     IdealGraphPrinter* printer = C->igv_printer();

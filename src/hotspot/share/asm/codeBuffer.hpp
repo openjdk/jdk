@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,7 +209,7 @@ class CodeSection {
   }
   void    set_locs_point(address pc) {
     assert(pc >= locs_point(), "relocation addr may not decrease");
-    assert(allocates2(pc),     "relocation addr must be in this section");
+    assert(allocates2(pc),     "relocation addr " INTPTR_FORMAT " must be in this section from " INTPTR_FORMAT " to " INTPTR_FORMAT, p2i(pc), p2i(_start), p2i(_limit));
     _locs_point = pc;
   }
 

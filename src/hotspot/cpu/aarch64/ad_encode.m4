@@ -87,4 +87,3 @@ STORE(vRegD,strd,Float,,8)
       loadStore(masm, &MacroAssembler::strb, zr, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
   %}
-

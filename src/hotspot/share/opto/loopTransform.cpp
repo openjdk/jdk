@@ -37,6 +37,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/movenode.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/phase.hpp"
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
@@ -1101,12 +1102,11 @@ void IdealLoopTree::policy_unroll_slp_analysis(CountedLoopNode *cl, PhaseIdealLo
   // Enable this functionality target by target as needed
   if (SuperWordLoopUnrollAnalysis) {
     if (!cl->was_slp_analyzed()) {
-      SuperWord sw(phase);
-      sw.transform_loop(this, false);
+      Compile::TracePhase tp("autoVectorize", &Phase::timers[Phase::_t_autoVectorize]);
 
-      // If the loop is slp canonical analyze it
-      if (sw.early_return() == false) {
-        sw.unrolling_analysis(_local_loop_unroll_factor);
+      VLoop vloop(this, true);
+      if (vloop.check_preconditions()) {
+        SuperWord::unrolling_analysis(vloop, _local_loop_unroll_factor);
       }
     }
 
@@ -3260,7 +3260,6 @@ void IdealLoopTree::adjust_loop_exit_prob(PhaseIdealLoop *phase) {
   }
 }
 
-#ifdef ASSERT
 static CountedLoopNode* locate_pre_from_main(CountedLoopNode* main_loop) {
   assert(!main_loop->is_main_no_pre_loop(), "Does not have a pre loop");
   Node* ctrl = main_loop->skip_assertion_predicates_with_halt();
@@ -3273,7 +3272,6 @@ static CountedLoopNode* locate_pre_from_main(CountedLoopNode* main_loop) {
   assert(pre_loop->is_pre_loop(), "No pre loop found");
   return pre_loop;
 }
-#endif
 
 // Remove the main and post loops and make the pre loop execute all
 // iterations. Useful when the pre loop is found empty.
@@ -3301,7 +3299,11 @@ void IdealLoopTree::remove_main_post_loops(CountedLoopNode *cl, PhaseIdealLoop *
     return;
   }
 
-  assert(locate_pre_from_main(main_head) == cl, "bad main loop");
+  // We found a main-loop after this pre-loop, but they might not belong together.
+  if (locate_pre_from_main(main_head) != cl) {
+    return;
+  }
+
   Node* main_iff = main_head->skip_assertion_predicates_with_halt()->in(0);
 
   // Remove the Opaque1Node of the pre loop and make it execute all iterations

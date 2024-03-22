@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2020, 2023, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -116,7 +116,7 @@ source %{
     }
   }
 
-  bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+  bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
     if (UseSVE == 0) {
       // These operations are not profitable to be vectorized on NEON, because no direct
       // NEON instructions support them. But the match rule support for them is profitable for

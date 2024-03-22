@@ -1085,13 +1085,6 @@ void LinkResolver::resolve_static_call(CallInfo& result,
     resolved_method = linktime_resolve_static_method(new_info, CHECK);
   }
 
-  if (resolved_method->is_continuation_native_intrinsic()
-      && resolved_method->from_interpreted_entry() == nullptr) { // does a load_acquire
-    methodHandle mh(THREAD, resolved_method);
-    // Generate a compiled form of the enterSpecial intrinsic.
-    AdapterHandlerLibrary::create_native_wrapper(mh);
-  }
-
   // setup result
   result.set_static(resolved_klass, methodHandle(THREAD, resolved_method), CHECK);
   JFR_ONLY(Jfr::on_resolution(result, CHECK);)

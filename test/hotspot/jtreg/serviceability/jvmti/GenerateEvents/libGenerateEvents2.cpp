@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,9 @@ extern "C" {
 
 #define AGENT_NAME "agent2"
 
-static JavaVM *java_vm = NULL;
-static jthread exp_thread = NULL;
-static jvmtiEnv *jvmti2 = NULL;
+static JavaVM *java_vm = nullptr;
+static jthread exp_thread = nullptr;
+static jvmtiEnv *jvmti2 = nullptr;
 static jint agent2_event_count = 0;
 static bool fail_status = false;
 
@@ -48,10 +48,10 @@ CompiledMethodLoad(jvmtiEnv* jvmti, jmethodID method,
                    jint code_size, const void* code_addr,
                    jint map_length, const jvmtiAddrLocationMap* map,
                    const void* compile_info) {
-  JNIEnv* env = NULL;
-  jthread thread = NULL;
-  char* name = NULL;
-  char* sign = NULL;
+  JNIEnv* env = nullptr;
+  jthread thread = nullptr;
+  char* name = nullptr;
+  char* sign = nullptr;
   jvmtiError err;
 
   // Posted on JavaThread's, so it is legal to obtain JNIEnv*
@@ -67,7 +67,7 @@ CompiledMethodLoad(jvmtiEnv* jvmti, jmethodID method,
   }
   agent2_event_count++;
 
-  err = jvmti->GetMethodName(method, &name, &sign, NULL);
+  err = jvmti->GetMethodName(method, &name, &sign, nullptr);
   check_jvmti_status(env, err, "CompiledMethodLoad: Error in JVMTI GetMethodName");
 
   printf("%s: CompiledMethodLoad: %s%s\n", AGENT_NAME, name, sign);
@@ -113,7 +113,7 @@ Java_MyPackage_GenerateEventsTest_agent2SetThread(JNIEnv *env, jclass cls, jthre
 
   exp_thread = (jthread)env->NewGlobalRef(thread);
 
-  err = jvmti2->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_COMPILED_METHOD_LOAD, NULL);
+  err = jvmti2->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_COMPILED_METHOD_LOAD, nullptr);
   check_jvmti_status(env, err, "setThread2: Error in JVMTI SetEventNotificationMode: JVMTI_ENABLE");
 }
 
@@ -121,7 +121,7 @@ JNIEXPORT jboolean JNICALL
 Java_MyPackage_GenerateEventsTest_agent2FailStatus(JNIEnv *env, jclass cls) {
   jvmtiError err;
 
-  err = jvmti2->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_COMPILED_METHOD_LOAD, NULL);
+  err = jvmti2->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_COMPILED_METHOD_LOAD, nullptr);
   check_jvmti_status(env, err, "check2: Error in JVMTI SetEventNotificationMode: JVMTI_DISABLE");
 
   printf("\n");

@@ -125,7 +125,7 @@ public class TestDwarf {
                         new DwarfConstraint(1, "Java_TestDwarf_crashNativeMultipleMethods", "libTestDwarf.c", 70));
         }
         runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeDereferenceNull"),
-                    new DwarfConstraint(0, "dereference_null", "libTestDwarfHelper.h", 44));
+                    new DwarfConstraint(0, "dereference_null", "libTestDwarfHelper.h", 46));
     }
 
     // The full pattern accepts lines like:

@@ -58,8 +58,7 @@ ZCollectedHeap* ZCollectedHeap::heap() {
 }
 
 ZCollectedHeap::ZCollectedHeap()
-  : _soft_ref_policy(),
-    _barrier_set(),
+  : _barrier_set(),
     _initialize(&_barrier_set),
     _heap(),
     _driver_minor(new ZDriverMinor()),
@@ -104,10 +103,6 @@ void ZCollectedHeap::stop() {
   ZAbort::abort();
   ZStopConcurrentGCThreadClosure cl;
   gc_threads_do(&cl);
-}
-
-SoftRefPolicy* ZCollectedHeap::soft_ref_policy() {
-  return &_soft_ref_policy;
 }
 
 size_t ZCollectedHeap::max_capacity() const {

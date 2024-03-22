@@ -51,6 +51,7 @@ public class CarrierThread extends ForkJoinWorkerThread {
 
     private boolean blocking;    // true if in blocking op
 
+    @SuppressWarnings("this-escape")
     public CarrierThread(ForkJoinPool pool) {
         super(CARRIER_THREADGROUP, pool, true);
         U.putReference(this, CONTEXTCLASSLOADER, ClassLoader.getSystemClassLoader());

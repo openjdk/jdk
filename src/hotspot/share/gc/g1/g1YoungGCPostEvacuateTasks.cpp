@@ -34,12 +34,12 @@
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/shared/bufferNode.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -545,12 +545,12 @@ class G1PostEvacuateCollectionSetCleanupTask2::ProcessEvacuationFailedRegionsTas
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
       G1ConcurrentMark* cm = g1h->concurrent_mark();
 
-      uint region = r->hrm_index();
-      assert(r->top_at_mark_start() == r->bottom(), "TAMS must not have been set for region %u", region);
-      assert(cm->live_bytes(region) == 0, "Marking live bytes must not be set for region %u", region);
+      HeapWord* top_at_mark_start = cm->top_at_mark_start(r);
+      assert(top_at_mark_start == r->bottom(), "TAMS must not have been set for region %u", r->hrm_index());
+      assert(cm->live_bytes(r->hrm_index()) == 0, "Marking live bytes must not be set for region %u", r->hrm_index());
 
       // Concurrent mark does not mark through regions that we retain (they are root
-      // regions wrt to marking), so we must clear their mark data (tams, bitmap)
+      // regions wrt to marking), so we must clear their mark data (tams, bitmap, ...)
       // set eagerly or during evacuation failure.
       bool clear_mark_data = !g1h->collector_state()->in_concurrent_start_gc() ||
                              g1h->policy()->should_retain_evac_failed_region(r);
@@ -559,9 +559,9 @@ class G1PostEvacuateCollectionSetCleanupTask2::ProcessEvacuationFailedRegionsTas
         g1h->clear_bitmap_for_region(r);
       } else {
         // This evacuation failed region is going to be marked through. Update mark data.
-        r->set_top_at_mark_start(r->top());
+        cm->update_top_at_mark_start(r);
         cm->set_live_bytes(r->hrm_index(), r->live_bytes());
-        assert(cm->mark_bitmap()->get_next_marked_addr(r->bottom(), r->top_at_mark_start()) != r->top_at_mark_start(),
+        assert(cm->mark_bitmap()->get_next_marked_addr(r->bottom(), cm->top_at_mark_start(r)) != cm->top_at_mark_start(r),
                "Marks must be on bitmap for region %u", r->hrm_index());
       }
       return false;
@@ -590,22 +590,16 @@ public:
 };
 
 class G1PostEvacuateCollectionSetCleanupTask2::RedirtyLoggedCardsTask : public G1AbstractSubTask {
-  G1RedirtyCardsQueueSet* _rdcqs;
-  BufferNode* volatile _nodes;
+  BufferNodeList* _rdc_buffers;
+  uint _num_buffer_lists;
   G1EvacFailureRegions* _evac_failure_regions;
 
 public:
-  RedirtyLoggedCardsTask(G1RedirtyCardsQueueSet* rdcqs, G1EvacFailureRegions* evac_failure_regions) :
+  RedirtyLoggedCardsTask(G1EvacFailureRegions* evac_failure_regions, BufferNodeList* rdc_buffers, uint num_buffer_lists) :
     G1AbstractSubTask(G1GCPhaseTimes::RedirtyCards),
-    _rdcqs(rdcqs),
-    _nodes(rdcqs->all_completed_buffers()),
+    _rdc_buffers(rdc_buffers),
+    _num_buffer_lists(num_buffer_lists),
     _evac_failure_regions(evac_failure_regions) { }
-
-  virtual ~RedirtyLoggedCardsTask() {
-    G1DirtyCardQueueSet& dcq = G1BarrierSet::dirty_card_queue_set();
-    dcq.merge_bufferlists(_rdcqs);
-    _rdcqs->verify_empty();
-  }
 
   double worker_cost() const override {
     // Needs more investigation.
@@ -614,13 +608,23 @@ public:
 
   void do_work(uint worker_id) override {
     RedirtyLoggedCardTableEntryClosure cl(G1CollectedHeap::heap(), _evac_failure_regions);
-    BufferNode* next = Atomic::load(&_nodes);
-    while (next != nullptr) {
-      BufferNode* node = next;
-      next = Atomic::cmpxchg(&_nodes, node, node->next());
-      if (next == node) {
-        cl.apply_to_buffer(node, worker_id);
-        next = node->next();
+
+    uint start = worker_id;
+    for (uint i = 0; i < _num_buffer_lists; i++) {
+      uint index = (start + i) % _num_buffer_lists;
+
+      BufferNode* next = Atomic::load(&_rdc_buffers[index]._head);
+      BufferNode* tail = Atomic::load(&_rdc_buffers[index]._tail);
+
+      while (next != nullptr) {
+        BufferNode* node = next;
+        next = Atomic::cmpxchg(&_rdc_buffers[index]._head, node, (node != tail ) ? node->next() : nullptr);
+        if (next == node) {
+          cl.apply_to_buffer(node, worker_id);
+          next = (node != tail ) ? node->next() : nullptr;
+        } else {
+          break; // If there is contention, move to the next BufferNodeList
+        }
       }
     }
     record_work_item(worker_id, 0, cl.num_dirtied());
@@ -970,7 +974,10 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
     add_parallel_task(new RestorePreservedMarksTask(per_thread_states->preserved_marks_set()));
     add_parallel_task(new ProcessEvacuationFailedRegionsTask(evac_failure_regions));
   }
-  add_parallel_task(new RedirtyLoggedCardsTask(per_thread_states->rdcqs(), evac_failure_regions));
+  add_parallel_task(new RedirtyLoggedCardsTask(evac_failure_regions,
+                                               per_thread_states->rdc_buffers(),
+                                               per_thread_states->num_workers()));
+
   if (UseTLAB && ResizeTLAB) {
     add_parallel_task(new ResizeTLABsTask());
   }

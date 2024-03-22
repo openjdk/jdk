@@ -359,6 +359,7 @@ class AbstractAssembler : public ResourceObj  {
   }
 
   static bool is_uimm12(uint64_t x) { return is_uimm(x, 12); }
+  static bool is_uimm32(uint64_t x) { return is_uimm(x, 32); }
 
   // Accessors
   CodeSection*  code_section() const   { return _code_section; }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -519,7 +519,7 @@ int CallDynamicJavaDirectNode::compute_padding(int current_offset) const
 }
 
 // This could be in MacroAssembler but it's fairly C2 specific
-void emit_cmpfp_fixup(MacroAssembler* masm) {
+static void emit_cmpfp_fixup(MacroAssembler* masm) {
   Label exit;
   __ jccb(Assembler::noParity, exit);
   __ pushf();
@@ -539,7 +539,7 @@ void emit_cmpfp_fixup(MacroAssembler* masm) {
   __ bind(exit);
 }
 
-void emit_cmpfp3(MacroAssembler* masm, Register dst) {
+static void emit_cmpfp3(MacroAssembler* masm, Register dst) {
   Label done;
   __ movl(dst, -1);
   __ jcc(Assembler::parity, done);
@@ -558,10 +558,10 @@ void emit_cmpfp3(MacroAssembler* masm, Register dst) {
 // je            #
 // |-jz -> a | b # a & b
 // |    -> a     #
-void emit_fp_min_max(MacroAssembler* masm, XMMRegister dst,
-                     XMMRegister a, XMMRegister b,
-                     XMMRegister xmmt, Register rt,
-                     bool min, bool single) {
+static void emit_fp_min_max(MacroAssembler* masm, XMMRegister dst,
+                            XMMRegister a, XMMRegister b,
+                            XMMRegister xmmt, Register rt,
+                            bool min, bool single) {
 
   Label nan, zero, below, above, done;
 
@@ -1444,39 +1444,18 @@ void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 {
   if (UseCompressedClassPointers) {
     st->print_cr("movl    rscratch1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
-    st->print_cr("\tdecode_klass_not_null rscratch1, rscratch1");
-    st->print_cr("\tcmpq    rax, rscratch1\t # Inline cache check");
+    st->print_cr("\tcmpl    rscratch1, [rax + CompiledICData::speculated_klass_offset()]\t # Inline cache check");
   } else {
-    st->print_cr("\tcmpq    rax, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t"
-                 "# Inline cache check");
+    st->print_cr("movq    rscratch1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tcmpq    rscratch1, [rax + CompiledICData::speculated_klass_offset()]\t # Inline cache check");
   }
   st->print_cr("\tjne     SharedRuntime::_ic_miss_stub");
-  st->print_cr("\tnop\t# nops to align entry point");
 }
 #endif
 
 void MachUEPNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
 {
-  uint insts_size = __ offset();
-  if (UseCompressedClassPointers) {
-    __ load_klass(rscratch1, j_rarg0, rscratch2);
-    __ cmpptr(rax, rscratch1);
-  } else {
-    __ cmpptr(rax, Address(j_rarg0, oopDesc::klass_offset_in_bytes()));
-  }
-
-  __ jump_cc(Assembler::notEqual, RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
-
-  /* WARNING these NOPs are critical so that verified entry point is properly
-     4 bytes aligned for patching by NativeJump::patch_verified_entry() */
-  int nops_cnt = 4 - ((__ offset() - insts_size) & 0x3);
-  if (OptoBreakpoint) {
-    // Leave space for int3
-    nops_cnt -= 1;
-  }
-  nops_cnt &= 0x3; // Do not add nops if code is aligned.
-  if (nops_cnt > 0)
-    __ nop(nops_cnt);
+  __ ic_check(InteriorEntryAlignment);
 }
 
 uint MachUEPNode::size(PhaseRegAlloc* ra_) const
@@ -1804,7 +1783,7 @@ encode %{
         __ code()->shared_stub_to_interp_for(_method, call_offset);
       } else {
         // Emit stubs for static call.
-        address stub = CompiledStaticCall::emit_to_interp_stub(masm, mark);
+        address stub = CompiledDirectCall::emit_to_interp_stub(masm, mark);
         __ clear_inst_mark();
         if (stub == nullptr) {
           ciEnv::current()->record_failure("CodeCache is full");
@@ -2111,28 +2090,6 @@ operand immU31()
   interface(CONST_INTER);
 %}
 
-// Constant for long shifts
-operand immI_32()
-%{
-  predicate( n->get_int() == 32 );
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Constant for long shifts
-operand immI_64()
-%{
-  predicate( n->get_int() == 64 );
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // Pointer Immediate
 operand immP()
 %{
@@ -2143,7 +2100,7 @@ operand immP()
   interface(CONST_INTER);
 %}
 
-// nullptr Pointer Immediate
+// Null Pointer Immediate
 operand immP0()
 %{
   predicate(n->get_ptr() == 0);
@@ -2171,7 +2128,7 @@ operand immNKlass() %{
   interface(CONST_INTER);
 %}
 
-// nullptr Pointer Immediate
+// Null Pointer Immediate
 operand immN0() %{
   predicate(n->get_narrowcon() == 0);
   match(ConN);
@@ -2283,28 +2240,6 @@ operand immL_M1()
   predicate(n->get_long() == -1);
   match(ConL);
 
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Long Immediate: the value 10
-operand immL10()
-%{
-  predicate(n->get_long() == 10);
-  match(ConL);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Long immediate from 0 to 127.
-// Used for a shorter form of long mul by 10.
-operand immL_127()
-%{
-  predicate(0 <= n->get_long() && n->get_long() < 0x80);
-  match(ConL);
-
-  op_cost(10);
   format %{ %}
   interface(CONST_INTER);
 %}
@@ -2438,64 +2373,6 @@ operand immL_65535()
 operand kReg()
 %{
   constraint(ALLOC_IN_RC(vectmask_reg));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K1()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K1));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K2()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K2));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-// Special Registers
-operand kReg_K3()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K3));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K4()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K4));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K5()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K5));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K6()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K6));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-// Special Registers
-operand kReg_K7()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K7));
   match(RegVectMask);
   format %{%}
   interface(REG_INTER);
@@ -2648,18 +2525,6 @@ operand rRegN() %{
 // the RBP is used as a proper frame pointer and is not included in ptr_reg. As a
 // result, RBP is not included in the output of the instruction either.
 
-operand no_rax_RegP()
-%{
-  constraint(ALLOC_IN_RC(ptr_no_rax_reg));
-  match(RegP);
-  match(rbx_RegP);
-  match(rsi_RegP);
-  match(rdi_RegP);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 // This operand is not allowed to use RBP even if
 // RBP is not used to hold the frame pointer.
 operand no_rbp_RegP()
@@ -2667,17 +2532,6 @@ operand no_rbp_RegP()
   constraint(ALLOC_IN_RC(ptr_reg_no_rbp));
   match(RegP);
   match(rbx_RegP);
-  match(rsi_RegP);
-  match(rdi_RegP);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand no_rax_rbx_RegP()
-%{
-  constraint(ALLOC_IN_RC(ptr_no_rax_rbx_reg));
-  match(RegP);
   match(rsi_RegP);
   match(rdi_RegP);
 
@@ -4444,7 +4298,7 @@ instruct loadD(regD dst, memory mem)
 
 // max = java.lang.Math.max(float a, float b)
 instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp) %{
-  predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MaxF a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
   format %{ "maxF $dst, $a, $b \t! using tmp, atmp and btmp as TEMP" %}
@@ -4455,7 +4309,7 @@ instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
 %}
 
 instruct maxF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRegI tmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MaxF a b));
   effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
 
@@ -4469,7 +4323,7 @@ instruct maxF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRe
 
 // max = java.lang.Math.max(double a, double b)
 instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp) %{
-  predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MaxD a b));
   effect(USE a, USE b, TEMP atmp, TEMP btmp, TEMP tmp);
   format %{ "maxD $dst, $a, $b \t! using tmp, atmp and btmp as TEMP" %}
@@ -4480,7 +4334,7 @@ instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
 %}
 
 instruct maxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xmmt, rRegL tmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MaxD a b));
   effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
 
@@ -4494,7 +4348,7 @@ instruct maxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xmmt, rRe
 
 // min = java.lang.Math.min(float a, float b)
 instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp) %{
-  predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MinF a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
   format %{ "minF $dst, $a, $b \t! using tmp, atmp and btmp as TEMP" %}
@@ -4505,7 +4359,7 @@ instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
 %}
 
 instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRegI tmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MinF a b));
   effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
 
@@ -4519,7 +4373,7 @@ instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRe
 
 // min = java.lang.Math.min(double a, double b)
 instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp) %{
-  predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MinD a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
     format %{ "minD $dst, $a, $b \t! using tmp, atmp and btmp as TEMP" %}
@@ -4530,7 +4384,7 @@ instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
 %}
 
 instruct minD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xmmt, rRegL tmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MinD a b));
   effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
 
@@ -4866,7 +4720,7 @@ instruct loadConF(regF dst, immF con) %{
 instruct loadConN0(rRegN dst, immN0 src, rFlagsReg cr) %{
   match(Set dst src);
   effect(KILL cr);
-  format %{ "xorq    $dst, $src\t# compressed nullptr ptr" %}
+  format %{ "xorq    $dst, $src\t# compressed null pointer" %}
   ins_encode %{
     __ xorq($dst$$Register, $dst$$Register);
   %}
@@ -5133,7 +4987,7 @@ instruct storeImmP0(memory mem, immP0 zero)
   ins_pipe(ialu_mem_reg);
 %}
 
-// Store nullptr Pointer, mark word, or other simple pointer constant.
+// Store Null Pointer, mark word, or other simple pointer constant.
 instruct storeImmP(memory mem, immP31 src)
 %{
   predicate(n->as_Store()->barrier_data() == 0);
@@ -12368,7 +12222,7 @@ instruct cmpFastLockRTM(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, 
 %}
 
 instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRegP scr) %{
-  predicate(!Compile::current()->use_rtm());
+  predicate(LockingMode != LM_LIGHTWEIGHT && !Compile::current()->use_rtm());
   match(Set cr (FastLock object box));
   effect(TEMP tmp, TEMP scr, USE_KILL box);
   ins_cost(300);
@@ -12381,12 +12235,37 @@ instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRe
 %}
 
 instruct cmpFastUnlock(rFlagsReg cr, rRegP object, rax_RegP box, rRegP tmp) %{
+  predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set cr (FastUnlock object box));
   effect(TEMP tmp, USE_KILL box);
   ins_cost(300);
   format %{ "fastunlock $object,$box\t! kills $box,$tmp" %}
   ins_encode %{
     __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register, ra_->C->use_rtm());
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmpFastLockLightweight(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI rax_reg, rRegP tmp) %{
+  predicate(LockingMode == LM_LIGHTWEIGHT);
+  match(Set cr (FastLock object box));
+  effect(TEMP rax_reg, TEMP tmp, USE_KILL box);
+  ins_cost(300);
+  format %{ "fastlock $object,$box\t! kills $box,$rax_reg,$tmp" %}
+  ins_encode %{
+    __ fast_lock_lightweight($object$$Register, $box$$Register, $rax_reg$$Register, $tmp$$Register, r15_thread);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmpFastUnlockLightweight(rFlagsReg cr, rRegP object, rax_RegP rax_reg, rRegP tmp) %{
+  predicate(LockingMode == LM_LIGHTWEIGHT);
+  match(Set cr (FastUnlock object rax_reg));
+  effect(TEMP tmp, USE_KILL rax_reg);
+  ins_cost(300);
+  format %{ "fastunlock $object,$rax_reg\t! kills $rax_reg,$tmp" %}
+  ins_encode %{
+    __ fast_unlock_lightweight($object$$Register, $rax_reg$$Register, $tmp$$Register, r15_thread);
   %}
   ins_pipe(pipe_slow);
 %}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -352,6 +352,15 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * digits as well as all Unicode decimal digits, as defined by
  * {@link Character#digit Character.digit}, are recognized.
  *
+ * <h3 id="digit_limits"> Integer and Fraction Digit Limits </h3>
+ *
+ * @implSpec
+ * When formatting a {@code Number} other than {@code BigInteger} and
+ * {@code BigDecimal}, {@code 309} is used as the upper limit for integer digits,
+ * and {@code 340} as the upper limit for fraction digits. This occurs, even if
+ * one of the {@code DecimalFormat} getter methods, for example, {@link #getMinimumFractionDigits()}
+ * returns a numerically greater value.
+ *
  * <h4>Special Values</h4>
  *
  * <p>Not a Number({@code NaN}) is formatted as a string, which typically has a
@@ -440,6 +449,7 @@ public class DecimalFormat extends NumberFormat {
      * @see java.text.NumberFormat#getCurrencyInstance
      * @see java.text.NumberFormat#getPercentInstance
      */
+    @SuppressWarnings("this-escape")
     public DecimalFormat() {
         // Get the pattern for the default locale.
         Locale def = Locale.getDefault(Locale.Category.FORMAT);
@@ -476,6 +486,7 @@ public class DecimalFormat extends NumberFormat {
      * @see java.text.NumberFormat#getCurrencyInstance
      * @see java.text.NumberFormat#getPercentInstance
      */
+    @SuppressWarnings("this-escape")
     public DecimalFormat(String pattern) {
         // Always applyPattern after the symbols are set
         this.symbols = DecimalFormatSymbols.getInstance(Locale.getDefault(Locale.Category.FORMAT));
@@ -506,6 +517,7 @@ public class DecimalFormat extends NumberFormat {
      * @see java.text.NumberFormat#getPercentInstance
      * @see java.text.DecimalFormatSymbols
      */
+    @SuppressWarnings("this-escape")
     public DecimalFormat (String pattern, DecimalFormatSymbols symbols) {
         // Always applyPattern after the symbols are set
         this.symbols = (DecimalFormatSymbols)symbols.clone();
@@ -2997,6 +3009,17 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
+     * {@return a string identifying this {@code DecimalFormat}, for debugging}
+     */
+    @Override
+    public String toString() {
+        return
+            """
+            DecimalFormat [locale: "%s", pattern: "%s"]
+            """.formatted(symbols.getLocale().getDisplayName(), toPattern());
+    }
+
+    /**
      * Synthesizes a pattern string that represents the current state
      * of this Format object.
      *
@@ -3260,66 +3283,86 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Does the real work of generating a pattern.  */
+     * Implementation of producing a pattern. This method returns a positive and
+     * negative (if needed), pattern string in the form of : Prefix (optional)
+     * Number Suffix (optional). A NegativePattern is only produced if the
+     * prefix or suffix patterns differs.
+     */
     private String toPattern(boolean localized) {
+        // Determine symbol values; use DFS if localized
+        char zeroSymbol = localized ? symbols.getZeroDigit() : PATTERN_ZERO_DIGIT;
+        char digitSymbol = localized ? symbols.getDigit() : PATTERN_DIGIT;
+        char groupingSymbol = localized ?
+                (isCurrencyFormat ? symbols.getMonetaryGroupingSeparator() : symbols.getGroupingSeparator()) :
+                PATTERN_GROUPING_SEPARATOR;
+        char decimalSymbol = localized ?
+                (isCurrencyFormat ? symbols.getMonetaryDecimalSeparator() : symbols.getDecimalSeparator()) :
+                PATTERN_DECIMAL_SEPARATOR;
+        String exponentSymbol = localized ? symbols.getExponentSeparator() : PATTERN_EXPONENT;
+        char patternSeparator = localized ? symbols.getPatternSeparator() : PATTERN_SEPARATOR;
+
         StringBuilder result = new StringBuilder();
+        // j == 1 denotes PositivePattern, j == 0 denotes NegativePattern
         for (int j = 1; j >= 0; --j) {
-            if (j == 1)
-                appendAffix(result, posPrefixPattern, positivePrefix, localized);
-            else appendAffix(result, negPrefixPattern, negativePrefix, localized);
-            int i;
-            int digitCount = useExponentialNotation
-                        ? getMaximumIntegerDigits()
-                        : Math.max(groupingSize, getMinimumIntegerDigits())+1;
-            for (i = digitCount; i > 0; --i) {
-                if (i != digitCount && isGroupingUsed() && groupingSize != 0 &&
-                    i % groupingSize == 0) {
-                    result.append(localized ?
-                        (isCurrencyFormat ? symbols.getMonetaryGroupingSeparator() : symbols.getGroupingSeparator()) :
-                        PATTERN_GROUPING_SEPARATOR);
-                }
-                result.append(i <= getMinimumIntegerDigits()
-                    ? (localized ? symbols.getZeroDigit() : PATTERN_ZERO_DIGIT)
-                    : (localized ? symbols.getDigit() : PATTERN_DIGIT));
-            }
-            if (getMaximumFractionDigits() > 0 || decimalSeparatorAlwaysShown)
-                result.append(localized ?
-                    (isCurrencyFormat ? symbols.getMonetaryDecimalSeparator() : symbols.getDecimalSeparator()) :
-                    PATTERN_DECIMAL_SEPARATOR);
-            for (i = 0; i < getMaximumFractionDigits(); ++i) {
-                if (i < getMinimumFractionDigits()) {
-                    result.append(localized ? symbols.getZeroDigit() :
-                                  PATTERN_ZERO_DIGIT);
-                } else {
-                    result.append(localized ? symbols.getDigit() :
-                                  PATTERN_DIGIT);
-                }
-            }
-        if (useExponentialNotation)
-        {
-            result.append(localized ? symbols.getExponentSeparator() :
-                  PATTERN_EXPONENT);
-        for (i=0; i<minExponentDigits; ++i)
-                    result.append(localized ? symbols.getZeroDigit() :
-                                  PATTERN_ZERO_DIGIT);
-        }
             if (j == 1) {
-                appendAffix(result, posSuffixPattern, positiveSuffix, localized);
-                if ((negSuffixPattern == posSuffixPattern && // n == p == null
-                     negativeSuffix.equals(positiveSuffix))
-                    || (negSuffixPattern != null &&
-                        negSuffixPattern.equals(posSuffixPattern))) {
-                    if ((negPrefixPattern != null && posPrefixPattern != null &&
-                         negPrefixPattern.equals("'-" + posPrefixPattern)) ||
-                        (negPrefixPattern == posPrefixPattern && // n == p == null
-                         negativePrefix.equals(symbols.getMinusSignText() + positivePrefix)))
-                        break;
+                // Append positive and negative (if needed) prefix pattern
+                appendAffix(result, posPrefixPattern, positivePrefix, localized);
+            } else {
+                appendAffix(result, negPrefixPattern, negativePrefix, localized);
+            }
+            // Append integer digits
+            int digitCount = useExponentialNotation ? getMaximumIntegerDigits() :
+                    Math.max(groupingSize, getMinimumIntegerDigits()) + 1;
+            for (int i = digitCount; i > 0; --i) {
+                if (i != digitCount && isGroupingUsed() && groupingSize != 0 &&
+                        i % groupingSize == 0) {
+                    result.append(groupingSymbol);
                 }
-                result.append(localized ? symbols.getPatternSeparator() :
-                              PATTERN_SEPARATOR);
-            } else appendAffix(result, negSuffixPattern, negativeSuffix, localized);
+                result.append(i <= getMinimumIntegerDigits() ? zeroSymbol : digitSymbol);
+            }
+            // Append decimal symbol
+            if (getMaximumFractionDigits() > 0 || decimalSeparatorAlwaysShown) {
+                result.append(decimalSymbol);
+            }
+            // Append fraction digits
+            result.repeat(zeroSymbol, getMinimumFractionDigits());
+            result.repeat(digitSymbol, getMaximumFractionDigits() - getMinimumFractionDigits());
+            // Append exponent symbol and digits
+            if (useExponentialNotation) {
+                result.append(exponentSymbol);
+                result.repeat(zeroSymbol, minExponentDigits);
+            }
+            if (j == 1) {
+                // Append positive suffix pattern
+                appendAffix(result, posSuffixPattern, positiveSuffix, localized);
+                if (posEqualsNegPattern()) {
+                    // Negative pattern not needed if suffix/prefix are equivalent
+                    break;
+                }
+                result.append(patternSeparator);
+            } else {
+                appendAffix(result, negSuffixPattern, negativeSuffix, localized);
+            }
         }
         return result.toString();
+    }
+
+    /**
+     * This method returns true if the positive and negative prefix/suffix
+     * values are equivalent. This is used to determine if an explicit NegativePattern
+     * is required.
+     */
+    private boolean posEqualsNegPattern() {
+        // Check suffix
+        return ((negSuffixPattern == posSuffixPattern && // n == p == null
+                negativeSuffix.equals(positiveSuffix))
+                || (negSuffixPattern != null &&
+                negSuffixPattern.equals(posSuffixPattern)))
+                && // Check prefix
+                ((negPrefixPattern != null && posPrefixPattern != null &&
+                negPrefixPattern.equals("'-" + posPrefixPattern)) ||
+                (negPrefixPattern == posPrefixPattern && // n == p == null
+                negativePrefix.equals(symbols.getMinusSignText() + positivePrefix)));
     }
 
     /**
@@ -3689,7 +3732,9 @@ public class DecimalFormat extends NumberFormat {
             setMinimumIntegerDigits(0);
             setMaximumIntegerDigits(MAXIMUM_INTEGER_DIGITS);
             setMinimumFractionDigits(0);
-            setMaximumFractionDigits(MAXIMUM_FRACTION_DIGITS);
+            // As maxFracDigits are fully displayed unlike maxIntDigits
+            // Prevent OOME by setting to a much more reasonable value.
+            setMaximumFractionDigits(DOUBLE_FRACTION_DIGITS);
         }
 
         // If there was no negative pattern, or if the negative pattern is
@@ -3707,11 +3752,9 @@ public class DecimalFormat extends NumberFormat {
 
     /**
      * Sets the maximum number of digits allowed in the integer portion of a
-     * number.
-     * For formatting numbers other than {@code BigInteger} and
-     * {@code BigDecimal} objects, the lower of {@code newValue} and
-     * 309 is used. Negative input values are replaced with 0.
+     * number. Negative input values are replaced with 0.
      * @see NumberFormat#setMaximumIntegerDigits
+     * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
     public void setMaximumIntegerDigits(int newValue) {
@@ -3726,11 +3769,9 @@ public class DecimalFormat extends NumberFormat {
 
     /**
      * Sets the minimum number of digits allowed in the integer portion of a
-     * number.
-     * For formatting numbers other than {@code BigInteger} and
-     * {@code BigDecimal} objects, the lower of {@code newValue} and
-     * 309 is used. Negative input values are replaced with 0.
+     * number. Negative input values are replaced with 0.
      * @see NumberFormat#setMinimumIntegerDigits
+     * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
     public void setMinimumIntegerDigits(int newValue) {
@@ -3745,11 +3786,9 @@ public class DecimalFormat extends NumberFormat {
 
     /**
      * Sets the maximum number of digits allowed in the fraction portion of a
-     * number.
-     * For formatting numbers other than {@code BigInteger} and
-     * {@code BigDecimal} objects, the lower of {@code newValue} and
-     * 340 is used. Negative input values are replaced with 0.
+     * number. Negative input values are replaced with 0.
      * @see NumberFormat#setMaximumFractionDigits
+     * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
     public void setMaximumFractionDigits(int newValue) {
@@ -3764,11 +3803,9 @@ public class DecimalFormat extends NumberFormat {
 
     /**
      * Sets the minimum number of digits allowed in the fraction portion of a
-     * number.
-     * For formatting numbers other than {@code BigInteger} and
-     * {@code BigDecimal} objects, the lower of {@code newValue} and
-     * 340 is used. Negative input values are replaced with 0.
+     * number. Negative input values are replaced with 0.
      * @see NumberFormat#setMinimumFractionDigits
+     * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
     public void setMinimumFractionDigits(int newValue) {
@@ -3783,11 +3820,11 @@ public class DecimalFormat extends NumberFormat {
 
     /**
      * Gets the maximum number of digits allowed in the integer portion of a
-     * number.
-     * For formatting numbers other than {@code BigInteger} and
-     * {@code BigDecimal} objects, the lower of the return value and
-     * 309 is used.
+     * number. The maximum number of integer digits can be set by either {@link #setMaximumIntegerDigits(int)}
+     * or {@link #applyPattern(String)}. See the {@link ##patterns Pattern Section} for
+     * comprehensive rules regarding maximum integer digits in patterns.
      * @see #setMaximumIntegerDigits
+     * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
     public int getMaximumIntegerDigits() {
@@ -3797,10 +3834,8 @@ public class DecimalFormat extends NumberFormat {
     /**
      * Gets the minimum number of digits allowed in the integer portion of a
      * number.
-     * For formatting numbers other than {@code BigInteger} and
-     * {@code BigDecimal} objects, the lower of the return value and
-     * 309 is used.
      * @see #setMinimumIntegerDigits
+     * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
     public int getMinimumIntegerDigits() {
@@ -3810,10 +3845,8 @@ public class DecimalFormat extends NumberFormat {
     /**
      * Gets the maximum number of digits allowed in the fraction portion of a
      * number.
-     * For formatting numbers other than {@code BigInteger} and
-     * {@code BigDecimal} objects, the lower of the return value and
-     * 340 is used.
      * @see #setMaximumFractionDigits
+     * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
     public int getMaximumFractionDigits() {
@@ -3823,10 +3856,8 @@ public class DecimalFormat extends NumberFormat {
     /**
      * Gets the minimum number of digits allowed in the fraction portion of a
      * number.
-     * For formatting numbers other than {@code BigInteger} and
-     * {@code BigDecimal} objects, the lower of the return value and
-     * 340 is used.
      * @see #setMinimumFractionDigits
+     * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
     public int getMinimumFractionDigits() {
@@ -4193,6 +4224,7 @@ public class DecimalFormat extends NumberFormat {
      * @see #getMaximumIntegerDigits
      * @since 1.5
      */
+    @SuppressWarnings("this-escape")
     private int    maximumIntegerDigits = super.getMaximumIntegerDigits();
 
     /**
@@ -4205,6 +4237,7 @@ public class DecimalFormat extends NumberFormat {
      * @see #getMinimumIntegerDigits
      * @since 1.5
      */
+    @SuppressWarnings("this-escape")
     private int    minimumIntegerDigits = super.getMinimumIntegerDigits();
 
     /**
@@ -4217,6 +4250,7 @@ public class DecimalFormat extends NumberFormat {
      * @see #getMaximumFractionDigits
      * @since 1.5
      */
+    @SuppressWarnings("this-escape")
     private int    maximumFractionDigits = super.getMaximumFractionDigits();
 
     /**
@@ -4229,6 +4263,7 @@ public class DecimalFormat extends NumberFormat {
      * @see #getMinimumFractionDigits
      * @since 1.5
      */
+    @SuppressWarnings("this-escape")
     private int    minimumFractionDigits = super.getMinimumFractionDigits();
 
     /**
