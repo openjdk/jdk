@@ -47,7 +47,7 @@ import java.net.URL;
  * @bug 4175560
  * @key headful
  * @summary Test use of user-defined icons
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual MegaIconTest
  */

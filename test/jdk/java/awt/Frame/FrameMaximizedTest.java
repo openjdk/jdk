@@ -29,7 +29,7 @@ import java.awt.Label;
  * @bug 4106068
  * @key headful
  * @summary Test to verify maximized window is not too big
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual FrameMaximizedTest
  */

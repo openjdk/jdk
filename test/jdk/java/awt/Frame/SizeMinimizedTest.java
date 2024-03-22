@@ -33,7 +33,7 @@ import java.util.List;
  * @bug 4065534
  * @key headful
  * @summary Frame.setSize() doesn't change size if window is in an iconified state
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual SizeMinimizedTest
  */
