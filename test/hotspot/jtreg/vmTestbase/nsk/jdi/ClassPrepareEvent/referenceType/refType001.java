@@ -273,7 +273,7 @@ public class refType001 {
             // wait for all expected events received or timeout exceeds
             try {
                 if (!eventsReceivedLatch.await(eventTimeout, TimeUnit.MILLISECONDS)) {
-                    log.complain("FAILURE 20: Timeout for waiting event was exceeded");
+                    log.complain("FAILURE 20: Timeout waiting for all events was exceeded");
                     testFailed = true;
                 }
             } catch (InterruptedException e) {
