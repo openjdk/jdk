@@ -999,7 +999,7 @@ void Parse::do_exits() {
   //
   // 3. On processors which are not CPU_MULTI_COPY_ATOMIC (e.g. PPC64),
   //    support_IRIW_for_not_multiple_copy_atomic_cpu selects that
-  //    MemBarVolatile is used before volatile load instead of after volatile
+  //    MemBarStoreStore is used before volatile load instead of after volatile
   //    store, so there's no barrier after the store.
   //    We want to guarantee the same behavior as on platforms with total store
   //    order, although this is not required by the Java memory model.
@@ -1012,30 +1012,22 @@ void Parse::do_exits() {
   // such unusual early publications.  But no barrier is needed on
   // exceptional returns, since they cannot publish normally.
   //
-  if (method()->is_initializer()) {
-    Node *bar = nullptr;
-    if ((AlwaysSafeConstructors && wrote_fields()) ||
-        (support_IRIW_for_not_multiple_copy_atomic_cpu && wrote_volatile())) {
-      bar = _exits.insert_mem_bar(Op_MemBarRelease, alloc_with_final());
-    } else if (wrote_final()) {
-      bar = _exits.insert_mem_bar(
-          Op_MemBarStoreStore,
-          alloc_with_final() == nullptr ? nullptr : alloc_with_final()->in(1));
-    }
+  if (method()->is_initializer() &&
+       (wrote_final() ||
+         (AlwaysSafeConstructors && wrote_fields()) ||
+         (support_IRIW_for_not_multiple_copy_atomic_cpu && wrote_volatile()))) {
+    _exits.insert_mem_bar(Op_MemBarStoreStore, alloc_with_final());
 
-    if (bar != nullptr) {
-      // If Memory barrier is created for final fields write
-      // and allocation node does not escape the initialize method,
-      // then barrier introduced by allocation node can be removed.
-      if (DoEscapeAnalysis && alloc_with_final() != nullptr) {
-        AllocateNode *alloc =
-            AllocateNode::Ideal_allocation(alloc_with_final());
-        alloc->compute_MemBar_redundancy(method());
-      }
-      if (PrintOpto && (Verbose || WizardMode)) {
-        method()->print_name();
-        tty->print_cr(" writes finals and needs a memory barrier");
-      }
+    // If Memory barrier is created for final fields write
+    // and allocation node does not escape the initialize method,
+    // then barrier introduced by allocation node can be removed.
+    if (DoEscapeAnalysis && alloc_with_final()) {
+      AllocateNode* alloc = AllocateNode::Ideal_allocation(alloc_with_final());
+      alloc->compute_MemBar_redundancy(method());
+    }
+    if (PrintOpto && (Verbose || WizardMode)) {
+      method()->print_name();
+      tty->print_cr(" writes finals and needs a memory barrier");
     }
   }
 
