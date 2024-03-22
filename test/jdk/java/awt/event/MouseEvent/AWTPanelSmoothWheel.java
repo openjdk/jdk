@@ -28,8 +28,6 @@ import java.awt.Panel;
 import java.awt.event.MouseWheelEvent;
 import javax.swing.JOptionPane;
 
-import static javax.swing.JOptionPane.WARNING_MESSAGE;
-
 /*
  * @test
  * @bug 6730447
@@ -48,16 +46,23 @@ public class AWTPanelSmoothWheel {
     private static final String INSTRUCTIONS = """
             <html>
             <body>
-            This test is relevant on platforms with high-resolution mouse wheel,
-            please press PASS if this is not the case.<br> <br>
+            This test is relevant on platforms with high-resolution mouse wheel
+            or a trackpad can be used too.
+            Please press PASS if this is not the case.<br> <br>
 
             Place the mouse cursor above the green panel and rotate the mouse wheel,
             the test will print mouse wheel event messages in the format
             <b> [Event#, WheelRotation, PreciseWheelRotation]</b> into the logging
             panel below the instruction window.<br> <br>
 
-            A hi-res mouse is one which produces MouseWheelEvents having:
+            A hi-res mouse/trackpad is one which produces MouseWheelEvents having:
             <pre><b> Math.abs(preciseWheelRotation) &lt; 1. </b></pre><br>
+
+            Check if the test works OK when the mouse-wheel/trackpad is scrolled
+            very slowly.<br> <br>
+            This is a semi-automated test, if you are using a hi-res mouse/trackpad
+            and it satisfies the hi-res MouseWheelEvents as described below,
+            the test should automatically pass.<br> <br>
 
             When preciseWheelRotation adds up, wheelRotation becomes non-zero
             (can be negative when mouse wheel is scrolled down). <br>
@@ -65,23 +70,17 @@ public class AWTPanelSmoothWheel {
             preciseWheelRotation &lt; 1 &amp; wheelRotation = 0 followed by
             an event where wheelRotation != 0 in the logs.<br> <br>
 
-            Check if the test works OK when the mouse wheel is rotated very slow.<br> <br>
-            This is a semi-automated test, if you are using a hi-res mouse and
-            it satisfies the hi-res MouseWheelEvents as described above,
-            the test should automatically pass.<br> <br>
-
             <hr>
-            PLEASE NOTE:
+            <b> NOTE: </b>
             <ul>
                 <li> If you don't see events with preciseWheelRotation &lt; 1,
-                then the mouse doesn't support high-resolution scrolling.</li>
+                then the mouse doesn't support high-resolution scrolling. </li>
                 <li> A warning is shown if you are not using a hi-res mouse. </li>
                 <li> MouseWheelEvent logs are displayed in the log area
                 for user reference. </li>
-                <li> When mouse is scrolled up, preciseWheelRotation & wheelRotation are positive
-                 and they are negative when scrolled down. </li>
+                <li> When mouse is scrolled up, preciseWheelRotation & wheelRotation
+                 are positive and they are negative when scrolled down. </li>
             </ul>
-            <br>
             </body>
             </html>
             """;
@@ -115,7 +114,7 @@ public class AWTPanelSmoothWheel {
                 if (wheelEventCount >= 5 && hiResWheelCount == 0) {
                     PassFailJFrame.log(WARNING_MSG);
                     JOptionPane.showMessageDialog(frame, WARNING_MSG,
-                            "WARNING", WARNING_MESSAGE);
+                            "Warning", JOptionPane.WARNING_MESSAGE);
                 }
                 if (e.getWheelRotation() != 0 && hiResWheelCount > 0) {
                     PassFailJFrame.log("The test passes: hiResWheelCount = "
