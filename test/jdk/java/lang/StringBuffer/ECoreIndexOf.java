@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.nio.charset.Charset;
+import java.lang.Math;
 
 // @ECoreIndexOf(singleThreaded=true)
 public class ECoreIndexOf {
@@ -42,6 +43,7 @@ public class ECoreIndexOf {
   static char[] haystack = new char[128];
   static char[] haystack_16 = new char[128];
 
+  static boolean verbose = false;
   static boolean success = true;
 
   static Map<Charset, String> titles = new HashMap<Charset, String>();
@@ -52,48 +54,9 @@ public class ECoreIndexOf {
     String testName = "ECoreIndexOf";
 
     generator = new Random();
-    long seed = -5291521104060046276L; //generator.nextLong();
+    long seed = generator.nextLong();//-5291521104060046276L;
     generator.setSeed(seed);
     System.out.println("Seed set to "+ seed);
-    {
-      foo = 0;
-      int nResult = 0;
-      int num = 1;
-
-      String[] latn1_short = new String[100];
-      String[] latn1_sse4 = new String[100];
-      String[] latn1_avx2 = new String[100];
-      String[] latn1_mixedLength = new String[100];
-      String[] utf16_short = new String[100];
-      String[] utf16_sse4 = new String[100];
-      String[] utf16_avx2 = new String[100];
-      String[] utf16_mixedLength = new String[100];
-
-      for (int i = 0; i < 100; i++) {
-        latn1_short[i] = makeRndString(false, 15);
-        latn1_sse4[i] = makeRndString(false, 16);
-        latn1_avx2[i] = makeRndString(false, 32);
-        utf16_short[i] = makeRndString(true, 7);
-        utf16_sse4[i] = makeRndString(true, 8);
-        utf16_avx2[i] = makeRndString(true, 16);
-        latn1_mixedLength[i] = makeRndString(false, rng.nextInt(65));
-        utf16_mixedLength[i] = makeRndString(true, rng.nextInt(65));
-      }
-
-      int xxyy = 0;
-      for (int i = 0; i < 12000; i++) {
-        for (String what : utf16_mixedLength) {
-          foo = indexOfKernel(what, "a");
-          nResult = naiveFind(what, "a");
-          if (nResult != foo) {
-            System.err.println("indexOfChar (" + num + ") stub=" + foo + ", naive=" + nResult + "length=" + what.length());
-            PrintError(foo, nResult, num, "indexOfChar", what, "a");
-            xxyy = 1;
-          }
-        }
-        if (xxyy == 1) break;
-      }
-    }
 
     ///////////////////////////  WARM-UP //////////////////////////
 
@@ -131,709 +94,6 @@ public class ECoreIndexOf {
       foo += indexOfKernel(sb, c16, 0);
     }
 
-    System.err.println("*************************************");
-
-    StringBuffer sb = new StringBuffer("\u0161".repeat(127));
-    String n1 = "\u0161".repeat(3) + "\u0000";
-    for (int gg = 0; gg < 20000000; gg++) {
-      foo += indexOfKernel(sb, n1, 123);
-    }
-
-    //////////////////////////////////////////////////////////////////////
-    // Test routines used in benchmarks
-    //
-    // From StringIndexofHuge
-    for (int xx = 0; xx < 2; xx++) {
-      int num = 1;
-
-      String dataString = "ngdflsoscargfdgf";
-      String dataString16 = "ngdfilso\u01facargfd\u01eef";
-      String dataStringHuge = (("A".repeat(32) + "B".repeat(32)).repeat(16) + "X").repeat(2) + "bB";
-      String dataStringHuge16 = "\u01de" + (("A".repeat(32) + "B".repeat(32)).repeat(16) + "\u01fe").repeat(2) + "\u01eeB";
-      String earlyMatchString = dataStringHuge.substring(0, 34);
-      String earlyMatchString16 = dataStringHuge16.substring(0, 34);
-      String midMatchString = dataStringHuge.substring(dataStringHuge.length() / 2 - 16, dataStringHuge.length() / 2 + 32);
-      String midMatchString16 = dataStringHuge16.substring(dataStringHuge16.length() / 2 - 16, dataStringHuge16.length() / 2 + 32);
-      String lateMatchString = dataStringHuge.substring(dataStringHuge.length() - 31);
-      String lateMatchString16 = dataStringHuge16.substring(dataStringHuge16.length() - 31);
-
-      String searchString = "oscar";
-      String searchString16 = "o\u01facar";
-      String searchStringSmall = "dgf";
-      String searchStringSmall16 = "d\u01eef";
-
-      String searchStringHuge = "capaapapapasdkajdlkajskldjaslkajdlkajskldjaslkjdlkasjdsalk";
-      String searchStringHuge16 = "capaapapapasdkajdlka\u01feskldjaslkajdlkajskldjaslkjdlkasjdsalk";
-
-      String searchNoMatch = "XYXyxYxy".repeat(22);
-      String searchNoMatch16 = "\u01ab\u01ba\u01cb\u01bc\u01de\u01ed\u01fa\u01af".repeat(22);
-
-      foo = indexOfKernel(dataStringHuge16, earlyMatchString);
-      int nResult = naiveFind(dataStringHuge16, earlyMatchString);
-      if (nResult != foo) {
-        System.err.println("Huge Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringHuge, earlyMatchString);
-      nResult = naiveFind(dataStringHuge, earlyMatchString);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringHuge, midMatchString);
-      nResult = naiveFind(dataStringHuge, midMatchString);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringHuge, lateMatchString);
-      nResult = naiveFind(dataStringHuge, lateMatchString);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringHuge, searchNoMatch);
-      nResult = naiveFind(dataStringHuge, searchNoMatch);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(searchString, searchString);
-      nResult = naiveFind(searchString, searchString);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataString, searchString);
-      nResult = naiveFind(dataString, searchString);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataString, searchStringSmall);
-      nResult = naiveFind(dataString, searchStringSmall);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringHuge, "B".repeat(30) + "X" + "A".repeat(30), 74);
-      nResult = naiveFind(dataStringHuge, "B".repeat(30) + "X" + "A".repeat(30), 74);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringHuge, "A".repeat(32) + "F" + "B".repeat(32), 64);
-      nResult = naiveFind(dataStringHuge, "A".repeat(32) + "F" + "B".repeat(32), 64);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(midMatchString, dataStringHuge, 3);
-      nResult = naiveFind(midMatchString, dataStringHuge, 3);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringHuge, "A".repeat(32) + "B".repeat(30) + "bB");
-      nResult = naiveFind(dataStringHuge, "A".repeat(32) + "B".repeat(30) + "bB");
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringHuge16, earlyMatchString);
-      nResult = naiveFind(dataStringHuge16, earlyMatchString);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringHuge16, midMatchString);
-      nResult = naiveFind(dataStringHuge16, midMatchString);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringHuge16, lateMatchString);
-      nResult = naiveFind(dataStringHuge16, lateMatchString);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringHuge16, searchNoMatch);
-      nResult = naiveFind(dataStringHuge16, searchNoMatch);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(searchString16, searchString);
-      nResult = naiveFind(searchString16, searchString);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataString16, searchString);
-      nResult = naiveFind(dataString16, searchString);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataString16, searchStringSmall);
-      nResult = naiveFind(dataString16, searchStringSmall);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringHuge16, "B".repeat(30) + "X" + "A".repeat(30), 74);
-      nResult = naiveFind(dataStringHuge16, "B".repeat(30) + "X" + "A".repeat(30), 74);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringHuge16, "A".repeat(32) + "F" + "B".repeat(32), 64);
-      nResult = naiveFind(dataStringHuge16, "A".repeat(32) + "F" + "B".repeat(32), 64);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(midMatchString16, dataStringHuge, 3);
-      nResult = naiveFind(midMatchString16, dataStringHuge, 3);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringHuge16, "A".repeat(32) + "B".repeat(30) + "bB");
-      nResult = naiveFind(dataStringHuge16, "A".repeat(32) + "B".repeat(30) + "bB");
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringHuge16, earlyMatchString16);
-      nResult = naiveFind(dataStringHuge16, earlyMatchString16);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringHuge16, midMatchString16);
-      nResult = naiveFind(dataStringHuge16, midMatchString16);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringHuge16, lateMatchString16);
-      nResult = naiveFind(dataStringHuge16, lateMatchString16);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringHuge16, searchNoMatch16);
-      nResult = naiveFind(dataStringHuge16, searchNoMatch16);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(searchString16, searchString16);
-      nResult = naiveFind(searchString16, searchString16);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataString16, searchString16);
-      nResult = naiveFind(dataString16, searchString16);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataString16, searchStringSmall16);
-      nResult = naiveFind(dataString16, searchStringSmall16);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringHuge16, "B".repeat(30) + "X" + "A".repeat(30), 74);
-      nResult = naiveFind(dataStringHuge16, "B".repeat(30) + "X" + "A".repeat(30), 74);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringHuge16, "A".repeat(32) + "\u01ef" + "B".repeat(32), 64);
-      nResult = naiveFind(dataStringHuge16, "A".repeat(32) + "\u01ef" + "B".repeat(32), 64);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(midMatchString16, dataStringHuge16, 3);
-      nResult = naiveFind(midMatchString16, dataStringHuge16, 3);
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringHuge16, "A".repeat(32) + "B".repeat(30) + "\u01eeB");
-      nResult = naiveFind(dataStringHuge16, "A".repeat(32) + "B".repeat(30) + "\u01eeB");
-      if (nResult != foo) {
-        System.err.println("Huge (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-    }
-
-    /////////////////////////////////////////////////////////////////////
-    //
-    // From StringIndexof
-    for (int xx = 0; xx < 2; xx++) {
-      int num = 1;
-
-      String dataString = "ngdfilsoscargfdgf";
-      String searchString = "oscar";
-      String dataStringBig = "2937489745890797905764956790452976742965790437698498409583479067ngdcapaapapapasdkajdlkajskldjaslkjdlkasjdsalkjas";
-      String searchStringBig = "capaapapapasdkajdlkajskldjaslkjdlkasjdsalk";
-      String data = "0000100101010010110101010010101110101001110110101010010101010010000010111010101010101010100010010101110111010101101010100010010100001010111111100001010101001010100001010101001010101010111010010101010101010101010101010";
-      String sub = "10101010";
-      String shortSub1 = "1";
-      String data2 = "00001001010100a10110101010010101110101001110110101010010101010010000010111010101010101010a100010010101110111010101101010100010010a100a0010101111111000010101010010101000010101010010101010101110a10010101010101010101010101010";
-      String shortSub2 = "a";
-      char searchChar = 's';
-
-      String string16Short = "scar\u01fe1";
-      String string16Medium = "capaapapapasdkajdlkajskldjaslkjdlkasjdsalksca1r\u01fescar";
-      String string16Long = "2937489745890797905764956790452976742965790437698498409583479067ngdcapaapapapasdkajdlkajskldjaslkjdlkasjdsalkja1sscar\u01fescar";
-      char searchChar16 = 0x1fe;
-      String searchString16 = "\u01fe";
-
-      foo = indexOfKernel(dataStringBig, searchChar);
-      int nResult = naiveFind(dataStringBig, searchChar);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-        PrintError(foo, nResult, num, "indexOf", dataStringBig, searchChar);
-      }
-      num++;
-      foo = indexOfKernel(searchStringBig, searchChar);
-      nResult = naiveFind(searchStringBig, searchChar);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(searchString, searchChar);
-      nResult = naiveFind(searchString, searchChar);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(string16Long, searchChar16);
-      nResult = naiveFind(string16Long, searchChar16);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(string16Medium, searchChar16);
-      nResult = naiveFind(string16Medium, searchChar16);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(string16Short, searchChar16);
-      nResult = naiveFind(string16Short, searchChar16);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringBig, searchChar, 3);
-      nResult = naiveFind(dataStringBig, searchChar, 3);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(searchStringBig, searchChar, 3);
-      nResult = naiveFind(searchStringBig, searchChar, 3);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(searchString, searchChar, 1);
-      nResult = naiveFind(searchString, searchChar, 1);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(string16Long, searchChar16, 3);
-      nResult = naiveFind(string16Long, searchChar16, 3);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(string16Medium, searchChar16, 3);
-      nResult = naiveFind(string16Medium, searchChar16, 3);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(string16Short, searchChar16, 2);
-      nResult = naiveFind(string16Short, searchChar16, 2);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(string16Long, shortSub1);
-      nResult = naiveFind(string16Long, shortSub1);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(string16Medium, shortSub1);
-      nResult = naiveFind(string16Medium, shortSub1);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(string16Long, shortSub2);
-      nResult = naiveFind(string16Long, shortSub2);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(string16Long, shortSub1, 3);
-      nResult = naiveFind(string16Long, shortSub1, 3);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(string16Medium, shortSub1, 3);
-      nResult = naiveFind(string16Medium, shortSub1, 3);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(string16Short, shortSub2, 1);
-      nResult = naiveFind(string16Short, shortSub2, 1);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(string16Long, searchString16, 3);
-      nResult = naiveFind(string16Long, searchString16, 3);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(string16Medium, searchString16, 3);
-      nResult = naiveFind(string16Medium, searchString16, 3);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(string16Short, searchString16, 2);
-      nResult = naiveFind(string16Short, searchString16, 2);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(string16Long, searchString16);
-      nResult = naiveFind(string16Long, searchString16);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(string16Medium, searchString16);
-      nResult = naiveFind(string16Medium, searchString16);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(string16Short, searchString16);
-      nResult = naiveFind(string16Short, searchString16);
-      // System.err.println("nResult is " + nResult + ", kernel=" + foo + ", num=" + num);
-      if (nResult != foo) {
-        PrintError(foo, nResult, num, "indexOf", string16Short, searchString16);
-      }
-      num++;
-      foo = indexOfKernel(dataString, searchString, 2);
-      nResult = naiveFind(dataString, searchString, 2);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      num++;
-      foo = indexOfKernel(dataStringBig, searchStringBig, 2);
-      nResult = naiveFind(dataStringBig, searchStringBig, 2);
-      if (nResult != foo) {
-        System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-      }
-      {
-        int index = 0;
-        int dummy = 0;
-        while ((index = indexOfKernel(data, sub, index)) > -1) {
-          nResult = naiveFind(data, sub, index);
-          if (index != nResult) {
-            System.err.println("indexOf (" + num + ") kernel=" + index + ", naive=" + nResult);
-          }
-          index++;
-          dummy += index;
-        }
-        num++;
-      }
-      {
-        int dummy = 0;
-        int index = 0;
-        while ((index = indexOfKernel(data, shortSub1, index)) > -1) {
-          nResult = naiveFind(data, shortSub1, index);
-          if (index != nResult) {
-            System.err.println("indexOf (" + num + ") kernel=" + index + ", naive=" + nResult);
-          }
-          index++;
-          dummy += index;
-        }
-        num++;
-      }
-      {
-        int dummy = 0;
-        int index = 0;
-        while ((index = indexOfKernel(data2, shortSub2, index)) > -1) {
-          nResult = naiveFind(data2, shortSub2, index);
-          if (index != nResult) {
-            System.err.println("indexOf (" + num + ") kernel=" + index + ", naive=" + nResult);
-          }
-          index++;
-          dummy += index;
-        }
-        num++;
-      }
-      {
-        String tmp = "simple-hash:SHA-1/UTF-8";
-        if (!tmp.contains("SHA-1")) {
-          System.err.println("indexOf (" + num + ") kernel" + foo + ", naive" + nResult);
-        }
-        num++;
-      }
-    }
-
-    /////////////////////////////////////////////////////////////////////
-    //
-    // From StringIndexofChar
-    for (int xx = 0; xx < 2; xx++) {
-      foo = 0;
-      int nResult = 0;
-      int num = 1;
-
-      String[] latn1_short = new String[100];
-      String[] latn1_sse4 = new String[100];
-      String[] latn1_avx2 = new String[100];
-      String[] latn1_mixedLength = new String[100];
-      String[] utf16_short = new String[100];
-      String[] utf16_sse4 = new String[100];
-      String[] utf16_avx2 = new String[100];
-      String[] utf16_mixedLength = new String[100];
-
-      for (int i = 0; i < 100; i++) {
-        latn1_short[i] = makeRndString(false, 15);
-        latn1_sse4[i] = makeRndString(false, 16);
-        latn1_avx2[i] = makeRndString(false, 32);
-        utf16_short[i] = makeRndString(true, 7);
-        utf16_sse4[i] = makeRndString(true, 8);
-        utf16_avx2[i] = makeRndString(true, 16);
-        latn1_mixedLength[i] = makeRndString(false, rng.nextInt(65));
-        utf16_mixedLength[i] = makeRndString(true, rng.nextInt(65));
-      }
-      for (String what : latn1_mixedLength) {
-        foo = indexOfKernel(what, 'a');
-        nResult = naiveFind(what, 'a');
-        if (nResult != foo) {
-          System.err.println("indexOfChar (" + num + ") stub=" + foo + ", naive=" + nResult);
-        }
-      }
-      num++;
-      for (String what : utf16_mixedLength) {
-        foo = indexOfKernel(what, 'a');
-        nResult = naiveFind(what, 'a');
-        if (nResult != foo) {
-          System.err.println("indexOfChar (" + num + ") stub=" + foo + ", naive=" + nResult);
-        }
-      }
-      num++;
-      for (String what : latn1_mixedLength) {
-        foo = indexOfKernel(what, "a");
-        nResult = naiveFind(what, "a");
-        if (nResult != foo) {
-          System.err.println("indexOfChar (" + num + ") stub=" + foo + ", naive=" + nResult);
-        }
-      }
-      num++;
-      for (String what : utf16_mixedLength) {
-        foo = indexOfKernel(what, "a");
-        nResult = naiveFind(what, "a");
-        if (nResult != foo) {
-          System.err.println("indexOfChar (" + num + ") stub=" + foo + ", naive=" + nResult + " X length=" + what.length());
-          System.err.println(" X " + what + " X ");
-          PrintError(foo, nResult, num, "indexOf", what, "a");
-        }
-      }
-      num++;
-      for (String what : latn1_short) {
-        foo = indexOfKernel(what, 'a');
-        nResult = naiveFind(what, 'a');
-        if (nResult != foo) {
-          System.err.println("indexOfChar (" + num + ") stub=" + foo + ", naive=" + nResult);
-        }
-      }
-      num++;
-      for (String what : latn1_sse4) {
-        foo = indexOfKernel(what, 'a');
-        nResult = naiveFind(what, 'a');
-        if (nResult != foo) {
-          System.err.println("indexOfChar (" + num + ") stub=" + foo + ", naive=" + nResult);
-        }
-      }
-      num++;
-      for (String what : latn1_avx2) {
-        foo = indexOfKernel(what, 'a');
-        nResult = naiveFind(what, 'a');
-        if (nResult != foo) {
-          System.err.println("indexOfChar (" + num + ") stub=" + foo + ", naive=" + nResult);
-        }
-      }
-      num++;
-      for (String what : utf16_short) {
-        foo = indexOfKernel(what, 'a');
-        nResult = naiveFind(what, 'a');
-        if (nResult != foo) {
-          System.err.println("indexOfChar (" + num + ") stub=" + foo + ", naive=" + nResult);
-        }
-      }
-      num++;
-      for (String what : utf16_sse4) {
-        foo = indexOfKernel(what, 'a');
-        nResult = naiveFind(what, 'a');
-        if (nResult != foo) {
-          System.err.println("indexOfChar (" + num + ") stub=" + foo + ", naive=" + nResult);
-        }
-      }
-      num++;
-      for (String what : utf16_avx2) {
-        foo = indexOfKernel(what, 'a');
-        nResult = naiveFind(what, 'a');
-        if (nResult != foo) {
-          System.err.println("indexOfChar (" + num + ") stub=" + foo + ", naive=" + nResult);
-        }
-      }
-      num++;
-      for (String what : latn1_short) {
-        foo = indexOfKernel(what, "a");
-        nResult = naiveFind(what, "a");
-        if (nResult != foo) {
-          System.err.println("indexOfChar (" + num + ") stub=" + foo + ", naive=" + nResult);
-        }
-      }
-      num++;
-      for (String what : latn1_sse4) {
-        foo = indexOfKernel(what, "a");
-        nResult = naiveFind(what, "a");
-        if (nResult != foo) {
-          System.err.println("indexOfChar (" + num + ") stub=" + foo + ", naive=" + nResult);
-        }
-      }
-      num++;
-      for (String what : latn1_avx2) {
-        foo = indexOfKernel(what, "a");
-        nResult = naiveFind(what, "a");
-        if (nResult != foo) {
-          System.err.println("indexOfChar (" + num + ") stub=" + foo + ", naive=" + nResult);
-        }
-      }
-      num++;
-      for (String what : utf16_short) {
-        foo = indexOfKernel(what, "a");
-        nResult = naiveFind(what, "a");
-        if (nResult != foo) {
-          System.err.println("indexOfChar (" + num + ") stub=" + foo + ", naive=" + nResult);
-        }
-      }
-      num++;
-      for (String what : utf16_sse4) {
-        foo = indexOfKernel(what, "a");
-        nResult = naiveFind(what, "a");
-        if (nResult != foo) {
-          System.err.println("indexOfChar (" + num + ") stub=" + foo + ", naive=" + nResult);
-        }
-      }
-      num++;
-      for (String what : utf16_avx2) {
-        foo = indexOfKernel(what, "a");
-        nResult = naiveFind(what, "a");
-        if (nResult != foo) {
-          System.err.println("indexOfChar (" + num + ") stub=" + foo + ", naive=" + nResult);
-        }
-      }
-      num++;
-    }
-
-
-    for (int i = 0; i < 128; i++) {
-      haystack[i] = (char) i;
-    }
-
-    haystack_16[0] = '\u0000'; //(char) (23 + 256);
-    for (int i = 1; i < 128; i++) {
-      haystack_16[i] = (char) (i);
-    }
-
-    String xStr = new String(Arrays.copyOfRange(haystack_16, 63, 118));
-    String shs = new String(Arrays.copyOfRange(haystack_16, 0, 126));
-
-    String data = "0000100101010010110101010010101110101001110110101010010101010010000010111010101010101010100010010101110111010101101010100010010100001010111111100001010101001010100001010101001010101010111010010101010101010101010101010";
-    String sub = "10101010";
-    StringBuffer sbdata = new StringBuffer(data);
-
-    String u16data = "\u0030" + "000100101010010110101010010101110101001110110101010010101010010000010111010101010101010100010010101110111010101101010100010010100001010111111100001010101001010100001010101001010101010111010010101010101010101010101010";
-    String u16sub = "\u0031" + "0101010";
-    StringBuffer u16sbdata = new StringBuffer(u16data);
-
-    for (int k = 0; k < 2000000; k++) {
-      int dummy = 0;
-      int index = 0;
-      index = indexOfKernel(data, sub);
-      while ((index = indexOfKernel(data, sub, index)) > -1) {
-        index++;
-        dummy += index;
-      }
-      index = 0;
-      while ((index = indexOfKernel(data, u16sub, index)) > -1) {
-        index++;
-        dummy += index;
-      }
-      index = 0;
-      while ((index = indexOfKernel(u16data, u16sub, index)) > -1) {
-        index++;
-        dummy += index;
-      }
-      index = 0;
-      while ((index = indexOfKernel(shs, "1234", index)) > -1) {
-        index++;
-        dummy += index;
-      }
-      index = 0;
-      while ((index = indexOfKernel(shs, xStr, index)) > -1) {
-        index++;
-        dummy += index;
-      }
-    }
-
-    for (int k = 0; k < 2000000; k++) {
-      int dummy = 0;
-      int index = 0;
-      index = indexOfKernel(sbdata, sub);
-      while ((index = indexOfKernel(sbdata, sub, index)) > -1) {
-        index++;
-        dummy += index;
-      }
-    }
-
-    for (int i = 0; i < 2000000; i++) {
-      foo = foo + indexOfKernel(testName, "dex");
-      foo = foo + indexOfKernel(testName, "dex", 2);
-      foo = foo + indexOfKernel(u16data, "dex");
-      foo = foo + indexOfKernel(u16data, "dex", 2);
-      foo = foo + indexOfKernel(u16data, u16sub);
-      foo = foo + indexOfKernel(u16data, u16sub, 2);
-      foo = foo + indexOfKernel(u16sbdata, u16sub);
-      foo = foo + indexOfKernel(u16sbdata, u16sub, 2);
-      foo = foo + indexOfKernel(shs, xStr);
-      foo = foo + indexOfKernel(shs, xStr, 2);
-    }
     ///////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////
 
@@ -844,11 +104,23 @@ public class ECoreIndexOf {
     titles.put(StandardCharsets.ISO_8859_1, "L");
     titles.put(StandardCharsets.UTF_16, "U");
 
-    for (int xxy = 0; xxy < 4; xxy++) {
+    for (int xxy = 0; xxy < 2; xxy++) { // Run at least twice to ensure stub called
+
+      for (int i = 0; i < 128; i++) {
+        haystack[i] = (char) i;
+      }
+
+      haystack_16[0] = '\u0000'; // (char) (23 + 256);
+      for (int i = 1; i < 128; i++) {
+        haystack_16[i] = (char) (i);
+      }
 
       simpleTest();
       compareIndexOfLastIndexOf();
       compareStringStringBuffer();
+      StringIndexof();
+      StringIndexofChar();
+      StringIndexofHuge();
 
       for (String decorator : decorators) {
         for (Charset csHaystack : charSets) {
@@ -870,18 +142,9 @@ public class ECoreIndexOf {
           haystack_16[i] = (char) ('a' + 256);
         }
       }
-
-      for (int i = 0; i < 128; i++) {
-        haystack[i] = (char) i;
-      }
-
-      haystack_16[0] = '\u0000'; //(char) (23 + 256);
-      for (int i = 1; i < 128; i++) {
-        haystack_16[i] = (char) (i);
-      }
     }
+
     System.out.println(testName + " complete.");
-    // compareExhaustive();
 
     if (failure)
       throw new RuntimeException("One or more failures.");
@@ -954,7 +217,6 @@ public class ECoreIndexOf {
   }
 
   private static void printStringBytes(byte[] bytes) {
-    // byte[] bytes = str.getBytes();
     System.err.println(" bytes.len=" + bytes.length);
     for (byte b : bytes) {
       System.err.print(String.format("0x%02x ", b));
@@ -988,13 +250,12 @@ public class ECoreIndexOf {
     for (int xx = 0; xx < offset; xx++) {
       hsndx += Character.charCount(haystack.codePointAt(hsndx));
     }
-    // System.out.println("(1) hsndx=" + hsndx);
+
     for (x = offset; x < haystack.length() - needle.length() + 1; x++) {
       if (haystack.codePointAt(hsndx) == needle.codePointAt(0)) {
         nndx = Character.charCount(needle.codePointAt(0));
         int hsndx_tmp = hsndx + Character.charCount(haystack.codePointAt(hsndx));
 
-        // System.out.println("(2) hsndx_tmp=" + hsndx_tmp + " nndx=" + nndx);
         while (nndx < needle.length()) {
           if (haystack.codePointAt(hsndx_tmp) != needle.codePointAt(nndx)) {
             break;
@@ -1021,17 +282,14 @@ public class ECoreIndexOf {
     for (int xx = 0; xx < offset; xx++) {
       hsndx += Character.charCount(haystack.codePointAt(hsndx));
     }
-    // System.err.println("hs:<" + haystack + "> offset:" + offset + " : needle:<" + needle + ">");
-    // System.out.println("(1) hsndx=" + hsndx);
+
     for (x = offset; x < haystack.length(); x++) {
-      // System.err.println("<" + haystack.codePointAt(hsndx) + "> : <" + needle.codePointAt(0) + ">");
       if (haystack.codePointAt(hsndx) == needle.codePointAt(0)) {
-        // System.err.println("FOUND: <" + haystack.codePointAt(hsndx) + "> : <" + needle.codePointAt(0) + "> returning " + x);
         return x;
       }
       hsndx += Character.charCount(haystack.codePointAt(hsndx));
     }
-    // System.err.println("returning -1");
+
     return -1;
   }
 
@@ -1044,8 +302,6 @@ public class ECoreIndexOf {
     int failCount = 0;
 
     String thisTest = titles.get(hs_charset) + titles.get(needleCharset) + (useOffset ? " w/offset" : "") + (useStringBuffer ? " StringBuffer" : "");
-    // System.err.println("Use offset=" + useOffset + ", Use StringBuffer=" + useStringBuffer + ", Haystack=" + hs_charset
-    //     + ", Needle=" + needleCharset);
 
     for (int needleSize = 0; needleSize < 128; needleSize++) {
       for (int haystackSize = 0; haystackSize < 128; haystackSize++) {
@@ -1053,7 +309,7 @@ public class ECoreIndexOf {
           String needle = new String(Arrays.copyOfRange(
               (needleCharset == StandardCharsets.UTF_16) ? haystack_16 : haystack, l_offset, l_offset + needleSize));
           int hsSize = (haystackSize - l_offset) >= 0 ? haystackSize - l_offset : 0;
-          int midStart = hsSize / 2;
+          int midStart = Math.max((hsSize / 2) - (needleSize / 2), 0);
           int endStart = (hsSize > needleSize) ? hsSize - needleSize : 0;
           String midNeedle = new String(
               Arrays.copyOfRange((needleCharset == StandardCharsets.UTF_16) ? haystack_16 : haystack,
@@ -1152,54 +408,14 @@ public class ECoreIndexOf {
   }
 
   private static void PrintError(int kernel, int naive, int num, String prefix, String hs, String needle) {
+    if (!verbose)
+      return;
     System.err.println(prefix + ": (" + num + "): kernel=" + kernel + ", naive=" + naive);
     System.err.print("Haystack=");
     printStringBytes(hs.getBytes());
     System.err.print("Needle=");
     printStringBytes(needle.getBytes());
     System.err.println("");
-}
-
-
-  private static void compareExhaustive() {
-    int failCount = 0;
-    String sourceString;
-    String targetString;
-    int hsLen = 97;
-    int maxNeedleLen = hsLen;// / 2;
-    int haystackLen;
-    int needleLen;
-    int hsBegin, nBegin;
-
-    for (int i = 0; i < 10000; i++) {
-      do {
-        sourceString = generateTestString(hsLen - 1, hsLen);
-        targetString = generateTestString(maxNeedleLen - 1, maxNeedleLen);
-      } while (naiveFind(sourceString, targetString, 0) != -1);
-
-      for (haystackLen = 0; haystackLen < hsLen; haystackLen += 7) {
-        for (needleLen = 0; (needleLen < maxNeedleLen) && (needleLen <= haystackLen); needleLen++) {
-          for (hsBegin = 0; (hsBegin < haystackLen - needleLen) && (hsBegin + haystackLen < hsLen); hsBegin += 3) {
-            for (nBegin = 0; (nBegin < needleLen) && (nBegin + needleLen < maxNeedleLen); nBegin += 3) {
-              int nResult = naiveFind(sourceString.substring(hsBegin, hsBegin + haystackLen),
-                  targetString.substring(nBegin, nBegin + needleLen), 0);
-              int iResult = sourceString.substring(hsBegin, hsBegin + haystackLen)
-                  .indexOf(targetString.substring(nBegin, nBegin + needleLen));
-              if (iResult != nResult) {
-                System.out.println("Source=" + sourceString.substring(hsBegin, hsBegin + haystackLen));
-                System.out.println("Target=" + targetString.substring(nBegin, nBegin + needleLen));
-                System.out.println("haystackLen=" + haystackLen + " needleLen=" + needleLen + " hsBegin=" + hsBegin
-                    + " nBegin=" + nBegin +
-                    " iResult=" + iResult + " nResult=" + nResult);
-                failCount++;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    report("Exhaustive                   ", failCount);
   }
 
   private static void simpleTest() {
@@ -1421,6 +637,736 @@ public class ECoreIndexOf {
     }
 
     report("String vs StringBuffer       ", failCount);
+  }
+
+  //////////////////////////////////////////////////////////////////////
+  // Test routines used in benchmarks
+  //
+  // From StringIndexofHuge
+  private static void StringIndexofHuge() {
+    int stubResult = 0;
+    int failCount = 0;
+
+    for (int xx = 0; xx < 2; xx++) {
+      int num = 1;
+
+      String dataString = "ngdflsoscargfdgf";
+      String dataString16 = "ngdfilso\u01facargfd\u01eef";
+      String dataStringHuge = (("A".repeat(32) + "B".repeat(32)).repeat(16) + "X").repeat(2) + "bB";
+      String dataStringHuge16 = "\u01de" + (("A".repeat(32) + "B".repeat(32)).repeat(16) + "\u01fe").repeat(2)
+          + "\u01eeB";
+      String earlyMatchString = dataStringHuge.substring(0, 34);
+      String earlyMatchString16 = dataStringHuge16.substring(0, 34);
+      String midMatchString = dataStringHuge.substring(dataStringHuge.length() / 2 - 16,
+          dataStringHuge.length() / 2 + 32);
+      String midMatchString16 = dataStringHuge16.substring(dataStringHuge16.length() / 2 - 16,
+          dataStringHuge16.length() / 2 + 32);
+      String lateMatchString = dataStringHuge.substring(dataStringHuge.length() - 31);
+      String lateMatchString16 = dataStringHuge16.substring(dataStringHuge16.length() - 31);
+
+      String searchString = "oscar";
+      String searchString16 = "o\u01facar";
+      String searchStringSmall = "dgf";
+      String searchStringSmall16 = "d\u01eef";
+
+      String searchStringHuge = "capaapapapasdkajdlkajskldjaslkajdlkajskldjaslkjdlkasjdsalk";
+      String searchStringHuge16 = "capaapapapasdkajdlka\u01feskldjaslkajdlkajskldjaslkjdlkasjdsalk";
+
+      String searchNoMatch = "XYXyxYxy".repeat(22);
+      String searchNoMatch16 = "\u01ab\u01ba\u01cb\u01bc\u01de\u01ed\u01fa\u01af".repeat(22);
+
+      stubResult = indexOfKernel(dataStringHuge16, earlyMatchString);
+      int nResult = naiveFind(dataStringHuge16, earlyMatchString);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataStringHuge16, earlyMatchString);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringHuge, earlyMatchString);
+      nResult = naiveFind(dataStringHuge, earlyMatchString);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataStringHuge, earlyMatchString);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringHuge, midMatchString);
+      nResult = naiveFind(dataStringHuge, midMatchString);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataStringHuge, midMatchString);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringHuge, lateMatchString);
+      nResult = naiveFind(dataStringHuge, lateMatchString);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataStringHuge, lateMatchString);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringHuge, searchNoMatch);
+      nResult = naiveFind(dataStringHuge, searchNoMatch);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataStringHuge, searchNoMatch);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(searchString, searchString);
+      nResult = naiveFind(searchString, searchString);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", searchString, searchString);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataString, searchString);
+      nResult = naiveFind(dataString, searchString);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataString, searchString);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataString, searchStringSmall);
+      nResult = naiveFind(dataString, searchStringSmall);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataString, searchStringSmall);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringHuge, "B".repeat(30) + "X" + "A".repeat(30), 74);
+      nResult = naiveFind(dataStringHuge, "B".repeat(30) + "X" + "A".repeat(30), 74);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataStringHuge,
+            "B".repeat(30) + "X" + "A".repeat(30));
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringHuge, "A".repeat(32) + "F" + "B".repeat(32), 64);
+      nResult = naiveFind(dataStringHuge, "A".repeat(32) + "F" + "B".repeat(32), 64);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataStringHuge,
+            "A".repeat(32) + "F" + "B".repeat(32));
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(midMatchString, dataStringHuge, 3);
+      nResult = naiveFind(midMatchString, dataStringHuge, 3);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", midMatchString, dataStringHuge);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringHuge, "A".repeat(32) + "B".repeat(30) + "bB");
+      nResult = naiveFind(dataStringHuge, "A".repeat(32) + "B".repeat(30) + "bB");
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataStringHuge,
+            "A".repeat(32) + "B".repeat(30) + "bB");
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringHuge16, earlyMatchString);
+      nResult = naiveFind(dataStringHuge16, earlyMatchString);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataStringHuge16, earlyMatchString);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringHuge16, midMatchString);
+      nResult = naiveFind(dataStringHuge16, midMatchString);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataStringHuge16, midMatchString);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringHuge16, lateMatchString);
+      nResult = naiveFind(dataStringHuge16, lateMatchString);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataStringHuge16, lateMatchString);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringHuge16, searchNoMatch);
+      nResult = naiveFind(dataStringHuge16, searchNoMatch);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataStringHuge16, searchNoMatch);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(searchString16, searchString);
+      nResult = naiveFind(searchString16, searchString);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", searchString16, searchString);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataString16, searchString);
+      nResult = naiveFind(dataString16, searchString);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataString16, searchString);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataString16, searchStringSmall);
+      nResult = naiveFind(dataString16, searchStringSmall);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataString16, searchStringSmall);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringHuge16, "B".repeat(30) + "X" + "A".repeat(30), 74);
+      nResult = naiveFind(dataStringHuge16, "B".repeat(30) + "X" + "A".repeat(30), 74);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataStringHuge16,
+            "B".repeat(30) + "X" + "A".repeat(30));
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringHuge16, "A".repeat(32) + "F" + "B".repeat(32), 64);
+      nResult = naiveFind(dataStringHuge16, "A".repeat(32) + "F" + "B".repeat(32), 64);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataStringHuge16,
+            "A".repeat(32) + "F" + "B".repeat(32));
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(midMatchString16, dataStringHuge, 3);
+      nResult = naiveFind(midMatchString16, dataStringHuge, 3);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", midMatchString16, dataStringHuge);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringHuge16, "A".repeat(32) + "B".repeat(30) + "bB");
+      nResult = naiveFind(dataStringHuge16, "A".repeat(32) + "B".repeat(30) + "bB");
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataStringHuge16,
+            "A".repeat(32) + "B".repeat(30) + "bB");
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringHuge16, earlyMatchString16);
+      nResult = naiveFind(dataStringHuge16, earlyMatchString16);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataStringHuge16, earlyMatchString16);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringHuge16, midMatchString16);
+      nResult = naiveFind(dataStringHuge16, midMatchString16);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataStringHuge16, midMatchString16);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringHuge16, lateMatchString16);
+      nResult = naiveFind(dataStringHuge16, lateMatchString16);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataStringHuge16, lateMatchString16);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringHuge16, searchNoMatch16);
+      nResult = naiveFind(dataStringHuge16, searchNoMatch16);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataStringHuge16, searchNoMatch16);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(searchString16, searchString16);
+      nResult = naiveFind(searchString16, searchString16);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", searchString16, searchString16);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataString16, searchString16);
+      nResult = naiveFind(dataString16, searchString16);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataString16, searchString16);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataString16, searchStringSmall16);
+      nResult = naiveFind(dataString16, searchStringSmall16);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataString16, searchStringSmall16);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringHuge16, "B".repeat(30) + "X" + "A".repeat(30), 74);
+      nResult = naiveFind(dataStringHuge16, "B".repeat(30) + "X" + "A".repeat(30), 74);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataStringHuge16,
+            "B".repeat(30) + "X" + "A".repeat(30));
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringHuge16, "A".repeat(32) + "\u01ef" + "B".repeat(32), 64);
+      nResult = naiveFind(dataStringHuge16, "A".repeat(32) + "\u01ef" + "B".repeat(32), 64);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataStringHuge16,
+            "A".repeat(32) + "\u01ef" + "B".repeat(32));
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(midMatchString16, dataStringHuge16, 3);
+      nResult = naiveFind(midMatchString16, dataStringHuge16, 3);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", midMatchString16, dataStringHuge16);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringHuge16, "A".repeat(32) + "B".repeat(30) + "\u01eeB");
+      nResult = naiveFind(dataStringHuge16, "A".repeat(32) + "B".repeat(30) + "\u01eeB");
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexofHuge", dataStringHuge16,
+            "A".repeat(32) + "B".repeat(30) + "\u01eeB");
+        failCount++;
+      }
+      num++;
+    }
+
+    report("StringIndexofHuge            ", failCount);
+  }
+
+  /////////////////////////////////////////////////////////////////////
+  //
+  // From StringIndexof
+  private static void StringIndexof() {
+    int stubResult = 0;
+    int failCount = 0;
+
+    for (int xx = 0; xx < 2; xx++) {
+      int num = 1;
+
+      String dataString = "ngdfilsoscargfdgf";
+      String searchString = "oscar";
+      String dataStringBig = "2937489745890797905764956790452976742965790437698498409583479067ngdcapaapapapasdkajdlkajskldjaslkjdlkasjdsalkjas";
+      String searchStringBig = "capaapapapasdkajdlkajskldjaslkjdlkasjdsalk";
+      String data = "0000100101010010110101010010101110101001110110101010010101010010000010111010101010101010100010010101110111010101101010100010010100001010111111100001010101001010100001010101001010101010111010010101010101010101010101010";
+      String sub = "10101010";
+      String shortSub1 = "1";
+      String data2 = "00001001010100a10110101010010101110101001110110101010010101010010000010111010101010101010a100010010101110111010101101010100010010a100a0010101111111000010101010010101000010101010010101010101110a10010101010101010101010101010";
+      String shortSub2 = "a";
+      char searchChar = 's';
+
+      String string16Short = "scar\u01fe1";
+      String string16Medium = "capaapapapasdkajdlkajskldjaslkjdlkasjdsalksca1r\u01fescar";
+      String string16Long = "2937489745890797905764956790452976742965790437698498409583479067ngdcapaapapapasdkajdlkajskldjaslkjdlkasjdsalkja1sscar\u01fescar";
+      char searchChar16 = 0x1fe;
+      String searchString16 = "\u01fe";
+
+      stubResult = indexOfKernel(dataStringBig, searchChar);
+      int nResult = naiveFind(dataStringBig, searchChar);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", dataStringBig, searchChar);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(searchStringBig, searchChar);
+      nResult = naiveFind(searchStringBig, searchChar);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", searchStringBig, searchChar);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(searchString, searchChar);
+      nResult = naiveFind(searchString, searchChar);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", searchString, searchChar);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(string16Long, searchChar16);
+      nResult = naiveFind(string16Long, searchChar16);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", string16Long, searchChar16);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(string16Medium, searchChar16);
+      nResult = naiveFind(string16Medium, searchChar16);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", string16Medium, searchChar16);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(string16Short, searchChar16);
+      nResult = naiveFind(string16Short, searchChar16);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", string16Short, searchChar16);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringBig, searchChar, 3);
+      nResult = naiveFind(dataStringBig, searchChar, 3);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", dataStringBig, searchChar);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(searchStringBig, searchChar, 3);
+      nResult = naiveFind(searchStringBig, searchChar, 3);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", searchStringBig, searchChar);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(searchString, searchChar, 1);
+      nResult = naiveFind(searchString, searchChar, 1);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", searchString, searchChar);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(string16Long, searchChar16, 3);
+      nResult = naiveFind(string16Long, searchChar16, 3);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", string16Long, searchChar16);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(string16Medium, searchChar16, 3);
+      nResult = naiveFind(string16Medium, searchChar16, 3);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", string16Medium, searchChar16);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(string16Short, searchChar16, 2);
+      nResult = naiveFind(string16Short, searchChar16, 2);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", string16Short, searchChar16);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(string16Long, shortSub1);
+      nResult = naiveFind(string16Long, shortSub1);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", string16Long, shortSub1);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(string16Medium, shortSub1);
+      nResult = naiveFind(string16Medium, shortSub1);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", string16Medium, shortSub1);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(string16Long, shortSub2);
+      nResult = naiveFind(string16Long, shortSub2);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", string16Long, shortSub2);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(string16Long, shortSub1, 3);
+      nResult = naiveFind(string16Long, shortSub1, 3);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", string16Long, shortSub1);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(string16Medium, shortSub1, 3);
+      nResult = naiveFind(string16Medium, shortSub1, 3);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", string16Medium, shortSub1);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(string16Short, shortSub2, 1);
+      nResult = naiveFind(string16Short, shortSub2, 1);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", string16Short, shortSub2);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(string16Long, searchString16, 3);
+      nResult = naiveFind(string16Long, searchString16, 3);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", string16Long, searchString16);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(string16Medium, searchString16, 3);
+      nResult = naiveFind(string16Medium, searchString16, 3);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", string16Medium, searchString16);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(string16Short, searchString16, 2);
+      nResult = naiveFind(string16Short, searchString16, 2);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", string16Short, searchString16);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(string16Long, searchString16);
+      nResult = naiveFind(string16Long, searchString16);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", string16Long, searchString16);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(string16Medium, searchString16);
+      nResult = naiveFind(string16Medium, searchString16);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", string16Medium, searchString16);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(string16Short, searchString16);
+      nResult = naiveFind(string16Short, searchString16);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", string16Short, searchString16);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataString, searchString, 2);
+      nResult = naiveFind(dataString, searchString, 2);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", dataString, searchString);
+        failCount++;
+      }
+      num++;
+      stubResult = indexOfKernel(dataStringBig, searchStringBig, 2);
+      nResult = naiveFind(dataStringBig, searchStringBig, 2);
+      if (nResult != stubResult) {
+        PrintError(stubResult, nResult, num, "StringIndexof", dataStringBig, searchStringBig);
+      }
+      {
+        int index = 0;
+        int dummy = 0;
+        while ((index = indexOfKernel(data, sub, index)) > -1) {
+          nResult = naiveFind(data, sub, index);
+          if (index != nResult) {
+            PrintError(stubResult, nResult, num, "StringIndexof", data, sub);
+            failCount++;
+          }
+          index++;
+          dummy += index;
+        }
+        num++;
+      }
+      {
+        int dummy = 0;
+        int index = 0;
+        while ((index = indexOfKernel(data, shortSub1, index)) > -1) {
+          nResult = naiveFind(data, shortSub1, index);
+          if (index != nResult) {
+            PrintError(stubResult, nResult, num, "StringIndexof", data, shortSub1);
+            failCount++;
+          }
+          index++;
+          dummy += index;
+        }
+        num++;
+      }
+      {
+        int dummy = 0;
+        int index = 0;
+        while ((index = indexOfKernel(data2, shortSub2, index)) > -1) {
+          nResult = naiveFind(data2, shortSub2, index);
+          if (index != nResult) {
+            PrintError(stubResult, nResult, num, "StringIndexof", data2, shortSub2);
+            failCount++;
+          }
+          index++;
+          dummy += index;
+        }
+        num++;
+      }
+      {
+        String tmp = "simple-hash:SHA-1/UTF-8";
+        if (!tmp.contains("SHA-1")) {
+          PrintError(stubResult, nResult, num, "StringIndexof", "simple-hash:SHA-1/UTF-8", "SHA-1");
+          failCount++;
+        }
+        num++;
+      }
+    }
+
+    report("StringIndexof                ", failCount);
+  }
+
+  /////////////////////////////////////////////////////////////////////
+  //
+  // From StringIndexofChar
+  private static void StringIndexofChar() {
+    int stubResult = 0;
+    int failCount = 0;
+
+    for (int xx = 0; xx < 2; xx++) {
+      stubResult = 0;
+      int nResult = 0;
+      int num = 1;
+
+      String[] latn1_short = new String[100];
+      String[] latn1_sse4 = new String[100];
+      String[] latn1_avx2 = new String[100];
+      String[] latn1_mixedLength = new String[100];
+      String[] utf16_short = new String[100];
+      String[] utf16_sse4 = new String[100];
+      String[] utf16_avx2 = new String[100];
+      String[] utf16_mixedLength = new String[100];
+
+      for (int i = 0; i < 100; i++) {
+        latn1_short[i] = makeRndString(false, 15);
+        latn1_sse4[i] = makeRndString(false, 16);
+        latn1_avx2[i] = makeRndString(false, 32);
+        utf16_short[i] = makeRndString(true, 7);
+        utf16_sse4[i] = makeRndString(true, 8);
+        utf16_avx2[i] = makeRndString(true, 16);
+        latn1_mixedLength[i] = makeRndString(false, rng.nextInt(65));
+        utf16_mixedLength[i] = makeRndString(true, rng.nextInt(65));
+      }
+      for (String what : latn1_mixedLength) {
+        stubResult = indexOfKernel(what, 'a');
+        nResult = naiveFind(what, 'a');
+        if (nResult != stubResult) {
+          PrintError(stubResult, nResult, num, "StringIndexofChar", what, 'a');
+          failCount++;
+        }
+      }
+      num++;
+      for (String what : utf16_mixedLength) {
+        stubResult = indexOfKernel(what, 'a');
+        nResult = naiveFind(what, 'a');
+        if (nResult != stubResult) {
+          PrintError(stubResult, nResult, num, "StringIndexofChar", what, 'a');
+          failCount++;
+        }
+      }
+      num++;
+      for (String what : latn1_mixedLength) {
+        stubResult = indexOfKernel(what, "a");
+        nResult = naiveFind(what, "a");
+        if (nResult != stubResult) {
+          PrintError(stubResult, nResult, num, "StringIndexofChar", what, "a");
+          failCount++;
+        }
+      }
+      num++;
+      for (String what : utf16_mixedLength) {
+        stubResult = indexOfKernel(what, "a");
+        nResult = naiveFind(what, "a");
+        if (nResult != stubResult) {
+          PrintError(stubResult, nResult, num, "StringIndexofChar", what, "a");
+          failCount++;
+        }
+      }
+      num++;
+      for (String what : latn1_short) {
+        stubResult = indexOfKernel(what, 'a');
+        nResult = naiveFind(what, 'a');
+        if (nResult != stubResult) {
+          PrintError(stubResult, nResult, num, "StringIndexofChar", what, 'a');
+          failCount++;
+        }
+      }
+      num++;
+      for (String what : latn1_sse4) {
+        stubResult = indexOfKernel(what, 'a');
+        nResult = naiveFind(what, 'a');
+        if (nResult != stubResult) {
+          PrintError(stubResult, nResult, num, "StringIndexofChar", what, 'a');
+          failCount++;
+        }
+      }
+      num++;
+      for (String what : latn1_avx2) {
+        stubResult = indexOfKernel(what, 'a');
+        nResult = naiveFind(what, 'a');
+        if (nResult != stubResult) {
+          PrintError(stubResult, nResult, num, "StringIndexofChar", what, 'a');
+          failCount++;
+        }
+      }
+      num++;
+      for (String what : utf16_short) {
+        stubResult = indexOfKernel(what, 'a');
+        nResult = naiveFind(what, 'a');
+        if (nResult != stubResult) {
+          PrintError(stubResult, nResult, num, "StringIndexofChar", what, 'a');
+          failCount++;
+        }
+      }
+      num++;
+      for (String what : utf16_sse4) {
+        stubResult = indexOfKernel(what, 'a');
+        nResult = naiveFind(what, 'a');
+        if (nResult != stubResult) {
+          PrintError(stubResult, nResult, num, "StringIndexofChar", what, 'a');
+          failCount++;
+        }
+      }
+      num++;
+      for (String what : utf16_avx2) {
+        stubResult = indexOfKernel(what, 'a');
+        nResult = naiveFind(what, 'a');
+        if (nResult != stubResult) {
+          PrintError(stubResult, nResult, num, "StringIndexofChar", what, 'a');
+          failCount++;
+        }
+      }
+      num++;
+      for (String what : latn1_short) {
+        stubResult = indexOfKernel(what, "a");
+        nResult = naiveFind(what, "a");
+        if (nResult != stubResult) {
+          PrintError(stubResult, nResult, num, "StringIndexofChar", what, "a");
+          failCount++;
+        }
+      }
+      num++;
+      for (String what : latn1_sse4) {
+        stubResult = indexOfKernel(what, "a");
+        nResult = naiveFind(what, "a");
+        if (nResult != stubResult) {
+          PrintError(stubResult, nResult, num, "StringIndexofChar", what, "a");
+          failCount++;
+        }
+      }
+      num++;
+      for (String what : latn1_avx2) {
+        stubResult = indexOfKernel(what, "a");
+        nResult = naiveFind(what, "a");
+        if (nResult != stubResult) {
+          PrintError(stubResult, nResult, num, "StringIndexofChar", what, "a");
+          failCount++;
+        }
+      }
+      num++;
+      for (String what : utf16_short) {
+        stubResult = indexOfKernel(what, "a");
+        nResult = naiveFind(what, "a");
+        if (nResult != stubResult) {
+          PrintError(stubResult, nResult, num, "StringIndexofChar", what, "a");
+          failCount++;
+        }
+      }
+      num++;
+      for (String what : utf16_sse4) {
+        stubResult = indexOfKernel(what, "a");
+        nResult = naiveFind(what, "a");
+        if (nResult != stubResult) {
+          PrintError(stubResult, nResult, num, "StringIndexofChar", what, "a");
+          failCount++;
+        }
+      }
+      num++;
+      for (String what : utf16_avx2) {
+        stubResult = indexOfKernel(what, "a");
+        nResult = naiveFind(what, "a");
+        if (nResult != stubResult) {
+          PrintError(stubResult, nResult, num, "StringIndexofChar", what, "a");
+          failCount++;
+        }
+      }
+      num++;
+    }
+
+    report("StringIndexofChar            ", failCount);
   }
 
 }

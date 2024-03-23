@@ -73,8 +73,8 @@ public class StringIndexOfHuge {
     dataStringHuge16 = "\u01de" + (("A".repeat(32) + "B".repeat(32)).repeat(16) + "\u01fe").repeat(2) + "\u01eeB";
     earlyMatchString = dataStringHuge.substring(0, 34);
     earlyMatchString16 = dataStringHuge16.substring(0, 34);
-    midMatchString = dataStringHuge.substring(dataStringHuge.length() / 2 - 16, dataStringHuge.length() / 2 + 32);
-    midMatchString16 = dataStringHuge16.substring(dataStringHuge16.length() / 2 - 16, dataStringHuge16.length() / 2 + 32);
+    midMatchString = dataStringHuge.substring(dataStringHuge.length() / 2 - 16, dataStringHuge.length() / 2 + 17);
+    midMatchString16 = dataStringHuge16.substring(dataStringHuge16.length() / 2 - 16, dataStringHuge16.length() / 2 + 17);
     lateMatchString = dataStringHuge.substring(dataStringHuge.length() - 31);
     lateMatchString16 = dataStringHuge16.substring(dataStringHuge16.length() - 31);
 
@@ -144,7 +144,7 @@ public class StringIndexOfHuge {
 
   @Benchmark
   public int searchHugeWorstCase() {
-      return dataStringHuge.indexOf("A".repeat(32) + "B".repeat(30) + "bB");
+      return dataStringHuge.indexOf("A".repeat(32) + "B".repeat(32) + "XbB");
   }
 
   @Benchmark
@@ -199,7 +199,7 @@ public class StringIndexOfHuge {
 
   @Benchmark
   public int search16HugeWorstCase() {
-    return dataStringHuge16.indexOf("A".repeat(32) + "B".repeat(30) + "bB");
+    return dataStringHuge16.indexOf("A".repeat(32) + "B".repeat(32) + "XbB");
   }
 
   @Benchmark
@@ -254,6 +254,6 @@ public class StringIndexOfHuge {
 
   @Benchmark
   public int search16HugeWorstCase16() {
-    return dataStringHuge16.indexOf("A".repeat(32) + "B".repeat(30) + "\u01eeB");
+    return dataStringHuge16.indexOf("A".repeat(32) + "B".repeat(32) + "\u01fe\u01eeB");
   }
 }
