@@ -28,18 +28,17 @@ include LibCommon.gmk
 ################################################################################
 
 LIBMANAGEMENT_OPTIMIZATION := HIGH
-ifeq ($(call isTargetOs, linux), true)
-  ifeq ($(COMPILE_WITH_DEBUG_SYMBOLS), true)
-    LIBMANAGEMENT_OPTIMIZATION := LOW
-  endif
+ifeq ($(call isTargetOs, linux)+$(COMPILE_WITH_DEBUG_SYMBOLS), true+true)
+  LIBMANAGEMENT_OPTIMIZATION := LOW
 endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT, \
     NAME := management, \
     OPTIMIZATION := $(LIBMANAGEMENT_OPTIMIZATION), \
-    LIBS := $(JDKLIB_LIBS), \
+    JDK_LIBS := $(JDKLIB_LIBS), \
+    JDK_LIBS_windows := $(WIN_JAVA_LIB) jvm.lib, \
     LIBS_aix := -lperfstat,\
-    LIBS_windows := jvm.lib psapi.lib $(WIN_JAVA_LIB) advapi32.lib, \
+    LIBS_windows := advapi32.lib psapi.lib, \
 ))
 
 $(BUILD_LIBMANAGEMENT): $(call FindLib, java.base, java)
