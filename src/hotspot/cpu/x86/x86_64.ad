@@ -10392,7 +10392,7 @@ instruct MoveL2D_reg_reg(regD dst, rRegL src) %{
 %}
 
 // Fast clearing of an array
-// Small non-const lenght ClearArray for non-AVX512 targets.
+// Small non-constant lenght ClearArray for non-AVX512 targets.
 instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
                   Universe dummy, rFlagsReg cr)
 %{
