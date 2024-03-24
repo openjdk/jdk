@@ -1751,6 +1751,10 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
       }
       break;
     case Op_ClearArray:
+      if ((size_in_bits != 512) && !VM_Version::supports_avx512vl()) {
+        return false;
+      }
+      break;
     case Op_VectorMaskGen:
     case Op_VectorCmpMasked:
       if (!is_LP64 || !VM_Version::supports_avx512bw()) {
