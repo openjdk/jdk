@@ -1363,19 +1363,22 @@ void static continuation_enter_cleanup(MacroAssembler* masm) {
   __ movptr(rbx, Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()));
   __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), rbx);
 
-  __ movq(rbx, Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()));
-  __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), rbx);
-
   if (CheckJNICalls) {
     Label no_warn;
     __ cmpptr(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
     __ jcc(Assembler::equal, no_warn);
-    // If the JNi monitor count is > 0 and this vthread is terminating then
+    // Check if this is a virtual thread continuation
+    __ cmpl(Address(rsp, ContinuationEntry::flags_offset()), 0);
+    __ jcc(Assembler::equal, no_warn);
+    // If the held monitor count is > 0 and this vthread is terminating then
     // it failed to release a JNI monitor. So we issue the same log message
     // that JavaThread::exit does.
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::log_jni_monitor_still_held));
     __ bind(no_warn);
   }
+
+  __ movq(rbx, Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()));
+  __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), rbx);
 
   __ movq(rbx, Address(rsp, ContinuationEntry::parent_jni_monitor_count_offset()));
   __ movq(Address(r15_thread, JavaThread::jni_monitor_count_offset()), rbx);
