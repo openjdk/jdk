@@ -36,7 +36,7 @@ import compiler.lib.ir_framework.TestFramework;
  * @bug 8327381
  * @summary Refactor boolean node tautology transformations
  * @library /test/lib /
- * @run main compiler.c2.irTests.TestBoolNodeGvn
+ * @run main compiler.c2.irTests.TestBoolNodeGVN
  */
 public class TestBoolNodeGVN {
     public static void main(String[] args) {
