@@ -25,7 +25,7 @@
  * @test
  * @bug 8323682
  * @summary Test that the appropriate guards are generated for the copyOfRange
- *          intrinsic, even if the result of the array copy are not used.
+ *          intrinsic, even if the result of the array copy is not used.
  *
  * @run main/othervm -XX:-TieredCompilation
  *                   -XX:CompileCommand=compileonly,compiler.arraycopy.TestArrayCopyOfRangeGuards::test
