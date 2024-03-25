@@ -60,7 +60,7 @@ public class BootstrapMethodErrorTest {
                 b = loadClassData(name);
             }
             catch (Throwable th) {
-                th.printStackTrace();
+                throw new ClassNotFoundException("Loading error", th);
             }
             assert b != null;
             return defineClass(name, b, 0, b.length);
