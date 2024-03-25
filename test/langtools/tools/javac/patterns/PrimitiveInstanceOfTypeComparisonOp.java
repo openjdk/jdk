@@ -43,6 +43,7 @@ public class PrimitiveInstanceOfTypeComparisonOp {
         assertEquals(true,  unboxing());
         assertEquals(true,  unboxingWithObject());
         assertEquals(true,  wideningReferenceConversionUnboxing(42));
+        assertEquals(true,  wideningReferenceConversionUnboxing2(Byte.valueOf((byte) 42)));
         assertEquals(true,  wideningReferenceConversionUnboxingAndWideningPrimitive(42));
         assertEquals(true,  unboxingAndWideningPrimitiveExact());
         assertEquals(false, unboxingAndWideningPrimitiveNotExact());
@@ -106,14 +107,18 @@ public class PrimitiveInstanceOfTypeComparisonOp {
         Object o1 = (int) 42;
         Object o2 = (byte) 42;
 
-        return o1 instanceof int i1 &&
-                o2 instanceof byte b1 &&
-                !(o1 instanceof byte b2 &&
-                !(o2 instanceof int i2));
+        return o1 instanceof int &&
+                o2 instanceof byte &&
+                !(o1 instanceof byte &&
+                !(o2 instanceof int));
     }
 
     public static <T extends Integer> boolean wideningReferenceConversionUnboxing(T i) {
         return i instanceof int;
+    }
+
+    public static <T extends Byte> boolean wideningReferenceConversionUnboxing2(T i) {
+        return i instanceof byte;
     }
 
     public static <T extends Integer> boolean wideningReferenceConversionUnboxingAndWideningPrimitive(T i) {
