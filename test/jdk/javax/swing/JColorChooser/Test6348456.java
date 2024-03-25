@@ -41,8 +41,10 @@ import javax.swing.colorchooser.DefaultColorSelectionModel;
 
 public final class Test6348456 {
 
-    private static final DefaultColorSelectionModel WHITE = new DefaultColorSelectionModel(Color.WHITE);
-    private static final DefaultColorSelectionModel BLACK = new DefaultColorSelectionModel(Color.BLACK);
+    private static final DefaultColorSelectionModel WHITE =
+            new DefaultColorSelectionModel(Color.WHITE);
+    private static final DefaultColorSelectionModel BLACK =
+            new DefaultColorSelectionModel(Color.BLACK);
 
     private static JColorChooser chooser;
 
@@ -63,7 +65,7 @@ public final class Test6348456 {
     }
 
     public static JFrame test() {
-        JFrame frame = new JFrame("temp");
+        JFrame frame = new JFrame("JColor Swap Models Test");
         JButton button = new JButton("Swap models");
         button.addActionListener(new ActionListener() {
             @Override
