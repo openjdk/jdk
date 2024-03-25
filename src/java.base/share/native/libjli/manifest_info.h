@@ -139,6 +139,12 @@
 #define ZIP64_LOCTOT(b) LG(b, 16)     /* total number of disks */
 
 /*
+ * Macros for getting Extensible Data Fields
+ */
+#define ZIPEXT_HDR(b) SH(b, 0)      /* Header ID */
+#define ZIPEXT_SIZ(b) SH(b, 2)      /* Data Size */
+
+/*
  * A comment of maximum length of 64kb can follow the END record. This
  * is the furthest the END record can be from the end of the file.
  */

@@ -140,6 +140,70 @@ readAt(int fd, jlong pos, unsigned int count, void *buf) {
             && read(fd, buf, count) == (jlong) count);
 }
 
+/*
+ * Reads size and offset fields from a zip64 extended information extra field.
+ * See APPNOTE.TXT 4.5.3.
+ */
+static jboolean read_zip64_ext(Byte *p, jlong cenext, jlong *cenlen,
+                               jlong *censiz, jlong *cenoff, jlong *cendsk) {
+  jlong start = 0;
+  while (start < cenext) {
+    short headerId = ZIPEXT_HDR(p + start);
+    short headerSize = ZIPEXT_SIZ(p + start);
+    if (headerId == ZIP64_EXTID) {
+      short expectedSize =
+          (*cenlen == ZIP64_MAGICVAL ? 8 : 0) +
+          (*censiz == ZIP64_MAGICVAL ? 8 : 0) +
+          (*cenoff == ZIP64_MAGICVAL ? 8 : 0) +
+          (*cendsk == ZIP64_MAGICVAL ? 8 : 0);
+      if (headerSize != expectedSize) {
+        return JNI_FALSE;
+      }
+      jlong offset = start + 4;
+      if (*cenlen == ZIP64_MAGICVAL) {
+        *cenlen = LL(p, offset);
+        offset += 8;
+      }
+      if (*censiz == ZIP64_MAGICVAL) {
+        *censiz = LL(p, offset);
+        offset += 8;
+      }
+      if (*cenoff == ZIP64_MAGICVAL) {
+        *cenoff = LL(p, offset);
+        offset += 8;
+      }
+      if (*cendsk == ZIP64_MAGICVAL) {
+        *cendsk = LL(p, offset);
+        offset += 8;
+      }
+      break;
+    }
+    start += 4 + headerSize;
+  }
+  return JNI_TRUE;
+}
+
+static jboolean validate_loc_header(int fd, jlong censtart, jlong base_offset,
+                                    Byte *cenhdr) {
+  Byte lochdr[LOCHDR];
+  jlong cenlen = CENLEN(cenhdr);
+  jlong censiz = CENSIZ(cenhdr);
+  jlong cenoff = CENOFF(cenhdr);
+  jlong cendsk = CENDSK(cenhdr);
+  jlong cenext = CENEXT(cenhdr);
+  if (cenoff == ZIP64_MAGICVAL && cenext > 0) {
+    Byte p[cenext];
+    if (!readAt(fd, censtart + CENHDR + CENNAM(cenhdr), cenext, p)) {
+      return JNI_FALSE;
+    }
+    if (!read_zip64_ext(p, cenext, &cenlen, &censiz, &cenoff, &cendsk)) {
+      return JNI_FALSE;
+    }
+  }
+  return readAt(fd, base_offset + cenoff, LOCHDR, lochdr)
+      && LOCSIG_AT(lochdr)
+      && CENNAM(cenhdr) == LOCNAM(lochdr);
+}
 
 /*
  * Tells whether given header values (obtained from either ZIP64 or
@@ -150,7 +214,6 @@ static jboolean
 is_valid_end_header(int fd, jlong endpos,
                     jlong censiz, jlong cenoff, jlong entries) {
     Byte cenhdr[CENHDR];
-    Byte lochdr[LOCHDR];
     // Expected offset of the first central directory header
     jlong censtart = endpos - censiz;
     // Expected position within the file that offsets are relative to
@@ -161,9 +224,7 @@ is_valid_end_header(int fd, jlong endpos,
          // Central directory must come directly before the end header.
          (readAt(fd, censtart, CENHDR, cenhdr)
           && CENSIG_AT(cenhdr)
-          && readAt(fd, base_offset + CENOFF(cenhdr), LOCHDR, lochdr)
-          && LOCSIG_AT(lochdr)
-          && CENNAM(cenhdr) == LOCNAM(lochdr)));
+          && validate_loc_header(fd, censtart, base_offset, cenhdr)));
 }
 
 /*
@@ -418,7 +479,22 @@ find_file(int fd, zentry *entry, const char *file_name)
          */
         if ((size_t)CENNAM(p) == JLI_StrLen(file_name) &&
           memcmp((p + CENHDR), file_name, JLI_StrLen(file_name)) == 0) {
-            if (JLI_Lseek(fd, base_offset + CENOFF(p), SEEK_SET) < (jlong)0) {
+            jlong cenlen = CENLEN(p);
+            jlong censiz = CENSIZ(p);
+            jlong cenoff = CENOFF(p);
+            jlong cendsk = CENDSK(p);
+            jlong cenext = CENEXT(p);
+            if ((cenlen == ZIP64_MAGICVAL
+                  || censiz == ZIP64_MAGICVAL
+                  || cenoff == ZIP64_MAGICVAL)
+                && cenext > 0) {
+              if (!read_zip64_ext(p + CENHDR + CENNAM(p), cenext,
+                                  &cenlen, &censiz, &cenoff, &cendsk)) {
+                free(buffer);
+                return (-1);
+              }
+            }
+            if (JLI_Lseek(fd, base_offset + cenoff, SEEK_SET) < (jlong)0) {
                 free(buffer);
                 return (-1);
             }
@@ -430,9 +506,9 @@ find_file(int fd, zentry *entry, const char *file_name)
                 free(buffer);
                 return (-1);
             }
-            entry->isize = CENLEN(p);
-            entry->csize = CENSIZ(p);
-            entry->offset = base_offset + CENOFF(p) + LOCHDR +
+            entry->isize = cenlen;
+            entry->csize = censiz;
+            entry->offset = base_offset + cenoff + LOCHDR +
                 LOCNAM(locbuf) + LOCEXT(locbuf);
             entry->how = CENHOW(p);
             free(buffer);
