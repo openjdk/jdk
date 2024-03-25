@@ -177,7 +177,7 @@ jobs:
           echo "Dumping config.log:" &&
           cat config.log &&
           exit 1)
-        if: steps.create-sysroot.outcome == 'success'
+        if: steps.create-sysroot.outcome == 'success' || steps.get-cached-sysroot.outputs.cache-hit == 'true'
 
       - name: 'Build'
         id: build
@@ -185,4 +185,4 @@ jobs:
         with:
           make-target: 'hotspot ${{ inputs.make-arguments }}'
           platform: linux-${{ matrix.target-cpu }}
-        if: steps.create-sysroot.outcome == 'success'
+        if: steps.create-sysroot.outcome == 'success' || steps.get-cached-sysroot.outputs.cache-hit == 'true'
