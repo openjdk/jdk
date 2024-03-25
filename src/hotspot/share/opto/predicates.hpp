@@ -264,6 +264,13 @@ class RuntimePredicate : public StackObj {
   static bool is_success_proj(Node* node, Deoptimization::DeoptReason deopt_reason);
 };
 
+// Interface to transform OpaqueLoopInit and OpaqueLoopStride nodes of a Template Assertion Predicate Expression.
+class TransformStrategyForOpaqueLoopNodes : public StackObj {
+ public:
+  virtual Node* transform_opaque_init(OpaqueLoopInitNode* opaque_init) const = 0;
+  virtual Node* transform_opaque_stride(OpaqueLoopStrideNode* opaque_stride) const = 0;
+};
+
 // A Template Assertion Predicate Expression represents the Opaque4Node for the initial value or the last value of a
 // Template Assertion Predicate and all the nodes up to and including the OpaqueLoop* nodes.
 class TemplateAssertionPredicateExpression : public StackObj {
@@ -273,7 +280,7 @@ class TemplateAssertionPredicateExpression : public StackObj {
   explicit TemplateAssertionPredicateExpression(Opaque4Node* opaque4_node) : _opaque4_node(opaque4_node) {}
 
  private:
-  Opaque4Node* clone(TransformStrategyForOpaqueLoopNodes& transform_strategy, Node* new_ctrl, PhaseIdealLoop* phase);
+  Opaque4Node* clone(const TransformStrategyForOpaqueLoopNodes& transform_strategy, Node* new_ctrl, PhaseIdealLoop* phase);
 
  public:
   // Is 'n' a node that could be part of a Template Assertion Predicate Expression (i.e. could be found on the input

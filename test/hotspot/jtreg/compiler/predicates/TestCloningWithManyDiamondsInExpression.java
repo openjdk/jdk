@@ -35,6 +35,7 @@
  *                              -XX:CompileCommand=compileonly,*TestCloningWithManyDiamondsInExpression::test*
  *                              -XX:CompileCommand=inline,*TestCloningWithManyDiamondsInExpression::create*
  *                              compiler.predicates.TestCloningWithManyDiamondsInExpression
+ * @run main compiler.predicates.TestCloningWithManyDiamondsInExpression
  */
 
 package compiler.predicates;

@@ -161,11 +161,11 @@ class CloneStrategy : public TransformStrategyForOpaqueLoopNodes {
         _new_ctrl(new_ctrl) {}
   NONCOPYABLE(CloneStrategy);
 
-  Node* transform_opaque_init(OpaqueLoopInitNode* opaque_init) override {
+  Node* transform_opaque_init(OpaqueLoopInitNode* opaque_init) const override {
     return _phase->clone_and_register(opaque_init, _new_ctrl)->as_OpaqueLoopInit();
   }
 
-  Node* transform_opaque_stride(OpaqueLoopStrideNode* opaque_stride) override {
+  Node* transform_opaque_stride(OpaqueLoopStrideNode* opaque_stride) const override {
     return _phase->clone_and_register(opaque_stride, _new_ctrl)->as_OpaqueLoopStride();
   }
 };
@@ -182,21 +182,24 @@ Opaque4Node* TemplateAssertionPredicateExpression::clone(Node* new_ctrl, PhaseId
 // Class to collect data nodes from a source to target nodes by following the inputs of the source node recursively.
 // The class takes a node filter to decide which input nodes to follow and a target node predicate to start backtracking
 // from. All nodes found on all paths from source->target(s) returned in a Unique_Node_List (without duplicates).
-class DataNodesOnPathToTargets : public StackObj {
+class DataNodesOnPathsToTargets : public StackObj {
   typedef bool (*NodeCheck)(const Node*);
 
-  NodeCheck _node_filter; // Node filter function to decide if we should process a node or not while searching for targets.
-  NodeCheck _is_target_node; // Function to decide if a node is a target node (i.e. where we should start backtracking).
+  // Node filter function to decide if we should process a node or not while searching for targets.
+  NodeCheck _node_filter;
+  // Function to decide if a node is a target node (i.e. where we should start backtracking). This check should also
+  // trivially pass the _node_filter.
+  NodeCheck _is_target_node;
   Node_Stack _stack; // Stack that stores entries of the form: [Node* node, int next_unvisited_input_index_of_node].
   VectorSet _visited; // Ensure that we are not visiting a node twice in the DFS walk which could happen with diamonds.
   Unique_Node_List _collected_nodes; // The resulting node collection of all nodes on paths from source->target(s).
 
  public:
-  DataNodesOnPathToTargets(NodeCheck node_filter, NodeCheck is_target_node)
+  DataNodesOnPathsToTargets(NodeCheck node_filter, NodeCheck is_target_node)
       : _node_filter(node_filter),
         _is_target_node(is_target_node),
         _stack(2) {}
-  NONCOPYABLE(DataNodesOnPathToTargets);
+  NONCOPYABLE(DataNodesOnPathsToTargets);
 
   // Collect all input nodes from 'start_node'->target(s) by applying the node filter to discover new input nodes and
   // the target node predicate to stop discovering more inputs and start backtracking. The implementation is done
@@ -301,14 +304,14 @@ class DataNodesOnPathToTargets : public StackObj {
 };
 
 // Clones this Template Assertion Predicate Expression and applies the given strategy to transform the OpaqueLoop* nodes.
-Opaque4Node* TemplateAssertionPredicateExpression::clone(TransformStrategyForOpaqueLoopNodes& transform_strategy,
+Opaque4Node* TemplateAssertionPredicateExpression::clone(const TransformStrategyForOpaqueLoopNodes& transform_strategy,
                                                          Node* new_ctrl, PhaseIdealLoop* phase) {
   ResourceMark rm;
   auto is_opaque_loop_node = [](const Node* node) {
     return node->is_Opaque1();
   };
-  DataNodesOnPathToTargets data_nodes_on_path_to_targets(TemplateAssertionPredicateExpression::maybe_contains,
-                                                         is_opaque_loop_node);
+  DataNodesOnPathsToTargets data_nodes_on_path_to_targets(TemplateAssertionPredicateExpression::maybe_contains,
+                                                          is_opaque_loop_node);
   const Unique_Node_List& collected_nodes = data_nodes_on_path_to_targets.collect(_opaque4_node);
   DataNodeGraph data_node_graph(collected_nodes, phase);
   const OrigToNewHashtable& orig_to_new = data_node_graph.clone_with_opaque_loop_transform_strategy(transform_strategy, new_ctrl);

@@ -4526,8 +4526,9 @@ void DataNodeGraph::rewire_clones_to_cloned_inputs() {
 
 // Clone all non-OpaqueLoop* nodes and apply the provided transformation strategy for OpaqueLoop* nodes.
 // Set 'new_ctrl' as ctrl for all cloned non-OpaqueLoop* nodes.
-void DataNodeGraph::clone_data_nodes_and_transform_opaque_loop_nodes(TransformStrategyForOpaqueLoopNodes& transform_strategy,
-                                                                     Node* new_ctrl) {
+void DataNodeGraph::clone_data_nodes_and_transform_opaque_loop_nodes(
+    const TransformStrategyForOpaqueLoopNodes& transform_strategy,
+    Node* new_ctrl) {
   for (uint i = 0; i < _data_nodes.size(); i++) {
     Node* data_node = _data_nodes[i];
     if (data_node->is_Opaque1()) {
@@ -4538,8 +4539,7 @@ void DataNodeGraph::clone_data_nodes_and_transform_opaque_loop_nodes(TransformSt
   }
 }
 
-void DataNodeGraph::transform_opaque_node(TransformStrategyForOpaqueLoopNodes& transform_strategy, Node* node) {
-  const uint next_idx = _phase->C->unique();
+void DataNodeGraph::transform_opaque_node(const TransformStrategyForOpaqueLoopNodes& transform_strategy, Node* node) {
   Node* transformed_node;
   if (node->is_OpaqueLoopInit()) {
     transformed_node = transform_strategy.transform_opaque_init(node->as_OpaqueLoopInit());

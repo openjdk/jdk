@@ -365,7 +365,7 @@ void PhaseIdealLoop::get_assertion_predicates(Node* predicate, Unique_Node_List&
 // Clone an Assertion Predicate for an unswitched loop. OpaqueLoopInit and OpaqueLoopStride nodes are cloned and uncommon
 // traps are kept for the predicate (a Halt node is used later when creating pre/main/post loops and copying this cloned
 // predicate again).
-IfProjNode* PhaseIdealLoop::clone_assertion_predicate_for_unswitched_loops(Node* template_assertion_predicate,
+IfProjNode* PhaseIdealLoop::clone_assertion_predicate_for_unswitched_loops(IfNode* template_assertion_predicate,
                                                                            IfProjNode* predicate,
                                                                            Deoptimization::DeoptReason reason,
                                                                            ParsePredicateSuccessProj* parse_predicate_proj) {
