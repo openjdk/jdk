@@ -96,7 +96,7 @@ public class TestScopedValue {
     private static void forceCompilation(String name, Class<?>... parameterTypes) throws NoSuchMethodException {
         Method m = TestScopedValue.class.getDeclaredMethod(name, parameterTypes);
         WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-        TestVM.assertCompiledByC2(m);
+        TestFramework.assertCompiledByC2(m);
     }
 
     @DontInline
@@ -480,7 +480,7 @@ public class TestScopedValue {
                     testFastPath15();
                 });
         Method m = TestScopedValue.class.getDeclaredMethod("testFastPath15");
-        TestVM.assertDeoptimizedByC2(m);
+        TestFramework.assertDeoptimizedByC2(m);
         // Compile again
         runAndCompile15();
     }
