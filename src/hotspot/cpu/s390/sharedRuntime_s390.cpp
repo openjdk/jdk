@@ -261,7 +261,7 @@ static const RegisterSaver::LiveRegType RegisterSaver_LiveVolatileRegs[] = {
 };
 
 static const RegisterSaver::LiveRegType RegisterSaver_LiveVRegs[] = {
-  // live vector registers (optional, only these ones are used by C2):
+  // live vector registers (optional, only these are used by C2):
   RegisterSaver_LiveVReg( Z_V16 ),
   RegisterSaver_LiveVReg( Z_V17 ),
   RegisterSaver_LiveVReg( Z_V18 ),
@@ -292,7 +292,6 @@ int RegisterSaver::live_reg_save_size(RegisterSet reg_set) {
   }
   return (reg_space / sizeof(RegisterSaver::LiveRegType)) * reg_size;
 }
-
 
 int RegisterSaver::live_reg_frame_size(RegisterSet reg_set, bool save_vectors) {
   const int vregstosave_num = save_vectors ? (sizeof(RegisterSaver_LiveVRegs) /
@@ -412,13 +411,12 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, RegisterSet reg
   assert(first != noreg, "Should spill at least one int reg.");
   __ z_stmg(first, last, first_offset, Z_SP);
 
-  for (int i = 0; i < vregstosave_num; i++) {
+  for (int i = 0; i < vregstosave_num; i++, offset += v_reg_size) {
     int reg_num  = RegisterSaver_LiveVRegs[i].reg_num;
 
     __ z_vst(as_VectorRegister(reg_num), Address(Z_SP, offset));
 
     map->set_callee_saved(VMRegImpl::stack2reg(offset>>2), RegisterSaver_LiveVRegs[i].vmreg);
-    offset += v_reg_size;
   }
 
   assert(offset == frame_size_in_bytes, "consistency check");
@@ -567,12 +565,10 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, RegisterSet reg
   assert(first != noreg, "Should spill at least one int reg.");
   __ z_lmg(first, last, first_offset, Z_SP);
 
-  for (int i = 0; i < vregstosave_num; i++) {
+  for (int i = 0; i < vregstosave_num; i++, offset += v_reg_size) {
     int reg_num  = RegisterSaver_LiveVRegs[i].reg_num;
 
     __ z_vl(as_VectorRegister(reg_num), Address(Z_SP, offset));
-
-    offset += v_reg_size;
   }
 
   assert(offset == frame_size_in_bytes, "consistency check");
