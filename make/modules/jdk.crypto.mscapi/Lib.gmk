@@ -25,18 +25,17 @@
 
 include LibCommon.gmk
 
-################################################################################
-
 ifeq ($(call isTargetOs, windows), true)
+  ##############################################################################
+  ## Build libsunmscapi
+  ##############################################################################
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBSUNMSCAPI, \
       NAME := sunmscapi, \
       OPTIMIZATION := LOW, \
       LDFLAGS := $(LDFLAGS_CXX_JDK), \
-      LIBS := crypt32.lib advapi32.lib ncrypt.lib, \
+      LIBS_windows := advapi32.lib crypt32.lib ncrypt.lib, \
   ))
 
   TARGETS += $(BUILD_LIBSUNMSCAPI)
 endif
-
-################################################################################

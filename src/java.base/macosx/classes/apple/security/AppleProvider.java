@@ -60,7 +60,9 @@ public final class AppleProvider extends Provider {
             try {
                 if (type.equals("KeyStore")) {
                     if (algo.equals("KeychainStore")) {
-                        return new KeychainStore();
+                        return new KeychainStore.USER();
+                    } else if (algo.equals("KeychainStore-ROOT")) {
+                        return new KeychainStore.ROOT();
                     }
                 }
             } catch (Exception ex) {
@@ -82,7 +84,9 @@ public final class AppleProvider extends Provider {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
                 putService(new ProviderService(p, "KeyStore",
-                           "KeychainStore", "apple.security.KeychainStore"));
+                           "KeychainStore", "apple.security.KeychainStore$USER"));
+                putService(new ProviderService(p, "KeyStore",
+                           "KeychainStore-ROOT", "apple.security.KeychainStore$ROOT"));
                 return null;
             }
         });
