@@ -140,8 +140,9 @@ public abstract class AbstractFilePermissionTest {
         perms_0700.add(PosixFilePermission.OWNER_EXECUTE);
         Files.setPosixFilePermissions(file2PermissionTest, perms_0700);
 
-        if (doTest() != 0) {
-            System.out.println("FAILURE");
+        int e = doTest();
+        if (e != 0) {
+            System.out.println("FAILURE: expected exit code 0, got: " + e);
             ++failures;
         }
     }
@@ -155,8 +156,9 @@ public abstract class AbstractFilePermissionTest {
         perms.add(PosixFilePermission.OTHERS_EXECUTE);
         Files.setPosixFilePermissions(file2PermissionTest, perms);
 
-        if (doTest() == 0) {
-            System.out.println("FAILURE");
+        int e = doTest();
+        if (e == 0) {
+            System.out.println("FAILURE: expected exit code non-zero, got: " + e);
             ++failures;
         }
     }
