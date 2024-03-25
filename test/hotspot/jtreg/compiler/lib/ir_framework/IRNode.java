@@ -1534,6 +1534,11 @@ public class IRNode {
         trapNodes(UNSTABLE_IF_TRAP, "unstable_if");
     }
 
+    public static final String UNSTABLE_FUSED_IF_TRAP = PREFIX + "UNSTABLE_FUSED_IF_TRAP" + POSTFIX;
+    static {
+        trapNodes(UNSTABLE_FUSED_IF_TRAP, "unstable_fused_if");
+    }
+
     public static final String UNREACHED_TRAP = PREFIX + "UNREACHED_TRAP" + POSTFIX;
     static {
         trapNodes(UNREACHED_TRAP, "unreached");
