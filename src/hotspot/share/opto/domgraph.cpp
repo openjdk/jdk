@@ -506,6 +506,9 @@ void PhaseIdealLoop::Dominators() {
     NTarjan *tdom = t->_dom;           // Handy access to immediate dominator
     if( tdom )  {                      // Root has no immediate dominator
       Node* dom = tdom->_control;
+      // The code that removes unreachable loops above could have left a region with a single input. Remove it. Do it
+      // now that we iterate over cfg nodes for the last time (doing it earlier would have left a dead cfg node behind
+      // that code that goes over the dfs list would have had to handle).
       if (dom != C->root() && dom->is_Region() && dom->req() == 2) {
         remove_single_entry_region(t, tdom, dom, _igvn);
       }
