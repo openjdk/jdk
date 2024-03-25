@@ -181,7 +181,7 @@ Opaque4Node* TemplateAssertionPredicateExpression::clone(Node* new_ctrl, PhaseId
 
 // Class to collect data nodes from a source to target nodes by following the inputs of the source node recursively.
 // The class takes a node filter to decide which input nodes to follow and a target node predicate to start backtracking
-// from. All nodes found on all paths from source->target(s) returned in a Unique_Node_List (without duplicates).
+// from. All nodes found on all paths from source->target(s) are returned in a Unique_Node_List (without duplicates).
 class DataNodesOnPathsToTargets : public StackObj {
   typedef bool (*NodeCheck)(const Node*);
 
@@ -190,115 +190,68 @@ class DataNodesOnPathsToTargets : public StackObj {
   // Function to decide if a node is a target node (i.e. where we should start backtracking). This check should also
   // trivially pass the _node_filter.
   NodeCheck _is_target_node;
-  Node_Stack _stack; // Stack that stores entries of the form: [Node* node, int next_unvisited_input_index_of_node].
-  VectorSet _visited; // Ensure that we are not visiting a node twice in the DFS walk which could happen with diamonds.
   Unique_Node_List _collected_nodes; // The resulting node collection of all nodes on paths from source->target(s).
+  // List to track all nodes visited on the search for target nodes starting at a start node. These nodes are then used
+  // in backtracking to find the nodes actually being on a start->target(s) path. This list also serves as visited set
+  // to avoid double visits of a node which could happen with diamonds shapes.
+  Unique_Node_List _nodes_to_visit;
 
  public:
   DataNodesOnPathsToTargets(NodeCheck node_filter, NodeCheck is_target_node)
       : _node_filter(node_filter),
-        _is_target_node(is_target_node),
-        _stack(2) {}
+        _is_target_node(is_target_node) {}
   NONCOPYABLE(DataNodesOnPathsToTargets);
 
   // Collect all input nodes from 'start_node'->target(s) by applying the node filter to discover new input nodes and
   // the target node predicate to stop discovering more inputs and start backtracking. The implementation is done
-  // with an iterative DFS walk including a visited set to avoid redundant double visits when encountering a diamand
-  // shape which could consume a lot of unnecessary time.
+  // with two BFS traversal: One to collect the target nodes (if any) and one to backtrack from the target nodes to
+  // find all other nodes on the start->target(s) paths.
   const Unique_Node_List& collect(Node* start_node) {
-    assert(_collected_nodes.size() == 0, "should not call this method twice in a row");
-    assert(!_is_target_node(start_node), "no trivial paths where start node is also a target");
+    assert(_collected_nodes.size() == 0 && _nodes_to_visit.size() == 0, "should not call this method twice in a row");
+    assert(!_is_target_node(start_node), "no trivial paths where start node is also a target node");
 
-    push_unvisited_node(start_node);
-    while (_stack.is_nonempty()) {
-      Node* current = _stack.node();
-      _visited.set(current->_idx);
-      if (_is_target_node(current)) {
-        // Target node? Do not visit its inputs and begin backtracking.
-        _collected_nodes.push(current);
-        pop_target_node_and_collect_predecessor();
-      } else if (!push_next_unvisited_input()) {
-        // All inputs visited. Continue backtracking.
-        pop_node_and_maybe_collect_predecessor();
-      }
+    collect_target_nodes(start_node);
+    if (_collected_nodes.size() != 0) {
+      backtrack_from_target_nodes();
+      assert(_collected_nodes.member(start_node), "must find start node again when backtracking");
     }
     return _collected_nodes;
   }
 
  private:
-  // The predecessor (just below the target node (currently on top) on the stack) is also on the path from
-  // start->target. Collect it and pop the target node from the top of the stack.
-  void pop_target_node_and_collect_predecessor() {
-    _stack.pop();
-    assert(_stack.is_nonempty(), "target nodes should not be start nodes");
-    _collected_nodes.push(_stack.node());
-  }
-
-  // Push the next unvisited input node of the current node on top of the stack by using its stored associated input index:
-  //
-  //                        Stack:
-  //      I1  I2  I3        [current, 2] // Index 2 means that I1 (first data node at index 1) was visited before.
-  //       \  |  /                       // The next unvisited input is I2. Visit I2 by pushing a new entry [I2, 1]
-  //   Y   current                       // and update the index [current, 2] -> [current, 3] to visit I3 once 'current'
-  //    \  /                             // is on top of stack again later in DFS walk.
-  //     X                  [X, 3]       // Index 3 points past node input array which means that there are no more inputs
-  //                                     // to visit. Once X is on top of stack again, we are done with 'X' and pop it.
-  //
-  // If an input was already collected before (i.e. part of start->target), then the current node is part of some kind
-  // of diamond with it:
-  //
-  //        C3       X
-  //       /  \     /
-  //     C2   current
-  //      \  /
-  //       C1
-  //
-  // Cx means collected. Since C3 is already collected (and thus already visited), we add 'current' to the collected list
-  // since it must also be on a path from start->target. We continue the DFS with X which could potentially also be on a
-  // start->target path but that is not known yet.
-  //
-  // This method returns true if there is an unvisited input and return false otherwise if all inputs have been visited.
-  bool push_next_unvisited_input() {
-    Node* current = _stack.node();
-    const uint next_unvisited_input_index = _stack.index();
-    for (uint i = next_unvisited_input_index; i < current->req(); i++) {
-      Node* input = current->in(i);
-      if (_node_filter(input)) {
-        if (!_visited.test(input->_idx)) { // Avoid double visits which could take a long time to process.
-          // Visit current->in(i) next in DFS walk. Once 'current' is again on top of stack, we need to visit in(i+1).
-          push_input_and_update_current_index(input, i + 1);
-          return true;
-        } else if (_collected_nodes.member(input)) {
-          // Diamond case, see description above.
-          // Input node part of start->target? Then current node (i.e. a predecessor of input) is also on path. Collect it.
-          _collected_nodes.push(current);
+  // Do a BFS from the start_node to collect all target nodes. We can then do another BFS from the target nodes to
+  // find all nodes on the paths from start->target(s).
+  // Note: We could do a single DFS pass to search targets and backtrack in one walk. But this is much more complex.
+  //       Given that the typical Template Assertion Predicate Expression only consists of a few nodes, we aim for
+  //       simplicity here.
+  void collect_target_nodes(Node* start_node) {
+    _nodes_to_visit.push(start_node);
+    for (uint i = 0; i < _nodes_to_visit.size(); i++) {
+      Node* next = _nodes_to_visit[i];
+      for (uint j = 1; j < next->req(); j++) {
+        Node* input = next->in(j);
+        if (_is_target_node(input)) {
+          assert(_node_filter(input), "must also pass node filter");
+          _collected_nodes.push(input);
+        } else if (_node_filter(input)) {
+          _nodes_to_visit.push(input);
         }
       }
     }
-    return false;
   }
 
-  // Update the index of the current node on top of the stack with the next unvisited input index and push 'input' to
-  // the stack which is visited next in the DFS order.
-  void push_input_and_update_current_index(Node* input, uint next_unvisited_input_index) {
-    _stack.set_index(next_unvisited_input_index);
-    push_unvisited_node(input);
-  }
-
-  // Push the next unvisited node in the DFS order with index 1 since this node needs to visit all its inputs.
-  void push_unvisited_node(Node* next_to_visit) {
-    _stack.push(next_to_visit, 1);
-  }
-
-  // If the current node on top of the stack is on a path from start->target(s), then also collect the predecessor node
-  // before popping the current node.
-  void pop_node_and_maybe_collect_predecessor() {
-    Node* current_node = _stack.node();
-    _stack.pop();
-    if (_stack.is_nonempty() && _collected_nodes.member(current_node)) {
-      // Current node was part of start->target? Then predecessor (i.e. newly on top of stack) is also on path. Collect it.
-      Node* predecessor = _stack.node();
-      _collected_nodes.push(predecessor);
+  // Backtrack from all previously collected target nodes by using the visited set of the start->target(s) search.
+  void backtrack_from_target_nodes() {
+    for (uint i = 0; i < _collected_nodes.size(); i++) {
+      Node* node_on_path = _collected_nodes[i];
+      for (DUIterator_Fast jmax, j = node_on_path->fast_outs(jmax); j < jmax; j++) {
+        Node* use = node_on_path->fast_out(j);
+        if (_nodes_to_visit.member(use)) {
+          // use must be on a path from start->target(s) because it was also visited in the first BFS starting from
+          // the start node.
+          _collected_nodes.push(use);
+        }
+      }
     }
   }
 };
