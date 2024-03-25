@@ -28,6 +28,8 @@ import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
 
 import java.io.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.Iterator;
 
 import nsk.share.*;
@@ -68,7 +70,8 @@ public class refType001 {
                 {"AnotherThread",   "Inter",                    "0"}
              };
 
-    static private volatile boolean testFailed, eventsReceived, threadsStarted;
+    static private volatile boolean testFailed;
+    static private CountDownLatch eventsReceivedLatch;
     static private int eventTimeout;
 
     public static void main (String argv[]) {
@@ -82,9 +85,7 @@ public class refType001 {
         String command;
 
         testFailed = false;
-        eventsReceived = false;
-        threadsStarted = false;
-
+        eventsReceivedLatch = new CountDownLatch(1);
 
         argHandler = new ArgumentHandler(args);
         log = new Log(out, argHandler);
@@ -114,8 +115,10 @@ public class refType001 {
 
                 public void run() {
 
-                    // handle events until all threads started and all expected events received
-                    while (!(threadsStarted && eventsReceived)) {
+                    boolean isConnected = true;
+                    boolean allEventsReceived = false;
+                    // handle events until debuggee is disconnected
+                    while (isConnected) {
                         EventSet eventSet = null;
                         try {
                             eventSet = vm.eventQueue().remove(TIMEOUT_DELTA);
@@ -133,8 +136,10 @@ public class refType001 {
                             Event event = eventIterator.nextEvent();
 //                            log.display("\nEvent received:\n  " + event);
 
-                            // handle ClassPrepareEvent
-                            if (event instanceof ClassPrepareEvent) {
+                            if (event instanceof VMDeathEvent || event instanceof VMDisconnectEvent) {
+                                log.display("eventHandler got " + event);
+                                isConnected = false;
+                            } else  if (event instanceof ClassPrepareEvent) {
                                 ClassPrepareEvent castedEvent = (ClassPrepareEvent)event;
                                 log.display("\nClassPrepareEvent received:\n  " + event);
 
@@ -198,11 +203,20 @@ public class refType001 {
                                                    }
                                               }
 
-                                              // Check that all expected ClassPrepareEvent are received
-                                              eventsReceived = true;
-                                              for (int i = 0; i < checkedTypes.length; i++) {
-                                                   if (checkedTypes[i][2] == "0")
-                                                       eventsReceived = false;
+                                              // Check that all expected ClassPrepareEvent(s) are received.
+                                              if (!allEventsReceived) {
+                                                  allEventsReceived = true;
+                                                  for (int i = 0; i < checkedTypes.length; i++) {
+                                                      // checkedTypes[i][2] is "0" initially,
+                                                      // "1" after corresponding ClassPrepareEvent is received.
+                                                      if (checkedTypes[i][2] == "0") {
+                                                          allEventsReceived = false;
+                                                          break;
+                                                      }
+                                                  }
+                                                  if (allEventsReceived) {
+                                                      eventsReceivedLatch.countDown();
+                                                  }
                                               }
                                          }
                                     }
@@ -219,7 +233,9 @@ public class refType001 {
                         } // event handled
 
 //                        log.display("Resuming event set");
-                        eventSet.resume();
+                        if (isConnected) {
+                            eventSet.resume();
+                        }
 
                     } // event set handled
 
@@ -260,17 +276,12 @@ public class refType001 {
                 testFailed = true;
             }
 
-            // notify EventHandler that all threads started
-            threadsStarted = true;
-
             // wait for all expected events received or timeout exceeds
             try {
-                  eventHandler.join(eventTimeout);
-                  if (eventHandler.isAlive()) {
-                      log.complain("FAILURE 20: Timeout for waiting event was exceeded");
-                      eventHandler.interrupt();
-                      testFailed = true;
-                  }
+                if (!eventsReceivedLatch.await(eventTimeout, TimeUnit.MILLISECONDS)) {
+                    log.complain("FAILURE 20: Timeout waiting for all events was exceeded");
+                    testFailed = true;
+                }
             } catch (InterruptedException e) {
                   log.complain("TEST INCOMPLETE: InterruptedException caught while waiting for eventHandler's death");
                   testFailed = true;
