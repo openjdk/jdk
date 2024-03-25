@@ -72,15 +72,25 @@ public class SimpleWithers {
             }
         }
         if (r instanceof R(var val1, var val2, var val3) && r with {
-                val1 = -3;
-            } instanceof R(var v1, var v2, var v3) && v1 != (-3)) {
+                val1 = -4;
+            } instanceof R(var v1, var v2, var v3) && v1 != (-4)) {
             throw new AssertionError("Incorrect value: " + v1);
         }
         C c = l -> l with {
-            val1 = -4;
-            val3 = -8;
+            val1 = -5;
+            val3 = -6;
         };
+        //component local variables may shadow:
+        int val1 = 0, val2 = 0, val3 = 0;
+        if (r with {
+                val1 = -7;
+                val2 = -8;
+                val3 = -9;
+            } instanceof R(var v1, var v2, var v3) && v1 != (-7)) {
+            throw new AssertionError("Incorrect value: " + v1);
+        }
     }
+
     record R(int val1, int val2, int val3) {}
     record R2(R val1) {}
     interface C {

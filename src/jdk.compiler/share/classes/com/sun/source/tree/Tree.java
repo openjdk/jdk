@@ -230,7 +230,9 @@ public interface Tree {
 
         /**
          * Used for instances of {@link DerivedInstanceTree}.
+         * @since 23
          */
+        @PreviewFeature(feature=PreviewFeature.Feature.DERIVED_RECORD_CREATION, reflective=true)
         DERIVED_INSTANCE(DerivedInstanceTree.class),
 
         /**

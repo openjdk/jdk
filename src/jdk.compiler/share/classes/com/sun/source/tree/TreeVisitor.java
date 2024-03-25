@@ -384,7 +384,9 @@ public interface TreeVisitor<R,P> {
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value
+     * @since 23
      */
+    @PreviewFeature(feature=PreviewFeature.Feature.DERIVED_RECORD_CREATION, reflective=true)
     R visitDerivedInstance(DerivedInstanceTree node, P p);
 
     /**

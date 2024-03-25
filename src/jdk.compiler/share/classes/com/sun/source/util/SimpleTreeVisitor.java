@@ -552,8 +552,10 @@ public class SimpleTreeVisitor <R,P> implements TreeVisitor<R,P> {
      * @param node {@inheritDoc}
      * @param p {@inheritDoc}
      * @return  the result of {@code defaultAction}
+     * @since 23
      */
     @Override
+    @PreviewFeature(feature=PreviewFeature.Feature.DERIVED_RECORD_CREATION, reflective=true)
     public R visitDerivedInstance(DerivedInstanceTree node, P p) {
         return defaultAction(node, p);
     }

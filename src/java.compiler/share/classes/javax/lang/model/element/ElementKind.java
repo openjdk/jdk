@@ -25,6 +25,8 @@
 
 package javax.lang.model.element;
 
+import jdk.internal.javac.PreviewFeature;
+
 /**
  * The {@code kind} of an element.
  *
@@ -121,7 +123,14 @@ public enum ElementKind {
      * A binding variable in a pattern.
      * @since 16
      */
-    BINDING_VARIABLE;
+    BINDING_VARIABLE,
+
+    /**
+     * A binding variable in a pattern.
+     * @since 23
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.DERIVED_RECORD_CREATION, reflective=true)
+    COMPONENT_LOCAL_VARIABLE;
 
     // Maintenance note: check if the default implementation of
     // Elements.getOutermostTypeElement needs updating when new kind

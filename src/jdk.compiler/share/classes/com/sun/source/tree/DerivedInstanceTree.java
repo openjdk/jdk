@@ -25,6 +25,8 @@
 
 package com.sun.source.tree;
 
+import jdk.internal.javac.PreviewFeature;
+
 /**
  * A tree node for a derived record creation expression.
  *
@@ -33,9 +35,11 @@ package com.sun.source.tree;
  *   <em>expression</em> with { <em>assignments</em> }
  * </pre>
  *
- * TODO: @jls 15.10.3 Array Access Expressions
+ * @jls 15.30 Derived Record Creation Expression
  *
+ * @since 23
  */
+@PreviewFeature(feature=PreviewFeature.Feature.DERIVED_RECORD_CREATION, reflective=true)
 public interface DerivedInstanceTree extends ExpressionTree {
     /**
      * Returns the expression for the array being accessed.

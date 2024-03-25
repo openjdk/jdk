@@ -670,8 +670,10 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
      * @return the result of scanning
+     * @since 23
      */
     @Override
+    @PreviewFeature(feature=PreviewFeature.Feature.DERIVED_RECORD_CREATION, reflective=true)
     public R visitDerivedInstance(DerivedInstanceTree node, P p) {
         R r = scan(node.getExpression(), p);
         r = scanAndReduce(node.getBlock(), p, r);
