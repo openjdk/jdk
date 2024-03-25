@@ -3069,13 +3069,14 @@ void TemplateTable::fast_storefield(TosState state)
 
   // access constant pool cache
   __ load_field_entry(r2, r1);
+
+  // Must prevent reordering of the following cp cache loads with bytecode load
+  __ membar(MacroAssembler::LoadLoad);
+
   __ push(r0);
   // R1: field offset, R2: TOS, R3: flags
   load_resolved_field_entry(r2, r2, r0, r1, r3);
   __ pop(r0);
-
-  // Must prevent reordering of the following cp cache loads with bytecode load
-  __ membar(MacroAssembler::LoadLoad);
 
   {
     Label notVolatile;
