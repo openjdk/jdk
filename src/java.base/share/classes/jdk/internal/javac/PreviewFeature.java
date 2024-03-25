@@ -81,6 +81,8 @@ public @interface PreviewFeature {
         CLASSFILE_API,
         @JEP(number=461, title="Stream Gatherers", status="Preview")
         STREAM_GATHERERS,
+        @JEP(number=0, title="Module Imports", status="Preview")
+        MODULE_IMPORTS,
         /**
          * A key for testing.
          */
