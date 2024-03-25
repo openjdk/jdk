@@ -487,11 +487,10 @@ that the " characters are essential)
 accordingly. If you have not installed the `BuildTools`, but e.g.
 `Professional`, adjust the product ID accordingly.
 
-### IBM XL C/C++
+### IBM Open XL C/C++
 
-Please consult the AIX section of the [Supported Build Platforms](
-https://wiki.openjdk.org/display/Build/Supported+Build+Platforms) OpenJDK Build
-Wiki page for details about which versions of XLC are supported.
+The minimum accepted version of Open XL is 17.1.1.4. This is in essence clang
+15, and will be treated as such by the OpenJDK build system.
 
 ## Boot JDK Requirements
 
