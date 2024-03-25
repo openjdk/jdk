@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -871,8 +871,8 @@ private:
   void check_relocation(RelocationHolder const& rspec, int format);
 #endif
 
-  void emit_data(jint data, relocInfo::relocType    rtype, int format);
-  void emit_data(jint data, RelocationHolder const& rspec, int format);
+  void emit_data(jint data, relocInfo::relocType    rtype, int format = 0);
+  void emit_data(jint data, RelocationHolder const& rspec, int format = 0);
   void emit_data64(jlong data, relocInfo::relocType rtype, int format = 0);
   void emit_data64(jlong data, RelocationHolder const& rspec, int format = 0);
 
@@ -1975,8 +1975,12 @@ private:
   void pmaddwd(XMMRegister dst, XMMRegister src);
   void vpmaddwd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpmaddubsw(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
+  void vpmadd52luq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
+  void vpmadd52luq(XMMRegister dst, XMMRegister src1, Address src2, int vector_len);
   void evpmadd52luq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
   void evpmadd52luq(XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len);
+  void vpmadd52huq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
+  void vpmadd52huq(XMMRegister dst, XMMRegister src1, Address src2, int vector_len);
   void evpmadd52huq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
   void evpmadd52huq(XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len);
 
@@ -2071,6 +2075,8 @@ private:
   void punpckldq(XMMRegister dst, XMMRegister src);
   void punpckldq(XMMRegister dst, Address src);
   void vpunpckldq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpunpcklqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+
 
   // Interleave High Word
   void vpunpckhwd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
@@ -2080,6 +2086,7 @@ private:
 
   // Interleave High Doublewords
   void vpunpckhdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpunpckhqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   // Interleave Low Quadwords
   void punpcklqdq(XMMRegister dst, XMMRegister src);

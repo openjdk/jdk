@@ -393,18 +393,26 @@
   inline common_abi* own_abi()     const { return (common_abi*) _sp; }
   inline common_abi* callers_abi() const { return (common_abi*) _fp; }
 
+  enum class kind {
+    unknown,          // The frame's pc is not necessarily in the CodeCache.
+                      // CodeCache::find_blob_fast(void* pc) can yield wrong results in this case and must not be used.
+    code_blob,        // The frame's pc is known to be in the CodeCache but it is likely not in an nmethod.
+                      // CodeCache::find_blob_fast() will be correct but not faster in this case.
+    nmethod           // This is likely the frame of a nmethod.
+                      // The code cache lookup is optimized based on NativePostCallNops.
+  };
+
  private:
 
   // Initialize frame members (_pc and _sp must be given)
-  inline void setup();
+  inline void setup(kind knd);
 
  public:
 
-  const ImmutableOopMap* get_oop_map() const;
-
   // Constructors
   inline frame(intptr_t* sp, intptr_t* fp, address pc);
-  inline frame(intptr_t* sp, address pc, intptr_t* unextended_sp = nullptr, intptr_t* fp = nullptr, CodeBlob* cb = nullptr);
+  inline frame(intptr_t* sp, address pc, kind knd = kind::nmethod);
+  inline frame(intptr_t* sp, address pc, intptr_t* unextended_sp, intptr_t* fp = nullptr, CodeBlob* cb = nullptr);
   inline frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map);
   inline frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map, bool on_heap);
 

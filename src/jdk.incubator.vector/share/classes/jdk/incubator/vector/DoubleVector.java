@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3797,9 +3797,19 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         @ForceInline
         @Override final
         public DoubleVector fromArray(Object a, int offset) {
-            // User entry point:  Be careful with inputs.
+            // User entry point
+            // Defer only to the equivalent method on the vector class, using the same inputs
             return DoubleVector
                 .fromArray(this, (double[]) a, offset);
+        }
+
+        @ForceInline
+        @Override final
+        public DoubleVector fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+            // User entry point
+            // Defer only to the equivalent method on the vector class, using the same inputs
+            return DoubleVector
+                .fromMemorySegment(this, ms, offset, bo);
         }
 
         @ForceInline

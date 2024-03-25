@@ -207,6 +207,7 @@ class Thread: public ThreadShadow {
  private:
   DEBUG_ONLY(bool _suspendible_thread;)
   DEBUG_ONLY(bool _indirectly_suspendible_thread;)
+  DEBUG_ONLY(bool _indirectly_safepoint_thread;)
 
  public:
   // Determines if a heap allocation failure will be retried
@@ -225,6 +226,10 @@ class Thread: public ThreadShadow {
   void set_indirectly_suspendible_thread()   { _indirectly_suspendible_thread = true; }
   void clear_indirectly_suspendible_thread() { _indirectly_suspendible_thread = false; }
   bool is_indirectly_suspendible_thread()    { return _indirectly_suspendible_thread; }
+
+  void set_indirectly_safepoint_thread()   { _indirectly_safepoint_thread = true; }
+  void clear_indirectly_safepoint_thread() { _indirectly_safepoint_thread = false; }
+  bool is_indirectly_safepoint_thread()    { return _indirectly_safepoint_thread; }
 #endif
 
  private:

@@ -33,6 +33,7 @@ class ShenandoahDegenGC : public ShenandoahGC {
   friend class VM_ShenandoahDegeneratedGC;
 private:
   const ShenandoahDegenPoint  _degen_point;
+  bool _abbreviated;
 
 public:
   ShenandoahDegenGC(ShenandoahDegenPoint degen_point);
@@ -48,6 +49,7 @@ private:
   void op_finish_mark();
   void op_prepare_evacuation();
   void op_cleanup_early();
+
   void op_evacuate();
   void op_init_updaterefs();
   void op_updaterefs();
@@ -57,6 +59,9 @@ private:
   // Fail handling
   void op_degenerated_futile();
   void op_degenerated_fail();
+
+  // Turns this degenerated cycle into a full gc without leaving the safepoint
+  void upgrade_to_full();
 
   const char* degen_event_message(ShenandoahDegenPoint point) const;
 };

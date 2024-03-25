@@ -684,6 +684,9 @@ void CallGenerator::do_late_inline_helper() {
       C->print_inlining_update_delayed(this);
       return;
     }
+    if (C->print_inlining() && (is_mh_late_inline() || is_virtual_late_inline())) {
+      C->print_inlining_update_delayed(this);
+    }
 
     // Setup default node notes to be picked up by the inlining
     Node_Notes* old_nn = C->node_notes_at(call->_idx);

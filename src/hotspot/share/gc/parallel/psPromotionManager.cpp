@@ -272,9 +272,7 @@ template <class T> void PSPromotionManager::process_array_chunk_work(
   T* p               = base + start;
   T* const chunk_end = base + end;
   while (p < chunk_end) {
-    if (PSScavenge::should_scavenge(p)) {
-      claim_or_forward_depth(p);
-    }
+    claim_or_forward_depth(p);
     ++p;
   }
 }

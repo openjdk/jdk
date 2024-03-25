@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -680,7 +680,7 @@ DumpWriter::~DumpWriter(){
   if (_tmp_buffer != nullptr) {
     os::free(_tmp_buffer);
   }
-  if (_writer != NULL) {
+  if (_writer != nullptr) {
     delete _writer;
   }
   _bytes_written = -1;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 4018937 8008577
+ * @bug 4018937 8008577 8174269
  * @summary Confirm that methods which are newly added to support BigDecimal and BigInteger work as expected.
- * @run junit/othervm -Djava.locale.providers=COMPAT,SPI BigDecimalParse
+ * @run junit/othervm BigDecimalParse
  */
 
 import java.math.BigDecimal;
@@ -42,7 +42,7 @@ public class BigDecimalParse {
     // Change JVM default Locale
     @BeforeAll
     static void initAll() {
-        Locale.setDefault(Locale.US);
+        Locale.setDefault(Locale.forLanguageTag("en-US-u-cf-account"));
     }
 
 
@@ -240,7 +240,7 @@ public class BigDecimalParse {
 
         // From: Double.NaN
         // To:   Double.NaN
-        check("\ufffd", Double.NaN);
+        check("NaN", Double.NaN);
 
         // From: Double.POSITIVE_INFINITY
         // To:   Double.NaN
@@ -350,7 +350,7 @@ public class BigDecimalParse {
         df.setParseBigDecimal(true);
 
         String[] numbers = {
-            "0", "0.0", "25", "25.0", "25.5", "\u221e", "\ufffd",
+            "0", "0.0", "25", "25.0", "25.5", "\u221e", "NaN",
             "-0", "-0.0", "-25", "-25.0", "-25.5", "-\u221e",
         };
         int multipliers[] = {5, -5};

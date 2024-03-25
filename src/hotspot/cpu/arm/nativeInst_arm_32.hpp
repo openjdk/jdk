@@ -385,7 +385,7 @@ class NativeMovConstReg: public NativeInstruction {
   }
   void set_pc_relative_offset(address addr, address pc);
   address next_instruction_address() const {
-    // NOTE: CompiledStaticCall::set_to_interpreted() calls this but
+    // NOTE: CompiledDirectCall::set_to_interpreted() calls this but
     // are restricted to single-instruction ldr. No need to jump over
     // several instructions.
     assert(is_ldr_literal(), "Should only use single-instructions load");
@@ -438,8 +438,8 @@ inline NativeCall* nativeCall_before(address return_address) {
 class NativePostCallNop: public NativeInstruction {
 public:
   bool check() const { return is_nop(); }
-  int displacement() const { return 0; }
-  void patch(jint diff);
+  bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const { return false; }
+  bool patch(int32_t oopmap_slot, int32_t cb_offset) { return false; }
   void make_deopt();
 };
 

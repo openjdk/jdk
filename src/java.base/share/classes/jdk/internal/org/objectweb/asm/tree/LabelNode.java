@@ -109,4 +109,3 @@ public class LabelNode extends AbstractInsnNode {
         value = null;
     }
 }
-

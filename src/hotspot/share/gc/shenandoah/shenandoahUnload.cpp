@@ -106,7 +106,7 @@ public:
   }
 
   virtual bool is_safe(CompiledMethod* method) {
-    if (SafepointSynchronize::is_at_safepoint()) {
+    if (SafepointSynchronize::is_at_safepoint() || method->is_unloading()) {
       return true;
     }
 
