@@ -867,6 +867,11 @@ public class IRNode {
         vectorNode(MAX_VD, "MaxV", TYPE_DOUBLE);
     }
 
+    public static final String MAX_VL = VECTOR_PREFIX + "MAX_VL" + POSTFIX;
+    static {
+        vectorNode(MAX_VL, "MaxV", TYPE_LONG);
+    }
+
     public static final String MEMBAR = PREFIX + "MEMBAR" + POSTFIX;
     static {
         beforeMatchingNameRegex(MEMBAR, "MemBar");
@@ -925,6 +930,11 @@ public class IRNode {
     public static final String MIN_VD = VECTOR_PREFIX + "MIN_VD" + POSTFIX;
     static {
         vectorNode(MIN_VD, "MinV", TYPE_DOUBLE);
+    }
+
+    public static final String MIN_VL = VECTOR_PREFIX + "MIN_VL" + POSTFIX;
+    static {
+        vectorNode(MIN_VL, "MinV", TYPE_LONG);
     }
 
     public static final String MUL = PREFIX + "MUL" + POSTFIX;
@@ -2233,7 +2243,7 @@ public class IRNode {
      */
     private static void fromMacroToBeforeMatching(String irNodePlaceholder, String regex) {
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new SinglePhaseRangeEntry(CompilePhase.PRINT_IDEAL, regex,
-                                                                          CompilePhase.MACRO_EXPANSION,
+                                                                          CompilePhase.AFTER_MACRO_EXPANSION,
                                                                           CompilePhase.BEFORE_MATCHING));
     }
 

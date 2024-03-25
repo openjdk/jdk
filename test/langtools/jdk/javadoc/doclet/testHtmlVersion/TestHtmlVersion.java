@@ -97,7 +97,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <div class="summary-table two-column-summary" aria-labelledby="class-summary-tab0">""",
+                    <div class="summary-table two-column-summary">""",
                 """
                     <header role="banner">
                     <nav role="navigation">
@@ -412,7 +412,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <div class="caption"><span>Enum Constants</span></div>
                     """,
                 """
-                    <div class="summary-table three-column-summary" aria-labelledby="method-summary-table-tab0">
+                    <div class="summary-table three-column-summary">
                     """,
                 """
                     <section class="method-summary" id="method-summary">
@@ -453,7 +453,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <div id="method-summary-table">
                     """,
                 """
-                    <div class="summary-table three-column-summary" aria-labelledby="method-summary-table-tab0">
+                    <div class="summary-table three-column-summary">
                     """,
                 """
                     <section class="method-details" id="method-detail">

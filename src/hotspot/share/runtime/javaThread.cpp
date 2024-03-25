@@ -189,6 +189,16 @@ void JavaThread::set_jvmti_vthread(oop p) {
   _jvmti_vthread.replace(p);
 }
 
+// If there is a virtual thread mounted then return vthread() oop.
+// Otherwise, return threadObj().
+oop JavaThread::vthread_or_thread() const {
+  oop result = vthread();
+  if (result == nullptr) {
+    result = threadObj();
+  }
+  return result;
+}
+
 oop JavaThread::scopedValueCache() const {
   return _scopedValueCache.resolve();
 }
@@ -263,7 +273,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
 
 jlong* JavaThread::_jvmci_old_thread_counters;
 
-bool jvmci_counters_include(JavaThread* thread) {
+static bool jvmci_counters_include(JavaThread* thread) {
   return !JVMCICountersExcludeCompiler || !thread->is_Compiler_thread();
 }
 
@@ -282,7 +292,7 @@ void JavaThread::collect_counters(jlong* array, int length) {
 }
 
 // Attempt to enlarge the array for per thread counters.
-jlong* resize_counters_array(jlong* old_counters, int current_size, int new_size) {
+static jlong* resize_counters_array(jlong* old_counters, int current_size, int new_size) {
   jlong* new_counters = NEW_C_HEAP_ARRAY_RETURN_NULL(jlong, new_size, mtJVMCI);
   if (new_counters == nullptr) {
     return nullptr;
@@ -544,7 +554,6 @@ void JavaThread::interrupt() {
   _ParkEvent->unpark();
 }
 
-
 bool JavaThread::is_interrupted(bool clear_interrupted) {
   debug_only(check_for_dangling_thread_pointer(this);)
 
@@ -579,7 +588,37 @@ bool JavaThread::is_interrupted(bool clear_interrupted) {
     java_lang_Thread::set_interrupted(threadObj(), false);
     WINDOWS_ONLY(osthread()->set_interrupted(false);)
   }
+  return interrupted;
+}
 
+// This is only for use by JVMTI RawMonitorWait. It emulates the actions of
+// the Java code in Object::wait which are not present in RawMonitorWait.
+bool JavaThread::get_and_clear_interrupted() {
+  if (!is_interrupted(false)) {
+    return false;
+  }
+  oop thread_oop = vthread_or_thread();
+  bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
+
+  if (!is_virtual) {
+    return is_interrupted(true);
+  }
+  // Virtual thread: clear interrupt status for both virtual and
+  // carrier threads under the interruptLock protection.
+  JavaThread* current = JavaThread::current();
+  HandleMark hm(current);
+  Handle thread_h(current, thread_oop);
+  ObjectLocker lock(Handle(current, java_lang_Thread::interrupt_lock(thread_h())), current);
+
+  // re-check the interrupt status under the interruptLock protection
+  bool interrupted = java_lang_Thread::interrupted(thread_h());
+
+  if (interrupted) {
+    assert(this == Thread::current(), "only the current thread can clear");
+    java_lang_Thread::set_interrupted(thread_h(), false);  // clear for virtual
+    java_lang_Thread::set_interrupted(threadObj(), false); // clear for carrier
+    WINDOWS_ONLY(osthread()->set_interrupted(false);)
+  }
   return interrupted;
 }
 
@@ -745,6 +784,7 @@ static void ensure_join(JavaThread* thread) {
   // Clear the native thread instance - this makes isAlive return false and allows the join()
   // to complete once we've done the notify_all below. Needs a release() to obey Java Memory Model
   // requirements.
+  assert(java_lang_Thread::thread(threadObj()) == thread, "must be alive");
   java_lang_Thread::release_set_thread(threadObj(), nullptr);
   lock.notify_all(thread);
   // Ignore pending exception, since we are exiting anyway
@@ -1455,7 +1495,7 @@ void JavaThread::metadata_do(MetadataClosure* f) {
 }
 
 // Printing
-const char* _get_thread_state_name(JavaThreadState _thread_state) {
+static const char* _get_thread_state_name(JavaThreadState _thread_state) {
   switch (_thread_state) {
   case _thread_uninitialized:     return "_thread_uninitialized";
   case _thread_new:               return "_thread_new";
@@ -2155,6 +2195,8 @@ void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
   // on a ThreadsList. We don't want to wait for the release when the
   // Theads_lock is dropped when the 'mu' destructor is run since the
   // JavaThread* is already visible to JVM/TI via the ThreadsList.
+
+  assert(java_lang_Thread::thread(thread_oop()) == nullptr, "must not be alive");
   java_lang_Thread::release_set_thread(thread_oop(), target); // isAlive == true now
   Thread::start(target);
 }

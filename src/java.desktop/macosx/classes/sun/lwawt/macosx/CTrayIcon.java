@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ import static sun.awt.AWTAccessor.MenuComponentAccessor;
 import static sun.awt.AWTAccessor.getMenuComponentAccessor;
 
 public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
-    private TrayIcon target;
+    private final TrayIcon target;
     private PopupMenu popup;
 
     // In order to construct MouseEvent object, we need to specify a
@@ -173,7 +173,6 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
         }
 
         LWCToolkit.targetDisposedPeer(target, this);
-        target = null;
 
         super.dispose();
     }
@@ -366,7 +365,7 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
     class IconObserver implements ImageObserver {
         @Override
         public boolean imageUpdate(Image image, int flags, int x, int y, int width, int height) {
-            if (target == null || image != target.getImage()) //if the image has been changed
+            if (image != target.getImage()) //if the image has been changed
             {
                 return false;
             }

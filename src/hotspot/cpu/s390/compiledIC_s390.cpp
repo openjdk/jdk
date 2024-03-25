@@ -26,7 +26,6 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/compiledIC.hpp"
-#include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -40,7 +39,7 @@
 #undef  __
 #define __ _masm.
 
-address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark/* = nullptr*/) {
+address CompiledDirectCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark/* = nullptr*/) {
 #ifdef COMPILER2
   // Stub is fixed up when the corresponding call is converted from calling
   // compiled code to calling interpreted code.
@@ -54,7 +53,7 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark/*
   // That's why we must use the macroassembler to generate a stub.
   MacroAssembler _masm(&cbuf);
 
-  address stub = __ start_a_stub(CompiledStaticCall::to_interp_stub_size());
+  address stub = __ start_a_stub(CompiledDirectCall::to_interp_stub_size());
   if (stub == nullptr) {
     return nullptr;  // CodeBuffer::expand failed.
   }
@@ -81,26 +80,19 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark/*
 
 #undef __
 
-int CompiledStaticCall::to_interp_stub_size() {
+int CompiledDirectCall::to_interp_stub_size() {
   return 2 * MacroAssembler::load_const_from_toc_size() +
          2; // branch
 }
 
 // Relocation entries for call stub, compiled java to interpreter.
-int CompiledStaticCall::reloc_to_interp_stub() {
+int CompiledDirectCall::reloc_to_interp_stub() {
   return 5; // 4 in emit_java_to_interp + 1 in Java_Static_Call
 }
 
-void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, address entry) {
+void CompiledDirectCall::set_to_interpreted(const methodHandle& callee, address entry) {
   address stub = find_stub();
   guarantee(stub != nullptr, "stub not found");
-
-  {
-    ResourceMark rm;
-    log_trace(inlinecache)("CompiledDirectStaticCall@" INTPTR_FORMAT ": set_to_interpreted %s",
-                  p2i(instruction_address()),
-                  callee->name_and_sig_as_C_string());
-  }
 
   // Creation also verifies the object.
   NativeMovConstReg* method_holder = nativeMovConstReg_at(stub + NativeCall::get_IC_pos_in_java_to_interp_stub());
@@ -115,7 +107,7 @@ void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, ad
   set_destination_mt_safe(stub);
 }
 
-void CompiledDirectStaticCall::set_stub_to_clean(static_stub_Relocation* static_stub) {
+void CompiledDirectCall::set_stub_to_clean(static_stub_Relocation* static_stub) {
   // Reset stub.
   address stub = static_stub->addr();
   assert(stub != nullptr, "stub not found");
@@ -131,7 +123,7 @@ void CompiledDirectStaticCall::set_stub_to_clean(static_stub_Relocation* static_
 
 #ifndef PRODUCT
 
-void CompiledDirectStaticCall::verify() {
+void CompiledDirectCall::verify() {
   // Verify call.
   _call->verify();
   _call->verify_alignment();

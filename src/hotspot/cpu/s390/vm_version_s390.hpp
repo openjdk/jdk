@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -567,7 +567,6 @@ class VM_Version: public Abstract_VM_Version {
   static unsigned long z_SIGSEGV();
 
   static void initialize_cpu_information(void);
-  static bool profile_all_receivers_at_type_check() { return false; }
 };
 
 #endif // CPU_S390_VM_VERSION_S390_HPP

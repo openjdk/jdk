@@ -61,7 +61,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @test
- * @bug 8213031 8273935
+ * @bug 8213031 8273935 8324635
  * @summary Test POSIX ZIP file operations.
  * @modules jdk.zipfs
  *          jdk.jartool
@@ -291,7 +291,8 @@ public class TestPosix {
         return fs;
     }
 
-    private FileSystem createEmptyZipFile(Path zpath, Map<String, Object> env) throws IOException {
+    // The caller is responsible for closing the FileSystem returned by this method
+    private FileSystem createEmptyZipFileSystem(Path zpath, Map<String, Object> env) throws IOException {
         if (Files.exists(zpath)) {
             System.out.println("Deleting old " + zpath + "...");
             Files.delete(zpath);
@@ -480,7 +481,7 @@ public class TestPosix {
     public void testCopy() throws IOException {
         // copy zip to zip with default options
         try (FileSystem zipIn = createTestZipFile(ZIP_FILE, ENV_DEFAULT);
-             FileSystem zipOut = createEmptyZipFile(ZIP_FILE_COPY, ENV_DEFAULT)) {
+             FileSystem zipOut = createEmptyZipFileSystem(ZIP_FILE_COPY, ENV_DEFAULT)) {
             Path from = zipIn.getPath("/");
             Files.walkFileTree(from, new CopyVisitor(from, zipOut.getPath("/")));
         }
@@ -516,7 +517,7 @@ public class TestPosix {
 
         // the target zip file is opened with Posix support
         // but we expect no permission data to be copied using the default copy method
-        try (FileSystem tgtZip = createEmptyZipFile(ZIP_FILE_COPY, ENV_POSIX)) {
+        try (FileSystem tgtZip = createEmptyZipFileSystem(ZIP_FILE_COPY, ENV_POSIX)) {
             Files.walkFileTree(UNZIP_DIR, new CopyVisitor(UNZIP_DIR, tgtZip.getPath("/")));
         }
 
@@ -559,7 +560,7 @@ public class TestPosix {
         // permissions should have been propagated to file system
         checkEntries(UNZIP_DIR, checkExpects.permsPosix);
 
-        try (FileSystem tgtZip = createEmptyZipFile(ZIP_FILE_COPY, ENV_POSIX)) {
+        try (FileSystem tgtZip = createEmptyZipFileSystem(ZIP_FILE_COPY, ENV_POSIX)) {
             // Make some files owner readable to be able to copy them into the zipfs
             addOwnerRead(UNZIP_DIR);
 
@@ -719,7 +720,7 @@ public class TestPosix {
     }
 
     /**
-     * Verify that calling Files.setPosixPermissions with the current
+     * Verify that calling Files.setPosixFilePermissions with the current
      * permission set does not change the 'external file attributes' field.
      *
      * @throws IOException if an unexpected IOException occurs
@@ -731,6 +732,52 @@ public class TestPosix {
             // Set permissions to their current value
             Files.setPosixFilePermissions(path, Files.getPosixFilePermissions(path));
         });
+    }
+
+    /**
+     * Verify that calling Files.setPosixFilePermissions on an MS-DOS entry
+     * results in only the expected permission bits being set
+     *
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @Test
+    public void setPermissionsShouldConvertToUnix() throws IOException {
+        // The default environment creates MS-DOS entries, with zero 'external file attributes'
+        try (FileSystem fs = createEmptyZipFileSystem(ZIP_FILE, ENV_DEFAULT)) {
+            Path path = fs.getPath("hello.txt");
+            Files.createFile(path);
+        }
+        // The CEN header is now as follows:
+        //
+        //   004A CENTRAL HEADER #1     02014B50
+        //   004E Created Zip Spec      14 '2.0'
+        //   004F Created OS            00 'MS-DOS'
+        //   0050 Extract Zip Spec      14 '2.0'
+        //   0051 Extract OS            00 'MS-DOS'
+        //   [...]
+        //   0070 Ext File Attributes   00000000
+
+        // Sanity check that all 'external file attributes' bits are all zero
+        verifyExternalFileAttribute(Files.readAllBytes(ZIP_FILE), "0");
+
+        // Convert to a UNIX entry by calling Files.setPosixFilePermissions
+        try (FileSystem fs = FileSystems.newFileSystem(ZIP_FILE, ENV_POSIX)) {
+            Path path = fs.getPath("hello.txt");
+            Files.setPosixFilePermissions(path, EnumSet.of(OWNER_READ));
+        }
+
+        // The CEN header should now be as follows:
+        //
+        // 004A CENTRAL HEADER #1     02014B50
+        // 004E Created Zip Spec      14 '2.0'
+        // 004F Created OS            03 'Unix'
+        // 0050 Extract Zip Spec      14 '2.0'
+        // 0051 Extract OS            00 'MS-DOS'
+        // [...]
+        // 0070 Ext File Attributes   01000000
+
+        // The first of the nine trailing permission bits should be set
+        verifyExternalFileAttribute(Files.readAllBytes(ZIP_FILE), "100000000");
     }
 
     /**

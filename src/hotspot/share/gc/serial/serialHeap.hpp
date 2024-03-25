@@ -90,8 +90,6 @@ private:
   // The singleton CardTable Remembered Set.
   CardTableRS* _rem_set;
 
-  SoftRefPolicy _soft_ref_policy;
-
   GCPolicyCounters* _gc_policy_counters;
 
   // Indicates that the most recent previous incremental collection failed.
@@ -143,7 +141,6 @@ private:
 public:
   // Returns JNI_OK on success
   jint initialize() override;
-  virtual CardTableRS* create_rem_set(const MemRegion& reserved_region);
 
   // Does operations required after initialization has been done.
   void post_initialize() override;
@@ -154,16 +151,11 @@ public:
   MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
-  SoftRefPolicy* soft_ref_policy() override { return &_soft_ref_policy; }
-
   // Performance Counter support
   GCPolicyCounters* counters()     { return _gc_policy_counters; }
 
   size_t capacity() const override;
   size_t used() const override;
-
-  // Save the "used_region" for both generations.
-  void save_used_regions();
 
   size_t max_capacity() const override;
 
@@ -255,10 +247,6 @@ public:
    public:
     virtual void do_generation(Generation* gen) = 0;
   };
-
-  // Apply "cl.do_generation" to all generations in the heap
-  // If "old_to_young" determines the order.
-  void generation_iterate(GenClosure* cl, bool old_to_young);
 
   // Return "true" if all generations have reached the
   // maximal committed limit that they can reach, without a garbage
@@ -378,10 +366,6 @@ public:
   template <typename OopClosureType1, typename OopClosureType2>
   void oop_since_save_marks_iterate(OopClosureType1* cur,
                                     OopClosureType2* older);
-
-  void young_process_roots(OopClosure* root_closure,
-                           OopIterateClosure* old_gen_closure,
-                           CLDClosure* cld_closure);
 
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;

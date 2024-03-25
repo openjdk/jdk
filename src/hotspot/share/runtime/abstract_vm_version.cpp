@@ -34,6 +34,7 @@ const char* Abstract_VM_Version::_s_internal_vm_info_string = Abstract_VM_Versio
 
 uint64_t Abstract_VM_Version::_features = 0;
 const char* Abstract_VM_Version::_features_string = "";
+uint64_t Abstract_VM_Version::_cpu_features = 0;
 
 #ifndef SUPPORTS_NATIVE_CX8
 bool Abstract_VM_Version::_supports_cx8 = false;
@@ -196,10 +197,6 @@ const char *Abstract_VM_Version::vm_platform_string() {
 }
 
 const char* Abstract_VM_Version::internal_vm_info_string() {
-  #ifndef HOTSPOT_BUILD_USER
-    #define HOTSPOT_BUILD_USER unknown
-  #endif
-
   #ifndef HOTSPOT_BUILD_COMPILER
     #ifdef _MSC_VER
       #if _MSC_VER == 1911
@@ -283,7 +280,7 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
   #define INTERNAL_VERSION_SUFFIX VM_RELEASE ")" \
          " for " OS "-" CPU FLOAT_ARCH_STR LIBC_STR \
          " JRE (" VERSION_STRING "), built on " HOTSPOT_BUILD_TIME \
-         " by " XSTR(HOTSPOT_BUILD_USER) " with " HOTSPOT_BUILD_COMPILER
+         " with " HOTSPOT_BUILD_COMPILER
 
   return strcmp(DEBUG_LEVEL, "release") == 0
       ? VMNAME " (" INTERNAL_VERSION_SUFFIX

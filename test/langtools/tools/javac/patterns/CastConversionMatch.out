@@ -1,2 +1,2 @@
-CastConversionMatch.java:11:26: compiler.err.type.found.req: int, (compiler.misc.type.req.class.array)
+CastConversionMatch.java:11:26: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.primitive.patterns)
 1 error

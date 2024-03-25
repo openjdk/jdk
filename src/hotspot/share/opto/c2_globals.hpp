@@ -56,6 +56,9 @@
   product(bool, StressIncrementalInlining, false, DIAGNOSTIC,               \
           "Randomize the incremental inlining decision")                    \
                                                                             \
+  product(bool, StressMacroExpansion, false, DIAGNOSTIC,                    \
+          "Randomize macro node expansion order")                           \
+                                                                            \
   product(uint, StressSeed, 0, DIAGNOSTIC,                                  \
           "Seed for randomized stress testing (if unset, a random one is "  \
           "generated). The seed is recorded in the compilation log, if "    \
