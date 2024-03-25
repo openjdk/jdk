@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Change file permission for out-of-the-box management an do test used by
- * PasswordFilePermissionTest and SSLConfigFilePermissionTest tests
+ * Change file permission for out-of-the-box management, and test.
+ * Used by PasswordFilePermissionTest and SSLConfigFilePermissionTest tests.
  *
  * @author Taras Ledkov
  */
@@ -141,12 +141,13 @@ public abstract class AbstractFilePermissionTest {
         Files.setPosixFilePermissions(file2PermissionTest, perms_0700);
 
         if (doTest() != 0) {
+            System.out.println("FAILURE");
             ++failures;
         }
     }
 
     /**
-     * Test 1 - SSL config file is secure - VM should start
+     * Test 2 - SSL config file is NOT secure - VM should not start
      */
     private void test2() throws Exception {
         final Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file2PermissionTest);
@@ -155,6 +156,7 @@ public abstract class AbstractFilePermissionTest {
         Files.setPosixFilePermissions(file2PermissionTest, perms);
 
         if (doTest() == 0) {
+            System.out.println("FAILURE");
             ++failures;
         }
     }
@@ -172,7 +174,6 @@ public abstract class AbstractFilePermissionTest {
             command.add(TEST_CLASSES);
             command.add(className);
 
-
             ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(command);
 
             System.out.println("test cmdline: " + Arrays.toString(processBuilder.command().toArray()).replace(",", ""));
@@ -181,13 +182,15 @@ public abstract class AbstractFilePermissionTest {
             System.out.println("test output:");
             System.out.println(output.getOutput());
 
-            if ((output.getExitValue() == 0)  ||
-                !output.getOutput().contains("Exception thrown by the agent : " +
-                        "java.rmi.server.ExportException: Port already in use")) {
-                return output.getExitValue();
+            if (output.getOutput().contains("Exception thrown by the agent: java.rmi.server.ExportException: Port already in use")) {
+                if (i < MAX_GET_FREE_PORT_TRIES - 1) {
+                    System.out.println("Retrying...");
+                    continue;
+                }
             }
+            // Fail on too many port failures, and all other startup failures.
+            return output.getExitValue();
         }
-
         return -1;
     }
 
