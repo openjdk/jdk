@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,6 @@ import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -767,10 +764,10 @@ public abstract class PKCS11Test {
     private static String fetchNssLib(Class<?> clazz) {
         String path = null;
         try {
-            path = ArtifactResolver.resolve(clazz).entrySet().stream()
-                    .findAny().get().getValue() + File.separator + "nss"
-                    + File.separator + "lib" + File.separator;
-        } catch (ArtifactResolverException e) {
+            Path p = ArtifactResolver.resolve(clazz).entrySet().stream()
+                    .findAny().get().getValue();
+            path = findNSSLibrary(p);
+        } catch (ArtifactResolverException | IOException e) {
             Throwable cause = e.getCause();
             if (cause == null) {
                 System.out.println("Cannot resolve artifact, "
@@ -782,6 +779,16 @@ public abstract class PKCS11Test {
         }
         Policy.setPolicy(null); // Clear the policy created by JIB if any
         return path;
+    }
+
+    private static String findNSSLibrary(Path path) throws IOException {
+        Path nssLibrary = Path.of(System.mapLibraryName(nss_library));
+        Path p = Files.find(path, 10,
+                        (tp, attr) -> tp.getFileName().equals(nssLibrary))
+                .findAny()
+                .orElse(path)
+                .getParent();
+        return p.toString();
     }
 
     public abstract void main(Provider p) throws Exception;
