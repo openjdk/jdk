@@ -38,7 +38,7 @@ import compiler.lib.ir_framework.TestFramework;
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestBoolNodeGvn
  */
-public class TestBoolNodeGvn {
+public class TestBoolNodeGVN {
     public static void main(String[] args) {
         TestFramework.run();
         testCorrectness();
@@ -49,13 +49,13 @@ public class TestBoolNodeGvn {
      * The test is not applicable to x86 (32bit) for not having <code>Integer.compareUnsigned</code> intrinsified.
      */
     @Test
-    @Arguments({Argument.DEFAULT, Argument.DEFAULT})
+    @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
     @IR(failOn = IRNode.CMP_U, phase = CompilePhase.AFTER_PARSING, applyIfPlatform = {"x86", "false"})
     public static boolean test(int x, int m) {
-        return !(Integer.compareUnsigned((x & m), m) > 0) // assert in inversions to generates the pattern looking for
-                & !(Integer.compareUnsigned((m & x), m) > 0)
-                & Integer.compareUnsigned((x & m), m + 1) < 0
-                & Integer.compareUnsigned((m & x), m + 1) < 0;
+        return !(Integer.compareUnsigned((x & m), m) > 0) & // assert in inversions to generates the pattern looking for
+                !(Integer.compareUnsigned((m & x), m) > 0) &
+                Integer.compareUnsigned((x & m), m + 1) < 0 &
+                Integer.compareUnsigned((m & x), m + 1) < 0;
     }
 
     private static void testCorrectness() {
