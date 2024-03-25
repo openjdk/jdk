@@ -9665,21 +9665,6 @@ instruct vlshiftv_reg_masked(vec dst, vec src2, kReg mask) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vlshift_mem_masked(vec dst, memory src2, kReg mask) %{
-  match(Set dst (LShiftVS (Binary dst (LoadVector src2)) mask));
-  match(Set dst (LShiftVI (Binary dst (LoadVector src2)) mask));
-  match(Set dst (LShiftVL (Binary dst (LoadVector src2)) mask));
-  format %{ "vplshift_masked $dst, $dst, $src2, $mask\t! lshift masked operation" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    int opc = this->ideal_Opcode();
-    __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
-                   $dst$$XMMRegister, $src2$$Address, true, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct vrshift_imm_masked(vec dst, immI8 shift, kReg mask) %{
   match(Set dst (RShiftVS (Binary dst (RShiftCntV shift)) mask));
   match(Set dst (RShiftVI (Binary dst (RShiftCntV shift)) mask));
@@ -9727,21 +9712,6 @@ instruct vrshiftv_reg_masked(vec dst, vec src2, kReg mask) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vrshift_mem_masked(vec dst, memory src2, kReg mask) %{
-  match(Set dst (RShiftVS (Binary dst (LoadVector src2)) mask));
-  match(Set dst (RShiftVI (Binary dst (LoadVector src2)) mask));
-  match(Set dst (RShiftVL (Binary dst (LoadVector src2)) mask));
-  format %{ "vprshift_masked $dst, $dst, $src2, $mask\t! rshift masked operation" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    int opc = this->ideal_Opcode();
-    __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
-                   $dst$$XMMRegister, $src2$$Address, true, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct vurshift_imm_masked(vec dst, immI8 shift, kReg mask) %{
   match(Set dst (URShiftVS (Binary dst (RShiftCntV shift)) mask));
   match(Set dst (URShiftVI (Binary dst (RShiftCntV shift)) mask));
@@ -9785,21 +9755,6 @@ instruct vurshiftv_reg_masked(vec dst, vec src2, kReg mask) %{
     int opc = this->ideal_Opcode();
     __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
                    $dst$$XMMRegister, $src2$$XMMRegister, true, vlen_enc, true);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vurshift_mem_masked(vec dst, memory src2, kReg mask) %{
-  match(Set dst (URShiftVS (Binary dst (LoadVector src2)) mask));
-  match(Set dst (URShiftVI (Binary dst (LoadVector src2)) mask));
-  match(Set dst (URShiftVL (Binary dst (LoadVector src2)) mask));
-  format %{ "vpurshift_masked $dst, $dst, $src2, $mask\t! urshift masked operation" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    int opc = this->ideal_Opcode();
-    __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
-                   $dst$$XMMRegister, $src2$$Address, true, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}

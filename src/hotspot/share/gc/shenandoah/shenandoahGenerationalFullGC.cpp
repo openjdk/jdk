@@ -318,11 +318,13 @@ void ShenandoahPrepareForGenerationalCompactionObjectClosure::do_object(oop p) {
       _old_compact_point = _old_to_region->bottom();
     }
 
-    // Object fits into current region, record new location:
+    // Object fits into current region, record new location, if object does not move:
     assert(_old_compact_point + obj_size <= _old_to_region->end(), "must fit");
     shenandoah_assert_not_forwarded(nullptr, p);
-    _preserved_marks->push_if_necessary(p, p->mark());
-    p->forward_to(cast_to_oop(_old_compact_point));
+    if (_old_compact_point != cast_from_oop<HeapWord*>(p)) {
+      _preserved_marks->push_if_necessary(p, p->mark());
+      p->forward_to(cast_to_oop(_old_compact_point));
+    }
     _old_compact_point += obj_size;
   } else {
     assert(_from_affiliation == ShenandoahAffiliation::YOUNG_GENERATION,
@@ -363,11 +365,14 @@ void ShenandoahPrepareForGenerationalCompactionObjectClosure::do_object(oop p) {
       _young_compact_point = _young_to_region->bottom();
     }
 
-    // Object fits into current region, record new location:
+    // Object fits into current region, record new location, if object does not move:
     assert(_young_compact_point + obj_size <= _young_to_region->end(), "must fit");
     shenandoah_assert_not_forwarded(nullptr, p);
-    _preserved_marks->push_if_necessary(p, p->mark());
-    p->forward_to(cast_to_oop(_young_compact_point));
+
+    if (_young_compact_point != cast_from_oop<HeapWord*>(p)) {
+      _preserved_marks->push_if_necessary(p, p->mark());
+      p->forward_to(cast_to_oop(_young_compact_point));
+    }
     _young_compact_point += obj_size;
   }
 }

@@ -56,10 +56,6 @@ void ShenandoahCardTable::initialize() {
   assert(byte_for(low_bound) == &_byte_map[0], "Checking start of map");
   assert(byte_for(high_bound-1) <= &_byte_map[last_valid_index()], "Checking end of map");
 
-  CardValue* guard_card = &_byte_map[num_cards];
-  assert(is_aligned(guard_card, _page_size), "must be on its own OS page");
-  _guard_region = MemRegion((HeapWord*)guard_card, _page_size);
-
   _write_byte_map = _byte_map;
   _write_byte_map_base = _byte_map_base;
 
@@ -85,10 +81,6 @@ void ShenandoahCardTable::initialize() {
   // because the mutator write barrier hard codes the address of the _write_byte_map_base.  Instead,
   // the current implementation simply copies contents of _write_byte_map onto _read_byte_map and cleans
   // the entirety of _write_byte_map at the init_mark safepoint.
-  //
-  // If we choose to modify the mutator write barrier so that we can swap _read_byte_map_base and
-  // _write_byte_map_base pointers, we may also have to figure out certain details about how the
-  // _guard_region is implemented so that we can replicate the read and write versions of this region.
   //
   // Alternatively, we may switch to a SATB-based write barrier and replace the direct card-marking
   // remembered set with something entirely different.
