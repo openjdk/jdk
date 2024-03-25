@@ -291,7 +291,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                         if (node.getFullBody().isEmpty()) {
                             //there is no body in the javadoc, add synthetic {@inheritDoc}, which
                             //will be automatically filled in visitInheritDoc:
-                            DocCommentTree dc = parseDocComment(task, "{@inheritDoc}", CommentKind.BLOCK).fst; //XXX
+                            DocCommentTree dc = parseDocComment(task, "{@inheritDoc}", CommentKind.BLOCK).fst;
                             syntheticTrees.put(dc, "*\n");
                             interestingParent.push(dc);
                             boolean prevInSynthetic = inSynthetic;
@@ -641,27 +641,30 @@ public abstract class JavadocHelper implements AutoCloseable {
         private Pair<DocCommentTree, Integer> parseDocComment(JavacTask task, String javadoc, CommentKind docCommentKind) {
             DocTrees trees = DocTrees.instance(task);
             try {
-                SimpleJavaFileObject fo;
+                URI uri;
+                Kind kind;
+                String content;
+                int offset;
                 if (docCommentKind == CommentKind.BLOCK) {
-                    fo = new SimpleJavaFileObject(new URI("mem:///doc.html"), Kind.HTML) {
-                        @Override @DefinedBy(Api.COMPILER)
-                        public CharSequence getCharContent(boolean ignoreEncodingErrors)
-                                throws IOException {
-                            return "<body>" + javadoc + "</body>";
-                        }
-                    };
+                    uri = new URI("mem:///doc.html");
+                    kind = Kind.HTML;
+                    content = "<body>" + javadoc + "</body>";
+                    offset = "<body>".length();
                 } else {
-                    fo = new SimpleJavaFileObject(new URI("mem:///doc.md"), Kind.OTHER) {
+                    uri = new URI("mem:///doc.md");
+                    kind = Kind.OTHER;
+                    content = javadoc;
+                    offset = 0;
+                }
+                SimpleJavaFileObject fo = new SimpleJavaFileObject(uri, kind) {
                         @Override @DefinedBy(Api.COMPILER)
                         public CharSequence getCharContent(boolean ignoreEncodingErrors)
                                 throws IOException {
-                            return javadoc;
+                            return content;
                         }
                     };
-                }
-                DocCommentTree tree = /*trees.getDocCommentTreeTransformer().transform(trees, */trees.getDocCommentTree(fo)/*)*/;
-                int offset = (int) trees.getSourcePositions().getStartPosition(null, tree, tree);
-                offset += docCommentKind == CommentKind.BLOCK ? "<body>".length() : 0;
+                DocCommentTree tree = trees.getDocCommentTree(fo);
+                offset += (int) trees.getSourcePositions().getStartPosition(null, tree, tree);
                 return Pair.of(tree, offset);
             } catch (URISyntaxException ex) {
                 throw new IllegalStateException(ex);
