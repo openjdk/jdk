@@ -264,7 +264,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                 private long insertPos = offset;
                 @Override
                 public Void scan(Iterable<? extends DocTree> nodes, Void p) {
-                    if (containsMarkdown(nodes)) {
+                    if (nodes != null && containsMarkdown(nodes)) {
                         JoinedMarkdown joinedMarkdowns = joinMarkdown(trees, dcTree, nodes);
                         String source = joinedMarkdowns.source();
                         Parser parser = Parser.builder()
