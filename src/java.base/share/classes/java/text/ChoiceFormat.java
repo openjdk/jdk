@@ -136,6 +136,10 @@ import java.util.Objects;
  *
  * @apiNote A subclass could perform more consistent pattern validation by
  * throwing an {@code IllegalArgumentException} for all incorrect cases.
+ * <p>This class inherits instance methods from {@code NumberFormat} it does
+ * not utilize; a subclass could override and throw {@code
+ * UnsupportedOperationException} for such methods to better enforce the
+ * {@code NumberFormat} contract.
  * @implNote Given an incorrect pattern, this implementation may either
  * throw an exception or succeed and discard the incorrect portion. A {@code
  * NumberFormatException} is thrown if a {@code limit} can not be
