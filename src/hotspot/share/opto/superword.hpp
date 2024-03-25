@@ -545,7 +545,7 @@ private:
   void order_inputs_of_all_use_pairs_to_match_def_pair(Node* def1, Node* def2);
   enum PairOrderStatus { Ordered, Unordered, Unknown };
   PairOrderStatus order_inputs_of_uses_to_match_def_pair(Node* def1, Node* def2, Node* use1, Node* use2);
-  int estimate_cost_savings_when_packing_pair(const Node* s1, const Node* s2) const;
+  int estimate_cost_savings_when_packing_as_pair(const Node* s1, const Node* s2) const;
 
   void combine_pairs_to_longer_packs();
 

@@ -1111,7 +1111,7 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* 
     }
     align = adjust_alignment_for_type_conversion(s1, t1, align);
     if (stmts_can_pack(t1, t2, align)) {
-      if (estimate_cost_savings_when_packing_pair(t1, t2) >= 0) {
+      if (estimate_cost_savings_when_packing_as_pair(t1, t2) >= 0) {
         _pairset.add_pair(t1, t2);
 #ifndef PRODUCT
         if (is_trace_superword_alignment()) {
@@ -1141,7 +1141,6 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* 
                   s1->_idx, align);
   }
 #endif
-  bool changed = false;
   int savings = -1;
   Node* u1 = nullptr;
   Node* u2 = nullptr;
@@ -1162,7 +1161,7 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* 
       int adjusted_align = alignment(s1);
       adjusted_align = adjust_alignment_for_type_conversion(s1, t1, adjusted_align);
       if (stmts_can_pack(t1, t2, adjusted_align)) {
-        int my_savings = estimate_cost_savings_when_packing_pair(t1, t2);
+        int my_savings = estimate_cost_savings_when_packing_as_pair(t1, t2);
         if (my_savings > savings) {
           savings = my_savings;
           u1 = t1;
@@ -1181,9 +1180,9 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* 
     }
 #endif
     set_alignment(u1, u2, align);
-    changed = true;
+    return true; // changed
   }
-  return changed;
+  return false; // no change
 }
 
 // For a pair (def1. def2), find all use packs (use1, use2), and ensure that their inputs have an order
@@ -1225,38 +1224,38 @@ void SuperWord::order_inputs_of_all_use_pairs_to_match_def_pair(Node* def1, Node
 //                                                                         | |
 //                                                                         use2
 //
-// 2: Inputs of (use1, use2) already match (def1, def2), i.e. for all input indices i:
-//
-//    use1->in(i) == def1 || use2->in(def2)   ->    use1->in(i) == def1 && use2->in(def2)
-//
-// 3: Add/Mul (use1, use2): we can try to swap edges:
+// 2: Commutative operations, just as Add/Mul and their subclasses: we can try to swap edges:
 //
 //     def1 x1   x2 def2           def1 x1   def2 x2
 //        | |     | |       ==>       | |       | |
 //        use1    use2                use1      use2
 //
-// 4: MulAddS2I (use1, use2): we can try to swap edges:
+// 3: MulAddS2I (use1, use2): we can try to swap edges:
 //
-//    (x1 * x2) + (x3 * x4)    ==>  4.a: (x2 * x1) + (x4 * x3)
-//                                  4.b: (x4 * x3) + (x2 * x1)
-//                                  4.c: (x3 * x4) + (x1 * x2)
+//    (x1 * x2) + (x3 * x4)    ==>  3.a: (x2 * x1) + (x4 * x3)
+//                                  3.b: (x4 * x3) + (x2 * x1)
+//                                  3.c: (x3 * x4) + (x1 * x2)
 //
 //    Note: MulAddS2I with its 4 inputs is too complicated, if there is any mismatch, we always
 //          return PairOrderStatus::Unknown.
 //          Therefore, extend_pairset_with_more_pairs_by_following_use cannot extend to MulAddS2I,
 //          but there is a chance that extend_pairset_with_more_pairs_by_following_def can do it.
 //
+// 4: Otherwise, check if the inputs of (use1, use2) already match (def1, def2), i.e. for all input indices i:
+//
+//    use1->in(i) == def1 || use2->in(i) == def2   ->    use1->in(i) == def1 && use2->in(i) == def2
+//
 SuperWord::PairOrderStatus SuperWord::order_inputs_of_uses_to_match_def_pair(Node* def1, Node* def2, Node* use1, Node* use2) {
   assert(_pairset.has_pair(def1, def2), "(def1, def2) must be a pair");
 
   // 1. Reduction
   if (is_marked_reduction(use1) && is_marked_reduction(use2)) {
-    Node* first = use1->in(2);
-    if (first->is_Phi() || is_marked_reduction(first)) {
+    Node* use1_in2 = use1->in(2);
+    if (use1_in2->is_Phi() || is_marked_reduction(use1_in2)) {
       use1->swap_edges(1, 2);
     }
-    first = use2->in(2);
-    if (first->is_Phi() || is_marked_reduction(first)) {
+    Node* use2_in2 = use2->in(2);
+    if (use2_in2->is_Phi() || is_marked_reduction(use2_in2)) {
       use2->swap_edges(1, 2);
     }
     return PairOrderStatus::Ordered;
@@ -1271,10 +1270,10 @@ SuperWord::PairOrderStatus SuperWord::order_inputs_of_uses_to_match_def_pair(Nod
     for (i2++; i2 < ct; i2++) { if (use2->in(i2) == def2) { break; } }
     if (i1 != i2) {
       if ((i1 == (3-i2)) && (use2->is_Add() || use2->is_Mul())) {
-        // 3. Add/Mul: swap edges, and hope the other position matches too.
+        // 2. Commutative: swap edges, and hope the other position matches too.
         use2->swap_edges(i1, i2);
       } else if (VectorNode::is_muladds2i(use2) && use1 != use2) {
-        // 4.a/b: MulAddS2I.
+        // 3.a/b: MulAddS2I.
         if (i1 == 5 - i2) { // ((i1 == 3 && i2 == 2) || (i1 == 2 && i2 == 3) || (i1 == 1 && i2 == 4) || (i1 == 4 && i2 == 1))
           use2->swap_edges(1, 2);
           use2->swap_edges(3, 4);
@@ -1285,26 +1284,26 @@ SuperWord::PairOrderStatus SuperWord::order_inputs_of_uses_to_match_def_pair(Nod
         }
         return PairOrderStatus::Unknown;
       } else {
-        // The inputs are not ordered, and we cannot do anything about it.
+        // 4. The inputs are not ordered, and we cannot do anything about it.
         return PairOrderStatus::Unordered;
       }
     } else if (i1 == i2 && VectorNode::is_muladds2i(use2) && use1 != use2) {
-      // 4.c: MulAddS2I.
+      // 3.c: MulAddS2I.
       use2->swap_edges(1, 3);
       use2->swap_edges(2, 4);
       return PairOrderStatus::Unknown;
     }
   } while (i1 < ct);
 
-  // 2. All inputs match.
+  // 4. All inputs match.
   return PairOrderStatus::Ordered;
 }
 
 // Estimate the savings from executing s1 and s2 as a pair.
-int SuperWord::estimate_cost_savings_when_packing_pair(const Node* s1, const Node* s2) const {
+int SuperWord::estimate_cost_savings_when_packing_as_pair(const Node* s1, const Node* s2) const {
   int save_in = 2 - 1; // 2 operations per instruction in packed form
 
-  auto adjacent_profit = [&] (Node* s1, Node* s2) { return 2; };
+  auto adjacent_profit = [&] () { return 2; };
   auto pack_cost       = [&] (int ct) { return ct; };
   auto unpack_cost     = [&] (int ct) { return ct; };
 
@@ -1314,7 +1313,7 @@ int SuperWord::estimate_cost_savings_when_packing_pair(const Node* s1, const Nod
     Node* x2 = s2->in(i);
     if (x1 != x2) {
       if (are_adjacent_refs(x1, x2)) {
-        save_in += adjacent_profit(x1, x2);
+        save_in += adjacent_profit();
       } else if (!_pairset.has_pair(x1, x2)) {
         save_in -= pack_cost(2);
       } else {
@@ -1335,9 +1334,15 @@ int SuperWord::estimate_cost_savings_when_packing_pair(const Node* s1, const Nod
 
     for (DUIterator_Fast kmax, k = s2->fast_outs(kmax); k < kmax; k++) {
       if (use2 == s2->fast_out(k)) {
+        // We have pattern:
+        //
+        //   s1    s2
+        //    |    |
+        // [use1, use2]
+        //
         ct++;
         if (are_adjacent_refs(use1, use2)) {
-          save_use += adjacent_profit(use1, use2);
+          save_use += adjacent_profit();
         }
       }
     }
@@ -1362,16 +1367,18 @@ void SuperWord::combine_pairs_to_longer_packs() {
     Node* s1 = pair.left();
     Node* s2 = pair.right();
     if (_pairset.is_left_in_a_left_most_pair(s1)) {
+      assert(pack == nullptr, "no unfinished pack");
       pack = new (arena()) Node_List(arena());
       pack->push(s1);
     }
+    assert(pack != nullptr, "must have unfinished pack");
     pack->push(s2);
     if (_pairset.is_right_in_a_right_most_pair(s2)) {
       _packset.add_pack(pack);
       pack = nullptr;
     }
   }
-  assert(pack == nullptr, "finished the last pack");
+  assert(pack == nullptr, "no unfinished pack");
 
   assert(!_packset.is_empty(), "must have combined some packs");
 
