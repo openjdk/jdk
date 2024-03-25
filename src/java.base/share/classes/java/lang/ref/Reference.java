@@ -573,17 +573,16 @@ public abstract sealed class Reference<T>
      * Reference processing or finalization may occur when the virtual machine
      * detects that there is no further need for an object. The garbage collector
      * may reclaim an object even if values from that object's fields are still
-     * in use, or while a method on the object is still running, so long as the
+     * in use, or while a method of the object is still running, so long as the
      * object has otherwise become unreachable.
-     * <p>
      * This may have surprising and undesirable effects, in particular when using
      * a Cleaner or finalizer for cleanup. If an object becomes unreachable while
-     * a method on the object is running, it can lead to a race between the
+     * a method of the object is running, it can lead to a race between the
      * program thread running the method and the cleanup thread running the
-     * Cleaner or finalizer. For instance, the cleanup thread could cleanup the
+     * Cleaner or finalizer. For instance, the cleanup thread could free the
      * resource, followed by the program thread (still running the method)
      * attempting to access the now-already-freed resource.
-     * {@code reachabilityFence} can prevent this race by ensuring that the
+     * Use of {@code reachabilityFence} can prevent this race by ensuring that the
      * object remains strongly reachable.
      * <p>
      * The following is an example in which the bookkeeping associated with a class is
