@@ -349,7 +349,7 @@ int[] fibs = IntStream.range(0, 10)
         .toArray(); // { 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 }
 ```
 
-Note how there's only field of type `List<Monotonic<Integer>>` to initialize - every other computation is
+Note how there's only one field of type `List<Monotonic<Integer>>` to initialize - every other computation is
 performed before the corresponding element of the list is accessed. Note also how the value of an element in the
 list, stored in an instance field, depends on the value of other (lower-index) element values. The Monotonic Value API
 allows modeling this cleanly, while still preserving good constant-folding guarantees and integrity of updates in
@@ -381,7 +381,7 @@ to composition with other constructs in order to create more high-level and powe
 Some of these features are exposed as convenience methods in the class `java.lang.Monotonics`.
 
 For example, to guarantee a value supplier or function is invoked *at most once*,
-even though invoked by several threads, we can use one of the `Monotonics::asMemoized`
+even though invoked by several threads, we can use one of the `Monotonics::as...`
 functions.
 
 Here is how we could make sure the lambda `() -> Logger.getLogger("com.foo.Bar")`
@@ -415,7 +415,7 @@ class Fibonacci {
 
     private final IntFunction<Integer> numCache;
 
-    public Fibonacci3(int upperBound) {
+    public Fibonacci(int upperBound) {
         numCache = Monotonics.asIntFunction(upperBound, this::number);
     }
 
@@ -435,7 +435,7 @@ parameter is computed at-most-once even in a multi-threaded environment.
 Here is an example of how such a memoized function can be defined and used:
 
 ```
-class MapDemo2 {
+class MapDemo {
 
     // 1. Declare a memoized (cached) function backed by a monotonic map
     private static final Function<String, Logger> LOGGERS =
