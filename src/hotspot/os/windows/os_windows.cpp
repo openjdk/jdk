@@ -860,6 +860,8 @@ bool os::has_allocatable_memory_limit(size_t* limit) {
 }
 
 int os::active_processor_count() {
+  win32::log_general_system_processor_debug_info();
+
   // User has overridden the number of active processors
   if (ActiveProcessorCount > 0) {
     log_trace(os)("active_processor_count: "
@@ -4009,6 +4011,7 @@ int    os::win32::_build_minor               = 0;
 
 bool   os::win32::_processor_group_warning_displayed = false;
 bool   os::win32::_job_object_processor_group_warning_displayed = false;
+bool   os::win32::_logged_general_system_processor_debug_info = false;
 
 void os::win32::initialize_windows_version() {
   assert(_major_version == 0, "windows version already initialized.");
@@ -4145,6 +4148,7 @@ DWORD os::win32::active_processors_in_job_object(DWORD* active_processor_groups)
     return 0;
   }
 
+  log_debug(os)("Process is running in a job with %d active processors.", processors);
   return processors;
 }
 
@@ -4189,6 +4193,19 @@ DWORD os::win32::system_logical_processor_count() {
   }
 
   return logical_processors;
+}
+
+void os::win32::log_general_system_processor_debug_info() {
+  if (!win32::logged_general_system_processor_debug_info()) {
+    const char* auto_schedules_message = "Host Windows OS automatically schedules threads across all processor groups.";
+    const char* no_auto_schedules_message = "Host Windows OS does not automatically schedule threads across all processor groups.";
+
+    bool schedules_all_processor_groups = win32::is_windows_11_or_greater() || win32::is_windows_server_2022_or_greater();
+    log_debug(os)(schedules_all_processor_groups ? auto_schedules_message : no_auto_schedules_message);
+    log_debug(os)("%d logical processors found.", win32::system_logical_processor_count());
+
+    win32::set_logged_general_system_processor_debug_info(true);
+  }
 }
 
 void os::win32::initialize_system_info() {
