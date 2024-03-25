@@ -26,14 +26,13 @@
 $(eval $(call IncludeCustomExtension, hotspot/lib/CompileGtest.gmk))
 
 GTEST_TEST_SRC += $(TOPDIR)/test/hotspot/gtest
-GTEST_LAUNCHER_SRC := $(TOPDIR)/test/hotspot/gtest/gtestLauncher.cpp
 
 ifeq ($(ASAN_ENABLED), true)
-  GTEST_LAUNCHER_SRC += $(TOPDIR)/make/data/asan/asan_default_options.cpp
+  GTEST_LAUNCHER_EXTRA_FILES += $(TOPDIR)/make/data/asan/asan_default_options.cpp
 endif
 
 ifeq ($(LSAN_ENABLED), true)
-  GTEST_LAUNCHER_SRC += $(TOPDIR)/make/data/lsan/lsan_default_options.cpp
+  GTEST_LAUNCHER_EXTRA_FILES += $(TOPDIR)/make/data/lsan/lsan_default_options.cpp
 endif
 
 # On Windows, there are no internal debug symbols so must set copying to true
@@ -136,7 +135,9 @@ $(eval $(call SetupJdkExecutable, BUILD_GTEST_LAUNCHER, \
     TYPE := EXECUTABLE, \
     LINK_TYPE := C++, \
     OUTPUT_DIR := $(JVM_OUTPUTDIR)/gtest, \
-    EXTRA_FILES := $(GTEST_LAUNCHER_SRC), \
+    SRC := $(TOPDIR)/test/hotspot/gtest, \
+    INCLUDE_FILES := gtestLauncher.cpp, \
+    EXTRA_FILES := $(GTEST_LAUNCHER_EXTRA_FILES), \
     OBJECT_DIR := $(JVM_OUTPUTDIR)/gtest/launcher-objs, \
     DEFAULT_CFLAGS := false, \
     CFLAGS := $(JVM_CFLAGS) \
