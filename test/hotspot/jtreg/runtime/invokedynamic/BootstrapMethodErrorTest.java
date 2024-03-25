@@ -62,7 +62,6 @@ public class BootstrapMethodErrorTest {
             catch (Throwable th) {
                 throw new ClassNotFoundException("Loading error", th);
             }
-            assert b != null;
             return defineClass(name, b, 0, b.length);
         }
 
