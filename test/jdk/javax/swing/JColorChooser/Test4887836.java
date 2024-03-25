@@ -56,8 +56,7 @@ public class Test4887836 {
     private static JColorChooser createColorChooser() {
         JColorChooser chooser = new JColorChooser(Color.LIGHT_GRAY);
 
-        // NON-NLS: property and font names
-        UIManager.put("Label.font", new Font("Perpetua", 0, 36));
+        UIManager.put("Label.font", new Font("Font.DIALOG", 0, 36));
         return chooser;
     }
 }
