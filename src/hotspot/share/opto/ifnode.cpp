@@ -755,6 +755,10 @@ bool IfNode::cmpi_folds(PhaseIterGVN* igvn, bool fold_ne) {
 bool IfNode::is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn) {
   return ctrl != nullptr &&
     ctrl->is_Proj() &&
+    // The dominating control should not have any pinned nodes (e.g. stores),
+    // otherwise these would be re-pinned to earlier control after folding the
+    // ifs, and could be scheduled too early.
+    ctrl->outcnt() == 1 &&
     ctrl->in(0) != nullptr &&
     ctrl->in(0)->Opcode() == Op_If &&
     ctrl->in(0)->outcnt() == 2 &&
@@ -1328,7 +1332,7 @@ Node* IfNode::fold_compares(PhaseIterGVN* igvn) {
 
   if (cmpi_folds(igvn)) {
     Node* ctrl = in(0);
-    if (is_ctrl_folds(ctrl, igvn) && ctrl->outcnt() == 1) {
+    if (is_ctrl_folds(ctrl, igvn)) {
       // A integer comparison immediately dominated by another integer
       // comparison
       ProjNode* success = nullptr;
