@@ -45,7 +45,6 @@ import java.awt.print.PrinterJob;
 import javax.swing.JButton;
 
 public class SetOrient {
-    static PrinterJob pjob;
     private static final String INSTRUCTIONS =
             """
              This test prints two pages and sends them to the printer.
@@ -72,7 +71,7 @@ public class SetOrient {
     public static JButton createAndShowGUI() {
         JButton btn = new JButton("PRINT");
         btn.addActionListener(e -> {
-            pjob = PrinterJob.getPrinterJob();
+            PrinterJob pjob = PrinterJob.getPrinterJob();
 
             Printable p = new Printable() {
                 public int print(Graphics g, PageFormat pf, int pageIndex) {
