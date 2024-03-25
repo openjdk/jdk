@@ -108,7 +108,7 @@ public class bug4150029 {
             pfframe.awaitAndCheck();
         } finally {
             if (!res) {
-                throw new RuntimeException("BackSpace keyboard button does not lead to parent directory");
+                PassFailJFrame.forceFail("BackSpace keyboard button does not lead to parent directory");
             }
         }
     }
