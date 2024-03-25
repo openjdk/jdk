@@ -1363,32 +1363,17 @@ JvmtiEnv::GetOwnedMonitorInfo(jthread thread, jint* owned_monitor_count_ptr, job
     return err;
   }
 
-  if (java_lang_VirtualThread::is_instance(thread_oop)) {
-    // There is no monitor info to collect if target virtual thread is unmounted.
-    if (java_thread != nullptr) {
-      VirtualThreadGetOwnedMonitorInfoClosure op(this,
-                                                 Handle(calling_thread, thread_oop),
-                                                 owned_monitors_list);
-      Handshake::execute(&op, java_thread);
-      err = op.result();
-    }
-  } else {
+  if (java_thread != nullptr) {
+    Handle thread_handle(calling_thread, thread_oop);
     EscapeBarrier eb(true, calling_thread, java_thread);
     if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
       delete owned_monitors_list;
       return JVMTI_ERROR_OUT_OF_MEMORY;
     }
-
-    if (java_thread == calling_thread) {
-      // It is only safe to make a direct call on the current thread.
-      // All other usage needs to use a direct handshake for safety.
-      err = get_owned_monitors(calling_thread, java_thread, owned_monitors_list);
-    } else {
-      // get owned monitors info with handshake
-      GetOwnedMonitorInfoClosure op(calling_thread, this, owned_monitors_list);
-      Handshake::execute(&op, java_thread);
-      err = op.result();
-    }
+    // get owned monitors info with handshake
+    GetOwnedMonitorInfoClosure op(this, calling_thread, owned_monitors_list);
+    JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
+    err = op.result();
   }
 
   jint owned_monitor_count = owned_monitors_list->length();
@@ -1436,33 +1421,19 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(jthread thread, jint* monitor_info_count
     return err;
   }
 
-  if (java_lang_VirtualThread::is_instance(thread_oop)) {
-    // There is no monitor info to collect if target virtual thread is unmounted.
-    if (java_thread != nullptr) {
-      VirtualThreadGetOwnedMonitorInfoClosure op(this,
-                                                 Handle(calling_thread, thread_oop),
-                                                 owned_monitors_list);
-      Handshake::execute(&op, java_thread);
-      err = op.result();
-    }
-  } else {
+  if (java_thread != nullptr) {
+    Handle thread_handle(calling_thread, thread_oop);
     EscapeBarrier eb(true, calling_thread, java_thread);
     if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
       delete owned_monitors_list;
       return JVMTI_ERROR_OUT_OF_MEMORY;
     }
-
-    if (java_thread == calling_thread) {
-      // It is only safe to make a direct call on the current thread.
-      // All other usage needs to use a direct handshake for safety.
-      err = get_owned_monitors(calling_thread, java_thread, owned_monitors_list);
-    } else {
-      // get owned monitors info with handshake
-      GetOwnedMonitorInfoClosure op(calling_thread, this, owned_monitors_list);
-      Handshake::execute(&op, java_thread);
-      err = op.result();
-    }
+    // get owned monitors info with handshake
+    GetOwnedMonitorInfoClosure op(this, calling_thread, owned_monitors_list);
+    JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
+    err = op.result();
   }
+
   jint owned_monitor_count = owned_monitors_list->length();
   if (err == JVMTI_ERROR_NONE) {
     if ((err = allocate(owned_monitor_count * sizeof(jvmtiMonitorStackDepthInfo),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 #define SHARE_GC_G1_G1BLOCKOFFSETTABLE_INLINE_HPP
 
 #include "gc/g1/g1BlockOffsetTable.hpp"
-
 #include "gc/g1/g1HeapRegion.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "runtime/atomic.hpp"
 #include "oops/oop.inline.hpp"
@@ -47,14 +47,14 @@ inline HeapWord* G1BlockOffsetTablePart::block_start_reaching_into_card(const vo
   size_t index = _bot->index_for(addr);
 
   u_char offset = _bot->offset_array(index);
-  while (offset >= BOTConstants::card_size_in_words()) {
+  while (offset >= CardTable::card_size_in_words()) {
     // The excess of the offset from N_words indicates a power of Base
     // to go back by.
     size_t n_cards_back = BOTConstants::entry_to_cards_back(offset);
     index -= n_cards_back;
     offset = _bot->offset_array(index);
   }
-  assert(offset < BOTConstants::card_size_in_words(), "offset too large");
+  assert(offset < CardTable::card_size_in_words(), "offset too large");
 
   HeapWord* q = _bot->address_for_index(index);
   return q - offset;
@@ -92,7 +92,7 @@ void G1BlockOffsetTable::set_offset_array(size_t left, size_t right, u_char offs
 
 // Variant of index_for that does not check the index for validity.
 inline size_t G1BlockOffsetTable::index_for_raw(const void* p) const {
-  return pointer_delta((char*)p, _reserved.start(), sizeof(char)) >> BOTConstants::log_card_size();
+  return pointer_delta((char*)p, _reserved.start(), sizeof(char)) >> CardTable::card_shift();
 }
 
 inline size_t G1BlockOffsetTable::index_for(const void* p) const {
