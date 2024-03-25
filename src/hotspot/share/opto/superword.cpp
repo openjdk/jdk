@@ -1212,8 +1212,8 @@ void SuperWord::order_inputs_of_all_use_pairs_to_match_def_pair(Node* def1, Node
   }
 }
 
-// For a def-pair (def1. def2), and their use-nodes (use1, use2):
-// ensure that the input order of (use1, use2) matches the order of (def1, def2).
+// For a def-pair (def1, def2), and their use-nodes (use1, use2):
+// Ensure that the input order of (use1, use2) matches the order of (def1, def2).
 //
 // We have different cases:
 //
@@ -1285,7 +1285,7 @@ SuperWord::PairOrderStatus SuperWord::order_inputs_of_uses_to_match_def_pair(Nod
         }
         return PairOrderStatus::Unknown;
       } else {
-        // The inputs are not ordered, and we can not do anything about it.
+        // The inputs are not ordered, and we cannot do anything about it.
         return PairOrderStatus::Unordered;
       }
     } else if (i1 == i2 && VectorNode::is_muladds2i(use2) && use1 != use2) {
@@ -1300,7 +1300,7 @@ SuperWord::PairOrderStatus SuperWord::order_inputs_of_uses_to_match_def_pair(Nod
   return PairOrderStatus::Ordered;
 }
 
-// Estimate the savings from executing s1 and s2 as a pack
+// Estimate the savings from executing s1 and s2 as a pair.
 int SuperWord::estimate_cost_savings_when_packing_pair(const Node* s1, const Node* s2) const {
   int save_in = 2 - 1; // 2 operations per instruction in packed form
 
