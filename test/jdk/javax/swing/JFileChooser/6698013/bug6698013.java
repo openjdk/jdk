@@ -54,7 +54,7 @@ public class bug6698013 {
         PassFailJFrame pfframe = PassFailJFrame.builder()
                 .title("bug6698013")
                 .instructions(instructions)
-                .rows(5)
+                .rows(25)
                 .columns(40)
                 .testTimeOut(10)
                 .build();
