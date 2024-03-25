@@ -36,25 +36,18 @@
  */
 
 import com.sun.source.tree.AssignmentTree;
-import com.sun.source.tree.InstanceOfTree;
 import com.sun.source.util.TreePath;
 import java.util.Set;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.TypeMirror;
-
-import com.sun.source.tree.BindingPatternTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.DerivedInstanceTree;
-import com.sun.source.tree.VariableTree;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
-import java.util.ArrayList;
-import java.util.List;
 import javax.lang.model.element.ElementKind;
 
 public class Model extends JavacTestingAbstractProcessor {
