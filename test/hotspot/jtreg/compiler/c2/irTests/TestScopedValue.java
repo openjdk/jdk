@@ -24,6 +24,7 @@
 package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.*;
+import compiler.lib.ir_framework.test.TestVM;
 import jdk.test.whitebox.WhiteBox;
 import java.lang.reflect.Method;
 import compiler.whitebox.CompilerWhiteBoxTest;
@@ -93,14 +94,9 @@ public class TestScopedValue {
     }
 
     private static void forceCompilation(String name, Class<?>... parameterTypes) throws NoSuchMethodException {
-        if (tieredStopAtLevel < CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
-            return;
-        }
         Method m = TestScopedValue.class.getDeclaredMethod(name, parameterTypes);
         WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-        if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
-            throw new RuntimeException("should be compiled");
-        }
+        TestVM.assertCompiledByC2(m);
     }
 
     @DontInline
@@ -477,23 +473,19 @@ public class TestScopedValue {
     @Run(test = "testFastPath15", mode = RunMode.STANDALONE)
     private void testFastPath15Runner() throws Exception {
         // Profile data will report a single of the 2 cache locations as a hit
-        runAndCompiler15();
+        runAndCompile15();
         // Force a cache miss
         ScopedValue.where(svObject, new Object()).run(
                 () -> {
                     testFastPath15();
                 });
         Method m = TestScopedValue.class.getDeclaredMethod("testFastPath15");
-        if (tieredStopAtLevel == CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION &&
-                WHITE_BOX.isMethodCompiled(m) &&
-                WHITE_BOX.getMethodCompilationLevel(m) == CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
-            throw new RuntimeException("should have deoptimized");
-        }
+        TestVM.assertDeoptimizedByC2(m);
         // Compile again
-        runAndCompiler15();
+        runAndCompile15();
     }
 
-    private static void runAndCompiler15() throws NoSuchMethodException {
+    private static void runAndCompile15() throws NoSuchMethodException {
         ScopedValue.where(svObject, new Object()).run(
                 () -> {
                     Object unused = svObject.get();
