@@ -56,6 +56,8 @@
 #define ZIP64_EXTHDR 24       // EXT header size
 #define ZIP64_EXTID   1       // Extra field Zip64 header ID
 
+#define ZIP64_EXTMAXLEN 36 // Maximum Zip64 extra field length
+
 #define ZIP64_MAGICVAL 0xffffffffLL
 #define ZIP64_MAGICCOUNT 0xffff
 

@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @requires vm.bits == 64
  * @bug 8328995
  * @summary Test java.util.zip behavior with >4GB offsets
  * @library /test/lib
