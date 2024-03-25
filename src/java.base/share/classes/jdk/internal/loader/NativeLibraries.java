@@ -117,7 +117,6 @@ public final class NativeLibraries {
     @SuppressWarnings("removal")
     public NativeLibrary loadLibrary(Class<?> fromClass, File file) {
         // Check to see if we're attempting to access a static library
-
         String name = findBuiltinLib(file.getName());
         boolean isBuiltin = (name != null);
         if (!isBuiltin) {
@@ -125,10 +124,8 @@ public final class NativeLibraries {
                     public String run() {
                         try {
                             if (loadLibraryOnlyIfPresent && !file.exists()) {
-                               
                                 return null;
                             }
-                            
                             return file.getCanonicalPath();
                         } catch (IOException e) {
                             return null;
@@ -248,6 +245,7 @@ public final class NativeLibraries {
      */
     public NativeLibrary loadLibrary(Class<?> fromClass, String name) {
         assert name.indexOf(File.separatorChar) < 0;
+
         NativeLibrary lib = findFromPaths(LibraryPaths.SYS_PATHS, fromClass, name);
         if (lib == null && searchJavaLibraryPath) {
             lib = findFromPaths(LibraryPaths.USER_PATHS, fromClass, name);
@@ -263,7 +261,6 @@ public final class NativeLibraries {
                 return nl;
             }
             libfile = ClassLoaderHelper.mapAlternativeName(libfile);
-            System.out.println("mapalternare"+libfile);
             if (libfile != null) {
                 nl = loadLibrary(fromClass, libfile);
                 if (nl != null) {
