@@ -541,7 +541,8 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
       parentless dialogs we use NULL to show them in the taskbar,
       and for all other dialogs AwtToolkit's HWND is used.
     */
-    else if (awtParent != NULL) {
+    else if (awtParent != NULL)
+    {
         setup.hwndOwner = AwtToolkit::GetInstance().GetHWnd();
     } else {
         setup.hwndOwner = NULL;
