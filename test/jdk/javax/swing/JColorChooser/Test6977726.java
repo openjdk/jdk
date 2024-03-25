@@ -39,7 +39,7 @@ public class Test6977726 {
     public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()
                 .title("Test6977726")
-                .instructions("Check that there is an empty panel " +
+                .instructions("Check that there is a panel with white text " +
                         "titled \"Preview\" in the JColorChooser.")
                 .rows(5)
                 .columns(40)
