@@ -589,18 +589,16 @@ public class ECoreIndexOf {
       sbAnswer = indexOfKernel(testBuffer, fragment, testIndex);
 
       if (sAnswer != sbAnswer) {
-        do {
-          System.err.println("(2) IndexOf fragment '" + fragment + "' (" + fragment.length() + ") index = " + testIndex
-              + " len String = " + testString.length() + " len Buffer = " + testBuffer.length());
-          System.err.println("  sAnswer = " + sAnswer + ", sbAnswer = " + sbAnswer);
-          System.err.println("  testString = '" + testString + "'");
-          System.err.println("  testBuffer = '" + testBuffer + "'");
-          failCount++;
-          make_new = false;
+        System.err.println("(2) IndexOf fragment '" + fragment + "' (" + fragment.length() + ") index = " + testIndex
+            + " len String = " + testString.length() + " len Buffer = " + testBuffer.length());
+        System.err.println("  sAnswer = " + sAnswer + ", sbAnswer = " + sbAnswer);
+        System.err.println("  testString = '" + testString + "'");
+        System.err.println("  testBuffer = '" + testBuffer + "'");
+        failCount++;
+        make_new = true;
 
-          sAnswer = indexOfKernel(testString, fragment, testIndex);
-          sbAnswer = indexOfKernel(testBuffer, fragment, testIndex);
-        } while (sAnswer != sbAnswer);
+        sAnswer = indexOfKernel(testString, fragment, testIndex);
+        sbAnswer = indexOfKernel(testBuffer, fragment, testIndex);
       } else {
         if ((sAnswer > testString.length()) || ((sAnswer != -1) && (sAnswer < testIndex) && (fragment.length() != 0))) {
           System.err.println("IndexOf returned value out of range; return: " + sAnswer + " length max: "
