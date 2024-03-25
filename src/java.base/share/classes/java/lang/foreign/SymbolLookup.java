@@ -79,7 +79,7 @@ import java.util.function.BiFunction;
  * {@snippet lang = java:
  * try (Arena arena = Arena.ofConfined()) {
  *     SymbolLookup libGL = SymbolLookup.libraryLookup("libGL.so", arena); // libGL.so loaded here
- *     MemorySegment glGetString = libGL.find("glGetString").orElseThrow();
+ *     MemorySegment glGetString = libGL.findOrThrow("glGetString");
  *     ...
  * } //  libGL.so unloaded here
  *}
@@ -93,7 +93,7 @@ import java.util.function.BiFunction;
  * System.loadLibrary("GL"); // libGL.so loaded here
  * ...
  * SymbolLookup libGL = SymbolLookup.loaderLookup();
- * MemorySegment glGetString = libGL.find("glGetString").orElseThrow();
+ * MemorySegment glGetString = libGL.findOrThrow("glGetString");
  * }
  *
  * This symbol lookup, which is known as a <em>loader lookup</em>, is dynamic with
@@ -130,7 +130,7 @@ import java.util.function.BiFunction;
  * {@snippet lang = java:
  * Linker nativeLinker = Linker.nativeLinker();
  * SymbolLookup stdlib = nativeLinker.defaultLookup();
- * MemorySegment malloc = stdlib.find("malloc").orElseThrow();
+ * MemorySegment malloc = stdlib.findOrThrow("malloc");
  *}
  *
  * @since 22
@@ -144,8 +144,38 @@ public interface SymbolLookup {
      * @param name the symbol name
      * @return a zero-length memory segment whose address indicates the address of
      *         the symbol, if found
+     * @see #findOrThrow(String)
      */
     Optional<MemorySegment> find(String name);
+
+    /**
+     * {@return the address of the symbol with the provided {@code name} or throws an
+     *          {@linkplain IllegalArgumentException} if no such address can be found}
+     *<p>
+     * This is a convenience method that provides better exception messages compared
+     * to:
+     * {@snippet lang= java :
+     *    MemorySegment address = lookup.find("foo")
+     *        .orElseThrow(IllegalArgumentException::new);
+     * }
+     *
+     * @param name the symbol name to look up
+     * @throws IllegalArgumentException if no symbol address can be found for the
+     *         provided name
+     * @see #find(String) 
+     *
+     * @since 23
+     */
+    default MemorySegment findOrThrow(String name) {
+        Objects.requireNonNull(name);
+        Optional<MemorySegment> address = find(name);
+        // Avoid capturing lambda
+        if (address.isPresent()) {
+            return address.get();
+        }
+        throw new IllegalArgumentException(
+                "Unable to to find a symbol with the name: " + name);
+    }
 
     /**
      * {@return a composed symbol lookup that returns the result of finding the symbol
