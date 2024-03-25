@@ -125,20 +125,10 @@ public final class NativeLibraries {
                     public String run() {
                         try {
                             if (loadLibraryOnlyIfPresent && !file.exists()) {
-                                //Remove member name in brackets from file pathname, as such pathnames do not exist.
-                                //Original pathname with bracket is returned,which is handled by dlopen() in AIX.
-                                if (file.getName().contains("(")){
-                                    String pathWithMember = file.getCanonicalPath();
-                                    int openBracketIndex = pathWithMember.lastIndexOf("(");
-                                    String newFileName = pathWithMember.substring(0, openBracketIndex);
-                                    File file2 = new File(newFileName);
-                                    file.renameTo(file2);
-                                    if (file2.exists()){
-                                        return pathWithMember;
-                                    }
-                                }
+                               
                                 return null;
                             }
+                            
                             return file.getCanonicalPath();
                         } catch (IOException e) {
                             return null;
@@ -273,6 +263,7 @@ public final class NativeLibraries {
                 return nl;
             }
             libfile = ClassLoaderHelper.mapAlternativeName(libfile);
+            System.out.println("mapalternare"+libfile);
             if (libfile != null) {
                 nl = loadLibrary(fromClass, libfile);
                 if (nl != null) {
