@@ -1563,8 +1563,10 @@ Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
     // Improve graph before escape analysis and boxing elimination.
     record_for_igvn(ld);
     if (ld->is_DecodeN()) {
-      // Also record the actual load (LoadN) in case ld is DecodeN
-      assert(ld->in(1)->Opcode() == Op_LoadN, "Assumption invalid: input to DecodeN is not LoadN");
+      // Also record the actual load (LoadN) in case ld is DecodeN. In some
+      // rare corner cases, ld->in(1) can be something other than LoadN (e.g.,
+      // a Phi). Recording such cases is still perfectly sound, but may be
+      // unnecessary and result in some minor IGVN overhead.
       record_for_igvn(ld->in(1));
     }
   }
