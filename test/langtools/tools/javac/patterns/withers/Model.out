@@ -1,0 +1,6 @@
+visitDerivedInstance start
+val1
+val2
+visitDerivedInstance end
+- compiler.note.preview.filename: Model.java, DEFAULT
+- compiler.note.preview.recompile
