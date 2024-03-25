@@ -46,7 +46,7 @@ public class PrinterDialogsModalityTest {
              After the test starts, you will see a frame titled "Test Frame"
              with two buttons: "Page Dialog" and "Print Dialog".
              1. Make the "Test Frame" active by clicking on title.
-             2. Press "Page Dialog" button and a page dailog should popup.
+             2. Press "Page Dialog" button and a page dialog should popup.
              3. Make sure page dialog is modal. (Modal in this case means that
                 it blocks the user from interacting with other windows in the
                 same application, like this instruction window. You may still be
