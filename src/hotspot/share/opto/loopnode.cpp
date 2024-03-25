@@ -792,13 +792,14 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   }
 #endif
 
-  jlong stride_con = head->stride_con();
-  assert(stride_con != 0, "missed some peephole opt");
+  jlong stride_con_long = head->stride_con();
+  assert(stride_con_long != 0, "missed some peephole opt");
   // We can't iterate for more than max int at a time.
-  if (stride_con != (jint)stride_con) {
+  if (stride_con_long != (jint)stride_con_long || stride_con_long == min_jint) {
     assert(bt == T_LONG, "only for long loops");
     return false;
   }
+  jint stride_con = checked_cast<jint>(stride_con_long);
   // The number of iterations for the integer count loop: guarantee no
   // overflow: max_jint - stride_con max. -1 so there's no need for a
   // loop limit check if the exit test is <= or >=.
@@ -966,7 +967,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   }
 
   // Clone the iv data nodes as an integer iv
-  Node* int_stride = _igvn.intcon(checked_cast<int>(stride_con));
+  Node* int_stride = _igvn.intcon(stride_con);
   set_ctrl(int_stride, C->root());
   Node* inner_phi = new PhiNode(x->in(0), TypeInt::INT);
   Node* inner_incr = new AddINode(inner_phi, int_stride);
@@ -1061,7 +1062,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     register_new_node(outer_phi, outer_head);
   }
 
-  transform_long_range_checks(checked_cast<int>(stride_con), range_checks, outer_phi, inner_iters_actual_int,
+  transform_long_range_checks(stride_con, range_checks, outer_phi, inner_iters_actual_int,
                               inner_phi, iv_add, inner_head);
   // Peel one iteration of the loop and use the safepoint at the end
   // of the peeled iteration to insert Parse Predicates. If no well
@@ -1098,7 +1099,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   return true;
 }
 
-int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong stride_con, int iters_limit, PhiNode* phi,
+int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jint stride_con, int iters_limit, PhiNode* phi,
                                               Node_List& range_checks) {
   const jlong min_iters = 2;
   jlong reduced_iters_limit = iters_limit;
@@ -1114,7 +1115,8 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
         jlong scale = 0;
         if (loop->is_range_check_if(if_proj, this, T_LONG, phi, range, offset, scale) &&
             loop->is_invariant(range) && loop->is_invariant(offset) &&
-            original_iters_limit / ABS(scale * stride_con) >= min_iters) {
+            original_iters_limit / ABS(scale) >= min_iters * ABS(stride_con)) {
+          assert(scale == (jint)scale, "scale should be an int");
           reduced_iters_limit = MIN2(reduced_iters_limit, original_iters_limit/ABS(scale));
           range_checks.push(c);
         }

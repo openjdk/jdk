@@ -98,13 +98,6 @@ jobs:
         with:
           platform: linux-x64
 
-        # Use linux-x64 JDK bundle as build JDK
-      - name: 'Get build JDK'
-        id: buildjdk
-        uses: ./.github/actions/get-bundles
-        with:
-          platform: linux-x64
-
       - name: 'Get GTest'
         id: gtest
         uses: ./.github/actions/get-gtest
@@ -177,7 +170,6 @@ jobs:
           --disable-precompiled-headers
           --openjdk-target=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}
           --with-sysroot=sysroot
-          --with-build-jdk=${{ steps.buildjdk.outputs.jdk-path }}
           --with-jmod-compress=zip-1
           CC=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}-gcc-${{ inputs.gcc-major-version }}
           CXX=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}-g++-${{ inputs.gcc-major-version }}
