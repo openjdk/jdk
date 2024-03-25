@@ -162,7 +162,7 @@ public interface SymbolLookup {
      * @param name the symbol name to look up
      * @throws IllegalArgumentException if no symbol address can be found for the
      *         provided name
-     * @see #find(String) 
+     * @see #find(String)
      *
      * @since 23
      */
