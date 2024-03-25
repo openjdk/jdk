@@ -138,7 +138,7 @@ extern "C" int getargs(procsinfo*, int, char*, int);
 #define ERROR_MP_VMGETINFO_FAILED                    102
 #define ERROR_MP_VMGETINFO_CLAIMS_NO_SUPPORT_FOR_64K 103
 
-// excerpts from systemcfg.h that might be missing on older os levels
+// excerpts from sys/systemcfg.h that might be missing on older os levels
 #ifndef PV_7
   #define PV_7 0x200000          /* Power PC 7 */
 #endif
@@ -157,7 +157,12 @@ extern "C" int getargs(procsinfo*, int, char*, int);
 #ifndef PV_9_Compat
   #define PV_9_Compat  0x408000  /* Power PC 9 */
 #endif
-
+#ifndef PV_10
+  #define PV_10 0x500000          /* Power PC 10 */
+#endif
+#ifndef PV_10_Compat
+  #define PV_10_Compat  0x508000  /* Power PC 10 */
+#endif
 
 static address resolve_function_descriptor_to_code_pointer(address p);
 
@@ -1306,6 +1311,9 @@ void os::print_memory_info(outputStream* st) {
 void os::get_summary_cpu_info(char* buf, size_t buflen) {
   // read _system_configuration.version
   switch (_system_configuration.version) {
+  case PV_10:
+    strncpy(buf, "Power PC 10", buflen);
+    break;
   case PV_9:
     strncpy(buf, "Power PC 9", buflen);
     break;
@@ -1344,6 +1352,9 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
     break;
   case PV_9_Compat:
     strncpy(buf, "PV_9_Compat", buflen);
+    break;
+  case PV_10_Compat:
+    strncpy(buf, "PV_10_Compat", buflen);
     break;
   default:
     strncpy(buf, "unknown", buflen);
