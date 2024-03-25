@@ -3150,7 +3150,7 @@ void AwtWindow::_ModalDisable(void *param)
         }
     }
 
-    window = (AwtWindow *) pData;
+    window = (AwtWindow *)pData;
     windowHWnd = window->GetHWnd();
     if (::IsWindow(windowHWnd)) {
         AwtWindow::SetAndActivateModalBlocker(windowHWnd, blockerHWnd);
