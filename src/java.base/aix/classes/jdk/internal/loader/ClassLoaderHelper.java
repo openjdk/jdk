@@ -53,7 +53,7 @@ class ClassLoaderHelper {
     static File mapAlternativeName(File lib) {
         String name = lib.toString();
         // Checking if there is a member object mentioned.
-        if(name.contains("(")){
+        if (name.contains("(")) {
             int openBracketIndex = name.lastIndexOf('(');
             int closeBracketIndex = name.lastIndexOf(')');
             long openBracketCount = name.chars().filter(ch -> ch == '(').count();
