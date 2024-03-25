@@ -21,6 +21,13 @@
  * questions.
  */
 
+import java.awt.Button;
+import java.awt.FlowLayout;
+import java.awt.print.PageFormat;
+import java.awt.print.PrinterJob;
+
+import javax.swing.JFrame;
+
 /*
  * @test
  * @bug 4784285 4785920
@@ -32,13 +39,6 @@
  *  activated after their closing
  * @run main/manual PrinterDialogsModalityTest
  */
-
-import java.awt.Button;
-import java.awt.FlowLayout;
-import java.awt.print.PageFormat;
-import java.awt.print.PrinterJob;
-
-import javax.swing.JFrame;
 
 public class PrinterDialogsModalityTest {
     private static final String INSTRUCTIONS =
@@ -89,7 +89,6 @@ public class PrinterDialogsModalityTest {
         frame.add(page);
         frame.add(print);
         frame.pack();
-        frame.setVisible(true);
         return frame;
     }
 }
