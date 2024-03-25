@@ -1363,7 +1363,8 @@ void AwtFrame::_SetState(void *param)
     }
     f = (AwtFrame *) pData;
     HWND hwnd = f->GetHWnd();
-    if (::IsWindow(hwnd)) {
+    if (::IsWindow(hwnd))
+    {
         DASSERT(!IsBadReadPtr(f, sizeof(AwtFrame)));
 
         BOOL iconify = (state & java_awt_Frame_ICONIFIED) != 0;
