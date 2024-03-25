@@ -1041,10 +1041,10 @@ void SuperWord::extend_pairset_with_more_pairs_by_following_use_and_def() {
     changed = false;
     // Iterate the pairs in insertion order.
     for (int i = 0; i < _pairset.length(); i++) {
-      Node* s1 = _pairset.left_at(i);
-      Node* s2 = _pairset.right_at(i);
-      changed |= extend_pairset_with_more_pairs_by_following_def(s1, s2);
-      changed |= extend_pairset_with_more_pairs_by_following_use(s1, s2);
+      Node* left  = _pairset.left_at(i);
+      Node* right = _pairset.right_at(i);
+      changed |= extend_pairset_with_more_pairs_by_following_def(left, right);
+      changed |= extend_pairset_with_more_pairs_by_following_use(left, right);
     }
   } while (changed);
 
@@ -1056,9 +1056,9 @@ void SuperWord::extend_pairset_with_more_pairs_by_following_use_and_def() {
   // all pair-chains from left-to-right, we essencially impose the order of the first
   // element on all other elements in the pair-chain.
   for (PairSetIterator pair(_pairset); !pair.done(); pair.next()) {
-    Node* s1 = pair.left();
-    Node* s2 = pair.right();
-    order_inputs_of_all_use_pairs_to_match_def_pair(s1, s2);
+    Node* left  = pair.left();
+    Node* right = pair.right();
+    order_inputs_of_all_use_pairs_to_match_def_pair(left, right);
   }
 
 #ifndef PRODUCT
@@ -1364,16 +1364,16 @@ void SuperWord::combine_pairs_to_longer_packs() {
   // Iterate pair-chain by pair-chain, each from left-most to right-most.
   Node_List* pack = nullptr;
   for (PairSetIterator pair(_pairset); !pair.done(); pair.next()) {
-    Node* s1 = pair.left();
-    Node* s2 = pair.right();
-    if (_pairset.is_left_in_a_left_most_pair(s1)) {
+    Node* left  = pair.left();
+    Node* right = pair.right();
+    if (_pairset.is_left_in_a_left_most_pair(left)) {
       assert(pack == nullptr, "no unfinished pack");
       pack = new (arena()) Node_List(arena());
-      pack->push(s1);
+      pack->push(left);
     }
     assert(pack != nullptr, "must have unfinished pack");
-    pack->push(s2);
-    if (_pairset.is_right_in_a_right_most_pair(s2)) {
+    pack->push(right);
+    if (_pairset.is_right_in_a_right_most_pair(right)) {
       _packset.add_pack(pack);
       pack = nullptr;
     }
@@ -3725,16 +3725,16 @@ void PairSet::print() const {
   int chain = 0;
   int chain_index = 0;
   for (PairSetIterator pair(*this); !pair.done(); pair.next()) {
-    Node* n1 = pair.left();
-    Node* n2 = pair.right();
-    if (is_left_in_a_left_most_pair(n1)) {
+    Node* left  = pair.left();
+    Node* right = pair.right();
+    if (is_left_in_a_left_most_pair(left)) {
       chain_index = 0;
       tty->print_cr(" Pair-chain %d:", chain++);
       tty->print("  %3d: ", chain_index++);
-      n1->dump();
+      left->dump();
     }
     tty->print("  %3d: ", chain_index++);
-    n2->dump();
+    right->dump();
   }
 }
 
