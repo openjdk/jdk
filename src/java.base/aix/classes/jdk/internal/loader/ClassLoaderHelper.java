@@ -39,7 +39,7 @@ class ClassLoaderHelper {
       * it's present on the file system.
       */
       static boolean loadLibraryOnlyIfPresent() {
-          return true;
+          return false;
       }
 
     /**
