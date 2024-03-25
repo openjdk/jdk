@@ -126,7 +126,7 @@ public enum ElementKind {
     BINDING_VARIABLE,
 
     /**
-     * A binding variable in a pattern.
+     * A local component variable in a derived record creation expression.
      * @since 23
      */
     @PreviewFeature(feature=PreviewFeature.Feature.DERIVED_RECORD_CREATION, reflective=true)

@@ -42,14 +42,12 @@ import jdk.internal.javac.PreviewFeature;
 @PreviewFeature(feature=PreviewFeature.Feature.DERIVED_RECORD_CREATION, reflective=true)
 public interface DerivedInstanceTree extends ExpressionTree {
     /**
-     * Returns the expression for the array being accessed.
-     * @return the array
+     * {@return the origin expression of the derived record creation expression.}
      */
     ExpressionTree getExpression();
 
     /**
-     * Returns the reconstruction block
-     * @return the reconstruction block
+     * {@return the reconstruction block.}
      */
     BlockTree getBlock();
 }
