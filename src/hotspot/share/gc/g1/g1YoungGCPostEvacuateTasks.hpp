@@ -56,6 +56,7 @@ public:
 // - Update Derived Pointers (s)
 // - Clear Retained Region Data (on evacuation failure)
 // - Redirty Logged Cards
+// - Restore Preserved Marks (on evacuation failure, only 32 bit JVM)
 // - Free Collection Set
 // - Resize TLABs
 class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
@@ -66,6 +67,9 @@ class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
 
   class ProcessEvacuationFailedRegionsTask;
   class RedirtyLoggedCardsTask;
+#ifndef _LP64
+  class RestorePreservedMarksTask;
+#endif
   class FreeCollectionSetTask;
   class ResizeTLABsTask;
 

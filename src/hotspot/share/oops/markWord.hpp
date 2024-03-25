@@ -147,8 +147,12 @@ class markWord {
     return (mask_bits(value(), lock_mask_in_place) == marked_value);
   }
   bool is_forwarded() const {
+#ifndef _LP64
+    return is_marked();
+#else
     // Returns true for normal forwarded (0b011) and self-forwarded (0b1xx).
     return mask_bits(value(), lock_mask_in_place | self_fwd_mask_in_place) >= static_cast<intptr_t>(marked_value);
+#endif
   }
   bool is_neutral()  const {
     return (mask_bits(value(), lock_mask_in_place) == unlocked_value);
@@ -269,14 +273,17 @@ class markWord {
   inline void* decode_pointer() { return (void*)clear_lock_bits().value(); }
 
   inline bool self_forwarded() const {
+    NOT_LP64(assert(LockingMode != LM_LEGACY, "incorrect with LM_LEGACY on 32 bit");)
     return mask_bits(value(), self_fwd_mask_in_place) != 0;
   }
 
   inline markWord set_self_forwarded() const {
+    NOT_LP64(assert(LockingMode != LM_LEGACY, "incorrect with LM_LEGACY on 32 bit");)
     return markWord(value() | self_fwd_mask_in_place);
   }
 
   inline markWord unset_self_forwarded() const {
+    NOT_LP64(assert(LockingMode != LM_LEGACY, "incorrect with LM_LEGACY on 32 bit");)
     return markWord(value() & ~self_fwd_mask_in_place);
   }
 };

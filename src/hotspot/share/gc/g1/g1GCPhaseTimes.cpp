@@ -105,6 +105,9 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[UpdateDerivedPointers] = new WorkerDataArray<double>("UpdateDerivedPointers", "Update Derived Pointers (ms):", max_gc_threads);
 #endif
   _gc_par_phases[EagerlyReclaimHumongousObjects] = new WorkerDataArray<double>("EagerlyReclaimHumongousObjects", "Eagerly Reclaim Humongous Objects (ms):", max_gc_threads);
+#ifndef _LP64
+  _gc_par_phases[RestorePreservedMarks] = new WorkerDataArray<double>("RestorePreservedMarks", "Restore Preserved Marks (ms):", max_gc_threads);
+#endif
   _gc_par_phases[ProcessEvacuationFailedRegions] = new WorkerDataArray<double>("ProcessEvacuationFailedRegions", "Process Evacuation Failed Regions (ms):", max_gc_threads);
 
   _gc_par_phases[ScanHR]->create_thread_work_items("Scanned Cards:", ScanHRScannedCards);
@@ -511,6 +514,9 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
   debug_time("Post Evacuate Cleanup 2", _cur_post_evacuate_cleanup_2_time_ms);
   if (evacuation_failed) {
     debug_phase(_gc_par_phases[RecalculateUsed], 1);
+#ifndef _LP64
+    debug_phase(_gc_par_phases[RestorePreservedMarks], 1);
+#endif
     debug_phase(_gc_par_phases[ProcessEvacuationFailedRegions], 1);
   }
 #if COMPILER2_OR_JVMCI

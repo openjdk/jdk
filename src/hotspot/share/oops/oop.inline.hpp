@@ -267,7 +267,11 @@ bool oopDesc::is_forwarded() const {
 }
 
 bool oopDesc::is_self_forwarded() const {
+#ifndef _LP64
+  return is_forwarded() && forwardee() == cast_to_oop(this);
+#else
   return mark().self_forwarded();
+#endif
 }
 
 // Used by scavengers
@@ -278,7 +282,11 @@ void oopDesc::forward_to(oop p) {
 }
 
 void oopDesc::forward_to_self() {
+#ifndef _LP64
+  forward_to(cast_to_oop(this));
+#else
   set_mark(mark().set_self_forwarded());
+#endif
 }
 
 oop oopDesc::cas_set_forwardee(markWord new_mark, markWord compare, atomic_memory_order order) {
@@ -298,18 +306,26 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
 }
 
 oop oopDesc::forward_to_self_atomic(markWord old_mark, atomic_memory_order order) {
+#ifndef _LP64
+  return forward_to_atomic(cast_to_oop(this), old_mark, order);
+#else
   markWord new_mark = old_mark.set_self_forwarded();
   assert(forwardee(new_mark) == cast_to_oop(this), "encoding must be reversible");
   return cas_set_forwardee(new_mark, old_mark, order);
+#endif
 }
 
 oop oopDesc::forwardee(markWord mark) const {
   assert(mark.is_forwarded(), "only decode when actually forwarded");
+#ifndef _LP64
+  return cast_to_oop(mark.decode_pointer());
+#else
   if (mark.self_forwarded()) {
     return cast_to_oop(this);
   } else {
     return cast_to_oop(mark.decode_pointer());
   }
+#endif
 }
 
 // Note that the forwardee is not the same thing as the displaced_mark.
