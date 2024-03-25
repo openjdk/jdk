@@ -645,7 +645,6 @@ public class ForkJoinPool extends AbstractExecutorService {
                         (phase & (IDLE | 1)) != 0 && top - base <= 0)
                         break;                    // empty
                 }
-                Thread.onSpinWait();
             }
             return null;
         }
@@ -1203,13 +1202,13 @@ public class ForkJoinPool extends AbstractExecutorService {
     final void runWorker(WorkQueue w) {
         if (w != null) {
             int cfg = w.config & (FIFO|CLEAR_TLS), r = w.stackPred, dscans = 0;
-            for (long stat;;) {
-                r = (int)(stat = scan(w, r, dscans, cfg));
-                if ((dscans = (int)(stat >>> 32)) == -1) {
+            for (;;) {
+                if ((dscans = scan(w, r, dscans, cfg)) < 0) {
                     if (quiescent() > 0 || awaitWork(w) != 0)
                         break;
                     dscans = 0;
                 }
+                r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
             }
         }
     }
@@ -1221,20 +1220,17 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @param r random seed
      * @param dscans if nonzero and inactive, weighted countdown until block
      * @param cfg config bits
-     * @return dscans and seed for next use
+     * @return next dscans, or negative for block or terminate
      */
-    private long scan(WorkQueue w, int r, int dscans, int cfg) {
+    private int scan(WorkQueue w, int r, int dscans, int cfg) {
         int e = runState, n;
         WorkQueue[] qs = queues;
         if (w == null || (e & STOP) != 0 || qs == null || (n = qs.length) <= 0)
-            return -1L;
+            return -1;
         long prevCtl = ctl;                   // for signal check
         int phase = w.phase;                  // IDLE set when deactivated
-        r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // advance xorshift
         int i = r, step = (r >>> 16) | 1;     // scan random permutation
-        int retries = n;                      // move and restart if stalled
-        boolean restart = false;
-        sweep: for (int l = n; l > 0; --l, i += step) {
+        for (int retries = n, l = n; l > 0; --l, i += step) {
             int j; WorkQueue q;
             if ((q = qs[j = i & SMASK & (n - 1)]) != null) {
                 for (;;) {
@@ -1254,15 +1250,15 @@ public class ForkJoinPool extends AbstractExecutorService {
                     }
                     else if ((phase & IDLE) != 0) { // reactivate
                         long sp = w.stackPred & LMASK, sc; int p, np;
-                        if (((p = w.phase) & IDLE) != 0) {
-                            if ((np = p + 1) != (int)(sc = ctl))
-                                break;        // ineligible
-                            else if (compareAndSetCtl(
-                                         sc, sp | ((sc + RC_UNIT) & UMASK)))
-                                w.phase = np;
-                        }
-                        restart = true;
-                        break sweep;
+                        if (((p = w.phase) & IDLE) == 0)
+                            return 0;
+                        if ((np = p + 1) != (int)(sc = ctl))
+                            break;           // ineligible
+                        if (!compareAndSetCtl(
+                                sc, sp | ((sc + RC_UNIT) & UMASK)))
+                            return dscans;   // possibly retry
+                        w.phase = np;
+                        return 0;
                     }
                     else if (U.compareAndSetReference(a, kp, t, null)) {
                         q.base = b + 1;
@@ -1270,39 +1266,33 @@ public class ForkJoinPool extends AbstractExecutorService {
                         if (a[(b + 1) & (cap - 1)] != null)
                             signalWork();     // propagate signal
                         w.topLevelExec(t, q, cfg);
-                        restart = true;
-                        break sweep;
+                        return 0;
                     }
-                    if (--retries <= 0) {     // randomly move
-                        restart = true;
-                        break sweep;
-                    }
+                    if (--retries <= 0)       // randomly move if stalled
+                        return dscans;
                 }
             }
         }
-        if (!restart) {
-            int ac; long c;                   // check for possible signals
-            if ((ac = (short)((c = ctl) >>> RC_SHIFT)) <= 0 ||
-                c == prevCtl || ac < (short)(prevCtl >>> RC_SHIFT)) {
-                if ((phase & IDLE) == 0) {    // try to deactivate
-                    w.phase = phase | IDLE;
-                    for (long ap = (phase + (IDLE << 1)) & LMASK;;) {
-                        w.stackPred = (int)c; // set ctl stack link
-                        if (c == (c = compareAndExchangeCtl(
-                                      c, ap | ((c - RC_UNIT) & UMASK))))
-                            break;
-                        if (ac <= (ac = (short)(c >>> RC_SHIFT))) {
-                            w.phase = phase;  // back out
-                            break;
-                        }
+        int ac; long c;                       // check for nonincreasing ctl
+        if (((ac = (short)((c = ctl) >>> RC_SHIFT)) <= 0 ||
+             c == prevCtl || ac < (short)(prevCtl >>> RC_SHIFT))) {
+            if ((phase & IDLE) == 0) {        // try to deactivate
+                w.phase = phase | IDLE;
+                for (long ap = (phase + (IDLE << 1)) & LMASK;;) {
+                    w.stackPred = (int)c;     // set ctl stack link
+                    if (c == (c = compareAndExchangeCtl(
+                                  c, ap | ((c - RC_UNIT) & UMASK))))
+                        return SPIN_WAITS;    // rescan after deactivating
+                    if (ac <= (ac = (short)(c >>> RC_SHIFT))) {
+                        w.phase = phase;      // back out
+                        break;
                     }
-                    dscans = SPIN_WAITS;      // rescan
                 }
-                else if (ac <= 0 || (dscans -= ac) <= 0)
-                    dscans = -1;              // block or terminate
             }
+            else if (ac <= 0 || (dscans -= ac) <= 0)
+                return -1;                   // block or terminate
         }
-        return ((long)dscans << 32) | (r & LMASK);
+        return dscans;
     }
 
     /**
