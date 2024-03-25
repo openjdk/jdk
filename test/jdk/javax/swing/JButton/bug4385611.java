@@ -21,8 +21,11 @@
  * questions.
  */
 
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.Insets;
+import java.awt.image.BufferedImage;
 import java.lang.reflect.InvocationTargetException;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -39,7 +42,7 @@ import javax.swing.UIManager;
 
 public class bug4385611 {
     static JButton bt1, bt2;
-    static final ImageIcon icon32x32 = new ImageIcon(bug4385611.class.getResource("red.gif"));
+    static final ImageIcon icon32x32 = generateImageIcon();
     static final Dimension DIM_32X32 = new Dimension(32, 32);
     static final Dimension DIM_33X33 = new Dimension(33, 33);
 
@@ -81,5 +84,14 @@ public class bug4385611 {
                 e.printStackTrace();
             }
         });
+    }
+
+    private static ImageIcon generateImageIcon() {
+        BufferedImage image = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
+        Graphics g = image.createGraphics();
+        g.setColor(Color.YELLOW);
+        g.fillRect(0, 0, 32, 32);
+        g.dispose();
+        return new ImageIcon(image);
     }
 }

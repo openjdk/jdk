@@ -226,23 +226,18 @@ public class bug4774166 {
 
     public void cleanupGUI() {
         if (testframe != null) {
-            testframe.setVisible(false);
             testframe.dispose();
         }
         if (testwindowframe != null) {
-            testwindowframe.setVisible(false);
             testwindowframe.dispose();
         }
         if (testwindow != null) {
-            testwindow.setVisible(false);
             testwindow.dispose();
         }
         if (customframe != null) {
-            customframe.setVisible(false);
             customframe.dispose();
         }
         if (testdialog != null) {
-            testdialog.setVisible(false);
             testdialog.dispose();
         }
     }
