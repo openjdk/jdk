@@ -109,9 +109,9 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
     DEFAULT_LDFLAGS := false, \
     LDFLAGS := $(JVM_LDFLAGS), \
     LDFLAGS_unix := -L$(JVM_OUTPUTDIR)/libgtest, \
+    JDK_LIBS_unix := -lgtest, \
+    JDK_LIBS_windows := $(JVM_OUTPUTDIR)/libgtest/gtest.lib, \
     LIBS := $(JVM_LIBS), \
-    LIBS_unix := -lgtest, \
-    LIBS_windows := $(JVM_OUTPUTDIR)/libgtest/gtest.lib, \
     OPTIMIZATION := $(JVM_OPTIMIZATION), \
     COPY_DEBUG_SYMBOLS := $(GTEST_COPY_DEBUG_SYMBOLS), \
     ZIP_EXTERNAL_DEBUG_SYMBOLS := false, \
@@ -146,8 +146,8 @@ $(eval $(call SetupJdkExecutable, BUILD_GTEST_LAUNCHER, \
         -I$(GTEST_FRAMEWORK_SRC)/googlemock/include, \
     LD_SET_ORIGIN := false, \
     LDFLAGS_unix := -L$(JVM_OUTPUTDIR)/gtest $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LIBS_unix := -ljvm, \
-    LIBS_windows := $(JVM_OUTPUTDIR)/gtest/objs/jvm.lib, \
+    JDK_LIBS_unix := -ljvm, \
+    JDK_LIBS_windows := $(JVM_OUTPUTDIR)/gtest/objs/jvm.lib, \
     COPY_DEBUG_SYMBOLS := $(GTEST_COPY_DEBUG_SYMBOLS), \
     ZIP_EXTERNAL_DEBUG_SYMBOLS := false, \
 ))

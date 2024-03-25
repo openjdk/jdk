@@ -122,10 +122,6 @@ define SetupBuildLauncherBody
     endif
   endif
 
-  ifeq ($(USE_EXTERNAL_LIBZ), true)
-    $1_LIBS += -lz
-  endif
-
   $1_WINDOWS_JLI_LIB := $(call FindStaticLib, java.base, jli, /libjli)
 
   $1_EXTRA_FILES := $(LAUNCHER_SRC)/main.c
@@ -155,13 +151,19 @@ define SetupBuildLauncherBody
       LDFLAGS_macosx := $$(call SET_EXECUTABLE_ORIGIN,/../lib) \
           -L$(call FindLibDirForModule, java.base), \
       LDFLAGS_aix := -L$(SUPPORT_OUTPUTDIR)/native/java.base, \
-      LIBS := $(JDKEXE_LIBS) $$($1_LIBS), \
-      LIBS_linux := -ljli -lpthread $(LIBDL), \
-      LIBS_macosx := -ljli -framework Cocoa -framework Security \
-          -framework ApplicationServices, \
-      LIBS_aix := -ljli_static, \
-      LIBS_windows := $$($1_WINDOWS_JLI_LIB) \
-          $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib, \
+      JDK_LIBS_linux := -ljli, \
+      JDK_LIBS_macosx := -ljli, \
+      JDK_LIBS_aix := -ljli_static, \
+      JDK_LIBS_windows := \
+          $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib \
+          $$($1_WINDOWS_JLI_LIB), \
+      LIBS := $$($1_LIBS), \
+      LIBS_unix := $(LIBZ_LIBS), \
+      LIBS_linux := $(LIBDL) -lpthread, \
+      LIBS_macosx := \
+          -framework ApplicationServices \
+          -framework Cocoa \
+          -framework Security, \
       OUTPUT_DIR := $$($1_OUTPUT_DIR), \
       VERSIONINFO_RESOURCE := $$($1_VERSION_INFO_RESOURCE), \
       EXTRA_RCFLAGS := $$($1_EXTRA_RCFLAGS), \
