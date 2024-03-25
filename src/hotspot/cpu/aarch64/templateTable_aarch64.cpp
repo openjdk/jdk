@@ -2552,6 +2552,9 @@ void TemplateTable::jvmti_post_field_access(Register cache, Register index,
 
     __ load_field_entry(c_rarg2, index);
 
+    // Must prevent reordering of the following cp cache loads with bytecode load
+  __ membar(MacroAssembler::LoadLoad);
+
     if (is_static) {
       __ mov(c_rarg1, zr); // null object reference
     } else {
@@ -3034,6 +3037,10 @@ void TemplateTable::jvmti_post_fast_field_mod() {
     __ mov(c_rarg3, esp);             // points to jvalue on the stack
     // access constant pool cache entry
     __ load_field_entry(c_rarg2, r0);
+
+    // Must prevent reordering of the following cp cache loads with bytecode load
+    __ membar(MacroAssembler::LoadLoad);
+
     __ verify_oop(r19);
     // r19: object pointer copied above
     // c_rarg2: cache entry pointer
@@ -3234,6 +3241,8 @@ void TemplateTable::fast_xaccess(TosState state)
   __ ldr(r0, aaddress(0));
   // access constant pool cache
   __ load_field_entry(r2, r3, 2);
+  // Must prevent reordering of the following cp cache loads with bytecode load
+  __ membar(MacroAssembler::LoadLoad);
   __ load_sized_value(r1, Address(r2, in_bytes(ResolvedFieldEntry::field_offset_offset())), sizeof(int), true /*is_signed*/);
 
   // 8179954: We need to make sure that the code generated for
