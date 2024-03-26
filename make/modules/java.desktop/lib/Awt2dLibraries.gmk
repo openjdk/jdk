@@ -401,31 +401,14 @@ endif
 ## Build libfreetype
 ################################################################################
 
-ifeq ($(FREETYPE_TO_USE), system)
-  # For use by libfontmanager:
-  LIBFREETYPE_CFLAGS := $(FREETYPE_CFLAGS)
-  LIBFREETYPE_LIBS := $(FREETYPE_LIBS)
-else
-  BUILD_LIBFREETYPE_HEADER_DIRS := \
-      $(TOPDIR)/src/$(MODULE)/share/native/libfreetype/include
-  BUILD_LIBFREETYPE_CFLAGS := -DFT2_BUILD_LIBRARY
-
-  # For use by libfontmanager:
-  LIBFREETYPE_CFLAGS := -I$(BUILD_LIBFREETYPE_HEADER_DIRS)
-  ifeq ($(call isTargetOs, windows), true)
-    LIBFREETYPE_LIBS := \
-        $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfreetype/freetype.lib
-    # freetype now requires you to manually define this (see ftconfig.h)
-    BUILD_LIBFREETYPE_CFLAGS += -DDLL_EXPORT
-  else
-    LIBFREETYPE_LIBS := -lfreetype
-  endif
-
+ifeq ($(FREETYPE_TO_USE), bundled)
+  # freetype requires you to manually define DLL_EXPORT for windows (see ftconfig.h)
   $(eval $(call SetupJdkLibrary, BUILD_LIBFREETYPE, \
       NAME := freetype, \
       OPTIMIZATION := HIGHEST, \
-      CFLAGS := $(BUILD_LIBFREETYPE_CFLAGS), \
-      EXTRA_HEADER_DIRS := $(BUILD_LIBFREETYPE_HEADER_DIRS), \
+      CFLAGS := -DFT2_BUILD_LIBRARY, \
+      CFLAGS_windows := -DDLL_EXPORT, \
+      EXTRA_HEADER_DIRS := libfreetype/include, \
       DISABLED_WARNINGS_microsoft := 4267 4244 4996, \
       DISABLED_WARNINGS_gcc := dangling-pointer stringop-overflow, \
   ))
@@ -493,8 +476,19 @@ LIBFONTMANAGER_EXTRA_HEADER_DIRS := \
     libawt/java2d/loops \
     #
 
-LIBFONTMANAGER_CFLAGS += $(LIBFREETYPE_CFLAGS)
-LIBFONTMANAGER_LIBS += $(LIBFREETYPE_LIBS)
+ifeq ($(FREETYPE_TO_USE), system)
+  LIBFONTMANAGER_CFLAGS += $(FREETYPE_CFLAGS)
+  LIBFONTMANAGER_LIBS += $(FREETYPE_LIBS)
+else
+  LIBFONTMANAGER_EXTRA_HEADER_DIRS += libfreetype/include
+
+  ifeq ($(call isTargetOs, windows), true)
+    LIBFONTMANAGER_JDK_LIBS += \
+        $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfreetype/freetype.lib
+  else
+    LIBFONTMANAGER_JDK_LIBS += -lfreetype
+  endif
+endif
 
 LIBFONTMANAGER_OPTIMIZATION := HIGHEST
 
@@ -541,6 +535,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
     LDFLAGS_FILTER_OUT :=-Wl$(COMMA)-z$(COMMA)defs, \
     LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
     LDFLAGS_aix := -Wl$(COMMA)-berok, \
+    JDK_LIBS := $(LIBFONTMANAGER_JDK_LIBS), \
     JDK_LIBS_unix := -lawt -ljava -ljvm, \
     JDK_LIBS_macosx := -lawt_lwawt, \
     JDK_LIBS_windows := $(WIN_AWT_LIB) $(WIN_JAVA_LIB), \
