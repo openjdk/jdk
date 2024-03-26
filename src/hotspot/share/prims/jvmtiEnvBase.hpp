@@ -796,25 +796,6 @@ public:
   jvmtiError result() { return _result; }
 };
 
-// HandshakeClosure to get virtual thread state at safepoint.
-class VirtualThreadGetThreadStateClosure : public HandshakeClosure {
-private:
-  Handle _vthread_h;
-  jint *_state_ptr;
-  jvmtiError _result;
-
-public:
-  VirtualThreadGetThreadStateClosure(Handle vthread_h, jint *state_ptr)
-    : HandshakeClosure("VirtualThreadGetThreadState"),
-      _vthread_h(vthread_h),
-      _state_ptr(state_ptr),
-      _result(JVMTI_ERROR_NONE) {}
-
-  void do_thread(Thread *target);
-  jvmtiError result() { return _result; }
-};
-
-
 // ResourceTracker
 //
 // ResourceTracker works a little like a ResourceMark. All allocates
