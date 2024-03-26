@@ -564,9 +564,12 @@ TARGETS += $(BUILD_LIBFONTMANAGER)
 ## Build libjawt
 ################################################################################
 
+LIBJAWT_EXTRA_HEADER_DIRS := \
+    include \
+    #
+
 ifeq ($(call isTargetOs, windows), true)
-  LIBJAWT_EXTRA_HEADER_DIRS := \
-      include \
+  LIBJAWT_EXTRA_HEADER_DIRS += \
       common/awt/debug \
       common/awt/utility \
       libawt/awt/image/cvutils \
@@ -575,24 +578,68 @@ ifeq ($(call isTargetOs, windows), true)
       libawt/windows \
       java.base:libjava \
       #
+else
+  LIBJAWT_EXTRA_HEADER_DIRS += \
+      common/awt \
+      #
+endif
 
-  ifeq ($(call isTargetCpu, x86), true)
-    LIBJAWT_LIBS := kernel32.lib
+ifeq ($(call isTargetOs, macosx), true)
+  # libjawt on macosx do not use the unix code
+  LIBJAWT_EXCLUDE_SRC_PATTERNS := /unix/
+endif
+
+ifeq ($(call isTargetOs, linux)+$(ENABLE_HEADLESS_ONLY), true+true)
+  LIBJAWT_CFLAGS += -DHEADLESS
+endif
+
+ifeq ($(call isTargetOs, windows)+$(call isTargetCpu, x86), true+true)
+  LIBJAWT_LIBS_windows := kernel32.lib
+endif
+
+ifeq ($(call isTargetOsType, unix)+$(call isTargetOs, macosx), true+false)
+  LIBJAWT_JDK_LIBS_unix := -lawt
+  ifeq ($(ENABLE_HEADLESS_ONLY), false)
+    LIBJAWT_JDK_LIBS_unix += -lawt_xawt
+  else
+    LIBJAWT_JDK_LIBS_unix += -lawt_headless
   endif
+endif
 
-  $(eval $(call SetupJdkLibrary, BUILD_LIBJAWT, \
-      NAME := jawt, \
-      OPTIMIZATION := LOW, \
-      CFLAGS_windows := -EHsc -DUNICODE -D_UNICODE, \
-      CXXFLAGS_windows := -EHsc -DUNICODE -D_UNICODE, \
-      EXTRA_HEADER_DIRS := $(LIBJAWT_EXTRA_HEADER_DIRS), \
-      LDFLAGS := $(LDFLAGS_CXX_JDK), \
-      JDK_LIBS_windows := $(WIN_AWT_LIB), \
-      LIBS_windows := advapi32.lib $(LIBJAWT_LIBS), \
-  ))
+$(eval $(call SetupJdkLibrary, BUILD_LIBJAWT, \
+    NAME := jawt, \
+    EXCLUDE_SRC_PATTERNS := $(LIBJAWT_EXCLUDE_SRC_PATTERNS), \
+    OPTIMIZATION := LOW, \
+    CFLAGS := $(LIBJAWT_CFLAGS), \
+    CFLAGS_windows := -EHsc -DUNICODE -D_UNICODE, \
+    CXXFLAGS_windows := -EHsc -DUNICODE -D_UNICODE, \
+    DISABLED_WARNINGS_clang_jawt.m := sign-compare, \
+    EXTRA_HEADER_DIRS := $(LIBJAWT_EXTRA_HEADER_DIRS), \
+    LDFLAGS_windows := $(LDFLAGS_CXX_JDK), \
+    LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
+    LDFLAGS_macosx := -Wl$(COMMA)-rpath$(COMMA)@loader_path, \
+    JDK_LIBS_unix := $(LIBJAWT_JDK_LIBS_unix) $(JDKLIB_LIBS), \
+    JDK_LIBS_macosx := -lawt_lwawt, \
+    JDK_LIBS_windows := $(WIN_AWT_LIB), \
+    LIBS_macosx := -framework Cocoa, \
+    LIBS_windows := advapi32.lib $(LIBJAWT_LIBS_windows), \
+))
 
+ifeq ($(call isTargetOs, windows), true)
   $(BUILD_LIBJAWT): $(BUILD_LIBAWT)
+else ifeq ($(call isTargetOs, macosx), true)
+   $(BUILD_LIBJAWT): $(call FindLib, $(MODULE), awt_lwawt)
+else
+  ifeq ($(ENABLE_HEADLESS_ONLY), false)
+    $(BUILD_LIBJAWT): $(BUILD_LIBAWT_XAWT)
+  else
+    $(BUILD_LIBJAWT): $(call FindLib, $(MODULE), awt_headless)
+  endif
+endif
 
+TARGETS += $(BUILD_LIBJAWT)
+
+ifeq ($(call isTargetOs, windows), true)
   $(eval $(call SetupCopyFiles, COPY_JAWT_LIB, \
       FILES := $(BUILD_LIBJAWT_IMPORT_LIBRARY), \
       DEST := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
@@ -601,53 +648,7 @@ ifeq ($(call isTargetOs, windows), true)
   $(COPY_JAWT_LIB): $(BUILD_LIBJAWT)
 
   TARGETS += $(COPY_JAWT_LIB)
-else # not windows
-  ifeq ($(call isTargetOs, macosx), true)
-    # libjawt on macosx do not use the unix code
-    LIBJAWT_EXCLUDE_SRC_PATTERNS := /unix/
-  endif
-
-  ifeq ($(call isTargetOs, macosx), true)
-    LIBJAWT_JDK_LIBS := -lawt_lwawt
-  else
-    LIBJAWT_JDK_LIBS := -lawt
-    ifeq ($(ENABLE_HEADLESS_ONLY), false)
-      LIBJAWT_JDK_LIBS += -lawt_xawt
-    else
-      LIBJAWT_JDK_LIBS += -lawt_headless
-      ifeq ($(call isTargetOs, linux), true)
-        LIBJAWT_CFLAGS += -DHEADLESS
-      endif
-    endif
-  endif
-
-  $(eval $(call SetupJdkLibrary, BUILD_LIBJAWT, \
-      NAME := jawt, \
-      EXCLUDE_SRC_PATTERNS := $(LIBJAWT_EXCLUDE_SRC_PATTERNS), \
-      OPTIMIZATION := LOW, \
-      CFLAGS := $(LIBJAWT_CFLAGS), \
-      DISABLED_WARNINGS_clang_jawt.m := sign-compare, \
-      EXTRA_HEADER_DIRS := \
-          include \
-          common/awt, \
-      LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
-      LDFLAGS_macosx := -Wl$(COMMA)-rpath$(COMMA)@loader_path, \
-      JDK_LIBS_unix := $(LIBJAWT_JDK_LIBS) $(JDKLIB_LIBS), \
-      LIBS_macosx := -framework Cocoa, \
-  ))
-
-  ifeq ($(ENABLE_HEADLESS_ONLY), false)
-    $(BUILD_LIBJAWT): $(BUILD_LIBAWT_XAWT)
-  else
-    $(BUILD_LIBJAWT): $(call FindLib, $(MODULE), awt_headless)
-  endif
-
-  ifeq ($(call isTargetOs, macosx), true)
-   $(BUILD_LIBJAWT): $(call FindLib, $(MODULE), awt_lwawt)
-  endif
 endif
-
-TARGETS += $(BUILD_LIBJAWT)
 
 ################################################################################
 ## Build libsplashscreen
