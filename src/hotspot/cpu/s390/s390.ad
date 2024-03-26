@@ -1622,9 +1622,9 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_MulVF:
     case Op_DivVF:
     case Op_SqrtVF:
-      return (SuperwordUseVX && UseSFPV);
+    //PopCountVI supported by z14 onwards.
     case Op_PopCountVI:
-      return (SuperwordUseVX && UsePopCountInstruction);
+      return (SuperwordUseVX && UseSFPV);
     case Op_FmaF:
     case Op_FmaD:
       return UseFMA;
