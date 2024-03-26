@@ -513,7 +513,10 @@ static SpecialFlag const special_jvm_flags[] = {
   { "RTMTotalCountIncrRate",        JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
   { "RTMLockingCalculationDelay",   JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
   { "UseRTMXendForLockBusy",        JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
+#ifdef COMPILER2
+  { "PrintPreciseRTMLockingStatistics", JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
 #endif
+#endif // X86
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
 
