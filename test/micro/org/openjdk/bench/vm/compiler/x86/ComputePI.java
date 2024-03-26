@@ -33,9 +33,9 @@
  import org.openjdk.jmh.annotations.Setup;
  import org.openjdk.jmh.annotations.State;
  import org.openjdk.jmh.annotations.Warmup;
- 
+
  import java.util.concurrent.TimeUnit;
- 
+
  @State(Scope.Thread)
  @BenchmarkMode(Mode.AverageTime)
  @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -43,12 +43,12 @@
  @Measurement(iterations = 5, time = 5, timeUnit = TimeUnit.SECONDS)
  @Fork(value = 3)
  public class ComputePI {
- 
+
    @Benchmark
    public double compute_pi_int_dbl() {
      double pi = 4.0;
      boolean sign = false;
- 
+
      for (int i = 3; i < 1000; i += 2) {
        if (sign) {
          pi += 4.0 / i;
@@ -59,12 +59,12 @@
      }
      return pi;
    }
- 
+
    @Benchmark
    public double compute_pi_int_flt() {
      float pi = 4.0f;
      boolean sign = false;
- 
+
      for (int i = 3; i < 1000; i += 2) {
        if (sign) {
          pi += 4.0f / i;
@@ -75,12 +75,12 @@
      }
      return pi;
    }
- 
+
    @Benchmark
    public double compute_pi_long_dbl() {
      double pi = 4.0;
      boolean sign = false;
- 
+
      for (long i = 3; i < 1000; i += 2) {
        if (sign) {
          pi += 4.0 / i;
@@ -91,12 +91,12 @@
      }
      return pi;
    }
- 
+
    @Benchmark
    public double compute_pi_long_flt() {
      float pi = 4.0f;
      boolean sign = false;
- 
+
      for (long i = 3; i < 1000; i += 2) {
        if (sign) {
          pi += 4.0f / i;
@@ -107,12 +107,12 @@
      }
      return pi;
    }
- 
+
    @Benchmark
    public double compute_pi_flt_dbl() {
      double pi = 4.0;
      boolean sign = false;
- 
+
      for (float i = 3.0f; i < 1000.0f; i += 2.0f) {
        if (sign) {
          pi += 4.0 / i;
@@ -123,12 +123,12 @@
      }
      return pi;
    }
- 
+
    @Benchmark
    public double compute_pi_dbl_flt() {
      float pi = 4.0f;
      boolean sign = false;
- 
+
      for (float i = 3.0f; i < 1000.0f; i += 2.0f) {
        if (sign) {
          pi += 4.0f / i;
