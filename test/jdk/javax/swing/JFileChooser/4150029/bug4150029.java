@@ -21,9 +21,15 @@
  * questions.
  */
 
+import java.awt.BorderLayout;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.io.File;
-import java.io.IOException;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 import jdk.test.lib.Platform;
@@ -38,23 +44,17 @@ import jdk.test.lib.Platform;
  */
 
 public class bug4150029 {
-    private static boolean res;
+    private static JFrame frame;
+    private static JFileChooser fileChooser;
+    private static Robot robot;
+    private static File testDir;
+    private static File subDir;
+    private static File prevDir;
+    private static File crntDir;
 
     public static void main(String[] args) throws Exception {
-        String instructions = """
-                Follow the instructions below.
-                1.Go into 'subDir' folder.
-                2.Press BACKSPACE key.
-                3.Push OPEN button.
-                4.Push PASS button.""";
-
-        PassFailJFrame pfframe = PassFailJFrame.builder()
-                .title("bug4150029")
-                .instructions(instructions)
-                .rows(5)
-                .columns(40)
-                .testTimeOut(10)
-                .build();
+        robot = new Robot();
+        robot.setAutoDelay(100);
 
         try {
             if (Platform.isOSX()) {
@@ -71,45 +71,79 @@ public class bug4150029 {
             if (tmpDir.length() == 0) {
                 tmpDir = System.getProperty("user.home");
             }
-
             System.out.println("Temp directory: " + tmpDir);
 
-            File testDir = new File(tmpDir, "testDir");
-
+            testDir = new File(tmpDir, "testDir");
             testDir.mkdir();
-
-            File subDir = new File(testDir, "subDir");
-
-            subDir.mkdir();
-
+            testDir.deleteOnExit();
             System.out.println("Created directory: " + testDir);
+
+            subDir = new File(testDir, "subDir");
+            subDir.mkdir();
+            subDir.deleteOnExit();
             System.out.println("Created sub-directory: " + subDir);
 
-            JFileChooser fileChooser = new JFileChooser(testDir);
+            fileChooser = new JFileChooser(subDir);
 
-            fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+//            fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
-            try {
-                res = fileChooser.showOpenDialog(null) != JFileChooser.APPROVE_OPTION ||
-                        testDir.getCanonicalPath().equals(fileChooser.getSelectedFile().getCanonicalPath());
-            } catch (IOException e) {
-                res = false;
+            SwingUtilities.invokeAndWait(() -> {
+                frame = new JFrame("Backspace Shortcut for Directory Navigation Test");
+                frame.getContentPane().setLayout(new BorderLayout());
+                fileChooser = new JFileChooser(subDir);
+                fileChooser.setControlButtonsAreShown(false);
+                frame.getContentPane().add(fileChooser, BorderLayout.CENTER);
+                frame.pack();
+                frame.setLocationRelativeTo(null);
+                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                frame.setVisible(true);
+            });
 
-                e.printStackTrace();
-            }
-
-            try {
-                subDir.delete();
-                testDir.delete();
-            } catch (SecurityException e) {
-                e.printStackTrace();
-            }
-
-            pfframe.awaitAndCheck();
+            doTesting();
         } finally {
-            if (!res) {
-                PassFailJFrame.forceFail("BackSpace keyboard button does not lead to parent directory");
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
+    }
+
+    private static void doTesting() {
+        Point p = frame.getLocationOnScreen();
+        robot.mouseMove(p.x + 200, p.y + 200);
+        robot.mousePress(InputEvent.BUTTON1_MASK);
+
+        boolean passed_1 = false;
+        boolean passed_2 = false;
+        robot.waitForIdle();
+
+        // check backspace key at subDir level
+        clickBackSpace();
+        if (prevDir != crntDir) {
+            passed_1 = true;
+        }
+
+        // check if backspace key changes directory at root level
+        while (!fileChooser.getFileSystemView().isFileSystemRoot(prevDir)) {
+            clickBackSpace();
+            if (prevDir == crntDir) {
+                passed_2 = true;
+                break;
             }
         }
+
+        if (passed_1 && passed_2) {
+            System.out.println("Passed");
+        } else {
+            throw new RuntimeException("BackSpace does not lead to parent directory");
+        }
+    }
+
+    private static void clickBackSpace() {
+        prevDir = fileChooser.getCurrentDirectory();
+        robot.keyPress(KeyEvent.VK_BACK_SPACE);
+        robot.keyRelease(KeyEvent.VK_BACK_SPACE);
+        crntDir = fileChooser.getCurrentDirectory();
     }
 }
