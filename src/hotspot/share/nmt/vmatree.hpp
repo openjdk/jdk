@@ -81,7 +81,9 @@ public:
     Arrow out;
 
     bool is_noop() {
-      return in.type == out.type && Metadata::equals(in.data, out.data);
+      return
+          (in.type == StateType::Released && out.type == StateType::Released) ||
+          (in.type == out.type && Metadata::equals(in.data, out.data));
     }
   };
 
