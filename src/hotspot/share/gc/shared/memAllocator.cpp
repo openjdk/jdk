@@ -319,15 +319,13 @@ HeapWord* MemAllocator::mem_allocate_inside_tlab_slow(Allocation& allocation) co
   if (ZeroTLAB) {
     // ..and clear it.
     Copy::zero_to_words(mem, allocation._allocated_tlab_size);
-  } else {
-    // ...and zap just allocated object.
-#ifdef ASSERT
+  } else if (ZapTLAB) {
+    // ...and zap just allocated TLAB.
     // Skip mangling the space corresponding to the object header to
     // ensure that the returned space is not considered parsable by
     // any concurrent GC thread.
     size_t hdr_size = oopDesc::header_size();
     Copy::fill_to_words(mem + hdr_size, allocation._allocated_tlab_size - hdr_size, badHeapWordVal);
-#endif // ASSERT
   }
 
   tlab.fill(mem, mem + _word_size, allocation._allocated_tlab_size);
