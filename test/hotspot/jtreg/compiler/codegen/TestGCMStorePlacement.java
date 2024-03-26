@@ -27,7 +27,7 @@ import jdk.test.lib.Asserts;
 
 /**
  * @test
- * @bug 8255763 8258894
+ * @bug 8255763 8258894 8320718
  * @summary Tests GCM's store placement in different scenarios (regular and OSR
  *          compilations, reducible and irreducible CFGs).
  * @library /test/lib /
@@ -37,6 +37,9 @@ import jdk.test.lib.Asserts;
  * @run main/othervm -Xcomp -XX:CompileOnly=compiler.codegen.TestGCMStorePlacement::* compiler.codegen.TestGCMStorePlacement regularReducible4
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler.codegen.TestGCMStorePlacement::* compiler.codegen.TestGCMStorePlacement osrReducible1
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler.codegen.TestGCMStorePlacement::* compiler.codegen.TestGCMStorePlacement osrReducible2
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileOnly=compiler.codegen.TestGCMStorePlacement::testOsrReducible3 compiler.codegen.TestGCMStorePlacement osrReducible3
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileOnly=compiler.codegen.TestGCMStorePlacement::testOsrReducible3 -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM compiler.codegen.TestGCMStorePlacement osrReducible3
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileOnly=compiler.codegen.TestGCMStorePlacement::testOsrReducible4 -XX:Tier4BackEdgeThreshold=1000 -XX:LoopMaxUnroll=0 compiler.codegen.TestGCMStorePlacement osrReducible4
  * @run main/othervm -Xbatch compiler.codegen.TestGCMStorePlacement osrIrreducible1
  */
 
@@ -44,6 +47,8 @@ public class TestGCMStorePlacement {
 
     static int intCounter;
     static long longCounter;
+    static boolean alwaysFalse = false;
+    static boolean bailout = false;
 
     static void testRegularReducible1() {
         // This should not be placed into the loop.
@@ -154,6 +159,36 @@ public class TestGCMStorePlacement {
         }
     }
 
+    static void testOsrReducible3() {
+        // Trigger OSR compilation.
+        for (int i = 0; i < 50_000; i++) {
+            intCounter++;
+            if (alwaysFalse) { return; }
+            for (int j = 0; j > i;) { break; }
+            for (int j = 0; j < 100; ++j) { }
+            if (bailout) { return; }
+        }
+    }
+
+    static void testOsrReducible4() {
+        // Trigger OSR compilation.
+        // TODO: transform back into for loop
+        int i = 0;
+        while (i < 2049) {
+            // On OSR entry, i == intCounter == 2048. This test checks that
+            // intCounter is not incremented once too often in a single run of
+            // the pre-loop, which could happen if the outer and inner loop
+            // conditions were treated as explicit range checks and
+            // (erroneously) fused. See also
+            // compiler.rangechecks.TestRangeChecksWithInterleavedStores.
+            intCounter++;
+            if (alwaysFalse) { return; }
+            for (int j = 0; j > i;) { break; }
+            if (bailout) { return; }
+            i++;
+        }
+    }
+
     static void testOsrIrreducible1() {
         for (int i = 0; i < 30; i++) {
             switch (i % 3) {
@@ -215,6 +250,29 @@ public class TestGCMStorePlacement {
             testOsrReducible2();
             Asserts.assertEQ(intCounter, 42);
             break;
+        case "osrReducible3":
+            // Warmup to make sure invocation counter is set and loop opts are
+            // executed during OSR compilation of 'testOsrReducible3'
+            // (workaround for JDK-8280320).
+            bailout = true;
+            for (int i = 0; i < 100; ++i) {
+                testOsrReducible3();
+            }
+            intCounter = 0;
+            bailout = false;
+            // Trigger OSR compilation.
+            testOsrReducible3();
+            Asserts.assertEQ(intCounter, 50_000);
+        case "osrReducible4":
+            // Warmup and run similarly to the osrReducible3 case above.
+            bailout = true;
+            for (int i = 0; i < 100; ++i) {
+                testOsrReducible4();
+            }
+            intCounter = 0;
+            bailout = false;
+            testOsrReducible4();
+            Asserts.assertEQ(intCounter, 2049);
         case "osrIrreducible1":
             intCounter = 0;
             testOsrIrreducible1();
