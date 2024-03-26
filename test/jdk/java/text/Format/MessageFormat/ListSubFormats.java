@@ -28,31 +28,34 @@
  *          appropriate FormatType and FormatStyle for ListFormat. ListFormat's
  *          STANDARD, OR, and UNIT types are supported as built-in patterns for
  *          MessageFormat. All types use the FULL style.
- * @run junit/othervm -Duser.language=en -Duser.country=US ListSubFormats
+ * @run junit ListSubFormats
  */
 
 import java.text.ListFormat;
 import java.text.MessageFormat;
+import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-// This tests expects an en_US locale, as this locale provides distinct instances
-// for different styles.
 public class ListSubFormats {
+
+    // This test expects an en_US locale, as this locale provides distinct instances
+    // for different styles.
+    private static final Locale loc = Locale.of("en", "US");
 
     // Recognize the 'list' FormatType as well as '', 'or', and
     // 'unit' associated FormatStyles
     @Test
     public void applyPatternTest() {
         var mFmt = new MessageFormat("{0,list}{1,list,or}{2,list,unit}");
-        var listStandard = ListFormat.getInstance(mFmt.getLocale(),
+        var listStandard = ListFormat.getInstance(loc,
                 ListFormat.Type.STANDARD, ListFormat.Style.FULL);
-        var listOr = ListFormat.getInstance(mFmt.getLocale(),
+        var listOr = ListFormat.getInstance(loc,
                 ListFormat.Type.OR, ListFormat.Style.FULL);
-        var listUnit = ListFormat.getInstance(mFmt.getLocale(),
+        var listUnit = ListFormat.getInstance(loc,
                 ListFormat.Type.UNIT, ListFormat.Style.FULL);
         assertEquals(mFmt.getFormatsByArgumentIndex()[0], listStandard);
         assertEquals(mFmt.getFormatsByArgumentIndex()[1], listOr);
@@ -81,11 +84,11 @@ public class ListSubFormats {
     public void toPatternTest() {
         var mFmt = new MessageFormat("{0}{1}{2}");
         mFmt.setFormatByArgumentIndex(0,
-                ListFormat.getInstance(mFmt.getLocale(), ListFormat.Type.STANDARD, ListFormat.Style.FULL));
+                ListFormat.getInstance(loc, ListFormat.Type.STANDARD, ListFormat.Style.FULL));
         mFmt.setFormatByArgumentIndex(1,
-                ListFormat.getInstance(mFmt.getLocale(), ListFormat.Type.OR, ListFormat.Style.FULL));
+                ListFormat.getInstance(loc, ListFormat.Type.OR, ListFormat.Style.FULL));
         mFmt.setFormatByArgumentIndex(2,
-                ListFormat.getInstance(mFmt.getLocale(), ListFormat.Type.UNIT, ListFormat.Style.FULL));
+                ListFormat.getInstance(loc, ListFormat.Type.UNIT, ListFormat.Style.FULL));
         assertEquals("{0,list}{1,list,or}{2,list,unit}", mFmt.toPattern());
     }
 
@@ -94,7 +97,7 @@ public class ListSubFormats {
     public void badToPatternTest() {
         var mFmt = new MessageFormat("{0}");
         mFmt.setFormatByArgumentIndex(0,
-                ListFormat.getInstance(mFmt.getLocale(), ListFormat.Type.UNIT, ListFormat.Style.NARROW));
+                ListFormat.getInstance(loc, ListFormat.Type.UNIT, ListFormat.Style.NARROW));
         assertEquals("{0}", mFmt.toPattern());
     }
 }

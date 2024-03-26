@@ -26,7 +26,7 @@
  * @bug 8318761 8329118
  * @summary Test MessageFormatPattern ability to recognize and produce
  *          appropriate FormatType and FormatStyle for CompactNumberFormat.
- * @run junit/othervm -Duser.language=en -Duser.country=US CompactSubFormats
+ * @run junit CompactSubFormats
  */
 
 import java.text.CompactNumberFormat;
@@ -40,9 +40,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-// This tests expects an en_US locale, as this locale provides distinct instances
-// for different styles.
 public class CompactSubFormats {
+
+    // This test expects an en_US locale, as this locale provides distinct instances
+    // for different styles.
+    private static final Locale loc = Locale.of("en", "US");
 
     // Ensure the built-in FormatType and FormatStyles for cnFmt are as expected
     @Test
@@ -50,9 +52,9 @@ public class CompactSubFormats {
         var mFmt = new MessageFormat(
                 "{0,number,compact_short}{1,number,compact_long}");
         var compactShort = NumberFormat.getCompactNumberInstance(
-                mFmt.getLocale(), NumberFormat.Style.SHORT);
+                loc, NumberFormat.Style.SHORT);
         var compactLong = NumberFormat.getCompactNumberInstance(
-                mFmt.getLocale(), NumberFormat.Style.LONG);
+                loc, NumberFormat.Style.LONG);
         assertEquals(mFmt.getFormatsByArgumentIndex()[0], compactShort);
         assertEquals(mFmt.getFormatsByArgumentIndex()[1], compactLong);
     }
@@ -73,9 +75,9 @@ public class CompactSubFormats {
     public void toPatternTest() {
         var mFmt = new MessageFormat("{0}{1}");
         mFmt.setFormatByArgumentIndex(0, NumberFormat.getCompactNumberInstance(
-                mFmt.getLocale(), NumberFormat.Style.SHORT));
+                loc, NumberFormat.Style.SHORT));
         mFmt.setFormatByArgumentIndex(1, NumberFormat.getCompactNumberInstance(
-                mFmt.getLocale(), NumberFormat.Style.LONG));
+                loc, NumberFormat.Style.LONG));
         assertEquals("{0,number,compact_short}{1,number,compact_long}", mFmt.toPattern());
     }
 
