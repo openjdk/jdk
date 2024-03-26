@@ -73,11 +73,11 @@ class TreapNode {
     }
     if ( (CMP(head->_key, key) <= 0 && mode == LEQ) ||
          (CMP(head->_key, key) < 0 && mode == LT) ) {
-      auto p = split(head->_right, key, mode);
+      nd_pair p = split(head->_right, key, mode);
       head->_right = p.left;
       return {head, p.right};
     } else {
-      auto p = split(head->_left, key, mode);
+      nd_pair p = split(head->_left, key, mode);
       head->_left = p.right;
       return {p.left, head};
     }
