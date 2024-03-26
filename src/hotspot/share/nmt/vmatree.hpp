@@ -37,7 +37,7 @@
 class VMATree {
   static int addr_cmp(size_t a, size_t b);
 public:
-  enum class InOut : uint8_t {
+  enum class StateType : uint8_t {
     Reserved,
     Committed,
     Released
@@ -63,14 +63,14 @@ public:
   };
 
   struct Arrow {
-    InOut type;
+    StateType type;
     Metadata data;
 
-    void lub(const Arrow& b) {
-      if (this->type == InOut::Released) {
+    void merge(const Arrow& b) {
+      if (this->type == StateType::Released) {
         this->data.flag = b.data.flag;
         this->data.stack_idx = b.data.stack_idx;
-      } else if (this->type == InOut::Committed) {
+      } else if (this->type == StateType::Committed) {
         this->data.flag = b.data.flag;
       }
     }
@@ -114,7 +114,7 @@ private:
 
 public:
   template<typename Merge>
-  SummaryDiff register_mapping(size_t A, size_t B, InOut state, Metadata& metadata, Merge merge) {
+  SummaryDiff register_mapping(size_t A, size_t B, StateType state, Metadata& metadata, Merge merge) {
     // AddressState saves the necessary information for performing online summary accounting.
     struct AddressState {
       size_t address;
@@ -139,8 +139,8 @@ public:
     }
 
     SummaryDiff diff;
-    NodeState stA{Arrow{InOut::Released, Metadata{}}, Arrow{state, metadata}};
-    NodeState stB{Arrow{state, metadata}, Arrow{InOut::Released, Metadata{}}};
+    NodeState stA{Arrow{StateType::Released, Metadata{}}, Arrow{state, metadata}};
+    NodeState stB{Arrow{state, metadata}, Arrow{StateType::Released, Metadata{}}};
     // First handle A.
     // Find closest node that is LEQ A
     VTreap* leqA_n = closest_leq(A);
@@ -170,7 +170,7 @@ public:
         // and the result should be a larger area, [x1, x3). In that case, the middle node (A and le_n)
         // is not needed anymore. So we just remove the old node.
         // We can only do this merge if the metadata is considered equivalent after merging.
-        stA.out.lub(leqA_n->val().out);
+        stA.out.merge(leqA_n->val().out);
         if (stA.is_noop()) {
           // invalidates leqA_n
           tree.remove(leqA_n->key());
@@ -190,7 +190,7 @@ public:
         // We add a new node, but only if there would be a state change. If there would not be a
         // state change, we just omit the node.
         // That happens, for example, when reserving within an already reserved region with identical metadata.
-        stA.in.lub(leqA_n->val().out); // .. and the region's prior state is the incoming state
+        stA.in.merge(leqA_n->val().out); // .. and the region's prior state is the incoming state
         if (stA.is_noop()) {
           // Nothing to do.
         } else {
@@ -234,7 +234,7 @@ public:
           } else if (cmp_B == 0) {
             // Re-purpose B node, unless it would result in a noop node, in
             // which case record old node at B for deletion and summary accounting.
-            stB.out.lub(head->val().out);
+            stB.out.merge(head->val().out);
             if (stB.is_noop()) {
               to_be_deleted_inbetween_a_b.push(AddressState{B, head->val()});
             } else {
@@ -263,9 +263,9 @@ public:
       // We have smashed a hole in an existing region (or replaced it entirely).
       // LEQ_A - A - B - GEQ_B
       auto& rescom = diff.flag[NMTUtil::flag_to_index(LEQ_A.flag_out())];
-      if (LEQ_A.state.out.type == InOut::Reserved) {
+      if (LEQ_A.state.out.type == StateType::Reserved) {
         rescom.reserve -= B - A;
-      } else if (LEQ_A.state.out.type == InOut::Committed) {
+      } else if (LEQ_A.state.out.type == StateType::Committed) {
         rescom.commit -= B - A;
         rescom.reserve -= B - A;
       }
@@ -278,9 +278,9 @@ public:
       to_be_deleted_inbetween_a_b.pop();
       tree.remove(delete_me.address);
       auto& rescom = diff.flag[NMTUtil::flag_to_index(flag_in)];
-      if (delete_me.state.in.type == InOut::Reserved) {
+      if (delete_me.state.in.type == StateType::Reserved) {
         rescom.reserve -= delete_me.address - prev.address;
-      } else if (delete_me.state.in.type == InOut::Committed) {
+      } else if (delete_me.state.in.type == StateType::Committed) {
         rescom.commit -= delete_me.address - prev.address;
         rescom.reserve -= delete_me.address - prev.address;
       }
@@ -288,15 +288,15 @@ public:
       flag_in = delete_me.flag_out();
     }
     if (prev.address != A &&
-        prev.state.out.type != InOut::Released &&
-        GEQ_B.state.in.type != InOut::Released) {
+        prev.state.out.type != StateType::Released &&
+        GEQ_B.state.in.type != StateType::Released) {
       // There was some node inside of (A, B) and it is connected to GEQ_B
       // A - prev - B - GEQ_B
       // It might be that prev.address == B == GEQ_B.address, this is fine.
-      if (prev.state.out.type == InOut::Reserved) {
+      if (prev.state.out.type == StateType::Reserved) {
         auto& rescom = diff.flag[NMTUtil::flag_to_index(prev.flag_out())];
         rescom.reserve -= B - prev.address;
-      } else if (prev.state.out.type == InOut::Committed) {
+      } else if (prev.state.out.type == StateType::Committed) {
         auto& rescom = diff.flag[NMTUtil::flag_to_index(prev.flag_out())];
         rescom.commit -= B - prev.address;
         rescom.reserve -= B - prev.address;
@@ -305,9 +305,9 @@ public:
 
     // Finally, we can register the new region [A, B)'s summary data.
     auto& rescom = diff.flag[NMTUtil::flag_to_index(metadata.flag)];
-    if (state == InOut::Reserved) {
+    if (state == StateType::Reserved) {
       rescom.reserve += B - A;
-    } else if (state == InOut::Committed) {
+    } else if (state == StateType::Committed) {
       rescom.commit += B - A;
       rescom.reserve += B - A;
     }
@@ -319,11 +319,11 @@ public:
   }
 
   SummaryDiff reserve_mapping(size_t from, size_t sz, Metadata& metadata) {
-    return register_mapping(from, from + sz, InOut::Reserved, metadata, identity_merge);
+    return register_mapping(from, from + sz, StateType::Reserved, metadata, identity_merge);
   }
 
   SummaryDiff commit_mapping(size_t from, size_t sz, Metadata& metadata) {
-    return register_mapping(from, from + sz, InOut::Committed, metadata, [](Metadata& merge_into, const Metadata& existent) {
+    return register_mapping(from, from + sz, StateType::Committed, metadata, [](Metadata& merge_into, const Metadata& existent) {
       // The committing API takes no flag, so we inherit the flag of the reserved region.
       merge_into.flag = existent.flag;
       return merge_into;
@@ -332,7 +332,7 @@ public:
 
   SummaryDiff release_mapping(size_t from, size_t sz) {
     Metadata empty;
-    return register_mapping(from, from + sz, InOut::Released, empty, [](Metadata& merge_into, const Metadata& existent) {
+    return register_mapping(from, from + sz, StateType::Released, empty, [](Metadata& merge_into, const Metadata& existent) {
       // The releasing API takes no flag, so we inherit the flag of the reserved/committed region.
       // The releasing API also has no call stack, so we inherit the callstack also.
       merge_into.flag = existent.flag;

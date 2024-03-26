@@ -101,8 +101,8 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     tree.visit(0, 999999, [&](Node* x) {
       found_nodes++;
       VMATree::NodeState v = x->val();
-      EXPECT_TRUE((v.in.type == VMATree::InOut::Released && v.out.type == VMATree::InOut::Committed) ||
-                  (v.in.type == VMATree::InOut::Committed && v.out.type == VMATree::InOut::Released));
+      EXPECT_TRUE((v.in.type == VMATree::StateType::Released && v.out.type == VMATree::StateType::Committed) ||
+                  (v.in.type == VMATree::StateType::Committed && v.out.type == VMATree::StateType::Released));
     });
     EXPECT_EQ(2, found_nodes);
   };
