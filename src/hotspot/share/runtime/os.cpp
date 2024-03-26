@@ -1288,9 +1288,10 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     return;
   }
 
+#endif // !INCLUDE_ASAN
+
   st->print_cr(INTPTR_FORMAT " is an unknown value", p2i(addr));
 
-#endif // !INCLUDE_ASAN
 }
 
 static bool is_pointer_bad(intptr_t* ptr) {
