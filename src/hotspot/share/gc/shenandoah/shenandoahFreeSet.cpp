@@ -49,7 +49,7 @@ size_t ShenandoahSimpleBitMap::count_leading_ones(ssize_t start_idx) const {
   uintx element_bits = _bitmap[array_idx];
   uintx bit_number = start_idx & right_n_bits(LogBitsPerWord);
   uintx omit_mask = right_n_bits(bit_number);
-  uintx mask = right_n_bits(BitsPerWord) & ~omit_mask;
+  uintx mask = ((uintx) 0 - 1) & ~omit_mask;
 #undef KELVIN_DEBUG
 #ifdef KELVIN_DEBUG
   printf(" count_leading_ones(" SSIZE_FORMAT "), array_idx: " SIZE_FORMAT ", element_bits: " SIZE_FORMAT_X
