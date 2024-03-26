@@ -81,17 +81,7 @@ public:
     Arrow out;
 
     bool is_noop() {
-      if (in.type == out.type) {
-        if (out.type == StateType::Released) {
-          return true;
-        } else if (out.type == StateType::Committed) {
-          return NativeCallStackStorage::StackIndex::equals(in.data.stack_idx, out.data.stack_idx);
-        } else {
-          return Metadata::equals(in.data, out.data);
-        }
-      } else {
-        return false;
-      }
+      return in.type == out.type && Metadata::equals(in.data, out.data);
     }
   };
 
@@ -180,7 +170,7 @@ public:
         // and the result should be a larger area, [x1, x3). In that case, the middle node (A and le_n)
         // is not needed anymore. So we just remove the old node.
         // We can only do this merge if the metadata is considered equivalent after merging.
-        //stA.out.merge(leqA_n->val().out);
+        stA.out.merge(leqA_n->val().out);
         if (stA.is_noop()) {
           // invalidates leqA_n
           tree.remove(leqA_n->key());
@@ -200,7 +190,7 @@ public:
         // We add a new node, but only if there would be a state change. If there would not be a
         // state change, we just omit the node.
         // That happens, for example, when reserving within an already reserved region with identical metadata.
-        stA.in = leqA_n->val().out; // .. and the region's prior state is the incoming state
+        stA.in.merge(leqA_n->val().out); // .. and the region's prior state is the incoming state
         if (stA.is_noop()) {
           // Nothing to do.
         } else {
@@ -244,7 +234,7 @@ public:
           } else if (cmp_B == 0) {
             // Re-purpose B node, unless it would result in a noop node, in
             // which case record old node at B for deletion and summary accounting.
-            //stB.out.merge(head->val().out);
+            stB.out.merge(head->val().out);
             if (stB.is_noop()) {
               to_be_deleted_inbetween_a_b.push(AddressState{B, head->val()});
             } else {
