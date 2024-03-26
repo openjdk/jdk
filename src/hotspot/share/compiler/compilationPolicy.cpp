@@ -1090,6 +1090,10 @@ CompLevel CompilationPolicy::common(const methodHandle& method, CompLevel cur_le
             } else {
               next_level = CompLevel_full_optimization;
             }
+          } else if (method->is_native() && CompilationModeFlag::disable_intermediate()) {
+              if (Predicate::apply(method, cur_level, method->invocation_count(), 0)) {
+                next_level = CompLevel_full_optimization;
+              }
           }
         }
         break;
