@@ -67,6 +67,7 @@ public class VMDeprecatedOptions {
             Arrays.asList(new String[][] {
               {"UseRTMLocking",         "false"},
               {"UseRTMDeopt",           "false"},
+              {"RTMRetryCount",         "5"}
             })
           );
         }
