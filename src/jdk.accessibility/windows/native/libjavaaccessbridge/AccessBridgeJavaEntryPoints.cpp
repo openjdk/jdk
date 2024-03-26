@@ -1161,7 +1161,7 @@ AccessBridgeJavaEntryPoints::getActiveDescendent(const jobject accessibleContext
         return globalRef;
     } else {
         PrintDebugString("[ERROR]: either jniEnv == 0 or getActiveDescendentMethod == 0");
-        return reinterpret_cast<jobject>((AccessibleContext) 0);
+        return reinterpret_cast<jobject>((AccessibleContext)0);
     }
 }
 
