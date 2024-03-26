@@ -54,6 +54,7 @@ import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -258,19 +259,13 @@ public abstract class PKCS11Test {
 
     static Path getNSSLibPath(String library) throws Exception {
         String osid = getOsId();
-        String nssLibDir = fetchNssLib(osid);
-        if (nssLibDir == null) {
+        Path libraryName = Path.of(System.mapLibraryName(library));
+        Path nssLibPath = fetchNssLib(osid, libraryName);
+        if (nssLibPath == null) {
             throw new SkippedException("Warning: unsupported OS: " + osid
                     + ", please initialize NSS library location, skipping test");
         }
-
-        String libraryName = System.mapLibraryName(library);
-        Path libPath = Paths.get(nssLibDir).resolve(libraryName);
-        if (!Files.exists(libPath)) {
-            throw new SkippedException("NSS library \"" + libraryName + "\" was not found in " + nssLibDir);
-        }
-
-        return libPath;
+        return nssLibPath;
     }
 
     private static String getOsId() {
@@ -732,41 +727,41 @@ public abstract class PKCS11Test {
         return data;
     }
 
-    private static String fetchNssLib(String osId) {
+    private static Path fetchNssLib(String osId, Path libraryName) {
         switch (osId) {
             case "Windows-amd64-64":
-                return fetchNssLib(WINDOWS_X64.class);
+                return fetchNssLib(WINDOWS_X64.class, libraryName);
 
             case "MacOSX-x86_64-64":
-                return fetchNssLib(MACOSX_X64.class);
+                return fetchNssLib(MACOSX_X64.class, libraryName);
 
             case "MacOSX-aarch64-64":
-                return fetchNssLib(MACOSX_AARCH64.class);
+                return fetchNssLib(MACOSX_AARCH64.class, libraryName);
 
             case "Linux-amd64-64":
                 if (Platform.isOracleLinux7()) {
                     throw new SkippedException("Skipping Oracle Linux prior to v8");
                 } else {
-                    return fetchNssLib(LINUX_X64.class);
+                    return fetchNssLib(LINUX_X64.class, libraryName);
                 }
 
             case "Linux-aarch64-64":
                 if (Platform.isOracleLinux7()) {
                     throw new SkippedException("Skipping Oracle Linux prior to v8");
                 } else {
-                    return fetchNssLib(LINUX_AARCH64.class);
+                    return fetchNssLib(LINUX_AARCH64.class, libraryName);
                 }
             default:
                 return null;
         }
     }
 
-    private static String fetchNssLib(Class<?> clazz) {
-        String path = null;
+    private static Path fetchNssLib(Class<?> clazz, Path libraryName) {
+        Path path = null;
         try {
             Path p = ArtifactResolver.resolve(clazz).entrySet().stream()
                     .findAny().get().getValue();
-            path = findNSSLibrary(p);
+            path = findNSSLibrary(p, libraryName);
         } catch (ArtifactResolverException | IOException e) {
             Throwable cause = e.getCause();
             if (cause == null) {
@@ -781,14 +776,14 @@ public abstract class PKCS11Test {
         return path;
     }
 
-    private static String findNSSLibrary(Path path) throws IOException {
-        Path nssLibrary = Path.of(System.mapLibraryName(nss_library));
-        Path p = Files.find(path, 10,
-                        (tp, attr) -> tp.getFileName().equals(nssLibrary))
-                .findAny()
-                .orElse(path)
-                .getParent();
-        return p.toString();
+    private static Path findNSSLibrary(Path path, Path libraryName) throws IOException {
+        try(Stream<Path> files = Files.find(path, 10,
+                (tp, attr) -> tp.getFileName().equals(libraryName))) {
+
+            return files.findAny()
+                        .orElseThrow(() -> new SkippedException(
+                        "NSS library \"" + libraryName + "\" was not found in " + path));
+        }
     }
 
     public abstract void main(Provider p) throws Exception;
