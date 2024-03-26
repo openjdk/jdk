@@ -146,10 +146,10 @@ public:
         if (cmp_to < 0) {
           f(head);
         }
-        to_visit.push(head->_left);
-        to_visit.push(head->_right);
+        to_visit.push(head->left());
+        to_visit.push(head->right());
       } else {
-        to_visit.push(head->_right);
+        to_visit.push(head->right());
       }
     }
   }
@@ -157,9 +157,9 @@ private:
   template<typename F>
   void in_order_traversal_doer(F f, const VTreap* node) const {
     if (node == nullptr) return;
-    in_order_traversal_doer(f, node->_left);
+    in_order_traversal_doer(f, node->left());
     f(node);
-    in_order_traversal_doer(f, node->_right);
+    in_order_traversal_doer(f, node->right());
   }
 public:
   template<typename F>

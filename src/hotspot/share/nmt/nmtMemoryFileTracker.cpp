@@ -49,8 +49,8 @@ void MemoryFileTracker::print_report_on(const MemoryFile* device, outputStream* 
       prev = current;
       return;
     }
-    const auto& pval = prev->val();
-    const auto& cval = current->val();
+    const VMATree::NodeState& pval = prev->val();
+    const VMATree::NodeState& cval = current->val();
     assert(pval.out.type == cval.in.type, "must be");
     if (pval.out.type == VMATree::StateType::Reserved) {
       const auto& start_addr = prev->key();

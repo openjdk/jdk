@@ -119,10 +119,10 @@ public:
     return _value;
   }
 
-  Nd* left() {
+  Nd* left() const {
     return _left;
   }
-  Nd* right() {
+  Nd* right() const {
     return _left;
   }
 
