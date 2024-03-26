@@ -46,7 +46,6 @@ import vm.runtime.defmeth.shared.data.*;
 import vm.runtime.defmeth.shared.data.method.body.EmptyBody;
 import vm.runtime.defmeth.shared.builder.TestBuilder;
 
-
 import static java.lang.classfile.ClassFile.*;
 import static vm.runtime.defmeth.shared.ExecutionMode.*;
 
