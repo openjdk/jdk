@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @key headful
- * @bug 8328953
- * @summary JEditorPane.read throws ChangedCharSetException
- * @run main EditorPaneCharset
- */
 import java.awt.BorderLayout;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -39,11 +32,20 @@ import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import javax.swing.text.Document;
 
+/*
+ * @test
+ * @key headful
+ * @bug 8328953
+ * @summary JEditorPane.read throws ChangedCharSetException
+ * @run main EditorPaneCharset
+ */
+
 public final class EditorPaneCharset {
     private static final String HTML_CYRILLIC =
             "<html lang=\"ru\">\n" +
             "<head>\n" +
-            "    <meta http-equiv=\"Content-Type\" content=\"text/html; charset=windows-1251\">\n" +
+            "    <meta http-equiv=\"Content-Type\" content=\"text/html; charset=
+			windows-1251\">\n" +
             "</head><body>\n" +
             "<p>\u041F\u0440\u0438\u0432\u0435\u0442, \u043C\u0438\u0440!</p>\n" +
             "</body></html>\n";
