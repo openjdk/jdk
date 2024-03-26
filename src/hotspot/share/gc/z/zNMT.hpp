@@ -37,13 +37,14 @@
 class ZNMT : public AllStatic {
 private:
   static MemoryFileTracker::MemoryFile* _device;
+
 public:
   static void init();
-  static void map(zaddress_unsafe addr, size_t size, zoffset offset);
-  static void unmap(zaddress_unsafe addr, size_t size);
   static void reserve(zaddress_unsafe start, size_t size);
   static void commit(zoffset offset, size_t size);
   static void uncommit(zoffset offset, size_t size);
+  static void map(zaddress_unsafe addr, size_t size, zoffset offset);
+  static void unmap(zaddress_unsafe addr, size_t size);
 };
 
 #endif // SHARE_GC_Z_ZNMT_HPP

@@ -33,12 +33,18 @@
 
 MemoryFileTracker::MemoryFile* ZNMT::_device = nullptr;
 
+void ZNMT::init() {
+  _device = MemTracker::register_device("ZGC heap backing file");
+}
+
 void ZNMT::reserve(zaddress_unsafe start, size_t size) {
-  MemTracker::record_virtual_memory_reserve((address)start, size, CALLER_PC, mtJavaHeap);
+  MemTracker::record_virtual_memory_reserve((address)untype(start), size, CALLER_PC, mtJavaHeap);
 }
+
 void ZNMT::commit(zoffset offset, size_t size) {
-  MemTracker::allocate_memory_in(ZNMT::_device, static_cast<size_t>(offset), size, mtJavaHeap, CALLER_PC);
+  MemTracker::allocate_memory_in(ZNMT::_device, untype(offset), size, mtJavaHeap, CALLER_PC);
 }
+
 void ZNMT::uncommit(zoffset offset, size_t size) {
   MemTracker::free_memory_in(ZNMT::_device, (size_t)offset, size);
 }
@@ -46,10 +52,7 @@ void ZNMT::uncommit(zoffset offset, size_t size) {
 void ZNMT::map(zaddress_unsafe addr, size_t size, zoffset offset) {
   // NMT doesn't track mappings at the moment.
 }
+
 void ZNMT::unmap(zaddress_unsafe addr, size_t size) {
   // NMT doesn't track mappings at the moment.
-}
-
-void ZNMT::init() {
-  _device = MemTracker::register_device("ZGC heap backing file");
 }
