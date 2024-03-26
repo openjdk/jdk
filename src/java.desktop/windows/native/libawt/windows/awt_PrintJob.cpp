@@ -1227,10 +1227,10 @@ Java_sun_awt_windows_WPrinterJob_validatePaper(JNIEnv *env, jobject self,
     }
 
     // page imageable area in 1/72"
-    jdouble imgX = (jdouble) ((xPixelOrg * 72)/(jdouble) xPixelRes);
-    jdouble imgY = (jdouble) ((yPixelOrg * 72)/(jdouble) yPixelRes);
-    jdouble imgWid = (jdouble) ((imgPixelWid * 72)/(jdouble) xPixelRes);
-    jdouble imgHgt = (jdouble) ((imgPixelHgt * 72)/(jdouble) yPixelRes);
+    jdouble imgX = (jdouble)((xPixelOrg * 72)/(jdouble)xPixelRes);
+    jdouble imgY = (jdouble)((yPixelOrg * 72)/(jdouble)yPixelRes);
+    jdouble imgWid = (jdouble)((imgPixelWid * 72)/(jdouble)xPixelRes);
+    jdouble imgHgt = (jdouble)((imgPixelHgt * 72)/(jdouble)yPixelRes);
 
     /* Check each of the individual values is within range.
      * Then make sure imageable area is placed within imageable area.
