@@ -100,9 +100,9 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     int found_nodes = 0;
     tree.visit(0, 999999, [&](Node* x) {
       found_nodes++;
-      VMATree::State v = x->val();
-      EXPECT_TRUE((v.in == VMATree::InOut::Released && v.out == VMATree::InOut::Committed) ||
-                  (v.in == VMATree::InOut::Committed && v.out == VMATree::InOut::Released));
+      VMATree::NodeState v = x->val();
+      EXPECT_TRUE((v.in.type == VMATree::InOut::Released && v.out.type == VMATree::InOut::Committed) ||
+                  (v.in.type == VMATree::InOut::Committed && v.out.type == VMATree::InOut::Released));
     });
     EXPECT_EQ(2, found_nodes);
   };
@@ -139,7 +139,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     tree.reserve_mapping(0, 100, md);
     int found_nodes = 0;
     tree.visit(0, 99999, [&](Node* x) {
-      EXPECT_EQ(x->val().metadata.flag, mtTest);
+      EXPECT_EQ(x->val().out.data.flag, mtTest);
       found_nodes++;
     });
     EXPECT_EQ(2, found_nodes);

@@ -37,7 +37,7 @@
 class VMATree {
   static int addr_cmp(size_t a, size_t b);
 public:
-  enum class InOut {
+  enum class InOut : uint8_t {
     Reserved,
     Committed,
     Released
@@ -62,17 +62,31 @@ public:
     }
   };
 
-  struct State {
-    InOut in; // Previous node active
-    InOut out; // This node's state
-    Metadata metadata;
-  };
-  bool is_noop(State st) {
-    return st.in == st.out;
-  }
+  struct Arrow {
+    InOut type;
+    Metadata data;
 
-  using VTreap = TreapNode<size_t, State, addr_cmp>;
-  TreapCHeap<size_t, State, addr_cmp> tree;
+    void lub(const Arrow& b) {
+      if (this->type == InOut::Released) {
+        this->data.flag = b.data.flag;
+        this->data.stack_idx = b.data.stack_idx;
+      } else if (this->type == InOut::Committed) {
+        this->data.flag = b.data.flag;
+      }
+    }
+  };
+  // A node has an arrow going into it and an arrow going out of it.
+  struct NodeState {
+    Arrow in;
+    Arrow out;
+
+    bool is_noop() {
+      return in.type == out.type && Metadata::equals(in.data, out.data);
+    }
+  };
+
+  using VTreap = TreapNode<size_t, NodeState, addr_cmp>;
+  TreapCHeap<size_t, NodeState, addr_cmp> tree;
   VMATree()
   : tree() {
   }
@@ -104,9 +118,9 @@ public:
     // AddressState saves the necessary information for performing online summary accounting.
     struct AddressState {
       size_t address;
-      State state;
-      MEMFLAGS flag() const {
-        return state.metadata.flag;
+      NodeState state;
+      MEMFLAGS flag_out() const {
+        return state.out.data.flag;
       }
     };
 
@@ -125,14 +139,14 @@ public:
     }
 
     SummaryDiff diff;
-    State stA{InOut::Released, state, metadata};
-    State stB{state, InOut::Released, metadata};
+    NodeState stA{Arrow{InOut::Released, Metadata{}}, Arrow{state, metadata}};
+    NodeState stB{Arrow{state, metadata}, Arrow{InOut::Released, Metadata{}}};
     // First handle A.
     // Find closest node that is LEQ A
     VTreap* leqA_n = closest_leq(A);
     if (leqA_n == nullptr) {
       // No match.
-      if (is_noop(stA)) {
+      if (stA.is_noop()) {
         // nothing to do.
       } else {
         // Add new node.
@@ -143,9 +157,7 @@ public:
       LEQ_A = AddressState{leqA_n->key(), leqA_n->val()};
       // Unless we know better, let B's outgoing state be the outgoing state of the node at or preceding A.
       // Consider the case where the found node is the start of a region enclosing [A,B)
-      // We must also ineherit the metadata.
       stB.out = leqA_n->val().out;
-      stB.metadata = leqA_n->val().metadata;
 
       // Direct address match.
       if (leqA_n->key() == A) {
@@ -158,8 +170,8 @@ public:
         // and the result should be a larger area, [x1, x3). In that case, the middle node (A and le_n)
         // is not needed anymore. So we just remove the old node.
         // We can only do this merge if the metadata is considered equivalent after merging.
-        stA.metadata = merge(stA.metadata, leqA_n->_value.metadata);
-        if (is_noop(stA) && Metadata::equals(stA.metadata, leqA_n->val().metadata)) {
+        stA.out.lub(leqA_n->val().out);
+        if (stA.is_noop()) {
           // invalidates leqA_n
           tree.remove(leqA_n->key());
           // Summary accounting: Not needed, we are only expanding
@@ -178,8 +190,8 @@ public:
         // We add a new node, but only if there would be a state change. If there would not be a
         // state change, we just omit the node.
         // That happens, for example, when reserving within an already reserved region with identical metadata.
-        stA.in = leqA_n->val().out; // .. and the region's prior state is the incoming state
-        if (is_noop(stA) && Metadata::equals(stA.metadata, leqA_n->val().metadata)) {
+        stA.in.lub(leqA_n->val().out); // .. and the region's prior state is the incoming state
+        if (stA.is_noop()) {
           // Nothing to do.
         } else {
           // Add new node.
@@ -222,8 +234,8 @@ public:
           } else if (cmp_B == 0) {
             // Re-purpose B node, unless it would result in a noop node, in
             // which case record old node at B for deletion and summary accounting.
-            stB.metadata = merge(stB.metadata, head->_value.metadata);
-            if (is_noop(stB) && Metadata::equals(stB.metadata, head->val().metadata)) {
+            stB.out.lub(head->val().out);
+            if (stB.is_noop()) {
               to_be_deleted_inbetween_a_b.push(AddressState{B, head->val()});
             } else {
               head->_value = stB;
@@ -235,8 +247,8 @@ public:
     }
     // Insert B node if needed
     if (B_needs_insert    && // Was not already inserted
-        (!is_noop(stB)     || // The operation is differing Or
-         !Metadata::equals(stB.metadata, Metadata{})) // The metadata was changed from empty earlier
+        (!stB.is_noop()     || // The operation is differing Or
+         !Metadata::equals(stB.out.data, Metadata{})) // The metadata was changed from empty earlier
         ) {
       tree.upsert(B, stB);
     }
@@ -250,42 +262,42 @@ public:
         && GEQ_B.address >= B) {
       // We have smashed a hole in an existing region (or replaced it entirely).
       // LEQ_A - A - B - GEQ_B
-      auto& rescom = diff.flag[NMTUtil::flag_to_index(LEQ_A.flag())];
-      if (LEQ_A.state.out == InOut::Reserved) {
+      auto& rescom = diff.flag[NMTUtil::flag_to_index(LEQ_A.flag_out())];
+      if (LEQ_A.state.out.type == InOut::Reserved) {
         rescom.reserve -= B - A;
-      } else if (LEQ_A.state.out == InOut::Committed) {
+      } else if (LEQ_A.state.out.type == InOut::Committed) {
         rescom.commit -= B - A;
         rescom.reserve -= B - A;
       }
     }
 
     AddressState prev = {A, stA}; // stA is just filler
-    MEMFLAGS flag_in = LEQ_A.flag();
+    MEMFLAGS flag_in = LEQ_A.flag_out();
     while (to_be_deleted_inbetween_a_b.length() > 0) {
       const AddressState delete_me = to_be_deleted_inbetween_a_b.top();
       to_be_deleted_inbetween_a_b.pop();
       tree.remove(delete_me.address);
       auto& rescom = diff.flag[NMTUtil::flag_to_index(flag_in)];
-      if (delete_me.state.in == InOut::Reserved) {
+      if (delete_me.state.in.type == InOut::Reserved) {
         rescom.reserve -= delete_me.address - prev.address;
-      } else if (delete_me.state.in == InOut::Committed) {
+      } else if (delete_me.state.in.type == InOut::Committed) {
         rescom.commit -= delete_me.address - prev.address;
         rescom.reserve -= delete_me.address - prev.address;
       }
       prev = delete_me;
-      flag_in = delete_me.flag();
+      flag_in = delete_me.flag_out();
     }
     if (prev.address != A &&
-        prev.state.out != InOut::Released &&
-        GEQ_B.state.in != InOut::Released) {
+        prev.state.out.type != InOut::Released &&
+        GEQ_B.state.in.type != InOut::Released) {
       // There was some node inside of (A, B) and it is connected to GEQ_B
       // A - prev - B - GEQ_B
       // It might be that prev.address == B == GEQ_B.address, this is fine.
-      if (prev.state.out == InOut::Reserved) {
-        auto& rescom = diff.flag[NMTUtil::flag_to_index(prev.flag())];
+      if (prev.state.out.type == InOut::Reserved) {
+        auto& rescom = diff.flag[NMTUtil::flag_to_index(prev.flag_out())];
         rescom.reserve -= B - prev.address;
-      } else if (prev.state.out == InOut::Committed) {
-        auto& rescom = diff.flag[NMTUtil::flag_to_index(prev.flag())];
+      } else if (prev.state.out.type == InOut::Committed) {
+        auto& rescom = diff.flag[NMTUtil::flag_to_index(prev.flag_out())];
         rescom.commit -= B - prev.address;
         rescom.reserve -= B - prev.address;
       }
