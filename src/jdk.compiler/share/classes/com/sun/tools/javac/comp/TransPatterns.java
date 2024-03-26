@@ -1362,55 +1362,40 @@ public class TransPatterns extends TreeTranslator {
 
     @Override
     public void visitReconstruction(JCDerivedInstance tree) {
-        List<BindingSymbol> newOutgoingBindings = tree.outgoingBindings.map(vs -> new BindingSymbol(0, vs.name, vs.type, vs.owner));
-        Map<VarSymbol, BindingSymbol> old2New = new HashMap<>();
-        List<VarSymbol> outgoingBindingsIt = tree.outgoingBindings;
-        List<BindingSymbol> newOutgoingBindingsIt = newOutgoingBindings;
-
-        while (outgoingBindingsIt.nonEmpty()) {
-            old2New.put(outgoingBindingsIt.head, newOutgoingBindingsIt.head);
-            outgoingBindingsIt = outgoingBindingsIt.tail;
-            newOutgoingBindingsIt = newOutgoingBindingsIt.tail;
+        ListBuffer<JCStatement> newBlock = new ListBuffer<>();
+        VarSymbol temp;
+        if (tree.expr instanceof JCIdent i &&
+            i.sym.kind == Kind.VAR &&
+            (i.sym.owner.kind == Kind.MTH || i.sym.owner.kind == Kind.VAR)) {
+            temp = (VarSymbol) i.sym;
+        } else {
+            temp = new VarSymbol(Flags.SYNTHETIC,
+                    names.fromString("expr" + variableIndex++ + target.syntheticNameChar() + "temp"),
+                    tree.expr.type,
+                    currentMethodSym);
+            newBlock.add(make.VarDef(temp, translate(tree.expr)));
         }
 
+
         ClassSymbol recordClass = (ClassSymbol) tree.expr.type.tsym;
+        List<VarSymbol> outgoingBindingsIt = tree.outgoingBindings;
+        List<? extends RecordComponent> recordComponentsIt = recordClass.getRecordComponents();
 
-        JCRecordPattern pat = make.RecordPattern(make.QualIdent(recordClass), newOutgoingBindings.map(bs -> (JCPattern) make.BindingPattern(make.VarDef(bs, null)).setType(bs.type)));
+        while (outgoingBindingsIt.nonEmpty()) {
+            Type erasedComponentType = types.erasure(recordComponentsIt.head.type);
+            newBlock.add(make.VarDef(outgoingBindingsIt.head, make.App(make.Select(make.Ident(temp), recordComponentsIt.head.accessor)).setType(erasedComponentType)));
+            outgoingBindingsIt = outgoingBindingsIt.tail;
+            recordComponentsIt = recordComponentsIt.tail;
+        }
 
-        pat.record = recordClass;
-        pat.type = tree.type;
-        pat.fullComponentTypes = recordClass.getRecordComponents().map(c -> types.memberType(tree.type, c));
+        newBlock.add(translate(tree.block));
 
-        new TreeScanner() {
-            @Override
-            public void visitIdent(JCIdent tree) {
-                BindingSymbol newSym = old2New.get(tree.sym);
-                if (newSym != null) {
-                    tree.sym = newSym;
-                } 
-                super.visitIdent(tree);
-            }
-        }.scan(tree.block);
-
-        JCNewClass createNew = make.NewClass(null, List.nil(), make.QualIdent(recordClass), newOutgoingBindings.map(bs -> make.Ident(bs)), null);
+        JCNewClass createNew = make.NewClass(null, List.nil(), make.QualIdent(recordClass), tree.outgoingBindings.map(bs -> make.Ident(bs)), null);
 
         createNew.type = tree.type;
         createNew.constructor = recordClass.members().findFirst(names.init, s -> (s.flags() & Flags.RECORD) != 0); //TODO: more safer test, like "is constructor".
 
-        JCYield yieldResult = make.Yield(createNew);
-        ListBuffer<JCStatement> stats = new ListBuffer<>();
-        stats.appendList(tree.block.stats);
-        stats.append(yieldResult);
-
-        JCCase cse = make.Case(CaseKind.STATEMENT, List.of(make.PatternCaseLabel(pat)), null, stats.toList(), null);
-        JCSwitchExpression mainSwitch = make.SwitchExpression(tree.expr, List.of(
-                cse
-                //implicit default -> throw new MatchException()
-        ));
-        mainSwitch.patternSwitch = true;
-        mainSwitch.type = tree.type;
-        yieldResult.target = mainSwitch;
-        result = translate(mainSwitch);
+        result = make.LetExpr(newBlock.toList(), createNew).setType(tree.type);
     }
 
     public JCTree translateTopLevelClass(Env<AttrContext> env, JCTree cdef, TreeMaker make) {

@@ -1222,20 +1222,7 @@ public class Gen extends JCTree.Visitor {
                 //if the switch expression contains try-catch, the catch handlers need to have
                 //an empty stack. So stash whole stack to local variables, and restore it before
                 //breaks:
-                while (code.state.stacksize > 0) {
-                    Type type = code.state.peek();
-                    Name varName = names.fromString(target.syntheticNameChar() +
-                                                    "stack" +
-                                                    target.syntheticNameChar() +
-                                                    tree.pos +
-                                                    target.syntheticNameChar() +
-                                                    code.state.stacksize);
-                    VarSymbol var = new VarSymbol(Flags.SYNTHETIC, varName, type,
-                                                  this.env.enclMethod.sym);
-                    LocalItem item = items.new LocalItem(type, code.newLocal(var));
-                    stackBeforeSwitchExpression = stackBeforeSwitchExpression.prepend(item);
-                    item.store();
-                }
+                stackBeforeSwitchExpression = stashStackToLocalVariables(tree);
                 switchResult = makeTemp(tree.type);
             }
             int prevLetExprStart = code.setLetExprStackPos(code.state.stacksize);
@@ -1250,35 +1237,35 @@ public class Gen extends JCTree.Visitor {
             code.endScopes(limit);
         }
     }
-    //where:
-        private boolean hasTry(JCSwitchExpression tree) {
-            class HasTryScanner extends TreeScanner {
-                private boolean hasTry;
 
-                @Override
-                public void visitTry(JCTry tree) {
-                    hasTry = true;
-                }
+    private boolean hasTry(JCTree tree) {
+        class HasTryScanner extends TreeScanner {
+            private boolean hasTry;
 
-                @Override
-                public void visitSynchronized(JCSynchronized tree) {
-                    hasTry = true;
-                }
+            @Override
+            public void visitTry(JCTry tree) {
+                hasTry = true;
+            }
 
-                @Override
-                public void visitClassDef(JCClassDecl tree) {
-                }
+            @Override
+            public void visitSynchronized(JCSynchronized tree) {
+                hasTry = true;
+            }
 
-                @Override
-                public void visitLambda(JCLambda tree) {
-                }
-            };
+            @Override
+            public void visitClassDef(JCClassDecl tree) {
+            }
 
-            HasTryScanner hasTryScanner = new HasTryScanner();
+            @Override
+            public void visitLambda(JCLambda tree) {
+            }
+        };
 
-            hasTryScanner.scan(tree);
-            return hasTryScanner.hasTry;
-        }
+        HasTryScanner hasTryScanner = new HasTryScanner();
+
+        hasTryScanner.scan(tree);
+        return hasTryScanner.hasTry;
+    }
 
     private void handleSwitch(JCTree swtch, JCExpression selector, List<JCCase> cases,
                               boolean patternSwitch) {
@@ -1852,9 +1839,13 @@ public class Gen extends JCTree.Visitor {
         }
 
         private void reloadStackBeforeSwitchExpr() {
-            for (LocalItem li : stackBeforeSwitchExpression)
-                li.load();
+            reloadStackFromVariables(stackBeforeSwitchExpression);
         }
+
+    private void reloadStackFromVariables(List<LocalItem> variables) {
+        for (LocalItem li : variables)
+            li.load();
+    }
 
     public void visitContinue(JCContinue tree) {
         int tmpPos = code.pendingStatPos;
@@ -2412,17 +2403,49 @@ public class Gen extends JCTree.Visitor {
     public void visitLetExpr(LetExpr tree) {
         code.resolvePending();
 
+        List<LocalItem> stashedStack;
+
+        if (hasTry(tree)) {
+            //if the let expression contains try-catch, the catch handlers need to have
+            //an empty stack. So stash whole stack to local variables, and restore it
+            //at the end:
+            stashedStack = stashStackToLocalVariables(tree);
+        } else {
+            stashedStack = List.nil();
+        }
+
         int limit = code.nextreg;
         int prevLetExprStart = code.setLetExprStackPos(code.state.stacksize);
         try {
             genStats(tree.defs, env);
         } finally {
             code.setLetExprStackPos(prevLetExprStart);
+            reloadStackFromVariables(stashedStack);
         }
         result = genExpr(tree.expr, tree.expr.type).load();
         code.endScopes(limit);
     }
 
+    private List<LocalItem> stashStackToLocalVariables(JCTree tree) {
+        List<LocalItem> variables = List.nil();
+
+        while (code.state.stacksize > 0) {
+            Type type = code.state.peek();
+            Name varName = names.fromString(target.syntheticNameChar() +
+                                            "stack" +
+                                            target.syntheticNameChar() +
+                                            tree.pos +
+                                            target.syntheticNameChar() +
+                                            code.state.stacksize);
+            VarSymbol var = new VarSymbol(Flags.SYNTHETIC, varName, type,
+                                          this.env.enclMethod.sym);
+            LocalItem item = items.new LocalItem(type, code.newLocal(var));
+            variables = variables.prepend(item);
+            item.store();
+        }
+
+        return variables;
+    }
     private void generateReferencesToPrunedTree(ClassSymbol classSymbol) {
         List<JCTree> prunedInfo = lower.prunedTree.get(classSymbol);
         if (prunedInfo != null) {
