@@ -493,9 +493,6 @@ HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
 void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
   jlong level = -1; // -1 means no compression.
   jlong parallel = HeapDumper::default_num_of_dump_threads();
-  // in case no specific filename was passed to heap_dump command,
-  // attempt to use the HeapDumpPath if it was set
-  const char* filename = HeapDumpPath;
   bool use_heapdump_path = false;
 
   if (_gzip.is_set()) {
@@ -519,14 +516,14 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
     }
   }
 
-  if (filename == nullptr && !_filename.is_set()) {
-    output()->print_cr("Filename or -XX:HeapDumpPath must be set!");
-    return;
-  } else if (_filename.is_set()) {
-    filename = _filename.value();
-  } else {
-    // use HeapDumpPath (file or directory is possible)
-    use_heapdump_path = true;
+  if (!_filename.is_set()) {
+    if (HeapDumpPath != nullptr) {
+      // use HeapDumpPath (file or directory is possible)
+      use_heapdump_path = true;
+    } else {
+      output()->print_cr("Filename or -XX:HeapDumpPath must be set!");
+      return;
+    }
   }
 
   // Request a full GC before heap dump if _all is false
@@ -537,7 +534,7 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
   if (use_heapdump_path) {
     dumper.dump_to(output(), (int)level, _overwrite.value(), (uint)parallel);
   } else {
-    dumper.dump(filename, output(), (int)level, _overwrite.value(), (uint)parallel);
+    dumper.dump(_filename.value(), output(), (int)level, _overwrite.value(), (uint)parallel);
   }
 }
 
