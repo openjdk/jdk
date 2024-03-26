@@ -2498,6 +2498,16 @@ GetCurrentContendedMonitorClosure::do_thread(Thread *target) {
 }
 
 void
+GetCurrentContendedMonitorClosure::do_vthread(Handle target_h) {
+  if (_target_jt == nullptr) {
+    _result = JVMTI_ERROR_NONE; // target virtual thread is unmounted
+    return;
+  }
+  // mounted virtual thread case
+  do_thread(_target_jt);
+}
+
+void
 GetStackTraceClosure::do_thread(Thread *target) {
   Thread* current = Thread::current();
   ResourceMark rm(current);
