@@ -50,11 +50,11 @@ public class CompactSubFormats {
     @Test
     public void applyPatternTest() {
         var mFmt = new MessageFormat(
-                "{0,number,compact_short}{1,number,compact_long}");
+                "{0,number,compact_short}{1,number,compact_long}", loc);
         var compactShort = NumberFormat.getCompactNumberInstance(
-                loc, NumberFormat.Style.SHORT);
+                mFmt.getLocale(), NumberFormat.Style.SHORT);
         var compactLong = NumberFormat.getCompactNumberInstance(
-                loc, NumberFormat.Style.LONG);
+                mFmt.getLocale(), NumberFormat.Style.LONG);
         assertEquals(mFmt.getFormatsByArgumentIndex()[0], compactShort);
         assertEquals(mFmt.getFormatsByArgumentIndex()[1], compactLong);
     }
@@ -67,24 +67,24 @@ public class CompactSubFormats {
         // An exception won't be thrown since 'compact_regular' will be interpreted as a
         // subformatPattern.
         assertEquals(new DecimalFormat("compact_regular"),
-                new MessageFormat("{0,number,compact_regular}").getFormatsByArgumentIndex()[0]);
+                new MessageFormat("{0,number,compact_regular}", loc).getFormatsByArgumentIndex()[0]);
     }
 
     // SHORT and LONG CompactNumberFormats should produce correct patterns
     @Test
     public void toPatternTest() {
-        var mFmt = new MessageFormat("{0}{1}");
+        var mFmt = new MessageFormat("{0}{1}", loc);
         mFmt.setFormatByArgumentIndex(0, NumberFormat.getCompactNumberInstance(
-                loc, NumberFormat.Style.SHORT));
+                mFmt.getLocale(), NumberFormat.Style.SHORT));
         mFmt.setFormatByArgumentIndex(1, NumberFormat.getCompactNumberInstance(
-                loc, NumberFormat.Style.LONG));
+                mFmt.getLocale(), NumberFormat.Style.LONG));
         assertEquals("{0,number,compact_short}{1,number,compact_long}", mFmt.toPattern());
     }
 
     // A custom cnFmt cannot be recognized, thus does not produce any built-in pattern
     @Test
     public void badToPatternTest() {
-        var mFmt = new MessageFormat("{0}");
+        var mFmt = new MessageFormat("{0}", loc);
         // Non-recognizable compactNumberFormat
         mFmt.setFormatByArgumentIndex(0, new CompactNumberFormat("",
                         DecimalFormatSymbols.getInstance(Locale.US), new String[]{""}));

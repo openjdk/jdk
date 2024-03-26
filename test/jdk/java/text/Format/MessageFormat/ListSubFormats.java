@@ -50,12 +50,12 @@ public class ListSubFormats {
     // 'unit' associated FormatStyles
     @Test
     public void applyPatternTest() {
-        var mFmt = new MessageFormat("{0,list}{1,list,or}{2,list,unit}");
-        var listStandard = ListFormat.getInstance(loc,
+        var mFmt = new MessageFormat("{0,list}{1,list,or}{2,list,unit}", loc);
+        var listStandard = ListFormat.getInstance(mFmt.getLocale(),
                 ListFormat.Type.STANDARD, ListFormat.Style.FULL);
-        var listOr = ListFormat.getInstance(loc,
+        var listOr = ListFormat.getInstance(mFmt.getLocale(),
                 ListFormat.Type.OR, ListFormat.Style.FULL);
-        var listUnit = ListFormat.getInstance(loc,
+        var listUnit = ListFormat.getInstance(mFmt.getLocale(),
                 ListFormat.Type.UNIT, ListFormat.Style.FULL);
         assertEquals(mFmt.getFormatsByArgumentIndex()[0], listStandard);
         assertEquals(mFmt.getFormatsByArgumentIndex()[1], listOr);
@@ -68,12 +68,12 @@ public class ListSubFormats {
     public void badApplyPatternTest() {
         // Wrong FormatStyle
         IllegalArgumentException exc = assertThrows(IllegalArgumentException.class, () ->
-                new MessageFormat("{0,list,standard}"));
+                new MessageFormat("{0,list,standard}", loc));
         assertEquals("Unexpected modifier for List: standard", exc.getMessage());
 
         // Wrong FormatType
         exc = assertThrows(IllegalArgumentException.class, () ->
-                new MessageFormat("{0,listt,or}"));
+                new MessageFormat("{0,listt,or}", loc));
         assertEquals("unknown format type: listt", exc.getMessage());
 
     }
@@ -82,22 +82,23 @@ public class ListSubFormats {
     // produce correct patterns.
     @Test
     public void toPatternTest() {
-        var mFmt = new MessageFormat("{0}{1}{2}");
+        var mFmt = new MessageFormat("{0}{1}{2}", loc);
         mFmt.setFormatByArgumentIndex(0,
-                ListFormat.getInstance(loc, ListFormat.Type.STANDARD, ListFormat.Style.FULL));
+                ListFormat.getInstance(mFmt.getLocale(), ListFormat.Type.STANDARD, ListFormat.Style.FULL));
         mFmt.setFormatByArgumentIndex(1,
-                ListFormat.getInstance(loc, ListFormat.Type.OR, ListFormat.Style.FULL));
+                ListFormat.getInstance(mFmt.getLocale(), ListFormat.Type.OR, ListFormat.Style.FULL));
         mFmt.setFormatByArgumentIndex(2,
-                ListFormat.getInstance(loc, ListFormat.Type.UNIT, ListFormat.Style.FULL));
+                ListFormat.getInstance(mFmt.getLocale(), ListFormat.Type.UNIT, ListFormat.Style.FULL));
         assertEquals("{0,list}{1,list,or}{2,list,unit}", mFmt.toPattern());
     }
 
     // A custom ListFormat cannot be recognized, thus does not produce any built-in pattern
     @Test
     public void badToPatternTest() {
-        var mFmt = new MessageFormat("{0}");
+        var mFmt = new MessageFormat("{0}", loc);
         mFmt.setFormatByArgumentIndex(0,
-                ListFormat.getInstance(loc, ListFormat.Type.UNIT, ListFormat.Style.NARROW));
+                ListFormat.getInstance(mFmt.getLocale(),
+                        ListFormat.Type.UNIT, ListFormat.Style.NARROW));
         assertEquals("{0}", mFmt.toPattern());
     }
 }
