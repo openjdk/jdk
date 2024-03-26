@@ -139,7 +139,10 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     tree.reserve_mapping(0, 100, md);
     int found_nodes = 0;
     tree.visit(0, 99999, [&](Node* x) {
-      EXPECT_EQ(x->val().out.data.flag, mtTest);
+      EXPECT_TRUE(x->key() == 0 || x->key() == 100);
+      if (x->key() == 0) {
+        EXPECT_EQ(x->val().out.data.flag, mtTest);
+      }
       found_nodes++;
     });
     EXPECT_EQ(2, found_nodes);
