@@ -173,6 +173,7 @@ public:
         // is not needed anymore. So we just remove the old node.
         // We can only do this merge if the metadata is considered equivalent after merging.
         stA.out.merge(leqA_n->val().out);
+        stB.in = stA.out;
         if (stA.is_noop()) {
           // invalidates leqA_n
           tree.remove(leqA_n->key());
