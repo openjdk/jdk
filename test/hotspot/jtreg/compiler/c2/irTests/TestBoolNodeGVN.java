@@ -50,7 +50,9 @@ public class TestBoolNodeGVN {
      */
     @Test
     @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
-    @IR(failOn = IRNode.CMP_U, phase = CompilePhase.AFTER_PARSING, applyIfPlatform = {"x86", "false"})
+    @IR(failOn = IRNode.CMP_U,
+        phase = CompilePhase.AFTER_PARSING,
+        applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
     public static boolean test(int x, int m) {
         return !(Integer.compareUnsigned((x & m), m) > 0) & // assert in inversions to generates the pattern looking for
                 !(Integer.compareUnsigned((m & x), m) > 0) &
