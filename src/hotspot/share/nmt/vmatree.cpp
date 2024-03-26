@@ -24,51 +24,6 @@
 
 #include "nmt/vmatree.hpp"
 
-VMATree::VTreap* VMATree::closest_geq(size_t B) {
-  // Need to go "left-ward" for EQ node, so do a leq search first.
-  VTreap* leqB = closest_leq(B);
-  if (leqB != nullptr && leqB->key() == B) {
-    return leqB;
-  }
-  VTreap* gtB = nullptr;
-  VTreap* head = tree.tree;
-  while (head != nullptr) {
-    int cmp_r = addr_cmp(head->key(), B);
-    if (cmp_r == 0) { // Exact match
-      gtB = head;
-      break; // Can't become better than that.
-    }
-    if (cmp_r > 0) {
-      // Found a match, try to find a better one.
-      gtB = head;
-      head = head->left;
-    } else if (cmp_r < 0) {
-      head = head->right;
-    }
-  }
-  return gtB;
-}
-
-VMATree::VTreap* VMATree::closest_leq(size_t A) {
-  VTreap* leqA_n = nullptr;
-  VTreap* head = tree.tree;
-  while (head != nullptr) {
-    int cmp_r = addr_cmp(head->key(), A);
-    if (cmp_r == 0) { // Exact match
-      leqA_n = head;
-      break; // Can't become better than that.
-    }
-    if (cmp_r < 0) {
-      // Found a match, try to find a better one.
-      leqA_n = head;
-      head = head->right;
-    } else if (cmp_r > 0) {
-      head = head->left;
-    }
-  }
-  return leqA_n;
-}
-
 VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType state,
                                                Metadata& metadata) {
   // AddressState saves the necessary information for performing online summary accounting.
@@ -88,7 +43,7 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
   AddressState LEQ_A;
   bool GEQ_B_found = false;
   AddressState GEQ_B;
-  VTreap* geqB_n = closest_geq(B);
+  VTreap* geqB_n = tree.closest_geq(B);
   if (geqB_n != nullptr) {
     GEQ_B = {geqB_n->key(), geqB_n->val()};
     GEQ_B_found = true;
@@ -105,7 +60,7 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
   };
   // First handle A.
   // Find closest node that is LEQ A
-  VTreap* leqA_n = closest_leq(A);
+  VTreap* leqA_n = tree.closest_leq(A);
   if (leqA_n == nullptr) {
     // No match.
     if (stA.is_noop()) {
@@ -144,7 +99,7 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
         // reserve [x1, A), flag1; ... reserve [A, x2), flag2; or
         // reserve [A, x1), flag1; ... reserve [A, x2), flag2;
         // then we re-use the existing out node, overwriting its old metadata.
-        leqA_n->_value = stA;
+        leqA_n->val() = stA;
       }
     } else {
       // The address must be smaller.
@@ -183,12 +138,12 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
       int cmp_A = addr_cmp(head->key(), A);
       int cmp_B = addr_cmp(head->key(), B);
       if (cmp_B > 0) {
-        to_visit.push(head->left);
+        to_visit.push(head->left());
       } else if (cmp_A <= 0) {
-        to_visit.push(head->right);
+        to_visit.push(head->right());
       } else if (cmp_A > 0 && cmp_B <= 0) {
-        to_visit.push(head->left);
-        to_visit.push(head->right);
+        to_visit.push(head->left());
+        to_visit.push(head->right());
 
         stB.out = head->val().out;
         if (cmp_B < 0) {
@@ -201,7 +156,7 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
           if (stB.is_noop()) {
             to_be_deleted_inbetween_a_b.push(AddressState{B, head->val()});
           } else {
-            head->_value = stB;
+            head->val() = stB;
           }
           B_needs_insert = false;
         } else { /* Unreachable */

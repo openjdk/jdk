@@ -112,15 +112,6 @@ public:
     }
   };
 
-private:
-  // Utilities for the register_mapping function
-
-  // Find the closest node which is LEQ (<=) to A.
-  VTreap* closest_leq(size_t A);
-  // Find the closest node which is GEQ (>=) to B.
-  VTreap* closest_geq(size_t B);
-
-public:
   SummaryDiff register_mapping(size_t A, size_t B, StateType state, Metadata& metadata);
 
   SummaryDiff reserve_mapping(size_t from, size_t sz, Metadata& metadata) {
@@ -158,10 +149,10 @@ public:
         if (cmp_to < 0) {
           f(head);
         }
-        to_visit.push(head->left);
-        to_visit.push(head->right);
+        to_visit.push(head->_left);
+        to_visit.push(head->_right);
       } else {
-        to_visit.push(head->right);
+        to_visit.push(head->_right);
       }
     }
   }
@@ -169,9 +160,9 @@ private:
   template<typename F>
   void in_order_traversal_doer(F f, const VTreap* node) const {
     if (node == nullptr) return;
-    in_order_traversal_doer(f, node->left);
+    in_order_traversal_doer(f, node->_left);
     f(node);
-    in_order_traversal_doer(f, node->right);
+    in_order_traversal_doer(f, node->_right);
   }
 public:
   template<typename F>

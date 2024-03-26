@@ -47,14 +47,13 @@ template<typename K, typename V, int(*CMP)(K,K)>
 class TreapNode {
   template<typename InnerK, typename InnerV, int(*CMPP)(InnerK,InnerK)>
   friend class TreapCHeap;
-  friend class VMATree;
 
   uint64_t _priority;
   K _key;
   V _value;
   using Nd = TreapNode<K,V,CMP>;
-  TreapNode<K, V, CMP>* left;
-  TreapNode<K, V, CMP>* right;
+  Nd* _left;
+  Nd* _right;
 
   struct nd_pair {
     Nd* left;
@@ -74,12 +73,12 @@ class TreapNode {
     }
     if ( (CMP(head->_key, key) <= 0 && mode == LEQ) ||
          (CMP(head->_key, key) < 0 && mode == LT) ) {
-      auto p = split(head->right, key, mode);
-      head->right = p.left;
+      auto p = split(head->_right, key, mode);
+      head->_right = p.left;
       return {head, p.right};
     } else {
-      auto p = split(head->left, key, mode);
-      head->left = p.right;
+      auto p = split(head->_left, key, mode);
+      head->_left = p.right;
       return {p.left, head};
     }
   }
@@ -95,7 +94,7 @@ class TreapNode {
       //         |
       //         RIGHT
       // For the invariant re: priorities to hold.
-      left->right = merge(left->right, right);
+      left->_right = merge(left->_right, right);
       return left;
     } else {
       // We need
@@ -103,21 +102,28 @@ class TreapNode {
       //         |
       //      LEFT
       // For the invariant re: priorities to hold.
-      right->left = merge(left, right->left);
+      right->_left = merge(left, right->_left);
       return right;
     }
   }
 
 public:
   TreapNode(const K& k, const V& v, uint64_t p)
-  : _priority(p), _key(k), _value(v), left(nullptr), right(nullptr) {
+  : _priority(p), _key(k), _value(v), _left(nullptr), _right(nullptr) {
   }
 
   const K& key() const {
     return _key;
   }
-  const V& val() const {
+  V& val() const {
     return _value;
+  }
+
+  Nd* left() {
+    return _left;
+  }
+  Nd* right() {
+    return _left;
   }
 
   static Nd* find(Nd* node, const K& k) {
@@ -129,9 +135,9 @@ public:
     }
 
     if (CMP(node->_key, k) <= 0) { // LEQ
-      return find(node->left, k);
+      return find(node->_left, k);
     } else {
-      return find(node->right, k);
+      return find(node->_right, k);
     }
   }
 
@@ -175,8 +181,8 @@ public:
     while (!to_delete.is_empty()) {
       Nd* head = to_delete.pop();
       if (head == nullptr) continue;
-      to_delete.push(head->left);
-      to_delete.push(head->right);
+      to_delete.push(head->_left);
+      to_delete.push(head->_right);
       free(head);
     }
     return nullptr;
@@ -226,6 +232,50 @@ public:
     tree = CTreap::delete_all(tree, [](void* ptr){
       os::free(ptr);
     });
+  }
+
+  CTreap* closest_geq(const K& key) {
+    // Need to go "left-ward" for EQ node, so do a leq search first.
+    CTreap* leqB = closest_leq(key);
+    if (leqB != nullptr && leqB->key() == key) {
+      return leqB;
+    }
+    CTreap* gtB = nullptr;
+    CTreap* head = tree;
+    while (head != nullptr) {
+      int cmp_r = addr_cmp(head->key(), key);
+      if (cmp_r == 0) { // Exact match
+        gtB = head;
+        break; // Can't become better than that.
+      }
+      if (cmp_r > 0) {
+        // Found a match, try to find a better one.
+        gtB = head;
+        head = head->_left;
+      } else if (cmp_r < 0) {
+        head = head->_right;
+      }
+    }
+    return gtB;
+  }
+  CTreap* closest_leq(const K& key) {
+    CTreap* leqA_n = nullptr;
+    CTreap* head = tree;
+    while (head != nullptr) {
+      int cmp_r = addr_cmp(head->key(), key);
+      if (cmp_r == 0) { // Exact match
+        leqA_n = head;
+        break; // Can't become better than that.
+      }
+      if (cmp_r < 0) {
+        // Found a match, try to find a better one.
+        leqA_n = head;
+        head = head->_right;
+      } else if (cmp_r > 0) {
+        head = head->_left;
+      }
+    }
+    return leqA_n;
   }
 };
 
