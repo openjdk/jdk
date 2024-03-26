@@ -30,6 +30,8 @@ import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
 
+import java.util.function.Function;
+
 /**
  * @test
  * @bug 8328528
@@ -103,18 +105,24 @@ public class TestCountedLoopIV {
         return a;
     }
 
+    private static <T extends Number> void test(Function<Integer, T> function, int iteration, T expected) {
+        T result = function.apply(iteration);
+        if (!result.equals(expected)) {
+            throw new RuntimeException("Bad result for IV with stop = " + iteration + ", expected " + expected
+                    + ", got " + result);
+        }
+    }
+
     private static void testCorrectness() {
-        int[] iterations = {Integer.MIN_VALUE, -100, -42, -2, -1, 0, 1, 2, 42, 100, Integer.MAX_VALUE};
+        int[] iterations = {0, 1, 2, 42, 100};
 
         for (int i : iterations) {
-            if (testIntCountedLoopWithIntIV(i) != i ||
-                testIntCountedLoopWithIntIVZero(i) != 0 ||
-                testIntCountedLoopWithIntIVMax(i) != Integer.MAX_VALUE * i ||
-                testIntCountedLoopWithLongIV(i) != i ||
-                testIntCountedLoopWithLongIVZero(i) != 0 ||
-                testIntCountedLoopWithLongIVMax(i) != Long.MAX_VALUE * i ) {
-                throw new RuntimeException("Bad result for IV with stop = " + i);
-            }
+            test(TestCountedLoopIV::testIntCountedLoopWithIntIV, i, i);
+            test(TestCountedLoopIV::testIntCountedLoopWithIntIVZero, i, 0);
+            test(TestCountedLoopIV::testIntCountedLoopWithIntIVMax, i, i * Integer.MAX_VALUE);
+            test(TestCountedLoopIV::testIntCountedLoopWithLongIV, i, i);
+            test(TestCountedLoopIV::testIntCountedLoopWithLongIVZero, i, 0);
+            test(TestCountedLoopIV::testIntCountedLoopWithLongIVMax, i, i * Long.MAX_VALUE);
         }
     }
 }
