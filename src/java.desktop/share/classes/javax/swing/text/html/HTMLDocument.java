@@ -2499,7 +2499,7 @@ public class HTMLDocument extends DefaultStyledDocument {
             tagMap.put(HTML.Tag.SCRIPT, ha);
             tagMap.put(HTML.Tag.SELECT, fa);
             tagMap.put(HTML.Tag.SMALL, ca);
-            tagMap.put(HTML.Tag.SPAN, ca);
+            tagMap.put(HTML.Tag.SPAN, new ConvertSpan());
             tagMap.put(HTML.Tag.STRIKE, conv);
             tagMap.put(HTML.Tag.S, conv);
             tagMap.put(HTML.Tag.STRONG, ca);
@@ -3425,6 +3425,62 @@ public class HTMLDocument extends DefaultStyledDocument {
                 }
             }
 
+            public void end(HTML.Tag t) {
+                popCharacterStyle();
+            }
+        }
+
+        final class ConvertSpan extends CharacterAction {
+            @Override
+            public void start(HTML.Tag t, MutableAttributeSet attr) {
+                pushCharacterStyle();
+                if (!foundInsertTag) {
+                    // Note that the third argument should really be based off
+                    // inParagraph and impliedP. If we're wrong (that is
+                    // insertTagDepthDelta shouldn't be changed), we'll end up
+                    // removing an extra EndSpec, which won't matter anyway.
+                    boolean insert = canInsertTag(t, attr, false);
+                    if (foundInsertTag) {
+                        if (!inParagraph) {
+                            inParagraph = impliedP = true;
+                        }
+                    }
+                    if (!insert) {
+                        return;
+                    }
+                }
+                if (attr.isDefined(IMPLIED)) {
+                    attr.removeAttribute(IMPLIED);
+                }
+
+                Object textDecoration0 = attr.getAttribute(CSS.Attribute.TEXT_DECORATION);
+                Object textDecoration1 = charAttr.getAttribute(CSS.Attribute.TEXT_DECORATION);
+
+                charAttr.addAttribute(t, attr.copyAttributes());
+                if (styleAttributes != null) {
+                    charAttr.addAttributes(styleAttributes);
+                }
+                if (textDecoration1 == null) {
+                    // No 'text-decoration' on the stack
+                    // No fix-up necessary
+                } else if (textDecoration0 == null) {
+                    // No 'text-decoration' in the incoming styles
+                    // No fix-up necessary
+                } else {
+                    if ("none".equals(textDecoration0.toString())) {
+                        // Nothing to do
+                    } else {
+                        StyleSheet sheet = getStyleSheet();
+                        sheet.addCSSAttribute(charAttr, CSS.Attribute.TEXT_DECORATION,
+                                              CSS.mergeTextDecoration(textDecoration1 + ","
+                                                                      + textDecoration0)
+                                                 .toString());
+                    }
+                }
+
+            }
+
+            @Override
             public void end(HTML.Tag t) {
                 popCharacterStyle();
             }

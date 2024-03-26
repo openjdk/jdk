@@ -2820,7 +2820,21 @@ public class StyleSheet extends StyleContext {
         Object doGetAttribute(Object key) {
             Object retValue = super.getAttribute(key);
             if (retValue != null) {
-                return retValue;
+                if (key != CSS.Attribute.TEXT_DECORATION) {
+                    return retValue;
+                } else {
+                    AttributeSet parent = getResolveParent();
+                    if (parent != null) {
+                        Object parentValue = parent.getAttribute(key);
+                        if (parentValue != null) {
+                            return CSS.mergeTextDecoration(retValue + "," + parentValue);
+                        } else {
+                            return retValue;
+                        }
+                    } else {
+                        return retValue;
+                    }
+                }
             }
 
             if (key == CSS.Attribute.FONT_SIZE) {
