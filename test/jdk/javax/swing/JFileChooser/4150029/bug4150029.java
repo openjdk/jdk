@@ -38,9 +38,9 @@ import jdk.test.lib.Platform;
  * @test
  * @bug 4150029 8006087
  * @summary BackSpace keyboard button does not lead to parent directory
- * @library /test/lib /java/awt/regtesthelpers
- * @build jdk.test.lib.Platform PassFailJFrame
- * @run main/manual bug4150029
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
+ * @run main bug4150029
  */
 
 public class bug4150029 {
@@ -85,18 +85,8 @@ public class bug4150029 {
 
             fileChooser = new JFileChooser(subDir);
 
-//            fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-
             SwingUtilities.invokeAndWait(() -> {
-                frame = new JFrame("Backspace Shortcut for Directory Navigation Test");
-                frame.getContentPane().setLayout(new BorderLayout());
-                fileChooser = new JFileChooser(subDir);
-                fileChooser.setControlButtonsAreShown(false);
-                frame.getContentPane().add(fileChooser, BorderLayout.CENTER);
-                frame.pack();
-                frame.setLocationRelativeTo(null);
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.setVisible(true);
+                createAndShowUI();
             });
 
             doTesting();
@@ -109,10 +99,26 @@ public class bug4150029 {
         }
     }
 
-    private static void doTesting() {
-        Point p = frame.getLocationOnScreen();
+    private static void createAndShowUI() {
+        frame = new JFrame("Backspace Shortcut for Directory Navigation Test");
+        frame.setLayout(new BorderLayout());
+        fileChooser = new JFileChooser(subDir);
+        fileChooser.setControlButtonsAreShown(false);
+        frame.add(fileChooser, BorderLayout.CENTER);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+    }
+
+    private static void doTesting() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            Point p = frame.getLocationOnScreen();
+
+        });
         robot.mouseMove(p.x + 200, p.y + 200);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
         boolean passed_1 = false;
         boolean passed_2 = false;
@@ -133,9 +139,7 @@ public class bug4150029 {
             }
         }
 
-        if (passed_1 && passed_2) {
-            System.out.println("Passed");
-        } else {
+        if (!(passed_1 && passed_2)) {
             throw new RuntimeException("BackSpace does not lead to parent directory");
         }
     }
