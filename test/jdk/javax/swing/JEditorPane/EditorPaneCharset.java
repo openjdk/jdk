@@ -43,7 +43,7 @@ public final class EditorPaneCharset {
     private static final String HTML_CYRILLIC =
             "<html lang=\"ru\">\n" +
             "<head>\n" +
-           "    <meta http-equiv=\"Content-Type\" content=\"text/html; charset=	windows-1251\">\n" +
+           "    <meta http-equiv=\"Content-Type\" content=\"text/html; charset=windows-1251\">\n" +
             "</head><body>\n" +
             "<p>" + CYRILLIC_TEXT + "</p>\n" +
             "</body></html>\n";
