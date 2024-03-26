@@ -159,7 +159,7 @@ public class Bind {
         });
         // address with space should work
         checkNormal(() -> {
-            UnixDomainSocketAddress usa =  UnixDomainSocketAddress.of("with space");
+            UnixDomainSocketAddress usa = UnixDomainSocketAddress.of("with space");
             Files.deleteIfExists(usa.getPath());
             try {
                 server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
