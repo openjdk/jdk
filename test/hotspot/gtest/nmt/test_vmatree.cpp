@@ -185,7 +185,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
       }
     });
   }
-  {
+  { // Merging prioritises the first region when committing over two reserved regions.
     Tree tree;
     VMATree::Metadata md{si1, mtTest };
     VMATree::Metadata md2{si2, mtNMT };
@@ -199,16 +199,12 @@ TEST_VM_F(VMATreeTest, LowLevel) {
       if (x->key() == 0) {
         EXPECT_EQ(x->val().out.data.flag, mtTest);
       }
-      if (x->key() == 50) {
-        EXPECT_EQ(x->val().in.data.flag, mtTest);
-        EXPECT_EQ(x->val().out.data.flag, mtNMT);
-      }
       if (x->key() == 100) {
-        EXPECT_EQ(x->val().in.data.flag, mtNMT);
+        EXPECT_EQ(x->val().in.data.flag, mtTest);
       }
       found_nodes++;
     });
-    EXPECT_EQ(3, found_nodes);
+    EXPECT_EQ(2, found_nodes);
   }
 }
 
