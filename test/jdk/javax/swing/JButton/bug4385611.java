@@ -66,7 +66,7 @@ public class bug4385611 {
                     throw new RuntimeException("The button's preferred size should be 32x32");
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                throw new RuntimeException("Can not initialize Metal LnF", e);
             }
 
             try {
@@ -81,7 +81,7 @@ public class bug4385611 {
                             + "33x33 and 32x32 correspondingly.");
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                throw new RuntimeException("Can not initialize Windows LnF", e);
             }
         });
     }
