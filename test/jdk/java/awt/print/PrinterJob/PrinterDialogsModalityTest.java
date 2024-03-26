@@ -66,12 +66,12 @@ public class PrinterDialogsModalityTest {
                 .instructions(INSTRUCTIONS)
                 .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(40)
-                .testUI(PrinterDialogsModalityTest::init)
+                .testUI(PrinterDialogsModalityTest::createAndShowGUI)
                 .build()
                 .awaitAndCheck();
     }
 
-    public static JFrame init() {
+    public static JFrame createAndShowGUI() {
         JFrame frame = new JFrame("Test Frame");
         frame.setLayout(new FlowLayout());
 
