@@ -94,7 +94,7 @@ public class TypePollution {
         Class<?>[] someInterfaces = new Class<?>[0];
         for (int i = 0; i < objectArray.length; i++) {
             Set<Class<?>> aSet = new HashSet<Class<?>>();
-            for (int j  = 0; j < 6; j++) {
+            for (int j = 0; j < 6; j++) {
                 aSet.add(classes[rand.nextInt(classes.length)]);
             }
             Class<?>[] interfaceArray = new Class[aSet.size()];
