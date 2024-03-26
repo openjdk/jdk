@@ -32,7 +32,6 @@ import javax.swing.JFrame;
  * @test
  * @bug 4784285 4785920
  * @key printer
- * @requires (os.family == "windows")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary check whether Print- and Page- dialogs are modal and correct window
