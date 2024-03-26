@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static sun.security.krb5.internal.Krb5.DEBUG;
 
 /**
  * CredentialsCache stores credentials(tickets, session keys, etc.) in a
@@ -70,7 +71,6 @@ public class FileCredentialsCache extends CredentialsCache
     public Tag tag; // optional
     public PrincipalName primaryPrincipal;
     private Vector<Credentials> credentialsList;
-    private static final boolean DEBUG = Krb5.DEBUG;
 
     public static synchronized FileCredentialsCache acquireInstance(
                 PrincipalName principal, String cache) {
@@ -92,8 +92,8 @@ public class FileCredentialsCache extends CredentialsCache
             return fcc;
         } catch (IOException | KrbException e) {
             // we don't handle it now, instead we return a null at the end.
-            if (DEBUG) {
-                e.printStackTrace();
+            if (DEBUG != null) {
+                e.printStackTrace(DEBUG.getPrintStream());
             }
         }
         return null;
@@ -128,8 +128,8 @@ public class FileCredentialsCache extends CredentialsCache
             return fcc;
         }
         catch (IOException | KrbException e) {
-            if (DEBUG) {
-                e.printStackTrace();
+            if (DEBUG != null) {
+                e.printStackTrace(DEBUG.getPrintStream());
             }
         }
         return null;
@@ -213,8 +213,8 @@ public class FileCredentialsCache extends CredentialsCache
                                      tmp.sname.getRealmString()))) {
                         matched = true;
                         if (c.endtime.getTime() >= tmp.endtime.getTime()) {
-                            if (DEBUG) {
-                                System.out.println(" >>> FileCredentialsCache "
+                            if (DEBUG != null) {
+                                DEBUG.println(" >>> FileCredentialsCache "
                                          +  "Ticket matched, overwrite "
                                          +  "the old one.");
                             }
@@ -224,8 +224,8 @@ public class FileCredentialsCache extends CredentialsCache
                     }
                 }
                 if (!matched) {
-                    if (DEBUG) {
-                        System.out.println(" >>> FileCredentialsCache Ticket "
+                    if (DEBUG != null) {
+                        DEBUG.println(" >>> FileCredentialsCache Ticket "
                                         +   "not exactly matched, "
                                         +   "add new one into cache.");
                     }
@@ -349,8 +349,8 @@ public class FileCredentialsCache extends CredentialsCache
 
         CredentialsCache.ConfigEntry entry = getConfigEntry("proxy_impersonator");
         if (entry == null) {
-            if (DEBUG) {
-                System.out.println("get normal credential");
+            if (DEBUG != null) {
+                DEBUG.println("get normal credential");
             }
             return tgt;
         }
@@ -363,8 +363,8 @@ public class FileCredentialsCache extends CredentialsCache
         }
         switch (prop) {
             case "no-impersonate": // never try impersonation
-                if (DEBUG) {
-                    System.out.println("get normal credential");
+                if (DEBUG != null) {
+                    DEBUG.println("get normal credential");
                 }
                 return tgt;
             case "try-impersonate":
@@ -382,8 +382,8 @@ public class FileCredentialsCache extends CredentialsCache
             PrincipalName service = new PrincipalName(
                     new String(entry.getData(), StandardCharsets.UTF_8));
             if (!tgt.getClient().equals(service)) {
-                if (DEBUG) {
-                    System.out.println("proxy_impersonator does not match service name");
+                if (DEBUG != null) {
+                    DEBUG.println("proxy_impersonator does not match service name");
                 }
                 return force ? null : tgt;
             }
@@ -397,18 +397,18 @@ public class FileCredentialsCache extends CredentialsCache
                 }
             }
             if (proxy == null) {
-                if (DEBUG) {
-                    System.out.println("Cannot find evidence ticket in ccache");
+                if (DEBUG != null) {
+                    DEBUG.println("Cannot find evidence ticket in ccache");
                 }
                 return force ? null : tgt;
             }
-            if (DEBUG) {
-                System.out.println("Get proxied credential");
+            if (DEBUG != null) {
+                DEBUG.println("Get proxied credential");
             }
             return tgt.setProxy(proxy.setKrbCreds());
         } catch (KrbException e) {
-            if (DEBUG) {
-                System.out.println("Impersonation with ccache failed");
+            if (DEBUG != null) {
+                DEBUG.println("Impersonation with ccache failed");
             }
             return force ? null : tgt;
         }
@@ -460,8 +460,8 @@ public class FileCredentialsCache extends CredentialsCache
                     return cache;
                 });
         if (name != null) {
-            if (DEBUG) {
-                System.out.println(">>>KinitOptions cache name is " + name);
+            if (DEBUG != null) {
+                DEBUG.println(">>>KinitOptions cache name is " + name);
             }
             return name;
         }
@@ -482,14 +482,14 @@ public class FileCredentialsCache extends CredentialsCache
             if (uid != -1) {
                 name = File.separator + "tmp" +
                         File.separator + stdCacheNameComponent + "_" + uid;
-                if (DEBUG) {
-                    System.out.println(">>>KinitOptions cache name is " +
+                if (DEBUG != null) {
+                    DEBUG.println(">>>KinitOptions cache name is " +
                             name);
                 }
                 return name;
             } else {
-                if (DEBUG) {
-                    System.out.println("Error in obtaining uid " +
+                if (DEBUG != null) {
+                    DEBUG.println("Error in obtaining uid " +
                                         "for Unix platforms " +
                                         "Using user's home directory");
                 }
@@ -513,8 +513,8 @@ public class FileCredentialsCache extends CredentialsCache
             name = user_home + File.separator + stdCacheNameComponent;
         }
 
-        if (DEBUG) {
-            System.out.println(">>>KinitOptions cache name is " + name);
+        if (DEBUG != null) {
+            DEBUG.println(">>>KinitOptions cache name is " + name);
         }
 
         return name;
@@ -562,8 +562,8 @@ public class FileCredentialsCache extends CredentialsCache
                     try {
                         return (Runtime.getRuntime().exec(command));
                     } catch (IOException e) {
-                        if (DEBUG) {
-                            e.printStackTrace();
+                        if (DEBUG != null) {
+                            e.printStackTrace(DEBUG.getPrintStream());
                         }
                         return null;
                     }
@@ -592,8 +592,8 @@ public class FileCredentialsCache extends CredentialsCache
             commandResult.close();
             return s1;
         } catch (Exception e) {
-            if (DEBUG) {
-                e.printStackTrace();
+            if (DEBUG != null) {
+                e.printStackTrace(DEBUG.getPrintStream());
             }
         }
         return null;

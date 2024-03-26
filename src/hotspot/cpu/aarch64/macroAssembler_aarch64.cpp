@@ -392,13 +392,13 @@ static bool offset_for(uint32_t insn1, uint32_t insn2, ptrdiff_t &byte_offset) {
   return false;
 }
 
-class Decoder : public RelocActions {
-  virtual reloc_insn adrpMem() { return &Decoder::adrpMem_impl; }
-  virtual reloc_insn adrpAdd() { return &Decoder::adrpAdd_impl; }
-  virtual reloc_insn adrpMovk() { return &Decoder::adrpMovk_impl; }
+class AArch64Decoder : public RelocActions {
+  virtual reloc_insn adrpMem() { return &AArch64Decoder::adrpMem_impl; }
+  virtual reloc_insn adrpAdd() { return &AArch64Decoder::adrpAdd_impl; }
+  virtual reloc_insn adrpMovk() { return &AArch64Decoder::adrpMovk_impl; }
 
 public:
-  Decoder(address insn_addr, uint32_t insn) : RelocActions(insn_addr, insn) {}
+  AArch64Decoder(address insn_addr, uint32_t insn) : RelocActions(insn_addr, insn) {}
 
   virtual int loadStore(address insn_addr, address &target) {
     intptr_t offset = Instruction_aarch64::sextract(_insn, 23, 5);
@@ -494,7 +494,7 @@ public:
 };
 
 address MacroAssembler::target_addr_for_insn(address insn_addr, uint32_t insn) {
-  Decoder decoder(insn_addr, insn);
+  AArch64Decoder decoder(insn_addr, insn);
   address target;
   decoder.run(insn_addr, target);
   return target;
@@ -3949,7 +3949,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     add(table2, table0, 2*256*sizeof(juint));
     add(table3, table0, 3*256*sizeof(juint));
 
-  if (UseNeon) {
+    { // Neon code start
       cmp(len, (u1)64);
       br(Assembler::LT, L_by16);
       eor(v16, T16B, v16, v16);
@@ -4081,7 +4081,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
       update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, true);
 
       add(len, len, 32);
-  }
+    } // Neon code end
 
   BIND(L_by16);
     subs(len, len, 16);

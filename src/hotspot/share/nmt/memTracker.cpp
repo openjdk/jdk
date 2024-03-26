@@ -95,20 +95,6 @@ void MemTracker::initialize() {
   }
 }
 
-void Tracker::record(address addr, size_t size) {
-  if (MemTracker::tracking_level() < NMT_summary) return;
-  switch(_type) {
-    case uncommit:
-      VirtualMemoryTracker::remove_uncommitted_region(addr, size);
-      break;
-    case release:
-      VirtualMemoryTracker::remove_released_region(addr, size);
-        break;
-    default:
-      ShouldNotReachHere();
-  }
-}
-
 // Report during error reporting.
 void MemTracker::error_report(outputStream* output) {
   if (enabled()) {

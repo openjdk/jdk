@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public class SetLastModifiedTime {
 
     @Test
     public void testSymbolicLink() throws Exception {
-        if (TestUtil.supportsLinks(testDir)) {
+        if (TestUtil.supportsSymbolicLinks(testDir)) {
             Path target = Files.createFile(testDir.resolve("target"));
             Path link = testDir.resolve("link");
             Files.createSymbolicLink(link, target);
