@@ -126,7 +126,11 @@ SetupJdkLibrary = $(NamedParamsMacroTemplate)
 define SetupJdkLibraryBody
   ifeq ($$($1_OUTPUT_DIR), )
     ifneq ($$(MODULE), )
-      $1_OUTPUT_DIR := $$(call FindLibDirForModule, $$(MODULE))
+      ifeq ($$($1_TYPE), STATIC_LIBRARY)
+        $1_OUTPUT_DIR := $$(SUPPORT_OUTPUTDIR)/native/$$(MODULE)
+      else
+        $1_OUTPUT_DIR := $$(call FindLibDirForModule, $$(MODULE))
+      endif
     else
       $$(error Must specify OUTPUT_DIR in a MODULE free context)
     endif
