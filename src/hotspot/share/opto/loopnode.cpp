@@ -3898,19 +3898,9 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
 //---------------------------replace_parallel_iv-------------------------------
 // Replace parallel induction variable (parallel to trip counter)
 void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
-  assert(loop->_head->is_CountedLoop() || loop->_head->is_LongCountedLoop(), "");
-
-  BasicType iv_bt = loop->_head->is_CountedLoop() ? T_INT : T_LONG;
-
-//  CountedLoopNode *cl = loop->_head->as_CountedLoop();
-  BaseCountedLoopNode *cl;
-  if (iv_bt == T_INT) {
-    cl = loop->_head->as_CountedLoop();
-  } else {
-    cl = loop->_head->as_LongCountedLoop();
-  }
-
-  if (!cl->is_valid_counted_loop(iv_bt)) {
+  assert(loop->_head->is_CountedLoop(), "");
+  CountedLoopNode *cl = loop->_head->as_CountedLoop();
+  if (!cl->is_valid_counted_loop(T_INT)) {
     return;         // skip malformed counted loop
   }
   Node *incr = cl->incr();
@@ -3953,14 +3943,14 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     // expressions.
     Node* init2 = phi2->in(LoopNode::EntryControl);
 
-    //    int stride_con2 = incr2->in(2)->get_int();
-    BasicType sc2_bt = incr2->Opcode() == Op_AddI ? T_INT : T_LONG;
-    jlong stride_con2 = incr2->in(2)->get_integer_as_long(sc2_bt);
+    // determine the basic type of the stride constant (and the iv being incremented)
+    BasicType stride_con2_bt = incr2->Opcode() == Op_AddI ? T_INT : T_LONG;
+    jlong stride_con2 = incr2->in(2)->get_integer_as_long(stride_con2_bt);
 
     // The ratio of the two strides cannot be represented as an int
     // if stride_con2 is min_int and stride_con is -1.
-    if (((sc2_bt == T_INT && stride_con2 == min_jint) ||
-        (sc2_bt == T_LONG && stride_con2 == min_jlong)) &&
+    if (((stride_con2_bt == T_INT && stride_con2 == min_jint) ||
+        (stride_con2_bt == T_LONG && stride_con2 == min_jlong)) &&
         stride_con == -1) {
       continue;
     }
@@ -3985,48 +3975,35 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
       // variable differs from the trip counter by a loop-invariant
       // amount, the difference between their respective initial values.
       // It is scaled by the 'ratio_con'.
-//      Node* ratio = _igvn.intcon(ratio_con);
-      Node* ratio = _igvn.integercon(ratio_con, sc2_bt);
+      Node* ratio = _igvn.integercon(ratio_con, stride_con2_bt);
       set_ctrl(ratio, C->root());
 //      Node* ratio_init = new MulINode(init, ratio);
 
-      Node* init_conv = init;
-      if (iv_bt != sc2_bt) {
-        if (sc2_bt == T_LONG) {
-          init_conv = new ConvI2LNode(init);
-        } else {
-          init_conv = new ConvL2INode(init);
-        }
-
-        _igvn.register_new_node_with_optimizer(init_conv, init);
-        set_early_ctrl(init_conv, false);
+      Node* init_converted = init;
+      if (stride_con2_bt == T_LONG) {
+        init_converted = new ConvI2LNode(init);
+        _igvn.register_new_node_with_optimizer(init_converted, init);
+        set_early_ctrl(init_converted, false);
       }
 
-      Node* ratio_init = MulNode::make(init_conv, ratio, sc2_bt);
-      _igvn.register_new_node_with_optimizer(ratio_init, init_conv);
+      Node* ratio_init = MulNode::make(init_converted, ratio, stride_con2_bt);
+      _igvn.register_new_node_with_optimizer(ratio_init, init_converted);
       set_early_ctrl(ratio_init, false);
-//      Node* diff = new SubINode(init2, ratio_init);
-      Node* diff = SubNode::make(init2, ratio_init, sc2_bt);
+      Node* diff = SubNode::make(init2, ratio_init, stride_con2_bt);
       _igvn.register_new_node_with_optimizer(diff, init2);
       set_early_ctrl(diff, false);
-//      Node* ratio_idx = new MulINode(phi, ratio);
 
-      Node* phi_conv = phi;
-      if (iv_bt != sc2_bt) {
-        if (sc2_bt == T_LONG) {
-          phi_conv = new ConvI2LNode(phi);
-        } else {
-          phi_conv = new ConvL2INode(phi);
-        }
-        _igvn.register_new_node_with_optimizer(phi_conv, phi);
-        set_early_ctrl(phi_conv, false);
+      Node* phi_converted = phi;
+      if (stride_con2_bt == T_LONG) {
+        phi_converted = new ConvI2LNode(phi);
+        _igvn.register_new_node_with_optimizer(phi_converted, phi);
+        set_early_ctrl(phi_converted, false);
       }
 
-      Node* ratio_idx = MulNode::make(phi_conv, ratio, sc2_bt);
-      _igvn.register_new_node_with_optimizer(ratio_idx, phi_conv);
+      Node* ratio_idx = MulNode::make(phi_converted, ratio, stride_con2_bt);
+      _igvn.register_new_node_with_optimizer(ratio_idx, phi_converted);
       set_ctrl(ratio_idx, cl);
-//      Node* add = new AddINode(ratio_idx, diff);
-      Node* add = AddNode::make(ratio_idx, diff, sc2_bt);
+      Node* add = AddNode::make(ratio_idx, diff, stride_con2_bt);
       _igvn.register_new_node_with_optimizer(add);
       set_ctrl(add, cl);
       _igvn.replace_node( phi2, add );
