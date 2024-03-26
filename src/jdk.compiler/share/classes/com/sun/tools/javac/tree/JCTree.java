@@ -616,7 +616,9 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             List<JCTree> typeDefs;
             for (typeDefs = defs; !typeDefs.isEmpty(); typeDefs = typeDefs.tail) {
                 if (!typeDefs.head.hasTag(MODULEDEF)
-                        && !typeDefs.head.hasTag(PACKAGEDEF) && !typeDefs.head.hasTag(IMPORT)) {
+                        && !typeDefs.head.hasTag(PACKAGEDEF)
+                        && !typeDefs.head.hasTag(IMPORT)
+                        && !typeDefs.head.hasTag(MODULEIMPORT)) {
                     break;
                 }
             }

@@ -33,9 +33,14 @@
  * @run main ImportModule
 */
 
+import com.sun.source.tree.Tree;
+import com.sun.source.util.TaskEvent;
+import com.sun.source.util.TaskEvent.Kind;
+import com.sun.source.util.TaskListener;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -527,6 +532,52 @@ public class ImportModule extends TestRunner {
         if (!Objects.equals(expectedErrors, actualErrors)) {
             throw new AssertionError("Incorrect Output, expected: " + expectedErrors +
                                       ", actual: " + out);
+
+        }
+    }
+
+    @Test
+    public void testModel(Path base) throws Exception {
+        Path current = base.resolve(".");
+        Path src = current.resolve("src");
+        Path classes = current.resolve("classes");
+        tb.writeJavaFiles(src,
+                          """
+                          package test;
+                          import module java.base;
+                          public class Test {
+                          }
+                          """);
+
+        Files.createDirectories(classes);
+        List<String> kinds = new ArrayList<>();
+
+        new JavacTask(tb)
+            .options("--enable-preview", "--release", SOURCE_VERSION)
+            .outdir(classes)
+            .callback(task -> {
+                task.addTaskListener(new TaskListener() {
+                    @Override
+                    public void finished(TaskEvent e) {
+                        if (e.getKind() == Kind.ANALYZE) {
+                            for (Tree t : e.getCompilationUnit().getTypeDecls()) {
+                                kinds.add(t.getKind().name());
+                            }
+                        }
+                    }
+                });
+            })
+            .files(tb.findJavaFiles(src))
+            .run(Task.Expect.SUCCESS)
+            .writeAll();
+
+        List<String> expectedKinds = List.of(
+            "CLASS"
+        );
+
+        if (!Objects.equals(expectedKinds, kinds)) {
+            throw new AssertionError("Incorrect Output, expected: " + expectedKinds +
+                                      ", actual: " + kinds);
 
         }
     }
