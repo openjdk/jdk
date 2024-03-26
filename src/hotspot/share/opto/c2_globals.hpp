@@ -68,10 +68,10 @@
           "Stress inlining through method handle linkers")                  \
                                                                             \
   product(bool, StressBailout, false, DIAGNOSTIC,                           \
-         "Perform bailouts randomly at C2 failing() checks.")               \
+         "Perform bailouts randomly at C2 failing() checks")                \
           constraint(StressBailoutConstraintFunc, AfterErgo)                \
                                                                             \
-  product(uint, StressBailoutInterval, 10000, DIAGNOSTIC,                   \
+  product(uint, StressBailoutInterval, 100000, DIAGNOSTIC,                  \
           "Stress bailout every n:th time on average")                      \
           range(1, max_juint)                                               \
                                                                             \
