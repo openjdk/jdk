@@ -39,7 +39,7 @@ public class Test4887836 {
 
     public static void main(String[] args) throws Exception {
         String instructions = """
-                                If you do not see white area under the \"Swatches\" tab,\n +
+                                If you do not see white area under the \"Swatches\" tab,
                                 then test passed, otherwise it failed.""";
 
         PassFailJFrame.builder()
