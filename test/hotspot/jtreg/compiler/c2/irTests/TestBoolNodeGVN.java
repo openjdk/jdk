@@ -46,7 +46,8 @@ public class TestBoolNodeGVN {
 
     /**
      * Test changing ((x & m) u<= m) or ((m & x) u<= m) to always true, same with ((x & m) u< m+1) and ((m & x) u< m+1)
-     * The test is not applicable to x86 (32bit) for not having <code>Integer.compareUnsigned</code> intrinsified.
+     * The test is only applicable to x64, aarch64 and riscv64 for having <code>Integer.compareUnsigned</code>
+     * intrinsified.
      */
     @Test
     @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
