@@ -38,8 +38,9 @@ public class Test6977726 {
 
     public static void main(String[] args) throws Exception {
         String instructions = """
-                Check that there is a panel with \"Text Preview Panel\" text 
-                and with title \"Preview\" in the JColorChooser.""";
+                Check that there is a panel with "Text Preview Panel" text
+                and with title "Preview" in the JColorChooser.
+                Test passes if the panel is as described, test fails otherwise.""";
 
         PassFailJFrame.builder()
                 .title("Test6977726")
