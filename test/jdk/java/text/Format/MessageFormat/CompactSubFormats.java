@@ -26,7 +26,7 @@
  * @bug 8318761 8329118
  * @summary Test MessageFormatPattern ability to recognize and produce
  *          appropriate FormatType and FormatStyle for CompactNumberFormat.
- * @run junit -Duser.language=en -Duser.country=US CompactSubFormats
+ * @run junit/othervm -Duser.language=en -Duser.country=US CompactSubFormats
  */
 
 import java.text.CompactNumberFormat;

@@ -28,7 +28,7 @@
  *          appropriate FormatType and FormatStyle for ListFormat. ListFormat's
  *          STANDARD, OR, and UNIT types are supported as built-in patterns for
  *          MessageFormat. All types use the FULL style.
- * @run junit -Duser.language=en -Duser.country=US ListSubFormats
+ * @run junit/othervm -Duser.language=en -Duser.country=US ListSubFormats
  */
 
 import java.text.ListFormat;
