@@ -4318,8 +4318,9 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
       klass_node = _gvn.transform(cast);
     }
 
-    // Bail out if start is negative.
+    // Bail out if either start or end is negative.
     generate_negative_guard(start, bailout, &start);
+    generate_negative_guard(end,   bailout, &end);
 
     Node* length = end;
     if (_gvn.type(start) != TypeInt::ZERO) {
