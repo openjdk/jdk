@@ -81,17 +81,7 @@ public:
     Arrow out;
 
     bool is_noop() {
-      if (in.type == out.type) {
-        if (out.type == StateType::Released) {
-          return true;
-        } else if (out.type == StateType::Committed) {
-          return NativeCallStackStorage::StackIndex::equals(in.data.stack_idx, out.data.stack_idx);
-        } else {
-          return Metadata::equals(in.data, out.data);
-        }
-      } else {
-        return false;
-      }
+      return in.type == out.type && Metadata::equals(in.data, out.data);
     }
   };
 
@@ -200,7 +190,7 @@ public:
         // We add a new node, but only if there would be a state change. If there would not be a
         // state change, we just omit the node.
         // That happens, for example, when reserving within an already reserved region with identical metadata.
-        stA.in.merge(leqA_n->val().out); // .. and the region's prior state is the incoming state
+        stA.in = leqA_n->val().out; // .. and the region's prior state is the incoming state
         if (stA.is_noop()) {
           // Nothing to do.
         } else {
