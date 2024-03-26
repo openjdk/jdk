@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,13 @@ export CP="@CP@"
 export CUT="@CUT@"
 export DIFF="@DIFF@"
 export DUMPBIN="@DUMPBIN@"
+export ECHO="@ECHO@"
 export EXPR="@EXPR@"
 export FILE="@FILE@"
 export FIND="@FIND@"
 export GREP="@GREP@"
 export GUNZIP="@GUNZIP@"
+export HEAD="@HEAD@"
 export LDD="@LDD@"
 export LN="@LN@"
 export MKDIR="@MKDIR@"

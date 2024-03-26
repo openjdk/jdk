@@ -34,6 +34,7 @@
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
@@ -1358,6 +1359,67 @@ void CodeCache::mark_all_nmethods_for_evol_deoptimization(DeoptimizationScope* d
 }
 
 #endif // INCLUDE_JVMTI
+
+void CodeCache::mark_directives_matches(bool top_only) {
+  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  Thread *thread = Thread::current();
+  HandleMark hm(thread);
+
+  CompiledMethodIterator iter(CompiledMethodIterator::only_not_unloading);
+  while(iter.next()) {
+    CompiledMethod* nm = iter.method();
+    methodHandle mh(thread, nm->method());
+    if (DirectivesStack::hasMatchingDirectives(mh, top_only)) {
+      ResourceMark rm;
+      log_trace(codecache)("Mark because of matching directives %s", mh->external_name());
+      mh->set_has_matching_directives();
+    }
+  }
+}
+
+void CodeCache::recompile_marked_directives_matches() {
+  Thread *thread = Thread::current();
+  HandleMark hm(thread);
+
+  // Try the max level and let the directives be applied during the compilation.
+  int comp_level = CompilationPolicy::highest_compile_level();
+  RelaxedCompiledMethodIterator iter(RelaxedCompiledMethodIterator::only_not_unloading);
+  while(iter.next()) {
+    CompiledMethod* nm = iter.method();
+    methodHandle mh(thread, nm->method());
+    if (mh->has_matching_directives()) {
+      ResourceMark rm;
+      mh->clear_directive_flags();
+      bool deopt = false;
+
+      if (!nm->is_osr_method()) {
+        log_trace(codecache)("Recompile to level %d because of matching directives %s",
+                             comp_level, mh->external_name());
+        nmethod * comp_nm = CompileBroker::compile_method(mh, InvocationEntryBci, comp_level,
+                                                          methodHandle(), 0,
+                                                          CompileTask::Reason_DirectivesChanged,
+                                                          (JavaThread*)thread);
+        if (comp_nm == nullptr) {
+          log_trace(codecache)("Recompilation to level %d failed, deoptimize %s",
+                               comp_level, mh->external_name());
+          deopt = true;
+        }
+      } else {
+        log_trace(codecache)("Deoptimize OSR %s", mh->external_name());
+        deopt = true;
+      }
+      // For some reason the method cannot be compiled by C2, e.g. the new directives forbid it.
+      // Deoptimize the method and let the usual hotspot logic do the rest.
+      if (deopt) {
+        if (!nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
+          nm->make_not_entrant();
+          nm->make_deoptimized();
+        }
+      }
+      gc_on_allocation(); // Flush unused methods from CodeCache if required.
+    }
+  }
+}
 
 // Mark methods for deopt (if safe or possible).
 void CodeCache::mark_all_nmethods_for_deoptimization(DeoptimizationScope* deopt_scope) {

@@ -2704,7 +2704,7 @@ void InstanceKlass::init_shared_package_entry() {
       _package_entry = PackageEntry::get_archived_entry(_package_entry);
     }
   } else if (CDSConfig::is_dumping_dynamic_archive() &&
-             CDSConfig::is_loading_full_module_graph() &&
+             CDSConfig::is_using_full_module_graph() &&
              MetaspaceShared::is_in_shared_metaspace(_package_entry)) {
     // _package_entry is an archived package in the base archive. Leave it as is.
   } else {
@@ -3030,7 +3030,7 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_
   }
 
   if (is_shared() && _package_entry != nullptr) {
-    if (CDSConfig::is_loading_full_module_graph() && _package_entry == pkg_entry) {
+    if (CDSConfig::is_using_full_module_graph() && _package_entry == pkg_entry) {
       // we can use the saved package
       assert(MetaspaceShared::is_in_shared_metaspace(_package_entry), "must be");
       return;

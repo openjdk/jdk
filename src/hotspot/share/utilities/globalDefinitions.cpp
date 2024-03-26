@@ -157,7 +157,6 @@ void basic_types_init() {
   static_assert(is_power_of_2(HeapWordSize), "HeapWordSize must be power of 2");
   static_assert((size_t)HeapWordSize >= sizeof(juint),
                 "HeapWord should be at least as large as juint");
-  static_assert(sizeof(NULL) == sizeof(char*), "NULL must be same size as pointer");
 #endif
 
   if( JavaPriority1_To_OSPriority != -1 )
