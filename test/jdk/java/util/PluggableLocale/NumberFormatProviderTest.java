@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,14 @@
 
 /*
  * @test
- * @bug 4052440 7003643 8062588 8210406
+ * @bug 4052440 7003643 8062588 8210406 8174269
  * @summary NumberFormatProvider tests
  * @library providersrc/foobarutils
  *          providersrc/fooprovider
  * @modules java.base/sun.util.locale.provider
  * @build com.foobar.Utils
  *        com.foo.*
- * @run main/othervm -Djava.locale.providers=JRE,SPI NumberFormatProviderTest
+ * @run main/othervm -Djava.locale.providers=CLDR,SPI NumberFormatProviderTest
  */
 
 import java.text.DecimalFormat;
@@ -43,6 +43,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import com.foo.FooNumberFormat;
 import com.foo.NumberFormatProviderImpl;
@@ -54,8 +55,12 @@ public class NumberFormatProviderTest extends ProviderTest {
     NumberFormatProviderImpl nfp = new NumberFormatProviderImpl();
     List<Locale> availloc = Arrays.asList(NumberFormat.getAvailableLocales());
     List<Locale> providerloc = Arrays.asList(nfp.getAvailableLocales());
-    List<Locale> jreloc = Arrays.asList(LocaleProviderAdapter.forJRE().getAvailableLocales());
-    List<Locale> jreimplloc = Arrays.asList(LocaleProviderAdapter.forJRE().getNumberFormatProvider().getAvailableLocales());
+    List<Locale> jreloc = Stream.concat(
+            Arrays.stream(LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR).getAvailableLocales()),
+            Arrays.stream(LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.FALLBACK).getAvailableLocales())).toList();
+    List<Locale> jreimplloc = Stream.concat(
+            Arrays.stream(LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR).getNumberFormatProvider().getAvailableLocales()),
+            Arrays.stream(LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.FALLBACK).getNumberFormatProvider().getAvailableLocales())).toList();
 
     public static void main(String[] s) {
         new NumberFormatProviderTest();
@@ -86,7 +91,7 @@ public class NumberFormatProviderTest extends ProviderTest {
             // JRE string arrays
             String[] jreNumberPatterns = null;
             if (jreSupportsLocale) {
-                jreNumberPatterns = LocaleProviderAdapter.forJRE().getLocaleResources(target).getNumberPatterns();
+                jreNumberPatterns = LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR).getLocaleResources(target).getNumberPatterns();
             }
 
             // result object

@@ -168,11 +168,6 @@
           "A System.gc() request invokes a concurrent collection; "         \
           "(effective only when using concurrent collectors)")              \
                                                                             \
-  product(uint, GCLockerEdenExpansionPercent, 5,                            \
-          "How much the GC can expand the eden by while the GC locker "     \
-          "is active (as a percentage)")                                    \
-          range(0, 100)                                                     \
-                                                                            \
   product(uintx, GCLockerRetryAllocationCount, 2, DIAGNOSTIC,               \
           "Number of times to retry allocations when "                      \
           "blocked by the GC locker")                                       \
@@ -283,13 +278,6 @@
   develop(uintx, ObjArrayMarkingStride, 2048,                               \
           "Number of object array elements to push onto the marking stack " \
           "before pushing a continuation entry")                            \
-                                                                            \
-  develop(bool, MetadataAllocationFailALot, false,                          \
-          "Fail metadata allocations at intervals controlled by "           \
-          "MetadataAllocationFailALotInterval")                             \
-                                                                            \
-  develop(uintx, MetadataAllocationFailALotInterval, 1000,                  \
-          "Metadata allocation failure a lot interval")                     \
                                                                             \
   product_pd(bool, NeverActAsServerClassMachine,                            \
           "Never act like a server-class machine")                          \
@@ -629,12 +617,11 @@
                                                                             \
   product(uint, MarkSweepDeadRatio,     5,                                  \
           "Percentage (0-100) of the old gen allowed as dead wood. "        \
-          "Serial mark sweep treats this as both the minimum and maximum "  \
+          "Serial full gc treats this as both the minimum and maximum "     \
           "value. "                                                         \
-          "Par compact uses a variable scale based on the density of the "  \
-          "generation and treats this as the maximum value when the heap "  \
-          "is either completely full or completely empty.  Par compact "    \
-          "also has a smaller default value; see arguments.cpp. "           \
+          "Parallel full gc treats this as maximum value, i.e. when "       \
+          "allowing dead wood, Parallel full gc wastes at most this amount "\
+          "of space."                                                       \
           "G1 full gc treats this as an allowed garbage threshold to skip " \
           "compaction of heap regions, i.e. if a heap region has less "     \
           "garbage than this value, then the region will not be compacted"  \

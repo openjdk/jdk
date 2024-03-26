@@ -149,7 +149,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // returned in actual_size.
   virtual HeapWord* allocate_new_tlab(size_t min_size,
                                       size_t requested_size,
-                                      size_t* actual_size);
+                                      size_t* actual_size) = 0;
 
   // Reinitialize tlabs before resuming mutators.
   virtual void resize_all_tlabs();
@@ -345,10 +345,7 @@ protected:
   // An estimate of the maximum allocation that could be performed
   // for thread-local allocation buffers without triggering any
   // collection or expansion activity.
-  virtual size_t unsafe_max_tlab_alloc(Thread *thr) const {
-    guarantee(false, "thread-local allocation buffers not supported");
-    return 0;
-  }
+  virtual size_t unsafe_max_tlab_alloc(Thread *thr) const = 0;
 
   // If a GC uses a stack watermark barrier, the stack processing is lazy, concurrent,
   // incremental and cooperative. In order for that to work well, mechanisms that stop

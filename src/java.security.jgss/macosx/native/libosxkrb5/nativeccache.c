@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ static jclass FindClass(JNIEnv *env, char *className)
     jclass cls = (*env)->FindClass(env, className);
 
     if (cls == NULL) {
-        printf("Couldn't find %s\n", className);
+        fprintf(stderr, "Couldn't find %s\n", className);
         return NULL;
     }
 
@@ -129,49 +129,49 @@ JNIEXPORT jint JNICALL DEF_JNI_OnLoad(JavaVM *jvm, void *reserved)
 
     ticketConstructor = (*env)->GetMethodID(env, ticketClass, "<init>", "([B)V");
     if (ticketConstructor == 0) {
-        printf("Couldn't find Ticket constructor\n");
+        fprintf(stderr, "Couldn't find Ticket constructor\n");
         return JNI_ERR;
     }
 
     principalNameConstructor = (*env)->GetMethodID(env, principalNameClass, "<init>", "(Ljava/lang/String;I)V");
     if (principalNameConstructor == 0) {
-        printf("Couldn't find PrincipalName constructor\n");
+        fprintf(stderr, "Couldn't find PrincipalName constructor\n");
         return JNI_ERR;
     }
 
     encryptionKeyConstructor = (*env)->GetMethodID(env, encryptionKeyClass, "<init>", "(I[B)V");
     if (encryptionKeyConstructor == 0) {
-        printf("Couldn't find EncryptionKey constructor\n");
+        fprintf(stderr, "Couldn't find EncryptionKey constructor\n");
         return JNI_ERR;
     }
 
     ticketFlagsConstructor = (*env)->GetMethodID(env, ticketFlagsClass, "<init>", "(I[B)V");
     if (ticketFlagsConstructor == 0) {
-        printf("Couldn't find TicketFlags constructor\n");
+        fprintf(stderr, "Couldn't find TicketFlags constructor\n");
         return JNI_ERR;
     }
 
     kerberosTimeConstructor = (*env)->GetMethodID(env, kerberosTimeClass, "<init>", "(J)V");
     if (kerberosTimeConstructor == 0) {
-        printf("Couldn't find KerberosTime constructor\n");
+        fprintf(stderr, "Couldn't find KerberosTime constructor\n");
         return JNI_ERR;
     }
 
     integerConstructor = (*env)->GetMethodID(env, javaLangIntegerClass, "<init>", "(I)V");
     if (integerConstructor == 0) {
-        printf("Couldn't find Integer constructor\n");
+        fprintf(stderr, "Couldn't find Integer constructor\n");
         return JNI_ERR;
     }
 
     hostAddressConstructor = (*env)->GetMethodID(env, hostAddressClass, "<init>", "(I[B)V");
     if (hostAddressConstructor == 0) {
-        printf("Couldn't find HostAddress constructor\n");
+        fprintf(stderr, "Couldn't find HostAddress constructor\n");
         return JNI_ERR;
     }
 
     hostAddressesConstructor = (*env)->GetMethodID(env, hostAddressesClass, "<init>", "([Lsun/security/krb5/internal/HostAddress;)V");
     if (hostAddressesConstructor == 0) {
-        printf("Couldn't find HostAddresses constructor\n");
+        fprintf(stderr, "Couldn't find HostAddresses constructor\n");
         return JNI_ERR;
     }
 
@@ -376,7 +376,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
                         krbcredsConstructor = (*env)->GetMethodID(env, krbcredsClass, "<init>",
                                                                   "(Lsun/security/krb5/internal/Ticket;Lsun/security/krb5/PrincipalName;Lsun/security/krb5/PrincipalName;Lsun/security/krb5/PrincipalName;Lsun/security/krb5/PrincipalName;Lsun/security/krb5/EncryptionKey;Lsun/security/krb5/internal/TicketFlags;Lsun/security/krb5/internal/KerberosTime;Lsun/security/krb5/internal/KerberosTime;Lsun/security/krb5/internal/KerberosTime;Lsun/security/krb5/internal/KerberosTime;Lsun/security/krb5/internal/HostAddresses;)V");
                         if (krbcredsConstructor == 0) {
-                            printf("Couldn't find sun.security.krb5.internal.Ticket constructor\n");
+                            fprintf(stderr, "Couldn't find sun.security.krb5.internal.Ticket constructor\n");
                             break;
                         }
                     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,18 +186,29 @@ public:
   }
 
   class CachedOopInfo {
-    // See "TEMP notes: What are these?" in archiveHeapWriter.hpp
+    // Used by CDSHeapVerifier.
     oop _orig_referrer;
 
     // The location of this object inside ArchiveHeapWriter::_buffer
     size_t _buffer_offset;
+
+    // One or more fields in this object are pointing to non-null oops.
+    bool _has_oop_pointers;
+
+    // One or more fields in this object are pointing to MetaspaceObj
+    bool _has_native_pointers;
   public:
-    CachedOopInfo(oop orig_referrer)
+    CachedOopInfo(oop orig_referrer, bool has_oop_pointers)
       : _orig_referrer(orig_referrer),
-        _buffer_offset(0) {}
+        _buffer_offset(0),
+        _has_oop_pointers(has_oop_pointers),
+        _has_native_pointers(false) {}
     oop orig_referrer()             const { return _orig_referrer;   }
     void set_buffer_offset(size_t offset) { _buffer_offset = offset; }
     size_t buffer_offset()          const { return _buffer_offset;   }
+    bool has_oop_pointers()         const { return _has_oop_pointers; }
+    bool has_native_pointers()      const { return _has_native_pointers; }
+    void set_has_native_pointers()        { _has_native_pointers = true; }
   };
 
 private:
@@ -237,7 +248,7 @@ private:
   static DumpTimeKlassSubGraphInfoTable* _dump_time_subgraph_info_table;
   static RunTimeKlassSubGraphInfoTable _run_time_subgraph_info_table;
 
-  static CachedOopInfo make_cached_oop_info();
+  static CachedOopInfo make_cached_oop_info(oop obj);
   static void archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
                                        bool is_full_module_graph);
 
@@ -368,6 +379,9 @@ private:
   // Scratch objects for archiving Klass::java_mirror()
   static void set_scratch_java_mirror(Klass* k, oop mirror);
   static void remove_scratch_objects(Klass* k);
+  static bool has_oop_pointers(oop obj);
+  static bool has_native_pointers(oop obj);
+  static void set_has_native_pointers(oop obj);
 
   // We use the HeapShared::roots() array to make sure that objects stored in the
   // archived heap region are not prematurely collected. These roots include:
