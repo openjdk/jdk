@@ -23,12 +23,12 @@
 
 /*
  * @test
- * @bug 8318761
+ * @bug 8318761 8329118
  * @summary Test MessageFormatPattern ability to recognize and produce the
  *          appropriate FormatType and FormatStyle for ListFormat. ListFormat's
  *          STANDARD, OR, and UNIT types are supported as built-in patterns for
  *          MessageFormat. All types use the FULL style.
- * @run junit ListSubFormats
+ * @run junit -Duser.language=en -Duser.country=US ListSubFormats
  */
 
 import java.text.ListFormat;
@@ -39,6 +39,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+// This tests expects an en_US locale, as this locale provides distinct instances
+// for different styles.
 public class ListSubFormats {
 
     // Recognize the 'list' FormatType as well as '', 'or', and

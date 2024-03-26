@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 8318761
+ * @bug 8318761 8329118
  * @summary Test MessageFormatPattern ability to recognize and produce
  *          appropriate FormatType and FormatStyle for CompactNumberFormat.
- * @run junit CompactSubFormats
+ * @run junit -Duser.language=en -Duser.country=US CompactSubFormats
  */
 
 import java.text.CompactNumberFormat;
@@ -40,6 +40,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+// This tests expects an en_US locale, as this locale provides distinct instances
+// for different styles.
 public class CompactSubFormats {
 
     // Ensure the built-in FormatType and FormatStyles for cnFmt are as expected
