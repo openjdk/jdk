@@ -29,10 +29,10 @@
 #include "gc/z/zMemory.hpp"
 #include "gc/z/zVirtualMemory.hpp"
 #include "memory/allStatic.hpp"
-#include "utilities/globalDefinitions.hpp"
-#include "utilities/nativeCallStack.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/nmtMemoryFileTracker.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/nativeCallStack.hpp"
 
 class ZNMT : public AllStatic {
 private:
