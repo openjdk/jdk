@@ -155,9 +155,6 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
   verify_oop(Roop, FILE_AND_LINE);
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    ld(Rmark, oopDesc::mark_offset_in_bytes(), Roop);
-    andi_(R0, Rmark, markWord::monitor_value);
-    bne(CCR0, slow_int);
     lightweight_unlock(Roop, Rmark, slow_int);
   } else if (LockingMode == LM_LEGACY) {
     // Check if it is still a light weight lock, this is is true if we see

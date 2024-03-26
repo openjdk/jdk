@@ -223,12 +223,6 @@ private:
   HeapRegionSetBase* _containing_set;
 #endif // ASSERT
 
-  // The start of the unmarked area. The unmarked area extends from this
-  // word until the top and/or end of the region, and is the part
-  // of the region for which no marking was done, i.e. objects may
-  // have been allocated in this part since the last mark phase.
-  HeapWord* volatile _top_at_mark_start;
-
   // The area above this limit is fully parsable. This limit
   // is equal to bottom except
   //
@@ -245,8 +239,6 @@ private:
 
   // Amount of dead data in the region.
   size_t _garbage_bytes;
-
-  inline void init_top_at_mark_start();
 
   // Data for young region survivor prediction.
   uint  _young_index_in_cset;
@@ -352,10 +344,6 @@ public:
 
   inline bool is_collection_set_candidate() const;
 
-  // Get the start of the unmarked area in this region.
-  HeapWord* top_at_mark_start() const;
-  void set_top_at_mark_start(HeapWord* value);
-
   // Retrieve parsable bottom; since it may be modified concurrently, outside a
   // safepoint the _acquire method must be used.
   HeapWord* parsable_bottom() const;
@@ -366,19 +354,12 @@ public:
   // that the collector is about to start or has finished (concurrently)
   // marking the heap.
 
-  // Notify the region that concurrent marking is starting. Initialize
-  // all fields related to the next marking info.
-  inline void note_start_of_marking();
-
-  // Notify the region that concurrent marking has finished. Passes the number of
-  // bytes between bottom and TAMS.
-  inline void note_end_of_marking(size_t marked_bytes);
+  // Notify the region that concurrent marking has finished. Passes TAMS and the number of
+  // bytes marked between bottom and TAMS.
+  inline void note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes);
 
   // Notify the region that scrubbing has completed.
   inline void note_end_of_scrubbing();
-
-  // Notify the region that the (corresponding) bitmap has been cleared.
-  inline void reset_top_at_mark_start();
 
   // During the concurrent scrubbing phase, can there be any areas with unloaded
   // classes or dead objects in this region?
@@ -539,10 +520,6 @@ public:
   // Determine if an address is in the parsable or the to-be-scrubbed area.
   inline        bool is_in_parsable_area(const void* const addr) const;
   inline static bool is_in_parsable_area(const void* const addr, const void* const pb);
-
-  bool obj_allocated_since_marking_start(oop obj) const {
-    return cast_from_oop<HeapWord*>(obj) >= top_at_mark_start();
-  }
 
   // Update the region state after a failed evacuation.
   void handle_evacuation_failure(bool retain);

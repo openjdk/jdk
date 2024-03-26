@@ -32,19 +32,22 @@
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import jdk.internal.util.OperatingSystem;
 
 public class JmodExcludedFiles {
+    private static String javaHome = System.getProperty("java.home");
+
     public static void main(String[] args) throws Exception {
-        String javaHome = System.getProperty("java.home");
         Path jmods = Path.of(javaHome, "jmods");
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(jmods, "*.jmod")) {
             for (Path jmodFile : stream) {
                 try (ZipFile zip = new ZipFile(jmodFile.toFile())) {
+                    JModSymbolFileMatcher jsfm = new JModSymbolFileMatcher(jmodFile.toString());
                     if (zip.stream().map(ZipEntry::getName)
-                                    .anyMatch(JmodExcludedFiles::isNativeDebugSymbol)) {
+                                    .anyMatch(jsfm::isNativeDebugSymbol)) {
                         throw new RuntimeException(jmodFile + " is expected not to include native debug symbols");
                     }
                 }
@@ -52,25 +55,47 @@ public class JmodExcludedFiles {
         }
     }
 
-    private static boolean isNativeDebugSymbol(String name) {
-        int index = name.indexOf("/");
-        if (index < 0) {
-            throw new RuntimeException("unexpected entry name: " + name);
+    static class JModSymbolFileMatcher {
+        private String jmod;
+
+        JModSymbolFileMatcher(String jmod) {
+            this.jmod = jmod;
         }
-        String section = name.substring(0, index);
-        if (section.equals("lib") || section.equals("bin")) {
-            if (OperatingSystem.isMacOS()) {
-                String n = name.substring(index+1);
-                int i = n.indexOf("/");
-                if (i != -1) {
-                    return n.substring(0, i).endsWith(".dSYM");
+
+        boolean isNativeDebugSymbol(String name) {
+            int index = name.indexOf("/");
+            if (index < 0) {
+                throw new RuntimeException("unexpected entry name: " + name);
+            }
+            String section = name.substring(0, index);
+            if (section.equals("lib") || section.equals("bin")) {
+                if (OperatingSystem.isMacOS()) {
+                    String n = name.substring(index + 1);
+                    int i = n.indexOf("/");
+                    if (i != -1) {
+                        if (n.substring(0, i).endsWith(".dSYM")) {
+                            System.err.println("Found symbols in " + jmod + ": " + name);
+                            return true;
+                        }
+                    }
+                }
+                if (OperatingSystem.isWindows() && name.endsWith(".pdb")) {
+                    // on Windows we check if we should have public symbols through --with-external-symbols-in-bundles=public (JDK-8237192)
+                    String strippedpdb = javaHome + "/bin/" + name.substring(index + 1, name.length() - 4) + ".stripped.pdb";
+                    if (!Files.exists(Paths.get(strippedpdb))) {
+                        System.err.println("Found symbols in " + jmod + ": " + name +
+                                ". No stripped pdb file " + strippedpdb + " exists.");
+                        return true;
+                    }
+                }
+                if (name.endsWith(".diz")
+                        || name.endsWith(".debuginfo")
+                        || name.endsWith(".map")) {
+                    System.err.println("Found symbols in " + jmod + ": " + name);
+                    return true;
                 }
             }
-            return name.endsWith(".diz")
-                    || name.endsWith(".debuginfo")
-                    || name.endsWith(".map")
-                    || name.endsWith(".pdb");
+            return false;
         }
-        return false;
     }
 }
