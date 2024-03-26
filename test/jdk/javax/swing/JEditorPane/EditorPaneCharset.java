@@ -21,16 +21,13 @@
  * questions.
  */
 
-import java.awt.BorderLayout;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
 
 import javax.swing.JEditorPane;
-import javax.swing.JFrame;
-import javax.swing.JScrollPane;
-import javax.swing.SwingUtilities;
 import javax.swing.text.Document;
+import javax.swing.text.Element;
 
 /*
  * @test
@@ -41,24 +38,22 @@ import javax.swing.text.Document;
  */
 
 public final class EditorPaneCharset {
+    private static final String CYRILLIC_TEXT =
+            "\u041F\u0440\u0438\u0432\u0435\u0442, \u043C\u0438\u0440!";
     private static final String HTML_CYRILLIC =
             "<html lang=\"ru\">\n" +
             "<head>\n" +
-            "    <meta http-equiv=\"Content-Type\" content=\"text/html; charset=
-			windows-1251\">\n" +
+           "    <meta http-equiv=\"Content-Type\" content=\"text/html; charset=	windows-1251\">\n" +
             "</head><body>\n" +
-            "<p>\u041F\u0440\u0438\u0432\u0435\u0442, \u043C\u0438\u0440!</p>\n" +
+            "<p>" + CYRILLIC_TEXT + "</p>\n" +
             "</body></html>\n";
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(EditorPaneCharset::new);
-    }
-
-    private EditorPaneCharset() {
+    public static void main() throws IOException {
         JEditorPane editorPane = new JEditorPane();
         editorPane.setContentType("text/html");
         Document document = editorPane.getDocument();
         try {
+            // Shouldn't throw ChangedCharSetException
             editorPane.read(
                     new ByteArrayInputStream(
                             HTML_CYRILLIC.getBytes(
@@ -67,11 +62,17 @@ public final class EditorPaneCharset {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        JFrame frame = new JFrame("Editor Pane Charset");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.add(new JScrollPane(editorPane), BorderLayout.CENTER);
-        frame.pack();
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
+
+        Element root = document.getDefaultRootElement();
+        Element body = root.getElement(1);
+        Element p = body.getElement(0);
+        String pText = document.getText(p.getStartOffset(),
+                                    p.getEndOffset() - p.getStartOffset()));
+        if (!CYRILLIC_TEXT.equals(pText)) {
+            throw new RuntimeException("Text doesn't match");
+        }
+    }
+
+    private EditorPaneCharset() {
     }
 }
