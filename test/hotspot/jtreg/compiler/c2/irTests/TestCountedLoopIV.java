@@ -120,9 +120,9 @@ public class TestCountedLoopIV {
             test(TestCountedLoopIV::testIntCountedLoopWithIntIV, i, i);
             test(TestCountedLoopIV::testIntCountedLoopWithIntIVZero, i, 0);
             test(TestCountedLoopIV::testIntCountedLoopWithIntIVMax, i, i * Integer.MAX_VALUE);
-            test(TestCountedLoopIV::testIntCountedLoopWithLongIV, i, i);
-            test(TestCountedLoopIV::testIntCountedLoopWithLongIVZero, i, 0);
-            test(TestCountedLoopIV::testIntCountedLoopWithLongIVMax, i, i * Long.MAX_VALUE);
+            test(TestCountedLoopIV::testIntCountedLoopWithLongIV, i, (long) i);
+            test(TestCountedLoopIV::testIntCountedLoopWithLongIVZero, i, (long) 0);
+            test(TestCountedLoopIV::testIntCountedLoopWithLongIVMax, i, (long) i * Long.MAX_VALUE);
         }
     }
 }
