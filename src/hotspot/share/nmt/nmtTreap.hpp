@@ -49,7 +49,7 @@ class TreapNode {
   friend class TreapCHeap;
 
   uint64_t _priority;
-  K _key;
+  const K _key;
   V _value;
   using Nd = TreapNode<K,V,CMP>;
   Nd* _left;
