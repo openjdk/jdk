@@ -169,6 +169,21 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     tree.release_mapping(0, 500000);
     EXPECT_EQ(nullptr, treap_of(tree));
   }
+  {
+    Tree::Metadata md{si1, mtNMT};
+    VMATree::Metadata md2{si2, mtNone};
+    Tree tree;
+    tree.reserve_mapping(0, 100, md);
+    tree.commit_mapping(0, 100, md2);
+    tree.visit(0, 99999, [&](Node* x) {
+      if (x->key() == 0) {
+        EXPECT_EQ(mtNMT, x->val().out.data.flag);
+      }
+      if (x->key() == 100) {
+        EXPECT_EQ(mtNMT, x->val().in.data.flag);
+      }
+    });
+  }
 }
 
 // Tests for summary accounting
