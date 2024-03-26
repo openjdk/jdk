@@ -354,6 +354,7 @@ public class ImportModule extends TestRunner {
                 new JavacTask(tb)
                     .options("--enable-preview", "--release", SOURCE_VERSION,
                              "-p", libClasses.toString(),
+                             "-XDdev",
                              "-XDrawDiagnostics")
                     .outdir(classes)
                     .files(tb.findJavaFiles(src))
@@ -367,6 +368,160 @@ public class ImportModule extends TestRunner {
                 "- compiler.note.preview.filename: Test.java, DEFAULT",
                 "- compiler.note.preview.recompile",
                 "2 errors"
+        );
+
+        if (!Objects.equals(expectedErrors, actualErrors)) {
+            throw new AssertionError("Incorrect Output, expected: " + expectedErrors +
+                                      ", actual: " + out);
+
+        }
+    }
+
+    @Test
+    public void testTransitiveDependencies(Path base) throws Exception {
+        Path current = base.resolve(".");
+        Path lib = current.resolve("lib");
+        Path libSrc = lib.resolve("src");
+        Path libM1 = libSrc.resolve("m1");
+        tb.writeJavaFiles(libM1,
+                          """
+                          module m1 {
+                              requires transitive m2;
+                              exports api1;
+                              exports api2 to test;
+                              exports api3 to m3;
+                          }
+                          """,
+                          """
+                          package api1;
+                          public class Api1 {
+                          }
+                          """,
+                          """
+                          package api2;
+                          public class Api2 {
+                          }
+                          """,
+                          """
+                          package api3;
+                          public class Api3 {
+                          }
+                          """,
+                          """
+                          package impl1;
+                          public class Impl1 {
+                          }
+                          """);
+
+        Path libM2 = libSrc.resolve("m2");
+        tb.writeJavaFiles(libM2,
+                          """
+                          module m2 {
+                              exports api4;
+                              exports api5 to test;
+                              exports api6 to m3;
+                          }
+                          """,
+                          """
+                          package api4;
+                          public class Api4 {
+                          }
+                          """,
+                          """
+                          package api5;
+                          public class Api5 {
+                          }
+                          """,
+                          """
+                          package api6;
+                          public class Api6 {
+                          }
+                          """,
+                          """
+                          package impl2;
+                          public class Impl2 {
+                          }
+                          """);
+
+        Path libClasses = lib.resolve("classes");
+        Files.createDirectories(libClasses);
+
+        new JavacTask(tb)
+            .options("--enable-preview", "--release", SOURCE_VERSION,
+                     "--module-source-path", libSrc.toString(),
+                     "-XDrawDiagnostics")
+            .outdir(libClasses)
+            .files(tb.findJavaFiles(libSrc))
+            .run()
+            .writeAll();
+
+        Path src = current.resolve("src");
+        tb.writeJavaFiles(src,
+                          """
+                          module test {
+                              requires m1;
+                          }
+                          """,
+                          """
+                          package test;
+                          import module m1;
+                          public class Test1 {
+                              Api1 a1;
+                              Api2 a2;
+                              Api3 a3;
+                              Impl1 i1;
+                              Api4 a4;
+                              Api5 a5;
+                              Api6 a6;
+                              Impl2 i2;
+                          }
+                          """,
+                          """
+                          package test;
+                          import module m2;
+                          public class Test2 {
+                              Api1 a1;
+                              Api2 a2;
+                              Api3 a3;
+                              Impl1 i1;
+                              Api4 a4;
+                              Api5 a5;
+                              Api6 a6;
+                              Impl2 i2;
+                          }
+                          """);
+
+        Path classes = current.resolve("classes");
+        Files.createDirectories(classes);
+
+        List<String> actualErrors;
+        List<String> expectedErrors;
+
+        actualErrors =
+                new JavacTask(tb)
+                    .options("--enable-preview", "--release", SOURCE_VERSION,
+                             "--module-path", libClasses.toString(),
+                             "-XDrawDiagnostics")
+                    .outdir(classes)
+                    .files(tb.findJavaFiles(src))
+                    .run(Task.Expect.FAIL)
+                    .writeAll()
+                    .getOutputLines(Task.OutputKind.DIRECT);
+
+        expectedErrors = List.of(
+                "Test1.java:6:5: compiler.err.cant.resolve.location: kindname.class, Api3, , , (compiler.misc.location: kindname.class, test.Test1, null)",
+                "Test1.java:7:5: compiler.err.cant.resolve.location: kindname.class, Impl1, , , (compiler.misc.location: kindname.class, test.Test1, null)",
+                "Test1.java:10:5: compiler.err.cant.resolve.location: kindname.class, Api6, , , (compiler.misc.location: kindname.class, test.Test1, null)",
+                "Test1.java:11:5: compiler.err.cant.resolve.location: kindname.class, Impl2, , , (compiler.misc.location: kindname.class, test.Test1, null)",
+                "Test2.java:4:5: compiler.err.cant.resolve.location: kindname.class, Api1, , , (compiler.misc.location: kindname.class, test.Test2, null)",
+                "Test2.java:5:5: compiler.err.cant.resolve.location: kindname.class, Api2, , , (compiler.misc.location: kindname.class, test.Test2, null)",
+                "Test2.java:6:5: compiler.err.cant.resolve.location: kindname.class, Api3, , , (compiler.misc.location: kindname.class, test.Test2, null)",
+                "Test2.java:7:5: compiler.err.cant.resolve.location: kindname.class, Impl1, , , (compiler.misc.location: kindname.class, test.Test2, null)",
+                "Test2.java:10:5: compiler.err.cant.resolve.location: kindname.class, Api6, , , (compiler.misc.location: kindname.class, test.Test2, null)",
+                "Test2.java:11:5: compiler.err.cant.resolve.location: kindname.class, Impl2, , , (compiler.misc.location: kindname.class, test.Test2, null)",
+                "- compiler.note.preview.plural: DEFAULT",
+                "- compiler.note.preview.recompile",
+                "10 errors"
         );
 
         if (!Objects.equals(expectedErrors, actualErrors)) {

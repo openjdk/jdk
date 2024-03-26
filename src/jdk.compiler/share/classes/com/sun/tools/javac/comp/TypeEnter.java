@@ -32,6 +32,8 @@ import java.util.function.BiConsumer;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Directive.ExportsDirective;
+import com.sun.tools.javac.code.Directive.RequiresDirective;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Scope.ImportFilter;
 import com.sun.tools.javac.code.Scope.ImportScope;
@@ -485,16 +487,35 @@ public class TypeEnter implements Completer {
                     //error recovery, make sure the module is completed:
                     module.getDirectives();
                 }
-                for (Directive.ExportsDirective export : module.exports) {
-                    if (export.modules != null && !export.modules.contains(env.toplevel.packge.modle)) {
+
+                List<ModuleSymbol> todo = List.of(module);
+                Set<ModuleSymbol> seenModules = new HashSet<>();
+
+                while (!todo.isEmpty()) {
+                    ModuleSymbol currentModule = todo.head;
+
+                    todo = todo.tail;
+
+                    if (!seenModules.add(currentModule)) {
                         continue;
                     }
 
-                    PackageSymbol pkg = export.getPackage();
-                    JCImport nestedImport = make.at(tree.pos)
-                            .Import(make.Select(make.QualIdent(pkg), names.asterisk), false);
+                    for (ExportsDirective export : currentModule.exports) {
+                        if (export.modules != null && !export.modules.contains(env.toplevel.packge.modle)) {
+                            continue;
+                        }
 
-                    doImport(nestedImport);
+                        PackageSymbol pkg = export.getPackage();
+                        JCImport nestedImport = make.at(tree.pos)
+                                .Import(make.Select(make.QualIdent(pkg), names.asterisk), false);
+
+                        doImport(nestedImport);
+                    }
+                    for (RequiresDirective requires : currentModule.requires) {
+                        if (requires.isTransitive()) {
+                            todo = todo.prepend(requires.module);
+                        }
+                    }
                 }
             } else {
                 log.error(tree.pos, Errors.ImportModuleNotFound(moduleName));
