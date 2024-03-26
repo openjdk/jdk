@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,21 +79,25 @@ public class FieldWriter extends AbstractMemberWriter {
         if (!fields.isEmpty()) {
             Content fieldDetailsHeader = getFieldDetailsHeader(target);
             Content memberList = getMemberList();
+            writer.tableOfContents.addLink(HtmlIds.FIELD_DETAIL, contents.fieldDetailsLabel);
+            writer.tableOfContents.pushNestedList();
 
             for (Element element : fields) {
                 currentElement = (VariableElement)element;
                 Content fieldContent = getFieldHeaderContent(currentElement);
-
-                buildSignature(fieldContent);
-                buildDeprecationInfo(fieldContent);
-                buildPreviewInfo(fieldContent);
-                buildFieldComments(fieldContent);
-                buildTagInfo(fieldContent);
-
+                Content div = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+                buildSignature(div);
+                buildDeprecationInfo(div);
+                buildPreviewInfo(div);
+                buildFieldComments(div);
+                buildTagInfo(div);
+                fieldContent.add(div);
                 memberList.add(getMemberListItem(fieldContent));
+                writer.tableOfContents.addLink(htmlIds.forMember(currentElement), Text.of(name(element)));
             }
             Content fieldDetails = getFieldDetails(fieldDetailsHeader, memberList);
             target.add(fieldDetails);
+            writer.tableOfContents.popNestedList();
         }
     }
 

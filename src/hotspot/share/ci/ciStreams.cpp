@@ -356,7 +356,7 @@ int ciBytecodeStream::get_method_index() {
   assert(Bytecodes::is_invoke(cur_bc()), "invalid bytecode: %s", Bytecodes::name(cur_bc()));
   if (has_index_u4())
     return get_index_u4();  // invokedynamic
-  return get_index_u2_cpcache();
+  return get_index_u2();
 }
 
 // ------------------------------------------------------------------

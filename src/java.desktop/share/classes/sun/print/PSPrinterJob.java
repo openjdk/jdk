@@ -264,7 +264,7 @@ public class PSPrinterJob extends RasterPrinterJob {
    private AffineTransform mLastTransform;
 
    private double xres = PS_XRES;
-   private double yres = PS_XRES;
+   private double yres = PS_YRES;
 
    /* non-null if printing EPS for Java Plugin */
    private EPSPrinter epsPrinter = null;

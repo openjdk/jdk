@@ -228,11 +228,11 @@ class Http2ClientImpl {
             connectionPoolLock.unlock();
         }
         do {
-            connections.values().forEach(this::close);
+            connections.values().removeIf(this::close);
         } while (!connections.isEmpty());
     }
 
-    private void close(Http2Connection h2c) {
+    private boolean close(Http2Connection h2c) {
         // close all streams
         try { h2c.closeAllStreams(); } catch (Throwable t) {}
         // send GOAWAY
@@ -241,6 +241,8 @@ class Http2ClientImpl {
         try { h2c.shutdown(STOPPED); } catch (Throwable t) {}
         // double check and close any new streams
         try { h2c.closeAllStreams(); } catch (Throwable t) {}
+        // Allows for use of removeIf in stop()
+        return true;
     }
 
     HttpClientImpl client() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,6 @@ extern Monitor* Compilation_lock;                // a lock used to pause compila
 extern Mutex*   CompileTaskAlloc_lock;           // a lock held when CompileTasks are allocated
 extern Mutex*   CompileStatistics_lock;          // a lock held when updating compilation statistics
 extern Mutex*   DirectivesStack_lock;            // a lock held when mutating the dirstack and ref counting directives
-extern Mutex*   MultiArray_lock;                 // a lock used to guard allocation of multi-dim arrays
 extern Monitor* Terminator_lock;                 // a lock used to guard termination of the vm
 extern Monitor* InitCompleted_lock;              // a lock used to signal threads waiting on init completed
 extern Monitor* BeforeExit_lock;                 // a lock used to guard cleanups and shutdown hooks
@@ -111,7 +110,6 @@ extern Monitor* Notification_lock;               // a lock used for notification
 extern Monitor* PeriodicTask_lock;               // protects the periodic task structure
 extern Monitor* RedefineClasses_lock;            // locks classes from parallel redefinition
 extern Mutex*   Verify_lock;                     // synchronize initialization of verify library
-extern Monitor* Zip_lock;                        // synchronize initialization of zip library
 extern Monitor* ThreadsSMRDelete_lock;           // Used by ThreadsSMRSupport to take pressure off the Threads_lock
 extern Mutex*   ThreadIdTableCreate_lock;        // Used by ThreadIdTable to lazily create the thread id table
 extern Mutex*   SharedDecoder_lock;              // serializes access to the decoder during normal (not error reporting) use
@@ -135,10 +133,6 @@ extern Mutex*   JfrStacktrace_lock;              // used to guard access to the 
 extern Monitor* JfrMsg_lock;                     // protects JFR messaging
 extern Mutex*   JfrBuffer_lock;                  // protects JFR buffer operations
 extern Monitor* JfrThreadSampler_lock;           // used to suspend/resume JFR thread sampler
-#endif
-
-#ifndef SUPPORTS_NATIVE_CX8
-extern Mutex*   UnsafeJlong_lock;                // provides Unsafe atomic updates to jlongs on platforms that don't support cx8
 #endif
 
 extern Mutex*   Metaspace_lock;                  // protects Metaspace virtualspace and chunk expansions
@@ -334,6 +328,23 @@ class MutexUnlocker: StackObj {
     } else {
       _mutex->lock();
     }
+  }
+};
+
+// Instance of a RecursiveLock that may be held through Java heap allocation, which may include calls to Java,
+// and JNI event notification for resource exhaustion for metaspace or heap.
+extern RecursiveMutex* MultiArray_lock;
+
+// RAII locker for a RecursiveMutex.  See comments in mutex.hpp for more information.
+class RecursiveLocker {
+  RecursiveMutex* _lock;
+  Thread*         _thread;
+ public:
+  RecursiveLocker(RecursiveMutex* lock, Thread* current) : _lock(lock), _thread(current) {
+    _lock->lock(_thread);
+  }
+  ~RecursiveLocker() {
+    _lock->unlock(_thread);
   }
 };
 

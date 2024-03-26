@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,14 +99,6 @@
 #include <unistd.h>
 #include <dirent.h>
 #endif /* Unix */
-
-#if defined(_AIX)
-  #define DIR DIR64
-  #define dirent dirent64
-  #define opendir opendir64
-  #define readdir readdir64
-  #define closedir closedir64
-#endif
 
 static int
 exists(const char* filename)

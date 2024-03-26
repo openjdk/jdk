@@ -1,4 +1,4 @@
-.\" Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "JAVA" "1" "2024" "JDK 22-ea" "JDK Commands"
+.TH "JAVA" "1" "2024" "JDK 23-ea" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -63,7 +63,7 @@ or
 \f[V]java\f[R] [\f[I]options\f[R]] \f[V]--module\f[R]
 \f[I]module\f[R][\f[V]/\f[R]\f[I]mainclass\f[R]] [\f[I]args\f[R] ...]
 .PP
-To launch a single source-file program:
+To launch a source-file program:
 .PP
 \f[V]java\f[R] [\f[I]options\f[R]] \f[I]source-file\f[R] [\f[I]args\f[R]
 \&...]
@@ -100,11 +100,10 @@ See \f[B]Standard Options for Java\f[R].
 .RE
 .TP
 \f[I]source-file\f[R]
-Only used to launch a single source-file program.
+Only used to launch a source-file program.
 Specifies the source file that contains the main class when using
 source-file mode.
-See \f[B]Using Source-File Mode to Launch Single-File Source-Code
-Programs\f[R]
+See \f[B]Using Source-File Mode to Launch Source-Code Programs\f[R]
 .TP
 \f[I]args\f[R] ...
 Optional: Arguments following \f[I]mainclass\f[R],
@@ -128,8 +127,8 @@ The method declaration has the following form:
 .PP
 In source-file mode, the \f[V]java\f[R] command can launch a class
 declared in a source file.
-See \f[B]Using Source-File Mode to Launch Single-File Source-Code
-Programs\f[R] for a description of using the source-file mode.
+See \f[B]Using Source-File Mode to Launch Source-Code Programs\f[R] for
+a description of using the source-file mode.
 .RS
 .PP
 \f[B]Note:\f[R] You can use the \f[V]JDK_JAVA_OPTIONS\f[R] launcher
@@ -157,7 +156,7 @@ Use \f[V]javaw\f[R] when you don\[aq]t want a command prompt window to
 appear.
 The \f[V]javaw\f[R] launcher will, however, display a dialog box with
 error information if a launch fails.
-.SH USING SOURCE-FILE MODE TO LAUNCH SINGLE-FILE SOURCE-CODE PROGRAMS
+.SH USING SOURCE-FILE MODE TO LAUNCH SOURCE-CODE PROGRAMS
 .PP
 To launch a class declared in a source file, run the \f[V]java\f[R]
 launcher in source-file mode.
@@ -187,7 +186,7 @@ with new values added and old values removed.
 You\[aq]ll get an error message if you use a value of \f[I]N\f[R] that
 is no longer supported.
 The supported values of \f[I]N\f[R] are the current Java SE release
-(\f[V]22\f[R]) and a limited number of previous releases, detailed in
+(\f[V]23\f[R]) and a limited number of previous releases, detailed in
 the command-line help for \f[V]javac\f[R], under the \f[V]--source\f[R]
 and \f[V]--release\f[R] options.
 .RE
@@ -205,25 +204,24 @@ Any arguments placed after the name of the source file in the original
 command line are passed to the compiled class when it is executed.
 .PP
 For example, if a file were named \f[V]HelloWorld.java\f[R] and
-contained a class named \f[V]hello.World\f[R], then the source-file mode
+contained a class named \f[V]HelloWorld\f[R], then the source-file mode
 command to launch the class would be:
 .RS
 .PP
 \f[V]java HelloWorld.java\f[R]
 .RE
 .PP
-The example illustrates that the class can be in a named package, and
-does not need to be in the unnamed package.
 This use of source-file mode is informally equivalent to using the
-following two commands where \f[V]hello.World\f[R] is the name of the
-class in the package:
+following two commands:
 .IP
 .nf
 \f[CB]
-javac -d <memory> HelloWorld.java
-java -cp <memory> hello.World
+javac -d <memory> --source-path <source-root> HelloWorld.java
+java --class-path <memory> HelloWorld
 \f[R]
 .fi
+.PP
+where \f[V]<source-root>\f[R] is computed
 .PP
 \f[B]In source-file mode, any additional command-line options are
 processed as follows:\f[R]
@@ -253,9 +251,24 @@ filename with an \f[V]\[at]\f[R] character.
 .IP \[bu] 2
 Any command-line options that are relevant to the compilation
 environment are taken into account.
+These include:
+\f[V]--class-path\f[R]/\f[V]-classpath\f[R]/\f[V]-cp\f[R],
+\f[V]--module-path\f[R]/\f[V]-p\f[R], \f[V]--add-exports\f[R],
+\f[V]--add-modules\f[R], \f[V]--limit-modules\f[R],
+\f[V]--patch-module\f[R], \f[V]--upgrade-module-path\f[R],
+\f[V]--enable-preview\f[R].
 .IP \[bu] 2
-No other source files are found and compiled, as if the source path is
-set to an empty value.
+The root of the source tree, \f[V]<source-root>\f[R] is computed from
+the package of the class being launched.
+For example, if \f[V]HelloWorld.java\f[R] declared its classes to be in
+the \f[V]hello\f[R] package, then the file \f[V]HelloWorld.java\f[R] is
+expected to reside in the directory \f[V]somedir/hello/\f[R].
+In this case, \f[V]somedir\f[R] is computed to be the root of the source
+tree.
+.IP \[bu] 2
+The root of the source tree serves as the source-path for compilation,
+so that other source files found in that tree and are needed by
+\f[V]HelloWorld\f[R] could be compiled.
 .IP \[bu] 2
 Annotation processing is disabled, as if \f[V]-proc:none\f[R] is in
 effect.
@@ -266,45 +279,59 @@ the compilation.
 This sets both the source version accepted by compiler and the system
 API that may be used by the code in the source file.
 .IP \[bu] 2
-The source file is compiled in the context of an unnamed module.
+If \f[V]--enable-preview\f[R] is specified, the \f[V]--source N\f[R]
+arguments can be omitted.
+If the Java runtime version is \f[V]N\f[R], then \f[V]--release N\f[R]
+is implied when compiling source files.
 .IP \[bu] 2
-The source file should contain one or more top-level classes, the first
-of which is taken as the class to be executed.
+If a \f[V]module-info.java\f[R] file exists in the
+\f[V]<source-root>\f[R] directory, its module declaration is used to
+define a named module that will contain all the classes compiled from
+\f[V].java\f[R] files in the source tree.
+If \f[V]module-info.java\f[R] does not exist, all the classes compiled
+from source files will be compiled in the context of the unnamed module.
 .IP \[bu] 2
-The compiler does not enforce the optional restriction defined at the
-end of JLS 7.6, that a type in a named package should exist in a file
-whose name is composed from the type name followed by the
-\f[V].java\f[R] extension.
+The source file that is launched should contain one or more top-level
+classes, the first of which is taken as the class to be executed.
 .IP \[bu] 2
-If the source file contains errors, appropriate error messages are
-written to the standard error stream, and the launcher exits with a
-non-zero exit code.
+For the source file that is launched, the compiler does not enforce the
+optional restriction defined at the end of JLS 7.6, that a type in a
+named package should exist in a file whose name is composed from the
+type name followed by the \f[V].java\f[R] extension.
+.IP \[bu] 2
+If a source file contains errors, appropriate error messages are written
+to the standard error stream, and the launcher exits with a non-zero
+exit code.
 .PP
 \f[B]In source-file mode, execution proceeds as follows:\f[R]
 .IP \[bu] 2
 The class to be executed is the first top-level class found in the
 source file.
-It must contain a declaration of the standard
-\f[V]public static void main(String[])\f[R] method.
+It must contain a declaration of an entry \f[V]main\f[R] method.
 .IP \[bu] 2
 The compiled classes are loaded by a custom class loader, that delegates
 to the application class loader.
 This implies that classes appearing on the application class path cannot
-refer to any classes declared in the source file.
+refer to any classes declared in source files.
 .IP \[bu] 2
-The compiled classes are executed in the context of an unnamed module,
-as though \f[V]--add-modules=ALL-DEFAULT\f[R] is in effect.
+If a \f[V]module-info.java\f[R] file exists in the
+\f[V]<source-root>\f[R] directory, then all the classes compiled from
+\f[V].java\f[R] files in the source tree will be in that module, which
+will serve as the root module for the execution of the program.
+If \f[V]module-info.java\f[R] does not exist, the compiled classes are
+executed in the context of an unnamed module, as though
+\f[V]--add-modules=ALL-DEFAULT\f[R] is in effect.
 This is in addition to any other \f[V]--add-module\f[R] options that may
 be have been specified on the command line.
 .IP \[bu] 2
 Any arguments appearing after the name of the file on the command line
-are passed to the standard main method in the obvious way.
+are passed to the main method in the obvious way.
 .IP \[bu] 2
 It is an error if there is a class on the application class path whose
 name is the same as that of the class to be executed.
 .PP
-See \f[B]JEP 330: Launch Single-File Source-Code Programs\f[R]
-[https://openjdk.org/jeps/330] for complete details.
+See \f[B]JEP 458: Launch Multi-File Source-Code Programs\f[R]
+[https://openjdk.org/jeps/458] for complete details.
 .SH USING THE JDK_JAVA_OPTIONS LAUNCHER ENVIRONMENT VARIABLE
 .PP
 \f[V]JDK_JAVA_OPTIONS\f[R] prepends its content to the options parsed
@@ -521,6 +548,20 @@ Allows classes to depend on \f[B]preview features\f[R]
 [https://docs.oracle.com/en/java/javase/12/language/index.html#JSLAN-GUID-5A82FE0E-0CA4-4F1F-B075-564874FE2823]
 of the release.
 .TP
+\f[V]--enable-native-access\f[R] \f[I]module\f[R][\f[V],\f[R]\f[I]module\f[R]...]
+Native access involves access to code or data outside the Java runtime.
+This is generally unsafe and, if done incorrectly, might crash the JVM
+or result in memory corruption.
+Methods that provide native access are restricted, and by default their
+use causes warnings.
+This option allows code in the specified modules to use restricted
+methods without warnings.
+\f[I]module\f[R] can be \f[V]ALL-UNNAMED\f[R] to indicate code on the
+class path.
+When this option is present, any use of restricted methods by code
+outside the specified modules causes an
+\f[V]IllegalCallerException\f[R].
+.TP
 \f[V]--finalization=\f[R]\f[I]value\f[R]
 Controls whether the JVM performs finalization of objects.
 Valid values are \[dq]enabled\[dq] and \[dq]disabled\[dq].
@@ -530,31 +571,32 @@ The value \[dq]disabled\[dq] disables finalization, so that no
 finalizers are invoked.
 .TP
 \f[V]--module-path\f[R] \f[I]modulepath\f[R]... or \f[V]-p\f[R] \f[I]modulepath\f[R]
-Specifies where to find application modules with a list of path elements.
-The elements of a module path can be a file path to a module or a directory
-containing modules. Each module is either a modular JAR or an
-exploded-module directory.
+Specifies where to find application modules with a list of path
+elements.
+The elements of a module path can be a file path to a module or a
+directory containing modules.
+Each module is either a modular JAR or an exploded-module directory.
 .RS
 .PP
-On Windows, semicolons (\f[V];\f[R]) separate path elements in this list;
-on other platforms it is a colon (\f[V]:\f[R]).
+On Windows, semicolons (\f[V];\f[R]) separate path elements in this
+list; on other platforms it is a colon (\f[V]:\f[R]).
 .RE
 .TP
 \f[V]--upgrade-module-path\f[R] \f[I]modulepath\f[R]...
-Specifies where to find module replacements of upgradeable modules in the
-runtime image with a list of path elements.
-The elements of a module path can be a file path to a module or a directory
-containing modules. Each module is either a modular JAR or an
-exploded-module directory.
+Specifies where to find module replacements of upgradeable modules in
+the runtime image with a list of path elements.
+The elements of a module path can be a file path to a module or a
+directory containing modules.
+Each module is either a modular JAR or an exploded-module directory.
 .RS
 .PP
-On Windows, semicolons (\f[V];\f[R]) separate path elements in this list;
-on other platforms it is a colon (\f[V]:\f[R]).
+On Windows, semicolons (\f[V];\f[R]) separate path elements in this
+list; on other platforms it is a colon (\f[V]:\f[R]).
 .RE
 .TP
 \f[V]--add-modules\f[R] \f[I]module\f[R][\f[V],\f[R]\f[I]module\f[R]...]
 Specifies the root modules to resolve in addition to the initial module.
-\f[I]module\f[R] also can be \f[V]ALL-DEFAULT\f[R],
+\f[I]module\f[R] can also be \f[V]ALL-DEFAULT\f[R],
 \f[V]ALL-SYSTEM\f[R], and \f[V]ALL-MODULE-PATH\f[R].
 .TP
 \f[V]--list-modules\f[R]
@@ -1116,13 +1158,14 @@ This option is similar to \f[V]-XX:ThreadStackSize\f[R].
 \f[V]--add-reads\f[R] \f[I]module\f[R]\f[V]=\f[R]\f[I]target-module\f[R](\f[V],\f[R]\f[I]target-module\f[R])*
 Updates \f[I]module\f[R] to read the \f[I]target-module\f[R], regardless
 of the module declaration.
-\f[I]target-module\f[R] can be all unnamed to read all unnamed modules.
+\f[I]target-module\f[R] can be \f[V]ALL-UNNAMED\f[R] to read all unnamed
+modules.
 .TP
 \f[V]--add-exports\f[R] \f[I]module\f[R]\f[V]/\f[R]\f[I]package\f[R]\f[V]=\f[R]\f[I]target-module\f[R](\f[V],\f[R]\f[I]target-module\f[R])*
 Updates \f[I]module\f[R] to export \f[I]package\f[R] to
 \f[I]target-module\f[R], regardless of module declaration.
-The \f[I]target-module\f[R] can be all unnamed to export to all unnamed
-modules.
+\f[I]target-module\f[R] can be \f[V]ALL-UNNAMED\f[R] to export to all
+unnamed modules.
 .TP
 \f[V]--add-opens\f[R] \f[I]module\f[R]\f[V]/\f[R]\f[I]package\f[R]\f[V]=\f[R]\f[I]target-module\f[R](\f[V],\f[R]\f[I]target-module\f[R])*
 Updates \f[I]module\f[R] to open \f[I]package\f[R] to
@@ -1304,6 +1347,7 @@ By default this option is disabled.
 .TP
 \f[V]-XX:FlightRecorderOptions=\f[R]\f[I]parameter\f[R]\f[V]=\f[R]\f[I]value\f[R] (or) \f[V]-XX:FlightRecorderOptions:\f[R]\f[I]parameter\f[R]\f[V]=\f[R]\f[I]value\f[R]
 Sets the parameters that control the behavior of JFR.
+Multiple parameters can be specified by separating them with a comma.
 .RS
 .PP
 The following list contains the available JFR
@@ -1369,9 +1413,6 @@ By default, the local buffer size is set to 8 kilobytes, with a minimum
 value of 4 kilobytes.
 Overriding this parameter could reduce performance and is not
 recommended.
-.PP
-You can specify values for multiple parameters by separating them with a
-comma.
 .RE
 .TP
 \f[V]-XX:LargePageSizeInBytes=\f[R]\f[I]size\f[R]
@@ -1444,6 +1485,17 @@ code, and thread.
 In addition to tracking memory usage by JVM subsystems, track memory
 usage by individual \f[V]CallSite\f[R], individual virtual memory region
 and its committed regions.
+.RE
+.TP
+\f[V]-XX:TrimNativeHeapInterval=\f[R]\f[I]millis\f[R]
+Interval, in ms, at which the JVM will trim the native heap.
+Lower values will reclaim memory more eagerly at the cost of higher
+overhead.
+A value of 0 (default) disables native heap trimming.
+Native heap trimming is performed in a dedicated thread.
+.RS
+.PP
+This option is only supported on Linux with GNU C Library (glibc).
 .RE
 .TP
 \f[V]-XX:+NeverActAsServerClassMachine\f[R]
@@ -1565,6 +1617,15 @@ Specifies the path and name of the class data sharing (CDS) archive file
 See \f[B]Application Class Data Sharing\f[R].
 .RE
 .TP
+\f[V]-XX:+VerifySharedSpaces\f[R]
+If this option is specified, the JVM will load a CDS archive file only
+if it passes an integrity check based on CRC32 checksums.
+The purpose of this flag is to check for unintentional damage to CDS
+archive files in transmission or storage.
+To guarantee the security and proper operation of CDS, the user must
+ensure that the CDS archive files used by Java applications cannot be
+modified without proper authorization.
+.TP
 \f[V]-XX:SharedArchiveConfigFile=\f[R]\f[I]shared_config_file\f[R]
 Specifies additional shared data added to the archive file.
 .TP
@@ -1658,6 +1719,9 @@ written when the recording is stopped, for example:
 \f[V]/home/user/recordings/recording.jfr\f[R]
 .IP \[bu] 2
 \f[V]c:\[rs]recordings\[rs]recording.jfr\f[R]
+.PP
+If %p and/or %t is specified in the filename, it expands to the
+JVM\[aq]s PID and the current timestamp, respectively.
 .RE
 .TP
 \f[V]name=\f[R]\f[I]identifier\f[R]
@@ -1810,19 +1874,6 @@ Use \f[V]-Xlog:os+container=trace\f[R] for maximum logging of container
 information.
 See \f[B]Enable Logging with the JVM Unified Logging Framework\f[R] for
 a description of using Unified Logging.
-.RE
-.TP
-\f[V]-XX:+UseHugeTLBFS\f[R]
-\f[B]Linux only:\f[R] This option is the equivalent of specifying
-\f[V]-XX:+UseLargePages\f[R].
-This option is disabled by default.
-This option pre-allocates all large pages up-front, when memory is
-reserved; consequently the JVM can\[aq]t dynamically grow or shrink
-large pages memory areas; see \f[V]-XX:UseTransparentHugePages\f[R] if
-you want this behavior.
-.RS
-.PP
-See \f[B]Large Pages\f[R].
 .RE
 .TP
 \f[V]-XX:+UseLargePages\f[R]
@@ -2172,37 +2223,16 @@ unlocks diagnostic JVM options.
 Sets the list of methods (separated by commas) to which compilation
 should be restricted.
 Only the specified methods are compiled.
-Specify each method with the full class name (including the packages and
-subpackages).
-For example, to compile only the \f[V]length()\f[R] method of the
-\f[V]String\f[R] class and the \f[V]size()\f[R] method of the
-\f[V]List\f[R] class, use the following:
-.RS
 .RS
 .PP
-\f[V]-XX:CompileOnly=java/lang/String.length,java/util/List.size\f[R]
-.RE
-.PP
-Note that the full class name is specified, including all packages and
-subpackages separated by a slash (\f[V]/\f[R]).
-For easier cut and paste operations, it\[aq]s also possible to use the
-method name format produced by the \f[V]-XX:+PrintCompilation\f[R] and
-\f[V]-XX:+LogCompilation\f[R] options:
-.RS
-.PP
-\f[V]-XX:CompileOnly=java.lang.String::length,java.util.List::size\f[R]
-.RE
-.PP
-Although wildcards aren\[aq]t supported, you can specify only the class
-or package name to compile all methods in that class or package, as well
-as specify just the method to compile methods with this name in any
-class:
+\f[V]-XX:CompileOnly=method1,method2,...,methodN\f[R] is an alias for:
 .IP
 .nf
 \f[CB]
--XX:CompileOnly=java/lang/String
--XX:CompileOnly=java/lang
--XX:CompileOnly=.length
+-XX:CompileCommand=compileonly,method1
+-XX:CompileCommand=compileonly,method2
+\&...
+-XX:CompileCommand=compileonly,methodN
 \f[R]
 .fi
 .RE
@@ -3655,14 +3685,6 @@ This is generally the best choice for small and simple applications that
 don\[aq]t require any special functionality from garbage collection.
 By default, this option is disabled and the default collector is used.
 .TP
-\f[V]-XX:+UseSHM\f[R]
-\f[B]Linux only:\f[R] Enables the JVM to use shared memory to set up
-large pages.
-.RS
-.PP
-See \f[B]Large Pages\f[R] for setting up large pages.
-.RE
-.TP
 \f[V]-XX:+UseStringDeduplication\f[R]
 Enables string deduplication.
 By default, this option is disabled.
@@ -3817,10 +3839,31 @@ This option was deprecated in JDK 16 by \f[B]JEP 396\f[R]
 403\f[R] [https://openjdk.org/jeps/403].
 .SH REMOVED JAVA OPTIONS
 .PP
-No documented java options have been removed in JDK 22.
+These \f[V]java\f[R] options have been removed in JDK 23 and using them
+results in an error of:
+.RS
+.PP
+\f[V]Unrecognized VM option\f[R] \f[I]option-name\f[R]
+.RE
+.TP
+\f[V]-XX:+UseHugeTLBFS\f[R]
+\f[B]Linux only:\f[R] This option is the equivalent of specifying
+\f[V]-XX:+UseLargePages\f[R].
+This option is disabled by default.
+This option pre-allocates all large pages up-front, when memory is
+reserved; consequently the JVM can\[aq]t dynamically grow or shrink
+large pages memory areas; see \f[V]-XX:UseTransparentHugePages\f[R] if
+you want this behavior.
+.TP
+\f[V]-XX:+UseSHM\f[R]
+\f[B]Linux only:\f[R] Enables the JVM to use shared memory to set up
+large pages.
 .PP
 For the lists and descriptions of options removed in previous releases
 see the \f[I]Removed Java Options\f[R] section in:
+.IP \[bu] 2
+\f[B]The \f[VB]java\f[B] Command, Release 22\f[R]
+[https://docs.oracle.com/en/java/javase/22/docs/specs/man/java.html]
 .IP \[bu] 2
 \f[B]The \f[VB]java\f[B] Command, Release 21\f[R]
 [https://docs.oracle.com/en/java/javase/21/docs/specs/man/java.html]
@@ -4915,20 +4958,6 @@ login as \f[V]root\f[R] and run:
 It is always recommended to check the value of \f[V]nr_hugepages\f[R]
 after the request to make sure the kernel was able to allocate the
 requested number of large pages.
-.PP
-When using the option \f[V]-XX:+UseSHM\f[R] to enable large pages you
-also need to make sure the \f[V]SHMMAX\f[R] parameter is configured to
-allow large enough shared memory segments to be allocated.
-To allow a maximum shared segment of 8 GB, login as \f[V]root\f[R] and
-run:
-.RS
-.PP
-\f[V]# echo 8589934592 > /proc/sys/kernel/shmmax\f[R]
-.RE
-.PP
-In some environments this is not needed since the default value is large
-enough, but it is important to make sure the value is large enough to
-fit the amount of memory intended to be backed by large pages.
 .RS
 .PP
 \f[B]Note:\f[R] The values contained in \f[V]/proc\f[R] and
@@ -5095,6 +5124,18 @@ The output of this command should contain the following text:
 \f[V][info][class,load] test.Hello source: shared objects file\f[R]
 .RE
 .RE
+.PP
+By default, when the \f[V]-Xshare:dump\f[R] option is used, the JVM runs
+in interpreter-only mode (as if the \f[V]-Xint\f[R] option were
+specified).
+This is required for generating deterministic output in the shared
+archive file.
+I.e., the exact same archive will be generated, bit-for-bit, every time
+you dump it.
+However, if deterministic output is not needed, and you have a large
+classlist, you can explicitly add \f[V]-Xmixed\f[R] to the command-line
+to enable the JIT compiler.
+This will speed up the archive creation.
 .SS Creating a Dynamic CDS Archive File with -XX:ArchiveClassesAtExit
 .PP
 Advantages of dynamic CDS archives are:

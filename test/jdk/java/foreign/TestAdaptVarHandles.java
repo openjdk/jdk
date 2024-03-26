@@ -82,8 +82,8 @@ public class TestAdaptVarHandles {
         }
     }
 
-    static final VarHandle intHandleIndexed = MethodHandles.collectCoordinates(ValueLayout.JAVA_INT.varHandle(),
-            1, MethodHandles.insertArguments(ValueLayout.JAVA_INT.scaleHandle(), 0, 0L));
+    static final VarHandle intHandleIndexed = MethodHandles.insertCoordinates(
+            ValueLayout.JAVA_INT.arrayElementVarHandle(), 1, 0L);
 
     static final VarHandle intHandle = MethodHandles.insertCoordinates(ValueLayout.JAVA_INT.varHandle(), 1, 0L);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,16 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.compiler
  * @run main/othervm/timeout=200 -Xmx1g FragmentMetaspace
+ */
+
+/**
+ * @test id=8320331
+ * @bug 8320331
+ * @requires vm.debug
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ * @modules java.compiler
+ * @run main/othervm/timeout=200 -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC -Xmx1g FragmentMetaspace
  */
 
 import java.io.IOException;

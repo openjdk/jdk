@@ -68,6 +68,7 @@ public class TestIncrementalInlining extends InliningBase {
         commandLineNormal.add("-XX:+WhiteBoxAPI");
         commandLineNormal.add("-XX:MaxInlineLevel=2");
         commandLineNormal.add("-XX:-AlwaysIncrementalInline");
+        commandLineNormal.add("-XX:-StressIncrementalInlining");
         runTest();
     }
 

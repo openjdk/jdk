@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     protected void addIndexComment(Element member, List<? extends DocTree> firstSentenceTags,
             Content tdSummaryContent) {
         addPreviewSummary(member, tdSummaryContent);
+        addRestrictedSummary(member, tdSummaryContent);
         List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(member);
         Content div;
         if (utils.isDeprecated(member)) {
@@ -186,10 +187,11 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     /**
      * Add the class content.
      *
-     * @param source class content which will be added to the documentation
+     * @param classContent class content which will be added to the documentation
      */
-    public void addClassContent(Content source) {
-        bodyContents.addMainContent(source);
+    public void addClassContent(Content classContent) {
+        bodyContents.addMainContent(classContent);
+        bodyContents.setSideContent(tableOfContents.toContent(true));
     }
 
     /**

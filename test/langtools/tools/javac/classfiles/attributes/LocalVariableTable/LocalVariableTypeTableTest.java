@@ -26,21 +26,17 @@
  * @summary local variable type table attribute test.
  * @bug 8040097
  * @library /tools/lib /tools/javac/lib ../lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox InMemoryFileManager TestBase LocalVariableTestBase
  * @compile -g LocalVariableTypeTableTest.java
  * @run main LocalVariableTypeTableTest
  */
 
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.attribute.*;
 import jdk.internal.classfile.impl.BoundAttribute;
 
 import java.io.IOException;

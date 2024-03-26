@@ -57,7 +57,6 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.Timer;
@@ -522,14 +521,15 @@ class ServerImpl {
 
                                     key.cancel();
                                     chan.configureBlocking (true);
+                                    // check if connection is being closed
                                     if (newlyAcceptedConnections.remove(conn)
                                             || idleConnections.remove(conn)) {
                                         // was either a newly accepted connection or an idle
                                         // connection. In either case, we mark that the request
                                         // has now started on this connection.
                                         requestStarted(conn);
+                                        handle (chan, conn);
                                     }
-                                    handle (chan, conn);
                                 } else {
                                     assert false : "Unexpected non-readable key:" + key;
                                 }
@@ -1019,35 +1019,30 @@ class ServerImpl {
      */
     class IdleTimeoutTask extends TimerTask {
         public void run () {
-            ArrayList<HttpConnection> toClose = new ArrayList<>();
-            final long currentTime = System.currentTimeMillis();
-            synchronized (idleConnections) {
-                final Iterator<HttpConnection> it = idleConnections.iterator();
-                while (it.hasNext()) {
-                    final HttpConnection c = it.next();
-                    if (currentTime - c.idleStartTime >= IDLE_INTERVAL) {
-                        toClose.add(c);
-                        it.remove();
-                    }
-                }
-            }
+            closeConnections(idleConnections, IDLE_INTERVAL);
             // if any newly accepted connection has been idle (i.e. no byte has been sent on that
             // connection during the configured idle timeout period) then close it as well
-            synchronized (newlyAcceptedConnections) {
-                final Iterator<HttpConnection> it = newlyAcceptedConnections.iterator();
-                while (it.hasNext()) {
-                    final HttpConnection c = it.next();
-                    if (currentTime - c.idleStartTime >= NEWLY_ACCEPTED_CONN_IDLE_INTERVAL) {
-                        toClose.add(c);
-                        it.remove();
-                    }
+            closeConnections(newlyAcceptedConnections, NEWLY_ACCEPTED_CONN_IDLE_INTERVAL);
+        }
+
+        private void closeConnections(Set<HttpConnection> connections, long idleInterval) {
+            long currentTime = System.currentTimeMillis();
+            ArrayList<HttpConnection> toClose = new ArrayList<>();
+
+            connections.forEach(c -> {
+                if (currentTime - c.idleStartTime >= idleInterval) {
+                    toClose.add(c);
                 }
-            }
+            });
             for (HttpConnection c : toClose) {
-                allConnections.remove(c);
-                c.close();
-                if (logger.isLoggable(Level.TRACE)) {
-                    logger.log(Level.TRACE, "Closed idle connection " + c);
+                // check if connection still idle
+                if (currentTime - c.idleStartTime >= idleInterval &&
+                        connections.remove(c)) {
+                    allConnections.remove(c);
+                    c.close();
+                    if (logger.isLoggable(Level.TRACE)) {
+                        logger.log(Level.TRACE, "Closed idle connection " + c);
+                    }
                 }
             }
         }

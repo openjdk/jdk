@@ -39,6 +39,7 @@ CompilerThread::CompilerThread(CompileQueue* queue,
   _queue = queue;
   _counters = counters;
   _buffer_blob = nullptr;
+  _can_call_java = false;
   _compiler = nullptr;
   _arena_stat = CompilationMemoryStatistic::enabled() ? new ArenaStatCounter : nullptr;
 
@@ -56,13 +57,15 @@ CompilerThread::~CompilerThread() {
   delete _arena_stat;
 }
 
+void CompilerThread::set_compiler(AbstractCompiler* c) {
+  // Only jvmci compiler threads can call Java
+  _can_call_java = c != nullptr && c->is_jvmci();
+  _compiler = c;
+}
+
 void CompilerThread::thread_entry(JavaThread* thread, TRAPS) {
   assert(thread->is_Compiler_thread(), "must be compiler thread");
   CompileBroker::compiler_thread_loop();
-}
-
-bool CompilerThread::can_call_java() const {
-  return _compiler != nullptr && _compiler->is_jvmci();
 }
 
 // Hide native compiler threads from external view.

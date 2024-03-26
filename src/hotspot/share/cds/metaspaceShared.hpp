@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ class MetaspaceShared : AllStatic {
   static intx _relocation_delta;
   static char* _requested_base_address;
   static bool _use_optimized_module_handling;
-  static bool _use_full_module_graph;
+
  public:
   enum {
     // core archive spaces
@@ -163,10 +163,6 @@ public:
   // Can we skip some expensive operations related to modules?
   static bool use_optimized_module_handling() { return NOT_CDS(false) CDS_ONLY(_use_optimized_module_handling); }
   static void disable_optimized_module_handling() { _use_optimized_module_handling = false; }
-
-  // Can we use the full archived module graph?
-  static bool use_full_module_graph() NOT_CDS_RETURN_(false);
-  static void disable_full_module_graph() { _use_full_module_graph = false; }
 
 private:
   static void read_extra_data(JavaThread* current, const char* filename) NOT_CDS_RETURN;

@@ -22,9 +22,6 @@
  */
 
 // key: compiler.err.use.of.underscore.not.allowed.with.brackets
-// key: compiler.misc.feature.unnamed.variables
-// key: compiler.warn.preview.feature.use.plural
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
 
 class UseOfUnderscoreNotAllowedWithBrackets {
     void test() {

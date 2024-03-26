@@ -34,5 +34,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
+		<currencies>
+			<currency type="EUR">
+				<pattern>¤ #,##0.00</pattern>
+			</currency>
+		</currencies>
 	</numbers>
 </ldml>

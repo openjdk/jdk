@@ -62,6 +62,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
       Reason_Whitebox,         // Whitebox API
       Reason_MustBeCompiled,   // Used for -Xcomp or AlwaysCompileLoopMethods (see CompilationPolicy::must_be_compiled())
       Reason_Bootstrap,        // JVMCI bootstrap
+      Reason_DirectivesChanged, // Changed CompilerDirectivesStack
       Reason_Count
   };
 
@@ -74,7 +75,8 @@ class CompileTask : public CHeapObj<mtCompiler> {
       "replay",
       "whitebox",
       "must_be_compiled",
-      "bootstrap"
+      "bootstrap",
+      "directives_changed"
     };
     return reason_names[compile_reason];
   }
@@ -180,7 +182,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   int          comp_level()                      { return _comp_level;}
   void         set_comp_level(int comp_level)    { _comp_level = comp_level;}
 
-  AbstractCompiler* compiler();
+  AbstractCompiler* compiler() const;
   CompileTask*      select_for_compilation();
 
   int          num_inlined_bytecodes() const     { return _num_inlined_bytecodes; }

@@ -102,6 +102,7 @@ public class LinuxResourceTest {
                 "License: APPLICATION_LICENSE_TYPE",
                 "Prefix: %{dirname:APPLICATION_DIRECTORY}",
                 "Provides: dont-install-me",
+                "%define _build_id_links none",
                 "%description",
                 "APPLICATION_DESCRIPTION",
                 "%prep",

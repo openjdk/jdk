@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -51,7 +51,6 @@
 #endif
 
 NEEDS_CLEANUP // remove this definitions ?
-const Register IC_Klass    = t1;    // where the IC klass is cached
 const Register SYNC_header = x10;   // synchronization header
 const Register SHIFT_count = x10;   // where count for shift operations must be
 
@@ -265,26 +264,7 @@ void LIR_Assembler::osr_entry() {
 
 // inline cache check; done before the frame is built.
 int LIR_Assembler::check_icache() {
-  Register receiver = FrameMap::receiver_opr->as_register();
-  Register ic_klass = IC_Klass;
-  int start_offset = __ offset();
-  Label dont;
-  __ inline_cache_check(receiver, ic_klass, dont);
-
-  // if icache check fails, then jump to runtime routine
-  // Note: RECEIVER must still contain the receiver!
-  __ far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
-
-  // We align the verified entry point unless the method body
-  // (including its inline cache check) will fit in a single 64-byte
-  // icache line.
-  if (!method()->is_accessor() || __ offset() - start_offset > 4 * 4) {
-    // force alignment after the cache check.
-    __ align(CodeEntryAlignment);
-  }
-
-  __ bind(dont);
-  return start_offset;
+  return __ ic_check(CodeEntryAlignment);
 }
 
 void LIR_Assembler::jobject2reg(jobject o, Register reg) {
@@ -363,7 +343,7 @@ int LIR_Assembler::emit_unwind_handler() {
     if (LockingMode == LM_MONITOR) {
       __ j(*stub->entry());
     } else {
-      __ unlock_object(x15, x14, x10, *stub->entry());
+      __ unlock_object(x15, x14, x10, x16, *stub->entry());
     }
     __ bind(*stub->continuation());
   }
@@ -1040,7 +1020,7 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
                       len,
                       tmp1,
                       tmp2,
-                      arrayOopDesc::header_size(op->type()),
+                      arrayOopDesc::base_offset_in_bytes(op->type()),
                       array_element_size(op->type()),
                       op->klass()->as_register(),
                       *op->stub()->entry());
@@ -1251,7 +1231,6 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
 }
 
 void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
-  assert(VM_Version::supports_cx8(), "wrong machine");
   Register addr;
   if (op->addr()->is_register()) {
     addr = as_reg(op->addr());
@@ -1399,7 +1378,7 @@ void LIR_Assembler::emit_static_call_stub() {
   __ relocate(static_stub_Relocation::spec(call_pc));
   __ emit_static_call_stub();
 
-  assert(__ offset() - start + CompiledStaticCall::to_trampoline_stub_size()
+  assert(__ offset() - start + CompiledDirectCall::to_trampoline_stub_size()
          <= call_stub_size(), "stub too big");
   __ end_a_stub();
 }
@@ -1426,7 +1405,7 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
   InternalAddress pc_for_athrow(__ pc());
   __ relocate(pc_for_athrow.rspec(), [&] {
     int32_t offset;
-    __ la_patchable(exceptionPC->as_register(), pc_for_athrow, offset);
+    __ la(exceptionPC->as_register(), pc_for_athrow.target(), offset);
     __ addi(exceptionPC->as_register(), exceptionPC->as_register(), offset);
   });
   add_call_info(pc_for_athrow_offset, info); // for exception handler
@@ -1512,6 +1491,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register obj = op->obj_opr()->as_register();  // may not be an oop
   Register hdr = op->hdr_opr()->as_register();
   Register lock = op->lock_opr()->as_register();
+  Register temp = op->scratch_opr()->as_register();
   if (LockingMode == LM_MONITOR) {
     if (op->info() != nullptr) {
       add_debug_info_for_null_check_here(op->info());
@@ -1521,13 +1501,13 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   } else if (op->code() == lir_lock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
     // add debug info for NullPointerException only if one is possible
-    int null_check_offset = __ lock_object(hdr, obj, lock, *op->stub()->entry());
+    int null_check_offset = __ lock_object(hdr, obj, lock, temp, *op->stub()->entry());
     if (op->info() != nullptr) {
       add_debug_info_for_null_check(null_check_offset, op->info());
     }
   } else if (op->code() == lir_unlock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
-    __ unlock_object(hdr, obj, lock, *op->stub()->entry());
+    __ unlock_object(hdr, obj, lock, temp, *op->stub()->entry());
   } else {
     Unimplemented();
   }
@@ -1653,10 +1633,11 @@ void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
       __ beqz(t1, none);
       __ mv(t0, (u1)TypeEntries::null_seen);
       __ beq(t0, t1, none);
-      // There is a chance that the checks above (re-reading profiling
-      // data from memory) fail if another thread has just set the
+      // There is a chance that the checks above
+      // fail if another thread has just set the
       // profiling to this obj's klass
       __ membar(MacroAssembler::LoadLoad);
+      __ xorr(tmp, tmp, t1); // get back original value before XOR
       __ ld(t1, mdo_addr);
       __ xorr(tmp, tmp, t1);
       __ andi(t0, tmp, TypeEntries::type_klass_mask);
@@ -1683,6 +1664,10 @@ void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
     __ bind(none);
     // first time here. Set profile type.
     __ sd(tmp, mdo_addr);
+#ifdef ASSERT
+    __ andi(tmp, tmp, TypeEntries::type_mask);
+    __ verify_klass_ptr(tmp);
+#endif
   }
 }
 
@@ -1717,6 +1702,10 @@ void LIR_Assembler::check_no_conflict(ciKlass* exact_klass, intptr_t current_kla
 #endif
     // first time here. Set profile type.
     __ sd(tmp, mdo_addr);
+#ifdef ASSERT
+    __ andi(tmp, tmp, TypeEntries::type_mask);
+    __ verify_klass_ptr(tmp);
+#endif
   } else {
     assert(ciTypeEntries::valid_ciklass(current_klass) != nullptr &&
            ciTypeEntries::valid_ciklass(current_klass) != exact_klass, "inconsistent");
@@ -1859,7 +1848,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
     RuntimeAddress target(dest);
     __ relocate(target.rspec(), [&] {
       int32_t offset;
-      __ la_patchable(t0, target, offset);
+      __ movptr(t0, target.target(), offset);
       __ jalr(x1, t0, offset);
     });
   }

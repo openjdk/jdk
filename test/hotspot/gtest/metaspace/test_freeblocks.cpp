@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -72,7 +72,7 @@ class FreeBlocksTest {
   bool feed_some() {
     size_t word_size = _rgen_feeding.get();
     MetaWord* p = _fb.get(word_size);
-    if (p != NULL) {
+    if (p != nullptr) {
       _freeblocks.add_block(p, word_size);
       return true;
     }
@@ -82,7 +82,7 @@ class FreeBlocksTest {
   bool deallocate_top() {
 
     allocation_t* a = _allocations;
-    if (a != NULL) {
+    if (a != nullptr) {
       _allocations = a->next;
       check_marked_range(a->p, a->word_size);
       _freeblocks.add_block(a->p, a->word_size);
@@ -101,7 +101,7 @@ class FreeBlocksTest {
 
     size_t word_size = MAX2(_rgen_allocations.get(), _freeblocks.MinWordSize);
     MetaWord* p = _freeblocks.remove_block(word_size);
-    if (p != NULL) {
+    if (p != nullptr) {
       _allocated_words.increment_by(word_size);
       allocation_t* a = new allocation_t;
       a->p = p; a->word_size = word_size;
@@ -115,7 +115,7 @@ class FreeBlocksTest {
   }
 
   void test_all_marked_ranges() {
-    for (allocation_t* a = _allocations; a != NULL; a = a->next) {
+    for (allocation_t* a = _allocations; a != nullptr; a = a->next) {
       check_marked_range(a->p, a->word_size);
     }
   }
@@ -177,7 +177,7 @@ public:
     _fb(512 * K), _freeblocks(),
     _rgen_feeding(128, 4096),
     _rgen_allocations(avg_alloc_size / 4, avg_alloc_size * 2, 0.01f, avg_alloc_size / 3, avg_alloc_size * 30),
-    _allocations(NULL),
+    _allocations(nullptr),
     _num_allocs(0),
     _num_deallocs(0),
     _num_feeds(0)

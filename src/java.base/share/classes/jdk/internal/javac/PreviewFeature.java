@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,21 +67,24 @@ public @interface PreviewFeature {
         // not used, but required for interim javac to not warn.
         VIRTUAL_THREADS,
         FOREIGN,
-
-        @JEP(number=430, title="String Templates")
+        @JEP(number=459, title="String Templates", status="Second Preview")
         STRING_TEMPLATES,
-        @JEP(number=443, title="Unnamed Patterns and Variables")
-        UNNAMED,
-        @JEP(number=445, title="Unnamed Classes and Instance Main Methods")
+        @JEP(number=445, title="Unnamed Classes and Instance Main Methods", status="Deprecated")
         UNNAMED_CLASSES,
-        @JEP(number=446, title="Scoped Values", status="Preview")
+        @JEP(number=463, title="Implicitly Declared Classes and Instance Main Methods", status="Preview")
+        IMPLICIT_CLASSES,
+        @JEP(number=464, title="Scoped Values", status="Second Preview")
         SCOPED_VALUES,
-        @JEP(number=453, title="Structured Concurrency", status="Preview")
+        @JEP(number=462, title="Structured Concurrency", status="Second Preview")
         STRUCTURED_CONCURRENCY,
+        @JEP(number=457, title="ClassFile API", status="Preview")
+        CLASSFILE_API,
+        @JEP(number=461, title="Stream Gatherers", status="Preview")
+        STREAM_GATHERERS,
         /**
          * A key for testing.
          */
-        @JEP(number=0, title="Test Feature")
+        @JEP(number=2_147_483_647, title="Test Feature")
         TEST,
         ;
     }

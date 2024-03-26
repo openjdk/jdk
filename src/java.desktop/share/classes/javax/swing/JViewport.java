@@ -603,11 +603,15 @@ public class JViewport extends JComponent implements Accessible
 
 
     private Graphics getBackingStoreGraphics(Graphics g) {
-        Graphics bsg = backingStoreImage.getGraphics();
-        bsg.setColor(g.getColor());
-        bsg.setFont(g.getFont());
-        bsg.setClip(g.getClipBounds());
-        return bsg;
+        if (!SwingUtilities2.isPrinting(g)) {
+            Graphics bsg = backingStoreImage.getGraphics();
+            bsg.setColor(g.getColor());
+            bsg.setFont(g.getFont());
+            bsg.setClip(g.getClipBounds());
+            return bsg;
+        } else {
+            return g;
+        }
     }
 
 

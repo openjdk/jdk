@@ -229,9 +229,8 @@ public:
   uint8_t barrier_data() const { return _barrier; }
   void set_barrier_data(uint8_t data) { _barrier = data; }
 
-  // Copy inputs and operands to new node of instruction.
+  // Copy index, inputs, and operands to a new version of the instruction.
   // Called from cisc_version() and short_branch_version().
-  // !!!! The method's body is defined in ad_<arch>.cpp file.
   void fill_new_machnode(MachNode *n) const;
 
   // Return an equivalent instruction using memory for cisc_operand position

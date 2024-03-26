@@ -26,8 +26,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="chg">tchagatay</language>
 			<language type="chn">chinook</language>
 			<language type="ckb">kurde central</language>
-			<language type="ckb" alt="menu">sorani</language>
-			<language type="ckb" alt="variant">kurde central</language>
+			<language type="ckb" alt="menu">kurde central</language>
+			<language type="ckb" alt="variant">sorani</language>
 			<language type="cr">cri</language>
 			<language type="crg">michif</language>
 			<language type="crl">cri du Nord-Est</language>
@@ -109,8 +109,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="155">Europe occidentale</territory>
 			<territory type="AC">île de l’Ascension</territory>
 			<territory type="AX">îles d’Åland</territory>
+			<territory type="BN">Brunéi</territory>
 			<territory type="BV">île Bouvet</territory>
 			<territory type="BY">Bélarus</territory>
+			<territory type="BZ">Bélize</territory>
 			<territory type="CC">îles Cocos (Keeling)</territory>
 			<territory type="CK">îles Cook</territory>
 			<territory type="CX">île Christmas</territory>
@@ -120,8 +122,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="HM">îles Heard et McDonald</territory>
 			<territory type="IC">îles Canaries</territory>
 			<territory type="IM">île de Man</territory>
-			<territory type="IO">territoire britannique de l’océan Indien</territory>
+			<territory type="IO" alt="biot">territoire britannique de l’océan Indien</territory>
+			<territory type="IO" alt="chagos">archipel Chagos</territory>
 			<territory type="KG">Kirghizistan</territory>
+			<territory type="KN">Saint‑Kitts‑et‑Nevis</territory>
 			<territory type="LR">Libéria</territory>
 			<territory type="MF">Saint-Martin (France)</territory>
 			<territory type="MM">Myanmar</territory>
@@ -136,12 +140,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TL" alt="variant">Timor oriental</territory>
 			<territory type="UM">îles mineures éloignées des États-Unis</territory>
 			<territory type="VA">Cité du Vatican</territory>
+			<territory type="VE">Vénézuéla</territory>
 			<territory type="VG">îles Vierges britanniques</territory>
 			<territory type="VI">îles Vierges américaines</territory>
 			<territory type="VN">Vietnam</territory>
 		</territories>
 		<types>
-			<type key="calendar" type="islamic-umalqura">calendrier musulman (calculé, Umm al-Qura)</type>
 			<type key="collation" type="big5han">ordre de tri chinois traditionnel - Big5</type>
 			<type key="collation" type="dictionary">ordre de tri du dictionnaire</type>
 			<type key="collation" type="eor">ordre multilingue européen</type>
@@ -167,7 +171,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters type="auxiliary">[á å ä ã ā ē í ì ī ñ ó ò ö ø ú ǔ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áåäãā ē íìī ñ óòöø úǔ]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<alternateQuotationStart>”</alternateQuotationStart>
@@ -185,21 +189,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<calendar type="coptic">
 				<months>
 					<monthContext type="format">
-						<monthWidth type="narrow">
-							<month type="1">T</month>
-							<month type="2">B</month>
-							<month type="3">H</month>
-							<month type="4">K</month>
-							<month type="5">T</month>
-							<month type="6">A</month>
-							<month type="7">B</month>
-							<month type="8">B</month>
-							<month type="9">B</month>
-							<month type="10">B</month>
-							<month type="11">A</month>
-							<month type="12">M</month>
-							<month type="13">N</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">tout</month>
 							<month type="2">bâbâ</month>
@@ -232,21 +221,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12">M</month>
 							<month type="13">N</month>
 						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">tout</month>
-							<month type="2">bâbâ</month>
-							<month type="3">hâtour</month>
-							<month type="4">kyakh</month>
-							<month type="5">toubah</month>
-							<month type="6">amshîr</month>
-							<month type="7">barmahât</month>
-							<month type="8">barmoudah</month>
-							<month type="9">bashans</month>
-							<month type="10">ba’ounah</month>
-							<month type="11">abîb</month>
-							<month type="12">misra</month>
-							<month type="13">al-nasi</month>
-						</monthWidth>
 					</monthContext>
 				</months>
 				<dateTimeFormats>
@@ -262,23 +236,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</calendar>
 			<calendar type="ethiopic">
 				<months>
-					<monthContext type="format">
-						<monthWidth type="narrow">
-							<month type="1">M</month>
-							<month type="2">T</month>
-							<month type="3">H</month>
-							<month type="4">T</month>
-							<month type="5">T</month>
-							<month type="6">Y</month>
-							<month type="7">M</month>
-							<month type="8">M</month>
-							<month type="9">G</month>
-							<month type="10">S</month>
-							<month type="11">H</month>
-							<month type="12">N</month>
-							<month type="13">P</month>
-						</monthWidth>
-					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="narrow">
 							<month type="1">M</month>
@@ -472,36 +429,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12">déc.</month>
 						</monthWidth>
 					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">janv.</month>
-							<month type="2">févr.</month>
-							<month type="3">mars</month>
-							<month type="4">avr.</month>
-							<month type="5">mai</month>
-							<month type="6">juin</month>
-							<month type="7">juill.</month>
-							<month type="8">août</month>
-							<month type="9">sept.</month>
-							<month type="10">oct.</month>
-							<month type="11">nov.</month>
-							<month type="12">déc.</month>
-						</monthWidth>
-					</monthContext>
 				</months>
-				<days>
-					<dayContext type="stand-alone">
-						<dayWidth type="narrow">
-							<day type="sun">D</day>
-							<day type="mon">L</day>
-							<day type="tue">M</day>
-							<day type="wed">M</day>
-							<day type="thu">J</day>
-							<day type="fri">V</day>
-							<day type="sat">S</day>
-						</dayWidth>
-					</dayContext>
-				</days>
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
@@ -521,43 +449,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="pm">p</dayPeriod>
 							<dayPeriod type="morning1">mat.</dayPeriod>
 							<dayPeriod type="afternoon1">après-midi</dayPeriod>
-							<dayPeriod type="evening1">soir</dayPeriod>
+							<dayPeriod type="evening1">du soir</dayPeriod>
 							<dayPeriod type="night1">mat.</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">a.m.</dayPeriod>
-							<dayPeriod type="pm">p.m.</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">a.m.</dayPeriod>
-							<dayPeriod type="pm">p.m.</dayPeriod>
 							<dayPeriod type="morning1">mat.</dayPeriod>
 							<dayPeriod type="afternoon1">après-midi</dayPeriod>
-							<dayPeriod type="evening1">soir</dayPeriod>
-							<dayPeriod type="night1">nuit</dayPeriod>
+							<dayPeriod type="evening1">du soir</dayPeriod>
+							<dayPeriod type="night1">du mat.</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">a.m.</dayPeriod>
-							<dayPeriod type="pm">p.m.</dayPeriod>
 							<dayPeriod type="morning1">mat.</dayPeriod>
 							<dayPeriod type="afternoon1">après-midi</dayPeriod>
-							<dayPeriod type="evening1">soir</dayPeriod>
+							<dayPeriod type="evening1">du soir</dayPeriod>
 							<dayPeriod type="night1">mat.</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">a.m.</dayPeriod>
-							<dayPeriod type="pm">p.m.</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
-				<eras>
-					<eraNames>
-						<era type="0" alt="variant">avant l’ère chrétienne</era>
-						<era type="1" alt="variant">de l’ère chrétienne</era>
-					</eraNames>
-				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
@@ -643,9 +553,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="Hmsv">HH 'h' mm 'min' ss 's' v</dateFormatItem>
 						<dateFormatItem id="hmv">h 'h' mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH 'h' mm v</dateFormatItem>
-						<dateFormatItem id="Md">M-d</dateFormatItem>
-						<dateFormatItem id="MEd">E M-d</dateFormatItem>
-						<dateFormatItem id="MMd">MM-d</dateFormatItem>
+						<dateFormatItem id="Md">MM-dd</dateFormatItem>
+						<dateFormatItem id="MEd">E MM-dd</dateFormatItem>
+						<dateFormatItem id="MMd">MM-dd</dateFormatItem>
 						<dateFormatItem id="MMdd">MM-dd</dateFormatItem>
 						<dateFormatItem id="ms">mm 'min' ss 's'</dateFormatItem>
 						<dateFormatItem id="yM">y-MM</dateFormatItem>
@@ -725,7 +635,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="H">H 'h' – H 'h' v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
-							<greatestDifference id="M">M – M</greatestDifference>
+							<greatestDifference id="M">MM – MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
 							<greatestDifference id="d">MM-dd – MM-dd</greatestDifference>
@@ -740,6 +650,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">d – d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y – y</greatestDifference>
@@ -760,6 +673,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM – MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">E d MMM – E d MMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -783,40 +699,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12">av</month>
 							<month type="13">ell.</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">T</month>
-							<month type="2">H</month>
-							<month type="3">K</month>
-							<month type="4">T</month>
-							<month type="5">S</month>
-							<month type="6">A</month>
-							<month type="7">A</month>
-							<month type="7" yeartype="leap">A</month>
-							<month type="8">N</month>
-							<month type="9">I</month>
-							<month type="10">S</month>
-							<month type="11">T</month>
-							<month type="12">A</month>
-							<month type="13">E</month>
-						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">tis.</month>
-							<month type="2">hes.</month>
-							<month type="3">kis.</month>
-							<month type="4">téb.</month>
-							<month type="5">sché.</month>
-							<month type="6">ad.I</month>
-							<month type="7">adar</month>
-							<month type="7" yeartype="leap">ad.II</month>
-							<month type="8">nis.</month>
-							<month type="9">iyar</month>
-							<month type="10">siv.</month>
-							<month type="11">tam.</month>
-							<month type="12">av</month>
-							<month type="13">ell.</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">T</month>
 							<month type="2">H</month>
@@ -839,9 +723,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<eraAbbr>
 						<era type="0">AM</era>
 					</eraAbbr>
-					<eraNarrow>
-						<era type="0">AM</era>
-					</eraNarrow>
 				</eras>
 				<dateTimeFormats>
 					<intervalFormats>
@@ -856,22 +737,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</calendar>
 			<calendar type="indian">
 				<months>
-					<monthContext type="format">
-						<monthWidth type="narrow">
-							<month type="1">C</month>
-							<month type="2">V</month>
-							<month type="3">J</month>
-							<month type="4">Ā</month>
-							<month type="5">S</month>
-							<month type="6">B</month>
-							<month type="7">Ā</month>
-							<month type="8">K</month>
-							<month type="9">M</month>
-							<month type="10">P</month>
-							<month type="11">M</month>
-							<month type="12">P</month>
-						</monthWidth>
-					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="narrow">
 							<month type="1">C</month>
@@ -938,7 +803,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="GyMd">y-MM-dd GGGGG</dateFormatItem>
 						<dateFormatItem id="Md">MM-dd</dateFormatItem>
 						<dateFormatItem id="MEd">E d MMM</dateFormatItem>
 						<dateFormatItem id="yyyyM">y-MM GGGGG</dateFormatItem>
@@ -999,36 +863,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12">Esfand</month>
 						</monthWidth>
 					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">Far.</month>
-							<month type="2">Ord.</month>
-							<month type="3">Kho.</month>
-							<month type="4">Tir</month>
-							<month type="5">Mor.</month>
-							<month type="6">Šah.</month>
-							<month type="7">Mehr</month>
-							<month type="8">Âbâ.</month>
-							<month type="9">Âzar</month>
-							<month type="10">Dey</month>
-							<month type="11">Bah.</month>
-							<month type="12">Esf.</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">Farvardin</month>
-							<month type="2">Ordibehešt</month>
-							<month type="3">Khordâd</month>
-							<month type="4">Tir</month>
-							<month type="5">Mordâd</month>
-							<month type="6">Šahrivar</month>
-							<month type="7">Mehr</month>
-							<month type="8">Âbân</month>
-							<month type="9">Âzar</month>
-							<month type="10">Dey</month>
-							<month type="11">Bahman</month>
-							<month type="12">Esfand</month>
-						</monthWidth>
-					</monthContext>
 				</months>
 				<eras>
 					<eraNames>
@@ -1037,9 +871,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<eraAbbr>
 						<era type="0">AP</era>
 					</eraAbbr>
-					<eraNarrow>
-						<era type="0">AP</era>
-					</eraNarrow>
 				</eras>
 				<dateTimeFormats>
 					<intervalFormats>
@@ -1088,9 +919,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>semaine du mois</displayName>
 			</field>
 			<field type="weekOfMonth-short">
-				<displayName>sem. (mois)</displayName>
-			</field>
-			<field type="weekOfMonth-narrow">
 				<displayName>sem. (mois)</displayName>
 			</field>
 			<field type="dayOfYear">
@@ -2308,10 +2136,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} bit</unitPattern>
 				<unitPattern count="other">{0} bits</unitPattern>
 			</unit>
-			<unit type="duration-year">
-				<unitPattern count="one">{0} an</unitPattern>
-				<unitPattern count="other">{0} ans</unitPattern>
-			</unit>
 			<unit type="duration-month">
 				<unitPattern count="one">{0} mois</unitPattern>
 				<unitPattern count="other">{0} mois</unitPattern>
@@ -2485,10 +2309,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="light-lux">
 				<unitPattern count="one">{0} lux</unitPattern>
 				<unitPattern count="other">{0} lux</unitPattern>
-			</unit>
-			<unit type="mass-tonne">
-				<unitPattern count="one">{0} tonne</unitPattern>
-				<unitPattern count="other">{0} tonnes</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<unitPattern count="one">{0} kilogramme</unitPattern>
@@ -2664,8 +2484,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="volume-jigger">
 				<displayName>gobelet doseur</displayName>
-				<unitPattern count="one">{0} gobelet doseur</unitPattern>
-				<unitPattern count="other">{0} gobelets doseurs</unitPattern>
 			</unit>
 			<unit type="volume-pinch">
 				<displayName>pincée</displayName>
@@ -2750,11 +2568,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="consumption-mile-per-gallon">
 				<unitPattern count="one">{0} mi/gal</unitPattern>
 				<unitPattern count="other">{0} mi/gal</unitPattern>
-			</unit>
-			<unit type="consumption-mile-per-gallon-imperial">
-				<displayName>mi/gal Imp</displayName>
-				<unitPattern count="one">{0} mi/gal Imp</unitPattern>
-				<unitPattern count="other">{0} mi/gal Imp</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<unitPattern count="one">{0} To</unitPattern>
@@ -2901,19 +2714,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} Hz</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
-			</unit>
-			<unit type="graphics-dot-per-inch">
-				<displayName>ppp</displayName>
-				<unitPattern count="one">{0} ppp</unitPattern>
-				<unitPattern count="other">{0} ppp</unitPattern>
-			</unit>
-			<unit type="graphics-dot">
-				<displayName>p</displayName>
-				<unitPattern count="one">{0} p</unitPattern>
-				<unitPattern count="other">{0} p</unitPattern>
+				<unitPattern count="one">{0} pt/cm</unitPattern>
+				<unitPattern count="other">{0} pt/cm</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<unitPattern count="one">{0} km</unitPattern>
@@ -3089,6 +2891,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} mi/h</unitPattern>
 				<unitPattern count="other">{0} mi/h</unitPattern>
 			</unit>
+			<unit type="speed-beaufort">
+				<unitPattern count="one">{0} Bf</unitPattern>
+				<unitPattern count="other">{0} Bf</unitPattern>
+			</unit>
 			<unit type="temperature-celsius">
 				<unitPattern count="one">{0} °C</unitPattern>
 				<unitPattern count="other">{0} °C</unitPattern>
@@ -3196,27 +3002,37 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} pte imp</unitPattern>
 				<unitPattern count="other">{0} pte imp</unitPattern>
 			</unit>
+			<coordinateUnit>
+				<coordinateUnitPattern type="east">{0} E.</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} N.</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} S.</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} O.</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
-			<unit type="acceleration-g-force">
-				<unitPattern count="one">{0} G</unitPattern>
-				<unitPattern count="other">{0} G</unitPattern>
-			</unit>
 			<unit type="angle-radian">
 				<unitPattern count="one">{0}rad</unitPattern>
 				<unitPattern count="other">{0}rad</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
-				<displayName>vg²</displayName>
 				<unitPattern count="one">{0}vg²</unitPattern>
 				<unitPattern count="other">{0}vg²</unitPattern>
 			</unit>
-			<unit type="concentr-percent">
-				<unitPattern count="one">{0} %</unitPattern>
-				<unitPattern count="other">{0} %</unitPattern>
+			<unit type="digital-terabit">
+				<unitPattern count="one">{0}Tb</unitPattern>
+				<unitPattern count="other">{0}Tb</unitPattern>
 			</unit>
-			<unit type="consumption-mile-per-gallon-imperial">
-				<displayName>mi/gal Imp</displayName>
+			<unit type="digital-gigabit">
+				<unitPattern count="one">{0}Gb</unitPattern>
+				<unitPattern count="other">{0}Gb</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<unitPattern count="one">{0}Mb</unitPattern>
+				<unitPattern count="other">{0}Mb</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<unitPattern count="one">{0}kb</unitPattern>
+				<unitPattern count="other">{0}kb</unitPattern>
 			</unit>
 			<unit type="duration-decade">
 				<displayName>déc</displayName>
@@ -3246,19 +3062,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}therm US</unitPattern>
 				<unitPattern count="other">{0}therm US</unitPattern>
 			</unit>
-			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0}ppcm</unitPattern>
-				<unitPattern count="other">{0}ppcm</unitPattern>
-			</unit>
-			<unit type="graphics-dot-per-inch">
-				<displayName>ppp</displayName>
-				<unitPattern count="one">{0}ppp</unitPattern>
-				<unitPattern count="other">{0}ppp</unitPattern>
-			</unit>
-			<unit type="graphics-dot">
-				<displayName>p</displayName>
-			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0}R⊕</unitPattern>
 				<unitPattern count="other">{0}R⊕</unitPattern>
@@ -3276,7 +3079,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}nm</unitPattern>
 			</unit>
 			<unit type="length-yard">
-				<displayName>vg</displayName>
 				<unitPattern count="one">{0}vg</unitPattern>
 				<unitPattern count="other">{0}vg</unitPattern>
 			</unit>
@@ -3305,7 +3107,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}fm</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
-				<displayName>NM</displayName>
 				<unitPattern count="one">{0}NM</unitPattern>
 				<unitPattern count="other">{0}NM</unitPattern>
 			</unit>
@@ -3318,7 +3119,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}pt</unitPattern>
 			</unit>
 			<unit type="mass-ton">
-				<displayName>tc</displayName>
 				<unitPattern count="one">{0}tc</unitPattern>
 				<unitPattern count="other">{0}tc</unitPattern>
 			</unit>
@@ -3331,7 +3131,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}mmHg</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
-				<displayName>psi</displayName>
 				<unitPattern count="one">{0}psi</unitPattern>
 				<unitPattern count="other">{0}psi</unitPattern>
 			</unit>
@@ -3344,17 +3143,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}nd</unitPattern>
 				<unitPattern count="other">{0}nd</unitPattern>
 			</unit>
+			<unit type="speed-beaufort">
+				<displayName>Bf</displayName>
+				<unitPattern count="one">{0} Bf</unitPattern>
+				<unitPattern count="other">{0} Bf</unitPattern>
+			</unit>
 			<unit type="temperature-celsius">
 				<unitPattern count="one">{0} °C</unitPattern>
 				<unitPattern count="other">{0} °C</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
-				<displayName>lb-pi</displayName>
 				<unitPattern count="one">{0}lb-pi</unitPattern>
 				<unitPattern count="other">{0}lb-pi</unitPattern>
 			</unit>
 			<unit type="volume-cubic-yard">
-				<displayName>vg³</displayName>
 				<unitPattern count="one">{0}vg³</unitPattern>
 				<unitPattern count="other">{0}vg³</unitPattern>
 			</unit>
@@ -3370,22 +3172,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0}/gal imp</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
-				<displayName>pte</displayName>
 				<unitPattern count="one">{0}pte</unitPattern>
 				<unitPattern count="other">{0}pte</unitPattern>
 			</unit>
 			<unit type="volume-pint">
-				<displayName>chop</displayName>
 				<unitPattern count="one">{0}chop</unitPattern>
 				<unitPattern count="other">{0}chop</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
-				<displayName>oz liq.</displayName>
 				<unitPattern count="one">{0}oz liq.</unitPattern>
 				<unitPattern count="other">{0}oz liq.</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
-				<displayName>oz liq imp.</displayName>
 				<unitPattern count="one">{0}oz liq imp.</unitPattern>
 				<unitPattern count="other">{0}oz liq imp.</unitPattern>
 			</unit>
@@ -3429,7 +3227,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}pincées</unitPattern>
 			</unit>
 			<unit type="volume-quart-imperial">
-				<displayName>pte imp</displayName>
 				<unitPattern count="one">{0}pte imp</unitPattern>
 				<unitPattern count="other">{0}pte imp</unitPattern>
 			</unit>
@@ -3465,9 +3262,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<sampleName item="nativeFull">
 			<nameField type="surname-core">Larochellière</nameField>
 			<nameField type="surname2">Drainville</nameField>
-		</sampleName>
-		<sampleName item="foreignFull">
-			<nameField type="title">Mme</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

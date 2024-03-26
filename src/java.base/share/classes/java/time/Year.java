@@ -315,7 +315,10 @@ public final class Year
      * @return true if the year is leap, false otherwise
      */
     public static boolean isLeap(long year) {
-        return ((year & 3) == 0) && ((year % 100) != 0 || (year % 400) == 0);
+        // A year that is a multiple of 100, 200 and 300 is not divisible by 16, but 400 is.
+        // So for a year that's divisible by 4, checking that it's also divisible by 16
+        // is sufficient to determine it must be a leap year.
+        return (year & 15) == 0 ? (year & 3) == 0 : (year & 3) == 0 && year % 100 != 0;
     }
 
     //-----------------------------------------------------------------------

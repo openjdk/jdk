@@ -188,7 +188,7 @@ public final class EventWriter {
 
     public void putStackTrace() {
         if (eventType.getStackTraceEnabled()) {
-            putLong(JVM.getStackTraceId(eventType.getStackTraceOffset()));
+            putLong(JVM.getStackTraceId(eventType.getStackTraceOffset(), eventType.getStackFilterId()));
         } else {
             putLong(0L);
         }

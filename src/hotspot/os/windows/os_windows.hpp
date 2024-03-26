@@ -70,13 +70,6 @@ class os::win32 {
   static HINSTANCE load_Windows_dll(const char* name, char *ebuf, int ebuflen);
 
  private:
-  // The handler passed to _beginthreadex().
-  // Called with the associated Thread* as the argument.
-  static unsigned __stdcall thread_native_entry(void*);
-
-  enum Ept { EPT_THREAD, EPT_PROCESS, EPT_PROCESS_DIE };
-  // Wrapper around _endthreadex(), exit() and _exit()
-  static int exit_process_or_thread(Ept what, int exit_code);
 
   static void initialize_performance_counter();
 

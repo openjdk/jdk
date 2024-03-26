@@ -74,7 +74,7 @@ import jdk.xml.internal.XMLSecurityManager.Limit;
  * @author Eric Ye, IBM
  * @author Sunitha Reddy, SUN Microsystems
  *
- * @LastModified: July 2023
+ * @LastModified: Nov 2023
  */
 public class XMLDocumentFragmentScannerImpl
         extends XMLScanner
@@ -342,6 +342,13 @@ public class XMLDocumentFragmentScannerImpl
      * of accessing external dtd or entity references
      */
     protected String fAccessExternalDTD = EXTERNAL_ACCESS_DEFAULT;
+
+    /**
+     * Properties to determine whether to use a user-specified Catalog:
+     * Feature USE_CATALOG, Resolve and Catalog File
+     */
+    protected boolean fUseCatalog = true;
+    protected String fCatalogFile;
 
     /**
      * standard uri conformant (strict uri).

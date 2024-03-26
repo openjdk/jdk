@@ -266,7 +266,7 @@ public class CDSTestUtils {
         for (String s : opts.suffix) cmd.add(s);
 
         String[] cmdLine = cmd.toArray(new String[cmd.size()]);
-        ProcessBuilder pb = ProcessTools.createTestJvm(cmdLine);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmdLine);
         return executeAndLog(pb, "dump");
     }
 
@@ -444,7 +444,7 @@ public class CDSTestUtils {
         for (String s : opts.suffix) cmd.add(s);
 
         String[] cmdLine = cmd.toArray(new String[cmd.size()]);
-        ProcessBuilder pb = ProcessTools.createTestJvm(cmdLine);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmdLine);
         return executeAndLog(pb, "exec");
     }
 

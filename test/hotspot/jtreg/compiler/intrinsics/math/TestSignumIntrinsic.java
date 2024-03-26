@@ -35,6 +35,10 @@
  *      -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *      -XX:-UseSignumIntrinsic -XX:+UseCopySignIntrinsic
  *      compiler.intrinsics.math.TestSignumIntrinsic
+ * @run main/othervm
+ *      -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
+ *      -Xcomp -XX:+UseSignumIntrinsic
+ *      compiler.intrinsics.math.TestSignumIntrinsic
  */
 
 package compiler.intrinsics.math;

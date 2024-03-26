@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,21 +54,21 @@ public class PreviewVersion {
 
         // Run the test. This should fail because --enable-preview is not specified.
         ClassFileInstaller.writeClassToDisk("PVTest", klassbuf, System.getProperty("test.classes"));
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-cp", "." + File.pathSeparator + System.getProperty("test.classes"), "PVTest");
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
         oa.shouldContain("Preview features are not enabled");
         oa.shouldHaveExitValue(1);
 
         // This should be successful because --enable-preview is specified.
-        pb = ProcessTools.createJavaProcessBuilder("--enable-preview",
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("--enable-preview",
             "-cp", "." + File.pathSeparator + System.getProperty("test.classes"), "PVTest");
         oa = new OutputAnalyzer(pb.start());
         oa.shouldContain("Hi!");
         oa.shouldHaveExitValue(0);
 
         // Test -Xlog:class+preview
-        pb = ProcessTools.createJavaProcessBuilder("--enable-preview", "-Xlog:class+preview",
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("--enable-preview", "-Xlog:class+preview",
             "-cp", "." + File.pathSeparator + System.getProperty("test.classes"), "PVTest");
         oa = new OutputAnalyzer(pb.start());
         oa.shouldContain("[info][class,preview] Loading class PVTest that depends on preview features");

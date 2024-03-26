@@ -35,7 +35,10 @@ import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 
 import java.awt.geom.Point2D;
+import java.lang.foreign.MemorySegment;
 import java.lang.ref.SoftReference;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.WeakHashMap;
 
@@ -162,17 +165,38 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
         return ref.getNativePtr();
     }
 
+    static boolean useFFM = true;
+    static {
+        @SuppressWarnings("removal")
+        String prop = AccessController.doPrivileged(
+            (PrivilegedAction<String>) () ->
+               System.getProperty("sun.font.layout.ffm", "true"));
+        useFFM = "true".equals(prop);
+
+    }
+
     public void layout(FontStrikeDesc desc, float[] mat, float ptSize, int gmask,
                        int baseIndex, TextRecord tr, int typo_flags,
                        Point2D.Float pt, GVData data) {
+
         Font2D font = key.font();
         FontStrike strike = font.getStrike(desc);
-        long pFace = getFacePtr(font);
-        if (pFace != 0) {
-            shape(font, strike, ptSize, mat, pFace,
+        if (useFFM) {
+            MemorySegment face = HBShaper.getFace(font);
+            if (face != null) {
+                HBShaper.shape(font, strike, ptSize, mat, face,
+                        tr.text, data, key.script(),
+                        tr.start, tr.limit, baseIndex, pt,
+                        typo_flags, gmask);
+            }
+        } else {
+            long pFace = getFacePtr(font);
+            if (pFace != 0) {
+                shape(font, strike, ptSize, mat, pFace,
                     tr.text, data, key.script(),
                     tr.start, tr.limit, baseIndex, pt,
                     typo_flags, gmask);
+            }
         }
     }
 

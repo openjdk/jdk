@@ -498,6 +498,11 @@ bool CompilerConfig::check_args_consistency(bool status) {
                 "Invalid NonNMethodCodeHeapSize=%dK. Must be at least %uK.\n", NonNMethodCodeHeapSize/K,
                 min_code_cache_size/K);
     status = false;
+  } else if (InlineCacheBufferSize > NonNMethodCodeHeapSize / 2) {
+    jio_fprintf(defaultStream::error_stream(),
+                "Invalid InlineCacheBufferSize=" SIZE_FORMAT "K. Must be less than or equal to " SIZE_FORMAT "K.\n",
+                InlineCacheBufferSize/K, NonNMethodCodeHeapSize/2/K);
+    status = false;
   }
 
 #ifdef _LP64
@@ -606,6 +611,7 @@ void CompilerConfig::ergo_initialize() {
     IncrementalInline = false;
     IncrementalInlineMH = false;
     IncrementalInlineVirtual = false;
+    StressIncrementalInlining = false;
   }
 #ifndef PRODUCT
   if (!IncrementalInline) {

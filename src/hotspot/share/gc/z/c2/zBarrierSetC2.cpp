@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/type.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
@@ -226,6 +227,7 @@ Label* ZBarrierStubC2::continuation() {
 }
 
 ZLoadBarrierStubC2* ZLoadBarrierStubC2::create(const MachNode* node, Address ref_addr, Register ref) {
+  AARCH64_ONLY(fatal("Should use ZLoadBarrierStubC2Aarch64::create"));
   ZLoadBarrierStubC2* const stub = new (Compile::current()->comp_arena()) ZLoadBarrierStubC2(node, ref_addr, ref);
   register_stub(stub);
 
@@ -275,6 +277,7 @@ void ZLoadBarrierStubC2::emit_code(MacroAssembler& masm) {
 }
 
 ZStoreBarrierStubC2* ZStoreBarrierStubC2::create(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic) {
+  AARCH64_ONLY(fatal("Should use ZStoreBarrierStubC2Aarch64::create"));
   ZStoreBarrierStubC2* const stub = new (Compile::current()->comp_arena()) ZStoreBarrierStubC2(node, ref_addr, new_zaddress, new_zpointer, is_native, is_atomic);
   register_stub(stub);
 
@@ -315,6 +318,20 @@ Register ZStoreBarrierStubC2::result() const {
 
 void ZStoreBarrierStubC2::emit_code(MacroAssembler& masm) {
   ZBarrierSet::assembler()->generate_c2_store_barrier_stub(&masm, static_cast<ZStoreBarrierStubC2*>(this));
+}
+
+uint ZBarrierSetC2::estimated_barrier_size(const Node* node) const {
+  uint8_t barrier_data = MemNode::barrier_data(node);
+  assert(barrier_data != 0, "should be a barrier node");
+  uint uncolor_or_color_size = node->is_Load() ? 1 : 2;
+  if ((barrier_data & ZBarrierElided) != 0) {
+    return uncolor_or_color_size;
+  }
+  // A compare and branch corresponds to approximately four fast-path Ideal
+  // nodes (Cmp, Bool, If, If projection). The slow path (If projection and
+  // runtime call) is excluded since the corresponding code is laid out
+  // separately and does not directly affect performance.
+  return uncolor_or_color_size + 4;
 }
 
 void* ZBarrierSetC2::create_barrier_state(Arena* comp_arena) const {

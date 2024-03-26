@@ -27,7 +27,6 @@ package jdk.internal.foreign;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.lang.ref.Cleaner;
 
 import jdk.internal.vm.annotation.ForceInline;
 

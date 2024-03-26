@@ -279,7 +279,6 @@ BasicObjectLock* frame::interpreter_frame_monitor_begin() const {
   return (BasicObjectLock*) addr_at(interpreter_frame_monitor_block_bottom_offset);
 }
 
-// Pointer beyond the "oldest/deepest" BasicObjectLock on stack.
 BasicObjectLock* frame::interpreter_frame_monitor_end() const {
   BasicObjectLock* result = (BasicObjectLock*) *addr_at(interpreter_frame_monitor_block_top_offset);
   // make sure the pointer points inside the frame

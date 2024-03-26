@@ -49,6 +49,7 @@ private:
   // These oops are managed by SafepointOp
   oop                _continuation;  // jdk.internal.vm.Continuation instance
   stackChunkOop      _tail;
+  bool               _done;
 
   ContinuationWrapper(const ContinuationWrapper& cont); // no copy constructor
 
@@ -58,6 +59,7 @@ private:
 
   void disallow_safepoint() {
     #ifdef ASSERT
+      assert(!_done, "");
       assert(_continuation != nullptr, "");
       _current_thread = Thread::current();
       if (_current_thread->is_Java_thread()) {
@@ -69,16 +71,19 @@ private:
   void allow_safepoint() {
     #ifdef ASSERT
       // we could have already allowed safepoints in done
-      if (_continuation != nullptr && _current_thread->is_Java_thread()) {
+      if (!_done && _current_thread->is_Java_thread()) {
         JavaThread::cast(_current_thread)->dec_no_safepoint_count();
       }
     #endif
   }
 
+  ContinuationWrapper(JavaThread* thread, ContinuationEntry* entry, oop continuation);
+
 public:
   void done() {
     allow_safepoint(); // must be done first
-    _continuation = nullptr;
+    _done = true;
+    *reinterpret_cast<intptr_t*>(&_continuation) = badHeapOopVal;
     *reinterpret_cast<intptr_t*>(&_tail) = badHeapOopVal;
   }
 
@@ -140,23 +145,19 @@ public:
 #endif
 };
 
-inline ContinuationWrapper::ContinuationWrapper(JavaThread* thread, oop continuation)
-  : _thread(thread), _entry(thread->last_continuation()), _continuation(continuation)
-  {
+inline ContinuationWrapper::ContinuationWrapper(JavaThread* thread, ContinuationEntry* entry, oop continuation)
+  : _thread(thread), _entry(entry), _continuation(continuation), _done(false) {
   assert(oopDesc::is_oop(_continuation),
          "Invalid continuation object: " INTPTR_FORMAT, p2i((void*)_continuation));
   disallow_safepoint();
   read();
 }
 
+inline ContinuationWrapper::ContinuationWrapper(JavaThread* thread, oop continuation)
+  : ContinuationWrapper(thread, thread->last_continuation(), continuation) {}
+
 inline ContinuationWrapper::ContinuationWrapper(oop continuation)
-  : _thread(nullptr), _entry(nullptr), _continuation(continuation)
-  {
-  assert(oopDesc::is_oop(_continuation),
-         "Invalid continuation object: " INTPTR_FORMAT, p2i((void*)_continuation));
-  disallow_safepoint();
-  read();
-}
+  : ContinuationWrapper(nullptr, nullptr, continuation) {}
 
 inline bool ContinuationWrapper::is_preempted() {
   return jdk_internal_vm_Continuation::is_preempted(_continuation);

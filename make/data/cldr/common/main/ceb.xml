@@ -14,14 +14,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 		<language type="ceb"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern>{0} ({1})</localePattern>
-			<localeSeparator>{0}, {1}</localeSeparator>
-			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
-		</localeDisplayPattern>
 		<languages>
 			<language type="ar">Arabic</language>
-			<language type="ar_001">Modernong Tamdanang Arabic</language>
+			<language type="ar_001">Modernong Standard nga Arabic</language>
 			<language type="bn">Bangla</language>
 			<language type="ceb">Cebuano</language>
 			<language type="de">German</language>
@@ -35,9 +30,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<language type="en_US">English sa America</language>
 			<language type="en_US" alt="short">English sa US</language>
 			<language type="es">Espanyol</language>
-			<language type="es_419">Espanyol sa Latin Amerika</language>
-			<language type="es_ES">Espanyol sa Europe</language>
-			<language type="es_MX">Espanyol sa Mexico</language>
+			<language type="es_ES">Espanyol (Europa)</language>
 			<language type="fr">Pranses</language>
 			<language type="fr_CA">Pranses sa Canada</language>
 			<language type="fr_CH">Pranses sa Switzerland</language>
@@ -56,12 +49,12 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<language type="ru">Russian</language>
 			<language type="th">Thai</language>
 			<language type="tr">Turkish</language>
-			<language type="und">Wala Mailhing Lengguwahe</language>
+			<language type="und">Wala Mailhing Pinulongan</language>
 			<language type="zh">Inintsik</language>
 			<language type="zh" alt="menu">Chinese, Mandarin</language>
-			<language type="zh_Hans">Simplified Chinese</language>
+			<language type="zh_Hans">Pinasimpleng Chinese</language>
 			<language type="zh_Hans" alt="long">Pinasimpleng Mandarin Chinese</language>
-			<language type="zh_Hant">Traditional nga Chinese</language>
+			<language type="zh_Hant">Tradisyonal nga Chinese</language>
 			<language type="zh_Hant" alt="long">Tradisyonal nga Mandarin Chinese</language>
 		</languages>
 		<scripts>
@@ -228,7 +221,8 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<territory type="IL">Israel</territory>
 			<territory type="IM">Isle of Man</territory>
 			<territory type="IN">India</territory>
-			<territory type="IO">British Indian Ocean Territory</territory>
+			<territory type="IO">Teritoryo sa British Indian Ocean</territory>
+			<territory type="IO" alt="chagos">Chagos Archipelago</territory>
 			<territory type="IQ">Iraq</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Iceland</territory>
@@ -394,38 +388,21 @@ the LDML specification (http://unicode.org/reports/tr35/)
 		<types>
 			<type key="calendar" type="gregorian">Gregorian nga Kalendaryo</type>
 			<type key="calendar" type="iso8601">Kalendaryo sa ISO-8601</type>
-			<type key="collation" type="standard">Tamdanang Paagi sa Paghan-ay</type>
+			<type key="collation" type="standard">Standard nga Paagi sa Paghan-ay</type>
 			<type key="numbers" type="latn">Mga Western Digit</type>
 		</types>
-		<measurementSystemNames>
-			<measurementSystemName type="metric">Metric</measurementSystemName>
-			<measurementSystemName type="UK">UK</measurementSystemName>
-			<measurementSystemName type="US">US</measurementSystemName>
-		</measurementSystemNames>
 		<codePatterns>
-			<codePattern type="language">Lengguwahe: {0}</codePattern>
+			<codePattern type="language">Pinulongan: {0}</codePattern>
 			<codePattern type="script">Script: {0}</codePattern>
 			<codePattern type="territory">Rehiyon: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
-	<layout>
-		<orientation>
-			<characterOrder>left-to-right</characterOrder>
-			<lineOrder>top-to-bottom</lineOrder>
-		</orientation>
-	</layout>
 	<characters>
 		<exemplarCharacters>[a b d e g h i k l m n o p r s t u w y]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[c f j ñ q v x z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- ‑ , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] @ * / \&amp; # ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‑ , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] @ * / \&amp; # ′ ″]</exemplarCharacters>
 	</characters>
-	<delimiters>
-		<quotationStart>“</quotationStart>
-		<quotationEnd>”</quotationEnd>
-		<alternateQuotationStart>‘</alternateQuotationStart>
-		<alternateQuotationEnd>’</alternateQuotationEnd>
-	</delimiters>
 	<dates>
 		<calendars>
 			<calendar type="generic">
@@ -433,19 +410,16 @@ the LDML specification (http://unicode.org/reports/tr35/)
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, MMMM d, y G</pattern>
-							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>MMMM d, y G</pattern>
-							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>MMM d, y G</pattern>
-							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -476,20 +450,13 @@ the LDML specification (http://unicode.org/reports/tr35/)
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
@@ -514,7 +481,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
@@ -626,24 +592,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 							<month type="6">Hun</month>
 							<month type="7">Hul</month>
 							<month type="8">Ago</month>
-							<month type="9">Set</month>
+							<month type="9">Sep</month>
 							<month type="10">Okt</month>
 							<month type="11">Nob</month>
 							<month type="12">Dis</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">E</month>
-							<month type="2">P</month>
-							<month type="3">M</month>
-							<month type="4">A</month>
-							<month type="5">M</month>
-							<month type="6">H</month>
-							<month type="7">H</month>
-							<month type="8">A</month>
-							<month type="9">S</month>
-							<month type="10">O</month>
-							<month type="11">N</month>
-							<month type="12">D</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Enero</month>
@@ -654,27 +606,13 @@ the LDML specification (http://unicode.org/reports/tr35/)
 							<month type="6">Hunyo</month>
 							<month type="7">Hulyo</month>
 							<month type="8">Agosto</month>
-							<month type="9">Setyembre</month>
+							<month type="9">Septiyembre</month>
 							<month type="10">Oktubre</month>
 							<month type="11">Nobyembre</month>
 							<month type="12">Disyembre</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">Ene</month>
-							<month type="2">Peb</month>
-							<month type="3">Mar</month>
-							<month type="4">Abr</month>
-							<month type="5">May</month>
-							<month type="6">Hun</month>
-							<month type="7">Hul</month>
-							<month type="8">Ago</month>
-							<month type="9">Set</month>
-							<month type="10">Okt</month>
-							<month type="11">Nob</month>
-							<month type="12">Dis</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">E</month>
 							<month type="2">P</month>
@@ -689,43 +627,11 @@ the LDML specification (http://unicode.org/reports/tr35/)
 							<month type="11">N</month>
 							<month type="12">D</month>
 						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">Enero</month>
-							<month type="2">Pebrero</month>
-							<month type="3">Marso</month>
-							<month type="4">Abril</month>
-							<month type="5">Mayo</month>
-							<month type="6">Hunyo</month>
-							<month type="7">Hulyo</month>
-							<month type="8">Agosto</month>
-							<month type="9">Setyembre</month>
-							<month type="10">Oktubre</month>
-							<month type="11">Nobyembre</month>
-							<month type="12">Disyembre</month>
-						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
-							<day type="sun">Dom</day>
-							<day type="mon">Lun</day>
-							<day type="tue">Mar</day>
-							<day type="wed">Miy</day>
-							<day type="thu">Huw</day>
-							<day type="fri">Biy</day>
-							<day type="sat">Sab</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun">D</day>
-							<day type="mon">L</day>
-							<day type="tue">M</day>
-							<day type="wed">M</day>
-							<day type="thu">H</day>
-							<day type="fri">B</day>
-							<day type="sat">S</day>
-						</dayWidth>
-						<dayWidth type="short">
 							<day type="sun">Dom</day>
 							<day type="mon">Lun</day>
 							<day type="tue">Mar</day>
@@ -745,15 +651,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun">Dom</day>
-							<day type="mon">Lun</day>
-							<day type="tue">Mar</day>
-							<day type="wed">Miy</day>
-							<day type="thu">Huw</day>
-							<day type="fri">Biy</day>
-							<day type="sat">Sab</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">D</day>
 							<day type="mon">L</day>
@@ -763,48 +660,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 							<day type="fri">B</day>
 							<day type="sat">S</day>
 						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">Dom</day>
-							<day type="mon">Lun</day>
-							<day type="tue">Mar</day>
-							<day type="wed">Miy</day>
-							<day type="thu">Huw</day>
-							<day type="fri">Biy</day>
-							<day type="sat">Sab</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">Domingo</day>
-							<day type="mon">Lunes</day>
-							<day type="tue">Martes</day>
-							<day type="wed">Miyerkules</day>
-							<day type="thu">Huwebes</day>
-							<day type="fri">Biyernes</day>
-							<day type="sat">Sabado</day>
-						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
 					<quarterContext type="format">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">Q1</quarter>
-							<quarter type="2">Q2</quarter>
-							<quarter type="3">Q3</quarter>
-							<quarter type="4">Q4</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">1</quarter>
-							<quarter type="2">2</quarter>
-							<quarter type="3">3</quarter>
-							<quarter type="4">4</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1">unang quarter</quarter>
-							<quarter type="2">ika-2 nga quarter</quarter>
-							<quarter type="3">ika-3 nga quarter</quarter>
-							<quarter type="4">ika-4 nga quarter</quarter>
-						</quarterWidth>
-					</quarterContext>
-					<quarterContext type="stand-alone">
 						<quarterWidth type="abbreviated">
 							<quarter type="1">Q1</quarter>
 							<quarter type="2">Q2</quarter>
@@ -825,30 +684,12 @@ the LDML specification (http://unicode.org/reports/tr35/)
 							<dayPeriod type="am">a</dayPeriod>
 							<dayPeriod type="pm">p</dayPeriod>
 						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
 					<eraNames>
 						<era type="0">Sa Wala Pa Si Kristo</era>
-						<era type="0" alt="variant">Wala Pa ang Komong Panahon</era>
+						<era type="0" alt="variant">Wala Pa ang Common Era</era>
 						<era type="1">Anno Domini</era>
 						<era type="1" alt="variant">Komong Panahon</era>
 					</eraNames>
@@ -863,19 +704,16 @@ the LDML specification (http://unicode.org/reports/tr35/)
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, MMMM d, y</pattern>
-							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>MMMM d, y</pattern>
-							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>MMM d, y</pattern>
-							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -932,57 +770,31 @@ the LDML specification (http://unicode.org/reports/tr35/)
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Bh">h B</dateFormatItem>
-						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
-						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
-						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
-						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
-						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
-						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
-						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
-						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">'semana' W 'sa' MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">'semana' W 'sa' MMMM</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
-						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
 						<dateFormatItem id="yMd">M/d/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, M/d/y</dateFormatItem>
@@ -996,7 +808,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 						<dateFormatItem id="yw" count="other">'semana' w 'sa' Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
@@ -1136,40 +947,13 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<relative type="0">karong tuiga</relative>
 				<relative type="1">sunod nga tuig</relative>
 			</field>
-			<field type="year-short">
-				<displayName>tuig</displayName>
-				<relative type="-1">miaging tuig</relative>
-				<relative type="0">karong tuiga</relative>
-				<relative type="1">sunod nga tuig</relative>
-			</field>
-			<field type="year-narrow">
-				<displayName>tuig</displayName>
-				<relative type="-1">miaging tuig</relative>
-				<relative type="0">karong tuiga</relative>
-				<relative type="1">sunod nga tuig</relative>
-			</field>
 			<field type="quarter">
 				<displayName>quarter</displayName>
 			</field>
 			<field type="quarter-short">
 				<displayName>qtr.</displayName>
 			</field>
-			<field type="quarter-narrow">
-				<displayName>qtr.</displayName>
-			</field>
 			<field type="month">
-				<displayName>buwan</displayName>
-				<relative type="-1">miaging buwan</relative>
-				<relative type="0">karong buwana</relative>
-				<relative type="1">sunod nga buwan</relative>
-			</field>
-			<field type="month-short">
-				<displayName>buwan</displayName>
-				<relative type="-1">miaging buwan</relative>
-				<relative type="0">karong buwana</relative>
-				<relative type="1">sunod nga buwan</relative>
-			</field>
-			<field type="month-narrow">
 				<displayName>buwan</displayName>
 				<relative type="-1">miaging buwan</relative>
 				<relative type="0">karong buwana</relative>
@@ -1182,33 +966,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<relative type="1">sunod nga semana</relative>
 				<relativePeriod>ang semana sa {0}</relativePeriod>
 			</field>
-			<field type="week-short">
-				<displayName>semana</displayName>
-				<relative type="-1">miaging semana</relative>
-				<relative type="0">karong semanaha</relative>
-				<relative type="1">sunod nga semana</relative>
-				<relativePeriod>ang semana sa {0}</relativePeriod>
-			</field>
-			<field type="week-narrow">
-				<displayName>semana</displayName>
-				<relative type="-1">miaging semana</relative>
-				<relative type="0">karong semanaha</relative>
-				<relative type="1">sunod nga semana</relative>
-				<relativePeriod>ang semana sa {0}</relativePeriod>
-			</field>
 			<field type="day">
-				<displayName>adlaw</displayName>
-				<relative type="-1">gahapon</relative>
-				<relative type="0">karong adlawa</relative>
-				<relative type="1">ugma</relative>
-			</field>
-			<field type="day-short">
-				<displayName>adlaw</displayName>
-				<relative type="-1">gahapon</relative>
-				<relative type="0">karong adlawa</relative>
-				<relative type="1">ugma</relative>
-			</field>
-			<field type="day-narrow">
 				<displayName>adlaw</displayName>
 				<relative type="-1">gahapon</relative>
 				<relative type="0">karong adlawa</relative>
@@ -1223,38 +981,21 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<field type="hour">
 				<displayName>oras</displayName>
 			</field>
-			<field type="hour-short">
-				<displayName>oras</displayName>
-			</field>
-			<field type="hour-narrow">
-				<displayName>oras</displayName>
-			</field>
 			<field type="minute">
-				<displayName>minuto</displayName>
-			</field>
-			<field type="minute-short">
-				<displayName>minuto</displayName>
-			</field>
-			<field type="minute-narrow">
 				<displayName>minuto</displayName>
 			</field>
 			<field type="second">
 				<displayName>segundo</displayName>
 			</field>
 			<field type="second-short">
-				<displayName>segundo</displayName>
-			</field>
-			<field type="second-narrow">
-				<displayName>segundo</displayName>
+				<displayName>seg.</displayName>
 			</field>
 			<field type="zone">
 				<displayName>time zone</displayName>
 			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat>+HH:mm;-HH:mm</hourFormat>
 			<gmtFormat>GMT {0}</gmtFormat>
-			<gmtZeroFormat>GMT</gmtZeroFormat>
 			<regionFormat>Oras sa {0}</regionFormat>
 			<regionFormat type="daylight">Daylight Time sa {0}</regionFormat>
 			<regionFormat type="standard">Tamdanang Oras sa {0}</regionFormat>
@@ -2169,33 +1910,11 @@ the LDML specification (http://unicode.org/reports/tr35/)
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<symbols numberSystem="latn">
-			<decimal>.</decimal>
-			<group>,</group>
-			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
-		</symbols>
-		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<scientificFormats numberSystem="latn">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern>#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
 					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
@@ -2203,7 +1922,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{1} {0}</unitPattern>
+			<unitPattern count="one">{0} {1}</unitPattern>
 			<unitPattern count="other">{1} {0}</unitPattern>
 		</currencyFormats>
 		<currencies>
@@ -2326,7 +2045,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<displayName>Belarusian Ruble</displayName>
 				<displayName count="one">Belarusian ruble</displayName>
 				<displayName count="other">Belarusian rubles</displayName>
-				<symbol alt="narrow" draft="contributed">BYN</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>Belize Dollar</displayName>
@@ -2752,7 +2470,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<displayName>Philippine Peso</displayName>
 				<displayName count="one">Philippine peso</displayName>
 				<displayName count="other">Philippine pesos</displayName>
-				<symbol draft="contributed">₱</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>Pakistani Rupee</displayName>
@@ -2829,10 +2546,15 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<displayName count="one">St. Helena pound</displayName>
 				<displayName count="other">St. Helena pounds</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Sierra Leonean Leone</displayName>
 				<displayName count="one">Sierra Leonean leone</displayName>
 				<displayName count="other">Sierra Leonean leones</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Sierra Leonean Leone (1964—2022)</displayName>
+				<displayName count="one">Sierra Leonean leone (1964—2022)</displayName>
+				<displayName count="other">Sierra Leonean leones (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Somali Shilling</displayName>
@@ -3104,11 +2826,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<compoundUnitPattern1 count="one">cubic {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">cubic {0}</compoundUnitPattern1>
 			</compoundUnit>
-			<compoundUnit type="times">
-				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
-			</compoundUnit>
 			<unit type="acceleration-g-force">
-				<displayName>g-force</displayName>
 				<unitPattern count="one">{0} g-force</unitPattern>
 				<unitPattern count="other">{0} g-force</unitPattern>
 			</unit>
@@ -3123,12 +2841,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga rebolusyon</unitPattern>
 			</unit>
 			<unit type="angle-radian">
-				<displayName>mga radian</displayName>
 				<unitPattern count="one">{0} ka radian</unitPattern>
 				<unitPattern count="other">{0} ka mga radian</unitPattern>
 			</unit>
 			<unit type="angle-degree">
-				<displayName>mga degree</displayName>
 				<unitPattern count="one">{0} ka degree</unitPattern>
 				<unitPattern count="other">{0} ka mga degree</unitPattern>
 			</unit>
@@ -3149,7 +2865,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<perUnitPattern>{0} kada kilometro kwadrado</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
-				<displayName>mga ektarya</displayName>
 				<unitPattern count="one">{0} ka ektarya</unitPattern>
 				<unitPattern count="other">{0} ka mga ektarya</unitPattern>
 			</unit>
@@ -3166,13 +2881,11 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<perUnitPattern>{0} kada sentimetro kwadrado</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
-				<displayName>mga milya kwadrado</displayName>
 				<unitPattern count="one">{0} ka milya kwadrado</unitPattern>
 				<unitPattern count="other">{0} ka mga milya kwadrado</unitPattern>
 				<perUnitPattern>{0} kada milya kwadrado</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
-				<displayName>mga acre</displayName>
 				<unitPattern count="one">{0} ka acre</unitPattern>
 				<unitPattern count="other">{0} ka mga acre</unitPattern>
 			</unit>
@@ -3193,12 +2906,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<perUnitPattern>{0} kada square inch</perUnitPattern>
 			</unit>
 			<unit type="area-dunam">
-				<displayName>mga dunam</displayName>
 				<unitPattern count="one">{0} ka dunam</unitPattern>
 				<unitPattern count="other">{0} ka mga dunam</unitPattern>
 			</unit>
 			<unit type="concentr-karat">
-				<displayName>mga karat</displayName>
 				<unitPattern count="one">{0} ka karat</unitPattern>
 				<unitPattern count="other">{0} ka mga karat</unitPattern>
 			</unit>
@@ -3218,17 +2929,14 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga part per million</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
-				<displayName>porsyento</displayName>
 				<unitPattern count="one">{0} ka porsyento</unitPattern>
 				<unitPattern count="other">{0} ka porsyento</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
-				<displayName>permille</displayName>
 				<unitPattern count="one">{0} ka permille</unitPattern>
 				<unitPattern count="other">{0} ka permille</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
-				<displayName>permyriad</displayName>
 				<unitPattern count="one">{0} ka permyriad</unitPattern>
 				<unitPattern count="other">{0} ka permyriad</unitPattern>
 			</unit>
@@ -3323,43 +3031,36 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga dekada</unitPattern>
 			</unit>
 			<unit type="duration-year">
-				<displayName>mga tuig</displayName>
 				<unitPattern count="one">{0} ka tuig</unitPattern>
 				<unitPattern count="other">{0} ka mga tuig</unitPattern>
 				<perUnitPattern>{0} kada tuig</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
-				<displayName>mga buwan</displayName>
 				<unitPattern count="one">{0} ka buwan</unitPattern>
 				<unitPattern count="other">{0} ka mga buwan</unitPattern>
 				<perUnitPattern>{0} kada buwan</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
-				<displayName>mga semana</displayName>
 				<unitPattern count="one">{0} ka semana</unitPattern>
 				<unitPattern count="other">{0} ka mga semana</unitPattern>
 				<perUnitPattern>{0} kada semana</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
-				<displayName>mga adlaw</displayName>
 				<unitPattern count="one">{0} ka adlaw</unitPattern>
 				<unitPattern count="other">{0} ka mga adlaw</unitPattern>
 				<perUnitPattern>{0} kada adlaw</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<displayName>mga oras</displayName>
 				<unitPattern count="one">{0} ka oras</unitPattern>
 				<unitPattern count="other">{0} ka mga oras</unitPattern>
 				<perUnitPattern>{0} kada oras</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
-				<displayName>mga minuto</displayName>
 				<unitPattern count="one">{0} ka minuto</unitPattern>
 				<unitPattern count="other">{0} ka mga minuto</unitPattern>
 				<perUnitPattern>{0} kada minuto</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName>mga segundo</displayName>
 				<unitPattern count="one">{0} ka segundo</unitPattern>
 				<unitPattern count="other">{0} ka mga segundo</unitPattern>
 				<perUnitPattern>{0} kada segundo</perUnitPattern>
@@ -3390,12 +3091,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga milliampere</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
-				<displayName>mga ohm</displayName>
 				<unitPattern count="one">{0} ka ohm</unitPattern>
 				<unitPattern count="other">{0} ka mga ohm</unitPattern>
 			</unit>
 			<unit type="electric-volt">
-				<displayName>mga boltahe</displayName>
 				<unitPattern count="one">{0} ka boltahe</unitPattern>
 				<unitPattern count="other">{0} ka mga boltahe</unitPattern>
 			</unit>
@@ -3410,9 +3109,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga calorie</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>mga Calorie</displayName>
-				<unitPattern count="one">{0} ka Calorie</unitPattern>
-				<unitPattern count="other">{0} ka mga Calorie</unitPattern>
+				<displayName draft="provisional">mga Calorie</displayName>
+				<unitPattern count="one" draft="provisional">{0} ka Calorie</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ka mga Calorie</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>mga kilojoule</displayName>
@@ -3420,7 +3119,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga kilojoule</unitPattern>
 			</unit>
 			<unit type="energy-joule">
-				<displayName>mga joule</displayName>
 				<unitPattern count="one">{0} ka joule</unitPattern>
 				<unitPattern count="other">{0} ka mga joule</unitPattern>
 			</unit>
@@ -3441,8 +3139,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="energy-therm-us">
 				<displayName>Mga US therm</displayName>
-				<unitPattern count="one">{0} ka US therm</unitPattern>
-				<unitPattern count="other">{0} ka mga US therm</unitPattern>
 			</unit>
 			<unit type="force-pound-force">
 				<displayName>mga pound sa puwersa</displayName>
@@ -3480,12 +3176,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
-				<displayName>mga pixel</displayName>
 				<unitPattern count="one">{0} ka pixel</unitPattern>
 				<unitPattern count="other">{0} ka mga pixel</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
-				<displayName>mga megapixel</displayName>
 				<unitPattern count="one">{0} ka megapixel</unitPattern>
 				<unitPattern count="other">{0} ka mga megapixel</unitPattern>
 			</unit>
@@ -3500,19 +3194,18 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga pixel kada pulgada</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>mga dot kada sentimetro</displayName>
-				<unitPattern count="one">{0} ka dot kada sentimetro</unitPattern>
-				<unitPattern count="other">{0} ka mga dot kada sentimetro</unitPattern>
+				<displayName draft="provisional">mga dot kada sentimetro</displayName>
+				<unitPattern count="one" draft="provisional">{0} ka dot kada sentimetro</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ka mga dot kada sentimetro</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>mga dot kada pulgada</displayName>
-				<unitPattern count="one">{0} ka dot kada pulgada</unitPattern>
-				<unitPattern count="other">{0} ka mga dot kada pulgada</unitPattern>
+				<displayName draft="provisional">mga dot kada pulgada</displayName>
+				<unitPattern count="one" draft="provisional">{0} ka dot kada pulgada</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ka mga dot kada pulgada</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>mga pixel</displayName>
-				<unitPattern count="one">{0} dot</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} dot</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} px</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>radyus sa yuta</displayName>
@@ -3563,29 +3256,24 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga picometer</unitPattern>
 			</unit>
 			<unit type="length-mile">
-				<displayName>mga milya</displayName>
 				<unitPattern count="one">{0} ka milya</unitPattern>
 				<unitPattern count="other">{0} ka mga milya</unitPattern>
 			</unit>
 			<unit type="length-yard">
-				<displayName>mga yarda</displayName>
 				<unitPattern count="one">{0} ka yarda</unitPattern>
 				<unitPattern count="other">{0} ka mga yarda</unitPattern>
 			</unit>
 			<unit type="length-foot">
-				<displayName>mga piye</displayName>
 				<unitPattern count="one">{0} ka piye</unitPattern>
 				<unitPattern count="other">{0} ka mga piye</unitPattern>
 				<perUnitPattern>{0} kada piye</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
-				<displayName>mga pulgada</displayName>
 				<unitPattern count="one">{0} ka pulgada</unitPattern>
 				<unitPattern count="other">{0} ka pulgada</unitPattern>
 				<perUnitPattern>{0} kada pulgada</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
-				<displayName>mga parsec</displayName>
 				<unitPattern count="one">{0} ka parsec</unitPattern>
 				<unitPattern count="other">{0} ka mga parsec</unitPattern>
 			</unit>
@@ -3610,17 +3298,14 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mile-scandinavian</unitPattern>
 			</unit>
 			<unit type="length-point">
-				<displayName>mga point</displayName>
 				<unitPattern count="one">{0} ka point</unitPattern>
 				<unitPattern count="other">{0} ka mga point</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
-				<displayName>mga solar radius</displayName>
 				<unitPattern count="one">{0} ka solar radius</unitPattern>
 				<unitPattern count="other">{0} ka mga solar radius</unitPattern>
 			</unit>
 			<unit type="light-lux">
-				<displayName>lux</displayName>
 				<unitPattern count="one">{0} lux</unitPattern>
 				<unitPattern count="other">{0} lux</unitPattern>
 			</unit>
@@ -3635,7 +3320,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka lumen</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
-				<displayName>mga solar luminosity</displayName>
 				<unitPattern count="one">{0} ka solar luminosity</unitPattern>
 				<unitPattern count="other">{0}ka mga solar luminosity</unitPattern>
 			</unit>
@@ -3651,7 +3335,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<perUnitPattern>{0} kada kilogramo</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
-				<displayName>mga gramo</displayName>
 				<unitPattern count="one">{0} ka gramo</unitPattern>
 				<unitPattern count="other">{0} ka mga gramo</unitPattern>
 				<perUnitPattern>{0} kada gramo</perUnitPattern>
@@ -3667,12 +3350,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga microgram</unitPattern>
 			</unit>
 			<unit type="mass-ton">
-				<displayName>mga tonelada</displayName>
 				<unitPattern count="one">{0} ka tonelada</unitPattern>
 				<unitPattern count="other">{0} ka mga tonelada</unitPattern>
 			</unit>
 			<unit type="mass-pound">
-				<displayName>mga pound</displayName>
 				<unitPattern count="one">{0} ka pound</unitPattern>
 				<unitPattern count="other">{0} ka mga pound</unitPattern>
 				<perUnitPattern>{0} kada pound</perUnitPattern>
@@ -3689,27 +3370,22 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga troy ounce</unitPattern>
 			</unit>
 			<unit type="mass-carat">
-				<displayName>mga carat</displayName>
 				<unitPattern count="one">{0} ka carat</unitPattern>
 				<unitPattern count="other">{0} ka mga carat</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
-				<displayName>mga dalton</displayName>
 				<unitPattern count="one">{0} ka dalton</unitPattern>
 				<unitPattern count="other">{0} ka mga dalton</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
-				<displayName>mga mass sa Earth</displayName>
 				<unitPattern count="one">{0} ka mass sa Earth</unitPattern>
 				<unitPattern count="other">{0} ka mga mass sa Earth</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
-				<displayName>mga solar mass</displayName>
 				<unitPattern count="one">{0} ka solar mass</unitPattern>
 				<unitPattern count="other">{0} ka mga solar mass</unitPattern>
 			</unit>
 			<unit type="mass-grain">
-				<displayName>grain</displayName>
 				<unitPattern count="one">{0} ka grain</unitPattern>
 				<unitPattern count="other">{0} ka grain</unitPattern>
 			</unit>
@@ -3729,7 +3405,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga kilowatt</unitPattern>
 			</unit>
 			<unit type="power-watt">
-				<displayName>mga watt</displayName>
 				<unitPattern count="one">{0} ka watt</unitPattern>
 				<unitPattern count="other">{0} ka mga watt</unitPattern>
 			</unit>
@@ -3813,11 +3488,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="one">{0} ka knot</unitPattern>
 				<unitPattern count="other">{0} ka mga knot</unitPattern>
 			</unit>
-			<unit type="temperature-generic">
-				<displayName>°</displayName>
-				<unitPattern count="one">{0}°</unitPattern>
-				<unitPattern count="other">{0}°</unitPattern>
-			</unit>
 			<unit type="temperature-celsius">
 				<displayName>mga degree Celsius</displayName>
 				<unitPattern count="one">{0} ka degree Celsius</unitPattern>
@@ -3891,7 +3561,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga hectoliter</unitPattern>
 			</unit>
 			<unit type="volume-liter">
-				<displayName>mga litro</displayName>
 				<unitPattern count="one">{0} ka litro</unitPattern>
 				<unitPattern count="other">{0} ka mga litro</unitPattern>
 				<perUnitPattern>{0} kada litro</perUnitPattern>
@@ -3944,12 +3613,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga quart</unitPattern>
 			</unit>
 			<unit type="volume-pint">
-				<displayName>mga pint</displayName>
 				<unitPattern count="one">{0} ka pint</unitPattern>
 				<unitPattern count="other">{0} ka mga pint</unitPattern>
 			</unit>
 			<unit type="volume-cup">
-				<displayName>mga tasa</displayName>
 				<unitPattern count="one">{0} ka tasa</unitPattern>
 				<unitPattern count="other">{0} ka mga tasa</unitPattern>
 			</unit>
@@ -3988,25 +3655,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="one">{0} ka Imp. nga kutsarang panghinam-is</unitPattern>
 				<unitPattern count="other">{0} ka Imp. nga kutsarang panghinam-is</unitPattern>
 			</unit>
-			<unit type="volume-drop">
-				<displayName>drop</displayName>
-				<unitPattern count="one">{0} ka drop</unitPattern>
-				<unitPattern count="other">{0} ka drop</unitPattern>
-			</unit>
 			<unit type="volume-dram">
 				<displayName>dram</displayName>
 				<unitPattern count="one">{0} ka dram</unitPattern>
 				<unitPattern count="other">{0} ka dram</unitPattern>
-			</unit>
-			<unit type="volume-jigger">
-				<displayName>jigger</displayName>
-				<unitPattern count="one">{0} ka jigger</unitPattern>
-				<unitPattern count="other">{0} ka jigger</unitPattern>
-			</unit>
-			<unit type="volume-pinch">
-				<displayName>pinch</displayName>
-				<unitPattern count="one">{0} ka pinch</unitPattern>
-				<unitPattern count="other">{0} ka pinch</unitPattern>
 			</unit>
 			<unit type="volume-quart-imperial">
 				<displayName>Imp. quart</displayName>
@@ -4022,31 +3674,11 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
-			<compoundUnit type="power2">
-				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
-			</compoundUnit>
-			<compoundUnit type="power3">
-				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
-			</compoundUnit>
-			<unit type="acceleration-g-force">
-				<unitPattern count="one">{0} G</unitPattern>
-				<unitPattern count="other">{0} G</unitPattern>
-			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>mga metro/sec²</displayName>
-				<unitPattern count="one">{0} m/s²</unitPattern>
-				<unitPattern count="other">{0} m/s²</unitPattern>
-			</unit>
-			<unit type="angle-revolution">
-				<unitPattern count="one">{0} rev</unitPattern>
-				<unitPattern count="other">{0} rev</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<displayName>mga radian</displayName>
-				<unitPattern count="one">{0} rad</unitPattern>
-				<unitPattern count="other">{0} rad</unitPattern>
 			</unit>
 			<unit type="angle-degree">
 				<displayName>mga degree</displayName>
@@ -4063,23 +3695,11 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="one">{0} ka arcsec</unitPattern>
 				<unitPattern count="other">{0} ka mga arcsec</unitPattern>
 			</unit>
-			<unit type="area-square-kilometer">
-				<unitPattern count="one">{0} km²</unitPattern>
-				<unitPattern count="other">{0} km²</unitPattern>
-			</unit>
 			<unit type="area-hectare">
 				<displayName>mga ektarya</displayName>
-				<unitPattern count="one">{0} ha</unitPattern>
-				<unitPattern count="other">{0} ha</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
 				<displayName>mga metro²</displayName>
-				<unitPattern count="one">{0} m²</unitPattern>
-				<unitPattern count="other">{0} m²</unitPattern>
-			</unit>
-			<unit type="area-square-centimeter">
-				<unitPattern count="one">{0} cm²</unitPattern>
-				<unitPattern count="other">{0} cm²</unitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<displayName>mga milya kwadrado</displayName>
@@ -4088,13 +3708,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="area-acre">
 				<displayName>mga acre</displayName>
-				<unitPattern count="one">{0} ac</unitPattern>
-				<unitPattern count="other">{0} ac</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
 				<displayName>mga yard²</displayName>
-				<unitPattern count="one">{0} yd²</unitPattern>
-				<unitPattern count="other">{0} yd²</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
 				<displayName>mga sq foot</displayName>
@@ -4103,8 +3719,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="area-square-inch">
 				<displayName>mga inch²</displayName>
-				<unitPattern count="one">{0} in²</unitPattern>
-				<unitPattern count="other">{0} in²</unitPattern>
 			</unit>
 			<unit type="area-dunam">
 				<displayName>mga dunam</displayName>
@@ -4113,47 +3727,27 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="concentr-karat">
 				<displayName>mga karat</displayName>
-				<unitPattern count="one">{0} kt</unitPattern>
-				<unitPattern count="other">{0} kt</unitPattern>
-			</unit>
-			<unit type="concentr-milligram-ofglucose-per-deciliter">
-				<unitPattern count="one">{0} mg/dL</unitPattern>
-				<unitPattern count="other">{0} mg/dL</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<displayName>millimol/litro</displayName>
-				<unitPattern count="one">{0} mmol/L</unitPattern>
-				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>mga part/million</displayName>
-				<unitPattern count="one">{0} ppm</unitPattern>
-				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>porsyento</displayName>
-				<unitPattern count="one">{0}%</unitPattern>
-				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
 				<displayName>permille</displayName>
-				<unitPattern count="one">{0}‰</unitPattern>
-				<unitPattern count="other">{0}‰</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>permyriad</displayName>
-				<unitPattern count="one">{0}‱</unitPattern>
-				<unitPattern count="other">{0}‱</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<displayName>mole</displayName>
-				<unitPattern count="one">{0} mol</unitPattern>
-				<unitPattern count="other">{0} mol</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>mga litro/km</displayName>
-				<unitPattern count="one">{0} L/km</unitPattern>
-				<unitPattern count="other">{0} L/km</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100 km</displayName>
@@ -4167,53 +3761,33 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName>mga milya/gal Imp.</displayName>
-				<unitPattern count="one">{0} mpg Imp.</unitPattern>
-				<unitPattern count="other">{0} mpg Imp.</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
 				<displayName>PByte</displayName>
-				<unitPattern count="one">{0} PB</unitPattern>
-				<unitPattern count="other">{0} PB</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TByte</displayName>
-				<unitPattern count="one">{0} TB</unitPattern>
-				<unitPattern count="other">{0} TB</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
 				<displayName>Tbit</displayName>
-				<unitPattern count="one">{0} Tb</unitPattern>
-				<unitPattern count="other">{0} Tb</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
 				<displayName>GByte</displayName>
-				<unitPattern count="one">{0} GB</unitPattern>
-				<unitPattern count="other">{0} GB</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
 				<displayName>Gbit</displayName>
-				<unitPattern count="one">{0} Gb</unitPattern>
-				<unitPattern count="other">{0} Gb</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
 				<displayName>MByte</displayName>
-				<unitPattern count="one">{0} MB</unitPattern>
-				<unitPattern count="other">{0} MB</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
 				<displayName>Mbit</displayName>
-				<unitPattern count="one">{0} Mb</unitPattern>
-				<unitPattern count="other">{0} Mb</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
 				<displayName>kByte</displayName>
-				<unitPattern count="one">{0} kB</unitPattern>
-				<unitPattern count="other">{0} kB</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
 				<displayName>kbit</displayName>
-				<unitPattern count="one">{0} kb</unitPattern>
-				<unitPattern count="other">{0} kb</unitPattern>
 			</unit>
 			<unit type="digital-byte">
 				<unitPattern count="one">{0} ka byte</unitPattern>
@@ -4222,14 +3796,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<unit type="digital-bit">
 				<unitPattern count="one">{0} ka bit</unitPattern>
 				<unitPattern count="other">{0} ka bit</unitPattern>
-			</unit>
-			<unit type="duration-century">
-				<unitPattern count="one">{0} c</unitPattern>
-				<unitPattern count="other">{0} c</unitPattern>
-			</unit>
-			<unit type="duration-decade">
-				<unitPattern count="one">{0} dec</unitPattern>
-				<unitPattern count="other">{0} dec</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>mga tuig</displayName>
@@ -4275,76 +3841,39 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>mga millisec</displayName>
-				<unitPattern count="one">{0} ms</unitPattern>
-				<unitPattern count="other">{0} ms</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
 				<displayName>μsecs</displayName>
-				<unitPattern count="one">{0} μs</unitPattern>
-				<unitPattern count="other">{0} μs</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
 				<displayName>mga nanosec</displayName>
-				<unitPattern count="one">{0} ns</unitPattern>
-				<unitPattern count="other">{0} ns</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
 				<displayName>mga amp</displayName>
-				<unitPattern count="one">{0} A</unitPattern>
-				<unitPattern count="other">{0} A</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
 				<displayName>mga milliamp</displayName>
-				<unitPattern count="one">{0} mA</unitPattern>
-				<unitPattern count="other">{0} mA</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
 				<displayName>mga ohm</displayName>
-				<unitPattern count="one">{0} Ω</unitPattern>
-				<unitPattern count="other">{0} Ω</unitPattern>
 			</unit>
 			<unit type="electric-volt">
 				<displayName>mga boltahe</displayName>
-				<unitPattern count="one">{0} V</unitPattern>
-				<unitPattern count="other">{0} V</unitPattern>
-			</unit>
-			<unit type="energy-kilocalorie">
-				<unitPattern count="one">{0} kcal</unitPattern>
-				<unitPattern count="other">{0} kcal</unitPattern>
-			</unit>
-			<unit type="energy-calorie">
-				<unitPattern count="one">{0} cal</unitPattern>
-				<unitPattern count="other">{0} cal</unitPattern>
-			</unit>
-			<unit type="energy-foodcalorie">
-				<displayName>kcal</displayName>
-				<unitPattern count="one">{0} kcal</unitPattern>
-				<unitPattern count="other">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojoule</displayName>
-				<unitPattern count="one">{0} kJ</unitPattern>
-				<unitPattern count="other">{0} kJ</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<displayName>mga joule</displayName>
-				<unitPattern count="one">{0} J</unitPattern>
-				<unitPattern count="other">{0} J</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
 				<displayName>kW-hour</displayName>
-				<unitPattern count="one">{0} kWh</unitPattern>
-				<unitPattern count="other">{0} kWh</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>electronvolt</displayName>
-				<unitPattern count="one">{0} eV</unitPattern>
-				<unitPattern count="other">{0} eV</unitPattern>
 			</unit>
 			<unit type="energy-british-thermal-unit">
 				<displayName>BTU</displayName>
-				<unitPattern count="one">{0} Btu</unitPattern>
-				<unitPattern count="other">{0} Btu</unitPattern>
 			</unit>
 			<unit type="energy-therm-us">
 				<unitPattern count="one">{0} ka US therm</unitPattern>
@@ -4352,30 +3881,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="force-pound-force">
 				<displayName>pound-force</displayName>
-				<unitPattern count="one">{0} lbf</unitPattern>
-				<unitPattern count="other">{0} lbf</unitPattern>
 			</unit>
 			<unit type="force-newton">
 				<displayName>newton</displayName>
-				<unitPattern count="one">{0} N</unitPattern>
-				<unitPattern count="other">{0} N</unitPattern>
-			</unit>
-			<unit type="frequency-gigahertz">
-				<unitPattern count="one">{0} GHz</unitPattern>
-				<unitPattern count="other">{0} GHz</unitPattern>
-			</unit>
-			<unit type="frequency-megahertz">
-				<displayName>MHz</displayName>
-				<unitPattern count="one">{0} MHz</unitPattern>
-				<unitPattern count="other">{0} MHz</unitPattern>
-			</unit>
-			<unit type="frequency-kilohertz">
-				<unitPattern count="one">{0} kHz</unitPattern>
-				<unitPattern count="other">{0} kHz</unitPattern>
-			</unit>
-			<unit type="frequency-hertz">
-				<unitPattern count="one">{0} Hz</unitPattern>
-				<unitPattern count="other">{0} Hz</unitPattern>
 			</unit>
 			<unit type="graphics-em">
 				<unitPattern count="one">{0} ka em</unitPattern>
@@ -4383,246 +3891,77 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName>mga pixel</displayName>
-				<unitPattern count="one">{0} px</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>mga megapixel</displayName>
-				<unitPattern count="one">{0} MP</unitPattern>
-				<unitPattern count="other">{0} MP</unitPattern>
-			</unit>
-			<unit type="graphics-pixel-per-centimeter">
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
-			</unit>
-			<unit type="graphics-pixel-per-inch">
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
-			</unit>
-			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
-			</unit>
-			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
-			</unit>
-			<unit type="graphics-dot">
-				<displayName>mga pixel</displayName>
-				<unitPattern count="one">{0} px</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
-			</unit>
-			<unit type="length-earth-radius">
-				<unitPattern count="one">{0} R⊕</unitPattern>
-				<unitPattern count="other">{0} R⊕</unitPattern>
-			</unit>
-			<unit type="length-kilometer">
-				<unitPattern count="one">{0} km</unitPattern>
-				<unitPattern count="other">{0} km</unitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>m</displayName>
-				<unitPattern count="one">{0} m</unitPattern>
-				<unitPattern count="other">{0} m</unitPattern>
-			</unit>
-			<unit type="length-decimeter">
-				<unitPattern count="one">{0} dm</unitPattern>
-				<unitPattern count="other">{0} dm</unitPattern>
-			</unit>
-			<unit type="length-centimeter">
-				<unitPattern count="one">{0} cm</unitPattern>
-				<unitPattern count="other">{0} cm</unitPattern>
-			</unit>
-			<unit type="length-millimeter">
-				<unitPattern count="one">{0} mm</unitPattern>
-				<unitPattern count="other">{0} mm</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
 				<displayName>mga μmeter</displayName>
-				<unitPattern count="one">{0} μm</unitPattern>
-				<unitPattern count="other">{0} μm</unitPattern>
-			</unit>
-			<unit type="length-nanometer">
-				<unitPattern count="one">{0} nm</unitPattern>
-				<unitPattern count="other">{0} nm</unitPattern>
-			</unit>
-			<unit type="length-picometer">
-				<unitPattern count="one">{0} pm</unitPattern>
-				<unitPattern count="other">{0} pm</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>mga milya</displayName>
-				<unitPattern count="one">{0} mi</unitPattern>
-				<unitPattern count="other">{0} mi</unitPattern>
 			</unit>
 			<unit type="length-yard">
 				<displayName>mga yarda</displayName>
-				<unitPattern count="one">{0} yd</unitPattern>
-				<unitPattern count="other">{0} yd</unitPattern>
 			</unit>
 			<unit type="length-foot">
 				<displayName>mga piye</displayName>
-				<unitPattern count="one">{0} ft</unitPattern>
-				<unitPattern count="other">{0} ft</unitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName>mga pulgada</displayName>
-				<unitPattern count="one">{0} in</unitPattern>
-				<unitPattern count="other">{0} in</unitPattern>
 			</unit>
 			<unit type="length-parsec">
 				<displayName>mga parsec</displayName>
-				<unitPattern count="one">{0} pc</unitPattern>
-				<unitPattern count="other">{0} pc</unitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<displayName>mga light yr</displayName>
-				<unitPattern count="one">{0} ly</unitPattern>
-				<unitPattern count="other">{0} ly</unitPattern>
-			</unit>
-			<unit type="length-astronomical-unit">
-				<unitPattern count="one">{0} au</unitPattern>
-				<unitPattern count="other">{0} au</unitPattern>
-			</unit>
-			<unit type="length-nautical-mile">
-				<unitPattern count="one">{0} nmi</unitPattern>
-				<unitPattern count="other">{0} nmi</unitPattern>
-			</unit>
-			<unit type="length-mile-scandinavian">
-				<unitPattern count="one">{0} smi</unitPattern>
-				<unitPattern count="other">{0} smi</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName>mga point</displayName>
-				<unitPattern count="one">{0} pt</unitPattern>
-				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>mga solar radius</displayName>
-				<unitPattern count="one">{0} R☉</unitPattern>
-				<unitPattern count="other">{0} R☉</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
-				<unitPattern count="one">{0} lx</unitPattern>
-				<unitPattern count="other">{0} lx</unitPattern>
-			</unit>
-			<unit type="light-candela">
-				<unitPattern count="one">{0} cd</unitPattern>
-				<unitPattern count="other">{0} cd</unitPattern>
-			</unit>
-			<unit type="light-lumen">
-				<unitPattern count="one">{0} lm</unitPattern>
-				<unitPattern count="other">{0} lm</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>mga solar luminosity</displayName>
-				<unitPattern count="one">{0} L☉</unitPattern>
-				<unitPattern count="other">{0} L☉</unitPattern>
-			</unit>
-			<unit type="mass-tonne">
-				<unitPattern count="one">{0} t</unitPattern>
-				<unitPattern count="other">{0} t</unitPattern>
-			</unit>
-			<unit type="mass-kilogram">
-				<unitPattern count="one">{0} kg</unitPattern>
-				<unitPattern count="other">{0} kg</unitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>mga gramo</displayName>
-				<unitPattern count="one">{0} g</unitPattern>
-				<unitPattern count="other">{0} g</unitPattern>
-			</unit>
-			<unit type="mass-milligram">
-				<unitPattern count="one">{0} mg</unitPattern>
-				<unitPattern count="other">{0} mg</unitPattern>
-			</unit>
-			<unit type="mass-microgram">
-				<unitPattern count="one">{0} μg</unitPattern>
-				<unitPattern count="other">{0} μg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>mga tonelada</displayName>
-				<unitPattern count="one">{0} tn</unitPattern>
-				<unitPattern count="other">{0} tn</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>mga pound</displayName>
-				<unitPattern count="one">{0} lb</unitPattern>
-				<unitPattern count="other">{0} lb</unitPattern>
-			</unit>
-			<unit type="mass-ounce">
-				<unitPattern count="one">{0} oz</unitPattern>
-				<unitPattern count="other">{0} oz</unitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
 				<displayName>oz troy</displayName>
-				<unitPattern count="one">{0} oz t</unitPattern>
-				<unitPattern count="other">{0} oz t</unitPattern>
 			</unit>
 			<unit type="mass-carat">
 				<displayName>mga carat</displayName>
-				<unitPattern count="one">{0} CD</unitPattern>
-				<unitPattern count="other">{0} CD</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>mga dalton</displayName>
-				<unitPattern count="one">{0} Da</unitPattern>
-				<unitPattern count="other">{0} Da</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
 				<displayName>mga mass sa Earth</displayName>
-				<unitPattern count="one">{0} M⊕</unitPattern>
-				<unitPattern count="other">{0} M⊕</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>mga solar mass</displayName>
-				<unitPattern count="one">{0} M☉</unitPattern>
-				<unitPattern count="other">{0} M☉</unitPattern>
-			</unit>
-			<unit type="mass-grain">
-				<unitPattern count="one">{0} grain</unitPattern>
-				<unitPattern count="other">{0} grain</unitPattern>
-			</unit>
-			<unit type="power-gigawatt">
-				<unitPattern count="one">{0} GW</unitPattern>
-				<unitPattern count="other">{0} GW</unitPattern>
-			</unit>
-			<unit type="power-megawatt">
-				<unitPattern count="one">{0} MW</unitPattern>
-				<unitPattern count="other">{0} MW</unitPattern>
-			</unit>
-			<unit type="power-kilowatt">
-				<unitPattern count="one">{0} kW</unitPattern>
-				<unitPattern count="other">{0} kW</unitPattern>
 			</unit>
 			<unit type="power-watt">
 				<displayName>mga watt</displayName>
-				<unitPattern count="one">{0} W</unitPattern>
-				<unitPattern count="other">{0} W</unitPattern>
-			</unit>
-			<unit type="power-milliwatt">
-				<unitPattern count="one">{0} mW</unitPattern>
-				<unitPattern count="other">{0} mW</unitPattern>
-			</unit>
-			<unit type="power-horsepower">
-				<unitPattern count="one">{0} hp</unitPattern>
-				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
 				<displayName>mmHg</displayName>
 				<unitPattern count="one">{0} mmHg</unitPattern>
 				<unitPattern count="other">{0} mmHg</unitPattern>
-			</unit>
-			<unit type="pressure-pound-force-per-square-inch">
-				<unitPattern count="one">{0} psi</unitPattern>
-				<unitPattern count="other">{0} psi</unitPattern>
-			</unit>
-			<unit type="pressure-inch-ofhg">
-				<unitPattern count="one">{0} inHg</unitPattern>
-				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
 				<unitPattern count="one">{0} ka bar</unitPattern>
@@ -4632,109 +3971,31 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="one">{0} ka mbar</unitPattern>
 				<unitPattern count="other">{0} ka mbar</unitPattern>
 			</unit>
-			<unit type="pressure-atmosphere">
-				<unitPattern count="one">{0} atm</unitPattern>
-				<unitPattern count="other">{0} atm</unitPattern>
-			</unit>
-			<unit type="pressure-pascal">
-				<unitPattern count="one">{0} Pa</unitPattern>
-				<unitPattern count="other">{0} Pa</unitPattern>
-			</unit>
-			<unit type="pressure-hectopascal">
-				<unitPattern count="one">{0} hPa</unitPattern>
-				<unitPattern count="other">{0} hPa</unitPattern>
-			</unit>
-			<unit type="pressure-kilopascal">
-				<unitPattern count="one">{0} kPa</unitPattern>
-				<unitPattern count="other">{0} kPa</unitPattern>
-			</unit>
-			<unit type="pressure-megapascal">
-				<unitPattern count="one">{0} MPa</unitPattern>
-				<unitPattern count="other">{0} MPa</unitPattern>
-			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/oras</displayName>
-				<unitPattern count="one">{0} km/h</unitPattern>
-				<unitPattern count="other">{0} km/h</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
 				<displayName>mga metro/seg</displayName>
-				<unitPattern count="one">{0} m/s</unitPattern>
-				<unitPattern count="other">{0} m/s</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<displayName>mga milya/oras</displayName>
 				<unitPattern count="one">{0} mph</unitPattern>
 				<unitPattern count="other">{0} mph</unitPattern>
 			</unit>
-			<unit type="speed-knot">
-				<unitPattern count="one">{0} kn</unitPattern>
-				<unitPattern count="other">{0} kn</unitPattern>
-			</unit>
-			<unit type="temperature-generic">
-				<unitPattern count="one">{0}°</unitPattern>
-				<unitPattern count="other">{0}°</unitPattern>
-			</unit>
 			<unit type="temperature-celsius">
 				<displayName>deg. C</displayName>
-				<unitPattern count="one">{0}°C</unitPattern>
-				<unitPattern count="other">{0}°C</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>deg. F</displayName>
-				<unitPattern count="one">{0}°F</unitPattern>
-				<unitPattern count="other">{0}°F</unitPattern>
-			</unit>
-			<unit type="temperature-kelvin">
-				<unitPattern count="one">{0} K</unitPattern>
-				<unitPattern count="other">{0} K</unitPattern>
-			</unit>
-			<unit type="torque-pound-force-foot">
-				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
-				<unitPattern count="other">{0} lbf⋅ft</unitPattern>
-			</unit>
-			<unit type="torque-newton-meter">
-				<unitPattern count="one">{0} N⋅m</unitPattern>
-				<unitPattern count="other">{0} N⋅m</unitPattern>
-			</unit>
-			<unit type="volume-cubic-kilometer">
-				<unitPattern count="one">{0} km³</unitPattern>
-				<unitPattern count="other">{0} km³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-meter">
-				<unitPattern count="one">{0} m³</unitPattern>
-				<unitPattern count="other">{0} m³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-centimeter">
-				<unitPattern count="one">{0} cm³</unitPattern>
-				<unitPattern count="other">{0} cm³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-mile">
-				<unitPattern count="one">{0} mi³</unitPattern>
-				<unitPattern count="other">{0} mi³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-yard">
 				<displayName>mga yard³</displayName>
-				<unitPattern count="one">{0} yd³</unitPattern>
-				<unitPattern count="other">{0} yd³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-foot">
 				<displayName>mga foot³</displayName>
-				<unitPattern count="one">{0} ft³</unitPattern>
-				<unitPattern count="other">{0} ft³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-inch">
 				<displayName>mga inch³</displayName>
-				<unitPattern count="one">{0} in³</unitPattern>
-				<unitPattern count="other">{0} in³</unitPattern>
-			</unit>
-			<unit type="volume-megaliter">
-				<unitPattern count="one">{0} ML</unitPattern>
-				<unitPattern count="other">{0} ML</unitPattern>
-			</unit>
-			<unit type="volume-hectoliter">
-				<unitPattern count="one">{0} hL</unitPattern>
-				<unitPattern count="other">{0} hL</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>mga litro</displayName>
@@ -4742,69 +4003,27 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} L</unitPattern>
 				<perUnitPattern>{0}/L</perUnitPattern>
 			</unit>
-			<unit type="volume-deciliter">
-				<unitPattern count="one">{0} dL</unitPattern>
-				<unitPattern count="other">{0} dL</unitPattern>
-			</unit>
-			<unit type="volume-centiliter">
-				<unitPattern count="one">{0} cL</unitPattern>
-				<unitPattern count="other">{0} cL</unitPattern>
-			</unit>
-			<unit type="volume-milliliter">
-				<unitPattern count="one">{0} mL</unitPattern>
-				<unitPattern count="other">{0} mL</unitPattern>
-			</unit>
-			<unit type="volume-pint-metric">
-				<unitPattern count="one">{0} mpt</unitPattern>
-				<unitPattern count="other">{0} mpt</unitPattern>
-			</unit>
-			<unit type="volume-cup-metric">
-				<unitPattern count="one">{0} mc</unitPattern>
-				<unitPattern count="other">{0} mc</unitPattern>
-			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>acre ft</displayName>
-				<unitPattern count="one">{0} ac ft</unitPattern>
-				<unitPattern count="other">{0} ac ft</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>gal</displayName>
 				<unitPattern count="one">{0} gal</unitPattern>
 				<unitPattern count="other">{0} gal</unitPattern>
-				<perUnitPattern>{0}/gal US</perUnitPattern>
-			</unit>
-			<unit type="volume-gallon-imperial">
-				<unitPattern count="one">{0} gal Imp.</unitPattern>
-				<unitPattern count="other">{0} gal Imp.</unitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<displayName>qts</displayName>
-				<unitPattern count="one">{0} qt</unitPattern>
-				<unitPattern count="other">{0} qt</unitPattern>
 			</unit>
 			<unit type="volume-pint">
 				<displayName>mga pint</displayName>
-				<unitPattern count="one">{0} pt</unitPattern>
-				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
 			<unit type="volume-cup">
 				<displayName>mga tasa</displayName>
-				<unitPattern count="one">{0} c</unitPattern>
-				<unitPattern count="other">{0} c</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
 				<displayName>fl oz</displayName>
 				<unitPattern count="one">{0} fl oz</unitPattern>
 				<unitPattern count="other">{0} fl oz</unitPattern>
-			</unit>
-			<unit type="volume-fluid-ounce-imperial">
-				<displayName>Imp. fl oz</displayName>
-				<unitPattern count="one">{0} fl oz Imp.</unitPattern>
-				<unitPattern count="other">{0} fl oz Imp.</unitPattern>
-			</unit>
-			<unit type="volume-tablespoon">
-				<unitPattern count="one">{0} tbsp</unitPattern>
-				<unitPattern count="other">{0} tbsp</unitPattern>
 			</unit>
 			<unit type="volume-teaspoon">
 				<displayName>kutsarita</displayName>
@@ -4813,16 +4032,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="volume-barrel">
 				<displayName>barrel</displayName>
-				<unitPattern count="one">{0} bbl</unitPattern>
-				<unitPattern count="other">{0} bbl</unitPattern>
-			</unit>
-			<unit type="volume-dessert-spoon">
-				<unitPattern count="one">{0} dstspn</unitPattern>
-				<unitPattern count="other">{0} dstspn</unitPattern>
-			</unit>
-			<unit type="volume-dessert-spoon-imperial">
-				<unitPattern count="one">{0} dstspn Imp</unitPattern>
-				<unitPattern count="other">{0} dstspn Imp</unitPattern>
 			</unit>
 			<unit type="volume-drop">
 				<unitPattern count="one">{0} ka drop</unitPattern>
@@ -4840,10 +4049,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="one">{0} ka pinch</unitPattern>
 				<unitPattern count="other">{0} ka pinch</unitPattern>
 			</unit>
-			<unit type="volume-quart-imperial">
-				<unitPattern count="one">{0} qt Imp.</unitPattern>
-				<unitPattern count="other">{0} qt Imp.</unitPattern>
-			</unit>
 			<coordinateUnit>
 				<displayName>direksyon</displayName>
 				<coordinateUnitPattern type="east">{0} E</coordinateUnitPattern>
@@ -4853,110 +4058,8 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
-			<compoundUnit type="10p-1">
-				<unitPrefixPattern>d{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-2">
-				<unitPrefixPattern>c{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-3">
-				<unitPrefixPattern>m{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-6">
-				<unitPrefixPattern>μ{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-9">
-				<unitPrefixPattern>n{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-12">
-				<unitPrefixPattern>p{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-15">
-				<unitPrefixPattern>f{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-18">
-				<unitPrefixPattern>a{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-21">
-				<unitPrefixPattern>z{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-24">
-				<unitPrefixPattern>y{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p1">
-				<unitPrefixPattern>da{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p2">
-				<unitPrefixPattern>h{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p3">
-				<unitPrefixPattern>k{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p6">
-				<unitPrefixPattern>M{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p9">
-				<unitPrefixPattern>G{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p12">
-				<unitPrefixPattern>T{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p15">
-				<unitPrefixPattern>P{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p18">
-				<unitPrefixPattern>E{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p21">
-				<unitPrefixPattern>Z{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p24">
-				<unitPrefixPattern>Y{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p1">
-				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p2">
-				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p3">
-				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p4">
-				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p5">
-				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p6">
-				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p7">
-				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p8">
-				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="per">
-				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
-			</compoundUnit>
-			<compoundUnit type="power2">
-				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
-			</compoundUnit>
-			<compoundUnit type="power3">
-				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
-			</compoundUnit>
-			<compoundUnit type="times">
-				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
-			</compoundUnit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
-				<unitPattern count="one">{0}%</unitPattern>
-				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
@@ -4965,8 +4068,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="duration-year">
 				<displayName>tuig</displayName>
-				<unitPattern count="one">{0} ka tuig</unitPattern>
-				<unitPattern count="other">{0} ka tuig</unitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>buwan</displayName>
@@ -4985,8 +4086,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="duration-hour">
 				<displayName>oras</displayName>
-				<unitPattern count="one">{0} ka oras</unitPattern>
-				<unitPattern count="other">{0} ka oras</unitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>minuto</displayName>
@@ -4995,8 +4094,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="duration-second">
 				<displayName>segundo</displayName>
-				<unitPattern count="one">{0}segundo</unitPattern>
-				<unitPattern count="other">{0}segundo</unitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>msec</displayName>
@@ -5004,34 +4101,27 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0}ms</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
-				<displayName>km</displayName>
 				<unitPattern count="one">{0}km</unitPattern>
 				<unitPattern count="other">{0}km</unitPattern>
 			</unit>
 			<unit type="length-meter">
-				<displayName>m</displayName>
 				<unitPattern count="one">{0}m</unitPattern>
 				<unitPattern count="other">{0}m</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
-				<displayName>cm</displayName>
 				<unitPattern count="one">{0}cm</unitPattern>
 				<unitPattern count="other">{0}cm</unitPattern>
 			</unit>
 			<unit type="length-millimeter">
-				<displayName>mm</displayName>
 				<unitPattern count="one">{0}mm</unitPattern>
 				<unitPattern count="other">{0}mm</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
-				<displayName>kg</displayName>
 				<unitPattern count="one">{0}kg</unitPattern>
 				<unitPattern count="other">{0}kg</unitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>gramo</displayName>
-				<unitPattern count="one">{0} g</unitPattern>
-				<unitPattern count="other">{0} g</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/hr</displayName>
@@ -5040,8 +4130,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
-				<unitPattern count="one">{0}°C</unitPattern>
-				<unitPattern count="other">{0}°C</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>litro</displayName>
@@ -5049,27 +4137,15 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0}L</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<displayName>direksyon</displayName>
 				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0}N</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0}S</coordinateUnitPattern>
 				<coordinateUnitPattern type="west">{0}W</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
-		<durationUnit type="hm">
-			<durationUnitPattern>h:mm</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="hms">
-			<durationUnitPattern>h:mm:ss</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="ms">
-			<durationUnitPattern>m:ss</durationUnitPattern>
-		</durationUnit>
 	</units>
 	<listPatterns>
 		<listPattern>
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, ug {1}</listPatternPart>
 			<listPatternPart type="2">{0} ug {1}</listPatternPart>
 		</listPattern>
@@ -5077,33 +4153,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<listPatternPart type="end">{0}, o {1}</listPatternPart>
 			<listPatternPart type="2">{0} o {1}</listPatternPart>
 		</listPattern>
-		<listPattern type="or-narrow">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0}, o {1}</listPatternPart>
-			<listPatternPart type="2">{0} o {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="or-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0}, o {1}</listPatternPart>
-			<listPatternPart type="2">{0} o {1}</listPatternPart>
-		</listPattern>
 		<listPattern type="standard-narrow">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0}, {1}</listPatternPart>
-			<listPatternPart type="2">{0}, {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="standard-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0}, ug {1}</listPatternPart>
-			<listPatternPart type="2">{0} ug {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
@@ -5114,8 +4164,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<listPatternPart type="2">{0} {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>

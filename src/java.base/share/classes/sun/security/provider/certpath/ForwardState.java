@@ -31,17 +31,11 @@ import java.security.cert.CertPathValidatorException;
 import java.security.cert.PKIXCertPathChecker;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import javax.security.auth.x500.X500Principal;
 
 import sun.security.util.Debug;
-import sun.security.x509.SubjectAlternativeNameExtension;
-import sun.security.x509.GeneralNames;
-import sun.security.x509.GeneralName;
-import sun.security.x509.GeneralNameInterface;
-import sun.security.x509.X500Name;
 import sun.security.x509.X509CertImpl;
 
 /**
@@ -61,9 +55,6 @@ class ForwardState implements State {
     /* The last cert in the path */
     X509CertImpl cert;
 
-    /* The set of subjectDNs and subjectAltNames of all certs in the path */
-    HashSet<GeneralNameInterface> subjectNamesTraversed;
-
     /*
      * The number of intermediate CA certs which have been traversed so
      * far in the path
@@ -72,7 +63,6 @@ class ForwardState implements State {
 
     /* Flag indicating if state is initial (path is just starting) */
     private boolean init = true;
-
 
     /* the untrusted certificates checker */
     UntrustedChecker untrustedChecker;
@@ -103,8 +93,6 @@ class ForwardState implements State {
                 "\n  issuerDN of last cert: " + issuerDN +
                 "\n  traversedCACerts: " + traversedCACerts +
                 "\n  init: " + init +
-                "\n  subjectNamesTraversed: \n" +
-                subjectNamesTraversed +
                 "\n  selfIssued: " + selfIssued + "\n" +
                 "]\n";
     }
@@ -117,7 +105,6 @@ class ForwardState implements State {
     public void initState(List<PKIXCertPathChecker> certPathCheckers)
         throws CertPathValidatorException
     {
-        subjectNamesTraversed = new HashSet<>();
         traversedCACerts = 0;
 
         /*
@@ -167,22 +154,6 @@ class ForwardState implements State {
             }
         }
 
-        /* update subjectNamesTraversed only if this is the EE cert or if
-           this cert is not self-issued */
-        if (init || !selfIssued) {
-            X500Principal subjName = cert.getSubjectX500Principal();
-            subjectNamesTraversed.add(X500Name.asX500Name(subjName));
-
-            SubjectAlternativeNameExtension subjAltNameExt
-                    = icert.getSubjectAlternativeNameExtension();
-            if (subjAltNameExt != null) {
-                GeneralNames gNames = subjAltNameExt.getNames();
-                for (GeneralName gName : gNames.names()) {
-                    subjectNamesTraversed.add(gName.getName());
-                }
-            }
-        }
-
         init = false;
     }
 
@@ -190,10 +161,6 @@ class ForwardState implements State {
      * Clone current state. The state is cloned as each cert is
      * added to the path. This is necessary if backtracking occurs,
      * and a prior state needs to be restored.
-     *
-     * Note that this is a SMART clone. Not all fields are fully copied,
-     * because some of them will
-     * not have their contents modified by subsequent calls to updateState.
      */
     @Override
     @SuppressWarnings("unchecked") // Safe casts assuming clone() works correctly
@@ -213,13 +180,6 @@ class ForwardState implements State {
                 }
             }
 
-            /*
-             * Shallow copy traversed names. There is no need to
-             * deep copy contents, since the elements of the Set
-             * are never modified by subsequent calls to updateState().
-             */
-            clonedState.subjectNamesTraversed
-                = (HashSet<GeneralNameInterface>)subjectNamesTraversed.clone();
             return clonedState;
         } catch (CloneNotSupportedException e) {
             throw new InternalError(e.toString(), e);

@@ -28,29 +28,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">ngàb mə̀kala</type>
 			<type key="numbers" type="latn">inu</type>
 		</types>
-		<codePatterns>
-			<codePattern type="language">{0}</codePattern>
-			<codePattern type="script">{0}</codePattern>
-			<codePattern type="territory">{0}</codePattern>
-		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a à b {ch} d e è ə {ə\u0300} f g {gh} i ì j k m n ŋ o ò ɔ {ɔ\u0300} p r s t u ù w y z ʼ]</exemplarCharacters>
+		<exemplarCharacters>[aà b {ch} d eè ə{ə̀} f g {gh} iì j k m n ŋ oò ɔ{ɔ̀} p r s t uù w y z ʼ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[c h l q v x]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B {CH} D E Ə F G {GH} I J K M N Ŋ O Ɔ P R S T U W Y Z ʼ]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[, ; \: ! ? . ' ‘ ’ &quot; “ ”]</exemplarCharacters>
-		<ellipsis type="final">{0}…</ellipsis>
-		<ellipsis type="initial">…{0}</ellipsis>
-		<ellipsis type="medial">{0}…{1}</ellipsis>
-		<moreInformation>?</moreInformation>
+		<exemplarCharacters type="punctuation">[, ; \: ! ? . '‘’ &quot;“”]</exemplarCharacters>
 	</characters>
-	<delimiters>
-		<quotationStart>“</quotationStart>
-		<quotationEnd>”</quotationEnd>
-		<alternateQuotationStart>‘</alternateQuotationStart>
-		<alternateQuotationEnd>’</alternateQuotationEnd>
-	</delimiters>
 	<dates>
 		<calendars>
 			<calendar type="generic">
@@ -64,19 +48,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>G y MMMM d</pattern>
-							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>G y MMM d</pattern>
-							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>GGGGG y-MM-dd</pattern>
-							<datetimeSkeleton>GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -101,12 +82,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
-					<availableFormats>
-						<dateFormatItem id="d">d</dateFormatItem>
-					</availableFormats>
-					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
-					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="gregorian">
@@ -126,20 +101,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">iməg zò</month>
 							<month type="12">iməg krizmed</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">M1</month>
-							<month type="2">A2</month>
-							<month type="3">M3</month>
-							<month type="4">N4</month>
-							<month type="5">F5</month>
-							<month type="6">I6</month>
-							<month type="7">A7</month>
-							<month type="8">I8</month>
-							<month type="9">K9</month>
-							<month type="10">10</month>
-							<month type="11">11</month>
-							<month type="12">12</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">iməg mbegtug</month>
 							<month type="2">imeg àbùbì</month>
@@ -156,20 +117,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">mbegtug</month>
-							<month type="2">imeg àbùbì</month>
-							<month type="3">imeg mbəŋchubi</month>
-							<month type="4">iməg ngwə̀t</month>
-							<month type="5">iməg fog</month>
-							<month type="6">iməg ichiibɔd</month>
-							<month type="7">iməg àdùmbə̀ŋ</month>
-							<month type="8">iməg ichika</month>
-							<month type="9">iməg kud</month>
-							<month type="10">iməg tèsiʼe</month>
-							<month type="11">iməg zò</month>
-							<month type="12">iməg krizmed</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">M1</month>
 							<month type="2">A2</month>
@@ -184,42 +131,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">11</month>
 							<month type="12">12</month>
 						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">iməg mbegtug</month>
-							<month type="2">imeg àbùbì</month>
-							<month type="3">imeg mbəŋchubi</month>
-							<month type="4">iməg ngwə̀t</month>
-							<month type="5">iməg fog</month>
-							<month type="6">iməg ichiibɔd</month>
-							<month type="7">iməg àdùmbə̀ŋ</month>
-							<month type="8">iməg ichika</month>
-							<month type="9">iməg kud</month>
-							<month type="10">iməg tèsiʼe</month>
-							<month type="11">iməg zò</month>
-							<month type="12">iməg krizmed</month>
-						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
-						<dayWidth type="abbreviated">
-							<day type="sun">Aneg 1</day>
-							<day type="mon">Aneg 2</day>
-							<day type="tue">Aneg 3</day>
-							<day type="wed">Aneg 4</day>
-							<day type="thu">Aneg 5</day>
-							<day type="fri">Aneg 6</day>
-							<day type="sat">Aneg 7</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun">A1</day>
-							<day type="mon">A2</day>
-							<day type="tue">A3</day>
-							<day type="wed">A4</day>
-							<day type="thu">A5</day>
-							<day type="fri">A6</day>
-							<day type="sat">A7</day>
-						</dayWidth>
 						<dayWidth type="short">
 							<day type="sun">1</day>
 							<day type="mon">2</day>
@@ -240,15 +155,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun">Aneg 1</day>
-							<day type="mon">Aneg 2</day>
-							<day type="tue">Aneg 3</day>
-							<day type="wed">Aneg 4</day>
-							<day type="thu">Aneg 5</day>
-							<day type="fri">Aneg 6</day>
-							<day type="sat">Aneg 7</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">A1</day>
 							<day type="mon">A2</day>
@@ -258,44 +164,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri">A6</day>
 							<day type="sat">A7</day>
 						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">1</day>
-							<day type="mon">2</day>
-							<day type="tue">3</day>
-							<day type="wed">4</day>
-							<day type="thu">5</day>
-							<day type="fri">6</day>
-							<day type="sat">7</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">Aneg 1</day>
-							<day type="mon">Aneg 2</day>
-							<day type="tue">Aneg 3</day>
-							<day type="wed">Aneg 4</day>
-							<day type="thu">Aneg 5</day>
-							<day type="fri">Aneg 6</day>
-							<day type="sat">Aneg 7</day>
-						</dayWidth>
 					</dayContext>
 				</days>
-				<dayPeriods>
-					<dayPeriodContext type="format">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-				</dayPeriods>
-				<eras>
-					<eraAbbr>
-						<era type="0">BCE</era>
-						<era type="1">CE</era>
-					</eraAbbr>
-				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
@@ -306,19 +176,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>y MMMM d</pattern>
-							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>y MMM d</pattern>
-							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>y-MM-dd</pattern>
-							<datetimeSkeleton>yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -326,25 +193,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>HH:mm:ss zzzz</pattern>
-							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>HH:mm:ss z</pattern>
-							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>HH:mm:ss</pattern>
-							<datetimeSkeleton>HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>HH:mm</pattern>
-							<datetimeSkeleton>HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -369,32 +232,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
-					<availableFormats>
-						<dateFormatItem id="d">d</dateFormatItem>
-					</availableFormats>
-					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
-					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
 		<fields>
-			<field type="era">
-				<displayName>Era</displayName>
-			</field>
 			<field type="year">
 				<displayName>fituʼ</displayName>
 			</field>
 			<field type="month">
 				<displayName>iməg</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} m</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} m</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} m</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} m</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="week">
 				<displayName>nkap</displayName>
@@ -405,146 +251,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">tèchɔ̀ŋ</relative>
 				<relative type="1">isu</relative>
 				<relative type="2">isu ywi</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} d</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} d</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} d</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} d</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="weekday">
 				<displayName>anəg agu nkap</displayName>
 			</field>
-			<field type="dayperiod">
-				<displayName>Dayperiod</displayName>
-			</field>
-			<field type="hour">
-				<displayName>Hour</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} h</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} h</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} h</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} h</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="minute">
-				<displayName>Minute</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} min</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} min</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} min</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} min</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="second">
-				<displayName>Second</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} s</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} s</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} s</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} s</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="zone">
-				<displayName>Zone</displayName>
-			</field>
 		</fields>
-		<timeZoneNames>
-			<hourFormat>+HH:mm;-HH:mm</hourFormat>
-			<gmtFormat>GMT{0}</gmtFormat>
-			<gmtZeroFormat>GMT</gmtZeroFormat>
-			<regionFormat>{0}</regionFormat>
-			<fallbackFormat>{1} ({0})</fallbackFormat>
-		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem>latn</defaultNumberingSystem>
-		<otherNumberingSystems>
-			<native>latn</native>
-		</otherNumberingSystems>
-		<symbols numberSystem="latn">
-			<decimal>.</decimal>
-			<group>,</group>
-			<list>;</list>
-			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
-			<exponential>E</exponential>
-			<perMille>‰</perMille>
-			<infinity>∞</infinity>
-			<nan>NaN</nan>
-		</symbols>
-		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<scientificFormats numberSystem="latn">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern>#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern>#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
 		<currencyFormats numberSystem="latn">
-			<currencyFormatLength>
-				<currencyFormat type="standard">
-					<pattern>¤ #,##0.00</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
-			<currencyFormatLength type="short">
-				<currencyFormat type="standard">
-					<pattern type="1000" count="one" draft="provisional">¤ 0K</pattern>
-					<pattern type="1000" count="other" draft="provisional">¤ 0K</pattern>
-					<pattern type="10000" count="one" draft="provisional">¤ 00K</pattern>
-					<pattern type="10000" count="other" draft="provisional">¤ 00K</pattern>
-					<pattern type="100000" count="one" draft="provisional">¤ 000K</pattern>
-					<pattern type="100000" count="other" draft="provisional">¤ 000K</pattern>
-					<pattern type="1000000" count="one" draft="provisional">¤ 0M</pattern>
-					<pattern type="1000000" count="other" draft="provisional">¤ 0M</pattern>
-					<pattern type="10000000" count="one" draft="provisional">¤ 00M</pattern>
-					<pattern type="10000000" count="other" draft="provisional">¤ 00M</pattern>
-					<pattern type="100000000" count="one" draft="provisional">¤ 000M</pattern>
-					<pattern type="100000000" count="other" draft="provisional">¤ 000M</pattern>
-					<pattern type="1000000000" count="one" draft="provisional">¤ 0G</pattern>
-					<pattern type="1000000000" count="other" draft="provisional">¤ 0G</pattern>
-					<pattern type="10000000000" count="one" draft="provisional">¤ 00G</pattern>
-					<pattern type="10000000000" count="other" draft="provisional">¤ 00G</pattern>
-					<pattern type="100000000000" count="one" draft="provisional">¤ 000G</pattern>
-					<pattern type="100000000000" count="other" draft="provisional">¤ 000G</pattern>
-					<pattern type="1000000000000" count="one" draft="provisional">¤ 0T</pattern>
-					<pattern type="1000000000000" count="other" draft="provisional">¤ 0T</pattern>
-					<pattern type="10000000000000" count="one" draft="provisional">¤ 00T</pattern>
-					<pattern type="10000000000000" count="other" draft="provisional">¤ 00T</pattern>
-					<pattern type="100000000000000" count="one" draft="provisional">¤ 000T</pattern>
-					<pattern type="100000000000000" count="other" draft="provisional">¤ 000T</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
 			<unitPattern count="one">{0} {1}</unitPattern>
 			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="XAF">
 				<displayName>shirè</displayName>
-				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>iku ikap mɔʼɔ</displayName>
@@ -552,33 +272,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</currencies>
 	</numbers>
 	<units>
-		<unitLength type="long">
-			<unit type="duration-month">
-				<displayName draft="provisional">m</displayName>
-				<unitPattern count="one">{0} m</unitPattern>
-				<unitPattern count="other">{0} m</unitPattern>
-			</unit>
-			<unit type="duration-day">
-				<displayName draft="provisional">d</displayName>
-				<unitPattern count="one">{0} d</unitPattern>
-				<unitPattern count="other">{0} d</unitPattern>
-			</unit>
-			<unit type="duration-hour">
-				<displayName draft="provisional">h</displayName>
-				<unitPattern count="one">{0} h</unitPattern>
-				<unitPattern count="other">{0} h</unitPattern>
-			</unit>
-			<unit type="duration-minute">
-				<displayName draft="provisional">min</displayName>
-				<unitPattern count="one">{0} min</unitPattern>
-				<unitPattern count="other">{0} min</unitPattern>
-			</unit>
-			<unit type="duration-second">
-				<displayName draft="provisional">s</displayName>
-				<unitPattern count="one">{0} s</unitPattern>
-				<unitPattern count="other">{0} s</unitPattern>
-			</unit>
-		</unitLength>
 		<unitLength type="short">
 			<unit type="duration-month">
 				<displayName draft="provisional">m</displayName>
@@ -588,9 +281,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="duration-hour">
 				<displayName draft="provisional">h</displayName>
-			</unit>
-			<unit type="duration-minute">
-				<displayName draft="provisional">min</displayName>
 			</unit>
 			<unit type="duration-second">
 				<displayName draft="provisional">s</displayName>

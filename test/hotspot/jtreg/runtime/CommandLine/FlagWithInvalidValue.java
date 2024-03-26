@@ -37,7 +37,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class FlagWithInvalidValue {
   public static void main(String[] args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
         "-XX:MaxRAMPercentage=v", "-version");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());

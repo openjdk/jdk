@@ -415,8 +415,8 @@ protected:
 public:
   // Return a node which computes the same function as this node, but
   // in a faster or cheaper fashion.
-  Node  *transform( Node *n );
-  Node  *transform_no_reclaim( Node *n );
+  Node* transform(Node* n);
+
   virtual void record_for_igvn(Node *n) {
     C->record_for_igvn(n);
   }
@@ -528,8 +528,9 @@ public:
   }
 
   // Add users of 'n' to worklist
-  void add_users_to_worklist0( Node *n );
-  void add_users_to_worklist ( Node *n );
+  static void add_users_to_worklist0(Node* n, Unique_Node_List& worklist);
+  static void add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_List& worklist);
+  void add_users_to_worklist(Node* n);
 
   // Replace old node with new one.
   void replace_node( Node *old, Node *nn ) {

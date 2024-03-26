@@ -28,10 +28,10 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
-import jdk.internal.classfile.ClassHierarchyResolver;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.components.ClassPrinter;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassHierarchyResolver;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.components.ClassPrinter;
+import java.lang.classfile.ClassFile;
 import jdk.internal.classfile.impl.ClassHierarchyImpl;
 import jdk.internal.classfile.impl.RawBytecodeHelper;
 import static jdk.internal.classfile.impl.RawBytecodeHelper.ILLEGAL;
@@ -328,12 +328,12 @@ public final class VerifierImpl {
                 VerificationType type, type2 = null;
                 VerificationType atype;
                 if (bcs.isWide) {
-                    if (opcode != Classfile.IINC && opcode != Classfile.ILOAD
-                        && opcode != Classfile.ALOAD && opcode != Classfile.LLOAD
-                        && opcode != Classfile.ISTORE && opcode != Classfile.ASTORE
-                        && opcode != Classfile.LSTORE && opcode != Classfile.FLOAD
-                        && opcode != Classfile.DLOAD && opcode != Classfile.FSTORE
-                        && opcode != Classfile.DSTORE) {
+                    if (opcode != ClassFile.IINC && opcode != ClassFile.ILOAD
+                        && opcode != ClassFile.ALOAD && opcode != ClassFile.LLOAD
+                        && opcode != ClassFile.ISTORE && opcode != ClassFile.ASTORE
+                        && opcode != ClassFile.LSTORE && opcode != ClassFile.FLOAD
+                        && opcode != ClassFile.DLOAD && opcode != ClassFile.FSTORE
+                        && opcode != ClassFile.DSTORE) {
                         verifyError("Bad wide instruction");
                     }
                 }
@@ -342,107 +342,107 @@ public final class VerifierImpl {
                     verified_exc_handlers = true;
                 }
                 switch (opcode) {
-                    case Classfile.NOP :
+                    case ClassFile.NOP :
                         no_control_flow = false; break;
-                    case Classfile.ACONST_NULL :
+                    case ClassFile.ACONST_NULL :
                         current_frame.push_stack(
                             VerificationType.null_type);
                         no_control_flow = false; break;
-                    case Classfile.ICONST_M1 :
-                    case Classfile.ICONST_0 :
-                    case Classfile.ICONST_1 :
-                    case Classfile.ICONST_2 :
-                    case Classfile.ICONST_3 :
-                    case Classfile.ICONST_4 :
-                    case Classfile.ICONST_5 :
+                    case ClassFile.ICONST_M1 :
+                    case ClassFile.ICONST_0 :
+                    case ClassFile.ICONST_1 :
+                    case ClassFile.ICONST_2 :
+                    case ClassFile.ICONST_3 :
+                    case ClassFile.ICONST_4 :
+                    case ClassFile.ICONST_5 :
                         current_frame.push_stack(
                             VerificationType.integer_type);
                         no_control_flow = false; break;
-                    case Classfile.LCONST_0 :
-                    case Classfile.LCONST_1 :
+                    case ClassFile.LCONST_0 :
+                    case ClassFile.LCONST_1 :
                         current_frame.push_stack_2(
                             VerificationType.long_type,
                             VerificationType.long2_type);
                         no_control_flow = false; break;
-                    case Classfile.FCONST_0 :
-                    case Classfile.FCONST_1 :
-                    case Classfile.FCONST_2 :
+                    case ClassFile.FCONST_0 :
+                    case ClassFile.FCONST_1 :
+                    case ClassFile.FCONST_2 :
                         current_frame.push_stack(
                             VerificationType.float_type);
                         no_control_flow = false; break;
-                    case Classfile.DCONST_0 :
-                    case Classfile.DCONST_1 :
+                    case ClassFile.DCONST_0 :
+                    case ClassFile.DCONST_1 :
                         current_frame.push_stack_2(
                             VerificationType.double_type,
                             VerificationType.double2_type);
                         no_control_flow = false; break;
-                    case Classfile.SIPUSH :
-                    case Classfile.BIPUSH :
+                    case ClassFile.SIPUSH :
+                    case ClassFile.BIPUSH :
                         current_frame.push_stack(
                             VerificationType.integer_type);
                         no_control_flow = false; break;
-                    case Classfile.LDC :
+                    case ClassFile.LDC :
                         verify_ldc(
                             opcode, bcs.getIndexU1(), current_frame,
                             cp, bci);
                         no_control_flow = false; break;
-                    case Classfile.LDC_W :
-                    case Classfile.LDC2_W :
+                    case ClassFile.LDC_W :
+                    case ClassFile.LDC2_W :
                         verify_ldc(
                             opcode, bcs.getIndexU2(), current_frame,
                             cp, bci);
                         no_control_flow = false; break;
-                    case Classfile.ILOAD :
+                    case ClassFile.ILOAD :
                         verify_iload(bcs.getIndex(), current_frame);
                         no_control_flow = false; break;
-                    case Classfile.ILOAD_0 :
-                    case Classfile.ILOAD_1 :
-                    case Classfile.ILOAD_2 :
-                    case Classfile.ILOAD_3 :
-                        index = opcode - Classfile.ILOAD_0;
+                    case ClassFile.ILOAD_0 :
+                    case ClassFile.ILOAD_1 :
+                    case ClassFile.ILOAD_2 :
+                    case ClassFile.ILOAD_3 :
+                        index = opcode - ClassFile.ILOAD_0;
                         verify_iload(index, current_frame);
                         no_control_flow = false; break;
-                    case Classfile.LLOAD :
+                    case ClassFile.LLOAD :
                         verify_lload(bcs.getIndex(), current_frame);
                         no_control_flow = false; break;
-                    case Classfile.LLOAD_0 :
-                    case Classfile.LLOAD_1 :
-                    case Classfile.LLOAD_2 :
-                    case Classfile.LLOAD_3 :
-                        index = opcode - Classfile.LLOAD_0;
+                    case ClassFile.LLOAD_0 :
+                    case ClassFile.LLOAD_1 :
+                    case ClassFile.LLOAD_2 :
+                    case ClassFile.LLOAD_3 :
+                        index = opcode - ClassFile.LLOAD_0;
                         verify_lload(index, current_frame);
                         no_control_flow = false; break;
-                    case Classfile.FLOAD :
+                    case ClassFile.FLOAD :
                         verify_fload(bcs.getIndex(), current_frame);
                         no_control_flow = false; break;
-                    case Classfile.FLOAD_0 :
-                    case Classfile.FLOAD_1 :
-                    case Classfile.FLOAD_2 :
-                    case Classfile.FLOAD_3 :
-                        index = opcode - Classfile.FLOAD_0;
+                    case ClassFile.FLOAD_0 :
+                    case ClassFile.FLOAD_1 :
+                    case ClassFile.FLOAD_2 :
+                    case ClassFile.FLOAD_3 :
+                        index = opcode - ClassFile.FLOAD_0;
                         verify_fload(index, current_frame);
                         no_control_flow = false; break;
-                    case Classfile.DLOAD :
+                    case ClassFile.DLOAD :
                         verify_dload(bcs.getIndex(), current_frame);
                         no_control_flow = false; break;
-                    case Classfile.DLOAD_0 :
-                    case Classfile.DLOAD_1 :
-                    case Classfile.DLOAD_2 :
-                    case Classfile.DLOAD_3 :
-                        index = opcode - Classfile.DLOAD_0;
+                    case ClassFile.DLOAD_0 :
+                    case ClassFile.DLOAD_1 :
+                    case ClassFile.DLOAD_2 :
+                    case ClassFile.DLOAD_3 :
+                        index = opcode - ClassFile.DLOAD_0;
                         verify_dload(index, current_frame);
                         no_control_flow = false; break;
-                    case Classfile.ALOAD :
+                    case ClassFile.ALOAD :
                         verify_aload(bcs.getIndex(), current_frame);
                         no_control_flow = false; break;
-                    case Classfile.ALOAD_0 :
-                    case Classfile.ALOAD_1 :
-                    case Classfile.ALOAD_2 :
-                    case Classfile.ALOAD_3 :
-                        index = opcode - Classfile.ALOAD_0;
+                    case ClassFile.ALOAD_0 :
+                    case ClassFile.ALOAD_1 :
+                    case ClassFile.ALOAD_2 :
+                    case ClassFile.ALOAD_3 :
+                        index = opcode - ClassFile.ALOAD_0;
                         verify_aload(index, current_frame);
                         no_control_flow = false; break;
-                    case Classfile.IALOAD :
+                    case ClassFile.IALOAD :
                         type = current_frame.pop_stack(
                             VerificationType.integer_type);
                         atype = current_frame.pop_stack(
@@ -453,7 +453,7 @@ public final class VerifierImpl {
                         current_frame.push_stack(
                             VerificationType.integer_type);
                         no_control_flow = false; break;
-                    case Classfile.BALOAD :
+                    case ClassFile.BALOAD :
                         type = current_frame.pop_stack(
                             VerificationType.integer_type);
                         atype = current_frame.pop_stack(
@@ -464,7 +464,7 @@ public final class VerifierImpl {
                         current_frame.push_stack(
                             VerificationType.integer_type);
                         no_control_flow = false; break;
-                    case Classfile.CALOAD :
+                    case ClassFile.CALOAD :
                         type = current_frame.pop_stack(
                             VerificationType.integer_type);
                         atype = current_frame.pop_stack(
@@ -475,7 +475,7 @@ public final class VerifierImpl {
                         current_frame.push_stack(
                             VerificationType.integer_type);
                         no_control_flow = false; break;
-                    case Classfile.SALOAD :
+                    case ClassFile.SALOAD :
                         type = current_frame.pop_stack(
                             VerificationType.integer_type);
                         atype = current_frame.pop_stack(
@@ -486,7 +486,7 @@ public final class VerifierImpl {
                         current_frame.push_stack(
                             VerificationType.integer_type);
                         no_control_flow = false; break;
-                    case Classfile.LALOAD :
+                    case ClassFile.LALOAD :
                         type = current_frame.pop_stack(
                             VerificationType.integer_type);
                         atype = current_frame.pop_stack(
@@ -498,7 +498,7 @@ public final class VerifierImpl {
                             VerificationType.long_type,
                             VerificationType.long2_type);
                         no_control_flow = false; break;
-                    case Classfile.FALOAD :
+                    case ClassFile.FALOAD :
                         type = current_frame.pop_stack(
                             VerificationType.integer_type);
                         atype = current_frame.pop_stack(
@@ -509,7 +509,7 @@ public final class VerifierImpl {
                         current_frame.push_stack(
                             VerificationType.float_type);
                         no_control_flow = false; break;
-                    case Classfile.DALOAD :
+                    case ClassFile.DALOAD :
                         type = current_frame.pop_stack(
                             VerificationType.integer_type);
                         atype = current_frame.pop_stack(
@@ -521,7 +521,7 @@ public final class VerifierImpl {
                             VerificationType.double_type,
                             VerificationType.double2_type);
                         no_control_flow = false; break;
-                    case Classfile.AALOAD : {
+                    case ClassFile.AALOAD : {
                         type = current_frame.pop_stack(
                             VerificationType.integer_type);
                         atype = current_frame.pop_stack(
@@ -539,57 +539,57 @@ public final class VerifierImpl {
                         }
                         no_control_flow = false; break;
                     }
-                    case Classfile.ISTORE :
+                    case ClassFile.ISTORE :
                         verify_istore(bcs.getIndex(), current_frame);
                         no_control_flow = false; break;
-                    case Classfile.ISTORE_0 :
-                    case Classfile.ISTORE_1 :
-                    case Classfile.ISTORE_2 :
-                    case Classfile.ISTORE_3 :
-                        index = opcode - Classfile.ISTORE_0;
+                    case ClassFile.ISTORE_0 :
+                    case ClassFile.ISTORE_1 :
+                    case ClassFile.ISTORE_2 :
+                    case ClassFile.ISTORE_3 :
+                        index = opcode - ClassFile.ISTORE_0;
                         verify_istore(index, current_frame);
                         no_control_flow = false; break;
-                    case Classfile.LSTORE :
+                    case ClassFile.LSTORE :
                         verify_lstore(bcs.getIndex(), current_frame);
                         no_control_flow = false; break;
-                    case Classfile.LSTORE_0 :
-                    case Classfile.LSTORE_1 :
-                    case Classfile.LSTORE_2 :
-                    case Classfile.LSTORE_3 :
-                        index = opcode - Classfile.LSTORE_0;
+                    case ClassFile.LSTORE_0 :
+                    case ClassFile.LSTORE_1 :
+                    case ClassFile.LSTORE_2 :
+                    case ClassFile.LSTORE_3 :
+                        index = opcode - ClassFile.LSTORE_0;
                         verify_lstore(index, current_frame);
                         no_control_flow = false; break;
-                    case Classfile.FSTORE :
+                    case ClassFile.FSTORE :
                         verify_fstore(bcs.getIndex(), current_frame);
                         no_control_flow = false; break;
-                    case Classfile.FSTORE_0 :
-                    case Classfile.FSTORE_1 :
-                    case Classfile.FSTORE_2 :
-                    case Classfile.FSTORE_3 :
-                        index = opcode - Classfile.FSTORE_0;
+                    case ClassFile.FSTORE_0 :
+                    case ClassFile.FSTORE_1 :
+                    case ClassFile.FSTORE_2 :
+                    case ClassFile.FSTORE_3 :
+                        index = opcode - ClassFile.FSTORE_0;
                         verify_fstore(index, current_frame);
                         no_control_flow = false; break;
-                    case Classfile.DSTORE :
+                    case ClassFile.DSTORE :
                         verify_dstore(bcs.getIndex(), current_frame);
                         no_control_flow = false; break;
-                    case Classfile.DSTORE_0 :
-                    case Classfile.DSTORE_1 :
-                    case Classfile.DSTORE_2 :
-                    case Classfile.DSTORE_3 :
-                        index = opcode - Classfile.DSTORE_0;
+                    case ClassFile.DSTORE_0 :
+                    case ClassFile.DSTORE_1 :
+                    case ClassFile.DSTORE_2 :
+                    case ClassFile.DSTORE_3 :
+                        index = opcode - ClassFile.DSTORE_0;
                         verify_dstore(index, current_frame);
                         no_control_flow = false; break;
-                    case Classfile.ASTORE :
+                    case ClassFile.ASTORE :
                         verify_astore(bcs.getIndex(), current_frame);
                         no_control_flow = false; break;
-                    case Classfile.ASTORE_0 :
-                    case Classfile.ASTORE_1 :
-                    case Classfile.ASTORE_2 :
-                    case Classfile.ASTORE_3 :
-                        index = opcode - Classfile.ASTORE_0;
+                    case ClassFile.ASTORE_0 :
+                    case ClassFile.ASTORE_1 :
+                    case ClassFile.ASTORE_2 :
+                    case ClassFile.ASTORE_3 :
+                        index = opcode - ClassFile.ASTORE_0;
                         verify_astore(index, current_frame);
                         no_control_flow = false; break;
-                    case Classfile.IASTORE :
+                    case ClassFile.IASTORE :
                         type = current_frame.pop_stack(
                             VerificationType.integer_type);
                         type2 = current_frame.pop_stack(
@@ -600,7 +600,7 @@ public final class VerifierImpl {
                             verifyError("Bad type");
                         }
                         no_control_flow = false; break;
-                    case Classfile.BASTORE :
+                    case ClassFile.BASTORE :
                         type = current_frame.pop_stack(
                             VerificationType.integer_type);
                         type2 = current_frame.pop_stack(
@@ -611,7 +611,7 @@ public final class VerifierImpl {
                             verifyError("Bad type");
                         }
                         no_control_flow = false; break;
-                    case Classfile.CASTORE :
+                    case ClassFile.CASTORE :
                         current_frame.pop_stack(
                             VerificationType.integer_type);
                         current_frame.pop_stack(
@@ -622,7 +622,7 @@ public final class VerifierImpl {
                             verifyError("Bad type");
                         }
                         no_control_flow = false; break;
-                    case Classfile.SASTORE :
+                    case ClassFile.SASTORE :
                         current_frame.pop_stack(
                             VerificationType.integer_type);
                         current_frame.pop_stack(
@@ -633,7 +633,7 @@ public final class VerifierImpl {
                             verifyError("Bad type");
                         }
                         no_control_flow = false; break;
-                    case Classfile.LASTORE :
+                    case ClassFile.LASTORE :
                         current_frame.pop_stack_2(
                             VerificationType.long2_type,
                             VerificationType.long_type);
@@ -645,7 +645,7 @@ public final class VerifierImpl {
                             verifyError("Bad type");
                         }
                         no_control_flow = false; break;
-                    case Classfile.FASTORE :
+                    case ClassFile.FASTORE :
                         current_frame.pop_stack(
                             VerificationType.float_type);
                         current_frame.pop_stack
@@ -656,7 +656,7 @@ public final class VerifierImpl {
                             verifyError("Bad type");
                         }
                         no_control_flow = false; break;
-                    case Classfile.DASTORE :
+                    case ClassFile.DASTORE :
                         current_frame.pop_stack_2(
                             VerificationType.double2_type,
                             VerificationType.double_type);
@@ -668,7 +668,7 @@ public final class VerifierImpl {
                             verifyError("Bad type");
                         }
                         no_control_flow = false; break;
-                    case Classfile.AASTORE :
+                    case ClassFile.AASTORE :
                         type = current_frame.pop_stack(object_type());
                         type2 = current_frame.pop_stack(
                             VerificationType.integer_type);
@@ -680,11 +680,11 @@ public final class VerifierImpl {
                         }
                         // 4938384: relaxed constraint in JVMS 3nd edition.
                         no_control_flow = false; break;
-                    case Classfile.POP :
+                    case ClassFile.POP :
                         current_frame.pop_stack(
                             VerificationType.category1_check);
                         no_control_flow = false; break;
-                    case Classfile.POP2 :
+                    case ClassFile.POP2 :
                         type = current_frame.pop_stack();
                         if (type.is_category1(this)) {
                             current_frame.pop_stack(
@@ -696,13 +696,13 @@ public final class VerifierImpl {
                             verifyError("Bad type");
                         }
                         no_control_flow = false; break;
-                    case Classfile.DUP :
+                    case ClassFile.DUP :
                         type = current_frame.pop_stack(
                             VerificationType.category1_check);
                         current_frame.push_stack(type);
                         current_frame.push_stack(type);
                         no_control_flow = false; break;
-                    case Classfile.DUP_X1 :
+                    case ClassFile.DUP_X1 :
                         type = current_frame.pop_stack(
                             VerificationType.category1_check);
                         type2 = current_frame.pop_stack(
@@ -711,7 +711,7 @@ public final class VerifierImpl {
                         current_frame.push_stack(type2);
                         current_frame.push_stack(type);
                         no_control_flow = false; break;
-                    case Classfile.DUP_X2 :
+                    case ClassFile.DUP_X2 :
                     {
                         VerificationType type3 = null;
                         type = current_frame.pop_stack(
@@ -732,7 +732,7 @@ public final class VerifierImpl {
                         current_frame.push_stack(type);
                         no_control_flow = false; break;
                     }
-                    case Classfile.DUP2 :
+                    case ClassFile.DUP2 :
                         type = current_frame.pop_stack();
                         if (type.is_category1(this)) {
                             type2 = current_frame.pop_stack(
@@ -748,7 +748,7 @@ public final class VerifierImpl {
                         current_frame.push_stack(type2);
                         current_frame.push_stack(type);
                         no_control_flow = false; break;
-                    case Classfile.DUP2_X1 :
+                    case ClassFile.DUP2_X1 :
                     {
                         VerificationType type3;
                         type = current_frame.pop_stack();
@@ -770,7 +770,7 @@ public final class VerifierImpl {
                         current_frame.push_stack(type);
                         no_control_flow = false; break;
                     }
-                    case Classfile.DUP2_X2 :
+                    case ClassFile.DUP2_X2 :
                         VerificationType type3, type4 = null;
                         type = current_frame.pop_stack();
                         if (type.is_category1(this)) {
@@ -799,7 +799,7 @@ public final class VerifierImpl {
                         current_frame.push_stack(type2);
                         current_frame.push_stack(type);
                         no_control_flow = false; break;
-                    case Classfile.SWAP :
+                    case ClassFile.SWAP :
                         type = current_frame.pop_stack(
                             VerificationType.category1_check);
                         type2 = current_frame.pop_stack(
@@ -807,39 +807,39 @@ public final class VerifierImpl {
                         current_frame.push_stack(type);
                         current_frame.push_stack(type2);
                         no_control_flow = false; break;
-                    case Classfile.IADD :
-                    case Classfile.ISUB :
-                    case Classfile.IMUL :
-                    case Classfile.IDIV :
-                    case Classfile.IREM :
-                    case Classfile.ISHL :
-                    case Classfile.ISHR :
-                    case Classfile.IUSHR :
-                    case Classfile.IOR :
-                    case Classfile.IXOR :
-                    case Classfile.IAND :
+                    case ClassFile.IADD :
+                    case ClassFile.ISUB :
+                    case ClassFile.IMUL :
+                    case ClassFile.IDIV :
+                    case ClassFile.IREM :
+                    case ClassFile.ISHL :
+                    case ClassFile.ISHR :
+                    case ClassFile.IUSHR :
+                    case ClassFile.IOR :
+                    case ClassFile.IXOR :
+                    case ClassFile.IAND :
                         current_frame.pop_stack(
                             VerificationType.integer_type);
                         // fall through
-                    case Classfile.INEG :
+                    case ClassFile.INEG :
                         current_frame.pop_stack(
                             VerificationType.integer_type);
                         current_frame.push_stack(
                             VerificationType.integer_type);
                         no_control_flow = false; break;
-                    case Classfile.LADD :
-                    case Classfile.LSUB :
-                    case Classfile.LMUL :
-                    case Classfile.LDIV :
-                    case Classfile.LREM :
-                    case Classfile.LAND :
-                    case Classfile.LOR :
-                    case Classfile.LXOR :
+                    case ClassFile.LADD :
+                    case ClassFile.LSUB :
+                    case ClassFile.LMUL :
+                    case ClassFile.LDIV :
+                    case ClassFile.LREM :
+                    case ClassFile.LAND :
+                    case ClassFile.LOR :
+                    case ClassFile.LXOR :
                         current_frame.pop_stack_2(
                             VerificationType.long2_type,
                             VerificationType.long_type);
                         // fall through
-                    case Classfile.LNEG :
+                    case ClassFile.LNEG :
                         current_frame.pop_stack_2(
                             VerificationType.long2_type,
                             VerificationType.long_type);
@@ -847,9 +847,9 @@ public final class VerifierImpl {
                             VerificationType.long_type,
                             VerificationType.long2_type);
                         no_control_flow = false; break;
-                    case Classfile.LSHL :
-                    case Classfile.LSHR :
-                    case Classfile.LUSHR :
+                    case ClassFile.LSHL :
+                    case ClassFile.LSHR :
+                    case ClassFile.LUSHR :
                         current_frame.pop_stack(
                             VerificationType.integer_type);
                         current_frame.pop_stack_2(
@@ -859,30 +859,30 @@ public final class VerifierImpl {
                             VerificationType.long_type,
                             VerificationType.long2_type);
                         no_control_flow = false; break;
-                    case Classfile.FADD :
-                    case Classfile.FSUB :
-                    case Classfile.FMUL :
-                    case Classfile.FDIV :
-                    case Classfile.FREM :
+                    case ClassFile.FADD :
+                    case ClassFile.FSUB :
+                    case ClassFile.FMUL :
+                    case ClassFile.FDIV :
+                    case ClassFile.FREM :
                         current_frame.pop_stack(
                             VerificationType.float_type);
                         // fall through
-                    case Classfile.FNEG :
+                    case ClassFile.FNEG :
                         current_frame.pop_stack(
                             VerificationType.float_type);
                         current_frame.push_stack(
                             VerificationType.float_type);
                         no_control_flow = false; break;
-                    case Classfile.DADD :
-                    case Classfile.DSUB :
-                    case Classfile.DMUL :
-                    case Classfile.DDIV :
-                    case Classfile.DREM :
+                    case ClassFile.DADD :
+                    case ClassFile.DSUB :
+                    case ClassFile.DMUL :
+                    case ClassFile.DDIV :
+                    case ClassFile.DREM :
                         current_frame.pop_stack_2(
                             VerificationType.double2_type,
                             VerificationType.double_type);
                         // fall through
-                    case Classfile.DNEG :
+                    case ClassFile.DNEG :
                         current_frame.pop_stack_2(
                             VerificationType.double2_type,
                             VerificationType.double_type);
@@ -890,44 +890,44 @@ public final class VerifierImpl {
                             VerificationType.double_type,
                             VerificationType.double2_type);
                         no_control_flow = false; break;
-                                case Classfile.IINC :
+                                case ClassFile.IINC :
                                     verify_iinc(bcs.getIndex(), current_frame);
                                     no_control_flow = false; break;
-                                case Classfile.I2L :
+                                case ClassFile.I2L :
                                     type = current_frame.pop_stack(
                                         VerificationType.integer_type);
                                     current_frame.push_stack_2(
                                         VerificationType.long_type,
                                         VerificationType.long2_type);
                                     no_control_flow = false; break;
-                             case Classfile.L2I :
+                             case ClassFile.L2I :
                                     current_frame.pop_stack_2(
                                         VerificationType.long2_type,
                                         VerificationType.long_type);
                                     current_frame.push_stack(
                                         VerificationType.integer_type);
                                     no_control_flow = false; break;
-                                case Classfile.I2F :
+                                case ClassFile.I2F :
                                     current_frame.pop_stack(
                                         VerificationType.integer_type);
                                     current_frame.push_stack(
                                         VerificationType.float_type);
                                     no_control_flow = false; break;
-                    case Classfile.I2D :
+                    case ClassFile.I2D :
                         current_frame.pop_stack(
                             VerificationType.integer_type);
                         current_frame.push_stack_2(
                             VerificationType.double_type,
                             VerificationType.double2_type);
                         no_control_flow = false; break;
-                    case Classfile.L2F :
+                    case ClassFile.L2F :
                         current_frame.pop_stack_2(
                             VerificationType.long2_type,
                             VerificationType.long_type);
                         current_frame.push_stack(
                             VerificationType.float_type);
                         no_control_flow = false; break;
-                    case Classfile.L2D :
+                    case ClassFile.L2D :
                         current_frame.pop_stack_2(
                             VerificationType.long2_type,
                             VerificationType.long_type);
@@ -935,34 +935,34 @@ public final class VerifierImpl {
                             VerificationType.double_type,
                             VerificationType.double2_type);
                         no_control_flow = false; break;
-                    case Classfile.F2I :
+                    case ClassFile.F2I :
                         current_frame.pop_stack(
                             VerificationType.float_type);
                         current_frame.push_stack(
                             VerificationType.integer_type);
                         no_control_flow = false; break;
-                    case Classfile.F2L :
+                    case ClassFile.F2L :
                         current_frame.pop_stack(
                             VerificationType.float_type);
                         current_frame.push_stack_2(
                             VerificationType.long_type,
                             VerificationType.long2_type);
                         no_control_flow = false; break;
-                    case Classfile.F2D :
+                    case ClassFile.F2D :
                         current_frame.pop_stack(
                             VerificationType.float_type);
                         current_frame.push_stack_2(
                             VerificationType.double_type,
                             VerificationType.double2_type);
                         no_control_flow = false; break;
-                    case Classfile.D2I :
+                    case ClassFile.D2I :
                         current_frame.pop_stack_2(
                             VerificationType.double2_type,
                             VerificationType.double_type);
                         current_frame.push_stack(
                             VerificationType.integer_type);
                         no_control_flow = false; break;
-                    case Classfile.D2L :
+                    case ClassFile.D2L :
                         current_frame.pop_stack_2(
                             VerificationType.double2_type,
                             VerificationType.double_type);
@@ -970,22 +970,22 @@ public final class VerifierImpl {
                             VerificationType.long_type,
                             VerificationType.long2_type);
                         no_control_flow = false; break;
-                    case Classfile.D2F :
+                    case ClassFile.D2F :
                         current_frame.pop_stack_2(
                             VerificationType.double2_type,
                             VerificationType.double_type);
                         current_frame.push_stack(
                             VerificationType.float_type);
                         no_control_flow = false; break;
-                    case Classfile.I2B :
-                    case Classfile.I2C :
-                    case Classfile.I2S :
+                    case ClassFile.I2B :
+                    case ClassFile.I2C :
+                    case ClassFile.I2S :
                         current_frame.pop_stack(
                             VerificationType.integer_type);
                         current_frame.push_stack(
                             VerificationType.integer_type);
                         no_control_flow = false; break;
-                    case Classfile.LCMP :
+                    case ClassFile.LCMP :
                         current_frame.pop_stack_2(
                             VerificationType.long2_type,
                             VerificationType.long_type);
@@ -995,8 +995,8 @@ public final class VerifierImpl {
                         current_frame.push_stack(
                             VerificationType.integer_type);
                         no_control_flow = false; break;
-                    case Classfile.FCMPL :
-                    case Classfile.FCMPG :
+                    case ClassFile.FCMPL :
+                    case ClassFile.FCMPG :
                         current_frame.pop_stack(
                             VerificationType.float_type);
                         current_frame.pop_stack(
@@ -1004,8 +1004,8 @@ public final class VerifierImpl {
                         current_frame.push_stack(
                             VerificationType.integer_type);
                         no_control_flow = false; break;
-                    case Classfile.DCMPL :
-                    case Classfile.DCMPG :
+                    case ClassFile.DCMPL :
+                    case ClassFile.DCMPG :
                         current_frame.pop_stack_2(
                             VerificationType.double2_type,
                             VerificationType.double_type);
@@ -1015,63 +1015,63 @@ public final class VerifierImpl {
                         current_frame.push_stack(
                             VerificationType.integer_type);
                         no_control_flow = false; break;
-                    case Classfile.IF_ICMPEQ:
-                    case Classfile.IF_ICMPNE:
-                    case Classfile.IF_ICMPLT:
-                    case Classfile.IF_ICMPGE:
-                    case Classfile.IF_ICMPGT:
-                    case Classfile.IF_ICMPLE:
+                    case ClassFile.IF_ICMPEQ:
+                    case ClassFile.IF_ICMPNE:
+                    case ClassFile.IF_ICMPLT:
+                    case ClassFile.IF_ICMPGE:
+                    case ClassFile.IF_ICMPGT:
+                    case ClassFile.IF_ICMPLE:
                         current_frame.pop_stack(
                             VerificationType.integer_type);
                         // fall through
-                    case Classfile.IFEQ:
-                    case Classfile.IFNE:
-                    case Classfile.IFLT:
-                    case Classfile.IFGE:
-                    case Classfile.IFGT:
-                    case Classfile.IFLE:
+                    case ClassFile.IFEQ:
+                    case ClassFile.IFNE:
+                    case ClassFile.IFLT:
+                    case ClassFile.IFGE:
+                    case ClassFile.IFGT:
+                    case ClassFile.IFLE:
                         current_frame.pop_stack(
                             VerificationType.integer_type);
                         target = bcs.dest();
                         stackmap_table.check_jump_target(
                             current_frame, target);
                         no_control_flow = false; break;
-                    case Classfile.IF_ACMPEQ :
-                    case Classfile.IF_ACMPNE :
+                    case ClassFile.IF_ACMPEQ :
+                    case ClassFile.IF_ACMPNE :
                         current_frame.pop_stack(
                             VerificationType.reference_check);
                         // fall through
-                    case Classfile.IFNULL :
-                    case Classfile.IFNONNULL :
+                    case ClassFile.IFNULL :
+                    case ClassFile.IFNONNULL :
                         current_frame.pop_stack(
                             VerificationType.reference_check);
                         target = bcs.dest();
                         stackmap_table.check_jump_target
                             (current_frame, target);
                         no_control_flow = false; break;
-                    case Classfile.GOTO :
+                    case ClassFile.GOTO :
                         target = bcs.dest();
                         stackmap_table.check_jump_target(
                             current_frame, target);
                         no_control_flow = true; break;
-                    case Classfile.GOTO_W :
+                    case ClassFile.GOTO_W :
                         target = bcs.destW();
                         stackmap_table.check_jump_target(
                             current_frame, target);
                         no_control_flow = true; break;
-                    case Classfile.TABLESWITCH :
-                    case Classfile.LOOKUPSWITCH :
+                    case ClassFile.TABLESWITCH :
+                    case ClassFile.LOOKUPSWITCH :
                         verify_switch(
                             bcs, code_length, code_data, current_frame,
                             stackmap_table);
                         no_control_flow = true; break;
-                    case Classfile.IRETURN :
+                    case ClassFile.IRETURN :
                         type = current_frame.pop_stack(
                             VerificationType.integer_type);
                         verify_return_value(return_type, type, bci,
                                                                 current_frame);
                         no_control_flow = true; break;
-                    case Classfile.LRETURN :
+                    case ClassFile.LRETURN :
                         type2 = current_frame.pop_stack(
                             VerificationType.long2_type);
                         type = current_frame.pop_stack(
@@ -1079,13 +1079,13 @@ public final class VerifierImpl {
                         verify_return_value(return_type, type, bci,
                                                                 current_frame);
                         no_control_flow = true; break;
-                    case Classfile.FRETURN :
+                    case ClassFile.FRETURN :
                         type = current_frame.pop_stack(
                             VerificationType.float_type);
                         verify_return_value(return_type, type, bci,
                                                                 current_frame);
                         no_control_flow = true; break;
-                    case Classfile.DRETURN :
+                    case ClassFile.DRETURN :
                         type2 = current_frame.pop_stack(
                             VerificationType.double2_type);
                         type = current_frame.pop_stack(
@@ -1093,13 +1093,13 @@ public final class VerifierImpl {
                         verify_return_value(return_type, type, bci,
                                                                 current_frame);
                         no_control_flow = true; break;
-                    case Classfile.ARETURN :
+                    case ClassFile.ARETURN :
                         type = current_frame.pop_stack(
                             VerificationType.reference_check);
                         verify_return_value(return_type, type, bci,
                                                                 current_frame);
                         no_control_flow = true; break;
-                    case Classfile.RETURN:
+                    case ClassFile.RETURN:
                         if (!return_type.is_bogus()) {
                             verifyError("Method expects a return value");
                         }
@@ -1108,24 +1108,24 @@ public final class VerifierImpl {
                             verifyError("Constructor must call super() or this() before return");
                         }
                         no_control_flow = true; break;
-                    case Classfile.GETSTATIC :
-                    case Classfile.PUTSTATIC :
+                    case ClassFile.GETSTATIC :
+                    case ClassFile.PUTSTATIC :
                         verify_field_instructions(bcs, current_frame, cp, true);
                         no_control_flow = false; break;
-                    case Classfile.GETFIELD :
-                    case Classfile.PUTFIELD :
+                    case ClassFile.GETFIELD :
+                    case ClassFile.PUTFIELD :
                         verify_field_instructions(bcs, current_frame, cp, false);
                         no_control_flow = false; break;
-                    case Classfile.INVOKEVIRTUAL :
-                    case Classfile.INVOKESPECIAL :
-                    case Classfile.INVOKESTATIC :
+                    case ClassFile.INVOKEVIRTUAL :
+                    case ClassFile.INVOKESPECIAL :
+                    case ClassFile.INVOKESTATIC :
                         this_uninit = verify_invoke_instructions(bcs, code_length, current_frame, (bci >= ex_minmax[0] && bci < ex_minmax[1]), this_uninit, return_type, cp, stackmap_table);
                         no_control_flow = false; break;
-                    case Classfile.INVOKEINTERFACE :
-                    case Classfile.INVOKEDYNAMIC :
+                    case ClassFile.INVOKEINTERFACE :
+                    case ClassFile.INVOKEDYNAMIC :
                         this_uninit = verify_invoke_instructions(bcs, code_length, current_frame, (bci >= ex_minmax[0] && bci < ex_minmax[1]), this_uninit, return_type, cp, stackmap_table);
                         no_control_flow = false; break;
-                    case Classfile.NEW :
+                    case ClassFile.NEW :
                     {
                         index = bcs.getIndexU2();
                         verify_cp_class_type(bci, index, cp);
@@ -1138,16 +1138,16 @@ public final class VerifierImpl {
                         current_frame.push_stack(type);
                         no_control_flow = false; break;
                     }
-                    case Classfile.NEWARRAY :
+                    case ClassFile.NEWARRAY :
                         type = get_newarray_type(bcs.getIndex(), bci);
                         current_frame.pop_stack(
                             VerificationType.integer_type);
                         current_frame.push_stack(type);
                         no_control_flow = false; break;
-                    case Classfile.ANEWARRAY :
+                    case ClassFile.ANEWARRAY :
                         verify_anewarray(bci, bcs.getIndexU2(), cp, current_frame);
                         no_control_flow = false; break;
-                    case Classfile.ARRAYLENGTH :
+                    case ClassFile.ARRAYLENGTH :
                         type = current_frame.pop_stack(
                             VerificationType.reference_check);
                         if (!(type.is_null() || type.is_array())) {
@@ -1156,7 +1156,7 @@ public final class VerifierImpl {
                         current_frame.push_stack(
                             VerificationType.integer_type);
                         no_control_flow = false; break;
-                    case Classfile.CHECKCAST :
+                    case ClassFile.CHECKCAST :
                     {
                         index = bcs.getIndexU2();
                         verify_cp_class_type(bci, index, cp);
@@ -1166,7 +1166,7 @@ public final class VerifierImpl {
                         current_frame.push_stack(klass_type);
                         no_control_flow = false; break;
                     }
-                    case Classfile.INSTANCEOF : {
+                    case ClassFile.INSTANCEOF : {
                         index = bcs.getIndexU2();
                         verify_cp_class_type(bci, index, cp);
                         current_frame.pop_stack(object_type());
@@ -1174,12 +1174,12 @@ public final class VerifierImpl {
                             VerificationType.integer_type);
                         no_control_flow = false; break;
                     }
-                    case Classfile.MONITORENTER :
-                    case Classfile.MONITOREXIT :
+                    case ClassFile.MONITORENTER :
+                    case ClassFile.MONITOREXIT :
                         current_frame.pop_stack(
                             VerificationType.reference_check);
                         no_control_flow = false; break;
-                    case Classfile.MULTIANEWARRAY :
+                    case ClassFile.MULTIANEWARRAY :
                     {
                         index = bcs.getIndexU2();
                         int dim = _method.codeArray()[bcs.bci+3] & 0xff;
@@ -1199,7 +1199,7 @@ public final class VerifierImpl {
                         current_frame.push_stack(new_array_type);
                         no_control_flow = false; break;
                     }
-                    case Classfile.ATHROW :
+                    case ClassFile.ATHROW :
                         type = VerificationType.reference_type(java_lang_Throwable);
                         current_frame.pop_stack(type);
                         no_control_flow = true; break;
@@ -1223,7 +1223,7 @@ public final class VerifierImpl {
         while (!bcs.isLastBytecode()) {
             if (bcs.rawNext() != ILLEGAL) {
                 int bci = bcs.bci;
-                if (bcs.rawCode == Classfile.NEW) {
+                if (bcs.rawCode == ClassFile.NEW) {
                     code_data[bci] = NEW_OFFSET;
                 } else {
                     code_data[bci] = BYTECODE_OFFSET;
@@ -1356,14 +1356,14 @@ public final class VerifierImpl {
         verify_cp_index(bci, cp, index);
         int tag = cp.tagAt(index);
         int types = 0;
-        if (opcode == Classfile.LDC || opcode == Classfile.LDC_W) {
+        if (opcode == ClassFile.LDC || opcode == ClassFile.LDC_W) {
             types = (1 << JVM_CONSTANT_Integer) | (1 << JVM_CONSTANT_Float)
                     | (1 << JVM_CONSTANT_String) | (1 << JVM_CONSTANT_Class)
                     | (1 << JVM_CONSTANT_MethodHandle) | (1 << JVM_CONSTANT_MethodType)
                     | (1 << JVM_CONSTANT_Dynamic);
             verify_cp_type(bci, index, cp, types);
         } else {
-            if (opcode != Classfile.LDC2_W) verifyError("must be ldc2_w");
+            if (opcode != ClassFile.LDC2_W) verifyError("must be ldc2_w");
             types = (1 << JVM_CONSTANT_Double) | (1 << JVM_CONSTANT_Long) | (1 << JVM_CONSTANT_Dynamic);
             verify_cp_type(bci, index, cp, types);
         }
@@ -1383,7 +1383,7 @@ public final class VerifierImpl {
                 VerificationType[] v_constant_type = new VerificationType[2];
                 var sig_stream = new VerificationSignature(constant_type, false, this);
                 int n = change_sig_to_verificationType(sig_stream, v_constant_type, 0);
-                int opcode_n = (opcode == Classfile.LDC2_W ? 2 : 1);
+                int opcode_n = (opcode == ClassFile.LDC2_W ? 2 : 1);
                 if (n != opcode_n) {
                     types &= ~(1 << JVM_CONSTANT_Dynamic);
                     verify_cp_type(bci, index, cp, types);
@@ -1412,7 +1412,7 @@ public final class VerifierImpl {
         int default_ofset = bcs.getInt(aligned_bci);
         int keys, delta;
         current_frame.pop_stack(VerificationType.integer_type);
-        if (bcs.rawCode == Classfile.TABLESWITCH) {
+        if (bcs.rawCode == ClassFile.TABLESWITCH) {
             int low = bcs.getInt(aligned_bci + 4);
             int high = bcs.getInt(aligned_bci + 2*4);
             if (low > high) {
@@ -1465,24 +1465,24 @@ public final class VerifierImpl {
         int n = change_sig_to_verificationType(sig_stream, field_type, 0);
         boolean is_assignable;
         switch (bcs.rawCode) {
-            case Classfile.GETSTATIC ->  {
+            case ClassFile.GETSTATIC ->  {
                 for (int i = 0; i < n; i++) {
                     current_frame.push_stack(field_type[i]);
                 }
             }
-            case Classfile.PUTSTATIC ->  {
+            case ClassFile.PUTSTATIC ->  {
                 for (int i = n - 1; i >= 0; i--) {
                     current_frame.pop_stack(field_type[i]);
                 }
             }
-            case Classfile.GETFIELD ->  {
+            case ClassFile.GETFIELD ->  {
                 stack_object_type = current_frame.pop_stack(
                     target_class_type);
                 for (int i = 0; i < n; i++) {
                     current_frame.push_stack(field_type[i]);
                 }
             }
-            case Classfile.PUTFIELD ->  {
+            case ClassFile.PUTFIELD ->  {
                 for (int i = n - 1; i >= 0; i--) {
                     current_frame.pop_stack(field_type[i]);
                 }
@@ -1536,7 +1536,7 @@ public final class VerifierImpl {
             this_uninit = true;
         } else if (type.is_uninitialized()) {
             int new_offset = type.bci(this);
-            if (new_offset > (code_length - 3) || (_method.codeArray()[new_offset] & 0xff) != Classfile.NEW) {
+            if (new_offset > (code_length - 3) || (_method.codeArray()[new_offset] & 0xff) != ClassFile.NEW) {
                 verifyError("Expecting new instruction");
             }
             int new_class_index = bcs.getIndexU2Raw(new_offset + 1);
@@ -1573,14 +1573,14 @@ public final class VerifierImpl {
         int opcode = bcs.rawCode;
         int types = 0;
         switch (opcode) {
-            case Classfile.INVOKEINTERFACE:
+            case ClassFile.INVOKEINTERFACE:
                 types = 1 << JVM_CONSTANT_InterfaceMethodref;
                 break;
-            case Classfile.INVOKEDYNAMIC:
+            case ClassFile.INVOKEDYNAMIC:
                 types = 1 << JVM_CONSTANT_InvokeDynamic;
                 break;
-            case Classfile.INVOKESPECIAL:
-            case Classfile.INVOKESTATIC:
+            case ClassFile.INVOKESPECIAL:
+            case ClassFile.INVOKESTATIC:
                 types = (_klass.majorVersion() < STATIC_METHOD_IN_INTERFACE_MAJOR_VERSION) ?
                     (1 << JVM_CONSTANT_Methodref) :
                     ((1 << JVM_CONSTANT_InterfaceMethodref) | (1 << JVM_CONSTANT_Methodref));
@@ -1593,7 +1593,7 @@ public final class VerifierImpl {
         String method_sig = cp.refSignatureAt(index);
         if (!VerificationSignature.isValidMethodSignature(method_sig)) verifyError("Invalid method signature");
         VerificationType ref_class_type = null;
-        if (opcode == Classfile.INVOKEDYNAMIC) {
+        if (opcode == ClassFile.INVOKEDYNAMIC) {
             if (_klass.majorVersion() < INVOKEDYNAMIC_MAJOR_VERSION) {
                 classError(String.format("invokedynamic instructions not supported by this class file version (%d), class %s", _klass.majorVersion(), _klass.thisClassName()));
             }
@@ -1607,7 +1607,7 @@ public final class VerifierImpl {
         create_method_sig_entry(mth_sig_verif_types, sig);
         int nargs = mth_sig_verif_types.num_args();
         int bci = bcs.bci;
-        if (opcode == Classfile.INVOKEINTERFACE) {
+        if (opcode == ClassFile.INVOKEINTERFACE) {
             if ((_method.codeArray()[bci+3] & 0xff) != (nargs+1)) {
                 verifyError("Inconsistent args count operand in invokeinterface");
             }
@@ -1615,17 +1615,17 @@ public final class VerifierImpl {
                 verifyError("Fourth operand byte of invokeinterface must be zero");
             }
         }
-        if (opcode == Classfile.INVOKEDYNAMIC) {
+        if (opcode == ClassFile.INVOKEDYNAMIC) {
             if ((_method.codeArray()[bci+3] & 0xff) != 0 || (_method.codeArray()[bci+4] & 0xff) != 0) {
                 verifyError("Third and fourth operand bytes of invokedynamic must be zero");
             }
         }
         if (method_name.charAt(0) == JVM_SIGNATURE_SPECIAL) {
-            if (opcode != Classfile.INVOKESPECIAL ||
+            if (opcode != ClassFile.INVOKESPECIAL ||
                 !object_initializer_name.equals(method_name)) {
                 verifyError("Illegal call to internal method");
             }
-        } else if (opcode == Classfile.INVOKESPECIAL
+        } else if (opcode == ClassFile.INVOKESPECIAL
                              && !is_same_or_direct_interface(current_class(), current_type(), ref_class_type)
                              && !ref_class_type.equals(VerificationType.reference_type(
                                         current_class().superclassName()))) {
@@ -1643,16 +1643,16 @@ public final class VerifierImpl {
         for (int i = nargs - 1; i >= 0; i--) { // Run backwards
             current_frame.pop_stack(sig_verif_types.get(i));
         }
-        if (opcode != Classfile.INVOKESTATIC &&
-            opcode != Classfile.INVOKEDYNAMIC) {
+        if (opcode != ClassFile.INVOKESTATIC &&
+            opcode != ClassFile.INVOKEDYNAMIC) {
             if (object_initializer_name.equals(method_name)) {    // <init> method
                 this_uninit = verify_invoke_init(bcs, index, ref_class_type, current_frame,
                     code_length, in_try_block, this_uninit, cp, stackmap_table);
             } else {
                 switch (opcode) {
-                    case Classfile.INVOKESPECIAL ->
+                    case ClassFile.INVOKESPECIAL ->
                         current_frame.pop_stack(current_type());
-                    case Classfile.INVOKEVIRTUAL -> {
+                    case ClassFile.INVOKEVIRTUAL -> {
                         VerificationType stack_object_type =
                                 current_frame.pop_stack(ref_class_type);
                         if (current_type() != stack_object_type) {
@@ -1660,7 +1660,7 @@ public final class VerifierImpl {
                         }
                     }
                     default -> {
-                        if (opcode != Classfile.INVOKEINTERFACE)
+                        if (opcode != ClassFile.INVOKEINTERFACE)
                             verifyError("Unexpected opcode encountered");
                         current_frame.pop_stack(ref_class_type);
                     }

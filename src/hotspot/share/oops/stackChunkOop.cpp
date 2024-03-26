@@ -411,8 +411,6 @@ template void stackChunkOopDesc::fix_thawed_frame(const frame& f, const SmallReg
 void stackChunkOopDesc::print_on(bool verbose, outputStream* st) const {
   if (*((juint*)this) == badHeapWordVal) {
     st->print_cr("BAD WORD");
-  } else if (*((juint*)this) == badMetaWordVal) {
-    st->print_cr("BAD META WORD");
   } else {
     InstanceStackChunkKlass::print_chunk(const_cast<stackChunkOopDesc*>(this), verbose, st);
   }

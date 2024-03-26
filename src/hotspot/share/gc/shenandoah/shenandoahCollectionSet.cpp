@@ -30,7 +30,7 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "runtime/atomic.hpp"
-#include "services/memTracker.hpp"
+#include "nmt/memTracker.hpp"
 #include "utilities/copy.hpp"
 
 ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedSpace space, char* heap_base) :

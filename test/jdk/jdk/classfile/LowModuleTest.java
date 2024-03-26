@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile low module attribute.
+ * @summary Testing ClassFile low module attribute.
  * @run junit LowModuleTest
  */
 import java.io.IOException;
@@ -32,15 +32,15 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.constantpool.PackageEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.constantpool.PackageEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -66,7 +66,7 @@ class LowModuleTest {
     void testRead(Path path, TestInfo test) throws Exception {
         try {
             printf("%nCHECK %s%n", test.getDisplayName());
-            ClassModel classLow = Classfile.of().parse(path);
+            ClassModel classLow = ClassFile.of().parse(path);
             testRead0(classLow);
         } catch(Exception ex) {
             System.err.printf("%nFAIL %s - %s%n", path, ex);

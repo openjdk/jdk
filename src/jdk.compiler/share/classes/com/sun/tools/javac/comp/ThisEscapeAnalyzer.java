@@ -506,7 +506,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
     public void visitApply(JCMethodInvocation invoke) {
 
         // Get method symbol
-        MethodSymbol sym = (MethodSymbol)TreeInfo.symbolFor(invoke.meth);
+        Symbol sym = TreeInfo.symbolFor(invoke.meth);
 
         // Recurse on method expression
         scan(invoke.meth);
@@ -530,7 +530,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
         invoke(invoke, sym, invoke.args, receiverRefs);
     }
 
-    private void invoke(JCTree site, MethodSymbol sym, List<JCExpression> args, RefSet<?> receiverRefs) {
+    private void invoke(JCTree site, Symbol sym, List<JCExpression> args, RefSet<?> receiverRefs) {
 
         // Skip if ignoring warnings for a constructor invoked via 'this()'
         if (suppressed.contains(sym))
@@ -810,6 +810,10 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     @Override
     public void visitReference(JCMemberReference tree) {
+        if (tree.type.isErroneous()) {
+            //error recovery - ignore erroneous member references
+            return ;
+        }
 
         // Scan target expression and extract 'this' references, if any
         scan(tree.expr);

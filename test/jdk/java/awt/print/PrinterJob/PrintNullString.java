@@ -25,7 +25,7 @@
  * @test
  * @bug 4223328
  * @summary Printer graphics must behave the same as screen graphics
- * @author prr
+ * @key printer
  * @run main/manual PrintNullString
  */
 

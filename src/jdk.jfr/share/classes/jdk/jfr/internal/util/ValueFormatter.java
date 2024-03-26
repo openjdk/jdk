@@ -57,7 +57,6 @@ public final class ValueFormatter {
         }
     }
 
-    private static final NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance();
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final Duration MICRO_SECOND = Duration.ofNanos(1_000);
     private static final Duration SECOND = Duration.ofSeconds(1);
@@ -68,6 +67,12 @@ public final class ValueFormatter {
     private static final int MILL_SIGNIFICANT_FIGURES = 3;
     private static final int DISPLAY_NANO_DIGIT = 3;
     private static final int BASE = 10;
+
+    // -XX:FlightRecorderOptions:repository=<path> triggers an upcall
+    // which will load this class. If NumberFormat.getNumberInstance()
+    // is called during startup, locale settings will not take effect.
+    // Workaround is to create an instance lazily. See numberFormatInstance().
+    private static NumberFormat NUMBER_FORMAT;
 
     public static String formatTimespan(Duration dValue, String separation) {
         if (dValue == null) {
@@ -110,8 +115,15 @@ public final class ValueFormatter {
         }
     }
 
+    private static NumberFormat numberFormatInstance() {
+        if (NUMBER_FORMAT == null) {
+            NUMBER_FORMAT = NumberFormat.getNumberInstance();
+        }
+        return NUMBER_FORMAT;
+    }
+
     public static String formatNumber(Number n) {
-        return NUMBER_FORMAT.format(n);
+        return numberFormatInstance().format(n);
     }
 
     public static String formatDuration(Duration d) {
@@ -331,6 +343,9 @@ public final class ValueFormatter {
     }
 
     public static String formatTimestamp(Instant instant) {
+        if (Instant.MIN.equals(instant)) {
+            return "N/A";
+        }
         return LocalTime.ofInstant(instant, ZoneId.systemDefault()).format(DATE_FORMAT);
     }
 }

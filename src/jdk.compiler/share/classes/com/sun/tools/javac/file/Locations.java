@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1906,9 +1906,12 @@ public class Locations {
         }
 
         private void update(Path p) {
-            if (!isCurrentPlatform(p) && !Files.exists(p.resolve("lib").resolve("jrt-fs.jar")) &&
-                    !Files.exists(systemJavaHome.resolve("modules")))
-                throw new IllegalArgumentException(p.toString());
+            if (!isCurrentPlatform(p)) {
+                var noJavaRuntimeFS = Files.notExists(resolveInJavaHomeLib(p, "jrt-fs.jar"));
+                var noModulesFile = Files.notExists(resolveInJavaHomeLib(p, "modules"));
+                if (noJavaRuntimeFS || noModulesFile)
+                    throw new IllegalArgumentException(p.toString());
+            }
             systemJavaHome = p;
             modules = null;
         }
@@ -1919,6 +1922,10 @@ public class Locations {
             } catch (IOException ex) {
                 throw new IllegalArgumentException(p.toString(), ex);
             }
+        }
+
+        private static Path resolveInJavaHomeLib(Path javaHomePath, String name) {
+            return javaHomePath.resolve("lib").resolve(name);
         }
 
         @Override
@@ -1967,10 +1974,10 @@ public class Locations {
                                     Collections.singletonMap("java.home", systemJavaHome.toString());
                             jrtfs = FileSystems.newFileSystem(jrtURI, attrMap);
                         } catch (ProviderNotFoundException ex) {
-                            URL javaHomeURL = systemJavaHome.resolve("jrt-fs.jar").toUri().toURL();
+                            URL jfsJar = resolveInJavaHomeLib(systemJavaHome, "jrt-fs.jar").toUri().toURL();
                             ClassLoader currentLoader = Locations.class.getClassLoader();
                             URLClassLoader fsLoader =
-                                    new URLClassLoader(new URL[] {javaHomeURL}, currentLoader);
+                                    new URLClassLoader(new URL[] {jfsJar}, currentLoader);
 
                             jrtfs = FileSystems.newFileSystem(jrtURI, Collections.emptyMap(), fsLoader);
 
@@ -1982,7 +1989,7 @@ public class Locations {
 
                     modules = jrtfs.getPath("/modules");
                 } catch (FileSystemNotFoundException | ProviderNotFoundException e) {
-                    modules = systemJavaHome.resolve("modules");
+                    modules = resolveInJavaHomeLib(systemJavaHome, "modules");
                     if (!Files.exists(modules))
                         throw new IOException("can't find system classes", e);
                 }

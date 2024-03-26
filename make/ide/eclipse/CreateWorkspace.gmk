@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -78,8 +78,6 @@ EmitExtractedDefines = \
 # Remaining parameter(s) are named arguments:
 #   NATURE - Which Eclipse Workspace nature to generate for the Workspace. Can
 #       be one of JAVA, HOTSPOT, NATIVE, or MIXED.
-#   SHARED - Workspace will share the same directory as the JDK if true. Can be
-#       either true or false. Defaults to false if not specified.
 SetupEclipseWorkspace = $(NamedParamsMacroTemplate)
 define SetupEclipseWorkspaceBody
 
@@ -95,26 +93,12 @@ define SetupEclipseWorkspaceBody
     $$(error Unrecognised nature $$($1_NATURE) specified for Eclipse Workspace)
   endif
 
-  ifeq ($$($1_SHARED), )
-    $$(info Workspace sharing option not given, assuming non-shared Eclipse Workspace)
-    $1_SHARED := false
-  else ifeq ($$(findstring $$($1_SHARED), true false), )
-    $$(error $$($1_NATURE) is not a boolean word)
-  endif
-
-  ifeq ($$($1_SHARED), true)
-    $1_CLASSPATH_FILE := $(TOPDIR)/.classpath
-    $1_WORKSPACE_FILE := $(TOPDIR)/.project
-    $1_NATIVE_FILE := $(TOPDIR)/.cproject
-    $1_SETTINGS_FILE := $(TOPDIR)/.settings/language.settings.xml
-  else
-    $1_IDE_OUTPUTDIR := $(OUTPUTDIR)/ide/eclipse
-    $1_CLASSPATH_FILE := $$($1_IDE_OUTPUTDIR)/.classpath
-    $1_WORKSPACE_FILE := $$($1_IDE_OUTPUTDIR)/.project
-    $1_NATIVE_FILE := $$($1_IDE_OUTPUTDIR)/.cproject
-    $1_SETTINGS_FILE := $$($1_IDE_OUTPUTDIR)/.settings/language.settings.xml
-    $$(call MakeDir, $$($1_IDE_OUTPUTDIR))
-  endif
+  $1_IDE_OUTPUTDIR := $(OUTPUTDIR)/ide/eclipse
+  $1_CLASSPATH_FILE := $$($1_IDE_OUTPUTDIR)/.classpath
+  $1_WORKSPACE_FILE := $$($1_IDE_OUTPUTDIR)/.project
+  $1_NATIVE_FILE := $$($1_IDE_OUTPUTDIR)/.cproject
+  $1_SETTINGS_FILE := $$($1_IDE_OUTPUTDIR)/.settings/language.settings.xml
+  $$(call MakeDir, $$($1_IDE_OUTPUTDIR))
 
   ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE MIXED), )
     ifeq ($$(call isCompiler, microsoft), true)
@@ -198,14 +182,11 @@ define SetupEclipseWorkspaceBody
       $1_MAKE := $$(call FixPath, $(MAKE))
     endif
 
-    $1_MATCHING_MAKE_TARGETS :=
-    $1_PLAIN_MAKE_TARGETS := update-build-docs docs gensrc gendata \
-        copy java launchers libs hotspot jdk product-images all-images test-image clean
-
     # make reconfigure omitted since it is sensitive to which make was used
-    ifeq ($$($1_SHARED), true)
-      $1_PLAIN_MAKE_TARGETS += dist-clean
-    endif
+    # make dist-clean omitted since it would delete the Workspace as well
+    $1_MATCHING_MAKE_TARGETS :=
+    $1_PLAIN_MAKE_TARGETS := update-build-docs docs gensrc gendata copy java \
+        launchers libs hotspot jdk product-images product-bundles all-images test-image clean
 
     $1_MATCHING_MAKE_TARGETS += $$(foreach name,$$($1_PLAIN_MAKE_TARGETS), \
       <target name="$$(strip $$(name))" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder"> \
@@ -232,11 +213,7 @@ define SetupEclipseWorkspaceBody
 
     TARGETS += $$($1_CREATE_NATIVE_FILE)
 
-    ifeq ($$($1_SHARED), true)
-      $$(call MakeDir, $(TOPDIR)/.settings)
-    else
-      $$(call MakeDir, $$($1_IDE_OUTPUTDIR)/.settings)
-    endif
+    $$(call MakeDir, $$($1_IDE_OUTPUTDIR)/.settings)
 
     $1_CSETTINGS :=
     $1_CXXSETTINGS :=
@@ -280,7 +257,6 @@ define SetupEclipseWorkspaceBody
         <resource project-relative-path="src/hotspot/share/runtime/abstract_vm_version.cpp"> \
             <entry kind="macro" name="HOTSPOT_VERSION_STRING" value="&quot;$(VERSION_STRING)&quot;"/> \
             <entry kind="macro" name="DEBUG_LEVEL" value="&quot;$(DEBUG_LEVEL)&quot;"/> \
-            <entry kind="macro" name="HOTSPOT_BUILD_USER" value="&quot;$(USERNAME)&quot;"/> \
             <entry kind="macro" name="HOTSPOT_VM_DISTRO" value="&quot;$(HOTSPOT_VM_DISTRO)&quot;"/> \
             <entry kind="macro" name="CPU" value="&quot;$(OPENJDK_TARGET_CPU_VM_VERSION)&quot;"/> \
             <entry kind="macro" name="HOTSPOT_BUILD_TIME" value="&quot;$(if $(HOTSPOT_BUILD_TIME),$(HOTSPOT_BUILD_TIME),$(call EpochToISO8601,$(shell $(DATE) +"%s")))&quot;"/> \
@@ -288,7 +264,6 @@ define SetupEclipseWorkspaceBody
         <resource project-relative-path="src/hotspot/share/runtime/arguments.cpp"> \
             <entry kind="macro" name="HOTSPOT_VERSION_STRING" value="&quot;$(VERSION_STRING)&quot;"/> \
             <entry kind="macro" name="DEBUG_LEVEL" value="&quot;$(DEBUG_LEVEL)&quot;"/> \
-            <entry kind="macro" name="HOTSPOT_BUILD_USER" value="&quot;$(USERNAME)&quot;"/> \
             <entry kind="macro" name="HOTSPOT_VM_DISTRO" value="&quot;$(HOTSPOT_VM_DISTRO)&quot;"/> \
             <entry kind="macro" name="CPU" value="&quot;$(OPENJDK_TARGET_CPU_VM_VERSION)&quot;"/> \
             <entry kind="macro" name="HOTSPOT_BUILD_TIME" value="&quot;$(if $(HOTSPOT_BUILD_TIME),$(HOTSPOT_BUILD_TIME),$(call EpochToISO8601,$(shell $(DATE) +"%s")))&quot;"/> \
@@ -316,40 +291,38 @@ define SetupEclipseWorkspaceBody
 
   endif
 
-  ifeq ($$($1_SHARED), false)
-    ifneq ($$(findstring $$($1_NATURE), JAVA MIXED), )
-      $1_LINKED_RESOURCES += $$(foreach src,$(JAVA_DIRS), \
-          <link> \
-              <name>$$(strip $$(src))</name> \
-              <type>2</type> \
-              <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/$$(src)))</location> \
-          </link>$$(NEWLINE))
-    endif
+  ifneq ($$(findstring $$($1_NATURE), JAVA MIXED), )
+    $1_LINKED_RESOURCES += $$(foreach src,$(JAVA_DIRS), \
+        <link> \
+            <name>$$(strip $$(src))</name> \
+            <type>2</type> \
+            <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/$$(src)))</location> \
+        </link>$$(NEWLINE))
+  endif
 
-    ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE MIXED), )
-      # CDT includes a Makefile editor, so if CDT support was indicated there's no harm in
-      # including the make sources as well, since the cost of indexing them is miniscule
-      $1_LINKED_RESOURCES += \
-          <link> \
-              <name>make</name> \
-              <type>2</type> \
-              <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/make))</location> \
-          </link> \
-          <link> \
-              <name>src/hotspot</name> \
-              <type>2</type> \
-              <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/src/hotspot))</location> \
-          </link>$$(NEWLINE)
-    endif
+  ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE MIXED), )
+    # CDT includes a Makefile editor, so if CDT support was indicated there's no harm in
+    # including the make sources as well, since the cost of indexing them is miniscule
+    $1_LINKED_RESOURCES += \
+        <link> \
+            <name>make</name> \
+            <type>2</type> \
+            <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/make))</location> \
+        </link> \
+        <link> \
+            <name>src/hotspot</name> \
+            <type>2</type> \
+            <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/src/hotspot))</location> \
+        </link>$$(NEWLINE)
+  endif
 
-    ifneq ($$(findstring $$($1_NATURE), NATIVE MIXED), )
-      $1_LINKED_RESOURCES += $$(foreach src,$(NATIVE_DIRS), \
-          <link> \
-              <name>$$(strip $$(src))</name> \
-              <type>2</type> \
-              <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/$$(src)))</location> \
-          </link>$$(NEWLINE))
-    endif
+  ifneq ($$(findstring $$($1_NATURE), NATIVE MIXED), )
+    $1_LINKED_RESOURCES += $$(foreach src,$(NATIVE_DIRS), \
+        <link> \
+            <name>$$(strip $$(src))</name> \
+            <type>2</type> \
+            <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/$$(src)))</location> \
+        </link>$$(NEWLINE))
   endif
 
   $$(eval $$(call SetupTextFileProcessing, $1_CREATE_WORKSPACE_FILE, \
@@ -368,22 +341,18 @@ endef
 ifeq ($(WORKSPACE), java)
   $(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
       NATURE := JAVA, \
-      SHARED := $(SHARED), \
   ))
 else ifeq ($(WORKSPACE), hotspot)
   $(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
       NATURE := HOTSPOT, \
-      SHARED := $(SHARED), \
   ))
 else ifeq ($(WORKSPACE), native)
   $(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
       NATURE := NATIVE, \
-      SHARED := $(SHARED), \
   ))
 else
   $(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
       NATURE := MIXED, \
-      SHARED := $(SHARED), \
   ))
 endif
 

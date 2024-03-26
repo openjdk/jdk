@@ -66,19 +66,26 @@ void BasicLock::move_to(oop obj, BasicLock* dest) {
   // is small (given the support for inflated fast-path locking in the fast_lock, etc)
   // we'll leave that optimization for another time.
 
-  if (displaced_header().is_neutral()) {
-    // The object is locked and the resulting ObjectMonitor* will also be
-    // locked so it can't be async deflated until ownership is dropped.
-    ObjectSynchronizer::inflate_helper(obj);
-    // WARNING: We cannot put a check here, because the inflation
-    // will not update the displaced header. Once BasicLock is inflated,
-    // no one should ever look at its content.
-  } else {
-    // Typically the displaced header will be 0 (recursive stack lock) or
-    // unused_mark.  Naively we'd like to assert that the displaced mark
-    // value is either 0, neutral, or 3.  But with the advent of the
-    // store-before-CAS avoidance in fast_lock/compiler_lock_object
-    // we can find any flavor mark in the displaced mark.
+  if (LockingMode == LM_LEGACY) {
+    if (displaced_header().is_neutral()) {
+      // The object is locked and the resulting ObjectMonitor* will also be
+      // locked so it can't be async deflated until ownership is dropped.
+      ObjectSynchronizer::inflate_helper(obj);
+      // WARNING: We cannot put a check here, because the inflation
+      // will not update the displaced header. Once BasicLock is inflated,
+      // no one should ever look at its content.
+    } else {
+      // Typically the displaced header will be 0 (recursive stack lock) or
+      // unused_mark.  Naively we'd like to assert that the displaced mark
+      // value is either 0, neutral, or 3.  But with the advent of the
+      // store-before-CAS avoidance in fast_lock/compiler_lock_object
+      // we can find any flavor mark in the displaced mark.
+    }
+    dest->set_displaced_header(displaced_header());
   }
-  dest->set_displaced_header(displaced_header());
+#ifdef ASSERT
+  else {
+    dest->set_displaced_header(markWord(badDispHeaderDeopt));
+  }
+#endif
 }

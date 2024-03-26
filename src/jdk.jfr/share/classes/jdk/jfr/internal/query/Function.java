@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.StringJoiner;
 
 abstract class Function {
 
@@ -46,7 +46,11 @@ abstract class Function {
             return new FirstNonNull();
         }
         if (aggregator == Aggregator.LIST) {
-            return new List();
+            return new Container(new ArrayList<>());
+        }
+
+        if (aggregator == Aggregator.SET) {
+            return new Container(new LinkedHashSet<>());
         }
 
         if (aggregator == Aggregator.DIFFERENCE) {
@@ -271,9 +275,6 @@ abstract class Function {
 
         @Override
         public Object result() {
-            if (maximum == null) {
-                System.out.println("Why");
-            }
             return maximum;
         }
     }
@@ -378,7 +379,7 @@ abstract class Function {
     // **** UNIQUE ****
 
     private static final class Unique extends Function {
-        private final Set<Object> unique = new HashSet<>();
+        private final Set<Object> unique = new LinkedHashSet<>();
 
         @Override
         public void add(Object value) {
@@ -391,23 +392,22 @@ abstract class Function {
         }
     }
 
-    // **** LIST ****
+    // **** LIST and SET ****
 
-    private static final class List extends Function {
-        private final ArrayList<Object> list = new ArrayList<>();
+    private static final class Container extends Function {
+        private final Collection<Object> collection;
 
+        private Container(Collection<Object> collection) {
+            this.collection = collection;
+        }
         @Override
         public void add(Object value) {
-            list.add(value);
+            collection.add(value);
         }
 
         @Override
         public Object result() {
-            StringJoiner sj = new StringJoiner(", ");
-            for (Object object : list) {
-                sj.add(String.valueOf(object));
-            }
-            return sj.toString();
+            return collection;
         }
     }
 

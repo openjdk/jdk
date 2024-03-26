@@ -60,8 +60,8 @@ public final class LocalGregorianCalendar extends BaseCalendar {
         return true;
     }
 
-    private String name;
-    private Era[] eras;
+    private final String name;
+    private final Era[] eras;
 
     // Used within java.time and java.util
     public static final class Date extends BaseCalendar.Date {

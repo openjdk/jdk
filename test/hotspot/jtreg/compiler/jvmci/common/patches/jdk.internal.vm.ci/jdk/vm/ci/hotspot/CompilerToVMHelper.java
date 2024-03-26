@@ -143,11 +143,6 @@ public class CompilerToVMHelper {
         return CTVM.resolveFieldInPool((HotSpotConstantPool) constantPool, cpi, (HotSpotResolvedJavaMethodImpl) method, opcode, info);
     }
 
-    public static int constantPoolRemapInstructionOperandFromCache(
-            ConstantPool constantPool, int cpci) {
-        return CTVM.constantPoolRemapInstructionOperandFromCache((HotSpotConstantPool) constantPool, cpci);
-    }
-
     public static Object lookupAppendixInPool(
             ConstantPool constantPool, int cpi) {
         return CTVM.lookupAppendixInPool((HotSpotConstantPool) constantPool, cpi);

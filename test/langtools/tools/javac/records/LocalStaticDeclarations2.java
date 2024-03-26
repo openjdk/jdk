@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,17 +29,15 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.util
- * @run testng/othervm LocalStaticDeclarations2
+ * @run junit/othervm LocalStaticDeclarations2
  */
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import tools.javac.combo.CompilationTestCase;
 
-import static org.testng.Assert.assertEquals;
-
-@Test
-public class LocalStaticDeclarations2 extends CompilationTestCase {
-    public void testLocalStatic() {
+class LocalStaticDeclarations2 extends CompilationTestCase {
+    @Test
+    void testLocalStatic() {
         assertOK(
                 """
                 class Test {

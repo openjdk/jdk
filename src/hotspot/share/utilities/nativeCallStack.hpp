@@ -26,7 +26,7 @@
 #define SHARE_UTILITIES_NATIVECALLSTACK_HPP
 
 #include "memory/allocation.hpp"
-#include "services/nmtCommon.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "utilities/ostream.hpp"
 
 /*

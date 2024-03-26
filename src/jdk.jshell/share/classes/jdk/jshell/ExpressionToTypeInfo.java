@@ -56,6 +56,7 @@ import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
+import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
@@ -428,7 +429,9 @@ class ExpressionToTypeInfo {
                         MethodInvocationTree superCall =
                                 clazz.getMembers()
                                      .stream()
-                                     .map(TreeInfo::firstConstructorCall)
+                                     .filter(JCMethodDecl.class::isInstance)
+                                     .map(JCMethodDecl.class::cast)
+                                     .map(TreeInfo::findConstructorCall)
                                      .findAny()
                                      .get();
                         TreePath superCallPath

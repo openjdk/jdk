@@ -1,0 +1,4 @@
+ImplicitClassRecovery.java:7:33: compiler.err.expected: ';'
+- compiler.note.preview.filename: ImplicitClassRecovery.java, DEFAULT
+- compiler.note.preview.recompile
+1 error

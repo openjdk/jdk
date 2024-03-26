@@ -34,43 +34,44 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.Instruction;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.instruction.SwitchCase;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.attribute.LineNumberTableAttribute;
-import jdk.internal.classfile.attribute.StackMapTableAttribute;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.constantpool.DoubleEntry;
-import jdk.internal.classfile.constantpool.FieldRefEntry;
-import jdk.internal.classfile.constantpool.InterfaceMethodRefEntry;
-import jdk.internal.classfile.constantpool.InvokeDynamicEntry;
-import jdk.internal.classfile.constantpool.LoadableConstantEntry;
-import jdk.internal.classfile.constantpool.LongEntry;
-import jdk.internal.classfile.constantpool.MemberRefEntry;
-import jdk.internal.classfile.instruction.CharacterRange;
-import jdk.internal.classfile.instruction.ExceptionCatch;
-import jdk.internal.classfile.instruction.LocalVariable;
-import jdk.internal.classfile.instruction.LocalVariableType;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.CustomAttribute;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.Label;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.instruction.SwitchCase;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.attribute.LineNumberTableAttribute;
+import java.lang.classfile.attribute.StackMapTableAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.DoubleEntry;
+import java.lang.classfile.constantpool.FieldRefEntry;
+import java.lang.classfile.constantpool.InterfaceMethodRefEntry;
+import java.lang.classfile.constantpool.InvokeDynamicEntry;
+import java.lang.classfile.constantpool.LoadableConstantEntry;
+import java.lang.classfile.constantpool.LongEntry;
+import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.classfile.instruction.CharacterRange;
+import java.lang.classfile.instruction.ExceptionCatch;
+import java.lang.classfile.instruction.LocalVariable;
+import java.lang.classfile.instruction.LocalVariableType;
 
-import static jdk.internal.classfile.Opcode.GOTO;
-import static jdk.internal.classfile.Opcode.GOTO_W;
-import static jdk.internal.classfile.Opcode.IINC;
-import static jdk.internal.classfile.Opcode.IINC_W;
-import static jdk.internal.classfile.Opcode.JSR;
-import static jdk.internal.classfile.Opcode.JSR_W;
-import static jdk.internal.classfile.Opcode.LDC2_W;
-import static jdk.internal.classfile.Opcode.LDC_W;
+import static java.lang.classfile.Opcode.GOTO;
+import static java.lang.classfile.Opcode.GOTO_W;
+import static java.lang.classfile.Opcode.IINC;
+import static java.lang.classfile.Opcode.IINC_W;
+import static java.lang.classfile.Opcode.JSR;
+import static java.lang.classfile.Opcode.JSR_W;
+import static java.lang.classfile.Opcode.LDC2_W;
+import static java.lang.classfile.Opcode.LDC_W;
 
 public final class DirectCodeBuilder
         extends AbstractDirectBuilder<CodeModel>
@@ -102,14 +103,14 @@ public final class DirectCodeBuilder
     public static Attribute<CodeAttribute> build(MethodInfo methodInfo,
                                                  Consumer<? super CodeBuilder> handler,
                                                  SplitConstantPool constantPool,
-                                                 ClassfileImpl context,
+                                                 ClassFileImpl context,
                                                  CodeModel original) {
         DirectCodeBuilder cb;
         try {
             handler.accept(cb = new DirectCodeBuilder(methodInfo, constantPool, context, original, false));
             cb.buildContent();
         } catch (LabelOverflowException loe) {
-            if (context.shortJumpsOption() == Classfile.ShortJumpsOption.FIX_SHORT_JUMPS) {
+            if (context.shortJumpsOption() == ClassFile.ShortJumpsOption.FIX_SHORT_JUMPS) {
                 handler.accept(cb = new DirectCodeBuilder(methodInfo, constantPool, context, original, true));
                 cb.buildContent();
             }
@@ -121,14 +122,14 @@ public final class DirectCodeBuilder
 
     private DirectCodeBuilder(MethodInfo methodInfo,
                               SplitConstantPool constantPool,
-                              ClassfileImpl context,
+                              ClassFileImpl context,
                               CodeModel original,
                               boolean transformFwdJumps) {
         super(constantPool, context);
         setOriginal(original);
         this.methodInfo = methodInfo;
         this.transformFwdJumps = transformFwdJumps;
-        this.transformBackJumps = context.shortJumpsOption() == Classfile.ShortJumpsOption.FIX_SHORT_JUMPS;
+        this.transformBackJumps = context.shortJumpsOption() == ClassFile.ShortJumpsOption.FIX_SHORT_JUMPS;
         bytecodesBufWriter = (original instanceof CodeImpl cai) ? new BufWriterImpl(constantPool, context, cai.codeLength())
                                                                : new BufWriterImpl(constantPool, context);
         this.startLabel = new LabelImpl(this, 0);
@@ -140,7 +141,11 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder with(CodeElement element) {
-        ((AbstractElement) element).writeTo(this);
+        if (element instanceof AbstractElement ae) {
+            ae.writeTo(this);
+        } else {
+            writeAttribute((CustomAttribute)element);
+        }
         return this;
     }
 
@@ -199,7 +204,7 @@ public final class DirectCodeBuilder
             int endPc = labelToBci(h.tryEnd());
             int handlerPc = labelToBci(h.handler());
             if (startPc == -1 || endPc == -1 || handlerPc == -1) {
-                if (context.deadLabelsOption() == Classfile.DeadLabelsOption.DROP_DEAD_LABELS) {
+                if (context.deadLabelsOption() == ClassFile.DeadLabelsOption.DROP_DEAD_LABELS) {
                     handlersSize--;
                 } else {
                     throw new IllegalArgumentException("Unbound label in exception handler");
@@ -223,7 +228,7 @@ public final class DirectCodeBuilder
         // Backfill branches for which Label didn't have position yet
         processDeferredLabels();
 
-        if (context.debugElementsOption() == Classfile.DebugElementsOption.PASS_DEBUG) {
+        if (context.debugElementsOption() == ClassFile.DebugElementsOption.PASS_DEBUG) {
             if (!characterRanges.isEmpty()) {
                 Attribute<?> a = new UnboundAttribute.AdHocAttribute<>(Attributes.CHARACTER_RANGE_TABLE) {
 
@@ -236,7 +241,7 @@ public final class DirectCodeBuilder
                             var start = labelToBci(cr.startScope());
                             var end = labelToBci(cr.endScope());
                             if (start == -1 || end == -1) {
-                                if (context.deadLabelsOption() == Classfile.DeadLabelsOption.DROP_DEAD_LABELS) {
+                                if (context.deadLabelsOption() == ClassFile.DeadLabelsOption.DROP_DEAD_LABELS) {
                                     crSize--;
                                 } else {
                                     throw new IllegalArgumentException("Unbound label in character range");
@@ -265,7 +270,7 @@ public final class DirectCodeBuilder
                         b.writeU2(lvSize);
                         for (LocalVariable l : localVariables) {
                             if (!l.writeTo(b)) {
-                                if (context.deadLabelsOption() == Classfile.DeadLabelsOption.DROP_DEAD_LABELS) {
+                                if (context.deadLabelsOption() == ClassFile.DeadLabelsOption.DROP_DEAD_LABELS) {
                                     lvSize--;
                                 } else {
                                     throw new IllegalArgumentException("Unbound label in local variable type");
@@ -288,7 +293,7 @@ public final class DirectCodeBuilder
                         b.writeU2(localVariableTypes.size());
                         for (LocalVariableType l : localVariableTypes) {
                             if (!l.writeTo(b)) {
-                                if (context.deadLabelsOption() == Classfile.DeadLabelsOption.DROP_DEAD_LABELS) {
+                                if (context.deadLabelsOption() == ClassFile.DeadLabelsOption.DROP_DEAD_LABELS) {
                                     lvtSize--;
                                 } else {
                                     throw new IllegalArgumentException("Unbound label in local variable type");
@@ -330,12 +335,12 @@ public final class DirectCodeBuilder
             }
 
             private void tryGenerateStackMaps(boolean codeMatch, BufWriterImpl buf) {
-                if (buf.getMajorVersion() >= Classfile.JAVA_6_VERSION) {
+                if (buf.getMajorVersion() >= ClassFile.JAVA_6_VERSION) {
                     try {
                         generateStackMaps(buf);
                     } catch (IllegalArgumentException e) {
                         //failover following JVMS-4.10
-                        if (buf.getMajorVersion() == Classfile.JAVA_6_VERSION) {
+                        if (buf.getMajorVersion() == ClassFile.JAVA_6_VERSION) {
                             writeCounters(codeMatch, buf);
                         } else {
                             throw e;
@@ -395,7 +400,7 @@ public final class DirectCodeBuilder
         private final BufWriterImpl buf;
         private int lastPc, lastLine, writtenLine;
 
-        public DedupLineNumberTableAttribute(ConstantPoolBuilder constantPool, ClassfileImpl context) {
+        public DedupLineNumberTableAttribute(ConstantPoolBuilder constantPool, ClassFileImpl context) {
             super(Attributes.LINE_NUMBER_TABLE);
             buf = new BufWriterImpl(constantPool, context);
             lastPc = -1;
@@ -486,7 +491,7 @@ public final class DirectCodeBuilder
 
     public void writeBytecode(Opcode opcode) {
         if (opcode.isWide())
-            bytecodesBufWriter.writeU1(Classfile.WIDE);
+            bytecodesBufWriter.writeU1(ClassFile.WIDE);
         bytecodesBufWriter.writeU1(opcode.bytecode() & 0xFF);
     }
 

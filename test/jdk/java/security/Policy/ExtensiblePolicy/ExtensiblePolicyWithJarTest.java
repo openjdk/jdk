@@ -94,7 +94,7 @@ public class ExtensiblePolicyWithJarTest {
             "-Djava.security.manager",
             "-Djava.security.policy=" + POL,
             "ExtensiblePolicyTest_orig$TestMain"};
-            ProcessTools.executeTestJvm(cmd).shouldHaveExitValue(0);
+            ProcessTools.executeTestJava(cmd).shouldHaveExitValue(0);
         } catch (Exception ex) {
             System.out.println("ExtensiblePolicyWithJarTest Failed");
         }

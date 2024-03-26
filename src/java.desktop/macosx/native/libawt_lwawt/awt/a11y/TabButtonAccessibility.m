@@ -84,10 +84,7 @@
 
 - (NSAccessibilitySubrole)accessibilitySubrole
 {
-    if (@available(macOS 10.13, *)) {
-        return NSAccessibilityTabButtonSubrole;
-    }
-    return NSAccessibilityUnknownSubrole;
+    return NSAccessibilityTabButtonSubrole;
 }
 
 - (id)accessibilityValue

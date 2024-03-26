@@ -44,7 +44,6 @@ public class JavaLayouts {
     static final VarHandle VH_LONG = arrayVarHandle(JAVA_LONG);
 
     private static VarHandle arrayVarHandle(ValueLayout layout) {
-        return MethodHandles.collectCoordinates(layout.varHandle(),
-            1, MethodHandles.insertArguments(layout.scaleHandle(), 0, 0L));
+        return MethodHandles.insertCoordinates(layout.arrayElementVarHandle(), 1, 0L);
     }
 }

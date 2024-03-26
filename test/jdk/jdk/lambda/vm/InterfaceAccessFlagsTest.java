@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,10 @@
 
 package vm;
 
-import java.io.*;
-
 import org.testng.annotations.Test;
-import separate.*;
+import separate.ClassToInterfaceConverter;
 import separate.Compiler;
+import separate.TestHarness;
 
 import static org.testng.Assert.*;
 import static separate.SourceModel.*;
@@ -71,8 +70,7 @@ public class InterfaceAccessFlagsTest extends TestHarness {
         }
     }
 
-    /* excluded: 8187655 */
-    @Test(enabled=false, groups = "vm_prototype")
+    @Test(groups = "vm_prototype")
     public void testPrivateMethodCall() {
         testMethodCallWithFlag(AccessFlag.PRIVATE);
     }

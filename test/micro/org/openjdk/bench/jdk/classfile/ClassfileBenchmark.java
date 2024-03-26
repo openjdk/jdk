@@ -26,13 +26,13 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.CompoundElement;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.CompoundElement;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 
@@ -46,18 +46,18 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 /**
- * ClassfileBenchmark
+ * ClassFileBenchmark
  */
 @Warmup(iterations = 3)
 @Measurement(iterations = 5)
 @Fork(value = 1, jvmArgsAppend = {
-        "--add-exports", "java.base/jdk.internal.classfile=ALL-UNNAMED"})
+        "--enable-preview"})
 
 @State(Scope.Benchmark)
 public class ClassfileBenchmark {
     private byte[] benchBytes;
     private ClassModel benchModel;
-    private Classfile sharedCP, newCP;
+    private ClassFile sharedCP, newCP;
     private ClassTransform threeLevelNoop;
     private ClassTransform addNOP;
 
@@ -66,9 +66,9 @@ public class ClassfileBenchmark {
         benchBytes = Files.readAllBytes(
                 FileSystems.getFileSystem(URI.create("jrt:/"))
                 .getPath("modules/java.base/java/util/AbstractMap.class"));
-        sharedCP = Classfile.of();
-        newCP = Classfile.of(Classfile.ConstantPoolSharingOption.NEW_POOL);
-        benchModel = Classfile.of().parse(benchBytes);
+        sharedCP = ClassFile.of();
+        newCP = ClassFile.of(ClassFile.ConstantPoolSharingOption.NEW_POOL);
+        benchModel = ClassFile.of().parse(benchBytes);
         threeLevelNoop = ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL);
         addNOP = ClassTransform.transformingMethodBodies(new CodeTransform() {
             @Override

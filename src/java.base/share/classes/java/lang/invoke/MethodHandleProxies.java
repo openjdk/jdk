@@ -48,10 +48,10 @@ import java.util.stream.Stream;
 
 import jdk.internal.access.JavaLangReflectAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.classfile.ClassHierarchyResolver;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.TypeKind;
+import java.lang.classfile.ClassHierarchyResolver;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.TypeKind;
 import jdk.internal.module.Modules;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
@@ -62,7 +62,7 @@ import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodType.methodType;
 import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
-import static jdk.internal.classfile.Classfile.*;
+import static java.lang.classfile.ClassFile.*;
 
 /**
  * This class consists exclusively of static methods that help adapt
@@ -367,7 +367,7 @@ public class MethodHandleProxies {
      */
     private static byte[] createTemplate(ClassLoader loader, ClassDesc proxyDesc, ClassDesc ifaceDesc,
                                          String methodName, List<MethodInfo> methods) {
-        return Classfile.of(ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofClassLoading(loader)))
+        return ClassFile.of(ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofClassLoading(loader)))
                         .build(proxyDesc, clb -> {
             clb.withSuperclass(CD_Object);
             clb.withFlags(ACC_FINAL | ACC_SYNTHETIC);

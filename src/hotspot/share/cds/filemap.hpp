@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,7 @@ public:
   bool is_dir()           const { return _type == dir_entry; }
   bool is_modules_image() const { return _type == modules_image_entry; }
   bool is_jar()           const { return _type == jar_entry; }
+  bool is_non_existent()  const { return _type == non_existent_entry; }
   bool from_class_path_attr() { return _from_class_path_attr; }
   time_t timestamp() const { return _timestamp; }
   const char* name() const;
@@ -170,7 +171,7 @@ public:
   BitMapView ptrmap_view();
   bool has_ptrmap()                  { return _ptrmap_size_in_bits != 0; }
 
-  bool check_region_crc() const;
+  bool check_region_crc(char* base) const;
   void print(outputStream* st, int region_index);
 };
 
@@ -223,10 +224,12 @@ private:
   bool   _allow_archiving_with_java_agent; // setting of the AllowArchivingWithJavaAgent option
   bool   _use_optimized_module_handling;// No module-relation VM options were specified, so we can skip
                                         // some expensive operations.
-  bool   _use_full_module_graph;        // Can we use the full archived module graph?
+  bool   _has_full_module_graph;        // Does this CDS archive contain the full archived module graph?
   size_t _ptrmap_size_in_bits;          // Size of pointer relocation bitmap
   size_t _heap_roots_offset;            // Offset of the HeapShared::roots() object, from the bottom
                                         // of the archived heap objects, in bytes.
+  size_t _heap_oopmap_start_pos;        // The first bit in the oopmap corresponds to this position in the heap.
+  size_t _heap_ptrmap_start_pos;        // The first bit in the ptrmap corresponds to this position in the heap.
   char* from_mapped_offset(size_t offset) const {
     return mapped_base_address() + offset;
   }
@@ -249,6 +252,7 @@ public:
   void set_base_archive_name_size(unsigned int s)           { _generic_header._base_archive_name_size = s;   }
   void set_common_app_classpath_prefix_size(unsigned int s) { _common_app_classpath_prefix_size = s;         }
 
+  bool is_static()                         const { return magic() == CDS_ARCHIVE_MAGIC; }
   size_t core_region_alignment()           const { return _core_region_alignment; }
   int obj_alignment()                      const { return _obj_alignment; }
   address narrow_oop_base()                const { return _narrow_oop_base; }
@@ -267,6 +271,8 @@ public:
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
   size_t heap_roots_offset()               const { return _heap_roots_offset; }
+  size_t heap_oopmap_start_pos()           const { return _heap_oopmap_start_pos;}
+  size_t heap_ptrmap_start_pos()           const { return _heap_ptrmap_start_pos;}
   // FIXME: These should really return int
   jshort max_used_path_index()             const { return _max_used_path_index; }
   jshort app_module_paths_start_index()    const { return _app_module_paths_start_index; }
@@ -279,6 +285,8 @@ public:
   void set_ptrmap_size_in_bits(size_t s)         { _ptrmap_size_in_bits = s; }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
   void set_heap_roots_offset(size_t n)           { _heap_roots_offset = n; }
+  void set_heap_oopmap_start_pos(size_t n)       { _heap_oopmap_start_pos = n; }
+  void set_heap_ptrmap_start_pos(size_t n)       { _heap_ptrmap_start_pos = n; }
   void copy_base_archive_name(const char* name);
 
   void set_shared_path_table(SharedPathTable table) {
@@ -376,6 +384,8 @@ public:
   uintx   max_heap_size()      const { return header()->max_heap_size(); }
   size_t  heap_roots_offset()  const { return header()->heap_roots_offset(); }
   size_t  core_region_alignment() const { return header()->core_region_alignment(); }
+  size_t  heap_oopmap_start_pos() const { return header()->heap_oopmap_start_pos(); }
+  size_t  heap_ptrmap_start_pos() const { return header()->heap_ptrmap_start_pos(); }
 
   CompressedOops::Mode narrow_oop_mode()      const { return header()->narrow_oop_mode(); }
   jshort app_module_paths_start_index()       const { return header()->app_module_paths_start_index(); }
@@ -432,6 +442,7 @@ public:
   void  write_header();
   void  write_region(int region, char* base, size_t size,
                      bool read_only, bool allow_exec);
+  size_t remove_bitmap_leading_zeros(CHeapBitMap* map);
   char* write_bitmap_region(const CHeapBitMap* ptrmap, ArchiveHeapInfo* heap_info,
                             size_t &size_in_bytes);
   size_t write_heap_region(ArchiveHeapInfo* heap_info);

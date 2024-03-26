@@ -27,13 +27,13 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_windows.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfMemory.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/formatBuffer.hpp"
 
@@ -1803,9 +1803,9 @@ void PerfMemory::detach(char* addr, size_t bytes) {
 
   if (MemTracker::enabled()) {
     // it does not go through os api, the operation has to record from here
-    Tracker tkr(Tracker::release);
+    ThreadCritical tc;
     remove_file_mapping(addr);
-    tkr.record((address)addr, bytes);
+    MemTracker::record_virtual_memory_release((address)addr, bytes);
   } else {
     remove_file_mapping(addr);
   }

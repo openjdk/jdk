@@ -163,5 +163,5 @@ jboolean XShared_initSurface(JNIEnv *env, X11SDOps *xsdo, jint depth, jint width
  *      is called since this function will not leave any outstanding
  *      JNI Critical locks unreleased.
  */
-JNIEXPORT X11SDOps * JNICALL
+X11SDOps *
 X11SurfaceData_GetOps(JNIEnv *env, jobject sData);

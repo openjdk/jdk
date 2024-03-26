@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,17 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
+#include "agent_common.hpp"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
 /* ============================================================================= */
 
 /* scaffold objects */
-static JNIEnv* jni = NULL;
-static jvmtiEnv *jvmti = NULL;
+static JNIEnv* jni = nullptr;
+static jvmtiEnv *jvmti = nullptr;
 static jlong timeout = 0;
 
 /* constant names */
@@ -64,7 +64,7 @@ void setCurrentStep(JNIEnv* jni_env, int value) {
     jfieldID fld;
 
     if (!NSK_JNI_VERIFY(jni_env, (fld =
-            jni_env->GetStaticFieldID(testClass, "currentStep", "I")) != NULL)) {
+            jni_env->GetStaticFieldID(testClass, "currentStep", "I")) != nullptr)) {
         jni_env->FatalError("TEST FAILED: while getting currentStep fieldID\n");
     }
 
@@ -102,7 +102,7 @@ void redefineClass(jvmtiEnv *jvmti_env, jclass klass) {
 
     char *className;
 
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &className, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &className, nullptr))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -165,7 +165,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
 void setBreakPoint(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jclass klass) {
     jmethodID mid;
 
-    if (!NSK_JNI_VERIFY(jni_env, (mid = jni_env->GetMethodID(klass, METHOD_NAME, METHOD_SIG)) != NULL))
+    if (!NSK_JNI_VERIFY(jni_env, (mid = jni_env->GetMethodID(klass, METHOD_NAME, METHOD_SIG)) != nullptr))
         jni_env->FatalError("[agent] failed to get ID for the java method\n");
 
     if (!NSK_JVMTI_VERIFY(jvmti_env->SetBreakpoint(mid, 1)))
@@ -200,7 +200,7 @@ callbackClassLoad(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
         nsk_jvmti_setFailStatus();
     }
 
-    if (generic != NULL)
+    if (generic != nullptr)
         if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)generic))) {
             nsk_jvmti_setFailStatus();
         }
@@ -232,7 +232,7 @@ callbackSingleStep(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
 
     char *methodName;
 
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &methodName, NULL, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &methodName, nullptr, nullptr))) {
         NSK_COMPLAIN0("TEST FAILED: unable to get method name during Breakpoint callback\n\n");
     }
 
@@ -244,7 +244,7 @@ callbackSingleStep(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
             NSK_COMPLAIN0("TEST FAILED: unable to get method name during Breakpoint callback\n\n");
         }
 
-        if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(declaringClass, &declaringClassName, NULL))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(declaringClass, &declaringClassName, nullptr))) {
             NSK_COMPLAIN0("TEST FAILED: unable to get method name during Breakpoint callback\n\n");
         }
 
@@ -335,7 +335,7 @@ callbackException(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
                         className, getThreadName(jni_env, thread));
 
         testStep++;
-        if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(exception)) != NULL)) {
+        if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(exception)) != nullptr)) {
             nsk_jvmti_setFailStatus();
             return;
         }
@@ -366,7 +366,7 @@ callbackExceptionCatch(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
                         className, getThreadName(jni_env, thread));
 
         testStep++;
-        if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(exception)) != NULL)) {
+        if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(exception)) != nullptr)) {
             nsk_jvmti_setFailStatus();
             return;
         }
@@ -397,7 +397,7 @@ int readNewBytecode(jvmtiEnv* jvmti, int testcase) {
                         filename);
 
     bytecode = fopen(filename, "rb");
-    if (bytecode == NULL) {
+    if (bytecode == nullptr) {
         NSK_COMPLAIN0("TEST FAILED: error opening file\n");
         return NSK_FALSE;
     }
@@ -430,13 +430,13 @@ const char* getThreadName(JNIEnv* jni_env, jthread thread) {
 
     strcpy(chbuffer, "");
 
-    if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(thread)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(thread)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return chbuffer;
     }
 
     if (!NSK_JNI_VERIFY(jni_env, (methodID =
-            jni_env->GetMethodID(klass, "getName", "()Ljava/lang/String;")) != NULL)) {
+            jni_env->GetMethodID(klass, "getName", "()Ljava/lang/String;")) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return chbuffer;
     }
@@ -462,7 +462,7 @@ const char* getClassName(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jobject object) {
 
     strcpy(chbuffer, "");
 
-    if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(object)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(object)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return chbuffer;
     }
@@ -478,7 +478,7 @@ const char* getClassName(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jobject object) {
         nsk_jvmti_setFailStatus();
     }
 
-    if (generic != NULL)
+    if (generic != nullptr)
         if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)generic))) {
             nsk_jvmti_setFailStatus();
         }
@@ -491,7 +491,7 @@ const char* getClassName(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jobject object) {
 int getLocalVariableValue(jvmtiEnv *jvmti_env, jthread thread,
                                 jmethodID method) {
 
-    jvmtiLocalVariableEntry *table = NULL;
+    jvmtiLocalVariableEntry *table = nullptr;
     jint entryCount = 0;
     int i;
     jint value = -1;
@@ -501,7 +501,7 @@ int getLocalVariableValue(jvmtiEnv *jvmti_env, jthread thread,
         NSK_COMPLAIN0("TEST FAILED: unable to get local variable table\n\n");
     }
 
-    if (table != NULL) {
+    if (table != nullptr) {
         jvmtiError error;
 
         for (i = 0; i < entryCount; i++) {
@@ -540,10 +540,10 @@ JNIEXPORT void JNICALL
 Java_nsk_jvmti_scenarios_hotswap_HS201_hs201t001_setThread(JNIEnv *env,
                         jclass cls, jthread thread) {
 
-    if (!NSK_JNI_VERIFY(env, (testClass = (jclass) env->NewGlobalRef(cls)) != NULL))
+    if (!NSK_JNI_VERIFY(env, (testClass = (jclass) env->NewGlobalRef(cls)) != nullptr))
         nsk_jvmti_setFailStatus();
 
-    if (!NSK_JNI_VERIFY(env, (testedThread = env->NewGlobalRef(thread)) != NULL))
+    if (!NSK_JNI_VERIFY(env, (testedThread = env->NewGlobalRef(thread)) != nullptr))
         nsk_jvmti_setFailStatus();
 
 }
@@ -632,7 +632,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     {
@@ -670,7 +670,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     enableEvent(jvmti, JVMTI_EVENT_EXCEPTION, testedThread);
     enableEvent(jvmti, JVMTI_EVENT_EXCEPTION_CATCH, testedThread);
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

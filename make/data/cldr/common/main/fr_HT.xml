@@ -32,9 +32,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="day-short">
 				<displayName draft="contributed">jr.</displayName>
 			</field>
-			<field type="day-narrow">
-				<displayName draft="contributed">jr.</displayName>
-			</field>
 			<field type="sun-narrow">
 				<relative type="-1" draft="contributed">dim dernier</relative>
 				<relative type="0" draft="contributed">ce dim</relative>
@@ -73,13 +70,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="hour-short">
 				<displayName draft="contributed">hr</displayName>
 			</field>
-			<field type="hour-narrow">
-				<displayName draft="contributed">hr</displayName>
-			</field>
 			<field type="minute-short">
-				<displayName draft="contributed">min.</displayName>
-			</field>
-			<field type="minute-narrow">
 				<displayName draft="contributed">min.</displayName>
 			</field>
 			<field type="second-narrow">

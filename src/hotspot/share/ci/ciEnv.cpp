@@ -121,7 +121,6 @@ ciEnv::ciEnv(CompileTask* task)
   _oop_recorder = nullptr;
   _debug_info = nullptr;
   _dependencies = nullptr;
-  _failure_reason = nullptr;
   _inc_decompile_count_on_failure = true;
   _compilable = MethodCompilable;
   _break_at_compile = false;
@@ -250,7 +249,6 @@ ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler) {
   _oop_recorder = nullptr;
   _debug_info = nullptr;
   _dependencies = nullptr;
-  _failure_reason = nullptr;
   _inc_decompile_count_on_failure = true;
   _compilable = MethodCompilable_never;
   _break_at_compile = false;
@@ -1143,17 +1141,15 @@ void ciEnv::register_method(ciMethod* target,
 #endif
 
       if (entry_bci == InvocationEntryBci) {
-        if (TieredCompilation) {
-          // If there is an old version we're done with it
-          CompiledMethod* old = method->code();
-          if (TraceMethodReplacement && old != nullptr) {
-            ResourceMark rm;
-            char *method_name = method->name_and_sig_as_C_string();
-            tty->print_cr("Replacing method %s", method_name);
-          }
-          if (old != nullptr) {
-            old->make_not_used();
-          }
+        // If there is an old version we're done with it
+        CompiledMethod* old = method->code();
+        if (TraceMethodReplacement && old != nullptr) {
+          ResourceMark rm;
+          char *method_name = method->name_and_sig_as_C_string();
+          tty->print_cr("Replacing method %s", method_name);
+        }
+        if (old != nullptr) {
+          old->make_not_used();
         }
 
         LogTarget(Info, nmethod, install) lt;
@@ -1233,9 +1229,9 @@ int ciEnv::num_inlined_bytecodes() const {
 // ------------------------------------------------------------------
 // ciEnv::record_failure()
 void ciEnv::record_failure(const char* reason) {
-  if (_failure_reason == nullptr) {
+  if (_failure_reason.get() == nullptr) {
     // Record the first failure reason.
-    _failure_reason = reason;
+    _failure_reason.set(reason);
   }
 }
 
@@ -1265,7 +1261,7 @@ void ciEnv::record_method_not_compilable(const char* reason, bool all_tiers) {
     _compilable = new_compilable;
 
     // Reset failure reason; this one is more important.
-    _failure_reason = nullptr;
+    _failure_reason.clear();
     record_failure(reason);
   }
 }
@@ -1535,11 +1531,11 @@ void ciEnv::process_invokehandle(const constantPoolHandle &cp, int index, JavaTh
   Klass* holder = ConstantPool::klass_at_if_loaded(cp, holder_index);
   Symbol* name = cp->name_ref_at(index, Bytecodes::_invokehandle);
   if (MethodHandles::is_signature_polymorphic_name(holder, name)) {
-    ConstantPoolCacheEntry* cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
-    if (cp_cache_entry->is_resolved(Bytecodes::_invokehandle)) {
+    ResolvedMethodEntry* method_entry = cp->resolved_method_entry_at(index);
+    if (method_entry->is_resolved(Bytecodes::_invokehandle)) {
       // process the adapter
-      Method* adapter = cp_cache_entry->f1_as_method();
-      oop appendix = cp_cache_entry->appendix_if_resolved(cp);
+      Method* adapter = method_entry->method();
+      oop appendix = cp->cache()->appendix_if_resolved(method_entry);
       record_call_site_method(thread, adapter);
       // process the appendix
       {
@@ -1591,7 +1587,7 @@ void ciEnv::find_dynamic_call_sites() {
               process_invokedynamic(pool, index, thread);
             } else {
               assert(opcode == Bytecodes::_invokehandle, "new switch label added?");
-              int cp_cache_index = bcs.get_index_u2_cpcache();
+              int cp_cache_index = bcs.get_index_u2();
               process_invokehandle(pool, cp_cache_index, thread);
             }
             break;

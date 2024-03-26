@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public class CheckUpperLimit {
         ProcessBuilder pb;
         OutputAnalyzer out;
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:ReservedCodeCacheSize=2049m", "-version");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:ReservedCodeCacheSize=2049m", "-version");
         out = new OutputAnalyzer(pb.start());
         out.shouldContain("Invalid ReservedCodeCacheSize=");
         out.shouldHaveExitValue(1);

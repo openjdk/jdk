@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,16 +68,16 @@ public class TestPageCacheFlush {
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessTools.executeProcess(ProcessTools.createJavaProcessBuilder(
-                                    "-XX:+UseZGC",
-                                    "-XX:-ZGenerational",
-                                    "-Xms128M",
-                                    "-Xmx128M",
-                                    "-Xlog:gc,gc+init,gc+heap=debug",
-                                    Test.class.getName()))
-                    .outputTo(System.out)
-                    .errorTo(System.out)
-                    .shouldContain("Page Cache Flushed:")
-                    .shouldHaveExitValue(0);
+        ProcessTools.executeLimitedTestJava(
+            "-XX:+UseZGC",
+            "-XX:-ZGenerational",
+            "-Xms128M",
+            "-Xmx128M",
+            "-Xlog:gc,gc+init,gc+heap=debug",
+            Test.class.getName())
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .shouldContain("Page Cache Flushed:")
+                .shouldHaveExitValue(0);
     }
 }

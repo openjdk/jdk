@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1463,9 +1463,9 @@ public final class Pattern
      * </tr>
      * </thead>
      * <tbody>
-     * <tr><th scope="row" style="text-weight:normal">:</th>
+     * <tr><th scope="row" style="font-weight:normal">:</th>
      *     <td>{@code { "boo", "and", "foo" }}</td></tr>
-     * <tr><th scope="row" style="text-weight:normal">o</th>
+     * <tr><th scope="row" style="font-weight:normal">o</th>
      *     <td>{@code { "b", "", ":and:f" }}</td></tr>
      * </tbody>
      * </table>
@@ -3272,10 +3272,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             if (head.study(info)) { // Deterministic
                 GroupTail temp = (GroupTail) tail;
                 head = root = new GroupCurly(head.next, curly.cmin,
-                                   curly.cmax, curly.type,
-                                   ((GroupTail)tail).localIndex,
-                                   ((GroupTail)tail).groupIndex,
-                                             capturingGroup);
+                        curly.cmax, curly.type,
+                        temp.localIndex,
+                        temp.groupIndex,
+                        capturingGroup);
                 return head;
             } else { // Non-deterministic
                 int temp = ((GroupHead) head).localIndex;

@@ -86,7 +86,7 @@ void LIR_Assembler::arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, 
     }
   } else {
     Register rreg = right->as_register();
-    __ corrected_idivl(dreg, lreg, rreg, is_irem);
+    __ corrected_idivl(dreg, lreg, rreg, is_irem, /* is_signed */ true);
   }
 }
 
@@ -172,8 +172,12 @@ void LIR_Assembler::arith_op_double_cpu(LIR_Code code, LIR_Opr left, LIR_Opr rig
       case lir_add: __ add(dest->as_register_lo(), lreg_lo, rreg_lo); break;
       case lir_sub: __ sub(dest->as_register_lo(), lreg_lo, rreg_lo); break;
       case lir_mul: __ mul(dest->as_register_lo(), lreg_lo, rreg_lo); break;
-      case lir_div: __ corrected_idivq(dest->as_register_lo(), lreg_lo, rreg_lo, false); break;
-      case lir_rem: __ corrected_idivq(dest->as_register_lo(), lreg_lo, rreg_lo, true); break;
+      case lir_div: __ corrected_idivq(dest->as_register_lo(), lreg_lo, rreg_lo,
+                                       /* want_remainder */ false, /* is_signed */ true);
+                    break;
+      case lir_rem: __ corrected_idivq(dest->as_register_lo(), lreg_lo, rreg_lo,
+                                       /* want_remainder */ true, /* is_signed */ true);
+                    break;
       default:
         ShouldNotReachHere();
     }

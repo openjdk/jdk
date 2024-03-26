@@ -42,7 +42,6 @@ import java.util.function.IntFunction;
 import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
 import static java.lang.foreign.MemoryLayout.PathElement.sequenceElement;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import static org.testng.Assert.*;
 
@@ -139,8 +138,8 @@ public class TestLayoutPaths {
     @Test
     public void testBadAlignmentOfRoot() {
         MemoryLayout struct = MemoryLayout.structLayout(
-            JAVA_INT,
-            JAVA_SHORT.withName("x"));
+            JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN),
+            JAVA_SHORT.withOrder(ByteOrder.LITTLE_ENDIAN).withName("x"));
         assertEquals(struct.byteAlignment(), 4);
 
         try (Arena arena = Arena.ofConfined()) {
@@ -310,6 +309,49 @@ public class TestLayoutPaths {
         byteOffsetHandle = byteOffsetHandle.asSpreader(long[].class, indexes.length);
         long actualByteOffset = (long) byteOffsetHandle.invokeExact(0L, indexes);
         assertEquals(actualByteOffset, expectedByteOffset);
+    }
+
+    @Test
+    public void testHashCodeCollision() {
+        PathElement sequenceElement = PathElement.sequenceElement();
+        PathElement dereferenceElement = PathElement.dereferenceElement();
+        assertNotEquals(sequenceElement.hashCode(), dereferenceElement.hashCode());
+    }
+
+    @Test
+    public void testGroupElementIndexToString() {
+        PathElement e = PathElement.groupElement(2);
+        assertEquals(e.toString(), "groupElement(2)");
+    }
+
+    @Test
+    public void testGroupElementNameToString() {
+        PathElement e = PathElement.groupElement("x");
+        assertEquals(e.toString(), "groupElement(\"x\")");
+    }
+
+    @Test
+    public void testSequenceElementToString() {
+        PathElement e = PathElement.sequenceElement();
+        assertEquals(e.toString(), "sequenceElement()");
+    }
+
+    @Test
+    public void testSequenceElementIndexToString() {
+        PathElement e = PathElement.sequenceElement(2);
+        assertEquals(e.toString(), "sequenceElement(2)");
+    }
+
+    @Test
+    public void testSequenceElementRangeToString() {
+        PathElement e = PathElement.sequenceElement(2, 4);
+        assertEquals(e.toString(), "sequenceElement(2, 4)");
+    }
+
+    @Test
+    public void testDerefereceElementToString() {
+        PathElement e = PathElement.dereferenceElement();
+        assertEquals(e.toString(), "dereferenceElement()");
     }
 
     @DataProvider

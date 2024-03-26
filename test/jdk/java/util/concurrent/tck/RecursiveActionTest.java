@@ -162,10 +162,10 @@ public class RecursiveActionTest extends JSR166TestCase {
 
     void checkCompletedAbnormally(RecursiveAction a, Throwable t) {
         assertTrue(a.isDone());
-        assertFalse(a.isCancelled());
         assertFalse(a.isCompletedNormally());
         assertTrue(a.isCompletedAbnormally());
-        assertSame(t.getClass(), a.getException().getClass());
+        if (!a.isCancelled())
+            assertSame(t.getClass(), a.getException().getClass());
         assertNull(a.getRawResult());
         assertFalse(a.cancel(false));
         assertFalse(a.cancel(true));
@@ -222,14 +222,17 @@ public class RecursiveActionTest extends JSR166TestCase {
         FailingFibAction(int n) { number = n; }
         public void compute() {
             int n = number;
-            if (n <= 1)
-                throw new FJException();
-            else {
-                FailingFibAction f1 = new FailingFibAction(n - 1);
-                FailingFibAction f2 = new FailingFibAction(n - 2);
-                invokeAll(f1, f2);
-                result = f1.result + f2.result;
+            if (n > 1) {
+                try {
+                    FailingFibAction f1 = new FailingFibAction(n - 1);
+                    FailingFibAction f2 = new FailingFibAction(n - 2);
+                    invokeAll(f1, f2);
+                    result = f1.result + f2.result;
+                    return;
+                } catch (CancellationException fallthrough) {
+                }
             }
+            throw new FJException();
         }
     }
 
@@ -488,7 +491,9 @@ public class RecursiveActionTest extends JSR166TestCase {
                 try {
                     f.get(randomTimeout(), null);
                     shouldThrow();
-                } catch (NullPointerException success) {}
+                } catch (NullPointerException success) {
+                    f.join();
+                }
             }};
         testInvokeOnPool(mainPool(), a);
     }

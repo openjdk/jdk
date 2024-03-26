@@ -111,26 +111,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sat">субота</day>
 						</dayWidth>
 					</dayContext>
-					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun">нед</day>
-							<day type="mon">пон</day>
-							<day type="tue">уто</day>
-							<day type="wed">сри</day>
-							<day type="thu">чет</day>
-							<day type="fri">пет</day>
-							<day type="sat">суб</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">недјеља</day>
-							<day type="mon">понедјељак</day>
-							<day type="tue">уторак</day>
-							<day type="wed">сриједа</day>
-							<day type="thu">четвртак</day>
-							<day type="fri">петак</day>
-							<day type="sat">субота</day>
-						</dayWidth>
-					</dayContext>
 				</days>
 				<dayPeriods>
 					<dayPeriodContext type="format">
@@ -152,10 +132,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">прије подне</dayPeriod>
-							<dayPeriod type="pm">по подне</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am">а</dayPeriod>
 							<dayPeriod type="pm">p</dayPeriod>
@@ -222,13 +198,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">прије {0} кв.</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="quarter-narrow">
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} кв.</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} кв.</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} кв.</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="month">
 				<displayName>мјесец</displayName>
 				<relative type="-1">прошлог мјесеца</relative>
@@ -262,7 +231,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="month-narrow">
-				<displayName>мјес.</displayName>
 				<relative type="-1">прошлог мјес.</relative>
 				<relative type="0">овог мјес.</relative>
 				<relative type="1">сљедећег м.</relative>
@@ -304,10 +272,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="few">прије {0} седм.</relativeTimePattern>
 					<relativeTimePattern count="other">прије {0} седм.</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod>седмица која почиње {0}.</relativePeriod>
 			</field>
 			<field type="week-narrow">
-				<displayName>седм.</displayName>
 				<relative type="-1">прошле с.</relative>
 				<relative type="0">ове с.</relative>
 				<relative type="1">сљедеће с.</relative>
@@ -321,15 +287,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="few">прије {0} с.</relativeTimePattern>
 					<relativeTimePattern count="other">прије {0} с.</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod>седмица која почиње {0}.</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
 				<displayName>седмица у мјесецу</displayName>
 			</field>
 			<field type="weekOfMonth-short">
-				<displayName>седм. у мјес.</displayName>
-			</field>
-			<field type="weekOfMonth-narrow">
 				<displayName>седм. у мјес.</displayName>
 			</field>
 			<field type="day">
@@ -346,29 +308,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">прије {0} д.</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="day-narrow">
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} д.</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} д.</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} д.</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="weekday">
 				<displayName>дан у седмици</displayName>
 			</field>
 			<field type="weekday-short">
 				<displayName>дан у седм.</displayName>
 			</field>
-			<field type="weekday-narrow">
-				<displayName>дан у седм.</displayName>
-			</field>
 			<field type="weekdayOfMonth">
-				<displayName>дан у мјесецу</displayName>
-			</field>
-			<field type="weekdayOfMonth-short">
-				<displayName>дан у мјесецу</displayName>
-			</field>
-			<field type="weekdayOfMonth-narrow">
 				<displayName>дан у мјесецу</displayName>
 			</field>
 			<field type="sun">
@@ -390,31 +336,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">пр. нед.</relative>
 				<relative type="0">у нед</relative>
 				<relative type="1">сљ. нед.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">за {0} недјељу</relativeTimePattern>
-					<relativeTimePattern count="few">за {0} недјеље</relativeTimePattern>
-					<relativeTimePattern count="other">за {0} недјеља</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} недјеље</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} недјеље</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} недјеља</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sun-narrow">
-				<relative type="-1">пр. нед.</relative>
-				<relative type="0">у нед</relative>
-				<relative type="1">сљ. нед.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">за {0} недјељу</relativeTimePattern>
-					<relativeTimePattern count="few">за {0} недјеље</relativeTimePattern>
-					<relativeTimePattern count="other">за {0} недјеља</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} недјеље</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} недјеље</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} недјеља</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">прошлог понедјељка</relative>
@@ -435,30 +356,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">прошлог пон</relative>
 				<relative type="0">у пон</relative>
 				<relative type="1">сљедећег пон</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">за {0} понедјељак</relativeTimePattern>
-					<relativeTimePattern count="few">за {0} понедјељка</relativeTimePattern>
-					<relativeTimePattern count="other">за {0} понедјељака</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} понедјељка</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} понедјељка</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} понедјељака</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="mon-narrow">
-				<relative type="-1">прошлог пон</relative>
-				<relative type="0">у пон</relative>
-				<relative type="1">сљедећег пон</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">за {0} понедјељак</relativeTimePattern>
 					<relativeTimePattern count="few">за {0} понедјељкa</relativeTimePattern>
 					<relativeTimePattern count="other">за {0} понедјељака</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} понедјељка</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} понедјељка</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} понедјељака</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="tue">
@@ -475,21 +378,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">прошлог уто</relative>
 				<relative type="0">у уто</relative>
 				<relative type="1">сљедећег уто</relative>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} уторка</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} уторка</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} уторака</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="tue-narrow">
-				<relative type="-1">прошлог уто</relative>
-				<relative type="0">у уто</relative>
-				<relative type="1">сљедећег уто</relative>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} уторка</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} уторка</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} уторака</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">прошле сриједе</relative>
@@ -510,31 +398,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">прошле сри</relative>
 				<relative type="0">у сри</relative>
 				<relative type="1">сљедеће сри</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">за {0} сриједу</relativeTimePattern>
-					<relativeTimePattern count="few">за {0} сриједе</relativeTimePattern>
-					<relativeTimePattern count="other">за {0} сриједа</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} сриједе</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} сриједе</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} сриједа</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="wed-narrow">
-				<relative type="-1">прошле сри</relative>
-				<relative type="0">у сри</relative>
-				<relative type="1">сљедеће сри</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">за {0} сриједу</relativeTimePattern>
-					<relativeTimePattern count="few">за {0} сриједе</relativeTimePattern>
-					<relativeTimePattern count="other">за {0} сриједа</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} сриједе</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} сриједе</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} сриједа</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">прошлог четвртка</relative>
@@ -550,21 +413,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">прошлог чет</relative>
 				<relative type="0">у чет</relative>
 				<relative type="1">сљедећег чет</relative>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} четвртка</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} четвртка</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} четвртака</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="thu-narrow">
-				<relative type="-1">прошлог чет</relative>
-				<relative type="0">у чет</relative>
-				<relative type="1">сљедећег чет</relative>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} четвртка</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} четвртка</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} четвртака</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">прошлог петка</relative>
@@ -580,21 +428,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">прошлог пет</relative>
 				<relative type="0">у пет</relative>
 				<relative type="1">сљедећег пет</relative>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} петка</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} петка</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} петака</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="fri-narrow">
-				<relative type="-1">прошлог пет</relative>
-				<relative type="0">у пет</relative>
-				<relative type="1">сљедећег пет</relative>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} петка</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} петка</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} петака</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">прошле суботе</relative>
@@ -610,29 +443,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">прошле суб</relative>
 				<relative type="0">у суб</relative>
 				<relative type="1">сљедеће суб</relative>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} суботе</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} суботе</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} субота</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sat-narrow">
-				<relative type="-1">прошле суб</relative>
-				<relative type="0">у суб</relative>
-				<relative type="1">сљедеће суб</relative>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} суботе</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} суботе</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} субота</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="dayperiod-short">
 				<displayName>прије подне/по подне</displayName>
 			</field>
 			<field type="dayperiod">
-				<displayName>прије подне/по подне</displayName>
-			</field>
-			<field type="dayperiod-narrow">
 				<displayName>прије подне/по подне</displayName>
 			</field>
 			<field type="hour">
@@ -649,13 +464,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">прије {0} ч.</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="hour-narrow">
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} ч.</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} ч.</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} ч.</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="minute">
 				<relativeTime type="past">
 					<relativeTimePattern count="one">прије {0} минута</relativeTimePattern>
@@ -664,13 +472,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="minute-short">
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} мин.</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} мин.</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} мин.</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="minute-narrow">
 				<relativeTime type="past">
 					<relativeTimePattern count="one">прије {0} мин.</relativeTimePattern>
 					<relativeTimePattern count="few">прије {0} мин.</relativeTimePattern>
@@ -1688,30 +1489,43 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-30">
+				<unitPrefixPattern>q{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p27">
+				<unitPrefixPattern>R{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p30">
+				<unitPrefixPattern>Q{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="1024p8">
 				<unitPrefixPattern>јоби{0}</unitPrefixPattern>
 			</compoundUnit>
+			<unit type="acceleration-g-force">
+				<unitPattern count="one">{0} ге сила</unitPattern>
+				<unitPattern count="few">{0} G</unitPattern>
+				<unitPattern count="other">{0} ге сила</unitPattern>
+			</unit>
 			<unit type="duration-century">
 				<displayName>вијекови</displayName>
 				<unitPattern count="one">{0} вијек</unitPattern>
+				<unitPattern count="one" case="genitive">{0} вијека</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} вијеком</unitPattern>
 				<unitPattern count="few">{0} вијека</unitPattern>
-				<unitPattern count="few" case="accusative">{0} вијека</unitPattern>
 				<unitPattern count="few" case="genitive">{0} вијека</unitPattern>
 				<unitPattern count="few" case="instrumental">{0} вијека</unitPattern>
 				<unitPattern count="other">{0} вијекова</unitPattern>
-				<unitPattern count="other" case="accusative">{0} вијекова</unitPattern>
 				<unitPattern count="other" case="genitive">{0} вијекова</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} вијекова</unitPattern>
 			</unit>
 			<unit type="duration-month">
-				<displayName>мјесеци</displayName>
 				<unitPattern count="one">{0} мјесец</unitPattern>
+				<unitPattern count="one" case="genitive">{0} мјесеца</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} мјесецом</unitPattern>
 				<unitPattern count="few">{0} мјесеца</unitPattern>
-				<unitPattern count="few" case="accusative">{0} мјесеца</unitPattern>
 				<unitPattern count="few" case="genitive">{0} мјесеца</unitPattern>
 				<unitPattern count="few" case="instrumental">{0} мјесеца</unitPattern>
 				<unitPattern count="other">{0} мјесеци</unitPattern>
-				<unitPattern count="other" case="accusative">{0} мјесеци</unitPattern>
 				<unitPattern count="other" case="genitive">{0} мјесеци</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} мјесеци</unitPattern>
 				<perUnitPattern>{0} мјесечно</perUnitPattern>
@@ -1719,6 +1533,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-week">
 				<displayName>недјеље</displayName>
 				<unitPattern count="one">{0} недјеља</unitPattern>
+				<unitPattern count="one" case="accusative">{0} недјељу</unitPattern>
+				<unitPattern count="one" case="genitive">{0} недјеље</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} недјељом</unitPattern>
 				<unitPattern count="few">{0} недјеље</unitPattern>
 				<unitPattern count="few" case="accusative">{0} недјеље</unitPattern>
 				<unitPattern count="few" case="genitive">{0} недјеље</unitPattern>
@@ -1729,6 +1546,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="instrumental">{0} недјеља</unitPattern>
 				<perUnitPattern>{0} недјељно</perUnitPattern>
 			</unit>
+			<unit type="electric-milliampere">
+				<unitPattern count="one">{0} милиампер</unitPattern>
+				<unitPattern count="few">{0} mA</unitPattern>
+				<unitPattern count="other">{0} милиампера</unitPattern>
+			</unit>
+			<unit type="energy-kilojoule">
+				<unitPattern count="one">{0} килоџул</unitPattern>
+				<unitPattern count="few">{0} kJ</unitPattern>
+				<unitPattern count="other">{0} килоџула</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<unitPattern count="one">{0} херц</unitPattern>
+				<unitPattern count="few">{0} Hz</unitPattern>
+				<unitPattern count="other">{0} херца</unitPattern>
+			</unit>
 			<unit type="length-light-year">
 				<displayName>свјетлосне године</displayName>
 				<unitPattern count="one">{0} свјетлосна година</unitPattern>
@@ -1736,10 +1568,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} свјетлосних година</unitPattern>
 			</unit>
 			<unit type="mass-grain">
-				<displayName>гран</displayName>
 				<unitPattern count="one">{0} гран</unitPattern>
 				<unitPattern count="few">{0} грана</unitPattern>
 				<unitPattern count="other">{0} гранова</unitPattern>
+			</unit>
+			<unit type="pressure-inch-ofhg">
+				<unitPattern count="one">{0} инч живиног стуба</unitPattern>
+				<unitPattern count="few">{0} inHg</unitPattern>
+				<unitPattern count="other">{0} инча живиног стуба</unitPattern>
+			</unit>
+			<unit type="pressure-millibar">
+				<unitPattern count="one">{0} милибар</unitPattern>
+				<unitPattern count="few">{0} mbar</unitPattern>
+				<unitPattern count="other">{0} милибара</unitPattern>
+			</unit>
+			<unit type="speed-beaufort">
+				<displayName>Bft</displayName>
+				<unitPattern count="one">B {0}</unitPattern>
+				<unitPattern count="few">B {0}</unitPattern>
+				<unitPattern count="other">B {0}</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<unitPattern count="one">{0} ac ft</unitPattern>
+				<unitPattern count="few">{0} акер стопе</unitPattern>
+				<unitPattern count="other">{0} акер стопа</unitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<unitPattern count="one">{0} имп. галон</unitPattern>
+				<unitPattern count="few">{0} gal Imp.</unitPattern>
+				<unitPattern count="other">{0} имп. галона</unitPattern>
 			</unit>
 		</unitLength>
 		<unitLength type="short">
@@ -1758,22 +1615,48 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} грана</unitPattern>
 				<unitPattern count="other">{0} гранова</unitPattern>
 			</unit>
-			<unit type="volume-dessert-spoon">
-				<displayName>dstspn</displayName>
-				<unitPattern count="one">{0} dstspn</unitPattern>
-				<unitPattern count="few">{0} dstspn</unitPattern>
-				<unitPattern count="other">{0} dstspn</unitPattern>
+			<unit type="speed-beaufort">
+				<unitPattern count="one">B {0}</unitPattern>
+				<unitPattern count="few">B {0}</unitPattern>
+				<unitPattern count="other">Б {0}</unitPattern>
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
-			<unit type="length-light-year">
-				<displayName>свјетлосне год.</displayName>
+			<unit type="duration-year">
+				<unitPattern count="one">{0} г</unitPattern>
+				<unitPattern count="few">{0} год.</unitPattern>
+				<unitPattern count="other">{0} г</unitPattern>
 			</unit>
-			<unit type="mass-grain">
-				<displayName>гран</displayName>
-				<unitPattern count="one">{0} гран</unitPattern>
-				<unitPattern count="few">{0} грана</unitPattern>
-				<unitPattern count="other">{0} гранова</unitPattern>
+			<unit type="duration-month">
+				<unitPattern count="one">{0} м</unitPattern>
+				<unitPattern count="few">{0} мјес.</unitPattern>
+				<unitPattern count="other">{0} м</unitPattern>
+			</unit>
+			<unit type="duration-week">
+				<unitPattern count="one">{0} нед.</unitPattern>
+				<unitPattern count="few">{0} н</unitPattern>
+				<unitPattern count="other">{0} н</unitPattern>
+			</unit>
+			<unit type="duration-second">
+				<unitPattern count="one">{0} сек</unitPattern>
+				<unitPattern count="few">{0} с</unitPattern>
+				<unitPattern count="other">{0} с</unitPattern>
+			</unit>
+			<unit type="power-horsepower">
+				<unitPattern count="one">{0} кс</unitPattern>
+				<unitPattern count="few">{0} hp</unitPattern>
+				<unitPattern count="other">{0} кс</unitPattern>
+			</unit>
+			<unit type="speed-beaufort">
+				<displayName>Bft</displayName>
+				<unitPattern count="one">B {0}</unitPattern>
+				<unitPattern count="few">B {0}</unitPattern>
+				<unitPattern count="other">B {0}</unitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<unitPattern count="one">{0}/gal Imp</unitPattern>
+				<unitPattern count="few">{0} gal Imp.</unitPattern>
+				<unitPattern count="other">{0}/gal Imp</unitPattern>
 			</unit>
 			<unit type="volume-barrel">
 				<unitPattern count="one">{0}bbl</unitPattern>
@@ -1795,6 +1678,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</unitLength>
 	</units>
 	<characterLabels>
+		<characterLabelPattern type="facing-left">{0} гледа улијево</characterLabelPattern>
 		<characterLabel type="body">тијело</characterLabel>
 		<characterLabel type="bullets_stars">Знакови за набрајање/звјездице</characterLabel>
 		<characterLabel type="downwards_arrows">Стрелице надоље</characterLabel>

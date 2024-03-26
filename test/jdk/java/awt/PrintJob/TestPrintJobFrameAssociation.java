@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 8154218
+ * @key printer
  * @summary  Verifies if owner Frame is associated with print dialog
  * @run main/manual TestPrintJobFrameAssociation
  */

@@ -30,15 +30,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
-import jdk.internal.classfile.attribute.StackMapTableAttribute;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.instruction.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
+import java.lang.classfile.attribute.StackMapTableAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.instruction.*;
 
-import static jdk.internal.classfile.Classfile.*;
+import static java.lang.classfile.ClassFile.*;
 
 public final class CodeImpl
         extends BoundAttribute.BoundCodeAttribute
@@ -121,7 +121,7 @@ public final class CodeImpl
         if (!inflated) {
             if (labels == null)
                 labels = new LabelImpl[codeLength + 1];
-            if (((ClassReaderImpl)classReader).context().lineNumbersOption() == Classfile.LineNumbersOption.PASS_LINE_NUMBERS)
+            if (((ClassReaderImpl)classReader).context().lineNumbersOption() == ClassFile.LineNumbersOption.PASS_LINE_NUMBERS)
                 inflateLineNumbers();
             inflateJumpTargets();
             inflateTypeAnnotations();
@@ -170,7 +170,7 @@ public final class CodeImpl
         inflateMetadata();
         boolean doLineNumbers = (lineNumbers != null);
         generateCatchTargets(consumer);
-        if (((ClassReaderImpl)classReader).context().debugElementsOption() == Classfile.DebugElementsOption.PASS_DEBUG)
+        if (((ClassReaderImpl)classReader).context().debugElementsOption() == ClassFile.DebugElementsOption.PASS_DEBUG)
             generateDebugElements(consumer);
         for (int pos=codeStart; pos<codeEnd; ) {
             if (labels[pos - codeStart] != null)
@@ -247,7 +247,7 @@ public final class CodeImpl
     private void inflateJumpTargets() {
         Optional<StackMapTableAttribute> a = findAttribute(Attributes.STACK_MAP_TABLE);
         if (a.isEmpty()) {
-            if (classReader.readU2(6) <= Classfile.JAVA_6_VERSION) {
+            if (classReader.readU2(6) <= ClassFile.JAVA_6_VERSION) {
                 //fallback to jump targets inflation without StackMapTableAttribute
                 for (int pos=codeStart; pos<codeEnd; ) {
                     var i = bcToInstruction(classReader.readU1(pos), pos);
@@ -460,7 +460,7 @@ public final class CodeImpl
                     case ASTORE -> new AbstractInstruction.BoundStoreInstruction(Opcode.ASTORE_W, this, pos);
                     case IINC -> new AbstractInstruction.BoundIncrementInstruction(Opcode.IINC_W, this, pos);
                     case RET ->  new AbstractInstruction.BoundRetInstruction(Opcode.RET_W, this, pos);
-                    default -> throw new UnsupportedOperationException("unknown wide instruction: " + bclow);
+                    default -> throw new IllegalArgumentException("unknown wide instruction: " + bclow);
                 };
             }
 
@@ -475,7 +475,7 @@ public final class CodeImpl
             default -> {
                 Instruction instr = SINGLETON_INSTRUCTIONS[bc];
                 if (instr == null)
-                    throw new UnsupportedOperationException("unknown instruction: " + bc);
+                    throw new IllegalArgumentException("unknown instruction: " + bc);
                 yield instr;
             }
         };

@@ -138,7 +138,6 @@ final class StringConcatHelper {
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     static long mix(long lengthCoder, FormatConcatItem value) {
         lengthCoder = value.mix(lengthCoder);
-
         return checkOverflow(lengthCoder);
     }
 
@@ -152,7 +151,7 @@ final class StringConcatHelper {
      * @param value      boolean value to encode
      * @return           updated index (coder value retained)
      */
-    private static long prepend(long indexCoder, byte[] buf, boolean value) {
+    static long prepend(long indexCoder, byte[] buf, boolean value) {
         int index = (int)indexCoder;
         if (indexCoder < UTF16) {
             if (value) {
@@ -198,7 +197,7 @@ final class StringConcatHelper {
      */
     static long prepend(long indexCoder, byte[] buf, boolean value, String prefix) {
         indexCoder = prepend(indexCoder, buf, value);
-        if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
+        indexCoder = prepend(indexCoder, buf, prefix);
         return indexCoder;
     }
 
@@ -212,7 +211,7 @@ final class StringConcatHelper {
      * @param value      char value to encode
      * @return           updated index (coder value retained)
      */
-    private static long prepend(long indexCoder, byte[] buf, char value) {
+    static long prepend(long indexCoder, byte[] buf, char value) {
         if (indexCoder < UTF16) {
             buf[(int)(--indexCoder)] = (byte) (value & 0xFF);
         } else {
@@ -234,7 +233,7 @@ final class StringConcatHelper {
      */
     static long prepend(long indexCoder, byte[] buf, char value, String prefix) {
         indexCoder = prepend(indexCoder, buf, value);
-        if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
+        indexCoder = prepend(indexCoder, buf, prefix);
         return indexCoder;
     }
 
@@ -248,7 +247,7 @@ final class StringConcatHelper {
      * @param value      integer value to encode
      * @return           updated index (coder value retained)
      */
-    private static long prepend(long indexCoder, byte[] buf, int value) {
+    static long prepend(long indexCoder, byte[] buf, int value) {
         if (indexCoder < UTF16) {
             return StringLatin1.getChars(value, (int)indexCoder, buf);
         } else {
@@ -269,7 +268,7 @@ final class StringConcatHelper {
      */
     static long prepend(long indexCoder, byte[] buf, int value, String prefix) {
         indexCoder = prepend(indexCoder, buf, value);
-        if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
+        indexCoder = prepend(indexCoder, buf, prefix);
         return indexCoder;
     }
 
@@ -283,7 +282,7 @@ final class StringConcatHelper {
      * @param value      long value to encode
      * @return           updated index (coder value retained)
      */
-    private static long prepend(long indexCoder, byte[] buf, long value) {
+    static long prepend(long indexCoder, byte[] buf, long value) {
         if (indexCoder < UTF16) {
             return StringLatin1.getChars(value, (int)indexCoder, buf);
         } else {
@@ -304,7 +303,7 @@ final class StringConcatHelper {
      */
     static long prepend(long indexCoder, byte[] buf, long value, String prefix) {
         indexCoder = prepend(indexCoder, buf, value);
-        if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
+        indexCoder = prepend(indexCoder, buf, prefix);
         return indexCoder;
     }
 
@@ -318,7 +317,7 @@ final class StringConcatHelper {
      * @param value      String value to encode
      * @return           updated index (coder value retained)
      */
-    private static long prepend(long indexCoder, byte[] buf, String value) {
+    static long prepend(long indexCoder, byte[] buf, String value) {
         indexCoder -= value.length();
         if (indexCoder < UTF16) {
             value.getBytes(buf, (int)indexCoder, String.LATIN1);
@@ -341,7 +340,7 @@ final class StringConcatHelper {
      */
     static long prepend(long indexCoder, byte[] buf, String value, String prefix) {
         indexCoder = prepend(indexCoder, buf, value);
-        if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
+        indexCoder = prepend(indexCoder, buf, prefix);
         return indexCoder;
     }
 
@@ -357,8 +356,7 @@ final class StringConcatHelper {
      * @since 21
      */
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-    private static long prepend(long indexCoder, byte[] buf,
-                                FormatConcatItem value) {
+    static long prepend(long indexCoder, byte[] buf, FormatConcatItem value) {
         try {
             return value.prepend(indexCoder, buf);
         } catch (Error ex) {
@@ -384,7 +382,7 @@ final class StringConcatHelper {
     static long prepend(long indexCoder, byte[] buf,
                         FormatConcatItem value, String prefix) {
         indexCoder = prepend(indexCoder, buf, value);
-        if (prefix != null) indexCoder = prepend(indexCoder, buf, prefix);
+        indexCoder = prepend(indexCoder, buf, prefix);
         return indexCoder;
     }
 
@@ -586,7 +584,8 @@ final class StringConcatHelper {
 
     static MethodHandle lookupStatic(String name, MethodType methodType) {
         try {
-            return MethodHandles.lookup().findStatic(StringConcatHelper.class, name, methodType);
+            return MethodHandles.lookup()
+                    .findStatic(StringConcatHelper.class, name, methodType);
         } catch (NoSuchMethodException|IllegalAccessException e) {
             throw new AssertionError(e);
         }

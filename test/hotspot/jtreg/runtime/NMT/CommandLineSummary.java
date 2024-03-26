@@ -37,7 +37,7 @@ public class CommandLineSummary {
 
   public static void main(String args[]) throws Exception {
 
-    ProcessBuilder pb = ProcessTools.createTestJvm(
+    ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
       "-XX:NativeMemoryTracking=summary",
       "-version");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());

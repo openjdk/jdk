@@ -16,9 +16,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</languages>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a á à ǎ b c d e é è ě ɛ {ɛ\u0301} {ɛ\u0300} {ɛ\u030C} f g {gb} {gh} h i ɨ {ɨ\u0301} {ɨ\u0300} {ɨ\u030C} j k {kp} m n {ny} ŋ o ó ò ǒ ɔ {ɔ\u0301} {ɔ\u0300} {ɔ\u030C} p r s t u ú ù ǔ ʉ {ʉ\u0301} {ʉ\u0300} {ʉ\u030C} w y]</exemplarCharacters>
+		<exemplarCharacters>[aáàǎ b c d eéèě ɛ{ɛ́}{ɛ̀}{ɛ̌} f g {gb} {gh} h i ɨ{ɨ́}{ɨ̀}{ɨ̌} j k {kp} m n {ny} ŋ oóòǒ ɔ{ɔ́}{ɔ̀}{ɔ̌} p r s t uúùǔ ʉ{ʉ́}{ʉ̀}{ʉ̌} w y]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[l q v x z]</exemplarCharacters>
-		<exemplarCharacters type="index">[A b B C D E Ɛ F G h I Ɨ J K M N Ŋ O Ɔ p P R S T U Ʉ W y Y]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . ‘ ’ “ ”]</exemplarCharacters>
+		<exemplarCharacters type="index">[A bB C D E Ɛ F G h I Ɨ J K M N Ŋ O Ɔ pP R S T U Ʉ W yY]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . ‘’ “”]</exemplarCharacters>
 	</characters>
 </ldml>

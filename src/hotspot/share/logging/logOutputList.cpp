@@ -52,6 +52,7 @@ void LogOutputList::wait_until_no_readers() const {
 }
 
 void LogOutputList::set_output_level(LogOutput* output, LogLevelType level) {
+  assert(output != nullptr, "LogOutput is null");
   LogOutputNode* node = find(output);
   if (level == LogLevel::Off && node != nullptr) {
     remove_output(node);

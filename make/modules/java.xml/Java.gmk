@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,4 +27,5 @@ DISABLED_WARNINGS_java += lossy-conversions this-escape
 DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:$(call CommaList, javax.xml.catalog javax.xml.datatype \
     javax.xml.transform javax.xml.validation javax.xml.xpath)'
+COPY += .dtd .xsd .xml
 CLEAN += .properties

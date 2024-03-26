@@ -97,6 +97,7 @@ class outputStream;
   LOG_TAG(iklass) \
   LOG_TAG(indy) \
   LOG_TAG(init) \
+  LOG_TAG(inlinecache)\
   LOG_TAG(inlining) \
   LOG_TAG(install) \
   LOG_TAG(interpreter) \
