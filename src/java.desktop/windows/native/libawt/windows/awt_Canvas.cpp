@@ -227,7 +227,7 @@ void AwtCanvas::_SetEraseBackground(void *param)
         }
     }
 
-    AwtCanvas *c = (AwtCanvas*) pData;
+    AwtCanvas *c = (AwtCanvas*)pData;
     c->m_eraseBackground = doErase;
     c->m_eraseBackgroundOnResize = doEraseOnResize;
 
