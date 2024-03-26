@@ -55,9 +55,9 @@ public class TestBoolNodeGVN {
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
     public static boolean test(int x, int m) {
         return !(Integer.compareUnsigned((x & m), m) > 0) & // assert in inversions to generates the pattern looking for
-                !(Integer.compareUnsigned((m & x), m) > 0) &
-                Integer.compareUnsigned((x & m), m + 1) < 0 &
-                Integer.compareUnsigned((m & x), m + 1) < 0;
+               !(Integer.compareUnsigned((m & x), m) > 0) &
+               Integer.compareUnsigned((x & m), m + 1) < 0 &
+               Integer.compareUnsigned((m & x), m + 1) < 0;
     }
 
     private static void testCorrectness() {
