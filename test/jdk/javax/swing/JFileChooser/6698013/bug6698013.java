@@ -39,17 +39,12 @@ public class bug6698013 {
 
     final static VirtualFile root = new VirtualFile("testdir", true);
 
-    final static VirtualFile rootFile = new VirtualFile("testdir/test.txt", false);
-
-    final static VirtualFile subdir = new VirtualFile("testdir/subdir", true);
-
-    final static VirtualFile subdirFile = new VirtualFile("testdir/subdir/subtest.txt", false);
-
     public static void main(String[] args) throws Exception {
         String instructions = """
                 1. Go into 'subdir' folder via double click
                 2. Return to parent directory
-                3. Go into 'subdir' folder: select 'subdir' folder and press the 'Open' button""";
+                3. Go into 'subdir' folder: select 'subdir' folder and press the 'Open' button
+                If both methods of navigating into the subdir work, pass test. Otherwise fail.""";
 
         PassFailJFrame pfframe = PassFailJFrame.builder()
                 .title("bug6698013")
@@ -70,6 +65,9 @@ public class bug6698013 {
 }
 
 class VirtualFileSystemView extends FileSystemView {
+    final static VirtualFile rootFile = new VirtualFile("testdir/test.txt", false);
+    final static VirtualFile subdir = new VirtualFile("testdir/subdir", true);
+    final static VirtualFile subdirFile = new VirtualFile("testdir/subdir/subtest.txt", false);
 
     public boolean isRoot(File dir) {
         return bug6698013.root.equals(dir);
@@ -101,11 +99,11 @@ class VirtualFileSystemView extends FileSystemView {
 
     public File[] getFiles(File dir, boolean hide_hidden) {
         if (dir.equals(bug6698013.root)) {
-            return new File[]{bug6698013.rootFile, bug6698013.subdir};
+            return new File[]{rootFile, subdir};
         }
 
-        if (dir.equals(bug6698013.subdir)) {
-            return new File[]{bug6698013.subdirFile};
+        if (dir.equals(subdir)) {
+            return new File[]{subdirFile};
         }
 
         return null;
