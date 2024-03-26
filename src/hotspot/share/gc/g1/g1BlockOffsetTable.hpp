@@ -51,9 +51,8 @@ private:
   // The reserved region covered by the table.
   MemRegion _reserved;
 
-  // Array for keeping offsets for retrieving object start fast given an
-  // address.
-  volatile u_char* _offset_array;  // byte array keeping backwards offsets
+  // Biased array-start of BOT array for fast BOT entry translation
+  volatile u_char* _offset_base;
 
   void check_offset(size_t offset, const char* msg) const {
     assert(offset < CardTable::card_size_in_words(),
@@ -63,16 +62,16 @@ private:
 
   // Bounds checking accessors:
   // For performance these have to devolve to array accesses in product builds.
-  inline u_char offset_array(size_t index) const;
+  inline u_char offset_array(u_char* addr) const;
 
-  inline void set_offset_array_raw(size_t index, u_char offset);
-  inline void set_offset_array(size_t index, u_char offset);
+  inline void set_offset_array_raw(u_char* addr, u_char offset);
+  inline void set_offset_array(u_char* addr, u_char offset);
 
-  inline void set_offset_array(size_t index, HeapWord* high, HeapWord* low);
+  inline void set_offset_array(u_char* addr, HeapWord* high, HeapWord* low);
 
-  inline void set_offset_array(size_t left, size_t right, u_char offset);
+  inline void set_offset_array(u_char* left, u_char* right, u_char offset);
 
-  void check_index(size_t index, const char* msg) const NOT_DEBUG_RETURN;
+  void check_address(u_char* addr, const char* msg) const NOT_DEBUG_RETURN;
 
 public:
 
@@ -92,17 +91,11 @@ public:
   // in the heap parameter.
   G1BlockOffsetTable(MemRegion heap, G1RegionToSpaceMapper* storage);
 
-  // Return the appropriate index into "_offset_array" for "p".
-  inline size_t index_for(const void* p) const;
-  inline size_t index_for_raw(const void* p) const;
+  // Mapping from address to object start array entry
+  u_char* entry_for_addr(const void* const p) const;
 
-  // Return the address indicating the start of the region corresponding to
-  // "index" in "_offset_array".
-  inline HeapWord* address_for_index(size_t index) const;
-  // Variant of address_for_index that does not check the index for validity.
-  inline HeapWord* address_for_index_raw(size_t index) const {
-    return _reserved.start() + (index << CardTable::card_shift_in_words());
-  }
+  // Mapping from object start array entry to address of first word
+  HeapWord* addr_for_entry(const u_char* const p) const;
 };
 
 class G1BlockOffsetTablePart {
@@ -117,12 +110,12 @@ private:
 
   // Sets the entries corresponding to the cards starting at "start" and ending
   // at "end" to point back to the card before "start"; [start, end]
-  void set_remainder_to_point_to_start_incl(size_t start, size_t end);
+  void set_remainder_to_point_to_start_incl(u_char* start, u_char* end);
 
   // Update BOT entries corresponding to the mem range [blk_start, blk_end).
   void update_for_block_work(HeapWord* blk_start, HeapWord* blk_end);
 
-  void check_all_cards(size_t left_card, size_t right_card) const NOT_DEBUG_RETURN;
+  void check_all_cards(u_char* left_card, u_char* right_card) const NOT_DEBUG_RETURN;
 
   static HeapWord* align_up_by_card_size(HeapWord* const addr) {
     return align_up(addr, CardTable::card_size());

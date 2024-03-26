@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,27 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SERIAL_SERIALBLOCKOFFSETTABLE_INLINE_HPP
-#define SHARE_GC_SERIAL_SERIALBLOCKOFFSETTABLE_INLINE_HPP
+import com.sun.java.swing.plaf.motif.MotifInternalFrameTitlePane;
+import javax.swing.JInternalFrame;
 
-#include "gc/serial/serialBlockOffsetTable.hpp"
+/*
+ * @test
+ * @bug 4150591
+ * @summary MotifInternalFrameTitlePane is public now and can be
+ * instantiated by other classes within the desktop module without using Reflection.
+ * This does not mean that this class will ever become part
+ * of the official public Java API.
+ * @modules java.desktop/com.sun.java.swing.plaf.motif
+ * @run main bug4150591
+ */
 
-inline uint8_t* SerialBlockOffsetSharedArray::entry_for_addr(const void* const p) const {
-  assert(_reserved.contains(p),
-         "out of bounds access to block offset array");
-  uint8_t* result = &_offset_base[uintptr_t(p) >> CardTable::card_shift()];
-  return result;
+public class bug4150591 {
+    public static void main(String[] args) {
+        MotifInternalFrameTitlePane mtp = new MotifInternalFrameTitlePane(new JInternalFrame());
+    }
 }
-
-inline HeapWord* SerialBlockOffsetSharedArray::addr_for_entry(const uint8_t* const p) const {
-  size_t delta = pointer_delta(p, _offset_base, sizeof(uint8_t));
-  HeapWord* result = (HeapWord*) (delta << CardTable::card_shift());
-  assert(_reserved.contains(result),
-         "out of bounds accessor from block offset array");
-  return result;
-}
-
-#endif // SHARE_GC_SERIAL_SERIALBLOCKOFFSETTABLE_INLINE_HPP

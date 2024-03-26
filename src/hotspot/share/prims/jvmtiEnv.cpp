@@ -1463,44 +1463,14 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(jthread thread, jint* monitor_info_count
 // monitor_ptr - pre-checked for null
 jvmtiError
 JvmtiEnv::GetCurrentContendedMonitor(jthread thread, jobject* monitor_ptr) {
-  JavaThread* calling_thread = JavaThread::current();
-  HandleMark hm(calling_thread);
+  JavaThread* current = JavaThread::current();
 
-  JvmtiVTMSTransitionDisabler disabler(thread);
-  ThreadsListHandle tlh(calling_thread);
+  *monitor_ptr = nullptr;
 
-  JavaThread* java_thread = nullptr;
-  oop thread_oop = nullptr;
-  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_oop);
-  if (err != JVMTI_ERROR_NONE) {
-    return err;
-  }
-
-  if (java_lang_VirtualThread::is_instance(thread_oop)) {
-    // There is no monitor info to collect if target virtual thread is unmounted.
-    if (java_thread != nullptr) {
-      GetCurrentContendedMonitorClosure op(calling_thread, this, monitor_ptr, /* is_virtual */ true);
-      Handshake::execute(&op, java_thread);
-      err = op.result();
-    } else {
-      *monitor_ptr = nullptr;
-      if (!JvmtiEnvBase::is_vthread_alive(thread_oop)) {
-        err = JVMTI_ERROR_THREAD_NOT_ALIVE;
-      }
-    }
-    return err;
-  }
-  if (java_thread == calling_thread) {
-    // It is only safe to make a direct call on the current thread.
-    // All other usage needs to use a direct handshake for safety.
-    err = get_current_contended_monitor(calling_thread, java_thread, monitor_ptr, /* is_virtual */ false);
-  } else {
-    // get contended monitor information with handshake
-    GetCurrentContendedMonitorClosure op(calling_thread, this, monitor_ptr, /* is_virtual */ false);
-    Handshake::execute(&op, java_thread);
-    err = op.result();
-  }
-  return err;
+  // get contended monitor information with handshake
+  GetCurrentContendedMonitorClosure op(this, current, monitor_ptr);
+  JvmtiHandshake::execute(&op, thread);
+  return op.result();
 } /* end GetCurrentContendedMonitor */
 
 
