@@ -46,7 +46,7 @@ void ZNMT::commit(zoffset offset, size_t size) {
 }
 
 void ZNMT::uncommit(zoffset offset, size_t size) {
-  MemTracker::free_memory_in(ZNMT::_device, (size_t)offset, size);
+  MemTracker::free_memory_in(ZNMT::_device, untype(offset), size);
 }
 
 void ZNMT::map(zaddress_unsafe addr, size_t size, zoffset offset) {
