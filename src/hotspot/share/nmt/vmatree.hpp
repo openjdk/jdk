@@ -81,7 +81,17 @@ public:
     Arrow out;
 
     bool is_noop() {
-      return in.type == out.type && Metadata::equals(in.data, out.data);
+      if (in.type == out.type) {
+        if (out.type == StateType::Released) {
+          return true;
+        } else if (out.type == StateType::Committed) {
+          return NativeCallStackStorage::StackIndex::equals(in.data.stack_idx, out.data.stack_idx);
+        } else {
+          return Metadata::equals(in.data, out.data);
+        }
+      } else {
+        return false;
+      }
     }
   };
 
