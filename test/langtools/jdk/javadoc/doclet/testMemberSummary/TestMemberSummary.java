@@ -77,8 +77,7 @@ public class TestMemberSummary extends JavadocTester {
         // Legacy anchor dimensions (6290760)
         checkOutput("pkg2/A.html", true,
                 """
-                    <section class="detail" id="f(T[])">
-                    <h3 id="f(java.lang.Object[])">f</h3>
+                    <section class="detail" id="f(java.lang.Object[])">
                     """);
     }
 

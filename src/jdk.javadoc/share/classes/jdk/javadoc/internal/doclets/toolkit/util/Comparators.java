@@ -377,6 +377,9 @@ public class Comparators {
                     if (result != 0) {
                         return result;
                     }
+                    // this might not be needed: if e1 != e2 and both are
+                    // executables they must differ in FQN and thus we
+                    // shouldn't reach here
                     return compareTypeParameters(e1, e2);
                 }
             };

@@ -170,7 +170,7 @@ public class TestPrivateClasses extends JavadocTester {
                 """
                     <dt>Overrides:</dt>
                     <dd><code><a href="PrivateParent.html#methodOverriddenFromParent(char%5B%5D,int,\
-                    T,V,java.util.List)">methodOverriddenFromParent</a></code>&nbsp;in class&nbsp;<c\
+                    java.util.List,java.lang.Object,java.util.List)">methodOverriddenFromParent</a></code>&nbsp;in class&nbsp;<c\
                     ode><a href="PrivateParent.html" title="class in pkg">PrivateParent</a></code></\
                     dd>""",
                 // Should document that a method is specified by private interface.
@@ -225,10 +225,10 @@ public class TestPrivateClasses extends JavadocTester {
                 //with generic parameters has been implemented.
                 """
                     <span class="description-from-type-label">Description copied from interface:&nbsp;<code><\
-                    a href="I.html#hello(T)">I</a></code></span>""",
+                    a href="I.html#hello(java.lang.Object)">I</a></code></span>""",
                 """
                     <dt>Specified by:</dt>
-                    <dd><code><a href="I.html#hello(T)">hello</a></code>&nbsp;in interface&nbsp;<cod\
+                    <dd><code><a href="I.html#hello(java.lang.Object)">hello</a></code>&nbsp;in interface&nbsp;<cod\
                     e><a href="I.html" title="interface in pkg2">I</a>&lt;java.lang.String&gt;</code\
                     ></dd>""");
 
