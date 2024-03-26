@@ -634,23 +634,6 @@ public abstract sealed class Reference<T>
      * might need further precautions to ensure that
      * {@code reachabilityFence} is encountered along all code paths.
      *
-     * <p> It is sometimes possible to better encapsulate use of
-     * {@code reachabilityFence}.  Continuing the above example, if it were
-     * acceptable for the call to method {@code update} to proceed even if the
-     * finalizer had already executed (nulling out slot), then you could
-     * localize use of {@code reachabilityFence}:
-     *
-     * <pre> {@code
-     * public void action2() {
-     *   // ...
-     *   Resource.update(getExternalResource());
-     * }
-     * private ExternalResource getExternalResource() {
-     *   ExternalResource ext = externalResourceArray[myIndex];
-     *   Reference.reachabilityFence(this);
-     *   return ext;
-     * }}</pre>
-     *
      * <p> Method {@code reachabilityFence} is not required in constructions
      * that themselves ensure reachability.  For example, because objects that
      * are locked cannot, in general, be reclaimed, it would suffice if all
