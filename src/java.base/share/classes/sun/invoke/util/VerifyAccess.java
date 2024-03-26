@@ -201,9 +201,10 @@ public class VerifyAccess {
             Module lookupModule = lookupClass.getModule();
             Module refModule = refc.getModule();
 
-            // early VM startup case, java.base not defined
-            if (lookupModule == null) {
-                assert refModule == null;
+            // early VM startup case, java.base not defined or
+            // module system is not fully initialized and exports are not set up
+            if (lookupModule == null || !jdk.internal.misc.VM.isModuleSystemInited()) {
+                assert lookupModule == refModule;
                 return true;
             }
 
@@ -228,11 +229,6 @@ public class VerifyAccess {
                                                               : null;
             assert refModule != lookupModule || refModule != prevLookupModule;
             if (isModuleAccessible(refc, lookupModule, prevLookupModule))
-                return true;
-
-            // not exported but allow access during VM initialization
-            // because java.base does not have its exports setup
-            if (!jdk.internal.misc.VM.isModuleSystemInited())
                 return true;
 
             // public class not accessible to lookupClass

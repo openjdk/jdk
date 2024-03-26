@@ -207,8 +207,7 @@
  * @summary Interoperability tests with Google's GlobalSign R4 and GTS Root certificates
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop globalsigneccrootcar4 OCSP
- * @run main/othervm -Djava.security.debug=certpath CAInterop globalsigneccrootcar4 CRL
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop globalsigneccrootcar4 DEFAULT
  */
 
 /*
@@ -217,8 +216,7 @@
  * @summary Interoperability tests with Google's GlobalSign R4 and GTS Root certificates
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop gtsrootcar1 OCSP
- * @run main/othervm -Djava.security.debug=certpath CAInterop gtsrootcar1 CRL
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop gtsrootcar1 DEFAULT
  */
 
 /*
@@ -227,8 +225,7 @@
  * @summary Interoperability tests with Google's GlobalSign R4 and GTS Root certificates
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop gtsrootcar2 OCSP
- * @run main/othervm -Djava.security.debug=certpath CAInterop gtsrootcar2 CRL
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop gtsrootcar2 DEFAULT
  */
 
 /*
@@ -237,8 +234,7 @@
  * @summary Interoperability tests with Google's GlobalSign R4 and GTS Root certificates
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop gtsrootecccar3 OCSP
- * @run main/othervm -Djava.security.debug=certpath CAInterop gtsrootecccar3 CRL
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop gtsrootecccar3 DEFAULT
  */
 
 /*
@@ -247,8 +243,7 @@
  * @summary Interoperability tests with Google's GlobalSign R4 and GTS Root certificates
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop gtsrootecccar4 OCSP
- * @run main/othervm -Djava.security.debug=certpath CAInterop gtsrootecccar4 CRL
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop gtsrootecccar4 DEFAULT
  */
 
 /*

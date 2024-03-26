@@ -97,20 +97,23 @@ function sortTable(header, columnIndex, columns) {
 
 // Toggles the visibility of a table category in all tables in a page
 function toggleGlobal(checkbox, selected, columns) {
-    var display = checkbox.checked ? '' : 'none';
-    document.querySelectorAll("div.table-tabs").forEach(function(t) {
-        var id = t.parentElement.getAttribute("id");
-        var selectedClass = id + "-tab" + selected;
-        // if selected is empty string it selects all uncategorized entries
-        var selectUncategorized = !Boolean(selected);
+    const display = checkbox.checked ? '' : 'none';
+    const selectOther = selected === "other";
+    const selectAll = selected === "all";
+    if (selectAll) {
+        document.querySelectorAll('.checkboxes input[type="checkbox"]').forEach(c => {
+            c.checked = checkbox.checked;
+        });
+    }
+    document.querySelectorAll("div.table-tabs").forEach(t => {
+        const id = t.parentElement.getAttribute("id");
+        const selectedClass = id + "-tab" + (selectOther ? "" : selected);
         var visible = 0;
-        document.querySelectorAll('div.' + id)
+        t.parentElement.querySelectorAll('div.' + id)
             .forEach(function(elem) {
-                if (selectUncategorized) {
-                    if (elem.className.indexOf(selectedClass) === -1) {
-                        elem.style.display = display;
-                    }
-                } else if (elem.classList.contains(selectedClass)) {
+                if (selectAll
+                    || (!selectOther && elem.classList.contains(selectedClass))
+                    || (selectOther && elem.className.indexOf(selectedClass) < 0)) {
                     elem.style.display = display;
                 }
                 if (elem.style.display === '') {
