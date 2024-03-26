@@ -169,7 +169,8 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     tree.release_mapping(0, 500000);
     EXPECT_EQ(nullptr, treap_of(tree));
   }
-  {
+  { // A committed region inside of/replacing a reserved region
+    // should inherit the reserved region
     Tree::Metadata md{si1, mtNMT};
     VMATree::Metadata md2{si2, mtNone};
     Tree tree;
@@ -183,6 +184,31 @@ TEST_VM_F(VMATreeTest, LowLevel) {
         EXPECT_EQ(mtNMT, x->val().in.data.flag);
       }
     });
+  }
+  {
+    Tree tree;
+    VMATree::Metadata md{si1, mtTest };
+    VMATree::Metadata md2{si2, mtNMT };
+    VMATree::Metadata md3{si1, mtNone };
+    tree.reserve_mapping(0, 50, md);
+    tree.reserve_mapping(50, 50, md2);
+    tree.commit_mapping(0, 100, md3);
+    int found_nodes = 0;
+    tree.visit(0, 99999, [&](Node* x) {
+      EXPECT_TRUE(x->key() == 0 || x->key() == 100);
+      if (x->key() == 0) {
+        EXPECT_EQ(x->val().out.data.flag, mtTest);
+      }
+      if (x->key() == 50) {
+        EXPECT_EQ(x->val().in.data.flag, mtTest);
+        EXPECT_EQ(x->val().out.data.flag, mtNMT);
+      }
+      if (x->key() == 100) {
+        EXPECT_EQ(x->val().in.data.flag, mtNMT);
+      }
+      found_nodes++;
+    });
+    EXPECT_EQ(3, found_nodes);
   }
 }
 
