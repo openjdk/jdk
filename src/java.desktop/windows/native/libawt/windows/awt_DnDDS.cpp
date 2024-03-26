@@ -41,7 +41,7 @@ void * operator new(size_t size) {return operator new(size, "stl", 1);}
 
 #include <shlobj.h>
 
-// These files must be included before awt.h, since the latter redefines malloc 
+// These files must be included before awt.h, since the latter redefines malloc
 // to Do_Not_Use_Malloc, etc, and that will break these files.
 #include "awt_ole.h"
 #include "awt_DCHolder.h"
