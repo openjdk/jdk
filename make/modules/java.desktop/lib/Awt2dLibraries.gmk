@@ -270,9 +270,6 @@ endif
 ## Build liblcms
 ################################################################################
 
-# The fast floor code loses precision.
-LCMS_CFLAGS=-DCMS_DONT_USE_FAST_FLOOR -DCMS_NO_HALF_SUPPORT
-
 ifeq ($(USE_EXTERNAL_LCMS), true)
   # If we're using an external library, we'll just need the wrapper part.
   # By including it explicitly, all other files will be excluded.
@@ -280,6 +277,8 @@ ifeq ($(USE_EXTERNAL_LCMS), true)
   # If we're using an external library, we can't include our own SRC path
   # as includes, instead the system headers should be used.
   LIBLCMS_HEADERS_FROM_SRC := false
+  # FIXME: Keep old behavior and reset LCMS_CFLAGS. This is likely a bug.
+  LCMS_CFLAGS :=
 endif
 
 ifeq ($(TOOLCHAIN_TYPE)+$(TOOLCHAIN_VERSION), clang+10.1)
@@ -287,11 +286,13 @@ ifeq ($(TOOLCHAIN_TYPE)+$(TOOLCHAIN_VERSION), clang+10.1)
   BUILD_LIBLCMS_cmsopt.c_CFLAGS := -O0
 endif
 
+# We use CMS_DONT_USE_FAST_FLOOR and CMS_NO_HALF_SUPPORT since the fast floor
+# code loses precision.
 $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
     NAME := lcms, \
     INCLUDE_FILES := $(LIBLCMS_INCLUDE_FILES), \
     OPTIMIZATION := HIGHEST, \
-    CFLAGS := $(LCMS_CFLAGS), \
+    CFLAGS := -DCMS_DONT_USE_FAST_FLOOR -DCMS_NO_HALF_SUPPORT $(LCMS_CFLAGS), \
     CFLAGS_windows := -DCMS_IS_WINDOWS_, \
     EXTRA_HEADER_DIRS := \
         common/awt/debug \
@@ -315,7 +316,6 @@ $(BUILD_LIBLCMS): $(BUILD_LIBAWT)
 ################################################################################
 
 ifeq ($(USE_EXTERNAL_LIBJPEG), true)
-  LIBJPEG_LIBS := -ljpeg
   LIBJAVAJPEG_INCLUDE_FILES := \
       imageioJPEG.c \
       jpegdecoder.c
@@ -673,13 +673,10 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
     LIBSPLASHSCREEN_HEADER_DIRS += libsplashscreen/giflib
   else
     LIBSPLASHSCREEN_EXCLUDES += giflib
-    GIFLIB_LIBS := -lgif
   endif
 
   ifeq ($(USE_EXTERNAL_LIBJPEG), false)
     LIBSPLASHSCREEN_EXTRA_SRC += libjavajpeg
-  else
-    LIBJPEG_LIBS := -ljpeg
   endif
 
   ifeq ($(USE_EXTERNAL_LIBPNG), false)
