@@ -604,13 +604,7 @@ bool os::Aix::get_meminfo(meminfo_t* pmi) {
   assert(pmi, "get_meminfo: invalid parameter");
   memset(pmi, 0, sizeof(meminfo_t));
 
-  // On AIX, I use the (dynamically loaded) perfstat library to retrieve memory statistics
-  // See:
-  // http://publib.boulder.ibm.com/infocenter/systems/index.jsp
-  //        ?topic=/com.ibm.aix.basetechref/doc/basetrf1/perfstat_memtot.htm
-  // http://publib.boulder.ibm.com/infocenter/systems/index.jsp
-  //        ?topic=/com.ibm.aix.files/doc/aixfiles/libperfstat.h.htm
-
+  // dynamically loaded perfstat library is used to retrieve memory statistics
   perfstat_memory_total_t psmt;
   memset (&psmt, '\0', sizeof(psmt));
   const int rc = libperfstat::perfstat_memory_total(nullptr, &psmt, sizeof(psmt), 1);
@@ -622,9 +616,6 @@ bool os::Aix::get_meminfo(meminfo_t* pmi) {
 
   assert(rc == 1, "perfstat_memory_total() - weird return code");
 
-  // excerpt from
-  // http://publib.boulder.ibm.com/infocenter/systems/index.jsp
-  //        ?topic=/com.ibm.aix.files/doc/aixfiles/libperfstat.h.htm
   // The fields of perfstat_memory_total_t:
   // u_longlong_t virt_total         Total virtual memory (in 4 KB pages).
   // u_longlong_t real_total         Total real memory (in 4 KB pages).
