@@ -84,7 +84,7 @@ int jdk_internal_vm_StackChunk::_parent_offset;
 int jdk_internal_vm_StackChunk::_size_offset;
 int jdk_internal_vm_StackChunk::_sp_offset;
 int jdk_internal_vm_StackChunk::_pc_offset;
-int jdk_internal_vm_StackChunk::_argsize_offset;
+int jdk_internal_vm_StackChunk::_bottom_offset;
 int jdk_internal_vm_StackChunk::_flags_offset;
 int jdk_internal_vm_StackChunk::_maxThawingSize_offset;
 int jdk_internal_vm_StackChunk::_cont_offset;
@@ -93,7 +93,7 @@ int jdk_internal_vm_StackChunk::_cont_offset;
   macro(_parent_offset,  k, vmSymbols::parent_name(),  stackchunk_signature, false); \
   macro(_size_offset,    k, vmSymbols::size_name(),    int_signature,        false); \
   macro(_sp_offset,      k, vmSymbols::sp_name(),      int_signature,        false); \
-  macro(_argsize_offset, k, vmSymbols::argsize_name(), int_signature,        false);
+  macro(_bottom_offset,  k, vmSymbols::bottom_name(),  int_signature,        false);
 
 void jdk_internal_vm_StackChunk::compute_offsets() {
   InstanceKlass* k = vmClasses::StackChunk_klass();
