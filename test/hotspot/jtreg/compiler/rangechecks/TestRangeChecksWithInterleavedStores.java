@@ -33,7 +33,7 @@ import compiler.lib.ir_framework.*;
  *          single checks in the presence of interleaved stores. Doing so would
  *          risk illegally hoisting the stores above their corresponding checks.
  * @library /test/lib /
- * @run driver compiler.rangechecks.TestExplicitRangeChecksIR
+ * @run driver compiler.rangechecks.TestRangeChecksWithInterleavedStores
  */
 
 public class TestRangeChecksWithInterleavedStores {
