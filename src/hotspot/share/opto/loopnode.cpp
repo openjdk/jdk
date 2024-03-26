@@ -4083,19 +4083,7 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
     phase->replace_parallel_iv(this);
   } else if (_head->is_LongCountedLoop() ||
              phase->is_counted_loop(_head, loop, T_LONG)) {
-//    if (LoopStripMiningIter == 0 || _head->as_LongCountedLoop()->is_strip_mined()) {
-//      // Indicate we do not need a safepoint here
-//      _has_sfpt = 1;
-//    }
-//
-//    // Remove safepoints
-//    bool keep_one_sfpt = !(_has_call || _has_sfpt);
-
-    // TODO: Long counted loop is deliberately never strip mined. Why? (L2213)
     remove_safepoints(phase, true);
-
-    // Look for induction variables
-    phase->replace_parallel_iv(this);
   } else {
     assert(!_head->is_Loop() || !_head->as_Loop()->is_loop_nest_inner_loop(), "transformation to counted loop should not fail");
     if (_parent != nullptr && !_irreducible) {
