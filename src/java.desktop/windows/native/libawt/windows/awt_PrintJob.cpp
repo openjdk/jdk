@@ -544,7 +544,9 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
     else if (awtParent != NULL)
     {
         setup.hwndOwner = AwtToolkit::GetInstance().GetHWnd();
-    } else {
+    }
+    else
+    {
         setup.hwndOwner = NULL;
     }
 
