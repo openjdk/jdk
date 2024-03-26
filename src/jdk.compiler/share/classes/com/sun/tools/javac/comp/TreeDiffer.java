@@ -67,6 +67,7 @@ import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCModifiers;
 import com.sun.tools.javac.tree.JCTree.JCModuleDecl;
+import com.sun.tools.javac.tree.JCTree.JCModuleImport;
 import com.sun.tools.javac.tree.JCTree.JCNewArray;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.tree.JCTree.JCOpens;
@@ -408,8 +409,13 @@ public class TreeDiffer extends TreeScanner {
     public void visitImport(JCImport tree) {
         JCImport that = (JCImport) parameter;
         result = tree.staticImport == that.staticImport &&
-                tree.moduleImport == that.moduleImport &&
                 scan(tree.qualid, that.qualid);
+    }
+
+    @Override
+    public void visitModuleImport(JCModuleImport tree) {
+        JCModuleImport that = (JCModuleImport) parameter;
+        result = scan(tree.module, that.module);
     }
 
     @Override

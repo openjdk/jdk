@@ -129,6 +129,7 @@ public class TreeMaker implements JCTree.Factory {
             Assert.check(node instanceof JCClassDecl
                 || node instanceof JCPackageDecl
                 || node instanceof JCImport
+                || node instanceof JCModuleImport
                 || node instanceof JCModuleDecl
                 || node instanceof JCSkip
                 || node instanceof JCErroneous
@@ -151,8 +152,14 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCImport Import(JCFieldAccess qualid, boolean staticImport, boolean moduleImport) {
-        JCImport tree = new JCImport(qualid, staticImport, moduleImport);
+    public JCImport Import(JCFieldAccess qualid, boolean staticImport) {
+        JCImport tree = new JCImport(qualid, staticImport);
+        tree.pos = pos;
+        return tree;
+    }
+
+    public JCModuleImport ModuleImport(JCExpression moduleName) {
+        JCModuleImport tree = new JCModuleImport(moduleName);
         tree.pos = pos;
         return tree;
     }

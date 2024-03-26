@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 9999999
+ * @bug 8328481
  * @summary Check behavior of module imports.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -82,27 +82,54 @@ public class ImportModule extends TestRunner {
 
         Files.createDirectories(classes);
 
-        new JavacTask(tb)
-            .options("--enable-preview", "--release", SOURCE_VERSION)
-            .outdir(classes)
-            .files(tb.findJavaFiles(src))
-            .run(Task.Expect.SUCCESS)
-            .writeAll();
+        {//with --release:
+            new JavacTask(tb)
+                .options("--enable-preview", "--release", SOURCE_VERSION)
+                .outdir(classes)
+                .files(tb.findJavaFiles(src))
+                .run(Task.Expect.SUCCESS)
+                .writeAll();
 
-        var out = new JavaTask(tb)
-                .classpath(classes.toString())
-                .className("test.Test")
-                .vmOptions("--enable-preview")
-                .run()
-                .writeAll()
-                .getOutputLines(Task.OutputKind.STDOUT);
+            var out = new JavaTask(tb)
+                    .classpath(classes.toString())
+                    .className("test.Test")
+                    .vmOptions("--enable-preview")
+                    .run()
+                    .writeAll()
+                    .getOutputLines(Task.OutputKind.STDOUT);
 
-        var expectedOut = List.of("java.util.ArrayList");
+            var expectedOut = List.of("java.util.ArrayList");
 
-        if (!Objects.equals(expectedOut, out)) {
-            throw new AssertionError("Incorrect Output, expected: " + expectedOut +
-                                      ", actual: " + out);
+            if (!Objects.equals(expectedOut, out)) {
+                throw new AssertionError("Incorrect Output, expected: " + expectedOut +
+                                          ", actual: " + out);
 
+            }
+        }
+
+        {//with --source:
+            new JavacTask(tb)
+                .options("--enable-preview", "--source", SOURCE_VERSION)
+                .outdir(classes)
+                .files(tb.findJavaFiles(src))
+                .run(Task.Expect.SUCCESS)
+                .writeAll();
+
+            var out = new JavaTask(tb)
+                    .classpath(classes.toString())
+                    .className("test.Test")
+                    .vmOptions("--enable-preview")
+                    .run()
+                    .writeAll()
+                    .getOutputLines(Task.OutputKind.STDOUT);
+
+            var expectedOut = List.of("java.util.ArrayList");
+
+            if (!Objects.equals(expectedOut, out)) {
+                throw new AssertionError("Incorrect Output, expected: " + expectedOut +
+                                          ", actual: " + out);
+
+            }
         }
     }
 
@@ -244,4 +271,109 @@ public class ImportModule extends TestRunner {
             .writeAll();
 
     }
+
+    @Test
+    public void testNoQualifiedExports(Path base) throws Exception {
+        Path current = base.resolve(".");
+
+        Path lib = current.resolve("lib");
+        Path libSrc = lib.resolve("src");
+        Path libClasses = lib.resolve("classes");
+        tb.writeJavaFiles(libSrc,
+                          """
+                          module lib {
+                              exports api;
+                              exports impl to use;
+                          }
+                          """,
+                          """
+                          package api;
+                          public class Api {
+                          }
+                          """,
+                          """
+                          package impl;
+                          public class Impl {
+                          }
+                          """);
+
+        Files.createDirectories(libClasses);
+
+        new JavacTask(tb)
+            .outdir(libClasses)
+            .files(tb.findJavaFiles(libSrc))
+            .run()
+            .writeAll();
+
+        Path src = current.resolve("src");
+        Path classes = current.resolve("classes");
+
+        tb.writeJavaFiles(src,
+                          """
+                          package test;
+                          import module lib;
+                          public class Test {
+                              public static void main(String... args) {
+                                  Api a;
+                                  Impl i;
+                              }
+                          }
+                          """);
+
+        Files.createDirectories(classes);
+
+        List<String> actualErrors;
+        List<String> expectedErrors;
+
+        actualErrors =
+                new JavacTask(tb)
+                    .options("--enable-preview", "--release", SOURCE_VERSION,
+                             "-p", libClasses.toString(),
+                             "--add-modules", "lib",
+                             "-XDrawDiagnostics")
+                    .outdir(classes)
+                    .files(tb.findJavaFiles(src))
+                    .run(Task.Expect.FAIL)
+                    .writeAll()
+                    .getOutputLines(Task.OutputKind.DIRECT);
+
+        expectedErrors = List.of(
+                "Test.java:6:9: compiler.err.cant.resolve.location: kindname.class, Impl, , , (compiler.misc.location: kindname.class, test.Test, null)",
+                "- compiler.note.preview.filename: Test.java, DEFAULT",
+                "- compiler.note.preview.recompile",
+                "1 error"
+        );
+
+        if (!Objects.equals(expectedErrors, actualErrors)) {
+            throw new AssertionError("Incorrect Output, expected: " + expectedErrors +
+                                      ", actual: " + out);
+
+        }
+
+        actualErrors =
+                new JavacTask(tb)
+                    .options("--enable-preview", "--release", SOURCE_VERSION,
+                             "-p", libClasses.toString(),
+                             "-XDrawDiagnostics")
+                    .outdir(classes)
+                    .files(tb.findJavaFiles(src))
+                    .run(Task.Expect.FAIL)
+                    .writeAll()
+                    .getOutputLines(Task.OutputKind.DIRECT);
+
+        expectedErrors = List.of(
+                "Test.java:2:1: compiler.err.import.module.does.not.read: lib",
+                "Test.java:6:9: compiler.err.cant.resolve.location: kindname.class, Impl, , , (compiler.misc.location: kindname.class, test.Test, null)",
+                "- compiler.note.preview.filename: Test.java, DEFAULT",
+                "- compiler.note.preview.recompile",
+                "2 errors"
+        );
+
+        if (!Objects.equals(expectedErrors, actualErrors)) {
+            throw new AssertionError("Incorrect Output, expected: " + expectedErrors +
+                                      ", actual: " + out);
+
+        }
+    }
+
 }
