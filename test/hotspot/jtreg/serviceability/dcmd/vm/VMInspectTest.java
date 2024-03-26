@@ -24,19 +24,19 @@
 /*
  * @test
  * @bug 8318026
- * @summary Test of diagnostic command VM.debug
+ * @summary Test of diagnostic command VM.inspect
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run testng/othervm -Dvmdebug.enabled=true -XX:+UnlockDiagnosticVMOptions VMDebugTest
+ * @run testng/othervm -Dvminspect.enabled=true -XX:+UnlockDiagnosticVMOptions VMInspectTest 
  */
 
 /*
  * @test
  * @bug 8318026
- * @summary Test of diagnostic command VM.debug
+ * @summary Test of diagnostic command VM.inspect
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run testng/othervm -Dvmdebug.enabled=false VMDebugTest
+ * @run testng/othervm -Dvminspect.enabled=false VMInspectTest
  */
 
 import org.testng.annotations.Test;
@@ -53,7 +53,7 @@ import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class VMDebugTest {
+public class VMInspectTest {
 
     // - locked <0x00000007dd0135e8> (a MyLock)
     static Pattern waiting_on_mylock =
@@ -69,56 +69,35 @@ public class VMDebugTest {
         BigInteger ptr = null;
         OutputAnalyzer output = null;
 
-        // Testing VM.debug requires UnlockDiagnosticVMOptions or a debug JVM.
+        // Testing VM.inspect requires UnlockDiagnosticVMOptions or a debug JVM.
         // This test runs with a System Property set as a hint whether UnlockDiagnosticVMOptions is set.
-        boolean enabled = Platform.isDebugBuild() || Boolean.getBoolean("vmdebug.enabled");
-        System.out.println("VM.debug should be enabled = " + enabled);
+        boolean enabled = Platform.isDebugBuild() || Boolean.getBoolean("vminspect.enabled");
+        System.out.println("VM.inspect should be enabled = " + enabled);
         if (!enabled) {
             // Use any pointer, command should be refused:
-            output = executor.execute("VM.debug find 0x0");
+            output = executor.execute("VM.inspect 0x0");
             output.shouldContain("-XX:+UnlockDiagnosticVMOptions is required");
             return; // no more testing
         }
 
-        // Tests with VM.debug enabled:
+        // Tests where enabled:
         output = executor.execute("help");
-        output.shouldNotContain("VM.debug"); // debug is not promoted in help
-        output = executor.execute("help VM.debug");
-        output.shouldContain("Syntax : VM.debug"); // but help is available
+        output.shouldNotContain("VM.inspect"); // VM.inspect is not promoted in help
+        output = executor.execute("help VM.inspect");
+        output.shouldContain("Syntax : VM.inspect"); // but help is available
 
-        // Test the VM.debug subcommands, without being too specific and vulnerable to format changes.
-
-        // Test VM.debug threads:
-        output = executor.execute("VM.debug threads");
-        output.shouldContain("Threads class SMR info:");
-        output.shouldContain("Java Threads:");
-        output.shouldContain("JavaThread \"main\"");
-        output.shouldContain("VMThread \"VM Thread\"");
-
-        // Test VM.debug findclass:
-        output = executor.execute("VM.debug findclass");
-        output.shouldContain("Usage: VM.debug findclass ");
-        output = executor.execute("VM.debug findclass java/lang/String 3");
-        output.shouldContain("class java/lang/String");
-
-        // Test VM.debug findmethod:
-        output = executor.execute("VM.debug findmethod");
-        output.shouldContain("Usage: VM.debug findmethod ");
-        output = executor.execute("VM.debug findmethod java/lang/String contains 3");
-        output.shouldContain("class java/lang/String");
-
-        // Test VM.debug find:
+        // Test VM.inspect:
         testFind(executor);
     }
 
     public void testFind(CommandExecutor executor) {
         boolean testMisaligned = true;
-        OutputAnalyzer output = executor.execute("VM.debug find");
-        output.shouldContain("Usage: VM.debug find ");
+        OutputAnalyzer output = executor.execute("VM.inspect");
+        output.shouldContain("Usage: VM.inspect");
         // Find and test a thread id:
         OutputAnalyzer threadPrintOutput = executor.execute("Thread.print");
         BigInteger ptr = findPointer(threadPrintOutput, thread_id_line, 1);
-        output = executor.execute("VM.debug find " + pointerText(ptr));
+        output = executor.execute("VM.inspect " + pointerText(ptr));
         output.shouldContain(" is a thread");
         // verbose shows output like:
         // "main" #1 [17235] prio=5 os_prio=0 cpu=1265.79ms elapsed=6.12s tid=0x000014e37802bd80 nid=17235 in Object.wait()  [0x000014e3817d4000]
@@ -127,20 +106,20 @@ public class VMDebugTest {
         // ...
         // Also a debug vm shows: JavaThread state: _thread_blocked
         // ...
-        output = executor.execute("VM.debug find -verbose " + pointerText(ptr));
+        output = executor.execute("VM.inspect -verbose " + pointerText(ptr));
         output.shouldContain("java.lang.Thread.State: WAITING");
 
         // Known bad pointers:
-        output = executor.execute("VM.debug find 0x0");
+        output = executor.execute("VM.inspect 0x0");
         output.shouldContain("address not safe");
 
-        output = executor.execute("VM.debug find -1");
+        output = executor.execute("VM.inspect -1");
         output.shouldContain("address not safe");
 
         // Find and test a Java Object:
         threadPrintOutput = executor.execute("Thread.print");
         ptr = findPointer(threadPrintOutput, waiting_on_mylock, 1);
-        output = executor.execute("VM.debug find " + pointerText(ptr));
+        output = executor.execute("VM.inspect " + pointerText(ptr));
         System.out.println(output);
         // Some tests put ZGC options in test.java.opts, not test.vm.opts
         String testOpts = System.getProperty("test.vm.opts", "")
@@ -166,10 +145,10 @@ public class VMDebugTest {
         // ...so don't check for that error.
         if (testMisaligned) {
             BigInteger badPtr = ptr.add(BigInteger.ONE);
-            output = executor.execute("VM.debug find " + pointerText(badPtr));
+            output = executor.execute("VM.inspect " + pointerText(badPtr));
             output.shouldContain("misaligned");
             badPtr = badPtr.add(BigInteger.ONE);
-            output = executor.execute("VM.debug find " + pointerText(badPtr));
+            output = executor.execute("VM.inspect " + pointerText(badPtr));
             output.shouldContain("misaligned");
         }
     }

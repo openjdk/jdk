@@ -576,22 +576,18 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-// VM state inspection. Subcommands to provide utilities similar to debug.cpp.
-class VMDebugDCmd: public DCmdWithParser {
+class VMInspectDCmd: public DCmdWithParser {
 protected:
-  DCmdArgument<char*> _subcommand;
   DCmdArgument<char*> _arg1;
-  DCmdArgument<char*> _arg2;
-  DCmdArgument<char*> _arg3;
   DCmdArgument<bool> _verbose;
 public:
-  static int num_arguments() { return 5; }
-  VMDebugDCmd(outputStream* output, bool heap);
+  static int num_arguments() { return 1; }
+  VMInspectDCmd(outputStream* output, bool heap);
   static const char* name() {
-    return "VM.debug";
+    return "VM.inspect";
   }
   static const char* description() {
-    return "Inspect VM state. Requires -XX:+UnlockDiagnosticVMOptions. Subcommands: threads, find ADDRESS, findclass CLASS_PATTERN FLAGS, findmethod CLASS_PATTERN METHOD_PATTERN FLAGS";
+    return "Inspect VM object at address.";
   }
   static const char* impact() {
       return "High: not recommended for live production use.";

@@ -170,7 +170,7 @@ void DCmd::register_dcmds(){
 #endif // INCLUDE_CDS
 
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<NMTDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMDebugDCmd>(full_export, true, true));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMInspectDCmd>(full_export, true, true));
 }
 
 HelpDCmd::HelpDCmd(outputStream* output, bool heap) : DCmdWithParser(output, heap),
@@ -1241,24 +1241,24 @@ void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
   CompilationMemoryStatistic::print_all_by_size(output(), human_readable, minsize);
 }
 
-VMDebugDCmd::VMDebugDCmd(outputStream* output, bool heap) :
+VMInspectDCmd::VMInspectDCmd(outputStream* output, bool heap) :
                                      DCmdWithParser(output, heap),
-  _subcommand("subcommand", "", "STRING", true, nullptr),
   _arg1("arg1", "", "STRING", false, nullptr),
-  _arg2("arg2", "", "STRING", false, nullptr),
-  _arg3("arg3", "", "STRING", false, nullptr),
   _verbose("-verbose", "", "BOOLEAN", false, "false") {
 
-  _dcmdparser.add_dcmd_argument(&_subcommand);
   _dcmdparser.add_dcmd_argument(&_arg1);
-  _dcmdparser.add_dcmd_argument(&_arg2);
-  _dcmdparser.add_dcmd_argument(&_arg3);
   _dcmdparser.add_dcmd_option(&_verbose);
 }
 
-void VMDebugDCmd::find() {
+void VMInspectDCmd::execute(DCmdSource source, TRAPS) {
+  DebuggingContext dc{}; // avoid asserts
+
+  if (!UnlockDiagnosticVMOptions) {
+    output()->print_cr("-XX:+UnlockDiagnosticVMOptions is required");
+    return;
+  }
   if (!_arg1.has_value()) {
-    output()->print_cr("Usage: VM.debug find ADDRESS");
+    output()->print_cr("Usage: VM.inspect ADDRESS");
   } else {
     intptr_t x = strtoll(_arg1.value(), nullptr, 0);
     if (!os::is_readable_pointer((intptr_t*) x)) {
@@ -1276,39 +1276,6 @@ void VMDebugDCmd::find() {
       }
       os::print_location(output(), x, _verbose.is_set());
     }
-  }
-}
-
-void VMDebugDCmd::execute(DCmdSource source, TRAPS) {
-  DebuggingContext dc{}; // avoid asserts
-
-  if (!UnlockDiagnosticVMOptions) {
-    output()->print_cr("-XX:+UnlockDiagnosticVMOptions is required");
-    return;
-  }
-  // Interpret _subcommand, using further args _arg1, etc as required.
-  if (strcmp("threads", _subcommand.value()) == 0) {
-    char buf[1024];
-    Threads::print_on_error(output(), THREAD, buf, sizeof(buf));
-  } else if (strcmp("findclass", _subcommand.value()) == 0) {
-    if (!_arg1.has_value() || !_arg2.has_value()) {
-      output()->print_cr("Usage: VM.debug findclass CLASS_PATTERN FLAGS");
-    } else {
-      long flags = strtol(_arg2.value(), nullptr, 0);
-      ClassPrinter::print_classes(_arg1.value(), flags, output());
-    }
-  } else if (strcmp("findmethod", _subcommand.value()) == 0) {
-    if (!_arg1.has_value() || !_arg2.has_value() || !_arg3.has_value()) {
-      output()->print_cr("Usage: VM.debug findmethod CLASS_PATTERN METHOD_PATTERN FLAGS");
-    } else {
-      long flags = strtol(_arg3.value(), nullptr, 0);
-      ClassPrinter::print_methods(_arg1.value(), _arg2.value(), flags, output());
-    }
-  } else if (strcmp("find", _subcommand.value()) == 0) {
-      find();
-  } else {
-    output()->print_cr("VM.debug: unknown sub-command.");
-    output()->print_cr("%s", description());
   }
 }
 
