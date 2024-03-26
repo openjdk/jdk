@@ -3977,7 +3977,6 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
       // It is scaled by the 'ratio_con'.
       Node* ratio = _igvn.integercon(ratio_con, stride_con2_bt);
       set_ctrl(ratio, C->root());
-//      Node* ratio_init = new MulINode(init, ratio);
 
       Node* init_converted = init;
       if (stride_con2_bt == T_LONG) {
