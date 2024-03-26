@@ -198,7 +198,7 @@ ifeq ($(call isTargetOs, aix), true)
       EXTRA_FILES := $(LIBJLI_EXTRA_FILES), \
       OPTIMIZATION := HIGH, \
       CFLAGS := $(STATIC_LIBRARY_FLAGS) $(CFLAGS_JDKLIB) $(LIBJLI_CFLAGS) \
-          $(LIBZ_CFLAGS) (addprefix -I, $(LIBJLI_SRC_DIRS)), \
+          $(LIBZ_CFLAGS) $(addprefix -I, $(LIBJLI_SRC_DIRS)), \
       DISABLED_WARNINGS_clang_aix := format-nonliteral \
           deprecated-non-prototype, \
       ARFLAGS := $(ARFLAGS), \
