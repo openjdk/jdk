@@ -291,8 +291,18 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   if (ShenandoahThreadLocalData::is_oom_during_evac(Thread::current())) {
     // This thread went through the OOM during evac protocol and it is safe to return
     // the forward pointer. It must not attempt to evacuate any more.
+#ifdef ASSERT
+    ShenandoahEvacOOMHandler::ShenandoahEvacuationState state = Atomic::load(&(_oom_evac_handler._evacuation_state));
+    assert(state == ShenandoahEvacOOMHandler::_oom_not_evacuating,
+           "all threads must be not evacuating if any thread is not evacuating");
+#endif
     return ShenandoahBarrierSet::resolve_forwarded(p);
   }
+#ifdef ASSERT
+  ShenandoahEvacOOMHandler::ShenandoahEvacuationState state = Atomic::load(&(_oom_evac_handler._evacuation_state));
+  assert(state == ShenandoahEvacOOMHandler::_evacuating,
+         "all threads must be evacuating if any thread is evacuating");
+#endif
 
   assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
 
