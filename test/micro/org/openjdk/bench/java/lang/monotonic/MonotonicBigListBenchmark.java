@@ -45,16 +45,16 @@ public class MonotonicBigListBenchmark {
 
     private static final int SIZE = 1_000_000;
 
-    private static final List<Monotonic<Integer>> MONOTONIC_LAZY = randomMono(Monotonic.ofList(SIZE));
-    private final List<Monotonic<Integer>> MONOTONIC_EAGER = randomMono(IntStream.range(0, SIZE)
-            .mapToObj(_ -> Monotonic.<Integer>of())
+    //private static final List<Monotonic<Integer>> MONOTONIC_LAZY = randomMono(Monotonic.ofList(SIZE));
+    private final List<Lazy<Integer>> Lazy_EAGER = randomMono(IntStream.range(0, SIZE)
+            .mapToObj(_ -> Lazy.<Integer>of())
             .toList());
 
     private static final List<Integer> ARRAY_LIST = random(new ArrayList<>(SIZE));
 
-    private final List<Monotonic<Integer>> monotonicLazy = randomMono(Monotonic.ofList(SIZE));
-    private final List<Monotonic<Integer>> monotonicEager = randomMono(IntStream.range(0, SIZE)
-                     .mapToObj(_ -> Monotonic.<Integer>of())
+    //private final List<Monotonic<Integer>> monotonicLazy = randomMono(Monotonic.ofList(SIZE));
+    private final List<Lazy<Integer>> lazyEager = randomMono(IntStream.range(0, SIZE)
+                     .mapToObj(_ -> Lazy.<Integer>of())
                      .toList());
     private static final List<Integer> arrayList = random(new ArrayList<>(SIZE));
 
@@ -74,20 +74,20 @@ public class MonotonicBigListBenchmark {
     @Benchmark
     public int instanceMonotonicEager() {
         int sum = 0;
-        for (int i = 0; i < monotonicEager.size(); i++) {
-            sum += monotonicEager.get(i).orThrow();
+        for (int i = 0; i < lazyEager.size(); i++) {
+            sum += lazyEager.get(i).orThrow();
         }
         return sum;
     }
 
-    @Benchmark
+/*    @Benchmark
     public int instanceMonotonicLazy() {
         int sum = 0;
         for (int i = 0; i < monotonicLazy.size(); i++) {
             sum += monotonicLazy.get(i).orThrow();
         }
         return sum;
-    }
+    }*/
 
     @Benchmark
     public int staticArrayList() {
@@ -101,22 +101,22 @@ public class MonotonicBigListBenchmark {
     @Benchmark
     public int staticMonotonicEager() {
         int sum = 0;
-        for (int i = 0; i < MONOTONIC_EAGER.size(); i++) {
-            sum += MONOTONIC_EAGER.get(i).orThrow();
+        for (int i = 0; i < Lazy_EAGER.size(); i++) {
+            sum += Lazy_EAGER.get(i).orThrow();
         }
         return sum;
     }
 
-    @Benchmark
+/*    @Benchmark
     public int staticMonotonicLazy() {
         int sum = 0;
         for (int i = 0; i < MONOTONIC_LAZY.size(); i++) {
             sum += MONOTONIC_LAZY.get(i).orThrow();
         }
         return sum;
-    }
+    }*/
 
-    private static List<Monotonic<Integer>> randomMono(List<Monotonic<Integer>> list) {
+    private static List<Lazy<Integer>> randomMono(List<Lazy<Integer>> list) {
         Random rnd = new Random();
         for (int i = 0; i < SIZE; i++) {
             list.get(i).bindOrThrow(rnd.nextInt(0, SIZE));

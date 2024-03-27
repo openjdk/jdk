@@ -22,9 +22,9 @@
  */
 
 /* @test
- * @summary Basic tests for Monotonic.Map implementations
- * @compile --enable-preview -source ${jdk.version} BasicMonotonicMapTest.java
- * @run junit/othervm --enable-preview BasicMonotonicMapTest
+ * @summary Basic tests for Lazy Map implementations
+ * @compile --enable-preview -source ${jdk.version} BasicLazyMapTest.java
+ * @run junit/othervm --enable-preview BasicLazyMapTest
  */
 
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +36,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -45,7 +45,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class BasicMonotonicMapTest {
+final class BasicLazyMapTest {
 
     private static final String[] KEYS = "A,B,C,D,E,F,G".split(",");
     private static final int SIZE = KEYS.length;
@@ -54,11 +54,14 @@ final class BasicMonotonicMapTest {
             .findFirst()
             .orElseThrow();
 
-    private Map<String, Monotonic<Integer>> map;
+    private Map<String, Lazy<Integer>> map;
 
     @BeforeEach
     void setup() {
-        map = Monotonic.ofMap(Set.of(KEYS));
+        map = Map.copyOf(Arrays.stream(KEYS)
+                .distinct()
+                .map(Objects::requireNonNull)
+                .collect(Collectors.toMap(Function.identity(), _ -> Lazy.of())));
     }
 
     @Test
@@ -80,31 +83,31 @@ final class BasicMonotonicMapTest {
 
     @ParameterizedTest
     @MethodSource("unsupportedOperations")
-    void uoe(String name, Consumer<Map<String, Monotonic<Integer>>> op) {
+    void uoe(String name, Consumer<Map<String, Lazy<Integer>>> op) {
         assertThrows(UnsupportedOperationException.class, () -> op.accept(map), name);
     }
 
     @ParameterizedTest
     @MethodSource("nullOperations")
-    void npe(String name, Consumer<Map<String, Monotonic<Integer>>> op) {
+    void npe(String name, Consumer<Map<String, Lazy<Integer>>> op) {
         assertThrows(NullPointerException.class, () -> op.accept(map), name);
     }
 
     private static Stream<Arguments> unsupportedOperations() {
         return Stream.of(
                 Arguments.of("clear",            asConsumer(Map::clear)),
-                Arguments.of("put",              asConsumer(m -> m.put(KEY, Monotonic.of()))),
+                Arguments.of("put",              asConsumer(m -> m.put(KEY, Lazy.of()))),
                 Arguments.of("remove(K)",        asConsumer(m -> m.remove(KEY))),
-                Arguments.of("remove(K, V)",     asConsumer(m -> m.remove(KEY, Monotonic.of()))),
+                Arguments.of("remove(K, V)",     asConsumer(m -> m.remove(KEY, Lazy.of()))),
                 Arguments.of("putAll(K, V)",     asConsumer(m -> m.putAll(new HashMap<>()))),
                 Arguments.of("replaceAll",       asConsumer(m -> m.replaceAll((_, _) -> null))),
-                Arguments.of("putIfAbsent",      asConsumer(m -> m.putIfAbsent(KEY, Monotonic.of()))),
-                Arguments.of("replace(K, V)",    asConsumer(m -> m.replace(KEY, Monotonic.of()))),
-                Arguments.of("replace(K, V, V)", asConsumer(m -> m.replace(KEY, Monotonic.of(), Monotonic.of()))),
-                Arguments.of("computeIfAbsent",  asConsumer(m -> m.computeIfAbsent(KEY, _ -> Monotonic.of()))),
-                Arguments.of("computeIfPresent", asConsumer(m -> m.computeIfPresent(KEY, (_, _) -> Monotonic.of()))),
-                Arguments.of("compute",          asConsumer(m -> m.compute(KEY, (_, _) -> Monotonic.of()))),
-                Arguments.of("merge",            asConsumer(m -> m.merge(KEY, Monotonic.of(), (_, _) -> Monotonic.of())))
+                Arguments.of("putIfAbsent",      asConsumer(m -> m.putIfAbsent(KEY, Lazy.of()))),
+                Arguments.of("replace(K, V)",    asConsumer(m -> m.replace(KEY, Lazy.of()))),
+                Arguments.of("replace(K, V, V)", asConsumer(m -> m.replace(KEY, Lazy.of(), Lazy.of()))),
+                Arguments.of("computeIfAbsent",  asConsumer(m -> m.computeIfAbsent(KEY, _ -> Lazy.of()))),
+                Arguments.of("computeIfPresent", asConsumer(m -> m.computeIfPresent(KEY, (_, _) -> Lazy.of()))),
+                Arguments.of("compute",          asConsumer(m -> m.compute(KEY, (_, _) -> Lazy.of()))),
+                Arguments.of("merge",            asConsumer(m -> m.merge(KEY, Lazy.of(), (_, _) -> Lazy.of())))
         );
     }
 
@@ -114,7 +117,7 @@ final class BasicMonotonicMapTest {
         );
     }
 
-    private static Consumer<Map<String, Monotonic<Integer>>> asConsumer(Consumer<Map<String, Monotonic<Integer>>> consumer) {
+    private static Consumer<Map<String, Lazy<Integer>>> asConsumer(Consumer<Map<String, Lazy<Integer>>> consumer) {
         return consumer;
     }
 
@@ -143,7 +146,7 @@ final class BasicMonotonicMapTest {
         }
     }
 
-    static String expectedToString(Map<String, Monotonic<Integer>> map) {
+    static String expectedToString(Map<String, Lazy<Integer>> map) {
         return "{" + map.entrySet()
                 .stream().map(e -> e.getKey() + "=" + e.getValue())
                 .collect(Collectors.joining(", ")) + "}";

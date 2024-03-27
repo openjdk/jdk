@@ -81,8 +81,8 @@ public @interface PreviewFeature {
         CLASSFILE_API,
         @JEP(number=461, title="Stream Gatherers", status="Preview")
         STREAM_GATHERERS,
-        @JEP(number=8312611, title="Monotonic Values", status="Preview")
-        MONOTONIC_VALUES,
+        @JEP(number=8312611, title="Lazy Collections and Values", status="Preview")
+        LAZY_COLLECTIONS_AND_VALUES,
         /**
          * A key for testing.
          */

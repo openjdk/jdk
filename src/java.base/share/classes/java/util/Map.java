@@ -25,6 +25,8 @@
 
 package java.util;
 
+import jdk.internal.javac.PreviewFeature;
+
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -1747,4 +1749,59 @@ public interface Map<K, V> {
             return (Map<K,V>)Map.ofEntries(map.entrySet().toArray(new Entry[0]));
         }
     }
+
+    /**
+     * {@return an unmodifiable, shallowly immutable, thread-safe, value-lazy,
+     * {@linkplain Map } where the {@linkplain java.util.Map#keySet() keys}
+     * contains precisely the distinct provided set of {@code keys} and where the
+     * values are lazily computed upon being first accessed
+     * (e.g. via {@linkplain Map#get(Object)}) by invoking the provided {@code mapper}
+     * at most once per key}
+     * <p>
+     * The provided {@code mapper} must not return {@code null} values.
+     * <p>
+     * The returned map is not {@linkplain Serializable}.
+     * <p>
+     * The returned map is eligible for constant folding and other
+     * optimizations by the JVM.
+     *
+     * @param keys   the keys in the map
+     * @param mapper to apply when lazily computing values
+     * @param <K>    the type of keys maintained by the returned map
+     * @param <V>    the type of mapped values
+     * @throws NullPointerException if the provided {@code keys} or the provided
+     *         {@code mapper} is null
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.LAZY_COLLECTIONS_AND_VALUES)
+    static <K, V> Map<K, V> ofLazy(Set<? extends K> keys, Function<? super K, ? extends V> mapper) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@return an unmodifiable, shallowly immutable, thread-safe, value-lazy,
+     * {@linkplain Map } where the {@linkplain java.util.Map#keySet() keys}
+     * contains precisely the distinct provided set of {@code keys} and where the
+     * values are lazily computed upon being first accessed
+     * (e.g. via {@linkplain Map#get(Object)}) by invoking the provided {@code mapper}
+     * at most once per key}
+     * <p>
+     * The provided {@code mapper} must not return {@code null} values.
+     * <p>
+     * The returned map is not {@linkplain Serializable}.
+     * <p>
+     * The returned map is eligible for constant folding and other
+     * optimizations by the JVM.
+     *
+     * @param keys   the keys in the map
+     * @param mapper to apply when lazily computing values
+     * @param <K>    the type of enum keys maintained by the returned map
+     * @param <V>    the type of mapped values
+     * @throws NullPointerException if the provided {@code keys} or the provided
+     *         {@code mapper} is null
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.LAZY_COLLECTIONS_AND_VALUES)
+    static <K extends Enum<K>, V> Map<K, V> ofLazyEnum(Set<K> keys, Function<? super K, ? extends V> mapper) {
+        throw new UnsupportedOperationException();
+    }
+
 }

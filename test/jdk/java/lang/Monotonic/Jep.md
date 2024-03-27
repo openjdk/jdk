@@ -1,22 +1,21 @@
+# Lazy Collections and Values (Preview)
+
 ## Summary
 
-Introduce _Monotonic Values_, which are immutable value holders that are initialized at most once.
-Monotonic values offer the performance and safety benefits of final fields, while offering greater
+Introduce _Lazy Collections and Values_, which are immutable value holders that are initialized _at most once_.
+Lazy collections and values offer the performance and safety benefits of final fields, while offering greater
 flexibility as to the timing of initialization. This is a [preview API](https://openjdk.org/jeps/12).
 
 ## Goals
 
-- Decouple the initialization of monotonic values from the initialization of their containing class or object.
-- Provide an easy and intuitive API for monotonic values and collections thereof.
-- Enable [constant folding](https://en.wikipedia.org/wiki/Constant_folding) optimizations for monotonic values.
-- Support dependencies between monotonic values.
-- Reduce the amount of static initializer code and/or field initialization to be executed.
-- Allow the initialization of values to be decoupled from one another (disentanglement of the soup of `<clinit>` dependencies).
+- Provide an easy and intuitive API to describe value holders that can change at most once.
+- Decouple declaration from initialization without significant footprint or performance penalties.
+- Reduce the amount of static initializer and/or field initialization code.
 - Uphold integrity and consistency, even in a multi-threaded environment.
 
 ## Non-goals
 
-- It is not a goal to provide additional language support for expressing monotonic computation. 
+- It is not a goal to provide additional language support for expressing lazy computation.
   This might be the subject of a future JEP.
 - It is not a goal to prevent or deprecate existing idioms for expressing lazy initialization.
 
@@ -33,7 +32,7 @@ Java, Item 17). Immutability confers many advantages including:
 Java's main tool for managing immutability is `final` fields (and more recently, `record` classes).
 Unfortunately, `final` fields come with restrictions. Final instance fields must be set by the end of
 the constructor, and `static final` fields during class initialization. Moreover, the order in which `final`
-field initializers are executed is determined by the [textual order](https://docs.oracle.com/javase/specs/jls/se7/html/jls-13.html#jls-12.4.1) 
+field initializers are executed is determined by the [textual order](https://docs.oracle.com/javase/specs/jls/se7/html/jls-13.html#jls-12.4.1)
 and is then made explicit in the resulting class file. As such, the initialization of a `final`
 field is fixed in time; it cannot be arbitrarily moved forward. In other words, developers
 cannot cause specific constants to be initialized after the class or object is initialized.
@@ -119,90 +118,66 @@ as non-final. This is not ideal for several reasons:
 
 Furthermore, the idiom does not work for `null` values.
 
-The situation is even worse when clients need to operate on a _collection_ of immutable values. 
-A classic example of this is the [Fibonacci sequence](https://en.wikipedia.org/wiki/Fibonacci_sequence), where each element in the sequence 
-is the sum of the two preceding elements. More formally:
+The situation is even worse when clients need to operate on a _collection_ of immutable values.
+
+An example of this is a `List` that holds HTML pages that corresponds to an error code in the range 0 to 7,
+ where each element is pulled in from the file system on-demand, once actually used:
 
 ```
-fib(n) = fib(n-1) + fib(n-2) when n >= 2
-fib(n) = n when 0 <= n < 2
-```
+class ErrorMessages {
 
-When a computation depends on more sub-computations, it induces a *dependency graph*, where 
-each computation is a node in the graph, and has zero or more edges to each of the 
-sub-computation nodes it depends on. For instance, the dependency graph associated with
-`fib(5)` is given below:
+    private static final int SIZE = 8;
 
-```
- 
-               ___________fib(5)___________
-              /                            \
-        ____fib(4)____                ____fib(3)____
-       /              \              /              \
-     fib(3)         fib(2)         fib(2)          fib(1)
-    /      \       /      \       /      \
-  fib(2)  fib(1) fib(1)  fib(0) fib(1)  fib(0)
+    // 1. Declare a list of error pages to serve up
+    private static final List<String> MESSAGES = new ArrayList<>(SIZE);
 
-```
-
-This dependency graph has a number of interesting properties. Firstly, as `n` grows, it becomes
-increasingly demanding to compute `fib(n)` on the fly - that is, the number of nodes in the graph
-grows *exponentially* with `n`. Secondly, the dependency graph contains many repeated nodes. 
-For instance, `fib(1)` occurs 4 times; `fib(2)` occurs 3 times, etc. Any repeated node in the 
-dependency graph leads to some waste, as we are spending valuable CPU resources to compute a value
-that has already been computed before.
-
-Here is an example of how to implement a class holding values in the Fibonacci sequence using a `Map`:
-
-```
-static class Fibonacci {
-
-    private final Map<Integer, Integer> map;
-
-    public Fibonacci(int upperBound) {
-        map = new HashMap<>(upperBound);
+    static {
+        // Pre-populate the list with null values
+        for (int i = 0; i < SIZE; i++) {
+            MESSAGES.add(null);
+        }
     }
 
-    public int number(int n) {
-        if (n < 2) {
-            return n;
+    // 2. Define a function that is to be called the first
+    //    time a particular message number is referenced
+    private static String readFromFile(int messageNumber) {
+        try {
+            return Files.lines(Path.of("message-" + messageNumber + ".html"))
+                    .collect(Collectors.joining());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
-        Integer v = map.get(n);
-        if (v != null) {
-            return v;
-        }
-        int n1 = number(n - 1);
-        int n2 = number(n - 2);
-        int sum = n1 + n2;
-        map.put(n, sum);
-        return sum;
     }
 
-}
+    static synchronized String message(int messageNumber) {
+        // 3. Access the memoized list element under synchronization
+        //    and compute and store if absent.
+        String page = MESSAGES.get(messageNumber);
+        if (page == null) {
+            page = readFromFile(messageNumber);
+            MESSAGES.set(messageNumber, page);
+        }
+        return page;
+    }
+
+ }
 ```
-
-Clients can then use the `Fibonacci` class to obtain the value for a given `n < upperBound`:
-
+We can now retrieve an error page like so:
 ```
-Fibonacci fibonacci = new Fibonacci(20);
-
-int[] fibs = IntStream.range(0, 10)
-        .map(fibonacci::number)
-        .toArray(); // { 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 }
+String errorPage = ErrorMessages.errorPage(2); // "Payment was denied: Insufficient funds."
 ```
 
 Unfortunately, this approach provides a number of challenges. First, retrieving the values
-from a `Map` is slow, as said values cannot be constant-folded. Even worse, using `Map` can
-be error-prone, as dependencies between values in the Fibonacci sequence have to be managed manually.
-For instance, when calling `fib(n)`, entries for all `fib(x)` (where x < n) must also be added to the map.
-Furthermore, the class holder idiom (see above) is clearly insufficient in this case, as 
-the number of required holder classes is *statically unbounded* - it depends on the value of 
-the construction parameter `upperBound`.
+from a `List` is slow, as said values cannot be constant-folded. Even worse, access to the `List` is 
+guarded by synchronization that is slow and will block access to the list for all elements whenever one of 
+the elements are under computation. Furthermore, the class holder idiom (see above) is clearly insufficient
+in this case, as the number of required holder classes is *statically unbounded* - it depends on the value of
+the parameter `MAX_ERROR_CODE`.
 
 What we are missing -- in all cases -- is a way to *promise* that a constant will be initialized
-by the time it is used, with a value that is computed at most once. Such a mechanism would give 
+by the time it is used, with a value that is computed at most once. Such a mechanism would give
 the Java runtime maximum opportunity to stage and optimize its computation, thus avoiding the penalties
-(static footprint, loss of runtime optimizations) that plague the workarounds shown above. Moreover, 
+(static footprint, loss of runtime optimizations) that plague the workarounds shown above. Moreover,
 such a mechanism should gracefully scale to handle collections of constant values, while retaining
 efficient computer resource management.
 
@@ -210,7 +185,7 @@ The attentive reader might have noticed the similarity between what is proposed 
 annotation`jdk.internal.vm.annotation.@Stable`. This annotation is used by *JDK code* to mark scalar and
 array variables whose values or elements will change *at most once*. This annotation is powerful and often
 crucial to achieving optimal performance, but it is also easy to misuse: further updating a `@Stable` field
-after its initial update will result in undefined behavior, as the JIT compiler might have *already* 
+after its initial update will result in undefined behavior, as the JIT compiler might have *already*
 constant-folded the (now overwritten) field value. In other words, what we are after is a *safe* and *efficient*
 wrapper around the `@Stable` mechanism - in the form of a new Java SE API which might be enjoyed by
 _all_ 3rd party Java code (and not the JDK alone).
@@ -219,8 +194,8 @@ _all_ 3rd party Java code (and not the JDK alone).
 
 ### Preview Feature
 
-Monotonic Values is a [preview API](https://openjdk.org/jeps/12), disabled by default.
-To use the Monotonic Value API, the JVM flag `--enable-preview` must be passed in, as follows:
+Lazy Collections and Values is a [preview API](https://openjdk.org/jeps/12), disabled by default.
+To use the Lazy Collections and Values APIs, the JVM flag `--enable-preview` must be passed in, as follows:
 
 - Compile the program with `javac --release 23 --enable-preview Main.java` and run it with `java --enable-preview Main`; or,
 
@@ -230,33 +205,35 @@ To use the Monotonic Value API, the JVM flag `--enable-preview` must be passed i
 
 ### Outline
 
-The [Monotonic Value API](https://cr.openjdk.org/~pminborg/computed-constant/api/java.base/java/lang/ComputedConstant.html) defines classes and an interface so that client code in libraries and applications can
+The Lazy Collections and Values APIs define classes and an interface so that client code in libraries and applications can
 
-- Define and use monotonic objects: `Monotonic`
+- Define and use lazy collections: 
+  [`List.ofLazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/List.html#ofLazy()), 
+  [`Set.ofLazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Set.html#ofLazy()), and 
+  [`Map.ofLazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Map.html#ofLazy())
+- Define and use lazy values: [`Lazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Monotonic.html)
 
-- Define and use monotonic collections: `List<Monotonic<V>>` and `Map<K, Monotonic<V>>` 
+The Lazy Collections and Values APIs resides in the `java.util` and `java.lang` packages of the `java.base` module.
 
-The [Monotonic Value API](https://cr.openjdk.org/~pminborg/computed-constant/api/java.base/java/lang/ComputedConstant.html) resides in the [`java.lang`] package of the [`java.base`] module.
+### Lazy Values
 
-### Monotonic Value
-
-A _monotonic value_ is a holder object that is bound at most once whereby it
-goes from "unbound" to "bound". It is expressed as an object of type `Monotonic`,
+A _lazy value_ is a holder object that is bound at most once whereby it
+goes from "unbound" to "bound". It is expressed as an object of type `Lazy`,
 which, like `Future`, is a holder for some computation that may or may not have occurred yet.
-Fresh (unbound) `Monotonic` instances are created via the factory method `Monotonic::of`:
+Fresh (unbound) `Lazy` instances are created via the factory method `Lazy::of`:
 
 ```
 class Bar {
-    // 1. Declare a monotonic value
-    private static final Monotonic<Logger> LOGGER = Monotonic.of();
+    // 1. Declare a Lazy
+    private static final Lazy<Logger> LOGGER = Lazy.of();
     
     static void init() {
-        // 2. Bind the monotonic value _after_ being declared
+        // 2. Bind the lazy value _after_ being declared
         LOGGER.bindOrThrow(Logger.getLogger("com.foo.Bar"));
     }
     
     static Logger logger() {
-        // 3. Access the monotonic value with as-declared-final performance
+        // 3. Access the lazy value with as-declared-final performance
         return LOGGER.orThrow();
     }
 }
@@ -266,193 +243,191 @@ This is similar in spirit to the holder-class idiom, and offers the same
 performance, constant-folding, and thread-safety characteristics, but is simpler
 and incurs a lower static footprint since no additional class is required.
 
-Binding a monotonic value is an atomic, non-blocking operation, e.g. `Monotonic::bindOrThrow`, 
-either results in successfully initializing the monotonic to a value, or fails
-with an exception. This is true regardless of whether the monotonic value is accessed by a single
+Binding a lazy value is an atomic, non-blocking operation, e.g. `Lazy::bindOrThrow`,
+either results in successfully initializing the lazy to a value, or fails
+with an exception. This is true regardless of whether the lazy value is accessed by a single
 thread, or concurrently, by multiple threads.
 
-A monotonic value may be bound to `null` which then will be considered its bound value.
-Null-averse applications can also use `Monotonic<Optional<V>>`.
+A lazy value may be bound to `null` which then will be considered its bound value.
+Null-averse applications can also use `Lazy<Optional<V>>`.
 
-In case a monotonic value cannot be pre-bound as in the example above, it is possible
+In case a lazy value cannot be pre-bound as in the example above, it is possible
 to compute and bind an unbound value on-demand as shown in this example:
 
 ```
 class Bar {
-    // 1. Declare a monotonic value
-    private static final Monotonic<Logger> LOGGER = Monotonic.of();
+    // 1. Declare a lazy value
+    private static final Lazy<Logger> LOGGER = Lazy.of();
     
     static Logger logger() {
-        // 2. Access the monotonic value with as-declared-final performance
+        // 2. Access the lazy value with as-declared-final performance
         //    (evaluation made before the first access)
         return LOGGER.computeIfUnbound( () -> Logger.getLogger("com.foo.Bar") );
     }
 }
 ```
 Calling `logger()` multiple times yields the same value from each invocation.
-`Monotonic::computeIfUnbound` can invoke the value supplier several times if called
-from a plurality of threads but only one witness value is ever exposed to the 
-outside world. 
+`Lazy::computeIfUnbound` can invoke the value supplier several times if called
+from a plurality of threads but only one witness value is ever exposed to the
+outside world.
 
-Monotonic reference values are faster to obtain than reference values managed via
-double-checked-idiom constructs as monotonic values rely on explicit memory barriers
-rather than performing volatile access on each get operation.
+Lazy reference values are faster to obtain than reference values managed via
+double-checked-idiom constructs as lazy values rely on explicit memory barriers
+rather than performing volatile access on each get operation and in addition, they are eligible
+for [constant folding](https://en.wikipedia.org/wiki/Constant_folding) optimizations.
 
-### Monotonic Collections
+### Lazy Collections
 
-While initializing a single field of type `Monotonic` is cheap (remember, creating a new `Monotonic` 
-object only creates the *holder* for the value), this (small) initialization cost has 
-to be paid for each field of type `Monotonic` declared by the class. As a result, the class static 
-and/or instance initializer will keep growing with the number of `Monotonic` fields, thus degrading performance.
+While initializing a single field of type `Lazy` is cheap (remember, creating a new `Lazy`
+object only creates the *holder* for the value), this (small) initialization cost has
+to be paid for each field of type `Lazy` declared by the class. As a result, the class static
+and/or instance initializer will keep growing with the number of `Lazy` fields, thus degrading performance.
 
-To handle these cases, the Monotonic Value API provides constructs that allow the creation and handling of a
-*`List` of `Monotonic` elements*. Such a `List` is a list whose elements are created lazily on demand
-before a particular element is first accessed. Lists of monotonic values are objects of type `List<Monotonic>`.
-Consequently, each element in the list enjoys the same properties as a `Monotonic` but may require less resources.
+To handle these cases, the Lazy Collections and Values API provides constructs that allow the creation and handling of a
+*`List` of lazy elements*. Such a `List` is a list whose elements are created lazily on demand
+before a particular element is first accessed. Lists of lazy values are objects of type `List<E>`.
+Consequently, each element in the list enjoys the same properties as a `Lazy` but may require less resources.
 
-Like a `Monotonic` object, a `List<Monotonic>` object is created via a factory method by providing a size
-of the desired List:
-
-```
-static <V> List<Monotonic<V>> ofList(int size) { ... }
-```
-
-This allows for improving the handling of lists with monotonic values and enables a much better
-implementation of the `Fibonacci` class mentioned earlier:
+Like a `Lazy` object, a lazy List object is created via a factory method by providing a size
+of the desired List and an IntFunction to be used to lazily compute its elements:
 
 ```
-class Fibonacci {
+static <E> List<E> List.ofLazy(int size, IntFunction<? extends E> mapper) { ... }
+```
 
-    private final List<Monotonic<Integer>> numberCache;
+This allows for improving the handling of lists with lazy values and enables a much better
+implementation of the `ListDemoClass` class mentioned earlier:
 
-    public Fibonacci(int upperBound) {
-        numberCache = Monotonic.ofList(upperBound);
+```
+class ErrorMessages {
+
+    private static final int SIZE = 8;
+
+    // 1. Declare a lazy list of default error pages to serve up
+    private static final List<String> MESSAGES = List.ofLazy(
+            SIZE, ErrorMessages::readFromFile);
+
+    // 2. Define a function that is to be called the first
+    //    time a particular message number is referenced
+    private static String readFromFile(int messageNumber) {
+        try {
+            return Files.lines(Path.of("message-" + messageNumber + ".html"))
+                     .collect(Collectors.joining());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
-    public int number(int n) {
-        return (n < 2)
-                ? n
-                : Monotonics.computeIfUnbound(numberCache, n -1 , this::number)
-                + Monotonics.computeIfUnbound(numberCache, n - 2, this::number);
+    static String errorPage(int messageNumber) {
+        // 3. Access the memoized list element with as-declared-final performance
+        //    (evaluation made before the first access)
+        return MESSAGES.get(messageNumber);
     }
-
+    
 }
 ```
 
-Just like before, we can perform retrieval of values like this:
+Just like before, we can perform retrieval of error pages like this:
 
 ```
-Fibonacci fibonacci = new Fibonacci(20);
-
-int[] fibs = IntStream.range(0, 10)
-        .map(fibonacci::number)
-        .toArray(); // { 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 }
+String errorPage = ErrorMessages.errorPage(2); // "Payment was denied: Insufficient funds."
 ```
 
-Note how there's only one field of type `List<Monotonic<Integer>>` to initialize - every other computation is
-performed before the corresponding element of the list is accessed. Note also how the value of an element in the
-list, stored in an instance field, depends on the value of other (lower-index) element values. The Monotonic Value API
+Note how there's only one field of type `List<String>` to initialize - every computation is
+performed independently of the other element of the list when accessed. The Lazy Collections and Values API
 allows modeling this cleanly, while still preserving good constant-folding guarantees and integrity of updates in
 the case of multi-threaded access.
 
+It should be noted that even though a lazy list might mutate its internal state upon external access, it is still
+_immutable_ because _no change can ever be observed by an external entity_. This is similar to other
+immutable classes, such as `String` (which cached its `hash`), where they might rely on mutable internal states
+that are carefully kept internal and that never shine through to the outside world.
 
-Finally, a `Map` of `Monotonic` values can also be defined and used similarly to how a 
-`List` of `Monotonic` elements can be handled. In the example below, we cache values for 
+Moreover, a `Map` of lazy values can also be defined and used similarly to how a
+`List` of lazy elements can be handled. In the example below, we cache values for
 an enumerated collection of keys:
 
 ```
 class MapDemo {
 
-    private static final Map<String, Monotonic<Logger>> LOGGERS =
-            Monotonic.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
+    static final Map<String, Logger> LOGGERS =
+            Map.ofLazy(Set.of("com.foo.Bar", "com.foo.Baz"), Logger::getLogger);
 
     static Logger logger(String name) {
-        return Monotonics.computeIfUnbound(LOGGERS, name, Logger::getLogger);
+        return LOGGERS.get(name);
     }
 }
 ```
 
+Finally, a `Set` of lazy elements can be defined. In the example below, the well known problem of determining
+if a logger will actually output something for a certain level is solved using a lazy Set. This allows constant folding
+of the code path and will eliminate unused code paths dynamically by the JVM:
+
+```
+ class SetDemo {
+ 
+    static final Set<String> INFO_LOGGABLE =
+            Set.ofLazy(Set.of("com.foo.Bar", "com.foo.Baz"),
+                    name -> MapDemo.logger(name).isLoggable(Level.INFO));
+                    
+    static boolean isInfoLoggable(String name) {
+        return INFO_LOGGABLE.contains(name);
+    }
+    
+    private static final String NAME = "com.foo.Bar";
+    
+    public void servlet() {
+        if (INFO_LOGGABLE.contains(NAME)) {
+            MapDemo.LOGGERS.get(NAME).log(Level.INFO, "This is fast...");
+        }
+    }
+}
+```
+This last example also demonstrates how lazy constructs can be composed into more high-level, high-performance
+constructs that can leverage constant folding and other JVM optimizations transitively. 
+
+
 ### Memoized functions
 
-So far, we have talked about the fundamental low-level features of `Monotonic` as a securely
-wrapped `@Stable` value holder. However, it has become apparent, `Monotonic` primitives are amenable
+So far, we have talked about the fundamental low-level features of lazy collections and values as a securely
+wrapped `@Stable` value holder. However, as shown above, it has become apparent, lazy primitives are amenable
 to composition with other constructs in order to create more high-level and powerful features.
-
-Some of these features are exposed as convenience methods in the class `java.lang.Monotonics`.
-
-For example, to guarantee a value supplier or function is invoked *at most once*,
-even though invoked by several threads, we can use one of the `Monotonics::as...`
-functions.
 
 Here is how we could make sure the lambda `() -> Logger.getLogger("com.foo.Bar")`
 in one of the first examples above is invoked at most once (provided it executes successfully)
 in a multi-threaded environment:
 
 ```
-class Bar {
-    // 1. Declare a memoized (cached) Supplier (backed by an 
-    //    internal monotonic value) that is invoked at most once
-    private static final Supplier<Logger> LOGGER = Monotonics.asSupplier(
-                    () -> Logger.getLogger("com.foo.Bar"));
-
-    static Logger logger() {
-        // 2. Access the memoized value with as-declared-final performance
-        //    (evaluation made before the first access)
-        return LOGGER.get();
-    }
-}
-```
-
-In the example above, the supplier is invoked at most once per
-loading of the containing class `Bar` (`Bar`, in turn, can be loaded at
-most once into any given `ClassLoader`).
-
-Similarly to how a `Supplier` can be memoized using a backing `Monotonic`, the same pattern can be used
-for an `IntFunction` that will record its cached value in a backing _list of `Monotonic` elements_:
-
-```
-class Fibonacci {
-
-    private final IntFunction<Integer> numCache;
-
-    public Fibonacci(int upperBound) {
-        numCache = Monotonics.asIntFunction(upperBound, this::number);
-    }
-
-    public int number(int n) {
-        return (n < 2)
-                ? n
-                : numCache.apply(n - 1) + numCache.apply(n - 2);
-    }
-
-}
-```
-
-Corresponding to a memoized `Supplier` or an `IntFunction`, a general `Function` can also be memoized
-via a backing `Map` of `Monotonic` values, thereby ensuring the resulting value for each input
-parameter is computed at-most-once even in a multi-threaded environment.
-
-Here is an example of how such a memoized function can be defined and used:
-
-```
 class MapDemo {
 
-    // 1. Declare a memoized (cached) function backed by a monotonic map
+    // 1. Declare a memoized (cached) function backed by a lazy map
     private static final Function<String, Logger> LOGGERS =
-            Monotonics.asFunction(
-                    Set.of("com.foo.Bar", "com.foo.Baz"),
-                    Logger::getLogger);
+            Map.ofLazy(Set.of("com.foo.Bar", "com.foo.Baz"), Logger::getLogger)::get;
 
     static Logger logger(String name) {
         // 2. Access the memoized value with as-declared-final performance
         //    (evaluation made before the first access)
         return LOGGERS.apply(name);
     }
-}
 ```
+
+In the example above, the supplier is invoked at most once per
+loading of the containing class `MapDemo` (`MapDemo`, in turn, can be loaded at
+most once into any given `ClassLoader`).
+
 It should be noted that the enumerated collection of keys given at creation time
 constitutes the only valid inputs for the memoized function.
 
+Similarly to how a `Funcion` can be memoized using a backing lazy map, the same pattern can be used
+for an `IntFunction` that will record its cached value in a backing _lazy list_:
+
+```
+private static final IntFunction<String> ERROR_PAGES = List.ofLazy(
+        MAX_ERROR_CODE, ListDemo::readFromFile)::get;
+```
+
+The same is true for creating a memoized Supplier or a Predicate using a using backing Lazy or backing lazy Set. 
+The solution for this is left to the reader as an exercise.
 
 ## Alternatives
 
@@ -460,7 +435,7 @@ There are other classes in the JDK that support lazy computation including `Map`
 and `ThreadLocal` which are similar in the sense that they support arbitrary mutation and thus, prevent the JVM
 from reasoning about constantness and do not allow shifting computation _before_ being used.
 
-So, alternatives would be to keep using explicit double-checked locking, maps, holder classes, Atomic classes, 
+So, alternatives would be to keep using explicit double-checked locking, maps, holder classes, Atomic classes,
 and third-party frameworks.  Another alternative would be to add language support for immutable value holders.
 
 ## Risks and Assumptions
@@ -473,6 +448,3 @@ will likely suffice to reach the goals of this JEP.
 
 The work described here will likely enable subsequent work to provide pre-evaluated computed
 constant fields at compile, condensation, and/or runtime.
-
-[`java.lang`]: https://cr.openjdk.org/~pminborg/computed-constant/api/java.base/java/lang/package-summary.html
-[`java.base`]: https://cr.openjdk.org/~pminborg/computed-constant/api/java.base/module-summary.html

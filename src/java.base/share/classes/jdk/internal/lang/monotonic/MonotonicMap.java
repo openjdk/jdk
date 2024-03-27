@@ -40,8 +40,8 @@ import java.util.function.Function;
 import static jdk.internal.lang.monotonic.MonotonicUtil.*;
 
 public final class MonotonicMap<K, V>
-        extends AbstractMap<K, Monotonic<V>>
-        implements Map<K, Monotonic<V>> {
+        extends AbstractMap<K, Lazy<V>>
+        implements Map<K, Lazy<V>> {
 
     private static final long SALT32L = Long.MAX_VALUE; // Todo: reuse from ImmutableCollections
     private static final int EXPAND_FACTOR = 2;
@@ -99,9 +99,9 @@ public final class MonotonicMap<K, V>
         }
     }
 
-    private Monotonic<V> value(int keyIndex) {
+    private Lazy<V> value(int keyIndex) {
         @SuppressWarnings("unchecked")
-        Monotonic<V> m = (Monotonic<V>) table[keyIndex + 1];
+        Lazy<V> m = (Lazy<V>) table[keyIndex + 1];
         if (m != null) {
             return m;
         }
@@ -109,13 +109,13 @@ public final class MonotonicMap<K, V>
     }
 
     @SuppressWarnings("unchecked")
-    private Monotonic<V> slowValue(int keyIndex) {
-        Monotonic<V> m = (Monotonic<V>) tableItemVolatile(keyIndex + 1);
+    private Lazy<V> slowValue(int keyIndex) {
+        Lazy<V> m = (Lazy<V>) tableItemVolatile(keyIndex + 1);
         if (m != null) {
             return m;
         }
         // racy, only use the one who uploaded first
-        return (Monotonic<V>) caeTableItemWitness(keyIndex + 1, Monotonic.of());
+        return (Lazy<V>) caeTableItemWitness(keyIndex + 1, Lazy.of());
     }
 
     private Object tableItemVolatile(int index) {
@@ -146,7 +146,7 @@ public final class MonotonicMap<K, V>
     }
 
     @Override
-    public Monotonic<V> get(Object key) {
+    public Lazy<V> get(Object key) {
         if (size == 0) {
             return null;
         }
@@ -159,7 +159,7 @@ public final class MonotonicMap<K, V>
     }
 
     @Override
-    public Set<Entry<K, Monotonic<V>>> entrySet() {
+    public Set<Entry<K, Lazy<V>>> entrySet() {
         return new AbstractSet<>() {
             @Override
             public int size() {
@@ -167,13 +167,13 @@ public final class MonotonicMap<K, V>
             }
 
             @Override
-            public Iterator<Entry<K, Monotonic<V>>> iterator() {
+            public Iterator<Entry<K, Lazy<V>>> iterator() {
                 return new Itr();
             }
         };
     }
 
-    final class Itr implements Iterator<Entry<K, Monotonic<V>>> {
+    final class Itr implements Iterator<Entry<K, Lazy<V>>> {
         private int remaining;
 
         private int idx;
@@ -199,13 +199,13 @@ public final class MonotonicMap<K, V>
         }
 
         @Override
-        public Map.Entry<K, Monotonic<V>> next() {
+        public Map.Entry<K, Lazy<V>> next() {
             if (remaining > 0) {
                 int idx;
                 while (table[idx = nextIndex()] == null) {
                 }
                 @SuppressWarnings("unchecked")
-                Map.Entry<K, Monotonic<V>> e =
+                Map.Entry<K, Lazy<V>> e =
                         java.util.Map.entry((K) table[idx], value(idx));
                 remaining--;
                 return e;
@@ -216,37 +216,38 @@ public final class MonotonicMap<K, V>
     }
 
     // all mutating methods throw UnsupportedOperationException
-    @Override public Monotonic<V> put(K key, Monotonic<V> value) {throw uoe();}
-    @Override public Monotonic<V> remove(Object key) {throw uoe();}
-    @Override public void putAll(Map<? extends K, ? extends Monotonic<V>> m) {throw uoe();}
+    @Override public Lazy<V> put(K key, Lazy<V> value) {throw uoe();}
+    @Override public Lazy<V> remove(Object key) {throw uoe();}
+    @Override public void putAll(Map<? extends K, ? extends Lazy<V>> m) {throw uoe();}
     @Override public void clear() {throw uoe();}
-    @Override public void replaceAll(BiFunction<? super K, ? super Monotonic<V>, ? extends Monotonic<V>> function) {throw uoe();}
-    @Override public Monotonic<V> putIfAbsent(K key, Monotonic<V> value) {throw uoe();}
+    @Override public void replaceAll(BiFunction<? super K, ? super Lazy<V>, ? extends Lazy<V>> function) {throw uoe();}
+    @Override public Lazy<V> putIfAbsent(K key, Lazy<V> value) {throw uoe();}
     @Override public boolean remove(Object key, Object value) {throw uoe();}
-    @Override public boolean replace(K key, Monotonic<V> oldValue, Monotonic<V> newValue) {throw uoe();}
-    @Override public Monotonic<V> replace(K key, Monotonic<V> value) {throw uoe();}
-    @Override public Monotonic<V> computeIfAbsent(K key, Function<? super K, ? extends Monotonic<V>> mappingFunction) {throw uoe();}
-    @Override public Monotonic<V> computeIfPresent(K key, BiFunction<? super K, ? super Monotonic<V>, ? extends Monotonic<V>> remappingFunction) {throw uoe();}
-    @Override public Monotonic<V> compute(K key, BiFunction<? super K, ? super Monotonic<V>, ? extends Monotonic<V>> remappingFunction) {throw uoe();}
-    @Override public Monotonic<V> merge(K key, Monotonic<V> value, BiFunction<? super Monotonic<V>, ? super Monotonic<V>, ? extends Monotonic<V>> remappingFunction) {throw uoe();}
+    @Override public boolean replace(K key, Lazy<V> oldValue, Lazy<V> newValue) {throw uoe();}
+    @Override public Lazy<V> replace(K key, Lazy<V> value) {throw uoe();}
+    @Override public Lazy<V> computeIfAbsent(K key, Function<? super K, ? extends Lazy<V>> mappingFunction) {throw uoe();}
+    @Override public Lazy<V> computeIfPresent(K key, BiFunction<? super K, ? super Lazy<V>, ? extends Lazy<V>> remappingFunction) {throw uoe();}
+    @Override public Lazy<V> compute(K key, BiFunction<? super K, ? super Lazy<V>, ? extends Lazy<V>> remappingFunction) {throw uoe();}
+    @Override public Lazy<V> merge(K key, Lazy<V> value, BiFunction<? super Lazy<V>, ? super Lazy<V>, ? extends Lazy<V>> remappingFunction) {throw uoe();}
 
     // Factories
 
-    public static <K, V> Map<K, Monotonic<V>> ofMap(Object[] keys) {
+    public static <K, V> Map<K, Lazy<V>> ofMap(Object[] keys) {
         return new MonotonicMap<>(keys);
     }
 
-    public static <K, V> V computeIfUnbound(Map<K, Monotonic<V>> map,
+    public static <K, V> V computeIfUnbound(Map<K, Lazy<V>> map,
                                             K key,
                                             Function<? super K, ? extends V> mapper) {
-        Monotonic<V> monotonic = monotonicOrThrow(map, key);
-        if (monotonic.isBound()) {
-            return monotonic.orThrow();
+        Lazy<V> lazy = monotonicOrThrow(map, key);
+        if (lazy.isBound()) {
+            return lazy.orThrow();
         }
         V newValue = mapper.apply(key);
-        return monotonic.bindIfUnbound(newValue);
+        return lazy.bindIfUnbound(newValue);
     }
 
+/*
     public static <K, V> Function<K, V> asFunction(Set<? extends K> keys,
                                                    Function<? super K, ? extends V> mapper) {
         Map<K, Monotonic<V>> map = Monotonic.ofMap(keys);
@@ -271,13 +272,14 @@ public final class MonotonicMap<K, V>
             }
         };
     }
+*/
 
-    private static <K, V> Monotonic<V> monotonicOrThrow(Map<K, Monotonic<V>> map, K key) {
-        Monotonic<V> monotonic = map.get(key);
-        if (monotonic == null) {
+    private static <K, V> Lazy<V> monotonicOrThrow(Map<K, Lazy<V>> map, K key) {
+        Lazy<V> lazy = map.get(key);
+        if (lazy == null) {
             throw new IllegalArgumentException("No such key:" + key);
         }
-        return monotonic;
+        return lazy;
     }
 
 }

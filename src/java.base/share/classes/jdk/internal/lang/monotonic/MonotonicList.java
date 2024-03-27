@@ -38,35 +38,35 @@ import java.util.function.Predicate;
 import static jdk.internal.lang.monotonic.MonotonicUtil.*;
 
 public final class MonotonicList<V>
-        extends AbstractList<Monotonic<V>>
-        implements List<Monotonic<V>> {
+        extends AbstractList<Lazy<V>>
+        implements List<Lazy<V>> {
 
     @Stable
-    private final Monotonic<V>[] elements;
+    private final Lazy<V>[] elements;
     @Stable
     private final int size; // Appears to be faster than elements.length
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     MonotonicList(int size) {
-        this.elements = (Monotonic<V>[]) new Monotonic[size];
+        this.elements = (Lazy<V>[]) new Lazy[size];
         this.size = size;
     }
 
     @Override
-    public Monotonic<V> get(int index) {
-        Monotonic<V> m = elements[index];
+    public Lazy<V> get(int index) {
+        Lazy<V> m = elements[index];
         if (m != null) {
             return m;
         }
         return slowPath(index);
     }
 
-    private Monotonic<V> slowPath(int index) {
-        Monotonic<V> m = elementVolatile(index);
+    private Lazy<V> slowPath(int index) {
+        Lazy<V> m = elementVolatile(index);
         if (m != null) {
             return m;
         }
-        Monotonic<V> created = Monotonic.of();
+        Lazy<V> created = Lazy.of();
         m = caeElement(index, created);
         return m == null ? created : m;
     }
@@ -77,15 +77,15 @@ public final class MonotonicList<V>
     }
 
     // all mutating methods throw UnsupportedOperationException
-    @Override public boolean add(Monotonic<V> v) {throw uoe();}
-    @Override public boolean addAll(Collection<? extends Monotonic<V>> c) {throw uoe();}
-    @Override public boolean addAll(int index, Collection<? extends Monotonic<V>> c) {throw uoe();}
+    @Override public boolean add(Lazy<V> v) {throw uoe();}
+    @Override public boolean addAll(Collection<? extends Lazy<V>> c) {throw uoe();}
+    @Override public boolean addAll(int index, Collection<? extends Lazy<V>> c) {throw uoe();}
     @Override public void    clear() {throw uoe();}
     @Override public boolean remove(Object o) {throw uoe();}
     @Override public boolean removeAll(Collection<?> c) {throw uoe();}
-    @Override public boolean removeIf(Predicate<? super Monotonic<V>> filter) {throw uoe();}
+    @Override public boolean removeIf(Predicate<? super Lazy<V>> filter) {throw uoe();}
     @Override public boolean retainAll(Collection<?> c) {throw uoe();}
-    @Override public void    sort(Comparator<? super Monotonic<V>> c) {throw uoe();}
+    @Override public void    sort(Comparator<? super Lazy<V>> c) {throw uoe();}
 
     @Override
     public int indexOf(Object o) {
@@ -100,42 +100,42 @@ public final class MonotonicList<V>
     }
 
     @Override
-    public List<Monotonic<V>> reversed() {
+    public List<Lazy<V>> reversed() {
         // Todo: Fix this
         throw new UnsupportedOperationException();
         //return ReverseOrderListView.of(this, true); // we must assume it's modifiable
     }
 
     @SuppressWarnings("unchecked")
-    private Monotonic<V> elementVolatile(int index) {
-        return (Monotonic<V>) UNSAFE.getReferenceVolatile(elements, objectOffset(index));
+    private Lazy<V> elementVolatile(int index) {
+        return (Lazy<V>) UNSAFE.getReferenceVolatile(elements, objectOffset(index));
     }
 
     @SuppressWarnings("unchecked")
-    private Monotonic<V> caeElement(int index, Monotonic<V> created) {
+    private Lazy<V> caeElement(int index, Lazy<V> created) {
         // Make sure no reordering of store operations
         freeze();
-        return (Monotonic<V>) UNSAFE.compareAndExchangeReference(elements, objectOffset(index), null, created);
+        return (Lazy<V>) UNSAFE.compareAndExchangeReference(elements, objectOffset(index), null, created);
     }
 
     // Factories
 
-    public static <V> List<Monotonic<V>> of(int size) {
+    public static <V> List<Lazy<V>> of(int size) {
         return new MonotonicList<>(size);
     }
 
-    public static <V> V computeIfUnbound(List<Monotonic<V>> list,
+    public static <V> V computeIfUnbound(List<Lazy<V>> list,
                                          int index,
                                          IntFunction<? extends V> mapper) {
-        Monotonic<V> monotonic = list.get(index);
-        if (monotonic.isBound()) {
-            return monotonic.orThrow();
+        Lazy<V> lazy = list.get(index);
+        if (lazy.isBound()) {
+            return lazy.orThrow();
         }
         V newValue = mapper.apply(index);
-        return monotonic.bindIfUnbound(newValue);
+        return lazy.bindIfUnbound(newValue);
     }
 
-    public static <V> IntFunction<V> asMemoized(int size,
+/*    public static <V> IntFunction<V> asMemoized(int size,
                                                 IntFunction<? extends V> mapper) {
         List<Monotonic<V>> list = Monotonic.ofList(size);
         IntFunction<V> guardedMapper = new IntFunction<>() {
@@ -156,6 +156,6 @@ public final class MonotonicList<V>
                 return computeIfUnbound(list, value, guardedMapper);
             }
         };
-    }
+    }*/
 
 }

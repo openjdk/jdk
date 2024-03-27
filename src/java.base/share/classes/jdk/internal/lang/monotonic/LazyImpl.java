@@ -32,10 +32,10 @@ import java.util.function.Supplier;
 
 import static jdk.internal.lang.monotonic.MonotonicUtil.*;
 
-public final class MonotonicImpl<V> implements Monotonic<V> {
+public final class LazyImpl<V> implements Lazy<V> {
 
     private static final long VALUE_OFFSET =
-            UNSAFE.objectFieldOffset(MonotonicImpl.class, "value");
+            UNSAFE.objectFieldOffset(LazyImpl.class, "value");
 
     private static final Object NULL_SENTINEL = new Object();
 
@@ -46,7 +46,7 @@ public final class MonotonicImpl<V> implements Monotonic<V> {
     @Stable
     private Object value;
 
-    MonotonicImpl() {}
+    LazyImpl() {}
 
     @ForceInline
     @Override
@@ -152,18 +152,29 @@ public final class MonotonicImpl<V> implements Monotonic<V> {
 
     // Factories
 
-    public static <V> Monotonic<V> of() {
-        return new MonotonicImpl<>();
+    public static <V> Lazy<V> of() {
+        return new LazyImpl<>();
+    }
+
+    public static <V> Lazy<V> ofBackground(Supplier<? extends V> supplier) {
+        Lazy<V> lazy = Lazy.of();
+        Thread.ofVirtual()
+                .start(() -> {
+                    try {
+                        lazy.computeIfUnbound(supplier);
+                    } catch (Exception _) {}
+                });
+        return lazy;
     }
 
     public static <V> Supplier<V> asMemoized(Supplier<? extends V> supplier) {
-        Monotonic<V> monotonic = Monotonic.of();
+        Lazy<V> lazy = Lazy.of();
         Supplier<V> guardedSupplier = new Supplier<>() {
             @Override
             public V get() {
-                synchronized (monotonic) {
-                    if (monotonic.isBound()) {
-                        return monotonic.orThrow();
+                synchronized (lazy) {
+                    if (lazy.isBound()) {
+                        return lazy.orThrow();
                     }
                 }
                 return supplier.get();
@@ -172,7 +183,7 @@ public final class MonotonicImpl<V> implements Monotonic<V> {
         return new Supplier<>() {
             @Override
             public V get() {
-                return monotonic.computeIfUnbound(guardedSupplier);
+                return lazy.computeIfUnbound(guardedSupplier);
             }
         };
     }

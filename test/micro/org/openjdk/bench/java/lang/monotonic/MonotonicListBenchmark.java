@@ -28,6 +28,7 @@ import org.openjdk.jmh.annotations.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 
 /**
@@ -39,29 +40,31 @@ import java.util.stream.IntStream;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 2, jvmArgsAppend = "--enable-preview")
-@OperationsPerInvocation(100)
 public class MonotonicListBenchmark {
 
+    private static final IntFunction<Integer> FUNCTION = i -> i;
     private static final int SIZE = 100;
 
-    private static final List<Monotonic<Integer>> WRAPPED =
+    private static final List<Lazy<Integer>> WRAPPED =
             IntStream.range(0, SIZE)
-                    .mapToObj(_ -> Monotonic.<Integer>of())
+                    .mapToObj(_ -> Lazy.<Integer>of())
                     .toList();
     static {
         WRAPPED.get(8).bindOrThrow(8);
     }
 
-    private static final List<Monotonic<Integer>> MONOTONIC_LIST = initMono(Monotonic.ofList(SIZE));
+    //private static final List<Monotonic<Integer>> MONOTONIC_LIST = initMono(Monotonic.ofList(SIZE));
     private static final List<Integer> ARRAY_LIST = initList(new ArrayList<>(SIZE));
+    private static final List<Integer> LAZY_LIST = List.ofLazy(SIZE, FUNCTION);
 
-    private final List<Monotonic<Integer>> referenceList = initMono(Monotonic.ofList(SIZE));
+    //private final List<Monotonic<Integer>> referenceList = initMono(Monotonic.ofList(SIZE));
     private final List<Integer> arrayList = initList(new ArrayList<>(SIZE));
-    private final List<Monotonic<Integer>> wrappedList;
+    private final List<Integer> lazyList = List.ofLazy(SIZE, FUNCTION);
+    private final List<Lazy<Integer>> wrappedList;
 
     public MonotonicListBenchmark() {
         this.wrappedList = IntStream.range(0, SIZE)
-                .mapToObj(i -> Monotonic.<Integer>of())
+                .mapToObj(i -> Lazy.<Integer>of())
                 .toList();
         wrappedList.get(8).bindOrThrow(8);
     }
@@ -70,10 +73,12 @@ public class MonotonicListBenchmark {
     public void setup() {
     }
 
+/*
     @Benchmark
     public Integer staticMonotonic() {
         return MONOTONIC_LIST.get(8).orThrow();
     }
+*/
 
     @Benchmark
     public Integer staticArrayList() {
@@ -81,9 +86,16 @@ public class MonotonicListBenchmark {
     }
 
     @Benchmark
+    public Integer staticLazyList() {
+        return LAZY_LIST.get(8);
+    }
+
+/*
+    @Benchmark
     public Integer instanceMonotonic() {
         return referenceList.get(8).orThrow();
     }
+*/
 
     @Benchmark
     public Integer instanceArrayList() {
@@ -91,19 +103,24 @@ public class MonotonicListBenchmark {
     }
 
     @Benchmark
+    public Integer instanceLazyList() {
+        return lazyList.get(8);
+    }
+
+    @Benchmark
     public Integer instanceWrapped() {
         return wrappedList.get(8).orThrow();
     }
 
-    private static List<Monotonic<Integer>> initMono(List<Monotonic<Integer>> list) {
-        list.get(8).bindOrThrow(8);
+    private static List<Lazy<Integer>> initMono(List<Lazy<Integer>> list) {
+        int index = 8;
+        list.get(index).bindOrThrow(FUNCTION.apply(index));
         return list;
     }
 
     private static List<Integer> initList(List<Integer> list) {
         for (int i = 0; i < 9; i++) {
-            list.add(i);
-
+            list.add(FUNCTION.apply(i));
         }
         return list;
     }

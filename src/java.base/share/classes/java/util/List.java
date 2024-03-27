@@ -25,6 +25,10 @@
 
 package java.util;
 
+import jdk.internal.javac.PreviewFeature;
+
+import java.io.Serializable;
+import java.util.function.IntFunction;
 import java.util.function.UnaryOperator;
 
 /**
@@ -1190,4 +1194,40 @@ public interface List<E> extends SequencedCollection<E> {
     static <E> List<E> copyOf(Collection<? extends E> coll) {
         return ImmutableCollections.listCopy(coll);
     }
+
+    /**
+     * {@return an unmodifiable, shallowly immutable, thread-safe, lazy,
+     * {@linkplain List} containing {@code size} elements which are
+     * lazily computed upon being first accessed (e.g. via {@linkplain List#get(int)})
+     * by invoking the provided {@code mapper} at most once per element}
+     * <p>
+     * The provided {@code mapper} must not return {@code null} values.
+     * <p>
+     * The returned List is not {@linkplain Serializable}.
+     * <p>
+     * The returned monotonic map is eligible for constant folding and other
+     * optimizations by the JVM.
+     *
+     * @param <E>    the {@code List}'s element type
+     * @param size   the number of elements in the list
+     * @param mapper to invoke upon lazily computing element values
+     * @throws NullPointerException if the provided {@code mapper} is {@code null}
+     *
+     * @since 23
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.LAZY_COLLECTIONS_AND_VALUES)
+    static <E> List<E> ofLazy(int size, IntFunction<? extends E> mapper) {
+        if (size < 0) {
+            throw new IllegalArgumentException();
+        }
+        Objects.requireNonNull(mapper);
+        if (size == 0) {
+            return ImmutableCollections.LazyListEmpty.instance();
+        }
+        if (size == 1) {
+            return ImmutableCollections.LazyListSingleton.create(mapper);
+        }
+        return ImmutableCollections.LazyListN.create(size, mapper);
+    }
+
 }

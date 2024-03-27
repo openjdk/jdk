@@ -22,9 +22,9 @@
  */
 
 /* @test
- * @summary Basic tests for Monotonic implementations
- * @compile --enable-preview -source ${jdk.version} BasicMonotonicTest.java
- * @run junit/othervm --enable-preview BasicMonotonicTest
+ * @summary Basic tests for Lazy implementations
+ * @compile --enable-preview -source ${jdk.version} BasicLazyTest.java
+ * @run junit/othervm --enable-preview BasicLazyTest
  */
 
 import org.junit.jupiter.api.BeforeEach;
@@ -40,16 +40,16 @@ import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class BasicMonotonicTest {
+final class BasicLazyTest {
 
     private static final int FIRST = 42;
     private static final int SECOND = 13;
 
-    private Monotonic<Integer> m;
+    private Lazy<Integer> m;
 
     @BeforeEach
     void setup() {
-        m = Monotonic.of();
+        m = Lazy.of();
     }
 
     @Test
@@ -101,7 +101,7 @@ final class BasicMonotonicTest {
         };
         assertDoesNotThrow(() -> m.computeIfUnbound(throwingSupplier));
 
-        var m2 = Monotonic.of();
+        var m2 = Lazy.of();
         m2.computeIfUnbound(() -> FIRST);
         assertEquals(FIRST, m2.orThrow());
     }
@@ -119,7 +119,7 @@ final class BasicMonotonicTest {
     @Test
     void memoized() {
         CountingSupplier<Integer> cSup = new CountingSupplier<>(() -> FIRST);
-        Monotonic<Integer> m3 = Monotonic.of();
+        Lazy<Integer> m3 = Lazy.of();
         Supplier<Integer> memoized = () -> m3.computeIfUnbound(cSup);
         assertEquals(FIRST, memoized.get());
         // Make sure the original supplier is not invoked more than once
@@ -130,10 +130,10 @@ final class BasicMonotonicTest {
     @Test
     void reflection() throws NoSuchFieldException {
         final class Holder {
-            private final Monotonic<Integer> monotonic = Monotonic.of();
+            private final Lazy<Integer> monotonic = Lazy.of();
         }
         final class HolderNonFinal {
-            private Monotonic<Integer> monotonic = Monotonic.of();
+            private Lazy<Integer> monotonic = Lazy.of();
         }
 
         Field field = Holder.class.getDeclaredField("monotonic");
@@ -153,7 +153,7 @@ final class BasicMonotonicTest {
         sun.misc.Unsafe unsafe = (sun.misc.Unsafe)unsafeField.get(null);
 
         final class Holder {
-            private final Monotonic<Integer> monotonic = Monotonic.of();
+            private final Lazy<Integer> monotonic = Lazy.of();
         }
         Field field = Holder.class.getDeclaredField("monotonic");
         assertThrows(UnsupportedOperationException.class, () ->
@@ -166,21 +166,21 @@ final class BasicMonotonicTest {
     void varHandle() throws NoSuchFieldException, IllegalAccessException {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
 
-        Monotonic<Integer> original = Monotonic.of();
+        Lazy<Integer> original = Lazy.of();
 
         final class Holder {
-            private final Monotonic<Integer> monotonic = original;
+            private final Lazy<Integer> monotonic = original;
         }
 
-        VarHandle varHandle = lookup.findVarHandle(Holder.class, "monotonic", Monotonic.class);
+        VarHandle varHandle = lookup.findVarHandle(Holder.class, "monotonic", Lazy.class);
         Holder holder = new Holder();
 
         assertThrows(UnsupportedOperationException.class, () ->
-                varHandle.set(holder, Monotonic.of())
+                varHandle.set(holder, Lazy.of())
         );
 
         assertThrows(UnsupportedOperationException.class, () ->
-                varHandle.compareAndSet(holder, original, Monotonic.of())
+                varHandle.compareAndSet(holder, original, Lazy.of())
         );
 
     }

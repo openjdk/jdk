@@ -23,16 +23,26 @@
 
 package org.openjdk.bench.java.lang.monotonic;
 
-import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OperationsPerInvocation;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
+import java.util.function.IntFunction;
+import java.util.stream.Stream;
 
 /**
- * Benchmark measuring monotonic list performance
+ * Benchmark measuring lazy list performance
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -41,22 +51,23 @@ import java.util.stream.IntStream;
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 2, jvmArgsAppend = "--enable-preview")
 @OperationsPerInvocation(1000)
-public class MonotonicSmallListBenchmark {
+public class LazyListBenchmark {
 
+    private static final IntFunction<Integer> FUNCTION = i -> i;
     private static final int SIZE = 1_000;
 
-    //private static final List<Monotonic<Integer>> MONOTONIC_LAZY = randomMono(Monotonic.ofList(SIZE));
-    private final List<Lazy<Integer>> Lazy_EAGER = randomMono(IntStream.range(0, SIZE)
-            .mapToObj(_ -> Lazy.<Integer>of())
+    private static final List<Integer> LAZY = List.ofLazy(SIZE, FUNCTION);
+    private final List<Lazy<Integer>> Lazy_EAGER = initMonotonic(Stream.generate(Lazy::<Integer>of)
+            .limit(SIZE)
             .toList());
 
-    private static final List<Integer> ARRAY_LIST = random(new ArrayList<>(SIZE));
+    private static final List<Integer> ARRAY_LIST = init(new ArrayList<>(SIZE));
 
-    //private final List<Monotonic<Integer>> monotonicLazy = randomMono(Monotonic.ofList(SIZE));
-    private final List<Lazy<Integer>> lazyEager = randomMono(IntStream.range(0, SIZE)
-                     .mapToObj(_ -> Lazy.<Integer>of())
-                     .toList());
-    private static final List<Integer> arrayList = random(new ArrayList<>(SIZE));
+    private final List<Integer> lazy = List.ofLazy(SIZE, FUNCTION);
+    private final List<Lazy<Integer>> lazyEager = initMonotonic(Stream.generate(Lazy::<Integer>of)
+            .limit(SIZE)
+            .toList());
+    private static final List<Integer> arrayList = init(new ArrayList<>(SIZE));
 
     @Setup
     public void setup() {
@@ -80,14 +91,14 @@ public class MonotonicSmallListBenchmark {
         return sum;
     }
 
-/*    @Benchmark
-    public int instanceMonotonicLazy() {
+    @Benchmark
+    public int instanceLazy() {
         int sum = 0;
-        for (int i = 0; i < monotonicLazy.size(); i++) {
-            sum += monotonicLazy.get(i).orThrow();
+        for (int i = 0; i < lazy.size(); i++) {
+            sum += lazy.get(i);
         }
         return sum;
-    }*/
+    }
 
     @Benchmark
     public int staticArrayList() {
@@ -107,27 +118,25 @@ public class MonotonicSmallListBenchmark {
         return sum;
     }
 
-/*    @Benchmark
-    public int staticMonotonicLazy() {
+    @Benchmark
+    public int staticLazy() {
         int sum = 0;
-        for (int i = 0; i < MONOTONIC_LAZY.size(); i++) {
-            sum += MONOTONIC_LAZY.get(i).orThrow();
+        for (int i = 0; i < LAZY.size(); i++) {
+            sum += LAZY.get(i);
         }
         return sum;
-    }*/
+    }
 
-    private static List<Lazy<Integer>> randomMono(List<Lazy<Integer>> list) {
-        Random rnd = new Random();
+    private static List<Lazy<Integer>> initMonotonic(List<Lazy<Integer>> list) {
         for (int i = 0; i < SIZE; i++) {
-            list.get(i).bindOrThrow(rnd.nextInt(0, SIZE));
+            list.get(i).bindOrThrow(FUNCTION.apply(i));
         }
         return list;
     }
 
-    private static List<Integer> random(List<Integer> list) {
-        Random rnd = new Random();
+    private static List<Integer> init(List<Integer> list) {
         for (int i = 0; i < SIZE; i++) {
-            list.add(rnd.nextInt(0, Integer.SIZE));
+            list.add(FUNCTION.apply(i));
         }
         return list;
     }

@@ -26,34 +26,62 @@
 package java.lang;
 
 import jdk.internal.javac.PreviewFeature;
-import jdk.internal.lang.monotonic.MonotonicImpl;
-import jdk.internal.lang.monotonic.MonotonicList;
-import jdk.internal.lang.monotonic.MonotonicMap;
+import jdk.internal.lang.monotonic.LazyImpl;
 
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static jdk.internal.javac.PreviewFeature.*;
 
 /**
- * A <em>monotonic value</em> that can be atomically bound at most once.
+ * An atomic, thread-safe, non-blocking <em>lazy value</em> that can be bound at most once.
  * <p>
- * Monotonic values are eligible for constant folding and other optimizations by the JVM.
+ * Lazy values are eligible for constant folding and other optimizations by the JVM.
  * <p>
- * The state of a monotonic value can only go from <em>unbound</em> to <em>bound</em> and
- * consequently, a value can only be bound at most once.
+ * A Lazy value is monotonic because the state of a lazy value can only go from
+ * <em>unbound</em> to <em>bound</em> and consequently, a value can only be bound
+ * at most once.
+ * <p>
+ * Lazy collections, that are operating directly on element/values, are available via
+ * the factories:
+ * <ul>
+ *     <li>{@linkplain List#ofLazy(int, IntFunction)}</li>
+ *     <li>{@linkplain Set#ofLazy(Set, Predicate)}</li>
+ *     <li>{@linkplain Set#ofLazyEnum(Set, Predicate)}</li>
+ *     <li>{@linkplain Map#ofLazy(Set, Function)}</li>
+ *     <li>{@linkplain Map#ofLazyEnum(Set, Function)}</li>
+ * </ul>
+ * The returned collections above are all eligible for constant folding optimizations.
+ * <p>
+ * To create collections of <em>wrapped Lazy elements</em>, that, in turn, are also
+ * eligible for constant folding optimizations, the following patterns can be used:
+ * <ul>
+ *     <li>{@snippet lang=java :
+ *     List<Lazy<V>> list = Stream.generate(Lazy::<V>of)
+ *             .limit(size)
+ *             .toList();
+ *     }</li>
  *
- * @implSpec The implementation of this interface is thread-safe, atomic, and non-blocking.
+ * <li>{@snippet lang=java :
+ *     Map<K, Lazy<V>> map = Map.copyOf(keys.stream()
+ *             .distinct()
+ *             .map(Objects::requireNonNull)
+ *             .collect(Collectors.toMap(Function.identity(), _ -> Lazy.of())));
+ *     }</li>
+ *</ul>>
  *
  * @param <V> value type
  * @since 23
  */
-@PreviewFeature(feature = Feature.MONOTONIC_VALUES)
-public sealed interface Monotonic<V> permits MonotonicImpl {
+@PreviewFeature(feature = Feature.LAZY_COLLECTIONS_AND_VALUES)
+public sealed interface Lazy<V> permits LazyImpl {
 
     /**
      * {@return the bound value (nullable) if bound, otherwise throws
@@ -69,7 +97,7 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
     boolean isBound();
 
     /**
-     * Binds the monotonic value to the provided (nullable) {@code value} or throws an
+     * Binds the lazy value to the provided (nullable) {@code value} or throws an
      * exception if a value is already bound.
      *
      * @param value to bind
@@ -78,7 +106,7 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
     void bindOrThrow(V value);
 
     /**
-     * If no value is bound, binds the monotonic value to the provided (nullable)
+     * If no value is bound, binds the lazy value to the provided (nullable)
      * {@code value}, returning the (pre-existing or newly bound) value.
      * <p>
      * If several threads invoke this method simultaneously, only one thread will succeed
@@ -100,18 +128,18 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
      * lazily computed value or memoized result, as in:
      *
      * <pre> {@code
-     * Value witness = monotonic.computeIfUnbound(Value::new);
+     * Value witness = lazy.computeIfUnbound(Value::new);
      * }</pre>
      *
      * @implSpec The implementation logic is equivalent to the following steps for this
-     * {@code monotonic}:
+     * {@code lazy}:
      *
      * <pre> {@code
-     * if (monotonic.isBound()) {
-     *     return monotonic.get();
+     * if (lazy.isBound()) {
+     *     return lazy.get();
      * } else {
      *     V newValue = supplier.get();
-     *     monotonic.put(newValue);
+     *     lazy.put(newValue);
      *     return newValue;
      * }
      * }</pre>
@@ -121,76 +149,58 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
      *
      * @param supplier to be used for computing a value
      * @return the current (pre-existing or computed) value
-     * @see Monotonics#asSupplier(Supplier)
      */
     V computeIfUnbound(Supplier<? extends V> supplier);
 
     // Factories
 
     /**
-     * {@return a fresh Monotonic with an unbound value}
+     * {@return a fresh lazy with an unbound value}
      *
      * @param <V> the value type to bind
      */
-    static <V> Monotonic<V> of() {
-        return MonotonicImpl.of();
+    static <V> Lazy<V> of() {
+        return LazyImpl.of();
     }
 
     /**
-     * {@return a new unmodifiable, shallowly immutable, thread-safe, lazy, non-blocking
-     * {@linkplain List } of {@code size} fresh distinct unbound monotonic values}
+     * {@return a new lazy with an unbound value where the returned lazy's
+     * value is computed in a separate fresh background thread using the provided
+     * (@code supplier}}
      * <p>
-     * The returned {@code List} is equivalent to the following List:
-     * {@snippet lang=java :
-     * List<Monotonic<V>> list = Stream.generate(Monotonic::<V>of)
-     *         .limit(size)
-     *         .toList();
-     * }
-     * except it creates the list's elements lazily as they are accessed.
-     * <p>
-     * The returned monotonic list is eligible for constant folding and other
-     * optimizations by the JVM.
+     * If the supplier throws an (unchecked) exception, the exception is ignored, and no
+     * value is bound.
      *
-     * @param size the size of the returned monotonic list
-     * @param <V>  the value type for the Monotonic elements in this list
-     * @see List#of()
+     * @param <V>      the value type to bind
+     * @param supplier to be used for computing a value
+     * @see Lazy#of
      */
-    static <V> List<Monotonic<V>> ofList(int size) {
-        if (size < 0) {
-            throw new IllegalArgumentException();
-        }
-        return MonotonicList.of(size);
+    static <V> Lazy<V> ofBackground(Supplier<? extends V> supplier) {
+        Objects.requireNonNull(supplier);
+        return LazyImpl.ofBackground(supplier);
     }
 
     /**
-     * {@return a new unmodifiable, shallowly immutable, thread-safe, value-lazy,
-     * non-blocking {@linkplain Map } where the {@linkplain java.util.Map#keySet() keys}
-     * contains precisely the distinct provided set of {@code keys} and where the
-     * values are fresh distinct unbound monotonic values}
+     * {@return a wrapped, thread-safe, memoized supplier backed by a new empty
+     * lazy value where the memoized value is obtained by invoking the provided
+     * {@code suppler} at most once}
      * <p>
-     * The returned {@code Map} is equivalent to the following Map:
-     * {@snippet lang=java :
-     * Map<K, Monotonic<V>> map = Map.copyOf(keys.stream()
-     *         .distinct()
-     *         .map(Objects::requireNonNull)
-     *         .collect(Collectors.toMap(Function.identity(), _ -> Monotonic.of())));
-     * }
-     * except it creates the map's values lazily as they are accessed.
-     * <p>
-     * The returned monotonic map is eligible for constant folding and other
-     * optimizations by the JVM.
+     * The returned memoized {@code Supplier} is equivalent to the following supplier:
+     * {@snippet lang = java:
+     * Lazy<V> lazy = Lazy.of();
+     * Supplier<V> memoized = () -> lazy.computeIfUnbound(supplier);
+     *}
+     * except it promises the provided {@code supplier} is invoked at most once once
+     * even though the returned memoized Supplier is invoked simultaneously
+     * by several threads. The method will block, if a computation is already in progress.
      *
-     * @param keys the keys in the map
-     * @param <K>  the type of keys maintained by the returned map
-     * @param <V>  the value type for the Monotonic values in this map
-     * @see Map#of()
+     * @param supplier   to be used for computing a value
+     * @param <V>        the type of the value to memoize
+     * @see Lazy#computeIfUnbound(Supplier)
      */
-    static <K, V> Map<K, Monotonic<V>> ofMap(Set<? extends K> keys) {
-        Objects.requireNonNull(keys);
-        // Checks for null keys and removes any duplicates
-        Object[] keyArray = Set.copyOf(keys)
-                .toArray();
-        return MonotonicMap.ofMap(keyArray);
+    static <V> Supplier<V> asSupplier(Supplier<? extends V> supplier) {
+        Objects.requireNonNull(supplier);
+        return LazyImpl.asMemoized(supplier);
     }
 
 }

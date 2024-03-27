@@ -25,6 +25,12 @@
 
 package java.util;
 
+import jdk.internal.javac.PreviewFeature;
+
+import java.io.Serializable;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
 /**
  * A collection that contains no duplicate elements.  More formally, sets
  * contain no pair of elements {@code e1} and {@code e2} such that
@@ -734,4 +740,53 @@ public interface Set<E> extends Collection<E> {
             return (Set<E>)Set.of(new HashSet<>(coll).toArray());
         }
     }
+
+    /**
+     * {@return an unmodifiable, shallowly immutable, thread-safe, lazy,
+     * {@linkplain Set } where the computation of the {@linkplain java.util.Set#contains(Object)}
+     * operation is deferred to when first being called and can only be made for the
+     * distinct provided set of {@code elements} and where the elements' existence
+     * is lazily computed upon being first queried by invoking the provided
+     * {@code predicate} at most once per element}
+     * <p>
+     * The returned set is not {@linkplain Serializable}.
+     * <p>
+     * The returned set is eligible for constant folding and other
+     * optimizations by the JVM.
+     *
+     * @param candidates the potential elements in the set
+     * @param predicate  to apply when lazily computing containment
+     * @param <E>        the type of elements maintained by this set
+     * @throws NullPointerException if the provided {@code keys} or the provided
+     *         {@code mapper} is null
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.LAZY_COLLECTIONS_AND_VALUES)
+    static <E> Set<E> ofLazy(Set<? extends E> candidates, Predicate<? super E> predicate) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@return an unmodifiable, shallowly immutable, thread-safe, lazy,
+     * {@linkplain Set } where the computation of the {@linkplain java.util.Set#contains(Object)}
+     * operation is deferred to when first being called and can only be made for the
+     * distinct provided set of {@code elements} and where the elements' existence
+     * is lazily computed upon being first queried by invoking the provided
+     * {@code predicate} at most once per element}
+     * <p>
+     * The returned set is not {@linkplain Serializable}.
+     * <p>
+     * The returned set is eligible for constant folding and other
+     * optimizations by the JVM.
+     *
+     * @param elements  the elements in the set
+     * @param predicate to apply when lazily computing containment
+     * @param <E>       the type of elements maintained by this set
+     * @throws NullPointerException if the provided {@code keys} or the provided
+     *         {@code mapper} is null
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.LAZY_COLLECTIONS_AND_VALUES)
+    static <E extends Enum<E>> Set<E> ofLazyEnum(Set<E> elements, Predicate<? super E> predicate) {
+        throw new UnsupportedOperationException();
+    }
+
 }

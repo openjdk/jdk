@@ -29,12 +29,12 @@ import jdk.internal.misc.Unsafe;
 
 import static jdk.internal.misc.Unsafe.*;
 
-final class MonotonicUtil {
+public final class MonotonicUtil {
 
     private MonotonicUtil() {
     }
 
-    static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    public static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     static UnsupportedOperationException uoe() {
         return new UnsupportedOperationException();
@@ -47,14 +47,14 @@ final class MonotonicUtil {
      * This inserts a memory barrier, thereby establishing a happens-before constraint.
      * This prevents the reordering of store operations across the freeze boundary.
      */
-    static void freeze() {
+    public static void freeze() {
         // Issue a store fence, which is sufficient
         // to provide protection against store/store reordering.
         // See VarHandle::releaseFence
         UNSAFE.storeFence();
     }
 
-    static long objectOffset(int index) {
+    public static long objectOffset(int index) {
         return ARRAY_OBJECT_BASE_OFFSET + (long) index * ARRAY_OBJECT_INDEX_SCALE;
     }
 

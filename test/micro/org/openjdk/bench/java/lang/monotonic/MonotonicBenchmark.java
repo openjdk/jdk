@@ -41,10 +41,10 @@ public class MonotonicBenchmark {
 
     private static final int VALUE = 42;
 
-    private static final Monotonic<Integer> MONOTONIC = init(Monotonic.of());
+    private static final Lazy<Integer> LAZY = init(Lazy.of());
     private static final Supplier<Integer> DCL = new Dcl<>(() -> VALUE);
 
-    private final Monotonic<Integer> monotonic = init(Monotonic.of());
+    private final Lazy<Integer> lazy = init(Lazy.of());
     private final Supplier<Integer> dcl = new Dcl<>(() -> VALUE);
 
     @Setup
@@ -53,7 +53,7 @@ public class MonotonicBenchmark {
 
     @Benchmark
     public int staticMonotonic() {
-        return MONOTONIC.orThrow();
+        return LAZY.orThrow();
     }
 
     @Benchmark
@@ -72,7 +72,7 @@ public class MonotonicBenchmark {
 
     @Benchmark
     public int instanceMonotonic() {
-        return monotonic.orThrow();
+        return lazy.orThrow();
     }
 
     @Benchmark
@@ -80,7 +80,7 @@ public class MonotonicBenchmark {
         return dcl.get();
     }
 
-    private static Monotonic<Integer> init(Monotonic<Integer> m) {
+    private static Lazy<Integer> init(Lazy<Integer> m) {
         m.bindOrThrow(VALUE);
         return m;
     }
