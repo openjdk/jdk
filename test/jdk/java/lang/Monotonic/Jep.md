@@ -142,8 +142,7 @@ class ErrorMessages {
     //    time a particular message number is referenced
     private static String readFromFile(int messageNumber) {
         try {
-            return Files.lines(Path.of("message-" + messageNumber + ".html"))
-                    .collect(Collectors.joining());
+            return Files.readString(Path.of("message-" + messageNumber + ".html"));                    
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -164,7 +163,12 @@ class ErrorMessages {
 ```
 We can now retrieve an error page like so:
 ```
-String errorPage = ErrorMessages.errorPage(2); // "Payment was denied: Insufficient funds."
+String errorPage = ErrorMessages.errorPage(2);
+// <!DOCTYPE html>
+// <html lang="en">
+//   <head><meta charset="utf-8"></head>
+//   <body>Payment was denied: Insufficient funds.</body>
+// </html>
 ```
 
 Unfortunately, this approach provides a number of challenges. First, retrieving the values
@@ -312,8 +316,7 @@ class ErrorMessages {
     //    time a particular message number is referenced
     private static String readFromFile(int messageNumber) {
         try {
-            return Files.lines(Path.of("message-" + messageNumber + ".html"))
-                     .collect(Collectors.joining());
+            return Files.readString(Path.of("message-" + messageNumber + ".html"));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -331,7 +334,12 @@ class ErrorMessages {
 Just like before, we can perform retrieval of error pages like this:
 
 ```
-String errorPage = ErrorMessages.errorPage(2); // "Payment was denied: Insufficient funds."
+String errorPage = ErrorMessages.errorPage(2);
+// <!DOCTYPE html>
+// <html lang="en">
+//   <head><meta charset="utf-8"></head>
+//   <body>Payment was denied: Insufficient funds.</body>
+// </html>
 ```
 
 Note how there's only one field of type `List<String>` to initialize even though every computation is

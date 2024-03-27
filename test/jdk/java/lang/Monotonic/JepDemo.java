@@ -198,8 +198,7 @@ final class JepDemo {
         //    time a particular message number is referenced
         private static String readFromFile(int messageNumber) {
             try {
-                return Files.lines(Path.of("message-" + messageNumber + ".html"))
-                        .collect(Collectors.joining());
+                return Files.readString(Path.of("message-" + messageNumber + ".html"));
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -233,8 +232,7 @@ final class JepDemo {
             //    time a particular message number is referenced
             private static String readFromFile(int messageNumber) {
                 try {
-                    return Files.lines(Path.of("message-" + messageNumber + ".html"))
-                            .collect(Collectors.joining());
+                    return Files.readString(Path.of("message-" + messageNumber + ".html"));
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
