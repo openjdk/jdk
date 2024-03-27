@@ -923,6 +923,35 @@ void universe_oopstorage_init() {
   Universe::oopstorage_init();
 }
 
+void LatestMethodCache::init(JavaThread* current, InstanceKlass* ik,
+                             const char* method, Symbol* signature, bool is_static)
+{
+  TempNewSymbol name = SymbolTable::new_symbol(method);
+  Method* m = nullptr;
+  // The klass must be linked before looking up the method.
+  if (!ik->link_class_or_fail(current) ||
+      ((m = ik->find_method(name, signature)) == nullptr) ||
+      is_static != m->is_static()) {
+    ResourceMark rm(current);
+    // NoSuchMethodException doesn't actually work because it tries to run the
+    // <init> function before java_lang_Class is linked. Print error and exit.
+    vm_exit_during_initialization(err_msg("Unable to link/verify %s.%s method",
+                                 ik->name()->as_C_string(), method));
+  }
+
+  _klass = ik;
+  _method_idnum = m->method_idnum();
+  assert(_method_idnum >= 0, "sanity check");
+}
+
+Method* LatestMethodCache::get_method() {
+  if (klass() == nullptr) return nullptr;
+  InstanceKlass* ik = InstanceKlass::cast(klass());
+  Method* m = ik->method_with_idnum(method_idnum());
+  assert(m != nullptr, "sanity check");
+  return m;
+}
+
 Method* Universe::finalizer_register_method()     { return _finalizer_register_cache.get_method(); }
 Method* Universe::loader_addClass_method()        { return _loader_addClass_cache.get_method(); }
 Method* Universe::throw_illegal_access_error()    { return _throw_illegal_access_error_cache.get_method(); }
@@ -1238,35 +1267,6 @@ uintptr_t Universe::verify_mark_bits() {
   return bits;
 }
 #endif // PRODUCT
-
-void LatestMethodCache::init(JavaThread* current, InstanceKlass* ik,
-                             const char* method, Symbol* signature, bool is_static)
-{
-  TempNewSymbol name = SymbolTable::new_symbol(method);
-  Method* m = nullptr;
-  // The klass must be linked before looking up the method.
-  if (!ik->link_class_or_fail(current) ||
-      ((m = ik->find_method(name, signature)) == nullptr) ||
-      is_static != m->is_static()) {
-    ResourceMark rm(current);
-    // NoSuchMethodException doesn't actually work because it tries to run the
-    // <init> function before java_lang_Class is linked. Print error and exit.
-    vm_exit_during_initialization(err_msg("Unable to link/verify %s.%s method",
-                                 ik->name()->as_C_string(), method));
-  }
-
-  _klass = ik;
-  _method_idnum = m->method_idnum();
-  assert(_method_idnum >= 0, "sanity check");
-}
-
-Method* LatestMethodCache::get_method() {
-  if (klass() == nullptr) return nullptr;
-  InstanceKlass* ik = InstanceKlass::cast(klass());
-  Method* m = ik->method_with_idnum(method_idnum());
-  assert(m != nullptr, "sanity check");
-  return m;
-}
 
 #ifdef ASSERT
 // Release dummy object(s) at bottom of heap
