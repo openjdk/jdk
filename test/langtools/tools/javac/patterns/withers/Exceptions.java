@@ -99,7 +99,7 @@ public class Exceptions {
             }
             return s2;
         }
-        
+
     }
 
     public static class Intentional extends RuntimeException {
