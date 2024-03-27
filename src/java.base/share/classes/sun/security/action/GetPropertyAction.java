@@ -243,9 +243,9 @@ public class GetPropertyAction implements PrivilegedAction<String> {
         }
 
         String lower = rawPropVal.toLowerCase(Locale.ROOT);
-        if (lower.equals("true")) {
+        if ("true".equals(lower)) {
             return true;
-        } else if (lower.equals("false")) {
+        } else if ("false".equals(lower)) {
             return false;
         } else {
             if (dbg != null) {
