@@ -850,10 +850,8 @@ public class CSS implements Serializable {
             return null;
         }
         String newValue = underline && strikeThrough
-                               ? "underline,line-through"
-                               : underline
-                                         ? "underline"
-                                         : "line-through";
+                          ? "underline,line-through"
+                          : (underline ? "underline" : "line-through");
         return new StringValue().parseCssValue(newValue);
     }
 
