@@ -81,7 +81,7 @@ import static jdk.internal.javac.PreviewFeature.*;
  * @param <V> value type
  * @since 23
  */
-@PreviewFeature(feature = Feature.LAZY_COLLECTIONS_AND_VALUES)
+@PreviewFeature(feature = Feature.LAZY_VALUES_AND_COLLECTIONS)
 public sealed interface Lazy<V> permits LazyImpl {
 
     /**

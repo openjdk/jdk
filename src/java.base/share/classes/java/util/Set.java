@@ -28,7 +28,6 @@ package java.util;
 import jdk.internal.javac.PreviewFeature;
 
 import java.io.Serializable;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -761,7 +760,7 @@ public interface Set<E> extends Collection<E> {
      * @throws NullPointerException if the provided {@code keys} or the provided
      *         {@code mapper} is null
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.LAZY_COLLECTIONS_AND_VALUES)
+    @PreviewFeature(feature = PreviewFeature.Feature.LAZY_VALUES_AND_COLLECTIONS)
     static <E> Set<E> ofLazy(Set<? extends E> candidates,
                              Predicate<? super E> predicate) {
         throw new UnsupportedOperationException();
@@ -786,7 +785,7 @@ public interface Set<E> extends Collection<E> {
      * @throws NullPointerException if the provided {@code enumType} or the provided
      *         {@code mapper} is null
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.LAZY_COLLECTIONS_AND_VALUES)
+    @PreviewFeature(feature = PreviewFeature.Feature.LAZY_VALUES_AND_COLLECTIONS)
     static <E extends Enum<E>> Set<E> ofLazy(Class<E> enumType,
                                              Predicate<? super E> predicate) {
         throw new UnsupportedOperationException();

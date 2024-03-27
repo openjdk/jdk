@@ -1216,7 +1216,7 @@ public interface List<E> extends SequencedCollection<E> {
      *
      * @since 23
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.LAZY_COLLECTIONS_AND_VALUES)
+    @PreviewFeature(feature = PreviewFeature.Feature.LAZY_VALUES_AND_COLLECTIONS)
     static <E> List<E> ofLazy(int size, IntFunction<? extends E> mapper) {
         if (size < 0) {
             throw new IllegalArgumentException();

@@ -1772,7 +1772,7 @@ public interface Map<K, V> {
      * @throws NullPointerException if the provided {@code keys} or the provided
      *         {@code mapper} is null
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.LAZY_COLLECTIONS_AND_VALUES)
+    @PreviewFeature(feature = PreviewFeature.Feature.LAZY_VALUES_AND_COLLECTIONS)
     static <K, V> Map<K, V> ofLazy(Set<? extends K> keys,
                                    Function<? super K, ? extends V> mapper) {
         throw new UnsupportedOperationException();
@@ -1800,7 +1800,7 @@ public interface Map<K, V> {
      * @throws NullPointerException if the provided {@code enumType} or the provided
      *         {@code mapper} is null
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.LAZY_COLLECTIONS_AND_VALUES)
+    @PreviewFeature(feature = PreviewFeature.Feature.LAZY_VALUES_AND_COLLECTIONS)
     static <K extends Enum<K>, V> Map<K, V> ofLazy(Class<K> enumType,
                                                    Function<? super K, ? extends V> mapper) {
         throw new UnsupportedOperationException();
