@@ -42,7 +42,6 @@
 class CollectedHeap;
 class DeferredObjAllocEvent;
 class OopStorage;
-class LatestMethodCache;
 class ReservedHeapSpace;
 class SerializeClosure;
 
@@ -88,12 +87,6 @@ class Universe: AllStatic {
 
   // preallocated cause message for delayed StackOverflowError
   static OopHandle    _delayed_stack_overflow_error_message;
-
-  static LatestMethodCache _finalizer_register_cache; // static method for registering finalizable objects
-  static LatestMethodCache _loader_addClass_cache;    // method for registering loaded classes in class loader vector
-  static LatestMethodCache _throw_illegal_access_error_cache; // Unsafe.throwIllegalAccessError() method
-  static LatestMethodCache _throw_no_such_method_error_cache; // Unsafe.throwNoSuchMethodError() method
-  static LatestMethodCache _do_stack_walk_cache;      // method for stack walker callback
 
   static Array<int>*            _the_empty_int_array;            // Canonicalized int array
   static Array<u2>*             _the_empty_short_array;          // Canonicalized short array

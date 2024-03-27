@@ -154,11 +154,12 @@ OopHandle Universe::_virtual_machine_error_instance;
 OopHandle Universe::_reference_pending_list;
 
 Array<Klass*>* Universe::_the_array_interfaces_array = nullptr;
-LatestMethodCache Universe::_finalizer_register_cache;
-LatestMethodCache Universe::_loader_addClass_cache;
-LatestMethodCache Universe::_throw_illegal_access_error_cache;
-LatestMethodCache Universe::_throw_no_such_method_error_cache;
-LatestMethodCache Universe::_do_stack_walk_cache;
+
+static LatestMethodCache _finalizer_register_cache; // static method for registering finalizable objects
+static LatestMethodCache _loader_addClass_cache;    // method for registering loaded classes in class loader vector
+static LatestMethodCache _throw_illegal_access_error_cache; // Unsafe.throwIllegalAccessError() method
+static LatestMethodCache _throw_no_such_method_error_cache; // Unsafe.throwNoSuchMethodError() method
+static LatestMethodCache _do_stack_walk_cache;      // method for stack walker callback
 
 long Universe::verify_flags                           = Universe::Verify_All;
 
