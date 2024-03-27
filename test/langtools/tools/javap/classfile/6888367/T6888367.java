@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -312,21 +312,14 @@ public class T6888367 {
         }
 
         public String visitWildcardType(Signature.TypeArg type) {
-            switch (type.wildcardIndicator()) {
-                case UNBOUNDED -> {
-                    return "W{?}";
-                }
-                case EXTENDS -> {
-                    return "W{e," + print(type.boundType().get()) + "}";
-                }
-                case SUPER -> {
-                    return "W{s," + print(type.boundType().get()) + "}";
-                }
-                default -> {
-                    if (type.boundType().isPresent()) return print(type.boundType().get());
-                    else throw new AssertionError();
-                }
-            }
+            return switch (type) {
+                case Signature.TypeArg.Unbounded _ -> "W{?}";
+                case Signature.TypeArg.Bounded b -> switch (b.wildcardIndicator()) {
+                    case EXTENDS -> "W{e," + print(b.boundType()) + "}";
+                    case SUPER -> "W{s," + print(b.boundType()) + "}";
+                    case NONE -> print(b.boundType());
+                };
+            };
         }
 
     };

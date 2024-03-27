@@ -366,16 +366,20 @@ public class ClassWriter extends BasicWriter {
         }
 
         private void print(StringBuilder sb, Signature.TypeArg ta) {
-            switch (ta.wildcardIndicator()) {
-                case DEFAULT -> print(sb, ta.boundType().get());
-                case UNBOUNDED -> sb.append('?');
-                case EXTENDS -> {
-                    sb.append("? extends ");
-                    print(sb, ta.boundType().get());
-                }
-                case SUPER -> {
-                    sb.append("? super ");
-                    print(sb, ta.boundType().get());
+            switch (ta) {
+                case Signature.TypeArg.Unbounded _ -> sb.append('?');
+                case Signature.TypeArg.Bounded bta -> {
+                    switch (bta.wildcardIndicator()) {
+                        case NONE -> print(sb, bta.boundType());
+                        case EXTENDS -> {
+                            sb.append("? extends ");
+                            print(sb, bta.boundType());
+                        }
+                        case SUPER -> {
+                            sb.append("? super ");
+                            print(sb, bta.boundType());
+                        }
+                    }
                 }
             }
         }
