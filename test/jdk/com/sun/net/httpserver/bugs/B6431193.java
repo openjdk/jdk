@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,52 +47,45 @@ public class B6431193 {
         i.close();
     }
 
-    /**
-     * @param args
-     */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         class MyHandler implements HttpHandler {
             public void handle(HttpExchange t) throws IOException {
-                InputStream is = t.getRequestBody();
-                read(is);
-                // .. read the request body
+                try (InputStream is = t.getRequestBody();
+                     OutputStream os = t.getResponseBody()) {
+                    read(is);
+                    // .. read the request body
                     String response = "This is the response";
-                t.sendResponseHeaders(200, response.length());
-                OutputStream os = t.getResponseBody();
-                os.write(response.getBytes());
-                os.close();
-                error = Thread.currentThread().isDaemon();
+                    t.sendResponseHeaders(200, response.length());
+                    os.write(response.getBytes());
+                    os.close();
+                    error = Thread.currentThread().isDaemon();
+                }
             }
         }
 
-
-        HttpServer server;
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        HttpServer server = HttpServer.create(new InetSocketAddress(loopback, 0), 10);
         try {
-            InetAddress loopback = InetAddress.getLoopbackAddress();
-            server = HttpServer.create(new InetSocketAddress(loopback, 0), 10);
-
             server.createContext("/apps", new MyHandler());
             server.setExecutor(null);
             // creates a default executor
-                server.start();
+            server.start();
             int port = server.getAddress().getPort();
-            String s = "http://localhost:"+port+"/apps/foo";
             URL url = URIBuilder.newBuilder()
-                      .scheme("http")
-                      .loopback()
-                      .port(port)
-                      .path("/apps/foo")
-                      .toURL();
+                    .scheme("http")
+                    .loopback()
+                    .port(port)
+                    .path("/apps/foo")
+                    .toURL();
             InputStream is = url.openConnection(Proxy.NO_PROXY).getInputStream();
-            read (is);
-            server.stop(0);
+            read(is);
             if (error) {
-                throw new RuntimeException ("error in test");
+                throw new RuntimeException("error in test");
             }
-
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new AssertionError("Unexpected exception: " + e, e);
+        } finally {
+            server.stop(0);
         }
     }
 }
