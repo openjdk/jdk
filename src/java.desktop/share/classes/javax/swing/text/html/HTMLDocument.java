@@ -3453,31 +3453,24 @@ public class HTMLDocument extends DefaultStyledDocument {
                     attr.removeAttribute(IMPLIED);
                 }
 
-                Object textDecoration0 = attr.getAttribute(CSS.Attribute.TEXT_DECORATION);
-                Object textDecoration1 = charAttr.getAttribute(CSS.Attribute.TEXT_DECORATION);
+                Object newDecoration = attr.getAttribute(CSS.Attribute.TEXT_DECORATION);
+                Object currentDecoration = charAttr.getAttribute(CSS.Attribute.TEXT_DECORATION);
 
                 charAttr.addAttribute(t, attr.copyAttributes());
                 if (styleAttributes != null) {
                     charAttr.addAttributes(styleAttributes);
                 }
-                if (textDecoration1 == null) {
-                    // No 'text-decoration' on the stack
-                    // No fix-up necessary
-                } else if (textDecoration0 == null) {
-                    // No 'text-decoration' in the incoming styles
-                    // No fix-up necessary
-                } else {
-                    if ("none".equals(textDecoration0.toString())) {
-                        // Nothing to do
-                    } else {
-                        StyleSheet sheet = getStyleSheet();
-                        sheet.addCSSAttribute(charAttr, CSS.Attribute.TEXT_DECORATION,
-                                              CSS.mergeTextDecoration(textDecoration1 + ","
-                                                                      + textDecoration0)
-                                                 .toString());
-                    }
-                }
 
+                if (newDecoration != null
+                    && !"none".equals(newDecoration.toString())
+                    && currentDecoration != null) {
+                    StyleSheet sheet = getStyleSheet();
+                    sheet.addCSSAttribute(charAttr,
+                                          CSS.Attribute.TEXT_DECORATION,
+                                          CSS.mergeTextDecoration(newDecoration + ","
+                                                                  + currentDecoration)
+                                             .toString());
+                }
             }
 
             @Override
