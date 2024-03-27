@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2020, Red Hat Inc.
+ * Copyright (c) 2024, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,31 +21,25 @@
  * questions.
  */
 
-package jdk.internal.platform;
-
-/**
- * Marker interface for cgroup-based metrics
- *
+/*
+ * @test
+ * @key cgroups
+ * @requires os.family == "linux"
+ * @requires vm.flagless
+ * @library /test/lib
+ * @build TestSystemSettings
+ * @run main/othervm TestSystemSettings
  */
-public interface CgroupSubsystem extends Metrics {
 
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
-    default boolean isContainerized() {
-        return false; // This default impl is never used
+public class TestSystemSettings {
+
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XshowSettings:system", "-version");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+
+        output.shouldContain("System not containerized.");
     }
-
-    /**
-     * Returned for metrics of type long if the underlying implementation
-     * has determined that no limit is being imposed.
-     */
-    public static final long LONG_RETVAL_UNLIMITED = -1;
-    public static final String MAX_VAL = "max";
-
-    public static long limitFromString(String strVal) {
-        if (strVal == null || MAX_VAL.equals(strVal)) {
-            return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
-        }
-        return Long.parseLong(strVal);
-    }
-
 }

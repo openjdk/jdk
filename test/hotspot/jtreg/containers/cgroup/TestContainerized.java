@@ -22,57 +22,27 @@
  */
 
 /*
- * @test PlainRead
+ * @test
+ * @bug 8261242
  * @key cgroups
  * @requires os.family == "linux"
  * @requires vm.flagless
  * @library /testlibrary /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI PlainRead
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestContainerized
  */
 
 import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Platform;
 import jdk.test.whitebox.WhiteBox;
 
-public class PlainRead {
-
-    static public void match(OutputAnalyzer oa, String what, String value) {
-       oa.shouldMatch("^.*" + what + " *" + value + ".*$");
-    }
-
-    static public void noMatch(OutputAnalyzer oa, String what, String value) {
-       oa.shouldNotMatch("^.*" + what + " *" + value + ".*$");
-    }
-
-    static final String good_value = "(\\d+|-1|-2|Unlimited)";
-    static final String bad_value = "(failed)";
-
-    static final String[] variables = {"Memory Limit is:", "CPU Quota is:", "CPU Period is:", "active_processor_count:"};
-
-    static public void isContainer(OutputAnalyzer oa) {
-        for (String v: variables) {
-            match(oa, v, good_value);
-        }
-        for (String v: variables) {
-            noMatch(oa, v, bad_value);
-        }
-    }
-
-    static public void isNotContainer(OutputAnalyzer oa) {
-       oa.shouldMatch("^.*Can't open /proc/self/mountinfo.*$");
-    }
+public class TestContainerized {
 
     public static void main(String[] args) throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:os+container=trace", "-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-
         if (wb.isContainerized()) {
-            System.out.println("Inside a cgroup, testing...");
-            isContainer(output);
+            throw new RuntimeException("Test failed! Expected not containerized on plain Linux.");
         }
+        System.out.println("Plain linux, no limits. Passed!");
     }
 }

@@ -54,7 +54,8 @@ TEST(cgroupTest, set_cgroupv1_subsystem_path) {
                             &container_engine };
   for (int i = 0; i < length; i++) {
     CgroupV1Controller* ctrl = new CgroupV1Controller( (char*)testCases[i]->root_path,
-                                                       (char*)testCases[i]->mount_path);
+                                                       (char*)testCases[i]->mount_path,
+                                                       true /* read-only mount */);
     ctrl->set_subsystem_path((char*)testCases[i]->cgroup_path);
     ASSERT_STREQ(testCases[i]->expected_path, ctrl->subsystem_path());
   }
@@ -78,7 +79,8 @@ TEST(cgroupTest, set_cgroupv2_subsystem_path) {
                             &sub_path };
   for (int i = 0; i < length; i++) {
     CgroupV2Controller* ctrl = new CgroupV2Controller( (char*)testCases[i]->mount_path,
-                                                       (char*)testCases[i]->cgroup_path);
+                                                       (char*)testCases[i]->cgroup_path,
+                                                       true /* read-only mount */);
     ASSERT_STREQ(testCases[i]->expected_path, ctrl->subsystem_path());
   }
 }
