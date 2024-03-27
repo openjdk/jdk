@@ -51,6 +51,7 @@
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahGlobalGeneration.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -298,7 +299,7 @@ jint ShenandoahHeap::initialize() {
   _bitmap_region_special = bitmap.special();
 
   size_t bitmap_init_commit = _bitmap_bytes_per_slice *
-                              align_up(num_committed_regions, _bitmap_regions_per_slice) / _bitmap_regions_per_slice;
+    align_up(num_committed_regions, _bitmap_regions_per_slice) / _bitmap_regions_per_slice;
   bitmap_init_commit = MIN2(_bitmap_size, bitmap_init_commit);
   if (!_bitmap_region_special) {
     os::commit_memory_or_exit((char *) _bitmap_region.start(), bitmap_init_commit, bitmap_page_size, false,
@@ -1024,26 +1025,27 @@ HeapWord* ShenandoahHeap::allocate_from_gclab_slow(Thread* thread, size_t size) 
 // Establish a new PLAB and allocate size HeapWords within it.
 HeapWord* ShenandoahHeap::allocate_from_plab_slow(Thread* thread, size_t size, bool is_promotion) {
   // New object should fit the PLAB size
-  size_t min_size = MAX2(size, PLAB::min_size());
 
-  // Figure out size of new PLAB, looking back at heuristics. Expand aggressively.
+  assert(mode()->is_generational(), "PLABs only relevant to generational GC");
+  ShenandoahGenerationalHeap* generational_heap = (ShenandoahGenerationalHeap*) this;
+  const size_t plab_min_size = generational_heap->plab_min_size();
+  const size_t min_size = (size > plab_min_size)? align_up(size, CardTable::card_size_in_words()): plab_min_size;
+
+  // Figure out size of new PLAB, looking back at heuristics. Expand aggressively.  PLABs must align on size
+  // of card table in order to avoid the need for synchronization when registering newly allocated objects within
+  // the card table.
   size_t cur_size = ShenandoahThreadLocalData::plab_size(thread);
   if (cur_size == 0) {
-    cur_size = PLAB::min_size();
+    cur_size = plab_min_size;
   }
-  size_t future_size = cur_size * 2;
-  // Limit growth of PLABs to ShenandoahMaxEvacLABRatio * the minimum size.  This enables more equitable distribution of
-  // available evacuation buidget between the many threads that are coordinating in the evacuation effort.
-  if (ShenandoahMaxEvacLABRatio > 0) {
-    future_size = MIN2(future_size, PLAB::min_size() * ShenandoahMaxEvacLABRatio);
-  }
-  future_size = MIN2(future_size, PLAB::max_size());
-  future_size = MAX2(future_size, PLAB::min_size());
 
-  size_t unalignment = future_size % CardTable::card_size_in_words();
-  if (unalignment != 0) {
-    future_size = future_size - unalignment + CardTable::card_size_in_words();
-  }
+  // Limit growth of PLABs to the smaller of ShenandoahMaxEvacLABRatio * the minimum size and ShenandoahHumongousThreshold.
+  // This minimum value is represented by generational_heap->plab_max_size().  Enforcing this limit enables more equitable
+  // distribution of available evacuation budget between the many threads that are coordinating in the evacuation effort.
+  size_t future_size = MIN2(cur_size * 2, generational_heap->plab_max_size());
+  assert(is_aligned(future_size, CardTable::card_size_in_words()), "Align by design, future_size: " SIZE_FORMAT
+         ", alignment: " SIZE_FORMAT ", cur_size: " SIZE_FORMAT ", max: " SIZE_FORMAT,
+         future_size, (size_t) CardTable::card_size_in_words(), cur_size, generational_heap->plab_max_size());
 
   // Record new heuristic value even if we take any shortcut. This captures
   // the case when moderately-sized objects always take a shortcut. At some point,
@@ -1058,7 +1060,7 @@ HeapWord* ShenandoahHeap::allocate_from_plab_slow(Thread* thread, size_t size, b
 
   // Retire current PLAB, and allocate a new one.
   PLAB* plab = ShenandoahThreadLocalData::plab(thread);
-  if (plab->words_remaining() < PLAB::min_size()) {
+  if (plab->words_remaining() < plab_min_size) {
     // Retire current PLAB, and allocate a new one.
     // CAUTION: retire_plab may register the remnant filler object with the remembered set scanner without a lock.  This
     // is safe iff it is assured that each PLAB is a whole-number multiple of card-mark memory size and each PLAB is
@@ -1070,7 +1072,7 @@ HeapWord* ShenandoahHeap::allocate_from_plab_slow(Thread* thread, size_t size, b
     // less than the remaining evacuation need.  It also adjusts plab_preallocated and expend_promoted if appropriate.
     HeapWord* plab_buf = allocate_new_plab(min_size, cur_size, &actual_size);
     if (plab_buf == nullptr) {
-      if (min_size == PLAB::min_size()) {
+      if (min_size == plab_min_size) {
         // Disable plab promotions for this thread because we cannot even allocate a plab of minimal size.  This allows us
         // to fail faster on subsequent promotion attempts.
         ShenandoahThreadLocalData::disable_plab_promotions(thread);
@@ -1079,7 +1081,7 @@ HeapWord* ShenandoahHeap::allocate_from_plab_slow(Thread* thread, size_t size, b
     } else {
       ShenandoahThreadLocalData::enable_plab_retries(thread);
     }
-    assert (size <= actual_size, "allocation should fit");
+    // Since the allocated PLAB may have been down-sized for alignment, plab->allocate(size) below may still fail.
     if (ZeroTLAB) {
       // ..and clear it.
       Copy::zero_to_words(plab_buf, actual_size);
@@ -1093,6 +1095,7 @@ HeapWord* ShenandoahHeap::allocate_from_plab_slow(Thread* thread, size_t size, b
       Copy::fill_to_words(plab_buf + hdr_size, actual_size - hdr_size, badHeapWordVal);
 #endif // ASSERT
     }
+    assert(is_aligned(actual_size, CardTable::card_size_in_words()), "Align by design");
     plab->set_buf(plab_buf, actual_size);
     if (is_promotion && !ShenandoahThreadLocalData::allow_plab_promotions(thread)) {
       return nullptr;
@@ -1129,15 +1132,17 @@ void ShenandoahHeap::retire_plab(PLAB* plab, Thread* thread) {
   if (not_promoted > 0) {
     old_generation()->unexpend_promoted(not_promoted);
   }
-  size_t waste = plab->waste();
-  HeapWord* top = plab->top();
+  const size_t original_waste = plab->waste();
+  HeapWord* const top = plab->top();
+
+  // plab->retire() overwrites unused memory between plab->top() and plab->hard_end() with a dummy object to make memory parsable.
+  // It adds the size of this unused memory, in words, to plab->waste().
   plab->retire();
-  if (top != nullptr && plab->waste() > waste && is_in_old(top)) {
-    // If retiring the plab created a filler object, then we
-    // need to register it with our card scanner so it can
+  if (top != nullptr && plab->waste() > original_waste && is_in_old(top)) {
+    // If retiring the plab created a filler object, then we need to register it with our card scanner so it can
     // safely walk the region backing the plab.
     log_debug(gc)("retire_plab() is registering remnant of size " SIZE_FORMAT " at " PTR_FORMAT,
-                  plab->waste() - waste, p2i(top));
+                  plab->waste() - original_waste, p2i(top));
     card_scan()->register_object_without_lock(top);
   }
 }
@@ -1195,14 +1200,11 @@ HeapWord* ShenandoahHeap::allocate_new_gclab(size_t min_size,
   return res;
 }
 
-HeapWord* ShenandoahHeap::allocate_new_plab(size_t min_size,
-                                            size_t word_size,
-                                            size_t* actual_size) {
-  // Align requested sizes to card sized multiples
-  size_t words_in_card = CardTable::card_size_in_words();
-  size_t align_mask = ~(words_in_card - 1);
-  min_size = (min_size + words_in_card - 1) & align_mask;
-  word_size = (word_size + words_in_card - 1) & align_mask;
+HeapWord* ShenandoahHeap::allocate_new_plab(size_t min_size, size_t word_size, size_t* actual_size) {
+  // Align requested sizes to card-sized multiples.  Align down so that we don't violate max size of TLAB.
+  assert(is_aligned(min_size, CardTable::card_size_in_words()), "Align by design");
+  assert(word_size >= min_size, "Requested PLAB is too small");
+
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_plab(min_size, word_size);
   // Note that allocate_memory() sets a thread-local flag to prohibit further promotions by this thread
   // if we are at risk of infringing on the old-gen evacuation budget.
@@ -1212,6 +1214,7 @@ HeapWord* ShenandoahHeap::allocate_new_plab(size_t min_size,
   } else {
     *actual_size = 0;
   }
+  assert(is_aligned(res, CardTable::card_size_in_words()), "Align by design");
   return res;
 }
 
@@ -1728,6 +1731,8 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
           break;
         }
         case OLD_GENERATION: {
+          assert(mode()->is_generational(), "OLD Generation only exists in generational mode");
+          ShenandoahGenerationalHeap* gen_heap = (ShenandoahGenerationalHeap*) this;
           PLAB* plab = ShenandoahThreadLocalData::plab(thread);
           if (plab != nullptr) {
             has_plab = true;
@@ -1737,13 +1742,13 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
               ShenandoahThreadLocalData::plab_retries_enabled(thread)) {
             // PLAB allocation failed because we are bumping up against the limit on old evacuation reserve or because
             // the requested object does not fit within the current plab but the plab still has an "abundance" of memory,
-            // where abundance is defined as >= PLAB::min_size().  In the former case, we try resetting the desired
+            // where abundance is defined as >= ShenGenHeap::plab_min_size().  In the former case, we try resetting the desired
             // PLAB size and retry PLAB allocation to avoid cascading of shared memory allocations.
 
             // In this situation, PLAB memory is precious.  We'll try to preserve our existing PLAB by forcing
             // this particular allocation to be shared.
-            if (plab->words_remaining() < PLAB::min_size()) {
-              ShenandoahThreadLocalData::set_plab_size(thread, PLAB::min_size());
+            if (plab->words_remaining() < gen_heap->plab_min_size()) {
+              ShenandoahThreadLocalData::set_plab_size(thread, gen_heap->plab_min_size());
               copy = allocate_from_plab(thread, size, is_promotion);
               // If we still get nullptr, we'll try a shared allocation below.
               if (copy == nullptr) {

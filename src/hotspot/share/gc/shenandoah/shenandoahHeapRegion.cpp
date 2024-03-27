@@ -1064,7 +1064,7 @@ void ShenandoahHeapRegion::promote_in_place() {
     old_gen->increment_affiliated_region_count();
     old_gen->increase_used(region_used);
 
-    // add_old_collector_free_region() increases promoted_reserve() if available space exceeds PLAB::min_size()
+    // add_old_collector_free_region() increases promoted_reserve() if available space exceeds plab_min_size()
     heap->free_set()->add_old_collector_free_region(this);
   }
 }

@@ -31,8 +31,10 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/sizes.hpp"
@@ -107,7 +109,16 @@ public:
     assert(data(thread)->_gclab == nullptr, "Only initialize once");
     data(thread)->_gclab = new PLAB(PLAB::min_size());
     data(thread)->_gclab_size = 0;
-    data(thread)->_plab = new PLAB(PLAB::min_size());
+
+    // TODO:
+    //   Only initialize _plab if (!Universe::is_fully_initialized() || ShenandoahHeap::heap()->mode()->is_generational())
+    //   Otherwise, set _plab to nullptr
+    // Problem is there is code sprinkled throughout that asserts (plab != nullptr) that need to be fixed up.  Perhaps
+    // those assertions are overzealous.
+
+    // In theory, plabs are only need if heap->mode()->is_generational().  However, some threads
+    // instantiated before we are able to answer that question.
+    data(thread)->_plab = new PLAB(align_up(PLAB::min_size(), CardTable::card_size_in_words()));
     data(thread)->_plab_size = 0;
   }
 

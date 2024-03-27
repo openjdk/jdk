@@ -459,10 +459,11 @@ HeapWord* ShenandoahFreeSet::allocate_old_with_affiliation(ShenandoahAffiliation
 
 void ShenandoahFreeSet::add_old_collector_free_region(ShenandoahHeapRegion* region) {
   shenandoah_assert_heaplocked();
+  size_t plab_min_size_in_bytes = ShenandoahGenerationalHeap::heap()->plab_min_size() * HeapWordSize;
   size_t idx = region->index();
   size_t capacity = alloc_capacity(region);
   assert(_free_sets.membership(idx) == NotFree, "Regions promoted in place should not be in any free set");
-  if (capacity >= PLAB::min_size() * HeapWordSize) {
+  if (capacity >= plab_min_size_in_bytes) {
     _free_sets.make_free(idx, OldCollector, capacity);
     _heap->old_generation()->augment_promoted_reserve(capacity);
   }
@@ -698,13 +699,13 @@ HeapWord* ShenandoahFreeSet::allocate_aligned_plab(size_t size, ShenandoahAllocR
   assert(_heap->mode()->is_generational(), "PLABs are only for generational mode");
   assert(r->is_old(), "All PLABs reside in old-gen");
   assert(!req.is_mutator_alloc(), "PLABs should not be allocated by mutators.");
-  assert(size % CardTable::card_size_in_words() == 0, "size must be multiple of card table size, was " SIZE_FORMAT, size);
+  assert(is_aligned(size, CardTable::card_size_in_words()), "Align by design");
 
   HeapWord* result = r->allocate_aligned(size, req, CardTable::card_size());
   assert(result != nullptr, "Allocation cannot fail");
   assert(r->top() <= r->end(), "Allocation cannot span end of region");
   assert(req.actual_size() == size, "Should not have needed to adjust size for PLAB.");
-  assert(((uintptr_t) result) % CardTable::card_size_in_words() == 0, "PLAB start must align with card boundary");
+  assert(is_aligned(result, CardTable::card_size_in_words()), "Align by design");
 
   return result;
 }
@@ -1066,7 +1067,7 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_cset_regi
       assert(!region->is_cset(), "Shouldn't be adding cset regions to the free set");
       assert(_free_sets.in_free_set(idx, NotFree), "We are about to make region free; it should not be free already");
 
-      // Do not add regions that would almost surely fail allocation
+      // Do not add regions that would almost surely fail allocation.  Note that PLAB::min_size() is typically less than ShenandoahGenerationalHeap::plab_min_size()
       if (alloc_capacity(region) < PLAB::min_size() * HeapWordSize) continue;
 
       if (region->is_old()) {

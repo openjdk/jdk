@@ -351,8 +351,11 @@ public:
   inline void restore_top_before_promote();
   inline size_t garbage_before_padded_for_promote() const;
 
-  // Allocation (return nullptr if full)
-  inline HeapWord* allocate_aligned(size_t word_size, ShenandoahAllocRequest &req, size_t alignment_in_words);
+  // If next available memory is not aligned on address that is multiple of alignment, fill the empty space
+  // so that returned object is aligned on an address that is a multiple of alignment_in_bytes.  Requested
+  // size is in words.  It is assumed that this->is_old().  A pad object is allocated, filled, and registered
+  // if necessary to assure the new allocation is properly aligned.  Return nullptr if memory is not available.
+  inline HeapWord* allocate_aligned(size_t word_size, ShenandoahAllocRequest &req, size_t alignment_in_bytes);
 
   // Allocation (return nullptr if full)
   inline HeapWord* allocate(size_t word_size, ShenandoahAllocRequest req);

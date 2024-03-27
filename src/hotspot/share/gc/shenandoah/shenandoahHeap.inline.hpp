@@ -313,11 +313,11 @@ inline HeapWord* ShenandoahHeap::allocate_from_plab(Thread* thread, size_t size,
   }
   // if plab->word_size() <= 0, thread's plab not yet initialized for this pass, so allow_plab_promotions() is not trustworthy
   obj = plab->allocate(size);
-  if ((obj == nullptr) && (plab->words_remaining() < PLAB::min_size())) {
+  if ((obj == nullptr) && (plab->words_remaining() < ShenandoahGenerationalHeap::heap()->plab_min_size())) {
     // allocate_from_plab_slow will establish allow_plab_promotions(thread) for future invocations
     obj = allocate_from_plab_slow(thread, size, is_promotion);
   }
-  // if plab->words_remaining() >= PLAB::min_size(), just return nullptr so we can use a shared allocation
+  // if plab->words_remaining() >= ShenGenHeap::heap()->plab_min_size(), just return nullptr so we can use a shared allocation
   if (obj == nullptr) {
     return nullptr;
   }

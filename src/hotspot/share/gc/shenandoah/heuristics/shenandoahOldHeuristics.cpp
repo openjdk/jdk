@@ -29,6 +29,9 @@
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "logging/log.hpp"
 #include "utilities/quickSort.hpp"
 
 uint ShenandoahOldHeuristics::NOT_FOUND = -1U;

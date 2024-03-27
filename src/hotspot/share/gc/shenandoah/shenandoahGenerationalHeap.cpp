@@ -72,9 +72,25 @@ ShenandoahGenerationalHeap* ShenandoahGenerationalHeap::heap() {
   return checked_cast<ShenandoahGenerationalHeap*>(heap);
 }
 
+size_t ShenandoahGenerationalHeap::calculate_min_plab() const {
+  return align_up(PLAB::min_size(), CardTable::card_size_in_words());
+}
+
+size_t ShenandoahGenerationalHeap::calculate_max_plab() const {
+  size_t MaxTLABSizeWords = ShenandoahHeapRegion::max_tlab_size_words();
+  return ((ShenandoahMaxEvacLABRatio > 0)?
+          align_down(MIN2(MaxTLABSizeWords, PLAB::min_size() * ShenandoahMaxEvacLABRatio), CardTable::card_size_in_words()):
+          align_down(MaxTLABSizeWords, CardTable::card_size_in_words()));
+}
+
 ShenandoahGenerationalHeap::ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy) :
   ShenandoahHeap(policy),
-  _regulator_thread(nullptr) { }
+  _min_plab_size(calculate_min_plab()),
+  _max_plab_size(calculate_max_plab()),
+  _regulator_thread(nullptr) {
+  assert(is_aligned(_min_plab_size, CardTable::card_size_in_words()), "min_plab_size must be aligned");
+  assert(is_aligned(_max_plab_size, CardTable::card_size_in_words()), "max_plab_size must be aligned");
+}
 
 void ShenandoahGenerationalHeap::print_init_logger() const {
   ShenandoahGenerationalInitLogger logger;
