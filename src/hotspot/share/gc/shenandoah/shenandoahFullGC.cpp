@@ -100,14 +100,14 @@ void ShenandoahFullGC::entry_full(GCCause::Cause cause) {
 }
 
 void ShenandoahFullGC::op_full(GCCause::Cause cause) {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
   ShenandoahMetricsSnapshot metrics;
   metrics.snap_before();
 
   // Perform full GC
   do_it(cause);
 
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-
+  heap->mmu_tracker()->record_full(GCId::current());
   metrics.snap_after();
 
   if (metrics.is_good_progress()) {

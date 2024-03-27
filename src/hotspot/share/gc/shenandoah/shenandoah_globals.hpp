@@ -287,9 +287,14 @@
           "going to a Full GC.")                                            \
                                                                             \
   product(uintx, ShenandoahNoProgressThreshold, 5, EXPERIMENTAL,            \
-          "After this number of consecutive Full GCs fail to make "         \
-          "progress, Shenandoah will raise out of memory errors. Note "     \
-          "that progress is determined by ShenandoahCriticalFreeThreshold") \
+          "After this number of consecutive Full GCs following an "         \
+          "initial out-of-memory condition fail to make progress, "         \
+          "Shenandoah will throw additional OutOfMemoryErrors without "     \
+          "further attempts to perform GC.  This delay represented by "     \
+          "this parameter provides an opportunity for application threads " \
+          "discard live memory in response to the initially thrown "        \
+          "OutOfMemoryError exception.  Note that progress is "             \
+          "determined by ShenandoahCriticalFreeThreshold")                  \
                                                                             \
   product(bool, ShenandoahImplicitGCInvokesConcurrent, false, EXPERIMENTAL, \
           "Should internally-caused GC requests invoke concurrent cycles, " \
@@ -330,6 +335,14 @@
   product(uintx, ShenandoahMaxSATBBufferFlushes, 5, EXPERIMENTAL,           \
           "How many times to maximum attempt to flush SATB buffers at the " \
           "end of concurrent marking.")                                     \
+                                                                            \
+  product(uint, ShenandoahGCTimeLimit, 90, EXPERIMENTAL,                    \
+          "The percentage of CPU consumed by GC at which GC considers "     \
+          "itself to have exceeded the reasonable threshold.  This "        \
+          "replaces GCTimeLimit.  The denominator is calculated from "      \
+          "authorized ParallelGCThreads as a fraction of total available "  \
+          "CPU cores.")                                                     \
+          range(0, 100)                                                     \
                                                                             \
   product(bool, ShenandoahSATBBarrier, true, DIAGNOSTIC,                    \
           "Turn on/off SATB barriers in Shenandoah")                        \

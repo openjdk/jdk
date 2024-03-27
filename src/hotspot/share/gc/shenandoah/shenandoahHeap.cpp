@@ -438,6 +438,13 @@ jint ShenandoahHeap::initialize() {
 
   ShenandoahInitLogger::print();
 
+  _gc_historical_utilization = NEW_C_HEAP_ARRAY(double, GCOverheadLimitThreshold, mtGC);
+  _gc_historical_duration = NEW_C_HEAP_ARRAY(double, GCOverheadLimitThreshold, mtGC);
+  for (uint i = 0; i < GCOverheadLimitThreshold; i++) {
+    _gc_historical_utilization[i] = 0.0;
+    _gc_historical_duration[i] = 0.0;
+  }
+
   return JNI_OK;
 }
 
@@ -504,6 +511,9 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _update_refs_iterator(this),
   _gc_state_changed(false),
   _gc_no_progress_count(0),
+  _gcu_historical(0.0),
+  _gc_history_first(0),
+  _gc_no_progress_count_at_last_oom(-1),
   _control_thread(nullptr),
   _shenandoah_policy(policy),
   _gc_mode(nullptr),
@@ -542,7 +552,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
 
   if (ParallelGCThreads > 1) {
     _safepoint_workers = new ShenandoahWorkerThreads("Safepoint Cleanup Thread",
-                                                ParallelGCThreads);
+                                                     ParallelGCThreads);
     _safepoint_workers->initialize_workers();
   }
 }
@@ -645,6 +655,8 @@ public:
 
 void ShenandoahHeap::post_initialize() {
   CollectedHeap::post_initialize();
+  _mmu_tracker.initialize();
+
   MutexLocker ml(Threads_lock);
 
   ShenandoahInitWorkerGCLABClosure init_gclabs;
@@ -920,7 +932,24 @@ HeapWord* ShenandoahHeap::allocate_new_gclab(size_t min_size,
   return res;
 }
 
-HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
+// This captures GC utilization at end of each GC pass for purposes of detecting GC overhead exceeded.
+void ShenandoahHeap::report_gc_utilization(double utilization, double duration) {
+  _gc_historical_utilization[_gc_history_first] = utilization;
+  _gc_historical_duration[_gc_history_first] = duration;
+  _gc_history_first++;
+  if (_gc_history_first >= GCOverheadLimitThreshold) {
+    _gc_history_first = 0;
+  }
+  double weighted_sum = 0.0;
+  double total_duration = 0.0;
+  for (uint i = 0; i < GCOverheadLimitThreshold; i++) {
+    weighted_sum += _gc_historical_utilization[i] * _gc_historical_duration[i];
+    total_duration += _gc_historical_duration[i];
+  }
+  _gcu_historical = ((total_duration > 0)? weighted_sum / total_duration: 0.0);
+}
+
+HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req, bool* gc_overhead_limit_was_exceeded) {
   intptr_t pacer_epoch = 0;
   bool in_new_region = false;
   HeapWord* result = nullptr;
@@ -935,36 +964,114 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       result = allocate_memory_under_lock(req, in_new_region);
     }
 
-    // Check that gc overhead is not exceeded.
-    //
-    // Shenandoah will grind along for quite a while allocating one
-    // object at a time using shared (non-tlab) allocations. This check
-    // is testing that the GC overhead limit has not been exceeded.
-    // This will notify the collector to start a cycle, but will raise
-    // an OOME to the mutator if the last Full GCs have not made progress.
-    if (result == nullptr && !req.is_lab_alloc() && get_gc_no_progress_count() > ShenandoahNoProgressThreshold) {
-      control_thread()->handle_alloc_failure(req, false);
-      return nullptr;
-    }
+    // It might happen that one of the threads requesting allocation would unblock way later after GC happened, only
+    // to fail a second allocation request because other threads have already depleted the free storage.  Repeatedly
+    // retry the allocation after blocking until the control thread has had a chance to perform more GC.
 
-    // Block until control thread reacted, then retry allocation.
-    //
-    // It might happen that one of the threads requesting allocation would unblock
-    // way later after GC happened, only to fail the second allocation, because
-    // other threads have already depleted the free storage. In this case, a better
-    // strategy is to try again, as long as GC makes progress (or until at least
-    // one full GC has completed).
-    size_t original_count = shenandoah_policy()->full_gc_count();
-    while (result == nullptr
-        && (get_gc_no_progress_count() == 0 || original_count == shenandoah_policy()->full_gc_count())) {
-      control_thread()->handle_alloc_failure(req);
-      result = allocate_memory_under_lock(req, in_new_region);
+    if (result == nullptr) {
+      intptr_t no_progress_count = get_gc_no_progress_count();
+      intptr_t no_progress_count_at_last_oom = get_gc_no_progress_count_at_last_oom();
+      if (no_progress_count_at_last_oom >= 0) {
+        // The rationale for only immediately throwing OOM if !is_lab_alloc is that lab_allocs are speculative
+        // allocations.  The mutator has not yet demanded this memory, so it would be inappropriate to penalize
+        // the mutator with an OOM.  Note that a typical mutator response to a failed lab alloc will be to
+        // request a shared alloc, so the mutator will eventually see an OOM when it demands the shared alloc.
+        //
+        // TODO: experiment with immediately throwing the OOM even for lab allocs.  does this cause premature OOM?
+        if (!req.is_lab_alloc() &&
+            no_progress_count >= (intptr_t) (no_progress_count_at_last_oom + ShenandoahNoProgressThreshold)) {
+          // We've experienced ShenandoahNoProgressThreshold consecutive GCs without progress following an
+          // initial OOM condition.  We've provided plenty of opportunity for the application to recover
+          // from its OOM situation, and it hasn't.  Don't waste any more efforts on urgent GC.
+          //
+          // Note that a successful allocation following an initial OOM is not sufficient to end our counting
+          // of consecutive unproductive GCs following an initial OOM condition.  Even after an unproductive
+          // GC, we may be able to allocate a small number of small objects.  But we won't be able to allocate
+          // large objects or large numbers of objects between GCs until we begin to experience productive GCs.
+          //
+          // Note that even if we no longer trigger GCs in response to failed allocation request, GCs will still
+          // be triggered by heuristics, and these GCs may eventually recover from the low-memory situation.
+          if (UseGCOverheadLimit && (gc_overhead_limit_was_exceeded != nullptr)) {
+            *gc_overhead_limit_was_exceeded = true;
+          }
+          return nullptr;
+        }
+      }
+
+      size_t original_count = shenandoah_policy()->full_gc_count();
+      if (UseGCOverheadLimit) {
+        // "Use policy to limit proportion of time spent in GC before an OutOfMemory error is thrown."
+        //
+        // But this policy alone is not sufficient.  In some cases, heuristics limit the number of threads dedicated to
+        // STW degenerated and Full GCs.  In other cases, contention with other applications running on the same
+        // host may prevent GC threads from consuming the full CPU time to which they might be entitled.  Both scenarios
+        // may prevent GC overhead from reaching the threshold required by GC in order to exceed the threshold.
+
+        do {
+          control_thread()->handle_alloc_failure(req);
+          result = allocate_memory_under_lock(req, in_new_region);
+
+          // A first failure to allocate may happen due to unfortunate timing in that memory just happens to have been
+          // consumed by other threads by the time my request arrives.  If we fail a second time after giving GC an opportunity
+          // to clean up memory, we should return nullptr.
+
+          // We are careful to not cascade the throwing of OOM.  Some applications are written to allow a first OOM "handler"
+          // to clean up memory so that other threads will not experience OOM.  Waiting for a second failure to allocate
+          // allows the memory cleanup efforts of a first thread to be realized.  If memory is successfully reclaimed by a
+          // subsequent concurrent GC, the gc overhead will typically decrease before this quantity is sampled again.
+
+          // This strategy is not perfect.  If the first OOM thread is too slow to clean up memory, or it does not
+          // clean up enough memory, or if other threads consume all of the newly available memory before this thread
+          // has an opportunity to repeat its request, the current thread will also experience OOM.
+
+        } while ((result == nullptr) && !gc_overhead_exceeds_limit() && (original_count == shenandoah_policy()->full_gc_count()));
+
+        // With Shenandoah, there are two mechanisms to detect violation of the limit: CPU time or a full GC with no progress.
+        if (result == nullptr) {
+          intptr_t no_progess_count = get_gc_no_progress_count();
+          intptr_t no_progress_count_at_last_oom = get_gc_no_progress_count_at_last_oom();
+          if (no_progress_count_at_last_oom == -1) {
+            capture_gc_no_progress_count_at_last_oom();
+          }
+          if ((gc_overhead_limit_was_exceeded != nullptr) &&
+              (gc_overhead_exceeds_limit() ||
+               ((original_count != shenandoah_policy()->full_gc_count()) && (no_progress_count != 0)))) {
+            *gc_overhead_limit_was_exceeded = true;
+          }
+        }
+      } else {
+        // Retry allocation request until at least one full GC has completed
+
+        do {
+          control_thread()->handle_alloc_failure(req);
+          result = allocate_memory_under_lock(req, in_new_region);
+
+          // A first failure to allocate may happen due to unfortunate timing in that memory just happens to have been
+          // consumed by other threads by the time my request arrives.  If we fail a second time after giving GC an opportunity
+          // to clean up memory, we should return nullptr (triggering an OutOfMemoryError) if there has been at least one full
+          // GC collection, whether or not that Full GC had good progress.
+
+          // This strategy is not perfect.  If the full gc made good progress and replenished the free pool, but other threads
+          // consumed all available memory before this thread was able to satisfy its allocation request, we will throw OOM
+          // even though we may have been able to satisfy our allocation request following yet another GC.  If this happens,
+          // we are operating too close to the edge, and an OOM is appropriate.
+
+        } while (result == nullptr && (original_count == shenandoah_policy()->full_gc_count()));
+
+        if (result == nullptr) {
+          intptr_t no_progress_count_at_last_oom = get_gc_no_progress_count_at_last_oom();
+          if (no_progress_count_at_last_oom == -1) {
+            capture_gc_no_progress_count_at_last_oom();
+          }
+        }
+      }
     }
 
     if (log_is_enabled(Debug, gc, alloc)) {
       ResourceMark rm;
-      log_debug(gc, alloc)("Thread: %s, Result: " PTR_FORMAT ", Request: %s, Size: " SIZE_FORMAT ", Original: " SIZE_FORMAT ", Latest: " SIZE_FORMAT,
-                           Thread::current()->name(), p2i(result), req.type_string(), req.size(), original_count, get_gc_no_progress_count());
+      log_debug(gc, alloc)("Thread: %s, Result: " PTR_FORMAT ", Request: %s, Size: " SIZE_FORMAT ", Full count: " SIZE_FORMAT ", Latest: " SIZE_FORMAT,
+                           Thread::current()->name(), p2i(result), req.type_string(), req.size(),
+                           shenandoah_policy()->full_gc_count(), get_gc_no_progress_count());
     }
   } else {
     assert(req.is_gc_alloc(), "Can only accept GC allocs here");
@@ -1012,9 +1119,9 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
 }
 
 HeapWord* ShenandoahHeap::mem_allocate(size_t size,
-                                        bool*  gc_overhead_limit_was_exceeded) {
+                                       bool*  gc_overhead_limit_was_exceeded) {
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared(size);
-  return allocate_memory(req);
+  return allocate_memory(req, gc_overhead_limit_was_exceeded);
 }
 
 MetaWord* ShenandoahHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
