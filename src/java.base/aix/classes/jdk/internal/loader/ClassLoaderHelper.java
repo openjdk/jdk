@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,14 +58,14 @@ class ClassLoaderHelper {
             int closeBracketIndex = name.lastIndexOf(')');
             long openBracketCount = name.chars().filter(ch -> ch == '(').count();
             long closeBracketCount = name.chars().filter(ch -> ch == ')').count();
-            //Checking if the format is correct.
+            // Checking if the format is correct.
             if (openBracketCount > 1 || closeBracketCount > 1 || openBracketIndex > closeBracketIndex)
             {
                 return null;
             }
             int dotIndex = name.lastIndexOf('.');
             String memberName = name.substring(openBracketIndex,dotIndex);
-            //Reconstruct <libname>.so(<member_name>) as <libname>.a(<member_name>)
+            // Reconstruct <libname>(<member_name>).so as <libname>.a(<member_name>)
             String reconstructedFileName = name.substring(0, openBracketIndex) + ".a"+ memberName;
             return new File(reconstructedFileName);
         }
