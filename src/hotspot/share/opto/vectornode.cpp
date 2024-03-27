@@ -1162,8 +1162,8 @@ Node* StoreVectorScatterNode::Identity(PhaseGVN* phase) {
 Node* LoadVectorGatherMaskedNode::Identity(PhaseGVN* phase) {
   Node* value = LoadVectorNode::Identity(phase);
   if ((value != this) &&  (value->is_LoadVectorGatherMasked()) &&
-    (in(MemNode::ValueIn)->eqv_uncast(value->in(MemNode::ValueIn))) &&
-    (in(MemNode::OopStore)->eqv_uncast(value->in(MemNode::OopStore)))) {
+      (in(MemNode::ValueIn)->eqv_uncast(value->in(MemNode::ValueIn))) &&
+      (in(MemNode::OopStore)->eqv_uncast(value->in(MemNode::OopStore)))) {
     return value;
   }
   return this;
