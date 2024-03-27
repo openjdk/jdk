@@ -1,9 +1,9 @@
-# Lazy Collections and Values (Preview)
+# Lazy Values & Collections (Preview)
 
 ## Summary
 
-Introduce _Lazy Collections and Values_, which are immutable value holders that are initialized _at most once_.
-Lazy collections and values offer the performance and safety benefits of final fields, while offering greater
+Introduce _Lazy Value & Collections_, which are immutable value holders where values are initialized _at most once_.
+Lazy Values & Collections offer the performance and safety benefits of final fields, while offering greater
 flexibility as to the timing of initialization. This is a [preview API](https://openjdk.org/jeps/12).
 
 ## Goals
@@ -71,7 +71,7 @@ required.  The (possibly expensive) initializer for the logger lives in the
 nested `Holder` class, which will only be initialized when the `logger` method
 accesses the `LOGGER` field.  While this idiom works well, its reliance on the
 class loading process comes with significant drawbacks.  First, each constant
-whose computation needs to be shifted in time generally requires its own holder
+whose computation needs to be deferred generally requires its own holder
 class, thus introducing a significant static footprint cost.  Second, this idiom
 is only really applicable if the field initialization is suitably isolated, not
 relying on any other parts of the object state.
@@ -120,7 +120,7 @@ Furthermore, the idiom does not work for `null` values.
 
 The situation is even worse when clients need to operate on a _collection_ of immutable values.
 
-An example of this is a `List` that holds HTML pages that corresponds to an error code in the range 0 to 7,
+An example of this is a `List` that holds HTML pages that corresponds to an error code in the range [0, 7]
  where each element is pulled in from the file system on-demand, once actually used:
 
 ```
@@ -168,11 +168,11 @@ String errorPage = ErrorMessages.errorPage(2); // "Payment was denied: Insuffici
 ```
 
 Unfortunately, this approach provides a number of challenges. First, retrieving the values
-from a `List` is slow, as said values cannot be constant-folded. Even worse, access to the `List` is 
-guarded by synchronization that is slow and will block access to the list for all elements whenever one of 
-the elements are under computation. Furthermore, the class holder idiom (see above) is clearly insufficient
-in this case, as the number of required holder classes is *statically unbounded* - it depends on the value of
-the parameter `MAX_ERROR_CODE`.
+from a `List` is slow, as said values cannot be [constant-folded](https://en.wikipedia.org/wiki/Constant_folding).
+Even worse, access to the `List` is guarded by synchronization that is slow and will block access to the list for
+all elements whenever one of  the elements is under computation. Furthermore, the class holder idiom (see above)
+is clearly insufficient in this case, as the number of required holder classes is *statically unbounded* - it 
+depends on the value of the parameter `SIZE` which may change in future variants.
 
 What we are missing -- in all cases -- is a way to *promise* that a constant will be initialized
 by the time it is used, with a value that is computed at most once. Such a mechanism would give
@@ -194,8 +194,8 @@ _all_ 3rd party Java code (and not the JDK alone).
 
 ### Preview Feature
 
-Lazy Collections and Values is a [preview API](https://openjdk.org/jeps/12), disabled by default.
-To use the Lazy Collections and Values APIs, the JVM flag `--enable-preview` must be passed in, as follows:
+Lazy Values & Collections is a [preview API](https://openjdk.org/jeps/12), disabled by default.
+To use the Lazy Value and Collections APIs, the JVM flag `--enable-preview` must be passed in, as follows:
 
 - Compile the program with `javac --release 23 --enable-preview Main.java` and run it with `java --enable-preview Main`; or,
 
@@ -205,15 +205,15 @@ To use the Lazy Collections and Values APIs, the JVM flag `--enable-preview` mus
 
 ### Outline
 
-The Lazy Collections and Values APIs define classes and an interface so that client code in libraries and applications can
+The Values & Collections APIs define classes and an interface so that client code in libraries and applications can
 
+- Define and use lazy scalar values: [`Lazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Monotonic.html)
 - Define and use lazy collections: 
   [`List.ofLazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/List.html#ofLazy()), 
-  [`Set.ofLazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Set.html#ofLazy()), and 
-  [`Map.ofLazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Map.html#ofLazy())
-- Define and use lazy values: [`Lazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Monotonic.html)
+  [`Set.ofLazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Set.html#ofLazy()), [`Set.ofLazyEnum`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Set.html#ofLazyEnum()) and 
+  [`Map.ofLazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Map.html#ofLazy()), [`Map.ofLazyEnum`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Map.html#ofLazyEnum())
 
-The Lazy Collections and Values APIs resides in the `java.util` and `java.lang` packages of the `java.base` module.
+The Lazy Values & Collections APIs resides in the `java.lang` and `java.util` packages of the `java.base` module.
 
 ### Lazy Values
 
@@ -243,7 +243,7 @@ This is similar in spirit to the holder-class idiom, and offers the same
 performance, constant-folding, and thread-safety characteristics, but is simpler
 and incurs a lower static footprint since no additional class is required.
 
-Binding a lazy value is an atomic, non-blocking operation, e.g. `Lazy::bindOrThrow`,
+Binding a lazy value is an atomic, thread-safe, non-blocking operation, e.g. `Lazy::bindOrThrow`,
 either results in successfully initializing the lazy to a value, or fails
 with an exception. This is true regardless of whether the lazy value is accessed by a single
 thread, or concurrently, by multiple threads.
@@ -274,7 +274,7 @@ outside world.
 Lazy reference values are faster to obtain than reference values managed via
 double-checked-idiom constructs as lazy values rely on explicit memory barriers
 rather than performing volatile access on each get operation and in addition, they are eligible
-for [constant folding](https://en.wikipedia.org/wiki/Constant_folding) optimizations.
+for constant folding optimizations.
 
 ### Lazy Collections
 
@@ -283,20 +283,21 @@ object only creates the *holder* for the value), this (small) initialization cos
 to be paid for each field of type `Lazy` declared by the class. As a result, the class static
 and/or instance initializer will keep growing with the number of `Lazy` fields, thus degrading performance.
 
-To handle these cases, the Lazy Collections and Values API provides constructs that allow the creation and handling of a
-*`List` of lazy elements*. Such a `List` is a list whose elements are created lazily on demand
-before a particular element is first accessed. Lists of lazy values are objects of type `List<E>`.
+To handle these cases, the Lazy Values & Collections API provides constructs that allow the creation and handling of a
+*`List` of lazily computed elements*. Such a `List` is a list whose elements are created lazily on demand
+before a particular element is first accessed. Lists of lazily computed values are objects of type `List<E>`.
 Consequently, each element in the list enjoys the same properties as a `Lazy` but may require less resources.
 
 Like a `Lazy` object, a lazy List object is created via a factory method by providing a size
-of the desired List and an IntFunction to be used to lazily compute its elements:
+of the desired `List` and an `IntFunction` to be used to lazily compute its elements:
 
 ```
 static <E> List<E> List.ofLazy(int size, IntFunction<? extends E> mapper) { ... }
 ```
 
-This allows for improving the handling of lists with lazy values and enables a much better
-implementation of the `ListDemoClass` class mentioned earlier:
+This allows for improving the handling of lists with lazily computed values and enables a much better
+implementation of the `ErrorMessages` class mentioned earlier. Here is a new version
+of the class which is using the newly proposed API:
 
 ```
 class ErrorMessages {
@@ -334,18 +335,17 @@ String errorPage = ErrorMessages.errorPage(2); // "Payment was denied: Insuffici
 ```
 
 Note how there's only one field of type `List<String>` to initialize - every computation is
-performed independently of the other element of the list when accessed. The Lazy Collections and Values API
-allows modeling this cleanly, while still preserving good constant-folding guarantees and integrity of updates in
-the case of multi-threaded access.
+performed independently of the other element of the list when accessed (i.e. no blocking will occur across threads 
+computing distinct elements). The Lazy Values & Collections API allows modeling this cleanly, while still preserving
+good constant-folding guarantees and integrity of updates in the case of multi-threaded access.
 
-It should be noted that even though a lazy list might mutate its internal state upon external access, it is still
-_immutable_ because _no change can ever be observed by an external entity_. This is similar to other
-immutable classes, such as `String` (which cached its `hash`), where they might rely on mutable internal states
-that are carefully kept internal and that never shine through to the outside world.
+It should be noted that even though a lazily computed list might mutate its internal state upon external access, it 
+is still _immutable_ because _no change can ever be observed by an external entity_. This is similar to other
+immutable classes, such as `String` (which internally cached its `hash` value), where they might rely on mutable
+internal states  that are carefully kept internal and that never shine through to the outside world.
 
-Moreover, a `Map` of lazy values can also be defined and used similarly to how a
-`List` of lazy elements can be handled. In the example below, we cache values for
-an enumerated collection of keys:
+Just as a `List` can be lazily computed, a `Map` of lazily computed values can also be defined and used similarly.
+In the example below, we lazily compute the map's values for an enumerated collection of pre-defined keys:
 
 ```
 class MapDemo {
@@ -359,9 +359,9 @@ class MapDemo {
 }
 ```
 
-Finally, a `Set` of lazy elements can be defined. In the example below, the well known problem of determining
-if a logger will actually output something for a certain level is solved using a lazy Set. This allows constant folding
-of the code path and will eliminate unused code paths dynamically by the JVM:
+Finally, a `Set` of lazily computed elements can be defined. In the example below, the well known problem of determining
+if a logger will actually output something for a certain level is solved using a lazily computed Set. This allows 
+constant folding of the code path and might totally eliminate unused code paths dynamically by the JVM:
 
 ```
  class SetDemo {
@@ -384,12 +384,12 @@ of the code path and will eliminate unused code paths dynamically by the JVM:
 }
 ```
 This last example also demonstrates how lazy constructs can be composed into more high-level, high-performance
-constructs that can leverage constant folding and other JVM optimizations transitively. 
+concepts that can leverage constant folding and other JVM optimizations transitively. 
 
 
 ### Memoized functions
 
-So far, we have talked about the fundamental low-level features of lazy collections and values as a securely
+So far, we have talked about the fundamental features of lazy values and collectionsas a securely
 wrapped `@Stable` value holder. However, as shown above, it has become apparent, lazy primitives are amenable
 to composition with other constructs in order to create more high-level and powerful features.
 
@@ -413,7 +413,8 @@ class MapDemo {
 
 In the example above, the supplier is invoked at most once per
 loading of the containing class `MapDemo` (`MapDemo`, in turn, can be loaded at
-most once into any given `ClassLoader`).
+most once into any given `ClassLoader`) as it is backed by a `Map` with lazily
+computed values which upholds the invoke-at-most-once invariant.
 
 It should be noted that the enumerated collection of keys given at creation time
 constitutes the only valid inputs for the memoized function.
@@ -426,8 +427,8 @@ private static final IntFunction<String> ERROR_PAGES = List.ofLazy(
         MAX_ERROR_CODE, ListDemo::readFromFile)::get;
 ```
 
-The same is true for creating a memoized Supplier or a Predicate using a using backing Lazy or backing lazy Set. 
-The solution for this is left to the reader as an exercise.
+The same is true for creating a memoized `Supplier` or a `Predicate` using a using backing `Lazy` or backing lazily 
+computed `Set`. The solution for this is left for the reader as an exercise.
 
 ## Alternatives
 
