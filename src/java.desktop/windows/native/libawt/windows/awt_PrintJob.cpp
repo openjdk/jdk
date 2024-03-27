@@ -595,7 +595,7 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
         int measure = PSD_INTHOUSANDTHSOFINCHES;
         int sz = GetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_IMEASURE, NULL, 0);
         if (sz > 0) {
-          LPTSTR str = (LPTSTR) SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(TCHAR), sz);
+          LPTSTR str = (LPTSTR)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(TCHAR), sz);
           if (str != NULL) {
             sz = GetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_IMEASURE, str, sz);
             if (sz > 0) {
