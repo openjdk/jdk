@@ -3282,7 +3282,7 @@ void AwtWindow::_UpdateWindow(void* param)
         }
     }
 
-    window->UpdateWindow(env, data, (int) uws->width, (int) uws->height,
+    window->UpdateWindow(env, data, (int)uws->width, (int)uws->height,
                          uws->hBitmap);
 
     env->DeleteGlobalRef(self);
