@@ -506,6 +506,7 @@ public final class ThreadLocalRandom extends Random {
      * {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
      * @implNote {@inheritDoc}
+     * @since 17
      */
     @Override
     public float nextFloat(float bound) {
@@ -516,6 +517,7 @@ public final class ThreadLocalRandom extends Random {
      * {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
      * @implNote {@inheritDoc}
+     * @since 17
      */
     @Override
     public float nextFloat(float origin, float bound) {
