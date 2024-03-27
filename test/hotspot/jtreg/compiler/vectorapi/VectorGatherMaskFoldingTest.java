@@ -40,10 +40,10 @@ import jdk.incubator.vector.VectorSpecies;
  * @summary Don't allow folding of load/store of vectors when using incompatible indices or mask
  * @modules jdk.incubator.vector
  *
- * @run main/othervm -XX:UseAVX=3 compiler.vectorapi.VectorLoadGatherFoldingTest
+ * @run main/othervm -XX:UseAVX=3 compiler.vectorapi.VectorGatherMaskFoldingTest
  */
 
-public class VectorLoadGatherFoldingTest {
+public class VectorGatherMaskFoldingTest {
     private static final int NUM_ITER = 50000;
     private static final VectorSpecies<Long> L_SPECIES = LongVector.SPECIES_MAX;
     private static final VectorSpecies<Integer> I_SPECIES = IntVector.SPECIES_MAX;
