@@ -403,14 +403,15 @@ public abstract class NumberFormat extends Format  {
     /**
      * Parses text from the beginning of the given string to produce a {@code Number}.
      * <p>
-     * This method attempts to parse text starting at the index given by
-     * {@code pos}. If parsing succeeds, then the index of {@code parsePosition} is updated
-     * to the index after the last character used (parsing does not necessarily
-     * use all characters up to the end of the string), and the parsed number is
-     * returned. The updated {@code parsePosition} can be used to indicate the starting
+     * This method attempts to parse text starting at the index given by the
+     * {@code ParsePosition}. If parsing succeeds, then the index of the {@code
+     * ParsePosition} is updated to the index after the last character used
+     * (parsing does not necessarily use all characters up to the end of the
+     * string), and the parsed number is returned. The updated {@code
+     * ParsePosition} can be used to indicate the starting
      * point for the next call to this method. If an error occurs, then the
-     * index of {@code parsePosition} is not changed, the error index of {@code
-     * parsePosition} is set to the index of the character where the error
+     * index of the {@code ParsePosition} is not changed, the error index of the
+     * {@code ParsePosition} is set to the index of the character where the error
      * occurred, and {@code null} is returned.
      * <p>
      * This method will return a Long if possible (e.g., within the range [Long.MIN_VALUE,
@@ -424,8 +425,6 @@ public abstract class NumberFormat extends Format  {
      * @throws NullPointerException if {@code source} or {@code ParsePosition}
      *         is {@code null}.
      * @see #isStrict()
-     * @see #isParseIntegerOnly()
-     * @see #isGroupingUsed()
      */
     public abstract Number parse(String source, ParsePosition parsePosition);
 
@@ -440,8 +439,6 @@ public abstract class NumberFormat extends Format  {
      * @throws ParseException if parsing fails
      * @throws NullPointerException if {@code source} is {@code null}.
      * @see #isStrict()
-     * @see #isParseIntegerOnly()
-     * @see #isGroupingUsed()
      */
     public Number parse(String source) throws ParseException {
         ParsePosition parsePosition = new ParsePosition(0);

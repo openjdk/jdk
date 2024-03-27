@@ -1580,7 +1580,6 @@ public final class CompactNumberFormat extends NumberFormat {
      * @return the parsed value, or {@code null} if the parse fails
      * @throws     NullPointerException if {@code text} or
      *             {@code pos} is null
-     * @see #setStrict(boolean)
      */
     @Override
     public Number parse(String text, ParsePosition pos) {
@@ -2389,7 +2388,7 @@ public final class CompactNumberFormat extends NumberFormat {
     /**
      * {@inheritDoc NumberFormat}
      *
-     * @see #setStrict(boolean)
+     * @see #isStrict()
      * @see #parse(String, ParsePosition)
      * @since 23
      */
