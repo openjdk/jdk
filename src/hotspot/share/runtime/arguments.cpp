@@ -501,6 +501,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RegisterFinalizersAtInit",     JDK_Version::jdk(22), JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "ZGenerational",                JDK_Version::jdk(23), JDK_Version::undefined(), JDK_Version::undefined() },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
