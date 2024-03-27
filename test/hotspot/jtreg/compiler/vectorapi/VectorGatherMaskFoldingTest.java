@@ -39,7 +39,7 @@ import jdk.incubator.vector.VectorSpecies;
  * @summary Don't allow folding of load/store of vectors when using incompatible indices or mask
  * @modules jdk.incubator.vector
  *
- * @run main/othervm compiler.vectorapi.VectorGatherMaskFoldingTest
+ * @run main compiler.vectorapi.VectorGatherMaskFoldingTest
  */
 
 public class VectorGatherMaskFoldingTest {
