@@ -1333,7 +1333,16 @@ static void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj,
 
   __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), 0);
   __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), 0);
+
+  // Check if this is a virtual thread continuation
+  Label L_skip_vthread_code;
+  __ cmpl(Address(rsp, ContinuationEntry::flags_offset()), 0);
+  __ jcc(Assembler::equal, L_skip_vthread_code);
+    // For vthreads we have to explicitly zero the JNI monitor count of the carrier
+    // on startup. The held count is zeroed above after preserving in the parent.
   __ movq(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
+
+  __ bind(L_skip_vthread_code);
 }
 
 //---------------------------- continuation_enter_cleanup ---------------------------
@@ -1355,23 +1364,30 @@ void static continuation_enter_cleanup(MacroAssembler* masm) {
   __ stop("Incorrect rsp at continuation_enter_cleanup");
   __ bind(L_good_sp);
 #endif
-
   __ movptr(rbx, Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()));
   __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), rbx);
 
+  // Check if this is a virtual thread continuation
+  Label L_skip_vthread_code;
+  __ cmpl(Address(rsp, ContinuationEntry::flags_offset()), 0);
+  __ jcc(Assembler::equal, L_skip_vthread_code);
+
   if (CheckJNICalls) {
-    Label no_warn;
+    Label L_no_warn;
     __ cmpptr(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
-    __ jcc(Assembler::equal, no_warn);
-    // Check if this is a virtual thread continuation
-    __ cmpl(Address(rsp, ContinuationEntry::flags_offset()), 0);
-    __ jcc(Assembler::equal, no_warn);
+    __ jcc(Assembler::equal, L_no_warn);
     // If the held monitor count is > 0 and this vthread is terminating then
     // it failed to release a JNI monitor. So we issue the same log message
     // that JavaThread::exit does.
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::log_jni_monitor_still_held));
-    __ bind(no_warn);
+    __ bind(L_no_warn);
+    // For vthreads we have to explicitly zero the JNI monitor count of the carrier
+    // on termination. The held count is implicitly zeroed below when we restore from
+    // the parent held count (which has to be zero).
+    __ movq(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
   }
+
+  __ bind(L_skip_vthread_code);
 
   __ movq(rbx, Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()));
   __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), rbx);
