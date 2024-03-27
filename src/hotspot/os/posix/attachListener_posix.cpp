@@ -22,6 +22,7 @@
  *
  */
 
+#if INCLUDE_SERVICES
 #ifndef AIX
 
 #include "precompiled.hpp"
@@ -42,10 +43,6 @@
 
 #ifndef UNIX_PATH_MAX
 #define UNIX_PATH_MAX   sizeof(((struct sockaddr_un *)0)->sun_path)
-#endif
-
-#ifndef INCLUDE_SERVICES
-#define INCLUDE_SERVICES 1
 #endif
 
 // The attach mechanism on Linux and BSD uses a UNIX domain socket. An attach
@@ -114,8 +111,6 @@ class PosixAttachListener: AllStatic {
 
   static PosixAttachOperation* dequeue();
 };
-
-#if INCLUDE_SERVICES
 
 class PosixAttachOperation: public AttachOperation {
  private:
@@ -584,6 +579,6 @@ void AttachListener::pd_detachall() {
   // do nothing for now
 }
 
-#endif // INCLUDE_SERVICES
-
 #endif // AIX
+
+#endif // INCLUDE_SERVICES
