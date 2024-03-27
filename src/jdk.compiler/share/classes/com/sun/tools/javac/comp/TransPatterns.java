@@ -1378,22 +1378,30 @@ public class TransPatterns extends TreeTranslator {
 
 
         ClassSymbol recordClass = (ClassSymbol) tree.expr.type.tsym;
-        List<VarSymbol> outgoingBindingsIt = tree.outgoingBindings;
+        List<VarSymbol> outgoingBindingsIt = tree.componentLocalVariables;
         List<? extends RecordComponent> recordComponentsIt = recordClass.getRecordComponents();
 
         while (outgoingBindingsIt.nonEmpty()) {
             Type erasedComponentType = types.erasure(recordComponentsIt.head.type);
-            newBlock.add(make.VarDef(outgoingBindingsIt.head, make.App(make.Select(make.Ident(temp), recordComponentsIt.head.accessor)).setType(erasedComponentType)));
+            newBlock.add(make.VarDef(outgoingBindingsIt.head,
+                                     make.App(make.Select(make.Ident(temp),
+                                                          recordComponentsIt.head.accessor))
+                                         .setType(erasedComponentType)));
             outgoingBindingsIt = outgoingBindingsIt.tail;
             recordComponentsIt = recordComponentsIt.tail;
         }
 
         newBlock.add(translate(tree.block));
 
-        JCNewClass createNew = make.NewClass(null, List.nil(), make.QualIdent(recordClass), tree.outgoingBindings.map(bs -> make.Ident(bs)), null);
+        JCNewClass createNew = make.NewClass(null,
+                                             List.nil(),
+                                             make.QualIdent(recordClass),
+                                             tree.componentLocalVariables.map(make::Ident),
+                                             null);
 
         createNew.type = tree.type;
-        createNew.constructor = recordClass.members().findFirst(names.init, s -> (s.flags() & Flags.RECORD) != 0); //TODO: more safer test, like "is constructor".
+        createNew.constructor = recordClass.members()
+                                           .findFirst(names.init, s -> (s.flags() & Flags.RECORD) != 0);
 
         result = make.LetExpr(newBlock.toList(), createNew).setType(tree.type);
     }

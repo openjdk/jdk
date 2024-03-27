@@ -3970,21 +3970,26 @@ public class Attr extends JCTree.Visitor {
             env.dup(tree, env.info.dup(env.info.scope.dup()));
 
         try {
-            ListBuffer<VarSymbol> outgoingBindings = new ListBuffer<>();
+            ListBuffer<VarSymbol> componentLocalVariables = new ListBuffer<>();
 
             if ((exprType.tsym.flags() & RECORD) == 0) {
                 log.error(tree, Errors.DerivedExpressionNoRecord);
             } else {
-                for (RecordComponent component : ((ClassSymbol) exprType.tsym).getRecordComponents()) {
-                    VarSymbol outgoing = new VarSymbol(OUTGOING_BINDING, component.name, types.memberType(exprType, component), env.info.scope.owner);
+                ClassSymbol recordType = (ClassSymbol) exprType.tsym;
+
+                for (RecordComponent component : recordType.getRecordComponents()) {
+                    VarSymbol outgoing = new VarSymbol(COMPONENT_LOCAL_VARIABLE,
+                                                       component.name,
+                                                       types.memberType(exprType, component),
+                                                       env.info.scope.owner);
 
                     outgoing.pos = tree.pos;
-                    outgoingBindings.append(outgoing);
+                    componentLocalVariables.append(outgoing);
                     blockEnv.info.scope.enter(outgoing);
                 }
             }
 
-            tree.outgoingBindings = outgoingBindings.toList();
+            tree.componentLocalVariables = componentLocalVariables.toList();
 
             attribStat(tree.block, blockEnv);
 

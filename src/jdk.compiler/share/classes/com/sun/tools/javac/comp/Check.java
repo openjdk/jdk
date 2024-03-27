@@ -78,6 +78,7 @@ import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.code.TypeTag.WILDCARD;
 
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+import java.util.function.Function;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -4910,7 +4911,8 @@ public class Check {
 
     void checkDerivedInstanceBlockStructure(JCDerivedInstance instance) {
         new TreeScanner() {
-            private final Set<JCTree> seenTrees = Collections.newSetFromMap(new IdentityHashMap<>());
+            private final Set<JCTree> seenTrees =
+                    Collections.newSetFromMap(new IdentityHashMap<>());
             private final Set<VarSymbol> seenVariables = new HashSet<>();
             @Override
             public void scan(JCTree tree) {
@@ -4919,7 +4921,7 @@ public class Check {
             }
             @Override
             public void visitClassDef(JCClassDecl tree) {
-                //no limits on inside of the class decl
+                //no limits on the inside of the nested class decl
             }
             @Override
             public void visitReturn(JCReturn tree) {
@@ -4958,27 +4960,36 @@ public class Check {
             }
             @Override
             public void visitAssign(JCAssign tree) {
-                if (tree.lhs instanceof JCIdent var && !seenVariables.contains(var.sym)) {
-                    log.error(var.pos(), Errors.WithAssignmentNotAllowed(var.sym));
-                }
+                checkInvalidAssignTarget(tree.lhs);
                 super.visitAssign(tree);
+            }
+
+            @Override
+            public void visitAssignop(JCAssignOp tree) {
+                checkInvalidAssignTarget(tree.lhs);
+                super.visitAssignop(tree);
             }
 
             @Override
             public void visitUnary(JCUnary tree) {
                 switch (tree.getTag()) {
                     case PREDEC, PREINC, POSTDEC, POSTINC -> {
-                        if (tree.arg instanceof JCIdent var && !seenVariables.contains(var.sym)) {
-                            log.error(var.pos(), Errors.WithAssignmentNotAllowed(var.sym));
-                        }
+                        checkInvalidAssignTarget(tree.arg);
                     }
                 }
                 super.visitUnary(tree);
             }
 
+            private void checkInvalidAssignTarget(JCTree operand) {
+                if (operand instanceof JCIdent var &&
+                    !seenVariables.contains(var.sym)) {
+                    log.error(var.pos(), Errors.WithAssignmentNotAllowed(var.sym));
+                }
+            }
+
             @Override
             public void visitReconstruction(JCDerivedInstance tree) {
-                seenVariables.addAll(tree.outgoingBindings);
+                seenVariables.addAll(tree.componentLocalVariables);
                 super.visitReconstruction(tree);
             }
         }.scan(instance);

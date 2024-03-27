@@ -390,9 +390,9 @@ public class Flags {
     public static final long SEALED = 1L<<62; // ClassSymbols
 
     /**
-     * Flag to indicate outgoing binding declaration.
+     * Flag to indicate component local variables.
      */
-    public static final long OUTGOING_BINDING = 1L<<62; // VarSymbols
+    public static final long COMPONENT_LOCAL_VARIABLE = 1L<<62; // VarSymbols
 
     /**
      * Flag to indicate restricted method declaration.

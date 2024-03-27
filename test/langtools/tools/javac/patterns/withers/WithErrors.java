@@ -41,6 +41,7 @@ public class WithErrors {
 
             value = "nue"; //OK - assignment to the component
             i = ++i + i++ + --i + i-- + -i + +i; //error - assignment to outter variable
+            i += 1; //error - (compound) assignment to outter variable
             field = 0; //error - unqualified assignment to field
             this.field = 0; // OK - qualified assignment
             l = 0; //OK - assignment to a variable local to the block
@@ -53,6 +54,7 @@ public class WithErrors {
 
                 value = "nue"; //error - cannot assign inside lambda
                 i = 0; //error - assignment to outter variable, and inside lambda
+                i += 1; //error - (compound) assignment to outter variable
                 field = 0; //error - unqualified assignment to field
                 this.field = 0; // OK - qualified assignment
                 l1 = 0; //error - cannot assign inside lambda
@@ -79,12 +81,12 @@ public class WithErrors {
                 public void run () {
                     int l2;
 
-                    value = "nue"; //error - cannot assign inside lambda
-                    i = 0; //error - assignment to outter variable, and inside lambda
-                    field = 0; //error - unqualified assignment to field
+                    value = "nue"; //error - cannot assign inside the anonymous class
+                    i = 0; //error - cannot assign inside the anonymous class
+                    field = 0; //OK - assignment to outer field from inside the anonymous class
                     WithErrors.this.field = 0; // OK - qualified assignment
                     l1 = 0; //error - cannot assign inside lambda
-                    l2 = 0; //OK - assignment to a variable local to the block
+                    l2 = 0; //OK - assignment to a variable local to this block/method
                 }
             };
         };
@@ -174,7 +176,7 @@ public class WithErrors {
 
         input = input with {
             switch (0) {
-                default -> {}
+                default -> {break;}
             }
         };
 
@@ -252,7 +254,7 @@ public class WithErrors {
 
         input = input with {
             int _ = switch (0) {
-                default -> 0;
+                default -> { yield 0; }
             };
         };
     }

@@ -2056,7 +2056,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class JCDerivedInstance extends JCExpression implements DerivedInstanceTree {
         public JCExpression expr;
         public JCBlock block;
-        public List<VarSymbol> outgoingBindings;
+        public List<VarSymbol> componentLocalVariables;
         protected JCDerivedInstance(JCExpression expr, JCBlock block) {
             this.expr = expr;
             this.block = block;
