@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import jdk.jfr.events.FileForceEvent;
 import jdk.jfr.events.FileReadEvent;
 import jdk.jfr.events.FileWriteEvent;
 import jdk.jfr.events.InitialSecurityPropertyEvent;
+import jdk.jfr.events.SocketConnectEvent;
 import jdk.jfr.events.SocketReadEvent;
 import jdk.jfr.events.SocketWriteEvent;
 
@@ -62,6 +63,7 @@ public final class JDKEvents {
         FileForceEvent.class,
         FileReadEvent.class,
         FileWriteEvent.class,
+        SocketConnectEvent.class,
         SocketReadEvent.class,
         SocketWriteEvent.class,
         ActiveSettingEvent.class,
@@ -76,6 +78,7 @@ public final class JDKEvents {
         jdk.internal.event.SecurityPropertyModificationEvent.class,
         jdk.internal.event.SecurityProviderServiceEvent.class,
         jdk.internal.event.SerializationMisdeclarationEvent.class,
+        jdk.internal.event.SocketConnectEvent.class,
         jdk.internal.event.SocketReadEvent.class,
         jdk.internal.event.SocketWriteEvent.class,
         jdk.internal.event.ThreadSleepEvent.class,
