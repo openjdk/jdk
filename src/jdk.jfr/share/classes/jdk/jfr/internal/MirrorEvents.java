@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import jdk.jfr.events.DeserializationEvent;
 import jdk.jfr.events.ErrorThrownEvent;
 import jdk.jfr.events.ExceptionStatisticsEvent;
 import jdk.jfr.events.ExceptionThrownEvent;
+import jdk.jfr.events.FileForceEvent;
 import jdk.jfr.events.ProcessStartEvent;
 import jdk.jfr.events.SecurityPropertyModificationEvent;
 import jdk.jfr.events.SecurityProviderServiceEvent;
@@ -50,6 +51,7 @@ import jdk.jfr.events.X509ValidationEvent;
 public final class MirrorEvents {
     private static final Class<?>[] mirrorEventClasses = {
         DeserializationEvent.class,
+        FileForceEvent.class,
         ProcessStartEvent.class,
         SecurityPropertyModificationEvent.class,
         SecurityProviderServiceEvent.class,

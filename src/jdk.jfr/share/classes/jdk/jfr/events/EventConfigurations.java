@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,5 +30,4 @@ import jdk.jfr.internal.event.EventConfiguration;
 public final class EventConfigurations {
     public static final EventConfiguration FILE_READ = JVMSupport.getConfiguration(FileReadEvent.class);
     public static final EventConfiguration FILE_WRITE = JVMSupport.getConfiguration(FileWriteEvent.class);
-    public static final EventConfiguration FILE_FORCE = JVMSupport.getConfiguration(FileForceEvent.class);
 }
