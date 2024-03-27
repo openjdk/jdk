@@ -53,10 +53,10 @@ class JfrCHeapObj : public CHeapObj<mtTracing> {
   static char* allocate_array_noinline(size_t elements, size_t element_size);
 
  public:
-  NOINLINE void* operator new(size_t size) throw();
-  NOINLINE void* operator new (size_t size, const std::nothrow_t&  nothrow_constant) throw();
-  NOINLINE void* operator new [](size_t size) throw();
-  NOINLINE void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant) throw();
+  NOINLINE void* operator new(size_t size) noexcept;
+  NOINLINE void* operator new (size_t size, const std::nothrow_t&  nothrow_constant) noexcept;
+  NOINLINE void* operator new [](size_t size) noexcept;
+  NOINLINE void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant) noexcept;
   void  operator delete(void* p, size_t size);
   void  operator delete [] (void* p, size_t size);
   static char* realloc_array(char* old, size_t size);

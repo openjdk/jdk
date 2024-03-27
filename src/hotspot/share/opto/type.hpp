@@ -192,7 +192,7 @@ protected:
 
 public:
 
-  inline void* operator new( size_t x ) throw() {
+  inline void* operator new( size_t x ) noexcept {
     Compile* compile = Compile::current();
     compile->set_type_last_size(x);
     return compile->type_arena()->AmallocWords(x);

@@ -192,13 +192,13 @@ class CHeapObjBase {
   ALWAYSINLINE void* operator new(size_t size,
                                   MEMFLAGS f,
                                   const std::nothrow_t&,
-                                  const NativeCallStack& stack) throw() {
+                                  const NativeCallStack& stack) noexcept {
     return AllocateHeap(size, f, stack, AllocFailStrategy::RETURN_NULL);
   }
 
   ALWAYSINLINE void* operator new(size_t size,
                                   MEMFLAGS f,
-                                  const std::nothrow_t&) throw() {
+                                  const std::nothrow_t&) noexcept {
     return AllocateHeap(size, f, AllocFailStrategy::RETURN_NULL);
   }
 
@@ -215,13 +215,13 @@ class CHeapObjBase {
   ALWAYSINLINE void* operator new[](size_t size,
                                     MEMFLAGS f,
                                     const std::nothrow_t&,
-                                    const NativeCallStack& stack) throw() {
+                                    const NativeCallStack& stack) noexcept {
     return AllocateHeap(size, f, stack, AllocFailStrategy::RETURN_NULL);
   }
 
   ALWAYSINLINE void* operator new[](size_t size,
                                     MEMFLAGS f,
-                                    const std::nothrow_t&) throw() {
+                                    const std::nothrow_t&) noexcept {
     return AllocateHeap(size, f, AllocFailStrategy::RETURN_NULL);
   }
 
@@ -243,11 +243,11 @@ class CHeapObj {
   }
 
   ALWAYSINLINE void* operator new(size_t size, const std::nothrow_t& nt,
-                                  const NativeCallStack& stack) throw() {
+                                  const NativeCallStack& stack) noexcept {
     return CHeapObjBase::operator new(size, F, nt, stack);
   }
 
-  ALWAYSINLINE void* operator new(size_t size, const std::nothrow_t& nt) throw() {
+  ALWAYSINLINE void* operator new(size_t size, const std::nothrow_t& nt) noexcept {
     return CHeapObjBase::operator new(size, F, nt);
   }
 
@@ -261,11 +261,11 @@ class CHeapObj {
   }
 
   ALWAYSINLINE void* operator new[](size_t size, const std::nothrow_t& nt,
-                                    const NativeCallStack& stack) throw() {
+                                    const NativeCallStack& stack) noexcept {
     return CHeapObjBase::operator new[](size, F, nt, stack);
   }
 
-  ALWAYSINLINE void* operator new[](size_t size, const std::nothrow_t& nt) throw() {
+  ALWAYSINLINE void* operator new[](size_t size, const std::nothrow_t& nt) noexcept {
     return CHeapObjBase::operator new[](size, F, nt);
   }
 
@@ -404,11 +404,11 @@ class MetaspaceObj {
 
   void* operator new(size_t size, ClassLoaderData* loader_data,
                      size_t word_size,
-                     Type type, JavaThread* thread) throw();
+                     Type type, JavaThread* thread) noexcept;
                      // can't use TRAPS from this header file.
   void* operator new(size_t size, ClassLoaderData* loader_data,
                      size_t word_size,
-                     Type type) throw();
+                     Type type) noexcept;
   void operator delete(void* p) { ShouldNotCallThis(); }
 
   // Declare a *static* method with the same signature in any subclass of MetaspaceObj
@@ -437,12 +437,12 @@ class ResourceObj {
     return resource_allocate_bytes(size);
   }
 
-  void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
+  void* operator new(size_t size, const std::nothrow_t& nothrow_constant) noexcept {
     return resource_allocate_bytes(size, AllocFailStrategy::RETURN_NULL);
   }
 
-  void* operator new [](size_t size) throw() = delete;
-  void* operator new [](size_t size, const std::nothrow_t& nothrow_constant) throw() = delete;
+  void* operator new [](size_t size) noexcept = delete;
+  void* operator new [](size_t size, const std::nothrow_t& nothrow_constant) noexcept = delete;
 
   void  operator delete(void* p) = delete;
   void  operator delete [](void* p) = delete;
@@ -450,11 +450,11 @@ class ResourceObj {
 
 class ArenaObj {
  public:
-  void* operator new(size_t size, Arena *arena) throw();
-  void* operator new [](size_t size, Arena *arena) throw() = delete;
+  void* operator new(size_t size, Arena *arena) noexcept;
+  void* operator new [](size_t size, Arena *arena) noexcept = delete;
 
-  void* operator new [](size_t size) throw() = delete;
-  void* operator new [](size_t size, const std::nothrow_t& nothrow_constant) throw() = delete;
+  void* operator new [](size_t size) noexcept = delete;
+  void* operator new [](size_t size, const std::nothrow_t& nothrow_constant) noexcept = delete;
 
   void  operator delete(void* p) = delete;
   void  operator delete [](void* p) = delete;
@@ -497,8 +497,8 @@ protected:
   // CHeap allocations
   void* operator new(size_t size, MEMFLAGS flags) throw();
   void* operator new [](size_t size, MEMFLAGS flags) throw() = delete;
-  void* operator new(size_t size, const std::nothrow_t&  nothrow_constant, MEMFLAGS flags) throw();
-  void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant, MEMFLAGS flags) throw() = delete;
+  void* operator new(size_t size, const std::nothrow_t&  nothrow_constant, MEMFLAGS flags) noexcept;
+  void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant, MEMFLAGS flags) noexcept = delete;
 
   // Arena allocations
   void* operator new(size_t size, Arena *arena);
@@ -510,7 +510,7 @@ protected:
     DEBUG_ONLY(set_allocation_type(res, RESOURCE_AREA);)
     return res;
   }
-  void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
+  void* operator new(size_t size, const std::nothrow_t& nothrow_constant) noexcept {
     address res = (address)resource_allocate_bytes(size, AllocFailStrategy::RETURN_NULL);
     DEBUG_ONLY(if (res != nullptr) set_allocation_type(res, RESOURCE_AREA);)
     return res;

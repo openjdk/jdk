@@ -61,7 +61,7 @@ class State;
 class MachOper : public ResourceObj {
 public:
   // Allocate right next to the MachNodes in the same arena
-  void *operator new(size_t x) throw() {
+  void *operator new(size_t x) noexcept {
     Compile* C = Compile::current();
     return C->node_arena()->AmallocWords(x);
   }

@@ -406,7 +406,7 @@ class BufferBlob: public RuntimeBlob {
   BufferBlob(const char* name, int size);
   BufferBlob(const char* name, int size, CodeBuffer* cb);
 
-  void* operator new(size_t s, unsigned size) throw();
+  void* operator new(size_t s, unsigned size) noexcept;
 
  public:
   // Creation
@@ -447,7 +447,7 @@ class VtableBlob: public BufferBlob {
 private:
   VtableBlob(const char*, int);
 
-  void* operator new(size_t s, unsigned size) throw();
+  void* operator new(size_t s, unsigned size) noexcept;
 
 public:
   // Creation
@@ -490,7 +490,7 @@ class RuntimeStub: public RuntimeBlob {
     bool        caller_must_gc_arguments
   );
 
-  void* operator new(size_t s, unsigned size) throw();
+  void* operator new(size_t s, unsigned size) noexcept;
 
  public:
   // Creation
@@ -527,7 +527,7 @@ class SingletonBlob: public RuntimeBlob {
   friend class VMStructs;
 
  protected:
-  void* operator new(size_t s, unsigned size) throw();
+  void* operator new(size_t s, unsigned size) noexcept;
 
  public:
    SingletonBlob(
@@ -738,7 +738,7 @@ class UpcallStub: public RuntimeBlob {
 
   UpcallStub(const char* name, CodeBuffer* cb, int size, jobject receiver, ByteSize frame_data_offset);
 
-  void* operator new(size_t s, unsigned size) throw();
+  void* operator new(size_t s, unsigned size) noexcept;
 
   struct FrameData {
     JavaFrameAnchor jfa;

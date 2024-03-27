@@ -656,7 +656,7 @@ public:
     return _unc;
   }
 
-  inline void* operator new(size_t x) throw() {
+  inline void* operator new(size_t x) noexcept {
     Compile* C = Compile::current();
     return C->comp_arena()->AmallocWords(x);
   }

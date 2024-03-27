@@ -53,7 +53,7 @@ protected:
  private:
   NONCOPYABLE(Array);
 
-  inline void* operator new(size_t size, ClassLoaderData* loader_data, int length, TRAPS) throw();
+  inline void* operator new(size_t size, ClassLoaderData* loader_data, int length, TRAPS) noexcept;
 
   static size_t byte_sizeof(int length, size_t elm_byte_size) {
     return sizeof(Array<T>) + MAX2(length - 1, 0) * elm_byte_size;

@@ -104,7 +104,7 @@ void ParkEvent::Release (ParkEvent * ev) {
 // well as bank access imbalance on Niagara-like platforms,
 // although Niagara's hash function should help.
 
-void * ParkEvent::operator new (size_t sz) throw() {
+void * ParkEvent::operator new (size_t sz) noexcept {
   return (void *) ((intptr_t (AllocateHeap(sz + 256, mtInternal, CALLER_PC)) + 256) & -256) ;
 }
 

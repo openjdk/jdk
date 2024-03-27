@@ -148,7 +148,7 @@ class ParkEvent : public PlatformEvent {
     // aligned on 256-byte address boundaries.  This ensures that the least
     // significant byte of a ParkEvent address is always 0.
 
-    void * operator new (size_t sz) throw();
+    void * operator new (size_t sz) noexcept;
     void operator delete (void * a) ;
 
   public:

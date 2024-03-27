@@ -156,8 +156,8 @@ class PhiResolver: public CompilationResourceObj {
 class LIRGenerator: public InstructionVisitor, public BlockClosure {
  // LIRGenerator should never get instatiated on the heap.
  private:
-  void* operator new(size_t size) throw();
-  void* operator new[](size_t size) throw();
+  void* operator new(size_t size) noexcept;
+  void* operator new[](size_t size) noexcept;
   void operator delete(void* p) { ShouldNotReachHere(); }
   void operator delete[](void* p) { ShouldNotReachHere(); }
 

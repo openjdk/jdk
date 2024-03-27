@@ -44,7 +44,7 @@ void* AdlReAllocateHeap(void* old_ptr, size_t size) {
   return ptr;
 }
 
-void* AdlChunk::operator new(size_t requested_size, size_t length) throw() {
+void* AdlChunk::operator new(size_t requested_size, size_t length) noexcept {
   return AdlCHeapObj::operator new(requested_size + length);
 }
 
@@ -183,7 +183,7 @@ bool AdlArena::contains( const void *ptr ) const {
 //-----------------------------------------------------------------------------
 // CHeapObj
 
-void* AdlCHeapObj::operator new(size_t size) throw() {
+void* AdlCHeapObj::operator new(size_t size) noexcept {
   return (void *) AdlAllocateHeap(size);
 }
 

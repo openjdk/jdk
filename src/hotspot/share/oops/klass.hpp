@@ -196,7 +196,7 @@ protected:
   Klass(KlassKind kind);
   Klass();
 
-  void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw();
+  void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) noexcept;
 
  public:
   int kind() { return _kind; }

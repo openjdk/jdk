@@ -334,7 +334,7 @@ class Instruction: public CompilationResourceObj {
   };
 
  public:
-  void* operator new(size_t size) throw() {
+  void* operator new(size_t size) noexcept {
     Compilation* c = Compilation::current();
     void* res = c->arena()->Amalloc(size);
     return res;
@@ -1626,7 +1626,7 @@ LEAF(BlockBegin, StateSplit)
   friend class SuxAndWeightAdjuster;
 
  public:
-   void* operator new(size_t size) throw() {
+   void* operator new(size_t size) noexcept {
     Compilation* c = Compilation::current();
     void* res = c->arena()->Amalloc(size);
     return res;

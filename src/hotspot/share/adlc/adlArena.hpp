@@ -40,7 +40,7 @@ void* AdlReAllocateHeap(void* old_ptr, size_t size);
 
 class AdlCHeapObj {
  public:
-  void* operator new(size_t size) throw();
+  void* operator new(size_t size) noexcept;
   void  operator delete(void* p);
   void* new_array(size_t size);
 };
@@ -49,7 +49,7 @@ class AdlCHeapObj {
 
 class AdlAllStatic {
  public:
-  void* operator new(size_t size) throw();
+  void* operator new(size_t size) noexcept;
   void operator delete(void* p);
 };
 
@@ -63,7 +63,7 @@ class AdlChunk: public AdlCHeapObj {
   // delete rather than an ordinary sized delete; see C++14 3.7.4.2/p2.
   void operator delete(void* p);
  public:
-  void* operator new(size_t size, size_t length) throw();
+  void* operator new(size_t size, size_t length) noexcept;
   void  operator delete(void* p, size_t length);
   AdlChunk(size_t length);
 

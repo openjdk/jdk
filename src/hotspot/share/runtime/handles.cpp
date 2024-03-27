@@ -165,11 +165,11 @@ void HandleMark::chop_later_chunks() {
   Chunk::next_chop(_chunk);
 }
 
-void* HandleMark::operator new(size_t size) throw() {
+void* HandleMark::operator new(size_t size) noexcept {
   return AllocateHeap(size, mtThread);
 }
 
-void* HandleMark::operator new [] (size_t size) throw() {
+void* HandleMark::operator new [] (size_t size) noexcept {
   return AllocateHeap(size, mtThread);
 }
 
