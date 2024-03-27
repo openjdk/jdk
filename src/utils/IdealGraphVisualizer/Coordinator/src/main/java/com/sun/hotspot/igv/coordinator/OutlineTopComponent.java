@@ -29,12 +29,12 @@ import com.sun.hotspot.igv.data.*;
 import com.sun.hotspot.igv.data.serialization.ParseMonitor;
 import com.sun.hotspot.igv.data.serialization.Parser;
 import com.sun.hotspot.igv.data.serialization.Printer;
+import com.sun.hotspot.igv.data.serialization.Printer.GraphContext;
 import com.sun.hotspot.igv.data.services.GraphViewer;
 import com.sun.hotspot.igv.data.services.GroupCallback;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
-import com.sun.hotspot.igv.view.DiagramViewModel;
 import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -283,15 +283,12 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             InputGraph graph = lastProvider.getGraph();
             if (graph != null) {
                 if (graph.isDiffGraph()) {
-                    EditorTopComponent editor = EditorTopComponent.getActive();
-                    if (editor != null) {
-                        InputGraph firstGraph = editor.getModel().getFirstGraph();
-                        GraphNode firstNode = FolderNode.getGraphNode(firstGraph);
-                        InputGraph secondGraph = editor.getModel().getSecondGraph();
-                        GraphNode secondNode = FolderNode.getGraphNode(secondGraph);
-                        if (firstNode != null && secondNode != null) {
-                            selectedGraphs = new GraphNode[]{firstNode, secondNode};
-                        }
+                    InputGraph firstGraph = graph.getFirstGraph();
+                    GraphNode firstNode = FolderNode.getGraphNode(firstGraph);
+                    InputGraph secondGraph = graph.getSecondGraph();
+                    GraphNode secondNode = FolderNode.getGraphNode(secondGraph);
+                    if (firstNode != null && secondNode != null) {
+                        selectedGraphs = new GraphNode[]{firstNode, secondNode};
                     }
                 } else {
                     GraphNode graphNode = FolderNode.getGraphNode(graph);
@@ -449,52 +446,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         });
     }
 
-    private void saveStates(String path) throws IOException {
-        FileOutputStream fos = new FileOutputStream(path);
-        ObjectOutputStream out = new ObjectOutputStream(fos);
-
-        List<EditorTopComponent> editorTabs = new ArrayList<>();
-        WindowManager manager = WindowManager.getDefault();
-        for (Mode mode : manager.getModes()) {
-            List<TopComponent> compList = new ArrayList<>(Arrays.asList(manager.getOpenedTopComponents(mode)));
-            for (TopComponent comp : compList) {
-                if (comp instanceof EditorTopComponent) {
-                    editorTabs.add((EditorTopComponent) comp);
-                }
-            }
-        }
-
-        out.writeInt(STATE_FORMAT_VERSION);
-
-        int tabCount = editorTabs.size();
-        out.writeInt(tabCount);
-        for (EditorTopComponent etc : editorTabs) {
-            DiagramViewModel model = etc.getModel();
-            boolean isDiffGraph = model.getGraph().isDiffGraph();
-            out.writeBoolean(isDiffGraph);
-            if (isDiffGraph) {
-                InputGraph firstGraph = model.getFirstGraph();
-                InputGraph secondGraph = model.getSecondGraph();
-                out.writeInt(firstGraph.getGroup().getIndex());
-                out.writeInt(firstGraph.getIndex());
-                out.writeUTF(firstGraph.getGroup().getName() + "#" + firstGraph.getName());
-                out.writeInt(secondGraph.getGroup().getIndex());
-                out.writeInt(secondGraph.getIndex());
-                out.writeUTF(secondGraph.getGroup().getName() + "#" + secondGraph.getName());
-            } else {
-                InputGraph graph = model.getGraph();
-                out.writeInt(graph.getGroup().getIndex());
-                out.writeInt(graph.getIndex());
-                out.writeUTF(graph.getGroup().getName() + "#" + graph.getName());
-            }
-            int hiddenNodeCount = model.getHiddenNodes().size();
-            out.writeInt(hiddenNodeCount);
-            for (int hiddenNodeID : model.getHiddenNodes()) {
-                out.writeInt(hiddenNodeID);
-            }
-        }
-        out.close();
-    }
 
     public void loadGraphDocument(String path) throws IOException {
         RP.post(() -> {
@@ -554,16 +505,37 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         if (graphFile == null) {
             return;
         }
+
+        Set<GraphContext> saveContexts = new HashSet<>();
+        if (saveState) {
+            WindowManager manager = WindowManager.getDefault();
+            for (Mode mode : manager.getModes()) {
+                List<TopComponent> compList = new ArrayList<>(Arrays.asList(manager.getOpenedTopComponents(mode)));
+                for (TopComponent comp : compList) {
+                    if (comp instanceof EditorTopComponent etc) {
+                        InputGraph openedGraph = etc.getModel().getFirstGraph();
+                        int posDiff = etc.getModel().getSecondPosition() - etc.getModel().getFirstPosition();
+                        Set<Integer> hiddenNodes = new HashSet<>(etc.getModel().getHiddenNodes());
+                        Set<Integer> selectedNodes = new HashSet<>(etc.getModel().getSelectedNodes());
+                        GraphContext graphContext = new GraphContext(openedGraph, posDiff, hiddenNodes, selectedNodes);
+                        saveContexts.add(graphContext);
+                    }
+                }
+            }
+        }
+
         try (Writer writer = new OutputStreamWriter(Files.newOutputStream(graphFile.toPath()))) {
             Printer printer = new Printer();
-            printer.exportGraphDocument(writer, doc, saveState);
+            printer.exportGraphDocument(writer, doc, saveContexts);
         }
+
     }
+
+
 
     private InputGraph findGraph(int groupIdx, int graphIdx) {
         FolderElement folderElement = document.getElements().get(groupIdx);
-        if (folderElement instanceof Group) {
-            Group group = (Group) folderElement;
+        if (folderElement instanceof Group group) {
             return group.getGraphs().get(graphIdx);
         }
         return null;

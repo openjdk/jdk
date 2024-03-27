@@ -53,6 +53,10 @@ public class Parser implements GraphParser {
     public static final String TOP_ELEMENT = "graphDocument";
     public static final String GROUP_ELEMENT = "group";
     public static final String GRAPH_ELEMENT = "graph";
+    public static final String GRAPH_STATES_ELEMENT = "graphStates";
+    public static final String STATE_ELEMENT = "state";
+    public static final String STATE_POSITION_DIFFERENCE = "difference";
+    public static final String POSITION_DIFFERENCE_PROPERTY = "value";
     public static final String ROOT_ELEMENT = "graphDocument";
     public static final String PROPERTIES_ELEMENT = "properties";
     public static final String EDGES_ELEMENT = "edges";
@@ -60,6 +64,9 @@ public class Parser implements GraphParser {
     public static final String EDGE_ELEMENT = "edge";
     public static final String NODE_ELEMENT = "node";
     public static final String NODES_ELEMENT = "nodes";
+    public static final String SELECTED_NODES_ELEMENT = "selectedNodes";
+    public static final String HIDDEN_NODES_ELEMENT = "hiddenNodes";
+
     public static final String REMOVE_EDGE_ELEMENT = "removeEdge";
     public static final String REMOVE_NODE_ELEMENT = "removeNode";
     public static final String METHOD_NAME_PROPERTY = "name";
