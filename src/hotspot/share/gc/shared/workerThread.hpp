@@ -41,14 +41,17 @@ class WorkerTask : public CHeapObj<mtInternal> {
 private:
   const char* _name;
   const uint _gc_id;
+  const bool _caller_can_run;
 
- public:
-  explicit WorkerTask(const char* name) :
+public:
+  explicit WorkerTask(const char* name, bool caller_can_run = false) :
     _name(name),
-    _gc_id(GCId::current_or_undefined()) {}
+    _gc_id(GCId::current_or_undefined()),
+    _caller_can_run(caller_can_run) {}
 
   const char* name() const { return _name; }
   uint gc_id() const { return _gc_id; }
+  bool caller_can_run() const { return _caller_can_run; }
 
   virtual void work(uint worker_id) = 0;
 };
@@ -78,7 +81,12 @@ public:
   // Worker API.
 
   // Waits for a task to become available to the worker and runs it.
+  void caller_run_task();
+
+  // Sees if there is a task and runs it.
   void worker_run_task();
+
+  void internal_run_task(bool is_worker);
 };
 
 // A set of worker threads to execute tasks
