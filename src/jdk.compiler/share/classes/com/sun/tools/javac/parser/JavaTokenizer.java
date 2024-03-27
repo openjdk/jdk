@@ -75,6 +75,11 @@ public class JavaTokenizer extends UnicodeReader {
     private final Preview preview;
 
     /**
+     * Whether "///" comments are recognized as documentation comments.
+     */
+    protected final boolean enableLineDocComments;
+
+    /**
      * The log to be used for error reporting. Copied from scanner factory.
      */
     private final Log log;
@@ -181,6 +186,7 @@ public class JavaTokenizer extends UnicodeReader {
         this.tokens = fac.tokens;
         this.source = fac.source;
         this.preview = fac.preview;
+        this.enableLineDocComments = fac.enableLineDocComments;
         this.lint = fac.lint;
         this.sb = new StringBuilder(256);
         this.pendingTokens = List.nil();
@@ -1056,7 +1062,7 @@ public class JavaTokenizer extends UnicodeReader {
                     next();
 
                     if (accept('/')) { // (Spec. 3.7)
-                        if (accept('/')) { // JavaDoc line comment
+                        if (enableLineDocComments && accept('/')) { // JavaDoc line comment
                             int endPos;
                             do {
                                 skipToEOLN();

@@ -381,6 +381,8 @@ public enum Option {
 
     PREVIEW("--enable-preview", "opt.preview", STANDARD, BASIC),
 
+    DISABLE_LINE_DOC_COMMENTS("--disable-line-doc-comments", "opt.lineDocComments", EXTENDED, BASIC),
+
     PROFILE("-profile", "opt.arg.profile", "opt.profile", STANDARD, BASIC) {
         @Override
         public void process(OptionHelper helper, String option, String operand) throws InvalidValueException {
