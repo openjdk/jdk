@@ -69,8 +69,8 @@ public class FrameDialogMixedTest {
             Dialog dialog = new Dialog(frame);
             Point frameLoc = frame.getLocationOnScreen();
             dialog.setBounds(frameLoc.x + frame.getSize().width + 5,
-                                frameLoc.y,
-                                SIZE, SIZE);
+                             frameLoc.y,
+                             SIZE, SIZE);
             dialog.setBackground(Color.GREEN);
             dialog.setUndecorated(true);
             dialog.setVisible(true);
