@@ -43,13 +43,13 @@ public class ResolvedReferencesNotNullTest {
         String whiteboxParam = SharedStringsUtils.getWbParam();
 
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-cp",
-                                                                             appJar,
-                                                                             whiteboxParam,
-                                                                             "-XX:+UnlockDiagnosticVMOptions",
-                                                                             "-XX:+WhiteBoxAPI",
-                                                                             "ResolvedReferencesWb",
-                                                                             "false" // ResolvedReferencesTestApp is not archived
-                                                                             );
+                                                                      appJar,
+                                                                      whiteboxParam,
+                                                                      "-XX:+UnlockDiagnosticVMOptions",
+                                                                      "-XX:+WhiteBoxAPI",
+                                                                      "ResolvedReferencesWb",
+                                                                      "false" // ResolvedReferencesTestApp is not archived
+                                                                      );
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
 
