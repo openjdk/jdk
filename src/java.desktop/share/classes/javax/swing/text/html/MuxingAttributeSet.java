@@ -206,25 +206,20 @@ class MuxingAttributeSet implements AttributeSet, Serializable {
         final AttributeSet[] as = getAttributes();
         final int n = as.length;
         if (key != CSS.Attribute.TEXT_DECORATION) {
-            return Arrays.stream(as)
-                         .map(a -> a.getAttribute(key))
-                         .filter(Objects::nonNull)
-                         .findFirst()
-                         .orElse(null);
-//            for (int i = 0; i < n; i++) {
-//                Object o = as[i].getAttribute(key);
-//                if (o != null) {
-//                    return o;
-//                }
-//            }
-        } else {
-            String values = Arrays.stream(as)
-                                  .map(a -> a.getAttribute(key))
-                                  .filter(Objects::nonNull)
-                                  .map(Object::toString)
-                                  .collect(Collectors.joining(","));
-            return CSS.mergeTextDecoration(values);
+            for (int i = 0; i < n; i++) {
+                Object o = as[i].getAttribute(key);
+                if (o != null) {
+                    return o;
+                }
+            }
         }
+
+        String values = Arrays.stream(as)
+                              .map(a -> a.getAttribute(key))
+                              .filter(Objects::nonNull)
+                              .map(Object::toString)
+                              .collect(Collectors.joining(","));
+        return CSS.mergeTextDecoration(values);
     }
 
     /**
