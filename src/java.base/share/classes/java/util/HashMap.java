@@ -496,6 +496,14 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     /**
      * Implements Map.putAll and Map constructor.
      *
+     * @implNote Expand the map if the map if the number of mappings to be added
+     *           is greater than or equal to threshold. This is conservative; the
+     *           obvious condition is (m.size() + size) >= threshold, but this
+     *           condition could result in a map with twice the appropriate
+     *           capacity, if the keys to be added overlap with the keys already in
+     *           this map. By using the conservative calculation, we subject ourself
+     *           to at most one extra resize.
+     *
      * @param m the map
      * @param evict false when initially constructing this map, else
      * true (relayed to method afterNodeInsertion).
