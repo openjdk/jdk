@@ -3702,7 +3702,16 @@ public final class String
      *
      * @return  the {@code String}, converted to lowercase.
      * @see     java.lang.String#toLowerCase(Locale)
+     *
+     * @deprecated This method is locale sensitive, and may produce unexpected
+     * results if used for strings that are intended to be interpreted locale
+     * independently.
+     * <p>
+     * Instead, to obtain correct results for locale insensitive strings, use
+     * {@code toLowerCase(Locale.ROOT)}; otherwise, use
+     * {@code toLowerCase(Locale.getDefault())}.
      */
+    @Deprecated(since="21")
     public String toLowerCase() {
         return toLowerCase(Locale.getDefault());
     }
@@ -3782,7 +3791,16 @@ public final class String
      *
      * @return  the {@code String}, converted to uppercase.
      * @see     java.lang.String#toUpperCase(Locale)
+     *
+     * @deprecated This method is locale sensitive, and may produce unexpected
+     * results if used for strings that are intended to be interpreted locale
+     * independently.
+     * <p>
+     * Instead, to obtain correct results for locale insensitive strings, use
+     * {@code toUpperCase(Locale.ROOT)}; otherwise, use
+     * {@code toUpperCase(Locale.getDefault())}.
      */
+    @Deprecated(since="21")
     public String toUpperCase() {
         return toUpperCase(Locale.getDefault());
     }
