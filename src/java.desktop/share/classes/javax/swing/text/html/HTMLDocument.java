@@ -3423,59 +3423,41 @@ public class HTMLDocument extends DefaultStyledDocument {
                 if (styleAttributes != null) {
                     charAttr.addAttributes(styleAttributes);
                 }
+
+                convertAttributes(t, attr);
             }
 
             public void end(HTML.Tag t) {
                 popCharacterStyle();
+            }
+
+            /**
+             * Converts HTML tags to CSS attributes.
+             * @param t the current HTML tag
+             * @param attr the attributes of the HTML tag
+             */
+            void convertAttributes(HTML.Tag t, MutableAttributeSet attr) {
             }
         }
 
         final class ConvertSpan extends CharacterAction {
             @Override
-            public void start(HTML.Tag t, MutableAttributeSet attr) {
-                pushCharacterStyle();
-                if (!foundInsertTag) {
-                    // Note that the third argument should really be based off
-                    // inParagraph and impliedP. If we're wrong (that is
-                    // insertTagDepthDelta shouldn't be changed), we'll end up
-                    // removing an extra EndSpec, which won't matter anyway.
-                    boolean insert = canInsertTag(t, attr, false);
-                    if (foundInsertTag) {
-                        if (!inParagraph) {
-                            inParagraph = impliedP = true;
-                        }
-                    }
-                    if (!insert) {
-                        return;
-                    }
-                }
-                if (attr.isDefined(IMPLIED)) {
-                    attr.removeAttribute(IMPLIED);
-                }
-
+            void convertAttributes(HTML.Tag t, MutableAttributeSet attr) {
                 Object newDecoration = attr.getAttribute(CSS.Attribute.TEXT_DECORATION);
-                Object currentDecoration = charAttr.getAttribute(CSS.Attribute.TEXT_DECORATION);
-
-                charAttr.addAttribute(t, attr.copyAttributes());
-                if (styleAttributes != null) {
-                    charAttr.addAttributes(styleAttributes);
-                }
+                Object previousDecoration =
+                        charAttrStack.peek()
+                                     .getAttribute(CSS.Attribute.TEXT_DECORATION);
 
                 if (newDecoration != null
                     && !"none".equals(newDecoration.toString())
-                    && currentDecoration != null) {
+                    && previousDecoration != null) {
                     StyleSheet sheet = getStyleSheet();
                     sheet.addCSSAttribute(charAttr,
                                           CSS.Attribute.TEXT_DECORATION,
                                           CSS.mergeTextDecoration(newDecoration + ","
-                                                                  + currentDecoration)
+                                                                  + previousDecoration)
                                              .toString());
                 }
-            }
-
-            @Override
-            public void end(HTML.Tag t) {
-                popCharacterStyle();
             }
         }
 
@@ -3484,35 +3466,9 @@ public class HTMLDocument extends DefaultStyledDocument {
          * mappings that have a corresponding StyleConstants
          * and CSS mapping.  The conversion is to CSS attributes.
          */
-        class ConvertAction extends TagAction {
-
-            public void start(HTML.Tag t, MutableAttributeSet attr) {
-                pushCharacterStyle();
-                if (!foundInsertTag) {
-                    // Note that the third argument should really be based off
-                    // inParagraph and impliedP. If we're wrong (that is
-                    // insertTagDepthDelta shouldn't be changed), we'll end up
-                    // removing an extra EndSpec, which won't matter anyway.
-                    boolean insert = canInsertTag(t, attr, false);
-                    if (foundInsertTag) {
-                        if (!inParagraph) {
-                            inParagraph = impliedP = true;
-                        }
-                    }
-                    if (!insert) {
-                        return;
-                    }
-                }
-                if (attr.isDefined(IMPLIED)) {
-                    attr.removeAttribute(IMPLIED);
-                }
-                if (styleAttributes != null) {
-                    charAttr.addAttributes(styleAttributes);
-                }
-                // We also need to add attr, otherwise we lose custom
-                // attributes, including class/id for style lookups, and
-                // further confuse style lookup (doesn't have tag).
-                charAttr.addAttribute(t, attr.copyAttributes());
+        final class ConvertAction extends CharacterAction {
+            @Override
+            void convertAttributes(HTML.Tag t, MutableAttributeSet attr) {
                 StyleSheet sheet = getStyleSheet();
                 if (t == HTML.Tag.B) {
                     sheet.addCSSAttribute(charAttr, CSS.Attribute.FONT_WEIGHT, "bold");
@@ -3553,11 +3509,6 @@ public class HTMLDocument extends DefaultStyledDocument {
                     }
                 }
             }
-
-            public void end(HTML.Tag t) {
-                popCharacterStyle();
-            }
-
         }
 
         class AnchorAction extends CharacterAction {
