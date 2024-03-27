@@ -315,7 +315,7 @@ public class TestMemorySession {
         var sessionImpl = ((MemorySessionImpl) arena.scope());
         assertEquals(sessionImpl.isCloseableBy(Thread.currentThread()), sessionImpl.isCloseable());
         Thread otherThread = new Thread();
-        boolean isCloseableByOther = sessionImpl.isCloseable() && !"ConfinedSession".equals(sessionImpl.getClass().getSimpleName());
+        boolean isCloseableByOther = sessionImpl.isCloseable() && sessionImpl.ownerThread() == null;
         assertEquals(sessionImpl.isCloseableBy(otherThread), isCloseableByOther);
     }
 
