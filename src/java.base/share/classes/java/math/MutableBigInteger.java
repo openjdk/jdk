@@ -1840,31 +1840,28 @@ class MutableBigInteger {
      * the signed value of n is less than zero.
      * Returns long value where high 32 bits contain remainder value and
      * low 32 bits contain quotient value.
+     * @see {@link Long#divideUnsigned(long, long)}
+     * @see {@link Long#remainderUnsigned(long, long)}
      */
     static long divWord(long n, int d) {
-        long dLong = d & LONG_MASK;
-        long r;
-        long q;
-        if (dLong == 1) {
-            q = (int)n;
-            r = 0;
-            return (r << 32) | (q & LONG_MASK);
-        }
-
-        // Approximate the quotient and remainder
-        q = (n >>> 1) / (dLong >>> 1);
-        r = n - q*dLong;
-
-        // Correct the approximation
-        while (r < 0) {
-            r += dLong;
-            q--;
-        }
-        while (r >= dLong) {
-            r -= dLong;
-            q++;
-        }
-        // n - q*dlong == r && 0 <= r <dLong, hence we're done.
+        /* See Hacker's Delight (2nd ed), section 9.3 */
+        final long dLong = d & LONG_MASK;
+        final long q0 = (n >>> 1) / dLong << 1;
+        final long r0 = n - q0 * dLong;
+        /*
+         * Here, 0 <= r0 < 2 * dLong
+         * (1) When 0 <= r0 < dLong, the remainder is simply r0.
+         * (2) Otherwise the remainder is r0 - dLong.
+         *
+         * In case (1), r0 - dLong < 0. Applying ~ produces a long with
+         * sign bit 0, so >> produces 0. The remainder is thus r0.
+         *
+         * In case (2), a similar reasoning shows that >> produces -1,
+         * so the remainder is r0 - dLong.
+         */
+        long correction = ~(r0 - dLong);
+        long q = q0 + ((r0 | correction) >>> 63);
+        long r = r0 - ((correction >> 63) & dLong);
         return (r << 32) | (q & LONG_MASK);
     }
 
