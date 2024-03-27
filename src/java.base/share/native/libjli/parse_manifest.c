@@ -142,11 +142,19 @@ readAt(int fd, jlong pos, unsigned int count, void *buf) {
 
 /*
  * Reads size and offset fields from a zip64 extended information extra field.
+ *
+ * If one of the corresponding central directory fields is too small to hold the
+ * required data, the information will be in the zip64 extended information
+ * record.
+ *
+ * The disk number field is only used to validate the size of the zip64 extended
+ * information record.
+ *
  * See APPNOTE.TXT 4.5.3.
  */
 static jboolean
 read_zip64_ext(Byte *p, jlong *cenlen, jlong *censiz, jlong *cenoff,
-               jlong *cendsk) {
+               short cendsk) {
   short headerId = ZIPEXT_HDR(p);
   if (headerId != ZIP64_EXTID) {
     return JNI_FALSE;
@@ -156,7 +164,7 @@ read_zip64_ext(Byte *p, jlong *cenlen, jlong *censiz, jlong *cenoff,
       (*cenlen == ZIP64_MAGICVAL ? 8 : 0) +
       (*censiz == ZIP64_MAGICVAL ? 8 : 0) +
       (*cenoff == ZIP64_MAGICVAL ? 8 : 0) +
-      (*cendsk == ZIP64_MAGICVAL ? 8 : 0);
+      (cendsk == ZIP64_MAGICCOUNT ? 4 : 0);
   if (headerSize != expectedSize) {
     return JNI_FALSE;
   }
@@ -171,11 +179,6 @@ read_zip64_ext(Byte *p, jlong *cenlen, jlong *censiz, jlong *cenoff,
   }
   if (*cenoff == ZIP64_MAGICVAL) {
     *cenoff = LL(p, offset);
-    offset += 8;
-  }
-  if (*cendsk == ZIP64_MAGICVAL) {
-    *cendsk = LL(p, offset);
-    offset += 8;
   }
   return JNI_TRUE;
 }
@@ -190,7 +193,6 @@ validate_lochdr(int fd, jlong censtart, jlong base_offset, Byte *cenhdr) {
   jlong cenlen = CENLEN(cenhdr);
   jlong censiz = CENSIZ(cenhdr);
   jlong cenoff = CENOFF(cenhdr);
-  jlong cendsk = CENDSK(cenhdr);
   jlong cenext = CENEXT(cenhdr);
   if (cenoff == ZIP64_MAGICVAL && cenext > 0) {
     Byte p[ZIP64_EXTMAXLEN];
@@ -203,7 +205,7 @@ validate_lochdr(int fd, jlong censtart, jlong base_offset, Byte *cenhdr) {
       short headerId = ZIPEXT_HDR(p);
       short headerSize = ZIPEXT_SIZ(p);
       if (headerId == ZIP64_EXTID) {
-        if (!read_zip64_ext(p, &cenlen, &censiz, &cenoff, &cendsk)) {
+        if (!read_zip64_ext(p, &cenlen, &censiz, &cenoff, CENDSK(cenhdr))) {
           return JNI_FALSE;
         }
         break;
@@ -493,7 +495,6 @@ find_file(int fd, zentry *entry, const char *file_name)
             jlong cenlen = CENLEN(p);
             jlong censiz = CENSIZ(p);
             jlong cenoff = CENOFF(p);
-            jlong cendsk = CENDSK(p);
             jlong cenext = CENEXT(p);
             if ((cenlen == ZIP64_MAGICVAL
                   || censiz == ZIP64_MAGICVAL
@@ -505,7 +506,7 @@ find_file(int fd, zentry *entry, const char *file_name)
                 short headerId = ZIPEXT_HDR(base + offset);
                 short headerSize = ZIPEXT_SIZ(base + offset);
                 if (headerId == ZIP64_EXTID) {
-                  if (!read_zip64_ext(base + offset, &cenlen, &censiz, &cenoff, &cendsk)) {
+                  if (!read_zip64_ext(base + offset, &cenlen, &censiz, &cenoff, CENDSK(p))) {
                     free(buffer);
                     return (-1);
                   }
