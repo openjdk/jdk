@@ -78,6 +78,7 @@ import javax.print.attribute.standard.MediaPrintableArea;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.MediaTray;
+import javax.print.attribute.standard.OutputBin;
 import javax.print.attribute.standard.NumberUp;
 import javax.print.attribute.standard.OrientationRequested;
 import javax.print.attribute.standard.PDLOverrideSupported;
@@ -138,6 +139,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
     private DocFlavor[] supportedDocFlavors;
     private Class<?>[] supportedCats;
     private MediaTray[] mediaTrays;
+    private OutputBin[] outputBins;
     private MediaSizeName[] mediaSizeNames;
     private CustomMediaSizeName[] customMediaSizeNames;
     private int defaultMediaIndex;
@@ -211,6 +213,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         new RequestingUserName("", Locale.getDefault()),
         //SheetCollate.UNCOLLATED, //CUPS has no sheet collate?
         Sides.ONE_SIDED,
+        OutputBin.TOP,
     };
 
 
@@ -460,6 +463,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                         cps = new CUPSPrinter(printer);
                         mediaSizeNames = cps.getMediaSizeNames();
                         mediaTrays = cps.getMediaTrays();
+                        outputBins = cps.getOutputBins();
                         customMediaSizeNames = cps.getCustomMediaSizeNames();
                         defaultMediaIndex = cps.getDefaultMediaIndex();
                         rawResolutions = cps.getRawResolutions();
@@ -827,6 +831,8 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 new PrinterResolution[supportedRes.length];
             System.arraycopy(supportedRes, 0, arr, 0, supportedRes.length);
             return arr;
+        } else if (category == OutputBin.class) {
+            return Arrays.copyOf(outputBins, outputBins.length);
         }
 
         return null;
