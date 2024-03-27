@@ -1022,22 +1022,21 @@ void AwtWindow::_RepositionSecurityWarning(void* param)
         static_cast<RepositionSecurityWarningStruct *>(param);
     jobject self = rsws->window;
 
-    PDATA pData;
+    AwtWindow *window = nullptr;
     if (self == NULL) {
         env->ExceptionClear();
         JNU_ThrowNullPointerException(env, "self");
         delete rsws;
         return;
     } else {
-        pData = JNI_GET_PDATA(self);
-        if (pData == NULL) {
+        window = (AwtWindow *) JNI_GET_PDATA(self);
+        if (window == nullptr) {
             THROW_NULL_PDATA_IF_NOT_DESTROYED(self);
             env->DeleteGlobalRef(self);
             delete rsws;
             return;
         }
     }
-    AwtWindow *window = (AwtWindow *) pData;
 
     window->RepositionSecurityWarning(env);
 
