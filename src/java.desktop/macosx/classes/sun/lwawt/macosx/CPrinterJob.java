@@ -35,9 +35,20 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.atomic.AtomicReference;
 
+import java.io.Reader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.Files;
+import java.util.Properties;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.io.IOException;
+
 import javax.print.*;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.standard.Chromaticity;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.Destination;
 import javax.print.attribute.standard.Media;
@@ -77,6 +88,9 @@ public final class CPrinterJob extends RasterPrinterJob {
     //  basis.
     private long fNSPrintInfo = -1;
     private Object fNSPrintInfoLock = new Object();
+
+    private static String[] monochromeKeyValues;
+    private static String[] colorKeyValues;
 
     static {
         // AWT has to be initialized for the native code to function correctly.
@@ -701,6 +715,73 @@ public final class CPrinterJob extends RasterPrinterJob {
             attributes.add(s);
             this.sidesAttr = s;
         }
+    }
+
+    private int getChromaticity() {
+        return (this.chromaticityAttr == null) ? -1 : this.chromaticityAttr.getValue();
+    }
+
+    private static Properties getPrinterProperties() {
+
+        final String home = System.getProperty("java.home");
+        if (home == null) {
+            return null;
+        }
+
+        Path propertyPath = Paths.get(home, "conf", "printer.properties");
+
+        if (Files.notExists(propertyPath)) {
+            return null;
+        }
+
+        Properties properties = new Properties();
+        try (Reader reader = Files.newBufferedReader(propertyPath)) {
+            properties.load(reader);
+            return properties;
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    private String[] getChromaticityKeyValues(int value) {
+
+        if (monochromeKeyValues == null || colorKeyValues == null) {
+            Properties printerProperties = getPrinterProperties();
+            monochromeKeyValues = getChromaticityProperties("Chromaticity.MONOCHROME", printerProperties);
+            colorKeyValues = getChromaticityProperties("Chromaticity.COLOR", printerProperties);
+        }
+
+        if (Chromaticity.MONOCHROME.getValue() == value) {
+            return monochromeKeyValues;
+        } else if (Chromaticity.COLOR.getValue() == value) {
+            return colorKeyValues;
+        } else {
+            return new String[0];
+        }
+    }
+
+    private static String[] getChromaticityProperties(String chromaticityKeyPrefix, Properties printerProperties) {
+
+        if (printerProperties == null) {
+            return new String[0];
+        }
+
+        int prefixLength = chromaticityKeyPrefix.length() + 1;
+        List<String> chromaticityKeyValuesList = new ArrayList<>();
+        for (Map.Entry<Object, Object> entry : printerProperties.entrySet()) {
+
+            String key = entry.getKey().toString();
+
+            if (key.startsWith(chromaticityKeyPrefix)) {
+                if (key.length() > prefixLength) {
+                    String chromaticityKey = key.substring(prefixLength);
+                    chromaticityKeyValuesList.add(chromaticityKey);
+                    chromaticityKeyValuesList.add(entry.getValue().toString());
+                }
+            }
+        }
+
+        return chromaticityKeyValuesList.toArray(new String[chromaticityKeyValuesList.size()]);
     }
 
     private boolean cancelCheck() {

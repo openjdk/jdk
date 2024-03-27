@@ -70,6 +70,7 @@ import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.ResolutionSyntax;
 import javax.print.attribute.Size2DSyntax;
 import javax.print.attribute.standard.Copies;
+import javax.print.attribute.standard.Chromaticity;
 import javax.print.attribute.standard.Destination;
 import javax.print.attribute.standard.DialogTypeSelection;
 import javax.print.attribute.standard.DialogOwner;
@@ -166,7 +167,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
     public static boolean forcePDL = false;
     public static boolean forceRaster = false;
     public static boolean shapeTextProp = false;
-
     static {
         /* The system property FORCE_PIPE_PROP
          * can be used to force the printing code to
@@ -279,6 +279,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
     private PageRanges pageRangesAttr;
     protected PrinterResolution printerResAttr;
     protected Sides sidesAttr;
+    protected Chromaticity chromaticityAttr;
     protected String destinationAttr;
     protected boolean noJobSheet = false;
     protected int mDestType = RasterPrinterJob.FILE;
@@ -1228,6 +1229,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
         /*  reset all values to defaults */
         setCollated(false);
         sidesAttr = null;
+        chromaticityAttr = null;
         printerResAttr = null;
         pageRangesAttr = null;
         copiesAttr = 0;
@@ -1273,6 +1275,8 @@ public abstract class RasterPrinterJob extends PrinterJob {
         if (!isSupportedValue(sidesAttr,  attributes)) {
             sidesAttr = Sides.ONE_SIDED;
         }
+
+        chromaticityAttr = (Chromaticity)attributes.get(Chromaticity.class);
 
         printerResAttr = (PrinterResolution)attributes.get(PrinterResolution.class);
         if (service.isAttributeCategorySupported(PrinterResolution.class)) {
