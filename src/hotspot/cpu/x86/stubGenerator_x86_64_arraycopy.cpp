@@ -152,6 +152,11 @@ void StubGenerator::generate_arraycopy_stubs() {
   StubRoutines::_arrayof_jshort_fill = generate_fill(T_SHORT, true, "arrayof_jshort_fill");
   StubRoutines::_arrayof_jint_fill = generate_fill(T_INT, true, "arrayof_jint_fill");
 
+  StubRoutines::_unsafe_setmemory    = generate_unsafe_setmemory("unsafe_setmemory",
+                                                                 StubRoutines::_arrayof_jbyte_fill,
+                                                                 StubRoutines::_arrayof_jshort_fill,
+                                                                 StubRoutines::_arrayof_jint_fill);
+
   // We don't generate specialized code for HeapWord-aligned source
   // arrays, so just use the code we've already generated
   StubRoutines::_arrayof_jbyte_disjoint_arraycopy  = StubRoutines::_jbyte_disjoint_arraycopy;
@@ -2475,6 +2480,61 @@ address StubGenerator::generate_unsafe_copy(const char *name,
   return start;
 }
 
+
+//  Generate 'unsafe' set memory stub
+//  Though just as safe as the other stubs, it takes an unscaled
+//  size_t argument instead of an element count.
+//
+//  Input:
+//    c_rarg0   - destination array address
+//    c_rarg1   - byte count (size_t)
+//    c_rarg2   - byte count, treated as ssize_t
+//
+// Examines the alignment of the operands and dispatches
+// to an int, short, or byte fill loop.
+//
+address StubGenerator::generate_unsafe_setmemory(const char *name,
+                                                 address byte_fill_entry,
+                                                 address short_fill_entry,
+                                                 address int_fill_entry) {
+  Label L_int_aligned, L_short_aligned;
+
+  // Input registers (before setup_arg_regs)
+  const Register dest        = c_rarg1;  // destination array address
+  const Register size        = c_rarg2;  // byte count (size_t)
+  const Register value       = c_rarg0;  // byte value to fill
+
+  // Register used as a temp
+  const Register bits        = rax;      // test copy of low bits
+
+  __ align(CodeEntryAlignment);
+  StubCodeMark mark(this, "StubRoutines", name);
+  address start = __ pc();
+
+  __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+  // bump this on entry, not on exit:
+  INC_COUNTER_NP(SharedRuntime::_unsafe_set_memory_ctr, rscratch1);
+
+  __ mov(bits, dest);
+  __ orptr(bits, size);
+
+  __ testb(bits, BytesPerInt-1);
+  __ jccb(Assembler::zero, L_int_aligned);
+
+  __ testb(bits, BytesPerShort-1);
+  __ jump_cc(Assembler::notZero, RuntimeAddress(byte_fill_entry));
+
+  __ BIND(L_short_aligned);
+  // __ shrptr(size, LogBytesPerShort); // size => short_count
+  __ jump(RuntimeAddress(short_fill_entry));
+
+  __ BIND(L_int_aligned);
+  // __ shrptr(size, LogBytesPerInt); // size => int_count
+  __ jump(RuntimeAddress(int_fill_entry));
+
+  return start;
+}
 
 // Perform range checks on the proposed arraycopy.
 // Kills temp, but nothing else.

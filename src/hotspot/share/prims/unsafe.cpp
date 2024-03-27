@@ -397,16 +397,16 @@ UNSAFE_ENTRY_SCOPED(void, Unsafe_SetMemory0(JNIEnv *env, jobject unsafe, jobject
   }
 } UNSAFE_END
 
-UNSAFE_ENTRY_SCOPED(void, Unsafe_SetMemory1(JNIEnv *env, jobject unsafe, jobject obj, jlong size, jbyte value)) {
+UNSAFE_ENTRY_SCOPED(void, Unsafe_SetMemory1(JNIEnv *env, jobject unsafe, jlong address, jlong size, jbyte value)) {
   size_t sz = (size_t)size;
 
-  oop base = JNIHandles::resolve(obj);
-  void* p = index_oop_from_field_offset_long(base, 0);
+  void *p = (void *) address;
 
   {
     GuardUnsafeAccess guard(thread);
     Copy::fill_to_memory_atomic(p, sz, value);
   }
+
 } UNSAFE_END
 
 UNSAFE_ENTRY_SCOPED(void, Unsafe_CopyMemory0(JNIEnv *env, jobject unsafe, jobject srcObj, jlong srcOffset, jobject dstObj, jlong dstOffset, jlong size)) {
@@ -918,7 +918,7 @@ static JNINativeMethod jdk_internal_misc_Unsafe_methods[] = {
     {CC "writebackPreSync0",  CC "()V",                  FN_PTR(Unsafe_WriteBackPreSync0)},
     {CC "writebackPostSync0", CC "()V",                  FN_PTR(Unsafe_WriteBackPostSync0)},
     {CC "setMemory0",         CC "(" OBJ "JJB)V",        FN_PTR(Unsafe_SetMemory0)},
-    {CC "setMemory1",         CC "(" OBJ "JB)V",         FN_PTR(Unsafe_SetMemory1)},
+    {CC "setMemory1",         CC "(JJB)V",               FN_PTR(Unsafe_SetMemory1)},
 
     {CC "shouldBeInitialized0", CC "(" CLS ")Z",         FN_PTR(Unsafe_ShouldBeInitialized0)},
 

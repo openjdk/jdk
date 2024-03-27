@@ -751,7 +751,7 @@ public final class Unsafe {
      * <p>Equivalent to {@code setMemory(null, address, bytes, value)}.
      */
     public void setMemory(long address, long bytes, byte value) {
-        setMemory(null, address, bytes, value);
+        setMemory1(address, bytes, value);
     }
 
     /**
@@ -3826,7 +3826,7 @@ public final class Unsafe {
     private native void freeMemory0(long address);
     private native void setMemory0(Object o, long offset, long bytes, byte value);
     @IntrinsicCandidate
-    private native void setMemory1(Object dst, long bytes, byte value);
+    private native void setMemory1(long dst, long bytes, byte value);
     @IntrinsicCandidate
     private native void copyMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
     private native void copySwapMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes, long elemSize);
