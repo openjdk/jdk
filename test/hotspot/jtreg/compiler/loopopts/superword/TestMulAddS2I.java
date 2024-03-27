@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8310886
+ * @bug 8310886 8325252
  * @summary Test MulAddS2I vectorization.
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMulAddS2I

@@ -67,6 +67,40 @@ private:
   // Doubly-linked pairs. If not linked: -1
   GrowableArray<int> _left_to_right; // bb_idx -> bb_idx
   GrowableArray<int> _right_to_left; // bb_idx -> bb_idx
+  // Example:
+  //
+  //   Pairs: (n1, n2) and (n2, n3)
+  //   bb_idx(n1) = 1
+  //   bb_idx(n2) = 3
+  //   bb_idx(n3) = 5
+  //
+  //   index / bb_idx:   0   1   2   3   4   5   6
+  //
+  //   left_to_right:  |   | 3 |   | 5 |   |   |   |
+  //                         n1----->
+  //                                 n2----->
+  //
+  //   right_to_left:  |   |   |   | 1 |   | 3 |   |
+  //                          <------n2
+  //                                  <------n3
+  //
+  //   Nodes with bb_idx 0, 2, 4, and 6 are in no pair, they are thus neither left nor right elements,
+  //   and hence have no entries in the mapping.
+  //
+  //   Nodes with bb_idx 1 and 3 (n1 and n2) are both a left element in some pair. Therefore, they both
+  //   have an entry in the left_to_right mapping. This mapping indicates which right element they are
+  //   paired with, namely the nodes with bb_idx 3 and 5 (n2 and n3), respectively.
+  //
+  //   Nodes with bb_idx 3 and 5 (n2 and n4) are both a right element in some pair. Therefore, they both
+  //   have an entry in the right_to_left mapping. This mapping indicates which left element they are
+  //   paired with, namely the nodes with bb_idx 1 and 3 (n1 and n2), respectively.
+  //
+  //   Node n1 with bb_idx 1 is not a right element in any pair, thus its right_to_left is empty.
+  //
+  //   Node n2 with bb_idx 3 is both a left element of pair (n2, n3), and a right element of pair (n1, n2).
+  //   Thus it has entries in both left_to_right (mapping n2->n3) and right_to_left (mapping n2->n1).
+  //
+  //   Node n3 with bb_idx 5 is not a left element in any pair, thus its left_to_right is empty.
 
   // List of all left elements bb_idx, in the order of pair addition.
   GrowableArray<int> _lefts_in_insertion_order;
@@ -81,34 +115,39 @@ public:
     _lefts_in_insertion_order(arena, 8, 0, 0) {}
 
   const VLoopBody& body() const { return _body; }
+
   bool is_empty() const { return _lefts_in_insertion_order.is_empty(); }
-  bool has_left(int i)  const { return _left_to_right.at(i) != -1; }
-  bool has_right(int i) const { return _right_to_left.at(i) != -1; }
-  bool has_left(const Node* n)  const { return _vloop.in_bb(n) && has_left( _body.bb_idx(n)); }
-  bool has_right(const Node* n) const { return _vloop.in_bb(n) && has_right(_body.bb_idx(n)); }
-  bool has_pair(const Node* n1, const Node* n2) const { return has_left(n1) && get_right_for(n1) == n2; }
-  bool is_left_in_a_left_most_pair(int i)   const { return has_left(i) && !has_right(i); }
-  bool is_right_in_a_right_most_pair(int i) const { return !has_left(i) && has_right(i); }
+
+  bool is_left(int i)  const { return _left_to_right.at(i) != -1; }
+  bool is_right(int i) const { return _right_to_left.at(i) != -1; }
+  bool is_left(const Node* n)  const { return _vloop.in_bb(n) && is_left( _body.bb_idx(n)); }
+  bool is_right(const Node* n) const { return _vloop.in_bb(n) && is_right(_body.bb_idx(n)); }
+
+  bool is_pair(const Node* n1, const Node* n2) const { return is_left(n1) && get_right_for(n1) == n2; }
+
+  bool is_left_in_a_left_most_pair(int i)   const { return is_left(i) && !is_right(i); }
+  bool is_right_in_a_right_most_pair(int i) const { return !is_left(i) && is_right(i); }
   bool is_left_in_a_left_most_pair(const Node* n)   const { return is_left_in_a_left_most_pair( _body.bb_idx(n)); }
   bool is_right_in_a_right_most_pair(const Node* n) const { return is_right_in_a_right_most_pair(_body.bb_idx(n)); }
+
   int get_right_for(int i) const { return _left_to_right.at(i); }
   Node* get_right_for(const Node* n) const { return _body.body().at(get_right_for(_body.bb_idx(n))); }
-  Node* get_right_or_null_for(const Node* n) const { return has_left(n) ? get_right_for(n) : nullptr; }
+  Node* get_right_or_null_for(const Node* n) const { return is_left(n) ? get_right_for(n) : nullptr; }
 
   // To access elements in insertion order:
   int length() const { return _lefts_in_insertion_order.length(); }
-  Node* left_at(int i)  const { return _body.body().at(_lefts_in_insertion_order.at(i)); }
-  Node* right_at(int i) const { return _body.body().at(get_right_for(_lefts_in_insertion_order.at(i))); }
+  Node* left_at_in_insertion_order(int i)  const { return _body.body().at(_lefts_in_insertion_order.at(i)); }
+  Node* right_at_in_insertion_order(int i) const { return _body.body().at(get_right_for(_lefts_in_insertion_order.at(i))); }
 
   void add_pair(Node* n1, Node* n2) {
     assert(n1 != nullptr && n2 != nullptr && n1 != n2, "no nullptr, and different nodes");
-    assert(!has_left(n1) && !has_right(n2), "cannot be left twice, or right twice");
+    assert(!is_left(n1) && !is_right(n2), "cannot be left twice, or right twice");
     int bb_idx_1 = _body.bb_idx(n1);
     int bb_idx_2 = _body.bb_idx(n2);
     _left_to_right.at_put(bb_idx_1, bb_idx_2);
     _right_to_left.at_put(bb_idx_2, bb_idx_1);
     _lefts_in_insertion_order.append(bb_idx_1);
-    assert(has_left(n1) && has_right(n2), "must be set now");
+    assert(is_left(n1) && is_right(n2), "must be set now");
   }
 
   NOT_PRODUCT(void print() const;)
@@ -130,14 +169,18 @@ private:
 
 public:
   PairSetIterator(const PairSet& pairset) :
-    _pairset(pairset), _body(pairset.body()),
-    _chain_start_bb_idx(-1), _current_bb_idx(-1),
+    _pairset(pairset),
+    _body(pairset.body()),
+    _chain_start_bb_idx(-1),
+    _current_bb_idx(-1),
     _end_bb_idx(_body.body().length())
   {
     next_chain();
   }
 
-  bool done() const { return _chain_start_bb_idx >= _end_bb_idx; }
+  bool done() const {
+    return _chain_start_bb_idx >= _end_bb_idx;
+  }
 
   Node* left() const {
     return _body.body().at(_current_bb_idx);
@@ -150,9 +193,9 @@ public:
 
   // Try to keep walking on the current pair-chain, else find a new pair-chain.
   void next() {
-    assert(_pairset.has_left(_current_bb_idx), "current was valid");
+    assert(_pairset.is_left(_current_bb_idx), "current was valid");
     _current_bb_idx = _pairset.get_right_for(_current_bb_idx);
-    if (!_pairset.has_left(_current_bb_idx)) {
+    if (!_pairset.is_left(_current_bb_idx)) {
       next_chain();
     }
   }
@@ -260,7 +303,7 @@ private:
   const VLoop& _vloop;
   const VLoopBody& _body;
 
-  // The "packset" proper: an array of "packs"
+  // Set of all packs:
   GrowableArray<Node_List*> _packs;
 
   // Mapping from nodes to their pack: bb_idx -> pack

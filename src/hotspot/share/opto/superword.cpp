@@ -840,7 +840,7 @@ bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
   // and will still be vectorized by SuperWord::vector_opd.
   if (isomorphic(s1, s2) && !is_populate_index(s1, s2)) {
     if ((independent(s1, s2) && have_similar_inputs(s1, s2)) || reduction(s1, s2)) {
-      if (!_pairset.has_left(s1) && !_pairset.has_right(s2)) {
+      if (!_pairset.is_left(s1) && !_pairset.is_right(s2)) {
         if (!s1->is_Mem() || are_adjacent_refs(s1, s2)) {
           int s1_align = alignment(s1);
           int s2_align = alignment(s2);
@@ -1041,8 +1041,8 @@ void SuperWord::extend_pairset_with_more_pairs_by_following_use_and_def() {
     changed = false;
     // Iterate the pairs in insertion order.
     for (int i = 0; i < _pairset.length(); i++) {
-      Node* left  = _pairset.left_at(i);
-      Node* right = _pairset.right_at(i);
+      Node* left  = _pairset.left_at_in_insertion_order(i);
+      Node* right = _pairset.right_at_in_insertion_order(i);
       changed |= extend_pairset_with_more_pairs_by_following_def(left, right);
       changed |= extend_pairset_with_more_pairs_by_following_use(left, right);
     }
@@ -1086,7 +1086,7 @@ int SuperWord::adjust_alignment_for_type_conversion(Node* s, Node* t, int align)
 }
 
 bool SuperWord::extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* s2) {
-  assert(_pairset.has_pair(s1, s2), "(s1, s2) must be a pair");
+  assert(_pairset.is_pair(s1, s2), "(s1, s2) must be a pair");
   assert(s1->req() == s2->req(), "just checking");
   assert(alignment(s1) + data_size(s1) == alignment(s2), "just checking");
 
@@ -1131,7 +1131,7 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* 
 //       calling this method as long as there are some changes, we will eventually pack all pairs that
 //       can be packed.
 bool SuperWord::extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* s2) {
-  assert(_pairset.has_pair(s1, s2), "(s1, s2) must be a pair");
+  assert(_pairset.is_pair(s1, s2), "(s1, s2) must be a pair");
   assert(s1->req() == s2->req(), "just checking");
   assert(alignment(s1) + data_size(s1) == alignment(s2), "just checking");
 
@@ -1191,7 +1191,7 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* 
 // For a pair (def1, def2), find all use packs (use1, use2), and ensure that their inputs have an order
 // that matches the (def1, def2) pair.
 void SuperWord::order_inputs_of_all_use_pairs_to_match_def_pair(Node* def1, Node* def2) {
-  assert(_pairset.has_pair(def1, def2), "(def1, def2) must be a pair");
+  assert(_pairset.is_pair(def1, def2), "(def1, def2) must be a pair");
 
   if (def1->is_Store()) return;
 
@@ -1249,7 +1249,7 @@ void SuperWord::order_inputs_of_all_use_pairs_to_match_def_pair(Node* def1, Node
 //    use1->in(i) == def1 || use2->in(i) == def2   ->    use1->in(i) == def1 && use2->in(i) == def2
 //
 SuperWord::PairOrderStatus SuperWord::order_inputs_of_uses_to_match_def_pair(Node* def1, Node* def2, Node* use1, Node* use2) {
-  assert(_pairset.has_pair(def1, def2), "(def1, def2) must be a pair");
+  assert(_pairset.is_pair(def1, def2), "(def1, def2) must be a pair");
 
   // 1. Reduction
   if (is_marked_reduction(use1) && is_marked_reduction(use2)) {
@@ -1317,7 +1317,7 @@ int SuperWord::estimate_cost_savings_when_packing_as_pair(const Node* s1, const 
     if (x1 != x2) {
       if (are_adjacent_refs(x1, x2)) {
         save_in += adjacent_profit;
-      } else if (!_pairset.has_pair(x1, x2)) {
+      } else if (!_pairset.is_pair(x1, x2)) {
         save_in -= pack_cost(2);
       } else {
         save_in += unpack_cost(2);
