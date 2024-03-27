@@ -1328,12 +1328,8 @@ static void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj,
 
   __ movptr(rax, Address(r15_thread, JavaThread::cont_fastpath_offset()));
   __ movptr(Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()), rax);
-
   __ movq(rax, Address(r15_thread, JavaThread::held_monitor_count_offset()));
   __ movq(Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()), rax);
-
-  __ movq(rax, Address(r15_thread, JavaThread::jni_monitor_count_offset()));
-  __ movq(Address(rsp, ContinuationEntry::parent_jni_monitor_count_offset()), rax);
 
   __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), 0);
   __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), 0);
@@ -1379,9 +1375,6 @@ void static continuation_enter_cleanup(MacroAssembler* masm) {
 
   __ movq(rbx, Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()));
   __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), rbx);
-
-  __ movq(rbx, Address(rsp, ContinuationEntry::parent_jni_monitor_count_offset()));
-  __ movq(Address(r15_thread, JavaThread::jni_monitor_count_offset()), rbx);
 
   __ movptr(rbx, Address(rsp, ContinuationEntry::parent_offset()));
   __ movptr(Address(r15_thread, JavaThread::cont_entry_offset()), rbx);
