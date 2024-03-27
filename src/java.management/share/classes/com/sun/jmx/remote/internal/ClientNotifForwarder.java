@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,8 +167,7 @@ public abstract class ClientNotifForwarder {
                                         ObjectName name,
                                         NotificationListener listener,
                                         NotificationFilter filter,
-                                        Object handback,
-                                        Subject delegationSubject)
+                                        Object handback)
             throws IOException, InstanceNotFoundException {
 
         if (logger.traceOn()) {
@@ -181,9 +180,7 @@ public abstract class ClientNotifForwarder {
                                             name,
                                             listener,
                                             filter,
-                                            handback,
-                                            delegationSubject));
-
+                                            handback));
 
         init(false);
     }
