@@ -154,7 +154,7 @@ readAt(int fd, jlong pos, unsigned int count, void *buf) {
  */
 static jboolean
 read_zip64_ext(Byte *p, jlong *cenlen, jlong *censiz, jlong *cenoff,
-               short cendsk) {
+               unsigned short cendsk) {
   short headerId = ZIPEXT_HDR(p);
   if (headerId != ZIP64_EXTID) {
     return JNI_FALSE;
