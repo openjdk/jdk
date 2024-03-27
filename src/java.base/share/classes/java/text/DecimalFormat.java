@@ -2141,7 +2141,7 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc NumberFormat}
      * <p>
      * Parsing can be done in either a strict or lenient manner, by default it is lenient.
      * <p>
@@ -2980,7 +2980,7 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc NumberFormat}
      *
      * @see #setStrict(boolean)
      * @see #parse(String, ParsePosition)
@@ -2992,7 +2992,7 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc NumberFormat}
      *
      * @see #setStrict(boolean)
      * @see #parse(String, ParsePosition)

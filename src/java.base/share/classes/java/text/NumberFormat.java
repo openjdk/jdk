@@ -273,7 +273,7 @@ public abstract class NumberFormat extends Format  {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc Format}
      *
      * @implSpec This implementation is equivalent to calling {@code parse(source,
      *           pos)}.

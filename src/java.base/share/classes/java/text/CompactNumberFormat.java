@@ -1507,7 +1507,7 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc NumberFormat}
      * <p>
      * The returned value is the numeric part in the given text multiplied
      * by the numeric equivalent of the affix attached
@@ -2375,7 +2375,7 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc NumberFormat}
      *
      * @see #setStrict(boolean)
      * @see #parse(String, ParsePosition)
@@ -2387,7 +2387,7 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc NumberFormat}
      *
      * @see #setStrict(boolean)
      * @see #parse(String, ParsePosition)
