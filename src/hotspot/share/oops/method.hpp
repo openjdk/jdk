@@ -700,7 +700,6 @@ public:
   // made obsolete or deleted -- in these cases, the jmethodID
   // refers to null (as is the case for any weak reference).
   static jmethodID make_jmethod_id(ClassLoaderData* cld, Method* mh);
-  static void destroy_jmethod_id(ClassLoaderData* cld, jmethodID mid);
 
   // Ensure there is enough capacity in the internal tracking data
   // structures to hold the number of jmethodIDs you plan to generate.
