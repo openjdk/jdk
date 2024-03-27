@@ -229,7 +229,7 @@ bool CollectedHeap::is_oop(oop object) const {
     return false;
   }
 
-  if (!Metaspace::contains(object->klass_raw())) {
+  if (!Metaspace::contains(object->klass_without_asserts())) {
     return false;
   }
 
