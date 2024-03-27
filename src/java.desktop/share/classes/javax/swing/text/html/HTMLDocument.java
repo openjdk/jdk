@@ -2499,7 +2499,7 @@ public class HTMLDocument extends DefaultStyledDocument {
             tagMap.put(HTML.Tag.SCRIPT, ha);
             tagMap.put(HTML.Tag.SELECT, fa);
             tagMap.put(HTML.Tag.SMALL, ca);
-            tagMap.put(HTML.Tag.SPAN, new ConvertSpan());
+            tagMap.put(HTML.Tag.SPAN, new ConvertSpanAction());
             tagMap.put(HTML.Tag.STRIKE, conv);
             tagMap.put(HTML.Tag.S, conv);
             tagMap.put(HTML.Tag.STRONG, ca);
@@ -3440,7 +3440,7 @@ public class HTMLDocument extends DefaultStyledDocument {
             }
         }
 
-        final class ConvertSpan extends CharacterAction {
+        final class ConvertSpanAction extends CharacterAction {
             @Override
             void convertAttributes(HTML.Tag t, MutableAttributeSet attr) {
                 Object newDecoration = attr.getAttribute(CSS.Attribute.TEXT_DECORATION);
