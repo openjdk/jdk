@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1992,7 +1992,7 @@ run:
             HeapWord* result = THREAD->tlab().allocate(obj_size);
             if (result != nullptr) {
               // Initialize object field block.
-              // If TLAB was pre-zeroed, we can skip this path
+              // If TLAB was pre-zeroed, we can skip this path.
               if (!ZeroTLAB) {
                 size_t hdr_size = oopDesc::header_size();
                 Copy::fill_to_words(result + hdr_size, obj_size - hdr_size, 0);
