@@ -191,7 +191,7 @@ final class StringLatin1 {
         return charPos;
     }
 
-    private static void writeDigitPair(byte[] buf, int charPos, int value) {
+    static void writeDigitPair(byte[] buf, int charPos, int value) {
         short pair = DecimalDigits.digitPair(value);
         buf[charPos] = (byte)(pair);
         buf[charPos + 1] = (byte)(pair >> 8);
