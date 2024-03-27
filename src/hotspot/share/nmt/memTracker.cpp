@@ -29,6 +29,7 @@
 #include "memory/metaspaceUtils.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memBaseline.hpp"
+#include "nmt/memoryLogRecorder.hpp"
 #include "nmt/memReporter.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/nmtCommon.hpp"
@@ -53,6 +54,12 @@ NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
 MemBaseline MemTracker::_baseline;
 
 void MemTracker::initialize() {
+#ifdef ASSERT
+  if (strlen(NMTPrintMemoryAllocationsSizesFor) > 0) {
+    NMT_MemoryLogRecorder::printActualSizesFor((const char*)NMTPrintMemoryAllocationsSizesFor);
+  }
+#endif
+
   bool rc = true;
   assert(_tracking_level == NMT_unknown, "only call once");
 
