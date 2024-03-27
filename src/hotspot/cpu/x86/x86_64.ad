@@ -9975,6 +9975,9 @@ instruct convD2F_reg_reg(regF dst, regD src)
 
   format %{ "cvtsd2ss $dst, $src" %}
   ins_encode %{
+    if (UseAVX > 0) {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ cvtsd2ss ($dst$$XMMRegister, $src$$XMMRegister);
   %}
   ins_pipe(pipe_slow); // XXX
@@ -10066,6 +10069,9 @@ instruct convI2F_reg_reg(regF dst, rRegI src)
 
   format %{ "cvtsi2ssl $dst, $src\t# i2f" %}
   ins_encode %{
+    if (UseAVX > 0) {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ cvtsi2ssl ($dst$$XMMRegister, $src$$Register);
   %}
   ins_pipe(pipe_slow); // XXX
@@ -10090,6 +10096,9 @@ instruct convI2D_reg_reg(regD dst, rRegI src)
 
   format %{ "cvtsi2sdl $dst, $src\t# i2d" %}
   ins_encode %{
+    if (UseAVX > 0) {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ cvtsi2sdl ($dst$$XMMRegister, $src$$Register);
   %}
   ins_pipe(pipe_slow); // XXX
@@ -10164,6 +10173,9 @@ instruct convL2D_reg_reg(regD dst, rRegL src)
 
   format %{ "cvtsi2sdq $dst, $src\t# l2d" %}
   ins_encode %{
+    if (UseAVX > 0) {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ cvtsi2sdq ($dst$$XMMRegister, $src$$Register);
   %}
   ins_pipe(pipe_slow); // XXX
