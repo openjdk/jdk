@@ -877,11 +877,10 @@ HeapWord* ShenandoahHeap::allocate_from_gclab_slow(Thread* thread, size_t size) 
 
   assert (size <= actual_size, "allocation should fit");
 
+  // ...and clear or zap just allocated TLAB, if needed.
   if (ZeroTLAB) {
-    // ..and clear it.
     Copy::zero_to_words(gclab_buf, actual_size);
   } else if (ZapTLAB) {
-    // ...and zap just allocated TLAB.
     // Skip mangling the space corresponding to the object header to
     // ensure that the returned space is not considered parsable by
     // any concurrent GC thread.

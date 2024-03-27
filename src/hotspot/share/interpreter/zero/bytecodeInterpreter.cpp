@@ -1992,8 +1992,8 @@ run:
             HeapWord* result = THREAD->tlab().allocate(obj_size);
             if (result != nullptr) {
               // Initialize object field block.
-              // If TLAB was pre-zeroed, we can skip this path.
               if (!ZeroTLAB) {
+                // The TLAB was not pre-zeroed, we need to clear the memory here.
                 size_t hdr_size = oopDesc::header_size();
                 Copy::fill_to_words(result + hdr_size, obj_size - hdr_size, 0);
               }

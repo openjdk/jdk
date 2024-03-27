@@ -316,11 +316,10 @@ HeapWord* MemAllocator::mem_allocate_inside_tlab_slow(Allocation& allocation) co
          PTR_FORMAT " min: " SIZE_FORMAT ", desired: " SIZE_FORMAT,
          p2i(mem), min_tlab_size, new_tlab_size);
 
+  // ...and clear or zap just allocated TLAB, if needed.
   if (ZeroTLAB) {
-    // ..and clear it.
     Copy::zero_to_words(mem, allocation._allocated_tlab_size);
   } else if (ZapTLAB) {
-    // ...and zap just allocated TLAB.
     // Skip mangling the space corresponding to the object header to
     // ensure that the returned space is not considered parsable by
     // any concurrent GC thread.
