@@ -126,6 +126,25 @@ public class ToPlainStringTests {
             ++errors;
         }
 
+        String str = new StringBuilder().repeat('1', 100).toString();
+        int[] scales = new int[]{
+                Integer.MIN_VALUE,
+                Integer.MIN_VALUE + 1,
+                Integer.MAX_VALUE - 1,
+                Integer.MAX_VALUE
+        };
+        for (int scale : scales) {
+            try {
+                new BigDecimal(
+                        new BigInteger(str),
+                        scale
+                ).toPlainString();
+                errors++;
+            } catch (OutOfMemoryError | ArithmeticException ignored) {
+                // ignored
+            }
+        }
+
         if(errors > 0)
             throw new RuntimeException(errors + " errors during run.");
     }
