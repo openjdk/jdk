@@ -32,9 +32,9 @@ import javax.swing.text.Element;
 
 /*
  * @test
- * @key headless
  * @bug 8328953
- * @summary JEditorPane.read throws ChangedCharSetException
+ * @summary Verifies JEditorPane.read doesn't throw ChangedCharSetException
+            but handles it and reads HTML in the specified encoding
  * @run main EditorPaneCharset
  */
 
@@ -44,40 +44,30 @@ public final class EditorPaneCharset {
     private static final String HTML_CYRILLIC =
             "<html lang=\"ru\">\n" +
             "<head>\n" +
-           "    <meta http-equiv=\"Content-Type\" content=\"text/html; charset=windows-1251\">\n" +
+            "    <meta http-equiv=\"Content-Type\" " + 
+            "         content=\"text/html; charset=windows-1251\">\n" +
             "</head><body>\n" +
             "<p>" + CYRILLIC_TEXT + "</p>\n" +
             "</body></html>\n";
 
-    public static void main() throws IOException {
+    public static void main(String[] args) throws IOException, BadLocationException {
         JEditorPane editorPane = new JEditorPane();
         editorPane.setContentType("text/html");
         Document document = editorPane.getDocument();
-        try {
-            // Shouldn't throw ChangedCharSetException
-            editorPane.read(
-                    new ByteArrayInputStream(
-                            HTML_CYRILLIC.getBytes(
-                                    Charset.forName("windows-1251"))),
-                    document);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        // Shouldn't throw ChangedCharSetException
+        editorPane.read(
+                new ByteArrayInputStream(
+                        HTML_CYRILLIC.getBytes(
+                                Charset.forName("windows-1251"))),
+                document);
 
         Element root = document.getDefaultRootElement();
         Element body = root.getElement(1);
         Element p = body.getElement(0);
-        try {
-            String pText = document.getText(p.getStartOffset(),
-                                        p.getEndOffset() - p.getStartOffset());
-            if (!CYRILLIC_TEXT.equals(pText)) {
-                throw new RuntimeException("Text doesn't match");
-            }
-        } catch (BadLocationException e) {
-            throw new RuntimeException(e);
+        String pText = document.getText(p.getStartOffset(),
+                                    p.getEndOffset() - p.getStartOffset());
+        if (!CYRILLIC_TEXT.equals(pText)) {
+            throw new RuntimeException("Text doesn't match");
         }
-    }
-
-    private EditorPaneCharset() {
     }
 }
