@@ -26,6 +26,8 @@
 include LibCommon.gmk
 
 ################################################################################
+## Build libj2pcsc
+################################################################################
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJ2PCSC, \
     NAME := j2pcsc, \
@@ -37,5 +39,3 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJ2PCSC, \
 ))
 
 TARGETS += $(BUILD_LIBJ2PCSC)
-
-################################################################################
