@@ -55,9 +55,9 @@ import static jdk.internal.javac.PreviewFeature.*;
  * <ul>
  *     <li>{@linkplain List#ofLazy(int, IntFunction)}</li>
  *     <li>{@linkplain Set#ofLazy(Set, Predicate)}</li>
- *     <li>{@linkplain Set#ofLazyEnum(Set, Predicate)}</li>
+ *     <li>{@linkplain Set#ofLazy(Class, Predicate)}</li>
  *     <li>{@linkplain Map#ofLazy(Set, Function)}</li>
- *     <li>{@linkplain Map#ofLazyEnum(Set, Function)}</li>
+ *     <li>{@linkplain Map#ofLazy(Class, Function)}</li>
  * </ul>
  * The returned collections above are all eligible for constant folding optimizations.
  * <p>
@@ -76,7 +76,7 @@ import static jdk.internal.javac.PreviewFeature.*;
  *             .map(Objects::requireNonNull)
  *             .collect(Collectors.toMap(Function.identity(), _ -> Lazy.of())));
  *     }</li>
- *</ul>>
+ *</ul>
  *
  * @param <V> value type
  * @since 23
@@ -99,7 +99,7 @@ public sealed interface Lazy<V> permits LazyImpl {
 
     /**
      * Binds the lazy value to the provided (nullable) {@code value} or throws an
-     * exception if a value is already bound.
+     * {@linkplain IllegalStateException} if a value is already bound.
      *
      * @param value to bind
      * @throws IllegalStateException if a value is already bound
@@ -165,9 +165,9 @@ public sealed interface Lazy<V> permits LazyImpl {
     }
 
     /**
-     * {@return a new lazy with an unbound value where the returned lazy's
+     * {@return a fresh lazy with an unbound value where the returned lazy's
      * value is computed in a separate fresh background thread using the provided
-     * (@code supplier}}
+     * {@code supplier}}
      * <p>
      * If the supplier throws an (unchecked) exception, the exception is ignored, and no
      * value is bound.

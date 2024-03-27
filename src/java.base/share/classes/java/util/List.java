@@ -1211,6 +1211,7 @@ public interface List<E> extends SequencedCollection<E> {
      * @param <E>    the {@code List}'s element type
      * @param size   the number of elements in the list
      * @param mapper to invoke upon lazily computing element values
+     * @throws IllegalArgumentException if the provided {@code size} is negative
      * @throws NullPointerException if the provided {@code mapper} is {@code null}
      *
      * @since 23

@@ -743,11 +743,12 @@ public interface Set<E> extends Collection<E> {
 
     /**
      * {@return an unmodifiable, shallowly immutable, thread-safe, lazy,
-     * {@linkplain Set } where the computation of the {@linkplain java.util.Set#contains(Object)}
-     * operation is deferred to when first being called and can only be made for the
-     * distinct provided set of {@code elements} and where the elements' existence
-     * is lazily computed upon being first queried by invoking the provided
-     * {@code predicate} at most once per element}
+     * {@linkplain Set } where the computation of the
+     * {@linkplain java.util.Set#contains(Object) contains()} operation is deferred to
+     * when first being called and can only be made for the distinct provided set of
+     * {@code candidates} and where the elements' existence is lazily computed upon
+     * being first queried by invoking the provided {@code predicate}
+     * at most once per element}
      * <p>
      * The returned set is not {@linkplain Serializable}.
      * <p>
@@ -761,31 +762,33 @@ public interface Set<E> extends Collection<E> {
      *         {@code mapper} is null
      */
     @PreviewFeature(feature = PreviewFeature.Feature.LAZY_COLLECTIONS_AND_VALUES)
-    static <E> Set<E> ofLazy(Set<? extends E> candidates, Predicate<? super E> predicate) {
+    static <E> Set<E> ofLazy(Set<? extends E> candidates,
+                             Predicate<? super E> predicate) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * {@return an unmodifiable, shallowly immutable, thread-safe, lazy,
-     * {@linkplain Set } where the computation of the {@linkplain java.util.Set#contains(Object)}
-     * operation is deferred to when first being called and can only be made for the
-     * distinct provided set of {@code elements} and where the elements' existence
-     * is lazily computed upon being first queried by invoking the provided
-     * {@code predicate} at most once per element}
+     * {@linkplain Set } where the computation of the
+     * {@linkplain java.util.Set#contains(Object) contains()} operation is deferred to
+     * when first being called and can only be made for the enum elements of the provided
+     * {@code enumType} and where the elements' existence is lazily computed upon being
+     * first queried by invoking the provided {@code predicate} at most once per element}
      * <p>
      * The returned set is not {@linkplain Serializable}.
      * <p>
      * The returned set is eligible for constant folding and other
      * optimizations by the JVM.
      *
-     * @param elements  the elements in the set
+     * @param enumType  the enum type signifying the potential enum elements
      * @param predicate to apply when lazily computing containment
      * @param <E>       the type of elements maintained by this set
-     * @throws NullPointerException if the provided {@code keys} or the provided
+     * @throws NullPointerException if the provided {@code enumType} or the provided
      *         {@code mapper} is null
      */
     @PreviewFeature(feature = PreviewFeature.Feature.LAZY_COLLECTIONS_AND_VALUES)
-    static <E extends Enum<E>> Set<E> ofLazyEnum(Set<E> elements, Predicate<? super E> predicate) {
+    static <E extends Enum<E>> Set<E> ofLazy(Class<E> enumType,
+                                             Predicate<? super E> predicate) {
         throw new UnsupportedOperationException();
     }
 
