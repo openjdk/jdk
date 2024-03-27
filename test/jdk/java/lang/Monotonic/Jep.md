@@ -164,6 +164,7 @@ class ErrorMessages {
 We can now retrieve an error page like so:
 ```
 String errorPage = ErrorMessages.errorPage(2);
+
 // <!DOCTYPE html>
 // <html lang="en">
 //   <head><meta charset="utf-8"></head>
@@ -335,6 +336,7 @@ Just like before, we can perform retrieval of error pages like this:
 
 ```
 String errorPage = ErrorMessages.errorPage(2);
+
 // <!DOCTYPE html>
 // <html lang="en">
 //   <head><meta charset="utf-8"></head>
