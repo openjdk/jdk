@@ -108,13 +108,6 @@ public class TestStringUTF16IntrinsicRangeChecks {
                 throw new AssertionError("append");
             }
 
-            putCharsAt(val2, -1, '1', '2', '3', '4');
-            putCharsAt(val2,  0, '1', '2', '3', '4');
-            putCharsAt(val2,  2, '1', '2', '3', '4');
-            putCharsAt(val2, -1, '1', '2', '3', '4', '5');
-            putCharsAt(val2,  0, '1', '2', '3', '4', '5');
-            putCharsAt(val2,  2, '1', '2', '3', '4', '5');
-
             reverse(valHigh, -1);
             reverse(valHigh,  2);
             reverse(valLow,  -1);
@@ -244,22 +237,6 @@ public class TestStringUTF16IntrinsicRangeChecks {
         try {
             Helper.contentEquals(v, cs, len);
             throw new AssertionError("contentEquals");
-        } catch (IndexOutOfBoundsException io) {
-        }
-    }
-
-    static void putCharsAt(byte[] v, int i, char c1, char c2, char c3, char c4) {
-        try {
-            Helper.putCharsAt(v, i, c1, c2, c3, c4);
-            throw new AssertionError("putCharsAt");
-        } catch (IndexOutOfBoundsException io) {
-        }
-    }
-
-    static void putCharsAt(byte[] v, int i, char c1, char c2, char c3, char c4, char c5) {
-        try {
-            Helper.putCharsAt(v, i, c1, c2, c3, c4, c5);
-            throw new AssertionError("putCharsAt");
         } catch (IndexOutOfBoundsException io) {
         }
     }

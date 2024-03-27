@@ -61,6 +61,7 @@ import static java.lang.String.checkOffset;
  */
 abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     permits StringBuilder, StringBuffer {
+
     /**
      * The value is used for character storage.
      */
@@ -635,18 +636,21 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     private AbstractStringBuilder appendNull() {
-        ensureCapacityInternal(count + 4);
         int count = this.count;
+        ensureCapacityInternal(count + 4);
         byte[] val = this.value;
         if (isLatin1()) {
-            val[count++] = 'n';
-            val[count++] = 'u';
-            val[count++] = 'l';
-            val[count++] = 'l';
+            val[count] = 'n';
+            val[count + 1] = 'u';
+            val[count + 2] = 'l';
+            val[count + 3] = 'l';
         } else {
-            count = StringUTF16.putCharsAt(val, count, 'n', 'u', 'l', 'l');
+            StringUTF16.putChar(val, count, 'n');
+            StringUTF16.putChar(val, count + 1, 'u');
+            StringUTF16.putChar(val, count + 2, 'l');
+            StringUTF16.putChar(val, count + 3, 'l');
         }
-        this.count = count;
+        this.count = count + 4;
         return this;
     }
 
@@ -766,30 +770,38 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(boolean b) {
-        ensureCapacityInternal(count + (b ? 4 : 5));
         int count = this.count;
+        int spaceNeeded = count + (b ? 4 : 5);
+        ensureCapacityInternal(spaceNeeded);
         byte[] val = this.value;
         if (isLatin1()) {
             if (b) {
-                val[count++] = 't';
-                val[count++] = 'r';
-                val[count++] = 'u';
-                val[count++] = 'e';
+                val[count] = 't';
+                val[count + 1] = 'r';
+                val[count + 2] = 'u';
+                val[count + 3] = 'e';
             } else {
-                val[count++] = 'f';
-                val[count++] = 'a';
-                val[count++] = 'l';
-                val[count++] = 's';
-                val[count++] = 'e';
+                val[count] = 'f';
+                val[count + 1] = 'a';
+                val[count + 2] = 'l';
+                val[count + 3] = 's';
+                val[count + 4] = 'e';
             }
         } else {
             if (b) {
-                count = StringUTF16.putCharsAt(val, count, 't', 'r', 'u', 'e');
+                StringUTF16.putChar(val, count, 't');
+                StringUTF16.putChar(val, count + 1, 'r');
+                StringUTF16.putChar(val, count + 2, 'u');
+                StringUTF16.putChar(val, count + 3, 'e');
             } else {
-                count = StringUTF16.putCharsAt(val, count, 'f', 'a', 'l', 's', 'e');
+                StringUTF16.putChar(val, count, 'f');
+                StringUTF16.putChar(val, count + 1, 'a');
+                StringUTF16.putChar(val, count + 2, 'l');
+                StringUTF16.putChar(val, count + 3, 's');
+                StringUTF16.putChar(val, count + 4, 'e');
             }
         }
-        this.count = count;
+        this.count = spaceNeeded;
         return this;
     }
 
