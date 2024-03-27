@@ -231,6 +231,7 @@ void AwtCanvas::_SetEraseBackground(void *param)
     c->m_eraseBackground = doErase;
     c->m_eraseBackgroundOnResize = doEraseOnResize;
 
+
     env->DeleteGlobalRef(canvas);
     delete sebs;
 }
