@@ -83,7 +83,7 @@ public class MinimizeUndecoratedTest {
 
             if (isMinimized.await(8, TimeUnit.SECONDS)) {
                 EventQueue.invokeAndWait(() -> System.out.println("Frame state: "
-                                                                  + frame.getExtendedState()));
+                                               + frame.getExtendedState()));
                 Color afterColor = robot.getPixelColor(frameLoc.x + SIZE / 2,
                                                        frameLoc.y + SIZE / 2);
 
