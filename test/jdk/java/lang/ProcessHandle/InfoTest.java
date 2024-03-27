@@ -298,6 +298,10 @@ public class InfoTest {
                         // With busybox sleep is just a sym link to busybox.
                         // The busbox executable is seen as ProcessHandle.Info command.
                         expected = "busybox";
+                    } else if (Platform.isCoreutilsSingleExecutable()) {
+                        // With coreutils single executable sleep is just a script around coreutils.
+                        // The coreutils executable is seen as ProcessHandle.Info command.
+                        expected = "/usr/bin/coreutils";
                     }
                     Assert.assertTrue(command.endsWith(expected), "Command: expected: \'" +
                             expected + "\', actual: " + command);
@@ -307,10 +311,11 @@ public class InfoTest {
                     Assert.assertTrue(exe.exists(), "command must exist: " + exe);
                     Assert.assertTrue(exe.canExecute(), "command must be executable: " + exe);
                 }
+
                 if (info.arguments().isPresent()) {
                     String[] args = info.arguments().get();
                     if (args.length > 0) {
-                        Assert.assertEquals(args[0], String.valueOf(sleepTime));
+                        Assert.assertEquals(args[args.length - 1], String.valueOf(sleepTime));
                     }
                 }
                 p.destroy();
