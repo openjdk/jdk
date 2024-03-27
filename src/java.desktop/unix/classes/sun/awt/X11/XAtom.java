@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,27 @@
 
 package sun.awt.X11;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.lang.ref.Reference;
+import java.util.HashMap;
+
+import jdk.internal.misc.Unsafe;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * XAtom is a class that allows you to create and modify X Window properties.
  * An X Atom is an identifier for a property that you can set on any X Window.
  * Standard X Atom are defined by X11 and these atoms are defined in this class
  * for convenience. Common X Atoms like {@code XA_WM_NAME} are used to communicate with the
  * Window manager to let it know the Window name. The use and protocol for these
- * atoms are defined in the Inter client communications converntions manual.
+ * atoms are defined in the Inter client communications conventions manual.
  * User specified XAtoms are defined by specifying a name that gets Interned
  * by the XServer and an {@code XAtom} object is returned. An {@code XAtom} can also be created
- * by using a pre-exisiting atom like {@code XA_WM_CLASS}. A {@code display} has to be specified
+ * by using a pre-existing atom like {@code XA_WM_CLASS}. A {@code display} has to be specified
  * in order to create an {@code XAtom}. <p> <p>
  *
  * Once an {@code XAtom} instance is created, you can call get and set property methods to
@@ -57,13 +68,6 @@ package sun.awt.X11;
  * @author  Bino George
  * @since       1.5
  */
-
-import java.util.HashMap;
-
-import jdk.internal.misc.Unsafe;
-
-import static java.nio.charset.StandardCharsets.ISO_8859_1;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class XAtom {
 
@@ -291,9 +295,7 @@ public final class XAtom {
      * @since 1.5
      */
     public void setProperty(long window, String str) {
-        if (atom == 0) {
-            throw new IllegalStateException("Atom should be initialized");
-        }
+        assertAtomInitialized();
         checkWindow(window);
         XToolkit.awtLock();
         try {
@@ -308,9 +310,7 @@ public final class XAtom {
      */
     public void setPropertyUTF8(long window, String str) {
         XAtom XA_UTF8_STRING = XAtom.get("UTF8_STRING");   /* like STRING but encoding is UTF-8 */
-        if (atom == 0) {
-            throw new IllegalStateException("Atom should be initialized");
-        }
+        assertAtomInitialized();
         checkWindow(window);
         byte[] bdata = str.getBytes(UTF_8);
         if (bdata != null) {
@@ -322,9 +322,7 @@ public final class XAtom {
      * Sets STRING/8 type property. Explicitly converts str to Latin-1 byte sequence.
      */
     public void setProperty8(long window, String str) {
-        if (atom == 0) {
-            throw new IllegalStateException("Atom should be initialized");
-        }
+        assertAtomInitialized();
         checkWindow(window);
         byte[] bdata = str.getBytes(ISO_8859_1);
         if (bdata != null) {
@@ -339,9 +337,7 @@ public final class XAtom {
      * @since 1.5
      */
     public String getProperty(long window) {
-        if (atom == 0) {
-            throw new IllegalStateException("Atom should be initialized");
-        }
+        assertAtomInitialized();
         checkWindow(window);
         XToolkit.awtLock();
         try {
@@ -357,9 +353,7 @@ public final class XAtom {
      * 'property_type' on window 'window'.  Format of the property must be 32.
      */
     public long get32Property(long window, long property_type) {
-        if (atom == 0) {
-            throw new IllegalStateException("Atom should be initialized");
-        }
+        assertAtomInitialized();
         checkWindow(window);
         WindowPropertyGetter getter =
             new WindowPropertyGetter(window, this, 0, 1,
@@ -389,9 +383,7 @@ public final class XAtom {
      * Sets property of type CARDINAL on the window
      */
     public void setCard32Property(long window, long value) {
-        if (atom == 0) {
-            throw new IllegalStateException("Atom should be initialized");
-        }
+        assertAtomInitialized();
         checkWindow(window);
         XToolkit.awtLock();
         try {
@@ -412,6 +404,41 @@ public final class XAtom {
     }
 
     /**
+     * Gets uninterpreted set of data from property and stores them in the data segment.
+     * Property type is the same as current atom, property is current atom.
+     * Property format is 32. Property 'delete' is false.
+     * Returns boolean if requested type, format, length match returned values
+     * and returned data pointer is not null.
+     */
+    public boolean getAtomData(long window, Arena arena, MemorySegment data) {
+        assertAtomInitialized();
+        checkWindow(window);
+        int length = Math.toIntExact(data.byteSize() / ValueLayout.JAVA_INT.byteSize());
+        WindowPropertyGetter getter =
+                new WindowPropertyGetter(window, this, 0, length,
+                        false, this);
+        try {
+            int status = getter.execute();
+            if (status != XConstants.Success || getter.getData() == 0) {
+                return false;
+            }
+            if (getter.getActualType() != atom
+                    || getter.getActualFormat() != 32
+                    || getter.getNumberOfItems() != length) {
+                return false;
+            }
+            long bytes = (long) length * getAtomSize();
+            @SuppressWarnings("restricted")
+            MemorySegment source = MemorySegment.ofAddress(getter.getData())
+                    .reinterpret(bytes, arena, null);
+            MemorySegment.copy(source, 0, data, 0, bytes);
+            return true;
+        } finally {
+            getter.dispose();
+        }
+    }
+
+    /**
      * Gets uninterpreted set of data from property and stores them in data_ptr.
      * Property type is the same as current atom, property is current atom.
      * Property format is 32. Property 'delete' is false.
@@ -419,9 +446,7 @@ public final class XAtom {
      * and returned data pointer is not null.
      */
     public boolean getAtomData(long window, long data_ptr, int length) {
-        if (atom == 0) {
-            throw new IllegalStateException("Atom should be initialized");
-        }
+        assertAtomInitialized();
         checkWindow(window);
         WindowPropertyGetter getter =
             new WindowPropertyGetter(window, this, 0, (long)length,
@@ -453,9 +478,7 @@ public final class XAtom {
      * and returned data pointer is not null.
      */
     public boolean getAtomData(long window, long type, long data_ptr, int length) {
-        if (atom == 0) {
-            throw new IllegalStateException("Atom should be initialized");
-        }
+        assertAtomInitialized();
         checkWindow(window);
         WindowPropertyGetter getter =
             new WindowPropertyGetter(window, this, 0, (long)length,
@@ -486,9 +509,7 @@ public final class XAtom {
      * of items pointer by data_ptr.
      */
     public void setAtomData(long window, long data_ptr, int length) {
-        if (atom == 0) {
-            throw new IllegalStateException("Atom should be initialized");
-        }
+        assertAtomInitialized();
         checkWindow(window);
         XToolkit.awtLock();
         try {
@@ -507,9 +528,7 @@ public final class XAtom {
      * of items pointer by data_ptr.
      */
     public void setAtomData(long window, long type, long data_ptr, int length) {
-        if (atom == 0) {
-            throw new IllegalStateException("Atom should be initialized");
-        }
+        assertAtomInitialized();
         checkWindow(window);
         XToolkit.awtLock();
         try {
@@ -528,9 +547,7 @@ public final class XAtom {
      * of bytes pointer by data_ptr.
      */
     public void setAtomData8(long window, long type, long data_ptr, int length) {
-        if (atom == 0) {
-            throw new IllegalStateException("Atom should be initialized");
-        }
+        assertAtomInitialized();
         checkWindow(window);
         XToolkit.awtLock();
         try {
@@ -546,9 +563,7 @@ public final class XAtom {
      * Deletes property specified by this item on the window.
      */
     public void DeleteProperty(long window) {
-        if (atom == 0) {
-            throw new IllegalStateException("Atom should be initialized");
-        }
+        assertAtomInitialized();
         checkWindow(window);
         XToolkit.awtLock();
         try {
@@ -562,9 +577,7 @@ public final class XAtom {
      * Deletes property specified by this item on the window.
      */
     public void DeleteProperty(XBaseWindow window) {
-        if (atom == 0) {
-            throw new IllegalStateException("Atom should be initialized");
-        }
+        assertAtomInitialized();
         checkWindow(window.getWindow());
         XToolkit.awtLock();
         try {
@@ -589,9 +602,7 @@ public final class XAtom {
      * 'property_type' on window 'window'.  Format of the property must be 8.
      */
     public byte[] getByteArrayProperty(long window, long property_type) {
-        if (atom == 0) {
-            throw new IllegalStateException("Atom should be initialized");
-        }
+        assertAtomInitialized();
         checkWindow(window);
         WindowPropertyGetter getter =
             new WindowPropertyGetter(window, this, 0, 0xFFFF,
@@ -660,9 +671,7 @@ public final class XAtom {
      *         or has different format
      */
     XAtom[] getAtomListProperty(long window) {
-        if (atom == 0) {
-            throw new IllegalStateException("Atom should be initialized");
-        }
+        assertAtomInitialized();
         checkWindow(window);
 
         WindowPropertyGetter getter =
@@ -785,9 +794,7 @@ public final class XAtom {
      * Property is assumed to be of type WINDOW/32
      */
     public void setWindowProperty(long window, long window_value) {
-        if (atom == 0) {
-            throw new IllegalStateException("Atom should be initialized");
-        }
+        assertAtomInitialized();
         checkWindow(window);
         XToolkit.awtLock();
         try {
@@ -808,9 +815,7 @@ public final class XAtom {
      * of type WINDOW/32.
      */
     public long getWindowProperty(long window) {
-        if (atom == 0) {
-            throw new IllegalStateException("Atom should be initialized");
-        }
+        assertAtomInitialized();
         checkWindow(window);
         WindowPropertyGetter getter =
             new WindowPropertyGetter(window, this, 0, 1,
@@ -826,6 +831,12 @@ public final class XAtom {
             return Native.getWindow(getter.getData());
         } finally {
             getter.dispose();
+        }
+    }
+
+    private void assertAtomInitialized() {
+        if (atom == 0) {
+            throw new IllegalStateException("Atom should be initialized");
         }
     }
 }
