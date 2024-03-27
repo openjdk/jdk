@@ -49,7 +49,7 @@ public class TestCDSVMCrash {
             }
         }
         // else this is the main test
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+CrashOnOutOfMemoryError",
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-XX:+CrashOnOutOfMemoryError",
                                                                              "-XX:-CreateCoredumpOnCrash", "-Xmx128m",
                                                                              "-Xshare:on", TestCDSVMCrash.class.getName(),
                                                                              "throwOOME");
