@@ -30,8 +30,6 @@ import vm.runtime.defmeth.shared.data.AbstractVisitor;
 import vm.runtime.defmeth.shared.DefMethTest;
 import vm.runtime.defmeth.shared.MemoryClassLoader;
 import vm.runtime.defmeth.shared.data.Clazz;
-import vm.runtime.defmeth.shared.data.ConcreteClass;
-import vm.runtime.defmeth.shared.data.Interface;
 import vm.runtime.defmeth.shared.data.Visitor;
 import vm.runtime.defmeth.shared.data.Tester;
 import vm.runtime.defmeth.shared.data.method.AbstractMethod;
@@ -43,14 +41,13 @@ import vm.runtime.defmeth.shared.data.method.body.ReturnIntBody;
 import vm.runtime.defmeth.shared.data.method.body.ThrowExBody;
 import vm.runtime.defmeth.shared.data.method.result.IntResult;
 import vm.runtime.defmeth.shared.data.method.result.ThrowExResult;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 import java.lang.reflect.*;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 
 import static java.lang.String.format;
+import static java.lang.classfile.ClassFile.*;
 
 /**
  * Test runner for invocation mode through Reflection API (Method.invoke).

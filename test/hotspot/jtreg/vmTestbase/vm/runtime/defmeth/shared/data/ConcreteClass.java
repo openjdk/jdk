@@ -23,15 +23,15 @@
 
 package vm.runtime.defmeth.shared.data;
 
-import jdk.internal.org.objectweb.asm.Opcodes;
-import vm.runtime.defmeth.shared.data.method.Method;
+
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
 
 /**
  * Represents concrete class (not interface).
  */
 public interface ConcreteClass extends Clazz {
     static public final ConcreteClass OBJECT =
-            new ConcreteClassImpl("java.lang.Object", Opcodes.ACC_PUBLIC, 52, null, null, new Interface[0]);
+            new ConcreteClassImpl("java.lang.Object",ACC_PUBLIC, 52, null, null, new Interface[0]);
 
     public ConcreteClass parent();
 

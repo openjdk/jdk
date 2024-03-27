@@ -24,10 +24,11 @@
 package vm.runtime.defmeth.shared.data.method.body;
 
 import vm.runtime.defmeth.shared.data.method.param.Param;
-import jdk.internal.org.objectweb.asm.Opcodes;
 import vm.runtime.defmeth.shared.data.Visitor;
 import vm.runtime.defmeth.shared.data.Clazz;
 import vm.runtime.defmeth.shared.data.Interface;
+
+import static java.lang.classfile.ClassFile.*;
 
 /**
  * Represents arbitrary method call (invoke*).
@@ -36,10 +37,10 @@ public class CallMethod implements MethodBody {
 
     /** Invocation byte code instruction */
     public static enum Invoke {
-        VIRTUAL(   Opcodes.INVOKEVIRTUAL,   "INVOKEVIRTUAL",   5),
-        INTERFACE( Opcodes.INVOKEINTERFACE, "INVOKEINTERFACE", 9),
-        SPECIAL(   Opcodes.INVOKESPECIAL,   "INVOKESPECIAL",   7),
-        STATIC(    Opcodes.INVOKESTATIC,    "INVOKESTATIC",    6);
+        VIRTUAL(   INVOKEVIRTUAL,   "INVOKEVIRTUAL",   5),
+        INTERFACE( INVOKEINTERFACE, "INVOKEINTERFACE", 9),
+        SPECIAL(   INVOKESPECIAL,   "INVOKESPECIAL",   7),
+        STATIC(    INVOKESTATIC,    "INVOKESTATIC",    6);
 
         private final int opcode;
         private final String name;

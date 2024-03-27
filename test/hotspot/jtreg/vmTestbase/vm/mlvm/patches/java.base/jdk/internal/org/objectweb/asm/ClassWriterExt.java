@@ -23,6 +23,10 @@
 
 package jdk.internal.org.objectweb.asm;
 
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.reflect.InaccessibleObjectException;
 
 public class ClassWriterExt extends ClassWriter {
@@ -120,22 +124,17 @@ public class ClassWriterExt extends ClassWriter {
         cacheMHandles = value;
     }
 
-    public int getBytecodeLength(MethodVisitor mv) {
-        ByteVector code;
-        try {
-            java.lang.reflect.Field field = mv.getClass().getDeclaredField("code");
-            field.setAccessible(true);
-            code = (ByteVector) field.get(mv);
-        } catch (InaccessibleObjectException | SecurityException | ReflectiveOperationException e) {
-            throw new Error("can not read field 'code' from class " + mv.getClass(), e);
+    public int getByteCodeLength(ClassModel cm) {
+        int length = 0;
+        for (MethodModel fm : cm.methods()) {
+            CodeModel code = fm.code().get();
+            if (code instanceof CodeAttribute ca) {
+                length += ca.codeLength();
+            } else {
+                throw new InaccessibleObjectException("Code attribute is not accessible");
+            }
         }
-        try {
-            java.lang.reflect.Field field = code.getClass().getDeclaredField("length");
-            field.setAccessible(true);
-            return field.getInt(code);
-        } catch (InaccessibleObjectException | SecurityException | ReflectiveOperationException e) {
-            throw new Error("can not read field 'length' from class " + code.getClass(), e);
-        }
+        return length;
     }
 }
 
