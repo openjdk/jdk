@@ -59,6 +59,18 @@ public class VMInspectTest {
     static Pattern waiting_on_mylock =
         Pattern.compile("- waiting on \\<0x(\\p{XDigit}+)\\> \\(a MyLock\\)");
 
+    // Event: 2301.131 Thread 0x00007fc6cc2866a0 nmethod 1298 0x00007fc6b4f82610 code [0x00007fc6b4f82a40, 0x00007fc6b4f83aa0]
+    static Pattern compilation_event =
+        Pattern.compile("Event: .* Thread .* nmethod \\d+ 0x(\\p{XDigit}+) code ");
+
+    // Compressed class space mapped at: 0x00007fc62f000000-0x00007fc66f000000, reserved size: 1073741824
+    static Pattern compressed_class_space =
+        Pattern.compile("Compressed class space mapped at: 0x(\\p{XDigit}+)\\-0x(\\p{XDigit}+), ");
+
+    // Narrow klass base: 0x00007fc62e000000, Narrow klass shift: 0, Narrow klass range: 0x100000000
+    static Pattern narrow_klass_base =
+        Pattern.compile("Narrow klass base: 0x(\\p{XDigit}+), ");
+
     //  tid=0x0000153418029c20
     static Pattern thread_id_line =
         Pattern.compile(" tid=0x(\\p{XDigit}+) ");
@@ -97,13 +109,19 @@ public class VMInspectTest {
         OutputAnalyzer output = executor.execute("VM.inspect");
         output.shouldContain("is mandatory");
 
+        // Known bad pointers:
+        output = executor.execute("VM.inspect 0x0");
+        output.shouldContain("address not safe");
+        output = executor.execute("VM.inspect -1");
+        output.shouldContain("address not safe");
+
         // Find and test a thread id:
-        OutputAnalyzer threadPrintOutput = executor.execute("Thread.print");
-        BigInteger ptr = findPointer(threadPrintOutput, thread_id_line, 1);
+        OutputAnalyzer jcmdOutput = executor.execute("Thread.print", true /* silent */);
+        BigInteger ptr = findPointer(jcmdOutput, thread_id_line, 1, true);
         output = executor.execute("VM.inspect " + pointerText(ptr));
         output.shouldContain(" is a thread");
 
-        // verbose shows output like:
+        // -verbose shows output like:
         // "main" #1 [17235] prio=5 os_prio=0 cpu=1265.79ms elapsed=6.12s tid=0x000014e37802bd80 nid=17235 in Object.wait()  [0x000014e3817d4000]
         //    java.lang.Thread.State: WAITING (on object monitor)
         // Thread: 0x000014e37802bd80  [0x4353] State: _running _at_poll_safepoint 0
@@ -113,16 +131,39 @@ public class VMInspectTest {
         output = executor.execute("VM.inspect -verbose " + pointerText(ptr));
         output.shouldContain("java.lang.Thread.State: WAITING");
 
-        // Known bad pointers:
-        output = executor.execute("VM.inspect 0x0");
-        output.shouldContain("address not safe");
+        // Find and test a compiled method:
+        jcmdOutput = executor.execute("VM.info", true /* silent */);
+        ptr = findPointer(jcmdOutput, compilation_event, 1, false);
+        if (ptr != null) {
+            output = executor.execute("VM.inspect " + pointerText(ptr));
+            System.out.println(output);
+            output.shouldContain("Compiled method ");
+        } else{
+            System.out.println("No compilation event found.");
+        }
 
-        output = executor.execute("VM.inspect -1");
-        output.shouldContain("address not safe");
+        // Test pointer into metadata:
+        ptr = findPointer(jcmdOutput, compressed_class_space, 1, false);
+        if (ptr != null) {
+            output = executor.execute("VM.inspect " + pointerText(ptr));
+            System.out.println(output);
+            output.shouldContain("metadata");
+        } else{
+            System.out.println("No Compressed class space found.");
+        }
+
+        ptr = findPointer(jcmdOutput, narrow_klass_base, 1, false);
+        if (ptr != null) {
+            output = executor.execute("VM.inspect " + pointerText(ptr));
+            System.out.println(output);
+            output.shouldContain("metadata");
+        } else{
+            System.out.println("No narrow klass base found.");
+        }
 
         // Find and test a Java Object:
-        threadPrintOutput = executor.execute("Thread.print");
-        ptr = findPointer(threadPrintOutput, waiting_on_mylock, 1);
+        jcmdOutput = executor.execute("Thread.print");
+        ptr = findPointer(jcmdOutput, waiting_on_mylock, 1, true);
         output = executor.execute("VM.inspect " + pointerText(ptr));
         System.out.println(output);
 
@@ -158,7 +199,7 @@ public class VMInspectTest {
         }
     }
 
-    public BigInteger findPointer(OutputAnalyzer output, Pattern pattern, int regexGroup) {
+    public BigInteger findPointer(OutputAnalyzer output, Pattern pattern, int regexGroup, boolean mustFind) {
         Iterator<String> lines = output.asLines().iterator();
         Boolean foundMatch = false;
         BigInteger ptr = null;
@@ -175,7 +216,12 @@ public class VMInspectTest {
             }
         }
         if (!foundMatch) {
-            Assert.fail("Failed to find '" + pattern + "' in output:" + output.getOutput());
+            String msg = "Failed to find '" + pattern + "' in output:" + output.getOutput();
+            if (mustFind) {
+                Assert.fail(msg);
+            } else {
+                System.out.println(msg);
+            }
         }
         return ptr;
     }
