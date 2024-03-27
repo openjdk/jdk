@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public interface JavaUtilZipFileAccess {
     public Enumeration<JarEntry> entries(ZipFile zip);
     public Stream<JarEntry> stream(ZipFile zip);
     public Stream<String> entryNameStream(ZipFile zip);
-    public void setExtraAttributes(ZipEntry ze, int extraAttrs);
-    public int getExtraAttributes(ZipEntry ze);
+    public void setExternalFileAttributes(ZipEntry ze, int externalFileAttributes);
+    public int getExternalFileAttributes(ZipEntry ze);
 }
 

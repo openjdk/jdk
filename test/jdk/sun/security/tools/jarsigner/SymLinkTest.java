@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public class SymLinkTest {
         Files.write(Path.of(ZIPFILENAME), ZIPBYTES);
 
         // check attributes before signing
-        verifyExtraAttrs(ZIPFILENAME);
+        verifyExternalFileAttributes(ZIPFILENAME);
 
         // generate key for signing
         SecurityTools.keytool(
@@ -82,7 +82,7 @@ public class SymLinkTest {
                 .shouldContain(WARNING_MSG);
 
         // recheck attributes after signing
-        verifyExtraAttrs(ZIPFILENAME);
+        verifyExternalFileAttributes(ZIPFILENAME);
 
         // verify zip file - expect warning
         SecurityTools.jarsigner(
@@ -95,8 +95,8 @@ public class SymLinkTest {
                 .shouldContain(WARNING_MSG);
     }
 
-    private static void verifyExtraAttrs(String zipFileName) throws IOException {
-        // the 16 bit extra attributes value should equal 0xa1ff - look for that pattern.
+    private static void verifyExternalFileAttributes(String zipFileName) throws IOException {
+        // the 16 bit 'external file attributes' value should equal 0xa1ff - look for that pattern.
         // Such values can be read from zip file via 'unzip -Z -l -v <zipfile>'
         try (FileInputStream fis = new FileInputStream(ZIPFILENAME)) {
             byte[] b = fis.readAllBytes();
@@ -107,7 +107,7 @@ public class SymLinkTest {
                     return;
                 }
             }
-            throw new RuntimeException("extra attribute value not detected");
+            throw new RuntimeException("external file attribute value not detected");
         }
     }
 
