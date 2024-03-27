@@ -148,6 +148,9 @@ class StubGenerator: public StubCodeGenerator {
     // Shared code tests for "null" to discover the stub is not generated.
     StubRoutines::_unsafe_arraycopy          = nullptr;
 
+    // Shared code tests for "null" to discover the stub is not generated.
+    StubRoutines::_unsafe_setmemory          = nullptr;
+
     // We don't generate specialized code for HeapWord-aligned source
     // arrays, so just use the code we've already generated
     StubRoutines::_arrayof_jbyte_disjoint_arraycopy =
