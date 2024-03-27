@@ -52,23 +52,6 @@ class ClassLoaderHelper {
      */
     static File mapAlternativeName(File lib) {
         String name = lib.toString();
-        // Checking if there is a member object mentioned.
-        if (name.contains("(")) {
-            int openBracketIndex = name.lastIndexOf('(');
-            int closeBracketIndex = name.lastIndexOf(')');
-            long openBracketCount = name.chars().filter(ch -> ch == '(').count();
-            long closeBracketCount = name.chars().filter(ch -> ch == ')').count();
-            // Checking if the format is correct.
-            if (openBracketCount > 1 || closeBracketCount > 1 || openBracketIndex > closeBracketIndex)
-            {
-                return null;
-            }
-            int dotIndex = name.lastIndexOf('.');
-            String memberName = name.substring(openBracketIndex,dotIndex);
-            // Reconstruct <libname>(<member_name>).so as <libname>.a(<member_name>)
-            String reconstructedFileName = name.substring(0, openBracketIndex) + ".a"+ memberName;
-            return new File(reconstructedFileName);
-        }
         int index = name.lastIndexOf('.');
         if (index < 0) {
             return null;
