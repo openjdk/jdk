@@ -520,7 +520,8 @@ class Assembler : public AbstractAssembler  {
     REX_WRX    = 0x4E,
     REX_WRXB   = 0x4F,
 
-    REX2       = 0xd500,
+    REX2       = 0xd5,
+    WREX2      = REX2 << 8,
 
     VEX_3bytes = 0xC4,
     VEX_2bytes = 0xC5,
@@ -723,6 +724,7 @@ private:
 
   int get_base_prefix_bits(int enc);
   int get_index_prefix_bits(int enc);
+  int get_base_prefix_bits(Register base);
   int get_index_prefix_bits(Register index);
   int get_reg_prefix_bits(int enc);
 

@@ -824,6 +824,13 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     NOT_LP64(assert(false, "64bit prefixes"));
     goto again_after_prefix;
 
+  case REX2:
+    NOT_LP64(assert(false, "64bit prefixes"));
+    if ((0xFF & *ip++) & REXBIT_W) {
+      is_64bit = true;
+    }
+    goto again_after_prefix;
+
   case REX_W:
   case REX_WB:
   case REX_WX:
@@ -873,6 +880,14 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     case REX_WRXB:
       NOT_LP64(assert(false, "64bit prefix found"));
       goto again_after_size_prefix2;
+
+    case REX2:
+      NOT_LP64(assert(false, "64bit prefix found"));
+      if ((0xFF & *ip++) & REXBIT_W) {
+        is_64bit = true;
+      }
+      goto again_after_size_prefix2;
+
     case 0x8B: // movw r, a
     case 0x89: // movw a, r
       debug_only(has_disp32 = true);
@@ -1161,6 +1176,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     case REX_WRB:
     case REX_WRX:
     case REX_WRXB:
+    case REX2:
       NOT_LP64(assert(false, "found 64bit prefix"));
       ip++;
     default:
@@ -12772,6 +12788,10 @@ int Assembler::get_index_prefix_bits(int enc) {
   return bits;
 }
 
+int Assembler::get_base_prefix_bits(Register base) {
+  return base->is_valid() ? get_base_prefix_bits(base->encoding()) : 0;
+}
+
 int Assembler::get_index_prefix_bits(Register index) {
   return index->is_valid() ? get_index_prefix_bits(index->encoding()) : 0;
 }
@@ -12785,14 +12805,14 @@ int Assembler::get_reg_prefix_bits(int enc) {
 
 void Assembler::prefix(Register reg) {
   if (reg->encoding() >= 16) {
-    prefix16(REX2 | get_base_prefix_bits(reg->encoding()));
+    prefix16(WREX2 | get_base_prefix_bits(reg->encoding()));
   } else if (reg->encoding() >= 8) {
     prefix(REX_B);
   }
 }
 
 void Assembler::prefix(Register dst, Register src, Prefix p) {
-  if ((p & REX2) || src->encoding() >= 16 || dst->encoding() >= 16) {
+  if ((p & WREX2) || src->encoding() >= 16 || dst->encoding() >= 16) {
     prefix_rex2(dst, src);
     return;
   }
@@ -12812,7 +12832,7 @@ void Assembler::prefix_rex2(Register dst, Register src) {
   int bits = 0;
   bits |= get_base_prefix_bits(src->encoding());
   bits |= get_reg_prefix_bits(dst->encoding());
-  prefix16(REX2 | bits);
+  prefix16(WREX2 | bits);
 }
 
 void Assembler::prefix(Register dst, Address adr, Prefix p) {
@@ -12841,12 +12861,12 @@ void Assembler::prefix(Register dst, Address adr, Prefix p) {
 
 void Assembler::prefix_rex2(Register dst, Address adr) {
   if (adr.index_needs_rex2()) {
-    assert(false, "prefix(Register dst, Address adr, Prefix p) does not support handling of an X");
+    assert(false, "prefix(Register dst, Address adr) does not support handling of an X");
   }
   int bits = 0;
-  bits |= get_base_prefix_bits(adr.base()->encoding());
+  bits |= get_base_prefix_bits(adr.base());
   bits |= get_reg_prefix_bits(dst->encoding());
-  prefix16(REX2 | bits);
+  prefix16(WREX2 | bits);
 }
 
 void Assembler::prefix(Address adr, bool is_map1) {
@@ -12872,7 +12892,7 @@ void Assembler::prefix_rex2(Address adr, bool is_map1) {
   int bits = is_map1 ? REX2BIT_M0 : 0;
   bits |= get_base_prefix_bits(adr.base()->encoding());
   bits |= get_index_prefix_bits(adr.index());
-  prefix16(REX2 | bits);
+  prefix16(WREX2 | bits);
 }
 
 void Assembler::prefix(Address adr, Register reg, bool byteinst, bool is_map1) {
@@ -12917,7 +12937,7 @@ void Assembler::prefix_rex2(Address adr, Register reg, bool byteinst, bool is_ma
   bits |= get_base_prefix_bits(adr.base()->encoding());
   bits |= get_index_prefix_bits(adr.index());
   bits |= get_reg_prefix_bits(reg->encoding());
-  prefix16(REX2 | bits);
+  prefix16(WREX2 | bits);
 }
 
 void Assembler::prefix(Address adr, XMMRegister reg) {
@@ -12956,10 +12976,10 @@ void Assembler::prefix(Address adr, XMMRegister reg) {
 
 void Assembler::prefix_rex2(Address adr, XMMRegister src) {
   int bits = 0;
-  bits |= get_base_prefix_bits(adr.base()->encoding());
+  bits |= get_base_prefix_bits(adr.base());
   bits |= get_index_prefix_bits(adr.index());
   bits |= get_reg_prefix_bits(src->encoding());
-  prefix16(REX2 | bits);
+  prefix16(WREX2 | bits);
 }
 
 int Assembler::prefix_and_encode(int reg_enc, bool byteinst, bool is_map1) {
@@ -12977,7 +12997,7 @@ int Assembler::prefix_and_encode(int reg_enc, bool byteinst, bool is_map1) {
 }
 
 int Assembler::prefix_and_encode_rex2(int reg_enc, bool is_map1) {
-  prefix16(REX2 | (is_map1 ? REX2BIT_M0 : 0) | get_base_prefix_bits(reg_enc));
+  prefix16(WREX2 | (is_map1 ? REX2BIT_M0 : 0) | get_base_prefix_bits(reg_enc));
   return reg_enc & 0x7;
 }
 
@@ -13011,12 +13031,12 @@ int Assembler::prefix_and_encode_rex2(int dst_enc, int src_enc, int init_bits) {
   bits |= get_base_prefix_bits(src_enc);
   dst_enc &= 0x7;
   src_enc &= 0x7;
-  prefix16(REX2 | bits);
+  prefix16(WREX2 | bits);
   return dst_enc << 3 | src_enc;
 }
 
 bool Assembler::prefix_is_rex2(int prefix) {
-  return (prefix & 0xFF00) == REX2;
+  return (prefix & 0xFF00) == WREX2;
 }
 
 int Assembler::get_prefixq(Address adr, bool is_map1) {
@@ -13031,9 +13051,9 @@ int Assembler::get_prefixq(Address adr, bool is_map1) {
 int Assembler::get_prefixq_rex2(Address adr, bool is_map1) {
   int bits = REXBIT_W;
   if (is_map1) bits |= REX2BIT_M0;
-  bits |= get_base_prefix_bits(adr.base()->encoding());
+  bits |= get_base_prefix_bits(adr.base());
   bits |= get_index_prefix_bits(adr.index());
-  return REX2 | bits;
+  return WREX2 | bits;
 }
 
 int Assembler::get_prefixq(Address adr, Register src, bool is_map1) {
@@ -13081,10 +13101,10 @@ int Assembler::get_prefixq(Address adr, Register src, bool is_map1) {
 int Assembler::get_prefixq_rex2(Address adr, Register src, bool is_map1) {
   int bits = REXBIT_W;
   if (is_map1) bits |= REX2BIT_M0;
-  bits |= get_base_prefix_bits(adr.base()->encoding());
+  bits |= get_base_prefix_bits(adr.base());
   bits |= get_index_prefix_bits(adr.index());
   bits |= get_reg_prefix_bits(src->encoding());
-  return REX2 | bits;
+  return WREX2 | bits;
 }
 
 void Assembler::prefixq(Address adr) {
@@ -13143,10 +13163,10 @@ void Assembler::prefixq(Address adr, XMMRegister src) {
 
 void Assembler::prefixq_rex2(Address adr, XMMRegister src) {
   int bits = REXBIT_W;
-  bits |= get_base_prefix_bits(adr.base()->encoding());
+  bits |= get_base_prefix_bits(adr.base());
   bits |= get_index_prefix_bits(adr.index());
   bits |= get_reg_prefix_bits(src->encoding());
-  prefix16(REX2 | bits);
+  prefix16(WREX2 | bits);
 }
 
 int Assembler::prefixq_and_encode(int reg_enc, bool is_map1) {
@@ -13165,7 +13185,7 @@ int Assembler::prefixq_and_encode(int reg_enc, bool is_map1) {
 
 
 int Assembler::prefixq_and_encode_rex2(int reg_enc, bool is_map1) {
-  prefix16(REX2 | REXBIT_W | (is_map1 ? REX2BIT_M0: 0) | get_base_prefix_bits(reg_enc));
+  prefix16(WREX2 | REXBIT_W | (is_map1 ? REX2BIT_M0: 0) | get_base_prefix_bits(reg_enc));
   return reg_enc & 0x7;
 }
 
@@ -13194,7 +13214,7 @@ int Assembler::prefixq_and_encode(int dst_enc, int src_enc, bool is_map1) {
 }
 
 int Assembler::prefixq_and_encode_rex2(int dst_enc, int src_enc, bool is_map1) {
-  int init_bits = REX_W | (is_map1 ? REX2BIT_M0 : 0);
+  int init_bits = REXBIT_W | (is_map1 ? REX2BIT_M0 : 0);
   return prefix_and_encode_rex2(dst_enc, src_enc, init_bits);
 }
 
