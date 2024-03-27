@@ -1257,6 +1257,10 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
     value = &prop[key_len + 1];
   }
 
+  if (internal == ExternalProperty) {
+    CDSConfig::check_incompatible_property(key, value);
+  }
+
   if (strcmp(key, "java.compiler") == 0) {
     // we no longer support java.compiler system property, log a warning and let it get
     // passed to Java, like any other system property
@@ -2491,11 +2495,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       if (is_internal_module_property(option->optionString + 2)) {
         needs_module_property_warning = true;
         continue;
-      }
-      if (match_option(option, "-Djava.system.class.loader=", &value) ||
-          match_option(option, "-Djdk.module.showModuleResolution", &value) ||
-          match_option(option, "-Djdk.module.validation", &value)) {
-        CDSConfig::handle_incompatible_property((const char*)option->optionString + 2);
       }
       if (!add_property(tail)) {
         return JNI_ENOMEM;

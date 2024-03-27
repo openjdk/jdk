@@ -242,10 +242,22 @@ void CDSConfig::check_internal_module_property(const char* key, const char* valu
   }
 }
 
-void CDSConfig::handle_incompatible_property(const char* prop) {
-  stop_dumping_full_module_graph();
-  stop_using_full_module_graph();
-  log_info(cds)("full module graph: disabled due to incompatible property: %s", prop);
+void CDSConfig::check_incompatible_property(const char* key, const char* value) {
+  static const char* incompatible_properties[] = {
+    "java.system.class.loader",
+    "jdk.module.showModuleResolution",
+    "jdk.module.validation"
+  };
+
+  for (uint i = 0; i < ARRAY_SIZE(incompatible_properties); i++) {
+    if (strcmp(key, incompatible_properties[i]) == 0) {
+      stop_dumping_full_module_graph();
+      stop_using_full_module_graph();
+      log_info(cds)("full module graph: disabled due to incompatible property: %s=%s", key, value);
+      break;
+    }
+  }
+
 }
 
 static const char* unsupported_properties[] = {
