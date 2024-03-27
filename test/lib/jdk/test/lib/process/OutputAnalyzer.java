@@ -238,6 +238,30 @@ public final class OutputAnalyzer {
         return stdoutContains(expectedString) || stderrContains(expectedString);
     }
 
+
+    /**
+     * Verifies that the stdout and stderr contents of output buffer contains
+     * a series of expected strings, regardless of the order in which they appear.
+     *
+     * @param expectedStrings strings to verify
+     * @param verbose indicates verbose logging
+     * @throws RuntimeException if a string is not found
+     */
+    public void shouldContainTrivialOrder(String[] expectedStrings, boolean verbose) {
+        for (String expected : expectedStrings) {
+            if (! contains(expected)) {
+                String err = "Couldn't find match: " + expected;
+                if (!verbose) {
+                    reportDiagnosticSummary();
+                }
+                throw new RuntimeException(err);
+            }
+        }
+    }
+    public void shouldContainTrivialOrder(String... expectedStrings) {
+        shouldContainTrivialOrder(expectedStrings, true);
+    }
+
     /**
      * Verify that the stdout and stderr contents of output buffer contains the string
      *
@@ -372,6 +396,57 @@ public final class OutputAnalyzer {
                   + "' missing from stdout/stderr");
         }
         return this;
+    }
+
+    /**
+     * Verifies that the stdout and stderr contents of output buffer matches
+     * a series of patterns, regardless of the order in which they appear.
+     *
+     * @param regex regular expressions to match
+     * @param verbose indicates verbose output
+     * @throws RuntimeException if any pattern is not found
+     */
+    public void shouldMatchTrivialOrder(String[] regex, boolean verbose) {
+        String haystack = getOutput();
+        searchPatternsTrivialOrder(haystack, regex, verbose);
+    }
+
+    public void shouldMatchTrivialOrder(String... regex) {
+        shouldMatchTrivialOrder(regex, true);
+    }
+
+    /**
+     * Verifies that the stdout contents of output buffer matches
+     * a series of patterns, regardless of the order in which they appear.
+     *
+     * @param regex regular expressions to match
+     * @param verbose indicates verbose output
+     * @throws RuntimeException if any pattern is not found
+     */
+    public void stdoutShouldMatchTrivialOrder(String[] regex, boolean verbose) {
+        String haystack = getStdout();
+        searchPatternsTrivialOrder(haystack, regex, verbose);
+    }
+
+    public void stdoutShouldMatchTrivialOrder(String... regex) {
+        stdoutShouldMatchTrivialOrder(regex, true);
+    }
+
+    /**
+     * Verifies that the stderr contents of output buffer matches
+     * a series of patterns, regardless of the order in which they appear.
+     *
+     * @param regex regular expressions to match
+     * @param verbose indicates verbose output
+     * @throws RuntimeException if any pattern is not found
+     */
+    public void stderrShouldMatchTrivialOrder(String[] regex, boolean verbose) {
+        String haystack = getStderr();
+        searchPatternsTrivialOrder(haystack, regex, verbose);
+    }
+
+    public void stderrShouldMatchTrivialOrder(String... regex) {
+        stderrShouldMatchTrivialOrder(regex, true);
     }
 
     /**
@@ -855,7 +930,7 @@ public final class OutputAnalyzer {
     }
 
     public void stderrShouldContainMultiLinePattern(String[] needles, boolean verbose) {
-        String [] stderrLines = stdoutAsLines().toArray(new String[0]);
+        String [] stderrLines = stdoutAsLines().toArray(new String[0]); // TODO - this should be stderr. Separate issue?
         searchLinesForMultiLinePattern(stderrLines, needles, verbose);
     }
 
@@ -872,9 +947,297 @@ public final class OutputAnalyzer {
         shouldContainMultiLinePattern(needles, true);
     }
 
+    private void searchSubsequentPatternsForMultiLineOutput(String[] haystack, String[] needles, boolean verbose) {
+        if (needles.length == 0) {
+            return;
+        }
+        int firstNeedlePos = 0;
+        for (int i = 0; i < haystack.length; i++) {
+            if (verbose) {
+                System.out.println(i + ":" + haystack[i]);
+            }
+            Pattern pattern = Pattern.compile(needles[0], Pattern.MULTILINE);
+            Matcher matcher = pattern.matcher(haystack[i]);
+            if (matcher.find()) {
+                if (verbose) {
+                    System.out.println("Matches pattern 0 (\"" + needles[0] + "\")");
+                }
+                firstNeedlePos = i;
+                break;
+            }
+        }
+        for (int i = 1; i < needles.length; i++) {
+            int haystackPos = firstNeedlePos + i;
+            if (haystackPos < haystack.length) {
+                if (verbose) {
+                    System.out.println(haystackPos + ":" + haystack[haystackPos]);
+                }
+                Pattern pattern = Pattern.compile(needles[i], Pattern.MULTILINE);
+                Matcher matcher = pattern.matcher(haystack[haystackPos]);
+                if (matcher.find()) {
+                    if (verbose) {
+                        System.out.println("Matches pattern " + i  + "(\"" + needles[i] + "\")");
+                    }
+                } else {
+                    String err = "First unmatched pattern: " + i + " (\"" + needles[i] + "\")";
+                    if (!verbose) { // don't print twice
+                        reportDiagnosticSummary();
+                    }
+                    throw new RuntimeException(err);
+                }
+            }
+        }
+    }
+
     /**
-     * Assert that we did not crash with a hard VM error (generating an hs_err_pidXXX.log)
+     * Verifies that the stdout and stderr contents of output buffer
+     * matches a series of patterns, but only if the patterns follow
+     * each other in subsequent lines.
+     *
+     * @param regex regular expressions to match
+     * @param verbose indicates verbose logging
+     * @throws RuntimeException if patterns are not found in the correct order
      */
+    public void shouldMatchMultiLinePattern(String[] regex, boolean verbose) {
+        String[] lines = asLines().toArray(new String[0]);
+        searchSubsequentPatternsForMultiLineOutput(lines, regex, verbose);
+    }
+
+    public void shouldMatchMultiLinePattern(String... regex) {
+        shouldMatchMultiLinePattern(regex, true);
+    }
+
+    /**
+     * Verifies that the stdout contents of output buffer matches
+     * a series of patterns, but only if the patterns follow
+     * each other in subsequent lines.
+     *
+     * @param regex regular expressions to match
+     * @param verbose indicates verbose logging
+     * @throws RuntimeException if patterns are not found in the correct order
+     */
+    public void stdoutShouldMatchMultiLinePattern(String[] regex, boolean verbose) {
+        String [] stdoutLines = stdoutAsLines().toArray(new String[0]);
+        searchSubsequentPatternsForMultiLineOutput(stdoutLines, regex, verbose);
+    }
+
+    public void stdoutShouldMatchMultiLinePattern(String... regex) {
+        stdoutShouldMatchMultiLinePattern(regex, true);
+    }
+
+    /**
+     * Verifies that the stderr contents of output buffer matches
+     * a series of patterns, but only if the patterns follow
+     * each other in subsequent lines.
+     *
+     * @param regex regular expressions to match
+     * @param verbose enables verbose output
+     * @throws RuntimeException if patterns are not found in the right order
+     */
+    public void stderrShouldMatchMultiLinePattern(String[] regex, boolean verbose) {
+        String [] stderrLines = stderrAsLines().toArray(new String[0]);
+        searchSubsequentPatternsForMultiLineOutput(stderrLines, regex, verbose);
+    }
+
+    public void stderrShouldMatchMultiLinePattern(String... needles) {
+        stderrShouldMatchMultiLinePattern(needles, true);
+    }
+
+    private void searchPatternsTrivialOrder(String haystack, String[] needles, boolean verbose) {
+        for (String needle : needles) {
+            Pattern pattern = Pattern.compile(needle);
+            Matcher matcher = pattern.matcher(haystack);
+            if (matcher.find()) {
+                if (verbose) {
+                    System.out.println("Pattern matched: " + needle);
+                }
+            } else {
+                String err = "";
+                if (! verbose) {
+                    reportDiagnosticSummary();
+                }
+                throw new RuntimeException(err);
+            }
+        }
+    }
+
+    private void searchOrderedPatternsWithInterleavedLines(String[] haystack, String[] needles, boolean verbose) {
+        if (needles.length == 0) {
+            return;
+        }
+
+        int needleFoundPos = 0;
+        int haystackPos;
+
+        for (int i = 0; i < needles.length; i++) {
+            if (verbose) {
+                System.out.println("Trying to match pattern: " + needles[i]);
+            }
+
+            haystackPos = needleFoundPos + i;
+            while (haystackPos < haystack.length ) {
+                Pattern pattern = Pattern.compile(needles[i], Pattern.MULTILINE);
+                Matcher matcher = pattern.matcher(haystack[haystackPos]);
+                if (matcher.find()) {
+                    if (verbose) {
+                        System.out.println("Pattern matched: " + haystack[haystackPos]);
+                    }
+                    needleFoundPos = haystackPos;
+                    break;
+                }
+                haystackPos++;
+            }
+
+            if (haystackPos >= haystack.length) {
+                String err = "First unmatched pattern: " + i + " (\"" + needles[i] + "\")";
+                if (!verbose) {
+                    reportDiagnosticSummary();
+                }
+                throw new RuntimeException(err);
+            }
+        }
+    }
+
+    /**
+     * Verifies that the stdout and stderr contents of the output buffer
+     * matches an ordered series of patterns, allowing for interleaved lines.
+     *
+     * @param regex regular expressions to match
+     * @param verbose indicates verbose output
+     * @throws RuntimeException if any pattern is not found in the correct order.
+     */
+    public void shouldMatchOrderedPatternsInterleavedLines(String[] regex, boolean verbose) {
+        String[] lines = asLines().toArray(new String[0]);
+        searchOrderedPatternsWithInterleavedLines(lines, regex, verbose);
+    }
+
+    public void shouldMatchOrderedPatternsInterleavedLines(String... regex) {
+        shouldMatchOrderedPatternsInterleavedLines(regex, true);
+    }
+
+    /**
+     * Verifies that the stdout contents of the output buffer
+     * matches an ordered series of patterns, allowing for interleaved lines.
+     *
+     * @param regex regular expressions to match
+     * @param verbose indicates verbose output
+     * @throws RuntimeException if any pattern is not found in the correct order.
+     */
+    public void stdoutShouldMatchOrderedPatternsInterleavedLines(String[] regex, boolean verbose) {
+        String[] stdoutLines = stdoutAsLines().toArray(new String[0]);
+        searchOrderedPatternsWithInterleavedLines(stdoutLines, regex, verbose);
+    }
+
+    public void stdoutShouldMatchOrderedPatternsInterleavedLines(String... regex) {
+        stdoutShouldMatchOrderedPatternsInterleavedLines(regex, true);
+    }
+
+    /**
+     * Verifies that the stdout contents of the output buffer
+     * matches an ordered series of patterns, allowing for interleaved lines.
+     *
+     * @param regex regular expressions to match
+     * @param verbose indicates verbose output
+     * @throws RuntimeException if any pattern is not found in the correct order.
+     */
+    public void stderrShouldMatchOrderedPatternsInterleavedLines(String[] regex, boolean verbose) {
+        String[] stderrLines = stderrAsLines().toArray(new String[0]);
+        searchOrderedPatternsWithInterleavedLines(stderrLines, regex, verbose);
+    }
+
+    public void stderrShouldMatchOrderedPatternsInterleavedLines(String... regex) {
+        stderrShouldMatchOrderedPatternsInterleavedLines(regex, true);
+    }
+
+    private void searchMultipleLinesWithInterleavedLines(String[] haystack, String[] needles, boolean verbose) {
+        if (needles.length == 0) {
+            return;
+        }
+
+        int needleFoundPos = 0;
+        int haystackPos;
+
+        for (int i = 0; i < needles.length; i++) {
+            if (verbose) {
+                System.out.println("Trying to match line: " + needles[i]);
+            }
+            haystackPos = needleFoundPos + i;
+            while (haystackPos < haystack.length ) {
+                if (haystack[haystackPos].contains(needles[i])) {
+                    if (verbose) {
+                        System.out.println("Line matched: " + haystack[haystackPos]);
+                    }
+                    needleFoundPos = haystackPos;
+                    break;
+                }
+                haystackPos++;
+            }
+
+            if (haystackPos >= haystack.length) {
+                String err = "First line that couldn't be matched: " + i + " (\"" + needles[i] + "\")";
+                if (!verbose) {
+                    reportDiagnosticSummary();
+                }
+                throw new RuntimeException(err);
+            }
+        }
+    }
+
+    /**
+     * Verifies that the stdout and stderr contents of the output buffer
+     * contains an ordered series of strings, allowing for interleaved lines.
+     *
+     * @param expectedStrings strings to verify
+     * @param verbose indicates verbose output
+     * @throws RuntimeException if a string is not found in the correct order.
+     */
+    public void shouldContainOrderedPatternsInterleavedLines(String[] expectedStrings, boolean verbose) {
+        String[] lines = asLines().toArray(new String[0]);
+        searchMultipleLinesWithInterleavedLines(lines, expectedStrings, verbose);
+    }
+
+    public void shouldContainOrderedPatternsInterleavedLines(String... expectedStrings) {
+        shouldContainOrderedPatternsInterleavedLines(expectedStrings, true);
+    }
+
+    /**
+     * Verifies that the stdout contents of the output buffer
+     * contains an ordered series of strings, allowing for interleaved lines.
+     *
+     * @param expectedStrings strings to verify
+     * @param verbose indicates verbose output
+     * @throws RuntimeException if a string is not found in the correct order.
+     */
+    public void stdoutShouldContainOrderedPatternsInterleavedLines(String[] expectedStrings, boolean verbose) {
+        String[] stdoutLines = stdoutAsLines().toArray(new String[0]);
+        searchMultipleLinesWithInterleavedLines(stdoutLines, expectedStrings, verbose);
+    }
+
+    public void stdoutShouldContainOrderedPatternsInterleavedLines(String... expectedStrings) {
+        stdoutShouldContainOrderedPatternsInterleavedLines(expectedStrings, true);
+    }
+
+    /**
+     * Verifies that the stderr contents of the output buffer
+     * contains an ordered series of strings, allowing for interleaved lines.
+     *
+     * @param expectedStrings strings to verify
+     * @param verbose indicates verbose output
+     * @throws RuntimeException if a string is not found in the correct order.
+     */
+    public void stderrShouldContainOrderedPatternsInterleavedLines(String[] expectedStrings, boolean verbose) {
+        String[] stderrLines = stderrAsLines().toArray(new String[0]);
+        searchMultipleLinesWithInterleavedLines(stderrLines, expectedStrings, verbose);
+    }
+
+    public void stderrShouldContainOrderedPatternsInterleavedLines(String... expectedStrings) {
+        stderrShouldContainOrderedPatternsInterleavedLines(expectedStrings, true);
+    }
+    
+
+        /**
+         * Assert that we did not crash with a hard VM error (generating an hs_err_pidXXX.log)
+         */
     public void shouldNotHaveFatalError() {
         shouldNotMatch(FATAL_ERROR_PAT);
     }
