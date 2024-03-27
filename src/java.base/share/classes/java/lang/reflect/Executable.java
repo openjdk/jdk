@@ -255,12 +255,14 @@ public abstract sealed class Executable extends AccessibleObject
      * represented by this object.  Returns an array of length
      * 0 if the underlying executable takes no parameters.
      * Note that the constructors of some inner classes
-     * may have an implicitly declared parameter in addition to
-     * explicitly declared ones.
+     * may have an implicitly ({@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED mandated}) declared parameter in addition to
+     * explicitly declared ones.  Also note that compact constructors
+     * of a record class may have implicitly ({@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED mandated}) declared parameters.
      *
      * @return the parameter types for the executable this object
      * represents
      */
+    @SuppressWarnings("doclint:reference") // cross-module links
     public abstract Class<?>[] getParameterTypes();
 
     /**
@@ -280,18 +282,20 @@ public abstract sealed class Executable extends AccessibleObject
      * underlying executable takes no parameters.  Note that the
      * constructors of some inner classes may have an implicitly
      * declared parameter in addition to explicitly declared ones.
-     * Also note that as a <a
-     * href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">modeling
+     * Also note that compact constructors of a record class may have
+     * implicitly ({@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED mandated}) declared parameters.
+     * Finally note that as a <a href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">modeling
      * artifact</a>, the number of returned parameters can differ
      * depending on whether or not generic information is present. If
-     * generic information is present, only parameters explicitly
-     * present in the source will be returned; if generic information
-     * is not present, implicit and synthetic parameters may be
-     * returned as well.
+     * generic information is present, only parameters implicitly ({@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED mandated}) or
+     * explicitly present in the source will be returned; if generic
+     * information is not present, {@linkplain java.compiler/javax.lang.model.util.Elements.Origin#SYNTHETIC synthetic} parameters may be returned
+     * as well.
      *
      * <p>If a formal parameter type is a parameterized type,
      * the {@code Type} object returned for it must accurately reflect
-     * the actual type arguments used in the source code.
+     * the actual type arguments used, implicitly (({@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED mandated})) or explicitly, in the
+     * source code.
      *
      * <p>If a formal parameter type is a type variable or a parameterized
      * type, it is created. Otherwise, it is resolved.
@@ -309,6 +313,7 @@ public abstract sealed class Executable extends AccessibleObject
      *     the underlying executable's parameter types refer to a parameterized
      *     type that cannot be instantiated for any reason
      */
+    @SuppressWarnings("doclint:reference") // cross-module links
     public Type[] getGenericParameterTypes() {
         if (hasGenericInformation())
             return getGenericInfo().getParameterTypes();
@@ -337,17 +342,17 @@ public abstract sealed class Executable extends AccessibleObject
             if (realParamData) {
                 final Type[] out = new Type[nonGenericParamTypes.length];
                 final Parameter[] params = getParameters();
-                int fromidx = 0;
-                for (int i = 0; i < out.length; i++) {
+                int fromidx = genericParamTypes.length - 1;
+                for (int i = out.length - 1; i >= 0; i--) {
                     final Parameter param = params[i];
-                    if (param.isSynthetic() || param.isImplicit()) {
-                        // If we hit a synthetic or mandated parameter,
+                    if (param.isSynthetic() || fromidx < 0) {
+                        // If we hit a synthetic parameter or if we have already read all the elements from `genericParamTypes`,
                         // use the non generic parameter info.
                         out[i] = nonGenericParamTypes[i];
                     } else {
                         // Otherwise, use the generic parameter info.
                         out[i] = genericParamTypes[fromidx];
-                        fromidx++;
+                        fromidx--;
                     }
                 }
                 return out;
@@ -748,13 +753,15 @@ public abstract sealed class Executable extends AccessibleObject
      * Returns an array of length 0 if the method/constructor declares no
      * parameters.
      * Note that the constructors of some inner classes
-     * may have an implicitly declared parameter in addition to
-     * explicitly declared ones.
+     * may have an implicitly ({@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED mandated}) declared parameter in addition to
+     * explicitly declared ones.  Also note that compact constructors of a
+     * record class may have implicitly ({@linkplain java.compiler/javax.lang.model.util.Elements.Origin#MANDATED mandated}) declared parameters.
      *
      * @return an array of objects representing the types of the
      * formal parameters of the method or constructor represented by this
      * {@code Executable}
      */
+    @SuppressWarnings("doclint:reference") // cross-module links
     public AnnotatedType[] getAnnotatedParameterTypes() {
         return TypeAnnotationParser.buildAnnotatedTypes(getTypeAnnotationBytes0(),
                 SharedSecrets.getJavaLangAccess().
