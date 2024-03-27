@@ -46,7 +46,9 @@ bool G1PeriodicGCTask::should_start_periodic_gc(G1CollectedHeap* g1h,
   }
 
   // Check if enough time has passed since the last GC.
-  uintx time_since_last_gc = (uintx)g1h->time_since_last_collection().milliseconds();
+  uintx time_since_last_gc = G1PeriodicGCCheckWholeHeap ?
+          (uintx)g1h->millis_since_last_whole_heap_examined() :
+          (uintx)g1h->time_since_last_collection().milliseconds();
   if ((time_since_last_gc < G1PeriodicGCInterval)) {
     log_debug(gc, periodic)("Last GC occurred " UINTX_FORMAT "ms before which is below threshold " UINTX_FORMAT "ms. Skipping.",
                             time_since_last_gc, G1PeriodicGCInterval);

@@ -291,6 +291,11 @@
           "triggering a periodic gc. A value of zero disables periodically "\
           "enforced gc cycles.")                                            \
                                                                             \
+  product(bool, G1PeriodicGCCheckWholeHeap, false,                          \
+          "Check for recent whole heap GC instead of any recent GC for "    \
+          "periodic GC triggers. Enabling this would trigger periodic GC "  \
+          "even when young GCs happened recently.")                         \
+                                                                            \
   product(bool, G1PeriodicGCInvokesConcurrent, true,                        \
           "Determines the kind of periodic GC. Set to true to have G1 "     \
           "perform a concurrent GC as periodic GC, otherwise use a STW "    \
