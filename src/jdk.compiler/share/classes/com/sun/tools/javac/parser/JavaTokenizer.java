@@ -34,6 +34,8 @@ import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
+import com.sun.tools.javac.tree.EndPosTable;
+import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.*;
 
@@ -1418,6 +1420,8 @@ public class JavaTokenizer extends UnicodeReader {
          */
         CommentStyle cs;
 
+        DiagnosticPosition pos;
+
         /**
          * true if comment contains @deprecated at beginning of a line.
          */
@@ -1439,6 +1443,12 @@ public class JavaTokenizer extends UnicodeReader {
         protected BasicComment(CommentStyle cs, UnicodeReader reader, int pos, int endPos) {
             super(reader, pos, endPos);
             this.cs = cs;
+            this.pos = new SimpleDiagnosticPosition(pos) {
+                @Override
+                public int getEndPosition(EndPosTable endPosTable) {
+                    return endPos;
+                }
+            };
         }
 
         /**
@@ -1448,6 +1458,10 @@ public class JavaTokenizer extends UnicodeReader {
          */
         public String getText() {
             return null;
+        }
+
+        public DiagnosticPosition getPos() {
+            return pos;
         }
 
         /**
