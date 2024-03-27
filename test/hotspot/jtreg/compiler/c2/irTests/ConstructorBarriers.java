@@ -24,9 +24,6 @@
 package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.*;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
-import java.util.Random;
 
 /*
  * @test
