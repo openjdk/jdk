@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,19 @@ public final class OutputAnalyzer {
     private static final String FATAL_ERROR_PAT = "# A fatal error has been detected.*";
 
     private final OutputBuffer buffer;
+    /**
+     * Create an OutputAnalyzer, a utility class for verifying output and exit
+     * value from a Process
+     *
+     * @param process Process to analyze
+     * @param cs The charset used to convert stdout/stderr from bytes to chars
+     *           or null for the default charset.
+     * @param shouldLogProgress should it log the progress to stdout
+     * @throws IOException If an I/O error occurs.
+     */
+    public OutputAnalyzer(Process process, Charset cs, boolean shouldLogProgress) throws IOException {
+        buffer = OutputBuffer.of(process, cs, shouldLogProgress);
+    }
     /**
      * Create an OutputAnalyzer, a utility class for verifying output and exit
      * value from a Process

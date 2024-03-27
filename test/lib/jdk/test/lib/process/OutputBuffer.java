@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,12 +89,16 @@ public interface OutputBuffer {
    */
   public long pid();
 
+  public static OutputBuffer of(Process p, Charset cs, boolean shouldLogProgress) {
+    return new LazyOutputBuffer(p, cs, shouldLogProgress);
+  }
+
   public static OutputBuffer of(Process p, Charset cs) {
-    return new LazyOutputBuffer(p, cs);
+    return of(p, cs, true);
   }
 
   public static OutputBuffer of(Process p) {
-    return new LazyOutputBuffer(p, null);
+    return of(p, null);
   }
 
   public static OutputBuffer of(String stdout, String stderr, int exitValue) {
@@ -134,15 +138,19 @@ public interface OutputBuffer {
     private final StreamTask errTask;
     private final Process p;
     private volatile Integer exitValue; // null implies we don't yet know
+    private final boolean shouldLogProgress;
 
     private final void logProgress(String state) {
+      if (shouldLogProgress) {
         System.out.println("[" + Instant.now().toString() + "] " + state
                            + " for process " + p.pid());
         System.out.flush();
+      }
     }
 
-    private LazyOutputBuffer(Process p, Charset cs) {
+    private LazyOutputBuffer(Process p, Charset cs, boolean shouldLogProgress) {
       this.p = p;
+      this.shouldLogProgress = shouldLogProgress;
       logProgress("Gathering output");
       outTask = new StreamTask(p.getInputStream(), cs);
       errTask = new StreamTask(p.getErrorStream(), cs);
