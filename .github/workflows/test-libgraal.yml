@@ -1,0 +1,106 @@
+#
+# Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+name: 'Build and test libgraal'
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        required: true
+        type: string
+      runs-on:
+        required: true
+        type: string
+
+jobs:
+  test:
+    name: test-libgraal
+    runs-on: ${{ inputs.runs-on }}
+    defaults:
+      run:
+        shell: bash
+
+    strategy:
+      fail-fast: false
+      matrix:
+        test-name:
+          - 'libgraal/release'
+          #- 'libgraal/fastdebug'
+
+        include:
+          - test-name: 'libgraal/release'
+
+          # - test-name: 'libgraal/fastdebug'
+          #   debug-suffix: -debug
+    env:
+      JAVA_HOME: ${{ github.workspace }}/jdk
+      MX_PATH: ${{ github.workspace }}/mx
+      MX_PYTHON: python3.8
+
+    steps:
+      - name: 'Checkout the JDK source'
+        uses: actions/checkout@v4
+
+      - name: 'Clone Graal'
+        id: graal
+        uses: ./.github/actions/get-graal
+
+      - name: 'Get bundles'
+        id: bundles
+        uses: ./.github/actions/get-bundles
+        with:
+          platform: ${{ inputs.platform }}
+          debug-suffix: ${{ matrix.debug-suffix }}
+          include-static-libs: true
+
+      - name: Determine mx version
+        run: echo "MX_VERSION=$(jq -r '.mx_version' ${{ steps.graal.outputs.path }}/common.json)" >> ${GITHUB_ENV}
+
+      - name: Checkout graalvm/mx
+        uses: actions/checkout@v4
+        with:
+          repository: graalvm/mx.git
+          ref: ${{ env.MX_VERSION }}
+          fetch-depth: 1
+          path: ${{ env.MX_PATH }}
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+      - name: Update mx cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.mx
+          key: ${{ runner.os }}-mx-${{ hashFiles('**/suite.py') }}
+          restore-keys: ${{ runner.os }}-mx-
+
+      - name: Build libgraal
+        id: build-libgraal
+        run: ${MX_PATH}/mx --primary-suite-path ${{ steps.graal.outputs.path }}/vm --java-home=${{ steps.bundles.outputs.jdk-path }} --env libgraal build
+
+      - name: Test libgraal
+        id: libgraal-gate
+        run: ${MX_PATH}/mx --primary-suite-path ${{ steps.graal.outputs.path }}/vm --java-home=${{ steps.bundles.outputs.jdk-path }} --env libgraal gate --task 'LibGraal Compiler'
