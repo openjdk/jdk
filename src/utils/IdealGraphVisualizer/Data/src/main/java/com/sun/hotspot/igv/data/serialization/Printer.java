@@ -36,15 +36,8 @@ import java.util.Set;
  */
 public class Printer {
 
-    private final InputStream in;
 
-    public Printer() {
-        this(null);
-    }
-
-    public Printer(InputStream inputStream) {
-        this.in = inputStream;
-    }
+    public Printer() {}
 
     public void export(Writer writer, GraphDocument document) {
 
@@ -76,28 +69,17 @@ public class Printer {
         writer.startTag(Parser.GROUP_ELEMENT, attributes);
         writer.writeProperties(g.getProperties());
 
-        boolean shouldExport = true;
-        if (in != null) {
-            char c = (char) in.read();
-            if (c != 'y') {
-                shouldExport = false;
-            }
+        if (g.getMethod() != null) {
+            export(writer, g.getMethod());
         }
 
-        if (shouldExport) {
-            if (g.getMethod() != null) {
-                export(writer, g.getMethod());
-            }
-
-            InputGraph previous = null;
-            for (FolderElement e : g.getElements()) {
-                if (e instanceof InputGraph) {
-                    InputGraph graph = (InputGraph) e;
-                    export(writer, graph, previous, true);
-                    previous = graph;
-                } else if (e instanceof Group) {
-                    export(writer, (Group) e);
-                }
+        InputGraph previous = null;
+        for (FolderElement e : g.getElements()) {
+            if (e instanceof InputGraph graph) {
+                export(writer, graph, previous, true);
+                previous = graph;
+            } else if (e instanceof Group) {
+                export(writer, (Group) e);
             }
         }
 
