@@ -26,7 +26,6 @@ package jdk.tools.jlink.internal;
 
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
-import java.nio.ByteOrder;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -148,6 +147,8 @@ public final class Jlink {
         private final Path output;
         private final Set<String> modules;
         private final ModuleFinder finder;
+        private final boolean linkFromRuntimeImage;
+        private final boolean ignoreModifiedRuntime;
 
         /**
          * jlink configuration,
@@ -158,10 +159,14 @@ public final class Jlink {
          */
         public JlinkConfiguration(Path output,
                                   Set<String> modules,
-                                  ModuleFinder finder) {
+                                  ModuleFinder finder,
+                                  boolean linkFromRuntimeImage,
+                                  boolean ignoreModifiedRuntime) {
             this.output = output;
             this.modules = Objects.requireNonNull(modules);
             this.finder = finder;
+            this.linkFromRuntimeImage = linkFromRuntimeImage;
+            this.ignoreModifiedRuntime = ignoreModifiedRuntime;
         }
 
         /**
@@ -184,6 +189,14 @@ public final class Jlink {
          */
         public ModuleFinder finder() {
             return finder;
+        }
+
+        public boolean linkFromRuntimeImage() {
+            return linkFromRuntimeImage;
+        }
+
+        public boolean ignoreModifiedRuntime() {
+            return ignoreModifiedRuntime;
         }
 
         /**

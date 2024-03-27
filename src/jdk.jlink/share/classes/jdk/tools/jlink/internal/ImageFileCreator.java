@@ -44,6 +44,7 @@ import java.util.stream.Stream;
 import jdk.tools.jlink.internal.Archive.Entry;
 import jdk.tools.jlink.internal.Archive.Entry.EntryType;
 import jdk.tools.jlink.internal.ResourcePoolManager.CompressedModuleData;
+import jdk.tools.jlink.internal.runtimelink.RuntimeImageLinkException;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
@@ -166,6 +167,9 @@ public final class ImageFileCreator {
         //Handle files.
         try {
             plugins.storeFiles(allContent.resourcePool(), result, writer);
+        } catch (RuntimeImageLinkException e) {
+            // Propagate reason for run-time image based links
+            throw e.getReason();
         } catch (Exception ex) {
             if (JlinkTask.DEBUG) {
                 ex.printStackTrace();
@@ -187,6 +191,13 @@ public final class ImageFileCreator {
                 pe.printStackTrace();
             }
             throw pe;
+        } catch (RuntimeImageLinkException re) {
+            // might be thrown in the run-image link case. Populate the
+            // actual reason.
+            if (JlinkTask.DEBUG) {
+                re.printStackTrace();
+            }
+            throw re.getReason();
         } catch (Exception ex) {
             if (JlinkTask.DEBUG) {
                 ex.printStackTrace();
