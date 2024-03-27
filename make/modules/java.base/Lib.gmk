@@ -37,7 +37,8 @@ $(call FillFindCache, $(wildcard $(TOPDIR)/src/java.base/*/native))
 include lib/CoreLibraries.gmk
 
 ################################################################################
-# Create the network library
+## Build libnet
+################################################################################
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBNET, \
     NAME := net, \
@@ -45,18 +46,22 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNET, \
     DISABLED_WARNINGS_gcc_net_util_md.c := format-nonliteral, \
     DISABLED_WARNINGS_gcc_NetworkInterface.c := unused-function, \
     DISABLED_WARNINGS_clang_net_util_md.c := format-nonliteral, \
-    DISABLED_WARNINGS_clang_aix_DefaultProxySelector.c := deprecated-non-prototype, \
+    DISABLED_WARNINGS_clang_aix_DefaultProxySelector.c := \
+        deprecated-non-prototype, \
     DISABLED_WARNINGS_clang_aix_NetworkInterface.c := gnu-pointer-arith, \
     DISABLED_WARNINGS_microsoft_InetAddress.c := 4244, \
     DISABLED_WARNINGS_microsoft_ResolverConfigurationImpl.c := 4996, \
-    LDFLAGS_windows := -delayload:secur32.dll -delayload:iphlpapi.dll \
+    LDFLAGS_windows := -delayload:iphlpapi.dll -delayload:secur32.dll \
         -delayload:winhttp.dll, \
-    LIBS_unix := -ljvm -ljava, \
+    JDK_LIBS_unix := -ljava -ljvm, \
+    JDK_LIBS_windows := $(WIN_JAVA_LIB) jvm.lib, \
     LIBS_linux := $(LIBDL), \
     LIBS_aix := $(LIBDL),\
-    LIBS_windows := ws2_32.lib jvm.lib secur32.lib iphlpapi.lib winhttp.lib \
-        delayimp.lib $(WIN_JAVA_LIB) advapi32.lib, \
-    LIBS_macosx := -framework CoreFoundation -framework CoreServices, \
+    LIBS_windows := advapi32.lib delayimp.lib iphlpapi.lib secur32.lib \
+        winhttp.lib ws2_32.lib, \
+    LIBS_macosx := \
+        -framework CoreFoundation \
+        -framework CoreServices, \
 ))
 
 $(BUILD_LIBNET): $(BUILD_LIBJAVA)
@@ -64,7 +69,8 @@ $(BUILD_LIBNET): $(BUILD_LIBJAVA)
 TARGETS += $(BUILD_LIBNET)
 
 ################################################################################
-# Create the nio library
+## Build libnio
+################################################################################
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBNIO, \
     NAME := nio, \
@@ -73,100 +79,96 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNIO, \
         libnio/ch \
         libnio/fs \
         libnet, \
-    LIBS_unix := -ljava -lnet, \
-    LIBS_linux := -lpthread $(LIBDL), \
+    JDK_LIBS_unix := -ljava -lnet, \
+    JDK_LIBS_windows := $(WIN_JAVA_LIB) jvm.lib \
+        $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libnet/net.lib, \
+    LIBS_linux := $(LIBDL) -lpthread, \
     LIBS_aix := $(LIBDL), \
     LIBS_macosx := \
-        -framework CoreFoundation -framework CoreServices, \
-    LIBS_windows := jvm.lib Mswsock.lib ws2_32.lib $(WIN_JAVA_LIB) \
-        $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libnet/net.lib \
-        advapi32.lib, \
+        -framework CoreFoundation \
+        -framework CoreServices, \
+    LIBS_windows := advapi32.lib mswsock.lib ws2_32.lib, \
 ))
 
 TARGETS += $(BUILD_LIBNIO)
 
 $(BUILD_LIBNIO): $(BUILD_LIBNET)
 
-################################################################################
-# Create the macosx security library
-
 ifeq ($(call isTargetOs, macosx), true)
+  ##############################################################################
+  ## Build libosxsecurity
+  ##############################################################################
 
     $(eval $(call SetupJdkLibrary, BUILD_LIBOSXSECURITY, \
         NAME := osxsecurity, \
         OPTIMIZATION := LOW, \
         DISABLED_WARNINGS_clang_KeystoreImpl.m := deprecated-declarations, \
         LDFLAGS := -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base,\
-        LIBS := \
-            -lobjc \
+        JDK_LIBS := $(JDKLIB_LIBS), \
+        LIBS_macosx := -lobjc \
             -framework CoreServices \
-            -framework Security \
             -framework Foundation \
-            $(JDKLIB_LIBS), \
+            -framework Security, \
     ))
 
     $(BUILD_LIBOSXSECURITY): $(BUILD_LIBJAVA)
 
     TARGETS += $(BUILD_LIBOSXSECURITY)
-
 endif
 
-################################################################################
-# Create the jsig library
+ifeq ($(call isTargetOsType, unix)+$(STATIC_BUILD), true+false)
+  ##############################################################################
+  ## Build libjsig
+  ##############################################################################
 
-ifeq ($(call isTargetOsType, unix), true)
-  ifeq ($(STATIC_BUILD), false)
-    $(eval $(call SetupJdkLibrary, BUILD_LIBJSIG, \
-        NAME := jsig, \
-        OPTIMIZATION := LOW, \
-        jsig.c_CFLAGS := -DHOTSPOT_VM_DISTRO='"$(HOTSPOT_VM_DISTRO)"', \
-        LIBS_linux := $(LIBDL), \
-        LIBS_aix := $(LIBDL), \
-    ))
+  $(eval $(call SetupJdkLibrary, BUILD_LIBJSIG, \
+      NAME := jsig, \
+      OPTIMIZATION := LOW, \
+      jsig.c_CFLAGS := -DHOTSPOT_VM_DISTRO='"$(HOTSPOT_VM_DISTRO)"', \
+      LIBS_linux := $(LIBDL), \
+      LIBS_aix := $(LIBDL), \
+  ))
 
-    TARGETS += $(BUILD_LIBJSIG)
+  TARGETS += $(BUILD_LIBJSIG)
 
-    ############################################################################
-    # Create symlinks to libjsig in each JVM variant sub dir
-    ifneq ($(STATIC_LIBS), true)
-      LIB_OUTPUTDIR := $(call FindLibDirForModule, java.base)
+  ##############################################################################
+  # Create symlinks to libjsig in each JVM variant sub dir
+  ifneq ($(STATIC_LIBS), true)
+    LIB_OUTPUTDIR := $(call FindLibDirForModule, java.base)
 
-      # $1 variant subdir
-      define CreateSymlinks
-        # Always symlink from libdir/variant/libjsig.so -> ../libjsig.so.
-        $(LIB_OUTPUTDIR)/$1/$(call SHARED_LIBRARY,jsig): \
-            $(LIB_OUTPUTDIR)/$(call SHARED_LIBRARY,jsig)
+    # $1 variant subdir
+    define CreateSymlinks
+      # Always symlink from libdir/variant/libjsig.so -> ../libjsig.so.
+      $(LIB_OUTPUTDIR)/$1/$(call SHARED_LIBRARY,jsig): \
+          $(LIB_OUTPUTDIR)/$(call SHARED_LIBRARY,jsig)
 		$$(call MakeDir, $$(@D))
 		$(RM) $$@
 		$(LN) -s ../$$(@F) $$@
 
-        TARGETS += $(LIB_OUTPUTDIR)/$1/$(call SHARED_LIBRARY,jsig)
-      endef
+      TARGETS += $(LIB_OUTPUTDIR)/$1/$(call SHARED_LIBRARY,jsig)
+    endef
 
-      # The subdir is the same as the variant
-      $(foreach v, $(JVM_VARIANTS), $(eval $(call CreateSymlinks,$v)))
-    endif
-    ############################################################################
-
+    # The subdir is the same as the variant
+    $(foreach v, $(JVM_VARIANTS), $(eval $(call CreateSymlinks,$v)))
   endif
 endif
 
 ################################################################################
 # Create the symbols file for static builds.
-
 ifeq ($(STATIC_BUILD), true)
+  STATIC_SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base
   JAVA_BASE_EXPORT_SYMBOLS_SRC := \
-      $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/$(LIBRARY_PREFIX)jli.symbols \
-      $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/$(LIBRARY_PREFIX)java.symbols \
-      $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/$(LIBRARY_PREFIX)net.symbols \
-      $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/$(LIBRARY_PREFIX)nio.symbols \
-      $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/$(LIBRARY_PREFIX)verify.symbols \
-      $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/$(LIBRARY_PREFIX)zip.symbols \
-      $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/$(LIBRARY_PREFIX)jimage.symbols \
-      $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/server/$(LIBRARY_PREFIX)jvm.symbols \
+      $(STATIC_SYMBOLS_DIR)/$(LIBRARY_PREFIX)jli.symbols \
+      $(STATIC_SYMBOLS_DIR)/$(LIBRARY_PREFIX)java.symbols \
+      $(STATIC_SYMBOLS_DIR)/$(LIBRARY_PREFIX)net.symbols \
+      $(STATIC_SYMBOLS_DIR)/$(LIBRARY_PREFIX)nio.symbols \
+      $(STATIC_SYMBOLS_DIR)/$(LIBRARY_PREFIX)verify.symbols \
+      $(STATIC_SYMBOLS_DIR)/$(LIBRARY_PREFIX)zip.symbols \
+      $(STATIC_SYMBOLS_DIR)/$(LIBRARY_PREFIX)jimage.symbols \
+      $(STATIC_SYMBOLS_DIR)/server/$(LIBRARY_PREFIX)jvm.symbols \
       #
 
-  JAVA_BASE_EXPORT_SYMBOL_FILE := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/java.base.symbols
+  JAVA_BASE_EXPORT_SYMBOL_FILE := $(STATIC_SYMBOLS_DIR)/java.base.symbols
 
   $(JAVA_BASE_EXPORT_SYMBOL_FILE): $(JAVA_BASE_EXPORT_SYMBOLS_SRC)
 	$(call LogInfo, Generating java.base.symbols file)
@@ -181,56 +183,47 @@ ifeq ($(STATIC_BUILD), true)
 endif
 
 ################################################################################
-# Copy tzmappings file for Windows
-
-ifeq ($(call isTargetOs, windows), true)
-  $(eval $(call SetupCopyFiles, COPY_TZMAPPINGS, \
-      FILES := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/windows/conf/tzmappings, \
-      DEST := $(call FindLibDirForModule, $(MODULE)), \
-  ))
-  TARGETS += $(COPY_TZMAPPINGS)
-endif
-
+## Build libsyslookup
 ################################################################################
-# Create system lookup
 
-$(eval $(call SetupJdkLibrary, BUILD_SYSLOOKUPLIB, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBSYSLOOKUP, \
     NAME := syslookup, \
     LD_SET_ORIGIN := false, \
     LDFLAGS_linux := -Wl$(COMMA)--no-as-needed, \
     LDFLAGS_aix := -brtl -bexpfull, \
-    LIBS_linux := -lm -ldl, \
-    LIBS_aix := -lm -ldecNumber, \
+    LIBS_linux := $(LIBDL) $(LIBM), \
+    LIBS_aix := -ldecNumber $(LIBM), \
 ))
 
-TARGETS += $(BUILD_SYSLOOKUPLIB)
-
-################################################################################
-# Create fallback linker lib
+TARGETS += $(BUILD_LIBSYSLOOKUP)
 
 ifeq ($(ENABLE_FALLBACK_LINKER), true)
+  ##############################################################################
+  ## Build libfallbackLinker
+  ##############################################################################
+
   $(eval $(call SetupJdkLibrary, BUILD_LIBFALLBACKLINKER, \
       NAME := fallbackLinker, \
       CFLAGS := $(LIBFFI_CFLAGS), \
       LIBS := $(LIBFFI_LIBS), \
-      LIBS_windows := $(LIBFFI_LIBS) ws2_32.lib, \
+      LIBS_windows := ws2_32.lib, \
   ))
 
   TARGETS += $(BUILD_LIBFALLBACKLINKER)
 endif
 
-################################################################################
-
 ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2)+$(filter $(TOOLCHAIN_TYPE), gcc), true+true+true+gcc)
-  $(eval $(call SetupJdkLibrary, BUILD_LIB_SIMD_SORT, \
+  ##############################################################################
+  ## Build libsimdsort
+  ##############################################################################
+
+  $(eval $(call SetupJdkLibrary, BUILD_LIBSIMD_SORT, \
       NAME := simdsort, \
       LINK_TYPE := C++, \
       OPTIMIZATION := HIGH, \
       CXXFLAGS := -std=c++17, \
-      LIBS_linux := -lm -ldl, \
+      LIBS_linux := $(LIBDL) $(LIBM), \
   ))
 
-  TARGETS += $(BUILD_LIB_SIMD_SORT)
+  TARGETS += $(BUILD_LIBSIMD_SORT)
 endif
-
-################################################################################

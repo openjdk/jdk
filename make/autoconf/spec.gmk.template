@@ -559,7 +559,6 @@ JDKLIB_LIBS := @JDKLIB_LIBS@
 
 # LDFLAGS used to link the jdk native launchers (C-code)
 LDFLAGS_JDKEXE := @LDFLAGS_JDKEXE@
-JDKEXE_LIBS := @JDKEXE_LIBS@
 
 # LDFLAGS specific to C++ linking.
 LDFLAGS_CXX_JDK := @LDFLAGS_CXX_JDK@

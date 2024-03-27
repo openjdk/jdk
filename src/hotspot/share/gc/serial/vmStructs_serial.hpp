@@ -58,7 +58,7 @@
                                                                                                             \
   nonstatic_field(SerialBlockOffsetSharedArray,      _reserved,              MemRegion)                     \
   nonstatic_field(SerialBlockOffsetSharedArray,      _vs,                    VirtualSpace)                  \
-  nonstatic_field(SerialBlockOffsetSharedArray,      _offset_array,          u_char*)                       \
+  nonstatic_field(SerialBlockOffsetSharedArray,      _offset_base,           u_char*)                       \
                                                                                                             \
   nonstatic_field(TenuredSpace,                      _offsets,               SerialBlockOffsetTable)        \
                                                                                                             \
