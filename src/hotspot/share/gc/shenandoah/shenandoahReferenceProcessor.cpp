@@ -362,7 +362,7 @@ bool ShenandoahReferenceProcessor::discover_reference(oop reference, ReferenceTy
 
   log_trace(gc, ref)("Encountered Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
   uint worker_id = WorkerThread::worker_id();
-  _ref_proc_thread_locals->inc_encountered(type);
+  _ref_proc_thread_locals[worker_id].inc_encountered(type);
 
   if (UseCompressedOops) {
     return discover<narrowOop>(reference, type, worker_id);

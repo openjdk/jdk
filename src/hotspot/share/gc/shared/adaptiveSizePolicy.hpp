@@ -48,12 +48,6 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   virtual GCPolicyKind kind() const { return _gc_adaptive_size_policy; }
 
   enum SizePolicyTrueValues {
-    decrease_old_gen_for_throughput_true = -7,
-    decrease_young_gen_for_througput_true = -6,
-
-    increase_young_gen_for_min_pauses_true = -2,
-    increase_old_gen_for_maj_pauses_true = -1,
-
     decrease_young_gen_for_min_pauses_true = 1,
     decrease_old_gen_for_maj_pauses_true = 2,
 

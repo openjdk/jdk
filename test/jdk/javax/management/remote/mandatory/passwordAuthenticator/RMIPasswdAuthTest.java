@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  *          java.management/com.sun.jmx.remote.security
  * @run clean RMIPasswdAuthTest
  * @run build RMIPasswdAuthTest SimpleStandard SimpleStandardMBean
- * @run main RMIPasswdAuthTest
+ * @run main/othervm -Djava.security.manager=allow RMIPasswdAuthTest
  */
 
 import java.io.File;
@@ -89,12 +89,6 @@ public class RMIPasswdAuthTest {
             //
             System.out.println("Create the MBean server");
             MBeanServer mbs = MBeanServerFactory.createMBeanServer();
-            // Register the ClassPathClassLoaderMBean
-            //
-            System.out.println("Create ClassPathClassLoader MBean");
-            ObjectName cpcl =
-                new ObjectName("ClassLoader:name=ClassPathClassLoader");
-            mbs.createMBean("javax.management.loading.MLet", cpcl);
             // Register the SimpleStandardMBean
             //
             System.out.println("Create SimpleStandard MBean");

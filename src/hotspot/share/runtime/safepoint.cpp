@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/stringTable.hpp"
-#include "classfile/symbolTable.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
 #include "code/scopeDesc.hpp"
@@ -511,14 +507,6 @@ void SafepointSynchronize::end() {
   post_safepoint_end_event(event, safepoint_id());
 }
 
-bool SafepointSynchronize::is_cleanup_needed() {
-  // Need a safepoint if some inline cache buffers is non-empty
-  if (!InlineCacheBuffer::is_empty()) return true;
-  if (StringTable::needs_rehashing()) return true;
-  if (SymbolTable::needs_rehashing()) return true;
-  return false;
-}
-
 class ParallelCleanupTask : public WorkerTask {
 private:
   SubTasksDone _subtasks;
@@ -550,18 +538,6 @@ public:
   uint expected_num_workers() const {
     uint workers = 0;
 
-    if (SymbolTable::rehash_table_expects_safepoint_rehashing()) {
-      workers++;
-    }
-
-    if (StringTable::rehash_table_expects_safepoint_rehashing()) {
-      workers++;
-    }
-
-    if (InlineCacheBuffer::needs_update_inline_caches()) {
-      workers++;
-    }
-
     if (_do_lazy_roots) {
       workers++;
     }
@@ -570,21 +546,6 @@ public:
   }
 
   void work(uint worker_id) {
-    // These tasks are ordered by relative length of time to execute so that potentially longer tasks start first.
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH)) {
-      if (SymbolTable::needs_rehashing()) {
-        Tracer t("rehashing symbol table");
-        SymbolTable::rehash_table();
-      }
-    }
-
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_STRING_TABLE_REHASH)) {
-      if (StringTable::needs_rehashing()) {
-        Tracer t("rehashing string table");
-        StringTable::rehash_table();
-      }
-    }
-
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING)) {
       if (_do_lazy_roots) {
         Tracer t("lazy partial thread root processing");
@@ -597,11 +558,6 @@ public:
         LazyRootClosure cl;
         Threads::java_threads_do(&cl);
       }
-    }
-
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES)) {
-      Tracer t("updating inline caches");
-      InlineCacheBuffer::update_inline_caches();
     }
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_REQUEST_OOPSTORAGE_CLEANUP)) {
@@ -632,8 +588,6 @@ void SafepointSynchronize::do_cleanup_tasks() {
     // Serial cleanup using VMThread.
     cleanup.work(0);
   }
-
-  assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
 
   if (log_is_enabled(Debug, monitorinflation)) {
     // The VMThread calls do_final_audit_and_print_stats() which calls

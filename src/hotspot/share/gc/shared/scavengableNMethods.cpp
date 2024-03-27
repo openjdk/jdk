@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,27 +107,25 @@ void ScavengableNMethods::verify_nmethod(nmethod* nm) {
 #endif // PRODUCT
 }
 
-class HasScavengableOops: public OopClosure {
-  BoolObjectClosure* _is_scavengable;
-  bool               _found;
-public:
-  HasScavengableOops(BoolObjectClosure* is_scavengable, nmethod* nm) :
+bool ScavengableNMethods::has_scavengable_oops(nmethod* nm) {
+  struct HasScavengableOops: public OopClosure {
+    BoolObjectClosure* _is_scavengable;
+    bool               _found;
+
+    explicit HasScavengableOops(BoolObjectClosure* is_scavengable) :
       _is_scavengable(is_scavengable),
       _found(false) {}
 
-  bool found() { return _found; }
-  virtual void do_oop(oop* p) {
-    if (!_found && *p != nullptr && _is_scavengable->do_object_b(*p)) {
-      _found = true;
+    virtual void do_oop(oop* p) {
+      if (!_found && *p != nullptr && _is_scavengable->do_object_b(*p)) {
+        _found = true;
+      }
     }
-  }
-  virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
-};
+    virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
+  } cl {_is_scavengable};
 
-bool ScavengableNMethods::has_scavengable_oops(nmethod* nm) {
-  HasScavengableOops cl(_is_scavengable, nm);
   nm->oops_do(&cl);
-  return cl.found();
+  return cl._found;
 }
 
 // Walk the list of methods which might contain oops to the java heap.

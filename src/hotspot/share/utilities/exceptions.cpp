@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -433,6 +433,7 @@ void Exceptions::wrap_dynamic_exception(bool is_indy, JavaThread* THREAD) {
       // Pass through an Error, including BootstrapMethodError, any other form
       // of linkage error, or say OutOfMemoryError
       if (ls != nullptr) {
+        ResourceMark rm(THREAD);
         ls->print_cr("bootstrap method invocation wraps BSME around " PTR_FORMAT, p2i(exception));
         exception->print_on(ls);
       }
@@ -441,6 +442,7 @@ void Exceptions::wrap_dynamic_exception(bool is_indy, JavaThread* THREAD) {
 
     // Otherwise wrap the exception in a BootstrapMethodError
     if (ls != nullptr) {
+      ResourceMark rm(THREAD);
       ls->print_cr("%s throws BSME for " PTR_FORMAT, is_indy ? "invokedynamic" : "dynamic constant", p2i(exception));
       exception->print_on(ls);
     }
@@ -468,7 +470,7 @@ void Exceptions::count_out_of_memory_exceptions(Handle exception) {
   }
 }
 
-void print_oom_count(outputStream* st, const char *err, int count) {
+static void print_oom_count(outputStream* st, const char *err, int count) {
   if (count > 0) {
     st->print_cr("OutOfMemoryError %s=%d", err, count);
   }

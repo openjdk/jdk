@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,9 +81,11 @@ public class SearchWriter extends HtmlDocletWriter {
 
         contentTree.add(HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyle.title,
                         contents.getContent("doclet.search.main_heading")))
-                .add(HtmlTree.DIV(HtmlTree.INPUT("text", HtmlId.of("page-search-input"))
-                                .put(HtmlAttr.PLACEHOLDER, resources.getText("doclet.search_placeholder")))
-                        .add(HtmlTree.INPUT("reset", HtmlId.of("page-search-reset"))
+                .add(HtmlTree.DIV(HtmlTree.INPUT(HtmlAttr.InputType.TEXT, HtmlId.of("page-search-input"))
+                                .put(HtmlAttr.PLACEHOLDER, resources.getText("doclet.search_placeholder"))
+                                .put(HtmlAttr.ARIA_LABEL, resources.getText("doclet.search_in_documentation"))
+                                .put(HtmlAttr.AUTOCOMPLETE, "off"))
+                        .add(HtmlTree.INPUT(HtmlAttr.InputType.RESET, HtmlId.of("page-search-reset"))
                                 .put(HtmlAttr.VALUE, resources.getText("doclet.search_reset"))
                                 .put(HtmlAttr.STYLE, "margin: 6px;"))
                         .add(HtmlTree.DETAILS(HtmlStyle.pageSearchDetails)
@@ -104,7 +106,7 @@ public class SearchWriter extends HtmlDocletWriter {
                                 .addStyle(HtmlStyle.copy)
                                 .put(HtmlAttr.ARIA_LABEL, copyUrlText)
                                 .setId(HtmlId.of("page-search-copy")))
-                        .add(HtmlTree.P(HtmlTree.INPUT("checkbox", HtmlId.of("search-redirect")))
+                        .add(HtmlTree.P(HtmlTree.INPUT(HtmlAttr.InputType.CHECKBOX, HtmlId.of("search-redirect")))
                                 .add(HtmlTree.LABEL("search-redirect",
                                         contents.getContent("doclet.search.redirect")))))
                 .add(new HtmlTree(TagName.P)

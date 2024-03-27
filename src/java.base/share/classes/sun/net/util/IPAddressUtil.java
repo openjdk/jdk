@@ -882,8 +882,8 @@ public class IPAddressUtil {
     private static final int[] SUPPORTED_RADIXES = new int[]{HEXADECIMAL, OCTAL, DECIMAL};
 
     // BSD parser's return values
-    private final static long CANT_PARSE_IN_RADIX = -1L;
-    private final static long TERMINAL_PARSE_ERROR = -2L;
+    private static final long CANT_PARSE_IN_RADIX = -1L;
+    private static final long TERMINAL_PARSE_ERROR = -2L;
 
     private static final String ALLOW_AMBIGUOUS_IPADDRESS_LITERALS_SP = "jdk.net.allowAmbiguousIPAddressLiterals";
     private static final boolean ALLOW_AMBIGUOUS_IPADDRESS_LITERALS_SP_VALUE = Boolean.valueOf(

@@ -68,16 +68,16 @@ public class TestPageCacheFlush {
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessTools.executeProcess(ProcessTools.createLimitedTestJavaProcessBuilder(
-                                    "-XX:+UseZGC",
-                                    "-XX:-ZGenerational",
-                                    "-Xms128M",
-                                    "-Xmx128M",
-                                    "-Xlog:gc,gc+init,gc+heap=debug",
-                                    Test.class.getName()))
-                    .outputTo(System.out)
-                    .errorTo(System.out)
-                    .shouldContain("Page Cache Flushed:")
-                    .shouldHaveExitValue(0);
+        ProcessTools.executeLimitedTestJava(
+            "-XX:+UseZGC",
+            "-XX:-ZGenerational",
+            "-Xms128M",
+            "-Xmx128M",
+            "-Xlog:gc,gc+init,gc+heap=debug",
+            Test.class.getName())
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .shouldContain("Page Cache Flushed:")
+                .shouldHaveExitValue(0);
     }
 }

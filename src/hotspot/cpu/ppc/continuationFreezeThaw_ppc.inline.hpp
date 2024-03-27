@@ -350,7 +350,7 @@ inline void Thaw<ConfigT>::patch_caller_links(intptr_t* sp, intptr_t* bottom) {
     if (is_entry_frame) {
       callers_sp = _cont.entryFP();
     } else {
-      CodeBlob* cb = CodeCache::find_blob(pc);
+      CodeBlob* cb = CodeCache::find_blob_fast(pc);
       callers_sp = sp + cb->frame_size();
     }
     // set the back link

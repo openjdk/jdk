@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -33,12 +33,12 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint result = PASSED;
 
 void checkMeth(JNIEnv *env, jclass cl, const char *name, const char *sig, int stat, int max_loc) {
     jvmtiError err;
-    jmethodID mid = NULL;
+    jmethodID mid = nullptr;
     jint ret_loc;
 
     if (stat) {
@@ -46,7 +46,7 @@ void checkMeth(JNIEnv *env, jclass cl, const char *name, const char *sig, int st
     } else {
         mid = env->GetMethodID(cl, name, sig);
     }
-    if (mid == NULL) {
+    if (mid == nullptr) {
         printf("Name = %s, sig = %s: mid = 0\n", name, sig);
         result = STATUS_FAILED;
         return;
@@ -77,7 +77,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
     }

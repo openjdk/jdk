@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+
 import sun.security.pkcs11.SunPKCS11;
 
 import javax.security.auth.Subject;
@@ -32,12 +33,10 @@ import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.security.*;
-import java.util.Iterator;
 import java.util.PropertyPermission;
-import java.util.ServiceConfigurationError;
-import java.util.ServiceLoader;
 
 import jdk.test.lib.util.ForceGC;
+import jtreg.SkippedException;
 
 public class MultipleLogins {
     private static final String KS_TYPE = "PKCS11";
@@ -46,7 +45,13 @@ public class MultipleLogins {
     static final Policy DEFAULT_POLICY = Policy.getPolicy();
 
     public static void main(String[] args) throws Exception {
-        String nssConfig = PKCS11Test.getNssConfig();
+        String nssConfig = null;
+        try {
+            nssConfig = PKCS11Test.getNssConfig();
+        } catch (SkippedException exc) {
+            System.out.println("Skipping test: " + exc.getMessage());
+        }
+
         if (nssConfig == null) {
             // No test framework support yet. Ignore
             System.out.println("No NSS config found. Skipping.");
