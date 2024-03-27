@@ -96,8 +96,8 @@ public:
                            _count(0), _capacity(0), _last(0) {}
 
   ~CachedNMTInformation() {
-    ALLOW_C_FUNCTION(free, ::free(_ranges);)
-    ALLOW_C_FUNCTION(free, ::free(_flags);)
+    ALLOW_C_FUNCTION(::free, (_ranges);)
+    ALLOW_C_FUNCTION(::free, (_flags);)
   }
 
   bool add(const void* from, const void* to, MEMFLAGS f) {
@@ -112,8 +112,8 @@ public:
       // Enlarge if needed
       const size_t new_capacity = MAX2((size_t)4096, 2 * _capacity);
       // Unfortunately, we need to allocate manually, raw, since we must prevent NMT deadlocks (ThreadCritical).
-      ALLOW_C_FUNCTION(realloc, _ranges = (Range*)::realloc(_ranges, new_capacity * sizeof(Range));)
-      ALLOW_C_FUNCTION(realloc, _flags = (MEMFLAGS*)::realloc(_flags, new_capacity * sizeof(MEMFLAGS));)
+      _ranges = (Range*) ALLOW_C_FUNCTION(::realloc, (_ranges, new_capacity * sizeof(Range));)
+      _flags = (MEMFLAGS*) ALLOW_C_FUNCTION(::realloc, (_flags, new_capacity * sizeof(MEMFLAGS));)
       if (_ranges == nullptr || _flags == nullptr) {
         // In case of OOM lets make no fuss. Just return.
         return false;
