@@ -3230,22 +3230,21 @@ void AwtWindow::_SetOpaque(void* param)
     jobject self = os->window;
     BOOL isOpaque = (BOOL)os->isOpaque;
 
-    PDATA pData;
+    AwtWindow *window = nullptr;
     if (self == NULL) {
         env->ExceptionClear();
         JNU_ThrowNullPointerException(env, "self");
         delete os;
         return;
     } else {
-        pData = JNI_GET_PDATA(self);
-        if (pData == NULL) {
+        window = (AwtWindow *) JNI_GET_PDATA(self);
+        if (window == nullptr) {
             THROW_NULL_PDATA_IF_NOT_DESTROYED(self);
             env->DeleteGlobalRef(self);
             delete os;
             return;
         }
     }
-    AwtWindow *window = (AwtWindow *) pData;
 
     window->SetTranslucency(window->getOpacity(), isOpaque);
 
@@ -3261,7 +3260,7 @@ void AwtWindow::_UpdateWindow(void* param)
     jobject self = uws->window;
     jintArray data = uws->data;
 
-    PDATA pData;
+    AwtWindow *window = nullptr;
     if (self == NULL) {
         env->ExceptionClear();
         JNU_ThrowNullPointerException(env, "self");
@@ -3271,8 +3270,8 @@ void AwtWindow::_UpdateWindow(void* param)
         delete uws;
         return;
     } else {
-        pData = JNI_GET_PDATA(self);
-        if (pData == NULL) {
+        window = (AwtWindow *) JNI_GET_PDATA(self);
+        if (window == nullptr) {
             THROW_NULL_PDATA_IF_NOT_DESTROYED(self);
             env->DeleteGlobalRef(self);
             if (data != NULL) {
@@ -3282,7 +3281,6 @@ void AwtWindow::_UpdateWindow(void* param)
             return;
         }
     }
-    AwtWindow *window = (AwtWindow *) pData;
 
     window->UpdateWindow(env, data, (int) uws->width, (int) uws->height,
                          uws->hBitmap);
