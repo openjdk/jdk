@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -625,7 +625,7 @@ public final class Method extends Executable {
      * method; returns {@code false} otherwise}
      *
      * @apiNote
-     * A bridge method is a {@linkplain isSynthetic synthetic} method
+     * A bridge method is a {@linkplain #isSynthetic synthetic} method
      * created by a Java compiler alongside a method originating from
      * the source code. Bridge methods are used by Java compilers in
      * various circumstances to span differences in Java programming
@@ -808,7 +808,7 @@ public final class Method extends Executable {
      */
     @Override
     public Annotation[][] getParameterAnnotations() {
-        return sharedGetParameterAnnotations(parameterTypes, parameterAnnotations);
+        return sharedGetParameterAnnotations(parameterAnnotations);
     }
 
     /**

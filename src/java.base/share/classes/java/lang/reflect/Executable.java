@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,14 +31,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Objects;
 import java.util.StringJoiner;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.Stable;
+import sun.reflect.annotation.AnnotatedTypeFactory;
 import sun.reflect.annotation.AnnotationParser;
 import sun.reflect.annotation.AnnotationSupport;
-import sun.reflect.annotation.TypeAnnotationParser;
 import sun.reflect.annotation.TypeAnnotation;
+import sun.reflect.annotation.TypeAnnotationParser;
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 import sun.reflect.generics.repository.ConstructorRepository;
 
@@ -319,48 +321,18 @@ public abstract sealed class Executable extends AccessibleObject
     /**
      * Behaves like {@code getGenericParameterTypes}, but returns type
      * information for all parameters, including synthetic parameters.
+     * Returns value of {@link #getSharedParameterTypes()} if there is
+     * no generic information or if the generic parameter types is invalid.
      */
     Type[] getAllGenericParameterTypes() {
-        final boolean genericInfo = hasGenericInformation();
-
-        // Easy case: we don't have generic parameter information.  In
-        // this case, we just return the result of
-        // getParameterTypes().
-        if (!genericInfo) {
-            return getParameterTypes();
-        } else {
-            final boolean realParamData = hasRealParameterData();
-            final Type[] genericParamTypes = getGenericParameterTypes();
-            final Type[] nonGenericParamTypes = getSharedParameterTypes();
-            // If we have real parameter data, then we use the
-            // synthetic and mandate flags to our advantage.
-            if (realParamData) {
-                final Type[] out = new Type[nonGenericParamTypes.length];
-                final Parameter[] params = getParameters();
-                int fromidx = 0;
-                for (int i = 0; i < out.length; i++) {
-                    final Parameter param = params[i];
-                    if (param.isSynthetic() || param.isImplicit()) {
-                        // If we hit a synthetic or mandated parameter,
-                        // use the non generic parameter info.
-                        out[i] = nonGenericParamTypes[i];
-                    } else {
-                        // Otherwise, use the generic parameter info.
-                        out[i] = genericParamTypes[fromidx];
-                        fromidx++;
-                    }
-                }
-                return out;
-            } else {
-                // Otherwise, use the non-generic parameter data.
-                // Without method parameter reflection data, we have
-                // no way to figure out which parameters are
-                // synthetic/mandated, thus, no way to match up the
-                // indexes.
-                return genericParamTypes.length == nonGenericParamTypes.length ?
-                    genericParamTypes : getParameterTypes();
+        if (hasGenericInformation()) {
+            var genericParameterTypes = getGenericInfo().getParameterTypes();
+            if (genericParameterTypes.length == matchedParameterCount()) {
+                return matchParameters(genericParameterTypes, Function.identity());
             }
         }
+
+        return getSharedParameterTypes();
     }
 
     /**
@@ -384,18 +356,6 @@ public abstract sealed class Executable extends AccessibleObject
         // with it.  Since parameters are immutable, we can
         // shallow-copy.
         return parameterData().parameters.clone();
-    }
-
-    private Parameter[] synthesizeAllParams() {
-        final int realparams = getParameterCount();
-        final Parameter[] out = new Parameter[realparams];
-        for (int i = 0; i < realparams; i++)
-            // TODO: is there a way to synthetically derive the
-            // modifiers?  Probably not in the general case, since
-            // we'd have no way of knowing about them, but there
-            // may be specific cases.
-            out[i] = new Parameter("arg" + i, 0, this, i);
-        return out;
     }
 
     private void verifyParameters(final Parameter[] parameters) {
@@ -422,9 +382,8 @@ public abstract sealed class Executable extends AccessibleObject
         }
     }
 
-
     boolean hasRealParameterData() {
-        return parameterData().isReal;
+        return parameterData().mappings != ParameterData.NO_REAL_DATA;
     }
 
     private ParameterData parameterData() {
@@ -442,20 +401,91 @@ public abstract sealed class Executable extends AccessibleObject
             throw new MalformedParametersException("Invalid constant pool index");
         }
 
+        final int len = getParameterCount();
         // If we get back nothing, then synthesize parameters
         if (tmp == null) {
-            tmp = synthesizeAllParams();
-            parameterData = new ParameterData(tmp, false);
+            tmp = new Parameter[len];
+            for (int i = 0; i < len; i++)
+                tmp[i] = new Parameter("arg" + i, 0, this, i);
+            parameterData = new ParameterData(tmp, ParameterData.NO_REAL_DATA);
         } else {
             verifyParameters(tmp);
-            parameterData = new ParameterData(tmp, true);
+            int[] mapping = new int[len];
+            int i = 0;
+            for (int j = 0; j < len; j++) {
+                var p = tmp[j];
+                if (!p.isImplicit() && !p.isSynthetic()) {
+                    mapping[i++] = j;
+                }
+            }
+            parameterData = new ParameterData(tmp, i == len
+                    ? ParameterData.TRIVIAL_MAPPINGS
+                    : Arrays.copyOf(mapping, i));
         }
         return this.parameterData = parameterData;
     }
 
     private transient @Stable ParameterData parameterData;
 
-    record ParameterData(@Stable Parameter[] parameters, boolean isReal) {}
+    private record ParameterData(@Stable Parameter[] parameters, @Stable int[] mappings) {
+        // mappings is declaration in source index -> formal index
+        // empty if there's no mandated/synthetic params, i.e. 1-on-1 mapping
+        private static final int[] TRIVIAL_MAPPINGS = new int[0];
+        private static final int[] NO_REAL_DATA = new int[0];
+    }
+
+    /**
+     * Returns the number of explicit parameters we anticipate from MethodParameters
+     * attribute.
+     */
+    int matchedParameterCount() {
+        final int[] mappings = parameterData().mappings;
+        return mappings.length == 0 ? getParameterCount() : mappings.length;
+    }
+
+    /**
+     * Converts information from explicit parameters to information about all parameters,
+     * using information from MethodParameters attribute. Guard calls checks to
+     * {@code matchedParameterCount() == explicit.length}.
+     *
+     * @param <T> the type of information
+     * @param explicit information from explicit parameters
+     * @param implicitMapper generates information for implicit parameters
+     * @return information about all parameters
+     */
+    <T> T[] matchParameters(final T[] explicit, Function<Class<?>, ? extends T> implicitMapper) {
+        final int matchedCount = matchedParameterCount();
+        assert matchedCount == explicit.length;
+        if (matchedCount == getParameterCount()) {
+            // trivial case
+            return explicit;
+        }
+
+        // perform shifting
+        final int[] mappings = parameterData().mappings;
+        final Class<?>[] allParams = getSharedParameterTypes();
+        final int fullCount = allParams.length;
+
+        @SuppressWarnings("unchecked")
+        final T[] out = (T[]) Array.newInstance(explicit.getClass().componentType(), fullCount);
+        int j = 0;
+        for (int i = 0; i < matchedCount; i++) {
+            final int t = mappings[i];
+            while (j < t) {
+                out[j] = implicitMapper.apply(allParams[j]);
+                j++;
+            }
+            out[j] = explicit[i];
+            j++;
+        }
+
+        while (j < fullCount) {
+            out[j] = implicitMapper.apply(allParams[j]);
+            j++;
+        }
+
+        return out;
+    }
 
     private native Parameter[] getParameters0();
     native byte[] getTypeAnnotationBytes0();
@@ -568,21 +598,28 @@ public abstract sealed class Executable extends AccessibleObject
      */
     public abstract Annotation[][] getParameterAnnotations();
 
-    Annotation[][] sharedGetParameterAnnotations(Class<?>[] parameterTypes,
-                                                 byte[] parameterAnnotations) {
+    Annotation[][] sharedGetParameterAnnotations(byte[] parameterAnnotations) {
+        var parameterTypes = getSharedParameterTypes();
         int numParameters = parameterTypes.length;
-        if (parameterAnnotations == null)
-            return new Annotation[numParameters][0];
+        if (parameterAnnotations == null) {
+            var ret = new Annotation[numParameters][];
+            Arrays.fill(ret, AnnotationParser.getEmptyAnnotationArray());
+            return ret;
+        }
 
         Annotation[][] result = parseParameterAnnotations(parameterAnnotations);
 
-        if (result.length != numParameters &&
-            handleParameterNumberMismatch(result.length, parameterTypes)) {
+        if (result.length == matchedParameterCount()) {
+            return matchParameters(result, _ -> AnnotationParser.getEmptyAnnotationArray());
+        }
+
+        // Old routine, used for class files without MethodParameters attribute
+        if (handleParameterNumberMismatch(result.length, parameterTypes)) {
             Annotation[][] tmp = new Annotation[numParameters][];
             // Shift annotations down to account for any implicit leading parameters
             System.arraycopy(result, 0, tmp, numParameters - result.length, result.length);
             for (int i = 0; i < numParameters - result.length; i++) {
-                tmp[i] = new Annotation[0];
+                tmp[i] = AnnotationParser.getEmptyAnnotationArray();
             }
             result = tmp;
         }
@@ -756,13 +793,72 @@ public abstract sealed class Executable extends AccessibleObject
      * {@code Executable}
      */
     public AnnotatedType[] getAnnotatedParameterTypes() {
-        return TypeAnnotationParser.buildAnnotatedTypes(getTypeAnnotationBytes0(),
+        var annotatedTypeBase = annotatedParameterTypesBase();
+        if (annotatedTypeBase != INVALID_ANNOTATED_TYPE_BASE) {
+            assert annotatedTypeBase.length == matchedParameterCount();
+            var unmapped = TypeAnnotationParser.buildAnnotatedTypes(getTypeAnnotationBytes0(),
+                    SharedSecrets.getJavaLangAccess().
+                            getConstantPool(getDeclaringClass()),
+                    this,
+                    getDeclaringClass(),
+                    annotatedTypeBase,
+                    TypeAnnotation.TypeAnnotationTarget.METHOD_FORMAL_PARAMETER);
+
+            return matchParameters(unmapped, AnnotatedTypeFactory::simple);
+        }
+        return TypeAnnotationParser.buildAnnotatedTypesWithHeuristics(getTypeAnnotationBytes0(),
                 SharedSecrets.getJavaLangAccess().
                         getConstantPool(getDeclaringClass()),
                 this,
                 getDeclaringClass(),
                 getAllGenericParameterTypes(),
-                TypeAnnotation.TypeAnnotationTarget.METHOD_FORMAL_PARAMETER);
+                TypeAnnotation.TypeAnnotationTarget.METHOD_FORMAL_PARAMETER,
+                true);
+    }
+
+    private static final Type[] INVALID_ANNOTATED_TYPE_BASE = new Type[0];
+    private transient volatile @Stable Type[] annotatedParameterTypesBase;
+
+    /**
+     * Return an array of explicit-only parameter types that type annotations can build on.
+     */
+    private Type[] annotatedParameterTypesBase() {
+        var annotatedTypeBase = this.annotatedParameterTypesBase;
+        if (annotatedTypeBase != null) {
+            return annotatedTypeBase;
+        }
+
+        if (!hasRealParameterData()) {
+            // Cannot assume anything without MethodParameters
+            return this.annotatedParameterTypesBase = INVALID_ANNOTATED_TYPE_BASE;
+        }
+
+        if (!hasGenericInformation()) {
+            return this.annotatedParameterTypesBase = computeExplicitParameterTypes();
+        }
+
+        var genericInfoParams = getGenericInfo().getParameterTypes();
+        return this.annotatedParameterTypesBase = genericInfoParams.length == matchedParameterCount()
+                ? genericInfoParams : INVALID_ANNOTATED_TYPE_BASE;
+    }
+
+    /**
+     * Computes the explicit parameter types. Useful when there is no Signature
+     * but synthetic or mandated parameters are present in MethodParameters.
+     */
+    private Class<?>[] computeExplicitParameterTypes() {
+        int[] mappings = parameterData().mappings;
+        var sharedParamTypes = getSharedParameterTypes();
+        if (mappings.length == 0) {
+            return sharedParamTypes;
+        }
+
+        var explicitParameterTypes = new Class<?>[mappings.length];
+        for (int i = 0; i < mappings.length; i++) {
+            explicitParameterTypes[i] = sharedParamTypes[mappings[i]];
+        }
+
+        return explicitParameterTypes;
     }
 
     /**

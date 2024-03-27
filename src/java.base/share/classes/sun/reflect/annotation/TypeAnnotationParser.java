@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,19 @@ public final class TypeAnnotationParser {
             Class<?> container,
             Type[] types,
             TypeAnnotationTarget filter) {
+        return buildAnnotatedTypesWithHeuristics(rawAnnotations, cp, decl, container, types,
+                filter, false);
+    }
+
+    // Building an array of annotated types, legacy entrypoint kept to allow method
+    // annotation to parameter mapping without MethodParameters attribute
+    public static AnnotatedType[] buildAnnotatedTypesWithHeuristics(byte[] rawAnnotations,
+                                                                    ConstantPool cp,
+                                                                    AnnotatedElement decl,
+                                                                    Class<?> container,
+                                                                    Type[] types,
+                                                                    TypeAnnotationTarget filter,
+                                                                    boolean offsetHeuristics) {
         int size = types.length;
         AnnotatedType[] result = new AnnotatedType[size];
         Arrays.fill(result, AnnotatedTypeFactory.EMPTY_ANNOTATED_TYPE);
@@ -122,11 +135,12 @@ public final class TypeAnnotationParser {
                 tmp.add(t);
             }
         }
+        // When heuristics is enabled (no MethodParameters attribute):
         // If a constructor has a mandated outer this, that parameter
         // has no annotations and the annotations to parameter mapping
         // should be offset by 1.
         boolean offset = false;
-        if (decl instanceof Constructor<?> ctor) {
+        if (offsetHeuristics && decl instanceof Constructor<?> ctor) {
             Class<?> declaringClass = ctor.getDeclaringClass();
             if (!declaringClass.isEnum() &&
                 (declaringClass.isMemberClass() &&
@@ -148,7 +162,7 @@ public final class TypeAnnotationParser {
             }
             TypeAnnotation[] typeAnnotations;
             if (list != null) {
-                typeAnnotations = list.toArray(new TypeAnnotation[list.size()]);
+                typeAnnotations = list.toArray(EMPTY_TYPE_ANNOTATION_ARRAY);
             } else {
                 typeAnnotations = EMPTY_TYPE_ANNOTATION_ARRAY;
             }
