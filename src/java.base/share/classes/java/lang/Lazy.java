@@ -41,7 +41,8 @@ import java.util.function.Supplier;
 import static jdk.internal.javac.PreviewFeature.*;
 
 /**
- * An atomic, thread-safe, non-blocking <em>lazy value</em> that can be bound at most once.
+ * An atomic, thread-safe, non-blocking, lazy value holder for which the value can
+ * be bound at most once.
  * <p>
  * Lazy values are eligible for constant folding and other optimizations by the JVM.
  * <p>
