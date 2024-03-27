@@ -23,6 +23,8 @@
 # questions.
 #
 
+include CopyFiles.gmk
+
 WIN_AWT_LIB := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libawt/awt.lib
 
 LIBAWT_DEFAULT_HEADER_DIRS := \

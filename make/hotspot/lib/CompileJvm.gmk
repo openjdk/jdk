@@ -23,6 +23,8 @@
 # questions.
 #
 
+include CopyFiles.gmk
+
 # Include support files that will setup compiler flags due to the selected
 # jvm feature set, specific file overrides, and general flags.
 include lib/JvmFeatures.gmk

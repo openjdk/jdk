@@ -35,6 +35,8 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 
+include CopyFiles.gmk
+
 MODULE_SRC := $(TOPDIR)/src/$(MODULE)
 
 # All makefiles should add the targets to be built to this variable.

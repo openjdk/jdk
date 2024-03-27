@@ -23,6 +23,7 @@
 # questions.
 #
 
+include CopyFiles.gmk
 include JarArchive.gmk
 include JavaCompilation.gmk
 include Modules.gmk

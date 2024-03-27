@@ -26,6 +26,8 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+
+include CopyFiles.gmk
 include Execute.gmk
 include Modules.gmk
 include ModuleTools.gmk

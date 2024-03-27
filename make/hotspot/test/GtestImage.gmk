@@ -28,6 +28,8 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 
+include CopyFiles.gmk
+
 $(foreach v, $(JVM_VARIANTS), \
   $(eval $(call SetupCopyFiles, COPY_GTEST_$v, \
       SRC := $(HOTSPOT_OUTPUTDIR)/variant-$v/libjvm/gtest, \

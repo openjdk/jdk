@@ -36,6 +36,7 @@ ifeq ($(_MAKEBASE_GMK), )
   $(error You must include MakeBase.gmk prior to including NativeCompilation.gmk)
 endif
 
+include MakeIO.gmk
 include native/CompileFile.gmk
 include native/DebugSymbols.gmk
 include native/Flags.gmk

@@ -23,6 +23,7 @@
 # questions.
 #
 
+include CopyFiles.gmk
 include LibCommon.gmk
 
 # Hook to include the corresponding custom file, if present.
