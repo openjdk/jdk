@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,8 @@ public class CompressedCPUSpecificClassSpaceReservation {
             output.shouldContain(tryReserveFor16bitMoveIntoQ3);
         } else if (Platform.isX64()) {
             if (CDS) {
-                output.shouldNotContain(tryReserveForUnscaled);
+                // We always try to allocate below 4 GB.
+                output.shouldContain("reserve_between (range [0x0000000000000000-0x0000000100000000)");
                 output.shouldNotContain(tryReserveForZeroBased);
             } else {
                 output.shouldContain(tryReserveForUnscaled);
