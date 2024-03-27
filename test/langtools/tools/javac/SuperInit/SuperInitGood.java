@@ -433,6 +433,28 @@ public class SuperInitGood {
         }
     }
 
+    // we allow 'this' reference prior to super() for field assignments only
+    public static class Test22 {
+        private int x;
+        public Test22(short x) {
+            x = x;
+            super();
+        }
+        public Test22(int x) {
+            this.x = x;
+            super();
+        }
+        public Test22(char x) {
+            Test22.this.x = x;
+            super();
+        }
+        public Test22(byte y) {
+            x = y;
+            this((int)y);
+            this.x++;
+        }
+    }
+
     public static void main(String[] args) {
         new Test0();
         new Test1();
@@ -476,5 +498,6 @@ public class SuperInitGood {
         new Test19(123);
         new Test20();
         new Test21();
+        new Test22(123);
     }
 }
