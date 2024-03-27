@@ -3450,7 +3450,8 @@ public class HTMLDocument extends DefaultStyledDocument {
 
                 if (newDecoration != null
                     && !"none".equals(newDecoration.toString())
-                    && previousDecoration != null) {
+                    && previousDecoration != null
+                    && !"none".equals(previousDecoration.toString())) {
                     StyleSheet sheet = getStyleSheet();
                     sheet.addCSSAttribute(charAttr,
                                           CSS.Attribute.TEXT_DECORATION,
