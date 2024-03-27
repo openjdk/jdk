@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,11 @@ package com.sun.hotspot.igv.data.serialization;
 
 import com.sun.hotspot.igv.data.*;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Writer;
 import java.util.HashSet;
 import java.util.Set;
 
 /**
- *
  * @author Thomas Wuerthinger
  */
 public class Printer {
@@ -40,27 +38,21 @@ public class Printer {
     public Printer() {}
 
     public void export(Writer writer, GraphDocument document) {
-
         XMLWriter xmlWriter = new XMLWriter(writer);
-
         try {
-            export(xmlWriter, document);
-        } catch (IOException ignored) {}
-    }
-
-    private void export(XMLWriter xmlWriter, GraphDocument document) throws IOException {
-        xmlWriter.startTag(Parser.ROOT_ELEMENT);
-        xmlWriter.writeProperties(document.getProperties());
-        for (FolderElement e : document.getElements()) {
-            if (e instanceof Group) {
-                export(xmlWriter, (Group) e);
-            } else if (e instanceof InputGraph) {
-                export(xmlWriter, (InputGraph)e, null, false);
+            xmlWriter.startTag(Parser.ROOT_ELEMENT);
+            xmlWriter.writeProperties(document.getProperties());
+            for (FolderElement e : document.getElements()) {
+                if (e instanceof Group group) {
+                    export(xmlWriter, group);
+                } else if (e instanceof InputGraph graph) {
+                    export(xmlWriter, graph, null, false);
+                }
             }
+            xmlWriter.endTag();
+            xmlWriter.flush();
+        } catch (IOException ignored) {
         }
-
-        xmlWriter.endTag();
-        xmlWriter.flush();
     }
 
     private void export(XMLWriter writer, Group g) throws IOException {
@@ -78,16 +70,15 @@ public class Printer {
             if (e instanceof InputGraph graph) {
                 export(writer, graph, previous, true);
                 previous = graph;
-            } else if (e instanceof Group) {
-                export(writer, (Group) e);
+            } else if (e instanceof Group group) {
+                export(writer, group);
             }
         }
 
         writer.endTag();
     }
 
-    public void export(XMLWriter writer, InputGraph graph, InputGraph previous, boolean difference) throws IOException {
-
+    private void export(XMLWriter writer, InputGraph graph, InputGraph previous, boolean difference) throws IOException {
         writer.startTag(Parser.GRAPH_ELEMENT);
         writer.writeProperties(graph.getProperties());
         writer.startTag(Parser.NODES_ELEMENT);
@@ -157,7 +148,7 @@ public class Printer {
         for (InputBlock b : graph.getBlocks()) {
             writer.startTag(Parser.BLOCK_ELEMENT, new Properties(Parser.BLOCK_NAME_PROPERTY, b.getName()));
 
-            if (b.getSuccessors().size() > 0) {
+            if (!b.getSuccessors().isEmpty()) {
                 writer.startTag(Parser.SUCCESSORS_ELEMENT);
                 for (InputBlock s : b.getSuccessors()) {
                     writer.simpleTag(Parser.SUCCESSOR_ELEMENT, new Properties(Parser.BLOCK_NAME_PROPERTY, s.getName()));
@@ -165,8 +156,8 @@ public class Printer {
                 writer.endTag();
             }
 
-            if (b.getNodes().size() > 0) {
-            writer.startTag(Parser.NODES_ELEMENT);
+            if (!b.getNodes().isEmpty()) {
+                writer.startTag(Parser.NODES_ELEMENT);
                 for (InputNode n : b.getNodes()) {
                     writer.simpleTag(Parser.NODE_ELEMENT, new Properties(Parser.NODE_ID_PROPERTY, n.getId() + ""));
                 }
@@ -181,12 +172,11 @@ public class Printer {
     }
 
     private void export(XMLWriter w, InputMethod method) throws IOException {
-
         w.startTag(Parser.METHOD_ELEMENT, new Properties(Parser.METHOD_BCI_PROPERTY, method.getBci() + "", Parser.METHOD_NAME_PROPERTY, method.getName(), Parser.METHOD_SHORT_NAME_PROPERTY, method.getShortName()));
 
         w.writeProperties(method.getProperties());
 
-        if (method.getInlined().size() > 0) {
+        if (!method.getInlined().isEmpty()) {
             w.startTag(Parser.INLINE_ELEMENT);
             for (InputMethod m : method.getInlined()) {
                 export(w, m);
