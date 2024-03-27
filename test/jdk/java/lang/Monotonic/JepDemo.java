@@ -162,16 +162,20 @@ final class JepDemo {
     }
 
     static
-    class MapDemo2 {
+    class Memo {
 
-        // 1. Declare a memoized (cached) function backed by a lazy map
-        private static final Function<String, Logger> LOGGERS =
-                Map.ofLazy(Set.of("com.foo.Bar", "com.foo.Baz"), Logger::getLogger)::get;
+        static
+        class Memoized {
 
-        static Logger logger(String name) {
-            // 2. Access the memoized value with as-declared-final performance
-            //    (evaluation made before the first access)
-            return LOGGERS.apply(name);
+            // 1. Declare a memoized (cached) function backed by a lazily computed map
+            private static final Function<String, Logger> LOGGERS =
+                    Map.ofLazy(Set.of("com.foo.Bar", "com.foo.Baz"), Logger::getLogger)::get;
+
+            static Logger logger(String name) {
+                // 2. Access the memoized value with as-declared-final performance
+                //    (evaluation made before the first access)
+                return LOGGERS.apply(name);
+            }
         }
     }
 

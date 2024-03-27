@@ -205,7 +205,7 @@ To use the Lazy Value and Collections APIs, the JVM flag `--enable-preview` must
 
 ### Outline
 
-The Values & Collections APIs define classes and an interface so that client code in libraries and applications can
+The Values & Collections API define functions and an interface so that client code in libraries and applications can
 
 - Define and use lazy (scalar) values: [`Lazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Monotonic.html)
 - Define and use lazy collections: 
@@ -213,7 +213,7 @@ The Values & Collections APIs define classes and an interface so that client cod
   [`Set.ofLazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Set.html#ofLazy()), [`Set.ofLazyEnum`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Set.html#ofLazyEnum()) and 
   [`Map.ofLazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Map.html#ofLazy()), [`Map.ofLazyEnum`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Map.html#ofLazyEnum())
 
-The Lazy Values & Collections APIs resides in the `java.lang` and `java.util` packages of the `java.base` module.
+The Lazy Values & Collections API resides in the `java.lang` and `java.util` packages of the `java.base` module.
 
 ### Lazy Values
 
@@ -244,7 +244,7 @@ performance, constant-folding, and thread-safety characteristics, but is simpler
 and incurs a lower static footprint since no additional class is required.
 
 Binding a lazy value is an atomic, thread-safe, non-blocking operation, e.g. `Lazy::bindOrThrow`,
-either results in successfully initializing the lazy to a value, or fails
+either results in successfully initializing the `Lazy` to a value, or fails
 with an exception. This is true regardless of whether the lazy value is accessed by a single
 thread, or concurrently, by multiple threads.
 
@@ -267,8 +267,8 @@ class Bar {
 }
 ```
 Calling `logger()` multiple times yields the same value from each invocation.
-`Lazy::computeIfUnbound` might invoke the value supplier several times if called
-from a plurality of threads at about the same time but only one witness value is 
+Even though `Lazy::computeIfUnbound` might invoke the value supplier several times if called
+from a plurality of threads at about the same time, only one distinct witness value is 
 ever exposed to the outside world.
 
 Lazy reference values are faster to obtain than reference values managed via
@@ -288,7 +288,7 @@ To handle these cases, the Lazy Values & Collections API provides constructs tha
 before a particular element is first accessed. Lists of lazily computed values are objects of type `List<E>`.
 Consequently, each element in the list enjoys the same properties as a `Lazy` but may require less resources.
 
-Like a `Lazy` object, a lazy List object is created via a factory method by providing a size
+Like a `Lazy` object, a lazily computed `List` object is created via a factory method by providing the size
 of the desired `List` and an `IntFunction` to be used to lazily compute its elements:
 
 ```
@@ -334,10 +334,10 @@ Just like before, we can perform retrieval of error pages like this:
 String errorPage = ErrorMessages.errorPage(2); // "Payment was denied: Insufficient funds."
 ```
 
-Note how there's only one field of type `List<String>` to initialize - every computation is
+Note how there's only one field of type `List<String>` to initialize even though every computation is
 performed independently of the other element of the list when accessed (i.e. no blocking will occur across threads 
-computing distinct elements). The Lazy Values & Collections API allows modeling this cleanly, while still preserving
-good constant-folding guarantees and integrity of updates in the case of multi-threaded access.
+computing distinct elements simultaneously). The Lazy Values & Collections API allows modeling this cleanly, while
+still preserving good constant-folding guarantees and integrity of updates in the case of multi-threaded access.
 
 It should be noted that even though a lazily computed list might mutate its internal state upon external access, it 
 is still _immutable_ because _no change can ever be observed by an external entity_. This is similar to other
@@ -359,9 +359,10 @@ class MapDemo {
 }
 ```
 
-Finally, a `Set` of lazily computed elements can be defined and used. In the example below, the well known problem of determining
-if a logger will actually output something for a certain level is solved using a lazily computed Set. This allows 
-constant folding of the code path and might enable the JVM to totally eliminate unused code paths dynamically:
+Finally, a `Set` of lazily computed elements can be defined and used. In the example below, the well known problem of
+efficiently determining and acting on if a logger will actually output something for a certain level is solved using
+a lazily computed `Set`. This allows constant folding of the code path and might enable the JVM to totally eliminate
+unused code paths depending on dynamic logger properties determined when first accessed:
 
 ```
  class SetDemo {
@@ -387,7 +388,7 @@ This last example also demonstrates how lazy constructs can be composed into mor
 concepts that can leverage constant folding and other JVM optimizations transitively. 
 
 
-### Memoized functions
+### Memoized Functions
 
 So far, we have talked about the fundamental features of lazy values and collections as a securely
 wrapped `@Stable` value holder. However, as shown above, it has become apparent, lazy primitives are amenable
@@ -400,9 +401,9 @@ in one of the first examples above is invoked at most once (provided it executes
 in a multi-threaded environment:
 
 ```
-class MapDemo {
+class Memoized {
 
-    // 1. Declare a memoized (cached) function backed by a lazy map
+    // 1. Declare a memoized (cached) function backed by a lazily computed map
     private static final Function<String, Logger> LOGGERS =
             Map.ofLazy(Set.of("com.foo.Bar", "com.foo.Baz"), Logger::getLogger)::get;
 
@@ -411,17 +412,18 @@ class MapDemo {
         //    (evaluation made before the first access)
         return LOGGERS.apply(name);
     }
+}
 ```
 
-In the example above, the supplier is invoked at most once per
+In the example above, for each key, the function is invoked at most once per
 loading of the containing class `MapDemo` (`MapDemo`, in turn, can be loaded at
 most once into any given `ClassLoader`) as it is backed by a `Map` with lazily
-computed values which upholds the invoke-at-most-once invariant.
+computed values which upholds the invoke-at-most-once-per-key invariant.
 
 It should be noted that the enumerated collection of keys given at creation time
 constitutes the only valid inputs for the memoized function.
 
-Similarly to how a `Funcion` can be memoized using a backing lazy map, the same pattern can be used
+Similarly to how a `Funcion` can be memoized using a backing lazily computed map, the same pattern can be used
 for an `IntFunction` that will record its cached value in a backing _lazy list_:
 
 ```
@@ -429,8 +431,8 @@ private static final IntFunction<String> ERROR_PAGES = List.ofLazy(
         MAX_ERROR_CODE, ListDemo::readFromFile)::get;
 ```
 
-The same pattern can be used for creating a memoized `Supplier` or a `Predicate` using a using backing `Lazy` 
-or backing lazily computed `Set`. The solution for this is left for the reader as an exercise.
+The same pattern can be used for creating a memoized `Supplier` (using a backing `Lazy`) or a `Predicate` 
+(backed by a lazily computed `Set`). The solution for this is left for the reader as an exercise.
 
 ## Alternatives
 
