@@ -817,11 +817,8 @@ public interface Map<K, V> {
      *
      * @param key key with which the specified value is to be associated
      * @param value value to be associated with the specified key
-     * @return the previous value associated with the specified key, or
-     *         {@code null} if there was no mapping for the key.
-     *         (A {@code null} return can also indicate that the map
-     *         previously associated {@code null} with the key,
-     *         if the implementation supports null values.)
+     * @return {@code null} if the specified key was absent or was associated with
+     *         {@code null}, otherwise the value currently associated with the key
      * @throws UnsupportedOperationException if the {@code putIfAbsent} operation
      *         is not supported by this map
      *         ({@linkplain Collection##optional-restrictions optional})
