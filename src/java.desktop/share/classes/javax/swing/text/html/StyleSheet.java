@@ -2817,23 +2817,30 @@ public class StyleSheet extends StyleContext {
             return doGetAttribute(key);
         }
 
+        /**
+         * Merges the current value of the 'text-decoration' property
+         * with the value from parent.
+         */
+        private Object getTextDecoration(Object value) {
+            AttributeSet parent = getResolveParent();
+            if (parent == null) {
+                return value;
+            }
+
+            Object parentValue = parent.getAttribute(CSS.Attribute.TEXT_DECORATION);
+            return parentValue == null
+                   ? value
+                   : CSS.mergeTextDecoration(value + "," + parentValue);
+        }
+
         Object doGetAttribute(Object key) {
             Object retValue = super.getAttribute(key);
             if (retValue != null) {
                 if (key != CSS.Attribute.TEXT_DECORATION) {
                     return retValue;
                 } else {
-                    AttributeSet parent = getResolveParent();
-                    if (parent != null) {
-                        Object parentValue = parent.getAttribute(key);
-                        if (parentValue != null) {
-                            return CSS.mergeTextDecoration(retValue + "," + parentValue);
-                        } else {
-                            return retValue;
-                        }
-                    } else {
-                        return retValue;
-                    }
+                    // Merge current value with parent
+                    return getTextDecoration(retValue);
                 }
             }
 
