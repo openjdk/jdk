@@ -6583,6 +6583,7 @@ static void _GetInsets(void* param)
 
     component->GetInsets(gis->insets);
 
+
     env->DeleteGlobalRef(self);
     delete gis;
 }
