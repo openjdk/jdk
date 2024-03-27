@@ -90,7 +90,7 @@ void G1BlockOffsetTable::set_offset_array(uint8_t* left, uint8_t* right, uint8_t
 inline uint8_t* G1BlockOffsetTable::entry_for_addr(const void* const p) const {
   assert(_reserved.contains(p),
          "out of bounds access to block offset table");
-  uint8_t* result = const_cast<uint8_t *>(&_offset_base[uintptr_t(p) >> CardTable::card_shift()]);
+  uint8_t* result = const_cast<uint8_t*>(&_offset_base[uintptr_t(p) >> CardTable::card_shift()]);
   return result;
 }
 

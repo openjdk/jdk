@@ -49,8 +49,8 @@ G1BlockOffsetTable::G1BlockOffsetTable(MemRegion heap, G1RegionToSpaceMapper* st
 
 #ifdef ASSERT
 void G1BlockOffsetTable::check_address(uint8_t* addr, const char* msg) const {
-  uint8_t* start_addr = const_cast<uint8_t *>(_offset_base + (uintptr_t(_reserved.start()) >> CardTable::card_shift()));
-  uint8_t* end_addr = const_cast<uint8_t *>(_offset_base + (uintptr_t(_reserved.end()) >> CardTable::card_shift()));
+  uint8_t* start_addr = const_cast<uint8_t*>(_offset_base + (uintptr_t(_reserved.start()) >> CardTable::card_shift()));
+  uint8_t* end_addr = const_cast<uint8_t*>(_offset_base + (uintptr_t(_reserved.end()) >> CardTable::card_shift()));
   assert(addr >= start_addr && addr <= end_addr,
          "%s - offset address: " PTR_FORMAT ", start address: " PTR_FORMAT ", end address: " PTR_FORMAT,
          msg, (p2i(addr)), (p2i(start_addr)), (p2i(end_addr)));
@@ -108,7 +108,7 @@ void G1BlockOffsetTablePart::set_remainder_to_point_to_start_incl(uint8_t* start
   assert(_bot->offset_array(start_card-1) < CardTable::card_size_in_words(),
          "Offset card has an unexpected value");
   uint8_t* start_card_for_region = start_card;
-  uint8_t offset = max_jubyte;
+  uint8_t offset = UINT8_MAX;
   for (uint i = 0; i < BOTConstants::N_powers; i++) {
     // -1 so that the card with the actual offset is counted.  Another -1
     // so that the reach ends in this region and not at the start
