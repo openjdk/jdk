@@ -26,12 +26,13 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 
 import javax.swing.JEditorPane;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.Element;
 
 /*
  * @test
- * @key headful
+ * @key headless
  * @bug 8328953
  * @summary JEditorPane.read throws ChangedCharSetException
  * @run main EditorPaneCharset
@@ -66,10 +67,14 @@ public final class EditorPaneCharset {
         Element root = document.getDefaultRootElement();
         Element body = root.getElement(1);
         Element p = body.getElement(0);
-        String pText = document.getText(p.getStartOffset(),
-                                    p.getEndOffset() - p.getStartOffset()));
-        if (!CYRILLIC_TEXT.equals(pText)) {
-            throw new RuntimeException("Text doesn't match");
+        try {
+            String pText = document.getText(p.getStartOffset(),
+                                        p.getEndOffset() - p.getStartOffset());
+            if (!CYRILLIC_TEXT.equals(pText)) {
+                throw new RuntimeException("Text doesn't match");
+            }
+        } catch (BadLocationException e) {
+            throw new RuntimeException(e);
         }
     }
 
