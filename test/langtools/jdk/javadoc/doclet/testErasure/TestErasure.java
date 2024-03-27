@@ -250,4 +250,132 @@ public class TestErasure extends JavadocTester {
                 {"p":"<Unnamed>","c":"Foo","l":"m(T)","u":"m(java.lang.Object)"},\
                 {"p":"<Unnamed>","c":"Foo","l":"m(T)","u":"m(X)"}""");
     }
+
+    @Test
+    public void testNewAndDeprecated(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                public abstract class Foo {
+                    /** @since today */
+                    @Deprecated(since="tomorrow")
+                    public Foo(T arg) { }
+                    /** @since today */
+                    @Deprecated(since="tomorrow")
+                    public <T extends X> Foo(T arg) { }
+                    /** @since today */
+                    @Deprecated(since="tomorrow")
+                    public <T extends Y> Foo(T arg) { }
+                    /** @since today */
+                    @Deprecated(since="tomorrow")
+                    public abstract T m(T arg);
+                    /** @since today */
+                    @Deprecated(since="tomorrow")
+                    public abstract <T extends X> T m(T arg);
+                    /** @since today */
+                    @Deprecated(since="tomorrow")
+                    public abstract <T extends Y> T m(T arg);
+                }
+                class T { }
+                class X { }
+                class Y { }
+                """);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "--since", "today",
+                src.resolve("Foo.java").toString());
+
+        checkExit(Exit.OK);
+        checkOutput("new-list.html", true, """
+                <div class="col-summary-item-name even-row-color"><a href="Foo.html#m(T)">Foo.m<wbr>(T)</a></div>
+                <div class="col-second even-row-color">today</div>
+                <div class="col-last even-row-color">&nbsp;</div>
+                <div class="col-summary-item-name odd-row-color"><a href="Foo.html#m(X)">Foo.m<wbr>(T)</a></div>
+                <div class="col-second odd-row-color">today</div>
+                <div class="col-last odd-row-color">&nbsp;</div>
+                <div class="col-summary-item-name even-row-color"><a href="Foo.html#m(Y)">Foo.m<wbr>(T)</a></div>
+                <div class="col-second even-row-color">today</div>
+                <div class="col-last even-row-color">&nbsp;</div>""");
+        checkOutput("new-list.html", true, """
+                <div class="col-summary-item-name even-row-color"><a href="Foo.html#%3Cinit%3E(T)">Foo<wbr>(T)</a></div>
+                <div class="col-second even-row-color">today</div>
+                <div class="col-last even-row-color">&nbsp;</div>
+                <div class="col-summary-item-name odd-row-color"><a href="Foo.html#%3Cinit%3E(X)">Foo<wbr>(T)</a></div>
+                <div class="col-second odd-row-color">today</div>
+                <div class="col-last odd-row-color">&nbsp;</div>
+                <div class="col-summary-item-name even-row-color"><a href="Foo.html#%3Cinit%3E(Y)">Foo<wbr>(T)</a></div>
+                <div class="col-second even-row-color">today</div>
+                <div class="col-last even-row-color">&nbsp;</div>""");
+        checkOutput("deprecated-list.html", true, """
+                <div class="col-summary-item-name even-row-color"><a href="Foo.html#m(T)">Foo.m<wbr>(T)</a></div>
+                <div class="col-second even-row-color">tomorrow</div>
+                <div class="col-last even-row-color"></div>
+                <div class="col-summary-item-name odd-row-color"><a href="Foo.html#m(X)">Foo.m<wbr>(T)</a></div>
+                <div class="col-second odd-row-color">tomorrow</div>
+                <div class="col-last odd-row-color"></div>
+                <div class="col-summary-item-name even-row-color"><a href="Foo.html#m(Y)">Foo.m<wbr>(T)</a></div>
+                <div class="col-second even-row-color">tomorrow</div>
+                <div class="col-last even-row-color"></div>""");
+        checkOutput("deprecated-list.html", true, """
+                <div class="col-summary-item-name even-row-color"><a href="Foo.html#%3Cinit%3E(T)">Foo<wbr>(T)</a></div>
+                <div class="col-second even-row-color">tomorrow</div>
+                <div class="col-last even-row-color"></div>
+                <div class="col-summary-item-name odd-row-color"><a href="Foo.html#%3Cinit%3E(X)">Foo<wbr>(T)</a></div>
+                <div class="col-second odd-row-color">tomorrow</div>
+                <div class="col-last odd-row-color"></div>
+                <div class="col-summary-item-name even-row-color"><a href="Foo.html#%3Cinit%3E(Y)">Foo<wbr>(T)</a></div>
+                <div class="col-second even-row-color">tomorrow</div>
+                <div class="col-last even-row-color"></div>""");
+    }
+
+    @Test
+    public void testPreview(Path base) throws IOException {
+        // unlike that for other tests, here we cannot simulate ambiguity between
+        // a type parameter and a like-named class, because for that the class
+        // needs to be in the unnamed package, otherwise its FQN won't be T
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                import jdk.internal.javac.PreviewFeature;
+                public abstract class Foo {
+                    @PreviewFeature(feature=PreviewFeature.Feature.TEST)
+                    public <T extends X> Foo(T arg) { }
+                    @PreviewFeature(feature=PreviewFeature.Feature.TEST)
+                    public <T extends Y> Foo(T arg) { }
+                    @PreviewFeature(feature=PreviewFeature.Feature.TEST)
+                    public abstract <T extends X> T m(T arg);
+                    @PreviewFeature(feature=PreviewFeature.Feature.TEST)
+                    public abstract <T extends Y> T m(T arg);
+                }
+                class X { }
+                class Y { }
+                """);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "--patch-module", "java.base=" + src.toAbsolutePath().toString(),
+                src.resolve("p").resolve("Foo.java").toString());
+
+        checkExit(Exit.OK);
+        checkOutput("preview-list.html", true, """
+                <div class="col-summary-item-name even-row-color method method-tab1">\
+                <a href="java.base/p/Foo.html#m(p.X)">p.Foo.m<wbr>(T)</a><sup>\
+                <a href="java.base/p/Foo.html#preview-m(p.X)">PREVIEW</a></sup></div>
+                <div class="col-second even-row-color method method-tab1">Test Feature</div>
+                <div class="col-last even-row-color method method-tab1"></div>
+                <div class="col-summary-item-name odd-row-color method method-tab1">\
+                <a href="java.base/p/Foo.html#m(p.Y)">p.Foo.m<wbr>(T)</a><sup>\
+                <a href="java.base/p/Foo.html#preview-m(p.Y)">PREVIEW</a></sup></div>
+                <div class="col-second odd-row-color method method-tab1">Test Feature</div>
+                <div class="col-last odd-row-color method method-tab1"></div>""");
+        checkOutput("preview-list.html", true, """
+                <div class="col-summary-item-name even-row-color constructor constructor-tab1">\
+                <a href="java.base/p/Foo.html#%3Cinit%3E(p.X)">p.Foo<wbr>(T)</a><sup>\
+                <a href="java.base/p/Foo.html#preview-%3Cinit%3E(p.X)">PREVIEW</a></sup></div>
+                <div class="col-second even-row-color constructor constructor-tab1">Test Feature</div>
+                <div class="col-last even-row-color constructor constructor-tab1"></div>
+                <div class="col-summary-item-name odd-row-color constructor constructor-tab1">\
+                <a href="java.base/p/Foo.html#%3Cinit%3E(p.Y)">p.Foo<wbr>(T)</a><sup>\
+                <a href="java.base/p/Foo.html#preview-%3Cinit%3E(p.Y)">PREVIEW</a></sup></div>
+                <div class="col-second odd-row-color constructor constructor-tab1">Test Feature</div>
+                <div class="col-last odd-row-color constructor constructor-tab1"></div>""");
+    }
 }
