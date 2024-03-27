@@ -1280,15 +1280,52 @@ JavaThread* Threads::owning_thread_from_monitor(ThreadsList* t_list, ObjectMonit
 class PrintOnClosure : public ThreadClosure {
 private:
   outputStream* _st;
+  bool _print_stacks;
+  bool _internal_format;
+#if INCLUDE_SERVICES
+  ConcurrentLocksDump* _concurrent_locks;
+#endif // INCLUDE_SERVICES
+  bool _print_extended_info;
 
 public:
-  PrintOnClosure(outputStream* st) :
-      _st(st) {}
+  PrintOnClosure(outputStream* st, bool print_stacks,
+                 bool internal_format,
+                 bool print_extended_info) :
+    _st(st),
+    _print_stacks(print_stacks),
+    _internal_format(internal_format),
+#if INCLUDE_SERVICES
+    _concurrent_locks(nullptr),
+#endif // INCLUDE_SERVICES
+    _print_extended_info(print_extended_info) {}
+
+#if INCLUDE_SERVICES
+  void set_concurrent_locks(ConcurrentLocksDump* cl) { _concurrent_locks = cl; }
+#endif // INCLUDE_SERVICES
 
   virtual void do_thread(Thread* thread) {
     if (thread != nullptr) {
-      thread->print_on(_st);
-      _st->cr();
+      if (thread->is_Java_thread()) {
+        JavaThread* p = JavaThread::cast(thread);
+        ResourceMark rm;
+        p->print_on(_st, _print_extended_info);
+        if (_print_stacks) {
+          if (_internal_format) {
+            p->trace_stack();
+          } else {
+            p->print_stack_on(_st);
+          }
+        }
+        _st->cr();
+#if INCLUDE_SERVICES
+        if (_concurrent_locks != nullptr) {
+          _concurrent_locks->print_locks_on(p, _st);
+        }
+#endif // INCLUDE_SERVICES
+      } else {
+        thread->print_on(_st);
+        _st->cr();
+      }
     }
   }
 };
@@ -1306,10 +1343,13 @@ void Threads::print_on(outputStream* st, bool print_stacks,
                VM_Version::vm_info_string());
   st->cr();
 
-#if INCLUDE_SERVICES
+  PrintOnClosure cl(st, print_stacks, internal_format, print_extended_info);
+
+  #if INCLUDE_SERVICES
   // Dump concurrent locks
   ConcurrentLocksDump concurrent_locks;
   if (print_concurrent_locks) {
+    cl.set_concurrent_locks(&concurrent_locks);
     concurrent_locks.dump_at_safepoint();
   }
 #endif // INCLUDE_SERVICES
@@ -1317,29 +1357,18 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   ThreadsSMRSupport::print_info_on(st);
   st->cr();
 
-  ALL_JAVA_THREADS(p) {
-    ResourceMark rm;
-    p->print_on(st, print_extended_info);
-    if (print_stacks) {
-      if (internal_format) {
-        p->trace_stack();
-      } else {
-        p->print_stack_on(st);
-      }
+  if (SafepointSynchronize::is_at_safepoint()) {
+    // Threads::threads_do() is synchronized with thread termination
+    Threads::threads_do(&cl);
+  } else {
+    ALL_JAVA_THREADS(p) {
+      cl.do_thread(p);
     }
-    st->cr();
-#if INCLUDE_SERVICES
-    if (print_concurrent_locks) {
-      concurrent_locks.print_locks_on(p, st);
-    }
-#endif // INCLUDE_SERVICES
+    cl.do_thread(VMThread::vm_thread());
+    Universe::heap()->gc_threads_do(&cl);
+    cl.do_thread(WatcherThread::watcher_thread());
+    cl.do_thread(AsyncLogWriter::instance());
   }
-
-  PrintOnClosure cl(st);
-  cl.do_thread(VMThread::vm_thread());
-  Universe::heap()->gc_threads_do(&cl);
-  cl.do_thread(WatcherThread::watcher_thread());
-  cl.do_thread(AsyncLogWriter::instance());
 
   st->flush();
 }
