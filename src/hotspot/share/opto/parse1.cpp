@@ -999,7 +999,7 @@ void Parse::do_exits() {
   //
   // 3. On processors which are not CPU_MULTI_COPY_ATOMIC (e.g. PPC64),
   //    support_IRIW_for_not_multiple_copy_atomic_cpu selects that
-  //    MemBarStoreStore is used before volatile load instead of after volatile
+  //    MemBarVolatile is used before volatile load instead of after volatile
   //    store, so there's no barrier after the store.
   //    We want to guarantee the same behavior as on platforms with total store
   //    order, although this is not required by the Java memory model.

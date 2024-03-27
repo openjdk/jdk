@@ -30,18 +30,19 @@ import compiler.lib.ir_framework.*;
  * @bug 8300148
  * @summary Test barriers emitted in constructors
  * @library /test/lib /
+ * @requires os.arch=="aarch64" | os.arch=="x86_64"
  * @run main compiler.c2.irTests.ConstructorBarriers
  */
 public class ConstructorBarriers {
-    private class ClassBasic {
+    private static class ClassBasic {
         int field;
         public ClassBasic(int i) { field = i; }
     }
-    private class ClassWithFinal {
+    private static class ClassWithFinal {
         final int field;
         public ClassWithFinal(int i) { field = i; }
     }
-    private class ClassWithVolatile {
+    private static class ClassWithVolatile {
         volatile int field;
         public ClassWithVolatile(int i) { field = i; }
     }
@@ -61,9 +62,25 @@ public class ConstructorBarriers {
     @Test
     @Arguments(values = {Argument.RANDOM_EACH})
     @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_STORESTORE)
+    public int classBasicEscapes(int i) {
+        return new ClassBasic(i).field;
+    }
+
+    @Test
+    @Arguments(values = {Argument.RANDOM_EACH})
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
     @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
     public Object classWithFinal(int i) {
         return new ClassWithFinal(i);
+    }
+
+    @Test
+    @Arguments(values = {Argument.RANDOM_EACH})
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_STORESTORE)
+    public int classWithFinalEscapes(int i) {
+        return new ClassWithFinal(i).field;
     }
 
     @Test
@@ -73,5 +90,14 @@ public class ConstructorBarriers {
     @IR(counts = {IRNode.MEMBAR_VOLATILE, "1"})
     public Object classWithVolatile(int i) {
         return new ClassWithVolatile(i);
+    }
+
+    @Test
+    @Arguments(values = {Argument.RANDOM_EACH})
+    @IR(failOn = IRNode.MEMBAR_STORESTORE)
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_VOLATILE)
+    public int classWithVolatileEscapes(int i) {
+        return new ClassWithVolatile(i).field;
     }
 }
