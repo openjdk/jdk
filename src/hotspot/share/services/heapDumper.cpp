@@ -739,9 +739,6 @@ class DumperSupport : AllStatic {
   // Returns the size of the data to write.
   static u4 sig2size(Symbol* sig);
 
-  // returns the size of the instance of the given class
-  static u4 instance_size(InstanceKlass* ik, DumperClassCacheTableEntry* class_cache_entry = nullptr);
-
   // dump a jfloat
   static void dump_float(AbstractDumpWriter* writer, jfloat f);
   // dump a jdouble
@@ -1041,21 +1038,6 @@ void DumperSupport::dump_field_value(AbstractDumpWriter* writer, char type, oop 
   }
 }
 
-// returns the size of the instance of the given class
-u4 DumperSupport::instance_size(InstanceKlass* ik, DumperClassCacheTableEntry* class_cache_entry) {
-  if (class_cache_entry != nullptr) {
-    return class_cache_entry->instance_size();
-  } else {
-    u4 size = 0;
-    for (HierarchicalFieldStream<JavaFieldStream> fld(ik); !fld.done(); fld.next()) {
-      if (!fld.access_flags().is_static()) {
-        size += sig2size(fld.signature());
-      }
-    }
-    return size;
-  }
-}
-
 u4 DumperSupport::get_static_fields_size(InstanceKlass* ik, u2& field_count) {
   field_count = 0;
   u4 size = 0;
@@ -1164,7 +1146,7 @@ void DumperSupport::dump_instance(AbstractDumpWriter* writer, oop o, DumperClass
 
   DumperClassCacheTableEntry* cache_entry = class_cache->lookup_or_create(ik);
 
-  u4 is = instance_size(ik, cache_entry);
+  u4 is = cache_entry->instance_size();
   u4 size = 1 + sizeof(address) + 4 + sizeof(address) + 4 + is;
 
   writer->start_sub_record(HPROF_GC_INSTANCE_DUMP, size);
@@ -1223,7 +1205,7 @@ void DumperSupport::dump_instance_class(AbstractDumpWriter* writer, Klass* k) {
   writer->write_objectID(oop(nullptr));
 
   // instance size
-  writer->write_u4(DumperSupport::instance_size(ik));
+  writer->write_u4(checked_cast<u4>(HeapWordSize * ik->size_helper()));
 
   // size of constant pool - ignored by HAT 1.1
   writer->write_u2(0);
