@@ -1494,11 +1494,14 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
     if (tst != tst0) {
       // Canonicalize one more time since transform can change it.
       btest = tst->as_Bool()->_test._test;
-      if (!BoolTest(btest).is_canonical()) {
-        // Reverse edges one more time...
+      while (!BoolTest(btest).is_canonical()) {
+        // Reverse edges until the test is canonical. It is possible given
+        // constants c1 and c2, IfNode transformations will follow:
+        // `c2 > c1 - x` -> `c1 - x < c2` -> `c1 - c2 < x` -> `x > c1 - c2`
+        // Which is still not canonical. We can make it canonical by applying
+        // the gvn transformation again.
         tst   = _gvn.transform( tst->as_Bool()->negate(&_gvn) );
         btest = tst->as_Bool()->_test._test;
-        assert(BoolTest(btest).is_canonical(), "sanity");
         taken_if_true = !taken_if_true;
       }
       c = tst->in(1);

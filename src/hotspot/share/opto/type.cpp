@@ -1744,6 +1744,22 @@ const Type *TypeInt::narrow( const Type *old ) const {
   return this;
 }
 
+bool TypeInt::can_overflow(int opcode, const TypeInteger* other) const {
+  const TypeInt* other_int = other->isa_int();
+  if (other_int == nullptr || empty() || other->empty()) {
+    return true;
+  }
+  switch (opcode) {
+  case Op_AddI:
+    return add_underflows(_lo, other_int->_lo) ||
+           add_overflows(_hi, other_int->_hi);
+  case Op_SubI:
+    return subtract_underflows(_lo, other_int->_hi) ||
+           subtract_overflows(_hi, other_int->_lo);
+  }
+  return true;
+}
+
 //-----------------------------filter------------------------------------------
 const Type *TypeInt::filter_helper(const Type *kills, bool include_speculative) const {
   const TypeInt* ft = join_helper(kills, include_speculative)->isa_int();
@@ -1870,6 +1886,21 @@ const TypeLong *TypeLong::make( jlong lo, jlong hi, int w ) {
   return (TypeLong*)(new TypeLong(lo,hi,w))->hashcons();
 }
 
+bool TypeLong::can_overflow(int opcode, const TypeInteger* other) const {
+  const TypeLong* other_long = other->isa_long();
+  if (other_long == nullptr || empty() || other->empty()) {
+    return true;
+  }
+  switch (opcode) {
+  case Op_AddL:
+    return add_underflows(_lo, other_long->_lo) ||
+           add_overflows(_hi, other_long->_hi);
+  case Op_SubL:
+    return subtract_underflows(_lo, other_long->_hi) ||
+           subtract_overflows(_hi, other_long->_lo);
+  }
+  return true;
+}
 
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type representation object

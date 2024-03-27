@@ -421,26 +421,6 @@ static inline bool long_ranges_overlap(jlong lo1, jlong hi1,
 }
 #endif
 
-template<class T> static bool subtract_overflows(T x, T y) {
-  T s = java_subtract(x, y);
-  return (x >= 0) && (y < 0) && (s < 0);
-}
-
-template<class T> static bool subtract_underflows(T x, T y) {
-  T s = java_subtract(x, y);
-  return (x < 0) && (y > 0) && (s > 0);
-}
-
-template<class T> static bool add_overflows(T x, T y) {
-  T s = java_add(x, y);
-  return (x > 0) && (y > 0) && (s < 0);
-}
-
-template<class T> static bool add_underflows(T x, T y) {
-  T s = java_add(x, y);
-  return (x < 0) && (y < 0) && (s >= 0);
-}
-
 template<class T> static bool ranges_overlap(T xlo, T ylo, T xhi, T yhi, T zlo, T zhi,
                                              const Node* n, bool pos) {
   assert(xlo <= xhi && ylo <= yhi && zlo <= zhi, "should not be empty types");
