@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,29 @@ final class MathUtils {
         10_000_000_000_000_000L,
         100_000_000_000_000_000L,
     };
+
+    /**
+     * {@return the count of trailing zeros in the decimal expansion of the argument}
+     * @param n the input, assumed (but not checked) to be positive: {@code n} &gt; 0
+     */
+    static int decNumberOfTrailingZeros(int n) {
+        /*
+         * When n > 0 then
+         *      (int) (n * 3_435_973_837L >>> 35) == n / 10
+         * This is for the benefit of CPUs that lack support for efficient
+         * division instructions.
+         */
+        if (n != (n = (int) (n * 3_435_973_837L >>> 35)) * 10) return 0;
+        if (n != (n = (int) (n * 3_435_973_837L >>> 35)) * 10) return 1;
+        if (n != (n = (int) (n * 3_435_973_837L >>> 35)) * 10) return 2;
+        if (n != (n = (int) (n * 3_435_973_837L >>> 35)) * 10) return 3;
+        if (n != (n = (int) (n * 3_435_973_837L >>> 35)) * 10) return 4;
+        if (n != (n = (int) (n * 3_435_973_837L >>> 35)) * 10) return 5;
+        if (n != (n = (int) (n * 3_435_973_837L >>> 35)) * 10) return 6;
+        if (n != (n = (int) (n * 3_435_973_837L >>> 35)) * 10) return 7;
+        if (n != (int) (n * 3_435_973_837L >>> 35) * 10) return 8;
+        return 9;
+    }
 
     /**
      * Returns 10<sup>{@code e}</sup>.
