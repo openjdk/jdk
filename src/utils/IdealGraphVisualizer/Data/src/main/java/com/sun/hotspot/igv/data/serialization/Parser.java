@@ -49,7 +49,6 @@ import org.xml.sax.XMLReader;
  */
 public class Parser implements GraphParser {
 
-    public static final String INDENT = "  ";
     public static final String TOP_ELEMENT = "graphDocument";
     public static final String GROUP_ELEMENT = "group";
     public static final String GRAPH_ELEMENT = "graph";
@@ -70,12 +69,6 @@ public class Parser implements GraphParser {
     public static final String REMOVE_EDGE_ELEMENT = "removeEdge";
     public static final String REMOVE_NODE_ELEMENT = "removeNode";
     public static final String METHOD_NAME_PROPERTY = "name";
-    public static final String GROUP_NAME_PROPERTY = "name";
-    public static final String METHOD_IS_PUBLIC_PROPERTY = "public";
-    public static final String METHOD_IS_STATIC_PROPERTY = "static";
-    public static final String TRUE_VALUE = "true";
-    public static final String NODE_NAME_PROPERTY = "name";
-    public static final String EDGE_NAME_PROPERTY = "name";
     public static final String NODE_ID_PROPERTY = "id";
     public static final String FROM_PROPERTY = "from";
     public static final String TO_PROPERTY = "to";
@@ -96,7 +89,6 @@ public class Parser implements GraphParser {
     public static final String BLOCK_ELEMENT = "block";
     public static final String SUCCESSORS_ELEMENT = "successors";
     public static final String SUCCESSOR_ELEMENT = "successor";
-    public static final String ASSEMBLY_ELEMENT = "assembly";
     public static final String DIFFERENCE_PROPERTY = "difference";
     private final TopElementHandler<GraphDocument> xmlDocument = new TopElementHandler<>();
     private final Map<Group, Boolean> differenceEncoding = new HashMap<>();
