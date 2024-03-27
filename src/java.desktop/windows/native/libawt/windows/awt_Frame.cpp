@@ -1588,7 +1588,7 @@ void AwtFrame::_NotifyModalBlocked(void *param)
     jobject blockerPeer = nmbs->blockerPeer;
     jboolean blocked = nmbs->blocked;
 
-    PDATA pData;
+    AwtFrame *f = nullptr;
 
     if (peer == NULL) {
         env->ExceptionClear();
@@ -1599,8 +1599,8 @@ void AwtFrame::_NotifyModalBlocked(void *param)
         delete nmbs;
         return;
     } else {
-        pData = JNI_GET_PDATA(peer);
-        if (pData == NULL) {
+        f = (AwtFrame *) JNI_GET_PDATA(peer);
+        if (f == nullptr) {
             THROW_NULL_PDATA_IF_NOT_DESTROYED(peer);
             env->DeleteGlobalRef(self);
             env->DeleteGlobalRef(peer);
@@ -1610,7 +1610,6 @@ void AwtFrame::_NotifyModalBlocked(void *param)
             return;
         }
     }
-    AwtFrame *f = (AwtFrame *) pData;
 
     // dialog here may be NULL, for example, if the blocker is a native dialog
     // however, we need to install/unistall modal hooks anyway
@@ -1623,8 +1622,7 @@ void AwtFrame::_NotifyModalBlocked(void *param)
         delete nmbs;
         return;
     } else {
-        pData = JNI_GET_PDATA(blockerPeer);
-        if (pData == NULL) {
+        if ((AwtDialog *) JNI_GET_PDATA(blockerPeer) == nullptr) {
             THROW_NULL_PDATA_IF_NOT_DESTROYED(blockerPeer);
             env->DeleteGlobalRef(self);
             env->DeleteGlobalRef(peer);
@@ -1634,7 +1632,6 @@ void AwtFrame::_NotifyModalBlocked(void *param)
             return;
         }
     }
-    AwtDialog *dialog = (AwtDialog *) pData;
 
     if ((f != NULL) && ::IsWindow(f->GetHWnd())) {
         // get an HWND of the toplevel window this embedded frame is within
