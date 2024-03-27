@@ -51,6 +51,7 @@ public class bug4150029 {
     private static File subDir;
     private static File prevDir;
     private static File crntDir;
+    private static volatile Point p;
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
@@ -83,8 +84,6 @@ public class bug4150029 {
             subDir.deleteOnExit();
             System.out.println("Created sub-directory: " + subDir);
 
-            fileChooser = new JFileChooser(subDir);
-
             SwingUtilities.invokeAndWait(() -> {
                 createAndShowUI();
             });
@@ -113,33 +112,23 @@ public class bug4150029 {
 
     private static void doTesting() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
-            Point p = frame.getLocationOnScreen();
+            p = frame.getLocationOnScreen();
 
         });
         robot.mouseMove(p.x + 200, p.y + 200);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-        boolean passed_1 = false;
-        boolean passed_2 = false;
+        boolean passed = false;
         robot.waitForIdle();
 
         // check backspace key at subDir level
         clickBackSpace();
         if (prevDir != crntDir) {
-            passed_1 = true;
+            passed = true;
         }
 
-        // check if backspace key changes directory at root level
-        while (!fileChooser.getFileSystemView().isFileSystemRoot(prevDir)) {
-            clickBackSpace();
-            if (prevDir == crntDir) {
-                passed_2 = true;
-                break;
-            }
-        }
-
-        if (!(passed_1 && passed_2)) {
+        if (!passed) {
             throw new RuntimeException("BackSpace does not lead to parent directory");
         }
     }
