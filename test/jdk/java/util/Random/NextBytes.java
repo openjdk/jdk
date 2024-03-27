@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,39 +24,59 @@
 /*
  * @test
  * @bug 4261170
- * @summary Tests for Random.nextBytes
+ * @summary Tests for RandomGenerator.nextBytes
  * @author Martin Buchholz
+ * @run junit NextBytes
  */
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
+import java.util.function.Supplier;
+import java.util.random.RandomGenerator;
+import java.util.random.RandomGeneratorFactory;
+import java.util.stream.IntStream;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class NextBytes {
-    private static void realMain(String[] args) throws Throwable {
-        byte[] expected = new byte[]
-            {27, -105, -24, 83, -77, -29, 119, -74, -106, 68, 54};
-        Random r = new java.util.Random(2398579034L);
-        for (int i = 0; i <= expected.length; i++) {
-            r.setSeed(2398579034L);
-            byte[] actual = new byte[i];
-            r.nextBytes(actual);
-            //System.out.println(Arrays.toString(actual));
-            check(Arrays.equals(actual, Arrays.copyOf(expected,i)));
-        }
+
+    private static final long SEED = 2398579034L;
+
+    private static List<Arguments> params() {
+        return List.of(
+            Arguments.of(
+                "Random",
+                new byte[]{27, -105, -24, 83, -77, -29, 119, -74, -106, 68, 54, 46, 50, 46, 25, -16}
+            ),
+            Arguments.of(
+                "L32X64MixRandom",
+                new byte[]{-57, 102, 42, 34, -3, -113, 78, -20, 24, -17, 59, 11, -29, -86, -98, -37}
+            ),
+            Arguments.of(
+                "L64X128StarStarRandom",
+                new byte[]{109, -78, 16, -38, -12, -24, 77, 109, -79, -97, -9, 40, 123, 118, 43, 7}
+            ),
+            Arguments.of(
+                "Xoshiro256PlusPlus",
+                new byte[]{121, -17, 31, -115, 26, -119, 64, 25, -15, 63, 29, -125, -72, 53, -20, 7}
+            )
+        );
     }
 
-    //--------------------- Infrastructure ---------------------------
-    static volatile int passed = 0, failed = 0;
-    static void pass() {passed++;}
-    static void fail() {failed++; Thread.dumpStack();}
-    static void fail(String msg) {System.out.println(msg); fail();}
-    static void unexpected(Throwable t) {failed++; t.printStackTrace();}
-    static void check(boolean cond) {if (cond) pass(); else fail();}
-    static void equal(Object x, Object y) {
-        if (x == null ? y == null : x.equals(y)) pass();
-        else fail(x + " not equal to " + y);}
-    public static void main(String[] args) throws Throwable {
-        try {realMain(args);} catch (Throwable t) {unexpected(t);}
-        System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
-        if (failed > 0) throw new AssertionError("Some tests failed");}
+    @ParameterizedTest
+    @MethodSource("params")
+    void testNextBytes(String algo, byte[] expected) throws Throwable {
+        RandomGeneratorFactory factory = RandomGeneratorFactory.of(algo);
+        assertAll(IntStream.rangeClosed(0, expected.length).mapToObj(i -> () -> {
+            byte[] actual = new byte[i];
+            factory.create(SEED).nextBytes(actual);
+            assertArrayEquals(Arrays.copyOf(expected, i), actual);
+        }));
+    }
+
 }

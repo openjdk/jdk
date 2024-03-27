@@ -29,12 +29,13 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
-import jdk.internal.util.random.RandomSupport;
-
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+
+import jdk.internal.util.ByteArrayLittleEndian;
+import jdk.internal.util.random.RandomSupport;
 
 import static java.lang.Math.*;
 
@@ -652,8 +653,8 @@ public interface RandomGenerator {
         int len = bytes.length;
         for (int words = len >> 3; words--> 0; ) {
             long rnd = nextLong();
-            for (int n = 8; n--> 0; rnd >>>= Byte.SIZE)
-                bytes[i++] = (byte)rnd;
+            ByteArrayLittleEndian.setLong(bytes, i, rnd);
+            i += Long.BYTES;
         }
         if (i < len)
             for (long rnd = nextLong(); i < len; rnd >>>= Byte.SIZE)

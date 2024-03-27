@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -467,10 +467,17 @@ public class Random implements RandomGenerator, java.io.Serializable {
      */
     @Override
     public void nextBytes(byte[] bytes) {
-        for (int i = 0, len = bytes.length; i < len; )
-            for (int rnd = nextInt(),
-                 n = Math.min(len - i, Integer.SIZE/Byte.SIZE);
-                 n-- > 0; rnd >>= Byte.SIZE)
+        int i = 0;
+        int len = bytes.length;
+
+        for (int words = len >> 2; words--> 0; ) {
+            int rnd = nextInt();
+            unsafe.putIntUnaligned(bytes, (long)Unsafe.ARRAY_BYTE_BASE_OFFSET + i, rnd, false);
+            i += Integer.BYTES;
+        }
+
+        if (i < len)
+            for (int rnd = nextInt(); i < len; rnd >>>= Byte.SIZE)
                 bytes[i++] = (byte)rnd;
     }
 
