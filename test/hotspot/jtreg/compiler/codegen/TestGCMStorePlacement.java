@@ -172,7 +172,6 @@ public class TestGCMStorePlacement {
 
     static void testOsrReducible4() {
         // Trigger OSR compilation.
-        // TODO: transform back into for loop
         int i = 0;
         while (i < 2049) {
             // On OSR entry, i == intCounter == 2048. This test checks that
