@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,19 @@
  * @run testng/othervm/java.security.policy=empty.policy ObjectMethodsTest
  */
 
+import java.util.ArrayList;
 import java.util.List;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.runtime.ObjectMethods;
+import java.util.concurrent.TimeUnit;
+
 import org.testng.annotations.Test;
 import static java.lang.invoke.MethodType.methodType;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -139,8 +143,45 @@ public class ObjectMethodsTest {
         assertEquals((String)handle.invokeExact(new Empty()),    "Empty[]");
     }
 
+    public void testRearrangeEquals() {
+        class ThrowingList extends ArrayList<Object> {
+            public boolean equals(Object o) {
+                throw new IllegalStateException("Shouldn't be called");
+            }
+        }
+
+        class ThrowingObject {
+            public boolean equals(Object obj) {
+                throw new IllegalStateException("Shouldn't be called");
+            }
+        }
+
+        record TestRecord1(List<Object> list, byte[] bytes, long id){}
+        record TestRecord2(Object object, TimeUnit timeUnit, int id){}
+
+        var obj1 = new TestRecord1(new ThrowingList(), new byte[0], 1);
+        var obj2 = new TestRecord1(new ThrowingList(), new byte[0], -1);
+
+        //check exception is not thrown because false is returned before calling ThrowingList.equals()
+        assertNotEquals(obj1, obj2);
+        //verify List.equals() is called
+        assertThrows(ISE, () -> {
+            byte[] sameArray = new byte[0];
+            new TestRecord1(new ThrowingList(), sameArray, 1).equals(new TestRecord1(new ThrowingList(), sameArray, 1));
+        });
+
+        var obj3 = new TestRecord2(new ThrowingObject(), TimeUnit.DAYS, 1);
+        var obj4 = new TestRecord2(new ThrowingObject(), TimeUnit.HOURS, 1);
+
+        //check exception is not thrown because false is returned before calling ThrowingObject.equals()
+        assertNotEquals(obj3, obj4);
+        //verify Object.equals() is called
+        assertThrows(ISE, () -> new TestRecord2(new ThrowingObject(), TimeUnit.DAYS, 1).equals(new TestRecord2(new ThrowingObject(), TimeUnit.DAYS, 1)));
+    }
+
     Class<NullPointerException> NPE = NullPointerException.class;
     Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
+    Class<IllegalStateException> ISE = IllegalStateException.class;
 
     public void exceptions()  {
         assertThrows(IAE, () -> ObjectMethods.bootstrap(LOOKUP, "badName",  C.EQUALS_DESC,    C.class,         C.NAME_LIST, C.ACCESSORS));

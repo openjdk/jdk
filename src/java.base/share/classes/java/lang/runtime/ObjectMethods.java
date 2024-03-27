@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,7 +216,17 @@ public class ObjectMethods {
         MethodHandle isInstance = MethodHandles.dropArguments(CLASS_IS_INSTANCE.bindTo(receiverClass), 0, receiverClass); // (RO)Z
         MethodHandle accumulator = MethodHandles.dropArguments(TRUE, 0, receiverClass, receiverClass); // (RR)Z
 
-        for (MethodHandle getter : getters) {
+        var equalsGetters = getters.toArray(new MethodHandle[0]);
+        Arrays.sort(equalsGetters, (mh1, mh2) -> {
+            var rt1 = mh1.type().returnType();
+            var rt2 = mh2.type().returnType();
+            return Integer.compare(
+                rt1.isPrimitive() || rt1.isEnum() || rt1.isArray() ? 1 : Iterable.class.isAssignableFrom(rt1) ? -1 : 0,
+                rt2.isPrimitive() || rt2.isEnum() || rt2.isArray() ? 1 : Iterable.class.isAssignableFrom(rt2) ? -1 : 0
+            );
+        });
+
+        for (MethodHandle getter : equalsGetters) {
             MethodHandle equalator = equalator(getter.type().returnType()); // (TT)Z
             MethodHandle thisFieldEqual = MethodHandles.filterArguments(equalator, 0, getter, getter); // (RR)Z
             accumulator = MethodHandles.guardWithTest(thisFieldEqual, accumulator, instanceFalse.asType(rr));
@@ -434,7 +444,7 @@ public class ObjectMethods {
             case "toString" -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(String.class, recordClass)))
                     throw new IllegalArgumentException("Bad method type: " + methodType);
-                List<String> nameList = "".equals(names) ? List.of() : List.of(names.split(";"));
+                List<String> nameList = names.isEmpty() ? List.of() : List.of(names.split(";"));
                 if (nameList.size() != getterList.size())
                     throw new IllegalArgumentException("Name list and accessor list do not match");
                 yield makeToString(lookup, recordClass, getters, nameList);
