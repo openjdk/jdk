@@ -37,16 +37,16 @@ public class Printer {
 
     public Printer() {}
 
-    public void export(Writer writer, GraphDocument document) {
+    public void exportGraphDocument(Writer writer, GraphDocument document, boolean saveState) {
         XMLWriter xmlWriter = new XMLWriter(writer);
         try {
             xmlWriter.startTag(Parser.ROOT_ELEMENT);
             xmlWriter.writeProperties(document.getProperties());
             for (FolderElement e : document.getElements()) {
                 if (e instanceof Group group) {
-                    export(xmlWriter, group);
+                    exportGroup(xmlWriter, group, saveState);
                 } else if (e instanceof InputGraph graph) {
-                    export(xmlWriter, graph, null, false);
+                    exportInputGraph(xmlWriter, graph, null, false, saveState);
                 }
             }
             xmlWriter.endTag();
@@ -55,30 +55,30 @@ public class Printer {
         }
     }
 
-    private void export(XMLWriter writer, Group g) throws IOException {
+    private void exportGroup(XMLWriter writer, Group g, boolean saveState) throws IOException {
         Properties attributes = new Properties();
         attributes.setProperty("difference", Boolean.toString(true));
         writer.startTag(Parser.GROUP_ELEMENT, attributes);
         writer.writeProperties(g.getProperties());
 
         if (g.getMethod() != null) {
-            export(writer, g.getMethod());
+            exportInputMethod(writer, g.getMethod());
         }
 
         InputGraph previous = null;
         for (FolderElement e : g.getElements()) {
             if (e instanceof InputGraph graph) {
-                export(writer, graph, previous, true);
+                exportInputGraph(writer, graph, previous, true, saveState);
                 previous = graph;
             } else if (e instanceof Group group) {
-                export(writer, group);
+                exportGroup(writer, group, saveState);
             }
         }
 
         writer.endTag();
     }
 
-    private void export(XMLWriter writer, InputGraph graph, InputGraph previous, boolean difference) throws IOException {
+    private void exportInputGraph(XMLWriter writer, InputGraph graph, InputGraph previous, boolean difference, boolean saveState) throws IOException {
         writer.startTag(Parser.GRAPH_ELEMENT);
         writer.writeProperties(graph.getProperties());
         writer.startTag(Parser.NODES_ELEMENT);
@@ -108,11 +108,11 @@ public class Printer {
             if (!difference || !equal.contains(n)) {
                 writer.startTag(Parser.NODE_ELEMENT, new Properties(Parser.NODE_ID_PROPERTY, Integer.toString(n.getId())));
                 writer.writeProperties(n.getProperties());
-                writer.endTag();
+                writer.endTag(); // Parser.NODE_ELEMENT
             }
         }
 
-        writer.endTag();
+        writer.endTag(); // Parser.NODES_ELEMENT
 
         writer.startTag(Parser.EDGES_ELEMENT);
         Set<InputEdge> removedEdges = new HashSet<>();
@@ -142,7 +142,7 @@ public class Printer {
             }
         }
 
-        writer.endTag();
+        writer.endTag(); // Parser.EDGES_ELEMENT
 
         writer.startTag(Parser.CONTROL_FLOW_ELEMENT);
         for (InputBlock b : graph.getBlocks()) {
@@ -153,7 +153,7 @@ public class Printer {
                 for (InputBlock s : b.getSuccessors()) {
                     writer.simpleTag(Parser.SUCCESSOR_ELEMENT, new Properties(Parser.BLOCK_NAME_PROPERTY, s.getName()));
                 }
-                writer.endTag();
+                writer.endTag(); // Parser.SUCCESSORS_ELEMENT
             }
 
             if (!b.getNodes().isEmpty()) {
@@ -161,17 +161,17 @@ public class Printer {
                 for (InputNode n : b.getNodes()) {
                     writer.simpleTag(Parser.NODE_ELEMENT, new Properties(Parser.NODE_ID_PROPERTY, n.getId() + ""));
                 }
-                writer.endTag();
+                writer.endTag(); // Parser.NODES_ELEMENT
             }
 
-            writer.endTag();
+            writer.endTag(); // Parser.BLOCK_ELEMENT
         }
 
-        writer.endTag();
-        writer.endTag();
+        writer.endTag(); // Parser.CONTROL_FLOW_ELEMENT
+        writer.endTag(); // Parser.GRAPH_ELEMENT
     }
 
-    private void export(XMLWriter w, InputMethod method) throws IOException {
+    private void exportInputMethod(XMLWriter w, InputMethod method) throws IOException {
         w.startTag(Parser.METHOD_ELEMENT, new Properties(Parser.METHOD_BCI_PROPERTY, method.getBci() + "", Parser.METHOD_NAME_PROPERTY, method.getName(), Parser.METHOD_SHORT_NAME_PROPERTY, method.getShortName()));
 
         w.writeProperties(method.getProperties());
@@ -179,7 +179,7 @@ public class Printer {
         if (!method.getInlined().isEmpty()) {
             w.startTag(Parser.INLINE_ELEMENT);
             for (InputMethod m : method.getInlined()) {
-                export(w, m);
+                exportInputMethod(w, m);
             }
             w.endTag();
         }

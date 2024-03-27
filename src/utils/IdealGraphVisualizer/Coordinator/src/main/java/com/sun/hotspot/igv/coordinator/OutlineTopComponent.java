@@ -325,13 +325,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             loadGraphDocument(getWorkspaceGraphsPath());
         } catch (IOException ex) {
             Exceptions.printStackTrace(ex);
-            return;
-        }
-
-        try {
-            loadStates(getWorkspaceStatesPath());
-        } catch (IOException ex) {
-            Exceptions.printStackTrace(ex);
         }
     }
 
@@ -348,20 +341,15 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     }
 
     public static String WORKSPACE_XML_FILE = "graphs.xml";
-    public static String WORKSPACE_STATE_FILE = "state.igv";
 
     private String getWorkspaceGraphsPath() {
         return workspacePath + "/" + WORKSPACE_XML_FILE;
     }
 
-    private String getWorkspaceStatesPath() {
-        return workspacePath + "/" + WORKSPACE_STATE_FILE;
-    }
 
     public void saveWorkspace() {
         try {
-            saveGraphDocument(getDocument(), getWorkspaceGraphsPath());
-            saveStates(getWorkspaceStatesPath());
+            saveGraphDocument(getDocument(), getWorkspaceGraphsPath(), true);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -556,7 +544,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         });
     }
 
-    public static void saveGraphDocument(GraphDocument doc, String path) throws IOException {
+    public static void saveGraphDocument(GraphDocument doc, String path, boolean saveState) throws IOException {
         final File graphFile;
         if (path == null || path.isEmpty()) {
             graphFile = OutlineTopComponent.chooseFile();
@@ -568,7 +556,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         }
         try (Writer writer = new OutputStreamWriter(Files.newOutputStream(graphFile.toPath()))) {
             Printer printer = new Printer();
-            printer.export(writer, doc);
+            printer.exportGraphDocument(writer, doc, saveState);
         }
     }
 

@@ -64,7 +64,7 @@ public class ParserTest {
     private void test(GraphDocument document) {
         final Printer printer = new Printer();
         final CharArrayWriter writer = new CharArrayWriter();
-        printer.export(writer, document);
+        printer.exportGraphDocument(writer, document, false);
         test(document, writer.toString());
     }
 

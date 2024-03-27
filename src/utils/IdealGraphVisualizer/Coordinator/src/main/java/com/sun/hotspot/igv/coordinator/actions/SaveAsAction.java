@@ -64,7 +64,7 @@ public final class SaveAsAction extends NodeAction {
         }
 
         try {
-            OutlineTopComponent.saveGraphDocument(doc, null);
+            OutlineTopComponent.saveGraphDocument(doc, null, false);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
