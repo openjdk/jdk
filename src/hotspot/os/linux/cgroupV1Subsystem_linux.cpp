@@ -33,82 +33,19 @@
 #include "utilities/globalDefinitions.hpp"
 #include "os_linux.hpp"
 
-/*
- * Set directory to subsystem specific files based
- * on the contents of the mountinfo and cgroup files.
- */
-void CgroupV1Controller::set_subsystem_path(char *cgroup_path) {
-  stringStream ss;
-  if (_root != nullptr && cgroup_path != nullptr) {
-    if (strcmp(_root, "/") == 0) {
-      ss.print_raw(_mount_point);
-      if (strcmp(cgroup_path,"/") != 0) {
-        ss.print_raw(cgroup_path);
-      }
-      _path = os::strdup(ss.base());
-    } else {
-      if (strcmp(_root, cgroup_path) == 0) {
-        ss.print_raw(_mount_point);
-        _path = os::strdup(ss.base());
-      } else {
-        char *p = strstr(cgroup_path, _root);
-        if (p != nullptr && p == _root) {
-          if (strlen(cgroup_path) > strlen(_root)) {
-            ss.print_raw(_mount_point);
-            const char* cg_path_sub = cgroup_path + strlen(_root);
-            ss.print_raw(cg_path_sub);
-            _path = os::strdup(ss.base());
-          }
-        }
-      }
-    }
-  }
-}
-
-/* uses_mem_hierarchy
- *
- * Return whether or not hierarchical cgroup accounting is being
- * done.
- *
- * return:
- *    A number > 0 if true, or
- *    OSCONTAINER_ERROR for not supported
- */
-jlong CgroupV1MemoryController::uses_mem_hierarchy() {
-  GET_CONTAINER_INFO(jlong, this, "/memory.use_hierarchy",
-                    "Use Hierarchy is: ", JLONG_FORMAT, JLONG_FORMAT, use_hierarchy);
-  return use_hierarchy;
-}
-
-void CgroupV1MemoryController::set_subsystem_path(char *cgroup_path) {
-  CgroupV1Controller::set_subsystem_path(cgroup_path);
-  jlong hierarchy = uses_mem_hierarchy();
-  if (hierarchy > 0) {
-    set_hierarchical(true);
-  }
-}
-
 jlong CgroupV1Subsystem::read_memory_limit_in_bytes() {
   GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.limit_in_bytes",
                      "Memory Limit is: ", JULONG_FORMAT, JULONG_FORMAT, memlimit);
 
   if (memlimit >= os::Linux::physical_memory()) {
     log_trace(os, container)("Non-Hierarchical Memory Limit is: Unlimited");
-    CgroupV1MemoryController* mem_controller = reinterpret_cast<CgroupV1MemoryController*>(_memory->controller());
-    if (mem_controller->is_hierarchical()) {
-      GET_CONTAINER_INFO_LINE(julong, _memory->controller(), "/memory.stat", "hierarchical_memory_limit",
-                             "Hierarchical Memory Limit is: " JULONG_FORMAT, JULONG_FORMAT, hier_memlimit)
-      if (hier_memlimit >= os::Linux::physical_memory()) {
-        log_trace(os, container)("Hierarchical Memory Limit is: Unlimited");
-      } else {
-        return (jlong)hier_memlimit;
-      }
-    }
+    // Backward compatibility:
+    log_trace(os, container)("Hierarchical Memory Limit is: Unlimited");
     return (jlong)-1;
   }
-  else {
-    return (jlong)memlimit;
-  }
+  // Backward compatibility:
+  log_trace(os, container)("Hierarchical Memory Limit is: " JULONG_FORMAT, memlimit);
+  return (jlong)memlimit;
 }
 
 /* read_mem_swap
@@ -130,19 +67,12 @@ jlong CgroupV1Subsystem::read_mem_swap() {
   host_total_memsw = os::Linux::host_swap() + os::Linux::physical_memory();
   if (memswlimit >= host_total_memsw) {
     log_trace(os, container)("Non-Hierarchical Memory and Swap Limit is: Unlimited");
-    CgroupV1MemoryController* mem_controller = reinterpret_cast<CgroupV1MemoryController*>(_memory->controller());
-    if (mem_controller->is_hierarchical()) {
-      const char* matchline = "hierarchical_memsw_limit";
-      GET_CONTAINER_INFO_LINE(julong, _memory->controller(), "/memory.stat", matchline,
-                             "Hierarchical Memory and Swap Limit is : " JULONG_FORMAT, JULONG_FORMAT, hier_memswlimit)
-      if (hier_memswlimit >= host_total_memsw) {
-        log_trace(os, container)("Hierarchical Memory and Swap Limit is: Unlimited");
-      } else {
-        return (jlong)hier_memswlimit;
-      }
-    }
+    // Backward compatibility:
+    log_trace(os, container)("Hierarchical Memory and Swap Limit is: Unlimited");
     return (jlong)-1;
   } else {
+    // Backward compatibility:
+    log_trace(os, container)("Hierarchical Memory and Swap Limit is : " JULONG_FORMAT, memswlimit);
     return (jlong)memswlimit;
   }
 }

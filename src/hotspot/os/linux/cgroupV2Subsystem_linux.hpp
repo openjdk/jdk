@@ -28,24 +28,8 @@
 #include "cgroupSubsystem_linux.hpp"
 
 class CgroupV2Controller: public CgroupController {
-  private:
-    /* the mount path of the cgroup v2 hierarchy */
-    char *_mount_path;
-    /* The cgroup path for the controller */
-    char *_cgroup_path;
-
-    /* Constructed full path to the subsystem directory */
-    char *_path;
-    static char* construct_path(char* mount_path, char *cgroup_path);
-
   public:
-    CgroupV2Controller(char * mount_path, char *cgroup_path) {
-      _mount_path = mount_path;
-      _cgroup_path = os::strdup(cgroup_path);
-      _path = construct_path(mount_path, cgroup_path);
-    }
-
-    char *subsystem_path() { return _path; }
+    CgroupV2Controller(const char *root, const char *mountpoint) : CgroupController(root, mountpoint) {}
 };
 
 class CgroupV2Subsystem: public CgroupSubsystem {
@@ -68,6 +52,7 @@ class CgroupV2Subsystem: public CgroupSubsystem {
       _unified = unified;
       _memory = new CachingCgroupController(unified);
       _cpu = new CachingCgroupController(unified);
+      initialize_hierarchy();
     }
 
     jlong read_memory_limit_in_bytes();

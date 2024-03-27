@@ -60,7 +60,7 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
     }
 
     private long getLongVal(String file) {
-        return getLongVal(file, CgroupSubsystem.LONG_RETVAL_UNLIMITED);
+        return getLongVal(file, CgroupSubsystem.OSCONTAINER_ERROR);
     }
 
     /**
@@ -76,10 +76,12 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
      */
     public static CgroupSubsystem getInstance(CgroupInfo anyController) {
         if (INSTANCE == null) {
-            CgroupSubsystemController unified = new CgroupV2SubsystemController(
-                    anyController.getMountPoint(),
-                    anyController.getCgroupPath());
+            CgroupV2SubsystemController unified = new CgroupV2SubsystemController(
+                    anyController.getMountRoot(),
+                    anyController.getMountPoint());
+            unified.setSubsystemPath(anyController.getCgroupPath());
             CgroupV2Subsystem tmpCgroupSystem = new CgroupV2Subsystem(unified);
+            tmpCgroupSystem.initializeHierarchy(unified);
             synchronized (CgroupV2Subsystem.class) {
                 if (INSTANCE == null) {
                     INSTANCE = tmpCgroupSystem;
@@ -140,12 +142,12 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
         String cpuMaxRaw = CgroupSubsystemController.getStringValue(unified, "cpu.max");
         if (cpuMaxRaw == null) {
             // likely file not found
-            return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
+            return CgroupSubsystem.OSCONTAINER_ERROR;
         }
         // $MAX $PERIOD
         String[] tokens = cpuMaxRaw.split("\\s+");
         if (tokens.length != 2) {
-            return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
+            return CgroupSubsystem.OSCONTAINER_ERROR;
         }
         String quota = tokens[tokenIdx];
         return CgroupSubsystem.limitFromString(quota);
@@ -155,7 +157,7 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
     public long getCpuShares() {
         long sharesRaw = getLongVal("cpu.weight");
         if (sharesRaw == 100 || sharesRaw <= 0) {
-            return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
+            return Long.MAX_VALUE;
         }
         int shares = (int)sharesRaw;
         // CPU shares (OCI) value needs to get translated into
@@ -333,7 +335,7 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
                                 .map(mapFunc)
                                 .collect(Collectors.summingLong(e -> e));
         } catch (UncheckedIOException | IOException e) {
-            return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
+            return CgroupSubsystem.OSCONTAINER_ERROR;
         }
     }
 

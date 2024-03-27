@@ -40,11 +40,70 @@ import java.util.stream.Stream;
  * Cgroup version agnostic controller logic
  *
  */
-public interface CgroupSubsystemController {
+public abstract class CgroupSubsystemController {
+
+    // Values returned larger than this number are unlimited.
+    protected static final long UNLIMITED_MIN = 0x7FFFFFFFFF000000L;
+
+    String root;
+    String mountPoint;
+    String cgroupPath;
+    String path;
+
+    protected CgroupSubsystemController(String root, String mountPoint) {
+        this.root = root;
+        this.mountPoint = mountPoint;
+    }
+
+    public void setSubsystemPath(String cgroupPath) {
+        this.cgroupPath = cgroupPath;
+        trimPath(0);
+    }
+
+    public void setPath(String cgroupPath) {
+        // Do not use the this.cgroupPath variable.
+        if (root == null || cgroupPath == null) {
+            return;
+        }
+        if (root.equals("/")) {
+            if (!cgroupPath.equals("/")) {
+                path = mountPoint + cgroupPath;
+                return;
+            }
+            path = mountPoint;
+            return;
+        }
+        if (root.equals(cgroupPath)) {
+            path = mountPoint;
+            return;
+        }
+        if (!cgroupPath.startsWith(root) || cgroupPath.equals(root) || cgroupPath.charAt(root.length()) != '/') {
+            return;
+        }
+        String cgroupSubstr = cgroupPath.substring(root.length());
+        path = mountPoint + cgroupSubstr;
+    }
+
+    public String path() {
+        return path;
+    }
+
+    public boolean trimPath(int dir_count) {
+        String cgroupPath = this.cgroupPath;
+        assert cgroupPath.charAt(0) == '/';
+        while (dir_count-- > 0) {
+            int pos = cgroupPath.lastIndexOf('/');
+            assert pos >= 0;
+            if (pos == 0) {
+                return false;
+            }
+            cgroupPath = cgroupPath.substring(0, pos);
+        }
+        path = Paths.get(mountPoint, cgroupPath).toString();
+        return true;
+    }
 
     public static final String EMPTY_STR = "";
-
-    public String path();
 
     /**
      * getStringValue

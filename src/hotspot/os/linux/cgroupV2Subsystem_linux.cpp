@@ -241,15 +241,6 @@ void CgroupV2Subsystem::print_version_specific_info(outputStream* st) {
   OSContainer::print_container_helper(st, swap_limit, "memory_swap_max_limit_in_bytes");
 }
 
-char* CgroupV2Controller::construct_path(char* mount_path, char *cgroup_path) {
-  stringStream ss;
-  ss.print_raw(mount_path);
-  if (strcmp(cgroup_path, "/") != 0) {
-    ss.print_raw(cgroup_path);
-  }
-  return os::strdup(ss.base());
-}
-
 char* CgroupV2Subsystem::pids_max_val() {
   GET_CONTAINER_INFO_CPTR(cptr, _unified, "/pids.max",
                      "Maximum number of tasks is: %s", "%1023s", pidsmax, 1024);

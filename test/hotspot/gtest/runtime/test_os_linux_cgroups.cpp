@@ -53,9 +53,9 @@ TEST(cgroupTest, set_cgroupv1_subsystem_path) {
   TestCase* testCases[] = { &host,
                             &container_engine };
   for (int i = 0; i < length; i++) {
-    CgroupV1Controller* ctrl = new CgroupV1Controller( (char*)testCases[i]->root_path,
-                                                       (char*)testCases[i]->mount_path);
-    ctrl->set_subsystem_path((char*)testCases[i]->cgroup_path);
+    CgroupV1Controller* ctrl = new CgroupV1Controller( testCases[i]->root_path,
+                                                       testCases[i]->mount_path);
+    ctrl->set_subsystem_path(testCases[i]->cgroup_path);
     ASSERT_STREQ(testCases[i]->expected_path, ctrl->subsystem_path());
   }
 }
@@ -63,13 +63,13 @@ TEST(cgroupTest, set_cgroupv1_subsystem_path) {
 TEST(cgroupTest, set_cgroupv2_subsystem_path) {
   TestCase at_mount_root = {
     "/sys/fs/cgroup",       // mount_path
-    nullptr,                // root_path, ignored
+    "/",                    // root_path
     "/",                    // cgroup_path
     "/sys/fs/cgroup"        // expected_path
   };
   TestCase sub_path = {
     "/sys/fs/cgroup",       // mount_path
-    nullptr,                // root_path, ignored
+    "/",                    // root_path
     "/foobar",              // cgroup_path
     "/sys/fs/cgroup/foobar" // expected_path
   };
@@ -77,8 +77,9 @@ TEST(cgroupTest, set_cgroupv2_subsystem_path) {
   TestCase* testCases[] = { &at_mount_root,
                             &sub_path };
   for (int i = 0; i < length; i++) {
-    CgroupV2Controller* ctrl = new CgroupV2Controller( (char*)testCases[i]->mount_path,
-                                                       (char*)testCases[i]->cgroup_path);
+    CgroupV2Controller* ctrl = new CgroupV2Controller( testCases[i]->root_path,
+                                                       testCases[i]->mount_path);
+    ctrl->set_subsystem_path(testCases[i]->cgroup_path);
     ASSERT_STREQ(testCases[i]->expected_path, ctrl->subsystem_path());
   }
 }

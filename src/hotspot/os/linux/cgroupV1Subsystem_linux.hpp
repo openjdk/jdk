@@ -32,43 +32,8 @@
 // Cgroups version 1 specific implementation
 
 class CgroupV1Controller: public CgroupController {
-  private:
-    /* mountinfo contents */
-    char *_root;
-    char *_mount_point;
-
-    /* Constructed subsystem directory */
-    char *_path;
-
   public:
-    CgroupV1Controller(char *root, char *mountpoint) {
-      _root = os::strdup(root);
-      _mount_point = os::strdup(mountpoint);
-      _path = nullptr;
-    }
-
-    virtual void set_subsystem_path(char *cgroup_path);
-    char *subsystem_path() { return _path; }
-};
-
-class CgroupV1MemoryController: public CgroupV1Controller {
-
-  public:
-    bool is_hierarchical() { return _uses_mem_hierarchy; }
-    void set_subsystem_path(char *cgroup_path);
-  private:
-    /* Some container runtimes set limits via cgroup
-     * hierarchy. If set to true consider also memory.stat
-     * file if everything else seems unlimited */
-    bool _uses_mem_hierarchy;
-    jlong uses_mem_hierarchy();
-    void set_hierarchical(bool value) { _uses_mem_hierarchy = value; }
-
-  public:
-    CgroupV1MemoryController(char *root, char *mountpoint) : CgroupV1Controller(root, mountpoint) {
-      _uses_mem_hierarchy = false;
-    }
-
+    CgroupV1Controller(const char *root, const char *mountpoint) : CgroupController(root, mountpoint) {}
 };
 
 class CgroupV1Subsystem: public CgroupSubsystem {
@@ -124,12 +89,13 @@ class CgroupV1Subsystem: public CgroupSubsystem {
                       CgroupV1Controller* cpu,
                       CgroupV1Controller* cpuacct,
                       CgroupV1Controller* pids,
-                      CgroupV1MemoryController* memory) {
+                      CgroupV1Controller* memory) {
       _cpuset = cpuset;
       _cpu = new CachingCgroupController(cpu);
       _cpuacct = cpuacct;
       _pids = pids;
       _memory = new CachingCgroupController(memory);
+      initialize_hierarchy();
     }
 };
 

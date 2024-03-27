@@ -35,14 +35,41 @@ public interface CgroupSubsystem extends Metrics {
      * Returned for metrics of type long if the underlying implementation
      * has determined that no limit is being imposed.
      */
-    public static final long LONG_RETVAL_UNLIMITED = -1;
+    public static final long OSCONTAINER_ERROR = -2;
     public static final String MAX_VAL = "max";
 
     public static long limitFromString(String strVal) {
-        if (strVal == null || MAX_VAL.equals(strVal)) {
-            return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
+        if (strVal == null) {
+            return CgroupSubsystem.OSCONTAINER_ERROR;
+        }
+        if (MAX_VAL.equals(strVal)) {
+            return Long.MAX_VALUE;
         }
         return Long.parseLong(strVal);
     }
 
+    public default void initializeHierarchy(CgroupSubsystemController memory) {
+        int bestLevel = 0;
+        long memoryLimitMin = Long.MAX_VALUE;
+        long memorySwapLimitMin = Long.MAX_VALUE;
+
+        for (int dirCount = 0; memory.trimPath(dirCount); ++dirCount) {
+            long memoryLimit = getMemoryLimit();
+            if (memoryLimit != Long.MAX_VALUE && memoryLimit != CgroupSubsystem.OSCONTAINER_ERROR && memoryLimit < memoryLimitMin) {
+                memoryLimitMin = memoryLimit;
+                bestLevel = dirCount;
+            }
+            long memorySwapLimit = getMemoryAndSwapLimit();
+            if (memorySwapLimit != Long.MAX_VALUE && memorySwapLimit != CgroupSubsystem.OSCONTAINER_ERROR && memorySwapLimit < memorySwapLimitMin) {
+                memorySwapLimitMin = memorySwapLimit;
+                bestLevel = dirCount;
+            }
+            // Never use a directory without controller files (disabled by "../cgroup.subtree_control").
+            if (memoryLimit == CgroupSubsystem.OSCONTAINER_ERROR && memorySwapLimit == CgroupSubsystem.OSCONTAINER_ERROR && bestLevel == dirCount) {
+                ++bestLevel;
+            }
+        }
+
+        memory.trimPath(bestLevel);
+    }
 }

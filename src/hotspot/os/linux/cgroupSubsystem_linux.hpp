@@ -72,8 +72,30 @@
 typedef char * cptr;
 
 class CgroupController: public CHeapObj<mtInternal> {
+  protected:
+    void set_path(const char *cgroup_path);
+
+    /* mountinfo contents */
+    char *_root;
+    char *_mount_point;
+    char *_cgroup_path = nullptr;
+
+    /* Constructed subsystem directory */
+    char *_path = nullptr;
+
   public:
-    virtual char *subsystem_path() = 0;
+    CgroupController(const char *root, const char *mountpoint) : _root(os::strdup(root)), _mount_point(os::strdup(mountpoint)) {}
+    ~CgroupController() {
+      os::free(_root);
+      os::free(_mount_point);
+      os::free(_cgroup_path);
+      os::free(_path);
+    }
+
+    bool trim_path(size_t dir_count);
+    virtual const char *subsystem_path() { return _path; }
+
+    virtual void set_subsystem_path(const char *cgroup_path);
 };
 
 PRAGMA_DIAG_PUSH
@@ -252,6 +274,8 @@ class CachingCgroupController : public CHeapObj<mtInternal> {
 };
 
 class CgroupSubsystem: public CHeapObj<mtInternal> {
+  protected:
+    void initialize_hierarchy();
   public:
     jlong memory_limit_in_bytes();
     int active_processor_count();

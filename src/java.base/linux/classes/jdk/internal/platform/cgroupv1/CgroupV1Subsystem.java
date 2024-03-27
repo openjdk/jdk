@@ -81,9 +81,7 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
             case "memory": {
                 if (info.getMountRoot() != null && info.getMountPoint() != null) {
                     CgroupV1MemorySubSystemController controller = new CgroupV1MemorySubSystemController(info.getMountRoot(), info.getMountPoint());
-                    controller.setPath(info.getCgroupPath());
-                    boolean isHierarchial = getHierarchical(controller);
-                    controller.setHierarchical(isHierarchial);
+                    controller.setSubsystemPath(info.getCgroupPath());
                     boolean isSwapEnabled = getSwapEnabled(controller);
                     controller.setSwapEnabled(isSwapEnabled);
                     subsystem.setMemorySubSystem(controller);
@@ -94,7 +92,7 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
             case "cpuset": {
                 if (info.getMountRoot() != null && info.getMountPoint() != null) {
                     CgroupV1SubsystemController controller = new CgroupV1SubsystemController(info.getMountRoot(), info.getMountPoint());
-                    controller.setPath(info.getCgroupPath());
+                    controller.setSubsystemPath(info.getCgroupPath());
                     subsystem.setCpuSetController(controller);
                     anyActiveControllers = true;
                 }
@@ -103,7 +101,7 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
             case "cpuacct": {
                 if (info.getMountRoot() != null && info.getMountPoint() != null) {
                     CgroupV1SubsystemController controller = new CgroupV1SubsystemController(info.getMountRoot(), info.getMountPoint());
-                    controller.setPath(info.getCgroupPath());
+                    controller.setSubsystemPath(info.getCgroupPath());
                     subsystem.setCpuAcctController(controller);
                     anyActiveControllers = true;
                 }
@@ -112,7 +110,7 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
             case "cpu": {
                 if (info.getMountRoot() != null && info.getMountPoint() != null) {
                     CgroupV1SubsystemController controller = new CgroupV1SubsystemController(info.getMountRoot(), info.getMountPoint());
-                    controller.setPath(info.getCgroupPath());
+                    controller.setSubsystemPath(info.getCgroupPath());
                     subsystem.setCpuController(controller);
                     anyActiveControllers = true;
                 }
@@ -121,7 +119,7 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
             case "blkio": {
                 if (info.getMountRoot() != null && info.getMountPoint() != null) {
                     CgroupV1SubsystemController controller = new CgroupV1SubsystemController(info.getMountRoot(), info.getMountPoint());
-                    controller.setPath(info.getCgroupPath());
+                    controller.setSubsystemPath(info.getCgroupPath());
                     subsystem.setBlkIOController(controller);
                     anyActiveControllers = true;
                 }
@@ -130,7 +128,7 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
             case "pids": {
                 if (info.getMountRoot() != null && info.getMountPoint() != null) {
                     CgroupV1SubsystemController controller = new CgroupV1SubsystemController(info.getMountRoot(), info.getMountPoint());
-                    controller.setPath(info.getCgroupPath());
+                    controller.setSubsystemPath(info.getCgroupPath());
                     subsystem.setPidsController(controller);
                     anyActiveControllers = true;
                 }
@@ -143,6 +141,7 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
 
         // Return Metrics object if we found any subsystems.
         if (anyActiveControllers) {
+            subsystem.initializeHierarchy(subsystem.memory);
             return subsystem;
         }
 
@@ -155,11 +154,6 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
         return (memswBytes > 0 && swappiness > 0);
      }
 
-
-    private static boolean getHierarchical(CgroupV1MemorySubSystemController controller) {
-        long hierarchical = getLongValue(controller, "memory.use_hierarchy");
-        return hierarchical > 0;
-    }
 
     private void setMemorySubSystem(CgroupV1MemorySubSystemController memory) {
         this.memory = memory;
@@ -190,7 +184,7 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
         return CgroupSubsystemController.getLongValue(controller,
                                                       param,
                                                       CgroupV1SubsystemController::convertStringToLong,
-                                                      CgroupSubsystem.LONG_RETVAL_UNLIMITED);
+                                                      CgroupSubsystem.OSCONTAINER_ERROR);
     }
 
     public String getProvider() {
@@ -245,7 +239,7 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
     public long getCpuShares() {
         long retval = getLongValue(cpu, "cpu.shares");
         if (retval == 0 || retval == 1024)
-            return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
+            return Long.MAX_VALUE;
         else
             return retval;
     }
@@ -308,16 +302,6 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
 
     public long getMemoryLimit() {
         long retval = getLongValue(memory, "memory.limit_in_bytes");
-        if (retval > CgroupV1SubsystemController.UNLIMITED_MIN) {
-            if (memory.isHierarchical()) {
-                // memory.limit_in_bytes returned unlimited, attempt
-                // hierarchical memory limit
-                String match = "hierarchical_memory_limit";
-                retval = CgroupV1SubsystemController.getLongValueMatchingLine(memory,
-                                                            "memory.stat",
-                                                            match);
-            }
-        }
         return CgroupV1SubsystemController.longValOrUnlimited(retval);
     }
 
@@ -365,16 +349,6 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
             return getMemoryLimit();
         }
         long retval = getLongValue(memory, "memory.memsw.limit_in_bytes");
-        if (retval > CgroupV1SubsystemController.UNLIMITED_MIN) {
-            if (memory.isHierarchical()) {
-                // memory.memsw.limit_in_bytes returned unlimited, attempt
-                // hierarchical memory limit
-                String match = "hierarchical_memsw_limit";
-                retval = CgroupV1SubsystemController.getLongValueMatchingLine(memory,
-                                                            "memory.stat",
-                                                            match);
-            }
-        }
         return CgroupV1SubsystemController.longValOrUnlimited(retval);
     }
 
