@@ -215,8 +215,8 @@ The Values & Collections API define functions and an interface so that client co
 - Define and use lazy (scalar) values: [`Lazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Monotonic.html)
 - Define and use lazy collections: 
   [`List.ofLazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/List.html#ofLazy(int,java.util.function.IntFunction)), 
-  [`Set.ofLazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Set.html#ofLazy(java.util.Set,java.util.function.Predicate)), [`Set.ofLazyEnum`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Set.html#ofLazy(java.lang.Class,java.util.function.Predicate)) and 
-  [`Map.ofLazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Map.html#ofLazy(java.util.Set,java.util.function.Function)), [`Map.ofLazyEnum`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Map.html#ofLazy(java.lang.Class,java.util.function.Function))
+  [`Set.ofLazy(Set, Predicate)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Set.html#ofLazy(java.util.Set,java.util.function.Predicate)), [`Set.ofLazy(Enum.class, Predicate`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Set.html#ofLazy(java.lang.Class,java.util.function.Predicate)) and 
+  [`Map.ofLazy(Set, Function)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Map.html#ofLazy(java.util.Set,java.util.function.Function)), [`Map.ofLazy(Enum.class, Function)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Map.html#ofLazy(java.lang.Class,java.util.function.Function))
 
 The Lazy Values & Collections API resides in the `java.lang` and `java.util` packages of the `java.base` module.
 
