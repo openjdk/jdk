@@ -3783,6 +3783,48 @@ handler.
 This option is disabled by default.
 Options related to RTM are available only on x86 CPUs that support
 Transactional Synchronization Extensions (TSX).
+.RS
+.PP
+RTM is part of Intel\[aq]s TSX, which is an x86 instruction set
+extension and facilitates the creation of multithreaded applications.
+RTM introduces the new instructions \f[V]XBEGIN\f[R], \f[V]XABORT\f[R],
+\f[V]XEND\f[R], and \f[V]XTEST\f[R].
+The \f[V]XBEGIN\f[R] and \f[V]XEND\f[R] instructions enclose a set of
+instructions to run as a transaction.
+If no conflict is found when running the transaction, then the memory
+and register modifications are committed together at the \f[V]XEND\f[R]
+instruction.
+The \f[V]XABORT\f[R] instruction can be used to explicitly abort a
+transaction and the \f[V]XTEST\f[R] instruction checks if a set of
+instructions is being run in a transaction.
+.PP
+A lock on a transaction is inflated when another thread tries to access
+the same transaction, thereby blocking the thread that didn\[aq]t
+originally request access to the transaction.
+RTM requires that a fallback set of operations be specified in case a
+transaction aborts or fails.
+An RTM lock is a lock that has been delegated to the TSX\[aq]s system.
+.PP
+RTM improves performance for highly contended locks with low conflict in
+a critical region (which is code that must not be accessed by more than
+one thread concurrently).
+RTM also improves the performance of coarse-grain locking, which
+typically doesn\[aq]t perform well in multithreaded applications.
+(Coarse-grain locking is the strategy of holding locks for long periods
+to minimize the overhead of taking and releasing locks, while
+fine-grained locking is the strategy of trying to achieve maximum
+parallelism by locking only when necessary and unlocking as soon as
+possible.)
+Also, for lightly contended locks that are used by different threads,
+RTM can reduce false cache line sharing, also known as cache line
+ping-pong.
+This occurs when multiple threads from different processors are
+accessing different resources, but the resources share the same cache
+line.
+As a result, the processors repeatedly invalidate the cache lines of
+other processors, which forces them to read from main memory instead of
+their cache.
+.RE
 .SH OBSOLETE JAVA OPTIONS
 .PP
 These \f[V]java\f[R] options are still accepted but ignored, and a
