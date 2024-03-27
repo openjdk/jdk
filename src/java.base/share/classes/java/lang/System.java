@@ -285,6 +285,7 @@ public final class System {
         setErr0(err);
     }
 
+    @Stable
     private static volatile Console cons;
 
     /**

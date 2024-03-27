@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,22 +21,23 @@
  * questions.
  */
 
-#include "jni.h"
-#include "jni_util.h"
-#include "jvm.h"
-#include "java_io_Console.h"
+/**
+ * @test
+ * @run junit/othervm NativeConsoleTest
+ */
 
-#include <stdlib.h>
-#include <unistd.h>
+import org.junit.jupiter.api.*;
 
-JNIEXPORT jboolean JNICALL
-Java_java_io_Console_istty(JNIEnv *env, jclass cls)
-{
-    return isatty(fileno(stdin)) && isatty(fileno(stdout));
-}
+import java.io.Console;
 
-JNIEXPORT jstring JNICALL
-Java_java_io_Console_encoding(JNIEnv *env, jclass cls)
-{
-    return NULL;
+import static org.junit.jupiter.api.Assertions.*;
+
+class NativeConsoleTest {
+
+    @Test
+    void console() {
+        // Make sure the console can be loaded
+        System.console();
+    }
+
 }

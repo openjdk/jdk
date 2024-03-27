@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+#include <stdio.h>
 #include <arpa/inet.h>
 #include <errno.h>
 #include <net/if.h>
@@ -880,7 +881,6 @@ static netif *enumInterfaces(JNIEnv *env) {
             freeif(ifs);
             return NULL;
         }
-
         ifs = enumIPv6Interfaces(env, sock, ifs);
         close(sock);
 
@@ -1746,9 +1746,10 @@ static netif *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs) {
         if (ifa->ifa_addr == NULL || ifa->ifa_addr->sa_family != AF_INET6)
             continue;
 
+        int index = getIndex(sock, ifa->ifa_name);
+
         // set scope ID to interface index
-        ((struct sockaddr_in6 *)ifa->ifa_addr)->sin6_scope_id =
-            getIndex(sock, ifa->ifa_name);
+        ((struct sockaddr_in6 *)ifa->ifa_addr)->sin6_scope_id = index;
 
         // add interface to the list
         ifs = addif(env, sock, ifa->ifa_name, ifs, ifa->ifa_addr, NULL,

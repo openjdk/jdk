@@ -27,6 +27,7 @@ package jdk.internal.foreign;
 
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandles;
+import java.nio.file.AccessMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.AccessController;
@@ -34,6 +35,7 @@ import java.security.PrivilegedAction;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+
 import jdk.internal.loader.NativeLibrary;
 import jdk.internal.loader.RawNativeLibraries;
 import sun.security.action.GetPropertyAction;
@@ -69,6 +71,9 @@ public final class SystemLookup implements SymbolLookup {
             // This can happen in the event of a library loading failure - e.g. if one of the libraries the
             // system lookup depends on cannot be loaded for some reason. In such extreme cases, rather than
             // fail, return a dummy lookup.
+            System.err.printf("""
+                        WARNING: Unable to load system libraries: %s
+                        %n""", ex.getMessage());
             return FALLBACK_LOOKUP;
         }
     }
@@ -123,7 +128,10 @@ public final class SystemLookup implements SymbolLookup {
         NativeLibrary lib = loader.apply(RawNativeLibraries.newInstance(MethodHandles.lookup()));
         return name -> {
             Objects.requireNonNull(name);
-            if (Utils.containsNullChars(name)) return Optional.empty();
+            if (Utils.containsNullChars(name)) {
+                return Optional.empty();
+            }
+
             try {
                 long addr = lib.lookup(name);
                 return addr == 0 ?
@@ -212,7 +220,16 @@ public final class SystemLookup implements SymbolLookup {
         wscanf_s,
 
         // time
-        gmtime;
+        gmtime,
+
+        // consoleapi.h
+        GetConsoleCP,
+
+        // fileapi.h
+        GetFileType,
+
+        // processenv.h
+        GetStdHandle;
 
         static WindowsFallbackSymbols valueOfOrNull(String name) {
             try {

@@ -33,6 +33,7 @@ import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.io.JdkConsoleImpl;
 import jdk.internal.io.JdkConsoleProvider;
+import jdk.internal.natives.java.io.NativeConsole;
 import jdk.internal.util.StaticProperty;
 import sun.security.action.GetPropertyAction;
 
@@ -358,7 +359,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * @since 22
      */
     public boolean isTerminal() {
-        return istty;
+        return ISTTY;
     }
 
     private static UnsupportedOperationException newUnsupportedOperationException() {
@@ -366,14 +367,15 @@ public sealed class Console implements Flushable permits ProxyingConsole {
                 "Console class itself does not provide implementation");
     }
 
-    private static native String encoding();
-    private static final boolean istty = istty();
-    static final Charset CHARSET;
+    private static final boolean ISTTY = NativeConsole.istty();
+    private static final Charset CHARSET;
+    private static final Console CONSOLE;
+
     static {
         Charset cs = null;
 
-        if (istty) {
-            String csname = encoding();
+        if (ISTTY) {
+            String csname = NativeConsole.encoding();
             if (csname == null) {
                 csname = GetPropertyAction.privilegedGetProperty("stdout.encoding");
             }
@@ -388,12 +390,12 @@ public sealed class Console implements Flushable permits ProxyingConsole {
 
         CHARSET = cs;
 
-        cons = instantiateConsole(istty);
+        CONSOLE = instantiateConsole(ISTTY);
 
         // Set up JavaIOAccess in SharedSecrets
         SharedSecrets.setJavaIOAccess(new JavaIOAccess() {
             public Console console() {
-                return cons;
+                return CONSOLE;
             }
         });
     }
@@ -435,6 +437,4 @@ public sealed class Console implements Flushable permits ProxyingConsole {
         return c;
     }
 
-    private static final Console cons;
-    private static native boolean istty();
 }

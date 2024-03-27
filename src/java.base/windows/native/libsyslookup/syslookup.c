@@ -25,6 +25,10 @@
 
 #include <stdio.h>
 #include <time.h>
+#include <consoleapi.h>
+#include <fileapi.h>
+#include <Windows.h>
+
 
 // Forces generation of inline code on Windows
 __declspec(dllexport) void* funcs[] = {
@@ -82,5 +86,17 @@ __declspec(dllexport) void* funcs[] = {
     &wscanf_s,
 
     // time.h
-    &gmtime
-};
+    &gmtime,
+
+    // consoleapi.h
+    &GetConsoleCP,
+
+    // fileapi.h
+    &GetFileType,
+    // Todo: FILE_TYPE_CHAR, FILE_TYPE_DISK, FILE_TYPE_PIPE, FILE_TYPE_REMOTE, FILE_TYPE_UNKNOWN
+
+    // processenv.h
+    &GetStdHandle
+    // Todo: STD_INPUT_HANDLE, STD_OUTPUT_HANDLE, STD_ERROR_HANDLE
+
+    };
