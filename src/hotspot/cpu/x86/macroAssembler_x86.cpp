@@ -6647,11 +6647,11 @@ void MacroAssembler::multiply_128_x_128_bmi2_loop(Register y, Register z,
  * rbx: tmp5
  *
  */
-void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z, Register zlen,
+void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z, Register tmp0,
                                      Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5) {
-  ShortBranchVerifier sbv(this);
-  assert_different_registers(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, rdx);
+  assert_different_registers(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, rdx);
 
+  push(tmp0);
   push(tmp1);
   push(tmp2);
   push(tmp3);
@@ -6659,7 +6659,6 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   push(tmp5);
 
   push(xlen);
-  push(zlen);
 
   const Register idx = tmp1;
   const Register kdx = tmp2;
@@ -6668,7 +6667,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   const Register y_idx = tmp4;
   const Register carry = tmp5;
   const Register product  = xlen;
-  const Register x_xstart = zlen;  // reuse register
+  const Register x_xstart = tmp0;
 
   // First Loop.
   //
@@ -6685,7 +6684,9 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   //
 
   movl(idx, ylen);      // idx = ylen;
-  movl(kdx, zlen);      // kdx = xlen+ylen;
+  // movl(kdx, xlen);
+  // addl(kdx, ylen);      // kdx = xlen+ylen;
+  lea(kdx, Address(xlen, ylen));
   xorq(carry, carry);   // carry = 0;
 
   Label L_done;
@@ -6790,7 +6791,6 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
 
   bind(L_done);
 
-  pop(zlen);
   pop(xlen);
 
   pop(tmp5);
@@ -6798,6 +6798,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   pop(tmp3);
   pop(tmp2);
   pop(tmp1);
+  pop(tmp0);
 }
 
 void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register length, Register log2_array_indxscale,

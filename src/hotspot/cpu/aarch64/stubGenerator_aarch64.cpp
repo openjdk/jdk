@@ -4648,7 +4648,6 @@ class StubGenerator: public StubCodeGenerator {
    *    c_rarg2   - y address
    *    c_rarg3   - y length
    *    c_rarg4   - z address
-   *    c_rarg5   - z length
    */
   address generate_multiplyToLen() {
     __ align(CodeEntryAlignment);
@@ -4660,7 +4659,6 @@ class StubGenerator: public StubCodeGenerator {
     const Register y     = r2;
     const Register ylen  = r3;
     const Register z     = r4;
-    const Register zlen  = r5;
 
     const Register tmp1  = r10;
     const Register tmp2  = r11;
@@ -4669,10 +4667,11 @@ class StubGenerator: public StubCodeGenerator {
     const Register tmp5  = r14;
     const Register tmp6  = r15;
     const Register tmp7  = r16;
+    const Register tmp8  = r17;
 
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
-    __ multiply_to_len(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
+    __ multiply_to_len(x, xlen, y, ylen, z, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8);
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(lr);
 
