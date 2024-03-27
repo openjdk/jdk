@@ -736,37 +736,45 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @see #bitLength()
      */
     public BigInteger(int numBits, Random rnd) {
-        byte[] magnitude = randomBits(numBits, rnd);
+        // randomBits() returns a zero length array if numBits == 0
+        this.mag = randomBits(numBits, rnd);
 
-        try {
-            // stripLeadingZeroBytes() returns a zero length array if len == 0
-            this.mag = stripLeadingZeroBytes(magnitude, 0, magnitude.length);
-
-            if (this.mag.length == 0) {
-                this.signum = 0;
-            } else {
-                this.signum = 1;
-            }
-            if (mag.length >= MAX_MAG_LENGTH) {
+        if (this.mag.length == 0) {
+            this.signum = 0;
+        } else {
+            this.signum = 1;
+            if (mag.length >= MAX_MAG_LENGTH)
                 checkRange();
-            }
-        } finally {
-            Arrays.fill(magnitude, (byte)0);
         }
     }
 
-    private static byte[] randomBits(int numBits, Random rnd) {
+    private static int[] randomBits(int numBits, Random rnd) {
         if (numBits < 0)
             throw new IllegalArgumentException("numBits must be non-negative");
-        int numBytes = (int)(((long)numBits+7)/8); // avoid overflow
-        byte[] randomBits = new byte[numBytes];
 
-        // Generate random bytes and mask out any excess bits
-        if (numBytes > 0) {
-            rnd.nextBytes(randomBits);
-            int excessBits = 8*numBytes - numBits;
-            randomBits[0] &= (byte)((1 << (8-excessBits)) - 1);
+        if (numBits == 0)
+            return new int[0];
+
+        final int numInts = ((numBits - 1) >> 5) + 1;
+        // numInts >= 1, since numBits > 0
+
+        int firstInt = rnd.nextInt() & (-1 >>> -numBits); // Mask out any excess bits
+        // Skip any leading zero ints
+        int len;
+        if (firstInt == 0) {
+            for (len = numInts - 1; len > 0 && (firstInt = rnd.nextInt()) == 0; len--);
+        } else {
+            len = numInts;
         }
+
+        int[] randomBits = new int[len];
+        if (randomBits.length > 0) {
+            randomBits[0] = firstInt; // firstInt != 0
+            // Generate random ints
+            for (int i = 1; i < randomBits.length; i++)
+                randomBits[i] = rnd.nextInt();
+        }
+
         return randomBits;
     }
 
