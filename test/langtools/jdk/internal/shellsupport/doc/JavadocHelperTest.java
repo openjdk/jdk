@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.compiler/jdk.internal.shellsupport.doc
+ *          jdk.jshell/jdk.internal.shellsupport.doc
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @run testng/timeout=900/othervm -Xmx1024m JavadocHelperTest
  */
@@ -89,12 +89,6 @@ public class JavadocHelperTest {
                       " @throws IllegalAccessException exc3\n" +
                       " @return value\n");
     }
-
-    private Element getFirstMethod(JavacTask task, String typeName) {
-        return ElementFilter.methodsIn(task.getElements().getTypeElement(typeName).getEnclosedElements()).get(0);
-    }
-
-    private Function<JavacTask, Element> getSubTest = t -> getFirstMethod(t, "test.Sub");
 
     public void testInheritNoJavadoc() throws Exception {
         doTestJavadoc("",
@@ -298,6 +292,36 @@ public class JavadocHelperTest {
                       "@return value\n");
     }
 
+    public void testMarkdown() throws Exception {
+        doTestJavadoc("/// Prefix {@inheritDoc} suffix.\n" +
+                      "///\n" +
+                      "/// *Another* __paragraph__.\n" +
+                      "///\n" +
+                      "/// Paragraph \uFFFC with \uFFFC replacement \uFFFC character.\n" +
+                      "///\n" +
+                      "/// @param p1 prefix {@inheritDoc} suffix\n" +
+                      "/// @param p2 prefix {@inheritDoc} suffix\n" +
+                      "/// @param p3 prefix {@inheritDoc} suffix\n" +
+                      "/// @throws IllegalStateException prefix {@inheritDoc} suffix\n" +
+                      "/// @throws IllegalArgumentException prefix {@inheritDoc} suffix\n" +
+                      "/// @throws IllegalAccessException prefix {@inheritDoc} suffix\n" +
+                      "/// @return prefix {@inheritDoc} suffix\n",
+                      getSubTest,
+                      "Prefix javadoc1 suffix.\n" +
+                      "\n" +
+                      "<p><em>Another</em> <strong>paragraph</strong>.\n" +
+                      "\n" +
+                      "<p>Paragraph \ufffc with \ufffc replacement \ufffc character.\n" +
+                      "\n" +
+                      "@param p1 prefix param1 suffix\n" +
+                      "@param p2 prefix param2 suffix\n" +
+                      "@param p3 prefix param3 suffix\n" +
+                      "@throws IllegalStateException prefix exc1 suffix\n" +
+                      "@throws IllegalArgumentException prefix exc2 suffix\n" +
+                      "@throws IllegalAccessException prefix exc3 suffix\n" +
+                      "@return prefix value suffix");
+    }
+
     private void doTestJavadoc(String origJavadoc, Function<JavacTask, Element> getElement, String expectedJavadoc) throws Exception {
         doTestJavadoc(origJavadoc,
                       "    /**\n" +
@@ -366,6 +390,12 @@ public class JavadocHelperTest {
             }
         }
     }
+
+    private Element getFirstMethod(JavacTask task, String typeName) {
+        return ElementFilter.methodsIn(task.getElements().getTypeElement(typeName).getEnclosedElements()).get(0);
+    }
+
+    private Function<JavacTask, Element> getSubTest = t -> getFirstMethod(t, "test.Sub");
 
     private static final class JFOImpl extends SimpleJavaFileObject {
 
