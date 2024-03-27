@@ -36,9 +36,9 @@
 #define _UNICODE
 
 #include <windows.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
 #include <Strsafe.h>
 #include <ntsecapi.h>
 #include <new>
@@ -372,6 +372,13 @@ gss_import_name(OM_uint32 *minor_status,
         goto err;
     }
 
+    goto execution;
+
+err:
+    delete[] value;
+    return GSS_S_FAILURE;
+
+execution:
     len = MultiByteToWideChar(CP_UTF8, 0, input, len, value, len+1);
     if (len == 0) {
         goto err;
@@ -409,17 +416,13 @@ gss_import_name(OM_uint32 *minor_status,
         PP("Host-based service now %ls", value);
     }
     PP("import_name to %ls", value);
-    gss_name_struct* name;
-    name = new gss_name_struct;
-    if (name == NULL) {
+    gss_name_struct* name = new gss_name_struct;
+    if (name == nullptr) {
         goto err;
     }
     name->name = value;
     *output_name = (gss_name_t) name;
     return GSS_S_COMPLETE;
-err:
-    delete[] value;
-    return GSS_S_FAILURE;
 }
 
 __declspec(dllexport) OM_uint32
@@ -529,24 +532,28 @@ gss_export_name(OM_uint32 *minor_status,
     OM_uint32 result = GSS_S_FAILURE;
     SEC_WCHAR* name = input_name->name;
     SEC_WCHAR* fullname = get_full_name(name);
+    goto execution;
+err:
+    if (fullname != name) {
+        delete[] fullname;
+    }
+    return result;
+execution:
     if (!fullname) {
         goto err;
     }
     PP("Make fullname: %ls -> %ls", name, fullname);
     int len;
-    size_t namelen;
-    namelen = wcslen(fullname);
+    size_t namelen = wcslen(fullname);
     if (namelen > 255) {
         goto err;
     }
     len = (int)namelen;
     // We only deal with not-so-long names.
     // 04 01 00 ** 06 ** OID len:int32 name
-    int mechLen;
-    mechLen = KRB5_OID.length;
-    char* buffer;
-    buffer = (char*) malloc(10 + mechLen + len);
-    if (buffer == NULL) {
+    int mechLen = KRB5_OID.length;
+    char* buffer = static_cast<char*>(std::malloc(10 + mechLen + len));
+    if (buffer == nullptr) {
         goto err;
     }
     buffer[0] = 4;
@@ -567,7 +574,6 @@ gss_export_name(OM_uint32 *minor_status,
     exported_name->length = 10 + mechLen + len;
     exported_name->value = buffer;
     result = GSS_S_COMPLETE;
-err:
     if (fullname != name) {
         delete[] fullname;
     }
@@ -895,6 +901,21 @@ gss_init_sec_context(OM_uint32 *minor_status,
         return GSS_S_NO_CONTEXT;
     }
 
+    goto execution;
+
+err:
+    if (firstTime) {
+        OM_uint32 dummy;
+        gss_delete_sec_context(&dummy, context_handle, GSS_C_NO_BUFFER);
+    }
+    delete newCred;
+    if (output_token->value) {
+        gss_release_buffer(NULL, output_token);
+    }
+    output_token = GSS_C_NO_BUFFER;
+    return GSS_S_FAILURE;
+
+execution:
     DWORD outFlag;
     TCHAR outName[100];
 
@@ -908,8 +929,7 @@ gss_init_sec_context(OM_uint32 *minor_status,
     }
     outName[len] = 0;
 
-    int flag;
-    flag = flag_gss_to_sspi(req_flags) | ISC_REQ_ALLOCATE_MEMORY;
+    int flag = flag_gss_to_sspi(req_flags) | ISC_REQ_ALLOCATE_MEMORY;
 
     outBuffDesc.ulVersion = SECBUFFER_VERSION;
     outBuffDesc.cBuffers = 1;
@@ -1019,17 +1039,6 @@ gss_init_sec_context(OM_uint32 *minor_status,
         *ret_flags |= GSS_C_PROT_READY_FLAG;
         return GSS_S_COMPLETE;
     }
-err:
-    if (firstTime) {
-        OM_uint32 dummy;
-        gss_delete_sec_context(&dummy, context_handle, GSS_C_NO_BUFFER);
-    }
-    delete newCred;
-    if (output_token->value) {
-        gss_release_buffer(NULL, output_token);
-    }
-    output_token = GSS_C_NO_BUFFER;
-    return GSS_S_FAILURE;
 }
 
 __declspec(dllexport) OM_uint32
