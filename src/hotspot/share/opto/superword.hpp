@@ -288,16 +288,34 @@ public:
   Node_List* at(int i) const { return _packs.at(i); }
 
 private:
-  void set_pack(const Node* n, Node_List* pack) { _node_to_pack.at_put(_body.bb_idx(n), pack); }
+  void map_node_in_pack(const Node* n, Node_List* new_pack) {
+    assert(get_pack(n) == nullptr, "was previously unmapped");
+    _node_to_pack.at_put(_body.bb_idx(n), new_pack);
+  }
+
+  void remap_node_in_pack(const Node* n, Node_List* new_pack) {
+    assert(get_pack(n) != nullptr && new_pack != nullptr && get_pack(n) != new_pack, "was previously mapped");
+    _node_to_pack.at_put(_body.bb_idx(n), new_pack);
+  }
+
+  void unmap_node_in_pack(const Node* n) {
+    assert(get_pack(n) != nullptr, "was previously mapped");
+    _node_to_pack.at_put(_body.bb_idx(n), nullptr);
+  }
+
+  void unmap_all_nodes_in_pack(Node_List* old_pack) {
+    for (uint i = 0; i < old_pack->size(); i++) {
+      unmap_node_in_pack(old_pack->at(i));
+    }
+  }
 public:
-  Node_List* pack(const Node* n) const { return !_vloop.in_bb(n) ? nullptr : _node_to_pack.at(_body.bb_idx(n)); }
+  Node_List* get_pack(const Node* n) const { return !_vloop.in_bb(n) ? nullptr : _node_to_pack.at(_body.bb_idx(n)); }
 
   void add_pack(Node_List* pack) {
     _packs.append(pack);
     for (uint i = 0; i < pack->size(); i++) {
       Node* n = pack->at(i);
-      assert(this->pack(n) == nullptr, "not yet in a pack");
-      set_pack(n, pack);
+      map_node_in_pack(n, pack);
     }
   }
 
@@ -320,7 +338,7 @@ private:
 public:
   DEBUG_ONLY(void verify() const;)
   NOT_PRODUCT(void print() const;)
-  NOT_PRODUCT(void print_pack(Node_List* pack) const;)
+  NOT_PRODUCT(static void print_pack(Node_List* pack);)
 };
 
 // ========================= SuperWord =====================
@@ -485,7 +503,9 @@ class SuperWord : public ResourceObj {
 
   bool     do_vector_loop()        { return _do_vector_loop; }
 
-  const PackSet& packset()   const { return _packset; }
+  const PackSet& packset() const { return _packset; }
+  Node_List* get_pack(const Node* n) const { return _packset.get_pack(n); }
+
  private:
   bool           _do_vector_loop;  // whether to do vectorization/simd style
   int            _num_work_vecs;   // Number of non memory vector operations
@@ -573,7 +593,7 @@ private:
   Node* vector_opd(Node_List* p, int opd_idx);
 
   // Can code be generated for the pack, restricted to size nodes?
-  bool implemented(const Node_List* pack, uint size) const;
+  bool implemented(const Node_List* pack, const uint size) const;
   // Find the maximal implemented size smaller or equal to the packs size
   uint max_implemented_size(const Node_List* pack);
 

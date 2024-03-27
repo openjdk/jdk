@@ -1127,6 +1127,9 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* 
   return changed;
 }
 
+// Note: we only extend with a single pair (the one with most savings) for every call. Since we keep
+//       calling this method as long as there are some changes, we will eventually pack all pairs that
+//       can be packed.
 bool SuperWord::extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* s2) {
   assert(_pairset.has_pair(s1, s2), "(s1, s2) must be a pair");
   assert(s1->req() == s2->req(), "just checking");
@@ -1185,7 +1188,7 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* 
   return false; // no change
 }
 
-// For a pair (def1. def2), find all use packs (use1, use2), and ensure that their inputs have an order
+// For a pair (def1, def2), find all use packs (use1, use2), and ensure that their inputs have an order
 // that matches the (def1, def2) pair.
 void SuperWord::order_inputs_of_all_use_pairs_to_match_def_pair(Node* def1, Node* def2) {
   assert(_pairset.has_pair(def1, def2), "(def1, def2) must be a pair");
@@ -1303,9 +1306,9 @@ SuperWord::PairOrderStatus SuperWord::order_inputs_of_uses_to_match_def_pair(Nod
 int SuperWord::estimate_cost_savings_when_packing_as_pair(const Node* s1, const Node* s2) const {
   int save_in = 2 - 1; // 2 operations per instruction in packed form
 
-  auto adjacent_profit = [&] () { return 2; };
-  auto pack_cost       = [&] (int ct) { return ct; };
-  auto unpack_cost     = [&] (int ct) { return ct; };
+  const int adjacent_profit = 2;
+  auto pack_cost       = [&] (const int size) { return size; };
+  auto unpack_cost     = [&] (const int size) { return size; };
 
   // inputs
   for (uint i = 1; i < s1->req(); i++) {
@@ -1313,7 +1316,7 @@ int SuperWord::estimate_cost_savings_when_packing_as_pair(const Node* s1, const 
     Node* x2 = s2->in(i);
     if (x1 != x2) {
       if (are_adjacent_refs(x1, x2)) {
-        save_in += adjacent_profit();
+        save_in += adjacent_profit;
       } else if (!_pairset.has_pair(x1, x2)) {
         save_in -= pack_cost(2);
       } else {
@@ -1323,7 +1326,7 @@ int SuperWord::estimate_cost_savings_when_packing_as_pair(const Node* s1, const 
   }
 
   // uses of result
-  uint ct = 0;
+  uint number_of_packed_use_pairs = 0;
   int save_use = 0;
   for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
     Node* use1 = s1->fast_out(i);
@@ -1340,16 +1343,16 @@ int SuperWord::estimate_cost_savings_when_packing_as_pair(const Node* s1, const 
         //    |    |
         // [use1, use2]
         //
-        ct++;
+        number_of_packed_use_pairs++;
         if (are_adjacent_refs(use1, use2)) {
-          save_use += adjacent_profit();
+          save_use += adjacent_profit;
         }
       }
     }
   }
 
-  if (ct < s1->outcnt()) save_use += unpack_cost(1);
-  if (ct < s2->outcnt()) save_use += unpack_cost(1);
+  if (number_of_packed_use_pairs < s1->outcnt()) save_use += unpack_cost(1);
+  if (number_of_packed_use_pairs < s2->outcnt()) save_use += unpack_cost(1);
 
   return MAX2(save_in, save_use);
 }
@@ -1408,10 +1411,7 @@ SplitStatus PackSet::split_pack(const char* split_name,
         print_pack(pack);
       }
 #endif
-    for (uint i = 0; i < pack_size; i++) {
-      Node* n = pack->at(i);
-      set_pack(n, nullptr);
-    }
+    unmap_all_nodes_in_pack(pack);
     return SplitStatus::make_rejected();
   }
 
@@ -1441,10 +1441,7 @@ SplitStatus PackSet::split_pack(const char* split_name,
         print_pack(pack);
       }
 #endif
-    for (uint i = 0; i < pack_size; i++) {
-      Node* n = pack->at(i);
-      set_pack(n, nullptr);
-    }
+    unmap_all_nodes_in_pack(pack);
     return SplitStatus::make_rejected();
   }
 
@@ -1452,7 +1449,7 @@ SplitStatus PackSet::split_pack(const char* split_name,
   if (new_size < 2) {
     assert(new_size == 1 && old_size >= 2, "implied");
     Node* n = pack->pop();
-    set_pack(n, nullptr);
+    unmap_node_in_pack(n);
 #ifndef PRODUCT
       if (is_trace_superword_rejections()) {
         tty->cr();
@@ -1468,7 +1465,7 @@ SplitStatus PackSet::split_pack(const char* split_name,
     assert(old_size == 1 && new_size >= 2, "implied");
     Node* n = pack->at(0);
     pack->remove(0);
-    set_pack(n, nullptr);
+    unmap_node_in_pack(n);
 #ifndef PRODUCT
       if (is_trace_superword_rejections()) {
         tty->cr();
@@ -1486,7 +1483,7 @@ SplitStatus PackSet::split_pack(const char* split_name,
   for (uint i = 0; i < new_size; i++) {
     Node* n = pack->at(old_size + i);
     new_pack->push(n);
-    set_pack(n, new_pack);
+    remap_node_in_pack(n, new_pack);
   }
 
   for (uint i = 0; i < new_size; i++) {
@@ -1761,7 +1758,7 @@ void SuperWord::filter_packs_for_profitable() {
 }
 
 // Can code be generated for the pack, restricted to size nodes?
-bool SuperWord::implemented(const Node_List* pack, uint size) const {
+bool SuperWord::implemented(const Node_List* pack, const uint size) const {
   assert(size >= 2 && size <= pack->size() && is_power_of_2(size), "valid size");
   bool retValue = false;
   Node* p0 = pack->at(0);
@@ -1871,7 +1868,7 @@ bool SuperWord::profitable(const Node_List* p) const {
   // Check if reductions are connected
   if (is_marked_reduction(p0)) {
     Node* second_in = p0->in(2);
-    Node_List* second_pk = _packset.pack(second_in);
+    Node_List* second_pk = get_pack(second_in);
     if ((second_pk == nullptr) || (_num_work_vecs == _num_reductions)) {
       // No parent pack or not enough work
       // to cover reduction expansion overhead
@@ -1884,7 +1881,7 @@ bool SuperWord::profitable(const Node_List* p) const {
     // For now, return false if shift count is vector or not scalar promotion
     // case (different shift counts) because it is not supported yet.
     Node* cnt = p0->in(2);
-    Node_List* cnt_pk = _packset.pack(cnt);
+    Node_List* cnt_pk = get_pack(cnt);
     if (cnt_pk != nullptr)
       return false;
     if (!same_inputs(p, 2))
@@ -1937,12 +1934,12 @@ bool SuperWord::profitable(const Node_List* p) const {
   if (p0->is_CMove()) {
     // Verify that CMove has a matching Bool pack
     BoolNode* bol = p0->in(1)->as_Bool();
-    if (bol == nullptr || _packset.pack(bol) == nullptr) {
+    if (bol == nullptr || get_pack(bol) == nullptr) {
       return false;
     }
     // Verify that Bool has a matching Cmp pack
     CmpNode* cmp = bol->in(1)->as_Cmp();
-    if (cmp == nullptr || _packset.pack(cmp) == nullptr) {
+    if (cmp == nullptr || get_pack(cmp) == nullptr) {
       return false;
     }
   }
@@ -1991,7 +1988,7 @@ void PackSet::verify() const {
       Node* n = p->at(k);
       assert(_vloop.in_bb(n), "only nodes in bb can be in packset");
       assert(!processed.member(n), "node should only occur once in packset");
-      assert(pack(n) == p, "n has consisten packset info");
+      assert(get_pack(n) == p, "n has consisten packset info");
       processed.push(n);
     }
   }
@@ -2000,7 +1997,7 @@ void PackSet::verify() const {
   for (int i = 0; i < _body.body().length(); i++) {
     Node* n = _body.body().at(i);
     if (!processed.member(n)) {
-      assert(pack(n) == nullptr, "should not have pack if not in packset");
+      assert(get_pack(n) == nullptr, "should not have pack if not in packset");
     }
   }
 }
@@ -2090,7 +2087,7 @@ public:
       for (uint k = 0; k < p->size(); k++) {
         Node* n = p->at(k);
         set_pid(n, pid);
-        assert(packset.pack(n) == p, "matching packset");
+        assert(packset.get_pack(n) == p, "matching packset");
       }
     }
 
@@ -2106,7 +2103,7 @@ public:
       if (pid == 0) {
         pid = new_pid();
         set_pid(n, pid);
-        assert(packset.pack(n) == nullptr, "no packset");
+        assert(packset.get_pack(n) == nullptr, "no packset");
       }
     }
 
@@ -2172,7 +2169,7 @@ public:
 
       // Add memops to memops_schedule
       Node* n = get_node(pid);
-      Node_List* p = _slp->packset().pack(n);
+      Node_List* p = _slp->packset().get_pack(n);
       if (n->is_Mem()) {
         if (p == nullptr) {
           memops_schedule.push(n);
@@ -2401,7 +2398,7 @@ bool SuperWord::output() {
 
   for (int i = 0; i < body().length(); i++) {
     Node* n = body().at(i);
-    Node_List* p = _packset.pack(n);
+    Node_List* p = get_pack(n);
     if (p != nullptr && n == p->at(p->size()-1)) {
       // After schedule_reorder_memops, we know that the memops have the same order in the pack
       // as in the memory slice. Hence, "first" is the first memop in the slice from the pack,
@@ -2491,7 +2488,7 @@ bool SuperWord::output() {
                bol_test == BoolTest::lt ||
                bol_test == BoolTest::le,
                "CMove bool should be one of: eq,ne,ge,ge,lt,le");
-        Node_List* p_bol = _packset.pack(bol);
+        Node_List* p_bol = get_pack(bol);
         assert(p_bol != nullptr, "CMove must have matching Bool pack");
 
 #ifdef ASSERT
@@ -2504,7 +2501,7 @@ bool SuperWord::output() {
 
         CmpNode* cmp = bol->in(1)->as_Cmp();
         assert(cmp != nullptr, "must have cmp above CMove");
-        Node_List* p_cmp = _packset.pack(cmp);
+        Node_List* p_cmp = get_pack(cmp);
         assert(p_cmp != nullptr, "Bool must have matching Cmp pack");
 
         Node* cmp_in1 = vector_opd(p_cmp, 1);
@@ -2823,7 +2820,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   for (uint i = 1; i < vlen; i++) {
     Node* pi = p->at(i);
     Node* in = pi->in(opd_idx);
-    if (_packset.pack(in) != nullptr) {
+    if (get_pack(in) != nullptr) {
       assert(false, "Should already have been unpacked");
       return nullptr;
     }
@@ -2831,7 +2828,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     pk->add_opd(in);
     if (VectorNode::is_muladds2i(pi)) {
       Node* in2 = pi->in(opd_idx + 2);
-      if (_packset.pack(in2) != nullptr) {
+      if (get_pack(in2) != nullptr) {
         assert(false, "Should already have been unpacked");
         return nullptr;
       }
@@ -2864,7 +2861,7 @@ void SuperWord::verify_no_extract() {
         for (uint k = 0; k < use->req(); k++) {
           Node* maybe_def = use->in(k);
           if (def == maybe_def) {
-            Node_List* p_use = _packset.pack(use);
+            Node_List* p_use = get_pack(use);
             if (is_marked_reduction(def)) { continue; }
             assert(p_use != nullptr && is_vector_use(use, k), "all uses must be vector uses");
           }
@@ -2877,13 +2874,13 @@ void SuperWord::verify_no_extract() {
 
 // Check if n_super's pack uses are a superset of n_sub's pack uses.
 bool SuperWord::has_use_pack_superset(const Node* n_super, const Node* n_sub) const {
-  Node_List* pack = _packset.pack(n_super);
-  assert(pack != nullptr && pack == _packset.pack(n_sub), "must have the same pack");
+  Node_List* pack = get_pack(n_super);
+  assert(pack != nullptr && pack == get_pack(n_sub), "must have the same pack");
 
   // For all uses of n_sub that are in a pack (use_sub) ...
   for (DUIterator_Fast jmax, j = n_sub->fast_outs(jmax); j < jmax; j++) {
     Node* use_sub = n_sub->fast_out(j);
-    Node_List* pack_use_sub = _packset.pack(use_sub);
+    Node_List* pack_use_sub = get_pack(use_sub);
     if (pack_use_sub == nullptr) { continue; }
 
     // ... and all input edges: use_sub->in(i) == n_sub.
@@ -2896,7 +2893,7 @@ bool SuperWord::has_use_pack_superset(const Node* n_super, const Node* n_sub) co
       bool found = false;
       for (DUIterator_Fast kmax, k = n_super->fast_outs(kmax); k < kmax; k++) {
         Node* use_super = n_super->fast_out(k);
-        Node_List* pack_use_super = _packset.pack(use_super);
+        Node_List* pack_use_super = get_pack(use_super);
         if (pack_use_sub != pack_use_super) { continue; }
 
         // ... and where there is an edge use_super->in(i) == n_super.
@@ -2945,7 +2942,7 @@ uint SuperWord::find_use_def_boundary(const Node_List* pack) const {
       // No boundary if:
       // 1) the same packs OR
       // 2) reduction edge n0->n1 or n1->n0
-      if (_packset.pack(n0_in) != _packset.pack(n1_in) &&
+      if (get_pack(n0_in) != get_pack(n1_in) &&
           !((n0 == n1_in || n1 == n0_in) && is_reduction_pack)) {
         return i + 1;
       }
@@ -2966,11 +2963,11 @@ uint SuperWord::find_use_def_boundary(const Node_List* pack) const {
 //------------------------------is_vector_use---------------------------
 // Is use->in(u_idx) a vector use?
 bool SuperWord::is_vector_use(Node* use, int u_idx) const {
-  Node_List* u_pk = _packset.pack(use);
+  Node_List* u_pk = get_pack(use);
   if (u_pk == nullptr) return false;
   if (is_marked_reduction(use)) return true;
   Node* def = use->in(u_idx);
-  Node_List* d_pk = _packset.pack(def);
+  Node_List* d_pk = get_pack(def);
   if (d_pk == nullptr) {
     Node* n = u_pk->at(0)->in(u_idx);
     if (n == iv()) {
@@ -3751,7 +3748,7 @@ void PackSet::print() const {
   }
 }
 
-void PackSet::print_pack(Node_List* pack) const {
+void PackSet::print_pack(Node_List* pack) {
   for (uint i = 0; i < pack->size(); i++) {
     tty->print("  %3d: ", i);
     pack->at(i)->dump();
