@@ -1131,7 +1131,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bo
     } else {
       // Exploded build - attempt to locate class in its defining module's location.
       assert(_exploded_entries != nullptr, "No exploded build entries present");
-      assert(!CDSConfig::is_dumping_archive(), "CDS doesn't support exploded build");
+      assert(!CDSConfig::is_dumping_archive(), "CDS dumping doesn't support exploded build");
       stream = search_module_entries(THREAD, _exploded_entries, pkg_entry, file_name);
     }
   }
