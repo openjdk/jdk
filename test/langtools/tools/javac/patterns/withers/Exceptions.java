@@ -73,6 +73,13 @@ public class Exceptions {
                 throw new AssertionError(ex);
             }
         }
+        r = null;
+        try {
+            r = r with {};
+            throw new AssertionError("Should not get here!");
+        } catch (NullPointerException ex) {
+            //OK
+        }
     }
 
     private static void keepOnStack(int value, R r) { }

@@ -89,6 +89,20 @@ public class SimpleWithers {
             } instanceof R(var v1, var v2, var v3) && v1 != (-7)) {
             throw new AssertionError("Incorrect value: " + v1);
         }
+        if (r2 with {
+                val1 = val1 with { val1 = -10; };
+            } instanceof R2(R(var v, _, _)) && v != (-10)) {
+            throw new AssertionError("Incorrect value: " + v);
+        }
+        //the values are definitelly assigned:
+        r = new R(0, 0, 0);
+        if (r with {
+                val1++;
+                val2 += 2;
+                val3 = val3 + 3;
+            } instanceof R(var v1, var v2, var v3) && (v1 != 1 || v2 != 2 || v3 != 3)) {
+            throw new AssertionError("Incorrect value(s): " + v1 + ", " + v2 + ", " + v3);
+        }
     }
 
     record R(int val1, int val2, int val3) {}
