@@ -3301,22 +3301,21 @@ void AwtWindow::_SetFullScreenExclusiveModeState(void *param)
     jobject self = data->window;
     jboolean state = data->isFSEMState;
 
-    PDATA pData;
+    AwtWindow *window = nullptr;
     if (self == NULL) {
         env->ExceptionClear();
         JNU_ThrowNullPointerException(env, "self");
         delete data;
         return;
     } else {
-        pData = JNI_GET_PDATA(self);
-        if (pData == NULL) {
+        window = (AwtWindow *) JNI_GET_PDATA(self);
+        if (window == nullptr) {
             THROW_NULL_PDATA_IF_NOT_DESTROYED(self);
             env->DeleteGlobalRef(self);
             delete data;
             return;
         }
     }
-    AwtWindow *window = (AwtWindow *)pData;
 
     window->setFullScreenExclusiveModeState(state != 0);
 
