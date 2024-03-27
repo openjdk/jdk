@@ -83,6 +83,8 @@ public:
   //  structures outside this range).
   static void initialize(address addr, size_t len);
 
+  static bool pd_is_valid_encoding(address addr, size_t len, address base, int shift);
+
   static void     print_mode(outputStream* st);
 
   static address  base()               { return  _base; }
