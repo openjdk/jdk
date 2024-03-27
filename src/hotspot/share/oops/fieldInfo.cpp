@@ -59,7 +59,7 @@ Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fie
   //   End = 0
 
   using StreamSizer = UNSIGNED5::Sizer<>;
-  using StreamFieldSizer = Mapper<StreamSizer>;
+  using StreamFieldSizer = FieldInfoMapper<StreamSizer>;
   StreamSizer s;
   StreamFieldSizer sizer(&s);
 
@@ -72,8 +72,8 @@ Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fie
   int storage_size = sizer.consumer()->position() + 1;
   Array<u1>* const fis = MetadataFactory::new_array<u1>(loader_data, storage_size, CHECK_NULL);
 
-  using StreamWriter = UNSIGNED5::Writer<Array<u1>*, int, ArrayHelper<Array<u1>*, int>>;
-  using StreamFieldWriter = Mapper<StreamWriter>;
+  using StreamWriter = UNSIGNED5::Writer<Array<u1>*, int, Array<u1>::GetSetHelper>;
+  using StreamFieldWriter = FieldInfoMapper<StreamWriter>;
   StreamWriter w(fis);
   StreamFieldWriter writer(&w);
 
@@ -83,6 +83,8 @@ Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fie
     FieldInfo* fi = fields->adr_at(i);
     writer.map_field_info(*fi);
   }
+
+  w.collect_stats(UNSIGNED5::Statistics::FI);
 
 #ifdef ASSERT
   FieldInfoReader r(fis);

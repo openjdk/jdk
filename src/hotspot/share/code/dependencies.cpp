@@ -74,8 +74,6 @@ void Dependencies::initialize(ciEnv* env) {
   for (int i = (int)FIRST_TYPE; i < (int)TYPE_LIMIT; i++) {
     _deps[i] = new(arena) GrowableArray<ciBaseObject*>(arena, 10, 0, 0);
   }
-  _content_bytes = nullptr;
-  _size_in_bytes = (size_t)-1;
 
   assert(TYPE_LIMIT <= (1<<LG2_TYPE_LIMIT), "sanity");
 }
@@ -146,8 +144,6 @@ Dependencies::Dependencies(Arena* arena, OopRecorder* oop_recorder, CompileLog* 
   for (int i = (int)FIRST_TYPE; i < (int)TYPE_LIMIT; i++) {
     _dep_values[i] = new(arena) GrowableArray<DepValue>(arena, 10, 0, DepValue());
   }
-  _content_bytes = nullptr;
-  _size_in_bytes = (size_t)-1;
 
   assert(TYPE_LIMIT <= (1<<LG2_TYPE_LIMIT), "sanity");
 }
@@ -388,9 +384,9 @@ void Dependencies::copy_to(nmethod* nm) {
   address beg = nm->dependencies_begin();
   address end = nm->dependencies_end();
   guarantee(end - beg >= (ptrdiff_t) size_in_bytes(), "bad sizing");
-  Copy::disjoint_words((HeapWord*) content_bytes(),
-                       (HeapWord*) beg,
-                       size_in_bytes() / sizeof(HeapWord));
+  _non_oop_data.copy_bytes_to(beg, size_in_bytes(), UNSIGNED5::Statistics::DP);
+  // Note:  We could use Copy::disjoint_words directly, but it is
+  // probably just as safe to entrust the job to memcpy.
   assert(size_in_bytes() % sizeof(HeapWord) == 0, "copy by words");
 }
 
@@ -504,7 +500,8 @@ void Dependencies::encode_content_bytes() {
   sort_all_deps();
 
   // cast is safe, no deps can overflow INT_MAX
-  CompressedWriteStream bytes((int)estimate_size_in_bytes());
+  _non_oop_data.setup(nullptr, estimate_size_in_bytes());
+  CompressedWriteStream& bytes = _non_oop_data;
 
 #if INCLUDE_JVMCI
   if (_using_dep_values) {
@@ -576,17 +573,8 @@ void Dependencies::encode_content_bytes() {
 
   // write a sentinel byte to mark the end
   bytes.write_byte(end_marker);
-
-  // round it out to a word boundary
-  while (bytes.position() % sizeof(HeapWord) != 0) {
-    bytes.write_byte(end_marker);
-  }
-
-  // check whether the dept byte encoding really works
-  assert((jbyte)default_context_type_bit != 0, "byte overflow");
-
-  _content_bytes = bytes.buffer();
-  _size_in_bytes = bytes.position();
+  bytes.write_end_byte();
+  bytes.round_up_size_to_multiple(sizeof(HeapWord));
 }
 
 
@@ -906,7 +894,7 @@ void Dependencies::DepStream::initial_asserts(size_t byte_limit) {
 
 bool Dependencies::DepStream::next() {
   assert(_type != end_marker, "already at end");
-  if (_bytes.position() == 0 && _code != nullptr
+  if (_bytes.at_start() && _code != nullptr
       && _code->dependencies_size() == 0) {
     // Method has no dependencies at all.
     return false;

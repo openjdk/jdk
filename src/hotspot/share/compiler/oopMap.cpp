@@ -73,7 +73,7 @@ static inline derived_pointer operator+(derived_pointer p, intptr_t offset) {
 // OopMapStream
 
 OopMapStream::OopMapStream(const OopMap* oop_map)
-  : _stream(oop_map->write_stream()->buffer()) {
+  : _stream(oop_map->write_stream()->data_address_at(0)) {
   _size = oop_map->omv_count();
   _position = 0;
   _valid_omv = false;
@@ -143,10 +143,6 @@ OopMap::OopMap(OopMap::DeepCopyToken, OopMap* source) {
 
 OopMap* OopMap::deep_copy() {
   return new OopMap(_deep_copy_token, this);
-}
-
-void OopMap::copy_data_to(address addr) const {
-  memcpy(addr, write_stream()->buffer(), write_stream()->position());
 }
 
 class OopMapSort {
@@ -302,17 +298,19 @@ void OopMapSort::print() {
 void OopMap::copy_and_sort_data_to(address addr) const {
   OopMapSort sort(this);
   sort.sort();
-  CompressedWriteStream* stream = new CompressedWriteStream(_write_stream->position());
+  CompressedWriteStream* stream
+    = new CompressedWriteStream(_write_stream->data_size());
   sort.write(stream);
 
-  assert(stream->position() == write_stream()->position(), "");
-  memcpy(addr, stream->buffer(), stream->position());
+  size_t size = stream->data_size();
+  assert(size == write_stream()->data_size(), "");
+  stream->copy_bytes_to(addr, size, UNSIGNED5::Statistics::OM);
 }
 
 int OopMap::heap_size() const {
   int size = sizeof(OopMap);
   int align = sizeof(void *) - 1;
-  size += write_stream()->position();
+  size += write_stream()->data_size();
   // Align to a reasonable ending point
   size = ((size+align) & ~align);
   return size;
@@ -681,10 +679,12 @@ bool OopMap::equals(const OopMap* other) const {
   if (other->_omv_count != _omv_count) {
     return false;
   }
-  if (other->write_stream()->position() != write_stream()->position()) {
+  if (other->write_stream()->data_size() != write_stream()->data_size()) {
     return false;
   }
-  if (memcmp(other->write_stream()->buffer(), write_stream()->buffer(), write_stream()->position()) != 0) {
+  if (memcmp(other->write_stream()->data_address_at(0),
+             write_stream()->data_address_at(0),
+             write_stream()->data_size()) != 0) {
     return false;
   }
   return true;
@@ -743,7 +743,7 @@ int ImmutableOopMap::nr_of_bytes() const {
   while (!oms.is_done()) {
     oms.next();
   }
-  return sizeof(ImmutableOopMap) + oms.stream_position();
+  return sizeof(ImmutableOopMap) + oms.data().data_size();
 }
 #endif
 

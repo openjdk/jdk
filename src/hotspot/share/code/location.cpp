@@ -56,13 +56,16 @@ void Location::print_on(outputStream* st) const {
 }
 
 
-Location::Location(DebugInfoReadStream* stream) {
-  _value = (juint) stream->read_int();
+Location::Location(bool tagged, DebugInfoReadStream* stream) {
+  _value = tagged ? stream->read_post_tag() : stream->read_int();
 }
 
 
-void Location::write_on(DebugInfoWriteStream* stream) {
-  stream->write_int(_value);
+void Location::write_on(bool tagged, DebugInfoWriteStream* stream) {
+  if (tagged)
+    stream->write_post_tag(_value);
+  else
+    stream->write_int(_value);
 }
 
 

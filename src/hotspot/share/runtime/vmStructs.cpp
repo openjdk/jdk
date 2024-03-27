@@ -699,13 +699,6 @@
   nonstatic_field(JNIHandleBlock,              _top,                                          int)                                   \
   nonstatic_field(JNIHandleBlock,              _next,                                         JNIHandleBlock*)                       \
                                                                                                                                      \
-  /********************/                                                                                                             \
-  /* CompressedStream */                                                                                                             \
-  /********************/                                                                                                             \
-                                                                                                                                     \
-  nonstatic_field(CompressedStream,            _buffer,                                       u_char*)                               \
-  nonstatic_field(CompressedStream,            _position,                                     int)                                   \
-                                                                                                                                     \
   /*********************************/                                                                                                \
   /* VMRegImpl (NOTE: incomplete) */                                                                                                 \
   /*********************************/                                                                                                \

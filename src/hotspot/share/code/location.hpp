@@ -117,8 +117,8 @@ class Location {
   void print_on(outputStream* st) const;
 
   // Serialization of debugging information
-  Location(DebugInfoReadStream* stream);
-  void write_on(DebugInfoWriteStream* stream);
+  Location(bool tagged, DebugInfoReadStream* stream);
+  void write_on(bool tagged, DebugInfoWriteStream* stream);
 
   // check
   static bool legal_offset_in_bytes(int offset_in_bytes);

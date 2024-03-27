@@ -68,13 +68,14 @@ inline int FieldInfoStream::num_total_fields(const Array<u1>* fis) {
 inline int FieldInfoStream::num_java_fields(const Array<u1>* fis) { return FieldInfoReader(fis).next_uint(); }
 
 template<typename CON>
-inline void Mapper<CON>::map_field_info(const FieldInfo& fi) {
+inline void FieldInfoMapper<CON>::map_field_info(const FieldInfo& fi) {
   _next_index++;  // pre-increment
   _consumer->accept_uint(fi.name_index());
   _consumer->accept_uint(fi.signature_index());
   _consumer->accept_uint(fi.offset());
-  _consumer->accept_uint(fi.access_flags().as_int());
-  _consumer->accept_uint(fi.field_flags().as_uint());
+  _consumer->accept_uint_pair(FieldInfoReader::int_pair_bits(),
+                              fi.field_flags().as_uint(),
+                              fi.access_flags().as_int());
   if(fi.field_flags().has_any_optionals()) {
     if (fi.field_flags().is_initialized()) {
       _consumer->accept_uint(fi.initializer_index());
@@ -102,8 +103,9 @@ inline void FieldInfoReader::read_field_info(FieldInfo& fi) {
   fi._name_index = checked_cast<u2>(next_uint());
   fi._signature_index = checked_cast<u2>(next_uint());
   fi._offset = next_uint();
-  fi._access_flags = AccessFlags(next_uint());
-  fi._field_flags = FieldInfo::FieldFlags(next_uint());
+  uint32_t abits, fbits = next_uint_pair(abits);
+  fi._field_flags = FieldInfo::FieldFlags(fbits);
+  fi._access_flags = AccessFlags(abits);
   if (fi._field_flags.is_initialized()) {
     fi._initializer_index = checked_cast<u2>(next_uint());
   } else {
@@ -123,9 +125,10 @@ inline void FieldInfoReader::read_field_info(FieldInfo& fi) {
 
 inline FieldInfoReader&  FieldInfoReader::skip_field_info() {
   _next_index++;
-  const int name_sig_af_off = 4;  // four items
-  skip(name_sig_af_off);
-  FieldInfo::FieldFlags ff(next_uint());
+  const int name_sig_off = 3;  // three fixed items
+  skip(name_sig_off);
+  uint32_t aign, fbits = next_uint_pair(aign);
+  FieldInfo::FieldFlags ff(fbits);
   if (ff.has_any_optionals()) {
     const int init_gen_cont = (ff.is_initialized() +
                                 ff.is_generic() +

@@ -264,6 +264,11 @@ void print_statistics() {
 #endif //COMPILER1
   }
 
+  if (PrintCompressionStatistics || LogVMOutput || LogCompilation) {
+    FlagSetting fs(DisplayVMOutput, DisplayVMOutput && PrintCompressionStatistics);
+    UNSIGNED5::Statistics::print_statistics();
+  }
+
   if (PrintLockStatistics || PrintPreciseRTMLockingStatistics) {
     OptoRuntime::print_named_counters();
   }
