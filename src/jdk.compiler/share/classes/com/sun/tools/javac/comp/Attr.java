@@ -5002,10 +5002,14 @@ public class Attr extends JCTree.Visitor {
     public void visitStringTemplate(JCStringTemplate tree) {
         JCExpression processor = tree.processor;
         Type processorType = attribTree(processor, env, new ResultInfo(KindSelector.VAL, Type.noType));
-        chk.checkProcessorType(processor, processorType, env);
-        Type processMethodType = getProcessMethodType(tree, processorType);
-        tree.processMethodType = processMethodType;
-        Type resultType = processMethodType.getReturnType();
+        Type resultType;
+        if (chk.checkProcessorType(processor)) {
+            Type processMethodType = getProcessMethodType(tree, processorType);
+            tree.processMethodType = processMethodType;
+            resultType = processMethodType.getReturnType();
+        } else {
+            tree.processMethodType = resultType = types.createErrorType(processorType);
+        }
 
         Env<AttrContext> localEnv = env.dup(tree, env.info.dup());
 
