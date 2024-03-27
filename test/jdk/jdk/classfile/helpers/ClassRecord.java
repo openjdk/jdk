@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -485,7 +485,7 @@ public record ClassRecord(
 
         int hash(int from, int length) {
             int result = 1;
-            for (int i = from; i < length; i++) {
+            for (int i = from; i < from + length; i++) {
                 int elementHash = (codeToIndexMap[i] ^ (codeToIndexMap[i] >>> 32));
                 result = 31 * result + elementHash;
             }
@@ -557,7 +557,7 @@ public record ClassRecord(
                             yield local.slot();
                         }
                         else {
-                            yield code.hash(p[0] + 1, ins.sizeInBytes());
+                            yield code.hash(p[0] + 1, ins.sizeInBytes() - 1);
                         }
                     }
                 };
