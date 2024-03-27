@@ -55,7 +55,8 @@ public:
          Memory,                // Chunk of memory is being loaded from
          Address,               // Actually address, derived from base
          ValueIn,               // Value to store
-         OopStore               // Preceding oop store, only in StoreCM
+         OopStore,              // Preceding oop store, only in StoreCM. Offsets or mask for Load/StoreVector
+         OffsetsMask            // Offsets or mask for Load/StoreVector
   };
   typedef enum { unordered = 0,
                  acquire,       // Load has to acquire or be succeeded by MemBarAcquire.
