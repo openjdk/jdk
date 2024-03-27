@@ -108,11 +108,11 @@ class LatestMethodCache {
   Method* get_method();
 };
 
-static LatestMethodCache _finalizer_register_cache; // static method for registering finalizable objects
-static LatestMethodCache _loader_addClass_cache;    // method for registering loaded classes in class loader vector
-static LatestMethodCache _throw_illegal_access_error_cache; // Unsafe.throwIllegalAccessError() method
-static LatestMethodCache _throw_no_such_method_error_cache; // Unsafe.throwNoSuchMethodError() method
-static LatestMethodCache _do_stack_walk_cache;      // method for stack walker callback
+static LatestMethodCache _finalizer_register_cache;         // Finalizer.register()
+static LatestMethodCache _loader_addClass_cache;            // ClassLoader.addClass()
+static LatestMethodCache _throw_illegal_access_error_cache; // Unsafe.throwIllegalAccessError()
+static LatestMethodCache _throw_no_such_method_error_cache; // Unsafe.throwNoSuchMethodError()
+static LatestMethodCache _do_stack_walk_cache;              // AbstractStackWalker.doStackWalk()
 
 // Known objects
 Klass* Universe::_typeArrayKlassObjs[T_LONG+1]        = { nullptr /*, nullptr...*/ };
