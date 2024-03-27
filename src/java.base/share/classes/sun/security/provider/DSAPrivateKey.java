@@ -70,7 +70,7 @@ public final class DSAPrivateKey extends PKCS8Key
 
         byte[] xbytes = x.toByteArray();
         DerValue val = new DerValue(DerValue.tag_Integer, xbytes);
-        key = val.toByteArray();
+        privKeyMaterial = val.toByteArray();
         val.clear();
         Arrays.fill(xbytes, (byte)0);
     }
@@ -81,7 +81,7 @@ public final class DSAPrivateKey extends PKCS8Key
     public DSAPrivateKey(byte[] encoded) throws InvalidKeyException {
         super(encoded);
         try {
-            DerInputStream in = new DerInputStream(key);
+            DerInputStream in = new DerInputStream(privKeyMaterial);
             x = in.getBigInteger();
         } catch (IOException e) {
             throw new InvalidKeyException(e.getMessage(), e);
