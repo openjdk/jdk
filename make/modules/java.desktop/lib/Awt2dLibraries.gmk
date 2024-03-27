@@ -122,9 +122,9 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     EXTRA_SRC := $(LIBAWT_EXTRA_SRC), \
     EXCLUDE_FILES := $(LIBAWT_EXCLUDE_FILES), \
     OPTIMIZATION := HIGHEST, \
-    CFLAGS := $(X_CFLAGS) $(LIBAWT_CFLAGS), \
-    CFLAGS_gcc := -fgcse-after-reload, \
+    CFLAGS := $(LIBAWT_CFLAGS) $(X_CFLAGS), \
     CXXFLAGS := $(LIBAWT_CFLAGS) $(X_CFLAGS), \
+    CFLAGS_gcc := -fgcse-after-reload, \
     EXTRA_HEADER_DIRS := $(LIBAWT_EXTRA_HEADER_DIRS), \
     DISABLED_WARNINGS_gcc_awt_LoadLibrary.c := unused-result, \
     DISABLED_WARNINGS_gcc_debug_mem.c := format-nonliteral, \
