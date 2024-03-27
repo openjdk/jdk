@@ -666,6 +666,8 @@ public:
                                       Register temp4,
                                       Register temp5,
                                       Register result);
+  void klass_subtype_fallback_1();
+  void klass_subtype_fallback_2();
   void klass_subtype_fallback();
 
   // Simplified, combined version, good for typical uses.

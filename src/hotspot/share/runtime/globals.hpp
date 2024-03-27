@@ -2007,6 +2007,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, StressSecondarySuperHash, false, DIAGNOSTIC,                \
           "Use a terrible hash function in order to generate many collisions.") \
                                                                             \
+  product(bool, InlineSecondarySupersTest, false,                           \
+          "Inline the secondary supers hash lookup.")                       \
+                                                                            \
 
 // end of RUNTIME_FLAGS
 

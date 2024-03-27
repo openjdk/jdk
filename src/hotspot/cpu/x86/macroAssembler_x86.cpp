@@ -4633,7 +4633,6 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
 #undef final_jmp
 }
 
-
 void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
                                                    Register super_klass,
                                                    Register temp_reg,
@@ -4737,6 +4736,10 @@ do {                                                                    \
          "registers must match aarch64.ad");                            \
 } while(0)
 
+void poo() {
+  asm("nop");
+}
+
 void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
                                                    Klass *super_klass,
                                                    Register temp1,
@@ -4767,8 +4770,14 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
 
   CHECK_KLASS_SUBTYPE_SLOW_REGISTERS;
 
+  if (getenv("APH_FOO_BAR")) {
+    call(RuntimeAddress(CAST_FROM_FN_PTR(address, poo)));
+  }
+
   movq(r_bitmap, Address(r_sub_klass, Klass::bitmap_offset()));
   movq(r_array_index, r_bitmap);
+
+  mov_metadata(r_super_klass, super_klass);
 
   // First check the bitmap to see if super_klass might be present. If
   // the bit is zero, we are certain that super_klass is not one of
@@ -4783,17 +4792,103 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
     } else {
       testq(r_array_index, r_array_index);
     }
-  }  // We test the MSB of r_array_index, i.e. its sign bit
-  jcc(Assembler::positive, L_failure);
-
-  // Get the first array index that can contain super_klass into r_array_index.
-  if (bit != 0) {
-    popcntq(r_array_index, r_array_index);
-  } else {
-    movl(r_array_index, (u1)1);
   }
 
-  mov_metadata(r_super_klass, super_klass);
+  if (InlineSecondarySupersTest) {
+    // Get the first array index that can contain super_klass into r_array_index.
+    if (bit != 0) {
+      popcntq(r_array_index, r_array_index);
+    } else {
+      movl(r_array_index, (u1)1);
+    }
+
+    movl(r_array_length, bit);
+    call(RuntimeAddress(StubRoutines::_klass_subtype_fallback_stub));
+
+  } else {
+    // We test the MSB of r_array_index, i.e. its sign bit
+    jcc(Assembler::positive, L_failure);
+
+    // Get the first array index that can contain super_klass into r_array_index.
+    if (bit != 0) {
+      popcntq(r_array_index, r_array_index);
+    } else {
+      movl(r_array_index, (u1)1);
+    }
+
+    // We will consult the secondary-super array.
+    movptr(r_array_base, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
+
+    // We're asserting that the first word in an Array<Klass*> is the
+    // length, and the second word is the first word of the data. If
+    // that ever changes, r_array_base will have to be adjusted here.
+    assert(Array<Klass*>::base_offset_in_bytes() == wordSize, "Adjust this code");
+    assert(Array<Klass*>::length_offset_in_bytes() == 0, "Adjust this code");
+
+    cmpq(r_super_klass, Address(r_array_base, r_array_index, Address::times_8));
+    jcc(Assembler::equal, L_success);
+
+    // Is there another entry to check? Consult the bitmap.
+    btq(r_bitmap, (bit+1) & Klass::SEC_HASH_MASK);
+    jcc(Assembler::carryClear, L_failure);
+
+    // Linear probe. Rotate the bitmap so that the next bit to test is
+    // in Bit 0.
+    if (bit != 0) {
+      rorq(r_bitmap, bit);
+    }
+
+    call(RuntimeAddress(StubRoutines::_klass_subtype_fallback_stub));
+    // Result is in the Z flag
+    jcc(Assembler::equal, L_success);
+
+    bind(L_failure);
+    cmpptr(rsp, 0);
+    movl(result, (u1)1);
+    jmp(L_fallthrough);
+
+    bind(L_success);
+    movl(result, (u1)0);
+
+    bind(L_fallthrough);
+  }
+
+  verify_klass_subtype_slow_path(r_sub_klass, super_klass, r_super_klass,
+                                 temp1, temp2, temp3, temp4, temp5, result);
+  BLOCK_COMMENT("} hashed check_klass_subtype_slow_path");
+}
+
+void MacroAssembler::klass_subtype_fallback() {
+  if (! InlineSecondarySupersTest) {
+    klass_subtype_fallback_1();
+  } else {
+    klass_subtype_fallback_2();
+  }
+  ret(0);
+}
+
+void MacroAssembler::klass_subtype_fallback_1() {
+  const Register
+    r_super_klass = rax,
+    r_array_base = rbx,
+    r_array_length = rcx,
+    r_array_index = rdx,
+    r_sub_klass = rsi,
+    result = rdi,
+    r_bitmap = r11;
+
+  CHECK_KLASS_SUBTYPE_SLOW_REGISTERS;
+
+  Label L_fallthrough, L_success, L_failure;
+
+  // At entry, rcx contains the hash slot of the superklass
+  const Register r_bit = rcx;
+
+  // Linear probe. Rotate the bitmap so that the next bit to test is
+  // in Bit 0.
+  rorq(r_bitmap); // rcx = r_bit
+  btq(r_bitmap, 0);
+  jcc(Assembler::carryClear, L_failure);
 
   // We will consult the secondary-super array.
   movptr(r_array_base, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
@@ -4808,16 +4903,11 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   jcc(Assembler::equal, L_success);
 
   // Is there another entry to check? Consult the bitmap.
-  btq(r_bitmap, (bit+1) & Klass::SEC_HASH_MASK);
+  btq(r_bitmap, 1);
   jcc(Assembler::carryClear, L_failure);
 
-  // Linear probe. Rotate the bitmap so that the next bit to test is
-  // in Bit 0.
-  if (bit != 0) {
-    rorq(r_bitmap, bit);
-  }
+  klass_subtype_fallback_2();
 
-  call(RuntimeAddress(StubRoutines::_klass_subtype_fallback_stub));
   // Result is in the Z flag
   jcc(Assembler::equal, L_success);
 
@@ -4829,18 +4919,13 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   bind(L_success);
   movl(result, (u1)0);
 
-  BLOCK_COMMENT("} hashed check_klass_subtype_slow_path");
-
   bind(L_fallthrough);
-
-  verify_klass_subtype_slow_path(r_sub_klass, super_klass, r_super_klass,
-                                 temp1, temp2, temp3, temp4, temp5, result);
 }
 
 // Called by code generated by check_klass_subtype_slow_path
 // above. This is called when there is a collision in the hashed
 // lookup in the secondary supers array.
-void MacroAssembler::klass_subtype_fallback() {
+void MacroAssembler::klass_subtype_fallback_2() {
   const Register
     r_super_klass = rax,
     r_array_base = rbx,
@@ -4908,11 +4993,10 @@ void MacroAssembler::klass_subtype_fallback() {
 
   bind(L_failure);
   cmpptr(rsp, 0);
-  ret(0);
 
   bind(L_success);
-  ret(0);
 }
+
 
 #ifdef ASSERT
 static void debug_helper(Klass* sub, Klass* super, bool expected, bool result, const char* msg) {
