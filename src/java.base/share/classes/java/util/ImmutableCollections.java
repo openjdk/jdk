@@ -1307,7 +1307,7 @@ class ImmutableCollections {
 
         @Override
         public Set<Map.Entry<K,V>> entrySet() {
-            return new AbstractSet<>() {
+            return new AbstractImmutableSet<>() {
                 @Override
                 public int size() {
                     return MapN.this.size;
@@ -1318,14 +1318,10 @@ class ImmutableCollections {
                     return new MapNIterator();
                 }
 
-                // all mutating methods throw UnsupportedOperationException
-                @Override public boolean add(Map.Entry<K, V> e) { throw uoe(); }
-                @Override public boolean addAll(Collection<? extends Map.Entry<K, V>> c) { throw uoe(); }
-                @Override public void    clear() { throw uoe(); }
-                @Override public boolean remove(Object o) { throw uoe(); }
-                @Override public boolean removeAll(Collection<?> c) { throw uoe(); }
-                @Override public boolean removeIf(Predicate<? super Map.Entry<K, V>> filter) { throw uoe(); }
-                @Override public boolean retainAll(Collection<?> c) { throw uoe(); }
+                @Override
+                public int hashCode() {
+                    return MapN.this.hashCode();
+                }
             };
         }
 
