@@ -36,11 +36,11 @@ import jdk.incubator.vector.VectorSpecies;
  * @test
  * @bug 8325520
  * @library /test/lib /
- * @requires vm.cpu.features ~= ".*avx512.*"
+ * @requires vm.cpu.features ~= ".*avx.*" | vm.cpu.features ~= ".*sve.*"
  * @summary Don't allow folding of load/store of vectors when using incompatible indices or mask
  * @modules jdk.incubator.vector
  *
- * @run main/othervm -XX:UseAVX=3 compiler.vectorapi.VectorGatherMaskFoldingTest
+ * @run main/othervm compiler.vectorapi.VectorGatherMaskFoldingTest
  */
 
 public class VectorGatherMaskFoldingTest {
