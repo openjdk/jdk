@@ -578,16 +578,16 @@ public:
 
 class VMInspectDCmd: public DCmdWithParser {
 protected:
-  DCmdArgument<char*> _arg1;
+  DCmdArgument<char*> _address;
   DCmdArgument<bool> _verbose;
 public:
-  static int num_arguments() { return 1; }
+  static int num_arguments() { return 2; }
   VMInspectDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "VM.inspect";
   }
   static const char* description() {
-    return "Inspect VM object at address.";
+    return "Inspect at address: decode Java heap and some other areas and objects known to the VM.";
   }
   static const char* impact() {
       return "High: not recommended for live production use.";
@@ -597,7 +597,6 @@ public:
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
-  void find();
 };
 
 #ifdef LINUX

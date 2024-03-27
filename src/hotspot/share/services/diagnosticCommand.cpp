@@ -1241,10 +1241,10 @@ void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
 
 VMInspectDCmd::VMInspectDCmd(outputStream* output, bool heap) :
                                      DCmdWithParser(output, heap),
-  _arg1("arg1", "", "STRING", false, nullptr),
+  _address("address", "", "STRING", true, nullptr),
   _verbose("-verbose", "", "BOOLEAN", false, "false") {
 
-  _dcmdparser.add_dcmd_argument(&_arg1);
+  _dcmdparser.add_dcmd_argument(&_address);
   _dcmdparser.add_dcmd_option(&_verbose);
 }
 
@@ -1255,10 +1255,10 @@ void VMInspectDCmd::execute(DCmdSource source, TRAPS) {
     output()->print_cr("-XX:+UnlockDiagnosticVMOptions is required");
     return;
   }
-  if (!_arg1.has_value()) {
+  if (!_address.has_value()) {
     output()->print_cr("Usage: VM.inspect ADDRESS");
   } else {
-    intptr_t x = strtoll(_arg1.value(), nullptr, 0);
+    intptr_t x = strtoll(_address.value(), nullptr, 0);
     if (!os::is_readable_pointer((intptr_t*) x)) {
       output()->print_cr("address not safe");
     } else {
