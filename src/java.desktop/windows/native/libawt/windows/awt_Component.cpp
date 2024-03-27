@@ -6367,8 +6367,7 @@ void AwtComponent::_SetParent(void * param)
         AwtComponent *awtComponent = nullptr;
         AwtComponent *awtParent = nullptr;
 
-        PDATA pData;
-        if (self == NULL) {
+        if (self == NULL || parent == NULL) {
             env->ExceptionClear();
             JNU_ThrowNullPointerException(env, "peer");
             env->DeleteGlobalRef(self);
@@ -6376,32 +6375,22 @@ void AwtComponent::_SetParent(void * param)
             delete data;
             return;
         }
-        pData = JNI_GET_PDATA(self);
-        if (pData == NULL) {
+        awtComponent = (AwtComponent *) JNI_GET_PDATA(self);
+        if (awtComponent == nullptr) {
             THROW_NULL_PDATA_IF_NOT_DESTROYED(self);
             env->DeleteGlobalRef(self);
             env->DeleteGlobalRef(parent);
             delete data;
             return;
         }
-        awtComponent = (AwtComponent *) pData;
-        if (parent == NULL) {
-            env->ExceptionClear();
-            JNU_ThrowNullPointerException(env, "peer");
-            env->DeleteGlobalRef(self);
-            env->DeleteGlobalRef(parent);
-            delete data;
-            return;
-        }
-        pData = JNI_GET_PDATA(parent);
-        if (pData == NULL) {
+        awtParent = (AwtComponent *) JNI_GET_PDATA(parent);
+        if (awtParent == nullptr) {
             THROW_NULL_PDATA_IF_NOT_DESTROYED(parent);
             env->DeleteGlobalRef(self);
             env->DeleteGlobalRef(parent);
             delete data;
             return;
         }
-        awtParent = (AwtComponent *) pData;
 
         HWND selfWnd = awtComponent->GetHWnd();
         HWND parentWnd = awtParent->GetHWnd();
