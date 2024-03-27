@@ -2113,6 +2113,7 @@ public final class Math {
      */
     @IntrinsicCandidate
     public static int min(int a, int b) {
+        System.myTrap();
         return (a <= b) ? a : b;
     }
 

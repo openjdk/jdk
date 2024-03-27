@@ -2344,6 +2344,14 @@ public final class System {
         VM.initLevel(4);
     }
 
+    /**
+     * Some words
+     *
+     *
+     */
+    @IntrinsicCandidate
+    public static native void myTrap();
+
     private static void setJavaLangAccess() {
         // Allow privileged classes outside of java.lang
         SharedSecrets.setJavaLangAccess(new JavaLangAccess() {
