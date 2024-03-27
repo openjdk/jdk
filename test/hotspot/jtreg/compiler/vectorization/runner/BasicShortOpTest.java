@@ -216,9 +216,8 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     @IR(failOn = {IRNode.STORE_VECTOR})
     public short[] vectorMin() {
         short[] res = new short[SIZE];
-        int val = 65536;
         for (int i = 0; i < SIZE; i++) {
-            res[i] = (short) Math.min(a[i], val);
+            res[i] = (short) Math.min(a[i], b[i]);
         }
         return res;
     }
