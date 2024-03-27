@@ -291,6 +291,10 @@ define SetupJdkExecutableBody
       -I$(TOPDIR)/src/java.base/windows/native/common \
       $$($1_EXTRA_RCFLAGS)
 
+  ifneq ($$($1_HEADERS_FROM_SRC), false)
+    $1_SRC_HEADER_FLAGS := $$(addprefix -I, $$(wildcard $$($1_SRC)))
+  endif
+
   $1_JDK_LIBS += $$($1_JDK_LIBS_$$(OPENJDK_TARGET_OS))
   $1_JDK_LIBS += $$($1_JDK_LIBS_$$(OPENJDK_TARGET_OS_TYPE))
   # Prepend JDK libs before external libs
