@@ -44,8 +44,8 @@ public final class EditorPaneCharset {
     private static final String HTML_CYRILLIC =
             "<html lang=\"ru\">\n" +
             "<head>\n" +
-            "    <meta http-equiv=\"Content-Type\" " + 
-            "         content=\"text/html; charset=windows-1251\">\n" +
+            "    <meta http-equiv=\"Content-Type\" " +
+            "          content=\"text/html; charset=windows-1251\">\n" +
             "</head><body>\n" +
             "<p>" + CYRILLIC_TEXT + "</p>\n" +
             "</body></html>\n";
@@ -54,6 +54,7 @@ public final class EditorPaneCharset {
         JEditorPane editorPane = new JEditorPane();
         editorPane.setContentType("text/html");
         Document document = editorPane.getDocument();
+
         // Shouldn't throw ChangedCharSetException
         editorPane.read(
                 new ByteArrayInputStream(
@@ -65,7 +66,7 @@ public final class EditorPaneCharset {
         Element body = root.getElement(1);
         Element p = body.getElement(0);
         String pText = document.getText(p.getStartOffset(),
-                                    p.getEndOffset() - p.getStartOffset());
+                                        p.getEndOffset() - p.getStartOffset());
         if (!CYRILLIC_TEXT.equals(pText)) {
             throw new RuntimeException("Text doesn't match");
         }
