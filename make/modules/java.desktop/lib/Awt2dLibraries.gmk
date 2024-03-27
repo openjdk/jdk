@@ -585,7 +585,7 @@ else
 endif
 
 ifeq ($(call isTargetOs, macosx), true)
-  # libjawt on macosx do not use the unix code
+  # libjawt on macosx does not use the unix code
   LIBJAWT_EXCLUDE_SRC_PATTERNS := /unix/
 endif
 
@@ -705,7 +705,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
   endif
 
   ifeq ($(call isTargetOs, macosx), true)
-    # libsplashscreen on macosx do not use the unix code
+    # libsplashscreen on macosx does not use the unix code
     LIBSPLASHSCREEN_EXCLUDE_SRC_PATTERNS := /unix/
 
     BUILD_LIBSPLASHSCREEN_java_awt_SplashScreen.c_CFLAGS := -x objective-c -O0
