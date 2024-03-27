@@ -502,8 +502,33 @@ public class MapFactories {
     }
 
     @Test(expectedExceptions=UnsupportedOperationException.class)
+    public void immutableEntrySetAddAllDisallowed() {
+        Map.of().entrySet().addAll(List.of());
+    }
+
+    @Test(expectedExceptions=UnsupportedOperationException.class)
     public void immutableEntrySetClearDisallowed() {
         Map.of().entrySet().clear();
+    }
+
+    @Test(expectedExceptions=UnsupportedOperationException.class)
+    public void immutableEntrySetRemoveDisallowed() {
+        Map.of().entrySet().remove("x");
+    }
+
+    @Test(expectedExceptions=UnsupportedOperationException.class)
+    public void immutableEntrySetRemoveIfDisallowed() {
+        Map.of().entrySet().removeIf(x -> false);
+    }
+
+    @Test(expectedExceptions=UnsupportedOperationException.class)
+    public void immutableEntrySetRemoveAllDisallowed() {
+        Map.of().entrySet().removeAll(List.of());
+    }
+
+    @Test(expectedExceptions=UnsupportedOperationException.class)
+    public void immutableEntrySetRetainAllDisallowed() {
+        Map.of().entrySet().retainAll(List.of());
     }
 
     // Map.Entry::copyOf tests
