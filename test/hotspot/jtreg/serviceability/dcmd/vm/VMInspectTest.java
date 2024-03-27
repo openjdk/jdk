@@ -27,7 +27,7 @@
  * @summary Test of diagnostic command VM.inspect
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run testng/othervm -Dvminspect.enabled=true -XX:+UnlockDiagnosticVMOptions VMInspectTest 
+ * @run testng/othervm -Dvminspect.enabled=true -XX:+UnlockDiagnosticVMOptions VMInspectTest
  */
 
 /*
@@ -80,25 +80,29 @@ public class VMInspectTest {
             return; // no more testing
         }
 
-        // Tests where enabled:
+        // Tests with VM.inspect enabled:
         output = executor.execute("help");
         output.shouldNotContain("VM.inspect"); // VM.inspect is not promoted in help
         output = executor.execute("help VM.inspect");
         output.shouldContain("Syntax : VM.inspect"); // but help is available
 
-        // Test VM.inspect:
-        testFind(executor);
+        testInspectAddress(executor);
     }
 
-    public void testFind(CommandExecutor executor) {
+    public void testInspectAddress(CommandExecutor executor) {
         boolean testMisaligned = true;
+
+        // Test that address is mandatory:
+        // java.lang.IllegalArgumentException: The argument 'address' is mandatory.
         OutputAnalyzer output = executor.execute("VM.inspect");
-        output.shouldContain("Usage: VM.inspect");
+        output.shouldContain("is mandatory");
+
         // Find and test a thread id:
         OutputAnalyzer threadPrintOutput = executor.execute("Thread.print");
         BigInteger ptr = findPointer(threadPrintOutput, thread_id_line, 1);
         output = executor.execute("VM.inspect " + pointerText(ptr));
         output.shouldContain(" is a thread");
+
         // verbose shows output like:
         // "main" #1 [17235] prio=5 os_prio=0 cpu=1265.79ms elapsed=6.12s tid=0x000014e37802bd80 nid=17235 in Object.wait()  [0x000014e3817d4000]
         //    java.lang.Thread.State: WAITING (on object monitor)
@@ -121,6 +125,7 @@ public class VMInspectTest {
         ptr = findPointer(threadPrintOutput, waiting_on_mylock, 1);
         output = executor.execute("VM.inspect " + pointerText(ptr));
         System.out.println(output);
+
         // Some tests put ZGC options in test.java.opts, not test.vm.opts
         String testOpts = System.getProperty("test.vm.opts", "")
                           + System.getProperty("test.java.opts", "");
@@ -202,18 +207,17 @@ class DcmdTestClass {
 
     protected static MyLock lock = new MyLock();
 
-    public void work() {{
+    public void work() {
         Runnable r = () -> {
-          System.out.println("Hello");
-          synchronized(lock) {
-            try {
-              lock.wait();
-            } catch (Exception e) { }
-          }
+            System.out.println("Hello");
+            synchronized(lock) {
+                try {
+                    lock.wait();
+                } catch (Exception e) { }
+            }
         };
         Thread t = new Thread(r);
         t.start();
-      }
     }
 }
 
