@@ -248,7 +248,7 @@ protected:
   static constexpr int SEC_HASH_MASK = 64 - 1;
 
   static constexpr size_t hash_size_in_bits() { return (sizeof _hash) * 8; }
-  static constexpr int secondary_shift() { return hash_size_in_bits() - 6; }
+  static constexpr int secondary_shift() { return (int)hash_size_in_bits() - 6; }
   juint hash() const { return _hash; }
   int hash_slot() const { return hash() >> secondary_shift(); }
 

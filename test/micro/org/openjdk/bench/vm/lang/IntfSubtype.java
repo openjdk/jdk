@@ -27,7 +27,7 @@ import java.util.Random;
 
 @State(Scope.Thread)
 public class IntfSubtype {
-    interface J  {}
+    interface J {}
     interface I01 {}
     interface I02 extends I01 {}
     interface I03 extends I02 {}
