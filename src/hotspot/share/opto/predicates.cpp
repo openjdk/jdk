@@ -190,7 +190,8 @@ class DataNodesOnPathsToTargets : public StackObj {
   // Function to decide if a node is a target node (i.e. where we should start backtracking). This check should also
   // trivially pass the _node_filter.
   NodeCheck _is_target_node;
-  Unique_Node_List _collected_nodes; // The resulting node collection of all nodes on paths from source->target(s).
+  // The resulting node collection of all nodes on paths from source->target(s).
+  Unique_Node_List _collected_nodes;
   // List to track all nodes visited on the search for target nodes starting at a start node. These nodes are then used
   // in backtracking to find the nodes actually being on a start->target(s) path. This list also serves as visited set
   // to avoid double visits of a node which could happen with diamonds shapes.
@@ -211,10 +212,9 @@ class DataNodesOnPathsToTargets : public StackObj {
     assert(!_is_target_node(start_node), "no trivial paths where start node is also a target node");
 
     collect_target_nodes(start_node);
-    if (_collected_nodes.size() != 0) {
-      backtrack_from_target_nodes();
-      assert(_collected_nodes.member(start_node), "must find start node again when backtracking");
-    }
+    backtrack_from_target_nodes();
+    assert(_collected_nodes.size() == 0 || _collected_nodes.member(start_node),
+           "either target node predicate was never true or must find start node again when doing backtracking work");
     return _collected_nodes;
   }
 
@@ -240,7 +240,8 @@ class DataNodesOnPathsToTargets : public StackObj {
     }
   }
 
-  // Backtrack from all previously collected target nodes by using the visited set of the start->target(s) search.
+  // Backtrack from all previously collected target nodes by using the visited set of the start->target(s) search. If no
+  // node was collected in the first place (i.e. target node predicate was never true), then nothing needs to be done.
   void backtrack_from_target_nodes() {
     for (uint i = 0; i < _collected_nodes.size(); i++) {
       Node* node_on_path = _collected_nodes[i];
