@@ -248,7 +248,7 @@ BufferBlob::BufferBlob(const char* name, int size)
 : RuntimeBlob(name, sizeof(BufferBlob), size, CodeOffsets::frame_never_safe, /*locs_size:*/ 0)
 {}
 
-BufferBlob* BufferBlob::create(const char* name, uint buffer_size) {
+BufferBlob* BufferBlob::create(const char* name, uint buffer_size, bool alloc_in_codecache) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
   BufferBlob* blob = nullptr;
@@ -259,7 +259,7 @@ BufferBlob* BufferBlob::create(const char* name, uint buffer_size) {
   assert(name != nullptr, "must provide a name");
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) BufferBlob(name, size);
+    blob = new (size, alloc_in_codecache) BufferBlob(name, size);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
@@ -288,11 +288,13 @@ BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
   return blob;
 }
 
-void* BufferBlob::operator new(size_t s, unsigned size) throw() {
+void* BufferBlob::operator new(size_t s, unsigned size, bool alloc_in_codecache) throw() {
+  if (!alloc_in_codecache) { return (BufferBlob*)malloc(size); }
   return CodeCache::allocate(size, CodeBlobType::NonNMethod);
 }
 
 void BufferBlob::free(BufferBlob *blob) {
+  if (!CodeCache::contains((void*)blob)) { free(blob); return; }
   RuntimeBlob::free(blob);
 }
 

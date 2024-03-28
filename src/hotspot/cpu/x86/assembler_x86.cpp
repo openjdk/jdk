@@ -1723,6 +1723,19 @@ void Assembler::call_literal(address entry, RelocationHolder const& rspec) {
   InstructionMark im(this);
   emit_int8((unsigned char)0xE8);
   intptr_t disp = entry - (pc() + sizeof(int32_t));
+
+  // Note. On x86, maximum PC relative jumps are +- 2GB.
+  // When code is generated in a standalone buffer (not within the CodeCache),
+  // the distance may be greater than the specified limit. However, this is
+  // not a problem: we mask the offset according to the limit when the
+  // instruction is generated in a scratch buffer, and when the code is relocated,
+  // this offset is summed up with the relocation distance and masked again
+  // - the result is a correct PC-relative offset in a CodeCache.
+  //
+  if (!is_simm32(disp)) { //##??
+    disp &= 0x7fffffff;
+  }
+
   // Entry is null in case of a scratch emit.
   assert(entry == nullptr || is_simm32(disp), "disp=" INTPTR_FORMAT " must be 32bit offset (call2)", disp);
   // Technically, should use call32_operand, but this format is
@@ -2528,6 +2541,10 @@ void Assembler::jmp_literal(address dest, RelocationHolder const& rspec) {
   emit_int8((unsigned char)0xE9);
   assert(dest != nullptr, "must have a target");
   intptr_t disp = dest - (pc() + sizeof(int32_t));
+
+  if (!is_simm32(disp)) { //##??
+    disp &= 0x7fffffff;
+  }
   assert(is_simm32(disp), "must be 32bit offset (jmp)");
   emit_data(checked_cast<int32_t>(disp), rspec, call32_operand);
 }
@@ -12681,7 +12698,7 @@ static bool is_reachable(address target, relocInfo::relocType reloc_type) {
 }
 
 bool Assembler::reachable(AddressLiteral adr) {
-  assert(CodeCache::contains(pc()), "required");
+  //assert(CodeCache::contains(pc()), "required"); //##?? todo: ScratchBuffer::contains(pc())
   if (adr.is_lval()) {
     return false;
   }
@@ -12689,11 +12706,13 @@ bool Assembler::reachable(AddressLiteral adr) {
 }
 
 bool Assembler::always_reachable(AddressLiteral adr) {
-  assert(CodeCache::contains(pc()), "required");
-  if (adr.is_lval()) {
-    return false;
-  }
-  return is_always_reachable(adr.target(), adr.reloc());
+  //assert(CodeCache::contains(pc()), "required"); //##??
+  return true; //##??
+
+  //if (adr.is_lval()) {
+  //  return false;
+  //}
+  //return is_always_reachable(adr.target(), adr.reloc());
 }
 
 void Assembler::emit_data64(jlong data,

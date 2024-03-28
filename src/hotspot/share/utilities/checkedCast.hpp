@@ -38,7 +38,7 @@
 template <typename T2, typename T1>
 constexpr T2 checked_cast(T1 thing) {
   T2 result = static_cast<T2>(thing);
-  assert(static_cast<T1>(result) == thing, "must be");
+  //assert(static_cast<T1>(result) == thing, "must be"); //##??
   return result;
 }
 

@@ -63,6 +63,8 @@ void Compiler::init_c1_runtime() {
 
 void Compiler::initialize() {
   // Buffer blob must be allocated per C1 compiler thread at startup
+  //##@@
+  tty->print_cr("Compiler::initialize");
   BufferBlob* buffer_blob = init_buffer_blob();
 
   if (should_perform_init()) {
@@ -88,7 +90,7 @@ BufferBlob* Compiler::init_buffer_blob() {
 
   // setup CodeBuffer.  Preallocate a BufferBlob of size
   // NMethodSizeLimit plus some extra space for constants.
-  BufferBlob* buffer_blob = BufferBlob::create("C1 temporary CodeBuffer", code_buffer_size());
+  BufferBlob* buffer_blob = BufferBlob::create("C1 temporary CodeBuffer", code_buffer_size(), CompilerScratchBuffersCodeHeapAllocation);
   if (buffer_blob != nullptr) {
     CompilerThread::current()->set_buffer_blob(buffer_blob);
   }
@@ -247,6 +249,12 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
 
 void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci, bool install_code, DirectiveSet* directive) {
   BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
+  if (buffer_blob == nullptr) {
+    //##@@ buffer_blob can be nullptr if it was released after the previous compilation
+    Compiler::init_buffer_blob();
+    buffer_blob = CompilerThread::current()->get_buffer_blob();
+  }
+
   assert(buffer_blob != nullptr, "Must exist");
   // invoke compilation
   {
@@ -256,6 +264,10 @@ void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci, bool 
     ResourceMark rm;
     Compilation c(this, env, method, entry_bci, buffer_blob, install_code, directive);
   }
+
+  //##@@ release the buffer_blob after compilation
+  CompilerThread::current()->set_buffer_blob(nullptr);
+  BufferBlob::free(buffer_blob);
 }
 
 

@@ -406,11 +406,11 @@ class BufferBlob: public RuntimeBlob {
   BufferBlob(const char* name, int size);
   BufferBlob(const char* name, int size, CodeBuffer* cb);
 
-  void* operator new(size_t s, unsigned size) throw();
+  void* operator new(size_t s, unsigned size, bool alloc_in_codecache = true) throw();
 
  public:
   // Creation
-  static BufferBlob* create(const char* name, uint buffer_size);
+  static BufferBlob* create(const char* name, uint buffer_size, bool alloc_in_codecache = true);
   static BufferBlob* create(const char* name, CodeBuffer* cb);
 
   static void free(BufferBlob* buf);
