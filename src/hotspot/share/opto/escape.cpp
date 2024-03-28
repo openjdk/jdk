@@ -197,7 +197,9 @@ bool ConnectionGraph::compute_escape() {
         // Collect all MemBarStoreStore nodes so that depending on the
         // escape status of the associated Allocate node some of them
         // may be eliminated.
-        storestore_worklist.append(n->as_MemBarStoreStore());
+        if (n->req() > MemBarNode::Precedent) {
+          storestore_worklist.append(n->as_MemBarStoreStore());
+        }
         break;
       case Op_MemBarRelease:
         if (n->req() > MemBarNode::Precedent) {
