@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2595,6 +2595,7 @@ template<typename R, typename... Rx>
 
 #undef INSN
 
+  // Advanced SIMD across lanes
 #define INSN(NAME, opc, opc2, accepted) \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {                   \
     guarantee(T != T1Q && T != T1D, "incorrect arrangement");                           \

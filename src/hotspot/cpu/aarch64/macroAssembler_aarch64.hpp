@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -999,6 +999,29 @@ public:
                                      Label* L_failure,
                                      bool set_cond_codes = false);
 
+  // As above, but with a constant super_klass.
+  // The result is in Register result, not the condition codes.
+  void check_klass_subtype_slow_path(Register sub_klass,
+                                     Klass *super_klass,
+                                     Register temp1,
+                                     Register temp2,
+                                     Register temp3,
+                                     Register temp4,
+                                     FloatRegister vtemp,
+                                     Register result);
+
+  void verify_klass_subtype_slow_path(Register sub_klass,
+                                      Klass *super_klass,
+                                      Register r_super_klass,
+                                      Register temp1,
+                                      Register temp2,
+                                      Register temp3,
+                                      Register temp4,
+                                      FloatRegister vtemp,
+                                      Register result);
+
+  void klass_subtype_fallback();
+
   // Simplified, combined version, good for typical uses.
   // Falls through on failure.
   void check_klass_subtype(Register sub_klass,
@@ -1213,6 +1236,7 @@ public:
   // - relocInfo::virtual_call_type
   //
   // Return: the call PC or null if CodeCache is full.
+  // Clobbers: rscratch1
   address trampoline_call(Address entry);
 
   static bool far_branches() {

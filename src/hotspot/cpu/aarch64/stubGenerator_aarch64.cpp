@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2022, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -6772,6 +6772,16 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Used by HashSecondarySupers.
+  address generate_klass_subtype_fallback_stub() {
+    StubCodeMark mark(this, "StubRoutines", "klass_subtype_fallback");
+
+    address start = __ pc();
+    __ klass_subtype_fallback();
+
+    return start;
+  }
+
 #if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
 
   // ARMv8.1 LSE versions of the atomic stubs used by Atomic::PlatformXX.
@@ -8421,6 +8431,8 @@ class StubGenerator: public StubCodeGenerator {
     generate_atomic_entry_points();
 
 #endif // LINUX
+
+    StubRoutines::_klass_subtype_fallback_stub = generate_klass_subtype_fallback_stub();
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
 

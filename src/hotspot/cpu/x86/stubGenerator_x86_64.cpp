@@ -3994,6 +3994,16 @@ address StubGenerator::generate_upcall_stub_exception_handler() {
   return start;
 }
 
+// Used by HashSecondarySupers.
+address StubGenerator::generate_klass_subtype_fallback_stub() {
+  StubCodeMark mark(this, "StubRoutines", "klass_subtype_fallback");
+
+  address start = __ pc();
+  __ klass_subtype_fallback();
+
+  return start;
+}
+
 void StubGenerator::create_control_words() {
   // Round to nearest, 64-bit mode, exceptions masked, flags specialized
   StubRoutines::x86::_mxcsr_std = EnableX86ECoreOpts ? 0x1FBF : 0x1F80;
@@ -4146,6 +4156,8 @@ void StubGenerator::generate_final_stubs() {
   if (UseVectorizedMismatchIntrinsic) {
     StubRoutines::_vectorizedMismatch = generate_vectorizedMismatch();
   }
+
+  StubRoutines::_klass_subtype_fallback_stub = generate_klass_subtype_fallback_stub();
 
   StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
 }

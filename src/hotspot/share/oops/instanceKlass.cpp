@@ -1439,17 +1439,25 @@ GrowableArray<Klass*>* InstanceKlass::compute_secondary_supers(int num_extra_slo
     // Redefine classes has to be careful not to delete this!
     // We need the cast because Array<Klass*> is NOT a supertype of Array<InstanceKlass*>,
     // (but it's safe to do here because we won't write into _secondary_supers from this point on).
-    set_secondary_supers((Array<Klass*>*)(address)interfaces);
-    return nullptr;
-  } else {
-    // Copy transitive interfaces to a temporary growable array to be constructed
-    // into the secondary super list with extra slots.
-    GrowableArray<Klass*>* secondaries = new GrowableArray<Klass*>(interfaces->length());
-    for (int i = 0; i < interfaces->length(); i++) {
-      secondaries->push(interfaces->at(i));
+    if (! HashSecondarySupers) {
+      set_secondary_supers((Array<Klass*>*)(address)interfaces);
+      return nullptr;
+    } else if (num_extra_slots == 0 && interfaces->length() <= 1) {
+      // We will reuse the transitive interfaces list if we're certain
+      // it's in hash order.
+      uint64_t bitmap = hash_secondary_supers(interfaces, /*rewrite*/false);
+      set_secondary_supers((Array<Klass*>*)(address)interfaces, bitmap);
+      return nullptr;
     }
-    return secondaries;
+    // ... fall through if that didn't work.
   }
+  // Copy transitive interfaces to a temporary growable array to be constructed
+  // into the secondary super list with extra slots.
+  GrowableArray<Klass*>* secondaries = new GrowableArray<Klass*>(interfaces->length());
+  for (int i = 0; i < interfaces->length(); i++) {
+    secondaries->push(interfaces->at(i));
+  }
+  return secondaries;
 }
 
 bool InstanceKlass::implements_interface(Klass* k) const {
@@ -3620,8 +3628,13 @@ void InstanceKlass::print_on(outputStream* st) const {
     }
   }
 
+  if (HashSecondarySupers) {
+    st->print(BULLET"hash:              0x%x (slot=%d)", hash(), hash_slot()); st->cr();
+    st->print(BULLET"bitmap:            0x%" PRIx64, _bitmap);
+    st->cr();
+  }
   st->print(BULLET"arrays:            "); Metadata::print_value_on_maybe_null(st, array_klasses()); st->cr();
-  st->print(BULLET"methods:           "); methods()->print_value_on(st);                  st->cr();
+  st->print(BULLET"methods:           "); methods()->print_value_on(st);               st->cr();
   if (Verbose || WizardMode) {
     Array<Method*>* method_array = methods();
     for (int i = 0; i < method_array->length(); i++) {
@@ -3698,6 +3711,22 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"itable length      %d (start addr: " PTR_FORMAT ")", itable_length(), p2i(start_of_itable())); st->cr();
   if (itable_length() > 0 && (Verbose || WizardMode))  print_vtable(start_of_itable(), itable_length(), st);
   st->print_cr(BULLET"---- static fields (%d words):", static_field_size());
+  if ((Verbose || WizardMode) && _secondary_supers != nullptr) {
+    st->print_cr(BULLET"---- secondary supers (%d words):", _secondary_supers->length());
+    int longest_distance = 0;
+    for (int i = 0; i < _secondary_supers->length(); i++) {
+      unsigned home_slot = _secondary_supers->at(i)->hash_slot();
+      if (home_slot > 0) {
+        home_slot = population_count(_bitmap << (SEC_HASH_ENTRIES - home_slot));
+      }
+      int distance = (i - home_slot) & SEC_HASH_MASK;
+      longest_distance = MAX2(longest_distance, distance);
+      st->print_cr("  %d:  %p (home slot=%d, distance = %d)", i, _secondary_supers->at(i),
+                   home_slot, distance);
+    }
+    st->print_cr("  longest probe distance = %d", longest_distance);
+  }
+
   FieldPrinter print_static_field(st);
   ((InstanceKlass*)this)->do_local_static_fields(&print_static_field);
   st->print_cr(BULLET"---- non-static fields (%d words):", nonstatic_field_size());
