@@ -1,2 +1,2 @@
-SourceLevelCheck.java:31:15: compiler.err.preview.feature.disabled: (compiler.misc.feature.derived.instance)
+SourceLevelCheck.java:10:15: compiler.err.preview.feature.disabled: (compiler.misc.feature.derived.instance)
 1 error

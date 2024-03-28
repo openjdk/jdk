@@ -1,33 +1,33 @@
-WithErrors.java:43:13: compiler.err.with.assignment.not.allowed: i
-WithErrors.java:43:19: compiler.err.with.assignment.not.allowed: i
-WithErrors.java:43:23: compiler.err.with.assignment.not.allowed: i
-WithErrors.java:43:31: compiler.err.with.assignment.not.allowed: i
-WithErrors.java:43:35: compiler.err.with.assignment.not.allowed: i
-WithErrors.java:44:13: compiler.err.with.assignment.not.allowed: i
-WithErrors.java:45:13: compiler.err.with.assignment.not.allowed: field
-WithErrors.java:56:17: compiler.err.with.assignment.not.allowed: i
-WithErrors.java:57:17: compiler.err.with.assignment.not.allowed: i
-WithErrors.java:58:17: compiler.err.with.assignment.not.allowed: field
-WithErrors.java:111:23: compiler.err.derived.expression.no.record
-WithErrors.java:112:19: compiler.err.derived.expression.no.record
-WithErrors.java:118:17: compiler.err.with.return.not.allowed
-WithErrors.java:124:17: compiler.err.with.break.not.allowed
-WithErrors.java:136:17: compiler.err.with.break.not.allowed
-WithErrors.java:148:17: compiler.err.with.break.not.allowed
-WithErrors.java:160:17: compiler.err.with.break.not.allowed
-WithErrors.java:173:21: compiler.err.with.break.not.allowed
-WithErrors.java:186:21: compiler.err.with.continue.not.allowed
-WithErrors.java:202:21: compiler.err.with.continue.not.allowed
-WithErrors.java:218:21: compiler.err.with.continue.not.allowed
-WithErrors.java:234:21: compiler.err.with.continue.not.allowed
-WithErrors.java:250:21: compiler.err.with.yield.not.allowed
-WithErrors.java:55:17: compiler.err.cant.ref.non.effectively.final.var: value, (compiler.misc.lambda)
-WithErrors.java:60:17: compiler.err.cant.ref.non.effectively.final.var: l1, (compiler.misc.lambda)
-WithErrors.java:67:28: compiler.err.cant.ref.non.effectively.final.var: value, (compiler.misc.lambda)
-WithErrors.java:84:21: compiler.err.cant.ref.non.effectively.final.var: value, (compiler.misc.inner.cls)
-WithErrors.java:85:21: compiler.err.cant.ref.non.effectively.final.var: i, (compiler.misc.inner.cls)
-WithErrors.java:88:21: compiler.err.cant.ref.non.effectively.final.var: l1, (compiler.misc.inner.cls)
-WithErrors.java:97:32: compiler.err.cant.ref.non.effectively.final.var: value, (compiler.misc.inner.cls)
+WithErrors.java:22:13: compiler.err.with.assignment.not.allowed: i
+WithErrors.java:22:19: compiler.err.with.assignment.not.allowed: i
+WithErrors.java:22:23: compiler.err.with.assignment.not.allowed: i
+WithErrors.java:22:31: compiler.err.with.assignment.not.allowed: i
+WithErrors.java:22:35: compiler.err.with.assignment.not.allowed: i
+WithErrors.java:23:13: compiler.err.with.assignment.not.allowed: i
+WithErrors.java:24:13: compiler.err.with.assignment.not.allowed: field
+WithErrors.java:35:17: compiler.err.with.assignment.not.allowed: i
+WithErrors.java:36:17: compiler.err.with.assignment.not.allowed: i
+WithErrors.java:37:17: compiler.err.with.assignment.not.allowed: field
+WithErrors.java:90:23: compiler.err.derived.expression.no.record
+WithErrors.java:91:19: compiler.err.derived.expression.no.record
+WithErrors.java:97:17: compiler.err.with.return.not.allowed
+WithErrors.java:103:17: compiler.err.with.break.not.allowed
+WithErrors.java:115:17: compiler.err.with.break.not.allowed
+WithErrors.java:127:17: compiler.err.with.break.not.allowed
+WithErrors.java:139:17: compiler.err.with.break.not.allowed
+WithErrors.java:152:21: compiler.err.with.break.not.allowed
+WithErrors.java:165:21: compiler.err.with.continue.not.allowed
+WithErrors.java:181:21: compiler.err.with.continue.not.allowed
+WithErrors.java:197:21: compiler.err.with.continue.not.allowed
+WithErrors.java:213:21: compiler.err.with.continue.not.allowed
+WithErrors.java:229:21: compiler.err.with.yield.not.allowed
+WithErrors.java:34:17: compiler.err.cant.ref.non.effectively.final.var: value, (compiler.misc.lambda)
+WithErrors.java:39:17: compiler.err.cant.ref.non.effectively.final.var: l1, (compiler.misc.lambda)
+WithErrors.java:46:28: compiler.err.cant.ref.non.effectively.final.var: value, (compiler.misc.lambda)
+WithErrors.java:63:21: compiler.err.cant.ref.non.effectively.final.var: value, (compiler.misc.inner.cls)
+WithErrors.java:64:21: compiler.err.cant.ref.non.effectively.final.var: i, (compiler.misc.inner.cls)
+WithErrors.java:67:21: compiler.err.cant.ref.non.effectively.final.var: l1, (compiler.misc.inner.cls)
+WithErrors.java:76:32: compiler.err.cant.ref.non.effectively.final.var: value, (compiler.misc.inner.cls)
 - compiler.note.preview.filename: WithErrors.java, DEFAULT
 - compiler.note.preview.recompile
 30 errors
