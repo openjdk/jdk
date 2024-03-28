@@ -99,4 +99,8 @@ class KeyMap {
     Stream<ImportKey> importKeys() {
         return importMap.values().stream();
     }
+
+    Stream<TypeDeclKey> typeDeclKeys() {
+        return classMap.values().stream();
+    }
 }
