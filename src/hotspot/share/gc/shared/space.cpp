@@ -193,7 +193,7 @@ HeapWord* ContiguousSpace::par_allocate(size_t size) {
 
 #if INCLUDE_SERIALGC
 HeapWord* TenuredSpace::block_start_const(const void* addr) const {
-  HeapWord* cur_block = _offsets.block_start_reaching_into_card(addr);
+  HeapWord* cur_block = _offsets->block_start_reaching_into_card(addr);
 
   while (true) {
     HeapWord* next_block = cur_block + cast_to_oop(cur_block)->size();
@@ -208,9 +208,9 @@ HeapWord* TenuredSpace::block_start_const(const void* addr) const {
   }
 }
 
-TenuredSpace::TenuredSpace(SerialBlockOffsetSharedArray* sharedOffsetArray,
+TenuredSpace::TenuredSpace(SerialBlockOffsetTable* offsets,
                            MemRegion mr) :
-  _offsets(sharedOffsetArray)
+  _offsets(offsets)
 {
   initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);
 }

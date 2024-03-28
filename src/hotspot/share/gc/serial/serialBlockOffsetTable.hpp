@@ -36,9 +36,12 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-class SerialBlockOffsetSharedArray: public CHeapObj<mtGC> {
+// SerialBlockOffsetTable divides the covered region into "N"-word subregions (where
+// "N" = 2^"LogN".  An array with an entry for each such subregion indicates
+// how far back one must go to find the start of the chunk that includes the
+// first word of the subregion.
+class SerialBlockOffsetTable: public CHeapObj<mtGC> {
   friend class VMStructs;
-  friend class SerialBlockOffsetTable;
 
   // The reserved heap (i.e. old-gen) covered by the shared array.
   MemRegion _reserved;
@@ -63,6 +66,14 @@ class SerialBlockOffsetSharedArray: public CHeapObj<mtGC> {
     return ReservedSpace::allocation_align_size_up(number_of_slots);
   }
 
+  void update_for_block_work(HeapWord* blk_start, HeapWord* blk_end);
+
+  static HeapWord* align_up_by_card_size(HeapWord* const addr) {
+    return align_up(addr, CardTable::card_size());
+  }
+
+  void verify_for_block(HeapWord* blk_start, HeapWord* blk_end) const;
+
 public:
   // Initialize the table to cover from "base" to (at least)
   // "base + init_word_size".  In the future, the table may be expanded
@@ -70,7 +81,25 @@ public:
   // least "init_word_size".)  The contents of the initial table are
   // undefined; it is the responsibility of the constituent
   // SerialBlockOffsetTable(s) to initialize cards.
-  SerialBlockOffsetSharedArray(MemRegion reserved, size_t init_word_size);
+  SerialBlockOffsetTable(MemRegion reserved, size_t init_word_size);
+
+  static bool is_crossing_card_boundary(HeapWord* const obj_start,
+                                        HeapWord* const obj_end) {
+    HeapWord* cur_card_boundary = align_up_by_card_size(obj_start);
+    // Strictly greater-than, since we check if this block *crosses* card boundary.
+    return obj_end > cur_card_boundary;
+  }
+
+  // Returns the address of the start of the block reaching into the card containing
+  // "addr".
+  HeapWord* block_start_reaching_into_card(const void* addr) const;
+
+  // [blk_start, blk_end) representing a block of memory in the heap.
+  void update_for_block(HeapWord* blk_start, HeapWord* blk_end) {
+    if (is_crossing_card_boundary(blk_start, blk_end)) {
+      update_for_block_work(blk_start, blk_end);
+    }
+  }
 
   // Notes a change in the committed size of the region covered by the
   // table.  The "new_word_size" may not be larger than the size of the
@@ -96,48 +125,6 @@ public:
     size_t num_cards = right - left + 1;
 
     fill_range(left, num_cards, offset);
-  }
-};
-
-// SerialBlockOffsetTable divides the covered region into "N"-word subregions (where
-// "N" = 2^"LogN".  An array with an entry for each such subregion indicates
-// how far back one must go to find the start of the chunk that includes the
-// first word of the subregion.
-class SerialBlockOffsetTable {
-  friend class VMStructs;
-
-  // The array that contains offset values. Its reacts to heap resizing.
-  SerialBlockOffsetSharedArray* _array;
-
-  void update_for_block_work(HeapWord* blk_start, HeapWord* blk_end);
-
-  static HeapWord* align_up_by_card_size(HeapWord* const addr) {
-    return align_up(addr, CardTable::card_size());
-  }
-
-  void verify_for_block(HeapWord* blk_start, HeapWord* blk_end) const;
-
-public:
-  // Initialize the table to cover the given space.
-  // The contents of the initial table are undefined.
-  SerialBlockOffsetTable(SerialBlockOffsetSharedArray* array) : _array(array) {}
-
-  static bool is_crossing_card_boundary(HeapWord* const obj_start,
-                                        HeapWord* const obj_end) {
-    HeapWord* cur_card_boundary = align_up_by_card_size(obj_start);
-    // Strictly greater-than, since we check if this block *crosses* card boundary.
-    return obj_end > cur_card_boundary;
-  }
-
-  // Returns the address of the start of the block reaching into the card containing
-  // "addr".
-  HeapWord* block_start_reaching_into_card(const void* addr) const;
-
-  // [blk_start, blk_end) representing a block of memory in the heap.
-  void update_for_block(HeapWord* blk_start, HeapWord* blk_end) {
-    if (is_crossing_card_boundary(blk_start, blk_end)) {
-      update_for_block_work(blk_start, blk_end);
-    }
   }
 };
 
