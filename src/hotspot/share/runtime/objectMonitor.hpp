@@ -353,8 +353,13 @@ private:
   void      EnterI(JavaThread* current);
   void      ReenterI(JavaThread* current, ObjectWaiter* current_node);
   void      UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* current_node);
-  int       TryLock(JavaThread* current);
-  int       TrySpin(JavaThread* current);
+
+
+  enum TryLockResult { CAS_FAILED = -1, HAS_OWNER = 0, SUCCESS = 1};
+  TryLockResult  TryLock(JavaThread* current);
+
+  bool      TrySpin(JavaThread* current);
+  bool      short_fixed_spin(JavaThread* current, int spin_count, bool adapt);
   void      ExitEpilog(JavaThread* current, ObjectWaiter* Wakee);
 
   // Deflation support
