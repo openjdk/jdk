@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,14 +178,25 @@ void FrameMap::initialize() {
   map_register( 8, r11);  r11_opr = LIR_OprFact::single_cpu(8);
   map_register( 9, r13);  r13_opr = LIR_OprFact::single_cpu(9);
   map_register(10, r14);  r14_opr = LIR_OprFact::single_cpu(10);
-  // r12 is allocated conditionally. With compressed oops it holds
-  // the heapbase value and is not visible to the allocator.
-  map_register(11, r12);  r12_opr = LIR_OprFact::single_cpu(11);
+
+  // r12 is not visible when UseCompressedOops is enabled.
+  // rbp is not visible when PreserveFramePointer is enabled.
+  //
+  // If !PreserveFramePointer && UseCompressedOops, rbp should be in front.
+  // If PreserveFramePointer && !UseCompressedOops, r12 should be in front.
+  // Otherwise, the order doesn't matter
+  if (!PreserveFramePointer && UseCompressedOops) {
+    map_register(11, rbp);  rbp_opr = LIR_OprFact::single_cpu(11);
+    map_register(12, r12);  r12_opr = LIR_OprFact::single_cpu(12);
+  } else {
+    map_register(11, r12);  r12_opr = LIR_OprFact::single_cpu(11);
+    map_register(12, rbp);  rbp_opr = LIR_OprFact::single_cpu(12);
+  }
+
   // The unallocatable registers are at the end
-  map_register(12, r10);  r10_opr = LIR_OprFact::single_cpu(12);
-  map_register(13, r15);  r15_opr = LIR_OprFact::single_cpu(13);
-  map_register(14, rsp);
-  map_register(15, rbp);
+  map_register(13, r10);  r10_opr = LIR_OprFact::single_cpu(13);
+  map_register(14, r15);  r15_opr = LIR_OprFact::single_cpu(14);
+  map_register(15, rsp);
 #endif // _LP64
 
 #ifdef _LP64
@@ -213,7 +224,13 @@ void FrameMap::initialize() {
   _caller_save_cpu_regs[8]  = r11_opr;
   _caller_save_cpu_regs[9]  = r13_opr;
   _caller_save_cpu_regs[10] = r14_opr;
-  _caller_save_cpu_regs[11] = r12_opr;
+
+  if (!UseCompressedOops) {
+    assert(nof_caller_save_cpu_regs() == 12, "sanity check");
+    _caller_save_cpu_regs[11] = r12_opr;
+  } else {
+    assert(nof_caller_save_cpu_regs() == 11, "sanity check");
+  }
 #endif // _LP64
 
 
@@ -279,7 +296,9 @@ void FrameMap::initialize() {
   rcx_metadata_opr = as_metadata_opr(rcx);
 
   rsp_opr = as_pointer_opr(rsp);
+#ifndef _LP64
   rbp_opr = as_pointer_opr(rbp);
+#endif
 
 #ifdef _LP64
   r8_oop_opr = as_oop_opr(r8);
