@@ -651,7 +651,7 @@ void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
 
 void MetaspaceShared::prepare_for_dumping() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
-  CDSConfig::check_unsupported_dumping_properties();
+  CDSConfig::check_unsupported_dumping_module_options();
   ClassLoader::initialize_shared_path(JavaThread::current());
 }
 

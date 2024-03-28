@@ -1119,18 +1119,8 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bo
   // Note: The --patch-module entries are never searched if the boot loader's
   //       visibility boundary is limited to only searching the append entries.
   if (_patch_mod_entries != nullptr && !search_append_only) {
-    // At CDS dump time, the --patch-module entries are ignored. That means a
-    // class is still loaded from the runtime image even if it might
-    // appear in the _patch_mod_entries. The runtime shared class visibility
-    // check will determine if a shared class is visible based on the runtime
-    // environment, including the runtime --patch-module setting.
-    //
-    // Dynamic dumping requires UseSharedSpaces to be enabled. Since --patch-module
-    // is not supported with UseSharedSpaces, we can never come here during dynamic dumping.
-    assert(!CDSConfig::is_dumping_dynamic_archive(), "sanity");
-    if (!CDSConfig::is_dumping_static_archive()) {
-      stream = search_module_entries(THREAD, _patch_mod_entries, pkg_entry, file_name);
-    }
+    assert(!CDSConfig::is_dumping_archive(), "CDS doesn't support --patch-module during dumping");
+    stream = search_module_entries(THREAD, _patch_mod_entries, pkg_entry, file_name);
   }
 
   // Load Attempt #2: [jimage | exploded build]
@@ -1141,6 +1131,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bo
     } else {
       // Exploded build - attempt to locate class in its defining module's location.
       assert(_exploded_entries != nullptr, "No exploded build entries present");
+      assert(!CDSConfig::is_dumping_archive(), "CDS dumping doesn't support exploded build");
       stream = search_module_entries(THREAD, _exploded_entries, pkg_entry, file_name);
     }
   }
