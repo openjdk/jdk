@@ -111,6 +111,12 @@ public class JavacParser implements Parser {
     /** End position mappings container */
     protected final AbstractEndPosTable endPosTable;
 
+    /** A map associating "other nearby documentation comments"
+     *  with the preferred documentation comment for a declaration. */
+    protected Map<Comment, List<Comment>> danglingComments = new HashMap<>();
+    /** Handler for deferred diagnostics. */
+    protected final DeferredLintHandler deferredLintHandler;
+
     // Because of javac's limited lookahead, some contexts are ambiguous in
     // the presence of type annotations even though they are not ambiguous
     // in the absence of type annotations.  Consider this code:
@@ -181,6 +187,7 @@ public class JavacParser implements Parser {
         this.names = fac.names;
         this.source = fac.source;
         this.preview = fac.preview;
+        this.deferredLintHandler = fac.deferredLintHandler;
         this.allowStringFolding = fac.options.getBoolean("allowStringFolding", true);
         this.keepDocComments = keepDocComments;
         this.parseModuleInfo = parseModuleInfo;
@@ -205,6 +212,7 @@ public class JavacParser implements Parser {
         this.names = parser.names;
         this.source = parser.source;
         this.preview = parser.preview;
+        this.deferredLintHandler = parser.deferredLintHandler;
         this.allowStringFolding = parser.allowStringFolding;
         this.keepDocComments = parser.keepDocComments;
         this.parseModuleInfo = false;
@@ -551,8 +559,65 @@ public class JavacParser implements Parser {
      */
     private final DocCommentTable docComments;
 
+    /** Record nearby documentation comments against the
+     *  primary documentation comment for a declaration.
+     *
+     *  Dangling documentation comments are handled as follows.
+     *  1. {@code Scanner} adds all doc comments to a queue of
+     *     recent doc comments. The queue is flushed whenever
+     *     it is known that the recent doc comments should be
+     *     ignored and should not cause any warnings.
+     *  2. The primary documentation comment is the one obtained
+     *     from the first token of any declaration.
+     *     (using {@code token.getDocComment()}.
+     *  3. At the end of the "signature" of the declaration
+     *     (that is, before any initialization or body for the
+     *     declaration) any other "recent" comments are saved
+     *     in a map using the primary comment as a key,
+     *     using this method, {@code saveDanglingComments}.
+     *  4. When the tree node for the declaration is finally
+     *     available, and the primary comment, if any,
+     *     is "attached", (in {@link #attach}) any related
+     *     dangling comments are also attached to the tree node
+     *     by registering them using the {@link #deferredLintHandler}.
+     *  5. (Later) Warnings may be genereated for the dangling
+     *     comments, subject to the {@code -Xlint} and
+     *     {@code @SuppressWarnings}.
+     *
+     *  @param dc the primary documentation comment
+     */
+    private void saveDanglingDocComments(Comment dc) {
+        var recentComments = S.getDocComments();
+
+        switch (recentComments.size()) {
+            case 0:
+                // no recent comments
+                return;
+
+            case 1:
+                if (recentComments.peek() == dc) {
+                    // no other recent comments
+                    recentComments.remove();
+                    return;
+                }
+        }
+
+        var lb = new ListBuffer<Comment>();
+        while (!recentComments.isEmpty()) {
+            var c = recentComments.remove();
+            if (c != dc) {
+                lb.add(c);
+            }
+        }
+        danglingComments.put(dc, lb.toList());
+    }
+
     /** Make an entry into docComments hashtable,
      *  provided flag keepDocComments is set and given doc comment is non-null.
+     *  If there are any related "dangling comments", register
+     *  diagnostics to be handled later, when @SuppressWarnings
+     *  can be taken into account.
+     *
      *  @param tree   The tree to be used as index in the hashtable
      *  @param dc     The doc comment to associate with the tree, or null.
      */
@@ -561,6 +626,50 @@ public class JavacParser implements Parser {
 //          System.out.println("doc comment = ");System.out.println(dc);//DEBUG
             docComments.putComment(tree, dc);
         }
+        reportDanglingComments(tree, dc);
+    }
+
+    /** Reports all dangling comments associated with the
+     *  primary comment for a declaration against the position
+     *  of the tree node for a declaration.
+     *
+     * @param tree the tree node for the declaration
+     * @param dc the primary comment for the declaration
+     */
+    void reportDanglingComments(JCTree tree, Comment dc) {
+        var list = danglingComments.remove(dc);
+        if (list != null) {
+            var prevPos = deferredLintHandler.setPos(tree);
+            try {
+                list.forEach(this::reportDanglingDocComment);
+            } finally {
+                deferredLintHandler.setPos(prevPos);
+            }
+        }
+    }
+
+    /**
+     * Reports an individual dangling comment using the {@link #deferredLintHandler}.
+     * The comment may or not may generate an actual diagnostic, depending on
+     * the settings for {@code -Xlint} and/or {@code @SuppressWarnings}.
+     *
+     * @param c the comment
+     */
+    void reportDanglingDocComment(Comment c) {
+        var pos = c.getPos();
+        if (pos != null) {
+            deferredLintHandler.report(lint -> {
+                if (lint.isEnabled(Lint.LintCategory.DANGLING_DOC_COMMENTS)) {
+                    log.warning(Lint.LintCategory.DANGLING_DOC_COMMENTS,
+                            pos, Warnings.DanglingDocComment);
+                }
+            });
+        }
+    }
+
+    /** Ignores any recent documentation comments found by the scanner. */
+    private void ignoreDanglingComments() {
+        S.getDocComments().clear();
     }
 
 /* -------- source positions ------- */
@@ -2782,6 +2891,7 @@ public class JavacParser implements Parser {
         ListBuffer<JCStatement> stats = new ListBuffer<>();
         while (true) {
             List<JCStatement> stat = blockStatement();
+            ignoreDanglingComments();
             if (stat.isEmpty()) {
                 return stats.toList();
             } else {
@@ -3722,6 +3832,8 @@ public class JavacParser implements Parser {
             name = names.empty;
         }
 
+        saveDanglingDocComments(dc);
+
         if (token.kind == EQ) {
             nextToken();
             init = variableInitializer();
@@ -4294,6 +4406,9 @@ public class JavacParser implements Parser {
             implementing = typeList();
         }
         List<JCExpression> permitting = permitsClause(mods, "class");
+
+        saveDanglingDocComments(dc);
+
         List<JCTree> defs = classInterfaceOrRecordBody(name, false, false);
         JCClassDecl result = toP(F.at(pos).ClassDef(
             mods, name, typarams, extending, implementing, permitting, defs));
@@ -4316,6 +4431,9 @@ public class JavacParser implements Parser {
             nextToken();
             implementing = typeList();
         }
+
+        saveDanglingDocComments(dc);
+
         List<JCTree> defs = classInterfaceOrRecordBody(name, false, true);
         java.util.List<JCVariableDecl> fields = new ArrayList<>();
         for (JCVariableDecl field : headerFields) {
@@ -4375,6 +4493,9 @@ public class JavacParser implements Parser {
             extending = typeList();
         }
         List<JCExpression> permitting = permitsClause(mods, "interface");
+
+        saveDanglingDocComments(dc);
+
         List<JCTree> defs;
         defs = classInterfaceOrRecordBody(name, true, false);
         JCClassDecl result = toP(F.at(pos).ClassDef(
@@ -4419,6 +4540,8 @@ public class JavacParser implements Parser {
             nextToken();
             implementing = typeList();
         }
+
+        saveDanglingDocComments(dc);
 
         List<JCTree> defs = enumBody(name);
         mods.flags |= Flags.ENUM;
@@ -4549,6 +4672,9 @@ public class JavacParser implements Parser {
         int createPos = token.pos;
         List<JCExpression> args = (token.kind == LPAREN)
             ? arguments() : List.nil();
+
+        saveDanglingDocComments(dc);
+
         JCClassDecl body = null;
         if (token.kind == LBRACE) {
             JCModifiers mods1 = F.at(Position.NOPOS).Modifiers(Flags.ENUM);
@@ -4930,6 +5056,9 @@ public class JavacParser implements Parser {
                     thrown = qualidentList(true);
                 }
             }
+
+            saveDanglingDocComments(dc);
+
             JCBlock body = null;
             JCExpression defaultValue;
             if (token.kind == LBRACE) {

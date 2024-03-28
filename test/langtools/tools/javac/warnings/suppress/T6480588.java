@@ -1,4 +1,4 @@
-/**
+/*
  * @test /nodynamiccopyright/
  * @bug 6470588
  * @summary Verify that \\@SuppressWarnings("deprecation") works OK for all parts

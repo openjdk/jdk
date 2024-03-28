@@ -1,4 +1,4 @@
-/**
+/*
  * @test /nodynamiccopyright/
  * @bug 6199153
  * @summary Generic throws and overriding
