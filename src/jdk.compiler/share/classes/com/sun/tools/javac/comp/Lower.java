@@ -1843,7 +1843,6 @@ public class Lower extends TreeTranslator {
         List<VarSymbol> ots = outerThisStack;
         if (ots.isEmpty()) {
             log.error(pos, Errors.NoEnclInstanceOfTypeInScope(c));
-            Assert.error();
             return makeNull();
         }
         VarSymbol ot = ots.head;

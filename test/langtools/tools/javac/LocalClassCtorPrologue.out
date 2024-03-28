@@ -1,0 +1,4 @@
+LocalClassCtorPrologue.java:16:17: compiler.err.no.encl.instance.of.type.in.scope: LocalClassCtorPrologue
+- compiler.note.preview.filename: LocalClassCtorPrologue.java, DEFAULT
+- compiler.note.preview.recompile
+1 error
