@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -104,6 +104,49 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptInit
     }
 
     TRACE1("DEBUG C_EncryptInit: freed pMech = %p\n", ckpMechanism);
+    freeCKMechanismPtr(ckpMechanism);
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+
+    TRACE0("FINISHED\n");
+}
+
+/*
+ * Class:     sun_security_pkcs11_wrapper_PKCS11
+ * Method:    C_EncryptInitWithIvBitsMech
+ * Signature: (JLsun/security/pkcs11/wrapper/CK_MECHANISM;J)V
+ * Parametermapping:                    *PKCS11*
+ * @param   jlong jSessionHandle        CK_SESSION_HANDLE hSession
+ * @param   jobject jMechanism          CK_MECHANISM_PTR pMechanism
+ * @param   jlong jKeyHandle            CK_OBJECT_HANDLE hKey
+ */
+JNIEXPORT void JNICALL
+Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptInitWithIvBitsMech
+(JNIEnv *env, jobject obj, jlong jSessionHandle,
+ jobject jMechanism, jlong jKeyHandle)
+{
+    CK_SESSION_HANDLE ckSessionHandle;
+    CK_MECHANISM_PTR ckpMechanism = NULL;
+    CK_MECHANISM_PTR ckpTemp;
+    CK_OBJECT_HANDLE ckKeyHandle;
+    CK_RV rv = 1;
+
+    CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
+    if (ckpFunctions == NULL) { return; }
+
+    ckSessionHandle = jLongToCKULong(jSessionHandle);
+    ckKeyHandle = jLongToCKULong(jKeyHandle);
+    ckpMechanism = jMechanismToCKMechanismPtr(env, jMechanism);
+
+    if ((*env)->ExceptionCheck(env)) { return; }
+
+    ckpTemp = updateGCMParams(env, ckpMechanism);
+    if (ckpTemp != NULL) { // only call if conversion succeeds
+        ckpMechanism = ckpTemp;
+        rv = (*ckpFunctions->C_EncryptInit)(ckSessionHandle, ckpMechanism,
+                ckKeyHandle);
+    }
+
+    TRACE1("DEBUG C_EncryptInitWithIvBitsMech: freed pMech = %p\n", ckpMechanism);
     freeCKMechanismPtr(ckpMechanism);
     if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
 
@@ -344,6 +387,49 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptInit
     }
 
     TRACE1("DEBUG C_DecryptInit: freed pMech = %p\n", ckpMechanism);
+    freeCKMechanismPtr(ckpMechanism);
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+
+    TRACE0("FINISHED\n");
+}
+
+/*
+ * Class:     sun_security_pkcs11_wrapper_PKCS11
+ * Method:    C_DecryptInitWithIvBitsMech
+ * Signature: (JLsun/security/pkcs11/wrapper/CK_MECHANISM;J)V
+ * Parametermapping:                    *PKCS11*
+ * @param   jlong jSessionHandle        CK_SESSION_HANDLE hSession
+ * @param   jobject jMechanism          CK_MECHANISM_PTR pMechanism
+ * @param   jlong jKeyHandle            CK_OBJECT_HANDLE hKey
+ */
+JNIEXPORT void JNICALL
+Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptInitWithIvBitsMech
+(JNIEnv *env, jobject obj, jlong jSessionHandle,
+ jobject jMechanism, jlong jKeyHandle)
+{
+    CK_SESSION_HANDLE ckSessionHandle;
+    CK_MECHANISM_PTR ckpMechanism = NULL;
+    CK_MECHANISM_PTR ckpTemp;
+    CK_OBJECT_HANDLE ckKeyHandle;
+    CK_RV rv = 1;
+
+    CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
+    if (ckpFunctions == NULL) { return; }
+
+    ckSessionHandle = jLongToCKULong(jSessionHandle);
+    ckKeyHandle = jLongToCKULong(jKeyHandle);
+    ckpMechanism = jMechanismToCKMechanismPtr(env, jMechanism);
+
+    if ((*env)->ExceptionCheck(env)) { return; }
+
+    ckpTemp = updateGCMParams(env, ckpMechanism);
+    if (ckpTemp != NULL) { // only re-call if conversion succeeds
+        ckpMechanism = ckpTemp;
+        rv = (*ckpFunctions->C_DecryptInit)(ckSessionHandle, ckpMechanism,
+                ckKeyHandle);
+    }
+
+    TRACE1("DEBUG C_DecryptInitWithIvBitsMech: freed pMech = %p\n", ckpMechanism);
     freeCKMechanismPtr(ckpMechanism);
     if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
 
