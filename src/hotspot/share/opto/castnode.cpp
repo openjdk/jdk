@@ -213,13 +213,7 @@ const Type* CastIINode::Value(PhaseGVN* phase) const {
 
   // Similar to ConvI2LNode::Value() for the same reasons
   // see if we can remove type assertion after loop opts
-  // But here we have to pay extra attention:
-  // Do not narrow the type of range check dependent CastIINodes to
-  // avoid corruption of the graph if a CastII is replaced by TOP but
-  // the corresponding range check is not removed.
-  if (!_range_check_dependency) {
-    res = widen_type(phase, res, T_INT);
-  }
+  res = widen_type(phase, res, T_INT);
 
   return res;
 }
@@ -239,11 +233,11 @@ Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (progress != nullptr) {
     return progress;
   }
-  if (can_reshape && !_range_check_dependency && !phase->C->post_loop_opts_phase()) {
+  if (can_reshape && !phase->C->post_loop_opts_phase()) {
     // makes sure we run ::Value to potentially remove type assertion after loop opts
     phase->C->record_for_post_loop_opts_igvn(this);
   }
-  if (!_range_check_dependency) {
+  if (!_type->is_int()->empty()) {
     return optimize_integer_cast(phase, T_INT);
   }
   return nullptr;
@@ -253,13 +247,6 @@ Node* CastIINode::Identity(PhaseGVN* phase) {
   Node* progress = ConstraintCastNode::Identity(phase);
   if (progress != this) {
     return progress;
-  }
-  if (_range_check_dependency) {
-    if (phase->C->post_loop_opts_phase()) {
-      return this->in(1);
-    } else {
-      phase->C->record_for_post_loop_opts_igvn(this);
-    }
   }
   return this;
 }
