@@ -137,19 +137,19 @@ ShenandoahGenerationalHeap::TransferResult ShenandoahGenerationalHeap::balance_g
   shenandoah_assert_heaplocked_or_safepoint();
 
   ShenandoahOldGeneration* old_gen = old_generation();
-  const size_t old_region_surplus = old_gen->get_region_surplus();
-  const size_t old_region_deficit = old_gen->get_region_deficit();
-  old_gen->set_region_surplus(0);
-  old_gen->set_region_deficit(0);
+  const ssize_t old_region_balance = old_gen->get_region_balance();
+  old_gen->set_region_balance(0);
 
-  if (old_region_surplus) {
-    bool success = generation_sizer()->transfer_to_young(old_region_surplus);
+  if (old_region_balance > 0) {
+    const auto old_region_surplus = checked_cast<size_t>(old_region_balance);
+    const bool success = generation_sizer()->transfer_to_young(old_region_surplus);
     return TransferResult {
       success, old_region_surplus, "young"
     };
   }
 
-  if (old_region_deficit) {
+  if (old_region_balance < 0) {
+    const auto old_region_deficit = checked_cast<size_t>(-old_region_balance);
     const bool success = generation_sizer()->transfer_to_old(old_region_deficit);
     if (!success) {
       old_gen->handle_failed_transfer();
@@ -234,34 +234,27 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t old_xfer_
   assert(old_reserve <= max_old_reserve, "cannot reserve more than max for old evacuations");
 
   // We now check if the old generation is running a surplus or a deficit.
-  size_t old_region_deficit = 0;
-  size_t old_region_surplus = 0;
-
   const size_t max_old_available = old_generation()->available() + old_cset_regions * region_size_bytes;
   if (max_old_available >= old_reserve) {
     // We are running a surplus, so the old region surplus can go to young
-    const size_t old_surplus = max_old_available - old_reserve;
-    old_region_surplus = old_surplus / region_size_bytes;
+    const size_t old_surplus = (max_old_available - old_reserve) / region_size_bytes;
     const size_t unaffiliated_old_regions = old_generation()->free_unaffiliated_regions() + old_cset_regions;
-    old_region_surplus = MIN2(old_region_surplus, unaffiliated_old_regions);
+    const size_t old_region_surplus = MIN2(old_surplus, unaffiliated_old_regions);
+    old_generation()->set_region_balance(checked_cast<ssize_t>(old_region_surplus));
   } else {
     // We are running a deficit which we'd like to fill from young.
     // Ignore that this will directly impact young_generation()->max_capacity(),
     // indirectly impacting young_reserve and old_reserve.  These computations are conservative.
-    const size_t old_need = old_reserve - max_old_available;
-    // The old region deficit (rounded up) will come from young
-    old_region_deficit = (old_need + region_size_bytes - 1) / region_size_bytes;
+    // Note that deficit is rounded up by one region.
+    const size_t old_need = (old_reserve - max_old_available + region_size_bytes - 1) / region_size_bytes;
+    const size_t max_old_region_xfer = old_xfer_limit / region_size_bytes;
 
     // Round down the regions we can transfer from young to old. If we're running short
     // on young-gen memory, we restrict the xfer. Old-gen collection activities will be
     // curtailed if the budget is restricted.
-    const size_t max_old_region_xfer = old_xfer_limit / region_size_bytes;
-    old_region_deficit = MIN2(old_region_deficit, max_old_region_xfer);
+    const size_t old_region_deficit = MIN2(old_need, max_old_region_xfer);
+    old_generation()->set_region_balance(0 - checked_cast<ssize_t>(old_region_deficit));
   }
-  assert(old_region_deficit == 0 || old_region_surplus == 0, "Only surplus or deficit, never both");
-
-  old_generation()->set_region_surplus(old_region_surplus);
-  old_generation()->set_region_deficit(old_region_deficit);
 }
 
 void ShenandoahGenerationalHeap::reset_generation_reserves() {

@@ -266,29 +266,63 @@ void ShenandoahGenerationSizer::heap_size_changed(size_t heap_size) {
   recalculate_min_max_young_length(heap_size / ShenandoahHeapRegion::region_size_bytes());
 }
 
+bool ShenandoahGenerationSizer::transfer_regions(ShenandoahGeneration* src, ShenandoahGeneration* dst, size_t regions) const {
+  const size_t bytes_to_transfer = regions * ShenandoahHeapRegion::region_size_bytes();
+
+  if (src->free_unaffiliated_regions() < regions) {
+    // Source does not have enough free regions for this transfer. The caller should have
+    // already capped the transfer based on available unaffiliated regions.
+    return false;
+  }
+
+  if (dst->max_capacity() + bytes_to_transfer > max_size_for(dst)) {
+    // This transfer would cause the destination generation to grow above its configured maximum size.
+    return false;
+  }
+
+  if (src->max_capacity() - bytes_to_transfer < min_size_for(src)) {
+    // This transfer would cause the source generation to shrink below its configured minimum size.
+    return false;
+  }
+
+  src->decrease_capacity(bytes_to_transfer);
+  dst->increase_capacity(bytes_to_transfer);
+  const size_t new_size = dst->max_capacity();
+  log_info(gc)("Transfer " SIZE_FORMAT " region(s) from %s to %s, yielding increased size: " PROPERFMT,
+               regions, src->name(), dst->name(), PROPERFMTARGS(new_size));
+  return true;
+}
+
+
+size_t ShenandoahGenerationSizer::max_size_for(ShenandoahGeneration* generation) const {
+  switch (generation->type()) {
+    case YOUNG:
+      return max_young_size();
+    case OLD:
+      return min_young_size();
+    default:
+      ShouldNotReachHere();
+      return 0;
+  }
+}
+
+size_t ShenandoahGenerationSizer::min_size_for(ShenandoahGeneration* generation) const {
+  switch (generation->type()) {
+    case YOUNG:
+      return min_young_size();
+    case OLD:
+      return ShenandoahHeap::heap()->max_capacity() - max_young_size();
+    default:
+      ShouldNotReachHere();
+      return 0;
+  }
+}
+
+
 // Returns true iff transfer is successful
 bool ShenandoahGenerationSizer::transfer_to_old(size_t regions) const {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  ShenandoahGeneration* old_gen = heap->old_generation();
-  ShenandoahGeneration* young_gen = heap->young_generation();
-  size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-  size_t bytes_to_transfer = regions * region_size_bytes;
-
-  if (young_gen->free_unaffiliated_regions() < regions) {
-    return false;
-  } else if (old_gen->max_capacity() + bytes_to_transfer > heap->max_size_for(old_gen)) {
-    return false;
-  } else if (young_gen->max_capacity() - bytes_to_transfer < heap->min_size_for(young_gen)) {
-    return false;
-  } else {
-    young_gen->decrease_capacity(bytes_to_transfer);
-    old_gen->increase_capacity(bytes_to_transfer);
-    size_t new_size = old_gen->max_capacity();
-    log_info(gc)("Transfer " SIZE_FORMAT " region(s) from %s to %s, yielding increased size: " SIZE_FORMAT "%s",
-                 regions, young_gen->name(), old_gen->name(),
-                 byte_size_in_proper_unit(new_size), proper_unit_for_byte_size(new_size));
-    return true;
-  }
+  return transfer_regions(heap->young_generation(), heap->old_generation(), regions);
 }
 
 // This is used when promoting humongous or highly utilized regular regions in place.  It is not required in this situation
@@ -297,40 +331,19 @@ void ShenandoahGenerationSizer::force_transfer_to_old(size_t regions) const {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahGeneration* old_gen = heap->old_generation();
   ShenandoahGeneration* young_gen = heap->young_generation();
-  size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-  size_t bytes_to_transfer = regions * region_size_bytes;
+  const size_t bytes_to_transfer = regions * ShenandoahHeapRegion::region_size_bytes();
 
   young_gen->decrease_capacity(bytes_to_transfer);
   old_gen->increase_capacity(bytes_to_transfer);
-  size_t new_size = old_gen->max_capacity();
-  log_info(gc)("Forcing transfer of " SIZE_FORMAT " region(s) from %s to %s, yielding increased size: " SIZE_FORMAT "%s",
-               regions, young_gen->name(), old_gen->name(),
-               byte_size_in_proper_unit(new_size), proper_unit_for_byte_size(new_size));
+  const size_t new_size = old_gen->max_capacity();
+  log_info(gc)("Forcing transfer of " SIZE_FORMAT " region(s) from %s to %s, yielding increased size: " PROPERFMT,
+               regions, young_gen->name(), old_gen->name(), PROPERFMTARGS(new_size));
 }
 
 
 bool ShenandoahGenerationSizer::transfer_to_young(size_t regions) const {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  ShenandoahGeneration* old_gen = heap->old_generation();
-  ShenandoahGeneration* young_gen = heap->young_generation();
-  size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-  size_t bytes_to_transfer = regions * region_size_bytes;
-
-  if (old_gen->free_unaffiliated_regions() < regions) {
-    return false;
-  } else if (young_gen->max_capacity() + bytes_to_transfer > heap->max_size_for(young_gen)) {
-    return false;
-  } else if (old_gen->max_capacity() - bytes_to_transfer < heap->min_size_for(old_gen)) {
-    return false;
-  } else {
-    old_gen->decrease_capacity(bytes_to_transfer);
-    young_gen->increase_capacity(bytes_to_transfer);
-    size_t new_size = young_gen->max_capacity();
-    log_info(gc)("Transfer " SIZE_FORMAT " region(s) from %s to %s, yielding increased size: " SIZE_FORMAT "%s",
-                 regions, old_gen->name(), young_gen->name(),
-                 byte_size_in_proper_unit(new_size), proper_unit_for_byte_size(new_size));
-    return true;
-  }
+  return transfer_regions(heap->old_generation(), heap->young_generation(), regions);
 }
 
 size_t ShenandoahGenerationSizer::min_young_size() const {

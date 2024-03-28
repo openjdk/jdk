@@ -513,9 +513,6 @@ public:
   ShenandoahGeneration*      generation_for(ShenandoahAffiliation affiliation) const;
   const ShenandoahGenerationSizer* generation_sizer()  const { return &_generation_sizer;  }
 
-  size_t max_size_for(ShenandoahGeneration* generation) const;
-  size_t min_size_for(ShenandoahGeneration* generation) const;
-
   ShenandoahCollectorPolicy* shenandoah_policy() const { return _shenandoah_policy; }
   ShenandoahMode*            mode()              const { return _gc_mode;           }
   ShenandoahFreeSet*         free_set()          const { return _free_set;          }

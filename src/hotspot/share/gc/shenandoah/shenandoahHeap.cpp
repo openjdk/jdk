@@ -500,36 +500,6 @@ void ShenandoahHeap::print_init_logger() const {
   ShenandoahInitLogger::print();
 }
 
-size_t ShenandoahHeap::max_size_for(ShenandoahGeneration* generation) const {
-  switch (generation->type()) {
-    case YOUNG:
-      return _generation_sizer.max_young_size();
-    case OLD:
-      return max_capacity() - _generation_sizer.min_young_size();
-    case GLOBAL:
-    case NON_GEN:
-      return max_capacity();
-    default:
-      ShouldNotReachHere();
-      return 0;
-  }
-}
-
-size_t ShenandoahHeap::min_size_for(ShenandoahGeneration* generation) const {
-  switch (generation->type()) {
-    case YOUNG:
-      return _generation_sizer.min_young_size();
-    case OLD:
-      return max_capacity() - _generation_sizer.max_young_size();
-    case GLOBAL:
-    case NON_GEN:
-      return min_capacity();
-    default:
-      ShouldNotReachHere();
-      return 0;
-  }
-}
-
 void ShenandoahHeap::initialize_heuristics_generations() {
   if (ShenandoahGCMode != nullptr) {
     if (strcmp(ShenandoahGCMode, "satb") == 0) {

@@ -37,12 +37,12 @@ private:
   ShenandoahHeapRegion** _coalesce_and_fill_region_array;
   ShenandoahOldHeuristics* _old_heuristics;
 
-  // After determining the desired size of the old generation (see compute_old_generation_balance), these
-  // quantities represent the number of regions above (surplus) or below (deficit) that size.
-  // These values are computed prior to the actual exchange of any regions. These may never both
-  // be positive simultaneously.
-  size_t _region_surplus;
-  size_t _region_deficit;
+  // After determining the desired size of the old generation (see compute_old_generation_balance), this
+  // quantity represents the number of regions above (surplus) or below (deficit) that size.
+  // This value is computed prior to the actual exchange of any regions. A positive value represents
+  // a surplus of old regions which will be transferred from old _to_ young. A negative value represents
+  // a deficit of regions that will be replenished by a transfer _from_ young to old.
+  ssize_t _region_balance;
 
   // Set when evacuation in the old generation fails. When this is set, the control thread will initiate a
   // full GC instead of a futile degenerated cycle.
@@ -107,11 +107,8 @@ public:
   size_t get_promoted_expended();
 
   // See description in field declaration
-  void set_region_surplus(size_t surplus) { _region_surplus = surplus; };
-  void set_region_deficit(size_t deficit) { _region_deficit = deficit; };
-  size_t get_region_surplus() const { return _region_surplus; };
-  size_t get_region_deficit() const { return _region_deficit; };
-
+  void set_region_balance(ssize_t balance) { _region_balance = balance; }
+  ssize_t get_region_balance() const { return _region_balance; }
   // See description in field declaration
   void set_promotion_potential(size_t val) { _promotion_potential = val; };
   size_t get_promotion_potential() const { return _promotion_potential; };
