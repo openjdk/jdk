@@ -1115,6 +1115,7 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jint st
         jlong scale = 0;
         if (loop->is_range_check_if(if_proj, this, T_LONG, phi, range, offset, scale) &&
             loop->is_invariant(range) && loop->is_invariant(offset) &&
+            scale != min_jlong &&
             original_iters_limit / ABS(scale) >= min_iters * ABS(stride_con)) {
           assert(scale == (jint)scale, "scale should be an int");
           reduced_iters_limit = MIN2(reduced_iters_limit, original_iters_limit/ABS(scale));
