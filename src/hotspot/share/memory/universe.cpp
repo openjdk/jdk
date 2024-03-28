@@ -87,6 +87,29 @@
 #include "utilities/ostream.hpp"
 #include "utilities/preserveException.hpp"
 
+// A helper class for caching a Method* when the user of the cache
+// only cares about the latest version of the Method*. This cache safely
+// interacts with the RedefineClasses API.
+class LatestMethodCache {
+  // We save the InstanceKlass* and the idnum of Method* in order to get
+  // the current Method*.
+  InstanceKlass*        _klass;
+  int                   _method_idnum;
+
+ public:
+  LatestMethodCache()   { _klass = nullptr; _method_idnum = -1; }
+
+  void init(JavaThread* current, InstanceKlass* ik, const char* method,
+            Symbol* signature, bool is_static);
+  Method* get_method();
+};
+
+static LatestMethodCache _finalizer_register_cache;         // Finalizer.register()
+static LatestMethodCache _loader_addClass_cache;            // ClassLoader.addClass()
+static LatestMethodCache _throw_illegal_access_error_cache; // Unsafe.throwIllegalAccessError()
+static LatestMethodCache _throw_no_such_method_error_cache; // Unsafe.throwNoSuchMethodError()
+static LatestMethodCache _do_stack_walk_cache;              // AbstractStackWalker.doStackWalk()
+
 // Known objects
 Klass* Universe::_typeArrayKlassObjs[T_LONG+1]        = { nullptr /*, nullptr...*/ };
 Klass* Universe::_objectArrayKlassObj                 = nullptr;
@@ -133,11 +156,6 @@ OopHandle Universe::_virtual_machine_error_instance;
 OopHandle Universe::_reference_pending_list;
 
 Array<Klass*>* Universe::_the_array_interfaces_array = nullptr;
-LatestMethodCache* Universe::_finalizer_register_cache = nullptr;
-LatestMethodCache* Universe::_loader_addClass_cache    = nullptr;
-LatestMethodCache* Universe::_throw_illegal_access_error_cache = nullptr;
-LatestMethodCache* Universe::_throw_no_such_method_error_cache = nullptr;
-LatestMethodCache* Universe::_do_stack_walk_cache     = nullptr;
 
 long Universe::verify_flags                           = Universe::Verify_All;
 
@@ -214,10 +232,6 @@ void Universe::basic_type_classes_do(KlassClosure *closure) {
   // closure->do_klass(_fillerArrayKlassObj);
 }
 
-void LatestMethodCache::metaspace_pointers_do(MetaspaceClosure* it) {
-  it->push(&_klass);
-}
-
 void Universe::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_fillerArrayKlassObj);
   for (int i = 0; i < T_LONG+1; i++) {
@@ -231,12 +245,6 @@ void Universe::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_the_empty_instance_klass_array);
   it->push(&_the_empty_method_array);
   it->push(&_the_array_interfaces_array);
-
-  _finalizer_register_cache->metaspace_pointers_do(it);
-  _loader_addClass_cache->metaspace_pointers_do(it);
-  _throw_illegal_access_error_cache->metaspace_pointers_do(it);
-  _throw_no_such_method_error_cache->metaspace_pointers_do(it);
-  _do_stack_walk_cache->metaspace_pointers_do(it);
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -283,11 +291,6 @@ void Universe::serialize(SerializeClosure* f) {
   f->do_ptr(&_the_empty_method_array);
   f->do_ptr(&_the_empty_klass_array);
   f->do_ptr(&_the_empty_instance_klass_array);
-  _finalizer_register_cache->serialize(f);
-  _loader_addClass_cache->serialize(f);
-  _throw_illegal_access_error_cache->serialize(f);
-  _throw_no_such_method_error_cache->serialize(f);
-  _do_stack_walk_cache->serialize(f);
 }
 
 
@@ -810,14 +813,6 @@ jint universe_init() {
 
   ClassLoaderData::init_null_class_loader_data();
 
-  // We have a heap so create the Method* caches before
-  // Metaspace::initialize_shared_spaces() tries to populate them.
-  Universe::_finalizer_register_cache = new LatestMethodCache();
-  Universe::_loader_addClass_cache    = new LatestMethodCache();
-  Universe::_throw_illegal_access_error_cache = new LatestMethodCache();
-  Universe::_throw_no_such_method_error_cache = new LatestMethodCache();
-  Universe::_do_stack_walk_cache = new LatestMethodCache();
-
 #if INCLUDE_CDS
   DynamicArchive::check_for_dynamic_dump();
   if (UseSharedSpaces) {
@@ -924,55 +919,71 @@ void universe_oopstorage_init() {
   Universe::oopstorage_init();
 }
 
-static void initialize_known_method(LatestMethodCache* method_cache,
-                                    InstanceKlass* ik,
-                                    const char* method,
-                                    Symbol* signature,
-                                    bool is_static, TRAPS)
+void LatestMethodCache::init(JavaThread* current, InstanceKlass* ik,
+                             const char* method, Symbol* signature, bool is_static)
 {
   TempNewSymbol name = SymbolTable::new_symbol(method);
   Method* m = nullptr;
   // The klass must be linked before looking up the method.
-  if (!ik->link_class_or_fail(THREAD) ||
+  if (!ik->link_class_or_fail(current) ||
       ((m = ik->find_method(name, signature)) == nullptr) ||
       is_static != m->is_static()) {
-    ResourceMark rm(THREAD);
+    ResourceMark rm(current);
     // NoSuchMethodException doesn't actually work because it tries to run the
     // <init> function before java_lang_Class is linked. Print error and exit.
     vm_exit_during_initialization(err_msg("Unable to link/verify %s.%s method",
                                  ik->name()->as_C_string(), method));
   }
-  method_cache->init(ik, m);
+
+  _klass = ik;
+  _method_idnum = m->method_idnum();
+  assert(_method_idnum >= 0, "sanity check");
 }
 
-void Universe::initialize_known_methods(TRAPS) {
+Method* LatestMethodCache::get_method() {
+  if (_klass == nullptr) {
+    return nullptr;
+  } else {
+    Method* m = _klass->method_with_idnum(_method_idnum);
+    assert(m != nullptr, "sanity check");
+    return m;
+  }
+}
+
+Method* Universe::finalizer_register_method()     { return _finalizer_register_cache.get_method(); }
+Method* Universe::loader_addClass_method()        { return _loader_addClass_cache.get_method(); }
+Method* Universe::throw_illegal_access_error()    { return _throw_illegal_access_error_cache.get_method(); }
+Method* Universe::throw_no_such_method_error()    { return _throw_no_such_method_error_cache.get_method(); }
+Method* Universe::do_stack_walk_method()          { return _do_stack_walk_cache.get_method(); }
+
+void Universe::initialize_known_methods(JavaThread* current) {
   // Set up static method for registering finalizers
-  initialize_known_method(_finalizer_register_cache,
+  _finalizer_register_cache.init(current,
                           vmClasses::Finalizer_klass(),
                           "register",
-                          vmSymbols::object_void_signature(), true, CHECK);
+                          vmSymbols::object_void_signature(), true);
 
-  initialize_known_method(_throw_illegal_access_error_cache,
+  _throw_illegal_access_error_cache.init(current,
                           vmClasses::internal_Unsafe_klass(),
                           "throwIllegalAccessError",
-                          vmSymbols::void_method_signature(), true, CHECK);
+                          vmSymbols::void_method_signature(), true);
 
-  initialize_known_method(_throw_no_such_method_error_cache,
+  _throw_no_such_method_error_cache.init(current,
                           vmClasses::internal_Unsafe_klass(),
                           "throwNoSuchMethodError",
-                          vmSymbols::void_method_signature(), true, CHECK);
+                          vmSymbols::void_method_signature(), true);
 
   // Set up method for registering loaded classes in class loader vector
-  initialize_known_method(_loader_addClass_cache,
+  _loader_addClass_cache.init(current,
                           vmClasses::ClassLoader_klass(),
                           "addClass",
-                          vmSymbols::class_void_signature(), false, CHECK);
+                          vmSymbols::class_void_signature(), false);
 
   // Set up method for stack walking
-  initialize_known_method(_do_stack_walk_cache,
+  _do_stack_walk_cache.init(current,
                           vmClasses::AbstractStackWalker_klass(),
                           "doStackWalk",
-                          vmSymbols::doStackWalk_signature(), false, CHECK);
+                          vmSymbols::doStackWalk_signature(), false);
 }
 
 void universe2_init() {
@@ -1040,7 +1051,7 @@ bool universe_post_init() {
   instance = InstanceKlass::cast(k)->allocate_instance(CHECK_false);
   Universe::_class_init_stack_overflow_error = OopHandle(Universe::vm_global(), instance);
 
-  Universe::initialize_known_methods(CHECK_false);
+  Universe::initialize_known_methods(THREAD);
 
   // This needs to be done before the first scavenge/gc, since
   // it's an input to soft ref clearing policy.
@@ -1254,35 +1265,6 @@ uintptr_t Universe::verify_mark_bits() {
   return bits;
 }
 #endif // PRODUCT
-
-
-void LatestMethodCache::init(Klass* k, Method* m) {
-  if (!UseSharedSpaces) {
-    _klass = k;
-  }
-#ifndef PRODUCT
-  else {
-    // sharing initialization should have already set up _klass
-    assert(_klass != nullptr, "just checking");
-  }
-#endif
-
-  _method_idnum = m->method_idnum();
-  assert(_method_idnum >= 0, "sanity check");
-}
-
-
-Method* LatestMethodCache::get_method() {
-  if (klass() == nullptr) return nullptr;
-  InstanceKlass* ik = InstanceKlass::cast(klass());
-  Method* m = ik->method_with_idnum(method_idnum());
-  assert(m != nullptr, "sanity check");
-  return m;
-}
-
-void LatestMethodCache::serialize(SerializeClosure* f) {
-  f->do_ptr(&_klass);
-}
 
 #ifdef ASSERT
 // Release dummy object(s) at bottom of heap
