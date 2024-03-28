@@ -462,7 +462,8 @@ int ciMethod::check_overflow(int c, Bytecodes::Code code) {
 ciCallProfile ciMethod::call_profile_at_bci(int bci) {
   ResourceMark rm;
   ciCallProfile result;
-  if (method_data() != nullptr && method_data()->is_mature()) {
+  // take CounterData regardless of maturity.
+  if (method_data() != nullptr) {
     ciProfileData* data = method_data()->bci_to_data(bci);
     if (data != nullptr && data->is_CounterData()) {
       // Every profiled call site has a counter.
