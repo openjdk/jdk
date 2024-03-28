@@ -34,8 +34,12 @@ inline VMReg FloatRegister::as_VMReg() const {
   return VMRegImpl::as_VMReg((encoding() << 1) + ConcreteRegisterImpl::max_gpr);
 }
 
+inline VMReg VectorRegister::as_VMReg() const {
+  return VMRegImpl::as_VMReg((encoding()) + ConcreteRegisterImpl::max_fpr);
+}
+
 inline VMReg ConditionRegister::as_VMReg() const {
-  return VMRegImpl::as_VMReg((encoding() << 1) + ConcreteRegisterImpl::max_fpr);
+  return VMRegImpl::as_VMReg(encoding() + ConcreteRegisterImpl::max_vr);
 }
 
 #endif // CPU_S390_VMREG_S390_INLINE_HPP
