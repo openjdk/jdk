@@ -9975,9 +9975,6 @@ instruct convD2F_reg_reg(regF dst, regD src)
 
   format %{ "cvtsd2ss $dst, $src" %}
   ins_encode %{
-    if (UseAVX > 0) {
-      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
-    }
     __ cvtsd2ss ($dst$$XMMRegister, $src$$XMMRegister);
   %}
   ins_pipe(pipe_slow); // XXX
@@ -10150,6 +10147,9 @@ instruct convL2F_reg_reg(regF dst, rRegL src)
 
   format %{ "cvtsi2ssq $dst, $src\t# l2f" %}
   ins_encode %{
+    if (UseAVX > 0) {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ cvtsi2ssq ($dst$$XMMRegister, $src$$Register);
   %}
   ins_pipe(pipe_slow); // XXX
