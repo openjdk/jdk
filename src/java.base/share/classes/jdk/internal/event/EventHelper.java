@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.internal.event;
 
 import jdk.internal.access.JavaUtilJarAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.ThreadTracker;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -133,6 +134,18 @@ public final class EventHelper {
         }
     }
 
+    private static class ThreadTrackHolder {
+        static final ThreadTracker TRACKER = new ThreadTracker();
+    }
+
+    private static Object tryBeginLookup() {
+        return ThreadTrackHolder.TRACKER.tryBegin();
+    }
+
+    private static void endLookup(Object key) {
+        ThreadTrackHolder.TRACKER.end(key);
+    }
+
     /**
      * Helper to determine if security events are being logged
      * at a preconfigured logging level. The configuration value
@@ -141,14 +154,20 @@ public final class EventHelper {
      * @return boolean indicating whether an event should be logged
      */
     public static boolean isLoggingSecurity() {
-        // Avoid a bootstrap issue where the commitEvent attempts to
-        // trigger early loading of System Logger but where
-        // the verification process still has JarFiles locked
-        if (securityLogger == null && !JUJA.isInitializing()) {
-            LOGGER_HANDLE.compareAndSet( null, System.getLogger(SECURITY_LOGGER_NAME));
-            loggingSecurity = securityLogger.isLoggable(LOG_LEVEL);
+        Object key;
+        // Avoid bootstrap issues where
+        // * commitEvent triggers early loading of System Logger but where
+        //   the verification process still has JarFiles locked
+        // * the loading of the logging libraries involves recursive
+        //   calls to security libraries triggering recursion
+        if (securityLogger == null && !JUJA.isInitializing() && (key = tryBeginLookup()) != null) {
+            try {
+                LOGGER_HANDLE.compareAndSet(null, System.getLogger(SECURITY_LOGGER_NAME));
+                loggingSecurity = securityLogger.isLoggable(LOG_LEVEL);
+            } finally {
+                endLookup(key);
+            }
         }
         return loggingSecurity;
     }
-
 }
