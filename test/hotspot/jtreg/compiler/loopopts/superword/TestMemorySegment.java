@@ -152,34 +152,48 @@ public class TestMemorySegment {
         for (int i = 0; i < gold.length; i++) {
             Object g = gold[i];
             Object r = result[i];
-            if (g.getClass() != r.getClass() || !g.getClass().isArray() || !r.getClass().isArray()) {
-                throw new RuntimeException("verify " + name + ": must both be array of same type:" +
-                                           " gold[" + i + "].getClass() = " + g.getClass().getSimpleName() +
-                                           " result[" + i + "].getClass() = " + r.getClass().getSimpleName());
-            }
             if (g == r) {
-                throw new RuntimeException("verify " + name + ": should be two separate arrays (with identical content):" +
+                throw new RuntimeException("verify " + name + ": should be two separate objects (with identical content):" +
                                            " gold[" + i + "] == result[" + i + "]");
             }
-            if (Array.getLength(g) != Array.getLength(r)) {
-                    throw new RuntimeException("verify " + name + ": arrays must have same length:" +
-                                           " gold[" + i + "].length = " + Array.getLength(g) +
-                                           " result[" + i + "].length = " + Array.getLength(r));
+
+            MemorySegment mg;
+            MemorySegment mr;
+            if (g.getClass().isArray()) {
+                if (g.getClass() != r.getClass() || !g.getClass().isArray() || !r.getClass().isArray()) {
+                    throw new RuntimeException("verify " + name + ": must both be array of same type:" +
+                                               " gold[" + i + "].getClass() = " + g.getClass().getSimpleName() +
+                                               " result[" + i + "].getClass() = " + r.getClass().getSimpleName());
+                }
+                if (Array.getLength(g) != Array.getLength(r)) {
+                        throw new RuntimeException("verify " + name + ": arrays must have same length:" +
+                                               " gold[" + i + "].length = " + Array.getLength(g) +
+                                               " result[" + i + "].length = " + Array.getLength(r));
+                }
+                Class c = g.getClass().getComponentType();
+                if (c == byte.class) {
+                    verifyB(name, i, (byte[])g, (byte[])r);
+                } else if (c == short.class) {
+                    verifyS(name, i, (short[])g, (short[])r);
+                } else if (c == int.class) {
+                    verifyI(name, i, (int[])g, (int[])r);
+                } else if (c == long.class) {
+                    verifyL(name, i, (long[])g, (long[])r);
+                } else {
+                    throw new RuntimeException("verify " + name + ": array type not supported for verify:" +
+                                           " gold[" + i + "].getClass() = " + g.getClass().getSimpleName() +
+                                           " result[" + i + "].getClass() = " + r.getClass().getSimpleName());
+                }
+	    } else if (g instanceof MemorySegment) {
+                mg = (MemorySegment)g;
+                if (!(r instanceof MemorySegment)) {
+                    throw new RuntimeException("verify " + name + ": was not both MemorySegment:" +
+                                           " gold[" + i + "].getClass() = " + g.getClass().getSimpleName() +
+                                           " result[" + i + "].getClass() = " + r.getClass().getSimpleName());
+                }
+                mr = (MemorySegment)r;
             }
-            Class c = g.getClass().getComponentType();
-            if (c == byte.class) {
-                verifyB(name, i, (byte[])g, (byte[])r);
-            } else if (c == short.class) {
-                verifyS(name, i, (short[])g, (short[])r);
-            } else if (c == int.class) {
-                verifyI(name, i, (int[])g, (int[])r);
-            } else if (c == long.class) {
-                verifyL(name, i, (long[])g, (long[])r);
-            } else {
-                throw new RuntimeException("verify " + name + ": array type not supported for verify:" +
-                                       " gold[" + i + "].getClass() = " + g.getClass().getSimpleName() +
-                                       " result[" + i + "].getClass() = " + r.getClass().getSimpleName());
-            }
+            // TODO verify MemorySegment, size and content. Also do the same for the arrays?
         }
     }
 
