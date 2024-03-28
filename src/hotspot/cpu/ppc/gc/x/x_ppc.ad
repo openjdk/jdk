@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2021 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -32,7 +32,7 @@ source_hpp %{
 
 source %{
 
-static void x_load_barrier(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register ref,
+static void x_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref,
                            Register tmp, uint8_t barrier_data) {
   if (barrier_data == XLoadBarrierElided) {
     return;
@@ -45,14 +45,14 @@ static void x_load_barrier(MacroAssembler& _masm, const MachNode* node, Address 
   __ bind(*stub->continuation());
 }
 
-static void x_load_barrier_slow_path(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register ref,
+static void x_load_barrier_slow_path(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref,
                                      Register tmp) {
   XLoadBarrierStubC2* const stub = XLoadBarrierStubC2::create(node, ref_addr, ref, tmp, XLoadBarrierStrong);
   __ b(*stub->entry());
   __ bind(*stub->continuation());
 }
 
-static void x_compare_and_swap(MacroAssembler& _masm, const MachNode* node,
+static void x_compare_and_swap(MacroAssembler* masm, const MachNode* node,
                               Register res, Register mem, Register oldval, Register newval,
                               Register tmp_xchg, Register tmp_mask,
                               bool weak, bool acquire) {
@@ -70,7 +70,7 @@ static void x_compare_and_swap(MacroAssembler& _masm, const MachNode* node,
     __ beq(CCR0, skip_barrier);
 
     // CAS must have failed because pointer in memory is bad.
-    x_load_barrier_slow_path(_masm, node, Address(mem), tmp_xchg, res /* used as tmp */);
+    x_load_barrier_slow_path(masm, node, Address(mem), tmp_xchg, res /* used as tmp */);
 
     __ cmpxchgd(CCR0, tmp_xchg, oldval, newval, mem,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(), res, nullptr, true, weak);
@@ -89,7 +89,7 @@ static void x_compare_and_swap(MacroAssembler& _masm, const MachNode* node,
   }
 }
 
-static void x_compare_and_exchange(MacroAssembler& _masm, const MachNode* node,
+static void x_compare_and_exchange(MacroAssembler* masm, const MachNode* node,
                                    Register res, Register mem, Register oldval, Register newval, Register tmp,
                                    bool weak, bool acquire) {
   // z-specific load barrier requires strong CAS operations.
@@ -104,7 +104,7 @@ static void x_compare_and_exchange(MacroAssembler& _masm, const MachNode* node,
     __ and_(tmp, tmp, res);
     __ beq(CCR0, skip_barrier);
 
-    x_load_barrier_slow_path(_masm, node, Address(mem), res, tmp);
+    x_load_barrier_slow_path(masm, node, Address(mem), res, tmp);
 
     __ cmpxchgd(CCR0, res, oldval, newval, mem,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(), noreg, nullptr, true, weak);
@@ -138,7 +138,7 @@ instruct xLoadP(iRegPdst dst, memoryAlg4 mem, iRegPdst tmp, flagsRegCR0 cr0)
   ins_encode %{
     assert($mem$$index == 0, "sanity");
     __ ld($dst$$Register, $mem$$disp, $mem$$base$$Register);
-    x_load_barrier(_masm, this, Address($mem$$base$$Register, $mem$$disp), $dst$$Register, $tmp$$Register, barrier_data());
+    x_load_barrier(masm, this, Address($mem$$base$$Register, $mem$$disp), $dst$$Register, $tmp$$Register, barrier_data());
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -156,7 +156,7 @@ instruct xLoadP_acq(iRegPdst dst, memoryAlg4 mem, iRegPdst tmp, flagsRegCR0 cr0)
   format %{ "LD acq $dst, $mem" %}
   ins_encode %{
     __ ld($dst$$Register, $mem$$disp, $mem$$base$$Register);
-    x_load_barrier(_masm, this, Address($mem$$base$$Register, $mem$$disp), $dst$$Register, $tmp$$Register, barrier_data());
+    x_load_barrier(masm, this, Address($mem$$base$$Register, $mem$$disp), $dst$$Register, $tmp$$Register, barrier_data());
 
     // Uses the isync instruction as an acquire barrier.
     // This exploits the compare and the branch in the z load barrier (load, compare and branch, isync).
@@ -175,7 +175,7 @@ instruct xCompareAndSwapP(iRegIdst res, iRegPdst mem, iRegPsrc oldval, iRegPsrc 
 
   format %{ "CMPXCHG $res, $mem, $oldval, $newval; as bool; ptr" %}
   ins_encode %{
-    x_compare_and_swap(_masm, this,
+    x_compare_and_swap(masm, this,
                                 $res$$Register, $mem$$Register, $oldval$$Register, $newval$$Register,
                                 $tmp_xchg$$Register, $tmp_mask$$Register,
                                 false /* weak */, false /* acquire */);
@@ -193,7 +193,7 @@ instruct xCompareAndSwapP_acq(iRegIdst res, iRegPdst mem, iRegPsrc oldval, iRegP
 
   format %{ "CMPXCHG acq $res, $mem, $oldval, $newval; as bool; ptr" %}
   ins_encode %{
-    x_compare_and_swap(_masm, this,
+    x_compare_and_swap(masm, this,
                                 $res$$Register, $mem$$Register, $oldval$$Register, $newval$$Register,
                                 $tmp_xchg$$Register, $tmp_mask$$Register,
                                 false /* weak */, true /* acquire */);
@@ -211,7 +211,7 @@ instruct xCompareAndSwapPWeak(iRegIdst res, iRegPdst mem, iRegPsrc oldval, iRegP
 
   format %{ "weak CMPXCHG $res, $mem, $oldval, $newval; as bool; ptr" %}
   ins_encode %{
-    x_compare_and_swap(_masm, this,
+    x_compare_and_swap(masm, this,
                                 $res$$Register, $mem$$Register, $oldval$$Register, $newval$$Register,
                                 $tmp_xchg$$Register, $tmp_mask$$Register,
                                 true /* weak */, false /* acquire */);
@@ -229,7 +229,7 @@ instruct xCompareAndSwapPWeak_acq(iRegIdst res, iRegPdst mem, iRegPsrc oldval, i
 
   format %{ "weak CMPXCHG acq $res, $mem, $oldval, $newval; as bool; ptr" %}
   ins_encode %{
-    x_compare_and_swap(_masm, this,
+    x_compare_and_swap(masm, this,
                                 $res$$Register, $mem$$Register, $oldval$$Register, $newval$$Register,
                                 $tmp_xchg$$Register, $tmp_mask$$Register,
                                 true /* weak */, true /* acquire */);
@@ -250,7 +250,7 @@ instruct xCompareAndExchangeP(iRegPdst res, iRegPdst mem, iRegPsrc oldval, iRegP
 
   format %{ "CMPXCHG $res, $mem, $oldval, $newval; as ptr; ptr" %}
   ins_encode %{
-    x_compare_and_exchange(_masm, this,
+    x_compare_and_exchange(masm, this,
                                     $res$$Register, $mem$$Register, $oldval$$Register, $newval$$Register, $tmp$$Register,
                                     false /* weak */, false /* acquire */);
   %}
@@ -270,7 +270,7 @@ instruct xCompareAndExchangeP_acq(iRegPdst res, iRegPdst mem, iRegPsrc oldval, i
 
   format %{ "CMPXCHG acq $res, $mem, $oldval, $newval; as ptr; ptr" %}
   ins_encode %{
-    x_compare_and_exchange(_masm, this,
+    x_compare_and_exchange(masm, this,
                                     $res$$Register, $mem$$Register, $oldval$$Register, $newval$$Register, $tmp$$Register,
                                     false /* weak */, true /* acquire */);
   %}
@@ -286,7 +286,7 @@ instruct xGetAndSetP(iRegPdst res, iRegPdst mem, iRegPsrc newval, iRegPdst tmp, 
   format %{ "GetAndSetP $res, $mem, $newval" %}
   ins_encode %{
     __ getandsetd($res$$Register, $newval$$Register, $mem$$Register, MacroAssembler::cmpxchgx_hint_atomic_update());
-    x_load_barrier(_masm, this, Address(noreg, (intptr_t) 0), $res$$Register, $tmp$$Register, barrier_data());
+    x_load_barrier(masm, this, Address(noreg, (intptr_t) 0), $res$$Register, $tmp$$Register, barrier_data());
 
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
       __ isync();

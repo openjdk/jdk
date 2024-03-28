@@ -30,19 +30,19 @@ opclass vmemA(indirect);
 
 source %{
 
-  static void loadStore(C2_MacroAssembler masm, bool is_store,
+  static void loadStore(C2_MacroAssembler* masm, bool is_store,
                         VectorRegister reg, BasicType bt, Register base,
                         uint vector_length, Assembler::VectorMask vm = Assembler::unmasked) {
     Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
-    masm.vsetvli_helper(bt, vector_length);
+    __ vsetvli_helper(bt, vector_length);
 
     if (is_store) {
-      masm.vsex_v(reg, base, sew, vm);
+      __ vsex_v(reg, base, sew, vm);
     } else {
       if (vm == Assembler::v0_t) {
-        masm.vxor_vv(reg, reg, reg);
+        __ vxor_vv(reg, reg, reg);
       }
-      masm.vlex_v(reg, base, sew, vm);
+      __ vlex_v(reg, base, sew, vm);
     }
   }
 
@@ -108,7 +108,7 @@ instruct loadV(vReg dst, vmemA mem) %{
   format %{ "loadV $dst, $mem\t# vector (rvv)" %}
   ins_encode %{
     VectorRegister dst_reg = as_VectorRegister($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), false, dst_reg,
+    loadStore(masm, false, dst_reg,
               Matcher::vector_element_basic_type(this), as_Register($mem$$base), Matcher::vector_length(this));
   %}
   ins_pipe(pipe_slow);
@@ -120,7 +120,7 @@ instruct storeV(vReg src, vmemA mem) %{
   format %{ "storeV $mem, $src\t# vector (rvv)" %}
   ins_encode %{
     VectorRegister src_reg = as_VectorRegister($src$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), true, src_reg,
+    loadStore(masm, true, src_reg,
               Matcher::vector_element_basic_type(this, $src), as_Register($mem$$base), Matcher::vector_length(this, $src));
   %}
   ins_pipe(pipe_slow);
@@ -3154,7 +3154,7 @@ instruct loadV_masked(vReg dst, vmemA mem, vRegMask_V0 v0) %{
   format %{ "loadV_masked $dst, $mem, $v0" %}
   ins_encode %{
     VectorRegister dst_reg = as_VectorRegister($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), false, dst_reg,
+    loadStore(masm, false, dst_reg,
               Matcher::vector_element_basic_type(this), as_Register($mem$$base),
               Matcher::vector_length(this), Assembler::v0_t);
   %}
@@ -3166,7 +3166,7 @@ instruct storeV_masked(vReg src, vmemA mem, vRegMask_V0 v0) %{
   format %{ "storeV_masked $mem, $src, $v0" %}
   ins_encode %{
     VectorRegister src_reg = as_VectorRegister($src$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), true, src_reg,
+    loadStore(masm, true, src_reg,
               Matcher::vector_element_basic_type(this, $src), as_Register($mem$$base),
               Matcher::vector_length(this, $src), Assembler::v0_t);
   %}

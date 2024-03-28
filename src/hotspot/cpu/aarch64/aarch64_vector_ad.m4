@@ -84,7 +84,7 @@ source %{
                                                              PRegister Pg, const Address &adr);
 
   // Predicated load/store, with optional ptrue to all elements of given predicate register.
-  static void loadStoreA_predicated(C2_MacroAssembler masm, bool is_store, FloatRegister reg,
+  static void loadStoreA_predicated(C2_MacroAssembler* masm, bool is_store, FloatRegister reg,
                                     PRegister pg, BasicType mem_elem_bt, BasicType vector_elem_bt,
                                     int opcode, Register base, int index, int size, int disp) {
     sve_mem_insn_predicate insn;
@@ -109,7 +109,7 @@ source %{
         ShouldNotReachHere();
       }
       int imm4 = disp / mesize / Matcher::scalable_vector_reg_size(vector_elem_bt);
-      (masm.*insn)(reg, Assembler::elemType_to_regVariant(vector_elem_bt), pg, Address(base, imm4));
+      (masm->*insn)(reg, Assembler::elemType_to_regVariant(vector_elem_bt), pg, Address(base, imm4));
     } else {
       assert(false, "unimplemented");
       ShouldNotReachHere();
@@ -361,7 +361,7 @@ instruct loadV(vReg dst, vmemA mem) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), /* is_store */ false,
+    loadStoreA_predicated(masm, /* is_store */ false,
                           $dst$$FloatRegister, ptrue, bt, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
@@ -378,7 +378,7 @@ instruct storeV(vReg src, vmemA mem) %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src);
     assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), /* is_store */ true,
+    loadStoreA_predicated(masm, /* is_store */ true,
                           $src$$FloatRegister, ptrue, bt, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
@@ -393,7 +393,7 @@ instruct loadV_masked(vReg dst, vmemA mem, pRegGov pg) %{
   format %{ "loadV_masked $dst, $pg, $mem" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), /* is_store */ false, $dst$$FloatRegister,
+    loadStoreA_predicated(masm, /* is_store */ false, $dst$$FloatRegister,
                           $pg$$PRegister, bt, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
@@ -406,7 +406,7 @@ instruct storeV_masked(vReg src, vmemA mem, pRegGov pg) %{
   format %{ "storeV_masked $mem, $pg, $src" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src);
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), /* is_store */ true, $src$$FloatRegister,
+    loadStoreA_predicated(masm, /* is_store */ true, $src$$FloatRegister,
                           $pg$$PRegister, bt, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
@@ -3321,7 +3321,7 @@ instruct vloadmask_loadV(pReg dst, indirect mem, vReg tmp, rFlagsReg cr) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), false, $tmp$$FloatRegister,
+    loadStoreA_predicated(masm, false, $tmp$$FloatRegister,
                           ptrue, T_BOOLEAN, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
     __ sve_cmp(Assembler::NE, $dst$$PRegister, __ elemType_to_regVariant(bt),
@@ -3342,7 +3342,7 @@ instruct vloadmask_loadV_masked(pReg dst, indirect mem, pRegGov pg,
     // Load valid mask values which are boolean type, and extend them to the
     // defined vector element type. Convert the vector to predicate.
     BasicType bt = Matcher::vector_element_basic_type(this);
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), false, $tmp$$FloatRegister,
+    loadStoreA_predicated(masm, false, $tmp$$FloatRegister,
                           $pg$$PRegister, T_BOOLEAN, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
     __ sve_cmp(Assembler::NE, $dst$$PRegister, __ elemType_to_regVariant(bt),
@@ -3369,7 +3369,7 @@ instruct vloadmask_loadVMasked(pReg dst, vmemA mem, pRegGov pg, vReg tmp, rFlags
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), false, $tmp$$FloatRegister,
+    loadStoreA_predicated(masm, false, $tmp$$FloatRegister,
                           ptrue, T_BOOLEAN, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
     __ sve_cmp(Assembler::NE, $dst$$PRegister, __ elemType_to_regVariant(bt),
@@ -3397,7 +3397,7 @@ instruct vloadmask_loadVMasked_masked(pReg dst, vmemA mem, pRegGov pg1, pRegGov 
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), false, $tmp$$FloatRegister,
+    loadStoreA_predicated(masm, false, $tmp$$FloatRegister,
                           $pg2$$PRegister, T_BOOLEAN, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
     __ sve_cmp(Assembler::NE, $dst$$PRegister, __ elemType_to_regVariant(bt),
@@ -3422,7 +3422,7 @@ instruct storeV_vstoremask(indirect mem, pReg src, immI_gt_1 esize, vReg tmp) %{
     assert(type2aelembytes(bt) == (int)$esize$$constant, "unsupported type");
     Assembler::SIMD_RegVariant size = __ elemBytes_to_regVariant($esize$$constant);
     __ sve_cpy($tmp$$FloatRegister, size, $src$$PRegister, 1, false);
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), true, $tmp$$FloatRegister,
+    loadStoreA_predicated(masm, true, $tmp$$FloatRegister,
                           ptrue, T_BOOLEAN, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
@@ -3444,7 +3444,7 @@ instruct storeV_vstoremask_masked(indirect mem, pReg src, immI_gt_1 esize,
     Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
     __ sve_cpy($tmp$$FloatRegister, size, $src$$PRegister, 1, false);
     __ sve_gen_mask_imm($pgtmp$$PRegister, bt, Matcher::vector_length(this, $src));
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), true, $tmp$$FloatRegister,
+    loadStoreA_predicated(masm, true, $tmp$$FloatRegister,
                           $pgtmp$$PRegister, T_BOOLEAN, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
@@ -3470,7 +3470,7 @@ instruct storeVMasked_vstoremask(vmemA mem, pReg src, pRegGov pg, immI_gt_1 esiz
     assert(type2aelembytes(bt) == (int)$esize$$constant, "unsupported type.");
     Assembler::SIMD_RegVariant size = __ elemBytes_to_regVariant($esize$$constant);
     __ sve_cpy($tmp$$FloatRegister, size, $src$$PRegister, 1, false);
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), true, $tmp$$FloatRegister,
+    loadStoreA_predicated(masm, true, $tmp$$FloatRegister,
                           ptrue, T_BOOLEAN, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
@@ -3497,7 +3497,7 @@ instruct storeVMasked_vstoremask_masked(vmemA mem, pReg src, pRegGov pg, immI_gt
     Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
     __ sve_cpy($tmp$$FloatRegister, size, $src$$PRegister, 1, false);
     __ sve_gen_mask_imm($pgtmp$$PRegister, bt, Matcher::vector_length(this, $src));
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), true, $tmp$$FloatRegister,
+    loadStoreA_predicated(masm, true, $tmp$$FloatRegister,
                           $pgtmp$$PRegister, T_BOOLEAN, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}

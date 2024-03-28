@@ -132,7 +132,7 @@ bool methodOper::cmp( const MachOper &oper ) const {
 //------------------------------MachNode---------------------------------------
 
 //------------------------------emit-------------------------------------------
-void MachNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+void MachNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   #ifdef ASSERT
   tty->print("missing MachNode emit function: ");
   dump();
@@ -604,7 +604,7 @@ void MachNullCheckNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 }
 #endif
 
-void MachNullCheckNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+void MachNullCheckNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   // only emits entries in the null-pointer exception handler table
 }
 void MachNullCheckNode::label_set(Label* label, uint block_num) {

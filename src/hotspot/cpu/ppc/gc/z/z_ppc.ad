@@ -34,7 +34,7 @@ source %{
 
 #include "gc/z/zBarrierSetAssembler.hpp"
 
-static void z_color(MacroAssembler& _masm, Register dst, Register src) {
+static void z_color(MacroAssembler* masm, Register dst, Register src) {
   assert_different_registers(dst, src);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBits);
   __ li(dst, barrier_Relocation::unpatched); // Load color bits.
@@ -47,55 +47,55 @@ static void z_color(MacroAssembler& _masm, Register dst, Register src) {
   }
 }
 
-static void z_uncolor(MacroAssembler& _masm, Register ref) {
+static void z_uncolor(MacroAssembler* masm, Register ref) {
   __ srdi(ref, ref, ZPointerLoadShift);
 }
 
-static void check_color(MacroAssembler& _masm, Register ref, bool on_non_strong) {
+static void check_color(MacroAssembler* masm, Register ref, bool on_non_strong) {
   int relocFormat = on_non_strong ? ZBarrierRelocationFormatMarkBadMask
                                   : ZBarrierRelocationFormatLoadBadMask;
   __ relocate(barrier_Relocation::spec(), relocFormat);
   __ andi_(R0, ref, barrier_Relocation::unpatched);
 }
 
-static void z_load_barrier(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register ref) {
-  Assembler::InlineSkippedInstructionsCounter skipped_counter(&_masm);
+static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref) {
+  Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   if (node->barrier_data() == ZBarrierElided) {
-    z_uncolor(_masm, ref);
+    z_uncolor(masm, ref);
   } else {
     const bool on_non_strong =
       ((node->barrier_data() & ZBarrierWeak) != 0) ||
       ((node->barrier_data() & ZBarrierPhantom) != 0);
 
-    check_color(_masm, ref, on_non_strong);
+    check_color(masm, ref, on_non_strong);
 
     ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
     __ bne_far(CCR0, *stub->entry(), MacroAssembler::bc_far_optimize_on_relocate);
 
-    z_uncolor(_masm, ref);
+    z_uncolor(masm, ref);
     __ bind(*stub->continuation());
   }
 }
 
-static void z_store_barrier(MacroAssembler& _masm, const MachNode* node, Register ref_base, intptr_t disp, Register rnew_zaddress, Register rnew_zpointer, bool is_atomic) {
-  Assembler::InlineSkippedInstructionsCounter skipped_counter(&_masm);
+static void z_store_barrier(MacroAssembler* masm, const MachNode* node, Register ref_base, intptr_t disp, Register rnew_zaddress, Register rnew_zpointer, bool is_atomic) {
+  Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   if (node->barrier_data() == ZBarrierElided) {
-    z_color(_masm, rnew_zpointer, rnew_zaddress);
+    z_color(masm, rnew_zpointer, rnew_zaddress);
   } else {
     bool is_native = (node->barrier_data() & ZBarrierNative) != 0;
     ZStoreBarrierStubC2* const stub = ZStoreBarrierStubC2::create(node, Address(ref_base, disp), rnew_zaddress, rnew_zpointer, is_native, is_atomic);
     ZBarrierSetAssembler* bs_asm = ZBarrierSet::assembler();
-    bs_asm->store_barrier_fast(&_masm, ref_base, disp, rnew_zaddress, rnew_zpointer, true /* in_nmethod */, is_atomic, *stub->entry(), *stub->continuation());
+    bs_asm->store_barrier_fast(masm, ref_base, disp, rnew_zaddress, rnew_zpointer, true /* in_nmethod */, is_atomic, *stub->entry(), *stub->continuation());
   }
 }
 
-static void z_compare_and_swap(MacroAssembler& _masm, const MachNode* node,
+static void z_compare_and_swap(MacroAssembler* masm, const MachNode* node,
                               Register res, Register mem, Register oldval, Register newval,
                               Register tmp1, Register tmp2, bool acquire) {
 
   Register rold_zpointer = tmp1, rnew_zpointer = tmp2;
-  z_store_barrier(_masm, node, mem, 0, newval, rnew_zpointer, true /* is_atomic */);
-  z_color(_masm, rold_zpointer, oldval);
+  z_store_barrier(masm, node, mem, 0, newval, rnew_zpointer, true /* is_atomic */);
+  z_color(masm, rold_zpointer, oldval);
   __ cmpxchgd(CCR0, R0, rold_zpointer, rnew_zpointer, mem,
               MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(), res, nullptr, true,
               false /* we could support weak, but benefit is questionable */);
@@ -111,17 +111,17 @@ static void z_compare_and_swap(MacroAssembler& _masm, const MachNode* node,
   }
 }
 
-static void z_compare_and_exchange(MacroAssembler& _masm, const MachNode* node,
+static void z_compare_and_exchange(MacroAssembler* masm, const MachNode* node,
                                    Register res, Register mem, Register oldval, Register newval,
                                    Register tmp, bool acquire) {
 
   Register rold_zpointer = R0, rnew_zpointer = tmp;
-  z_store_barrier(_masm, node, mem, 0, newval, rnew_zpointer, true /* is_atomic */);
-  z_color(_masm, rold_zpointer, oldval);
+  z_store_barrier(masm, node, mem, 0, newval, rnew_zpointer, true /* is_atomic */);
+  z_color(masm, rold_zpointer, oldval);
   __ cmpxchgd(CCR0, res, rold_zpointer, rnew_zpointer, mem,
               MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(), noreg, nullptr, true,
               false /* we could support weak, but benefit is questionable */);
-  z_uncolor(_masm, res);
+  z_uncolor(masm, res);
 
   if (acquire) {
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -149,7 +149,7 @@ instruct zLoadP(iRegPdst dst, memoryAlg4 mem, flagsRegCR0 cr0)
   ins_encode %{
     assert($mem$$index == 0, "sanity");
     __ ld($dst$$Register, $mem$$disp, $mem$$base$$Register);
-    z_load_barrier(_masm, this, Address($mem$$base$$Register, $mem$$disp), $dst$$Register);
+    z_load_barrier(masm, this, Address($mem$$base$$Register, $mem$$disp), $dst$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -167,7 +167,7 @@ instruct zLoadP_acq(iRegPdst dst, memoryAlg4 mem, flagsRegCR0 cr0)
   format %{ "LD acq $dst, $mem" %}
   ins_encode %{
     __ ld($dst$$Register, $mem$$disp, $mem$$base$$Register);
-    z_load_barrier(_masm, this, Address($mem$$base$$Register, $mem$$disp), $dst$$Register);
+    z_load_barrier(masm, this, Address($mem$$base$$Register, $mem$$disp), $dst$$Register);
 
     // Uses the isync instruction as an acquire barrier.
     // This exploits the compare and the branch in the z load barrier (load, compare and branch, isync).
@@ -186,7 +186,7 @@ instruct zStoreP(memoryAlg4 mem, iRegPsrc src, iRegPdst tmp, flagsRegCR0 cr0)
   ins_cost(2 * MEMORY_REF_COST);
   format %{ "std    $mem, $src\t# ptr" %}
   ins_encode %{
-    z_store_barrier(_masm, this, $mem$$base$$Register, $mem$$disp, $src$$Register, $tmp$$Register, false /* is_atomic */);
+    z_store_barrier(masm, this, $mem$$base$$Register, $mem$$disp, $src$$Register, $tmp$$Register, false /* is_atomic */);
     __ std($tmp$$Register, $mem$$disp, $mem$$base$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -200,7 +200,7 @@ instruct zStorePNull(memoryAlg4 mem, immP_0 zero, iRegPdst tmp, flagsRegCR0 cr0)
   ins_cost(MEMORY_REF_COST);
   format %{ "std    $mem, null\t# ptr" %}
   ins_encode %{
-    z_store_barrier(_masm, this, $mem$$base$$Register, $mem$$disp, noreg, $tmp$$Register, false /* is_atomic */);
+    z_store_barrier(masm, this, $mem$$base$$Register, $mem$$disp, noreg, $tmp$$Register, false /* is_atomic */);
     __ std($tmp$$Register, $mem$$disp, $mem$$base$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -217,7 +217,7 @@ instruct zCompareAndSwapP(iRegIdst res, iRegPdst mem, iRegPsrc oldval, iRegPsrc 
 
   format %{ "CMPXCHG $res, $mem, $oldval, $newval; as bool; ptr" %}
   ins_encode %{
-    z_compare_and_swap(_masm, this,
+    z_compare_and_swap(masm, this,
                        $res$$Register, $mem$$Register, $oldval$$Register, $newval$$Register,
                        $tmp1$$Register, $tmp2$$Register,
                        false /* acquire */);
@@ -236,7 +236,7 @@ instruct zCompareAndSwapP_acq(iRegIdst res, iRegPdst mem, iRegPsrc oldval, iRegP
 
   format %{ "CMPXCHG acq $res, $mem, $oldval, $newval; as bool; ptr" %}
   ins_encode %{
-    z_compare_and_swap(_masm, this,
+    z_compare_and_swap(masm, this,
                        $res$$Register, $mem$$Register, $oldval$$Register, $newval$$Register,
                        $tmp1$$Register, $tmp2$$Register,
                        true /* acquire */);
@@ -257,7 +257,7 @@ instruct zCompareAndExchangeP(iRegPdst res, iRegPdst mem, iRegPsrc oldval, iRegP
 
   format %{ "CMPXCHG $res, $mem, $oldval, $newval; as ptr; ptr" %}
   ins_encode %{
-    z_compare_and_exchange(_masm, this,
+    z_compare_and_exchange(masm, this,
                            $res$$Register, $mem$$Register, $oldval$$Register, $newval$$Register, $tmp$$Register,
                            false /* acquire */);
   %}
@@ -277,7 +277,7 @@ instruct zCompareAndExchangeP_acq(iRegPdst res, iRegPdst mem, iRegPsrc oldval, i
 
   format %{ "CMPXCHG acq $res, $mem, $oldval, $newval; as ptr; ptr" %}
   ins_encode %{
-    z_compare_and_exchange(_masm, this,
+    z_compare_and_exchange(masm, this,
                            $res$$Register, $mem$$Register, $oldval$$Register, $newval$$Register, $tmp$$Register,
                            true /* acquire */);
   %}
@@ -293,9 +293,9 @@ instruct zGetAndSetP(iRegPdst res, iRegPdst mem, iRegPsrc newval, iRegPdst tmp, 
   format %{ "GetAndSetP $res, $mem, $newval" %}
   ins_encode %{
     Register rnew_zpointer = $tmp$$Register, result = $res$$Register;
-    z_store_barrier(_masm, this, $mem$$Register, 0, $newval$$Register, rnew_zpointer, true /* is_atomic */);
+    z_store_barrier(masm, this, $mem$$Register, 0, $newval$$Register, rnew_zpointer, true /* is_atomic */);
     __ getandsetd(result, rnew_zpointer, $mem$$Register, MacroAssembler::cmpxchgx_hint_atomic_update());
-    z_uncolor(_masm, result);
+    z_uncolor(masm, result);
 
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
       __ isync();

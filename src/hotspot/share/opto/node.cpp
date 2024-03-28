@@ -1092,8 +1092,8 @@ juint Node::max_flags() {
 // Print as assembly
 void Node::format( PhaseRegAlloc *, outputStream *st ) const {}
 //------------------------------emit-------------------------------------------
-// Emit bytes starting at parameter 'ptr'.
-void Node::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {}
+// Emit bytes using C2_MacroAssembler
+void Node::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {}
 //------------------------------size-------------------------------------------
 // Size of instruction in bytes
 uint Node::size(PhaseRegAlloc *ra_) const { return 0; }
