@@ -42,7 +42,6 @@ IMGEXTERN jmethodID g_BImgSetRGBMID;
 /* Raster ids */
 IMGEXTERN jfieldID g_RasterWidthID;
 IMGEXTERN jfieldID g_RasterHeightID;
-IMGEXTERN jfieldID g_RasterBaseRasterID;
 IMGEXTERN jfieldID g_RasterMinXID;
 IMGEXTERN jfieldID g_RasterMinYID;
 IMGEXTERN jfieldID g_RasterBaseOriginXID;
