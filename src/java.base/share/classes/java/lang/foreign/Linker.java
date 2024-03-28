@@ -88,7 +88,7 @@ import java.util.stream.Stream;
  * {@snippet lang = java:
  * Linker linker = Linker.nativeLinker();
  * MethodHandle strlen = linker.downcallHandle(
- *     linker.defaultLookup().find("strlen").orElseThrow(),
+ *     linker.defaultLookup().findOrThrow("strlen"),
  *     FunctionDescriptor.of(JAVA_LONG, ADDRESS)
  * );
  * }
@@ -306,7 +306,7 @@ import java.util.stream.Stream;
  * {@snippet lang = java:
  * Linker linker = Linker.nativeLinker();
  * MethodHandle qsort = linker.downcallHandle(
- *     linker.defaultLookup().find("qsort").orElseThrow(),
+ *     linker.defaultLookup().findOrThrow("qsort"),
  *         FunctionDescriptor.ofVoid(ADDRESS, JAVA_LONG, JAVA_LONG, ADDRESS)
  * );
  * }
@@ -397,12 +397,12 @@ import java.util.stream.Stream;
  * Linker linker = Linker.nativeLinker();
  *
  * MethodHandle malloc = linker.downcallHandle(
- *     linker.defaultLookup().find("malloc").orElseThrow(),
+ *     linker.defaultLookup().findOrThrow("malloc"),
  *     FunctionDescriptor.of(ADDRESS, JAVA_LONG)
  * );
  *
  * MethodHandle free = linker.downcallHandle(
- *     linker.defaultLookup().find("free").orElseThrow(),
+ *     linker.defaultLookup().findOrThrow("free"),
  *     FunctionDescriptor.ofVoid(ADDRESS)
  * );
  * }
@@ -530,7 +530,7 @@ import java.util.stream.Stream;
  * {@snippet lang = java:
  * Linker linker = Linker.nativeLinker();
  * MethodHandle printf = linker.downcallHandle(
- *     linker.defaultLookup().find("printf").orElseThrow(),
+ *     linker.defaultLookup().findOrThrow("printf"),
  *         FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT, JAVA_INT, JAVA_INT),
  *         Linker.Option.firstVariadicArg(1) // first int is variadic
  * );

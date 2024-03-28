@@ -120,7 +120,7 @@ public class Upcalls extends CLayouts {
 
     static MethodHandle linkFunc(String name, FunctionDescriptor baseDesc) {
         return abi.downcallHandle(
-                SymbolLookup.loaderLookup().find(name).orElseThrow(),
+                SymbolLookup.loaderLookup().findOrThrow(name),
                 baseDesc.appendArgumentLayouts(C_POINTER)
         );
     }

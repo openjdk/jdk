@@ -102,7 +102,7 @@ public final class SystemLookup implements SymbolLookup {
                     libLookup(libs -> libs.load(jdkLibraryPath("syslookup")));
 
             @SuppressWarnings("restricted")
-            MemorySegment funcs = fallbackLibLookup.find("funcs").orElseThrow()
+            MemorySegment funcs = fallbackLibLookup.findOrThrow("funcs")
                     .reinterpret(WindowsFallbackSymbols.LAYOUT.byteSize());
 
             Function<String, Optional<MemorySegment>> fallbackLookup = name -> Optional.ofNullable(WindowsFallbackSymbols.valueOfOrNull(name))

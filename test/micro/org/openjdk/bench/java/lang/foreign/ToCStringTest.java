@@ -66,7 +66,7 @@ public class ToCStringTest extends CLayouts {
 
     static {
         Linker abi = Linker.nativeLinker();
-        STRLEN = abi.downcallHandle(abi.defaultLookup().find("strlen").get(),
+        STRLEN = abi.downcallHandle(abi.defaultLookup().findOrThrow("strlen"),
                 FunctionDescriptor.of(C_INT, C_POINTER));
     }
 

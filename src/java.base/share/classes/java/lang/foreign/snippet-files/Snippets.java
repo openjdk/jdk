@@ -163,7 +163,7 @@ class Snippets {
         void downcall() throws Throwable {
             Linker linker = Linker.nativeLinker();
             MethodHandle strlen = linker.downcallHandle(
-                    linker.defaultLookup().find("strlen").orElseThrow(),
+                    linker.defaultLookup().findOrThrow("strlen"),
                     FunctionDescriptor.of(JAVA_LONG, ADDRESS)
             );
 
@@ -177,7 +177,7 @@ class Snippets {
         void qsort() throws Throwable {
             Linker linker = Linker.nativeLinker();
             MethodHandle qsort = linker.downcallHandle(
-                    linker.defaultLookup().find("qsort").orElseThrow(),
+                    linker.defaultLookup().findOrThrow("qsort"),
                     FunctionDescriptor.ofVoid(ADDRESS, JAVA_LONG, JAVA_LONG, ADDRESS)
             );
 
@@ -208,12 +208,12 @@ class Snippets {
             Linker linker = Linker.nativeLinker();
 
             MethodHandle malloc = linker.downcallHandle(
-                    linker.defaultLookup().find("malloc").orElseThrow(),
+                    linker.defaultLookup().findOrThrow("malloc"),
                     FunctionDescriptor.of(ADDRESS, JAVA_LONG)
             );
 
             MethodHandle free = linker.downcallHandle(
-                    linker.defaultLookup().find("free").orElseThrow(),
+                    linker.defaultLookup().findOrThrow("free"),
                     FunctionDescriptor.ofVoid(ADDRESS)
             );
 
@@ -282,7 +282,7 @@ class Snippets {
 
             Linker linker = Linker.nativeLinker();
             MethodHandle printf = linker.downcallHandle(
-                    linker.defaultLookup().find("printf").orElseThrow(),
+                    linker.defaultLookup().findOrThrow("printf"),
                     FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT, JAVA_INT, JAVA_INT),
                     Linker.Option.firstVariadicArg(1) // first int is variadic
             );
@@ -568,7 +568,7 @@ class Snippets {
             Linker linker = Linker.nativeLinker();
             SymbolLookup stdlib = linker.defaultLookup();
             MethodHandle strlen = linker.downcallHandle(
-                    stdlib.find("strlen").orElseThrow(),
+                    stdlib.findOrThrow("strlen"),
                     FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS)
             );
 
@@ -626,14 +626,14 @@ class Snippets {
         void header() {
             try (Arena arena = Arena.ofConfined()) {
                 SymbolLookup libGL = libraryLookup("libGL.so", arena); // libGL.so loaded here
-                MemorySegment glGetString = libGL.find("glGetString").orElseThrow();
+                MemorySegment glGetString = libGL.findOrThrow("glGetString");
                 // ...
             } //  libGL.so unloaded here
 
             System.loadLibrary("GL"); // libGL.so loaded here
             // ...
             SymbolLookup libGL = loaderLookup();
-            MemorySegment glGetString = libGL.find("glGetString").orElseThrow();
+            MemorySegment glGetString = libGL.findOrThrow("glGetString");
 
 
             Arena arena = Arena.ofAuto();
@@ -647,7 +647,7 @@ class Snippets {
 
             Linker nativeLinker = Linker.nativeLinker();
             SymbolLookup stdlib = nativeLinker.defaultLookup();
-            MemorySegment malloc = stdlib.find("malloc").orElseThrow();
+            MemorySegment malloc = stdlib.findOrThrow("malloc");
         }
 
     }
