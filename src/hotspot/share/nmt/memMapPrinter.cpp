@@ -27,19 +27,19 @@
 
 #ifdef LINUX
 
-#include "logging/logAsyncWriter.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "logging/logAsyncWriter.hpp"
 #include "memory/allocation.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memFlagBitmap.hpp"
+#include "nmt/memMapPrinter.hpp"
+#include "nmt/memTracker.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
-#include "nmt/memFlagBitmap.hpp"
-#include "nmt/memMapPrinter.hpp"
-#include "nmt/memTracker.hpp"
-#include "nmt/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
@@ -227,40 +227,17 @@ static void print_thread_details_for_supposed_stack_address(const void* from, co
 
 ///////////////
 
-static void print_legend(outputStream* st) {
-#define DO(flag, shortname, text) st->print_cr("%10s    %s", shortname, text);
+MappingPrintSession::MappingPrintSession(outputStream* st, const CachedNMTInformation& nmt_info, MappingPrintOptions options) :
+    _out(st), _options(options), _nmt_info(nmt_info)
+{}
+
+void MappingPrintSession::print_nmt_flag_legend(int indent) const {
+#define DO(flag, shortname, text) _out->fill_to(indent); _out->print_cr("%10s: %s", shortname, text);
   NMT_FLAGS_DO(DO)
 #undef DO
 }
 
-MappingPrintClosure::MappingPrintClosure(outputStream* st, bool human_readable, const CachedNMTInformation& nmt_info) :
-    _out(st), _human_readable(human_readable),
-    _total_count(0), _total_vsize(0), _nmt_info(nmt_info)
-{}
-
-void MappingPrintClosure::do_it(const MappingPrintInformation* info) {
-
-  _total_count++;
-
-  const void* const vma_from = info->from();
-  const void* const vma_to = info->to();
-
-  // print from, to
-  _out->print(PTR_FORMAT " - " PTR_FORMAT " ", p2i(vma_from), p2i(vma_to));
-  const size_t size = pointer_delta(vma_to, vma_from, 1);
-  _total_vsize += size;
-
-  // print mapping size
-  if (_human_readable) {
-    _out->print(PROPERFMT " ", PROPERFMTARGS(size));
-  } else {
-    _out->print("%11zu", size);
-  }
-
-  assert(info->from() <= info->to(), "Invalid VMA");
-  _out->fill_to(53);
-  info->print_OS_specific_details(_out);
-  _out->fill_to(70);
+void MappingPrintSession::print_nmt_info_for_region(const void* vma_from, const void* vma_to) const {
 
   // print NMT information, if available
   if (MemTracker::enabled()) {
@@ -270,59 +247,34 @@ void MappingPrintClosure::do_it(const MappingPrintInformation* info) {
       for (int i = 0; i < mt_number_of_types; i++) {
         const MEMFLAGS flag = (MEMFLAGS)i;
         if (flags.has_flag(flag)) {
+          if (i > 0) {
+            _out->put(' ');
+          }
           _out->print("%s", get_shortname_for_nmt_flag(flag));
           if (flag == mtThreadStack) {
             print_thread_details_for_supposed_stack_address(vma_from, vma_to, _out);
           }
-          _out->print(" ");
         }
       }
     }
   }
-
-  // print file name, if available
-  const char* f = info->filename();
-  if (f != nullptr) {
-    _out->print_raw(f);
-  }
-  _out->cr();
 }
 
-void MemMapPrinter::print_header(outputStream* st) {
-  st->print(
-#ifdef _LP64
-  //   0x0000000000000000 - 0x0000000000000000
-      "from                 to                 "
-#else
-  //   0x00000000 - 0x00000000
-      "from         to         "
-#endif
-  );
-  // Print platform-specific columns
-  pd_print_header(st);
-}
-
-void MemMapPrinter::print_all_mappings(outputStream* st, bool human_readable) {
-  // First collect all NMT information
+void MemMapPrinter::print_all_mappings(outputStream* st, MappingPrintOptions options) {
   CachedNMTInformation nmt_info;
-  nmt_info.fill_from_nmt();
-  DEBUG_ONLY(nmt_info.print_on(st);)
   st->print_cr("Memory mappings:");
-  if (!MemTracker::enabled()) {
-    st->cr();
-    st->print_cr(" (NMT is disabled, will not annotate mappings).");
+  if (!options.only_summary) {
+    // Prepare NMT info cache. But only do so if we print individual mappings,
+    // otherwise, we won't need it and can save that work.
+    if (MemTracker::enabled()) {
+      nmt_info.fill_from_nmt();
+      DEBUG_ONLY(nmt_info.print_on(st);)
+    } else {
+      st->print_cr("NMT is disabled. VM info not available.");
+    }
   }
-  st->cr();
-
-  print_legend(st);
-  st->print_cr("(*) - Mapping contains data from multiple regions");
-  st->cr();
-
-  pd_print_header(st);
-  MappingPrintClosure closure(st, human_readable, nmt_info);
-  pd_iterate_all_mappings(closure);
-  st->print_cr("Total: " UINTX_FORMAT " mappings with a total vsize of %zu (" PROPERFMT ")",
-               closure.total_count(), closure.total_vsize(), PROPERFMTARGS(closure.total_vsize()));
+  MappingPrintSession session(st, nmt_info, options);
+  pd_print_all_mappings(session);
 }
 
 #endif // LINUX
