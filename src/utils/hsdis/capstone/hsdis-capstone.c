@@ -120,8 +120,10 @@ static Options parse_options(const char* options, printf_callback_t printf_callb
   return ops;
 }
 
-#ifdef _WIN32
+#if defined(_WIN32)
 __declspec(dllexport)
+#elif defined(_GNU_SOURCE)
+__attribute__ ((visibility ("default")))
 #endif
 void* decode_instructions_virtual(uintptr_t start_va, uintptr_t end_va,
                                   unsigned char* buffer, uintptr_t length,
