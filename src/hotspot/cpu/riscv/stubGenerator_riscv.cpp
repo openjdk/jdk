@@ -5042,6 +5042,272 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
+const static uint64_t right_16_bits = right_n_bits(16);
+const static uint64_t right_8_bits = right_n_bits(8);
+
+  /***
+   *  int java.util.zip.Adler32.updateBytes(int adler, byte[] b, int off, int len)
+   *
+   *  Arguments:
+   *
+   *  Inputs:
+   *   c_rarg0   - int   adler
+   *   c_rarg1   - byte* buff (b + off)
+   *   c_rarg2   - int   len
+   *
+   * Output:
+   *   c_rarg0   - int adler result
+   */
+  address generate_updateBytesAdler32() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "updateBytesAdler32");
+    address start = __ pc();
+
+    Label L_simple_by1_loop, L_nmax, L_nmax_loop, L_by16, L_by16_loop, L_by1_loop, L_do_mod, L_combine, L_by1;
+
+    // Aliases
+    Register adler  = c_rarg0;
+    Register s1     = c_rarg0;
+    Register s2     = c_rarg3;
+    Register buff   = c_rarg1;
+    Register len    = c_rarg2;
+    Register nmax  = x29; // t4
+    Register base  = x30; // t5
+    Register count = x31; // t6
+    Register temp0 = c_rarg4;
+    Register temp1 = c_rarg5;
+    Register temp2 = t2;
+    Register temp3 = x28; // t3
+
+    // Max number of bytes we can process before having to take the mod
+    // 0x15B0 is 5552 in decimal, the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
+    const uint64_t BASE = 0xfff1;
+    const uint64_t NMAX = 0x15B0;
+
+    __ mv(temp3, right_16_bits);
+
+    __ mv(base, BASE);
+    __ mv(nmax, NMAX);
+
+    // s1 is initialized to the lower 16 bits of adler
+    // s2 is initialized to the upper 16 bits of adler
+    __ srli(s2, adler, 16); // s2 = ((adler >> 16) & 0xffff)
+    __ andr(s2, s2, temp3);
+    __ andr(s1, adler, temp3); // s1 = (adler & 0xffff)
+
+    // The pipelined loop needs at least 16 elements for 1 iteration
+    // It does check this, but it is more effective to skip to the cleanup loop
+    __ mv(temp0, (u1)16);
+    __ bgeu(len, temp0, L_nmax);
+    __ beqz(len, L_combine);
+
+    __ bind(L_simple_by1_loop);
+    __ lbu(temp0, Address(buff, 0));
+    __ addi(buff, buff, 1);
+    __ add(s1, s1, temp0);
+    __ add(s2, s2, s1);
+    __ sub(len, len, 1);
+    __ bgtz(len, L_simple_by1_loop);
+
+    // s1 = s1 % BASE
+    __ remuw(s1, s1, base);
+
+    // s2 = s2 % BASE
+    __ remuw(s2, s2, base);
+
+    __ j(L_combine);
+
+    __ bind(L_nmax);
+    __ sub(len, len, nmax);
+    __ sub(count, nmax, 16);
+    __ bltz(len, L_by16);
+
+    __ bind(L_nmax_loop);
+
+    __ ld(temp0, Address(buff, 0));
+    __ ld(temp1, Address(buff, sizeof(jlong)));
+    __ addi(buff, buff, 16);
+
+    __ andi(temp2, temp0, right_8_bits);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp0, 8);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp0, 16);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp0, 24);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp0, 32);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp0, 40);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp0, 48);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ add(s2, s2, s1);
+    __ srli(temp2, temp0, 56);
+    __ add(s1, s1, temp2);
+    __ add(s2, s2, s1);
+
+    __ andi(temp2, temp1, right_8_bits);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp1, 8);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp1, 16);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp1, 24);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp1, 32);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp1, 40);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp1, 48);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ add(s2, s2, s1);
+    __ srli(temp2, temp1, 56);
+    __ add(s1, s1, temp2);
+    __ add(s2, s2, s1);
+
+    __ sub(count, count, 16);
+    __ bgez(count, L_nmax_loop);
+
+    // s1 = s1 % BASE
+    __ remuw(s1, s1, base);
+
+    // s2 = s2 % BASE
+    __ remuw(s2, s2, base);
+
+    __ sub(len, len, nmax);
+    __ sub(count, nmax, 16);
+    __ bgez(len, L_nmax_loop);
+
+    __ bind(L_by16);
+    __ add(len, len, count);
+    __ bltz(len, L_by1);
+
+    __ bind(L_by16_loop);
+
+    __ ld(temp0, Address(buff, 0));
+    __ ld(temp1, Address(buff, sizeof(jlong)));
+    __ addi(buff, buff, 16);
+
+    __ andi(temp2, temp0, right_8_bits);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp0, 8);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp0, 16);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp0, 24);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp0, 32);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp0, 40);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp0, 48);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ add(s2, s2, s1);
+    __ srli(temp2, temp0, 56);
+    __ add(s1, s1, temp2);
+    __ add(s2, s2, s1);
+
+    __ andi(temp2, temp1, right_8_bits);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp1, 8);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp1, 16);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp1, 24);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp1, 32);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp1, 40);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ srli(temp2, temp1, 48);
+    __ andi(temp2, temp2, right_8_bits);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ add(s2, s2, s1);
+    __ srli(temp2, temp1, 56);
+    __ add(s1, s1, temp2);
+    __ add(s2, s2, s1);
+
+    __ sub(len, len, 16);
+    __ bgez(len, L_by16_loop);
+
+    __ bind(L_by1);
+    __ add(len, len, 15);
+    __ bltz(len, L_do_mod);
+
+    __ bind(L_by1_loop);
+    __ lbu(temp0, Address(buff, 0));
+    __ addi(buff, buff, 1);
+    __ add(s1, temp0, s1);
+    __ add(s2, s2, s1);
+    __ sub(len, len, 1);
+    __ bgez(len, L_by1_loop);
+
+    __ bind(L_do_mod);
+    // s1 = s1 % BASE
+    __ remuw(s1, s1, base);
+
+    // s2 = s2 % BASE
+    __ remuw(s2, s2, base);
+
+    // Combine lower bits and higher bits
+    // adler = s1 | (s2 << 16)
+    __ bind(L_combine);
+    __ slli(s2, s2, 16);
+    __ orr(s1, s1, s2);
+
+    __ ret();
+
+    return start;
+  }
+
 #endif // COMPILER2_OR_JVMCI
 
 #ifdef COMPILER2
@@ -5619,6 +5885,10 @@ static const int64_t right_3_bits = right_n_bits(3);
     if (UseSHA1Intrinsics) {
       StubRoutines::_sha1_implCompress     = generate_sha1_implCompress(false, "sha1_implCompress");
       StubRoutines::_sha1_implCompressMB   = generate_sha1_implCompress(true, "sha1_implCompressMB");
+    }
+
+    if (UseAdler32Intrinsics) {
+      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
 
 #endif // COMPILER2_OR_JVMCI
