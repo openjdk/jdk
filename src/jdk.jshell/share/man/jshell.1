@@ -122,9 +122,10 @@ module.
 Specifies the root modules to resolve in addition to the initial module.
 .TP
 \f[V]-C\f[R]\f[I]flag\f[R]
-Provides a flag to pass to the compiler.
-To pass more than one flag, provide an instance of this option for each
-flag or flag argument needed.
+passes \f[I]flag\f[R] to the Java compiler inside JShell.
+For example, \f[V]-C-Xlint\f[R] enables all the recommended lint
+warnings, and \f[V]-C--release=<N>\f[R] compiles for Java SE N, as if
+--release N was specified.
 .TP
 \f[V]--class-path\f[R] \f[I]path\f[R]
 Specifies the directories and archives that are searched to locate class
@@ -187,9 +188,12 @@ Prints a summary of nonstandard options and exits the tool.
 Nonstandard options are subject to change without notice.
 .TP
 \f[V]-J\f[R]\f[I]flag\f[R]
-Provides a flag to pass to the runtime system.
-To pass more than one flag, provide an instance of this option for each
-flag or flag argument needed.
+passes \f[I]flag\f[R] to the runtime system, but has no effect on the
+execution of code snippets.
+To specify flags that affect the execution of code snippets, use
+\f[V]-R\f[R]\f[I]flag\f[R].
+Alternatively, use \f[V]-J\f[R]\f[I]flag\f[R] with
+\f[V]--execution local\f[R].
 .TP
 \f[V]--module-path\f[R] \f[I]modulepath\f[R]
 Specifies where to find application modules.
@@ -208,9 +212,11 @@ Sets the feedback mode to \f[V]concise\f[R], which is the same as
 entering \f[V]--feedback concise\f[R].
 .TP
 \f[V]-R\f[R]\f[I]flag\f[R]
-Provides a flag to pass to the remote runtime system.
-To pass more than one flag, provide an instance of this option for each
-flag or flag argument to pass.
+passes \f[I]flag\f[R] to the runtime system only when code snippets are
+executed.
+For example, \f[V]-R-Dfoo=bar\f[R] means that execution of the snippet
+\f[V]System.getProperty(\[dq]foo\[dq])\f[R] will return
+\f[V]\[dq]bar\[dq]\f[R].
 .TP
 \f[V]-s\f[R]
 Sets the feedback mode to \f[V]silent\f[R], which is the same as
