@@ -747,8 +747,8 @@ public class ToolBox {
 
         private final static Pattern commentPattern =
                 Pattern.compile("(?s)(\\s+//.*?\n|/\\*.*?\\*/)");
-        private final static Pattern importPattern =
-                Pattern.compile("import\\s+");
+        private final static Pattern importModulePattern =
+                Pattern.compile("import\\s+module\\s+(((?:\\w+\\.)*)\\w+);");
         private final static Pattern modulePattern =
                 Pattern.compile("module\\s+((?:\\w+\\.)*)");
         private final static Pattern packagePattern =
@@ -763,23 +763,14 @@ public class ToolBox {
          * declarations from which the name is derived.
          */
         static String getJavaFileNameFromSource(String source) {
-            StringBuilder sb = new StringBuilder();
-            Matcher matcher = commentPattern.matcher(source);
-            int start = 0;
-            while (matcher.find()) {
-                sb.append(source, start, matcher.start());
-                start = matcher.end();
-            }
-            sb.append(source.substring(start));
-            source = sb.toString();
+            source = removeMatchingSpans(source, commentPattern);
+            source = removeMatchingSpans(source, importModulePattern);
+
+            Matcher matcher;
 
             String packageName = null;
 
-            matcher = importPattern.matcher(source);
-
-            int firstImport = matcher.find() ? matcher.start() : source.length();
-
-            matcher = modulePattern.matcher(source.subSequence(0, firstImport));
+            matcher = modulePattern.matcher(source);
             if (matcher.find())
                 return "module-info.java";
 
@@ -800,6 +791,20 @@ public class ToolBox {
                 throw new Error("Could not extract the java class " +
                         "name from the provided source");
             }
+        }
+
+        static String removeMatchingSpans(String source, Pattern toRemove) {
+            StringBuilder sb = new StringBuilder();
+            Matcher matcher = toRemove.matcher(source);
+            int start = 0;
+
+            while (matcher.find()) {
+                sb.append(source, start, matcher.start());
+                start = matcher.end();
+            }
+
+            sb.append(source.substring(start));
+            return sb.toString();
         }
     }
 
