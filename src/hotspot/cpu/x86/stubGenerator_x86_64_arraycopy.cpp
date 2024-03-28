@@ -156,7 +156,7 @@ void StubGenerator::generate_arraycopy_stubs() {
                                                                  StubRoutines::_arrayof_jbyte_fill,
                                                                  StubRoutines::_arrayof_jshort_fill,
                                                                  StubRoutines::_arrayof_jint_fill);
-  // StubRoutines::_unsafe_setmemory    = nullptr;
+  StubRoutines::_unsafe_setmemory    = nullptr;
 
   // We don't generate specialized code for HeapWord-aligned source
   // arrays, so just use the code we've already generated
