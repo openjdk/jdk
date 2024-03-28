@@ -70,6 +70,7 @@ public class CompletenessTest extends KullaTesting {
         "enum Tt { FOO, BAR, BAZ,; }",
         "record D(int i) {}",
         "static record D(int i) {}",
+        "var v = a with { i = 0; };",
     };
 
     static final String[] expression = new String[] {
@@ -90,7 +91,8 @@ public class CompletenessTest extends KullaTesting {
         "record()",
         "record(1)",
         "record.length()",
-        "\"\\{0}\""
+        "\"\\{0}\"",
+        "a with { i = 0; }",
     };
 
     static final String[] complete_with_semi = new String[] {
@@ -133,6 +135,7 @@ public class CompletenessTest extends KullaTesting {
         "int[] m = {1, 2}, n = null",
         "int[] m = {1, 2}, n",
         "int[] m = {1, 2}, n = {3, 4}",
+        "var v = a with { i = 0; }",
     };
 
     static final String[] considered_incomplete = new String[] {
@@ -230,6 +233,7 @@ public class CompletenessTest extends KullaTesting {
         "void t(int i) { int v = switch (i) { case 0 -> a = b;",
         "void t(int i) { int v = switch (i) { case 0 -> System.err.println(1);",
         "void t(int i) { int v = switch (i) { case 0 -> throw new IllegalStateException();",
+        "a with {",
     };
 
     static final String[] unknown = new String[] {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,6 +224,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         /** Parenthesized subexpressions, of type Parens.
          */
         PARENS,
+
+        /** Derived record creation expression, of type JCDerivedInstance.
+         */
+        DERIVEDRECORDCREATION,
 
         /** Assignment expressions, of type Assign.
          */
@@ -2047,6 +2051,36 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     /**
+     * A reconstruction subexpression ( ... )
+     */
+    public static class JCDerivedInstance extends JCExpression implements DerivedInstanceTree {
+        public JCExpression expr;
+        public JCBlock block;
+        public List<VarSymbol> componentLocalVariables;
+        protected JCDerivedInstance(JCExpression expr, JCBlock block) {
+            this.expr = expr;
+            this.block = block;
+        }
+        @Override
+        public void accept(Visitor v) { v.visitDerivedInstance(this); }
+
+        @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() { return Kind.DERIVED_INSTANCE; }
+        @DefinedBy(Api.COMPILER_TREE)
+        public JCExpression getExpression() { return expr; }
+        @DefinedBy(Api.COMPILER_TREE)
+        public JCBlock getBlock() { return block; }
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R,D> R accept(TreeVisitor<R,D> v, D d) {
+            return v.visitDerivedInstance(this, d);
+        }
+        @Override
+        public Tag getTag() {
+            return DERIVEDRECORDCREATION;
+        }
+    }
+
+    /**
      * A assignment with "=".
      */
     public static class JCAssign extends JCExpression implements AssignmentTree {
@@ -3570,6 +3604,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitNewArray(JCNewArray that)           { visitTree(that); }
         public void visitLambda(JCLambda that)               { visitTree(that); }
         public void visitParens(JCParens that)               { visitTree(that); }
+        public void visitDerivedInstance(JCDerivedInstance that) { visitTree(that); }
         public void visitAssign(JCAssign that)               { visitTree(that); }
         public void visitAssignop(JCAssignOp that)           { visitTree(that); }
         public void visitUnary(JCUnary that)                 { visitTree(that); }

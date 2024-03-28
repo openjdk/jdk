@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1762,6 +1762,9 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
                 return ElementKind.RESOURCE_VARIABLE;
             } else if ((flags & MATCH_BINDING) != 0) {
                 ElementKind kind = ElementKind.BINDING_VARIABLE;
+                return kind;
+            } else if ((flags & COMPONENT_LOCAL_VARIABLE) != 0) {
+                ElementKind kind = ElementKind.COMPONENT_LOCAL_VARIABLE;
                 return kind;
             } else {
                 return ElementKind.LOCAL_VARIABLE;
