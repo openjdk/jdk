@@ -235,7 +235,7 @@ void VLoopDependencyGraph::compute_depth() {
   for (int i = 0; i < _body.body().length(); i++) {
     Node* n = _body.body().at(i);
     int max_pred_depth = 0;
-    if (n->is_Phi()) {
+    if (!n->is_Phi()) {
       for (PredsIterator it(*this, n); !it.done(); it.next()) {
         Node* pred = it.current();
         if (_vloop.in_bb(pred)) {
