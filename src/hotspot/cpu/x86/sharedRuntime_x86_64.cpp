@@ -1354,9 +1354,46 @@ void static continuation_enter_cleanup(MacroAssembler* masm) {
   __ stop("Incorrect rsp at continuation_enter_cleanup");
   __ bind(L_good_sp);
 #endif
-
   __ movptr(rbx, Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()));
   __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), rbx);
+
+  if (CheckJNICalls) {
+    // Check if this is a virtual thread continuation
+    Label L_skip_vthread_code;
+    __ cmpl(Address(rsp, ContinuationEntry::flags_offset()), 0);
+    __ jcc(Assembler::equal, L_skip_vthread_code);
+
+    Label L_no_warn;
+    __ cmpptr(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
+    __ jcc(Assembler::equal, L_no_warn);
+    // If the held monitor count is > 0 and this vthread is terminating then
+    // it failed to release a JNI monitor. So we issue the same log message
+    // that JavaThread::exit does.
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::log_jni_monitor_still_held));
+    __ bind(L_no_warn);
+
+    // For vthreads we have to explicitly zero the JNI monitor count of the carrier
+    // on termination. The held count is implicitly zeroed below when we restore from
+    // the parent held count (which has to be zero).
+    __ movq(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
+
+    __ bind(L_skip_vthread_code);
+  }
+#ifdef ASSERT
+  else {
+    // Check if this is a virtual thread continuation
+    Label L_skip_vthread_code;
+    __ cmpl(Address(rsp, ContinuationEntry::flags_offset()), 0);
+    __ jcc(Assembler::equal, L_skip_vthread_code);
+
+    // See comment just above. If not checking JNI calls the JNI count is only
+    // needed for assertion checking.
+    __ movq(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
+
+    __ bind(L_skip_vthread_code);
+  }
+#endif
+
   __ movq(rbx, Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()));
   __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), rbx);
 
@@ -3698,4 +3735,3 @@ void OptoRuntime::generate_exception_blob() {
   _exception_blob =  ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
 }
 #endif // COMPILER2
-
