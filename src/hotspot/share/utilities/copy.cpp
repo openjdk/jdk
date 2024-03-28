@@ -247,8 +247,10 @@ void Copy::fill_to_memory_atomic(void* to, size_t size, jubyte value) {
     // This code is used by Unsafe and may hit the next page after truncation of mapped memory.
     // Therefore, we use volatile to prevent compilers from replacing the loop by memset which
     // may not trigger SIGBUS as needed (observed on Alpine Linux x86_64)
+    // Also making counter volatile to prevent compilers from generating strb with auto-increment
+    // Otherwise, it may trigger endless loop on Alpine Linux aarch64
     jbyte fill = value;
-    for (uintptr_t off = 0; off < size; off += sizeof(jbyte)) {
+    for (volatile uintptr_t off = 0; off < size; off += sizeof(jbyte)) {
       *(volatile jbyte*)(dst + off) = fill;
     }
 #else
