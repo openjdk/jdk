@@ -426,7 +426,7 @@ bool VectorNode::is_type_transition_to_int(Node* n) {
   return is_type_transition_short_to_int(n);
 }
 
-bool VectorNode::is_muladds2i(Node* n) {
+bool VectorNode::is_muladds2i(const Node* n) {
   if (n->Opcode() == Op_MulAddS2I) {
     return true;
   }

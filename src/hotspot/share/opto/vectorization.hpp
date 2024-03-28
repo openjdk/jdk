@@ -275,7 +275,7 @@ public:
   bool is_marked_reduction_loop() const { return !_loop_reductions.is_empty(); }
 
   // Are s1 and s2 reductions with a data path between them?
-  bool is_marked_reduction_pair(Node* s1, Node* s2) const;
+  bool is_marked_reduction_pair(const Node* s1, const Node* s2) const;
 
 private:
   // Whether n is a standard reduction operator.
