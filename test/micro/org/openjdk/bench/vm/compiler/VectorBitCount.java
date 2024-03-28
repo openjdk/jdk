@@ -64,6 +64,16 @@ public abstract class VectorBitCount {
     }
 
     @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public int[] intLeadingZeroCount() {
+        for (int i = 0; i < SIZE; i++) {
+            bitCounts[i] = Integer.numberOfLeadingZeros(bufferRandInts[i]);
+        }
+        return bitCounts;
+    }
+
+    @Benchmark
     public int[] longBitCount() {
         for (int i = 0; i < SIZE; i++) {
             bitCounts[i] = Long.bitCount(bufferRandLongs[i]);

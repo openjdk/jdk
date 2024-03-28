@@ -4868,7 +4868,7 @@ void C2_MacroAssembler::vector_cast_float_to_int_special_cases_avx(XMMRegister d
   // values are set.
   vpxor(xtmp3, xtmp2, xtmp4, vec_enc);
 
-  vblendvps(dst, dst, xtmp1, xtmp3, vec_enc);
+  vblendvps(dst, dst, xtmp1, xtmp3, vec_enc, true, xtmp4);
   bind(done);
 }
 
@@ -5004,7 +5004,7 @@ void C2_MacroAssembler::vector_cast_double_to_int_special_cases_avx(XMMRegister 
 
   // Shuffle mask vector and pack lower doubles word from each quadword lane.
   vector_crosslane_doubleword_pack_avx(xtmp3, xtmp3, xtmp4, xtmp5, 0x88, src_vec_enc);
-  vblendvps(dst, dst, xtmp4, xtmp3, Assembler::AVX_128bit);
+  vblendvps(dst, dst, xtmp4, xtmp3, Assembler::AVX_128bit, false, xtmp5);
 
   // Recompute the mask for remaining special value.
   pxor(xtmp2, xtmp3);
@@ -5017,7 +5017,7 @@ void C2_MacroAssembler::vector_cast_double_to_int_special_cases_avx(XMMRegister 
 
   // Replace destination lanes holding special value(0x80000000) with max int
   // if corresponding source lane holds a +ve value.
-  vblendvps(dst, dst, xtmp1, xtmp3, Assembler::AVX_128bit);
+  vblendvps(dst, dst, xtmp1, xtmp3, Assembler::AVX_128bit, false, xtmp5);
   bind(done);
 }
 
@@ -6071,7 +6071,7 @@ void C2_MacroAssembler::vector_count_leading_zeros_int_avx(XMMRegister dst, XMMR
   // Replace -ve exponent with zero, exponent is -ve when src
   // lane contains a zero value.
   vpxor(xtmp2, xtmp2, xtmp2, vec_enc);
-  vblendvps(dst, dst, xtmp2, dst, vec_enc);
+  vblendvps(dst, dst, xtmp2, dst, vec_enc, true, xtmp1);
 
   // Rematerialize broadcast 32.
   vpslld(xtmp1, xtmp3, 5, vec_enc);
@@ -6086,7 +6086,7 @@ void C2_MacroAssembler::vector_count_leading_zeros_int_avx(XMMRegister dst, XMMR
 
   // Replace biased_exp with 0 if source lane value is less than zero.
   vpxor(xtmp2, xtmp2, xtmp2, vec_enc);
-  vblendvps(dst, dst, xtmp2, src, vec_enc);
+  vblendvps(dst, dst, xtmp2, src, vec_enc, true, xtmp1);
 }
 
 void C2_MacroAssembler::vector_count_leading_zeros_long_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,

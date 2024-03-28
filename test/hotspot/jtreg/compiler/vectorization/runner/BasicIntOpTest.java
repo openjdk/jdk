@@ -42,6 +42,7 @@
 package compiler.vectorization.runner;
 
 import compiler.lib.ir_framework.*;
+import jdk.test.lib.Asserts;
 
 public class BasicIntOpTest extends VectorizationTestRunner {
 
@@ -57,7 +58,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
         c = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
             a[i] = -25 * i;
-            b[i] = 333 * i + 9999;
+            b[i] = 333 * i - 9999;
             c[i] = -987654321;
         }
     }
@@ -149,6 +150,24 @@ public class BasicIntOpTest extends VectorizationTestRunner {
             res[i] = Integer.bitCount(a[i]);
         }
         return res;
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTLEADINGZEROS_VI, ">0"})
+    public int[] vectorizeNumberOfLeadingZeros() {
+        int[] res = new int[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = Integer.numberOfLeadingZeros(b[i]);
+        }
+        return res;
+    }
+
+    @Run(test = {"vectorizeNumberOfLeadingZeros"})
+    public void checkResult() {
+        int[] res = vectorizeNumberOfLeadingZeros();
+        for (int i = 0; i < SIZE; ++i) {
+            Asserts.assertEquals(res[i], Integer.numberOfLeadingZeros(b[i]));
+        }
     }
 
     // ---------------- Logic ----------------
