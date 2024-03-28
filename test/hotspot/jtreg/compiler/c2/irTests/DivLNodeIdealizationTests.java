@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,8 @@ public class DivLNodeIdealizationTests {
 
     @Run(test = {"constant", "identity", "identityAgain", "identityThird",
                  "retainDenominator", "divByNegOne", "divByPow2And",
-                 "divByPow2And1",  "divByPow2", "divByNegPow2"})
+                 "divByPow2And1",  "divByPow2", "divByNegPow2", "divByMin",
+                 "magicDiv19", "magicDiv15", "magicDiv15Bounded"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
              a = (a == 0) ? 1 : a;
@@ -81,13 +82,18 @@ public class DivLNodeIdealizationTests {
             Asserts.assertTrue(shouldThrow, "Did not expected an exception to be thrown.");
         }
 
-        Asserts.assertEQ(a / 1        , identity(a));
+        Asserts.assertEQ(a / 1, identity(a));
         Asserts.assertEQ(a / (13 / 13), identityAgain(a));
-        Asserts.assertEQ(a / -1       , divByNegOne(a));
-        Asserts.assertEQ((a & -4) / 2 , divByPow2And(a));
-        Asserts.assertEQ((a & -2) / 2 , divByPow2And1(a));
-        Asserts.assertEQ(a / 8        , divByPow2(a));
-        Asserts.assertEQ(a / -8       , divByNegPow2(a));
+        Asserts.assertEQ(a / -1, divByNegOne(a));
+        Asserts.assertEQ((a & -6) / 2, divByPow2And(a));
+        Asserts.assertEQ((a & -2) / 2, divByPow2And1(a));
+        Asserts.assertEQ(a / 8, divByPow2(a));
+        Asserts.assertEQ(a / -8, divByNegPow2(a));
+        Asserts.assertEQ(a / Long.MIN_VALUE, divByMin(a));
+        Asserts.assertEQ(1L, divByMin(Long.MIN_VALUE));
+        Asserts.assertEQ(a / 19, magicDiv19(a));
+        Asserts.assertEQ(a / 15, magicDiv15(a));
+        Asserts.assertEQ((int)a / 15L, magicDiv15Bounded(a));
     }
 
     @Test
@@ -147,7 +153,7 @@ public class DivLNodeIdealizationTests {
     // Having a large enough and in the dividend removes the need to account for
     // rounding when converting to shifts and multiplies as in divByPow2()
     public long divByPow2And(long x) {
-        return (x & -4L) / 2L;
+        return (x & -6L) / 2L;
     }
 
     @Test
@@ -186,5 +192,55 @@ public class DivLNodeIdealizationTests {
     // to account for the negative.
     public long divByNegPow2(long x) {
         return x / -8L;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.DIV})
+    @IR(counts = {IRNode.URSHIFT_L, "2",
+                  IRNode.RSHIFT_L, "1",
+                  IRNode.ADD_L, "1"
+                 })
+    // Similar to above
+    public long divByMin(long x) {
+        return x / Long.MIN_VALUE;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.DIV_L}, applyIfPlatform = {"64-bit", "true"})
+    @IR(counts = {IRNode.SUB_L, "1",
+                  IRNode.RSHIFT_L, "1",
+                  IRNode.MUL_HI_L, "1"
+                 }, applyIfPlatform = {"64-bit", "true"})
+    // Checks magic long division occurs in general when dividing by a non power of 2.
+    // The constant derived from 19 lies inside the limit of an i64
+    public long magicDiv19(long x) {
+        return x / 19L;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.DIV_L}, applyIfPlatform = {"64-bit", "true"})
+    @IR(counts = {IRNode.SUB_L, "1",
+                  IRNode.RSHIFT_L, "2",
+                  IRNode.MUL_HI_L, "1",
+                  IRNode.ADD_L, "1"
+                 }, applyIfPlatform = {"64-bit", "true"})
+    // Checks magic long division occurs in general when dividing by a non power of 2.
+    // The constant derived from 15 lies outside the limit of an i64 but inside the limit
+    // of a u64
+    public long magicDiv15(long x) {
+        return x / 15L;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.DIV_L}, applyIfPlatform = {"64-bit", "true"})
+    @IR(counts = {IRNode.SUB_L, "1",
+                  IRNode.MUL_L, "1",
+                  IRNode.RSHIFT_L, "2"
+                 }, applyIfPlatform = {"64-bit", "true"})
+    // Checks magic long division occurs in general when dividing by a non power of 2.
+    // When the dividend is bounded, we can use smaller constant and do not need to use
+    // i128 arithmetic
+    public long magicDiv15Bounded(long x) {
+        return (int)x / 15L;
     }
 }
