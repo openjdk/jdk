@@ -30,6 +30,7 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import javax.net.ssl.SSLSession;
 import java.net.http.HttpClient;
@@ -52,6 +53,7 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
     final HttpClient.Version version;
     final RawChannelProvider rawChannelProvider;
     final T body;
+    final ResponseInfo rinfo;
 
     public HttpResponseImpl(HttpRequest initialRequest,
                             Response response,
@@ -68,6 +70,7 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
         this.version = response.version();
         this.rawChannelProvider = RawChannelProvider.create(response, exch);
         this.body = body;
+        this.rinfo = new ResponseInfoImpl(response);
     }
 
     @Override
@@ -93,6 +96,15 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
     @Override
     public T body() {
         return body;
+    }
+
+    @Override
+    public Optional<T> bodyWhen(Predicate<ResponseInfo> predicate) {
+        if (predicate.test(rinfo)) {
+            return Optional.of(body());
+        } else {
+            return Optional.empty();
+        }
     }
 
     @Override

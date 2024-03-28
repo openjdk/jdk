@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,24 +63,36 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * copied and modified many times in order to build multiple related requests
  * that differ in some parameters.
  *
- * <p> The following is an example of a GET request that prints the response
- * body as a String:
- *
+ * <p> The following is an example of an asynchronous POST:
  * {@snippet :
  *   HttpClient client = HttpClient.newHttpClient();
  *
  *   HttpRequest request = HttpRequest.newBuilder()
  *         .uri(URI.create("http://foo.com/"))
+ *         .POST(BodyPublishers.ofString("request body text"))
  *         .build();
  *
  *   client.sendAsync(request, BodyHandlers.ofString())
  *         .thenApply(HttpResponse::body)
  *         .thenAccept(System.out::println)
- *         .join(); }
+ *         .join();
+ *  }
  *
  * <p>The class {@link BodyPublishers BodyPublishers} provides implementations
  * of many common publishers. Alternatively, a custom {@code BodyPublisher}
  * implementation can be used.
+ *
+ * <p> The builder can be avoided for simple GET requests as the following example
+ * shows:
+ * {@snippet :
+ *   HttpClient client = HttpClient.newHttpClient();
+ *
+ *   HttpRequest request = HttpRequest.GET("https://www.foo.com/");
+ *   String response = client.send(request, BodyHandlers.ofString())
+ *                           .bodyWhen(r -> r.statusCode() == 200)
+ *                           .orElse("ERROR");
+ *   System.out.println(response);
+ * }
  *
  * @since 11
  */
@@ -323,6 +335,22 @@ public abstract class HttpRequest {
      */
     public static HttpRequest.Builder newBuilder(URI uri) {
         return new HttpRequestBuilderImpl(uri);
+    }
+
+    /**
+     * Convenience method which returns a GET HttpRequest for the given URI string.
+     *
+     * @param uristring the URI string to get
+     * @return a HttpRequest
+     * @throws IllegalArgumentException if the URI scheme is not supported
+     *         or if the provided {@code uristring} is not a valid URI.
+     */
+    public static HttpRequest GET(String uristring) {
+        URI uri = URI.create(uristring);
+        return HttpRequest.newBuilder()
+            .uri(uri)
+            .GET()
+            .build();
     }
 
     /**
