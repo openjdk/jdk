@@ -364,6 +364,7 @@ class Instruction: public CompilationResourceObj {
     InWorkListFlag,
     DeoptimizeOnException,
     KillsMemoryFlag,
+    OmitChecksFlag,
     InstructionLastFlag
   };
 
@@ -1327,16 +1328,19 @@ BASE(NewArray, StateSplit)
 LEAF(NewTypeArray, NewArray)
  private:
   BasicType _elt_type;
+  bool _zero_array;
 
  public:
   // creation
-  NewTypeArray(Value length, BasicType elt_type, ValueStack* state_before)
+  NewTypeArray(Value length, BasicType elt_type, ValueStack* state_before, bool zero_array)
   : NewArray(length, state_before)
   , _elt_type(elt_type)
+  , _zero_array(zero_array)
   {}
 
   // accessors
   BasicType elt_type() const                     { return _elt_type; }
+  bool zero_array()    const                     { return _zero_array; }
   ciType* exact_type() const;
 };
 
