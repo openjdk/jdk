@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,6 @@ public class PopFrameTest {
             }
             log("Main #B.2: got expected JVMTI_ERROR_NONE");
             resumeThread(testTaskThread);
-
             notifyAtBreakpoint();
 
             log("\nMain #B.3: unsuspended, call PopFrame on own thread");

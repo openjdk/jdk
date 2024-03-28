@@ -55,7 +55,7 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
   }
   LOG("Breakpoint: In method TestTask.B(): after sync section\n");
 
-  if (do_pop_frame != JNI_FALSE) {
+  if (do_pop_frame) {
     err = jvmti->PopFrame(thread);
     LOG("Breakpoint: PopFrame returned code: %s (%d)\n", TranslateError(err), err);
     check_jvmti_status(jni, err, "Breakpoint: Failed in PopFrame");
@@ -158,11 +158,11 @@ Java_PopFrameTest_ensureAtBreakpoint(JNIEnv *jni, jclass cls) {
   RawMonitorLocker rml(jvmti, jni, monitor);
   int attempts = 0;
   while (!bp_sync_reached) {
-    LOG("Main: ensureAtBreakpoint: waitig 5 millis\n");
+    LOG("Main: ensureAtBreakpoint: waitig 100 millis\n");
     if (++attempts > 100) {
-      fatal(jni, "Main: ensureAtBreakpoint: waited 1 sec");
+      fatal(jni, "Main: ensureAtBreakpoint: waited 10 sec");
     }
-    rml.wait(10); // 10 milliseconds
+    rml.wait(100); // 100 milliseconds
   }
 }
 
