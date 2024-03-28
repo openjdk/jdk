@@ -27,22 +27,18 @@
 
 #include "gc/serial/serialBlockOffsetTable.hpp"
 
-inline size_t SerialBlockOffsetSharedArray::index_for(const void* p) const {
-  char* pc = (char*)p;
-  assert(pc >= (char*)_reserved.start() &&
-         pc <  (char*)_reserved.end(),
-         "p not in range.");
-  size_t delta = pointer_delta(pc, _reserved.start(), sizeof(char));
-  size_t result = delta >> CardTable::card_shift();
-  assert(result < _vs.committed_size(), "bad index from address");
+inline uint8_t* SerialBlockOffsetSharedArray::entry_for_addr(const void* const p) const {
+  assert(_reserved.contains(p),
+         "out of bounds access to block offset array");
+  uint8_t* result = &_offset_base[uintptr_t(p) >> CardTable::card_shift()];
   return result;
 }
 
-inline HeapWord* SerialBlockOffsetSharedArray::address_for_index(size_t index) const {
-  assert(index < _vs.committed_size(), "bad index");
-  HeapWord* result = _reserved.start() + (index << CardTable::card_shift_in_words());
-  assert(result >= _reserved.start() && result < _reserved.end(),
-         "bad address from index");
+inline HeapWord* SerialBlockOffsetSharedArray::addr_for_entry(const uint8_t* const p) const {
+  size_t delta = pointer_delta(p, _offset_base, sizeof(uint8_t));
+  HeapWord* result = (HeapWord*) (delta << CardTable::card_shift());
+  assert(_reserved.contains(result),
+         "out of bounds accessor from block offset array");
   return result;
 }
 
