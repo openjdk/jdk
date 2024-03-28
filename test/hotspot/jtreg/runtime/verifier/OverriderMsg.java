@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,31 @@
 
 import java.io.File;
 import java.io.FileOutputStream;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
+
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.constant.ConstantDescs.*;
+
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * @test OverriderMsg
  * @bug 8026894
+ * @enablePreview
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile -XDignore.symbol.file OverriderMsg.java
- * @run driver OverriderMsg
+ * @run main/othervm --enable-preview OverriderMsg
  */
 
 // This test checks that the super class name is included in the message when
 // a method is detected overriding a final method in its super class.  The
-// asm part of the test creates these two classes:
+// ClassFile part of the test creates these two classes:
 //
 //     public class HasFinal {
 //         public final void m(String s) { }
@@ -57,67 +62,54 @@ public class OverriderMsg {
 
     public static void dump_HasFinal () throws Exception {
 
-        ClassWriter cw = new ClassWriter(0);
-        MethodVisitor mv;
+        byte[] bytes;
 
-        cw.visit(V1_7, ACC_PUBLIC + ACC_SUPER, "HasFinal", null, "java/lang/Object", null);
+        bytes = ClassFile.of().build(ClassDesc.of("HasFinal"),
+                    clb -> clb
+                            .withVersion(JAVA_7_VERSION, 0)
+                            .withFlags(ACC_PUBLIC | ACC_SUPER)
+                            .withSuperclass(CD_Object)
 
-        {
-            mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }
-        {
-            mv = cw.visitMethod(ACC_PUBLIC + ACC_FINAL, "m", "(Ljava/lang/String;)V", null, null);
-            mv.visitCode();
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(0, 2);
-            mv.visitEnd();
-        }
-        cw.visitEnd();
+                            .withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC,
+                                    cob -> cob
+                                            .aload(0)
+                                            .invokespecial(CD_Object, INIT_NAME, MTD_void)
+                                            .return_())
+
+                            .withMethodBody("m", MethodTypeDesc.ofDescriptor("(Ljava/lang/String;)V"), ACC_PUBLIC | ACC_FINAL, CodeBuilder::return_)
+
+        );
+
         try (FileOutputStream fos = new FileOutputStream(new File("HasFinal.class"))) {
-             fos.write(cw.toByteArray());
+             fos.write(bytes);
         }
     }
 
 
     public static void dump_Overrider () throws Exception {
 
-        ClassWriter cw = new ClassWriter(0);
-        MethodVisitor mv;
-        cw.visit(V1_7, ACC_PUBLIC + ACC_SUPER, "Overrider", null, "HasFinal", null);
+        byte[] bytes;
 
-        {
-            mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL, "HasFinal", "<init>", "()V");
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }
-        {
-            mv = cw.visitMethod(ACC_PUBLIC, "m", "(Ljava/lang/String;)V", null, null);
-            mv.visitCode();
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(0, 2);
-            mv.visitEnd();
-        }
-        {
-            mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
-            mv.visitCode();
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(0, 1);
-            mv.visitEnd();
-        }
-        cw.visitEnd();
+        bytes = ClassFile.of().build(ClassDesc.of("Overrider"),
+                clb -> clb
+                        .withVersion(JAVA_7_VERSION, 0)
+                        .withFlags(ACC_PUBLIC | ACC_SUPER)
+                        .withSuperclass(ClassDesc.of("HasFinal"))
+
+                        .withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC,
+                                cob -> cob
+                                        .aload(0)
+                                        .invokespecial(ClassDesc.ofInternalName("HasFinal"), INIT_NAME, MTD_void)
+                                        .return_())
+
+                        .withMethodBody("m", MethodTypeDesc.ofDescriptor("(Ljava/lang/String;)V"), ACC_PUBLIC, CodeBuilder::return_)
+
+                        .withMethodBody("main", MethodTypeDesc.ofDescriptor("([Ljava/lang/String;)V"), ACC_PUBLIC | ACC_STATIC, CodeBuilder::return_)
+
+        );
 
         try (FileOutputStream fos = new FileOutputStream(new File("Overrider.class"))) {
-             fos.write(cw.toByteArray());
+             fos.write(bytes);
         }
     }
 
