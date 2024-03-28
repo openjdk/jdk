@@ -112,9 +112,9 @@ public class VectorGatherMaskFoldingTest {
         for (int i = 0; i < L_SPECIES.length(); i++) {
             longArray[i] = i;
             longOffsets[i] = (i + L_SPECIES.length() / 2) % L_SPECIES.length();
-            longOffsets2[i] = L_SPECIES.length() - i - 1;
+            longOffsets2[i] = (L_SPECIES.length() - i) % L_SPECIES.length();
             longMask[i] = i % 2 == 0;
-            longMask2[i] = i < L_SPECIES.length() / 2;
+            longMask2[i] = i >= L_SPECIES.length() / 2;
         }
         LongVector longVector = LongVector.fromArray(L_SPECIES, longArray, 0);
         VectorMask<Long> longVectorMask = VectorMask.fromArray(L_SPECIES, longMask, 0);
@@ -129,9 +129,9 @@ public class VectorGatherMaskFoldingTest {
         for (int i = 0; i < I_SPECIES.length(); i++) {
             intArray[i] = i;
             intOffsets[i] = (i + I_SPECIES.length() / 2) % I_SPECIES.length();
-            intOffsets2[i] = I_SPECIES.length() - i - 1;
+            intOffsets2[i] = (I_SPECIES.length() - i) % I_SPECIES.length();
             intMask[i] = i % 2 == 0;
-            intMask2[i] = i < I_SPECIES.length() / 2;
+            intMask2[i] = i >= I_SPECIES.length() / 2;
         }
         IntVector intVector = IntVector.fromArray(I_SPECIES, intArray, 0);
         VectorMask<Integer> intVectorMask = VectorMask.fromArray(I_SPECIES, intMask, 0);
