@@ -702,6 +702,9 @@ public class SimpleOCSPServer {
      * responses.
      */
     private class OcspHandler implements Runnable {
+        private final boolean USE_GET =
+            !System.getProperty("com.sun.security.ocsp.useget", "").equals("false");
+
         private final Socket sock;
         InetSocketAddress peerSockAddr;
 
@@ -874,6 +877,12 @@ public class SimpleOCSPServer {
             // Okay, make sure we got what we needed from the header, then
             // read the remaining OCSP Request bytes
             if (properContentType && length >= 0) {
+                if (USE_GET && length <= 255) {
+                    // Received a small POST request. Check that our test code properly
+                    // handled the relevant flag. We expect small GET requests, unless
+                    // explicitly disabled.
+                    throw new IOException("Should have received small GET, not POST.");
+                }
                 byte[] ocspBytes = new byte[length];
                 inStream.read(ocspBytes);
                 return new LocalOcspRequest(ocspBytes);
