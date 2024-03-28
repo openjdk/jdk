@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -317,7 +317,7 @@ public class TestVisibleMembers extends JavadocTester {
                 "METHOD DETAIL",
                 "default", "void", "forEach", "java.util.function.Consumer",
                 "java.lang.Long", "action",
-                "Do you see me", "QLong.html#forEach(Q)",
+                "Do you see me", "QLong.html#forEach(java.lang.Object)",
                 "QLong.forEach(LongConsumer)",
                 "END OF CLASS DATA");
 

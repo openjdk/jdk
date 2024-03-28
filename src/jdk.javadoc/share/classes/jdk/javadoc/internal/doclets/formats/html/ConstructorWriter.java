@@ -116,7 +116,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
                 buildTagInfo(div);
                 constructorContent.add(div);
                 memberList.add(getMemberListItem(constructorContent));
-                writer.tableOfContents.addLink(htmlIds.forMember(currentConstructor),
+                writer.tableOfContents.addLink(htmlIds.forMember(typeElement, currentConstructor),
                         Text.of(utils.getSimpleName(constructor)
                                 + utils.makeSignature(currentConstructor, typeElement, false, true)));
             }
@@ -189,13 +189,9 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
         Content content = new ContentBuilder();
         var heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 Text.of(name(constructor)));
-        HtmlId erasureAnchor = htmlIds.forErasure(constructor);
-        if (erasureAnchor != null) {
-            heading.setId(erasureAnchor);
-        }
         content.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, content)
-                .setId(htmlIds.forMember(constructor));
+                .setId(htmlIds.forMember(typeElement, constructor));
     }
 
     protected Content getSignature(ExecutableElement constructor) {

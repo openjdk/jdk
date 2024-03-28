@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,7 @@ public class TestOverrideMethods  extends JavadocTester {
                     Classes.P.html#getRate()">getRate""",
                 "Classes.P.html#m2()\">m2",
                 "Classes.P.html#m3()\">m3",
-                "Classes.P.html#m4(K,V)\">m4",
+                "Classes.P.html#m4(java.lang.Object,java.lang.Object)\">m4",
                 """
                     Classes.P.html#rateProperty()">rateProperty""",
                 """
@@ -294,7 +294,7 @@ public class TestOverrideMethods  extends JavadocTester {
                     <a href="pkg5/Classes.C.html#m4(java.lang.String,java.lang.String)" class="membe\
                     r-name-link">m4(String, String)</a>""",
                 """
-                    <a href="pkg5/Classes.P.html#m4(K,V)" class="member-name-link">m4(K, V)</a>""",
+                    <a href="pkg5/Classes.P.html#m4(java.lang.Object,java.lang.Object)" class="member-name-link">m4(K, V)</a>""",
                 """
                     <a href="pkg5/Classes.P.html#m5()" class="member-name-link">m5()</a>""",
                 """

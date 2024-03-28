@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public class TestSeeTag extends JavadocTester {
                 <li><a href="Test.InnerOne.html#bar(java.lang.Object)"><code>Test.InnerOne.bar(Object)</code></a></li>
                 <li><a href="http://docs.oracle.com/javase/7/docs/technotes/tools/windows/javadoc.html#see">Javadoc</a></li>
                 <li><a href="Test.InnerOne.html#baz(float)">something</a></li>
-                <li><a href="Test.InnerOne.html#format(java.lang.String,java.lang.Object...)"><code>\
+                <li><a href="Test.InnerOne.html#format(java.lang.String,java.lang.Object%5B%5D)"><code>\
                 Test.InnerOne.format(java.lang.String, java.lang.Object...)</code></a></li>
                 </ul>
                 </dd>

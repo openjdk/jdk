@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,8 +77,7 @@ public class TestMemberSummary extends JavadocTester {
         // Legacy anchor dimensions (6290760)
         checkOutput("pkg2/A.html", true,
                 """
-                    <section class="detail" id="f(T[])">
-                    <h3 id="f(java.lang.Object[])">f</h3>
+                    <section class="detail" id="f(java.lang.Object[])">
                     """);
     }
 

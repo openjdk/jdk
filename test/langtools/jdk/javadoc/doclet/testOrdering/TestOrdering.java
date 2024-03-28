@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ public class TestOrdering extends JavadocTester {
                     "../MethodOrder.html#m(long)",
                     "../MethodOrder.html#m(long,long)",
                     "../MethodOrder.html#m(long,java.lang.Long)",
-                    "../MethodOrder.html#m(long,java.lang.Long...)",
+                    "../MethodOrder.html#m(long,java.lang.Long%5B%5D)",
                     "../MethodOrder.html#m(java.lang.Double)",
                     "../MethodOrder.html#m(java.lang.Double,double)",
                     "../MethodOrder.html#m(java.lang.Double,java.lang.Double)",
