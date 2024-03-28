@@ -28,77 +28,83 @@ include LibCommon.gmk
 ################################################################################
 
 ifeq ($(call isTargetOs, windows), true)
-
   ACCESSIBILITY_SRCDIR := $(TOPDIR)/src/jdk.accessibility/windows/native
 
+  ##############################################################################
+  # Setup rules to create 32/64 bit version of javaaccessbridge
+  #
+  # Parameter 1 Suffix
+  # Parameter 2 ACCESSBRIDGE_ARCH_ suffix
+  ##############################################################################
   define SetupJavaDLL
-    # Parameter 1 Suffix
-    # Parameter 2 ACCESSBRIDGE_ARCH_ suffix
-
-    $(call SetupJdkLibrary, BUILD_JAVAACCESSBRIDGE$1, \
+    $(call SetupJdkLibrary, BUILD_LIBJAVAACCESSBRIDGE$1, \
         NAME := javaaccessbridge$1, \
         SRC := libjavaaccessbridge, \
         EXTRA_SRC := common, \
         OPTIMIZATION := LOW, \
         DISABLED_WARNINGS_microsoft := 4311 4302 4312, \
-        CFLAGS_FILTER_OUT := -MD, \
         CXXFLAGS_FILTER_OUT := -MD, \
-        CFLAGS := -MT -DACCESSBRIDGE_ARCH_$2, \
         CXXFLAGS := -MT -DACCESSBRIDGE_ARCH_$2, \
         EXTRA_HEADER_DIRS := \
             include/bridge \
             java.desktop:include, \
-        LIBS := kernel32.lib user32.lib gdi32.lib \
-            winspool.lib comdlg32.lib advapi32.lib shell32.lib \
-            $(SUPPORT_OUTPUTDIR)/native/java.desktop/libjawt/jawt.lib \
-            ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib, \
-        VERSIONINFO_RESOURCE := $(ACCESSIBILITY_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
+        JDK_LIBS_windows := $(SUPPORT_OUTPUTDIR)/native/java.desktop/libjawt/jawt.lib, \
+        LIBS_windows := advapi32.lib comdlg32.lib gdi32.lib kernel32.lib \
+            odbc32.lib odbccp32.lib ole32.lib oleaut32.lib shell32.lib \
+            user32.lib uuid.lib winspool.lib, \
+        VERSIONINFO_RESOURCE := \
+            $(ACCESSIBILITY_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
     )
 
-    $$(BUILD_JAVAACCESSBRIDGE$1): $(call FindStaticLib, java.desktop, jawt, /libjawt)
+    $$(BUILD_LIBJAVAACCESSBRIDGE$1): $(call FindStaticLib, java.desktop, jawt, /libjawt)
 
-    TARGETS += $$(BUILD_JAVAACCESSBRIDGE$1)
+    TARGETS += $$(BUILD_LIBJAVAACCESSBRIDGE$1)
   endef
 
+  ##############################################################################
+  # Setup rules to create 32/64 bit version of windowsaccessbridge
+  #
+  # Parameter 1 Suffix
+  # Parameter 2 ACCESSBRIDGE_ARCH_ suffix
+  ##############################################################################
   define SetupWinDLL
-    # Parameter 1 Suffix
-    # Parameter 2 ACCESSBRIDGE_ARCH_ suffix
-    $(call SetupJdkLibrary, BUILD_WINDOWSACCESSBRIDGE$1, \
+    $(call SetupJdkLibrary, BUILD_LIBWINDOWSACCESSBRIDGE$1, \
         NAME := windowsaccessbridge$1, \
         SRC := libwindowsaccessbridge, \
         EXTRA_SRC := common, \
         OPTIMIZATION := LOW, \
         DISABLED_WARNINGS_microsoft_WinAccessBridge.cpp := 4302 4311, \
-        CFLAGS := -DACCESSBRIDGE_ARCH_$2, \
         CXXFLAGS := -DACCESSBRIDGE_ARCH_$2, \
         EXTRA_HEADER_DIRS := \
             include/bridge, \
         LDFLAGS := \
             -def:$(ACCESSIBILITY_SRCDIR)/libwindowsaccessbridge/WinAccessBridge.DEF, \
-        LIBS := kernel32.lib user32.lib gdi32.lib \
-            winspool.lib comdlg32.lib advapi32.lib shell32.lib \
-            ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib, \
-        VERSIONINFO_RESOURCE := $(ACCESSIBILITY_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
+        LIBS_windows := advapi32.lib comdlg32.lib gdi32.lib kernel32.lib \
+            odbc32.lib odbccp32.lib ole32.lib oleaut32.lib shell32.lib \
+            user32.lib uuid.lib winspool.lib, \
+        VERSIONINFO_RESOURCE := \
+            $(ACCESSIBILITY_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
     )
 
-    TARGETS += $$(BUILD_WINDOWSACCESSBRIDGE$1)
-
-  endef
-
-  define SetupAccessBridgeSysInfo
-
-    $(call SetupJdkLibrary, BUILD_ACCESSBRIDGESYSINFO, \
-        NAME := jabsysinfo, \
-        OPTIMIZATION := LOW, \
-        VERSIONINFO_RESOURCE := $(ACCESSIBILITY_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
-    )
-
-    TARGETS += $$(BUILD_ACCESSBRIDGESYSINFO)
-
+    TARGETS += $$(BUILD_LIBWINDOWSACCESSBRIDGE$1)
   endef
 
   ifeq ($(call isTargetCpuBits, 32), true)
-    $(eval $(call SetupAccessBridgeSysInfo))
+    ############################################################################
+    # Build libjabsysinfo
+    ############################################################################
+
+    $(eval $(call SetupJdkLibrary, BUILD_LIBJABSYSINFO, \
+        NAME := jabsysinfo, \
+        OPTIMIZATION := LOW, \
+        VERSIONINFO_RESOURCE := \
+            $(ACCESSIBILITY_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
+    )
+
+    TARGETS += $(BUILD_LIBJABSYSINFO)
+  endif
+
+  ifeq ($(call isTargetCpuBits, 32), true)
     $(eval $(call SetupJavaDLL,-32,32))
     $(eval $(call SetupJavaDLL,,LEGACY))
     $(eval $(call SetupWinDLL,-32,32))
@@ -107,7 +113,4 @@ ifeq ($(call isTargetOs, windows), true)
     $(eval $(call SetupJavaDLL,,64))
     $(eval $(call SetupWinDLL,-64,64))
   endif
-
 endif
-
-################################################################################
