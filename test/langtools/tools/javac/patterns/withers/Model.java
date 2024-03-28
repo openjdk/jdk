@@ -44,10 +44,12 @@ import javax.lang.model.element.TypeElement;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.DerivedInstanceTree;
 import com.sun.source.util.JavacTask;
+import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
+import java.io.IOException;
 import javax.lang.model.element.ElementKind;
 
 public class Model extends JavacTestingAbstractProcessor {
@@ -69,13 +71,22 @@ public class Model extends JavacTestingAbstractProcessor {
 
     private void performCheck(CompilationUnitTree cut) {
         Trees trees = Trees.instance(processingEnv);
+        SourcePositions sp = trees.getSourcePositions();
 
         new TreePathScanner<Void, Void>() {
             @Override
             public Void visitDerivedInstance(DerivedInstanceTree node, Void p) {
                 System.err.println("visitDerivedInstance start");
                 try {
+                    int start = (int) sp.getStartPosition(cut, node);
+                    int end = (int) sp.getEndPosition(cut, node);
+                    System.err.println(node.toString());
+                    System.err.println(cut.getSourceFile()
+                                          .getCharContent(true)
+                                          .subSequence(start, end));
                     return super.visitDerivedInstance(node, p);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
                 } finally {
                     System.err.println("visitDerivedInstance end");
                 }

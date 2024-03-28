@@ -23,6 +23,8 @@
 
 /**
  * @test
+ * @bug 8324651
+ * @summary Support for derived record creation expression
  * @compile/fail/ref=SourceLevelCheck.out --release 22 -XDrawDiagnostics SourceLevelCheck.java
  */
 public class SourceLevelCheck {

@@ -3222,7 +3222,7 @@ public class Flow {
             scan(tree.expr);
             int nextadrPrev = nextadr;
             for (VarSymbol component : tree.componentLocalVariables) {
-                newVar(null, component);
+                newVar(tree, component);
                 letInit(tree.pos(), component);
             }
             scan(tree.block);

@@ -23,6 +23,8 @@
 
 /**
  * @test
+ * @bug 8324651
+ * @summary Support for derived record creation expression
  * @enablePreview
  * @compile WithPriority.java
  * @run main WithPriority

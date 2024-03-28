@@ -1400,8 +1400,19 @@ public class TransPatterns extends TreeTranslator {
                                              null);
 
         createNew.type = tree.type;
-        createNew.constructor = recordClass.members()
-                                           .findFirst(names.init, s -> (s.flags() & Flags.RECORD) != 0);
+
+        List<Type> canonicalConstructorTypes =
+                recordClass.getRecordComponents()
+                           .stream()
+                           .map(c -> types.erasure(c.type))
+                           .collect(List.collector());
+        MethodSymbol init = rs.resolveInternalMethod(tree.pos(),
+                                                     env,
+                                                     tree.type,
+                                                     names.init,
+                                                     canonicalConstructorTypes,
+                                                     List.nil());
+        createNew.constructor = init;
 
         result = make.LetExpr(newBlock.toList(), createNew).setType(tree.type);
     }

@@ -1,4 +1,12 @@
 visitDerivedInstance start
+r with {
+    val1 = "a";
+    val2 = -1;
+}
+r with {
+            val1 = "a";
+            val2 = -1;
+        }
 val1
 val2
 visitDerivedInstance end

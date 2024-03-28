@@ -23,6 +23,8 @@
 
 /**
  * @test
+ * @bug 8324651
+ * @summary Support for derived record creation expression
  * @enablePreview
  * @compile/fail/ref=WithErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW WithErrors.java
  */
