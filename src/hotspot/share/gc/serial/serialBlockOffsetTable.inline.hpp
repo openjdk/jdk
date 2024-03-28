@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,14 @@ inline size_t SerialBlockOffsetSharedArray::index_for(const void* p) const {
          pc <  (char*)_reserved.end(),
          "p not in range.");
   size_t delta = pointer_delta(pc, _reserved.start(), sizeof(char));
-  size_t result = delta >> BOTConstants::log_card_size();
+  size_t result = delta >> CardTable::card_shift();
   assert(result < _vs.committed_size(), "bad index from address");
   return result;
 }
 
 inline HeapWord* SerialBlockOffsetSharedArray::address_for_index(size_t index) const {
   assert(index < _vs.committed_size(), "bad index");
-  HeapWord* result = _reserved.start() + (index << BOTConstants::log_card_size_in_words());
+  HeapWord* result = _reserved.start() + (index << CardTable::card_shift_in_words());
   assert(result >= _reserved.start() && result < _reserved.end(),
          "bad address from index");
   return result;

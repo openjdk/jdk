@@ -382,6 +382,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
   if (JvmtiEnv::get_phase() == JVMTI_PHASE_LIVE) {
     JavaThread* current_thread = JavaThread::current();
     // transition code: native to VM
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current_thread));
     ThreadInVMfromNative __tiv(current_thread);
     VM_ENTRY_BASE(jvmtiEnv*, JvmtiExport::get_jvmti_interface, current_thread)
     debug_only(VMNativeEntryWrapper __vew;)
@@ -3146,9 +3147,6 @@ bool JvmtiSampledObjectAllocEventCollector::object_alloc_is_safe_to_sample() {
     return false;
   }
 
-  if (MultiArray_lock->owner() == thread) {
-    return false;
-  }
   return true;
 }
 
