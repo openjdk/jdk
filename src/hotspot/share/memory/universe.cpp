@@ -88,23 +88,19 @@
 #include "utilities/preserveException.hpp"
 
 // A helper class for caching a Method* when the user of the cache
-// only cares about the latest version of the Method*.  This cache safely
+// only cares about the latest version of the Method*. This cache safely
 // interacts with the RedefineClasses API.
 class LatestMethodCache {
-  // We save the Klass* and the idnum of Method* in order to get
-  // the current cached Method*.
- private:
-  Klass*                _klass;
+  // We save the InstanceKlass* and the idnum of Method* in order to get
+  // the current Method*.
+  InstanceKlass*        _klass;
   int                   _method_idnum;
 
  public:
   LatestMethodCache()   { _klass = nullptr; _method_idnum = -1; }
 
-  void   init(JavaThread* current, InstanceKlass* ik, const char* method,
-              Symbol* signature, bool is_static);
-  Klass* klass() const           { return _klass; }
-  int    method_idnum() const    { return _method_idnum; }
-
+  void init(JavaThread* current, InstanceKlass* ik, const char* method,
+            Symbol* signature, bool is_static);
   Method* get_method();
 };
 
@@ -945,11 +941,13 @@ void LatestMethodCache::init(JavaThread* current, InstanceKlass* ik,
 }
 
 Method* LatestMethodCache::get_method() {
-  if (klass() == nullptr) return nullptr;
-  InstanceKlass* ik = InstanceKlass::cast(klass());
-  Method* m = ik->method_with_idnum(method_idnum());
-  assert(m != nullptr, "sanity check");
-  return m;
+  if (_klass == nullptr) {
+    return nullptr;
+  } else {
+    Method* m = _klass->method_with_idnum(_method_idnum);
+    assert(m != nullptr, "sanity check");
+    return m;
+  }
 }
 
 Method* Universe::finalizer_register_method()     { return _finalizer_register_cache.get_method(); }
