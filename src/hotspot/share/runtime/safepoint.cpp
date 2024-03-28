@@ -68,6 +68,10 @@
 #include "utilities/macros.hpp"
 #include "utilities/systemMemoryBarrier.hpp"
 
+#if INCLUDE_JFR
+#include "jfr/support/jfrTimeToSafepoint.inline.hpp"
+#endif
+
 static void post_safepoint_begin_event(EventSafepointBegin& event,
                                        uint64_t safepoint_id,
                                        int thread_count,
@@ -231,6 +235,7 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
     assert(cur_tss->get_next() == nullptr, "Must be null");
     if (thread_not_running(cur_tss)) {
       --still_running;
+      JFR_ONLY(JfrTimeToSafepoint::on_thread_not_running(cur_tss->thread(), 0);)
     } else {
       *p_prev = cur_tss;
       p_prev = cur_tss->next_ptr();
@@ -267,6 +272,7 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
         ThreadSafepointState *tmp = cur_tss;
         cur_tss = cur_tss->get_next();
         tmp->set_next(nullptr);
+        JFR_ONLY(JfrTimeToSafepoint::on_thread_not_running(tmp->thread(), iterations);)
       } else {
         *p_prev = cur_tss;
         p_prev = cur_tss->next_ptr();
@@ -385,6 +391,8 @@ void SafepointSynchronize::begin() {
   // Arms the safepoint, _current_jni_active_count and _waiting_to_block must be set before.
   arm_safepoint();
 
+  JFR_ONLY(JfrTimeToSafepoint::on_synchronizing();)
+
   // Will spin until all threads are safe.
   int iterations = synchronize_threads(safepoint_limit_time, nof_threads, &initial_running);
   assert(_waiting_to_block == 0, "No thread should be running");
@@ -434,6 +442,8 @@ void SafepointSynchronize::begin() {
                                    _waiting_to_block, iterations);
 
   SafepointTracing::synchronized(nof_threads, initial_running, _nof_threads_hit_polling_page);
+
+  JFR_ONLY(JfrTimeToSafepoint::on_synchronized();)
 
   // We do the safepoint cleanup first since a GC related safepoint
   // needs cleanup to be completed before running the GC op.

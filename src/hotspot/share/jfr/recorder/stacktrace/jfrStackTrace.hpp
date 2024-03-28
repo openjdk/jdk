@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ class JfrStackTrace : public JfrCHeapObj {
   friend class ObjectSampleCheckpoint;
   friend class ObjectSampler;
   friend class OSThreadSampler;
-  friend class StackTraceResolver;
+  friend class JfrTimeToSafepoint;
  private:
   const JfrStackTrace* _next;
   JfrStackFrame* _frames;
@@ -94,7 +94,7 @@ class JfrStackTrace : public JfrCHeapObj {
   void resolve_linenos() const;
 
   bool record(JavaThread* current_thread, int skip, int64_t stack_frame_id);
-  bool record(JavaThread* current_thread, const frame& frame, int skip, int64_t stack_frame_id);
+  bool record(JavaThread* thread, const frame& frame, int skip, int64_t stack_frame_id);
   bool record_async(JavaThread* other_thread, const frame& frame);
 
   bool have_lineno() const { return _lineno; }
