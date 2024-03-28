@@ -21,11 +21,12 @@
  * questions.
  */
 
- // key: compiler.misc.feature.module.imports
- // key: compiler.warn.preview.feature.use.plural
- // options: --release ${jdk.version} --enable-preview -Xlint:preview
+ // key: compiler.err.import.module.not.found
+ // key: compiler.note.preview.filename
+ // key: compiler.note.preview.recompile
+ // options: --release ${jdk.version} --enable-preview
 
-import module java.base;
+import module unknown;
 
-public class ImportModule {
+public class ImportModuleNotFound {
 }

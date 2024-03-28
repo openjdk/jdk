@@ -21,11 +21,8 @@
  * questions.
  */
 
- // key: compiler.misc.feature.module.imports
- // key: compiler.warn.preview.feature.use.plural
- // options: --release ${jdk.version} --enable-preview -Xlint:preview
-
-import module java.base;
-
-public class ImportModule {
-}
+// key: compiler.err.import.module.does.not.read
+// key: compiler.note.preview.filename
+// key: compiler.note.preview.recompile
+// options: --release ${jdk.version} --enable-preview
+module m {}
