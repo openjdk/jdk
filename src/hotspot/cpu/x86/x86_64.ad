@@ -12116,9 +12116,15 @@ instruct partialSubtypeCheckI(rsi_RegP sub, immP super, rdi_RegP result,
   format %{ "partialSubtypeCheck $result, $sub, super" %}
 
   ins_encode %{
-    __ check_klass_subtype_slow_path($sub$$Register, (Klass*)$super$$constant, $temp1$$Register, $temp2$$Register,
-                                     $temp3$$Register, $temp4$$Register, $temp5$$Register,
-                                     $result$$Register);
+    Klass *superklass = (Klass*)$super$$constant;
+    if (InlineSecondarySupersTest) {
+      __ check_klass_subtype_slow_path($sub$$Register, superklass, $temp1$$Register, $temp2$$Register,
+                                       $temp3$$Register, $temp4$$Register, $temp5$$Register,
+                                       $result$$Register);
+    } else {
+      __ movptr($temp4$$Register, (intptr_t)superklass);
+      __ call(RuntimeAddress(StubRoutines::hashed_secondary_subklass_stubs[superklass->hash_slot()]));
+    }
   %}
 
   opcode(0x1); // Force zero of result reg on hit

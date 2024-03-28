@@ -645,6 +645,13 @@ public:
                                      Label* L_success,
                                      Label* L_failure,
                                      bool set_cond_codes = false);
+  void hashed_check_klass_subtype_slow_path(Register sub_klass,
+                                     Register super_klass,
+                                     Register temp_reg,
+                                     Register temp2_reg,
+                                     Label* L_success,
+                                     Label* L_failure,
+                                     bool set_cond_codes = false);
 
   // As above, but with a constant super_klass.
   // The result is in Register result, not the condition codes.
@@ -655,7 +662,8 @@ public:
                                      Register temp3,
                                      Register temp4,
                                      Register temp5,
-                                     Register result);
+                                     Register result,
+                                     int hash_slot = -1);
 
   void verify_klass_subtype_slow_path(Register sub_klass,
                                       Klass *super_klass,
@@ -666,8 +674,7 @@ public:
                                       Register temp4,
                                       Register temp5,
                                       Register result);
-  void klass_subtype_fallback_1();
-  void klass_subtype_fallback_2();
+
   void klass_subtype_fallback();
 
   // Simplified, combined version, good for typical uses.

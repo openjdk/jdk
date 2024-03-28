@@ -499,6 +499,8 @@ class StubRoutines: AllStatic {
   static void arrayof_jlong_copy     (HeapWord* src, HeapWord* dest, size_t count);
   static void arrayof_oop_copy       (HeapWord* src, HeapWord* dest, size_t count);
   static void arrayof_oop_copy_uninit(HeapWord* src, HeapWord* dest, size_t count);
+
+  static address hashed_secondary_subklass_stubs[64];
 };
 
 #endif // SHARE_RUNTIME_STUBROUTINES_HPP
