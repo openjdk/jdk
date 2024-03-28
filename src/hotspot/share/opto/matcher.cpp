@@ -293,7 +293,6 @@ void Matcher::match( ) {
     if (C->failing()) {
       return;
     }
-
     if( OptoReg::is_valid(reg1))
       _calling_convention_mask[i].Insert(reg1);
 
@@ -301,7 +300,6 @@ void Matcher::match( ) {
     if (C->failing()) {
       return;
     }
-
     if( OptoReg::is_valid(reg2))
       _calling_convention_mask[i].Insert(reg2);
 
@@ -1440,10 +1438,8 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       if (C->failing()) {
         return nullptr;
       }
-
       if (OptoReg::is_valid(reg1))
         rm->Insert( reg1 );
-
       // Grab second register (if any), adjust stack slots and insert in mask.
       OptoReg::Name reg2 = warp_outgoing_stk_arg(second, begin_out_arg_area, out_arg_limit_per_call );
       if (C->failing()) {
@@ -1451,7 +1447,6 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       }
       if (OptoReg::is_valid(reg2))
         rm->Insert( reg2 );
-
     } // End of for all arguments
   }
 

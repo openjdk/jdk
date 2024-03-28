@@ -1140,9 +1140,7 @@ void Compile::Init(bool aliasing) {
 //---------------------------init_start----------------------------------------
 // Install the StartNode on this compile object.
 void Compile::init_start(StartNode* s) {
-  if (failing(true)) // Skip : this method has no side effect in product,
-                     // but we do a bailout check anyway, and then another one
-                     // in Compile::start(). TODO refactor?
+  if (failing(true))
     return; // already failing
   assert(s == start(), "");
 }

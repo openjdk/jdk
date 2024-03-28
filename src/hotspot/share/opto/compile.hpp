@@ -833,16 +833,20 @@ private:
     if (failing_internal()) {
       return true;
     }
-    if (!StressBailout || skip) {return false; }
+    if (!StressBailout || skip) {
+      return false;
+    }
     return fail_randomly(StressBailoutInterval);
   }
 
   bool fail_randomly(uint invprob) {
     guarantee(0 < invprob, "domain error");
 #ifdef ASSERT
-    return false; // TODO debug builds assert on bailouts. Do we want this silent skip?
+    return false; // debug builds assert on bailouts.
 #endif
-    if (random() % invprob) {return false; }
+    if (random() % invprob) {
+      return false;
+    }
     record_failure("StressBailout");
     return true;
   }
