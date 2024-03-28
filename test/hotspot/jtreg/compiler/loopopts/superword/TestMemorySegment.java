@@ -30,6 +30,7 @@ import java.lang.reflect.Array;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Random;
+import java.lang.foreign.*;
 
 /*
  * @test
@@ -84,6 +85,7 @@ public class TestMemorySegment {
 
         // Add all tests to list
         tests.put("testArrayBB", () -> { return testArrayBB(aB.clone(), bB.clone()); });
+        tests.put("testMemorySegmentB", () -> { return testMemorySegmentB(MemorySegment.ofArray(aB.clone())); });
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -95,7 +97,8 @@ public class TestMemorySegment {
     }
 
     @Warmup(100)
-    @Run(test = {"testArrayBB"})
+    @Run(test = {"testArrayBB",
+                 "testMemorySegmentB"})
     public void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -230,5 +233,18 @@ public class TestMemorySegment {
             b[i+0] = (byte)(a[i] + 1);
         }
         return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static Object[] testMemorySegmentB(MemorySegment m) {
+        for (int i = 0; i < m.byteSize(); i++) {
+            byte v = (byte)(m.get(ValueLayout.JAVA_BYTE, i) + 1);
+            m.set(ValueLayout.JAVA_BYTE, i, v);
+        }
+        return new Object[]{ m };
     }
 }
