@@ -365,12 +365,15 @@ void PhaseIdealLoop::get_assertion_predicates(Node* predicate, Unique_Node_List&
 // Clone an Assertion Predicate for an unswitched loop. OpaqueLoopInit and OpaqueLoopStride nodes are cloned and uncommon
 // traps are kept for the predicate (a Halt node is used later when creating pre/main/post loops and copying this cloned
 // predicate again).
-IfProjNode* PhaseIdealLoop::clone_assertion_predicate_for_unswitched_loops(Node* iff, IfProjNode* predicate,
+IfProjNode* PhaseIdealLoop::clone_assertion_predicate_for_unswitched_loops(IfNode* template_assertion_predicate,
+                                                                           IfProjNode* predicate,
                                                                            Deoptimization::DeoptReason reason,
                                                                            ParsePredicateSuccessProj* parse_predicate_proj) {
-  Node* bol = create_bool_from_template_assertion_predicate(iff, nullptr, nullptr, parse_predicate_proj);
-  IfProjNode* if_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason, iff->Opcode(), false);
-  _igvn.replace_input_of(if_proj->in(0), 1, bol);
+  TemplateAssertionPredicateExpression template_assertion_predicate_expression(
+      template_assertion_predicate->in(1)->as_Opaque4());
+  Opaque4Node* cloned_opaque4_node = template_assertion_predicate_expression.clone(parse_predicate_proj, this);
+  IfProjNode* if_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason, template_assertion_predicate->Opcode(), false);
+  _igvn.replace_input_of(if_proj->in(0), 1, cloned_opaque4_node);
   _igvn.replace_input_of(parse_predicate_proj->in(0), 0, if_proj);
   set_idom(parse_predicate_proj->in(0), if_proj, dom_depth(if_proj));
   return if_proj;

@@ -26,6 +26,7 @@
 #define SHARE_OPTO_PREDICATES_HPP
 
 #include "opto/cfgnode.hpp"
+#include "opto/opaquenode.hpp"
 
 /*
  * There are different kinds of predicates throughout the code. We differentiate between the following predicates:
@@ -261,6 +262,51 @@ class RuntimePredicate : public StackObj {
 
  public:
   static bool is_success_proj(Node* node, Deoptimization::DeoptReason deopt_reason);
+};
+
+// Interface to transform OpaqueLoopInit and OpaqueLoopStride nodes of a Template Assertion Predicate Expression.
+class TransformStrategyForOpaqueLoopNodes : public StackObj {
+ public:
+  virtual Node* transform_opaque_init(OpaqueLoopInitNode* opaque_init) const = 0;
+  virtual Node* transform_opaque_stride(OpaqueLoopStrideNode* opaque_stride) const = 0;
+};
+
+// A Template Assertion Predicate Expression represents the Opaque4Node for the initial value or the last value of a
+// Template Assertion Predicate and all the nodes up to and including the OpaqueLoop* nodes.
+class TemplateAssertionPredicateExpression : public StackObj {
+  Opaque4Node* _opaque4_node;
+
+ public:
+  explicit TemplateAssertionPredicateExpression(Opaque4Node* opaque4_node) : _opaque4_node(opaque4_node) {}
+
+ private:
+  Opaque4Node* clone(const TransformStrategyForOpaqueLoopNodes& transform_strategy, Node* new_ctrl, PhaseIdealLoop* phase);
+
+ public:
+  // Is 'n' a node that could be part of a Template Assertion Predicate Expression (i.e. could be found on the input
+  // chain of a Template Assertion Predicate Opaque4Node up to and including the OpaqueLoop* nodes)?
+  static bool maybe_contains(const Node* n) {
+    const int opcode = n->Opcode();
+    return (opcode == Op_OpaqueLoopInit ||
+            opcode == Op_OpaqueLoopStride ||
+            n->is_Bool() ||
+            n->is_Cmp() ||
+            opcode == Op_AndL ||
+            opcode == Op_OrL ||
+            opcode == Op_RShiftL ||
+            opcode == Op_LShiftL ||
+            opcode == Op_LShiftI ||
+            opcode == Op_AddL ||
+            opcode == Op_AddI ||
+            opcode == Op_MulL ||
+            opcode == Op_MulI ||
+            opcode == Op_SubL ||
+            opcode == Op_SubI ||
+            opcode == Op_ConvI2L ||
+            opcode == Op_CastII);
+  }
+
+  Opaque4Node* clone(Node* new_ctrl, PhaseIdealLoop* phase);
 };
 
 // This class represents a Predicate Block (i.e. either a Loop Predicate Block, a Profiled Loop Predicate Block,
