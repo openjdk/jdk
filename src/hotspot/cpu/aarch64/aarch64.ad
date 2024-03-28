@@ -16739,6 +16739,24 @@ instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
   ins_pipe(pipe_class_memory);
 %}
 
+instruct arrays_hashcode(iRegP_R1 ary, iRegI_R2 cnt, iRegI_R0 result, immI basic_type,
+                         iRegLNoSp tmp1, vRegD_V0 vtmp0, vRegD_V1 vtmp1, vRegD_V2 vtmp2,
+                         rFlagsReg cr)
+%{
+  match(Set result (VectorizedHashCode (Binary ary cnt) (Binary result basic_type)));
+  effect(TEMP tmp1, TEMP vtmp0, TEMP vtmp1, TEMP vtmp2, USE_KILL ary,
+         USE_KILL cnt, USE basic_type, KILL cr);
+  size(256);
+
+  format %{ "Array HashCode array[] $ary,$cnt,$result,$basic_type -> $result   // KILL all" %}
+  ins_encode %{
+    __ arrays_hashcode($ary$$Register, $cnt$$Register, $result$$Register, $tmp1$$Register,
+                       $vtmp0$$FloatRegister, $vtmp1$$FloatRegister, $vtmp2$$FloatRegister,
+                       (BasicType)$basic_type$$constant);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
 instruct count_positives(iRegP_R1 ary1, iRegI_R2 len, iRegI_R0 result, rFlagsReg cr)
 %{
   match(Set result (CountPositives ary1 len));

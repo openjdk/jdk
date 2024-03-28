@@ -46,6 +46,238 @@
 
 typedef void (MacroAssembler::* chr_insn)(Register Rt, const Address &adr);
 
+// jdk.internal.util.ArraysSupport.vectorizedHashCode
+void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register result, Register tmp1,
+                                        FloatRegister vtmp1, FloatRegister vtmp2,
+                                        FloatRegister vtmp3, BasicType eltype) {
+  assert_different_registers(ary, cnt, result, tmp1, rscratch1, rscratch2);
+  assert_different_registers(vtmp1, vtmp2, vtmp3);
+
+  Register      tmp2 = rscratch1, pow4 = rscratch2;
+  FloatRegister vpow0to3 = vtmp3;
+
+  Label ENTRY, TAIL, RELATIVE, PREHEADER, LOOP, DONE;
+
+  const size_t unroll_factor = 7;
+  const size_t loop_factor = eltype == T_BOOLEAN || eltype == T_BYTE                    ? 8
+                             : eltype == T_CHAR || eltype == T_SHORT || eltype == T_INT ? 4
+                                                                                        : 0;
+  guarantee(loop_factor, "unsopported eltype");
+
+  switch (eltype) {
+    case T_BOOLEAN: BLOCK_COMMENT("arrays_hashcode(unsigned byte) {"); break;
+    case T_CHAR: BLOCK_COMMENT("arrays_hashcode(char) {"); break;
+    case T_BYTE: BLOCK_COMMENT("arrays_hashcode(byte) {"); break;
+    case T_SHORT: BLOCK_COMMENT("arrays_hashcode(short) {"); break;
+    case T_INT: BLOCK_COMMENT("arrays_hashcode(int) {"); break;
+    default: ShouldNotReachHere();
+  }
+
+  /**
+   * Emit entry block that either jumps to the Neon loop or falls through to the tail (see below).
+   *
+   * Pseudocode:
+   *
+   *  input_cnt = cnt;
+   *  cnt -= loop_factor;
+   *  if (input_cnt > unroll_factor)
+   *    goto .PREHEADER;
+   */
+  bind(ENTRY);
+
+  if (unroll_factor + 1 != loop_factor) {
+    cmpw(cnt, unroll_factor + 1);
+    subw(cnt, cnt, loop_factor);
+  } else {
+    subsw(cnt, cnt, loop_factor);
+  }
+
+  br(Assembler::HS, PREHEADER);
+
+  /**
+   * Emit unrolled scalar tail loop. No SIMD instructions in this block.
+   *
+   * Pseudocode:
+   *
+   *  cnt -= unroll_facotor + 1 - loop_factor;
+   *  switch (cnt) {
+   *  case -1:
+   *    ret = ret * 31 + *ary;
+   *    ary++;
+   *  case -2:
+   *    ret = ret * 31 + *ary;
+   *    ary++;
+   *  ...
+   *  case -unroll_factor:
+   *    ret = ret * 31 + *ary;
+   *    ary++;
+   *  case -(unroll_factor + 1):
+   *    break;
+   *  }
+   *  goto .DONE
+   */
+  bind(TAIL);
+
+  size_t compensate = unroll_factor + 1 - loop_factor;
+  if (compensate) {
+    subw(cnt, cnt, compensate);
+  }
+
+  adr(tmp1, RELATIVE);
+  subs(tmp1, tmp1, cnt, ext::sxtw, 3);
+
+  bind(RELATIVE);
+  movw(tmp2, 0x1f);
+  br(tmp1);
+
+  for (size_t i = 0; i < unroll_factor; ++i) {
+    arrays_hashcode_elload(tmp1, Address(post(ary, arrays_hashcode_elsize(eltype))), eltype);
+    maddw(result, result, tmp2, tmp1);
+  }
+
+  b(DONE);
+
+  /**
+   * Put 0-4'th powers of 31 into registers. The 0-3'th go to a single SIMD register together.
+   *
+   * Pseudocode:
+   *
+   *  vpow0to3 = {1, 31, 31^2, 31^3};
+   *  pow4 = 31^4;
+   */
+  bind(PREHEADER);
+
+  if (eltype == T_INT) {
+    movw(tmp1, 0x745f);
+    movw(tmp2, 0x3c1);
+    mov(vpow0to3, Assembler::S, 0, tmp1);
+    mov(vpow0to3, Assembler::S, 1, tmp2);
+    movw(tmp1, 0x1f);
+    movw(tmp2, 0x1);
+    mov(vpow0to3, Assembler::S, 2, tmp1);
+    mov(vpow0to3, Assembler::S, 3, tmp2);
+  } else {
+    movw(tmp1, 0x1f);
+    movkw(tmp1, 0x1, 16);
+    movw(tmp2, 0x745f);
+    movkw(tmp2, 0x3c1, 16);
+    mov(vpow0to3, Assembler::S, 0, tmp2);
+    mov(vpow0to3, Assembler::S, 1, tmp1);
+  }
+  mov(pow4, 0x1781);
+  movk(pow4, 0xe, 16);
+
+  /**
+   * Neon loop. Loads 4 or 8 elements per iteration.
+   *
+   * Pseudocode:
+   *
+   *  for (; cnt >= 0; cnt -= loop_factor)
+   *    for (int i = 0; i += 4; i < loop_factor) {
+   *      // This is executed twice for T_BOOLEAN and T_BYTE types and just once for all other types.
+   *      // But even for T_BOOLEAN and T_BYTE this is a single 8B load.
+   *      data = <eltype[4]> *ary * vpow0to3;
+   *      ary += 4;
+   *      addend = sum(data);
+   *      result = result * pow4 + addend;
+   *    }
+   */
+  bind(LOOP);
+
+  Register addend = tmp1;
+
+  FloatRegister vdata = vtmp1;
+  FloatRegister vmultiplication = vtmp2;
+
+  size_t                      bytes_per_iteration = loop_factor * arrays_hashcode_elsize(eltype);
+  Assembler::SIMD_Arrangement load_arrangement =
+      eltype == T_BOOLEAN || eltype == T_BYTE ? Assembler::T8B
+      : eltype == T_CHAR || eltype == T_SHORT ? Assembler::T4H
+      : eltype == T_INT                       ? Assembler::T4S
+                                              : Assembler::INVALID_ARRANGEMENT;
+  guarantee(load_arrangement != Assembler::INVALID_ARRANGEMENT, "invalid arrangement");
+
+  ld1(vdata, load_arrangement, Address(post(ary, bytes_per_iteration)));
+
+  if (eltype == T_BOOLEAN || eltype == T_BYTE) {
+    // Extend 8B to 8H to be able to use vector multiply instructions
+    assert(load_arrangement == Assembler::T8B, "expected to extend 8B to 8H");
+    if (is_signed_subword_type(eltype)) {
+      sxtl(vdata, Assembler::T8H, vdata, load_arrangement);
+    } else {
+      uxtl(vdata, Assembler::T8H, vdata, load_arrangement);
+    }
+  }
+
+  // Process the lower half of a vector
+  if (load_arrangement == Assembler::T4S) {
+    mulv(vmultiplication, load_arrangement, vdata, vpow0to3);
+  } else if (load_arrangement == Assembler::T4H || load_arrangement == Assembler::T8B) {
+    assert(is_subword_type(eltype), "subword type expected");
+    if (is_signed_subword_type(eltype)) {
+      smullv(vmultiplication, Assembler::T4H, vdata, vpow0to3);
+    } else {
+      umullv(vmultiplication, Assembler::T4H, vdata, vpow0to3);
+    }
+  } else {
+    should_not_reach_here();
+  }
+
+  addv(vmultiplication, Assembler::T4S, vmultiplication);
+  umov(addend, vmultiplication, Assembler::S, 0); // Sign-extension isn't necessary
+  maddw(result, result, pow4, addend);
+
+  // Process the upper half of a vector
+  if (load_arrangement == Assembler::T8B) {
+    ext(vdata, Assembler::T16B, vdata, vdata, 8);
+
+    if (is_signed_subword_type(eltype)) {
+      smullv(vmultiplication, Assembler::T4H, vdata, vpow0to3);
+    } else {
+      umullv(vmultiplication, Assembler::T4H, vdata, vpow0to3);
+    }
+
+    addv(vmultiplication, Assembler::T4S, vmultiplication);
+    umov(addend, vmultiplication, Assembler::S, 0); // Sign-extension isn't necessary
+    maddw(result, result, pow4, addend);
+  }
+
+  subsw(cnt, cnt, loop_factor);
+  br(Assembler::HS, LOOP);
+
+  b(TAIL);
+
+  bind(DONE);
+
+  BLOCK_COMMENT("} // arrays_hashcode");
+}
+
+void C2_MacroAssembler::arrays_hashcode_elload(Register dst, Address src, BasicType eltype) {
+  switch (eltype) {
+  // T_BOOLEAN used as surrogate for unsigned byte
+  case T_BOOLEAN: ldrb(dst, src);  break;
+  case T_BYTE:    ldrsb(dst, src); break;
+  case T_SHORT:   ldrsh(dst, src); break;
+  case T_CHAR:    ldrh(dst, src);  break;
+  case T_INT:     ldrw(dst, src);  break;
+  default:
+    ShouldNotReachHere();
+  }
+}
+
+int C2_MacroAssembler::arrays_hashcode_elsize(BasicType eltype) {
+  switch (eltype) {
+  case T_BOOLEAN: return sizeof(jboolean);
+  case T_BYTE:    return sizeof(jbyte);
+  case T_SHORT:   return sizeof(jshort);
+  case T_CHAR:    return sizeof(jchar);
+  case T_INT:     return sizeof(jint);
+  default:
+    ShouldNotReachHere();
+    return -1;
+  }
+}
+
 void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register tmpReg,
                                   Register tmp2Reg, Register tmp3Reg) {
   Register oop = objectReg;
