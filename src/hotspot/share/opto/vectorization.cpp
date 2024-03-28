@@ -393,9 +393,15 @@ VPointer::VPointer(const MemNode* mem, const VLoop& vloop,
   NOT_PRODUCT(if(_tracer._is_trace_alignment) _tracer.restore_depth();)
   NOT_PRODUCT(_tracer.ctor_6(mem);)
 
-  // If stride and scale are too big, such that their product is close to overflowing
-  // or actually overflowing, then we should not allow this pointer to be used for
-  // autovectorization. This simplifies overflow-handling in the rest of the code.
+  // In the pointer analysis, and especially the AlignVector analysis we assume that
+  // stride and scale are not too large. For example, we multiply "scale * stride",
+  // and assume that this does not overflow the int range. We also take "abs(scale)"
+  // and "abs(stride)", which would overflow for min_int = -(2^31). Still, we want
+  // to at least allow small and moderately large stride and scale. Therefore, we
+  // allow values up to 2^30, which is only a factor 2 smaller than the max/min int
+  // values. Normal performance relevant code will have much lower. And the restriction
+  // allows us to keep the rest of the autovectorization code much simpler, since we
+  // do not have to deal with overflows.
   jlong long_scale  = _scale;
   jlong long_stride = _vloop.iv_stride();
   jlong max_val = 1 << 30;
