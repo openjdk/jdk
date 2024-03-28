@@ -1040,6 +1040,7 @@ void AwtWindow::_RepositionSecurityWarning(void* param)
 
     window->RepositionSecurityWarning(env);
 
+
     env->DeleteGlobalRef(self);
     delete rsws;
 }
@@ -3154,6 +3155,7 @@ void AwtWindow::_ModalDisable(void *param)
     if (::IsWindow(windowHWnd)) {
         AwtWindow::SetAndActivateModalBlocker(windowHWnd, blockerHWnd);
     }
+
 
     env->DeleteGlobalRef(self);
 
