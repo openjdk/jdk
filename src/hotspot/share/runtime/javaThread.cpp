@@ -1040,7 +1040,8 @@ bool JavaThread::is_lock_owned(address adr) const {
   assert(LockingMode != LM_LIGHTWEIGHT, "should not be called with new lightweight locking");
   if (Thread::is_lock_owned(adr)) return true;
 
-  for (MonitorChunk* chunk = monitor_chunks(); chunk != nullptr; chunk = chunk->next()) {
+  // Consider removing: chunk is always null.
+  for (MonitorChunk* chunk = monitor_chunks_safe(); chunk != nullptr; chunk = chunk->next()) {
     if (chunk->contains(adr)) return true;
   }
 
@@ -1053,6 +1054,37 @@ oop JavaThread::exception_oop() const {
 
 void JavaThread::set_exception_oop(oop o) {
   Atomic::store(&_exception_oop, o);
+}
+
+// Effectively wait for any deoptimization to complete and clear _monitor_chunk.
+class ReadMonitorChunksHandshake : public HandshakeClosure {
+  MonitorChunk* _mc;
+ public:
+  ReadMonitorChunksHandshake(): HandshakeClosure("ReadMonitorChunks") {}
+  void do_thread(Thread* thr) {
+    JavaThread* target = JavaThread::cast(thr);
+    _mc = target->monitor_chunks();
+  }
+  MonitorChunk* monitor_chunks() {
+    return _mc;
+  }
+};
+
+// _monitor_chunks is set and cleared by deoptimization.
+// If non-null, deoptimization is happening and the value
+// will be cleared soon.  Waiting for deopt is the only action.
+// A ThreadLocalHandshake will mean deopt is complete.
+MonitorChunk* JavaThread::monitor_chunks_safe() const {
+  MonitorChunk* chunks = _monitor_chunks;
+  if (chunks != nullptr) {
+    // Deopt is working, not at a safepoint.  Use Handshake:
+    ReadMonitorChunksHandshake rmch;
+    ThreadsListHandle tlh;
+    Handshake::execute(&rmch, &tlh, (JavaThread*) JavaThread::cast(this));
+    chunks = rmch.monitor_chunks(); // will be null, deopt has finished after handshake
+    assert(chunks == nullptr, "_monitor_chunks not null");
+  }
+  return chunks;
 }
 
 void JavaThread::add_monitor_chunk(MonitorChunk* chunk) {
