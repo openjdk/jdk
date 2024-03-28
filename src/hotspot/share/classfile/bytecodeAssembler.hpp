@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,9 +93,9 @@ class BytecodeCPEntry {
     return bcpe;
   }
 
-  static BytecodeCPEntry string(u2 index) {
+  static BytecodeCPEntry string(Symbol* symbol) {
     BytecodeCPEntry bcpe(STRING);
-    bcpe._u.string = index;
+    bcpe._u.utf8 = symbol;
     return bcpe;
   }
 
@@ -122,7 +122,7 @@ class BytecodeCPEntry {
   }
 };
 
-class BytecodeConstantPool : ResourceObj {
+class BytecodeConstantPool : public ResourceObj {
  private:
   typedef ResourceHashtable<BytecodeCPEntry, u2,
       256, AnyObj::RESOURCE_AREA, mtInternal,
@@ -131,12 +131,16 @@ class BytecodeConstantPool : ResourceObj {
   ConstantPool* _orig;
   GrowableArray<BytecodeCPEntry> _entries;
   IndexHash _indices;
+  int _orig_cp_added;
 
   u2 find_or_add(BytecodeCPEntry const& bcpe, TRAPS);
 
+  void init();
  public:
 
-  BytecodeConstantPool(ConstantPool* orig) : _orig(orig) {}
+  BytecodeConstantPool(ConstantPool* orig) : _orig(orig), _orig_cp_added(0) {
+    init();
+  }
 
   BytecodeCPEntry const& at(u2 index) const { return _entries.at(index); }
 
@@ -155,7 +159,7 @@ class BytecodeConstantPool : ResourceObj {
 
   u2 string(Symbol* str, TRAPS) {
     u2 utf8_entry = utf8(str, CHECK_0);
-    return find_or_add(BytecodeCPEntry::string(utf8_entry), THREAD);
+    return find_or_add(BytecodeCPEntry::string(str), THREAD);
   }
 
   u2 name_and_type(Symbol* name, Symbol* sig, TRAPS) {
