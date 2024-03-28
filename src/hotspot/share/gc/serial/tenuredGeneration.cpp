@@ -512,6 +512,10 @@ void TenuredGeneration::record_spaces_top() {
   _the_space->set_top_for_allocations();
 }
 
+size_t TenuredGeneration::zero_unused() {
+  return _the_space->zero_unused();
+}
+
 void TenuredGeneration::verify() {
   _the_space->verify();
 }

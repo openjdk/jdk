@@ -858,6 +858,14 @@ void ParallelScavengeHeap::gen_mangle_unused_area() {
 }
 #endif
 
+size_t ParallelScavengeHeap::zero_unused() {
+  size_t res = young_gen()->eden_space()->zero_unused();
+  res += young_gen()->to_space()->zero_unused();
+  res += young_gen()->from_space()->zero_unused();
+  res += old_gen()->object_space()->zero_unused();
+  return res;
+}
+
 void ParallelScavengeHeap::register_nmethod(nmethod* nm) {
   ScavengableNMethods::register_nmethod(nm);
 }
