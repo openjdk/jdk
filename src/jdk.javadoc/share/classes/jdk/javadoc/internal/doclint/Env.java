@@ -25,10 +25,8 @@
 
 package jdk.javadoc.internal.doclint;
 
-
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -63,6 +61,8 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.MatchingUtils;
 import com.sun.tools.javac.util.StringUtils;
 import jdk.javadoc.internal.tool.AccessLevel;
+
+import jdk.internal.markdown.MarkdownTransformer;
 
 /**
  * Utility container for current execution environment,
@@ -135,6 +135,7 @@ public class Env {
         this.trees = trees;
         this.elements = elements;
         this.types = types;
+
     }
 
     void initTypes() {

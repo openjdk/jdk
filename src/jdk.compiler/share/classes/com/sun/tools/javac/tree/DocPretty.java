@@ -391,6 +391,16 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
+    public Void visitRawText(RawTextTree node, Void p) {
+        try {
+            print(node.getContent());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return null;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitReference(ReferenceTree node, Void p) {
         try {
             print(node.getSignature());
@@ -627,8 +637,12 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
             print('{');
             print('@');
             print(node.getTagName());
-            print(' ');
-            print(node.getContent());
+            var content = node.getContent();
+            boolean isEmpty = content.stream().allMatch(n -> (n instanceof TextTree t) && t.getBody().isEmpty());
+            if (!isEmpty) {
+                print(' ');
+                print(content);
+            }
             print('}');
         } catch (IOException e) {
             throw new UncheckedIOException(e);

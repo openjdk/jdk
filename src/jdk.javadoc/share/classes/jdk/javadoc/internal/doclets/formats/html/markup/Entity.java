@@ -69,6 +69,11 @@ public class Entity extends Content {
     }
 
     @Override
+    public boolean isPhrasingContent() {
+        return true;
+    }
+
+    @Override
     public int charCount() {
         return 1;
     }

@@ -25,6 +25,8 @@
 
 package jdk.javadoc.internal.doclets.formats.html.markup;
 
+import java.util.Locale;
+
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
@@ -34,20 +36,20 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
  * @see <a href="https://www.w3.org/TR/html51/syntax.html#tag-name">HTML 5.1: Tag Name</a>
  */
 public enum TagName {
-    A,
+    A(true),
     ASIDE,
-    BUTTON,
+    BUTTON(true),
     BLOCKQUOTE,
     BODY,
-    BR,
+    BR(true),
     CAPTION,
-    CODE,
+    CODE(true),
     DD,
     DETAILS,
     DIV,
     DL,
     DT,
-    EM,
+    EM(true),
     FOOTER,
     FORM,
     H1,
@@ -60,29 +62,29 @@ public enum TagName {
     HEADER,
     HR,
     HTML,
-    I,
-    IMG,
-    INPUT,
-    LABEL,
+    I(true),
+    IMG(true),
+    INPUT(true),
+    LABEL(true),
     LI,
     LISTING,
-    LINK,
+    LINK(true),
     MAIN,
     MENU,
     META,
     NAV,
-    NOSCRIPT,
+    NOSCRIPT(true),
     OL,
     P,
     PRE,
-    SCRIPT,
+    SCRIPT(true),
     SECTION,
-    SMALL,
-    SPAN,
-    STRONG,
-    SUB,
+    SMALL(true),
+    SPAN(true),
+    STRONG(true),
+    SUB(true),
     SUMMARY,
-    SUP,
+    SUP(true),
     TABLE,
     TBODY,
     THEAD,
@@ -91,15 +93,26 @@ public enum TagName {
     TITLE,
     TR,
     UL,
-    WBR;
+    WBR(true);
 
     public final String value;
+    public final boolean phrasingContent;
+
+    static TagName of(String s) {
+        return valueOf(s.toUpperCase(Locale.ROOT));
+    }
 
     TagName() {
+        this(false);
+    }
+
+    TagName(boolean phrasingContent) {
         this.value = Utils.toLowerCase(name());
+        this.phrasingContent = phrasingContent;
     }
 
     public String toString() {
         return value;
     }
+
 }

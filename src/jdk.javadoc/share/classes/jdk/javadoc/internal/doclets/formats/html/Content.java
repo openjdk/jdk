@@ -141,4 +141,15 @@ public abstract class Content {
     public int charCount() {
         return 0;
     }
+
+    /**
+     * {@return true if the content is "phrasing content"}
+     *
+     * Phrasing content is content that may appear in a paragraph, such as text, or certain HTML elements.
+     *
+     * @see <a href="https://html.spec.whatwg.org/multipage/dom.html#phrasing-content">Phrasing content</a>
+     */
+    public boolean isPhrasingContent() {
+        return false;
+    }
 }

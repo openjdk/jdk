@@ -54,6 +54,7 @@ import com.sun.tools.javac.main.Arguments;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.ModuleHelper;
 import com.sun.tools.javac.util.StringUtils;
 
 import jdk.internal.opt.CommandLine;
@@ -559,6 +560,17 @@ public class Start {
                     throw new ToolException(CMDERR, text);
                 }
             }
+        }
+
+        // Allow doclets to access internal API if the appropriate
+        // option is given on the command line.
+        // A better solution would be to modify the javadoc API to
+        // permit an instance of an appropriately configured instance
+        // of a doclet to be specified instead of the name of the
+        // doclet class and optional doclet path.
+        // See https://bugs.openjdk.org/browse/JDK-8263219
+        if (options.compilerOptions().isSet("accessInternalAPI")) {
+            ModuleHelper.addExports(ModuleHelper.class.getModule(), doclet.getClass().getModule());
         }
 
         JavadocTool comp = JavadocTool.make0(context);

@@ -402,6 +402,13 @@ public class ToolOptions {
                 }
             },
 
+            new ToolOption("--disable-line-doc-comments", EXTENDED) {
+                @Override
+                public void process() throws InvalidValueException {
+                    processCompilerOption(Option.DISABLE_LINE_DOC_COMMENTS, primaryName);
+                }
+            },
+
             // ----- doclet options -----
 
             // This option exists so that it is documented in the command-line help.

@@ -52,15 +52,15 @@
  * @provides javax.tools.DocumentationTool
  * @provides javax.tools.Tool
  *
- *
  * @moduleGraph
  * @since 9
  */
 module jdk.javadoc {
-    requires java.xml;
 
     requires transitive java.compiler;
     requires transitive jdk.compiler;
+
+    requires jdk.internal.md;
     requires jdk.internal.opt;
 
     exports jdk.javadoc.doclet;
