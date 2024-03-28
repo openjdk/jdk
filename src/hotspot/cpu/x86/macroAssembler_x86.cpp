@@ -2330,7 +2330,8 @@ void MacroAssembler::incrementl(Address dst, int value) {
 void MacroAssembler::jump(AddressLiteral dst, Register rscratch) {
   assert(rscratch != noreg || always_reachable(dst), "missing");
 
-  if (reachable(dst)) {
+  // assert(is_valid(), "invalid register")  // ##??
+  if (rscratch == noreg || reachable(dst)) {
     jmp_literal(dst.target(), dst.rspec());
   } else {
     lea(rscratch, dst);

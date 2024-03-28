@@ -1559,6 +1559,9 @@ const int ObjectAlignmentInBytes = 8;
           "Minimum number of segments in a code cache block")               \
           range(1, 100)                                                     \
                                                                             \
+  product(bool, CompilerScratchBuffersCodeHeapAllocation, false,            \
+          "Use CodeHeap allocator for C1/C2 scratch buffers")               \
+                                                                            \
   notproduct(bool, ExitOnFullCodeCache, false,                              \
           "Exit the VM if we fill the code cache")                          \
                                                                             \
