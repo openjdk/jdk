@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package sun.nio.ch;
+
+import jdk.internal.event.SelectorSelectEvent;
 
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
@@ -117,7 +119,7 @@ public abstract class SelectorImpl
     protected abstract int doSelect(Consumer<SelectionKey> action, long timeout)
         throws IOException;
 
-    private int lockAndDoSelect(Consumer<SelectionKey> action, long timeout)
+    private int implLockAndDoSelect(Consumer<SelectionKey> action, long timeout)
         throws IOException
     {
         synchronized (this) {
@@ -133,6 +135,23 @@ public abstract class SelectorImpl
                 inSelect = false;
             }
         }
+    }
+
+    private int lockAndDoSelect(Consumer<SelectionKey> action, long timeout)
+        throws IOException
+    {
+        // no JFR event for selectNow
+        if ((timeout == 0) || (!SelectorSelectEvent.enabled())) {
+            return implLockAndDoSelect(action, timeout);
+        }
+        long start = SelectorSelectEvent.timestamp();
+        int n = implLockAndDoSelect(action, timeout);
+        long duration = SelectorSelectEvent.timestamp() - start;
+        if ((n == 0) || (SelectorSelectEvent.shouldCommit(duration))) {
+            timeout = (timeout < 0) ? 0 : timeout;
+            SelectorSelectEvent.commit(start, duration, n, timeout);
+        }
+        return n;
     }
 
     @Override

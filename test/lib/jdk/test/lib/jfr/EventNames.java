@@ -195,6 +195,7 @@ public class EventNames {
     public static final String FileForce  = PREFIX + "FileForce";
     public static final String FileRead = PREFIX + "FileRead";
     public static final String FileWrite = PREFIX + "FileWrite";
+    public static final String SelectorSelect = PREFIX + "SelectorSelect";
     public static final String SocketRead = PREFIX + "SocketRead";
     public static final String SocketWrite = PREFIX + "SocketWrite";
     public static final String ExceptionStatistics = PREFIX + "ExceptionStatistics";
