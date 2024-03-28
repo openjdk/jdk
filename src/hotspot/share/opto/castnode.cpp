@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,7 +321,7 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       assert(tl->_lo >= t_in_l->_lo && tl->_hi <= t_in_l->_hi, "CastLL type should be narrower than or equal to the type of its input");
       assert((tl != t_in_l) == (tl->_lo > t_in_l->_lo || tl->_hi < t_in_l->_hi), "if type differs then this nodes's type must be narrower");
       if (tl != t_in_l) {
-        const TypeInt* ti = TypeInt::make(checked_cast<jint>(tl->_lo), checked_cast<jint>(tl->_hi), tl->_widen);
+        const TypeInt* ti = TypeInt::make(checked_cast<jint>(tl->_lo), checked_cast<jint>(tl->_hi), tl->_widen)->is_int();
         Node* castii = phase->transform(new CastIINode(in(0), in1->in(1), ti));
         Node* convi2l = in1->clone();
         convi2l->set_req(1, castii);
@@ -473,7 +473,11 @@ Node* ConstraintCastNode::make_cast_for_type(Node* c, Node* in, const Type* type
 
 Node* ConstraintCastNode::optimize_integer_cast(PhaseGVN* phase, BasicType bt) {
   PhaseIterGVN *igvn = phase->is_IterGVN();
-  const TypeInteger* this_type = this->type()->is_integer(bt);
+  const TypeInteger* this_type = this->type()->isa_integer(bt);
+  if (this_type == nullptr) {
+    return nullptr;
+  }
+
   Node* z = in(1);
   const TypeInteger* rx = nullptr;
   const TypeInteger* ry = nullptr;

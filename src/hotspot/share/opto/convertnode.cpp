@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -648,8 +648,8 @@ static bool compute_updates_ranges(const TypeInteger* tx, const TypeInteger* ty,
   }
 
   int widen =  MAX2(tx->widen_limit(), ty->widen_limit());
-  rx = TypeInteger::make(rxlo, rxhi, widen, out_bt);
-  ry = TypeInteger::make(rylo, ryhi, widen, out_bt);
+  rx = TypeInteger::make(rxlo, rxhi, widen, out_bt)->is_integer(out_bt);
+  ry = TypeInteger::make(rylo, ryhi, widen, out_bt)->is_integer(out_bt);
   return true;
 }
 
@@ -791,7 +791,7 @@ const Type* ConvL2INode::Value(PhaseGVN* phase) const {
     // Easy case.
     ti = TypeInt::make((jint)tl->get_con());
   } else if (tl->_lo >= min_jint && tl->_hi <= max_jint) {
-    ti = TypeInt::make((jint)tl->_lo, (jint)tl->_hi, tl->_widen);
+    ti = TypeInt::make((jint)tl->_lo, (jint)tl->_hi, tl->_widen)->is_int();
   }
   return ti->filter(_type);
 }

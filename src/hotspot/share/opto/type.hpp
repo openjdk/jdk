@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_OPTO_TYPE_HPP
 
 #include "opto/adlcVMDeps.hpp"
+#include "opto/compile.hpp"
 #include "runtime/handles.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -71,6 +72,9 @@ class       TypeInstKlassPtr;
 class       TypeAryKlassPtr;
 class     TypeMetadataPtr;
 class VerifyMeet;
+
+template <class T, class U>
+class TypeIntPrototype;
 
 //------------------------------Type-------------------------------------------
 // Basic Type object, represents a set of primitive Values.
@@ -551,7 +555,15 @@ public:
 
 class TypeInteger : public Type {
 protected:
-  TypeInteger(TYPES t, int w) : Type(t), _widen(w) {}
+  TypeInteger(TYPES t, int w, bool dual) : Type(t), _dual(dual), _widen(w) {}
+
+  // Previously, we signify that a set is in the dual space if _lo > _hi.
+  // However, with the addition of unsigned range and known bits, this becomes
+  // ambiguous whether the set is empty or a dual of a non-empty set.
+  // As a result, we use this field to denote that a set is a dual set.
+  // Dual sets are only used to compute the join of 2 sets, and not used
+  // outside.
+  const bool _dual;
 
 public:
   const short _widen;           // Limit on times we widen this sucker
@@ -562,7 +574,7 @@ public:
   bool is_con() const { return lo_as_long() == hi_as_long(); }
   virtual short widen_limit() const { return _widen; }
 
-  static const TypeInteger* make(jlong lo, jlong hi, int w, BasicType bt);
+  static const Type* make(jlong lo, jlong hi, int w, BasicType bt);
 
   static const TypeInteger* bottom(BasicType type);
   static const TypeInteger* zero(BasicType type);
@@ -576,60 +588,74 @@ public:
 // Class of integer ranges, the set of integers between a lower bound and an
 // upper bound, inclusive.
 class TypeInt : public TypeInteger {
-  TypeInt( jint lo, jint hi, int w );
+  TypeInt(const TypeIntPrototype<jint, juint>& t, int w, bool dual);
+  static const Type* make(const TypeIntPrototype<jint, juint>& t, int w, bool dual);
 protected:
-  virtual const Type *filter_helper(const Type *kills, bool include_speculative) const;
+  virtual const Type* filter_helper(const Type* kills, bool include_speculative) const;
 
 public:
   typedef jint NativeType;
-  virtual bool eq( const Type *t ) const;
+  virtual bool eq(const Type* t) const;
   virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
-  const jint _lo, _hi;          // Lower bound, upper bound
+  const jint _lo, _hi;       // Lower bound, upper bound in the signed domain
+  const juint _ulo, _uhi;    // Lower bound, upper bound in the unsigned domain
+  const juint _zeros, _ones; // Bits that are known to be 0 or 1
 
-  static const TypeInt *make(jint lo);
+  static const TypeInt* cast(const Type* t) { return t->is_int(); }
+  static const TypeInt* try_cast(const Type* t) { return t->isa_int(); }
+  static const TypeInt* make(jint lo);
   // must always specify w
-  static const TypeInt *make(jint lo, jint hi, int w);
+  static const Type* make(jint lo, jint hi, int w);
+  static const Type* make(const TypeIntPrototype<jint, juint>& t, int w);
 
   // Check for single integer
-  bool is_con() const { return _lo==_hi; }
+  bool is_con() const { return _lo == _hi; }
   bool is_con(jint i) const { return is_con() && _lo == i; }
-  jint get_con() const { assert(is_con(), "" );  return _lo; }
+  jint get_con() const { assert(is_con(), "");  return _lo; }
+  // Check if a TypeInt is a subset of this TypeInt (i.e. all elements of the
+  // argument are also elements of this type)
+  bool contains(jint i) const;
+  bool contains(const TypeInt* t) const;
+  // Excluding the cases where this and t are the same
+  bool properly_contains(const TypeInt* t) const;
 
-  virtual bool        is_finite() const;  // Has a finite value
+  virtual bool is_finite() const;  // Has a finite value
 
-  virtual const Type *xmeet( const Type *t ) const;
-  virtual const Type *xdual() const;    // Compute dual right now.
-  virtual const Type *widen( const Type *t, const Type* limit_type ) const;
-  virtual const Type *narrow( const Type *t ) const;
+  virtual const Type* xmeet(const Type* t) const;
+  virtual const Type* xdual() const;    // Compute dual right now.
+  virtual const Type* widen(const Type* t, const Type* limit_type) const;
+  virtual const Type* narrow(const Type* t) const;
 
   virtual jlong hi_as_long() const { return _hi; }
   virtual jlong lo_as_long() const { return _lo; }
 
   // Do not kill _widen bits.
   // Convenience common pre-built types.
-  static const TypeInt *MAX;
-  static const TypeInt *MIN;
-  static const TypeInt *MINUS_1;
-  static const TypeInt *ZERO;
-  static const TypeInt *ONE;
-  static const TypeInt *BOOL;
-  static const TypeInt *CC;
-  static const TypeInt *CC_LT;  // [-1]  == MINUS_1
-  static const TypeInt *CC_GT;  // [1]   == ONE
-  static const TypeInt *CC_EQ;  // [0]   == ZERO
-  static const TypeInt *CC_LE;  // [-1,0]
-  static const TypeInt *CC_GE;  // [0,1] == BOOL (!)
-  static const TypeInt *BYTE;
-  static const TypeInt *UBYTE;
-  static const TypeInt *CHAR;
-  static const TypeInt *SHORT;
-  static const TypeInt *POS;
-  static const TypeInt *POS1;
-  static const TypeInt *INT;
-  static const TypeInt *SYMINT; // symmetric range [-max_jint..max_jint]
-  static const TypeInt *TYPE_DOMAIN; // alias for TypeInt::INT
+  static const TypeInt* MAX;
+  static const TypeInt* MIN;
+  static const TypeInt* MINUS_1;
+  static const TypeInt* ZERO;
+  static const TypeInt* ONE;
+  static const TypeInt* BOOL;
+  static const TypeInt* CC;
+  static const TypeInt* CC_LT;  // [-1]  == MINUS_1
+  static const TypeInt* CC_GT;  // [1]   == ONE
+  static const TypeInt* CC_EQ;  // [0]   == ZERO
+  static const TypeInt* CC_NE;  // [-1, 1]
+  static const TypeInt* CC_LE;  // [-1,0]
+  static const TypeInt* CC_GE;  // [0,1] == BOOL (!)
+  static const TypeInt* BYTE;
+  static const TypeInt* UBYTE;
+  static const TypeInt* CHAR;
+  static const TypeInt* SHORT;
+  static const TypeInt* NON_ZERO;
+  static const TypeInt* POS;
+  static const TypeInt* POS1;
+  static const TypeInt* INT;
+  static const TypeInt* SYMINT; // symmetric range [-max_jint..max_jint]
+  static const TypeInt* TYPE_DOMAIN; // alias for TypeInt::INT
 
   static const TypeInt *as_self(const Type *t) { return t->is_int(); }
 #ifndef PRODUCT
@@ -642,10 +668,11 @@ public:
 // Class of long integer ranges, the set of integers between a lower bound and
 // an upper bound, inclusive.
 class TypeLong : public TypeInteger {
-  TypeLong( jlong lo, jlong hi, int w );
+  TypeLong(const TypeIntPrototype<jlong, julong>& t, int w, bool dual);
+  static const Type* make(const TypeIntPrototype<jlong, julong>& t, int w, bool dual);
 protected:
   // Do not kill _widen bits.
-  virtual const Type *filter_helper(const Type *kills, bool include_speculative) const;
+  virtual const Type* filter_helper(const Type* kills, bool include_speculative) const;
 public:
   typedef jlong NativeType;
   virtual bool eq( const Type *t ) const;
@@ -653,16 +680,27 @@ public:
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 public:
-  const jlong _lo, _hi;         // Lower bound, upper bound
+  const jlong _lo, _hi;       // Lower bound, upper bound in the signed domain
+  const julong _ulo, _uhi;    // Lower bound, upper bound in the unsigned domain
+  const julong _zeros, _ones; // Bits that are known to be 0 or 1
 
-  static const TypeLong *make(jlong lo);
+  static const TypeLong* cast(const Type* t) { return t->is_long(); }
+  static const TypeLong* try_cast(const Type* t) { return t->isa_long(); }
+  static const TypeLong* make(jlong lo);
   // must always specify w
-  static const TypeLong *make(jlong lo, jlong hi, int w);
+  static const Type* make(jlong lo, jlong hi, int w);
+  static const Type* make(const TypeIntPrototype<jlong, julong>& t, int w);
 
   // Check for single integer
-  bool is_con() const { return _lo==_hi; }
+  bool is_con() const { return _lo == _hi; }
   bool is_con(jlong i) const { return is_con() && _lo == i; }
   jlong get_con() const { assert(is_con(), "" ); return _lo; }
+  // Check if a TypeLong is a subset of this TypeLong (i.e. all elements of the
+  // argument are also elements of this type)
+  bool contains(jlong i) const;
+  bool contains(const TypeLong* t) const;
+  // Excluding the cases where this and t are the same
+  bool properly_contains(const TypeLong* t) const;
 
   // Check for positive 32-bit value.
   int is_positive_int() const { return _lo >= 0 && _hi <= (jlong)max_jint; }
@@ -672,21 +710,23 @@ public:
   virtual jlong hi_as_long() const { return _hi; }
   virtual jlong lo_as_long() const { return _lo; }
 
-  virtual const Type *xmeet( const Type *t ) const;
-  virtual const Type *xdual() const;    // Compute dual right now.
-  virtual const Type *widen( const Type *t, const Type* limit_type ) const;
-  virtual const Type *narrow( const Type *t ) const;
+  virtual const Type* xmeet(const Type* t) const;
+  virtual const Type* xdual() const;    // Compute dual right now.
+  virtual const Type* widen(const Type* t, const Type* limit_type) const;
+  virtual const Type* narrow(const Type* t) const;
   // Convenience common pre-built types.
-  static const TypeLong *MAX;
-  static const TypeLong *MIN;
-  static const TypeLong *MINUS_1;
-  static const TypeLong *ZERO;
-  static const TypeLong *ONE;
-  static const TypeLong *POS;
-  static const TypeLong *LONG;
-  static const TypeLong *INT;    // 32-bit subrange [min_jint..max_jint]
-  static const TypeLong *UINT;   // 32-bit unsigned [0..max_juint]
-  static const TypeLong *TYPE_DOMAIN; // alias for TypeLong::LONG
+  static const TypeLong* MAX;
+  static const TypeLong* MIN;
+  static const TypeLong* MINUS_1;
+  static const TypeLong* ZERO;
+  static const TypeLong* ONE;
+  static const TypeLong* NON_ZERO;
+  static const TypeLong* POS;
+  static const TypeLong* NEG;
+  static const TypeLong* LONG;
+  static const TypeLong* INT;    // 32-bit subrange [min_jint..max_jint]
+  static const TypeLong* UINT;   // 32-bit unsigned [0..max_juint]
+  static const TypeLong* TYPE_DOMAIN; // alias for TypeLong::LONG
 
   // static convenience methods.
   static const TypeLong *as_self(const Type *t) { return t->is_long(); }
