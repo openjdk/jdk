@@ -86,7 +86,7 @@ public @interface PreviewFeature {
         /**
          * A key for testing.
          */
-        @JEP(number=0, title="Test Feature")
+        @JEP(number=2_147_483_647, title="Test Feature")
         TEST,
         ;
     }

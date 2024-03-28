@@ -235,18 +235,29 @@ void CDSConfig::init_shared_archive_paths() {
   }
 }
 
-void CDSConfig::check_system_property(const char* key, const char* value) {
+void CDSConfig::check_internal_module_property(const char* key, const char* value) {
   if (Arguments::is_internal_module_property(key)) {
     stop_using_optimized_module_handling();
     log_info(cds)("optimized module handling: disabled due to incompatible property: %s=%s", key, value);
   }
-  if (strcmp(key, "jdk.module.showModuleResolution") == 0 ||
-      strcmp(key, "jdk.module.validation") == 0 ||
-      strcmp(key, "java.system.class.loader") == 0) {
-    stop_dumping_full_module_graph();
-    stop_using_full_module_graph();
-    log_info(cds)("full module graph: disabled due to incompatible property: %s=%s", key, value);
+}
+
+void CDSConfig::check_incompatible_property(const char* key, const char* value) {
+  static const char* incompatible_properties[] = {
+    "java.system.class.loader",
+    "jdk.module.showModuleResolution",
+    "jdk.module.validation"
+  };
+
+  for (const char* property : incompatible_properties) {
+    if (strcmp(key, property) == 0) {
+      stop_dumping_full_module_graph();
+      stop_using_full_module_graph();
+      log_info(cds)("full module graph: disabled due to incompatible property: %s=%s", key, value);
+      break;
+    }
   }
+
 }
 
 static const char* unsupported_properties[] = {

@@ -79,13 +79,6 @@ void ParallelArguments::initialize() {
     }
   }
 
-  // Par compact uses lower default values since they are treated as
-  // minimums.  These are different defaults because of the different
-  // interpretation and are not ergonomically set.
-  if (FLAG_IS_DEFAULT(MarkSweepDeadRatio)) {
-    FLAG_SET_DEFAULT(MarkSweepDeadRatio, 1);
-  }
-
   if (FLAG_IS_DEFAULT(ParallelRefProcEnabled) && ParallelGCThreads > 1) {
     FLAG_SET_DEFAULT(ParallelRefProcEnabled, true);
   }
