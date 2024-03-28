@@ -160,6 +160,8 @@ public:
   // dead.
   void fill_range_with_dead_objects(HeapWord* start, HeapWord* end);
 
+  size_t zero_unused();
+
   // All allocations are done without updating the BOT. The BOT
   // needs to be kept in sync for old generation regions and
   // this is done by explicit updates when crossing thresholds.

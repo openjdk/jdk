@@ -673,6 +673,8 @@ public:
 
   void trash_humongous_region_at(ShenandoahHeapRegion *r);
 
+  size_t zero_unused() override;
+
 private:
   void trash_cset_regions();
 

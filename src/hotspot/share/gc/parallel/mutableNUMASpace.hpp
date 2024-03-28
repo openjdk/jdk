@@ -184,6 +184,8 @@ public:
   virtual size_t used_in_words() const;
   virtual size_t free_in_words() const;
 
+  size_t zero_unused() override;
+
   virtual size_t tlab_capacity(Thread* thr) const;
   virtual size_t tlab_used(Thread* thr) const;
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;

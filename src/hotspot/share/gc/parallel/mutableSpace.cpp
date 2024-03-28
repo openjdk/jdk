@@ -184,6 +184,10 @@ void MutableSpace::set_top_for_allocations() {
 }
 #endif
 
+size_t MutableSpace::zero_unused() {
+  return mangler()->zero_unused();
+}
+
 HeapWord* MutableSpace::cas_allocate(size_t size) {
   do {
     // Read top before end, else the range check may pass when it shouldn't.

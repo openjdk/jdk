@@ -1170,6 +1170,22 @@ void ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) {
   }
 }
 
+class ShenandoahZeroUnusedClosure: public ShenandoahHeapRegionClosure {
+  size_t _used;
+public:
+  ShenandoahZeroUnusedClosure() : _used(0) {}
+  void heap_region_do(ShenandoahHeapRegion* r) {
+    _used += r->zero_unused();
+  }
+  size_t result() { return _used; }
+};
+
+size_t ShenandoahHeap::zero_unused() {
+  ShenandoahZeroUnusedClosure blk;
+  heap_region_iterate(&blk);
+  return blk.result();
+}
+
 class ShenandoahCheckCleanGCLABClosure : public ThreadClosure {
 public:
   ShenandoahCheckCleanGCLABClosure() {}

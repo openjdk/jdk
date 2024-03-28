@@ -324,6 +324,8 @@ private:
   // Save the tops of the spaces in all generations
   void record_gen_tops_before_GC() PRODUCT_RETURN;
 
+  virtual size_t zero_unused() override;
+
   // Return true if we need to perform full collection.
   bool should_do_full_collection(size_t size, bool full,
                                  bool is_tlab, GenerationType max_gen) const;

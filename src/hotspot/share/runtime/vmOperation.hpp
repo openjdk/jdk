@@ -110,6 +110,7 @@
   template(PrintCompileQueue)                     \
   template(PrintClassHierarchy)                   \
   template(PrintClasses)                          \
+  template(ZeroUnusedMemory)                      \
   template(ICBufferFull)                          \
   template(PrintMetadata)                         \
   template(GTestExecuteAtSafepoint)               \

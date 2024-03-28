@@ -160,6 +160,8 @@ public:
 
   void record_spaces_top();
 
+  virtual size_t zero_unused();
+
   // Statistics
 
   void update_gc_stats(Generation* current_generation, bool full);

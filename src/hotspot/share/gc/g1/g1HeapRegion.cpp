@@ -706,6 +706,10 @@ void HeapRegion::mangle_unused_area() {
 }
 #endif
 
+size_t HeapRegion::zero_unused() {
+  return SpaceMangler::zero_unused(MemRegion(top(), end()));
+}
+
 void HeapRegion::update_bot_for_block(HeapWord* start, HeapWord* end) {
   _bot_part.update_for_block(start, end);
 }
