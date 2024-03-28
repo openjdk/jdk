@@ -900,6 +900,7 @@ class LoadVectorGatherNode : public LoadVectorNode {
 
   virtual int Opcode() const;
   virtual uint match_edge(uint idx) const { return idx == MemNode::Address || idx == MemNode::ValueIn; }
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 //------------------------------StoreVectorNode--------------------------------
@@ -958,6 +959,7 @@ class StoreVectorNode : public StoreNode {
    virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
                                                     idx == MemNode::ValueIn ||
                                                     idx == MemNode::ValueIn + 1; }
+   virtual Node* Identity(PhaseGVN* phase);
 };
 
 //------------------------------StoreVectorMaskedNode--------------------------------
@@ -977,6 +979,7 @@ class StoreVectorMaskedNode : public StoreVectorNode {
     return idx > 1;
   }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 //------------------------------LoadVectorMaskedNode--------------------------------
@@ -997,6 +1000,7 @@ class LoadVectorMaskedNode : public LoadVectorNode {
     return idx > 1;
   }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 //-------------------------------LoadVectorGatherMaskedNode---------------------------------
@@ -1017,6 +1021,7 @@ class LoadVectorGatherMaskedNode : public LoadVectorNode {
   virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
                                                    idx == MemNode::ValueIn ||
                                                    idx == MemNode::ValueIn + 1; }
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 //------------------------------StoreVectorScatterMaskedNode--------------------------------
@@ -1037,6 +1042,7 @@ class StoreVectorScatterMaskedNode : public StoreVectorNode {
                                                     idx == MemNode::ValueIn ||
                                                     idx == MemNode::ValueIn + 1 ||
                                                     idx == MemNode::ValueIn + 2; }
+   virtual Node* Identity(PhaseGVN* phase);
 };
 
 // Verify that memory address (adr) is aligned. The mask specifies the
