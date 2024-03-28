@@ -3920,7 +3920,7 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   }
   Node *init = cl->init_trip();
   Node *phi  = cl->phi();
-  int stride_con = cl->stride_con();
+  jlong stride_con = cl->stride_con();
 
   // Visit all children, looking for Phis
   for (DUIterator i = cl->outs(); cl->has_out(i); i++) {
@@ -3937,7 +3937,7 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
         incr2->req() != 3 ||
         incr2->in(1)->uncast() != phi2 ||
         incr2 == incr ||
-        incr2->Opcode() != Op_AddI ||
+        (incr2->Opcode() != Op_AddI && incr2->Opcode() != Op_AddL) ||
         !incr2->in(2)->is_Con()) {
       continue;
     }
@@ -3953,11 +3953,16 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     // the trip-counter, so we need to convert all these to trip-counter
     // expressions.
     Node* init2 = phi2->in(LoopNode::EntryControl);
-    int stride_con2 = incr2->in(2)->get_int();
+
+    // determine the basic type of the stride constant (and the iv being incremented)
+    BasicType stride_con2_bt = incr2->Opcode() == Op_AddI ? T_INT : T_LONG;
+    jlong stride_con2 = incr2->in(2)->get_integer_as_long(stride_con2_bt);
 
     // The ratio of the two strides cannot be represented as an int
     // if stride_con2 is min_int and stride_con is -1.
-    if (stride_con2 == min_jint && stride_con == -1) {
+    if (((stride_con2_bt == T_INT && stride_con2 == min_jint) ||
+        (stride_con2_bt == T_LONG && stride_con2 == min_jlong)) &&
+        stride_con == -1) {
       continue;
     }
 
@@ -3968,7 +3973,7 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     // Instead we require 'stride_con2' to be a multiple of 'stride_con',
     // where +/-1 is the common case, but other integer multiples are
     // also easy to handle.
-    int ratio_con = stride_con2/stride_con;
+    jlong ratio_con = stride_con2 / stride_con;
 
     if ((ratio_con * stride_con) == stride_con2) { // Check for exact
 #ifndef PRODUCT
@@ -3981,18 +3986,34 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
       // variable differs from the trip counter by a loop-invariant
       // amount, the difference between their respective initial values.
       // It is scaled by the 'ratio_con'.
-      Node* ratio = _igvn.intcon(ratio_con);
+      Node* ratio = _igvn.integercon(ratio_con, stride_con2_bt);
       set_ctrl(ratio, C->root());
-      Node* ratio_init = new MulINode(init, ratio);
-      _igvn.register_new_node_with_optimizer(ratio_init, init);
+
+      Node* init_converted = init;
+      if (stride_con2_bt == T_LONG) {
+        init_converted = new ConvI2LNode(init);
+        _igvn.register_new_node_with_optimizer(init_converted, init);
+        set_early_ctrl(init_converted, false);
+      }
+
+      Node* ratio_init = MulNode::make(init_converted, ratio, stride_con2_bt);
+      _igvn.register_new_node_with_optimizer(ratio_init, init_converted);
       set_early_ctrl(ratio_init, false);
-      Node* diff = new SubINode(init2, ratio_init);
+      Node* diff = SubNode::make(init2, ratio_init, stride_con2_bt);
       _igvn.register_new_node_with_optimizer(diff, init2);
       set_early_ctrl(diff, false);
-      Node* ratio_idx = new MulINode(phi, ratio);
-      _igvn.register_new_node_with_optimizer(ratio_idx, phi);
+
+      Node* phi_converted = phi;
+      if (stride_con2_bt == T_LONG) {
+        phi_converted = new ConvI2LNode(phi);
+        _igvn.register_new_node_with_optimizer(phi_converted, phi);
+        set_early_ctrl(phi_converted, false);
+      }
+
+      Node* ratio_idx = MulNode::make(phi_converted, ratio, stride_con2_bt);
+      _igvn.register_new_node_with_optimizer(ratio_idx, phi_converted);
       set_ctrl(ratio_idx, cl);
-      Node* add = new AddINode(ratio_idx, diff);
+      Node* add = AddNode::make(ratio_idx, diff, stride_con2_bt);
       _igvn.register_new_node_with_optimizer(add);
       set_ctrl(add, cl);
       _igvn.replace_node( phi2, add );
