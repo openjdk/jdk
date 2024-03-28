@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -571,6 +571,29 @@ public:
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
                         "monitor", nullptr};
+    return p;
+  }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+class VMInspectDCmd: public DCmdWithParser {
+protected:
+  DCmdArgument<char*> _address;
+  DCmdArgument<bool> _verbose;
+public:
+  static int num_arguments() { return 2; }
+  VMInspectDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "VM.inspect";
+  }
+  static const char* description() {
+    return "Inspect at address: decode Java heap and some other areas and objects known to the VM.";
+  }
+  static const char* impact() {
+      return "High: not recommended for live production use.";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);

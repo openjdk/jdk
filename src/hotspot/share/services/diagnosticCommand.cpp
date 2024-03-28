@@ -168,6 +168,7 @@ void DCmd::register_dcmds(){
 #endif // INCLUDE_CDS
 
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<NMTDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMInspectDCmd>(full_export, true, true));
 }
 
 HelpDCmd::HelpDCmd(outputStream* output, bool heap) : DCmdWithParser(output, heap),
@@ -1236,6 +1237,44 @@ void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
   const bool human_readable = _human_readable.value();
   const size_t minsize = _minsize.has_value() ? _minsize.value()._size : 0;
   CompilationMemoryStatistic::print_all_by_size(output(), human_readable, minsize);
+}
+
+VMInspectDCmd::VMInspectDCmd(outputStream* output, bool heap) :
+                                     DCmdWithParser(output, heap),
+  _address("address", "", "STRING", true, nullptr),
+  _verbose("-verbose", "", "BOOLEAN", false, "false") {
+
+  _dcmdparser.add_dcmd_argument(&_address);
+  _dcmdparser.add_dcmd_option(&_verbose);
+}
+
+void VMInspectDCmd::execute(DCmdSource source, TRAPS) {
+  DebuggingContext dc{}; // avoid asserts
+
+  if (!UnlockDiagnosticVMOptions) {
+    output()->print_cr("-XX:+UnlockDiagnosticVMOptions is required");
+    return;
+  }
+  if (!_address.has_value()) {
+    output()->print_cr("Usage: VM.inspect ADDRESS");
+  } else {
+    intptr_t x = strtoll(_address.value(), nullptr, 0);
+    if (!os::is_readable_pointer((intptr_t*) x)) {
+      output()->print_cr("address not safe");
+    } else {
+      if (Universe::heap()->is_in((oopDesc*) x)) {
+        if (x != align_down(x, ObjectAlignmentInBytes)) {
+          output()->print_cr("misaligned oop");
+          return;
+        }
+        if (!dbg_is_good_oop_detailed((oopDesc*) x)) {
+          output()->print_cr("bad oop");
+          return;
+        }
+      }
+      os::print_location(output(), x, _verbose.is_set());
+    }
+  }
 }
 
 #ifdef LINUX
