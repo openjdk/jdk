@@ -1955,7 +1955,7 @@ void ObjectSynchronizer::do_final_audit_and_print_stats() {
   }
 }
 
-// This function can be called by the monitor deflation thread or it can be called when
+// This function can be called by the MonitorDeflationThread or it can be called when
 // we are trying to exit the VM. The list walker functions can run in parallel with
 // the other list operations.
 // Calls to this function can be added in various places as a debugging
@@ -1974,8 +1974,8 @@ void ObjectSynchronizer::audit_and_print_stats(outputStream* ls, bool on_exit) {
   }
 
   // When exiting, only log the interesting entries at the Info level.
-  // When called at intervals by the MonitorDeflationThread, log output at the Trace level since
-  // there can be a lot of it.
+  // When called at intervals by the MonitorDeflationThread, log output
+  // at the Trace level since there can be a lot of it.
   if (!on_exit && log_is_enabled(Trace, monitorinflation)) {
     LogStreamHandle(Trace, monitorinflation) ls_tr;
     log_in_use_monitor_details(&ls_tr, true /* log_all */);
