@@ -88,7 +88,7 @@ struct ByteswapFallbackImpl<T, 8> {
 /*****************************************************************************
  * GCC and compatible (including Clang)
  *****************************************************************************/
-#if defined(TARGET_COMPILER_gcc) || defined(TARGET_COMPILER_xlc)
+#if defined(TARGET_COMPILER_gcc)
 
 #if defined(__clang__) || defined(ASSERT)
 

@@ -31,12 +31,23 @@
 // globally used constants & types, class (forward)
 // declarations and a few frequently used utility functions.
 
+#if defined(_AIX)
+#include <alloca.h>
+#endif
 #include <ctype.h>
 #include <string.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+// In stdlib.h on AIX malloc is defined as a macro causing
+// compiler errors when resolving them in different depths as it
+// happens in the log tags. This avoids the macro.
+#if (defined(__VEC__) || defined(__AIXVEC)) && defined(AIX) \
+    && defined(__open_xl_version__) && __open_xl_version__ >= 17
+  #undef malloc
+  extern void *malloc(size_t) asm("vec_malloc");
+#endif
 #include <wchar.h>
 
 #include <math.h>
@@ -48,7 +59,7 @@
 #include <limits.h>
 #include <errno.h>
 
-#if defined(LINUX) || defined(_ALLBSD_SOURCE)
+#if defined(LINUX) || defined(_ALLBSD_SOURCE) || defined(_AIX)
 #include <inttypes.h>
 #include <signal.h>
 #ifndef __OpenBSD__
@@ -60,6 +71,16 @@
 #endif
 #include <sys/time.h>
 #endif // LINUX || _ALLBSD_SOURCE
+
+#ifdef _AIX
+#if defined(__open_xl_version__)
+  #if __open_xl_version__ < 17
+  #error "open xlc < 17 not supported"
+  #endif
+#else
+  #error "xlc version not supported, macro __open_xl_version__ not found"
+#endif
+#endif // AIX
 
 // NULL vs NULL_WORD:
 // On Linux NULL is defined as a special type '__null'. Assigning __null to
@@ -79,7 +100,7 @@
   #define NULL_WORD  NULL
 #endif
 
-#if !defined(LINUX) && !defined(_ALLBSD_SOURCE)
+#if !defined(LINUX) && !defined(_ALLBSD_SOURCE) && !defined(_AIX)
 // Compiler-specific primitive types
 typedef unsigned short     uint16_t;
 #ifndef _UINT32_T
@@ -104,7 +125,7 @@ typedef unsigned int            uintptr_t;
 // checking for nanness
 #if defined(__APPLE__)
 inline int g_isnan(double f) { return isnan(f); }
-#elif defined(LINUX) || defined(_ALLBSD_SOURCE)
+#elif defined(LINUX) || defined(_ALLBSD_SOURCE) || defined(_AIX)
 inline int g_isnan(float  f) { return isnan(f); }
 inline int g_isnan(double f) { return isnan(f); }
 #else

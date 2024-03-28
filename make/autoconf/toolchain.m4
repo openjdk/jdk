@@ -953,11 +953,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
   # Setup hotspot lecagy names for toolchains
   HOTSPOT_TOOLCHAIN_TYPE=$TOOLCHAIN_TYPE
   if test "x$TOOLCHAIN_TYPE" = xclang; then
-    if test "x$OPENJDK_TARGET_OS" = xaix; then
-      HOTSPOT_TOOLCHAIN_TYPE=xlc
-    else
-      HOTSPOT_TOOLCHAIN_TYPE=gcc
-    fi
+    HOTSPOT_TOOLCHAIN_TYPE=gcc
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     HOTSPOT_TOOLCHAIN_TYPE=visCPP
   fi
