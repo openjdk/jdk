@@ -3221,6 +3221,7 @@ void AwtWindow::_SetOpacity(void* param)
 
     window->SetTranslucency(iOpacity, window->isOpaque());
 
+
     env->DeleteGlobalRef(self);
     delete os;
 }
@@ -3250,6 +3251,7 @@ void AwtWindow::_SetOpaque(void* param)
     }
 
     window->SetTranslucency(window->getOpacity(), isOpaque);
+
 
     env->DeleteGlobalRef(self);
     delete os;
