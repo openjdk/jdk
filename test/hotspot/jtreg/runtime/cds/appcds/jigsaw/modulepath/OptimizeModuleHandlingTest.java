@@ -306,6 +306,7 @@ public class OptimizeModuleHandlingTest {
                    .shouldNotContain(OPTIMIZE_ENABLED)
                    .shouldNotContain(OPTIMIZE_DISABLED);
             });
+        //after sorting the classpath, the classpath is same as the dump time.
         tty("10. run with CDS on,  with main/test jars on classpath also with -Xbootclasspath/a:  should pass");
         TestCommon.run("-Xlog:cds",
                        "-cp", mainJar.toString() + PATH_SEPARATOR + testJar.toString(),
@@ -314,8 +315,8 @@ public class OptimizeModuleHandlingTest {
             .assertAbnormalExit(out -> {
                 out.shouldNotContain(CLASS_FOUND_MESSAGE)
                    .shouldNotContain(CLASS_NOT_FOUND_MESSAGE)
-                   .shouldNotContain(OPTIMIZE_ENABLED)
-                   .shouldContain(MAP_FAILED);
+                   .shouldContain(OPTIMIZE_ENABLED)
+                   .shouldNotContain(MAP_FAILED);
             });
 
         // Dump an archive with -Xbootclasspath/a
