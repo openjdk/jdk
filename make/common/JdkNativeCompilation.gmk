@@ -35,12 +35,6 @@ include NativeCompilation.gmk
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, common/JdkNativeCompilation.gmk))
 
-FindSrcDirsForLib += \
-  $(call uniq, $(wildcard \
-      $(TOPDIR)/src/$(strip $1)/$(OPENJDK_TARGET_OS)/native/lib$(strip $2) \
-      $(TOPDIR)/src/$(strip $1)/$(OPENJDK_TARGET_OS_TYPE)/native/lib$(strip $2) \
-      $(TOPDIR)/src/$(strip $1)/share/native/lib$(strip $2)))
-
 FindSrcDirsForComponent += \
   $(call uniq, $(wildcard \
       $(TOPDIR)/src/$(strip $1)/$(OPENJDK_TARGET_OS)/native/$(strip $2) \
