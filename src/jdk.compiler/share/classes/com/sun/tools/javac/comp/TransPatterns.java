@@ -106,7 +106,6 @@ import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Assert;
-import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 
@@ -501,7 +500,10 @@ public class TransPatterns extends TreeTranslator {
             MethodSymbol bsm = rs.resolveInternalMethod(tree.pos(), env, syms.switchBootstrapsType,
                     bootstrapName, staticArgTypes, List.nil());
 
-            Type resolvedSelectorType = seltype;
+            Type resolvedSelectorType = syms.objectType;
+            if (target.releaseAfterJEP455())
+                resolvedSelectorType = seltype;
+
             MethodType indyType = new MethodType(
                     List.of(resolvedSelectorType, syms.intType),
                     syms.intType,
