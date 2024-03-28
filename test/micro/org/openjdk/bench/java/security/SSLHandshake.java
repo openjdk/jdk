@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,13 +75,15 @@ public class SSLHandshake {
     @Param({"TLSv1.2", "TLS"})
     String tlsVersion;
 
+    @Param({"SunX509", "PKIX"})
+    String keyMgr;
+
     @Setup(Level.Trial)
     public void init() throws Exception {
         KeyStore ks = TestCertificates.getKeyStore();
         KeyStore ts = TestCertificates.getTrustStore();
 
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance(
-                KeyManagerFactory.getDefaultAlgorithm());
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyMgr);
         kmf.init(ks, new char[0]);
 
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(
