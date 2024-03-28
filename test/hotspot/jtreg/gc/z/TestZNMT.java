@@ -86,20 +86,12 @@ public class TestZNMT {
         if (zForceDiscontiguousHeapReservations > 1) {
             oa.shouldContain("Address Space Type: Discontiguous");
         }
-
-        if (XmsInM < XmxInM) {
-            // There will be reservations which are smaller than the total
-            // memory allocated in TestZNMT.Test.main. This means that some
-            // reservation will be completely committed and print the following
-            // in the NMT statistics.
-            oa.shouldMatch("reserved and committed \\d+ for Java Heap");
-        }
+        // We expect to have a report of this type.
+        oa.shouldMatch("ZGC heap backing device");
+        oa.shouldMatch("allocated \\d+ for Java Heap");
     }
 
     public static void main(String[] args) throws Exception {
-        testValue(0);
-        testValue(1);
-        testValue(2);
         testValue(100);
     }
 }

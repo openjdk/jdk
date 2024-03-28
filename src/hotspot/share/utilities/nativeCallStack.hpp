@@ -54,6 +54,7 @@
 class MemTracker;
 
 class NativeCallStack : public StackObj {
+  friend class VMATreeTest;
 private:
   address       _stack[NMT_TrackingStackDepth];
   static const NativeCallStack _empty_stack;
