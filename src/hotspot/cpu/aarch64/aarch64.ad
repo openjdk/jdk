@@ -7838,7 +7838,7 @@ instruct membar_acquire() %{
   ins_cost(VOLATILE_REF_COST);
 
   format %{ "membar_acquire\n\t"
-            "dmb ish" %}
+            "dmb ishld" %}
 
   ins_encode %{
     __ block_comment("membar_acquire");
@@ -7892,11 +7892,12 @@ instruct membar_release() %{
   ins_cost(VOLATILE_REF_COST);
 
   format %{ "membar_release\n\t"
-            "dmb ish" %}
+            "dmb ishst\n\tdmb ishld" %}
 
   ins_encode %{
     __ block_comment("membar_release");
-    __ membar(Assembler::LoadStore|Assembler::StoreStore);
+    __ membar(Assembler::StoreStore);
+    __ membar(Assembler::LoadStore);
   %}
   ins_pipe(pipe_serial);
 %}
