@@ -473,7 +473,7 @@ void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
 #if INCLUDE_SERVICES // Heap dumping/inspection supported
 HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
-  _filename("filename","Name of the dump file", "STRING",true),
+  _filename("filename","Name of the dump file", "STRING", false, "if no filename was specified, but -XX:HeapDumpPath=hdp is set, path hdp is taken"),
   _all("-all", "Dump all objects, including unreachable objects",
        "BOOLEAN", false, "false"),
   _gzip("-gz", "If specified, the heap dump is written in gzipped format "
@@ -494,6 +494,7 @@ HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
 void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
   jlong level = -1; // -1 means no compression.
   jlong parallel = HeapDumper::default_num_of_dump_threads();
+  bool use_heapdump_path = false;
 
   if (_gzip.is_set()) {
     level = _gzip.value();
@@ -516,11 +517,26 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
     }
   }
 
+  if (!_filename.is_set()) {
+    if (HeapDumpPath != nullptr) {
+      // use HeapDumpPath (file or directory is possible)
+      use_heapdump_path = true;
+    } else {
+      output()->print_cr("Filename or -XX:HeapDumpPath must be set!");
+      return;
+    }
+  }
+
   // Request a full GC before heap dump if _all is false
   // This helps reduces the amount of unreachable objects in the dump
   // and makes it easier to browse.
   HeapDumper dumper(!_all.value() /* request GC if _all is false*/);
-  dumper.dump(_filename.value(), output(), (int) level, _overwrite.value(), (uint)parallel);
+
+  if (use_heapdump_path) {
+    dumper.dump_to(output(), (int)level, _overwrite.value(), (uint)parallel);
+  } else {
+    dumper.dump(_filename.value(), output(), (int)level, _overwrite.value(), (uint)parallel);
+  }
 }
 
 ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :

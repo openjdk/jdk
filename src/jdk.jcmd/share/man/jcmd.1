@@ -335,7 +335,9 @@ fewer.
 .PP
 \f[I]arguments\f[R]:
 .IP \[bu] 2
-\f[I]filename\f[R]: The name of the dump file (STRING, no default value)
+\f[I]filename\f[R]: The name of the dump file; in case no file is specified
+but -XX:HeapDumpPath=path is set, the path provided by HeapDumpPath is used
+(STRING, no default value)
 .RE
 .TP
 \f[V]GC.heap_info\f[R]

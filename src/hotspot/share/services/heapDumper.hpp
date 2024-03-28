@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,9 @@ class HeapDumper : public StackObj {
   // compression >= 0 creates a gzipped file with the given compression level.
   // parallel_thread_num >= 0 indicates thread numbers of parallel object dump
   int dump(const char* path, outputStream* out = nullptr, int compression = -1, bool overwrite = false, uint parallel_thread_num = 1);
+
+  // same as dump with path parameter, but uses the preset HeapDumpPath file or directory
+  int dump_to(outputStream* out, int compression, bool overwrite, uint parallel_thread_num);
 
   // returns error message (resource allocated), or null if no error
   char* error_as_C_string() const;

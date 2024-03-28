@@ -2761,9 +2761,9 @@ an \f[V]OutOfMemoryError\f[R] exception is thrown.
 \f[V]-XX:HeapDumpPath=\f[R]\f[I]path\f[R]
 Sets the path and file name for writing the heap dump provided by the
 heap profiler (HPROF) when the \f[V]-XX:+HeapDumpOnOutOfMemoryError\f[R]
-option is set.
-By default, the file is created in the current working directory, and
-it\[aq]s named \f[V]java_pid<pid>.hprof\f[R] where \f[V]<pid>\f[R] is
+option is set or a heap dump is triggered by \f[V]jcmd GC.heap_dump\f[R] without specifying a path.
+In case of HeapDumpOnOutOfMemoryError, by default, the file is created in the current
+working directory, and it\[aq]s named \f[V]java_pid<pid>.hprof\f[R] where \f[V]<pid>\f[R] is
 the identifier of the process that caused the error.
 The following example shows how to set the default file explicitly
 (\f[V]%p\f[R] represents the current process identifier):
