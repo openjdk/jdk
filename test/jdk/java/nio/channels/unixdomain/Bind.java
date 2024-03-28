@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,13 +159,17 @@ public class Bind {
         });
         // address with space should work
         checkNormal(() -> {
-            server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
-            UnixDomainSocketAddress usa =  UnixDomainSocketAddress.of("with space"); // relative to CWD
+            UnixDomainSocketAddress usa = UnixDomainSocketAddress.of("with space");
             Files.deleteIfExists(usa.getPath());
-            server.bind(usa);
-            client = SocketChannel.open(usa);
-            Files.delete(usa.getPath());
-            assertAddress(client.getRemoteAddress(), usa, "address");
+            try {
+                server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
+                // relative to CWD
+                server.bind(usa);
+                client = SocketChannel.open(usa);
+                assertAddress(client.getRemoteAddress(), usa, "address");
+            } finally {
+                Files.deleteIfExists(usa.getPath());
+            }
         });
         // client bind to null: allowed
         checkNormal(() -> {
@@ -185,12 +189,19 @@ public class Bind {
         });
         // server bind to null: should bind to a local address
         checkNormal(() -> {
-            server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
-            server.bind(null);
-            UnixDomainSocketAddress usa = (UnixDomainSocketAddress)server.getLocalAddress();
-            if (usa.getPath().toString().isEmpty())
-                throw new RuntimeException("expected non zero address length");
-            System.out.println("Null server address: " + server.getLocalAddress());
+            UnixDomainSocketAddress usa = null;
+            try {
+                server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
+                server.bind(null);
+                usa = (UnixDomainSocketAddress) server.getLocalAddress();
+                if (usa.getPath().toString().isEmpty())
+                    throw new RuntimeException("expected non zero address length");
+                System.out.println("Null server address: " + server.getLocalAddress());
+            } finally {
+                if (usa != null) {
+                    Files.deleteIfExists(usa.getPath());
+                }
+            }
         });
         // server no bind : not allowed
         checkException(
@@ -307,23 +318,32 @@ public class Bind {
             Arrays.fill(chars, 'x');
             String name = new String(chars);
             UnixDomainSocketAddress address = UnixDomainSocketAddress.of(name);
-            ServerSocketChannel server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
-            server.bind(address);
-            SocketChannel client = SocketChannel.open(address);
-            assertAddress(server.getLocalAddress(), address, "server");
-            assertAddress(client.getRemoteAddress(), address, "client");
-            Files.delete(address.getPath());
+            try {
+                ServerSocketChannel server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
+                server.bind(address);
+                SocketChannel client = SocketChannel.open(address);
+                assertAddress(server.getLocalAddress(), address, "server");
+                assertAddress(client.getRemoteAddress(), address, "client");
+            } finally {
+                Files.deleteIfExists(address.getPath());
+            }
         });
 
         // implicit server bind
         checkNormal(() -> {
-            server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
-            server.bind(null);
-            UnixDomainSocketAddress usa = (UnixDomainSocketAddress)server.getLocalAddress();
-            client = SocketChannel.open(usa);
-            accept1 = server.accept();
-            assertAddress(client.getRemoteAddress(), usa, "server");
-            Files.delete(usa.getPath());
+            UnixDomainSocketAddress usa = null;
+            try {
+                server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
+                server.bind(null);
+                usa = (UnixDomainSocketAddress) server.getLocalAddress();
+                client = SocketChannel.open(usa);
+                accept1 = server.accept();
+                assertAddress(client.getRemoteAddress(), usa, "server");
+            } finally {
+                if (usa != null) {
+                    Files.deleteIfExists(usa.getPath());
+                }
+            }
         });
     }
 }

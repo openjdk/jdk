@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import jdk.jfr.Event;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.EventStream;
 import jdk.jfr.consumer.RecordedEvent;
+import jdk.test.lib.Utils;
 
 /**
  * @test
@@ -118,7 +119,7 @@ public class TestReuse {
             }
             r.stop();
             rotation.close();
-            Path p = Files.createTempFile("recording", ".jfr");
+            Path p = Utils.createTempFile("recording", ".jfr");
             r.dump(p);
             return p;
         }
