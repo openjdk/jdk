@@ -878,7 +878,7 @@ public class SimpleOCSPServer {
             // read the remaining OCSP Request bytes
             if (properContentType && length >= 0) {
                 if (USE_GET && length <= 255) {
-                    // Received a small POST request. Check that our test code properly
+                    // Received a small POST request. Check that our client code properly
                     // handled the relevant flag. We expect small GET requests, unless
                     // explicitly disabled.
                     throw new IOException("Should have received small GET, not POST.");
