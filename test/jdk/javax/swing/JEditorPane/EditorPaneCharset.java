@@ -66,7 +66,7 @@ public final class EditorPaneCharset {
         Element body = root.getElement(1);
         Element p = body.getElement(0);
         String pText = document.getText(p.getStartOffset(),
-                                        p.getEndOffset() - p.getStartOffset());
+                                        p.getEndOffset() - p.getStartOffset() - 1);
         if (!CYRILLIC_TEXT.equals(pText)) {
             throw new RuntimeException("Text doesn't match");
         }
