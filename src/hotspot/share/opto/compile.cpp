@@ -3895,7 +3895,7 @@ void Compile::remove_range_check_cast(CastIINode* cast) {
     // For memory access or integer divisions nodes that depend on the cast, record the dependency on the cast's control
     // as a precedence edge, so they can't float above the cast in case that cast's narrowed type helped eliminated a
     // range check or a null divisor check.
-    assert(cast->in(0) != nullptr, "");
+    assert(cast->in(0) != nullptr, "All RangeCheck CastII must have a control dependency");
     ResourceMark rm;
     Unique_Node_List wq;
     wq.push(cast);

@@ -35,6 +35,9 @@
  * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
  *                   -XX:CompileCommand=dontinline,TestArrayAccessAboveRCAfterRCCastIIEliminated::notInlined
  *                   -XX:+StressIGVN -XX:StressSeed=94546681 TestArrayAccessAboveRCAfterRCCastIIEliminated
+ * @run main/othervm TestArrayAccessAboveRCAfterRCCastIIEliminated
+ * @run main/othervm -XX:CompileCommand=dontinline,TestArrayAccessAboveRCAfterRCCastIIEliminated::notInlined
+ *                   TestArrayAccessAboveRCAfterRCCastIIEliminated
  *
  */
 
