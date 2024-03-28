@@ -85,21 +85,6 @@ inline unsigned count_trailing_zeros_64(uint64_t x) {
 }
 
 /*****************************************************************************
- * IBM XL C/C++
- *****************************************************************************/
-#elif defined(TARGET_COMPILER_xlc)
-
-#include <builtins.h>
-
-inline unsigned count_trailing_zeros_32(uint32_t x) {
-  return __cnttz4(x);
-}
-
-inline unsigned count_trailing_zeros_64(uint64_t x) {
-  return __cnttz8(x);
-}
-
-/*****************************************************************************
  * Unknown toolchain
  *****************************************************************************/
 #else

@@ -124,37 +124,6 @@ template <typename T> struct CountLeadingZerosImpl<T, 8> {
 };
 
 /*****************************************************************************
- * IBM XL C/C++
- *****************************************************************************/
-#elif defined(TARGET_COMPILER_xlc)
-
-#include <builtins.h>
-
-template <typename T> struct CountLeadingZerosImpl<T, 1> {
-  static unsigned doit(T v) {
-    return __cntlz4((uint32_t)v & 0xFF) - 24u;
-  }
-};
-
-template <typename T> struct CountLeadingZerosImpl<T, 2> {
-  static unsigned doit(T v) {
-    return __cntlz4((uint32_t)v & 0xFFFF) - 16u;
-  }
-};
-
-template <typename T> struct CountLeadingZerosImpl<T, 4> {
-  static unsigned doit(T v) {
-    return __cntlz4(v);
-  }
-};
-
-template <typename T> struct CountLeadingZerosImpl<T, 8> {
-  static unsigned doit(T v) {
-    return __cntlz8(v);
-  }
-};
-
-/*****************************************************************************
  * Fallback
  *****************************************************************************/
 #else
