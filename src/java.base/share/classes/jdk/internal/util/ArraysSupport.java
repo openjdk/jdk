@@ -164,6 +164,19 @@ public class ArraysSupport {
         }
     }
 
+    /*
+     * This method does not perform type checks or bounds checks.  It is the
+     * responsibility of the caller to perform such checks before calling this
+     * method.
+     */
+    public static int hashCode(int[] a, int fromIndex, int length, int initialValue) {
+        return switch (length) {
+            case 0 -> initialValue;
+            case 1 -> 31 * initialValue + a[fromIndex];
+            default -> vectorizedHashCode(a, fromIndex, length, initialValue, T_INT);
+        };
+    }
+
     // Possible values for the type operand of the NEWARRAY instruction.
     // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-6.html#jvms-6.5.newarray.
 
