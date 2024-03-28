@@ -388,26 +388,33 @@ UNSAFE_LEAF(void, Unsafe_FreeMemory0(JNIEnv *env, jobject unsafe, jlong addr)) {
 UNSAFE_ENTRY_SCOPED(void, Unsafe_SetMemory0(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong size, jbyte value)) {
   size_t sz = (size_t)size;
 
+  // printf("In Unsafe_SetMemory0\n");
+
   oop base = JNIHandles::resolve(obj);
   void* p = index_oop_from_field_offset_long(base, offset);
 
   {
     GuardUnsafeAccess guard(thread);
-    Copy::fill_to_memory_atomic(p, sz, value);
+    if (StubRoutines::unsafe_setmemory() != nullptr) {
+      MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, thread));
+      StubRoutines::UnsafeSetMemory_stub()(p, sz, value);
+    } else {
+      Copy::fill_to_memory_atomic(p, sz, value);
+    }
   }
 } UNSAFE_END
 
-UNSAFE_ENTRY_SCOPED(void, Unsafe_SetMemory1(JNIEnv *env, jobject unsafe, jlong address, jlong size, jbyte value)) {
-  size_t sz = (size_t)size;
+// UNSAFE_ENTRY_SCOPED(void, Unsafe_SetMemory1(JNIEnv *env, jobject unsafe, jlong address, jlong size, jbyte value)) {
+//   size_t sz = (size_t)size;
 
-  void *p = (void *) address;
+//   void *p = (void *) address;
 
-  {
-    GuardUnsafeAccess guard(thread);
-    Copy::fill_to_memory_atomic(p, sz, value);
-  }
+//   {
+//     GuardUnsafeAccess guard(thread);
+//     Copy::fill_to_memory_atomic(p, sz, value);
+//   }
 
-} UNSAFE_END
+// } UNSAFE_END
 
 UNSAFE_ENTRY_SCOPED(void, Unsafe_CopyMemory0(JNIEnv *env, jobject unsafe, jobject srcObj, jlong srcOffset, jobject dstObj, jlong dstOffset, jlong size)) {
   size_t sz = (size_t)size;
@@ -918,7 +925,7 @@ static JNINativeMethod jdk_internal_misc_Unsafe_methods[] = {
     {CC "writebackPreSync0",  CC "()V",                  FN_PTR(Unsafe_WriteBackPreSync0)},
     {CC "writebackPostSync0", CC "()V",                  FN_PTR(Unsafe_WriteBackPostSync0)},
     {CC "setMemory0",         CC "(" OBJ "JJB)V",        FN_PTR(Unsafe_SetMemory0)},
-    {CC "setMemory1",         CC "(JJB)V",               FN_PTR(Unsafe_SetMemory1)},
+    // {CC "setMemory1",         CC "(JJB)V",               FN_PTR(Unsafe_SetMemory1)},
 
     {CC "shouldBeInitialized0", CC "(" CLS ")Z",         FN_PTR(Unsafe_ShouldBeInitialized0)},
 

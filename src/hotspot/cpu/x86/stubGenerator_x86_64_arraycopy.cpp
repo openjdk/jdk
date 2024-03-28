@@ -156,6 +156,7 @@ void StubGenerator::generate_arraycopy_stubs() {
                                                                  StubRoutines::_arrayof_jbyte_fill,
                                                                  StubRoutines::_arrayof_jshort_fill,
                                                                  StubRoutines::_arrayof_jint_fill);
+  // StubRoutines::_unsafe_setmemory    = nullptr;
 
   // We don't generate specialized code for HeapWord-aligned source
   // arrays, so just use the code we've already generated
@@ -2500,9 +2501,9 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
   Label L_int_aligned, L_short_aligned;
 
   // Input registers (before setup_arg_regs)
-  const Register dest        = c_rarg1;  // destination array address
-  const Register size        = c_rarg2;  // byte count (size_t)
-  const Register value       = c_rarg0;  // byte value to fill
+  const Register dest        = c_rarg0;  // destination array address
+  const Register size        = c_rarg1;  // byte count (size_t)
+  const Register value       = c_rarg2;  // byte value to fill
 
   // Register used as a temp
   const Register bits        = rax;      // test copy of low bits
@@ -2511,13 +2512,16 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
   StubCodeMark mark(this, "StubRoutines", name);
   address start = __ pc();
 
-  __ enter(); // required for proper stackwalking of RuntimeStub frame
+  // __ enter(); // required for proper stackwalking of RuntimeStub frame
 
   // bump this on entry, not on exit:
   INC_COUNTER_NP(SharedRuntime::_unsafe_set_memory_ctr, rscratch1);
 
   __ mov(bits, dest);
   __ orptr(bits, size);
+
+  // Generated fill routines expect a different argument order
+  __ xchgq(size, value);
 
   __ testb(bits, BytesPerInt-1);
   __ jccb(Assembler::zero, L_int_aligned);
@@ -2526,11 +2530,11 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
   __ jump_cc(Assembler::notZero, RuntimeAddress(byte_fill_entry));
 
   __ BIND(L_short_aligned);
-  // __ shrptr(size, LogBytesPerShort); // size => short_count
+  __ shrptr(value, LogBytesPerShort); // size => short_count
   __ jump(RuntimeAddress(short_fill_entry));
 
   __ BIND(L_int_aligned);
-  // __ shrptr(size, LogBytesPerInt); // size => int_count
+  __ shrptr(value, LogBytesPerInt); // size => int_count
   __ jump(RuntimeAddress(int_fill_entry));
 
   return start;

@@ -4953,12 +4953,17 @@ bool LibraryCallKit::inline_unsafe_setMemory() {
 
   C->set_has_unsafe_access(true);  // Mark eventual nmethod as "unsafe".
 
-  Node* dst_addr =         argument(1);  // type: long
-  Node* size     = ConvL2X(argument(2)); // type: long
-  Node* byte     = ConvL2X(argument(3)); // type: byte
+  // printf("In inline_unsafe_setMemory\n");
+
+  Node* dst_base =         argument(1);  // type: oop
+  Node* dst_off  = ConvL2X(argument(2)); // type: long
+  Node* size     = ConvL2X(argument(4)); // type: long
+  Node* byte     =         argument(6);  // type: byte
 
   assert(Unsafe_field_offset_to_byte_offset(11) == 11,
          "fieldOffset must be byte-scaled");
+
+  Node* dst_addr = make_unsafe_address(dst_base, dst_off);
 
   Node* thread = _gvn.transform(new ThreadLocalNode());
   Node* doing_unsafe_access_addr = basic_plus_adr(top(), thread, in_bytes(JavaThread::doing_unsafe_access_offset()));
@@ -4971,6 +4976,13 @@ bool LibraryCallKit::inline_unsafe_setMemory() {
   int flags = RC_LEAF | RC_NO_FP;
 
   const TypePtr* dst_type = TypePtr::BOTTOM;
+
+  // Adjust memory effects of the runtime call based on input values.
+  if (!has_wide_mem(_gvn, dst_addr, dst_base)) {
+    dst_type = _gvn.type(dst_addr)->is_ptr(); // narrow out memory
+
+    flags |= RC_NARROW_MEM; // narrow in memory
+  }
 
   // Call it.  Note that the length argument is not scaled.
   make_runtime_call(flags,
