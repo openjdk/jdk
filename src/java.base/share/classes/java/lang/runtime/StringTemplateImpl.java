@@ -45,10 +45,7 @@ import java.util.Objects;
  * These {@link MethodHandle MethodHandles} are  also shared by binding to the
  * {@link java.lang.invoke.CallSite CallSite}.
  *
- * @since 21
- *
- * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
- *          Do not rely on its availability.
+ * @since 23
  */
 final class StringTemplateImpl extends Carriers.CarrierObject implements StringTemplate {
     /**

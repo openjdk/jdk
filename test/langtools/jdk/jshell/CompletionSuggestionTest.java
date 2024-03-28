@@ -220,10 +220,10 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertEval("Object method3(Object o) {return o;}");
         assertCompletion("int ccTest4 = |", true, "ccTest1", "ccTest2", "method1(", "method2(");
         assertCompletion("Integer ccTest4 = |", true, "ccTest1", "ccTest2", "method1(", "method2(");
-        assertCompletion("Object ccTest4 = |", true, "ccTest1", "ccTest2", "ccTest3", "method1(", "method2(", "method3(");
+        assertCompletion("Object ccTest4 = |", true, "STR", "ccTest1", "ccTest2", "ccTest3", "method1(", "method2(", "method3(");
         assertCompletion("method1(|", true, "ccTest1", "ccTest2", "method1(", "method2(");
         assertCompletion("method2(|", true, "ccTest1", "ccTest2", "method1(", "method2(");
-        assertCompletion("method3(|", true, "ccTest1", "ccTest2", "ccTest3", "method1(", "method2(", "method3(");
+        assertCompletion("method3(|", true, "STR", "ccTest1", "ccTest2", "ccTest3", "method1(", "method2(", "method3(");
     }
 
     public void testNewClass() {
@@ -653,7 +653,7 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertEval("class Baz<X> { Baz(X x) { } } ");
         assertEval("String str = null;");
         assertEval("Integer i = null;");
-        assertCompletion("new Baz(|", true, "i", "str");
+        assertCompletion("new Baz(|", true, "STR", "i", "str");
         assertCompletion("new Baz<String>(|", true, "str");
         assertCompletion("Baz<String> bz = new Baz<>(|", true, "str");
         assertEval("class Foo { static void m(String str) {} static void m(Baz<String> baz) {} }");
