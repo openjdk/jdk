@@ -5402,65 +5402,52 @@ void LibraryCallKit::create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_
 //------------------------------inline_array_partition-----------------------
 bool LibraryCallKit::inline_array_partition() {
 
-  Node* elementType     = null_check(argument(0));
-  Node* obj             = argument(1);
-  Node* offset          = argument(2);
-  Node* fromIndex       = argument(4);
-  Node* toIndex         = argument(5);
-  Node* indexPivot1     = argument(6);
-  Node* indexPivot2     = argument(7);
+  Node* obj             = argument(0);
+  Node* from_idx        = argument(2);
+  Node* to_idx          = argument(3);
+  Node* index_pivot1    = argument(4);
+  Node* index_pivot2    = argument(5);
+  Node* basic_type      = argument(6);
 
-  Node* pivotIndices = nullptr;
-
-  // Set the original stack and the reexecute bit for the interpreter to reexecute
-  // the bytecode that invokes DualPivotQuicksort.partition() if deoptimization happens.
-  { PreserveReexecuteState preexecs(this);
-    jvms()->set_should_reexecute(true);
-
-    const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
-    ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-    BasicType bt = elem_type->basic_type();
-    // Disable the intrinsic if the CPU does not support SIMD sort
-    if (!Matcher::supports_simd_sort(bt)) {
-      return false;
-    }
-    address stubAddr = nullptr;
-    stubAddr = StubRoutines::select_array_partition_function();
-    // stub not loaded
-    if (stubAddr == nullptr) {
-      return false;
-    }
-    // get the address of the array
-    const TypeAryPtr* obj_t = _gvn.type(obj)->isa_aryptr();
-    if (obj_t == nullptr || obj_t->elem() == Type::BOTTOM ) {
-      return false; // failed input validation
-    }
-    Node* obj_adr = make_unsafe_address(obj, offset);
-
-    // create the pivotIndices array of type int and size = 2
-    Node* size = intcon(2);
-    Node* klass_node = makecon(TypeKlassPtr::make(ciTypeArrayKlass::make(T_INT)));
-    pivotIndices = new_array(klass_node, size, 0);  // no arguments to push
-    AllocateArrayNode* alloc = tightly_coupled_allocation(pivotIndices);
-    guarantee(alloc != nullptr, "created above");
-    Node* pivotIndices_adr = basic_plus_adr(pivotIndices, arrayOopDesc::base_offset_in_bytes(T_INT));
-
-    // pass the basic type enum to the stub
-    Node* elemType = intcon(bt);
-
-    // Call the stub
-    const char *stubName = "array_partition_stub";
-    make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::array_partition_Type(),
-                      stubAddr, stubName, TypePtr::BOTTOM,
-                      obj_adr, elemType, fromIndex, toIndex, pivotIndices_adr,
-                      indexPivot1, indexPivot2);
-
-  } // original reexecute is set back here
-
-  if (!stopped()) {
-    set_result(pivotIndices);
+  address stubAddr = nullptr;
+  stubAddr = StubRoutines::select_array_partition_function();
+  // stub not loaded
+  if (stubAddr == nullptr) {
+    return false;
   }
 
+  if (basic_type == top()) {
+    return false; // failed input validation
+  }
+
+  const TypeInt* basic_type_t = _gvn.type(basic_type)->is_int();
+  if (!basic_type_t->is_con()) {
+    return false; // Only intrinsify if basicType argument is constant
+  }
+
+  BasicType bt = (BasicType)basic_type_t->get_con();
+
+  // Disable the intrinsic if the CPU does not support SIMD sort
+  if (!Matcher::supports_simd_sort(bt)) {
+    return false;
+  }
+
+  obj = must_be_not_null(obj, true);
+  const TypeAryPtr* obj_t = _gvn.type(obj)->isa_aryptr();
+  if (obj_t == nullptr || obj_t->elem() == Type::BOTTOM ) {
+    return false; // failed input validation
+  }
+  // get address of the array
+  Node* obj_adr = array_element_address(obj, intcon(0), bt);
+
+  // Call the stub
+  const char *stubName = "array_partition_stub";
+  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::array_partition_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 obj_adr, basic_type, from_idx, to_idx,
+                                 index_pivot1, index_pivot2);
+  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  set_result(result);
   return true;
 }
 
@@ -5468,41 +5455,46 @@ bool LibraryCallKit::inline_array_partition() {
 //------------------------------inline_array_sort-----------------------
 bool LibraryCallKit::inline_array_sort() {
 
-  Node* elementType     = null_check(argument(0));
-  Node* obj             = argument(1);
-  Node* offset          = argument(2);
-  Node* fromIndex       = argument(4);
-  Node* toIndex         = argument(5);
+  Node* obj             = argument(0);
+  Node* from_idx        = argument(2);
+  Node* to_idx          = argument(3);
+  Node* basic_type      = argument(4);
 
-  const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  BasicType bt = elem_type->basic_type();
-  // Disable the intrinsic if the CPU does not support SIMD sort
-  if (!Matcher::supports_simd_sort(bt)) {
-    return false;
-  }
-  address stubAddr = nullptr;
-  stubAddr = StubRoutines::select_arraysort_function();
+  address stubAddr = StubRoutines::select_arraysort_function();
   //stub not loaded
   if (stubAddr == nullptr) {
     return false;
   }
 
-  // get address of the array
+  if (basic_type == top()) {
+    return false; // failed input validation
+  }
+
+  const TypeInt* basic_type_t = _gvn.type(basic_type)->is_int();
+  if (!basic_type_t->is_con()) {
+    return false; // Only intrinsify if basicType argument is constant
+  }
+
+  BasicType bt = (BasicType)basic_type_t->get_con();
+
+  // Disable the intrinsic if the CPU does not support SIMD sort
+  if (!Matcher::supports_simd_sort(bt)) {
+    return false;
+  }
+
+  obj = must_be_not_null(obj, true);
   const TypeAryPtr* obj_t = _gvn.type(obj)->isa_aryptr();
   if (obj_t == nullptr || obj_t->elem() == Type::BOTTOM ) {
     return false; // failed input validation
   }
-  Node* obj_adr = make_unsafe_address(obj, offset);
-
-  // pass the basic type enum to the stub
-  Node* elemType = intcon(bt);
+  // get address of the array
+  Node* obj_adr = array_element_address(obj, intcon(0), bt);
 
   // Call the stub.
   const char *stubName = "arraysort_stub";
   make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::array_sort_Type(),
                     stubAddr, stubName, TypePtr::BOTTOM,
-                    obj_adr, elemType, fromIndex, toIndex);
+                    obj_adr, basic_type, from_idx, to_idx);
 
   return true;
 }

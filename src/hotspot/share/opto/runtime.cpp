@@ -861,7 +861,7 @@ const TypeFunc* OptoRuntime::array_fill_Type() {
 
 const TypeFunc* OptoRuntime::array_partition_Type() {
   // create input type (domain)
-  int num_args = 7;
+  int num_args = 6;
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
@@ -869,7 +869,6 @@ const TypeFunc* OptoRuntime::array_partition_Type() {
   fields[argp++] = TypeInt::INT;      // element type
   fields[argp++] = TypeInt::INT;      // low
   fields[argp++] = TypeInt::INT;      // end
-  fields[argp++] = TypePtr::NOTNULL;  // pivot_indices (int array)
   fields[argp++] = TypeInt::INT;      // indexPivot1
   fields[argp++] = TypeInt::INT;      // indexPivot2
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
@@ -877,8 +876,8 @@ const TypeFunc* OptoRuntime::array_partition_Type() {
 
   // no result type needed
   fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = nullptr; // void
-  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  fields[TypeFunc::Parms+0] = TypeLong::LONG;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms+1, fields);
   return TypeFunc::make(domain, range);
 }
 
