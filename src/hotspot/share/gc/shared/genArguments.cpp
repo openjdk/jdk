@@ -309,6 +309,11 @@ void GenArguments::initialize_size_info() {
     MinOldSize = MIN2(initial_old_size, MinHeapSize - MinNewSize);
   }
 
+  // Don't resize old gen if -Xmx == -Xms
+  if (InitialHeapSize == MaxHeapSize && MinHeapSize == MaxHeapSize) {
+    MinOldSize = MaxOldSize;
+  }
+
   // The initial generation sizes should match the initial heap size,
   // if not issue a warning and resize the generations. This behavior
   // differs from JDK8 where the generation sizes have higher priority
