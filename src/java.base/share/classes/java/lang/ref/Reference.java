@@ -572,14 +572,24 @@ public abstract sealed class Reference<T>
      * @apiNote
      * Reference processing or finalization may occur when the virtual machine
      * detects that there is no further need for an object. The garbage collector
-     * may reclaim an object even if values from that object's fields are still
-     * in use, or while a method of the object is still running, so long as the
-     * object has otherwise become unreachable.
+     * may reclaim such an object even if values obtained from that object's
+     * fields are still in use, so long as there is no further use of the object
+     * itself. (From a garbage collection point of view, when an object has no
+     * further use in this way it is
+     * <a href="package-summary.html#reachability"><em>unreachable</em></a> or
+     * "no longer live.") Field <em>values</em> obtained from an object can
+     * remain live even after the object (and its fields) have become
+     * unreachable. The virtual machine, in the course of optimization, can
+     * reorder operations of an object's method; for instance, the loading of
+     * values from the object's fields can be moved to occur earlier. If the
+     * object is then no longer needed, it can become unreachable and be
+     * reclaimed, even while one of its methods is still running.
+     * <p>
      * This may have surprising and undesirable effects, in particular when using
      * a Cleaner or finalizer for cleanup. If an object becomes unreachable while
      * a method of the object is running, it can lead to a race between the
      * program thread running the method and the cleanup thread running the
-     * Cleaner or finalizer. For instance, the cleanup thread could free the
+     * Cleaner or finalizer. For instance, the cleanup thread could free a
      * resource, followed by the program thread (still running the method)
      * attempting to access the now-already-freed resource.
      * Use of {@code reachabilityFence} can prevent this race by ensuring that the
