@@ -465,11 +465,11 @@ bool ConnectionGraph::can_reduce_phi_check_inputs(PhiNode* ophi) const {
   for (uint i = 1; i < ophi->req(); i++) {
     JavaObjectNode* ptn = unique_java_object(ophi->in(i));
     if (ptn != nullptr && ptn->scalar_replaceable()) {
-      assert(ptn->ideal_node() != nullptr && ptn->ideal_node()->is_Allocate(), "sanity");
       AllocateNode* alloc = ptn->ideal_node()->as_Allocate();
 
       // Don't handle arrays.
       if (alloc->Opcode() != Op_Allocate) {
+        assert(alloc->Opcode() == Op_AllocateArray, "Unexpected type of allocation.");
         continue;
       }
 
@@ -2973,17 +2973,7 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj, Uniq
     //    if ( x ) p[0] = new Point(); // Will be not scalar replaced
     //
     if (field->base_count() > 1 && candidates.size() == 0) {
-      bool further_validate = false;
-
-      for (BaseIterator i(field); i.has_next(); i.next()) {
-        Node* base = i.get()->ideal_node();
-        if (base->is_Phi() && !reducible_merges.member(base)) {
-          further_validate = true;
-          break;
-        }
-      }
-
-      if (further_validate) {
+      if (has_non_reducible_merge(field, reducible_merges)) {
         for (BaseIterator i(field); i.has_next(); i.next()) {
           PointsToNode* base = i.get();
           // Don't take into account LocalVar nodes which
@@ -3011,6 +3001,16 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj, Uniq
     Node* candidate = candidates.at(i);
     reducible_merges.push(candidate);
   }
+}
+
+bool ConnectionGraph::has_non_reducible_merge(FieldNode* field, Unique_Node_List& reducible_merges) {
+  for (BaseIterator i(field); i.has_next(); i.next()) {
+    Node* base = i.get()->ideal_node();
+    if (base->is_Phi() && !reducible_merges.member(base)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // Propagate NSR (Not scalar replaceable) state.

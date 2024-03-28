@@ -590,6 +590,7 @@ private:
 
   // -------------------------------------------
   // Methods related to Reduce Allocation Merges
+  bool has_non_reducible_merge(FieldNode* field, Unique_Node_List& reducible_merges);
   PhiNode* create_selector(PhiNode* ophi) const;
   void updates_after_load_split(Node* data_phi, Node* previous_load, GrowableArray<Node *>  &alloc_worklist);
   Node* split_castpp_load_through_phi(Node* curr_addp, Node* curr_load, Node* region, GrowableArray<Node*>* bases_for_loads, GrowableArray<Node *>  &alloc_worklist);

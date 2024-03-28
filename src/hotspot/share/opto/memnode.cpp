@@ -1549,17 +1549,19 @@ static bool stable_phi(PhiNode* phi, PhaseGVN *phase) {
 // Phi *base*. This method is essentially a copy of the validations performed
 // by 'split_through_phi'. The first use of this method was in EA code as part
 // of simplification of allocation merges.
-// Some differences from original method:
+// Some differences from original method (split_through_phi):
 //  - If base->is_CastPP(): base = base->in(1)
 bool LoadNode::can_split_through_phi_base(PhaseGVN* phase) {
   Node* mem        = in(Memory);
   Node* address    = in(Address);
   intptr_t ignore  = 0;
   Node*    base    = AddPNode::Ideal_base_and_offset(address, phase, ignore);
-           base    = (base->is_CastPP()) ? base->in(1) : base;
-  bool base_is_phi = (base != nullptr) && base->is_Phi();
 
-  if (req() > 3 || !base_is_phi) {
+  if (base->is_CastPP()) {
+    base = base->in(1);
+  }
+
+  if (req() > 3 || base == nullptr || !base->is_Phi()) {
     return false;
   }
 
