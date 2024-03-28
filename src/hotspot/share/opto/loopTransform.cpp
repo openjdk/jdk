@@ -447,8 +447,8 @@ void IdealLoopTree::reassociate_invariants(PhaseIdealLoop *phase) {
 // is applicable if we can make a loop-invariant test (usually a null-check)
 // execute before we enter the loop. When TRUE, the estimated node budget is
 // also requested.
-bool IdealLoopTree::policy_peeling(PhaseIdealLoop *phase) {
-  uint estimate = estimate_peeling(phase);
+bool IdealLoopTree::policy_peeling(PhaseIdealLoop* phase, bool scoped_value_only) {
+  uint estimate = estimate_peeling(phase, scoped_value_only);
 
   return estimate == 0 ? false : phase->may_require_nodes(estimate);
 }
@@ -456,7 +456,7 @@ bool IdealLoopTree::policy_peeling(PhaseIdealLoop *phase) {
 // Perform actual policy and size estimate for the loop peeling transform, and
 // return the estimated loop size if peeling is applicable, otherwise return
 // zero. No node budget is allocated.
-uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
+uint IdealLoopTree::estimate_peeling(PhaseIdealLoop* phase, bool peel_only_if_has_scoped_value) {
 
   // If nodes are depleted, some transform has miscalculated its needs.
   assert(!phase->exceeding_node_budget(), "sanity");
@@ -484,7 +484,7 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
   Node* test = tail();
 
   while (test != _head) {   // Scan till run off top of loop
-    if (test->is_If()) {    // Test?
+    if (test->is_If() && !peel_only_if_has_scoped_value) {    // Test?
       Node *ctrl = phase->get_ctrl(test->in(1));
       if (ctrl->is_top()) {
         return 0;           // Found dead test on live IF?  No peeling!
@@ -500,6 +500,11 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
       if (!is_member(phase->get_loop(ctrl)) && is_loop_exit(test)) {
         return estimate;    // Found reason to peel!
       }
+    } else if (test->Opcode() == Op_ScopedValueGetResult &&
+               !phase->is_member(this, phase->get_ctrl((test->as_ScopedValueGetResult())->scoped_value()))) {
+      // Found a ScopedValueGetResult node: peeling one iteration will allow the elimination of the ScopedValue.get()
+      // nodes in the loop body.
+      return estimate;
     }
     // Walk up dominators to loop _head looking for test which is executed on
     // every path through the loop.
@@ -3640,7 +3645,7 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
         return false;
       }
     }
-    if (policy_peeling(phase)) {    // Should we peel?
+    if (policy_peeling(phase, false)) {    // Should we peel?
       if (PrintOpto) { tty->print_cr("should_peel"); }
       phase->do_peeling(this, old_new);
     } else if (policy_unswitching(phase)) {
@@ -3681,7 +3686,7 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
     }
   }
 
-  uint est_peeling = estimate_peeling(phase);
+  uint est_peeling = estimate_peeling(phase, false);
   bool should_peel = 0 < est_peeling;
 
   // Counted loops may be peeled, or may need some iterations run up
@@ -3781,6 +3786,13 @@ bool IdealLoopTree::iteration_split(PhaseIdealLoop* phase, Node_List &old_new) {
       if (policy_unswitching(phase)) {
         phase->do_unswitching(this, old_new);
         return false; // need to recalculate idom data
+      }
+      // If the loop body has a ScopedValueGetResult for a loop invariant ScopedValue object that dominates the backedge,
+      // then peeling one iteration of the loop body will allow the entire ScopedValue subgraph to be hoisted from the
+      // loop body
+      if (policy_peeling(phase, true)) {
+        phase->do_peeling(this, old_new);
+        return false;
       }
     }
   }

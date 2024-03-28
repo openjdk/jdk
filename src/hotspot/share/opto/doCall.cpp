@@ -159,6 +159,8 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
         cg = nullptr;
       } else if (IncrementalInline && should_delay_vector_inlining(callee, jvms)) {
         return CallGenerator::for_late_inline(callee, cg);
+      } else if (IncrementalInline && callee->intrinsic_id() == vmIntrinsics::_scopedValueCache) {
+        return CallGenerator::for_late_inline(callee, cg);
       } else {
         return cg;
       }
@@ -172,6 +174,10 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   if (callee->is_method_handle_intrinsic()) {
     CallGenerator* cg = CallGenerator::for_method_handle_call(jvms, caller, callee, allow_inline);
     return cg;
+  }
+
+  if (callee->intrinsic_id() == vmIntrinsics::_ScopedValueCache_invalidate) {
+    C->set_has_scoped_value_invalidate(true);
   }
 
   // Attempt to inline...
@@ -212,6 +218,10 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
             return CallGenerator::for_boxing_late_inline(callee, cg);
           } else if (should_delay_vector_reboxing_inlining(callee, jvms)) {
             return CallGenerator::for_vector_reboxing_late_inline(callee, cg);
+          } else if (callee->intrinsic_id() == vmIntrinsics::_ScopedValue_get && IncrementalInline) {
+            return CallGenerator::for_scoped_value_get_late_inline(callee, cg, true);
+          } else if (callee->intrinsic_id() == vmIntrinsics::_ScopedValue_slowGet && IncrementalInline) {
+            return CallGenerator::for_late_inline(callee, cg);
           } else {
             return cg;
           }

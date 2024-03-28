@@ -100,9 +100,15 @@ public:
   //                                             other_proj->[region->..]call_uct"
   // null otherwise
   CallStaticJavaNode* is_uncommon_trap_if_pattern(Deoptimization::DeoptReason reason = Deoptimization::Reason_none) const;
+  // Check if all cfg paths lead to some (possibly multiple different) uncommon trap or Halt node.
+  // Traverse Region, If, IfProj nodes.
+  bool is_multi_uncommon_trap_proj();
+  bool is_multi_uncommon_trap_if_pattern();
 
   // Return other proj node when this is a If proj node
   ProjNode* other_if_proj() const;
+  bool returns_pointer_from_call() const;
+  bool is_result_from_scoped_value_get() const;
 };
 
 #endif // SHARE_OPTO_MULTNODE_HPP

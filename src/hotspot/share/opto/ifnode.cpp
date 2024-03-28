@@ -1642,6 +1642,13 @@ bool IfNode::same_condition(const Node* dom, PhaseIterGVN* igvn) const {
   return true;
 }
 
+float IfNode::canonical_prob() const {
+  float prob = _prob;
+  if (prob != PROB_UNKNOWN && !in(1)->as_Bool()->_test.is_canonical()) {
+    prob = 1 - prob;
+  }
+  return prob;
+}
 
 static int subsuming_bool_test_encode(Node*);
 

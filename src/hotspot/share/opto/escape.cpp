@@ -36,6 +36,7 @@
 #include "opto/cfgnode.hpp"
 #include "opto/compile.hpp"
 #include "opto/escape.hpp"
+#include "opto/intrinsicnode.hpp"
 #include "opto/macro.hpp"
 #include "opto/locknode.hpp"
 #include "opto/phaseX.hpp"
@@ -1034,8 +1035,8 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
     }
     case Op_Proj: {
       // we are only interested in the oop result projection from a call
-      if (n->as_Proj()->_con == TypeFunc::Parms && n->in(0)->is_Call() &&
-          n->in(0)->as_Call()->returns_pointer()) {
+      ProjNode* proj = n->as_Proj();
+      if (proj->returns_pointer_from_call() || proj->is_result_from_scoped_value_get()) {
         add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(0), delayed_worklist);
       }
       break;
@@ -1103,6 +1104,17 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       }
       break;
     }
+    case Op_ScopedValueGetLoadFromCache: {
+      ScopedValueGetLoadFromCacheNode* load_from_cache = n->as_ScopedValueGetLoadFromCache();
+      map_ideal_node(load_from_cache, phantom_obj);
+      break;
+    }
+    case Op_ScopedValueGetResult: {
+      ScopedValueGetResultNode* get_result = n->as_ScopedValueGetResult();
+      add_local_var_and_edge(get_result, PointsToNode::NoEscape, get_result->result_in(), delayed_worklist);
+      break;
+    }
+
     default:
       ; // Do nothing for nodes not related to EA.
   }
@@ -1191,8 +1203,7 @@ void ConnectionGraph::add_final_edges(Node *n) {
     }
     case Op_Proj: {
       // we are only interested in the oop result projection from a call
-      assert(n->as_Proj()->_con == TypeFunc::Parms && n->in(0)->is_Call() &&
-             n->in(0)->as_Call()->returns_pointer(), "Unexpected node type");
+      assert(n->as_Proj()->returns_pointer_from_call() || n->as_Proj()->is_result_from_scoped_value_get(), "Unexpected node type");
       add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(0), nullptr);
       break;
     }
@@ -1269,6 +1280,11 @@ void ConnectionGraph::add_final_edges(Node *n) {
           add_edge(n_ptn, ptn);
         }
       }
+      break;
+    }
+    case Op_ScopedValueGetResult: {
+      ScopedValueGetResultNode* get_result = n->as_ScopedValueGetResult();
+      add_local_var_and_edge(get_result, PointsToNode::NoEscape, get_result->result_in(), nullptr);
       break;
     }
     default: {
@@ -3935,6 +3951,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
               op == Op_StrEquals || op == Op_VectorizedHashCode ||
               op == Op_StrIndexOf || op == Op_StrIndexOfChar ||
               op == Op_SubTypeCheck ||
+              op == Op_ScopedValueGetLoadFromCache || op == Op_ScopedValueGetResult ||
               BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(use))) {
           n->dump();
           use->dump();
@@ -4092,9 +4109,10 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           // They overwrite memory edge corresponding to destination array,
           memnode_worklist.append_if_missing(use);
         } else if (!(BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(use) ||
-              op == Op_AryEq || op == Op_StrComp || op == Op_CountPositives ||
-              op == Op_StrCompressedCopy || op == Op_StrInflatedCopy || op == Op_VectorizedHashCode ||
-              op == Op_StrEquals || op == Op_StrIndexOf || op == Op_StrIndexOfChar)) {
+                     op == Op_AryEq || op == Op_StrComp || op == Op_CountPositives ||
+                     op == Op_StrCompressedCopy || op == Op_StrInflatedCopy || op == Op_VectorizedHashCode ||
+                     op == Op_StrEquals || op == Op_StrIndexOf || op == Op_StrIndexOfChar ||
+                     op == Op_ScopedValueGetLoadFromCache || op == Op_ScopedValueGetResult)) {
           n->dump();
           use->dump();
           assert(false, "EA: missing memory path");

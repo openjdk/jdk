@@ -697,9 +697,9 @@ public:
 
   // Return TRUE or FALSE if the loop should be peeled or not. Peel if we can
   // move some loop-invariant test (usually a null-check) before the loop.
-  bool policy_peeling(PhaseIdealLoop *phase);
+  bool policy_peeling(PhaseIdealLoop* phase, bool scoped_value_only);
 
-  uint estimate_peeling(PhaseIdealLoop *phase);
+  uint estimate_peeling(PhaseIdealLoop* phase, bool peel_only_if_has_scoped_value);
 
   // Return TRUE or FALSE if the loop should be maximally unrolled. Stash any
   // known trip count in the counted loop node.
@@ -892,6 +892,7 @@ private:
   // clear out dead code after build_loop_late
   Node_List _deadlist;
   Node_List _zero_trip_guard_opaque_nodes;
+  Node_List _scoped_value_get_nodes;
 
   // Support for faster execution of get_late_ctrl()/dom_lca()
   // when a node has many uses and dominator depth is deep.
@@ -1242,8 +1243,9 @@ public:
   IdealLoopTree* ltree_root() const { return _ltree_root; }
 
   // Is 'n' a (nested) member of 'loop'?
-  int is_member( const IdealLoopTree *loop, Node *n ) const {
-    return loop->is_member(get_loop(n)); }
+  bool is_member(const IdealLoopTree *loop, Node *n) const {
+    return loop->is_member(get_loop(n));
+  }
 
   // This is the basic building block of the loop optimizations.  It clones an
   // entire loop body.  It makes an old_new loop body mapping; with this
@@ -1763,6 +1765,32 @@ public:
   void update_addp_chain_base(Node* x, Node* old_base, Node* new_base);
 
   bool can_move_to_inner_loop(Node* n, LoopNode* n_loop, Node* x);
+  void expand_sv_get_hits_in_cache_and_load_from_cache(ScopedValueGetHitsInCacheNode* hits_in_cache);
+  void test_and_load_from_cache(Node* load_of_cache, Node* mem, Node* index, Node* c, float prob, float cnt,
+                                Node* sv, Node*& failure, Node*& hit, Node*& res);
+
+  static bool is_uncommon_or_multi_uncommon_trap_if_pattern(IfProjNode* proj);
+
+  bool optimize_scoped_value_get_nodes();
+
+  bool expand_scoped_value_get_nodes();
+
+  bool loop_predication_for_scoped_value_get(IdealLoopTree* loop, IfProjNode* if_success_proj,
+                                             ParsePredicateSuccessProj* parse_predicate_proj,
+                                             Invariance& invar, Deoptimization::DeoptReason reason,
+                                             IfNode* iff, IfProjNode*& new_predicate_proj);
+
+  void move_scoped_value_nodes_to_not_peel(VectorSet &peel, VectorSet &not_peel, Node_List &peel_list,
+                                           Node_List &sink_list, uint i) const;
+
+  Node* scoped_value_cache_node(Node* raw_mem);
+
+  void find_most_likely_cache_index(const ScopedValueGetHitsInCacheNode* hits_in_cache, Node*&first_index,
+                                    Node*&second_index,
+                                    float &prob_cache_miss_at_first_if, float &first_if_cnt,
+                                    float &prob_cache_miss_at_second_if, float &second_if_cnt) const;
+
+  bool replace_scoped_value_result_by_dominator(ScopedValueGetResultNode* get_result, Node* scoped_value_object, Node* dom_ctrl);
 
   void pin_array_access_nodes_dependent_on(Node* ctrl);
 };

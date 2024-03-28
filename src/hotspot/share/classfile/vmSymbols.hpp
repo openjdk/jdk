@@ -122,6 +122,7 @@ class SerializeClosure;
   template(java_lang_SecurityManager,                 "java/lang/SecurityManager")                \
   template(java_lang_ScopedValue,                     "java/lang/ScopedValue")                    \
   template(java_lang_ScopedValue_Carrier,             "java/lang/ScopedValue$Carrier")            \
+  template(java_lang_ScopedValue_Cache,               "java/lang/ScopedValue$Cache")              \
   template(java_security_AccessControlContext,        "java/security/AccessControlContext")       \
   template(java_security_AccessController,            "java/security/AccessController")           \
   template(executePrivileged_name,                    "executePrivileged")                        \

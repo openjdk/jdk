@@ -187,6 +187,9 @@ class ShiftVNode;
 class ExpandVNode;
 class CompressVNode;
 class CompressMNode;
+class ScopedValueGetLoadFromCacheNode;
+class ScopedValueGetHitsInCacheNode;
+class ScopedValueGetResultNode;
 
 
 #ifndef OPTO_DU_ITERATOR_ASSERT
@@ -495,6 +498,7 @@ protected:
 
   // Find out of current node that matches opcode.
   Node* find_out_with(int opcode);
+  Node* find_unique_out_with(int opcode) const;
   // Return true if the current node has an out that matches opcode.
   bool has_out_with(int opcode);
   // Return true if the current node has an out that matches any of the opcodes.
@@ -776,6 +780,7 @@ public:
         DEFINE_CLASS_ID(FastLock,   Cmp, 0)
         DEFINE_CLASS_ID(FastUnlock, Cmp, 1)
         DEFINE_CLASS_ID(SubTypeCheck,Cmp, 2)
+      DEFINE_CLASS_ID(ScopedValueGetHitsInCache, Sub, 1)
 
     DEFINE_CLASS_ID(MergeMem, Node, 7)
     DEFINE_CLASS_ID(Bool,     Node, 8)
@@ -789,8 +794,10 @@ public:
     DEFINE_CLASS_ID(Move,     Node, 17)
     DEFINE_CLASS_ID(LShift,   Node, 18)
     DEFINE_CLASS_ID(Neg,      Node, 19)
+    DEFINE_CLASS_ID(ScopedValueGetLoadFromCache, Node, 20)
+    DEFINE_CLASS_ID(ScopedValueGetResult, Node, 21)
 
-    _max_classes  = ClassMask_Neg
+    _max_classes  = ClassMask_ScopedValueGetResult
   };
   #undef DEFINE_CLASS_ID
 
@@ -987,6 +994,9 @@ public:
   DEFINE_CLASS_QUERY(StoreVectorScatter)
   DEFINE_CLASS_QUERY(ShiftV)
   DEFINE_CLASS_QUERY(Unlock)
+  DEFINE_CLASS_QUERY(ScopedValueGetLoadFromCache)
+  DEFINE_CLASS_QUERY(ScopedValueGetHitsInCache)
+  DEFINE_CLASS_QUERY(ScopedValueGetResult)
 
   #undef DEFINE_CLASS_QUERY
 
@@ -1626,10 +1636,18 @@ public:
     }
     return false;
   }
-  void insert( uint i, Node *n ) { Node_Array::insert(i,n); _cnt++; }
-  void remove( uint i ) { Node_Array::remove(i); _cnt--; }
-  void push( Node *b ) { map(_cnt++,b); }
-  void yank( Node *n );         // Find and remove
+  void insert(uint i, Node *n) { Node_Array::insert(i,n); _cnt++; }
+  // preserve order
+  void remove(uint i) { Node_Array::remove(i); _cnt--; }
+  // doesn't preserve order
+  void delete_at(uint i) {
+    Node* top_of_stack = pop();
+    if (i < size()) {
+      map(i, top_of_stack);
+    }
+  }
+  void push(Node *b) { map(_cnt++,b); }
+  void yank(Node *n);         // Find and remove
   Node *pop() { return _nodes[--_cnt]; }
   void clear() { _cnt = 0; Node_Array::clear(); } // retain storage
   void copy(const Node_List& from) {
@@ -1688,8 +1706,8 @@ public:
   // Allow move constructor for && (eg. capture return of function)
   Unique_Node_List(Unique_Node_List&&) = default;
 
-  void remove( Node *n );
-  bool member( Node *n ) { return _in_worklist.test(n->_idx) != 0; }
+  void remove(Node *n);
+  bool member(Node *n) const { return _in_worklist.test(n->_idx) != 0; }
   VectorSet& member_set(){ return _in_worklist; }
 
   void push(Node* b) {

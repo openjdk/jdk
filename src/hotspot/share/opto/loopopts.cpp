@@ -33,6 +33,7 @@
 #include "opto/connode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/divnode.hpp"
+#include "opto/intrinsicnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/mulnode.hpp"
@@ -1663,7 +1664,9 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
       !n->is_MergeMem() &&
       !n->is_CMove() &&
       n->Opcode() != Op_Opaque4 &&
-      !n->is_Type()) {
+      !n->is_Type() &&
+      // ScopedValueGetLoadFromCache and companion ScopedValueGetHitsInCacheNode must stay together
+      n->Opcode() != Op_ScopedValueGetLoadFromCache) {
     Node *n_ctrl = get_ctrl(n);
     IdealLoopTree *n_loop = get_loop(n_ctrl);
 
@@ -3774,6 +3777,10 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
                             n->_idx, get_ctrl(n)->_idx);
             }
 #endif
+          } else if (n->Opcode() == Op_ScopedValueGetHitsInCache) {
+            // ScopedValueGetLoadFromCache and companion ScopedValueGetHitsInCacheNode must stay together
+            move_scoped_value_nodes_to_not_peel(peel, not_peel, peel_list, sink_list, i);
+            incr = false;
           }
         } else {
           // Otherwise check for special def-use cases that span
@@ -3985,6 +3992,22 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
   C->print_method(PHASE_AFTER_PARTIAL_PEELING, 4, new_head_clone);
 
   return true;
+}
+
+void PhaseIdealLoop::move_scoped_value_nodes_to_not_peel(VectorSet &peel, VectorSet &not_peel, Node_List &peel_list,
+                                                         Node_List &sink_list, uint i) const {
+  ScopedValueGetHitsInCacheNode* hits_in_cache = peel_list.at(i)->as_ScopedValueGetHitsInCache();
+  hits_in_cache->verify();
+  ScopedValueGetLoadFromCacheNode* load_from_cache = hits_in_cache->load_from_cache();
+  assert(load_from_cache == nullptr || not_peel.test(load_from_cache->_idx), "unexpected ScopedValueGetHitsInCache/ScopedValueGetLoadFromCache shape");
+  Node* bol = hits_in_cache->find_unique_out_with(Op_Bool);
+  assert(not_peel.test(bol->_idx), "should be in not peel subgraph");
+  Node* iff = bol->unique_ctrl_out();
+  assert(not_peel.test(iff->_idx), "should be in not peel subgraph");
+  sink_list.push(hits_in_cache);
+  peel.remove(hits_in_cache->_idx);
+  not_peel.set(hits_in_cache->_idx);
+  peel_list.remove(i);
 }
 
 // Transform:
