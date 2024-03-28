@@ -151,9 +151,7 @@ define SetupBuildLauncherBody
       LDFLAGS_macosx := $$(call SET_EXECUTABLE_ORIGIN,/../lib) \
           -L$(call FindLibDirForModule, java.base), \
       LDFLAGS_aix := -L$(SUPPORT_OUTPUTDIR)/native/java.base, \
-      JDK_LIBS_linux := -ljli, \
-      JDK_LIBS_macosx := -ljli, \
-      JDK_LIBS_aix := -ljli_static, \
+      JDK_LIBS_unix := -ljli, \
       JDK_LIBS_windows := \
           $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib \
           $$($1_WINDOWS_JLI_LIB), \
@@ -177,7 +175,7 @@ define SetupBuildLauncherBody
   $$(BUILD_LAUNCHER_$1): $$(BUILD_PLIST_$1)
 
   ifeq ($(call isTargetOs, aix), true)
-    $$(BUILD_LAUNCHER_$1): $(call FindStaticLib, java.base, jli_static)
+    $$(BUILD_LAUNCHER_$1): $(call FindStaticLib, java.base, jli)
   endif
 
   ifeq ($(call isTargetOs, windows), true)

@@ -73,8 +73,6 @@ include native/Paths.gmk
 #       used both for C and C++.
 #   LIBS_<toolchain>_<OS> the libraries to link to for the specified target
 #       OS and toolchain, used both for C and C++.
-#   ARFLAGS the archiver flags to be used on unix platforms
-#   LIBFLAGS the flags for the lib tool used on windows
 #   OBJECT_DIR the directory where we store the object files
 #   OUTPUT_DIR the directory where the resulting binary is put
 #   SYMBOLS_DIR the directory where the debug symbols are put, defaults to OUTPUT_DIR
