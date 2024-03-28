@@ -21,9 +21,9 @@
  * questions.
  */
 
+ // key: compiler.err.feature.not.supported.in.source.plural
  // key: compiler.misc.feature.string.templates
- // key: compiler.warn.preview.feature.use.plural
- // options: --enable-preview -source ${jdk.version} -Xlint:preview
+ // options: --release 22 -Xlint:preview
 
 class StringTemplate {
     String m() {

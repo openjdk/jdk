@@ -1,12 +1,11 @@
+
 /*
  * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,36 +22,14 @@
  * questions.
  */
 
-package com.sun.source.tree;
+ // key: compiler.misc.feature.implicit.classes
+ // key: compiler.warn.preview.feature.use.plural
+ // key: compiler.err.import.module.not.found
+ // options: -source ${jdk.version} --enable-preview -Xlint:preview
 
-import java.util.List;
+import module xxx.yyy;
 
-import jdk.internal.javac.PreviewFeature;
-
-/**
- * A tree node for a string template expression.
- *
- * @since 23
- */
-public interface StringTemplateTree extends ExpressionTree {
-    /**
-     * Returns templated string processor (may be qualified) or null.
-     *
-     * @return templated string processor
-     */
-    ExpressionTree getProcessor();
-
-    /**
-     * Returns string fragments.
-     *
-     * @return string fragments
-     */
-    List<String> getFragments();
-
-    /**
-     * Returns list of expressions.
-     *
-     * @return list of expressions
-     */
-    List<? extends ExpressionTree> getExpressions();
+public class ImportModule {
+    public static void main(String... args) {
+    }
 }

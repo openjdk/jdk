@@ -407,7 +407,9 @@ public class TreeDiffer extends TreeScanner {
     @Override
     public void visitImport(JCImport tree) {
         JCImport that = (JCImport) parameter;
-        result = tree.staticImport == that.staticImport && scan(tree.qualid, that.qualid);
+        result = tree.staticImport == that.staticImport &&
+                tree.moduleImport == that.moduleImport &&
+                scan(tree.qualid, that.qualid);
     }
 
     @Override

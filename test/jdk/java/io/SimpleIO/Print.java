@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,42 @@
  * questions.
  */
 
- // key: compiler.err.unclosed.text.block
- // key: compiler.err.text.block.template.is.not.well.formed
- // key: compiler.err.premature.eof
+public class Print {
 
-import java.lang.*;
+    private static final Object[] OBJECTS = {
+            null,
+            false,
+            (byte) 1,
+            (short) 2,
+            'a',
+            3,
+            4L,
+            5f,
+            6d,
+            new Object(),
+            "hello",
+            new char[]{'a'},
+    };
 
-class StringTemplateUnclosedTextBlock {
-    String m() {
-        int x = 10;
-        return STR."""
-                aaa
-                \{x
-                """
-        ;
+    public static void main(String[] args) {
+        switch (args[0]) {
+            case "print" -> doPrint();
+            case "println" -> doPrintln();
+            default -> throw new IllegalArgumentException();
+        }
+    }
+
+    private static void doPrint() {
+        for (var obj : OBJECTS)
+            System.out.println(obj);
+        for (var obj : OBJECTS)
+            java.io.SimpleIO.println(obj);
+    }
+
+    private static void doPrintln() {
+        for (var obj : OBJECTS)
+            System.out.print(obj);
+        for (var obj : OBJECTS)
+            java.io.SimpleIO.print(obj);
     }
 }

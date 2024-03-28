@@ -93,9 +93,8 @@ import jdk.internal.javac.PreviewFeature;
  *         );
  * }
  *
- * @since 21
+ * @since 23
  */
-@PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 public final class TemplateRuntime {
     private static final JavaTemplateAccess JTA = SharedSecrets.getJavaTemplateAccess();
 

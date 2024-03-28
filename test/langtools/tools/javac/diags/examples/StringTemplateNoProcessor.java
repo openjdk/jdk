@@ -22,8 +22,6 @@
  */
 
  // key: compiler.err.processor.missing.from.string.template.expression
- // key: compiler.misc.feature.string.templates
- // key: compiler.warn.preview.feature.use.plural
  // options: --enable-preview -source ${jdk.version} -Xlint:preview
 
 class StringTemplateNoProcessor {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,17 @@
  * questions.
  */
 
- // key: compiler.err.unclosed.text.block
- // key: compiler.err.text.block.template.is.not.well.formed
- // key: compiler.err.premature.eof
+/*
+ * @test
+ * @bug 8325324
+ * @summary Implement import module
+ * @enablePreview
+ */
 
-import java.lang.*;
+import module java.base;
 
-class StringTemplateUnclosedTextBlock {
-    String m() {
-        int x = 10;
-        return STR."""
-                aaa
-                \{x
-                """
-        ;
+public class ImportModule {
+    public static void main(String[] args) {
+        List<String> list = List.of("a", "b", "c");
     }
 }
