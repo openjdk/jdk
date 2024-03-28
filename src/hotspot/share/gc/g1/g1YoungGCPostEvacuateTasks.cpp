@@ -41,7 +41,9 @@
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
 #include "gc/shared/bufferNode.hpp"
+#ifndef _LP64
 #include "gc/shared/preservedMarks.inline.hpp"
+#endif
 #include "jfr/jfrEvents.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -251,7 +253,11 @@ class G1PostEvacuateCollectionSetCleanupTask1::RestoreEvacFailureRegionsTask : p
       {
         // Process marked object.
         assert(obj->is_forwarded() && obj->forwardee() == obj, "must be self-forwarded");
+#ifndef _LP64
         obj->init_mark();
+#else
+        obj->unset_self_forwarded();
+#endif
         hr->update_bot_for_block(obj_addr, obj_end_addr);
 
         // Statistics
@@ -476,6 +482,7 @@ public:
   }
 };
 
+#ifndef _LP64
 class G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask : public G1AbstractSubTask {
   PreservedMarksSet* _preserved_marks;
   WorkerTask* _task;
@@ -496,6 +503,7 @@ public:
 
   void do_work(uint worker_id) override { _task->work(worker_id); }
 };
+#endif
 
 class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
   size_t _num_dirtied;
@@ -971,7 +979,9 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
   }
 
   if (evac_failure_regions->has_regions_evac_failed()) {
+#ifndef _LP64
     add_parallel_task(new RestorePreservedMarksTask(per_thread_states->preserved_marks_set()));
+#endif
     add_parallel_task(new ProcessEvacuationFailedRegionsTask(evac_failure_regions));
   }
   add_parallel_task(new RedirtyLoggedCardsTask(evac_failure_regions,

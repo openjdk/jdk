@@ -62,6 +62,8 @@ class oopDesc {
   // make use of the C++ copy/assign incorrect.
   NONCOPYABLE(oopDesc);
 
+  inline oop cas_set_forwardee(markWord new_mark, markWord old_mark, atomic_memory_order order);
+
  public:
   // Must be trivial; see verifying static assert after the class.
   oopDesc() = default;
@@ -256,16 +258,22 @@ class oopDesc {
 
   // Forward pointer operations for scavenge
   inline bool is_forwarded() const;
+  inline bool is_self_forwarded() const;
 
   inline void forward_to(oop p);
+  inline void forward_to_self();
 
   // Like "forward_to", but inserts the forwarding pointer atomically.
   // Exactly one thread succeeds in inserting the forwarding pointer, and
   // this call returns null for that thread; any other thread has the
   // value of the forwarding pointer returned and does not modify "this".
   inline oop forward_to_atomic(oop p, markWord compare, atomic_memory_order order = memory_order_conservative);
+  inline oop forward_to_self_atomic(markWord compare, atomic_memory_order order = memory_order_conservative);
 
   inline oop forwardee() const;
+  inline oop forwardee(markWord header) const;
+
+  inline void unset_self_forwarded();
 
   // Age of object during scavenge
   inline uint age() const;

@@ -32,7 +32,9 @@
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/generationCounters.hpp"
+#ifndef _LP64
 #include "gc/shared/preservedMarks.hpp"
+#endif
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "utilities/align.hpp"
@@ -100,10 +102,12 @@ class DefNewGeneration: public Generation {
   // therefore we must remove their forwarding pointers.
   void remove_forwarding_pointers();
 
+#ifndef _LP64
   virtual void restore_preserved_marks();
 
   // Preserved marks
   PreservedMarksSet _preserved_marks_set;
+#endif
 
   Stack<oop, mtGC> _promo_failure_scan_stack;
   void drain_promo_failure_scan_stack(void);

@@ -53,7 +53,6 @@
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
-#include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"

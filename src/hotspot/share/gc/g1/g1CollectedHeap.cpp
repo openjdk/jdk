@@ -84,7 +84,6 @@
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/oopStorageParState.hpp"
-#include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/taskqueue.inline.hpp"

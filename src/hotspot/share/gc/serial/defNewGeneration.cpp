@@ -40,7 +40,9 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#ifndef _LP64
 #include "gc/shared/preservedMarks.inline.hpp"
+#endif
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/space.inline.hpp"
@@ -244,7 +246,7 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
                                    size_t max_size,
                                    const char* policy)
   : Generation(rs, initial_size),
-    _preserved_marks_set(false /* in_c_heap */),
+    NOT_LP64(_preserved_marks_set(false /* in_c_heap */) COMMA)
     _promo_failure_drain_in_progress(false),
     _should_allocate_from_space(false),
     _string_dedup_requests()
@@ -681,8 +683,10 @@ void DefNewGeneration::collect(bool   full,
 
   age_table()->clear();
   to()->clear(SpaceDecorator::Mangle);
+#ifndef _LP64
   // The preserved marks should be empty at the start of the GC.
   _preserved_marks_set.init(1);
+#endif
 
   assert(heap->no_allocs_since_save_marks(),
          "save marks have not been newly set.");
@@ -782,8 +786,11 @@ void DefNewGeneration::collect(bool   full,
     // Reset the PromotionFailureALot counters.
     NOT_PRODUCT(heap->reset_promotion_should_fail();)
   }
+
+#ifndef _LP64
   // We should have processed and cleared all the preserved marks.
   _preserved_marks_set.reclaim();
+#endif
 
   heap->trace_heap_after_gc(_gc_tracer);
 
@@ -806,32 +813,42 @@ void DefNewGeneration::remove_forwarding_pointers() {
   // starts. (The mark word is overloaded: `is_marked()` == `is_forwarded()`.)
   struct ResetForwardedMarkWord : ObjectClosure {
     void do_object(oop obj) override {
-      if (obj->is_forwarded()) {
+      if (obj->is_self_forwarded()) {
+#ifndef _LP64
         obj->init_mark();
+#else
+        obj->unset_self_forwarded();
+#endif
       }
     }
   } cl;
   eden()->object_iterate(&cl);
   from()->object_iterate(&cl);
 
+#ifndef _LP64
   restore_preserved_marks();
+#endif
 }
 
+#ifndef _LP64
 void DefNewGeneration::restore_preserved_marks() {
   _preserved_marks_set.restore(nullptr);
 }
+#endif
 
 void DefNewGeneration::handle_promotion_failure(oop old) {
   log_debug(gc, promotion)("Promotion failure size = " SIZE_FORMAT ") ", old->size());
 
   _promotion_failed = true;
   _promotion_failed_info.register_copy_failure(old->size());
+#ifndef _LP64
   _preserved_marks_set.get()->push_if_necessary(old, old->mark());
+#endif
 
   ContinuationGCSupport::transform_stack_chunk(old);
 
   // forward to self
-  old->forward_to(old);
+  old->forward_to_self();
 
   _promo_failure_scan_stack.push(old);
 

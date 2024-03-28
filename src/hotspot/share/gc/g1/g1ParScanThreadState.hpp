@@ -33,7 +33,9 @@
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/partialArrayTaskStepper.hpp"
+#ifndef _LP64
 #include "gc/shared/preservedMarks.hpp"
+#endif
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
@@ -47,8 +49,6 @@ class G1EvacuationRootClosures;
 class G1OopStarChunkedList;
 class G1PLABAllocator;
 class HeapRegion;
-class PreservedMarks;
-class PreservedMarksSet;
 class outputStream;
 
 class G1ParScanThreadState : public CHeapObj<mtGC> {
@@ -106,7 +106,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   // Per-thread evacuation failure data structures.
   ALLOCATION_FAILURE_INJECTOR_ONLY(size_t _allocation_failure_inject_counter;)
 
-  PreservedMarks* _preserved_marks;
+  NOT_LP64(PreservedMarks* _preserved_marks;)
   EvacuationFailedInfo _evacuation_failed_info;
   G1EvacFailureRegions* _evac_failure_regions;
   // Number of additional cards into evacuation failed regions enqueued into
@@ -125,7 +125,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 public:
   G1ParScanThreadState(G1CollectedHeap* g1h,
                        G1RedirtyCardsQueueSet* rdcqs,
-                       PreservedMarks* preserved_marks,
+                       NOT_LP64(PreservedMarks* preserved_marks COMMA)
                        uint worker_id,
                        uint num_workers,
                        G1CollectionSet* collection_set,
@@ -245,7 +245,7 @@ class G1ParScanThreadStateSet : public StackObj {
   G1CollectedHeap* _g1h;
   G1CollectionSet* _collection_set;
   G1RedirtyCardsQueueSet _rdcqs;
-  PreservedMarksSet _preserved_marks_set;
+  NOT_LP64(PreservedMarksSet _preserved_marks_set;)
   G1ParScanThreadState** _states;
   BufferNodeList* _rdc_buffers;
   size_t* _surviving_young_words_total;
@@ -262,7 +262,7 @@ class G1ParScanThreadStateSet : public StackObj {
 
   G1RedirtyCardsQueueSet* rdcqs() { return &_rdcqs; }
   BufferNodeList* rdc_buffers() { return _rdc_buffers; }
-  PreservedMarksSet* preserved_marks_set() { return &_preserved_marks_set; }
+  NOT_LP64(PreservedMarksSet* preserved_marks_set() { return &_preserved_marks_set; })
 
   void flush_stats();
   void record_unused_optional_region(HeapRegion* hr);
