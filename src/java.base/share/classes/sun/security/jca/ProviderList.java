@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -399,8 +399,8 @@ public final class ProviderList {
      *
      * The List returned is NOT thread safe.
      */
-    public List<Service> getServices(String type, String algorithm) {
-        return new ServiceList(type, algorithm);
+    public Iterator<Service> getServices(String type, String algorithm) {
+        return new ServiceIterator(type, algorithm);
     }
 
     /**
@@ -409,7 +409,7 @@ public final class ProviderList {
      * @deprecated use {@code getServices(List<ServiceId>)} instead
      */
     @Deprecated
-    public List<Service> getServices(String type, List<String> algorithms) {
+    public Iterator<Service> getServices(String type, List<String> algorithms) {
         List<ServiceId> ids = new ArrayList<>();
         for (String alg : algorithms) {
             ids.add(new ServiceId(type, alg));
@@ -417,8 +417,8 @@ public final class ProviderList {
         return getServices(ids);
     }
 
-    public List<Service> getServices(List<ServiceId> ids) {
-        return new ServiceList(ids);
+    public Iterator<Service> getServices(List<ServiceId> ids) {
+        return new ServiceIterator(ids);
     }
 
     /**
@@ -426,7 +426,7 @@ public final class ProviderList {
      * order to delay Provider initialization and lookup.
      * Not thread safe.
      */
-    private final class ServiceList extends AbstractList<Service> {
+    private final class ServiceIterator implements Iterator<Service> {
 
         // type and algorithm for simple lookup
         // avoid allocating/traversing the ServiceId list for these lookups
@@ -453,13 +453,13 @@ public final class ProviderList {
         ArrayList<PreferredEntry> preferredList = null;
         private int preferredIndex = 0;
 
-        ServiceList(String type, String algorithm) {
+        ServiceIterator(String type, String algorithm) {
             this.type = type;
             this.algorithm = algorithm;
             this.ids = null;
         }
 
-        ServiceList(List<ServiceId> ids) {
+        ServiceIterator(List<ServiceId> ids) {
             this.type = null;
             this.algorithm = null;
             this.ids = ids;
@@ -534,55 +534,23 @@ public final class ProviderList {
             }
         }
 
-        public Service get(int index) {
+        int index;
+
+        public boolean hasNext() {
+            return tryGet(index) != null;
+        }
+
+        public Service next() {
             Service s = tryGet(index);
             if (s == null) {
-                throw new IndexOutOfBoundsException();
+                throw new NoSuchElementException();
             }
+            index++;
             return s;
         }
 
-        public int size() {
-            int n;
-            if (services != null) {
-                n = services.size();
-            } else {
-                n = (firstService != null) ? 1 : 0;
-            }
-            while (tryGet(n) != null) {
-                n++;
-            }
-            return n;
-        }
-
-        // override isEmpty() and iterator() to not call size()
-        // this avoids loading + checking all Providers
-
-        public boolean isEmpty() {
-            return (tryGet(0) == null);
-        }
-
-        public Iterator<Service> iterator() {
-            return new Iterator<>() {
-                int index;
-
-                public boolean hasNext() {
-                    return tryGet(index) != null;
-                }
-
-                public Service next() {
-                    Service s = tryGet(index);
-                    if (s == null) {
-                        throw new NoSuchElementException();
-                    }
-                    index++;
-                    return s;
-                }
-
-                public void remove() {
-                    throw new UnsupportedOperationException();
-                }
-            };
+        public void remove() {
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -594,7 +562,7 @@ public final class ProviderList {
          * Return a list of all preferred entries that match the passed
          * ServiceList.
          */
-        ArrayList<PreferredEntry> getAll(ServiceList s) {
+        ArrayList<PreferredEntry> getAll(ServiceIterator s) {
             if (s.ids == null) {
                 return getAll(s.type, s.algorithm);
 
