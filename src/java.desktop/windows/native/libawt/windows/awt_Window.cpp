@@ -3190,6 +3190,7 @@ void AwtWindow::_ModalEnable(void *param)
         AwtWindow::SetModalBlocker(windowHWnd, NULL);
     }
 
+
     env->DeleteGlobalRef(self);
 }
 
