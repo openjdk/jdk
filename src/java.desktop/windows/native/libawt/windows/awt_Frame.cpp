@@ -1340,15 +1340,28 @@ void AwtFrame::_SetState(void *param)
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    SetStateStruct *sss = (SetStateStruct *)param;
+    SetStateStruct *sss = static_cast<SetStateStruct *>(param);
     jobject self = sss->frame;
     jint state = sss->state;
 
-    AwtFrame *f = NULL;
+    AwtFrame *f = nullptr;
 
     PDATA pData;
-    JNI_CHECK_PEER_GOTO(self, ret);
-    f = (AwtFrame *)pData;
+    if (self == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "self");
+        delete sss;
+        return;
+    } else {
+        pData = JNI_GET_PDATA(self);
+        if (pData == NULL) {
+            THROW_NULL_PDATA_IF_NOT_DESTROYED(self);
+            env->DeleteGlobalRef(self);
+            delete sss;
+            return;
+        }
+    }
+    f = (AwtFrame *) pData;
     HWND hwnd = f->GetHWnd();
     if (::IsWindow(hwnd))
     {
@@ -1405,7 +1418,7 @@ void AwtFrame::_SetState(void *param)
             f->setZoomed(zoom);
         }
     }
-ret:
+
     env->DeleteGlobalRef(self);
 
     delete sss;
@@ -1569,24 +1582,58 @@ void AwtFrame::_NotifyModalBlocked(void *param)
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    NotifyModalBlockedStruct *nmbs = (NotifyModalBlockedStruct *)param;
+    NotifyModalBlockedStruct *nmbs = static_cast<NotifyModalBlockedStruct *>(param);
     jobject self = nmbs->frame;
     jobject peer = nmbs->peer;
     jobject blockerPeer = nmbs->blockerPeer;
     jboolean blocked = nmbs->blocked;
 
-    PDATA pData;
+    AwtFrame *f = nullptr;
 
-    JNI_CHECK_PEER_GOTO(peer, ret);
-    AwtFrame *f = (AwtFrame *)pData;
+    if (peer == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "peer");
+        env->DeleteGlobalRef(self);
+        env->DeleteGlobalRef(blockerPeer);
+
+        delete nmbs;
+        return;
+    } else {
+        f = (AwtFrame *) JNI_GET_PDATA(peer);
+        if (f == nullptr) {
+            THROW_NULL_PDATA_IF_NOT_DESTROYED(peer);
+            env->DeleteGlobalRef(self);
+            env->DeleteGlobalRef(peer);
+            env->DeleteGlobalRef(blockerPeer);
+
+            delete nmbs;
+            return;
+        }
+    }
 
     // dialog here may be NULL, for example, if the blocker is a native dialog
     // however, we need to install/unistall modal hooks anyway
-    JNI_CHECK_PEER_GOTO(blockerPeer, ret);
-    AwtDialog *d = (AwtDialog *)pData;
+    if (blockerPeer == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "blockerPeer");
+        env->DeleteGlobalRef(self);
+        env->DeleteGlobalRef(peer);
 
-    if ((f != NULL) && ::IsWindow(f->GetHWnd()))
-    {
+        delete nmbs;
+        return;
+    } else {
+        if ((AwtDialog *) JNI_GET_PDATA(blockerPeer) == nullptr) {
+            THROW_NULL_PDATA_IF_NOT_DESTROYED(blockerPeer);
+            env->DeleteGlobalRef(self);
+            env->DeleteGlobalRef(peer);
+            env->DeleteGlobalRef(blockerPeer);
+
+            delete nmbs;
+            return;
+        }
+    }
+
+    if ((f != NULL) && ::IsWindow(f->GetHWnd())) {
         // get an HWND of the toplevel window this embedded frame is within
         HWND fHWnd = f->GetHWnd();
         while (::GetParent(fHWnd) != NULL) {
@@ -1634,7 +1681,7 @@ void AwtFrame::_NotifyModalBlocked(void *param)
             }
         }
     }
-ret:
+
     env->DeleteGlobalRef(self);
     env->DeleteGlobalRef(peer);
     env->DeleteGlobalRef(blockerPeer);

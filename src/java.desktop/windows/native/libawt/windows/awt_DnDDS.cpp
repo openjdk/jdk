@@ -39,10 +39,15 @@ void * operator new(size_t size) {return operator new(size, "stl", 1);}
 #pragma pop_macro("bad_alloc")
 //"bad_alloc" is undefined from here
 
-#include <awt.h>
 #include <shlobj.h>
 
+// These files must be included before awt.h, since the latter redefines malloc
+// to Do_Not_Use_Malloc, etc, and that will break these files.
+#include "awt_ole.h"
+#include "awt_DCHolder.h"
+
 #include "jlong.h"
+#include "awt.h"
 #include "awt_DataTransferer.h"
 #include "awt_DnDDS.h"
 #include "awt_DnDDT.h"
@@ -53,9 +58,6 @@ void * operator new(size_t size) {return operator new(size, "stl", 1);}
 #include "java_awt_event_InputEvent.h"
 #include "java_awt_dnd_DnDConstants.h"
 #include "sun_awt_windows_WDragSourceContextPeer.h"
-
-#include "awt_ole.h"
-#include "awt_DCHolder.h"
 
 bool operator < (const FORMATETC &fr, const FORMATETC &fl) {
     return memcmp(&fr, &fl, sizeof(FORMATETC)) < 0;

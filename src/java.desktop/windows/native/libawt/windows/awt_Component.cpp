@@ -6360,18 +6360,37 @@ void AwtComponent::_SetParent(void * param)
 {
     if (AwtToolkit::IsMainThread()) {
         JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-        SetParentStruct *data = (SetParentStruct*) param;
+        SetParentStruct *data = static_cast<SetParentStruct*>(param);
         jobject self = data->component;
         jobject parent = data->parentComp;
 
-        AwtComponent *awtComponent = NULL;
-        AwtComponent *awtParent = NULL;
+        AwtComponent *awtComponent = nullptr;
+        AwtComponent *awtParent = nullptr;
 
-        PDATA pData;
-        JNI_CHECK_PEER_GOTO(self, ret);
-        awtComponent = (AwtComponent *)pData;
-        JNI_CHECK_PEER_GOTO(parent, ret);
-        awtParent = (AwtComponent *)pData;
+        if (self == NULL || parent == NULL) {
+            env->ExceptionClear();
+            JNU_ThrowNullPointerException(env, "peer");
+            env->DeleteGlobalRef(self);
+            env->DeleteGlobalRef(parent);
+            delete data;
+            return;
+        }
+        awtComponent = (AwtComponent *) JNI_GET_PDATA(self);
+        if (awtComponent == nullptr) {
+            THROW_NULL_PDATA_IF_NOT_DESTROYED(self);
+            env->DeleteGlobalRef(self);
+            env->DeleteGlobalRef(parent);
+            delete data;
+            return;
+        }
+        awtParent = (AwtComponent *) JNI_GET_PDATA(parent);
+        if (awtParent == nullptr) {
+            THROW_NULL_PDATA_IF_NOT_DESTROYED(parent);
+            env->DeleteGlobalRef(self);
+            env->DeleteGlobalRef(parent);
+            delete data;
+            return;
+        }
 
         HWND selfWnd = awtComponent->GetHWnd();
         HWND parentWnd = awtParent->GetHWnd();
@@ -6380,7 +6399,7 @@ void AwtComponent::_SetParent(void * param)
             // (only the proxy may be the native focus owner).
             ::SetParent(selfWnd, parentWnd);
         }
-ret:
+
         env->DeleteGlobalRef(self);
         env->DeleteGlobalRef(parent);
         delete data;
@@ -6539,19 +6558,32 @@ static void _GetInsets(void* param)
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    GetInsetsStruct *gis = (GetInsetsStruct *)param;
+    GetInsetsStruct *gis = static_cast<GetInsetsStruct *>(param);
     jobject self = gis->window;
 
     gis->insets->left = gis->insets->top =
         gis->insets->right = gis->insets->bottom = 0;
 
     PDATA pData;
-    JNI_CHECK_PEER_GOTO(self, ret);
-    AwtComponent *component = (AwtComponent *)pData;
+    if (self == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "self");
+        delete gis;
+        return;
+    } else {
+        pData = JNI_GET_PDATA(self);
+        if (pData == NULL) {
+            THROW_NULL_PDATA_IF_NOT_DESTROYED(self);
+            env->DeleteGlobalRef(self);
+            delete gis;
+            return;
+        }
+    }
+    AwtComponent *component = (AwtComponent *) pData;
 
     component->GetInsets(gis->insets);
 
-  ret:
+
     env->DeleteGlobalRef(self);
     delete gis;
 }

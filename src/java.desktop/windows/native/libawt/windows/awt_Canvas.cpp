@@ -206,19 +206,32 @@ void AwtCanvas::_SetEraseBackground(void *param)
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    SetEraseBackgroundStruct *sebs = (SetEraseBackgroundStruct *)param;
+    SetEraseBackgroundStruct *sebs = static_cast<SetEraseBackgroundStruct *>(param);
     jobject canvas = sebs->canvas;
     jboolean doErase = sebs->doErase;
     jboolean doEraseOnResize = sebs->doEraseOnResize;
 
     PDATA pData;
-    JNI_CHECK_PEER_GOTO(canvas, ret);
+    if (canvas == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "canvas");
+        delete sebs;
+        return;
+    } else {
+        pData = JNI_GET_PDATA(canvas);
+        if (pData == NULL) {
+            THROW_NULL_PDATA_IF_NOT_DESTROYED(canvas);
+            env->DeleteGlobalRef(canvas);
+            delete sebs;
+            return;
+        }
+    }
 
     AwtCanvas *c = (AwtCanvas*)pData;
     c->m_eraseBackground = doErase;
     c->m_eraseBackgroundOnResize = doEraseOnResize;
 
-ret:
+
     env->DeleteGlobalRef(canvas);
     delete sebs;
 }
