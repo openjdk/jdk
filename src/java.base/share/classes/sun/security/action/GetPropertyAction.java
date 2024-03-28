@@ -232,7 +232,7 @@ public class GetPropertyAction implements PrivilegedAction<String> {
      * @param def a default value
      * @param dbg a Debug object, if null no debug messages will be sent
      *
-     * @return an boolean value corresponding to the value in the System property.
+     * @return a boolean value corresponding to the value in the System property.
      *      If the property value is neither "true" or "false", the default value
      *      will be returned.
      */
