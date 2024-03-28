@@ -4199,9 +4199,9 @@ public class JavacParser implements Parser {
     protected JCTree importDeclaration() {
         int pos = token.pos;
         nextToken();
-        boolean staticImport = false;
+        boolean importStatic = false;
         if (token.kind == STATIC) {
-            staticImport = true;
+            importStatic = true;
             nextToken();
         } else if (token.kind == IDENTIFIER && token.name() == names.module) {
             checkSourceLevel(Feature.MODULE_IMPORTS);
@@ -4223,7 +4223,7 @@ public class JavacParser implements Parser {
             }
         } while (token.kind == DOT);
         accept(SEMI);
-        return toP(F.at(pos).Import((JCFieldAccess)pid, staticImport));
+        return toP(F.at(pos).Import((JCFieldAccess)pid, importStatic));
     }
 
     /** TypeDeclaration = ClassOrInterfaceOrEnumDeclaration

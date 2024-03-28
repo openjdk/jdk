@@ -133,12 +133,12 @@ public class HashCollisionTest {
         };
         BiConsumer<JCImport, CompletionFailure> noCompletionFailure =
                 (imp, cf) -> { throw new IllegalStateException(); };
-        starImportScope.importAll(types, fromScope, typeFilter, make.Import(null, false, false), noCompletionFailure);
+        starImportScope.importAll(types, fromScope, typeFilter, make.Import(null, false), noCompletionFailure);
 
         dump("imported p", starImportScope);
 
         // 7. Insert the class from 3.
-        starImportScope.importAll(types, cc.members_field, typeFilter, make.Import(null, false, false), noCompletionFailure);
+        starImportScope.importAll(types, cc.members_field, typeFilter, make.Import(null, false), noCompletionFailure);
         dump("imported ce", starImportScope);
 
         /*

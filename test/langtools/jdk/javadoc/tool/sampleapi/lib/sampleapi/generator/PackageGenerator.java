@@ -294,7 +294,7 @@ public class PackageGenerator {
                         make.Ident(names.fromString(idents[0])), names.fromString(idents[1]));
                     for (int j = 2; j < idents.length; j++)
                         select = make.Select(select, names.fromString(idents[j]));
-                    imports.append(make.Import(select, false, false));
+                    imports.append(make.Import(select, false));
                     break;
             }
         }
