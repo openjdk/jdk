@@ -95,10 +95,12 @@ class ReservedSpace {
   // This splits the space into two spaces, the first part of which will be returned.
   ReservedSpace first_part(size_t partition_size, size_t alignment);
   ReservedSpace last_part (size_t partition_size, size_t alignment);
+  ReservedSpace partition (size_t offset, size_t partition_size, size_t alignment);
 
   // These simply call the above using the default alignment.
   inline ReservedSpace first_part(size_t partition_size);
   inline ReservedSpace last_part (size_t partition_size);
+  inline ReservedSpace partition (size_t offset, size_t partition_size);
 
   // Alignment
   static size_t page_align_size_up(size_t size);
@@ -113,8 +115,7 @@ class ReservedSpace {
                                        size_t page_size, bool special, bool executable);
 };
 
-ReservedSpace
-ReservedSpace::first_part(size_t partition_size)
+ReservedSpace ReservedSpace::first_part(size_t partition_size)
 {
   return first_part(partition_size, alignment());
 }
@@ -122,6 +123,11 @@ ReservedSpace::first_part(size_t partition_size)
 ReservedSpace ReservedSpace::last_part(size_t partition_size)
 {
   return last_part(partition_size, alignment());
+}
+
+ReservedSpace ReservedSpace::partition(size_t offset, size_t partition_size)
+{
+  return partition(offset, partition_size, alignment());
 }
 
 // Class encapsulating behavior specific of memory space reserved for Java heap.
