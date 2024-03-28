@@ -930,6 +930,7 @@ Compile::Compile( ciEnv* ci_env,
     _directive(directive),
     _log(ci_env->log()),
     _first_failure_details(nullptr),
+    _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
     _congraph(nullptr),
     NOT_PRODUCT(_igv_printer(nullptr) COMMA)
     _unique(0),
@@ -2441,6 +2442,8 @@ void Compile::Optimize() {
 
   C->clear_major_progress(); // ensure that major progress is now clear
 
+  if (failing())  return;
+
   process_for_post_loop_opts_igvn(igvn);
 
   if (failing())  return;
@@ -2916,6 +2919,24 @@ void Compile::optimize_logic_cones(PhaseIterGVN &igvn) {
       if (supported) {
         VectorSet visited(comp_arena());
         process_logic_cone_root(igvn, n, visited);
+      }
+    }
+  }
+}
+
+void Compile::gather_nodes_for_merge_stores(PhaseIterGVN &igvn) {
+  ResourceMark rm;
+  Unique_Node_List worklist;
+  worklist.push(root());
+  for (uint i = 0; i < worklist.size(); i++) {
+    Node* n = worklist[i];
+    int opc = n->Opcode();
+    if (opc == Op_StoreB || opc == Op_StoreC || opc == Op_StoreI) {
+      igvn._worklist.push(n);
+    }
+    for (uint i = 0; i < n->len(); i++) {
+      if (n->in(i) != nullptr) {
+        worklist.push(n->in(i));
       }
     }
   }

@@ -574,6 +574,10 @@ protected:
   Node *Ideal_masked_input       (PhaseGVN *phase, uint mask);
   Node *Ideal_sign_extended_input(PhaseGVN *phase, int  num_bits);
 
+  Node* Ideal_merge_primitive_array_stores(PhaseGVN* phase);
+  StoreNode* can_merge_primitive_array_store_with_use(PhaseGVN* phase, bool check_def);
+  StoreNode* can_merge_primitive_array_store_with_def(PhaseGVN* phase, bool check_use);
+
 public:
   // We must ensure that stores of object references will be visible
   // only after the object's initialization. So the callers of this
