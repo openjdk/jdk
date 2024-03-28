@@ -276,7 +276,7 @@ public class TreeScanner extends Visitor {
         scan(tree.expr);
     }
 
-    public void visitReconstruction(JCDerivedInstance tree) {
+    public void visitDerivedInstance(JCDerivedInstance tree) {
         scan(tree.expr);
         scan(tree.block);
     }

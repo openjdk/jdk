@@ -2062,7 +2062,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             this.block = block;
         }
         @Override
-        public void accept(Visitor v) { v.visitReconstruction(this); }
+        public void accept(Visitor v) { v.visitDerivedInstance(this); }
 
         @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() { return Kind.DERIVED_INSTANCE; }
@@ -3604,7 +3604,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitNewArray(JCNewArray that)           { visitTree(that); }
         public void visitLambda(JCLambda that)               { visitTree(that); }
         public void visitParens(JCParens that)               { visitTree(that); }
-        public void visitReconstruction(JCDerivedInstance that) { visitTree(that); }
+        public void visitDerivedInstance(JCDerivedInstance that) { visitTree(that); }
         public void visitAssign(JCAssign that)               { visitTree(that); }
         public void visitAssignop(JCAssignOp that)           { visitTree(that); }
         public void visitUnary(JCUnary that)                 { visitTree(that); }

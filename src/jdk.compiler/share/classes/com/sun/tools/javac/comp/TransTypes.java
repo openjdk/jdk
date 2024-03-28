@@ -736,7 +736,7 @@ public class TransTypes extends TreeTranslator {
     }
 
     @Override
-    public void visitReconstruction(JCDerivedInstance tree) {
+    public void visitDerivedInstance(JCDerivedInstance tree) {
         tree.expr = translate(tree.expr, pt);
         tree.block = translate(tree.block);
         tree.type = erasure(tree.expr.type);

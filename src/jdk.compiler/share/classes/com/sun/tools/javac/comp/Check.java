@@ -4988,9 +4988,9 @@ public class Check {
             }
 
             @Override
-            public void visitReconstruction(JCDerivedInstance tree) {
+            public void visitDerivedInstance(JCDerivedInstance tree) {
                 seenVariables.addAll(tree.componentLocalVariables);
-                super.visitReconstruction(tree);
+                super.visitDerivedInstance(tree);
             }
         }.scan(instance);
     }

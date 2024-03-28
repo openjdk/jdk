@@ -3218,7 +3218,7 @@ public class Flow {
         }
 
         @Override
-        public void visitReconstruction(JCDerivedInstance tree) {
+        public void visitDerivedInstance(JCDerivedInstance tree) {
             scan(tree.expr);
             int nextadrPrev = nextadr;
             for (VarSymbol component : tree.componentLocalVariables) {
@@ -3481,11 +3481,11 @@ public class Flow {
         }
 
         @Override
-        public void visitReconstruction(JCDerivedInstance tree) {
+        public void visitDerivedInstance(JCDerivedInstance tree) {
             if (declaredInsideGuard != null) {
                 tree.componentLocalVariables.forEach(declaredInsideGuard::enter);
             }
-            super.visitReconstruction(tree);
+            super.visitDerivedInstance(tree);
         }
 
         @Override

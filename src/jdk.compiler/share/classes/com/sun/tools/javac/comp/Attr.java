@@ -3964,7 +3964,7 @@ public class Attr extends JCTree.Visitor {
     }
 
     @Override
-    public void visitReconstruction(JCDerivedInstance tree) {
+    public void visitDerivedInstance(JCDerivedInstance tree) {
         Type exprType = attribExpr(tree.expr, env);
         Env<AttrContext> blockEnv =
             env.dup(tree, env.info.dup(env.info.scope.dup()));

@@ -1361,7 +1361,7 @@ public class TransPatterns extends TreeTranslator {
     }
 
     @Override
-    public void visitReconstruction(JCDerivedInstance tree) {
+    public void visitDerivedInstance(JCDerivedInstance tree) {
         ListBuffer<JCStatement> newBlock = new ListBuffer<>();
         VarSymbol temp;
         if (tree.expr instanceof JCIdent i &&

@@ -1492,7 +1492,7 @@ public class Pretty extends JCTree.Visitor {
     }
 
     @Override
-    public void visitReconstruction(JCDerivedInstance tree) {
+    public void visitDerivedInstance(JCDerivedInstance tree) {
         try {
             printExpr(tree.expr);
             print(" with ");

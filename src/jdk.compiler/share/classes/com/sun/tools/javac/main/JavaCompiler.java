@@ -1570,9 +1570,9 @@ public class JavaCompiler {
             }
 
             @Override
-            public void visitReconstruction(JCDerivedInstance tree) {
+            public void visitDerivedInstance(JCDerivedInstance tree) {
                 hasPatterns |= true;
-                super.visitReconstruction(tree);
+                super.visitDerivedInstance(tree);
             }
         }
         ScanNested scanner = new ScanNested();
