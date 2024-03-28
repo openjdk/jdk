@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.security.spec;
+
+import java.security.SecurityObject;
 
 /**
  * A (transparent) specification of the key material
@@ -59,4 +61,4 @@ package java.security.spec;
  * @since 1.2
  */
 
-public interface KeySpec { }
+public interface KeySpec extends SecurityObject { }

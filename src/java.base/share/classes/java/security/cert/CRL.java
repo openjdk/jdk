@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package java.security.cert;
 
+import java.security.SecurityObject;
+
 /**
  * This class is an abstraction of certificate revocation lists (CRLs) that
  * have different formats but important common uses. For example, all CRLs
@@ -43,7 +45,7 @@ package java.security.cert;
  * @since 1.2
  */
 
-public abstract class CRL {
+public abstract class CRL implements SecurityObject {
 
     // the CRL type
     private final String type;
