@@ -239,8 +239,10 @@ void JVMCIEnv::check_init(JVMCI_TRAPS) {
   if (_init_error == JNI_ENOMEM) {
     JVMCI_THROW_MSG(OutOfMemoryError, "JNI_ENOMEM creating or attaching to libjvmci");
   }
-  JVMCI_THROW_MSG(InternalError, err_msg("Error creating or attaching to libjvmci (err: %d, description: %s)",
-                  _init_error, _init_error_msg == nullptr ? "unknown" : _init_error_msg));
+  stringStream st;
+  st.print("Error creating or attaching to libjvmci (err: %d, description: %s)",
+           _init_error, _init_error_msg == nullptr ? "unknown" : _init_error_msg);
+  JVMCI_THROW_MSG(InternalError, st.freeze());
 }
 
 void JVMCIEnv::check_init(TRAPS) {
@@ -250,8 +252,10 @@ void JVMCIEnv::check_init(TRAPS) {
   if (_init_error == JNI_ENOMEM) {
     THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), "JNI_ENOMEM creating or attaching to libjvmci");
   }
-  THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), err_msg("Error creating or attaching to libjvmci (err: %d, description: %s)",
-            _init_error, _init_error_msg == nullptr ? "unknown" : _init_error_msg));
+  stringStream st;
+  st.print("Error creating or attaching to libjvmci (err: %d, description: %s)",
+           _init_error, _init_error_msg == nullptr ? "unknown" : _init_error_msg);
+  THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), st.freeze());
 }
 
 // Prints a pending exception (if any) and its stack trace to st.
