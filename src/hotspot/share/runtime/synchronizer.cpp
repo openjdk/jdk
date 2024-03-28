@@ -1957,9 +1957,7 @@ void ObjectSynchronizer::do_final_audit_and_print_stats() {
 
 // This function can be called by the monitor deflation thread or it can be called when
 // we are trying to exit the VM. The list walker functions can run in parallel with
-// the other list operations so spin-locking is (order access next are?) used for safety.
-// I don't see spin locking?
-//
+// the other list operations.
 // Calls to this function can be added in various places as a debugging
 // aid.
 //
