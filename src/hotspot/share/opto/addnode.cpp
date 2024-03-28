@@ -180,13 +180,17 @@ Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if (t12->singleton() && t12 != Type::TOP && (add1 != add1->in(1)) &&
         !(add1->in(1)->is_Phi() && (add1->in(1)->as_Phi()->is_tripcount(T_INT) || add1->in(1)->as_Phi()->is_tripcount(T_LONG)))) {
       assert(add1->in(1) != this, "dead loop in AddNode::Ideal");
-      add2 = add1->clone();
-      add2->set_req(2, in(2));
-      add2 = phase->transform(add2);
-      set_req_X(1, add2, phase);
-      set_req_X(2, a12, phase);
-      progress = this;
-      add2 = a12;
+      if (add2->Opcode() == Op_Proj && add2->in(0)->is_CallJava()) {
+        // Do nothing when y is a CallJavaNode.
+      } else {
+        add2 = add1->clone();
+        add2->set_req(2, in(2));
+        add2 = phase->transform(add2);
+        set_req_X(1, add2, phase);
+        set_req_X(2, a12, phase);
+        progress = this;
+        add2 = a12;
+      }
     }
   }
 
