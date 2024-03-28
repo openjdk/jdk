@@ -331,6 +331,7 @@ public class OfLiteralTest {
                 Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "127.08.9.1"),  // 8, 9 are invalid octals
                 Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "127.8.09.1"),
                 Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "048"),
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, ""),            // empty
                 Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "0x1FFFFFFFF"), // 2^33 - 1 is too large
                 Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "0x100000000")  // 2^32 is too large
         );

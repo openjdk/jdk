@@ -682,6 +682,10 @@ public class IPAddressUtil {
 
         byte[] res = new byte[]{0,0,0,0};
 
+        int len = input.length();
+        if (len == 0) {
+            return null;
+        }
         char firstSymbol = input.charAt(0);
         // Check if first digit is not a decimal digit
         if (parseAsciiDigit(firstSymbol, DECIMAL) == -1) {
@@ -689,7 +693,7 @@ public class IPAddressUtil {
         }
 
         // Last character is dot OR is not a supported digit: [0-9,A-F,a-f]
-        char lastSymbol = input.charAt(input.length() - 1);
+        char lastSymbol = input.charAt(len - 1);
         if (lastSymbol == '.' || parseAsciiHexDigit(lastSymbol) == -1) {
             return null;
         }
