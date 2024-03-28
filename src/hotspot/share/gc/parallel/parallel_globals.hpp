@@ -45,16 +45,6 @@
           "Use maximum compaction in the Parallel Old garbage collector "   \
           "for a system GC")                                                \
                                                                             \
-  product(size_t, ParallelOldDeadWoodLimiterMean, 50,                       \
-          "The mean used by the parallel compact dead wood "                \
-          "limiter (a number between 0-100)")                               \
-          range(0, 100)                                                     \
-                                                                            \
-  product(size_t, ParallelOldDeadWoodLimiterStdDev, 80,                     \
-          "The standard deviation used by the parallel compact dead wood "  \
-          "limiter (a number between 0-100)")                               \
-          range(0, 100)                                                     \
-                                                                            \
   product(bool, PSChunkLargeArrays, true,                                   \
           "Process large arrays in chunks")
 
