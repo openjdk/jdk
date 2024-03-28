@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ package vm.runtime.defmeth.shared;
 
 import java.util.List;
 import java.util.ArrayList;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+
 
 import vm.runtime.defmeth.shared.data.*;
 import vm.runtime.defmeth.shared.data.method.*;
@@ -34,6 +34,8 @@ import vm.runtime.defmeth.shared.data.method.param.*;
 import vm.runtime.defmeth.shared.data.method.result.*;
 
 import static java.lang.String.*;
+import static java.lang.classfile.ClassFile.*;
+
 import nsk.share.Pair;
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,8 @@ import vm.share.options.Option;
 import vm.share.options.OptionSupport;
 import vm.share.options.Options;
 import static java.lang.String.format;
-import static jdk.internal.org.objectweb.asm.Opcodes.V17;
-import static jdk.internal.org.objectweb.asm.Opcodes.V1_5;
+import static java.lang.classfile.ClassFile.JAVA_17_VERSION;
+import static java.lang.classfile.ClassFile.JAVA_5_VERSION;
 
 import vm.runtime.defmeth.RedefineTest;
 
@@ -111,8 +111,8 @@ public abstract class DefMethTest extends TestBase {
 
     private Pattern filter; // Precompiled pattern for filterString
 
-    public static final int MIN_MAJOR_VER = V1_5;
-    public static final int MAX_MAJOR_VER = V17;
+    public static final int MIN_MAJOR_VER = JAVA_5_VERSION;
+    public static final int MAX_MAJOR_VER = JAVA_17_VERSION;
 
     /**
      * Used from individual tests to get TestBuilder instances,
