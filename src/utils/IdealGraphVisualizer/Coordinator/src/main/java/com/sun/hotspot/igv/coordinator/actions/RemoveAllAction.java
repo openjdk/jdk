@@ -27,6 +27,7 @@ package com.sun.hotspot.igv.coordinator.actions;
 import com.sun.hotspot.igv.coordinator.OutlineTopComponent;
 import javax.swing.Action;
 import org.openide.util.HelpCtx;
+import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle;
 import org.openide.util.actions.CallableSystemAction;
 
@@ -43,6 +44,7 @@ public final class RemoveAllAction extends CallableSystemAction {
 
     public RemoveAllAction() {
         putValue(Action.SHORT_DESCRIPTION, "Remove all graphs and groups");
+        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
     }
 
     @Override

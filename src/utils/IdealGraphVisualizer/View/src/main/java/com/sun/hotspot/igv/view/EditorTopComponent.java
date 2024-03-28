@@ -326,11 +326,13 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
     }
 
     private void closeOnRemovedOrEmptyGroup() {
-        Group group = getModel().getGroup();
-        if (!group.getParent().getElements().contains(group) ||
-            group.getGraphs().isEmpty()) {
-            close();
-        }
+        SwingUtilities.invokeLater(() -> {
+            Group group = getModel().getGroup();
+            if (!group.getParent().getElements().contains(group) ||
+                    group.getGraphs().isEmpty()) {
+                close();
+            }
+        });
     }
 
     public void addSelectedNodes(Collection<InputNode> nodes, boolean showIfHidden) {

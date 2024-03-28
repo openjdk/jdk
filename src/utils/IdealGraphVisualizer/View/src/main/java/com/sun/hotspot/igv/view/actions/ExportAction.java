@@ -57,7 +57,7 @@ public final class ExportAction extends CallableSystemAction implements LookupLi
 
     public ExportAction() {
         putValue(Action.SHORT_DESCRIPTION, NbBundle.getMessage(ExportAction.class, "HINT_ExportAction"));
-        putValue(Action.SMALL_ICON , ImageUtilities.loadImageIcon(iconResource(), true));
+        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
         Lookup lookup = Utilities.actionsGlobalContext();
         result = lookup.lookup(new Lookup.Template<>(ExportCookie.class));
         result.addLookupListener(this);

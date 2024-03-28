@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,16 @@
 package com.sun.hotspot.igv.coordinator.actions;
 
 import com.sun.hotspot.igv.coordinator.FolderNode;
+import com.sun.hotspot.igv.coordinator.OutlineTopComponent;
 import com.sun.hotspot.igv.data.Folder;
 import com.sun.hotspot.igv.data.GraphDocument;
 import com.sun.hotspot.igv.data.Group;
-import com.sun.hotspot.igv.data.serialization.Printer;
-import com.sun.hotspot.igv.settings.Settings;
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.nio.file.Files;
 import javax.swing.Action;
-import javax.swing.JFileChooser;
 import org.openide.nodes.Node;
 import org.openide.util.HelpCtx;
+import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle;
 import org.openide.util.actions.NodeAction;
 
@@ -50,6 +46,7 @@ public final class SaveAsAction extends NodeAction {
 
     public SaveAsAction() {
         putValue(Action.SHORT_DESCRIPTION, "Save selected groups to XML file...");
+        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
     }
 
     @Override
@@ -65,33 +62,11 @@ public final class SaveAsAction extends NodeAction {
                 }
             }
         }
-        save(doc);
-    }
 
-    public static void save(GraphDocument doc) {
-        JFileChooser fc = new JFileChooser();
-        fc.setFileFilter(ImportAction.getFileFilter());
-        fc.setCurrentDirectory(new File(Settings.get().get(Settings.DIRECTORY, Settings.DIRECTORY_DEFAULT)));
-
-        if (fc.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
-            File file = fc.getSelectedFile();
-            if (!file.getName().contains(".")) {
-                file = new File(file.getAbsolutePath() + ".xml");
-            }
-
-            File dir = file;
-            if (!dir.isDirectory()) {
-                dir = dir.getParentFile();
-            }
-            Settings.get().put(Settings.DIRECTORY, dir.getAbsolutePath());
-            try {
-                try (Writer writer = new OutputStreamWriter(Files.newOutputStream(file.toPath()))) {
-                    Printer p = new Printer();
-                    p.export(writer, doc);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        try {
+            OutlineTopComponent.saveGraphDocument(doc, null);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -102,7 +77,7 @@ public final class SaveAsAction extends NodeAction {
 
     @Override
     protected String iconResource() {
-        return "com/sun/hotspot/igv/coordinator/images/save.png";
+        return "com/sun/hotspot/igv/coordinator/images/saveall.gif";
     }
 
     @Override

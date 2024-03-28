@@ -52,7 +52,7 @@ public final class ZoomOutAction extends CallableSystemAction {
 
     public ZoomOutAction() {
         putValue(Action.SHORT_DESCRIPTION, getDescription());
-        putValue(Action.SMALL_ICON , ImageUtilities.loadImageIcon(iconResource(), true));
+        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
     }
 
     @Override
