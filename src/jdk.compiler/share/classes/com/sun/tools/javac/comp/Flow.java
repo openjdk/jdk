@@ -3262,7 +3262,7 @@ public class Flow {
                     for (int i=0; i<vars.length; i++)
                         vars[i] = null;
                 if (vardecls == null)
-                    vardecls = new JCVariableDecl[32];
+                    vardecls = new JCTree[32];
                 else
                     for (int i=0; i<vardecls.length; i++)
                         vardecls[i] = null;
