@@ -1357,12 +1357,12 @@ void static continuation_enter_cleanup(MacroAssembler* masm) {
   __ movptr(rbx, Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()));
   __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), rbx);
 
-  // Check if this is a virtual thread continuation
-  Label L_skip_vthread_code;
-  __ cmpl(Address(rsp, ContinuationEntry::flags_offset()), 0);
-  __ jcc(Assembler::equal, L_skip_vthread_code);
-
   if (CheckJNICalls) {
+    // Check if this is a virtual thread continuation
+    Label L_skip_vthread_code;
+    __ cmpl(Address(rsp, ContinuationEntry::flags_offset()), 0);
+    __ jcc(Assembler::equal, L_skip_vthread_code);
+
     Label L_no_warn;
     __ cmpptr(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
     __ jcc(Assembler::equal, L_no_warn);
@@ -1371,14 +1371,28 @@ void static continuation_enter_cleanup(MacroAssembler* masm) {
     // that JavaThread::exit does.
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::log_jni_monitor_still_held));
     __ bind(L_no_warn);
+
+    // For vthreads we have to explicitly zero the JNI monitor count of the carrier
+    // on termination. The held count is implicitly zeroed below when we restore from
+    // the parent held count (which has to be zero).
+    __ movq(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
+
+    __ bind(L_skip_vthread_code);
   }
+#ifdef ASSERT
+  else {
+    // Check if this is a virtual thread continuation
+    Label L_skip_vthread_code;
+    __ cmpl(Address(rsp, ContinuationEntry::flags_offset()), 0);
+    __ jcc(Assembler::equal, L_skip_vthread_code);
 
-  // For vthreads we have to explicitly zero the JNI monitor count of the carrier
-  // on termination. The held count is implicitly zeroed below when we restore from
-  // the parent held count (which has to be zero).
-  __ movq(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
+    // See comment just above. If not checking JNI calls the JNI count is only
+    // needed for assertion checking.
+    __ movq(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
 
-  __ bind(L_skip_vthread_code);
+    __ bind(L_skip_vthread_code);
+  }
+#endif
 
   __ movq(rbx, Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()));
   __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), rbx);
