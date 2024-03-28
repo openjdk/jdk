@@ -4199,6 +4199,10 @@ void StubGenerator::generate_compiler_stubs() {
 
   generate_chacha_stubs();
 
+  if ((UseAVX == 2) && EnableX86ECoreOpts && VM_Version::supports_avx2()) {
+    generate_string_indexof(StubRoutines::_string_indexof_array);
+  }
+
   if (UseAdler32Intrinsics) {
      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
   }
