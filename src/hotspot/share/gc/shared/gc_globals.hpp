@@ -50,7 +50,6 @@
                  develop_pd,                                                \
                  product,                                                   \
                  product_pd,                                                \
-                 notproduct,                                                \
                  range,                                                     \
                  constraint)                                                \
                                                                             \
@@ -59,7 +58,6 @@
     develop_pd,                                                             \
     product,                                                                \
     product_pd,                                                             \
-    notproduct,                                                             \
     range,                                                                  \
     constraint))                                                            \
                                                                             \
@@ -68,7 +66,6 @@
     develop_pd,                                                             \
     product,                                                                \
     product_pd,                                                             \
-    notproduct,                                                             \
     range,                                                                  \
     constraint))                                                            \
                                                                             \
@@ -77,7 +74,6 @@
     develop_pd,                                                             \
     product,                                                                \
     product_pd,                                                             \
-    notproduct,                                                             \
     range,                                                                  \
     constraint))                                                            \
                                                                             \
@@ -86,7 +82,6 @@
     develop_pd,                                                             \
     product,                                                                \
     product_pd,                                                             \
-    notproduct,                                                             \
     range,                                                                  \
     constraint))                                                            \
                                                                             \
@@ -95,7 +90,6 @@
     develop_pd,                                                             \
     product,                                                                \
     product_pd,                                                             \
-    notproduct,                                                             \
     range,                                                                  \
     constraint))                                                            \
                                                                             \
@@ -104,7 +98,6 @@
     develop_pd,                                                             \
     product,                                                                \
     product_pd,                                                             \
-    notproduct,                                                             \
     range,                                                                  \
     constraint))                                                            \
                                                                             \
@@ -240,7 +233,7 @@
           "free space in this calculation. (G1 collector only)")            \
           range(0, 100)                                                     \
                                                                             \
-  notproduct(bool, ScavengeALot, false,                                     \
+  develop(bool, ScavengeALot, false,                                        \
           "Force scavenge at every Nth exit from the runtime system "       \
           "(N=ScavengeALotInterval)")                                       \
                                                                             \
@@ -248,10 +241,10 @@
           "Force full gc at every Nth exit from the runtime system "        \
           "(N=FullGCALotInterval)")                                         \
                                                                             \
-  notproduct(bool, GCALotAtAllSafepoints, false,                            \
+  develop(bool, GCALotAtAllSafepoints, false,                               \
           "Enforce ScavengeALot/GCALot at all potential safepoints")        \
                                                                             \
-  notproduct(bool, PromotionFailureALot, false,                             \
+  develop(bool, PromotionFailureALot, false,                                \
           "Use promotion failure handling on every youngest generation "    \
           "collection")                                                     \
                                                                             \
@@ -526,16 +519,16 @@
           "number of milliseconds")                                         \
           range(0, max_intx)                                                \
                                                                             \
-  notproduct(int, ScavengeALotInterval,     1,                              \
+  develop(int, ScavengeALotInterval,     1,                                 \
           "Interval between which scavenge will occur with +ScavengeALot")  \
                                                                             \
-  notproduct(int, FullGCALotInterval,     1,                                \
+  develop(int, FullGCALotInterval,     1,                                   \
           "Interval between which full gc will occur with +FullGCALot")     \
                                                                             \
-  notproduct(int, FullGCALotStart,     0,                                   \
+  develop(int, FullGCALotStart,     0,                                      \
           "For which invocation to start FullGCAlot")                       \
                                                                             \
-  notproduct(int, FullGCALotDummies,  32*K,                                 \
+  develop(int, FullGCALotDummies,  32*K,                                    \
           "Dummy object allocated with +FullGCALot, forcing all objects "   \
           "to move")                                                        \
                                                                             \
