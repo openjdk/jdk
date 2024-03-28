@@ -93,19 +93,56 @@
  * structure, this check will add little overhead to the hashtable
  * access methods.
  *
+ * <a id="MemoryConsistency"></a>
+ * <h3>Memory Consistency Properties</h3>
+ * Certain interactions between the garbage collector, references, and reference
+ * queues form
+ * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
+ * relationships:
+ *
+ * <ul>
+ *
+ * <li> Actions in a thread prior to calling
+ * {@link Reference#reachabilityFence Reference.reachabilityFence(x)}
+ * <i>happen-before</i> the garbage collector clears any reference to {@code x}.</li>
+ *
+ * <li>The clearing of a reference by the garbage collector <i>happens-before</i>
+ * the garbage collector enqueues the reference.</li>
+ *
+ * <li> The enqueueing of a reference (by the garbage collector, or
+ * by a successful call to {@link Reference#enqueue}) <i>happens-before</i>
+ * the reference is removed from the queue ("dequeued") by {@link ReferenceQueue#poll} or
+ * {@link ReferenceQueue#remove}.</li>
+ *
+ * <li>The dequeuing of a reference to a
+ * {@linkplain Cleaner#register(Object object, Runnable action) registered}
+ * object, by the Cleaner thread, <i>happens-before</i> the Cleaner thread runs
+ * the cleaning action for that object.</li>
+ *
+ * </ul>
+ *
+ * The above chain of <i>happens-before</i> edges ensures that actions in a
+ * thread prior to a {@link Reference#reachabilityFence Reference.reachabilityFence(x)}
+ * <i>happen-before</i> cleanup code for {@code x} runs on the cleaner thread.
+ * In particular, changes to the state of {@code x} made before
+ * {@code reachabilityFence(x)} will be visible to the cleanup code running on
+ * the cleaner thread without additional synchronization.
+ * See {@jls 17.4.5}.
+ *
  * <a id="reachability"></a>
  * <h3>Reachability</h3>
  *
- * Going from strongest to weakest, the different levels of
+ * A <em>reachable</em> object is any object that can be accessed in any potential
+ * continuing computation from any live thread (as stated in {@jls 12.6.1}).
+ *
+ * <p> Going from strongest to weakest, the different levels of
  * reachability reflect the life cycle of an object.  They are
  * operationally defined as follows:
  *
  * <ul>
  *
- * <li> An object is <em>strongly reachable</em> if it can be reached
- * by some thread without traversing any reference objects.  A
- * newly-created object is strongly reachable by the thread that
- * created it.
+ * <li> An object is <em>strongly reachable</em> if it is reachable and if it
+ * can be accessed without traversing the referent of a Reference object.
  *
  * <li> An object is <em>softly reachable</em> if it is not strongly
  * reachable but can be reached by traversing a soft reference.

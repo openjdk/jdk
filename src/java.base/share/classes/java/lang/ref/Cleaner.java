@@ -215,6 +215,14 @@ public final class Cleaner {
      * Refer to the <a href="#compatible-cleaners">API Note</a> above for
      * cautions about the behavior of cleaning actions.
      *
+     * <p>The object being registered is kept strongly reachable (and therefore not eligible
+     * for cleaning) during the register() method.
+     *
+     * <p><a href="{@docRoot}/java.base/java/lang/ref/package-summary.html#MemoryConsistency">Memory consistency effects</a>:
+     * Actions in a thread prior to calling {@code Cleaner.register()}
+     * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
+     * the cleaning action is run by the Cleaner's thread.
+     *
      * @param obj   the object to monitor
      * @param action a {@code Runnable} to invoke when the object becomes phantom reachable
      * @return a {@code Cleanable} instance
