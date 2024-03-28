@@ -50,28 +50,13 @@ size_t ShenandoahSimpleBitMap::count_leading_ones(ssize_t start_idx) const {
   uintx bit_number = start_idx & right_n_bits(LogBitsPerWord);
   uintx omit_mask = right_n_bits(bit_number);
   uintx mask = ((uintx) 0 - 1) & ~omit_mask;
-#undef KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
-  printf(" count_leading_ones(" SSIZE_FORMAT "), array_idx: " SIZE_FORMAT ", element_bits: " SIZE_FORMAT_X
-         ", mask: " SIZE_FORMAT_X ", bit_number: " SIZE_FORMAT "\n",
-         start_idx, array_idx, element_bits, mask, bit_number);
-#endif
   if ((element_bits & mask) == mask) {
     size_t counted_ones = BitsPerWord - bit_number;
-#ifdef KELVIN_DEBUG
-    printf("  count_leading_ones() recursing after counting " SIZE_FORMAT "\n", counted_ones);
-#endif
     return counted_ones + count_leading_ones(start_idx - counted_ones);
   } else {
     // Return number of consecutive ones starting with the_bit and including more significant bits.
     uintx aligned = element_bits >> bit_number;
     uintx complement = ~aligned;;
-#ifdef KELVIN_DEBUG
-    size_t result = count_trailing_zeros<uintx>(complement);
-    printf("  count_leading_ones() aligned: " SIZE_FORMAT_X ", complement: " SIZE_FORMAT_X " returning " SIZE_FORMAT "\n",
-           aligned, complement, result);
-    return result;
-#endif
     return count_trailing_zeros<uintx>(complement);
   }
 }
@@ -83,27 +68,13 @@ size_t ShenandoahSimpleBitMap::count_trailing_ones(ssize_t last_idx) const {
   uintx bit_number = last_idx & right_n_bits(LogBitsPerWord);
   // All ones from bit 0 to the_bit
   uintx mask = right_n_bits(bit_number + 1);
-#ifdef KELVIN_DEBUG
-  printf(" count_trailing_ones(" SSIZE_FORMAT "), array_idx: " SIZE_FORMAT ", element_bits: " SIZE_FORMAT_X
-         ", mask: " SIZE_FORMAT_X ", bit_number: " SIZE_FORMAT "\n",
-         last_idx, array_idx, element_bits, mask, bit_number);
-#endif
   if ((element_bits & mask) == mask) {
     size_t counted_ones = bit_number + 1;
-#ifdef KELVIN_DEBUG
-    printf("  count_trailing_ones() recursing after counting " SIZE_FORMAT "\n", counted_ones);
-#endif
     return counted_ones + count_trailing_ones(last_idx - counted_ones);
   } else {
     // Return number of consecutive ones starting with the_bit and including less significant bits
     uintx aligned = element_bits << (BitsPerWord - (bit_number + 1));
     uintx complement = ~aligned;
-#ifdef KELVIN_DEBUG
-    size_t result = count_leading_zeros<uintx>(complement);
-    printf("  count_trailing_ones() aligned: " SIZE_FORMAT_X ", complement: " SIZE_FORMAT_X " returning " SIZE_FORMAT "\n",
-           aligned, complement, result);
-    return result;
-#endif
     return count_leading_zeros<uintx>(complement);
   }
 }
@@ -116,9 +87,6 @@ bool ShenandoahSimpleBitMap::is_forward_consecutive_ones(ssize_t start_idx, ssiz
   uintx bit_number = start_idx & right_n_bits(LogBitsPerWord);
   uintx element_bits = _bitmap[array_idx];
   uintx bits_to_examine  = BitsPerWord - bit_number;
-#ifdef KELVIN_DEBUG
-  uintx orig_element_bits = element_bits;
-#endif
   element_bits >>= bit_number;
   uintx complement = ~element_bits;
   uintx trailing_ones;
@@ -127,11 +95,6 @@ bool ShenandoahSimpleBitMap::is_forward_consecutive_ones(ssize_t start_idx, ssiz
   } else {
     trailing_ones = bits_to_examine;
   }
-#ifdef KELVIN_DEBUG
-  printf(" is_forward_consecutive_ones(" SSIZE_FORMAT ", " SSIZE_FORMAT "), orig_element_bits: " SIZE_FORMAT_X
-         ", element_bits: " SIZE_FORMAT_X ", bits_to_examine: " SIZE_FORMAT ", trailing_ones: " SIZE_FORMAT,
-         start_idx, count, orig_element_bits, element_bits, bits_to_examine, trailing_ones);
-#endif
   if (trailing_ones >= (uintx) count) {
     return true;
   } else if (trailing_ones == bits_to_examine) {
@@ -149,9 +112,6 @@ bool ShenandoahSimpleBitMap::is_backward_consecutive_ones(ssize_t last_idx, ssiz
   uintx bit_number = last_idx & right_n_bits(LogBitsPerWord);
   uintx element_bits = _bitmap[array_idx];
   uintx bits_to_examine = bit_number + 1;
-#ifdef KELVIN_DEBUG
-  uintx orig_element_bits = element_bits;
-#endif
   element_bits <<= (BitsPerWord - bits_to_examine);
   uintx complement = ~element_bits;
   uintx leading_ones;
@@ -160,11 +120,6 @@ bool ShenandoahSimpleBitMap::is_backward_consecutive_ones(ssize_t last_idx, ssiz
   } else {
     leading_ones = bits_to_examine;
   }
-#ifdef KELVIN_DEBUG
-  printf(" is_forward_consecutive_ones(" SSIZE_FORMAT ", " SSIZE_FORMAT "), orig_element_bits: " SIZE_FORMAT_X
-         ", element_bits: " SIZE_FORMAT_X ", bits_to_examine: " SIZE_FORMAT ", leading_ones: " SIZE_FORMAT,
-         last_idx, count, orig_element_bits, element_bits, bits_to_examine, leading_ones);
-#endif
   if (leading_ones >= (uintx) count) {
     return true;
   } else if (leading_ones == bits_to_examine) {
@@ -186,18 +141,10 @@ ssize_t ShenandoahSimpleBitMap::find_next_consecutive_bits(size_t num_bits, ssiz
   uintx array_idx = start_idx >> LogBitsPerWord;
   uintx bit_number = start_idx & right_n_bits(LogBitsPerWord);
   uintx element_bits = _bitmap[array_idx];
-#ifdef KELVIN_DEBUG
-  uintx orig_element_bits = element_bits;
-#endif
   if (bit_number > 0) {
     uintx mask_out = right_n_bits(bit_number);
     element_bits &= ~mask_out;
   }
-#ifdef KELVIN_DEBUG
-  printf("find_next_consecutive_bits(" SIZE_FORMAT ", " SSIZE_FORMAT ", " SSIZE_FORMAT "), orig_bits: " SIZE_FORMAT_X
-         ", bits: " SIZE_FORMAT_X ", array_idx: " SIZE_FORMAT ", bit_number: " SIZE_FORMAT "\n",
-         num_bits, start_idx, boundary_idx, orig_element_bits, element_bits, array_idx, bit_number);
-#endif
   while (true) {
     if (!element_bits) {
       // move to the next element
@@ -209,15 +156,7 @@ ssize_t ShenandoahSimpleBitMap::find_next_consecutive_bits(size_t num_bits, ssiz
       array_idx++;
       bit_number = 0;
       element_bits = _bitmap[array_idx];
-#ifdef KELVIN_DEBUG
-      printf(" find_next_consecutive_bits() move to next element, "
-             "bits: " SIZE_FORMAT_X ", array_idx: " SIZE_FORMAT ", start_idx: " SSIZE_FORMAT ", bit_number: " SIZE_FORMAT "\n",
-             element_bits, array_idx, start_idx, bit_number);
-#endif
     } else if (is_forward_consecutive_ones(start_idx, num_bits)) {
-#ifdef KELVIN_DEBUG
-      printf(" find_next_consecutive_bits() found consecutive ones, returning " SSIZE_FORMAT "\n", start_idx);
-#endif
       return start_idx;
     } else {
       // There is at least one non-zero bit within the masked element_bits.  Find it.
@@ -236,19 +175,10 @@ ssize_t ShenandoahSimpleBitMap::find_next_consecutive_bits(size_t num_bits, ssiz
       array_idx = start_idx >> LogBitsPerWord;
       element_bits = _bitmap[array_idx];
       bit_number = start_idx & right_n_bits(LogBitsPerWord);
-#ifdef KELVIN_DEBUG
-      uintx orig_element_bits = element_bits;
-#endif
       if (bit_number > 0) {
         size_t mask_out = right_n_bits(bit_number);
         element_bits &= ~mask_out;
       }
-#ifdef KELVIN_DEBUG
-      printf(" find_next_consecutive_bits() shifting focus to "
-             "original bits: " SIZE_FORMAT_X ", bits: " SIZE_FORMAT_X ", array_idx: " SIZE_FORMAT ", start_idx: " SSIZE_FORMAT
-             ", bit_number: " SIZE_FORMAT "\n",
-             orig_element_bits, element_bits, array_idx, start_idx, bit_number);
-#endif
     }
   }
 }
@@ -266,18 +196,10 @@ ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(
   size_t array_idx = last_idx >> LogBitsPerWord;
   uintx bit_number = last_idx & right_n_bits(LogBitsPerWord);
   uintx element_bits = _bitmap[array_idx];
-#ifdef KELVIN_DEBUG
-  uintx orig_element_bits = element_bits;
-#endif
   if (bit_number < BitsPerWord - 1) {
     uintx mask_in = right_n_bits(bit_number + 1);
     element_bits &= mask_in;
   }
-#ifdef KELVIN_DEBUG
-  printf("find_prev_consecutive_bits(" SIZE_FORMAT ", " SSIZE_FORMAT ", " SSIZE_FORMAT "), orig_bits: " SIZE_FORMAT_X
-         ", bits: " SIZE_FORMAT_X ", array_idx: " SIZE_FORMAT ", bit_number: " SIZE_FORMAT "\n",
-         num_bits, last_idx, boundary_idx, orig_element_bits, element_bits, array_idx, bit_number);
-#endif
   while (true) {
     if (!element_bits) {
       // move to the previous element
@@ -289,15 +211,7 @@ ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(
       array_idx--;
       bit_number = BitsPerWord - 1;
       element_bits = _bitmap[array_idx];
-#ifdef KELVIN_DEBUG
-      printf(" find_prev_consecutive_bits() move to prev element, "
-             "bits: " SIZE_FORMAT_X ", array_idx: " SIZE_FORMAT ", start_idx: " SSIZE_FORMAT ", bit_number: " SIZE_FORMAT "\n",
-             element_bits, array_idx, last_idx, bit_number);
-#endif
     } else if (is_backward_consecutive_ones(last_idx, num_bits)) {
-#ifdef KELVIN_DEBUG
-      printf(" find_prev_consecutive_bits() found consecutive ones, returning " SSIZE_FORMAT "\n", last_idx);
-#endif
       return last_idx + 1 - num_bits;
     } else {
       // There is at least one non-zero bit within the masked element_bits.  Find it.
@@ -316,19 +230,10 @@ ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(
       array_idx = last_idx >> LogBitsPerWord;
       bit_number = last_idx & right_n_bits(LogBitsPerWord);
       element_bits = _bitmap[array_idx];
-#ifdef KELVIN_DEBUG
-      uintx orig_element_bits = element_bits;
-#endif
       if (bit_number < BitsPerWord - 1){
         size_t mask_in = right_n_bits(bit_number + 1);
         element_bits &= mask_in;
       }
-#ifdef KELVIN_DEBUG
-      printf(" find_prev_consecutive_bits() shifting focus to "
-             "original bits: " SIZE_FORMAT_X ", bits: " SIZE_FORMAT_X ", array_idx: " SIZE_FORMAT ", last_idx: " SSIZE_FORMAT
-             ", bit_number: " SIZE_FORMAT "\n",
-             orig_element_bits, element_bits, array_idx, last_idx, bit_number);
-#endif
     }
   }
 }
