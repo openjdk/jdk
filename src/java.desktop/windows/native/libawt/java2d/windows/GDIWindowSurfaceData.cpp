@@ -253,44 +253,6 @@ __inline HDC GetThreadDC(JNIEnv *env, GDIWinSDOps *wsdo) {
  * code.
  */
 
-static BOOL GDIWinSD_CheckMonitorArea(GDIWinSDOps *wsdo,
-                                     SurfaceDataBounds *bounds,
-                                     HDC hDC)
-{
-    HWND hW = wsdo->window;
-    BOOL retCode = TRUE;
-
-    J2dTraceLn(J2D_TRACE_INFO, "GDIWinSD_CheckMonitorArea");
-    int numScreens;
-    {
-        Devices::InstanceAccess devices;
-        numScreens = devices->GetNumDevices();
-    }
-    if( numScreens > 1 ) {
-
-        LPMONITORINFO miInfo;
-        RECT rSect ={0,0,0,0};
-        RECT rView ={bounds->x1, bounds->y1, bounds->x2, bounds->y2};
-        retCode = FALSE;
-
-        miInfo = wsdo->device->GetMonitorInfo();
-
-        POINT ptOrig = {0, 0};
-        ::ClientToScreen(hW, &ptOrig);
-        ::OffsetRect(&rView,
-            (ptOrig.x), (ptOrig.y));
-
-        ::IntersectRect(&rSect,&rView,&(miInfo->rcMonitor));
-
-        if( FALSE == ::IsRectEmpty(&rSect) ) {
-            if( TRUE == ::EqualRect(&rSect,&rView) ) {
-                retCode = TRUE;
-            }
-        }
-    }
-    return retCode;
-}
-
 extern "C" {
 
 void
