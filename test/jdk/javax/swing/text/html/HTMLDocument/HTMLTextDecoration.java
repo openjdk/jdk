@@ -55,7 +55,7 @@ public final class HTMLTextDecoration {
             <p><u><span style='text-decoration: line-through'>underline + line-through?</span></u></p>
             <p><s><span style='text-decoration: underline'>underline + line-through?</span></s></p>
             <p><strike><span style='text-decoration: underline'>underline + line-through?</span></strike></p>
-            
+
             <p><span style='text-decoration: line-through'><span style='text-decoration: underline'>underline + line-through?</span></span></p>
             <p><span style='text-decoration: underline'><span style='text-decoration: line-through'>underline + line-through?</span></span></p>
             
@@ -65,7 +65,7 @@ public final class HTMLTextDecoration {
 
             <p style='text-decoration: line-through'><span style='text-decoration: underline'>underline + line-through?</span></p>
             <p style='text-decoration: underline'><span style='text-decoration: line-through'>underline + line-through?</span></p>
-            
+
             <p class="underline"><span class="lineThrough">underline + line-through?</span></p>
             <p class="underline"><s>underline + line-through?</s></p>
             <p class="underline"><strike>underline + line-through?</strike></p>
