@@ -60,7 +60,7 @@ public:
   static void check_internal_module_property(const char* key, const char* value) NOT_CDS_RETURN;
   static void check_incompatible_property(const char* key, const char* value) NOT_CDS_RETURN;
   static void check_unsupported_dumping_module_options() NOT_CDS_RETURN;
-  static bool has_unsupported_runtime_module_options() NOT_CDS_RETURN;
+  static bool has_unsupported_runtime_module_options() NOT_CDS_RETURN_(false);
   static bool check_vm_args_consistency(bool patch_mod_javabase, bool mode_flag_cmd_line) NOT_CDS_RETURN_(true);
 
   // --- Basic CDS features
