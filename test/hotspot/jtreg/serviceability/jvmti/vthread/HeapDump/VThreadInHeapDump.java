@@ -55,6 +55,14 @@ import jdk.test.lib.hprof.parser.Reader;
  */
 
 /**
+ * @test id=default-serial
+ * @requires vm.jvmti
+ * @requires vm.continuations
+ * @library /test/lib
+ * @run main VThreadInHeapDump -XX:ActiveProcessorCount=1 -XX:+ErrorFileToStderr
+ */
+
+/**
  * @test id=no-vmcontinuations
  * @requires vm.jvmti
  * @library /test/lib
