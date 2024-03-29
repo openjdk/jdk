@@ -120,11 +120,6 @@ public:
         DASSERT(FALSE);
     }
 
-    // execute given code on Windows message-pump thread
-    static LRESULT WinThreadExec(jobject peerObject, UINT cmdId, LPARAM param1 = 0L, LPARAM param2 = 0L, LPARAM param3 = 0L, LPARAM param4 = 0L);
-    // callback function to execute code on Windows message-pump thread
-    virtual LRESULT WinThreadExecProc(AwtObject::ExecuteArgs * args);
-
     // overridden in AwtComponent to return FALSE if any messages
     // are being processed by this component
     virtual BOOL CanBeDeleted() {

@@ -1264,7 +1264,7 @@ LRESULT AwtFrame::WinThreadExecProc(ExecuteArgs * args)
         }
 
         default:
-            AwtWindow::WinThreadExecProc(args);
+            DASSERT(FALSE);
             break;
     }
 
