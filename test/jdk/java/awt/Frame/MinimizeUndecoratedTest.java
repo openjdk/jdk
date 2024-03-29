@@ -133,7 +133,7 @@ public class MinimizeUndecoratedTest {
         try {
             ImageIO.write(image, "png", new File("MinimizedFrame.png"));
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 }
