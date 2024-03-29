@@ -54,14 +54,6 @@
     extern void operator delete[](void *ptr, const char*, int);
 
     extern void operator delete(void *ptr) throw();
-    extern void DumpClipRectangle(const char * file, int line, int argc, const char * fmt, va_list arglist);
-    extern void DumpUpdateRectangle(const char * file, int line, int argc, const char * fmt, va_list arglist);
-
-    #define AWT_DUMP_UPDATE_RECTANGLE(_msg, _hwnd) \
-        _DTrace_Template(DumpUpdateRectangle, 2, "", (_msg), (_hwnd), 0, 0, 0, 0, 0, 0)
-
-    #define AWT_DUMP_CLIP_RECTANGLE(_msg, _hwnd) \
-        _DTrace_Template(DumpClipRectangle, 2, "", (_msg), (_hwnd), 0, 0, 0, 0, 0, 0)
 
     #define new         new(__FILE__, __LINE__)
 
@@ -71,9 +63,6 @@
     /* Disable inlining. */
     #define INLINE
 #else
-    #define AWT_DUMP_UPDATE_RECTANGLE(_msg, _hwnd) ((void)0)
-    #define AWT_DUMP_CLIP_RECTANGLE(_msg, _hwnd) ((void)0)
-
     #define UNIMPLEMENTED() \
         SignalError(0, JAVAPKG "NullPointerException","unimplemented");
 
