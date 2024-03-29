@@ -41,7 +41,6 @@ public final class NullPaper {
             throw new RuntimeException("NullPointerException is expected "
                                        + "but not thrown");
         } catch (NullPointerException e) {
-            /* Expected */
             System.out.println("NullPointerException caught - test passes");
         }
     }
