@@ -48,8 +48,6 @@ public class bug4150029 {
     private static JFrame frame;
     private static JFileChooser fileChooser;
     private static Robot robot;
-    private static File testDir;
-    private static File subDir;
     private static File prevDir;
     private static File crntDir;
     private static volatile Point p;
@@ -75,18 +73,19 @@ public class bug4150029 {
             }
             System.out.println("Temp directory: " + tmpDir);
 
-            testDir = new File(tmpDir, "testDir");
+            File testDir = new File(tmpDir, "testDir");
             testDir.mkdir();
             testDir.deleteOnExit();
             System.out.println("Created directory: " + testDir);
 
-            subDir = new File(testDir, "subDir");
+            File subDir = new File(testDir, "subDir");
             subDir.mkdir();
             subDir.deleteOnExit();
             System.out.println("Created sub-directory: " + subDir);
 
             SwingUtilities.invokeAndWait(() -> {
                 createAndShowUI();
+                fileChooser.setCurrentDirectory(subDir);
             });
 
             doTesting();
@@ -102,7 +101,7 @@ public class bug4150029 {
     private static void createAndShowUI() {
         frame = new JFrame("Backspace Shortcut for Directory Navigation Test");
         frame.setLayout(new BorderLayout());
-        fileChooser = new JFileChooser(subDir);
+        fileChooser = new JFileChooser();
         fileChooser.setControlButtonsAreShown(false);
         frame.add(fileChooser, BorderLayout.CENTER);
         frame.pack();
@@ -114,7 +113,6 @@ public class bug4150029 {
     private static void doTesting() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             p = frame.getLocationOnScreen();
-
         });
         robot.mouseMove(p.x + 200, p.y + 200);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
@@ -125,7 +123,7 @@ public class bug4150029 {
         // check backspace key at subDir level
         clickBackSpace();
 
-        if (!(prevDir != crntDir)) {
+        if (prevDir == crntDir) {
             throw new RuntimeException("BackSpace does not lead to parent directory");
         }
     }
