@@ -372,13 +372,6 @@ gss_import_name(OM_uint32 *minor_status,
         goto err;
     }
 
-    goto execution;
-
-err:
-    delete[] value;
-    return GSS_S_FAILURE;
-
-execution:
     len = MultiByteToWideChar(CP_UTF8, 0, input, len, value, len+1);
     if (len == 0) {
         goto err;
@@ -423,6 +416,9 @@ execution:
     name->name = value;
     *output_name = (gss_name_t) name;
     return GSS_S_COMPLETE;
+err:
+    delete[] value;
+    return GSS_S_FAILURE;
 }
 
 __declspec(dllexport) OM_uint32
