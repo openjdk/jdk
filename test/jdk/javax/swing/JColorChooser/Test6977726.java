@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.awt.Color;
 import javax.swing.JColorChooser;
 import javax.swing.JLabel;
 
@@ -48,13 +49,13 @@ public class Test6977726 {
                 .rows(5)
                 .columns(40)
                 .testTimeOut(2)
-                .splitUIRight(Test6977726::createColorChooser)
+                .testUI(Test6977726::createColorChooser)
                 .build()
                 .awaitAndCheck();
     }
 
     private static JColorChooser createColorChooser() {
-        JColorChooser chooser = new JColorChooser();
+        JColorChooser chooser = new JColorChooser(Color.BLUE);
         chooser.setPreviewPanel(new JLabel("Text Preview Panel"));
         return chooser;
     }
