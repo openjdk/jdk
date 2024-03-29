@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public:
 
 class ZIsUnloadingBehaviour : public IsUnloadingBehaviour {
 public:
-  virtual bool has_dead_oop(CompiledMethod* method) const {
+  virtual bool has_dead_oop(nmethod* method) const {
     nmethod* const nm = method->as_nmethod();
     ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
     ZLocker<ZReentrantLock> locker(lock);
@@ -90,20 +90,20 @@ public:
 
 class ZCompiledICProtectionBehaviour : public CompiledICProtectionBehaviour {
 public:
-  virtual bool lock(CompiledMethod* method) {
+  virtual bool lock(nmethod* method) {
     nmethod* const nm = method->as_nmethod();
     ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
     lock->lock();
     return true;
   }
 
-  virtual void unlock(CompiledMethod* method) {
+  virtual void unlock(nmethod* method) {
     nmethod* const nm = method->as_nmethod();
     ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
     lock->unlock();
   }
 
-  virtual bool is_safe(CompiledMethod* method) {
+  virtual bool is_safe(nmethod* method) {
     if (SafepointSynchronize::is_at_safepoint() || method->is_unloading()) {
       return true;
     }

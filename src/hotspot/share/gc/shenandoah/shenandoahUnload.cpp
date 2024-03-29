@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -77,7 +78,7 @@ public:
 
 class ShenandoahIsUnloadingBehaviour : public IsUnloadingBehaviour {
 public:
-  virtual bool has_dead_oop(CompiledMethod* method) const {
+  virtual bool has_dead_oop(nmethod* method) const {
     nmethod* const nm = method->as_nmethod();
     assert(ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress(), "Only for this phase");
     ShenandoahNMethod* data = ShenandoahNMethod::gc_data(nm);
@@ -90,7 +91,7 @@ public:
 
 class ShenandoahCompiledICProtectionBehaviour : public CompiledICProtectionBehaviour {
 public:
-  virtual bool lock(CompiledMethod* method) {
+  virtual bool lock(nmethod* method) {
     nmethod* const nm = method->as_nmethod();
     ShenandoahReentrantLock* const lock = ShenandoahNMethod::lock_for_nmethod(nm);
     assert(lock != nullptr, "Not yet registered?");
@@ -98,14 +99,14 @@ public:
     return true;
   }
 
-  virtual void unlock(CompiledMethod* method) {
+  virtual void unlock(nmethod* method) {
     nmethod* const nm = method->as_nmethod();
     ShenandoahReentrantLock* const lock = ShenandoahNMethod::lock_for_nmethod(nm);
     assert(lock != nullptr, "Not yet registered?");
     lock->unlock();
   }
 
-  virtual bool is_safe(CompiledMethod* method) {
+  virtual bool is_safe(nmethod* method) {
     if (SafepointSynchronize::is_at_safepoint() || method->is_unloading()) {
       return true;
     }
