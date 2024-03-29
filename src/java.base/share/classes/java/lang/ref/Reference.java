@@ -567,7 +567,6 @@ public abstract sealed class Reference<T>
      * Actions in a thread prior to calling {@code reachabilityFence(x)}
      * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
      * the garbage collector clears any reference to {@code x}.
-
      *
      * @apiNote
      * Reference processing or finalization may occur when the virtual machine
