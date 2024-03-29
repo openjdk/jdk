@@ -193,7 +193,6 @@ import sun.security.action.GetBooleanAction;
  * @author David Kloba
  * @since 1.2
  */
-/// PENDING(klobad) Who should be opaque in this component?
 @SuppressWarnings("serial")
 public class JRootPane extends JComponent implements Accessible {
 
