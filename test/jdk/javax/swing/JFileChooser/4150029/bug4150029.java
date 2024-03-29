@@ -37,6 +37,7 @@ import jdk.test.lib.Platform;
 /*
  * @test
  * @bug 4150029 8006087
+ * @key headful
  * @summary BackSpace keyboard button does not lead to parent directory
  * @library /test/lib
  * @build jdk.test.lib.Platform
@@ -119,16 +120,12 @@ public class bug4150029 {
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-        boolean passed = false;
         robot.waitForIdle();
 
         // check backspace key at subDir level
         clickBackSpace();
-        if (prevDir != crntDir) {
-            passed = true;
-        }
 
-        if (!passed) {
+        if (!(prevDir != crntDir)) {
             throw new RuntimeException("BackSpace does not lead to parent directory");
         }
     }
