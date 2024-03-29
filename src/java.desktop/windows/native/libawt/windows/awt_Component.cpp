@@ -80,7 +80,6 @@ LPCTSTR szAwtComponentClassName = TEXT("SunAwtComponent");
 const UINT AwtComponent::WmAwtIsComponent =
     ::RegisterWindowMessage(szAwtComponentClassName);
 
-static HWND g_hwndDown = NULL;
 static DCList activeDCList;
 static DCList passiveDCList;
 
@@ -197,10 +196,6 @@ UINT   AwtComponent::m_CodePage
                        = AwtComponent::LangToCodePage(m_idLang);
 
 jint *AwtComponent::masks;
-
-static BOOL bLeftShiftIsDown = false;
-static BOOL bRightShiftIsDown = false;
-static UINT lastShiftKeyPressed = 0; // init to safe value
 
 // Added by waleed to initialize the RTL Flags
 BOOL AwtComponent::sm_rtl = PRIMARYLANGID(GetInputLanguage()) == LANG_ARABIC ||

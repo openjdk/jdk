@@ -63,11 +63,6 @@
 
 extern "C" {
 
-/*** Private Constants ***/
-
-static const char *kJavaIntStr = "I";
-static const char *kJavaLongStr = "J";
-
 /* 2D printing uses 3 byte BGR pixels in Raster printing */
 static int J2DRasterBPP = 3;
 
