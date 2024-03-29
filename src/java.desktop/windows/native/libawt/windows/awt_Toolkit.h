@@ -413,7 +413,6 @@ public:
     INLINE void SetVerbose(long flag)   { m_verbose = (flag != 0); }
     INLINE void SetVerify(long flag)    { m_verifyComponents = (flag != 0); }
     INLINE void SetBreak(long flag)     { m_breakOnError = (flag != 0); }
-    INLINE void SetHeapCheck(long flag);
 
     static void SetBusy(BOOL busy);
 

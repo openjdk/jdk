@@ -1951,12 +1951,6 @@ HICON AwtToolkit::GetSecurityWarningIcon(UINT index, UINT w, UINT h)
     return securityWarningIcon[index];
 }
 
-void AwtToolkit::SetHeapCheck(long flag) {
-    if (flag) {
-        printf("heap checking not supported with this build\n");
-    }
-}
-
 void throw_if_shutdown(void)
 {
     AwtToolkit::GetInstance().VerifyActive();
