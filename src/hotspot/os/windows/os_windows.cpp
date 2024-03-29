@@ -4145,6 +4145,7 @@ DWORD os::win32::active_processors_in_job_object(DWORD* active_processor_groups)
     return 0;
   }
 
+  log_debug(os)("Process is running in a job with %d active processors.", processors);
   return processors;
 }
 
@@ -4561,6 +4562,12 @@ size_t os::_os_min_stack_allowed = 64 * K;
 
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
+  const char* auto_schedules_message = "Host Windows OS automatically schedules threads across all processor groups.";
+  const char* no_auto_schedules_message = "Host Windows OS does not automatically schedule threads across all processor groups.";
+
+  bool schedules_all_processor_groups = win32::is_windows_11_or_greater() || win32::is_windows_server_2022_or_greater();
+  log_debug(os)(schedules_all_processor_groups ? auto_schedules_message : no_auto_schedules_message);
+  log_debug(os)("%d logical processors found.", win32::system_logical_processor_count());
 
   // This could be set any time but all platforms
   // have to set it the same so we have to mirror Solaris.
