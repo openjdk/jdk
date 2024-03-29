@@ -66,7 +66,6 @@ class os::win32 {
   static bool   is_windows_11_or_greater();
   static bool   is_windows_server_2022_or_greater();
   static DWORD  system_logical_processor_count();
-  static void   log_general_system_processor_debug_info();
   static int windows_major_version() {
     assert(_major_version > 0, "windows version not initialized.");
     return _major_version;
@@ -114,14 +113,6 @@ class os::win32 {
   static void initialize_performance_counter();
   static void initialize_windows_version();
   static DWORD active_processors_in_job_object(DWORD* active_processor_groups = nullptr);
-
-  static bool   _logged_general_system_processor_debug_info;
-  static void set_logged_general_system_processor_debug_info(bool logged)  {
-    _logged_general_system_processor_debug_info = logged;
-  }
-  static bool logged_general_system_processor_debug_info() {
-    return _logged_general_system_processor_debug_info;
-  }
 
  public:
   // Generic interface:
