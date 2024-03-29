@@ -519,7 +519,7 @@ static void GlobalSetCursor(void* pStruct) {
     }
 
     if (!blocked) {
-        ::SetCursor(hCursor); // don't need WM_AWT_SETCURSOR
+        ::SetCursor(hCursor);
     }
 
     env->DeleteGlobalRef(((GlobalSetCursorStruct*)pStruct)->cursor);

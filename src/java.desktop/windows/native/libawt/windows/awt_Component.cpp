@@ -1297,8 +1297,6 @@ void SpyWinMessage(HWND hwnd, UINT message, LPCTSTR szComment) {
         WIN_MSG(WM_AWT_BEGIN_VALIDATE)
         WIN_MSG(WM_AWT_END_VALIDATE)
         WIN_MSG(WM_AWT_FORWARD_CHAR)
-        WIN_MSG(WM_AWT_FORWARD_BYTE)
-        WIN_MSG(WM_AWT_SET_SCROLL_INFO)
         WIN_MSG(WM_AWT_CREATECONTEXT)
         WIN_MSG(WM_AWT_DESTROYCONTEXT)
         WIN_MSG(WM_AWT_ASSOCIATECONTEXT)
@@ -1315,15 +1313,12 @@ void SpyWinMessage(HWND hwnd, UINT message, LPCTSTR szComment) {
         WIN_MSG(WM_AWT_OPENCANDIDATEWINDOW)
         WIN_MSG(WM_AWT_DLG_SHOWMODAL,)
         WIN_MSG(WM_AWT_DLG_ENDMODAL,)
-        WIN_MSG(WM_AWT_SETCURSOR,)
         WIN_MSG(WM_AWT_WAIT_FOR_SINGLE_OBJECT,)
         WIN_MSG(WM_AWT_INVOKE_METHOD,)
         WIN_MSG(WM_AWT_INVOKE_VOID_METHOD,)
         WIN_MSG(WM_AWT_GETDC)
         WIN_MSG(WM_AWT_RELEASEDC)
         WIN_MSG(WM_AWT_RELEASE_ALL_DCS)
-        WIN_MSG(WM_AWT_SHOWCURSOR)
-        WIN_MSG(WM_AWT_HIDECURSOR)
         WIN_MSG(WM_AWT_CREATE_PRINTED_PIXELS)
         WIN_MSG(WM_AWT_OBJECTLISTCLEANUP)
         default:
@@ -1410,12 +1405,6 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
             mr = mrConsume;
             break;
       }
-      case WM_AWT_SHOWCURSOR:
-          ::ShowCursor(TRUE);
-          break;
-      case WM_AWT_HIDECURSOR:
-          ::ShowCursor(FALSE);
-          break;
       case WM_CREATE: mr = WmCreate(); break;
       case WM_CLOSE:      mr = WmClose(); break;
       case WM_DESTROY:    mr = WmDestroy(); break;
@@ -1833,10 +1822,6 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
           mr = WmForwardChar(LOWORD(wParam), lParam, HIWORD(wParam));
           break;
 
-      case WM_AWT_FORWARD_BYTE:
-          mr = HandleEvent( (MSG *) lParam, (BOOL) wParam);
-          break;
-
       case WM_PASTE:
           mr = WmPaste();
           break;
@@ -1969,13 +1954,6 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
           mr = mrConsume;
           break;
 
-      case WM_AWT_SET_SCROLL_INFO: {
-          SCROLLINFO *si = (SCROLLINFO *) lParam;
-          ::SetScrollInfo(GetHWnd(), (int) wParam, si, TRUE);
-          delete si;
-          mr = mrConsume;
-          break;
-      }
       case WM_AWT_CREATE_PRINTED_PIXELS: {
           CreatePrintedPixelsStruct* cpps = (CreatePrintedPixelsStruct*)wParam;
           SIZE loc = { cpps->srcx, cpps->srcy };

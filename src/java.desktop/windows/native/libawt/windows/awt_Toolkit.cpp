@@ -1266,10 +1266,6 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
           ::PostMessage(HWND_BROADCAST, WM_PALETTEISCHANGING, NULL, NULL);
           break;
       }
-      case WM_AWT_SETCURSOR: {
-          ::SetCursor((HCURSOR)wParam);
-          return TRUE;
-      }
       /* Session management */
       case WM_QUERYENDSESSION: {
           /* Shut down cleanly */
