@@ -567,12 +567,6 @@ void SafepointSynchronize::do_cleanup_tasks() {
     // Serial cleanup using VMThread.
     cleanup.work(0);
   }
-
-  if (log_is_enabled(Debug, monitorinflation)) {
-    // The VMThread calls do_final_audit_and_print_stats() which calls
-    // audit_and_print_stats() at the Info level at VM exit time.
-    ObjectSynchronizer::audit_and_print_stats(false /* on_exit */);
-  }
 }
 
 // Methods for determining if a JavaThread is safepoint safe.

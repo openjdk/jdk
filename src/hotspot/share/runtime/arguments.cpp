@@ -1261,7 +1261,9 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
     value = &prop[key_len + 1];
   }
 
-  CDSConfig::check_system_property(key, value);
+  if (internal == ExternalProperty) {
+    CDSConfig::check_incompatible_property(key, value);
+  }
 
   if (strcmp(key, "java.compiler") == 0) {
     // we no longer support java.compiler system property, log a warning and let it get
@@ -1900,6 +1902,7 @@ bool Arguments::parse_uint(const char* value,
 
 bool Arguments::create_module_property(const char* prop_name, const char* prop_value, PropertyInternal internal) {
   assert(is_internal_module_property(prop_name), "unknown module property: '%s'", prop_name);
+  CDSConfig::check_internal_module_property(prop_name, prop_value);
   size_t prop_len = strlen(prop_name) + strlen(prop_value) + 2;
   char* property = AllocateHeap(prop_len, mtArguments);
   int ret = jio_snprintf(property, prop_len, "%s=%s", prop_name, prop_value);
@@ -1919,6 +1922,7 @@ bool Arguments::create_module_property(const char* prop_name, const char* prop_v
 
 bool Arguments::create_numbered_module_property(const char* prop_base_name, const char* prop_value, unsigned int count) {
   assert(is_internal_module_property(prop_base_name), "unknown module property: '%s'", prop_base_name);
+  CDSConfig::check_internal_module_property(prop_base_name, prop_value);
   const unsigned int props_count_limit = 1000;
   const int max_digits = 3;
   const int extra_symbols_count = 3; // includes '.', '=', '\0'
