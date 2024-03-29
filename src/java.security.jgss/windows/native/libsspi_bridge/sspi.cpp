@@ -891,21 +891,6 @@ gss_init_sec_context(OM_uint32 *minor_status,
         return GSS_S_NO_CONTEXT;
     }
 
-    goto execution;
-
-err:
-    if (firstTime) {
-        OM_uint32 dummy;
-        gss_delete_sec_context(&dummy, context_handle, GSS_C_NO_BUFFER);
-    }
-    delete newCred;
-    if (output_token->value) {
-        gss_release_buffer(NULL, output_token);
-    }
-    output_token = GSS_C_NO_BUFFER;
-    return GSS_S_FAILURE;
-
-execution:
     DWORD outFlag;
     TCHAR outName[100];
 
@@ -1029,6 +1014,17 @@ execution:
         *ret_flags |= GSS_C_PROT_READY_FLAG;
         return GSS_S_COMPLETE;
     }
+err:
+    if (firstTime) {
+        OM_uint32 dummy;
+        gss_delete_sec_context(&dummy, context_handle, GSS_C_NO_BUFFER);
+    }
+    delete newCred;
+    if (output_token->value) {
+        gss_release_buffer(NULL, output_token);
+    }
+    output_token = GSS_C_NO_BUFFER;
+    return GSS_S_FAILURE;
 }
 
 __declspec(dllexport) OM_uint32
