@@ -104,8 +104,8 @@ public class GetInstance {
     }
 
     /**
-     * Return a List of all the available Services that implement
-     * (type, algorithm). Note that the list is initialized lazily
+     * Return an iterator over all the available Services that implement
+     * (type, algorithm). Note that the iterator is initialized lazily
      * and Provider loading and lookup is only triggered when
      * necessary.
      */
@@ -115,19 +115,7 @@ public class GetInstance {
     }
 
     /**
-     * This method exists for compatibility with JCE only. It will be removed
-     * once JCE has been changed to use the replacement method.
-     * @deprecated use {@code getServices(List<ServiceId>)} instead
-     */
-    @Deprecated
-    public static Iterator<Service> getServices(String type,
-            List<String> algorithms) {
-        ProviderList list = Providers.getProviderList();
-        return list.getServices(type, algorithms);
-    }
-
-    /**
-     * Return a List of all the available Services that implement any of
+     * Return an iterator over all the available Services that implement any of
      * the specified algorithms. See getServices(String, String) for details.
      */
     public static Iterator<Service> getServices(List<ServiceId> ids) {

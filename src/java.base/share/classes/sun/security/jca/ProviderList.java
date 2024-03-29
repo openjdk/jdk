@@ -391,30 +391,16 @@ public final class ProviderList {
     }
 
     /**
-     * Return a List containing all the Services describing implementations
+     * Return an iterator over all the Services describing implementations
      * of the specified algorithms in precedence order. If no implementation
-     * exists, this method returns an empty List.
+     * exists, this method returns an empty iterator.
      *
-     * The elements of this list are determined lazily on demand.
+     * The elements of this iterator are determined lazily on demand.
      *
-     * The List returned is NOT thread safe.
+     * The iterator returned is NOT thread safe.
      */
     public Iterator<Service> getServices(String type, String algorithm) {
         return new ServiceIterator(type, algorithm);
-    }
-
-    /**
-     * This method exists for compatibility with JCE only. It will be removed
-     * once JCE has been changed to use the replacement method.
-     * @deprecated use {@code getServices(List<ServiceId>)} instead
-     */
-    @Deprecated
-    public Iterator<Service> getServices(String type, List<String> algorithms) {
-        List<ServiceId> ids = new ArrayList<>();
-        for (String alg : algorithms) {
-            ids.add(new ServiceId(type, alg));
-        }
-        return getServices(ids);
     }
 
     public Iterator<Service> getServices(List<ServiceId> ids) {
@@ -422,7 +408,7 @@ public final class ProviderList {
     }
 
     /**
-     * Inner class for a List of Services. Custom List implementation in
+     * Inner class for an iterator over Services. Customized implementation in
      * order to delay Provider initialization and lookup.
      * Not thread safe.
      */
@@ -449,7 +435,7 @@ public final class ProviderList {
         // index into config[] of the next provider we need to query
         private int providerIndex = 0;
 
-        // Matching preferred provider list for this ServiceList
+        // Matching preferred provider list for this ServiceIterator
         ArrayList<PreferredEntry> preferredList = null;
         private int preferredIndex = 0;
 
@@ -536,10 +522,12 @@ public final class ProviderList {
 
         int index;
 
+        @Override
         public boolean hasNext() {
             return tryGet(index) != null;
         }
 
+        @Override
         public Service next() {
             Service s = tryGet(index);
             if (s == null) {
@@ -549,6 +537,7 @@ public final class ProviderList {
             return s;
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
@@ -560,7 +549,7 @@ public final class ProviderList {
 
         /*
          * Return a list of all preferred entries that match the passed
-         * ServiceList.
+         * ServiceIterator.
          */
         ArrayList<PreferredEntry> getAll(ServiceIterator s) {
             if (s.ids == null) {
