@@ -402,13 +402,6 @@ public:
                              jint scrollAmount, jint wheelRotation,
                              jdouble preciseWheelRotation, MSG *msg = NULL);
 
-    /*
-     * Allocate and initialize a new java.awt.event.FocusEvent, and
-     * post it to the peer's target object.  No response is expected
-     * from the target.
-     */
-    void SendFocusEvent(jint id, HWND opposite);
-
     /* Forward a filtered event directly to the subclassed window.
        synthetic should be TRUE iff the message was generated because
        of a synthetic Java event, rather than a native event. */
