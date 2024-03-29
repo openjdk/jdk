@@ -48,10 +48,6 @@ inline void Assembler::prefixq(Address adr, Register reg, bool is_map1) {}
 inline void Assembler::prefix(Address adr, XMMRegister reg) {}
 inline void Assembler::prefixq(Address adr, XMMRegister reg) {}
 
-inline void Assembler::emit_opcode_prefix_and_encoding(int byte1, int ocp_and_encoding) {}
-inline void Assembler::emit_opcode_prefix_and_encoding(int byte1, int byte2, int ocp_and_encoding) {}
-inline void Assembler::emit_opcode_prefix_and_encoding(int byte1, int byte2, int ocp_and_encoding, int byte3) {}
-
 #endif // _LP64
 
 #endif // CPU_X86_ASSEMBLER_X86_INLINE_HPP

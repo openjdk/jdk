@@ -769,6 +769,33 @@ void Assembler::emit_operand(KRegister kreg, Register base, Register index,
                       scale, disp, rspec, post_addr_length);
 }
 
+void Assembler::emit_opcode_prefix_and_encoding(int byte1, int byte2, int ocp_and_encoding, int byte3) {
+  int opcode_prefix = (ocp_and_encoding & 0xFF00) >> 8;
+  if (opcode_prefix != 0) {
+    emit_int32(opcode_prefix, (unsigned char)byte1, byte2 | (ocp_and_encoding & 0xFF), byte3);
+  } else {
+    emit_int24((unsigned char)byte1, byte2 | (ocp_and_encoding & 0xFF), byte3);
+  }
+}
+
+void Assembler::emit_opcode_prefix_and_encoding(int byte1, int byte2, int ocp_and_encoding) {
+  int opcode_prefix = (ocp_and_encoding & 0xFF00) >> 8;
+  if (opcode_prefix != 0) {
+    emit_int24(opcode_prefix, (unsigned char)byte1, byte2 | (ocp_and_encoding & 0xFF));
+  } else {
+    emit_int16((unsigned char)byte1, byte2 | (ocp_and_encoding & 0xFF));
+  }
+}
+
+void Assembler::emit_opcode_prefix_and_encoding(int byte1, int ocp_and_encoding) {
+  int opcode_prefix = (ocp_and_encoding & 0xFF00) >> 8;
+  if (opcode_prefix != 0) {
+    emit_int16(opcode_prefix, (unsigned char)byte1 | (ocp_and_encoding & 0xFF));
+  } else {
+    emit_int8((unsigned char)byte1 | (ocp_and_encoding & 0xFF));
+  }
+}
+
 // Secret local extension to Assembler::WhichOperand:
 #define end_pc_operand (_WhichOperand_limit)
 
@@ -5416,6 +5443,7 @@ void Assembler::prefix(Prefix p) {
 }
 
 void Assembler::prefix16(int prefix) {
+  assert(UseAPX, "APX features not enabled");
   emit_int8((prefix & 0xff00) >> 8);
   emit_int8(prefix & 0xff);
 }
@@ -13049,6 +13077,7 @@ int Assembler::get_prefixq(Address adr, bool is_map1) {
 }
 
 int Assembler::get_prefixq_rex2(Address adr, bool is_map1) {
+  assert(UseAPX, "APX features not enabled");
   int bits = REXBIT_W;
   if (is_map1) bits |= REX2BIT_M0;
   bits |= get_base_prefix_bits(adr.base());
@@ -13099,6 +13128,7 @@ int Assembler::get_prefixq(Address adr, Register src, bool is_map1) {
 }
 
 int Assembler::get_prefixq_rex2(Address adr, Register src, bool is_map1) {
+  assert(UseAPX, "APX features not enabled");
   int bits = REXBIT_W;
   if (is_map1) bits |= REX2BIT_M0;
   bits |= get_base_prefix_bits(adr.base());
@@ -13223,33 +13253,6 @@ void Assembler::emit_prefix_and_int8(int prefix, int b1) {
     emit_int16(prefix, b1);
   } else {
     emit_int24((prefix & 0xFF00) >> 8, prefix & 0x00FF, b1);
-  }
-}
-
-void Assembler::emit_opcode_prefix_and_encoding(int byte1, int byte2, int ocp_and_encoding, int byte3) {
-  int opcode_prefix = (ocp_and_encoding & 0xFF00) >> 8;
-  if (opcode_prefix != 0) {
-    emit_int32(opcode_prefix, (unsigned char)byte1, byte2 | (ocp_and_encoding & 0xFF), byte3);
-  } else {
-    emit_int24((unsigned char)byte1, byte2 | (ocp_and_encoding & 0xFF), byte3);
-  }
-}
-
-void Assembler::emit_opcode_prefix_and_encoding(int byte1, int byte2, int ocp_and_encoding) {
-  int opcode_prefix = (ocp_and_encoding & 0xFF00) >> 8;
-  if (opcode_prefix != 0) {
-    emit_int24(opcode_prefix, (unsigned char)byte1, byte2 | (ocp_and_encoding & 0xFF));
-  } else {
-    emit_int16((unsigned char)byte1, byte2 | (ocp_and_encoding & 0xFF));
-  }
-}
-
-void Assembler::emit_opcode_prefix_and_encoding(int byte1, int ocp_and_encoding) {
-  int opcode_prefix = (ocp_and_encoding & 0xFF00) >> 8;
-  if (opcode_prefix != 0) {
-    emit_int16(opcode_prefix, (unsigned char)byte1 | (ocp_and_encoding & 0xFF));
-  } else {
-    emit_int8((unsigned char)byte1 | (ocp_and_encoding & 0xFF));
   }
 }
 
