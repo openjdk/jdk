@@ -44,27 +44,6 @@ static const char *HPRINTER_STR = "hPrintJob";
 #define PAPERNAME_LENGTH 64
 #define TRAYNAME_LENGTH 24
 
-
-static BOOL IsSupportedLevel(HANDLE hPrinter, DWORD dwLevel) {
-    BOOL isSupported = FALSE;
-    DWORD cbBuf = 0;
-    LPBYTE pPrinter = NULL;
-
-    DASSERT(hPrinter != NULL);
-
-    VERIFY(::GetPrinter(hPrinter, dwLevel, NULL, 0, &cbBuf) == 0);
-    if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-        pPrinter = new BYTE[cbBuf];
-        if (::GetPrinter(hPrinter, dwLevel, pPrinter, cbBuf, &cbBuf)) {
-            isSupported = TRUE;
-        }
-        delete[] pPrinter;
-    }
-
-    return isSupported;
-}
-
-
 extern "C" {
 
 JNIEXPORT jstring JNICALL
