@@ -1,0 +1,223 @@
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
+
+import javax.swing.JFileChooser;
+
+/*
+ * @test
+ * @bug 8325179
+ * @summary Verifies there's only one BasicDirectoryModel.FilesLoader thread
+ *          at any given moment
+ */
+public final class LoaderThreadCount extends ThreadGroup {
+    /** Initial number of files. */
+    private static final long NUMBER_OF_FILES = 500;
+
+    /**
+     * Number of threads running {@code fileChooser.rescanCurrentDirectory()}.
+     */
+    private static final int NUMBER_OF_THREADS = 5;
+
+    /** The barrier to start all the scanner threads simultaneously. */
+    private static final CyclicBarrier start = new CyclicBarrier(NUMBER_OF_THREADS + 1);
+
+    /** List of scanner threads. */
+    private static final List<Thread> threads = new ArrayList<>(NUMBER_OF_THREADS);
+
+    /**
+     * Stores an exception caught by any of the threads.
+     * If more exceptions are caught, they're added as suppressed exceptions.
+     */
+    private static final AtomicReference<Throwable> exception =
+            new AtomicReference<>();
+
+
+    public static void main(String[] args) throws Throwable {
+        try {
+            // Start the test in its own thread group to catch and handle
+            // all thrown exceptions, in particular in
+            // BasicDirectoryModel.FilesLoader which is created by Swing.
+            ThreadGroup threadGroup = new LoaderThreadCount();
+            Thread runner = new Thread(threadGroup,
+                                       LoaderThreadCount::wrapper,
+                                       "Test Runner");
+            runner.start();
+            runner.join();
+        } catch (Throwable throwable) {
+            handleException(throwable);
+        }
+
+        if (exception.get() != null) {
+            throw exception.get();
+        }
+    }
+
+    private static void wrapper() {
+        final long timeStart = System.currentTimeMillis();
+        try {
+            runTest(timeStart);
+        } catch (Throwable throwable) {
+            handleException(throwable);
+        } finally {
+            System.out.printf("Duration: %,d\n",
+                              (System.currentTimeMillis() - timeStart));
+        }
+    }
+
+    private static void runTest(final long timeStart) throws Throwable {
+        final Path temp = Files.createDirectory(Paths.get("fileChooser-concurrency-" + timeStart));
+
+        try {
+            createFiles(temp);
+
+            final JFileChooser fc = new JFileChooser(temp.toFile());
+
+            threads.addAll(Stream.generate(() -> new Thread(new Scanner(fc)))
+                                 .limit(NUMBER_OF_THREADS)
+                                 .toList());
+            threads.forEach(Thread::start);
+
+            int snapshots = 20;
+            List<Thread[]> threadsCapture =
+                    Stream.generate(LoaderThreadCount::getThreadSnapshot)
+                          .limit(snapshots)
+                          .toList();
+
+            threads.forEach(Thread::interrupt);
+
+            List<Long> loaderCount =
+                    threadsCapture.stream()
+                                  .map(ta -> Arrays.stream(ta)
+                                                   .filter(Objects::nonNull)
+                                                   .map(Thread::getName)
+                                                   .filter(tn -> tn.startsWith("Basic L&F File Loading Thread"))
+                                                   .count())
+                                  .filter(c -> c > 0)
+                                  .toList();
+
+            loaderCount.forEach(System.out::println);
+
+            if (loaderCount.isEmpty()) {
+                throw new RuntimeException("Invalid results: no loader threads detected");
+            }
+
+            System.out.println("Number of snapshots: " + loaderCount.size());
+
+            long count = loaderCount.stream()
+                                    .filter(n -> n > 1)
+                                    .count();
+            if (count > 0) {
+                throw new RuntimeException("Detected " + count + " snapshots "
+                                           + "with several loading threads");
+            }
+        } catch (Throwable e) {
+            threads.forEach(Thread::interrupt);
+            throw e;
+        } finally {
+            deleteFiles(temp);
+            Files.delete(temp);
+        }
+    }
+
+    private static Thread[] getThreadSnapshot() {
+        try {
+            start.await();
+            Thread.sleep(10);
+            Thread[] array = new Thread[Thread.activeCount()];
+            Thread.currentThread()
+                  .getThreadGroup()
+                  .enumerate(array, false);
+            Thread.sleep(500);
+            return array;
+        } catch (InterruptedException | BrokenBarrierException e) {
+            handleException(e);
+            throw new RuntimeException("getThreadSnapshot is interrupted");
+        }
+    }
+
+
+    private LoaderThreadCount() {
+        super("bdmConcurrency");
+    }
+
+    @Override
+    public void uncaughtException(Thread t, Throwable e) {
+        handleException(t, e);
+    }
+
+    private static void handleException(Throwable throwable) {
+        handleException(Thread.currentThread(), throwable);
+    }
+
+    private static void handleException(final Thread thread,
+                                        final Throwable throwable) {
+        System.err.println("Exception in " + thread.getName() + ": "
+                           + throwable.getClass()
+                           + (throwable.getMessage() != null
+                              ? ": " + throwable.getMessage()
+                              : ""));
+        if (!exception.compareAndSet(null, throwable)) {
+            exception.get().addSuppressed(throwable);
+        }
+        threads.stream()
+               .filter(t -> t != thread)
+               .forEach(Thread::interrupt);
+    }
+
+
+    private record Scanner(JFileChooser fileChooser)
+            implements Runnable {
+
+        @Override
+        public void run() {
+            try {
+                do {
+                    start.await();
+                    fileChooser.rescanCurrentDirectory();
+                } while (!Thread.interrupted());
+            } catch (InterruptedException | BrokenBarrierException e) {
+                // Just exit the loop
+            }
+        }
+    }
+
+    private static void createFiles(final Path parent) {
+        LongStream.range(0, LoaderThreadCount.NUMBER_OF_FILES)
+                  .mapToObj(n -> parent.resolve(n + ".file"))
+                  .forEach(LoaderThreadCount::createFile);
+    }
+
+    private static void createFile(final Path file) {
+        try {
+            Files.createFile(file);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void deleteFiles(final Path parent) throws IOException {
+        try (var stream = Files.walk(parent)) {
+            stream.filter(p -> p != parent)
+                  .forEach(LoaderThreadCount::deleteFile);
+        }
+    }
+
+    private static void deleteFile(final Path file) {
+        try {
+            Files.delete(file);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
