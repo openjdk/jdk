@@ -96,7 +96,6 @@ public:
     static void             ResetAllDesktopScales();
     static BOOL             IsPrimaryPalettized() { return primaryPalettized; }
     static int              GetDefaultDeviceIndex() { return primaryIndex; }
-    static void             DisableOffscreenAccelerationForDevice(HMONITOR hMonitor);
     static HDC              GetDCFromScreen(int screen);
     static int              GetScreenFromHMONITOR(HMONITOR mon);
 

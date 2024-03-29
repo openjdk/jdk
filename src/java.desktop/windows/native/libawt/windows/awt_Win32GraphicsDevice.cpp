@@ -802,22 +802,6 @@ void AwtWin32GraphicsDevice::ResetAllDesktopScales()
     }
 }
 
-void AwtWin32GraphicsDevice::DisableOffscreenAccelerationForDevice(
-    HMONITOR hMonitor)
-{
-    Devices::InstanceAccess devices;
-    if (hMonitor == NULL) {
-        devices->GetDevice(0)->DisableOffscreenAcceleration();
-    } else {
-        int devicesNum = devices->GetNumDevices();
-        for (int i = 0; i < devicesNum; ++i) {
-            if (devices->GetDevice(i)->GetMonitor() == hMonitor) {
-                devices->GetDevice(i)->DisableOffscreenAcceleration();
-            }
-        }
-    }
-}
-
 HMONITOR AwtWin32GraphicsDevice::GetMonitor(int deviceIndex)
 {
     Devices::InstanceAccess devices;
