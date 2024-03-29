@@ -21,79 +21,101 @@
  * questions.
  */
 
-import java.awt.BorderLayout;
-import java.awt.Button;
+import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Point;
-import java.util.ArrayList;
-import java.util.List;
+import java.awt.Robot;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+
+import javax.swing.SwingUtilities;
 
 /*
  * @test
+ * @key headful
  * @bug 4065534
  * @summary Frame.setSize() doesn't change size if window is in an iconified state
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
- * @run main/manual SizeMinimizedTest
+ * @run main SizeMinimizedTest
  */
 
 public class SizeMinimizedTest {
-    private static Frame frame2;
+    private static Frame frame;
+    private static final int INITIAL_WIDTH = 100;
+    private static final int INITIAL_HEIGHT = 100;
+    private static final int INITIAL_X = 150;
+    private static final int INITIAL_Y = 50;
+    private static final int RESET_WIDTH = 200;
+    private static final int RESET_HEIGHT = 200;
+    private static final int OFFSET = 10;
+    private static int iterationCnt = 0;
+    private static Dimension expectedSize;
+    private static Dimension frameSize;
+    private static Point expectedLoc;
+    private static Point frameLoc;
 
     public static void main(String[] args) throws Exception {
-        String INSTRUCTIONS = """
-                        (While this test runs, frame2 size and position will
-                        continuously be logged, so you can verify its changes)
-                        1. When the test starts, two frame windows will appear.
-                        Note the size of frame2.
-                        2. Minimize frame2 then click the resize button
-                        3. Restore frame2, it should be square and 200x200 pixels.
-                        4. Note the position of frame2.
-                        5. Minimize frame2 and click the move button several times.
-                        6. Restore frame2, it should have shifted to the right by
-                        about 10 pixels for every time move was clicked.
-                """;
+        Robot robot = new Robot();
+        try {
+            frame = new Frame("frame size test");
+            frame.setSize(INITIAL_WIDTH, INITIAL_HEIGHT);
+            frame.setLocation(INITIAL_X, INITIAL_Y);
+            frame.setVisible(true);
 
-        PassFailJFrame.builder()
-                .instructions(INSTRUCTIONS)
-                .rows(11)
-                .columns(50)
-                .testUI(SizeMinimizedTest::initialize)
-                .logArea()
-                .build()
-                .awaitAndCheck();
-    }
+            frame.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowOpened(WindowEvent e) {
+                    System.out.println("Initial Frame Size: " + frame.getSize());
+                    System.out.println("Initial Frame Location: " + frame.getLocationOnScreen());
+                }
+            });
+            frame.addComponentListener(new ComponentAdapter() {
+                @Override
+                public void componentResized(ComponentEvent e) {
+                    System.out.println("Frame Size: " + frame.getSize());
 
-    public static List<Frame> initialize() {
-        Frame frame1 = new Frame("frame1");
-        Button resize = new Button("resize");
-        frame1.add(resize, BorderLayout.NORTH);
-        resize.addActionListener(actionEvent -> {
-            PassFailJFrame.log("** Setting size to 200, 200 **");
-            frame2.setSize(200, 200);
-        });
-        Button move = new Button("move");
-        frame1.add(move, BorderLayout.CENTER);
-        move.addActionListener(actionEvent -> {
-            PassFailJFrame.log("** Moving right 10 pixels **");
-            Point pt = frame2.getLocation();
-            frame2.setLocation(pt.x + 10, pt.y);
-        });
-        Button quit = new Button("quit");
-        frame1.add(quit, BorderLayout.SOUTH);
-        quit.addActionListener(actionEvent -> System.exit(0));
+                    expectedSize = new Dimension(RESET_WIDTH, RESET_HEIGHT);
+                    frameSize = frame.getSize();
 
-        frame1.setSize(100, 100);
-        frame1.setLocation(10, 10);
+                    if (!expectedSize.equals(frameSize)) {
+                        throw new RuntimeException("Test Failed due to size mismatch.");
+                    }
+                }
 
-        frame2 = new Frame("frame2");
-        frame2.setSize(100, 100);
-        frame2.setLocation(150, 50);
-        frame1.setVisible(true);
-        frame2.setVisible(true);
-        List<Frame> frameList = new ArrayList<>();
-        frameList.add(frame1);
-        frameList.add(frame2);
-        return frameList;
+                @Override
+                public void componentMoved(ComponentEvent e) {
+                    System.out.println("Frame Location: " + frame.getLocationOnScreen());
+
+                    expectedLoc = new Point(INITIAL_X + OFFSET * iterationCnt, INITIAL_Y);
+                    frameLoc = frame.getLocationOnScreen();
+
+                    if (!expectedLoc.equals(frameLoc)) {
+                        throw new RuntimeException("Test Failed due to location mismatch.");
+                    }
+                }
+            });
+
+            frame.setSize(RESET_WIDTH, RESET_HEIGHT);
+            robot.waitForIdle();
+            robot.delay(100);
+
+            for (int i = 0; i < 5; i++) {
+                SwingUtilities.invokeAndWait(() -> {
+                    Point pt = frame.getLocation();
+                    frame.setLocation(pt.x + OFFSET, pt.y);
+                });
+                iterationCnt++;
+                robot.waitForIdle();
+                robot.delay(100);
+            }
+            System.out.println("Test Passed!");
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
     }
 }

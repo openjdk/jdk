@@ -33,7 +33,7 @@ import java.awt.Frame;
  */
 
 public class FrameMinimizeTest {
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         String INSTRUCTIONS = """
                 When the blank FrameMinimizeTest frame is shown, verify that
                   1. It is not resizable;

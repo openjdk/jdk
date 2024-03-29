@@ -34,7 +34,7 @@ import java.awt.Label;
  */
 
 public class FrameMaximizedTest {
-    public static void main (String args[]) throws Exception {
+    public static void main (String[] args) throws Exception {
         String INSTRUCTIONS = """
                 Maximize the frame window. Check that the right and bottom edges of the
                 window are not off the edge of the screen. If they are not, the test
