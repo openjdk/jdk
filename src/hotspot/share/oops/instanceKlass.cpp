@@ -2340,7 +2340,8 @@ jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
 }
 
 void InstanceKlass::update_methods_jmethod_cache() {
-  jmethodID* cache = methods_jmethod_ids_acquire();
+  assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
+  jmethodID* cache = _methods_jmethod_ids;
   if (cache != nullptr) {
     size_t size = idnum_allocated_count();
     size_t old_size = (size_t)cache[0];
@@ -2355,7 +2356,7 @@ void InstanceKlass::update_methods_jmethod_cache() {
       for (int i = 1; i <= (int)old_size; i++) {
         new_cache[i] = cache[i];
       }
-      release_set_methods_jmethod_ids(new_cache);
+      _methods_jmethod_ids = new_cache;
       FREE_C_HEAP_ARRAY(jmethodID, cache);
     }
   }
