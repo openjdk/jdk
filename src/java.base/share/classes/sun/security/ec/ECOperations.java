@@ -227,7 +227,7 @@ public class ECOperations {
         PointMultiplier multiplier = null;
         if (montgomeryOps == null) {
             multiplier = new DefaultMultiplier(this, affineP);
-        } else if (ecPoint == Secp256R1GeneratorMontgomeryMultiplier.generator) {
+        } else if (ecPoint.equals(Secp256R1GeneratorMontgomeryMultiplier.generator)) {
             // Lazy class loading upon function call (large static constant table)
             multiplier = Secp256R1GeneratorMontgomeryMultiplier.multiplier;
         } else {
@@ -244,7 +244,7 @@ public class ECOperations {
         PointMultiplier multiplier = null;
         if (montgomeryOps == null) {
             multiplier = new DefaultMultiplier(this, ecPoint);
-        } else if (ecPoint == Secp256R1GeneratorMontgomeryMultiplier.generator) {
+        } else if (ecPoint.equals(Secp256R1GeneratorMontgomeryMultiplier.generator)) {
             // Lazy class loading upon function call (large static constant table)
             multiplier = Secp256R1GeneratorMontgomeryMultiplier.multiplier;
         } else {

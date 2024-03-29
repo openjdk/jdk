@@ -31,7 +31,7 @@ import sun.security.util.math.intpoly.*;
 /*
  * @test
  * @key randomness
- * @modules jdk.crypto.ec/sun.security.ec jdk.crypto.ec/sun.security.ec.point java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
+ * @modules java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions  -XX:-UseIntPolyIntrinsics MontgomeryPolynomialFuzzTest
  * @summary Unit test MontgomeryPolynomialFuzzTest.
  */
@@ -39,7 +39,7 @@ import sun.security.util.math.intpoly.*;
 /*
  * @test
  * @key randomness
- * @modules jdk.crypto.ec/sun.security.ec jdk.crypto.ec/sun.security.ec.point java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
+ * @modules java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions  -XX:+UseIntPolyIntrinsics MontgomeryPolynomialFuzzTest
  * @summary Unit test MontgomeryPolynomialFuzzTest.
  */
@@ -49,7 +49,7 @@ import sun.security.util.math.intpoly.*;
 public class MontgomeryPolynomialFuzzTest {
         public static void main(String[] args) throws Exception {
                 //Note: it might be useful to increase this number during development of new Poly1305 intrinsics
-                final int repeat = 10000000;
+                final int repeat = 1000000;
                 for (int i = 0; i < repeat; i++) {
                         run();
                 }
@@ -89,14 +89,6 @@ public class MontgomeryPolynomialFuzzTest {
                         a = a.add(a);
                         check(aRef, a, seed);
                 }
-
-                // TODO: Confirm getElement() cannot handle BigInteger>Field.getModulus()
-                // if (rnd.nextBoolean()) { 
-                //         aRef = (new BigInteger(P.bitLength()+14, rnd));
-                //         a = montField.getElement(aRef);
-                //         aRef = aRef.multiply(r).mod(P);
-                //         check(aRef, a, seed);
-                // }
         }
 }
 

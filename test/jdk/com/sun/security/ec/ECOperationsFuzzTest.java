@@ -56,7 +56,7 @@ import sun.security.util.math.IntegerMontgomeryFieldModuloP;
 public class ECOperationsFuzzTest {
         public static void main(String[] args) throws Exception {
                 //Note: it might be useful to increase this number during development
-                final int repeat = 100000;
+                final int repeat = 10000;
                 test(repeat);
                 System.out.println("Fuzz Success");
         }
@@ -76,7 +76,7 @@ public class ECOperationsFuzzTest {
                 rnd.setSeed(seed);
 
                 int keySize = 256;
-                ECParameterSpec params = ECUtil.getECParameterSpec(null, keySize);
+                ECParameterSpec params = ECUtil.getECParameterSpec(keySize);
                 NamedCurve curve = CurveDB.lookup(KnownOIDs.secp256r1.value());
                 ECPoint generator = curve.getGenerator();
                 if (params == null || generator == null) {

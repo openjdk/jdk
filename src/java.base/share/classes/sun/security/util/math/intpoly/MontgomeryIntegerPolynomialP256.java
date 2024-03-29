@@ -286,13 +286,22 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial imp
         c7 &= LIMB_MASK;
         c8 &= LIMB_MASK;
 
-        // At this point, the result could overflow by one modulus. Leave unreduced, return 1 to signal number of overflown bits
-        r[0] =  c5;
-        r[1] =  c6;
-        r[2] =  c7;
-        r[3] =  c8;
-        r[4] =  c9;
-        return 1;
+        // At this point, the result could overflow by one modulus.
+        c0 = c5 - modulus[0];
+        c1 = c6 - modulus[1] + (c0 >> BITS_PER_LIMB); c0 &= LIMB_MASK;
+        c2 = c7 - modulus[2] + (c1 >> BITS_PER_LIMB); c1 &= LIMB_MASK;
+        c3 = c8 - modulus[3] + (c2 >> BITS_PER_LIMB); c2 &= LIMB_MASK;
+        c4 = c9 - modulus[4] + (c3 >> BITS_PER_LIMB); c3 &= LIMB_MASK;
+
+        long mask = c4 >> BITS_PER_LIMB; // Signed shift!
+
+        r[0] =  ((c5 & mask) | (c0 & ~mask));
+        r[1] =  ((c6 & mask) | (c1 & ~mask));
+        r[2] =  ((c7 & mask) | (c2 & ~mask));
+        r[3] =  ((c8 & mask) | (c3 & ~mask));
+        r[4] =  ((c9 & mask) | (c4 & ~mask));
+
+        return 0;
     }
 
     @Override
