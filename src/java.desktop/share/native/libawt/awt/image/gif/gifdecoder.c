@@ -82,19 +82,6 @@ if (rasline) \
 if (block) \
     (*env)->ReleasePrimitiveArrayCritical(env, blockh, block, 0)
 
-/* Place holders for the old native interface. */
-
-long
-sun_awt_image_GifImageDecoder_parseImage()
-{
-  return 0;
-}
-
-void
-sun_awt_image_GifImageDecoder_initIDs()
-{
-}
-
 static jmethodID readID;
 static jmethodID sendID;
 static jfieldID prefixID;
