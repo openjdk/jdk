@@ -294,7 +294,6 @@ void PSOldGen::resize(size_t desired_free_space) {
   new_size = clamp(new_size, min_gen_size(), max_gen_size());
 
   new_size = align_up(new_size, alignment);
-  new_size = clamp(new_size, min_gen_size(), max_gen_size());
 
   const size_t current_size = capacity_in_bytes();
 
