@@ -220,10 +220,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, NUMAStats, false,                                           \
           "Print NUMA stats in detailed heap information")                  \
                                                                             \
-  product(uintx, NUMAPageScanRate, 256,                                     \
-          "Maximum number of pages to include in the page scan procedure")  \
-          range(0, max_uintx)                                               \
-                                                                            \
   product(bool, UseAES, false,                                              \
           "Control whether AES instructions are used when available")       \
                                                                             \
@@ -897,10 +893,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, TraceOopMapRewrites, false,                                 \
           "Trace rewriting of methods during oop map generation")           \
-                                                                            \
-  product(uintx, ProcessDistributionStride, 4,                              \
-          "Stride through processors when distributing processes")          \
-          range(0, max_juint)                                               \
                                                                             \
   develop(bool, TraceFinalizerRegistration, false,                          \
           "Trace registration of final references")                         \
@@ -1977,11 +1969,11 @@ const int ObjectAlignmentInBytes = 8;
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
                                                                             \
-  product(int, LockingMode, LM_LEGACY,                                      \
+  product(int, LockingMode, LM_LIGHTWEIGHT,                                 \
           "Select locking mode: "                                           \
           "0: monitors only (LM_MONITOR), "                                 \
-          "1: monitors & legacy stack-locking (LM_LEGACY, default), "       \
-          "2: monitors & new lightweight locking (LM_LIGHTWEIGHT)")         \
+          "1: monitors & legacy stack-locking (LM_LEGACY), "                \
+          "2: monitors & new lightweight locking (LM_LIGHTWEIGHT, default)") \
           range(0, 2)                                                       \
                                                                             \
   product(uint, TrimNativeHeapInterval, 0,                                  \
