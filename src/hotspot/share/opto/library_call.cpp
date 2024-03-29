@@ -4990,7 +4990,7 @@ bool LibraryCallKit::inline_unsafe_setMemory() {
                     StubRoutines::unsafe_setmemory(),
                     "unsafe_setmemory",
                     dst_type,
-                    dst_addr, size, byte);
+                    dst_addr, size XTOP, byte);
 
   store_to_memory(control(), doing_unsafe_access_addr, intcon(0), doing_unsafe_access_bt, Compile::AliasIdxRaw, MemNode::unordered);
 

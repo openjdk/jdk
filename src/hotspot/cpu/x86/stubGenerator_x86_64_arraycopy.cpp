@@ -2498,7 +2498,7 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
                                                  address byte_fill_entry,
                                                  address short_fill_entry,
                                                  address int_fill_entry) {
-  Label L_int_aligned, L_short_aligned;
+  Label L_int_aligned, L_short_aligned, L_begin;
 
   // Input registers (before setup_arg_regs)
   const Register dest        = c_rarg0;  // destination array address
@@ -2512,6 +2512,361 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
   StubCodeMark mark(this, "StubRoutines", name);
   address start = __ pc();
 
+#if 0
+  address jmp_table_word;
+  address jmp_table_dword;
+  address jump_table_word[7];
+  address jump_table_dword[7];
+
+  __ enter(); // required for proper stackwalking of RuntimeStub frame
+  __ jmp(L_begin);
+
+  // Build jump tables
+  jump_table_word[0] = __ pc();
+// .LBB0_23:
+//         mov     word ptr [rdi + 4*rdx + 48], cx
+  __ movw(Address(rdi, rdx, Address::times_4, 48), rcx);
+  jump_table_word[1] = __ pc();
+// .LBB0_24:
+//         mov     word ptr [rdi + 4*rdx + 40], cx
+  __ movw(Address(rdi, rdx, Address::times_4, 40), rcx);
+  jump_table_word[2] = __ pc();
+// .LBB0_25:
+//         mov     word ptr [rdi + 4*rdx + 32], cx
+  __ movw(Address(rdi, rdx, Address::times_4, 32), rcx);
+  jump_table_word[3] = __ pc();
+// .LBB0_26:
+//         mov     word ptr [rdi + 4*rdx + 24], cx
+  __ movw(Address(rdi, rdx, Address::times_4, 24), rcx);
+  jump_table_word[4] = __ pc();
+// .LBB0_27:
+//         mov     word ptr [rdi + 4*rdx + 16], cx
+  __ movw(Address(rdi, rdx, Address::times_4, 16), rcx);
+  jump_table_word[5] = __ pc();
+// .LBB0_28:
+//         mov     word ptr [rdi + 4*rdx + 8], cx
+  __ movw(Address(rdi, rdx, Address::times_4, 8), rcx);
+  jump_table_word[60] = __ pc();
+// .LBB0_29:
+//         mov     word ptr [rdi + 4*rdx], cx
+//         ret
+  __ movw(Address(rdi, rdx, Address::times_4), rcx);
+  __ leave();
+  __ ret(0);
+
+  jump_table_dword[0] = __ pc();
+// .LBB0_31:
+//         mov     dword ptr [rdi + 4*rdx + 96], ecx
+  __ movl(Address(rdi, rdx, Address::times_4, 96), rcx);
+  jump_table_dword[1] = __ pc();
+// .LBB0_32:
+//         mov     dword ptr [rdi + 4*rdx + 80], ecx
+  __ movl(Address(rdi, rdx, Address::times_4, 80), rcx);
+  jump_table_dword[2] = __ pc();
+// .LBB0_33:
+//         mov     dword ptr [rdi + 4*rdx + 64], ecx
+  __ movl(Address(rdi, rdx, Address::times_4, 64), rcx);
+  jump_table_dword[3] = __ pc();
+// .LBB0_34:
+//         mov     dword ptr [rdi + 4*rdx + 48], ecx
+  __ movl(Address(rdi, rdx, Address::times_4, 48), rcx);
+  jump_table_dword[4] = __ pc();
+// .LBB0_35:
+//         mov     dword ptr [rdi + 4*rdx + 32], ecx
+  __ movl(Address(rdi, rdx, Address::times_4, 32), rcx);
+  jump_table_dword[5] = __ pc();
+// .LBB0_36:
+//         mov     dword ptr [rdi + 4*rdx + 16], ecx
+  __ movl(Address(rdi, rdx, Address::times_4, 16), rcx);
+  jump_table_dword[6] = __ pc();
+// .LBB0_37:
+//         mov     dword ptr [rdi + 4*rdx], ecx
+//         ret
+  __ movl(Address(rdi, rdx, Address::times_4), rcx);
+  __ leave();
+  __ ret(0);
+
+  __ align(8);
+  jmp_table_word = __ pc();
+  for (int i = 6; i >= 0; i--) {
+    __ emit_address(jump_table_word[i]);
+  }
+
+  jmp_table_dword = __ pc();
+  for (int i = 6; i >= 0; i--) {
+    __ emit_address(jump_table_dword[i]);
+  }
+
+  __ BIND(L_begin);
+  {
+// fill_to_memory_atomic(void*, unsigned long, unsigned char):          #
+//         mov     rax, rsi
+//         mov     r8, rdi
+//         or      r8, rsi
+//         movzx   esi, dl
+//         movabs  rcx, 72340172838076673
+//         imul    rcx, rsi
+//         test    r8b, 7
+//         je      .LBB0_1
+    __ movq(rax, rsi);
+    __ movq(r8, rdi);
+    __ orq(r8, rsi);
+    __ movzbl(rsi, rdx);
+    __ mov64(rcx, 0x0101010101010101);
+    __ imulq(rcx, rsi);
+    __ testb(r8, 0x7);
+    __ jccb(Assembler::zero, L_BB0_1);
+
+//         test    r8b, 3
+//         je      .LBB0_9
+    __ testb(r8, 0x3);
+    __ jccb(Assembler::zero, L_BB0_9);
+
+//         test    r8b, 1
+//         jne     .LBB0_22
+    __ testb(r8, 0x1);
+    __ jccb(Assembler::notZero, L_BB0_22);
+
+//         test    rax, rax
+//         je      .LBB0_30
+    __ testq(rax, rax);
+    __ jccb(Assembler::zero, L_BB0_30);
+
+//         lea     rdx, [rax + 1]
+//         cmp     rdx, 16
+//         jb      .LBB0_20
+    __ leaq(rdx, Address(rax, 1));
+    __ cmpq(rdx, 0x10);
+    __ jccb(Assembler::below, L_BB0_20);
+
+//         mov     rsi, rdx
+//         shr     rsi, 4
+//         lea     r8, [rdi + 56]
+    __ movq(rsi, rdx);
+    __ shrq(rsi, 4);
+    __ leaq(r8, Address(rdi, 56));
+
+// .LBB0_19:                               # =>This Inner Loop Header: Depth=1
+    __ BIND(L_BB0_19);
+
+//         mov     word ptr [r8 - 56], cx
+//         mov     word ptr [r8 - 48], cx
+//         mov     word ptr [r8 - 40], cx
+//         mov     word ptr [r8 - 32], cx
+//         mov     word ptr [r8 - 24], cx
+//         mov     word ptr [r8 - 16], cx
+//         mov     word ptr [r8 - 8], cx
+//         mov     word ptr [r8], cx
+//         add     r8, 64
+//         dec     rsi
+//         jne     .LBB0_19
+    __ movw(Address(r8, -56), rcx);
+    __ movw(Address(r8, -48), rcx);
+    __ movw(Address(r8, -40), rcx);
+    __ movw(Address(r8, -32), rcx);
+    __ movw(Address(r8, -24), rcx);
+    __ movw(Address(r8, -16), rcx);
+    __ movw(Address(r8, -8), rcx);
+    __ movw(Address(r8), rcx);
+    __ addq(r8, 64);
+    __ decrementq(rsi);
+    __ jccb(Assembler::notEqual, L_BB0_19);
+
+// .LBB0_20:
+//         and     rdx, -16
+//         mov     rsi, rdx
+//         not     rsi
+//         add     rsi, rax
+//         shr     rsi
+//         cmp     rsi, 6
+//         ja      .LBB0_30
+//         jmp     qword ptr [8*rsi + .LJTI0_0]
+    __ BIND(L_BB0_20);
+    __ andq(rdx, -16);
+    __ movq(rsi, rdx);
+    __ notq(rsi);
+    __ addq(rsi, rax);
+    __ shrq(rsi, 1);
+    __ cmpq(rsi, 6);
+    __ jccb(Assembler::above, L_BB0_30);
+    __ mov64(rax, (int64_t) jmp_table_word);
+    __ jmp(Address(rax, rsi, Address::times_8));
+
+// .LBB0_1:
+//         test    rax, rax
+//         je      .LBB0_30
+//         lea     rsi, [rax + 7]
+//         mov     rdx, rsi
+//         shr     rdx, 6
+//         cmp     rsi, 64
+//         jb      .LBB0_5
+//         lea     r8, [rdi + 224]
+//         mov     r9, rdx
+    __ BIND(L_BB0_1);
+    __ testq(rax, rax);
+    __ jccb(Assembler::equal, L_BB0_30);
+    __ leaq(rsi, Address(rax, 7));
+    __ movq(rdx, rsi);
+    __ shrq(rdx, 6);
+    __ cmpq(rsi, 64);
+    __ jccb(Assembler::below, L_BB0_5);
+    __ leaq(r8, Address(rdi, 224));
+    __ movq(r9, rdx);
+
+// .LBB0_4:                                # =>This Inner Loop Header: Depth=1
+//         mov     qword ptr [r8 - 224], rcx
+//         mov     qword ptr [r8 - 192], rcx
+//         mov     qword ptr [r8 - 160], rcx
+//         mov     qword ptr [r8 - 128], rcx
+//         mov     qword ptr [r8 - 96], rcx
+//         mov     qword ptr [r8 - 64], rcx
+//         mov     qword ptr [r8 - 32], rcx
+//         mov     qword ptr [r8], rcx
+//         add     r8, 256
+//         dec     r9
+//         jne     .LBB0_4
+    __ BIND(L-BB0_4);
+    __ movq(Address(r8, -224), rcx);
+    __ movq(Address(r8, -192), rcx);
+    __ movq(Address(r8, -160), rcx);
+    __ movq(Address(r8, -128), rcx);
+    __ movq(Address(r8, -96), rcx);
+    __ movq(Address(r8, -64), rcx);
+    __ movq(Address(r8, -32), rcx);
+    __ movq(Address(r8), rcx);
+    __ addq(r8, 256);
+    __ decrementq(r9);
+    __ jccb(Assembler::notEqual, L_BB0_4);
+
+// .LBB0_5:
+//         lea     r8, [8*rdx]
+//         shr     rsi, 3
+//         cmp     r8, rsi
+//         jae     .LBB0_30
+//         dec     rax
+//         shr     rax, 3
+//         shl     rdx, 8
+//         add     rdi, rdx
+//         sub     rax, r8
+//         inc     rax
+    __ BIND(L_BB0_5);
+    __ leaq(r8, Address(rdx, Address::times_8));
+    __ shrq(rsi, 3);
+    __ cmpq(r8, rsi);
+    __ jccb(Assembler::aboveEqual, L_BB0_30);
+    __ decrementq(rax);
+    __ shrq(rax, 3);
+    __ shlq(rdx, 8);
+    __ addq(rdi, rdx);
+    __ subq(rax, r8);
+    __ incrementq(rax);
+
+// .LBB0_7:                                # =>This Inner Loop Header: Depth=1
+//         mov     qword ptr [rdi], rcx
+//         add     rdi, 32
+//         dec     rax
+//         jne     .LBB0_7
+    __ BIND(L_BB0_7);
+    __ movq(Address(rdi), rcx);
+    __ addq(rdi, 32);
+    __ decrementq(rax);
+    __ jccb(Assembler::notEqual, L_BB0_7);
+
+// .LBB0_30:
+//         ret
+    __ BIND(L_BB0_30);
+    __ leave();
+    __ ret(0);
+
+// .LBB0_9:
+//         test    rax, rax
+//         je      .LBB0_30
+//         lea     rdx, [rax + 3]
+//         cmp     rdx, 32
+//         jb      .LBB0_13
+//         mov     rsi, rdx
+//         shr     rsi, 5
+//         lea     r8, [rdi + 112]
+    __ BIND(L_BB0_9);
+    __ testq(rax, rax);
+    __ jccb(Assembler::equal, L_BB0_30);
+    __ leaq(rdx, Address(rax, 3));
+    __ cmpq(rdx, 32);
+    __ jccb(Assembler::below, L_BB0_13);
+    __ movq(rsi, rdx);
+    __ shrq(rsi, 5);
+    __ leaq(r8, Address(rdi, 112));
+
+// .LBB0_12:                               # =>This Inner Loop Header: Depth=1
+//         mov     dword ptr [r8 - 112], ecx
+//         mov     dword ptr [r8 - 96], ecx
+//         mov     dword ptr [r8 - 80], ecx
+//         mov     dword ptr [r8 - 64], ecx
+//         mov     dword ptr [r8 - 48], ecx
+//         mov     dword ptr [r8 - 32], ecx
+//         mov     dword ptr [r8 - 16], ecx
+//         mov     dword ptr [r8], ecx
+//         sub     r8, -128
+//         dec     rsi
+//         jne     .LBB0_12
+    __ BIND(L_BB0_12);
+    __ movl(Address(r8, -112), rcx);
+    __ movl(Address(r8, -96), rcx);
+    __ movl(Address(r8, -80), rcx);
+    __ movl(Address(r8, -64), rcx);
+    __ movl(Address(r8, -48), rcx);
+    __ movl(Address(r8, -32), rcx);
+    __ movl(Address(r8, -16), rcx);
+    __ movl(Address(r8), rcx);
+    __ subq(r8, -128);
+    __ decrementq(rsi);
+    __ jccb(Assembler::notEqual, L_BB0_12);
+
+// .LBB0_13:
+//         and     rdx, -32
+//         mov     rsi, rdx
+//         not     rsi
+//         add     rsi, rax
+//         shr     rsi, 2
+//         cmp     rsi, 6
+//         ja      .LBB0_30
+//         jmp     qword ptr [8*rsi + .LJTI0_1]
+    __ BIND(L_BB0_13);
+    __ andq(rdx, -32);
+    __ movq(rsi, rdx);
+    __ notq(rsi);
+    __ addq(rsi, rax);
+    __ shrq(rsi, 2);
+    __ cmpq(rsi, 6);
+    __ jccb(Assembler::above, L_BB0_30);
+    __ mov64(rax, (int64_t) jmp_table_dword);
+    __ jmp(Address(rax, rsi, Address::times_8));
+
+// .LBB0_22:
+//         mov     rdx, rax
+//         jmp     _intel_fast_memset@PLT          # TAILCALL
+    __ movq(rdx, rax);
+    __ jmp(RuntimeAddress(memset));
+
+// .LJTI0_0:
+//         .quad   .LBB0_29
+//         .quad   .LBB0_28
+//         .quad   .LBB0_27
+//         .quad   .LBB0_26
+//         .quad   .LBB0_25
+//         .quad   .LBB0_24
+//         .quad   .LBB0_23
+// .LJTI0_1:
+//         .quad   .LBB0_37
+//         .quad   .LBB0_36
+//         .quad   .LBB0_35
+//         .quad   .LBB0_34
+//         .quad   .LBB0_33
+//         .quad   .LBB0_32
+//         .quad   .LBB0_31
+  }
+
+#else
   // __ enter(); // required for proper stackwalking of RuntimeStub frame
 
   // bump this on entry, not on exit:
@@ -2536,6 +2891,7 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
   __ BIND(L_int_aligned);
   __ shrptr(value, LogBytesPerInt); // size => int_count
   __ jump(RuntimeAddress(int_fill_entry));
+  #endif
 
   return start;
 }
