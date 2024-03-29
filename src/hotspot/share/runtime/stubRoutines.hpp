@@ -385,7 +385,6 @@ class StubRoutines: AllStatic {
 
   static address unsafe_setmemory()     { return _unsafe_setmemory; }
 
-  // ASGASG Not sure if this is needed
   typedef void (*UnsafeSetMemoryStub)(const void* src, size_t count, char byte);
   static UnsafeSetMemoryStub UnsafeSetMemory_stub()         { return CAST_TO_FN_PTR(UnsafeSetMemoryStub,  _unsafe_setmemory); }
 

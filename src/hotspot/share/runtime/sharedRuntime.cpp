@@ -179,7 +179,6 @@ uint SharedRuntime::_rethrow_ctr=0;
 
 uint SharedRuntime::_unsafe_set_memory_ctr=0;
 
-
 int     SharedRuntime::_ICmiss_index                    = 0;
 int     SharedRuntime::_ICmiss_count[SharedRuntime::maxICmiss_count];
 address SharedRuntime::_ICmiss_at[SharedRuntime::maxICmiss_count];
@@ -1993,7 +1992,6 @@ void SharedRuntime::print_statistics() {
   if (_rethrow_ctr) tty->print_cr("%5u rethrow handler", _rethrow_ctr);
 
   if (_unsafe_set_memory_ctr) tty->print_cr("%5u unsafe set memorys", _unsafe_set_memory_ctr);
-
 
   AdapterHandlerLibrary::print_statistics();
 

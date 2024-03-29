@@ -779,7 +779,6 @@ const TypeFunc* OptoRuntime::make_setmemory_Type() {
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
   fields[argp++] = TypePtr::NOTNULL;    // dest
-  // fields[argp++] = TypeInt::INT;        // size
   fields[argp++] = TypeLong::LONG;      // size
   fields[argp++] = Type::HALF;          // size
   fields[argp++] = TypeInt::INT;        // bytevalue

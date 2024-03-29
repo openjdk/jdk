@@ -2488,7 +2488,7 @@ address StubGenerator::generate_unsafe_copy(const char *name,
 //  Input:
 //    c_rarg0   - destination array address
 //    c_rarg1   - byte count (size_t)
-//    c_rarg2   - byte count, treated as ssize_t
+//    c_rarg2   - byte value
 //
 // Examines the alignment of the operands and dispatches
 // to an int, short, or byte fill loop.
@@ -2499,7 +2499,7 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
                                                  address int_fill_entry) {
   Label L_int_aligned, L_short_aligned, L_begin;
 
-  // Input registers (before setup_arg_regs)
+  // Input registers
   const Register dest        = c_rarg0;  // destination array address
   const Register size        = c_rarg1;  // byte count (size_t)
   const Register value       = c_rarg2;  // byte value to fill
@@ -2514,7 +2514,7 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
   // bump this on entry, not on exit:
   INC_COUNTER_NP(SharedRuntime::_unsafe_set_memory_ctr, rscratch1);
 
-  // *fill_entry requires broadcasted bytes
+  // *_fill_entry requires broadcasted bytes
   __ movzbl(bits, value);
   __ mov64(value, 0x0101010101010101);
   __ imulq(value, bits);

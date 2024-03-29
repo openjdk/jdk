@@ -273,7 +273,7 @@ class StubGenerator: public StubCodeGenerator {
   // size_t argument instead of an element count.
   //
   // Examines the alignment of the operands and dispatches
-  // to anint, short, or byte copy loop.
+  // to an int, short, or byte copy loop.
   address generate_unsafe_setmemory(const char *name, address byte_fill_entry,
                                     address short_fill_entry,
                                     address int_fill_entry);
