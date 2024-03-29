@@ -584,7 +584,6 @@ public abstract sealed class Reference<T>
      * values from the object's fields can be moved to occur earlier. If the
      * object is then no longer needed, it can become unreachable and be
      * reclaimed, even while one of its methods is still running.
-     * <p>
      * This may have surprising and undesirable effects, in particular when using
      * a Cleaner or finalizer for cleanup. If an object becomes unreachable while
      * a method of the object is running, it can lead to a race between the
