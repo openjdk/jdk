@@ -661,7 +661,7 @@ class ThreadInAsgct {
  public:
   ThreadInAsgct(Thread* thread) : _thread(thread) {
     assert(thread != nullptr, "invariant");
-    // AsyncGetCallTrace is reentrant - save the previous state.
+    // Allow AsyncGetCallTrace to be reentrant - save the previous state.
     _saved_in_asgct = thread->in_asgct();
     thread->set_in_asgct(true);
   }
