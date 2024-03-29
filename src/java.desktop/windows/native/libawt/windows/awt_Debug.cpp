@@ -70,26 +70,6 @@ void operator delete(void *ptr) throw() {
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-static void DumpRegion(HRGN rgn) {
-    DWORD size = ::GetRegionData(rgn, 0, NULL);
-    char* buffer = (char *)safe_Malloc(size);
-    memset(buffer, 0, size);
-    LPRGNDATA rgndata = (LPRGNDATA)buffer;
-    rgndata->rdh.dwSize = sizeof(RGNDATAHEADER);
-    rgndata->rdh.iType = RDH_RECTANGLES;
-    VERIFY(::GetRegionData(rgn, size, rgndata));
-
-    RECT* r = (RECT*)(buffer + rgndata->rdh.dwSize);
-    for (DWORD i=0; i<rgndata->rdh.nCount; i++) {
-        if ( !::IsRectEmpty(r) ) {
-            DTrace_PrintImpl("\trect %d %d %d %d\n", r->left, r->top, r->right, r->bottom);
-        }
-        r++;
-    }
-
-    free(buffer);
-}
-
 //
 // Declare a static object to init/fini the debug code
 //
