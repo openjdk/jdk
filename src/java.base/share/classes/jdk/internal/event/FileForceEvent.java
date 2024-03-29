@@ -56,7 +56,7 @@ public class FileForceEvent extends Event {
     }
 
     /**
-     * Actually commit a socket write event.  This is generated automatically.
+     * Actually commit an event.  The implementation is generated automatically.
      * The order of the fields must be the same as the parameters in this method.
      *
      * @param start     timestamp of the start of the operation
