@@ -158,10 +158,10 @@ Java_PopFrameTest_ensureAtBreakpoint(JNIEnv *jni, jclass cls) {
   RawMonitorLocker rml(jvmti, jni, monitor);
   int attempts = 0;
   while (!bp_sync_reached) {
-    LOG("Main: ensureAtBreakpoint: waitig 100 millis\n");
     if (++attempts > 100) {
       fatal(jni, "Main: ensureAtBreakpoint: waited 10 sec");
     }
+    LOG("Main: ensureAtBreakpoint: waitig 100 millis\n");
     rml.wait(100); // 100 milliseconds
   }
 }
