@@ -379,33 +379,6 @@ sendctl(Splash * splash, char code) {
 }
 
 int
-HandleError(Display * disp, XErrorEvent * err) {
-    // silently ignore non-fatal errors
-    /*
-    char msg[0x1000];
-    char buf[0x1000];
-    XGetErrorText(disp, err->error_code, msg, sizeof(msg));
-    fprintf(stderr, "Xerror %s, XID %x, ser# %d\n", msg, err->resourceid,
-        err->serial);
-    snprintf(buf, sizeof(buf), "%d", err->request_code);
-    XGetErrorDatabaseText(disp, "XRequest", buf, "Unknown", msg, sizeof(msg));
-    fprintf(stderr, "Major opcode %d (%s)\n", err->request_code, msg);
-    if (err->request_code > 128) {
-        fprintf(stderr, "Minor opcode %d\n", err->minor_code);
-    }
-    */
-    return 0;
-}
-
-int
-HandleIOError(Display * display) {
-    // for really bad errors, we should exit the thread we're on
-    SplashCleanup(SplashGetInstance());
-    pthread_exit(NULL);
-    return 0;
-}
-
-int
 SplashInitPlatform(Splash * splash) {
     int shapeVersionMajor, shapeVersionMinor;
 
@@ -418,8 +391,6 @@ SplashInitPlatform(Splash * splash) {
     pthread_mutex_init(&splash->lock, NULL);
 
     // We should not ignore any errors.
-    //XSetErrorHandler(HandleError);
-//    XSetIOErrorHandler(HandleIOError);
     XSetIOErrorHandler(NULL);
     splash->display = XOpenDisplay(NULL);
     if (!splash->display) {
