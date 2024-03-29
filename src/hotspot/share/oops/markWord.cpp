@@ -30,6 +30,11 @@
 
 markWord markWord::displaced_mark_helper() const {
   assert(has_displaced_mark_helper(), "check");
+#ifdef ASSERT
+  Thread* current = Thread::current();
+  assert(current->is_Java_thread() || current->is_VM_thread()
+         || SafepointSynchronize::is_at_safepoint() || current->is_suspendible_thread(), "Current thread must be suspendible");
+#endif
   if (has_monitor()) {
     // Has an inflated monitor. Must be checked before has_locker().
     ObjectMonitor* monitor = this->monitor();

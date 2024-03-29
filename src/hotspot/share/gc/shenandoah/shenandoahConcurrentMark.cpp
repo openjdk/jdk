@@ -137,7 +137,6 @@ ShenandoahConcurrentMark::ShenandoahConcurrentMark() :
 template <ShenandoahGenerationType GENERATION>
 class ShenandoahMarkConcurrentRootsTask : public WorkerTask {
 private:
-  SuspendibleThreadSetJoiner          _sts_joiner;
   ShenandoahConcurrentRootScanner     _root_scanner;
   ShenandoahObjToScanQueueSet* const  _queue_set;
   ShenandoahReferenceProcessor* const _rp;
@@ -165,6 +164,7 @@ ShenandoahMarkConcurrentRootsTask<GENERATION>::ShenandoahMarkConcurrentRootsTask
 template <ShenandoahGenerationType GENERATION>
 void ShenandoahMarkConcurrentRootsTask<GENERATION>::work(uint worker_id) {
   ShenandoahConcurrentWorkerSession worker_session(worker_id);
+  SuspendibleThreadSetJoiner stsj;
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
   ShenandoahMarkRefsClosure<GENERATION> cl(q, _rp);
   _root_scanner.roots_do(&cl, worker_id);

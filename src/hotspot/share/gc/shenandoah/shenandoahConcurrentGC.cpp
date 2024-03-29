@@ -659,6 +659,7 @@ public:
   }
 
   void work(uint worker_id) {
+    ShenandoahSuspendibleThreadSetJoiner stsj;
     // ShenandoahEvacOOMScope has to be setup by ShenandoahContextEvacuateUpdateRootsClosure.
     // Otherwise, may deadlock with watermark lock
     ShenandoahContextEvacuateUpdateRootsClosure oops_cl;
@@ -887,6 +888,7 @@ public:
   }
 
   void work(uint worker_id) {
+    ShenandoahSuspendibleThreadSetJoiner stsj;
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
     {
       ShenandoahEvacOOMScope oom;

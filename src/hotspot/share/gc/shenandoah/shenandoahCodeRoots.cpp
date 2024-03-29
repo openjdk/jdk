@@ -184,6 +184,7 @@ public:
   }
 
   virtual void work(uint worker_id) {
+    ShenandoahSuspendibleThreadSetJoiner stsj;
     _iterator.nmethods_do(&_cl);
   }
 };
