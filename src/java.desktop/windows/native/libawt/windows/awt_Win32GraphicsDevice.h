@@ -64,7 +64,6 @@ public:
     jobject                 GetJavaDevice() { return javaDevice; }
     int                     GetDeviceIndex() { return screen; }
     void                    Release();
-    void                    DisableOffscreenAcceleration();
     void                    DisableScaleAutoRefresh();
     void                    Invalidate(JNIEnv *env);
     void                    InitDesktopScales();

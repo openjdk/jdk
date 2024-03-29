@@ -712,16 +712,6 @@ float AwtWin32GraphicsDevice::GetScaleY()
     return scaleY;
 }
 
-/**
- * Disables offscreen acceleration for this device.  This
- * sets a flag in the java object that is used to determine
- * whether offscreen surfaces can be created on the device.
- */
-void AwtWin32GraphicsDevice::DisableOffscreenAcceleration()
-{
-    // REMIND: noop for now
-}
-
 void AwtWin32GraphicsDevice::DisableScaleAutoRefresh()
 {
     disableScaleAutoRefresh = TRUE;
@@ -735,7 +725,6 @@ void AwtWin32GraphicsDevice::DisableScaleAutoRefresh()
 void AwtWin32GraphicsDevice::Invalidate(JNIEnv *env)
 {
     int defIndex = AwtWin32GraphicsDevice::GetDefaultDeviceIndex();
-    DisableOffscreenAcceleration();
     jobject javaDevice = GetJavaDevice();
     if (!JNU_IsNull(env, javaDevice)) {
         JNU_CallMethodByName(env, NULL, javaDevice, "invalidate",
