@@ -1266,8 +1266,6 @@ AwtDragSource::call_dSCmouseMoved(JNIEnv* env, jobject self, jint targetActions,
     }
 }
 
-DECLARE_JAVA_CLASS(awtIEClazz, "java/awt/event/InputEvent")
-
 /**
  * Constructor
  */

@@ -264,7 +264,6 @@ class AwtDragSource : virtual public IDropSource, virtual public IDataObject {
         // static's ...
 
         static jclass           dSCClazz;
-        static jclass           awtIEClazz;
 
         static jmethodID        dSCdragenter;
         static jmethodID        dSCdragmotion;
