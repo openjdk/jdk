@@ -103,6 +103,15 @@ public class DebugOptions {
                 Arguments.of("all+thread+timestamp,properties",
                         "properties\\[.*\\|main.*\\|" + DATE_REGEX +
                                 ".*\\]((.*\\R)*)keystore\\[.*\\|main.*\\|" + DATE_REGEX + ".*\\]:",
+                        "properties:"),
+                // thread details should only be printed for properties option
+                Arguments.of("properties+thread,all",
+                        "properties\\[.*\\|main\\|.*\\]:",
+                        "keystore\\[.*\\|main\\|.*\\]:"),
+                // thread details should be printed for all statements
+                Arguments.of("properties,all+thread",
+                        "properties\\[.*\\|main.*java" +
+                                ".*\\]((.*\\R)*)keystore\\[.*\\|main.*java.*\\]:",
                         "properties:")
         );
     }

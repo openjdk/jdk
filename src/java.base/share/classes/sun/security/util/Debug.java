@@ -202,15 +202,16 @@ public class Debug {
         }
 
         // args is converted to lower case for the most part via marshal method
-        String subOpt = "";
-        try {
-            int beginIndex = args.lastIndexOf(option) + option.length();
-            int commaIndex = args.indexOf(',', beginIndex);
-            if (commaIndex == -1) commaIndex = args.length();
-            subOpt = args.substring(beginIndex, commaIndex);
-        } catch (IndexOutOfBoundsException e) {
-            // no sub option
+        int optionIndex = args.lastIndexOf(option);
+        if (optionIndex == -1) {
+            // option not in args list. Only here since "all" was present
+            // in debug property argument. "all" option already parsed
+            return;
         }
+        int beginIndex = optionIndex + option.length();
+        int commaIndex = args.indexOf(',', beginIndex);
+        if (commaIndex == -1) commaIndex = args.length();
+        String subOpt = args.substring(beginIndex, commaIndex);
         printDateTime = printDateTime || subOpt.contains(TIMESTAMP_OPTION);
         printThreadDetails = printThreadDetails || subOpt.contains(THREAD_OPTION);
     }
