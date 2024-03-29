@@ -212,6 +212,7 @@ class MuxingAttributeSet implements AttributeSet, Serializable {
                     return o;
                 }
             }
+            return null;
         }
 
         String values = Arrays.stream(as)
