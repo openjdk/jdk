@@ -187,6 +187,11 @@ define SetupJdkLibraryBody
   # Add the module specific java header dir
   $1_SRC_HEADER_FLAGS += $$(addprefix -I, $$(call GetJavaHeaderDir, $$(MODULE)))
 
+  $1_JDK_LIBS += $$($1_JDK_LIBS_$$(OPENJDK_TARGET_OS))
+  $1_JDK_LIBS += $$($1_JDK_LIBS_$$(OPENJDK_TARGET_OS_TYPE))
+  # Prepend JDK libs before external libs
+  $1_LIBS := $$($1_JDK_LIBS) $$($1_LIBS)
+
   ifneq ($$($1_EXTRA_HEADER_DIRS), )
     $1_PROCESSED_EXTRA_HEADER_DIRS := $$(foreach dir, $$($1_EXTRA_HEADER_DIRS), \
         $$(call ProcessDir, $$(dir)))
@@ -261,6 +266,19 @@ define SetupJdkExecutableBody
     $1_LIBS += $(LIBCXX)
   endif
 
+  ifeq ($$($1_SRC), )
+    ifneq ($$(MODULE), )
+      $1_SRC := $$(call FindSrcDirsForComponent, $$(MODULE), $$($1_NAME))
+    else
+      $$(error Must specify SRC in a MODULE free context)
+    endif
+  else
+    $1_SRC := $$(foreach dir, $$($1_SRC), $$(call ProcessDir, $$(dir)))
+  endif
+  ifneq ($$($1_EXTRA_SRC), )
+    $1_SRC += $$(foreach dir, $$($1_EXTRA_SRC), $$(call ProcessDir, $$(dir)))
+  endif
+
   ifeq ($$($1_VERSIONINFO_RESOURCE), )
     $1_VERSIONINFO_RESOURCE := $$(GLOBAL_VERSION_INFO_RESOURCE)
   endif
@@ -273,12 +291,37 @@ define SetupJdkExecutableBody
       -I$(TOPDIR)/src/java.base/windows/native/common \
       $$($1_EXTRA_RCFLAGS)
 
+  ifneq ($$($1_HEADERS_FROM_SRC), false)
+    $1_SRC_HEADER_FLAGS := $$(addprefix -I, $$(wildcard $$($1_SRC)))
+  endif
+
+  $1_JDK_LIBS += $$($1_JDK_LIBS_$$(OPENJDK_TARGET_OS))
+  $1_JDK_LIBS += $$($1_JDK_LIBS_$$(OPENJDK_TARGET_OS_TYPE))
+  # Prepend JDK libs before external libs
+  $1_LIBS := $$($1_JDK_LIBS) $$($1_LIBS)
+
+  ifneq ($$($1_EXTRA_HEADER_DIRS), )
+    $1_PROCESSED_EXTRA_HEADER_DIRS := $$(foreach dir, $$($1_EXTRA_HEADER_DIRS), \
+        $$(call ProcessDir, $$(dir)))
+    $1_EXTRA_HEADER_FLAGS := $$(addprefix -I, $$($1_PROCESSED_EXTRA_HEADER_DIRS))
+  endif
+
   ifneq ($$($1_DEFAULT_CFLAGS), false)
     # Set the default flags first to be able to override
     $1_CFLAGS := $$(filter-out $$($1_CFLAGS_FILTER_OUT), $$(CFLAGS_JDKEXE)) $$($1_CFLAGS)
 
     # Set the default flags first to be able to override
     $1_CXXFLAGS := $$(filter-out $$($1_CXXFLAGS_FILTER_OUT), $$(CXXFLAGS_JDKEXE)) $$($1_CXXFLAGS)
+  endif
+
+  ifneq ($$($1_CFLAGS), )
+    $1_CFLAGS += $$($1_SRC_HEADER_FLAGS) $$($1_EXTRA_HEADER_FLAGS)
+  endif
+  ifneq ($$($1_CXXFLAGS), )
+    $1_CXXFLAGS += $$($1_SRC_HEADER_FLAGS) $$($1_EXTRA_HEADER_FLAGS)
+  endif
+  ifeq ($$($1_CFLAGS)$$($1_CXXFLAGS), )
+    $1_CFLAGS += $$($1_SRC_HEADER_FLAGS) $$($1_EXTRA_HEADER_FLAGS)
   endif
 
   ifneq ($$($1_DEFAULT_LDFLAGS), false)
