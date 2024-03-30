@@ -171,7 +171,7 @@ class BuiltinException {
   CDS_JAVA_HEAP_ONLY(int _archived_root_index;)
 
 public:
-  BuiltinException() : _instance{} {
+  BuiltinException() : _instance() {
     CDS_JAVA_HEAP_ONLY(_archived_root_index = 0);
   }
 
