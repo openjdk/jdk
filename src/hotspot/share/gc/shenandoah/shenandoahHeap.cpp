@@ -87,6 +87,7 @@
 #include "runtime/java.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepointMechanism.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -2302,6 +2303,7 @@ bool ShenandoahHeap::uncommit_bitmap_slice(ShenandoahHeapRegion *r) {
 }
 
 void ShenandoahHeap::safepoint_synchronize_begin() {
+  StackWatermarkSet::safepoint_synchronize_begin();
   SuspendibleThreadSet::synchronize();
 }
 
