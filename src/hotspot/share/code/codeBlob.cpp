@@ -280,7 +280,7 @@ BufferBlob::BufferBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int 
 // Used by gtest
 BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
-    
+
   BufferBlob* blob = nullptr;
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(BufferBlob));
   assert(name != nullptr, "must provide a name");
