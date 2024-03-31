@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8318761
+ * @bug 8318761 8329118
  * @summary Test MessageFormatPattern ability to recognize and produce
  *          appropriate FormatType and FormatStyle for CompactNumberFormat.
  * @run junit CompactSubFormats
@@ -40,13 +40,15 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+// This test expects an US locale, as this locale provides distinct instances
+// for different styles.
 public class CompactSubFormats {
 
     // Ensure the built-in FormatType and FormatStyles for cnFmt are as expected
     @Test
     public void applyPatternTest() {
         var mFmt = new MessageFormat(
-                "{0,number,compact_short}{1,number,compact_long}");
+                "{0,number,compact_short}{1,number,compact_long}", Locale.US);
         var compactShort = NumberFormat.getCompactNumberInstance(
                 mFmt.getLocale(), NumberFormat.Style.SHORT);
         var compactLong = NumberFormat.getCompactNumberInstance(
@@ -63,13 +65,13 @@ public class CompactSubFormats {
         // An exception won't be thrown since 'compact_regular' will be interpreted as a
         // subformatPattern.
         assertEquals(new DecimalFormat("compact_regular"),
-                new MessageFormat("{0,number,compact_regular}").getFormatsByArgumentIndex()[0]);
+                new MessageFormat("{0,number,compact_regular}", Locale.US).getFormatsByArgumentIndex()[0]);
     }
 
     // SHORT and LONG CompactNumberFormats should produce correct patterns
     @Test
     public void toPatternTest() {
-        var mFmt = new MessageFormat("{0}{1}");
+        var mFmt = new MessageFormat("{0}{1}", Locale.US);
         mFmt.setFormatByArgumentIndex(0, NumberFormat.getCompactNumberInstance(
                 mFmt.getLocale(), NumberFormat.Style.SHORT));
         mFmt.setFormatByArgumentIndex(1, NumberFormat.getCompactNumberInstance(
@@ -80,7 +82,7 @@ public class CompactSubFormats {
     // A custom cnFmt cannot be recognized, thus does not produce any built-in pattern
     @Test
     public void badToPatternTest() {
-        var mFmt = new MessageFormat("{0}");
+        var mFmt = new MessageFormat("{0}", Locale.US);
         // Non-recognizable compactNumberFormat
         mFmt.setFormatByArgumentIndex(0, new CompactNumberFormat("",
                         DecimalFormatSymbols.getInstance(Locale.US), new String[]{""}));
