@@ -1351,18 +1351,16 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
   add(tmp1, tmp1, table1);
   lwu(tmp2, Address(tmp1));
 
-  if (upper)
+  if (upper) {
     tmp1 = v;
-  srli(tmp1, v, upper ? 24 : 22);
+    srli(tmp1, v, 24);
+  }
+  else
+    srliw(tmp1, v, 24);
   xorr(crc, crc, tmp2);
 
-  if (upper) {
-    // for 'upper' cases there's no need to clear bits other than lowest two
-    shadd(tmp1, tmp1, table0, tmp1, 2);
-  } else {
-    andi(tmp1, tmp1, (right_8_bits << 2));
-    add(tmp1, tmp1, table0);
-  }
+  // no need to clear bits other than lowest two
+  shadd(tmp1, tmp1, table0, tmp1, 2);
   lwu(tmp2, Address(tmp1));
   xorr(crc, crc, tmp2);
 }
