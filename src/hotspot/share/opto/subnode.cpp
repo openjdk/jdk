@@ -1535,52 +1535,45 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Fold cmp(add(x, c1), c2) into cmp(x, sub(c2, c1))
-  if ((cop == Op_CmpI && cmp1_op == Op_AddI && cmp2_op == Op_ConI) ||
-      (cop == Op_CmpL && cmp1_op == Op_AddL && cmp2_op == Op_ConL)) {
-    Node* x = cmp1->in(1);
-    Node* c1 = cmp1->in(2);
-    if ((c1->Opcode() == Op_ConI || c1->Opcode() == Op_ConL) &&
+  // and  cmp(sub(c2, x), c1) into cmp(sub(c2, c1), x)
+  if ((cop == Op_CmpI && (cmp1_op == Op_AddI || cmp1_op == Op_SubI) &&
+       cmp2_op == Op_ConI) ||
+      (cop == Op_CmpL && (cmp1_op == Op_AddL || cmp1_op == Op_SubL) &&
+       cmp2_op == Op_ConL)) {
+    Node* x;
+    Node* c1;
+    Node* c2;
+    if (cmp1->is_Add()) {
+      x = cmp1->in(1);
+      c1 = cmp1->in(2);
+      c2 = cmp2;
+    } else {
+      assert(cmp1->is_Sub(), "cmp1 must be sub");
+      x = cmp1->in(2);
+      c1 = cmp2;
+      c2 = cmp1->in(1);
+    }
+    BasicType bt = cop == Op_CmpI ? T_INT : T_LONG;
+    const TypeInteger* x_type = phase->type(x)->isa_integer(bt);
+    const TypeInteger* c1_type = phase->type(c1)->isa_integer(bt);
+    const TypeInteger* c2_type = phase->type(c2)->isa_integer(bt);
+    if (x_type != nullptr && c1_type != nullptr && c2_type != nullptr &&
         !is_cloop_condition(this)) {
+      // Do not fold if any node is TOP.
       // Do not modify loop exit conditions because it may prevent CountedLoop's
       // recognition of induction variables and strides.
-      BasicType bt = cmp1_op == Op_AddI ? T_INT : T_LONG;
-      const TypeInteger* x_type = phase->type(x)->isa_integer(bt);
-      if (x_type != nullptr) { // x_type can be TOP
-        const TypeInteger* c1_type = phase->type(c1)->is_integer(bt);
-        const TypeInteger* c2_type = phase->type(cmp2)->is_integer(bt);
-        bool add_no_overflow = !x_type->can_overflow(cmp1_op, c1_type);
-        bool cons_no_overflow = !c2_type->can_overflow(bt == T_INT ? Op_SubI : Op_SubL, c1_type);
-        if ((add_no_overflow && cons_no_overflow && _test.is_less()) ||
-            _test._test == BoolTest::eq || _test._test == BoolTest::ne) {
-          cmp = CmpNode::make(x, phase->transform(SubNode::make(cmp2, c1, bt)), bt);
-          cmp = phase->transform(cmp);
-          BoolNode* bn = new BoolNode(cmp, _test._test);
-          return bn;
-        }
-      }
-    }
-  }
-
-  // Fold cmp(sub(c1, x), c2) into cmp(sub(c1, c2), x)
-  if ((cop == Op_CmpI && cmp1_op == Op_SubI && cmp2_op == Op_ConI) ||
-      (cop == Op_CmpL && cmp1_op == Op_SubL && cmp2_op == Op_ConL)) {
-    Node* x = cmp1->in(2);
-    Node* c1 = cmp1->in(1);
-    if (c1->Opcode() == Op_ConI || c1->Opcode() == Op_ConL) {
-      BasicType bt = cmp1_op == Op_SubI ? T_INT : T_LONG;
-      const TypeInteger* x_type = phase->type(x)->isa_integer(bt);
-      if (x_type != nullptr) { // x_type can be TOP
-        const TypeInteger* c1_type = phase->type(c1)->is_integer(bt);
-        const TypeInteger* c2_type = phase->type(cmp2)->is_integer(bt);
-        bool sub_no_overflow = !c1_type->can_overflow(cmp1_op, x_type);
-        bool cons_no_overflow = !c1_type->can_overflow(cmp1_op, c2_type);
-        if ((sub_no_overflow && cons_no_overflow && _test.is_less()) ||
-            _test._test == BoolTest::eq || _test._test == BoolTest::ne) {
-          cmp = CmpNode::make(phase->transform(SubNode::make(c1, cmp2, bt)), x, bt);
-          cmp = phase->transform(cmp);
-          BoolNode* bn = new BoolNode(cmp, _test._test);
-          return bn;
-        }
+      bool binop_no_overflow = cmp1->is_Add()
+                                   ? !x_type->can_overflow(cmp1_op, c1_type)
+                                   : !c2_type->can_overflow(cmp1_op, x_type);
+      bool cons_no_overflow =
+          !c2_type->can_overflow(bt == T_INT ? Op_SubI : Op_SubL, c1_type);
+      if ((binop_no_overflow && cons_no_overflow && _test.is_less()) ||
+          _test._test == BoolTest::eq || _test._test == BoolTest::ne) {
+        Node *sub = phase->transform(SubNode::make(c2, c1, bt));
+        cmp = cmp1->is_Add() ? CmpNode::make(x, sub, bt)
+                              : CmpNode::make(sub, x, bt);
+        BoolNode *bn = new BoolNode(phase->transform(cmp), _test._test);
+        return bn;
       }
     }
   }

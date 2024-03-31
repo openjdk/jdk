@@ -1756,6 +1756,8 @@ bool TypeInt::can_overflow(int opcode, const TypeInteger* other) const {
   case Op_SubI:
     return subtract_underflows(_lo, other_int->_hi) ||
            subtract_overflows(_hi, other_int->_lo);
+  default:
+    assert(false, "invalid TypeInt opcode");
   }
   return true;
 }
@@ -1898,6 +1900,8 @@ bool TypeLong::can_overflow(int opcode, const TypeInteger* other) const {
   case Op_SubL:
     return subtract_underflows(_lo, other_long->_hi) ||
            subtract_overflows(_hi, other_long->_lo);
+  default:
+    assert(false, "invalid TypeLong opcode");
   }
   return true;
 }
