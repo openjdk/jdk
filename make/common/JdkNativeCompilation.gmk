@@ -126,7 +126,11 @@ SetupJdkLibrary = $(NamedParamsMacroTemplate)
 define SetupJdkLibraryBody
   ifeq ($$($1_OUTPUT_DIR), )
     ifneq ($$(MODULE), )
-      $1_OUTPUT_DIR := $$(call FindLibDirForModule, $$(MODULE))
+      ifeq ($$($1_TYPE), STATIC_LIBRARY)
+        $1_OUTPUT_DIR := $$(SUPPORT_OUTPUTDIR)/native/$$(MODULE)
+      else
+        $1_OUTPUT_DIR := $$(call FindLibDirForModule, $$(MODULE))
+      endif
     else
       $$(error Must specify OUTPUT_DIR in a MODULE free context)
     endif
@@ -290,6 +294,10 @@ define SetupJdkExecutableBody
       -D"JDK_FTYPE=0x1L" \
       -I$(TOPDIR)/src/java.base/windows/native/common \
       $$($1_EXTRA_RCFLAGS)
+
+  ifneq ($$($1_HEADERS_FROM_SRC), false)
+    $1_SRC_HEADER_FLAGS := $$(addprefix -I, $$(wildcard $$($1_SRC)))
+  endif
 
   $1_JDK_LIBS += $$($1_JDK_LIBS_$$(OPENJDK_TARGET_OS))
   $1_JDK_LIBS += $$($1_JDK_LIBS_$$(OPENJDK_TARGET_OS_TYPE))

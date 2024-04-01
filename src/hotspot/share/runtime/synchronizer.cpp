@@ -1950,38 +1950,18 @@ void ObjectSynchronizer::do_final_audit_and_print_stats() {
   log_info(monitorinflation)("Starting the final audit.");
 
   if (log_is_enabled(Info, monitorinflation)) {
-    // The other audit_and_print_stats() call is done at the Debug
-    // level at a safepoint in SafepointSynchronize::do_cleanup_tasks.
-    audit_and_print_stats(true /* on_exit */);
+    LogStreamHandle(Info, monitorinflation) ls;
+    audit_and_print_stats(&ls, true /* on_exit */);
   }
 }
 
-// This function can be called at a safepoint or it can be called when
-// we are trying to exit the VM. When we are trying to exit the VM, the
-// list walker functions can run in parallel with the other list
-// operations so spin-locking is used for safety.
-//
+// This function can be called by the MonitorDeflationThread or it can be called when
+// we are trying to exit the VM. The list walker functions can run in parallel with
+// the other list operations.
 // Calls to this function can be added in various places as a debugging
-// aid; pass 'true' for the 'on_exit' parameter to have in-use monitor
-// details logged at the Info level and 'false' for the 'on_exit'
-// parameter to have in-use monitor details logged at the Trace level.
+// aid.
 //
-void ObjectSynchronizer::audit_and_print_stats(bool on_exit) {
-  assert(on_exit || SafepointSynchronize::is_at_safepoint(), "invariant");
-
-  LogStreamHandle(Debug, monitorinflation) lsh_debug;
-  LogStreamHandle(Info, monitorinflation) lsh_info;
-  LogStreamHandle(Trace, monitorinflation) lsh_trace;
-  LogStream* ls = nullptr;
-  if (log_is_enabled(Trace, monitorinflation)) {
-    ls = &lsh_trace;
-  } else if (log_is_enabled(Debug, monitorinflation)) {
-    ls = &lsh_debug;
-  } else if (log_is_enabled(Info, monitorinflation)) {
-    ls = &lsh_info;
-  }
-  assert(ls != nullptr, "sanity check");
-
+void ObjectSynchronizer::audit_and_print_stats(outputStream* ls, bool on_exit) {
   int error_cnt = 0;
 
   ls->print_cr("Checking in_use_list:");
@@ -1993,12 +1973,14 @@ void ObjectSynchronizer::audit_and_print_stats(bool on_exit) {
     log_error(monitorinflation)("found in_use_list errors: error_cnt=%d", error_cnt);
   }
 
-  if ((on_exit && log_is_enabled(Info, monitorinflation)) ||
-      (!on_exit && log_is_enabled(Trace, monitorinflation))) {
-    // When exiting this log output is at the Info level. When called
-    // at a safepoint, this log output is at the Trace level since
-    // there can be a lot of it.
-    log_in_use_monitor_details(ls, !on_exit /* log_all */);
+  // When exiting, only log the interesting entries at the Info level.
+  // When called at intervals by the MonitorDeflationThread, log output
+  // at the Trace level since there can be a lot of it.
+  if (!on_exit && log_is_enabled(Trace, monitorinflation)) {
+    LogStreamHandle(Trace, monitorinflation) ls_tr;
+    log_in_use_monitor_details(&ls_tr, true /* log_all */);
+  } else if (on_exit) {
+    log_in_use_monitor_details(ls, false /* log_all */);
   }
 
   ls->flush();
