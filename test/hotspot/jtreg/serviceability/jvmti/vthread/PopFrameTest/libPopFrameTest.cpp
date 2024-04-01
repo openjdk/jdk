@@ -159,10 +159,10 @@ Java_PopFrameTest_ensureAtBreakpoint(JNIEnv *jni, jclass cls) {
   int attempts = 0;
   while (!bp_sync_reached) {
     if (++attempts > 100) {
-      fatal(jni, "Main: ensureAtBreakpoint: waited 10 sec");
+      fatal(jni, "Main: ensureAtBreakpoint: waited 20 sec");
     }
-    LOG("Main: ensureAtBreakpoint: waitig 100 millis\n");
-    rml.wait(100); // 100 milliseconds
+    LOG("Main: ensureAtBreakpoint: waiting 200 millis\n");
+    rml.wait(200); // 200 milliseconds
   }
 }
 
