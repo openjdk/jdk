@@ -38,7 +38,7 @@ endef
 
 ################################################################################
 define CreateStaticLibraryMicrosoft
-  $1_VARDEPS := $$($1_LIB) $$(LIBFLAGS) $$($1_LIBFLAGS) $$($1_LIBS) \
+  $1_VARDEPS := $$($1_LIB) $$(LIBFLAGS) $$($1_LIBS) \
       $$($1_EXTRA_LIBS)
   $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
       $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
@@ -50,7 +50,7 @@ define CreateStaticLibraryMicrosoft
 	$$(call LogInfo, Building static library $$($1_BASENAME))
 	$$(call MakeDir, $$($1_OUTPUT_DIR) $$($1_SYMBOLS_DIR))
 	$$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
-	    $$($1_LIB) -nologo $$(LIBFLAGS) $$($1_LIBFLAGS) -out:$$($1_TARGET) \
+	    $$($1_LIB) -nologo $$(LIBFLAGS) -out:$$($1_TARGET) \
 	        $$($1_LD_OBJ_ARG) $$($1_RES))
 endef
 

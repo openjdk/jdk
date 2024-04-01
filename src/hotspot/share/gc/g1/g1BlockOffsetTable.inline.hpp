@@ -38,14 +38,14 @@ inline HeapWord* G1BlockOffsetTablePart::block_start_reaching_into_card(const vo
 #ifdef ASSERT
   if (!_hr->is_continues_humongous()) {
     // For non-ContinuesHumongous regions, the first obj always starts from bottom.
-    u_char offset = _bot->offset_array(_bot->entry_for_addr(_hr->bottom()));
+    uint8_t offset = _bot->offset_array(_bot->entry_for_addr(_hr->bottom()));
     assert(offset == 0, "Found offset %u instead of 0 for region %u %s",
            offset, _hr->hrm_index(), _hr->get_short_type_str());
   }
 #endif
 
-  u_char* entry = _bot->entry_for_addr(addr);
-  u_char offset = _bot->offset_array(entry);
+  uint8_t* entry = _bot->entry_for_addr(addr);
+  uint8_t offset = _bot->offset_array(entry);
   while (offset >= CardTable::card_size_in_words()) {
     // The excess of the offset from N_words indicates a power of Base
     // to go back by.
@@ -58,45 +58,44 @@ inline HeapWord* G1BlockOffsetTablePart::block_start_reaching_into_card(const vo
   return q - offset;
 }
 
-u_char G1BlockOffsetTable::offset_array(u_char* addr) const {
+uint8_t G1BlockOffsetTable::offset_array(uint8_t* addr) const {
   check_address(addr, "Block offset table address out of range");
   return Atomic::load(addr);
 }
 
-void G1BlockOffsetTable::set_offset_array_raw(u_char* addr, u_char offset) {
+void G1BlockOffsetTable::set_offset_array_raw(uint8_t* addr, uint8_t offset) {
   Atomic::store(addr, offset);
 }
 
-void G1BlockOffsetTable::set_offset_array(u_char* addr, u_char offset) {
+void G1BlockOffsetTable::set_offset_array(uint8_t* addr, uint8_t offset) {
   check_address(addr, "Block offset table address out of range");
   set_offset_array_raw(addr, offset);
 }
 
-void G1BlockOffsetTable::set_offset_array(u_char* addr, HeapWord* high, HeapWord* low) {
+void G1BlockOffsetTable::set_offset_array(uint8_t* addr, HeapWord* high, HeapWord* low) {
   check_address(addr, "Block offset table address out of range");
   assert(high >= low, "addresses out of order");
   size_t offset = pointer_delta(high, low);
   check_offset(offset, "offset too large");
-  set_offset_array(addr, (u_char)offset);
+  set_offset_array(addr, (uint8_t)offset);
 }
 
-void G1BlockOffsetTable::set_offset_array(u_char* left, u_char* right, u_char offset) {
+void G1BlockOffsetTable::set_offset_array(uint8_t* left, uint8_t* right, uint8_t offset) {
   check_address(right, "Right block offset table address out of range");
   assert(left <= right, "indexes out of order");
   size_t num_cards = right - left + 1;
-  memset_with_concurrent_readers
-    (const_cast<u_char*> (left), offset, num_cards);
+  memset_with_concurrent_readers(left, offset, num_cards);
 }
 
-inline u_char* G1BlockOffsetTable::entry_for_addr(const void* const p) const {
+inline uint8_t* G1BlockOffsetTable::entry_for_addr(const void* const p) const {
   assert(_reserved.contains(p),
          "out of bounds access to block offset table");
-  u_char* result = const_cast<u_char *>(&_offset_base[uintptr_t(p) >> CardTable::card_shift()]);
+  uint8_t* result = const_cast<uint8_t*>(&_offset_base[uintptr_t(p) >> CardTable::card_shift()]);
   return result;
 }
 
-inline HeapWord* G1BlockOffsetTable::addr_for_entry(const u_char* const p) const {
-  size_t delta = pointer_delta(p, _offset_base, sizeof(u_char));
+inline HeapWord* G1BlockOffsetTable::addr_for_entry(const uint8_t* const p) const {
+  size_t delta = pointer_delta(p, _offset_base, sizeof(uint8_t));
   HeapWord* result = (HeapWord*) (delta << CardTable::card_shift());
   assert(_reserved.contains(result),
          "out of bounds accessor from block offset table");

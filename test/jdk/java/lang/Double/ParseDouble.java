@@ -193,6 +193,7 @@ public class ParseDouble {
         "\u0661e\u0661", // 1e1 in Arabic-Indic digits
         "\u06F1e\u06F1", // 1e1 in Extended Arabic-Indic digits
         "\u0967e\u0967", // 1e1 in Devanagari digits
+        "\uD835\uDFD9e\uD835\uDFD9", // 1e1 in Mathematical Alphanumeric Symbols
 
         // JCK test lex03592m3
         ".",
