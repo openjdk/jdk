@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package sun.nio.ch;
+
+import jdk.internal.event.FileForceEvent;
 
 import java.nio.channels.*;
 import java.util.concurrent.*;
@@ -50,19 +52,25 @@ public class SimpleAsynchronousFileChannelImpl
     // Used to make native read and write calls
     private static final FileDispatcher nd = new FileDispatcherImpl();
 
+    // file path
+    private final String path;
+
     // Thread-safe set of IDs of native threads, for signalling
     private final NativeThreadSet threads = new NativeThreadSet(2);
 
 
     SimpleAsynchronousFileChannelImpl(FileDescriptor fdObj,
+                                      String path,
                                       boolean reading,
                                       boolean writing,
                                       ExecutorService executor)
     {
         super(fdObj, reading, writing, executor);
+        this.path = path;
     }
 
     public static AsynchronousFileChannel open(FileDescriptor fdo,
+                                               String path,
                                                boolean reading,
                                                boolean writing,
                                                ThreadPool pool)
@@ -70,7 +78,7 @@ public class SimpleAsynchronousFileChannelImpl
         // Executor is either default or based on pool parameters
         ExecutorService executor = (pool == null) ?
             DefaultExecutorHolder.defaultExecutor : pool.executor();
-        return new SimpleAsynchronousFileChannelImpl(fdo, reading, writing, executor);
+        return new SimpleAsynchronousFileChannelImpl(fdo, path, reading, writing, executor);
     }
 
     @Override
@@ -151,8 +159,7 @@ public class SimpleAsynchronousFileChannelImpl
         }
     }
 
-    @Override
-    public void force(boolean metaData) throws IOException {
+    private void implForce(boolean metaData) throws IOException {
         int ti = threads.add();
         try {
             int n = 0;
@@ -167,6 +174,17 @@ public class SimpleAsynchronousFileChannelImpl
         } finally {
             threads.remove(ti);
         }
+    }
+
+    @Override
+    public void force(boolean metaData) throws IOException {
+        if (!FileForceEvent.enabled()) {
+            implForce(metaData);
+            return;
+        }
+        long start = FileForceEvent.timestamp();
+        implForce(metaData);
+        FileForceEvent.offer(start, path, metaData);
     }
 
     @Override
