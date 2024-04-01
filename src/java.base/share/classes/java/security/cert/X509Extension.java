@@ -165,8 +165,6 @@ public interface X509Extension {
      * <td>SubjectKeyIdentifier</td></tr>
      * <tr><th scope="row">2.5.29.15</th>
      * <td>KeyUsage</td></tr>
-     * <tr><th scope="row">2.5.29.16</th>
-     * <td>PrivateKeyUsage</td></tr>
      * <tr><th scope="row">2.5.29.17</th>
      * <td>SubjectAlternativeName</td></tr>
      * <tr><th scope="row">2.5.29.18</th>
@@ -175,12 +173,18 @@ public interface X509Extension {
      * <td>BasicConstraints</td></tr>
      * <tr><th scope="row">2.5.29.30</th>
      * <td>NameConstraints</td></tr>
+     * <tr><th scope="row">2.5.29.31</th>
+     * <td>CRLDistributionPoints</td></tr>
+     * <tr><th scope="row">2.5.29.32</th>
+     * <td>CertificatePolicies</td></tr>
      * <tr><th scope="row">2.5.29.33</th>
      * <td>PolicyMappings</td></tr>
      * <tr><th scope="row">2.5.29.35</th>
      * <td>AuthorityKeyIdentifier</td></tr>
      * <tr><th scope="row">2.5.29.36</th>
      * <td>PolicyConstraints</td></tr>
+     * <tr><th scope="row">2.5.29.37</th>
+     * <td>ExtendedKeyUsage</td></tr>
      * </tbody>
      * </table>
      *
