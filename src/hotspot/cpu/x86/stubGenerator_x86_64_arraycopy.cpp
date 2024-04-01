@@ -152,12 +152,8 @@ void StubGenerator::generate_arraycopy_stubs() {
   StubRoutines::_arrayof_jshort_fill = generate_fill(T_SHORT, true, "arrayof_jshort_fill");
   StubRoutines::_arrayof_jint_fill = generate_fill(T_INT, true, "arrayof_jint_fill");
 
-  StubRoutines::_unsafe_setmemory    = generate_unsafe_setmemory("unsafe_setmemory",
-                                                                 StubRoutines::_arrayof_jbyte_fill,
-                                                                 StubRoutines::_arrayof_jshort_fill,
-                                                                 StubRoutines::_arrayof_jint_fill);
-
-  // StubRoutines::_unsafe_setmemory = nullptr;
+  StubRoutines::_unsafe_setmemory = generate_unsafe_setmemory(
+      "unsafe_setmemory", StubRoutines::_arrayof_jbyte_fill);
 
   // We don't generate specialized code for HeapWord-aligned source
   // arrays, so just use the code we've already generated
@@ -2496,9 +2492,7 @@ address StubGenerator::generate_unsafe_copy(const char *name,
 // to an int, short, or byte fill loop.
 //
 address StubGenerator::generate_unsafe_setmemory(const char *name,
-                                                 address byte_fill_entry,
-                                                 address short_fill_entry,
-                                                 address int_fill_entry) {
+                                                 address byte_fill_entry) {
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, "StubRoutines", name);
   address start = __ pc();
@@ -2506,419 +2500,6 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
   // bump this on entry, not on exit:
   INC_COUNTER_NP(SharedRuntime::_unsafe_set_memory_ctr, rscratch1);
 
-#if 0
-  {
-    Label L_int_aligned, L_short_aligned, L_begin;
-
-    // Input registers
-    const Register dest        = c_rarg0;  // destination array address
-    const Register size        = c_rarg1;  // byte count (size_t)
-    const Register value       = c_rarg2;  // byte value to fill
-
-    // Register used as a temp
-    const Register bits        = rax;      // test copy of low bits
-    // *_fill_entry requires broadcasted bytes
-    __ movzbl(bits, value);
-    __ mov64(value, 0x0101010101010101);
-    __ imulq(value, bits);
-
-    __ mov(bits, dest);
-    __ orptr(bits, size);
-
-    // Generated fill routines expect a different argument order
-    __ xchgq(size, value);
-
-    __ testb(bits, BytesPerInt-1);
-    __ jccb(Assembler::zero, L_int_aligned);
-
-    __ testb(bits, BytesPerShort-1);
-    __ jump_cc(Assembler::notZero, RuntimeAddress(byte_fill_entry));
-
-    __ BIND(L_short_aligned);
-    __ shrptr(value, LogBytesPerShort); // size => short_count
-    __ jump(RuntimeAddress(short_fill_entry));
-
-    __ BIND(L_int_aligned);
-    __ shrptr(value, LogBytesPerInt); // size => int_count
-    __ jump(RuntimeAddress(int_fill_entry));
-  }
-#else
-#if 0
-  {
-    address jump_table_word[7];
-    address jump_table_dword[7];
-
-    address jmp_table_word = nullptr;
-    address jmp_table_dword = nullptr;
-
-    Label L_begin, L_BB0_30, L_BB0_1, L_BB0_9, L_BB0_22;
-    Label L_BB0_20, L_BB0_19, L_BB0_5, L_BB0_4, L_BB0_7;
-    Label L_BB0_13, L_BB0_12, L_byteByByte, L_Done, L_Loop;
-
-    setup_arg_regs(3);
-#define dest rdi
-#define size rsi
-#define wide_value rcx
-#define index rdx
-#define savedSize rax
-
-    __ jmp(L_begin);
-
-    // .LBB0_23:
-    //         mov     word ptr [rdi + 4*rdx + 48], cx
-    // .LBB0_24:
-    //         mov     word ptr [rdi + 4*rdx + 40], cx
-    // .LBB0_25:
-    //         mov     word ptr [rdi + 4*rdx + 32], cx
-    // .LBB0_26:
-    //         mov     word ptr [rdi + 4*rdx + 24], cx
-    // .LBB0_27:
-    //         mov     word ptr [rdi + 4*rdx + 16], cx
-    // .LBB0_28:
-    //         mov     word ptr [rdi + 4*rdx + 8], cx
-    // .LBB0_29:
-    //         mov     word ptr [rdi + 4*rdx], cx
-    //         ret
-    for (int i = 6; i >= 0; i--) {
-      jump_table_word[i] = __ pc();
-      __ movw(Address(dest, index, Address::times_4, i * 8), wide_value);
-    }
-    restore_arg_regs();
-    __ ret(0);
-
-    // .LBB0_31:
-    //         mov     dword ptr [rdi + 4*rdx + 96], ecx
-    // .LBB0_32:
-    //         mov     dword ptr [rdi + 4*rdx + 80], ecx
-    // .LBB0_33:
-    //         mov     dword ptr [rdi + 4*rdx + 64], ecx
-    // .LBB0_34:
-    //         mov     dword ptr [rdi + 4*rdx + 48], ecx
-    // .LBB0_35:
-    //         mov     dword ptr [rdi + 4*rdx + 32], ecx
-    // .LBB0_36:
-    //         mov     dword ptr [rdi + 4*rdx + 16], ecx
-    // .LBB0_37:
-    //         mov     dword ptr [rdi + 4*rdx], ecx
-    //         ret
-    for (int i = 6; i >= 0; i--) {
-      jump_table_dword[i] = __ pc();
-      __ movl(Address(dest, index, Address::times_4, i * 16), wide_value);
-    }
-    restore_arg_regs();
-    __ ret(0);
-
-    // Emit jump tables
-    __ align(8);
-
-    jmp_table_word = __ pc();
-
-    for (int i = 0; i < 7; i++) {
-      __ emit_address(jump_table_word[i]);
-    }
-
-    jmp_table_dword = __ pc();
-
-    for (int i = 0; i < 7; i++) {
-      __ emit_address(jump_table_dword[i]);
-    }
-
-    __ align(CodeEntryAlignment);
-
-    // fill_to_memory_atomic(void*, unsigned long, unsigned char):          #
-    __ BIND(L_begin);
-
-    //         test    rax, rax
-    //         je      .LBB0_30
-    __ testq(size, size);
-    __ jcc(Assembler::equal, L_BB0_30);
-#undef index
-#define value rdx
-#define rScratch3 r8
-    //         mov     rax, rsi
-    //         mov     r8, rdi
-    //         or      r8, rsi
-    //         movzx   esi, dl
-    //         movabs  rcx, 72340172838076673
-    //         imul    rcx, rsi
-    __ movq(savedSize, size);
-    __ movq(rScratch3, dest);
-    __ orq(rScratch3, size);
-#undef size
-#define rScratch2 rsi
-    __ movzbl(rScratch2, value);
-    __ mov64(wide_value, 0x0101010101010101);
-    __ imulq(wide_value, rScratch2);
-
-#undef value
-
-    //         test    r8b, 7
-    //         je      .LBB0_1
-    __ testb(rScratch3, 7);
-    __ jcc(Assembler::zero, L_BB0_1);
-
-    //         test    r8b, 3
-    //         je      .LBB0_9
-    __ testb(rScratch3, 3);
-    __ jcc(Assembler::zero, L_BB0_9);
-
-    //         test    r8b, 1
-    //         jne     .LBB0_22
-    __ testb(rScratch3, 1);
-    __ jcc(Assembler::notZero, L_BB0_22);
-
-    //         lea     rdx, [rax + 1]
-    //         cmp     rdx, 16
-    //         jb      .LBB0_20
-    //         mov     rsi, rdx
-    //         shr     rsi, 4
-    //         lea     r8, [rdi + 56]
-#define index rdx
-
-    __ leaq(index, Address(savedSize, 1));
-    __ cmpq(index, 16);
-    __ jccb(Assembler::below, L_BB0_20);
-    __ movq(rScratch2, index);
-    __ shrq(rScratch2, 4);
-    __ leaq(rScratch3, Address(dest, 56));
-
-    __ BIND(L_BB0_19);
-
-    // .LBB0_19:                               # =>This Inner Loop Header:
-    // Depth=1
-    //         mov     word ptr [r8 - 56], cx
-    //         mov     word ptr [r8 - 48], cx
-    //         mov     word ptr [r8 - 40], cx
-    //         mov     word ptr [r8 - 32], cx
-    //         mov     word ptr [r8 - 24], cx
-    //         mov     word ptr [r8 - 16], cx
-    //         mov     word ptr [r8 - 8], cx
-    //         mov     word ptr [r8], cx
-    //         add     r8, 64
-    //         dec     rsi
-    //         jne     .LBB0_19
-    for (int i = 7; i >= 0; i--) {
-      __ movw(Address(rScratch3, -(i * 8)), wide_value);
-    }
-    __ addq(rScratch3, 64);
-    __ decrementq(rScratch2);
-    __ jccb(Assembler::notEqual, L_BB0_19);
-
-    __ BIND(L_BB0_20);
-    // .LBB0_20:
-    //         and     rdx, -16
-    //         mov     rsi, rdx
-    //         not     rsi
-    //         add     rsi, rax
-    //         shr     rsi
-    //         cmp     rsi, 6
-    //         ja      .LBB0_30
-    //         jmp     qword ptr [8*rsi + .LJTI0_0]
-    __ andq(index, -16);
-    __ movq(rScratch2, index);
-    __ notq(rScratch2);
-    __ addq(rScratch2, savedSize);
-    __ shrq(rScratch2, 1);
-    __ cmpq(rScratch2, 6);
-    __ jcc(Assembler::above, L_BB0_30);
-
-    __ mov64(savedSize, (int64_t)jmp_table_word);
-    __ jmp(Address(savedSize, rScratch2, Address::times_8));
-
-#define rScratch4 r11
-    __ BIND(L_BB0_1);
-    // .LBB0_1:
-    //         test    rax, rax
-    //         je      .LBB0_30
-    //         lea     rsi, [rax + 7]
-    //         mov     rdx, rsi
-    //         shr     rdx, 6
-    //         cmp     rsi, 64
-    //         jb      .LBB0_5
-    //         lea     r8, [rdi + 224]
-    //         mov     r9, rdx
-    __ leaq(rScratch2, Address(savedSize, 7));
-    __ movq(index, rScratch2);
-    __ shrq(index, 6);
-    __ cmpq(rScratch2, 64);
-    __ jccb(Assembler::below, L_BB0_5);
-    __ leaq(rScratch3, Address(dest, 224));
-    __ movq(rScratch4, index);
-
-    __ BIND(L_BB0_4);
-    // .LBB0_4:                                # =>This Inner Loop Header:
-    // Depth=1
-    //         mov     qword ptr [r8 - 224], rcx
-    //         mov     qword ptr [r8 - 192], rcx
-    //         mov     qword ptr [r8 - 160], rcx
-    //         mov     qword ptr [r8 - 128], rcx
-    //         mov     qword ptr [r8 - 96], rcx
-    //         mov     qword ptr [r8 - 64], rcx
-    //         mov     qword ptr [r8 - 32], rcx
-    //         mov     qword ptr [r8], rcx
-    //         add     r8, 256
-    //         dec     r9
-    //         jne     .LBB0_4
-    for (int i = 7; i >= 0; i--) {
-      __ movq(Address(rScratch3, -(i * 32)), wide_value);
-    }
-    __ addq(rScratch3, 256);
-    __ decrementq(rScratch4);
-    __ jccb(Assembler::notZero, L_BB0_4);
-
-#undef rScratch4
-    __ BIND(L_BB0_5);
-    // .LBB0_5:
-    //         lea     r8, [8*rdx]
-    //         shr     rsi, 3
-    //         cmp     r8, rsi
-    //         jae     .LBB0_30
-    //         dec     rax
-    //         shr     rax, 3
-    //         shl     rdx, 8
-    //         add     rdi, rdx
-    //         sub     rax, r8
-    //         inc     rax
-    __ leaq(rScratch3, Address(index, 0, Address::times_8));
-    __ shrq(rScratch2, 3);
-    __ cmpq(rScratch3, rScratch2);
-    __ jccb(Assembler::aboveEqual, L_BB0_30);
-    __ decrementq(savedSize);
-    __ shrq(savedSize, 3);
-    __ shlq(index, 8);
-    __ addq(dest, index);
-    __ subq(savedSize, rScratch3);
-    __ incrementq(savedSize);
-
-    __ BIND(L_BB0_7);
-    // .LBB0_7:                                # =>This Inner Loop Header:
-    // Depth=1
-    //         mov     qword ptr [rdi], rcx
-    //         add     rdi, 32
-    //         dec     rax
-    //         jne     .LBB0_7
-    __ movq(Address(dest, 0), wide_value);
-    __ addq(dest, 32);
-    __ decrementq(savedSize);
-    __ jccb(Assembler::notEqual, L_BB0_7);
-
-    __ BIND(L_BB0_30);
-    // .LBB0_30:
-    //         ret
-    restore_arg_regs();
-    __ ret(0);
-
-    __ BIND(L_BB0_9);
-    // .LBB0_9:
-    //         test    rax, rax
-    //         je      .LBB0_30
-    //         lea     rdx, [rax + 3]
-    //         cmp     rdx, 32
-    //         jb      .LBB0_13
-    //         mov     rsi, rdx
-    //         shr     rsi, 5
-    //         lea     r8, [rdi + 112]
-    __ leaq(index, Address(savedSize, 3));
-    __ cmpq(index, 32);
-    __ jccb(Assembler::below, L_BB0_13);
-    __ movq(rScratch2, index);
-    __ shrq(rScratch2, 5);
-    __ leaq(rScratch3, Address(dest, 112));
-
-    __ BIND(L_BB0_12);
-    // .LBB0_12:                               # =>This Inner Loop Header:
-    // Depth=1
-    //         mov     dword ptr [r8 - 112], ecx
-    //         mov     dword ptr [r8 - 96], ecx
-    //         mov     dword ptr [r8 - 80], ecx
-    //         mov     dword ptr [r8 - 64], ecx
-    //         mov     dword ptr [r8 - 48], ecx
-    //         mov     dword ptr [r8 - 32], ecx
-    //         mov     dword ptr [r8 - 16], ecx
-    //         mov     dword ptr [r8], ecx
-    //         sub     r8, -128
-    //         dec     rsi
-    //         jne     .LBB0_12
-    for (int i = 7; i >= 0; i--) {
-      __ movl(Address(rScratch3, -(i * 16)), wide_value);
-    }
-    __ subq(rScratch3, -128);
-    __ decrementq(rScratch2);
-    __ jccb(Assembler::notEqual, L_BB0_12);
-
-    __ BIND(L_BB0_13);
-    // .LBB0_13:
-    //         and     rdx, -32
-    //         mov     rsi, rdx
-    //         not     rsi
-    //         add     rsi, rax
-    //         shr     rsi, 2
-    //         cmp     rsi, 6
-    //         ja      .LBB0_30
-    //         jmp     qword ptr [8*rsi + .LJTI0_1]
-    __ andq(index, -32);
-    __ movq(rScratch2, index);
-    __ notq(rScratch2);
-    __ addq(rScratch2, savedSize);
-    __ shrq(rScratch2, 2);
-    __ cmpq(rScratch2, 6);
-    __ jccb(Assembler::above, L_BB0_30);
-
-    __ mov64(savedSize, (int64_t)jmp_table_dword);
-    __ jmp(Address(savedSize, rScratch2, Address::times_8));
-
-#undef index
-#undef rScratch3
-#undef rScratch2
-
-    __ BIND(L_BB0_22);
-    __ cmpq(savedSize, 8);
-    __ jccb(Assembler::below, L_byteByByte);
-
-    for (int i = 0; i < 8; i++) {
-      __ movb(Address(dest, i), wide_value);
-    }
-    __ addptr(dest, 8);
-    __ subptr(savedSize, 8);
-    __ jmpb(L_BB0_22);
-
-    __ BIND(L_byteByByte);
-    __ cmpq(savedSize, 0);
-    __ jccb(Assembler::zero, L_Done);
-
-    __ BIND(L_Loop);
-    __ movb(Address(dest, 0), wide_value);
-    __ incrementq(dest);
-    __ decrementq(savedSize);
-    __ jccb(Assembler::notZero, L_Loop);
-
-    __ BIND(L_Done);
-    restore_arg_regs();
-    __ ret(0);
-    // .LBB0_22:
-    //         mov     rdx, rax
-    //         jmp     _intel_fast_memset@PLT          # TAILCALL
-    // .LJTI0_0:
-    //         .quad   .LBB0_29
-    //         .quad   .LBB0_28
-    //         .quad   .LBB0_27
-    //         .quad   .LBB0_26
-    //         .quad   .LBB0_25
-    //         .quad   .LBB0_24
-    //         .quad   .LBB0_23
-    // .LJTI0_1:
-    //         .quad   .LBB0_37
-    //         .quad   .LBB0_36
-    //         .quad   .LBB0_35
-    //         .quad   .LBB0_34
-    //         .quad   .LBB0_33
-    //         .quad   .LBB0_32
-    //         .quad   .LBB0_31
-#undef savedSize
-#undef dest
-#undef wide_value
-  }
-#else
   {
     Label L_exit, L_fillQuadwords, L_fillDwords, L_fillBytes;
 
@@ -2937,16 +2518,13 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
 #define rScratch3 r8
 #undef rScratch4
 #define rScratch4 r11
-//     fill_to_memory_atomic(unsigned char*, unsigned long, unsigned char):          #
-//         test    rsi, rsi
-//         je      .LBB0_17
+
+    //     fill_to_memory_atomic(unsigned char*, unsigned long, unsigned char)
+
     __ testq(size, size);
     __ jcc(Assembler::zero, L_exit);
-//         mov     rcx, rdi
-//         or      rcx, rsi
-//         movzx   r8d, dl
-//         movabs  rax, 72340172838076673
-//         imul    rax, r8
+
+    // Propagate byte to full register
     __ movq(rScratch1, dest);
     __ orq(rScratch1, size);
     __ movzbl(rScratch3, byteVal);
@@ -2955,29 +2533,16 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
 
 #undef byteVal
 #define rScratch2 rdx
-//         test    cl, 7
-//         je      .LBB0_24
     __ testb(rScratch1, 7);
     __ jcc(Assembler::equal, L_fillQuadwords);
 
-//         test    cl, 3
-//         je      .LBB0_3
     __ testb(rScratch1, 3);
     __ jcc(Assembler::equal, L_fillDwords);
 
-//         test    cl, 1
-//         jne     .LBB0_10
     __ testb(rScratch1, 1);
     __ jcc(Assembler::notEqual, L_fillBytes);
 
-//         lea     rdx, [rsi + 1]
-//         mov     rcx, rdx
-//         shr     rcx, 4
-//         cmp     rdx, 16
-//         jb      .LBB0_21
-//         lea     r8, [rdi + 14]
-//         mov     r9, rcx
-
+    // Fill words
     {
       Label L_wordsTail, L_wordsLoop, L_wordsTailLoop;
       //////  Set words
@@ -2991,36 +2556,18 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
 
       __ BIND(L_wordsLoop);
 
-      // .LBB0_20:                               # =>This Inner Loop Header:
-      // Depth=1
-      //         mov     word ptr [r8 - 14], ax
-      //         mov     word ptr [r8 - 12], ax
-      //         mov     word ptr [r8 - 10], ax
-      //         mov     word ptr [r8 - 8], ax
-      //         mov     word ptr [r8 - 6], ax
-      //         mov     word ptr [r8 - 4], ax
-      //         mov     word ptr [r8 - 2], ax
-      //         mov     word ptr [r8], ax
-      //         add     r8, 16
-      //         dec     r9
-      //         jne     .LBB0_20
+      // Unroll 8 word stores
       for (int i = 7; i >= 0; i--) {
         __ movw(Address(rScratch3, -(2 * i)), wide_value);
       }
+
       __ addq(rScratch3, 16);
       __ decrementq(rScratch4);
       __ jccb(Assembler::notEqual, L_wordsLoop);
 
       __ BIND(L_wordsTail);
 
-      // .LBB0_21:
-      //         shl     rcx, 3
-      //         shr     rdx
-      //         cmp     rcx, rdx
-      //         jae     .LBB0_17
-      //         dec     rsi
-      //         shr     rsi
-      //         inc     rsi
+      // Handle leftovers
       __ shlq(rScratch1, 3);
       __ shrq(rScratch2, 1);
       __ cmpq(rScratch1, rScratch2);
@@ -3031,13 +2578,6 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
 
       __ BIND(L_wordsTailLoop);
 
-      // .LBB0_23:                               # =>This Inner Loop Header:
-      // Depth=1
-      //         mov     word ptr [rdi + 2*rcx], ax
-      //         inc     rcx
-      //         cmp     rsi, rcx
-      //         jne     .LBB0_23
-      //         jmp     .LBB0_17
       __ movw(Address(dest, rScratch1, Address::times_2), wide_value);
       __ incrementq(rScratch1);
       __ cmpq(size, rScratch1);
@@ -3047,17 +2587,10 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
 
     __ BIND(L_fillQuadwords);
 
+    // Fill QUADWORDs
     {
       Label L_qwordLoop, L_qwordsTail, L_qwordsTailLoop;
 
-      // .LBB0_24:
-      //         lea     rdx, [rsi + 7]
-      //         mov     rcx, rdx
-      //         shr     rcx, 6
-      //         cmp     rdx, 64
-      //         jb      .LBB0_27
-      //         lea     r8, [rdi + 56]
-      //         mov     r9, rcx
       __ leaq(rScratch2, Address(size, 7));
       __ movq(rScratch1, rScratch2);
       __ shrq(rScratch1, 6);
@@ -3067,19 +2600,8 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
       __ movq(rScratch4, rScratch1);
 
       __ BIND(L_qwordLoop);
-      // .LBB0_26:                               # =>This Inner Loop Header:
-      // Depth=1
-      //         mov     qword ptr [r8 - 56], rax
-      //         mov     qword ptr [r8 - 48], rax
-      //         mov     qword ptr [r8 - 40], rax
-      //         mov     qword ptr [r8 - 32], rax
-      //         mov     qword ptr [r8 - 24], rax
-      //         mov     qword ptr [r8 - 16], rax
-      //         mov     qword ptr [r8 - 8], rax
-      //         mov     qword ptr [r8], rax
-      //         add     r8, 64
-      //         dec     r9
-      //         jne     .LBB0_26
+
+      // Unroll 8 qword stores
       for (int i = 7; i >= 0; i--) {
         __ movq(Address(rScratch3, -(8 * i)), wide_value);
       }
@@ -3089,14 +2611,7 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
 
       __ BIND(L_qwordsTail);
 
-      // .LBB0_27:
-      //         shl     rcx, 3
-      //         shr     rdx, 3
-      //         cmp     rcx, rdx
-      //         jae     .LBB0_17
-      //         dec     rsi
-      //         shr     rsi, 3
-      //         inc     rsi
+      // Handle leftovers
       __ shlq(rScratch1, 3);
       __ shrq(rScratch2, 3);
       __ cmpq(rScratch1, rScratch2);
@@ -3107,13 +2622,6 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
 
       __ BIND(L_qwordsTailLoop);
 
-      // .LBB0_29:                               # =>This Inner Loop Header:
-      // Depth=1
-      //         mov     qword ptr [rdi + 8*rcx], rax
-      //         inc     rcx
-      //         cmp     rsi, rcx
-      //         jne     .LBB0_29
-      //         jmp     .LBB0_17
       __ movq(Address(dest, rScratch1, Address::times_8), wide_value);
       __ incrementq(rScratch1);
       __ cmpq(size, rScratch1);
@@ -3122,16 +2630,11 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
     }
 
     __ BIND(L_fillDwords);
+
+    // Fill DWORDs
     {
       Label L_dwordLoop, L_dwordsTail, L_dwordsTailLoop;
-      // .LBB0_3:
-      //         lea     rdx, [rsi + 3]
-      //         mov     rcx, rdx
-      //         shr     rcx, 5
-      //         cmp     rdx, 32
-      //         jb      .LBB0_6
-      //         lea     r8, [rdi + 28]
-      //         mov     r9, rcx
+
       __ leaq(rScratch2, Address(size, 3));
       __ movq(rScratch1, rScratch2);
       __ shrq(rScratch1, 5);
@@ -3142,19 +2645,7 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
 
       __ BIND(L_dwordLoop);
 
-      // .LBB0_5:                                # =>This Inner Loop Header:
-      // Depth=1
-      //         mov     dword ptr [r8 - 28], eax
-      //         mov     dword ptr [r8 - 24], eax
-      //         mov     dword ptr [r8 - 20], eax
-      //         mov     dword ptr [r8 - 16], eax
-      //         mov     dword ptr [r8 - 12], eax
-      //         mov     dword ptr [r8 - 8], eax
-      //         mov     dword ptr [r8 - 4], eax
-      //         mov     dword ptr [r8], eax
-      //         add     r8, 32
-      //         dec     r9
-      //         jne     .LBB0_5
+      // Unroll 8 dword stores
       for (int i = 7; i >= 0; i--) {
         __ movl(Address(rScratch3, -(i * 4)), wide_value);
       }
@@ -3167,14 +2658,7 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
 #undef rScratch3
 #undef rScratch4
 
-      // .LBB0_6:
-      //         shl     rcx, 3
-      //         shr     rdx, 2
-      //         cmp     rcx, rdx
-      //         jae     .LBB0_17
-      //         dec     rsi
-      //         shr     rsi, 2
-      //         inc     rsi
+      // Handle leftovers
       __ shlq(rScratch1, 3);
       __ shrq(rScratch2, 2);
       __ cmpq(rScratch1, rScratch2);
@@ -3185,13 +2669,6 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
 
       __ BIND(L_dwordsTailLoop);
 
-      // .LBB0_8:                                # =>This Inner Loop Header:
-      // Depth=1
-      //         mov     dword ptr [rdi + 4*rcx], eax
-      //         inc     rcx
-      //         cmp     rsi, rcx
-      //         jne     .LBB0_8
-      //         jmp     .LBB0_17
       __ movl(Address(dest, rScratch1, Address::times_4), wide_value);
       __ incrementq(rScratch1);
       __ cmpq(size, rScratch1);
@@ -3200,6 +2677,7 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
     }
 
     __ BIND(L_fillBytes);
+#ifdef MUSL_LIBC
     {
       Label L_byteLoop, L_longByteLoop, L_byteTail, L_byteTailLoop;
 
@@ -3207,13 +2685,7 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
 #define savedSize rax
 #undef rScratch2
 #define byteVal rdx
-      // .LBB0_10:
-      //         mov     eax, esi
-      //         and     eax, 7
-      //         cmp     rsi, 8
-      //         jae     .LBB0_12
-      //         xor     ecx, ecx
-      //         jmp     .LBB0_14
+
       __ movq(savedSize, size);
       __ andq(savedSize, 7);
       __ cmpq(size, 8);
@@ -3223,41 +2695,22 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
 
       __ BIND(L_byteLoop);
 
-      // .LBB0_12:
-      //         and     rsi, -8
-      //         xor     ecx, ecx
       __ andq(size, -8);
       __ xorl(rScratch1, rScratch1);
 
       __ BIND(L_longByteLoop);
 
-      // .LBB0_13:                               # =>This Inner Loop Header:
-      // Depth=1
-      //         mov     byte ptr [rdi + rcx], dl
-      //         mov     byte ptr [rdi + rcx + 1], dl
-      //         mov     byte ptr [rdi + rcx + 2], dl
-      //         mov     byte ptr [rdi + rcx + 3], dl
-      //         mov     byte ptr [rdi + rcx + 4], dl
-      //         mov     byte ptr [rdi + rcx + 5], dl
-      //         mov     byte ptr [rdi + rcx + 6], dl
-      //         mov     byte ptr [rdi + rcx + 7], dl
-      //         add     rcx, 8
-      //         cmp     rsi, rcx
-      //         jne     .LBB0_13
+      // Unroll 8 byte stores
       for (int i = 0; i < 8; i++) {
         __ movb(Address(dest, rScratch1, Address::times_1, i), byteVal);
       }
+
       __ addq(rScratch1, 8);
       __ cmpq(size, rScratch1);
       __ jccb(Assembler::notEqual, L_longByteLoop);
 
       __ BIND(L_byteTail);
 
-      // .LBB0_14:
-      //         test    rax, rax
-      //         je      .LBB0_17
-      //         add     rdi, rcx
-      //         xor     ecx, ecx
       __ testq(savedSize, savedSize);
       __ jccb(Assembler::zero, L_exit);
       __ addq(dest, rScratch1);
@@ -3265,21 +2718,23 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
 
       __ BIND(L_byteTailLoop);
 
-      // .LBB0_16:                               # =>This Inner Loop Header:
-      // Depth=1
-      //         mov     byte ptr [rdi + rcx], dl
-      //         inc     rcx
-      //         cmp     rax, rcx
-      //         jne     .LBB0_16
       __ movb(Address(dest, rScratch1, Address::times_1), byteVal);
       __ incrementq(rScratch1);
       __ cmpq(savedSize, rScratch1);
       __ jccb(Assembler::notEqual, L_byteTailLoop);
     }
+#else  // MUSL_LIBC
+#define byteVal rdx
+    {
+      // rax has expanded byte value
+      __ movq(byteVal, rax);
+
+      __ xchgq(size, byteVal);
+      __ jump_cc(Assembler::notZero, RuntimeAddress(byte_fill_entry));
+    }
+#endif  // MUSL_LIBC
     __ BIND(L_exit);
 
-    // .LBB0_17:
-    //         ret
     restore_arg_regs();
     __ ret(0);
 
@@ -3289,8 +2744,6 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
 #undef rScratch1
 #undef byteVal
   }
-#endif
-#endif
 
   return start;
 }
