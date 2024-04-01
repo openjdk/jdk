@@ -91,6 +91,8 @@ public class DrawImage {
         pj.setPrintable(this::printImage);
         if (pj.printDialog()) {
             pj.print();
+        } else {
+            PassFailJFrame.forceFail("User cancelled printing");
         }
     }
 

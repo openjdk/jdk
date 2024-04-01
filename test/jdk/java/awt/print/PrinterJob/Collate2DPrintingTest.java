@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
