@@ -30,7 +30,6 @@ import compiler.lib.ir_framework.*;
  * @bug 8300148
  * @summary Test barriers emitted in constructors
  * @library /test/lib /
- * @requires os.arch=="aarch64" | os.arch=="x86_64"
  * @run main compiler.c2.irTests.ConstructorBarriers
  */
 public class ConstructorBarriers {
@@ -63,7 +62,7 @@ public class ConstructorBarriers {
     @Arguments(values = {Argument.RANDOM_EACH})
     @IR(failOn = IRNode.MEMBAR_RELEASE)
     @IR(failOn = IRNode.MEMBAR_STORESTORE)
-    public int classBasicEscapes(int i) {
+    public int classBasicNoEscape(int i) {
         return new ClassBasic(i).field;
     }
 
@@ -79,7 +78,7 @@ public class ConstructorBarriers {
     @Arguments(values = {Argument.RANDOM_EACH})
     @IR(failOn = IRNode.MEMBAR_RELEASE)
     @IR(failOn = IRNode.MEMBAR_STORESTORE)
-    public int classWithFinalEscapes(int i) {
+    public int classWithFinalNoEscape(int i) {
         return new ClassWithFinal(i).field;
     }
 
@@ -97,7 +96,21 @@ public class ConstructorBarriers {
     @IR(failOn = IRNode.MEMBAR_STORESTORE)
     @IR(failOn = IRNode.MEMBAR_RELEASE)
     @IR(failOn = IRNode.MEMBAR_VOLATILE)
-    public int classWithVolatileEscapes(int i) {
+    public int classWithVolatileNoEscape(int i) {
         return new ClassWithVolatile(i).field;
+    }
+
+    @Setup
+    Object[] stringBuilderSetup() {
+        return new Object[] { "foo", "bar", "baz" };
+    }
+
+    @Test
+    @Arguments(setup = "stringBuilderSetup")
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_VOLATILE)
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "3"})
+    public String stringBuilder(String s1, String s2, String s3) {
+        return new StringBuilder().append(s1).append(s2).append(s3).toString();
     }
 }
