@@ -390,8 +390,6 @@ SplashInitPlatform(Splash * splash) {
 
     pthread_mutex_init(&splash->lock, NULL);
 
-    // We should not ignore any errors.
-    XSetIOErrorHandler(NULL);
     splash->display = XOpenDisplay(NULL);
     if (!splash->display) {
         splash->isVisible = -1;
