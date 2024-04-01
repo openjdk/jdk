@@ -37,7 +37,6 @@ class CppVtableInfo;
 // Support for C++ vtables in CDS archive.
 class CppVtables : AllStatic {
   static CppVtableInfo** _index;
-  //static u4* _index;
 public:
   static char* dumptime_init(ArchiveBuilder* builder);
   static void zero_archived_vtables();

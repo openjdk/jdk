@@ -1582,13 +1582,12 @@ size_t FileMapInfo::remove_bitmap_leading_zeros(CHeapBitMap* map) {
     assert(new_zeros == 0, "Should have removed leading zeros");
   )
 
-  assert(map->size_in_bytes() < old_size, "Map size should have decreased: %ld -> %ld", old_size, map->size_in_bytes());
+  assert(map->size_in_bytes() < old_size, "Map size should have decreased");
   return old_zeros;
 }
 
 char* FileMapInfo::write_bitmap_region(const CHeapBitMap* rw_ptrmap, const CHeapBitMap* ro_ptrmap, ArchiveHeapInfo* heap_info,
                                        size_t &size_in_bytes) {
-  //size_in_bytes = ptrmap->size_in_bytes();
   size_in_bytes = rw_ptrmap->size_in_bytes() + ro_ptrmap->size_in_bytes();
 
   if (heap_info->is_used()) {
@@ -1610,8 +1609,6 @@ char* FileMapInfo::write_bitmap_region(const CHeapBitMap* rw_ptrmap, const CHeap
   // heap_info->ptrmap(): metaspace pointers in the heap region
   char* buffer = NEW_C_HEAP_ARRAY(char, size_in_bytes, mtClassShared);
   size_t written = 0;
-  // written = write_bitmap(ptrmap, buffer, written);
-  // header()->set_ptrmap_size_in_bits(ptrmap->size());
   written = write_bitmap(rw_ptrmap, buffer, written);
   header()->set_rw_ptrmap_size_in_bits(rw_ptrmap->size());
   written = write_bitmap(ro_ptrmap, buffer, written);
@@ -1901,21 +1898,12 @@ char* FileMapInfo::map_bitmap_region() {
   return bitmap_base;
 }
 
-address* rw_region_start;
-
 // This is called when we cannot map the archive at the requested[ base address (usually 0x800000000).
 // We relocate all pointers in the 2 core regions (ro, rw).
 bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
   log_debug(cds, reloc)("runtime archive relocation start");
   char* bitmap_base = map_bitmap_region();
 
-  rw_region_start = (address*)mapped_base(); // This is the low end of the rw region, which sits below the ro_region
-  if (UseNewCode) {
-    tty->print_cr("RW region start = %p, byte size = " SIZE_FORMAT, rw_region_start, region_at(MetaspaceShared::rw)->used());
-    tty->print_cr("RO region start = %p", region_at(MetaspaceShared::ro)->mapped_base());
-    tty->print_cr("RO region start is (" INTX_FORMAT " * 8) bytes above RW region start",
-                  ((address*)region_at(MetaspaceShared::ro)->mapped_base()) - rw_region_start);
-  }
   if (bitmap_base == nullptr) {
     return false; // OOM, or CRC check failure
   } else {

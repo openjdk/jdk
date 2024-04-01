@@ -108,7 +108,6 @@ CppVtableInfo* CppVtableCloner<T>::allocate_and_initialize(const char* name) {
   info->set_vtable_size(n);
   initialize(name, info);
   return info;
-  //return ArchiveBuilder::current()->buffer_to_offset_u4(info);
 }
 
 template <class T>
