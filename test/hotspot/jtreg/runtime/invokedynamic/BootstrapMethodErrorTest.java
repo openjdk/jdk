@@ -47,7 +47,7 @@ import static java.lang.constant.ConstantDescs.*;
 
 public class BootstrapMethodErrorTest {
 
-    static abstract class IndyClassloader extends ClassLoader{
+    static abstract class IndyClassloader extends ClassLoader {
 
         public IndyClassloader() {
             super(BootstrapMethodErrorTest.class.getClassLoader());
@@ -87,7 +87,7 @@ public class BootstrapMethodErrorTest {
         }
 
         byte[] defineIndyCallingClass() {
-                return of().build(ClassDesc.of(INDY_CALLER_CLASS_NAME),
+                return ClassFile.of().build(ClassDesc.of(INDY_CALLER_CLASS_NAME),
                         clb -> clb
                                 .withVersion(JAVA_8_VERSION, 0)
                                 .withFlags(ACC_SUPER | ACC_PUBLIC)
@@ -106,7 +106,7 @@ public class BootstrapMethodErrorTest {
         }
 
         byte[] defineIndyBootstrapMethodClass() {
-            return of().build(ClassDesc.of(BOOTSTRAP_METHOD_CLASS_NAME),
+            return ClassFile.of().build(ClassDesc.of(BOOTSTRAP_METHOD_CLASS_NAME),
                     clb -> clb
                             .withVersion(JAVA_8_VERSION, 0)
                             .withFlags(ACC_SUPER | ACC_PUBLIC)
@@ -194,7 +194,7 @@ public class BootstrapMethodErrorTest {
     static class InaccessibleBootstrapMethod extends IndyClassloader {
 
         byte[] defineIndyBootstrapMethodClass() {
-            return ClassFile.of(DeadCodeOption.KEEP_DEAD_CODE).build(ClassDesc.of(BOOTSTRAP_METHOD_CLASS_NAME),
+            return ClassFile.of().build(ClassDesc.of(BOOTSTRAP_METHOD_CLASS_NAME),
                     clb -> clb
                             .withVersion(JAVA_8_VERSION, 0)
                             .withFlags(ACC_SUPER | ACC_PUBLIC)
