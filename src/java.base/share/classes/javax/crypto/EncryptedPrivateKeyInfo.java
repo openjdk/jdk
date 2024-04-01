@@ -33,8 +33,6 @@ import javax.crypto.spec.PBEKeySpec;
 import java.io.IOException;
 import java.security.*;
 import java.security.spec.*;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * This class implements the {@code EncryptedPrivateKeyInfo} type
@@ -56,30 +54,6 @@ import java.util.List;
  * @see PKCS8EncodedKeySpec
  *
  * @since 1.4
- *
- *
- *
- * <pre>
- * EncryptedPrivateKeyInfo ::= SEQUENCE {
- *       encryptionAlgorithm  EncryptionAlgorithmIdentifier,
- *       encryptedData        EncryptedData
- * }
- *
- *       encryption alg's AlgID...
- *
- * PBES2Algorithms ALGORITHM-IDENTIFIER ::= {
- *       PBES2-params IDENTIFIED BY id-PBES2},
- *       ...
- * }
- *
- * id-PBES2 OBJECT IDENTIFIER ::= {pkcs-5 13}
- *
- * PBES2-params ::= SEQUENCE {
- *       keyDerivationFunc AlgorithmIdentifier {{PBES2-KDFs}},
- *       encryptionScheme AlgorithmIdentifier {{PBES2-Encs}}
- * }
- * </pre>
- *
  */
 
 public class EncryptedPrivateKeyInfo implements SecurityObject {
@@ -103,11 +77,10 @@ public class EncryptedPrivateKeyInfo implements SecurityObject {
     private static final String DEFAULT_ALGO = "PBEWithHmacSHA256AndAES_128";
 
     /**
-     * Constructs an {@code EncryptedPrivateKeyInfo} from
-     * a given Encrypted PKCS#8 ASN.1 encoding.
+     * Constructs an {@code EncryptedPrivateKeyInfo} from a given Encrypted
+     * PKCS#8 ASN.1 encoding.
      * @param encoded the ASN.1 encoding to be parsed.
-     * @throws NullPointerException if {@code encoded} is
-     * {@code null}.
+     * @throws NullPointerException if {@code encoded} is {@code null}.
      * @throws IOException if error occurs when parsing the ASN.1 encoding.
      */
     public EncryptedPrivateKeyInfo(byte[] encoded) throws IOException {

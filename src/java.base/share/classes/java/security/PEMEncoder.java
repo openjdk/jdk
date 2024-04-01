@@ -42,6 +42,7 @@ import java.security.cert.Certificate;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Objects;
 
@@ -52,20 +53,32 @@ import java.util.Objects;
  * lists (CRL). Defined in RFC 1421 and RFC 7468, PEM consists of a
  * Base64-formatted binary encoding surrounded by a type identifying header
  * and footer.
-
+ *
  * <p> Encoding is limited to classes that implement {@link SecurityObject},
  * which include classes and interfaces like
  * {@link PublicKey}, {@link PrivateKey}, {@link KeyPair},
  * {@link EncryptedPrivateKeyInfo}, {@link Certificate}, and {@link CRL}.
-
- * <p> When encrypting private key's, this class uses the Security Property
- * {@code jdk.epkcs8.defaultAlgorithm} for the default algorithm.  To configure
- * all the encryption options see {@linkplain EncryptedPrivateKeyInfo#encryptKey(
- * PrivateKey, char[], String, AlgorithmParameterSpec, Provider)} and use the
- * returned object with {@linkplain #encode}.
+ *
+ * <p> Encrypted private key PEM data can be built by calling the encode methods
+ * on a PEMEncoder instance returned by {@link #withEncryption(char[])} or
+ * by passing an {@link EncryptedPrivateKeyInfo} object into the encode methods.
+ *
+ * <p> PKCS8 v2.0 allows OneAsymmetric encoding, which is a private and public
+ * key in the same PEM.  This is supported by using the {@link KeyPair} class
+ * with the encode methods.
+ *
+ * <br>
+ * @apiNote
+ * Here is an example of encoding a PrivateKey object:
+ * <pre>{@code
+ *     PEMEncoder pe = PEMEncoder.of();
+ *     byte[] pemData = pe.encode(privKey);
+ * }</pre>
+ *
  */
 final public class PEMEncoder implements Encoder<SecurityObject> {
 
+    // Singleton instance of PEMEncoder
     final private static PEMEncoder PEM_ENCODER = new PEMEncoder(null);
 
     // If non-null, encoder is configured for encryption
@@ -158,6 +171,7 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
      * @throws IOException on any error with the object or the encoding process.
      * An exception is thrown when PEMEncoder is configured for encryption while
      * encoding a SecurityObject that does not support encryption.
+     * @see #withEncryption(char[])
      */
     public String encodeToString(SecurityObject so) throws IOException {
             return new String(encode(so), StandardCharsets.UTF_8);
@@ -171,6 +185,7 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
      * @throws IOException on any error with the object or the encoding process.
      * An exception is thrown when PEMEncoder is configured for encryption while
      * encoding a SecurityObject that does not support encryption.
+     * @see #withEncryption(char[])
      */
     @Override
     public byte[] encode(SecurityObject so) throws IOException {
@@ -231,7 +246,7 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
      *
      * <p> Only {@link PrivateKey} will be encrypted with this newly configured
      * instance.  Other {@link SecurityObject} classes that do not support
-     * encrypted PEM will cause encode() to thrown an IOException..
+     * encrypted PEM will cause encode() to throw an IOException.
      *
      * <p> Default algorithm defined by Security Property {@code
      * jdk.epkcs8.defaultAlgorithm}.  To configure all the encryption options
@@ -244,10 +259,12 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
      * @throws IOException on any encryption errors.
      */
     public PEMEncoder withEncryption(char[] password) throws IOException {
-        Objects.requireNonNull(password);
+        char[] pwd = password.clone();
+        Objects.requireNonNull(pwd);
 
         // PBEKeySpec clones the password array
-        PBEKeySpec spec = new PBEKeySpec(password);
+        PBEKeySpec spec = new PBEKeySpec(pwd);
+        Arrays.fill(pwd, (char)0x0);
 
         try {
             SecretKeyFactory factory;

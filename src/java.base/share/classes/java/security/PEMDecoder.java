@@ -42,30 +42,42 @@ import java.util.Base64;
 import java.util.Objects;
 
 /**
- * PEMDecoder is an immutable Privacy-Enhanced Mail (PEM) decoding class.
- * Decoding will return a {@link SecurityObject} unless specified by the
- * specialized methods.  {@code instanceof} can be used to determine what
- * SecurityObject was returned with heterogenous key, certificate, or CRL usage.
- *
- * <p> PEM is a textual encoding used for storing and transferring security
+ * <p>PEM is a textual encoding used for storing and transferring security
  * objects, such as asymmetric keys, certificates, and certificate revocation
  * lists (CRL). Defined in RFC 1421 and RFC 7468, PEM consists of a
  * Base64-formatted binary encoding surrounded by a type identifying header
  * and footer.
-
- * <p> The PEMEncoder returned by {@linkplain #withFactory} and/or
- * {@linkplain #withDecryption} are immutably configuration.  Configuring an
- * instance for decryption does not prevent decoding with unencrypted PEM. Any
- * encrypted PEM that does not use the configured password will cause an
+ *
+ * <p>PEMDecoder is an immutable Privacy-Enhanced Mail (PEM) decoding class.
+ * Decoding will return a {@link SecurityObject} or class that implements
+ * {@link SecurityObject} depending on the decode method used.
+ *
+ * <p>There are four methods to complete the decoding process. They each return
+ * a {@link SecurityObject} for which the caller can use instanceof or switch
+ * when processing the result. If the developer knows the class type being
+ * decoded, the two {@code decode} methods that take a {@code Class<S>}
+ * argument, can be used to specify the returned object class. If the class
+ * does not match the PEM type, an IOException is thrown.
+ *
+ * When passing input data into {@code decode}, the application is responsible
+ * for processing input data ahead of the PEM text. All data before the PEM
+ * header will be ignored.
+ *
+ * <p>A new immutable PEMDecoder instance is returned by
+ * {@linkplain #withFactory} and/or {@linkplain #withDecryption}.  Configuring
+ * an instance for decryption does not prevent decoding with unencrypted PEM.
+ * Any encrypted PEM that does not use the configured password will cause an
  * exception. A decoder instance not configured with decryption will return an
  * {@link EncryptedPrivateKeyInfo} with encrypted PEM.  EncryptedPrivateKeyInfo
  * methods must be used to retrieve the {@link PrivateKey}.
  *
  */
+
 final public class PEMDecoder implements Decoder<SecurityObject> {
     final private Provider factory;
     final private char[] password;
 
+    // Singleton instance for PEMDecoder
     final private static PEMDecoder PEM_DECODER = new PEMDecoder(null, null);
 
     /**
@@ -81,7 +93,8 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
     }
 
     /**
-     * Returns a instance of PEMDecoder.
+     * Returns an instance of PEMDecoder.  This instance may be repeatedly used
+     * to decode different PEM text.
      *
      * @return returns a PEMDecoder
      */
@@ -211,7 +224,7 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
      * Decodes and returns {@code SecurityObject} from the given string.
      *
      * @param str PEM data in a String.
-     * @return a SecurityObject that is contained in the PEM data.
+     * @return an SecurityObject generated from the PEM data.
      * @throws IOException on an error in decoding or if the PEM is unsupported.
      */
     @Override
@@ -224,10 +237,11 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
      * Decodes and returns a {@code SecurityObject} from the given
      * {@code InputStream}.
      * The method will read the {@code InputStream} until PEM data is
-     * found or until the end of the stream.
+     * found or until the end of the stream.  Non-PEM data in the
+     * {@code InputStream} before the PEM header will be ignored by the decoder.
      *
      * @param is InputStream containing PEM data.
-     * @return an object that is contained in the PEM data.
+     * @return an SecurityObject generated from the PEM data.
      * @throws IOException on an error in decoding or if the PEM is unsupported.
      */
     @Override
@@ -241,11 +255,21 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
     }
 
     /**
-     * Decodes and returns an object from the given PEM string. The user must
-     * have prior knowledge of the PEM data class type and specify the
-     * returned object's class.
+     * Decodes and returns the specified class for the given PEM string.  The
+     * class must extend {@code SecurityObject} and be the appropriate class for
+     * the PEM type.
      *
-     * @param <S> Type parameter
+     * <p>With the {@code tClass} argument, the returned object may be cast to a
+     * subclass or converted to a different return class, if
+     * appropriate for that PEM data.  Using EC public key PEM as an example,
+     * {@code tClass} may be set to {@code PublicKey.class},
+     * {@code ECPublicKey}, or a {@code X509EncodedKeySpec}.  {@code PublicKey}
+     * is useful for algorithm-agnostic methods, {@code ECPublicKey} for
+     * algorithm-specific operations, or {@code X509EncodedKeySpec} if the
+     * X.509 binary encoding is desired instead of a Key object.  An IOException
+     * will be thrown if the class is incorrect for the given PEM data.
+     *
+     * @param <S> Class type parameter that extends {@code SecurityObject}
      * @param string the String containing PEM data.
      * @param tClass  the returned object class that implementing
      * {@code SecurityObject}.
@@ -262,16 +286,18 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
     }
 
     /**
-     * Decodes and returns an object from the given Reader. The user must have prior
-     * knowledge of the PEM data class type and specify the returned object's
-     * class.  The method will read the {@code InputStream} until PEM data is
-     * found or until the end of the stream.
+     * Decodes and returns the specified class for the given PEM stream.  The
+     * class must extend {@code SecurityObject} and be an appropriate class for
+     * the PEM type.
      *
-     * @param <S>    the type parameter
-     * @param is a Reader that provides a stream of PEM data.
+     * <p>See {@link PEMDecoder#decode(String, Class)} for details about {@code tClass}.
+     * <br>See {@link PEMDecoder#decode(InputStream)} for details on using an {@code InputStream}.
+     *
+     * @param <S> Class type parameter that extends {@code SecurityObject}
+     * @param is an InputStream containing PEM data.
      * @param tClass the returned object class that implementing
      *   {@code SecurityObject}.
-     * @return an object that is contained in the PEM with the specified class.
+     * @return  tClass.
      * @throws IOException on an error in decoding, unsupported PEM, or
      * error casting to tClass.
      */
@@ -368,10 +394,10 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
     }
 
     /**
-     * Creates a new PEMDecoder instance from the current instance that uses
-     * Key and Certificate factories from the given Provider.
+     * Configures and return a new PEMDecoder instance from the current instance
+     * that will use Factory classes from the specified Provider.
      *
-     * @param provider the Factory provider for the new decoder instance.
+     * @param provider the Factory provider.
      * @return a new PEM decoder instance.
      */
     public PEMDecoder withFactory(Provider provider) {
@@ -379,8 +405,8 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
     }
 
     /**
-     * Creates a new PEMDecoder instance from the current instance that uses
-     * the given password to decode encrypted PEM data.
+     * Returns a new PEMDecoder instance from the current instance configured
+     * to decrypt encrypted PEM data with given password.
      * Non-encrypted PEM may still be decoded from this instance.
      *
      * @param password the password to decrypt encrypted PEM data.

@@ -29,15 +29,15 @@ import java.io.IOException;
 
 /**
  * This is a high-level generic interface for encoding cryptographic object
- * into a textual or binary format. The generic T defines what class or
+ * into a textual or binary format. The generic {@code T} defines what class or
  * interface the class will restrict operations on.
  *
  * @param <T> the type parameter
  */
 public interface Encoder<T> {
     /**
-     * Encode a cryptographic object of type T and return the result in a
-     * byte array.
+     * Encode a cryptographic object of type {@code T} and return the result in
+     * a byte array.
      *
      * @param tClass the cryptographic object to be encoded
      * @return the byte array

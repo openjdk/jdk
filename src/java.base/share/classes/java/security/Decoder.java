@@ -31,7 +31,7 @@ import java.io.Reader;
 
 /**
  * This is a high-level generic interface for decoding textual or binary format
- * into a cryptographic object. The generic T defines what class or
+ * into a cryptographic object. The generic {@code T} defines what class or
  * interface the class will restrict operations on.
  *
  * @param <T> the type parameter
@@ -39,46 +39,47 @@ import java.io.Reader;
 public interface Decoder<T> {
 
     /**
-     * Decode encoded data from a {@code String} and returning a
-     * cryptographic object of type T.
+     * Decode data from a {@code String} and returning a cryptographic object
+     * of type {@code T}.
      *
      * @param string a String object containing the encoded data
-     * @return an object of type T.
+     * @return an object of type {@code T}.
      * @throws IOException on decoding or read failures.
      */
     T decode(String string) throws IOException;
 
     /**
-     * Decode encoded data from an {@code InputStream} and returning a
-     * cryptographic object of type T.
+     * Decode data from an {@code InputStream} and returning a cryptographic
+     * object of type {@code T}.
      *
      * @param is InputStream to read the encoded data from.
-     * @return an object of type T.
+     * @return an object of type {@code T}.
      * @throws IOException on decoding or read failures.
      */
     T decode(InputStream is) throws IOException;
 
     /**
-     * Decode encoded data from a {@code String} and returning a
-     * cryptographic object of type T.
+     * Decode data from a {@code String} and returning a cryptographic object
+     * of {@code Class<S>}.  If {@code tClass} is not appropriate for the data,
+     * an IOException is thrown.
      *
-     * @param <S> the type parameter that implements T
+     * @param <S> the type parameter that implements {@code T}
      * @param string a String object containing the encoded data
-     * @param tClass the t class
-     * @return an object of type T.
+     * @param tClass a class that implements {@code T}
+     * @return an object of type {@code T}.
      * @throws IOException on decoding or read failures.
      */
     <S extends T> S decode(String string, Class <S> tClass) throws IOException;
 
     /**
-     * With a given {@code InputStream} that contains encoded data, the
-     * implemented method decodes and converts it into a cryptographic object
-     * of type T.
+     *  Decode data from an {@code InputStream} and returning a cryptographic object
+     *  of {@code Class<S>}.  If {@code tClass} is not appropriate for the data,
+     *  an IOException is thrown.
      *
-     * @param <S> the type parameter that implements T
+     * @param <S> the type parameter that implements {@code T}
      * @param is InputStream to read the encoded data from.
-     * @param tClass the t class
-     * @return an object of type T.
+     * @param tClass a class that implements {@code T}.
+     * @return an object of type {@code T}.
      * @throws IOException on decoding or read failures.
      */
     <S extends T> S decode(InputStream is, Class <S> tClass) throws IOException;
