@@ -33,37 +33,28 @@ class ClassLoaderHelper {
 
     private ClassLoaderHelper() {}
 
-
-     /**
-      * Returns true if loading a native library only if
-      * it's present on the file system.
-      */
-      static boolean loadLibraryOnlyIfPresent() {
-          return false;
-      }
-
     /**
-     * Returns an alternate path name for the given file
-     * such that if the original pathname did not exist, then the
-     * file may be located at the alternate location.
-     * For AIX, this replaces the final .so suffix with .a
-     * If the path name has a member, we place the member name after
-     * .a.
-     */
-    static File mapAlternativeName(File lib) {
-        String name = lib.toString();
-        int index = name.lastIndexOf('.');
-        if (index < 0) {
-            return null;
-        }
-        return new File(name.substring(0, index) + ".a");
+     * Returns true if loading a native library only if
+     * it's present on the file system.
+    */
+    static boolean loadLibraryOnlyIfPresent() {
+        return false;
     }
-
+    /**
+    * Returns an alternate path name for the given file
+    * such that if the original pathname did not exist, then the
+    * file may be located at the alternate location.
+    * For most platforms, this behavior is not supported and returns null.
+    */
+    static File mapAlternativeName(File lib) {
+        return null;
+    }
+   
     /**
      * Parse a PATH env variable.
      *
      * Empty elements will be replaced by dot.
-     */
+    */
     static String[] parsePath(String ldPath) {
         char ps = File.pathSeparatorChar;
         ArrayList<String> paths = new ArrayList<>();
