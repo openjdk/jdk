@@ -226,6 +226,8 @@ private:
                                         // some expensive operations.
   bool   _has_full_module_graph;        // Does this CDS archive contain the full archived module graph?
   size_t _ptrmap_size_in_bits;          // Size of pointer relocation bitmap
+  size_t _rw_ptrmap_size_in_bits;       // Size of pointer relocation map for read-write region
+  size_t _ro_ptrmap_size_in_bits;       // Size of pointer relocation map for read-only region
   size_t _heap_roots_offset;            // Offset of the HeapShared::roots() object, from the bottom
                                         // of the archived heap objects, in bytes.
   size_t _heap_oopmap_start_pos;        // The first bit in the oopmap corresponds to this position in the heap.
@@ -268,6 +270,8 @@ public:
   bool has_platform_or_app_classes()       const { return _has_platform_or_app_classes; }
   bool has_non_jar_in_classpath()          const { return _has_non_jar_in_classpath; }
   size_t ptrmap_size_in_bits()             const { return _ptrmap_size_in_bits; }
+  size_t rw_ptrmap_size_in_bits()             const { return _rw_ptrmap_size_in_bits; }
+  size_t ro_ptrmap_size_in_bits()             const { return _ro_ptrmap_size_in_bits; }
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
   size_t heap_roots_offset()               const { return _heap_roots_offset; }
@@ -283,6 +287,8 @@ public:
   void set_cloned_vtables(char* p)               { set_as_offset(p, &_cloned_vtables_offset); }
   void set_serialized_data(char* p)              { set_as_offset(p, &_serialized_data_offset); }
   void set_ptrmap_size_in_bits(size_t s)         { _ptrmap_size_in_bits = s; }
+  void set_rw_ptrmap_size_in_bits(size_t s)      { _rw_ptrmap_size_in_bits = s; }
+  void set_ro_ptrmap_size_in_bits(size_t s)      { _ro_ptrmap_size_in_bits = s; }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
   void set_heap_roots_offset(size_t n)           { _heap_roots_offset = n; }
   void set_heap_oopmap_start_pos(size_t n)       { _heap_oopmap_start_pos = n; }
@@ -443,7 +449,7 @@ public:
   void  write_region(int region, char* base, size_t size,
                      bool read_only, bool allow_exec);
   size_t remove_bitmap_leading_zeros(CHeapBitMap* map);
-  char* write_bitmap_region(const CHeapBitMap* ptrmap, ArchiveHeapInfo* heap_info,
+  char* write_bitmap_region(const CHeapBitMap* rw_ptrmap, const CHeapBitMap* ro_ptrmap, ArchiveHeapInfo* heap_info,
                             size_t &size_in_bytes);
   size_t write_heap_region(ArchiveHeapInfo* heap_info);
   void  write_bytes(const void* buffer, size_t count);

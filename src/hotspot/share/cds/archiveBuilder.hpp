@@ -205,6 +205,8 @@ private:
   DumpRegion _rw_region;
   DumpRegion _ro_region;
   CHeapBitMap _ptrmap;    // bitmap used by ArchivePtrMarker
+  CHeapBitMap _rw_ptrmap;    // bitmap used by ArchivePtrMarker
+  CHeapBitMap _ro_ptrmap;    // bitmap used by ArchivePtrMarker
 
   SourceObjList _rw_src_objs;                 // objs to put in rw region
   SourceObjList _ro_src_objs;                 // objs to put in ro region

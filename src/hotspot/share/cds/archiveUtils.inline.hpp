@@ -29,12 +29,20 @@
 
 #include "utilities/bitMap.inline.hpp"
 
+extern address* rw_region_start;
+
 inline bool SharedDataRelocator::do_bit(size_t offset) {
   address* p = _patch_base + offset;
   assert(_patch_base <= p && p < _patch_end, "must be");
 
+  if (UseNewCode) {
+    intx n = p - rw_region_start; // This is the n-th pointer
+    intx b = sizeof(address) * n; // which is this number of bytes from rw_region_start
+    tty->print_cr("Patch @ " INTX_FORMAT " = " INTX_FORMAT_X, n, b);
+  }
+
   address old_ptr = *p;
-  assert(_valid_old_base <= old_ptr && old_ptr < _valid_old_end, "must be");
+  assert(_valid_old_base <= old_ptr && old_ptr < _valid_old_end, "must be. %p -> %p, ptr=%p", _valid_old_base, _valid_old_end, old_ptr);
   assert(old_ptr != nullptr, "bits for null pointers should have been cleaned at dump time");
 
   address new_ptr = old_ptr + _delta;

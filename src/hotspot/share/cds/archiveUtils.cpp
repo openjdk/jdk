@@ -46,12 +46,16 @@
 #include "utilities/globalDefinitions.hpp"
 
 CHeapBitMap* ArchivePtrMarker::_ptrmap = nullptr;
+CHeapBitMap* ArchivePtrMarker::_rw_ptrmap = nullptr;
+CHeapBitMap* ArchivePtrMarker::_ro_ptrmap = nullptr;
 VirtualSpace* ArchivePtrMarker::_vs;
 
 bool ArchivePtrMarker::_compacted;
 
 void ArchivePtrMarker::initialize(CHeapBitMap* ptrmap, VirtualSpace* vs) {
   assert(_ptrmap == nullptr, "initialize only once");
+  assert(_rw_ptrmap == nullptr, "initialize only once");
+  assert(_ro_ptrmap == nullptr, "initialize only once");
   _vs = vs;
   _compacted = false;
   _ptrmap = ptrmap;
@@ -65,6 +69,23 @@ void ArchivePtrMarker::initialize(CHeapBitMap* ptrmap, VirtualSpace* vs) {
 
   // We need one bit per pointer in the archive.
   _ptrmap->initialize(estimated_archive_size / sizeof(intptr_t));
+}
+
+void ArchivePtrMarker::initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap, size_t rw_region_size, size_t ro_region_size) {
+  _rw_ptrmap = rw_ptrmap;
+  _ro_ptrmap = ro_ptrmap;
+
+  _rw_ptrmap->initialize(rw_region_size);
+  _ro_ptrmap->initialize(ro_region_size);
+
+  for (size_t rw_bit = 0; rw_bit < _rw_ptrmap->size(); rw_bit++) {
+    _rw_ptrmap->at_put(rw_bit, _ptrmap->at(rw_bit));
+  }
+  size_t ro_start = align_up(_rw_ptrmap->size(), MetaspaceShared::core_region_alignment());
+  for(size_t ro_bit = ro_start; ro_bit < _ptrmap->size(); ro_bit++) {
+    _ro_ptrmap->at_put(ro_bit-ro_start, _ptrmap->at(ro_bit));
+  }
+  // Free _ptrmap?
 }
 
 void ArchivePtrMarker::mark_pointer(address* ptr_loc) {
