@@ -194,10 +194,15 @@ validate_lochdr(int fd, jlong censtart, jlong base_offset, Byte *cenhdr) {
   jlong censiz = CENSIZ(cenhdr);
   jlong cenoff = CENOFF(cenhdr);
   jlong cenext = CENEXT(cenhdr);
+  // cenoff is the only value stored in the zip64 extended info that is used
+  // below, so if it fits in 32 bits we don't need to read the extra fields.
   if (cenoff == ZIP64_MAGICVAL && cenext > 0) {
     Byte p[ZIP64_EXTMAXLEN];
+    // The extra fields start after the fixed-size central directory
+    // header and the variable-length file name.
     jlong start = censtart + CENHDR + CENNAM(cenhdr);
     jlong offset = 0;
+    // Scan the extra fields for zip64 extra info, see APPNOTE.TXT 4.5
     while (offset < cenext) {
       if (!readAt(fd, start + offset, ZIP64_EXTMAXLEN, p)) {
         return JNI_FALSE;
@@ -500,8 +505,11 @@ find_file(int fd, zentry *entry, const char *file_name)
                   || censiz == ZIP64_MAGICVAL
                   || cenoff == ZIP64_MAGICVAL)
                 && cenext > 0) {
+              // The extra fields start after the fixed-size central directory
+              // header and the variable-length file name.
               Byte *base = p + CENHDR + CENNAM(p);
               jlong offset = 0;
+              // Scan the extra fields for zip64 extra info, see APPNOTE.TXT 4.5
               while (offset < cenext) {
                 short headerId = ZIPEXT_HDR(base + offset);
                 short headerSize = ZIPEXT_SIZ(base + offset);
