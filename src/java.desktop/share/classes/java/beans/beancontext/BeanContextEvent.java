@@ -46,6 +46,8 @@ import java.util.EventObject;
  * @see         java.beans.beancontext.BeanContext
  */
 
+@SuppressWarnings("removal")
+@Deprecated(forRemoval=true, since="23")
 public abstract class BeanContextEvent extends EventObject {
 
     /**

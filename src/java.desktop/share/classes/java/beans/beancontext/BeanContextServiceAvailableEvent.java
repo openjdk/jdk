@@ -35,6 +35,8 @@ import java.util.Iterator;
  * </p>
  */
 
+@SuppressWarnings("removal")
+@Deprecated(forRemoval=true, since="23")
 public class BeanContextServiceAvailableEvent extends BeanContextEvent {
 
     /**

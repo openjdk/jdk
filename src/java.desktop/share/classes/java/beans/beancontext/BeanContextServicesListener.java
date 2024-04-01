@@ -35,6 +35,9 @@ import java.beans.beancontext.BeanContextServiceRevokedListener;
  * A class that is interested in processing a
  * {@code BeanContextServiceAvailableEvent} implements this interface.
  */
+
+@SuppressWarnings("removal")
+@Deprecated(forRemoval=true, since="23")
 public interface BeanContextServicesListener extends BeanContextServiceRevokedListener {
 
     /**

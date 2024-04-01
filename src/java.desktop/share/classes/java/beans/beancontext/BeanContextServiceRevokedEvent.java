@@ -34,6 +34,9 @@ import java.io.Serial;
  * identify the service being revoked.
  * </p>
  */
+
+@SuppressWarnings("removal")
+@Deprecated(forRemoval=true, since="23")
 public class BeanContextServiceRevokedEvent extends BeanContextEvent {
 
     /**
