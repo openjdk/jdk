@@ -63,6 +63,16 @@ public class ValidatePage extends Frame implements Printable {
     Label myImageableHeightLabel;
     Label myOrientationLabel;
 
+    private static String GetOrientation(int o)
+    {
+        return switch (o) {
+            case PageFormat.PORTRAIT -> "PORTRAIT";
+            case PageFormat.LANDSCAPE -> "LANDSCAPE";
+            case PageFormat.REVERSE_LANDSCAPE -> "REVERSE_LANDSCAPE";
+            default -> "<invalid>";
+        };
+    }
+
     private void displayPageFormatAttributes() {
         myWidthLabel.setText("Format Width = " + drnd(myPageFormat.getWidth()));
         myHeightLabel.setText("Format Height = " + drnd(myPageFormat.getHeight()));
@@ -79,15 +89,8 @@ public class ValidatePage extends Frame implements Printable {
                         - (myPageFormat.getImageableY() + myPageFormat.getImageableHeight())));
         myImageableHeightLabel.setText("Format ImageableHeight = "
                 + drnd(myPageFormat.getImageableHeight()));
-        int o = myPageFormat.getOrientation();
-        myOrientationLabel.setText
-                ("Format Orientation = " +
-                        (switch (o) {
-                            case PageFormat.PORTRAIT -> "PORTRAIT";
-                            case PageFormat.LANDSCAPE -> "LANDSCAPE";
-                            case PageFormat.REVERSE_LANDSCAPE -> "REVERSE_LANDSCAPE";
-                            default -> "<invalid>";
-                        }));
+        myOrientationLabel.setText("Format Orientation = "
+                + GetOrientation(myPageFormat.getOrientation()));
         Paper p = myPageFormat.getPaper();
         pw.setText("Paper Width = " + drnd(p.getWidth()));
         ph.setText("Paper Height = " + drnd(p.getHeight()));
@@ -227,7 +230,7 @@ public class ValidatePage extends Frame implements Printable {
                 "the printer's imageable area for that paper size. Finally the top and \n" +
                 "left margins will be shrunk if they are too great for the adjusted \n" +
                 "imageable area to fit at that position. They will shrink by the minimum\n" +
-                "needed to accomodate the imageable area.\n \n \n" +
+                "needed to accommodate the imageable area.\n \n \n" +
                 "To test 6229507, put the minimum margins (all 0s) in Page Setup dialog.\n" +
                 "Compare Imageable width, height, and margins of portrait against landscape.");
 
@@ -242,13 +245,8 @@ public class ValidatePage extends Frame implements Printable {
             return Printable.NO_SUCH_PAGE;
         }
 
-        System.out.println("Format Orientation = " +
-                (switch (pageFormat.getOrientation()) {
-                    case PageFormat.PORTRAIT -> "PORTRAIT";
-                    case PageFormat.LANDSCAPE -> "LANDSCAPE";
-                    case PageFormat.REVERSE_LANDSCAPE -> "REVERSE_LANDSCAPE";
-                    default -> "<invalid>";
-                }));
+        System.out.println("Format Orientation = "
+                + GetOrientation(pageFormat.getOrientation()));
 
         Graphics2D g2d = (Graphics2D) graphics;
 
