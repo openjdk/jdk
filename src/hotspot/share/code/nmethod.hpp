@@ -274,7 +274,7 @@ class nmethod : public CodeBlob {
   bool _load_reported;
 
   // Protected by CompiledMethod_lock
-  volatile signed char _state;         // {not_installed, in_use, not_used, not_entrant}
+  volatile signed char _state;         // {not_installed, in_use, not_entrant}
 
   // set during construction
   uint8_t _has_unsafe_access:1,        // May fault due to unsafe access.
@@ -601,8 +601,7 @@ public:
   enum : signed char { not_installed = -1, // in construction, only the owner doing the construction is
                                            // allowed to advance state
                        in_use        = 0,  // executable nmethod
-                       not_used      = 1,  // not entrant, but revivable
-                       not_entrant   = 2,  // marked for deoptimization but activations may still exist
+                       not_entrant   = 1   // marked for deoptimization but activations may still exist
   };
 
   // flag accessing and manipulation

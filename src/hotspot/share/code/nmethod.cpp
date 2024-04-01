@@ -441,8 +441,6 @@ const char* nmethod::state() const {
     return "not installed";
   case in_use:
     return "in use";
-  case not_used:
-    return "not_used";
   case not_entrant:
     return "not_entrant";
   default:
