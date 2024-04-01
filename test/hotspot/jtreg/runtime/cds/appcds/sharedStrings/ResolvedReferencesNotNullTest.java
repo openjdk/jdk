@@ -26,6 +26,7 @@
  * @bug 8313638
  * @summary Testing resolved references array to ensure elements are non-null
  * @requires vm.cds.write.archived.java.heap
+ * @requires vm.flagless
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build jdk.test.whitebox.WhiteBox ResolvedReferencesWb ResolvedReferencesTestApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -42,14 +43,14 @@ public class ResolvedReferencesNotNullTest {
         String appJar = TestCommon.getTestJar(SharedStringsUtils.TEST_JAR_NAME_FULL);
         String whiteboxParam = SharedStringsUtils.getWbParam();
 
-        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-cp",
-                                                                      appJar,
-                                                                      whiteboxParam,
-                                                                      "-XX:+UnlockDiagnosticVMOptions",
-                                                                      "-XX:+WhiteBoxAPI",
-                                                                      "ResolvedReferencesWb",
-                                                                      "false" // ResolvedReferencesTestApp is not archived
-                                                                      );
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-cp",
+                                                                             appJar,
+                                                                             whiteboxParam,
+                                                                             "-XX:+UnlockDiagnosticVMOptions",
+                                                                             "-XX:+WhiteBoxAPI",
+                                                                             "ResolvedReferencesWb",
+                                                                             "false" // ResolvedReferencesTestApp is not archived
+                                                                             );
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
 
