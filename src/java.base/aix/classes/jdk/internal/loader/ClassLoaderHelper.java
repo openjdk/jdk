@@ -49,7 +49,7 @@ class ClassLoaderHelper {
     static File mapAlternativeName(File lib) {
         return null;
     }
-   
+
     /**
      * Parse a PATH env variable.
      *
