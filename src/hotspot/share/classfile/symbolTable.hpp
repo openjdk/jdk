@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,6 @@ class SymbolTable : public AllStatic {
   static void print_table_statistics(outputStream* st);
 
   static void try_rehash_table();
-  static bool do_rehash();
 
 public:
   // The symbol table
@@ -114,7 +113,7 @@ public:
   static void create_table();
 
   static void do_concurrent_work(JavaThread* jt);
-  static bool has_work() { return _has_work; }
+  static bool has_work();
   static void trigger_cleanup();
 
   // Probing
@@ -146,16 +145,12 @@ public:
   // Rehash the string table if it gets out of balance
 private:
   static bool should_grow();
+  static bool maybe_rehash_table();
 
 public:
-  static bool rehash_table_expects_safepoint_rehashing();
   static void rehash_table();
   static bool needs_rehashing() { return _needs_rehashing; }
-  static inline void update_needs_rehash(bool rehash) {
-    if (rehash) {
-      _needs_rehashing = true;
-    }
-  }
+  static inline void update_needs_rehash(bool rehash);
 
   // Heap dumper and CDS
   static void symbols_do(SymbolClosure *cl);

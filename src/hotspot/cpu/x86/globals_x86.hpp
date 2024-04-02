@@ -154,16 +154,18 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
                                                                             \
   /* Use Restricted Transactional Memory for lock eliding */                \
   product(bool, UseRTMLocking, false,                                       \
-          "Enable RTM lock eliding for inflated locks in compiled code")    \
+          "(Deprecated) Enable RTM lock eliding for inflated locks "        \
+          "in compiled code")                                               \
                                                                             \
   product(bool, UseRTMForStackLocks, false, EXPERIMENTAL,                   \
           "Enable RTM lock eliding for stack locks in compiled code")       \
                                                                             \
   product(bool, UseRTMDeopt, false,                                         \
-          "Perform deopt and recompilation based on RTM abort ratio")       \
+          "(Deprecated) Perform deopt and recompilation based on "          \
+          "RTM abort ratio")                                                \
                                                                             \
   product(int, RTMRetryCount, 5,                                            \
-          "Number of RTM retries on lock abort or busy")                    \
+          "(Deprecated) Number of RTM retries on lock abort or busy")       \
           range(0, max_jint)                                                \
                                                                             \
   product(int, RTMSpinLoopCount, 100, EXPERIMENTAL,                         \

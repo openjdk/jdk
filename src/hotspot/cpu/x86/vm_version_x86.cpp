@@ -309,9 +309,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ cpuid();
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::sef_cpuid7_ecx1_offset())));
     __ movl(Address(rsi, 0), rax);
-    __ movl(Address(rsi, 4), rbx);
-    __ movl(Address(rsi, 8), rcx);
-    __ movl(Address(rsi, 12), rdx);
 
     //
     // Extended cpuid(0x80000000)
