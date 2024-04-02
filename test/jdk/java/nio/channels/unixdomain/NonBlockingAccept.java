@@ -65,7 +65,9 @@ public class NonBlockingAccept {
                 throw new RuntimeException("expected null");
             // or exception could be thrown otherwise
         } finally {
-            Files.deleteIfExists(addr.getPath());
+            if (addr != null) {
+                Files.deleteIfExists(addr.getPath());
+            }
         }
     }
 }
