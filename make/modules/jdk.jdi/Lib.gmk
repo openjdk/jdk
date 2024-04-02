@@ -25,9 +25,10 @@
 
 include LibCommon.gmk
 
-################################################################################
-
 ifeq ($(call isTargetOs, windows), true)
+  ##############################################################################
+  ## Build libdt_shmem
+  ##############################################################################
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBDT_SHMEM, \
       NAME := dt_shmem, \
@@ -35,11 +36,8 @@ ifeq ($(call isTargetOs, windows), true)
       EXTRA_HEADER_DIRS := \
           jdk.jdwp.agent:include \
           jdk.jdwp.agent:libjdwp/export, \
-      LIBS := $(JDKLIB_LIBS), \
+      JDK_LIBS := $(JDKLIB_LIBS), \
   ))
 
   TARGETS += $(BUILD_LIBDT_SHMEM)
-
 endif
-
-################################################################################

@@ -593,21 +593,22 @@ public:
 };
 
 // HandshakeClosure to get current contended monitor. It is used for both platform and virtual threads.
-class GetCurrentContendedMonitorClosure : public JvmtiHandshakeClosure {
+class GetCurrentContendedMonitorClosure : public JvmtiUnitedHandshakeClosure {
 private:
-  JavaThread *_calling_thread;
   JvmtiEnv *_env;
+  JavaThread *_calling_thread;
   jobject *_owned_monitor_ptr;
-  bool _is_virtual;
 
 public:
-  GetCurrentContendedMonitorClosure(JavaThread* calling_thread, JvmtiEnv *env, jobject *mon_ptr, bool is_virtual)
-    : JvmtiHandshakeClosure("GetCurrentContendedMonitor"),
-      _calling_thread(calling_thread),
+  GetCurrentContendedMonitorClosure(JvmtiEnv *env,
+                                    JavaThread* calling_thread,
+                                    jobject *owned_monitor_ptr)
+    : JvmtiUnitedHandshakeClosure("GetCurrentContendedMonitor"),
       _env(env),
-      _owned_monitor_ptr(mon_ptr),
-      _is_virtual(is_virtual) {}
+      _calling_thread(calling_thread),
+      _owned_monitor_ptr(owned_monitor_ptr) {}
   void do_thread(Thread *target);
+  void do_vthread(Handle target_h);
 };
 
 // HandshakeClosure to get stack trace.
@@ -794,25 +795,6 @@ public:
   void do_thread(Thread *target);
   jvmtiError result() { return _result; }
 };
-
-// HandshakeClosure to get virtual thread state at safepoint.
-class VirtualThreadGetThreadStateClosure : public HandshakeClosure {
-private:
-  Handle _vthread_h;
-  jint *_state_ptr;
-  jvmtiError _result;
-
-public:
-  VirtualThreadGetThreadStateClosure(Handle vthread_h, jint *state_ptr)
-    : HandshakeClosure("VirtualThreadGetThreadState"),
-      _vthread_h(vthread_h),
-      _state_ptr(state_ptr),
-      _result(JVMTI_ERROR_NONE) {}
-
-  void do_thread(Thread *target);
-  jvmtiError result() { return _result; }
-};
-
 
 // ResourceTracker
 //
