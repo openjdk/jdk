@@ -29,7 +29,7 @@ include LibCommon.gmk
 ## Build libprefs
 ################################################################################
 
-# libprefs on macosx do not use the unix code
+# libprefs on macosx does not use the unix code
 ifeq ($(call isTargetOs, macosx), true)
   LIBPREFS_EXCLUDE_SRC_PATTERNS := /unix/
 endif
