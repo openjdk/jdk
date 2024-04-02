@@ -51,31 +51,33 @@ import javax.swing.UnsupportedLookAndFeelException;
 public class TestJTabbedPaneOpaqueColor {
     private static JFrame frame;
     private static JTabbedPane tabPane;
-    private static final String INSTRUCTIONS =
-            " The background color of panel (which contains the tabbed pane)" +
-                    "is green.\n" +
-            " The background color of the tabbed pane is red.\n\n" +
-            " Check the default behaviour of the tabbed pane:\n" +
-            "    - the area behind tabs is transparent (it must be green);\n" +
-            "    - the tabs area is opaque (it must be red, except the selected" +
-                    "tab which must be gray);\n" +
-            "    - the content area is opaque(it must be gray);\n\n" +
-            " Click to the check box 'opaque'. And be sure that:\n" +
-            "    - the area behind tabs is opaque (it must be red);\n" +
-            "    - the tabs area is opaque (it must be red, except the selected" +
-                    "tab which must be gray);\n" +
-            "    - the content area is opaque (it must be gray);\n\n" +
-            " Check this behaviour for other LAFs and tab layout.\n\n" +
-            " NOTE: For Nimbus LAF, tabs color are specific to nimbus style.";
+    private static final String INSTRUCTIONS = """
+            The background color of panel (which contains the tabbed pane
+                    is green.
+            The background color of the tabbed pane is red.
+
+             Check the default behaviour of the tabbed pane:
+                - the area behind tabs is transparent (it must be green).
+                - the tabs area is opaque (it must be red, except the selected
+                    "tab which must be gray).
+                - the content area is opaque(it must be gray).
+
+             Click to the check box 'opaque'. And be sure that
+                - the area behind tabs is opaque (it must be red).
+                - the tabs area is opaque (it must be red, except the selected
+                    "tab which must be gray).
+                - the content area is opaque (it must be gray).
+
+             Check this behaviour for other LAFs and tab layout.
+             NOTE: For Nimbus LAF, tabs color are specific to nimbus style.""";
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame.builder()
                 .title("JTabbedPane Arrow Direction Test Instructions")
                 .instructions(INSTRUCTIONS)
-                .testTimeOut(5)
+                .testTimeOut(10)
                 .rows(18)
                 .columns(60)
-                .screenCapture()
                 .build();
         SwingUtilities.invokeAndWait(
                 TestJTabbedPaneOpaqueColor::createAndShowUI);
