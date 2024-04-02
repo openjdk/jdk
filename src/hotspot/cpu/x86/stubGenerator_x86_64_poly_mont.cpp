@@ -30,8 +30,8 @@
 #define __ _masm->
 
 ATTRIBUTE_ALIGNED(64) uint64_t MODULUS_P256[] = {
-  0x000fffffffffffff, 0x00000fffffffffff, 
-  0x0000000000000000, 0x0000001000000000, 
+  0x000fffffffffffff, 0x00000fffffffffff,
+  0x0000000000000000, 0x0000001000000000,
   0x0000ffffffff0000, 0x0000000000000000,
   0x0000000000000000, 0x0000000000000000
 };
@@ -82,14 +82,14 @@ static address shift_1L() {
 /**
  * Unrolled Word-by-Word Montgomery Multiplication
  * r = a * b * 2^-260 (mod P)
- * 
+ *
  * Reference: Shay Gueron and Vlad Krasnov "Fast Prime Field Elliptic Curve Cryptography with 256 Bit Primes"
- *    See Figure 5. "Algorithm 2: Word-by-Word Montgomery Multiplication for a Montgomery 
+ *    See Figure 5. "Algorithm 2: Word-by-Word Montgomery Multiplication for a Montgomery
  *    Friendly modulus p". Note: Step 6. Skipped; Instead use numAdds to reuse existing overflow
  *    logic.
- * 
+ *
  * Pseudocode:
- * 
+ *
  *                                                     +--+--+--+--+--+--+--+--+
  *   M = load(*modulus_p256)                           | 0| 0| 0|m5|m4|m3|m2|m1|
  *                                                     +--+--+--+--+--+--+--+--+
@@ -97,7 +97,7 @@ static address shift_1L() {
  *                                                     +--+--+--+--+--+--+--+--+
  *   Acc1 = 0                                          | 0| 0| 0| 0| 0| 0| 0| 0|
  *                                                     +--+--+--+--+--+--+--+--+
- *      ---- for i = 0 to 4                            
+ *      ---- for i = 0 to 4
  *                                                     +--+--+--+--+--+--+--+--+
  *          Acc2 = 0                                   | 0| 0| 0| 0| 0| 0| 0| 0|
  *                                                     +--+--+--+--+--+--+--+--+
@@ -115,9 +115,9 @@ static address shift_1L() {
  *          N = replicate(Acc1[0])                     |n0|n0|n0|n0|n0|n0|n0|n0|
  *                                                     +--+--+--+--+--+--+--+--+
  *                                                     +--+--+--+--+--+--+--+--+
- *                                               Acc1+=| 0| 0| 0|c5|c4|c3|c2|c1|  
+ *                                               Acc1+=| 0| 0| 0|c5|c4|c3|c2|c1|
  *                                                    *| 0| 0| 0|m5|m4|m3|m2|m1|
- *          Acc1 += M *  N                             |n0|n0|n0|n0|n0|n0|n0|n0| Note: 52 low bits of Acc1[0] == 0 due to Montgomery! 
+ *          Acc1 += M *  N                             |n0|n0|n0|n0|n0|n0|n0|n0| Note: 52 low bits of Acc1[0] == 0 due to Montgomery!
  *                                                     +--+--+--+--+--+--+--+--+
  *                                               Acc2+=| 0| 0| 0|d5|d4|d3|d2|d1|
  *                                                   *h| 0| 0| 0|m5|m4|m3|m2|m1|
@@ -167,7 +167,7 @@ void StubGenerator::montgomeryMultiply(const Register aLimbs, const Register bLi
   KRegister limb0 = k1;
   KRegister limb5 = k2;
   KRegister allLimbs = k3;
-  
+
   __ mov64(t0, 0x1);
   __ kmovql(limb0, t0);
   __ mov64(t0, 0x10);
@@ -199,7 +199,7 @@ void StubGenerator::montgomeryMultiply(const Register aLimbs, const Register bLi
 
       // Acc1 += A * B
       __ evpmadd52luq(Acc1, A, B, Assembler::AVX_512bit);
-      
+
       // Acc2 += A *h B
       __ evpmadd52huq(Acc2, A, B, Assembler::AVX_512bit);
 
@@ -211,7 +211,7 @@ void StubGenerator::montgomeryMultiply(const Register aLimbs, const Register bLi
 
       // Acc2 += M *h N
       __ evpmadd52huq(Acc2, modulus, N, Assembler::AVX_512bit);
-      
+
       if (i == 4) break;
 
       // Combine high/low partial sums Acc1 + Acc2
@@ -224,7 +224,7 @@ void StubGenerator::montgomeryMultiply(const Register aLimbs, const Register bLi
 
       // Acc1 = Acc1 shift one q element >>
       __ evpermq(Acc1, allLimbs, shift1R, Acc1, false, Assembler::AVX_512bit);
-      
+
       // Acc1 = Acc1 + Acc2
       __ vpaddq(Acc1, Acc1, Acc2, Assembler::AVX_512bit);
   }
@@ -369,9 +369,9 @@ address StubGenerator::generate_intpoly_assign() {
   __ negq(set);
   __ kmovql(select, set);
 
-  // NOTE!! Allowed to branch on number of limbs; 
-  // Number of limbs is a constant in each IntegerPolynomial (i.e. this side-channel branch leaks 
-  //   number of limbs which is not a secret) 
+  // NOTE!! Allowed to branch on number of limbs;
+  // Number of limbs is a constant in each IntegerPolynomial (i.e. this side-channel branch leaks
+  //   number of limbs which is not a secret)
   __ cmpl(length, 5);
   __ jcc(Assembler::equal, L_Length5);
   __ cmpl(length, 10);
@@ -419,7 +419,7 @@ address StubGenerator::generate_intpoly_assign() {
   assign_avx(A, Address(aLimbs, 8),  B, Address(bLimbs, 8),  select, Assembler::AVX_128bit, _masm);
   assign_avx(A, Address(aLimbs, 24), B, Address(bLimbs, 24), select, Assembler::AVX_512bit, _masm);
   assign_avx(A, Address(aLimbs, 88), B, Address(bLimbs, 88), select, Assembler::AVX_512bit, _masm);
-  
+
   __ bind(L_Done);
   __ leave();
   __ ret(0);

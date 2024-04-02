@@ -56,24 +56,24 @@ public class IntegerPolynomialTest {
                         IntegerPolynomial1305.ONE, IntegerPolynomial25519.ONE,
                         IntegerPolynomial448.ONE, IntegerPolynomialP256.ONE, MontgomeryIntegerPolynomialP256.ONE,
                         IntegerPolynomialP384.ONE, IntegerPolynomialP521.ONE,
-                        new IntegerPolynomialModBinP.Curve25519OrderField(), new IntegerPolynomialModBinP.Curve448OrderField(), 
+                        new IntegerPolynomialModBinP.Curve25519OrderField(), new IntegerPolynomialModBinP.Curve448OrderField(),
                         P256OrderField.ONE, P384OrderField.ONE, P521OrderField.ONE,
                         Curve25519OrderField.ONE, Curve448OrderField.ONE
                 };
 
                 for (IntegerPolynomial field:testFields) {
-                        ImmutableIntegerModuloP aRef = field.getElement(new BigInteger(32*64, rnd)); 
-                        MutableIntegerModuloP a = aRef.mutable(); 
+                        ImmutableIntegerModuloP aRef = field.getElement(new BigInteger(32*64, rnd));
+                        MutableIntegerModuloP a = aRef.mutable();
                         ImmutableIntegerModuloP bRef = field.getElement(new BigInteger(32*64, rnd));
                         MutableIntegerModuloP b = bRef.mutable();
-                        
+
                         a.conditionalSet(b, 0); // Don't assign
                         if (Arrays.equals(a.getLimbs(), b.getLimbs())) {
-                                throw new RuntimeException("[SEED "+seed + "]: Incorrect assign for " + field); 
+                                throw new RuntimeException("[SEED "+seed + "]: Incorrect assign for " + field);
                         }
                         a.conditionalSet(b, 1); // Assign
                         if (!Arrays.equals(a.getLimbs(), b.getLimbs())) {
-                                throw new RuntimeException("[SEED "+seed + "]: Incorrect assign for " + field); 
+                                throw new RuntimeException("[SEED "+seed + "]: Incorrect assign for " + field);
                         }
                 }
                 System.out.println("Test Success");

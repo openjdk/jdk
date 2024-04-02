@@ -40,8 +40,8 @@ import sun.security.util.math.intpoly.IntegerPolynomialP256;
 import sun.security.util.math.MutableIntegerModuloP;
 import sun.security.util.math.ImmutableIntegerModuloP;
 
-@Fork(jvmArgsAppend = {"-XX:+AlwaysPreTouch", 
-    "--add-exports", "java.base/sun.security.util.math.intpoly=ALL-UNNAMED", 
+@Fork(jvmArgsAppend = {"-XX:+AlwaysPreTouch",
+    "--add-exports", "java.base/sun.security.util.math.intpoly=ALL-UNNAMED",
     "--add-exports", "java.base/sun.security.util.math=ALL-UNNAMED"}, value = 1)
 @Warmup(iterations = 3, time = 3)
 @Measurement(iterations = 8, time = 2)

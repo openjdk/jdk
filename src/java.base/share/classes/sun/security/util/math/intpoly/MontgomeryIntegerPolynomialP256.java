@@ -32,9 +32,9 @@ import java.lang.Math;
 import java.math.BigInteger;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
-// Reference: 
+// Reference:
 // - [1] Shay Gueron and Vlad Krasnov "Fast Prime Field Elliptic Curve Cryptography with 256 Bit Primes"
-// 
+//
 public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial implements IntegerMontgomeryFieldModuloP {
     private static final int BITS_PER_LIMB = 52;
     private static final int NUM_LIMBS = 5;
@@ -43,7 +43,7 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial imp
     private static final long LIMB_MASK = -1L >>> (64 - BITS_PER_LIMB);
 
     public static final MontgomeryIntegerPolynomialP256 ONE = new MontgomeryIntegerPolynomialP256();
-    
+
     // h = 2^(2*260)%p = 0x4fffffffdfffffffffffffffefffffffbffffffff000000000000000300
     // oneActual = 1
     // oneMont = (1*2^260) mod p
@@ -85,7 +85,7 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial imp
         long[] vLimbs = new long[NUM_LIMBS];
         long[] montLimbs = new long[NUM_LIMBS];
         setLimbsValuePositive(v, vLimbs);
-        
+
         // Convert to Montgomery domain
         int numAdds = mult(vLimbs, h, montLimbs);
         return new ImmutableElement(montLimbs, numAdds);
@@ -103,7 +103,7 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial imp
      * by a small constant (i.e. (int) 1,2,3,4). Instead of doing a montgomery conversion
      * followed by a montgomery multiplication, just use the spare top (64-BITS_PER_LIMB) bits
      * to multiply by a constant. (See [1] Section 4 )
-     * 
+     *
      * Will return an unreduced value
      */
     @Override
@@ -149,12 +149,12 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial imp
     protected int square(long[] a, long[] r) {
         return mult(a, a, r);
     }
-    
+
     /**
      * Unrolled Word-by-Word Montgomery Multiplication
      * r = a * b * 2^-260 (mod P)
-     * 
-     * See [1] Figure 5. "Algorithm 2: Word-by-Word Montgomery Multiplication for a Montgomery 
+     *
+     * See [1] Figure 5. "Algorithm 2: Word-by-Word Montgomery Multiplication for a Montgomery
      * Friendly modulus p". Note: Step 6. Skipped; Instead use numAdds to reuse existing overflow
      * logic.
      */
@@ -382,21 +382,21 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial imp
 
     /*
      * This function 'moves/reduces' digit 'v' to the 'lower' limbs
-     * 
-     * The result is not reduced further. Carry propagation is not performed 
+     *
+     * The result is not reduced further. Carry propagation is not performed
      * (see IntegerPolynomial.reduceHigh() for how this method is used)
-     * 
+     *
      * Proof:
      *   v * 2^(i*52) (mod p) ==  v * 2^(52i) - v * 2^(52i-256) * p                               (mod p)
      *                        ==  v * 2^(52i) - v * 2^(52i-256) * (2^256 -2^224 +2^192 +2^96 -1)  (mod p)
      *                        ==  v * 2^(52i) - v * [2^(52i-256+256) -2^(52i-256+224) +2^(52i-256+192) +2^(52i-256+96) -2^(52i-256)] (mod p)
      *                        ==  v * 2^(52i) - v * [2^(52i) -2^(52i-32) +2^(52i-64) +2^(52i-160) -2^(52i-256)]                      (mod p)
-     * 
+     *
      *                        ==  v * [2^(52i-32) +2^(52i-52-12) +2^(52i-3*52-4) -2^(52i-4*52-48)] (mod p)
      */
     @Override
     protected void reduceIn(long[] limbs, long v, int i) {
-        // Since top term (2^(52i-32)) will leave top 20 bits back in the same position i, 
+        // Since top term (2^(52i-32)) will leave top 20 bits back in the same position i,
         // "repeat same reduction on top 20 bits"
         v += v>>32;
 

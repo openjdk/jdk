@@ -47,7 +47,7 @@ import java.util.Optional;
  * elliptic curves" by Renes, Costello, and Batina.
  */
 public class ECOperations {
-    
+
     /*
      * An exception indicating a problem with an intermediate value produced
      * by some part of the computation. For example, the signing operation
@@ -70,7 +70,7 @@ public class ECOperations {
         P521OrderField.MODULUS, P521OrderField.ONE
     );
 
-    // This field is optional. 
+    // This field is optional.
     // It is set, when the operations are also available in Montgomery domain.
     private ECOperations montgomeryOps;
 
@@ -234,7 +234,7 @@ public class ECOperations {
             // affineP is in residue domain, use ecPoint to get domain conversion
             multiplier = new DefaultMontgomeryMultiplier(montgomeryOps, ecPoint);
         }
-        
+
         return multiplier.pointMultiply(s);
     }
 
@@ -250,7 +250,7 @@ public class ECOperations {
         } else {
             multiplier = new DefaultMontgomeryMultiplier(montgomeryOps, ecPoint);
         }
-        
+
         return multiplier.pointMultiply(s);
     }
 
@@ -314,7 +314,7 @@ public class ECOperations {
         MutableIntegerModuloP t2 = zero.mutable();
         MutableIntegerModuloP t3 = zero.mutable();
         MutableIntegerModuloP t4 = zero.mutable();
-        
+
         // Route to Montgomery setSum, if field implemented
         ECOperations ops = this;
         if (this.montgomeryOps != null) {
@@ -456,7 +456,7 @@ public class ECOperations {
         return isNeutral(this.multiply(ap, scalar));
     }
 
-    sealed interface PointMultiplier 
+    sealed interface PointMultiplier
         permits SmallWindowMultiplier, P256LargeTableMultiplier {
         // Multiply the point by a scalar and return the result as a mutable
         // point.  The multiplier point is specified by the implementation of
@@ -488,7 +488,7 @@ public class ECOperations {
         }
     }
 
-    sealed static abstract class SmallWindowMultiplier implements PointMultiplier 
+    sealed static abstract class SmallWindowMultiplier implements PointMultiplier
         permits DefaultMultiplier, DefaultMontgomeryMultiplier {
         private final AffinePoint affineP;
         private final ECOperations ecOps;
@@ -510,7 +510,7 @@ public class ECOperations {
             MutableIntegerModuloP t3 = zero.mutable();
             MutableIntegerModuloP t4 = zero.mutable();
 
-            ProjectivePoint.Mutable ps = 
+            ProjectivePoint.Mutable ps =
                 new ProjectivePoint.Mutable(field);
             ps.getY().setValue(field.get1().mutable());
 
@@ -575,7 +575,7 @@ public class ECOperations {
     }
 
     // Represents a multiplier with a larger precomputed table. Intended to be used for Basepoint multiplication
-    sealed static abstract class P256LargeTableMultiplier implements PointMultiplier 
+    sealed static abstract class P256LargeTableMultiplier implements PointMultiplier
         permits Secp256R1GeneratorMontgomeryMultiplier {
 
         private final ImmutableIntegerModuloP zero;
@@ -760,8 +760,8 @@ public class ECOperations {
 
         private Secp256R1GeneratorMontgomeryMultiplier() {
             super(
-                secp256r1Ops, 
-                MontgomeryIntegerPolynomialP256.ONE, 
+                secp256r1Ops,
+                MontgomeryIntegerPolynomialP256.ONE,
                 new DefaultMontgomeryMultiplier(secp256r1Ops, generator));
 
             // Check that the tables are correctly generated.

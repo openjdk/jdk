@@ -64,7 +64,7 @@ public class ECOperationsFuzzTest {
         private static void check(MutablePoint reference, MutablePoint testValue, long seed, int iter) {
                 AffinePoint affineRef = reference.asAffine();
                 AffinePoint affine = testValue.asAffine();
-                if (!affineRef.getX().asBigInteger().equals(affine.getX().asBigInteger()) || 
+                if (!affineRef.getX().asBigInteger().equals(affine.getX().asBigInteger()) ||
                     !affineRef.getY().asBigInteger().equals(affine.getY().asBigInteger())) {
                         throw new RuntimeException("Found error with seed "+seed +"at iteration "+ iter);
                 }
@@ -82,10 +82,10 @@ public class ECOperationsFuzzTest {
                 if (params == null || generator == null) {
                         throw new RuntimeException("No EC parameters available for key size " + keySize + " bits");
                 }
-                
+
                 ECOperations ops = ECOperations.forParameters(params).get();
                 ECOperations opsReference = ECOperations.forParameters(params).get();
-                
+
                 try {
                         Field montgomeryOps = ECOperations.class.getDeclaredField("montgomeryOps");
                         montgomeryOps.setAccessible(true);
@@ -109,13 +109,13 @@ public class ECOperationsFuzzTest {
                 AffinePoint montAffineGenerator = AffinePoint.fromECPoint(generator, point.getField());
 
                 MutablePoint refProjGenerator = new ProjectivePoint.Mutable(
-                        refAffineGenerator.getX().mutable(), 
-                        refAffineGenerator.getY().mutable(), 
+                        refAffineGenerator.getX().mutable(),
+                        refAffineGenerator.getY().mutable(),
                         referencePoint.getField().get1().mutable());
-                
+
                 MutablePoint projGenerator = new ProjectivePoint.Mutable(
-                        montAffineGenerator.getX().mutable(), 
-                        montAffineGenerator.getY().mutable(), 
+                        montAffineGenerator.getX().mutable(),
+                        montAffineGenerator.getY().mutable(),
                         point.getField().get1().mutable());
 
                 for (int i = 0; i < repeat; i++) {

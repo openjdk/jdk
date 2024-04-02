@@ -112,42 +112,42 @@ public class ECOperationsKATTest {
         public static final List<TestData> testList = new LinkedList<TestData>() {{
                 // (x1,y1) = mult*generator
                 // (x2,y2) = mult*mult*generator
-                add(new TestData("Test Vector #1", 
+                add(new TestData("Test Vector #1",
                 "0000000000000000000000000000000000000000000000000000000000000012", // mult
                 "1057E0AB5780F470DEFC9378D1C7C87437BB4C6F9EA55C63D936266DBD781FDA", // x1
                 "F6F1645A15CBE5DC9FA9B7DFD96EE5A7DCC11B5C5EF4F1F78D83B3393C6A45A2", // y1
                 "4954047A366A91E3FD94E574DB6F2B04F3A8465883DBC55A816EA563BF54A324", // x2
                 "B5A54786FD9EA48C9FC38A0557B0C4D54F285908A7291B630D06BEE970F530D3") // y2
                 );
-                add(new TestData("Test Vector #2", 
+                add(new TestData("Test Vector #2",
                 "1200000000000000000000000000000000000000000000000000000000000000", // mult
                 "DF684E6D0D57AF8B89DA11E8F7436C3D360F531D62BDCE42C5A8B72D73D5C717", // x
                 "9D3576BD03C09B8F416EE9C27D70AD4A425119271ACF549312CA48758F4E1FEC", // y
                 "57C8257EEAABF5446DCFACB99DEE104367B6C9950C76797C372EB177D5FA23B3", // x
                 "1CD3E8A34521C1C8E574EB4B99343CAA57E00725D8618F0231C7C79AA6837725") // y
                 );
-                add(new TestData("Test Vector #3", 
+                add(new TestData("Test Vector #3",
                 "0000000000000000000000000000000120000000000000000000000000000012", // mult
                 "A69DFD47B24485E5F523BDA5FBACF03F5A7C3D22E0C2BC6705594B7B051A06D0", // x
                 "ECF19629416BE5C9AF1E30988F3AA8B803809CF4D12944EB49C5E9892723798A", // y
                 "1E28559F5B681C308632EE11A007B9891B3FD592C982C4926153795794295E58", // x
                 "3C373046C27BB34609A43C91DF6D4B9AB9EB08F3B69A8F8FAE944211D8297F30") // y
                 );
-                add(new TestData("Test Vector #4", 
+                add(new TestData("Test Vector #4",
                 "0000000000000000000000000000000000000000000000000000000000000001", // mult
                 "6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296", // x
                 "4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5", // y
                 "6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296", // x
                 "4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5") // y
                 );
-                add(new TestData("Test Vector #5", 
+                add(new TestData("Test Vector #5",
                 "EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", // mult
                 "66B71D0BD47344197CCFB0C9578EAF0ADB609E05BB4E8F87D56BD34F24EE7C47", // x
                 "14A0ECB7F708C02B2BAE238D2C4607BB9D04FCE64E10A428C911D6FA25B2F0FD", // y
                 "D25AAFD0FCC5B5E95C84C0702C138BC4D7FEB4E5F9C2DFB4301E313507EFDF44", // x
                 "F3F04EBC7D308511B0392BB7171CF92688D6484A95A8100EDFC933613A359133") // y
                 );
-                add(new TestData("Test Vector #6", 
+                add(new TestData("Test Vector #6",
                 "1111111111111111111111111111111111111111111111111111111111111111", // mult
                 "0217E617F0B6443928278F96999E69A23A4F2C152BDF6D6CDF66E5B80282D4ED", // x
                 "194A7DEBCB97712D2DDA3CA85AA8765A56F45FC758599652F2897C65306E5794", // y
@@ -164,10 +164,10 @@ public class ECOperationsKATTest {
                 if (params == null || generator == null) {
                         throw new RuntimeException("No EC parameters available for key size " + keySize + " bits");
                 }
-                
+
                 ECOperations ops = ECOperations.forParameters(params).get();
                 ECOperations opsReference = ECOperations.forParameters(params).get();
-                
+
                 try {
                         Field montgomeryOps = ECOperations.class.getDeclaredField("montgomeryOps");
                         montgomeryOps.setAccessible(true);
@@ -205,7 +205,7 @@ public class ECOperationsKATTest {
  * KAT generator using OpenSSL for reference vectors
  * g++ ecpoint.cpp -g -lcrypto -Wno-deprecated-declarations && ./a.out
  * (Some OpenSSL EC operations are marked internal i.e. deprecated)
- * 
+ *
 
 #include <openssl/obj_mac.h>
 #include <openssl/ec.h>
