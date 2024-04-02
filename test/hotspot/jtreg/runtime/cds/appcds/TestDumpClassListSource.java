@@ -29,6 +29,7 @@
  * @bug 8279009 8275084
  * @requires vm.cds
  * @requires vm.cds.custom.loaders
+ * @requires vm.flagless
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile test-classes/Hello.java ClassSpecializerTestApp.java ClassListWithCustomClassNoSource.java
  * @run main/othervm TestDumpClassListSource

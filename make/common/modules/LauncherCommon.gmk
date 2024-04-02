@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,21 +27,6 @@ include JdkNativeCompilation.gmk
 include Modules.gmk
 include ProcessMarkdown.gmk
 include ToolsJdk.gmk
-
-# Tell the compiler not to export any functions unless declared so in
-# the source code. On Windows, this is the default and cannot be changed.
-# On Mac, we have always exported all symbols, probably due to oversight
-# and/or misunderstanding. To emulate this, don't hide any symbols
-# by default.
-# Also provide an override for non-conformant libraries.
-ifeq ($(TOOLCHAIN_TYPE), gcc)
-  LAUNCHER_CFLAGS += -fvisibility=hidden
-  LDFLAGS_JDKEXE += -Wl,--exclude-libs,ALL
-else ifeq ($(TOOLCHAIN_TYPE), clang)
-  LAUNCHER_CFLAGS += -fvisibility=hidden
-else ifeq ($(TOOLCHAIN_TYPE), xlc)
-  LAUNCHER_CFLAGS += -qvisibility=hidden
-endif
 
 LAUNCHER_SRC := $(TOPDIR)/src/java.base/share/native/launcher
 LAUNCHER_CFLAGS += -I$(TOPDIR)/src/java.base/share/native/launcher \
@@ -137,10 +122,6 @@ define SetupBuildLauncherBody
     endif
   endif
 
-  ifeq ($(USE_EXTERNAL_LIBZ), true)
-    $1_LIBS += -lz
-  endif
-
   $1_WINDOWS_JLI_LIB := $(call FindStaticLib, java.base, jli, /libjli)
 
   $1_EXTRA_FILES := $(LAUNCHER_SRC)/main.c
@@ -157,29 +138,30 @@ define SetupBuildLauncherBody
       NAME := $1, \
       EXTRA_FILES := $$($1_EXTRA_FILES), \
       OPTIMIZATION := $$($1_OPTIMIZATION), \
-      CFLAGS := $$(CFLAGS_JDKEXE) \
-          $$(LAUNCHER_CFLAGS) \
+      CFLAGS := $$(LAUNCHER_CFLAGS) \
           $$(VERSION_CFLAGS) \
           -DLAUNCHER_NAME='"$$(LAUNCHER_NAME)"' \
           -DPROGNAME='"$1"' \
           $$($1_CFLAGS), \
       CFLAGS_windows := $$($1_CFLAGS_windows), \
       DISABLED_WARNINGS_gcc := unused-function, \
-      LDFLAGS := $$(LDFLAGS_JDKEXE) \
-          $$(call SET_EXECUTABLE_ORIGIN) \
-          $$($1_LDFLAGS), \
+      LDFLAGS := $$($1_LDFLAGS), \
       LDFLAGS_linux := $$(call SET_EXECUTABLE_ORIGIN,/../lib) \
           -L$(call FindLibDirForModule, java.base), \
       LDFLAGS_macosx := $$(call SET_EXECUTABLE_ORIGIN,/../lib) \
           -L$(call FindLibDirForModule, java.base), \
       LDFLAGS_aix := -L$(SUPPORT_OUTPUTDIR)/native/java.base, \
-      LIBS := $(JDKEXE_LIBS) $$($1_LIBS), \
-      LIBS_linux := -ljli -lpthread $(LIBDL), \
-      LIBS_macosx := -ljli -framework Cocoa -framework Security \
-          -framework ApplicationServices, \
-      LIBS_aix := -ljli_static, \
-      LIBS_windows := $$($1_WINDOWS_JLI_LIB) \
-          $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib, \
+      JDK_LIBS_unix := -ljli, \
+      JDK_LIBS_windows := \
+          $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib \
+          $$($1_WINDOWS_JLI_LIB), \
+      LIBS := $$($1_LIBS), \
+      LIBS_unix := $(LIBZ_LIBS), \
+      LIBS_linux := $(LIBDL) -lpthread, \
+      LIBS_macosx := \
+          -framework ApplicationServices \
+          -framework Cocoa \
+          -framework Security, \
       OUTPUT_DIR := $$($1_OUTPUT_DIR), \
       VERSIONINFO_RESOURCE := $$($1_VERSION_INFO_RESOURCE), \
       EXTRA_RCFLAGS := $$($1_EXTRA_RCFLAGS), \
@@ -193,7 +175,7 @@ define SetupBuildLauncherBody
   $$(BUILD_LAUNCHER_$1): $$(BUILD_PLIST_$1)
 
   ifeq ($(call isTargetOs, aix), true)
-    $$(BUILD_LAUNCHER_$1): $(call FindStaticLib, java.base, jli_static)
+    $$(BUILD_LAUNCHER_$1): $(call FindStaticLib, java.base, jli)
   endif
 
   ifeq ($(call isTargetOs, windows), true)

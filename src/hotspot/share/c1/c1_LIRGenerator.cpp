@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,9 +205,11 @@ void LIRItem::set_result(LIR_Opr opr) {
   assert(value()->operand()->is_illegal() || value()->operand()->is_constant(), "operand should never change");
   value()->set_operand(opr);
 
+#ifdef ASSERT
   if (opr->is_virtual()) {
     _gen->_instruction_for_operand.at_put_grow(opr->vreg_number(), value(), nullptr);
   }
+#endif
 
   _result = opr;
 }
@@ -1494,28 +1496,22 @@ LIR_Opr LIRGenerator::operand_for_instruction(Instruction* x) {
       assert(x->as_Phi() || x->as_Local() != nullptr, "only for Phi and Local");
       // allocate a virtual register for this local or phi
       x->set_operand(rlock(x));
+#ifdef ASSERT
       _instruction_for_operand.at_put_grow(x->operand()->vreg_number(), x, nullptr);
+#endif
     }
   }
   return x->operand();
 }
 
-
-Instruction* LIRGenerator::instruction_for_opr(LIR_Opr opr) {
-  if (opr->is_virtual()) {
-    return instruction_for_vreg(opr->vreg_number());
-  }
-  return nullptr;
-}
-
-
+#ifdef ASSERT
 Instruction* LIRGenerator::instruction_for_vreg(int reg_num) {
   if (reg_num < _instruction_for_operand.length()) {
     return _instruction_for_operand.at(reg_num);
   }
   return nullptr;
 }
-
+#endif
 
 void LIRGenerator::set_vreg_flag(int vreg_num, VregFlag f) {
   if (_vreg_flags.size_in_bits() == 0) {
@@ -2660,7 +2656,9 @@ void LIRGenerator::do_Base(Base* x) {
     assert(as_ValueType(t)->tag() == local->type()->tag(), "check");
 #endif // __SOFTFP__
     local->set_operand(dest);
+#ifdef ASSERT
     _instruction_for_operand.at_put_grow(dest->vreg_number(), local, nullptr);
+#endif
     java_index += type2size[t];
   }
 
