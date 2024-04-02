@@ -30,6 +30,7 @@ import compiler.lib.ir_framework.*;
  * @bug 8300148
  * @summary Test barriers emitted in constructors
  * @library /test/lib /
+ * @requires os.arch=="aarch64" | os.arch=="x86_64" | os.arch=="amd64"
  * @run main compiler.c2.irTests.ConstructorBarriers
  */
 public class ConstructorBarriers {
