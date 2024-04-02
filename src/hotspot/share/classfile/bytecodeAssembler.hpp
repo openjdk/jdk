@@ -66,7 +66,6 @@ class BytecodeCPEntry {
   union {
     Symbol* utf8;
     u2 klass;
-    u2 string;
     struct {
       u2 name_index;
       u2 type_index;
@@ -75,11 +74,11 @@ class BytecodeCPEntry {
       u2 class_index;
       u2 name_and_type_index;
     } methodref;
-    uintptr_t hash;
+    uintptr_t value;
   } _u;
 
-  BytecodeCPEntry() : _tag(ERROR_TAG) { _u.hash = 0; }
-  BytecodeCPEntry(u1 tag) : _tag(tag) { _u.hash = 0; }
+  BytecodeCPEntry() : _tag(ERROR_TAG) { _u.value = 0; }
+  BytecodeCPEntry(u1 tag) : _tag(tag) { _u.value = 0; }
 
   static BytecodeCPEntry utf8(Symbol* symbol) {
     BytecodeCPEntry bcpe(UTF8);
@@ -114,11 +113,11 @@ class BytecodeCPEntry {
   }
 
   static bool equals(BytecodeCPEntry const& e0, BytecodeCPEntry const& e1) {
-    return e0._tag == e1._tag && e0._u.hash == e1._u.hash;
+    return e0._tag == e1._tag && e0._u.value == e1._u.value;
   }
 
   static unsigned hash(BytecodeCPEntry const& e0) {
-    return (unsigned)(e0._tag ^ e0._u.hash);
+    return (unsigned)(e0._tag ^ e0._u.value);
   }
 };
 
@@ -158,7 +157,8 @@ class BytecodeConstantPool : public ResourceObj {
   }
 
   u2 string(Symbol* str, TRAPS) {
-    u2 utf8_entry = utf8(str, CHECK_0);
+    // Create the utf8_entry in the hashtable but use Symbol for matching.
+    (void)utf8(str, CHECK_0);
     return find_or_add(BytecodeCPEntry::string(str), THREAD);
   }
 
