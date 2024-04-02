@@ -36,7 +36,7 @@ class AsyncLogTest : public LogTestFixture {
 public:
   // msg is 128 bytes.
   const char* large_message = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+                              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
   AsyncLogTest() {
     if (!LogConfiguration::is_async_mode()) {
       fprintf(stderr, "Warning: asynclog is OFF.\n");

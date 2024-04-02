@@ -118,26 +118,26 @@ private:
   PlatformMonitor& _stats_lock;
 
   // Can't use a Monitor here as we need a low-level API that can be used without Thread::current().
-  PlatformMonitor _read_lock;
-  PlatformMonitor _write_lock;
+  PlatformMonitor _consumer_lock;
+  PlatformMonitor _producer_lock;
   Semaphore _flush_sem;
 
   struct ConsumerLocker : public StackObj {
     CircularStringBuffer* buf;
     ConsumerLocker(CircularStringBuffer* buf) : buf(buf) {
-      buf->_read_lock.lock();
+      buf->_consumer_lock.lock();
     }
     ~ConsumerLocker() {
-      buf->_read_lock.unlock();
+      buf->_consumer_lock.unlock();
     }
   };
   struct ProducerLocker : public StackObj {
     CircularStringBuffer* buf;
     ProducerLocker(CircularStringBuffer* buf) : buf(buf) {
-      buf->_write_lock.lock();
+      buf->_producer_lock.lock();
     }
     ~ProducerLocker() {
-      buf->_write_lock.unlock();
+      buf->_producer_lock.unlock();
     }
   };
   // Opaque circular mapping of our buffer.

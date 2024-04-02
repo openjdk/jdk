@@ -119,7 +119,7 @@ void CircularStringBuffer::enqueue_locked(const char* str, size_t size, LogFileS
   if (not_enough_memory()) {
     if (_should_stall) {
       while (not_enough_memory()) {
-        _write_lock.wait(0);
+        _producer_lock.wait(0);
         unused = this->available_bytes();
       }
     } else {
@@ -143,7 +143,7 @@ void CircularStringBuffer::enqueue_locked(const char* str, size_t size, LogFileS
   // Finally move the tail, making the message available for consumers.
   Atomic::store(&_tail, (t + required_memory) % circular_mapping.size);
   // We're done, notify the reader.
-  _read_lock.notify();
+  _consumer_lock.notify();
   return;
 }
 
@@ -186,15 +186,15 @@ CircularStringBuffer::DequeueResult CircularStringBuffer::dequeue(Message* out_m
   circular_mapping.read_bytes(h, out, str_size);
   // Done, move the head forward
   Atomic::store(&_head, (h + out_msg->size) % circular_mapping.size);
-  // Notify a writer that more memory is available
-  _write_lock.notify();
+  // Notify a producer that more memory is available
+  _producer_lock.notify();
   // Release the lock
   return OK;
 }
 
 void CircularStringBuffer::flush() {
   enqueue("", 0, nullptr, CircularStringBuffer::None);
-  _read_lock.notify();
+  _consumer_lock.notify();
   _flush_sem.wait();
 }
 
@@ -212,7 +212,7 @@ void CircularStringBuffer::await_message() {
   while (true) {
     ConsumerLocker rl(this);
     while (_head == _tail) {
-      _read_lock.wait(0 /* no timeout */);
+      _consumer_lock.wait(0 /* no timeout */);
     }
     break;
   }
