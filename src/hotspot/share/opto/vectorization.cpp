@@ -174,55 +174,55 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
 
   _types.compute_vector_element_type();
 
-  _pointers.compute_and_cache();
+  _vpointers.compute_and_cache();
 
   _dependency_graph.construct();
 
   return VStatus::make_success();
 }
 
-void VLoopPointers::compute_and_cache() {
-  int number_of_pointers = 0;
+void VLoopVPointers::compute_and_cache() {
+  int number_of_vpointers = 0;
   for (int i = 0; i < _body.body().length(); i++) {
     MemNode* mem = _body.body().at(i)->isa_Mem();
     if (mem != nullptr && _vloop.in_bb(mem)) {
-      number_of_pointers++;
+      number_of_vpointers++;
     }
   }
 
-  uint bytes = number_of_pointers * sizeof(VPointer);
-  _pointers = (VPointer*)_arena->Amalloc(bytes);
+  uint bytes = number_of_vpointers * sizeof(VPointer);
+  _vpointers = (VPointer*)_arena->Amalloc(bytes);
 
   int pointers_idx = 0;
   for (int i = 0; i < _body.body().length(); i++) {
     MemNode* mem = _body.body().at(i)->isa_Mem();
     if (mem != nullptr && _vloop.in_bb(mem)) {
       // Placement new: construct directly into the array.
-      ::new (&_pointers[pointers_idx]) VPointer(mem, _vloop);
-      _bb_idx_to_pointer.at_put(i, pointers_idx);
+      ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop);
+      _bb_idx_to_vpointer.at_put(i, pointers_idx);
       pointers_idx++;
     }
   }
 
-  NOT_PRODUCT( if (_vloop.is_trace_pointers()) { print(); } )
+  NOT_PRODUCT( if (_vloop.is_trace_vpointers()) { print(); } )
 }
 
-const VPointer& VLoopPointers::get(const MemNode* mem) const {
+const VPointer& VLoopVPointers::vpointer(const MemNode* mem) const {
   assert(mem != nullptr && _vloop.in_bb(mem), "only mem in loop");
   int bb_idx = _body.bb_idx(mem);
-  int pointers_idx = _bb_idx_to_pointer.at(bb_idx);
+  int pointers_idx = _bb_idx_to_vpointer.at(bb_idx);
   assert(pointers_idx >= 0, "mem node must have a cached pointer");
-  return _pointers[pointers_idx];
+  return _vpointers[pointers_idx];
 }
 
 #ifndef PRODUCT
-void VLoopPointers::print() const {
-  tty->print_cr("\nVLoopPointers::print:");
+void VLoopVPointers::print() const {
+  tty->print_cr("\nVLoopVPointers::print:");
 
   for (int i = 0; i < _body.body().length(); i++) {
     MemNode* mem = _body.body().at(i)->isa_Mem();
     if (mem != nullptr && _vloop.in_bb(mem)) {
-      const VPointer& p = get(mem);
+      const VPointer& p = vpointer(mem);
       tty->print("  ");
       p.print();
     }
@@ -257,7 +257,7 @@ void VLoopDependencyGraph::construct() {
       MemNode* n1 = slice_nodes.at(j);
       memory_pred_edges.clear();
 
-      const VPointer& p1 = _pointers.get(n1);
+      const VPointer& p1 = _vpointers.vpointer(n1);
       // For all memory nodes before it, check if we need to add a memory edge.
       for (int k = slice_nodes.length() - 1; k > j; k--) {
         MemNode* n2 = slice_nodes.at(k);
@@ -265,7 +265,7 @@ void VLoopDependencyGraph::construct() {
         // Ignore Load-Load dependencies:
         if (n1->is_Load() && n2->is_Load()) { continue; }
 
-        const VPointer& p2 = _pointers.get(n2);
+        const VPointer& p2 = _vpointers.vpointer(n2);
         if (!VPointer::not_equal(p1.cmp(p2))) {
           // Possibly overlapping memory
           memory_pred_edges.append(_body.bb_idx(n2));

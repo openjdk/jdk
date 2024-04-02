@@ -156,7 +156,7 @@ public:
     return _vtrace.is_trace(TraceAutoVectorizationTag::DEPENDENCY_GRAPH);
   }
 
-  bool is_trace_pointers() const {
+  bool is_trace_vpointers() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::POINTERS);
   }
 
@@ -453,34 +453,34 @@ private:
 
 // Submodule of VLoopAnalyzer.
 // We compute and cache the VPointer for every load and store.
-class VLoopPointers : public StackObj {
+class VLoopVPointers : public StackObj {
 private:
   Arena*                   _arena;
   const VLoop&             _vloop;
   const VLoopBody&         _body;
 
   // Array of cached pointers
-  VPointer* _pointers;
+  VPointer* _vpointers;
 
-  // Map bb_idx -> index in _pointers. -1 if not mapped.
-  GrowableArray<int> _bb_idx_to_pointer;
+  // Map bb_idx -> index in _vpointers. -1 if not mapped.
+  GrowableArray<int> _bb_idx_to_vpointer;
 
 public:
-  VLoopPointers(Arena* arena,
-                const VLoop& vloop,
-                const VLoopBody& body) :
+  VLoopVPointers(Arena* arena,
+                 const VLoop& vloop,
+                 const VLoopBody& body) :
     _arena(arena),
     _vloop(vloop),
     _body(body),
-    _pointers(nullptr),
-    _bb_idx_to_pointer(arena,
-                       vloop.estimated_body_length(),
-                       vloop.estimated_body_length(),
-                       -1) {}
-  NONCOPYABLE(VLoopPointers);
+    _vpointers(nullptr),
+    _bb_idx_to_vpointer(arena,
+                        vloop.estimated_body_length(),
+                        vloop.estimated_body_length(),
+                        -1) {}
+  NONCOPYABLE(VLoopVPointers);
 
   void compute_and_cache();
-  const VPointer& get(const MemNode* mem) const;
+  const VPointer& vpointer(const MemNode* mem) const;
   NOT_PRODUCT( void print() const; )
 };
 
@@ -500,7 +500,7 @@ private:
   const VLoop&             _vloop;
   const VLoopBody&         _body;
   const VLoopMemorySlices& _memory_slices;
-  const VLoopPointers&     _pointers;
+  const VLoopVPointers&    _vpointers;
 
   // bb_idx -> DependenceNode*
   GrowableArray<DependencyNode*> _dependency_nodes;
@@ -513,12 +513,12 @@ public:
                        const VLoop& vloop,
                        const VLoopBody& body,
                        const VLoopMemorySlices& memory_slices,
-                       const VLoopPointers& pointers) :
+                       const VLoopVPointers& pointers) :
     _arena(arena),
     _vloop(vloop),
     _body(body),
     _memory_slices(memory_slices),
-    _pointers(pointers),
+    _vpointers(pointers),
     _dependency_nodes(arena,
                       vloop.estimated_body_length(),
                       vloop.estimated_body_length(),
@@ -612,7 +612,7 @@ private:
   VLoopMemorySlices    _memory_slices;
   VLoopBody            _body;
   VLoopTypes           _types;
-  VLoopPointers        _pointers;
+  VLoopVPointers       _vpointers;
   VLoopDependencyGraph _dependency_graph;
 
 public:
@@ -624,8 +624,8 @@ public:
     _memory_slices   (&_arena, vloop),
     _body            (&_arena, vloop, vshared),
     _types           (&_arena, vloop, _body),
-    _pointers        (&_arena, vloop, _body),
-    _dependency_graph(&_arena, vloop, _body, _memory_slices, _pointers)
+    _vpointers       (&_arena, vloop, _body),
+    _dependency_graph(&_arena, vloop, _body, _memory_slices, _vpointers)
   {
     _success = setup_submodules();
   }
@@ -639,7 +639,7 @@ public:
   const VLoopMemorySlices& memory_slices()       const { return _memory_slices; }
   const VLoopBody& body()                        const { return _body; }
   const VLoopTypes& types()                      const { return _types; }
-  const VLoopPointers& pointers()                const { return _pointers; }
+  const VLoopVPointers& vpointers()              const { return _vpointers; }
   const VLoopDependencyGraph& dependency_graph() const { return _dependency_graph; }
 
 private:

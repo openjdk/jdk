@@ -495,9 +495,9 @@ class SuperWord : public ResourceObj {
     return _vloop_analyzer.dependency_graph().mutually_independent(nodes);
   }
 
-  // VLoopDependencyGraph Accessors
-  const VPointer& get_pointer(const MemNode* mem) const {
-    return _vloop_analyzer.pointers().get(mem);
+  // VLoopVPointer Accessors
+  const VPointer& vpointer(const MemNode* mem) const {
+    return _vloop_analyzer.vpointers().vpointer(mem);
   }
 
 #ifndef PRODUCT
