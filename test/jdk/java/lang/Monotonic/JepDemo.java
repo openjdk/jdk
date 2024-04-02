@@ -184,15 +184,8 @@ final class JepDemo {
 
         private static final int SIZE = 8;
 
-        // 1. Declare a list of error pages to serve up
-        private static final List<String> MESSAGES = new ArrayList<>(SIZE);
-
-        static {
-            // Pre-populate the list with null values
-            for (int i = 0; i < SIZE; i++) {
-                MESSAGES.add(null);
-            }
-        }
+        // 1. Declare an array of error pages to serve up
+        private static final String[] MESSAGES = new String[SIZE];
 
         // 2. Define a function that is to be called the first
         //    time a particular message number is referenced
@@ -205,12 +198,12 @@ final class JepDemo {
         }
 
         static synchronized String message(int messageNumber) {
-            // 3. Access the memoized list element under synchronization
-            //    and compute and store if absent.
-            String page = MESSAGES.get(messageNumber);
+            // 3. Access the memoized array element under synchronization
+            //    and compute-and-store if absent.
+            String page = MESSAGES[messageNumber];
             if (page == null) {
                 page = readFromFile(messageNumber);
-                MESSAGES.set(messageNumber, page);
+                MESSAGES[messageNumber] = page;
             }
             return page;
         }
@@ -225,8 +218,8 @@ final class JepDemo {
             private static final int SIZE = 8;
 
             // 1. Declare a lazy list of default error pages to serve up
-            private static final List<String> MESSAGES = List.ofLazy(
-                    SIZE, ErrorMessages::readFromFile);
+            private static final List<String> MESSAGES =
+                    List.ofLazy(SIZE, ErrorMessages::readFromFile);
 
             // 2. Define a function that is to be called the first
             //    time a particular message number is referenced
@@ -245,7 +238,13 @@ final class JepDemo {
             }
 
             public static void main(String[] args) {
-                String errorPage = ErrorMessages.errorPage(2); // "Payment was denied: Insufficient funds."
+                String errorPage = ErrorMessages.errorPage(2);
+
+                // <!DOCTYPE html>
+                // <html lang="en">
+                //   <head><meta charset="utf-8"></head>
+                //   <body>Payment was denied: Insufficient funds.</body>
+                // </html>
             }
 
         }

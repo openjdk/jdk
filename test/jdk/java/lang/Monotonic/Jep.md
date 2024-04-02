@@ -2,7 +2,7 @@
 
 ## Summary
 
-Introduce _Lazy Value & Collections_, which are immutable value holders where elements are initialized _at most once_.
+Introduce a _Lazy Values & Collections_ API, which provides immutable value holders where elements are initialized _at most once_.
 Lazy Values & Collections offer the performance and safety benefits of final fields, while offering greater
 flexibility as to the timing of initialization. This is a [preview API](https://openjdk.org/jeps/12).
 
@@ -128,33 +128,26 @@ class ErrorMessages {
 
     private static final int SIZE = 8;
 
-    // 1. Declare a list of error pages to serve up
-    private static final List<String> MESSAGES = new ArrayList<>(SIZE);
-
-    static {
-        // Pre-populate the list with null values
-        for (int i = 0; i < SIZE; i++) {
-            MESSAGES.add(null);
-        }
-    }
+    // 1. Declare an array of error pages to serve up
+    private static final String[] MESSAGES = new String[SIZE];
 
     // 2. Define a function that is to be called the first
     //    time a particular message number is referenced
     private static String readFromFile(int messageNumber) {
         try {
-            return Files.readString(Path.of("message-" + messageNumber + ".html"));                    
+            return Files.readString(Path.of("message-" + messageNumber + ".html"));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
     static synchronized String message(int messageNumber) {
-        // 3. Access the memoized list element under synchronization
-        //    and compute and store if absent.
-        String page = MESSAGES.get(messageNumber);
+        // 3. Access the memoized array element under synchronization
+        //    and compute-and-store if absent.
+        String page = MESSAGES[messageNumber];
         if (page == null) {
             page = readFromFile(messageNumber);
-            MESSAGES.set(messageNumber, page);
+            MESSAGES[messageNumber] = page;
         }
         return page;
     }
@@ -173,11 +166,11 @@ String errorPage = ErrorMessages.errorPage(2);
 ```
 
 Unfortunately, this approach provides a number of challenges. First, retrieving the values
-from a `List` is slow, as said values cannot be [constant-folded](https://en.wikipedia.org/wiki/Constant_folding).
-Even worse, access to the `List` is guarded by synchronization that is slow and will block access to the list for
-all elements whenever one of  the elements is under computation. Furthermore, the class holder idiom (see above)
+from an array is slow, as said values cannot be [constant-folded](https://en.wikipedia.org/wiki/Constant_folding). Even worse, access to
+the array is guarded by synchronization that is slow and will block access to the array for
+all elements whenever one of the elements is under computation. Furthermore, the class holder idiom (see above)
 is clearly insufficient in this case, as the number of required holder classes is *statically unbounded* - it 
-depends on the value of the parameter `SIZE` which may change in future variants.
+depends on the value of the parameter `SIZE` which may change in future variants of the code.
 
 What we are missing -- in all cases -- is a way to *promise* that a constant will be initialized
 by the time it is used, with a value that is computed at most once. Such a mechanism would give
@@ -186,18 +179,18 @@ the Java runtime maximum opportunity to stage and optimize its computation, thus
 such a mechanism should gracefully scale to handle collections of constant values, while retaining
 efficient computer resource management.
 
-The attentive reader might have noticed the similarity between what is proposed here and the JDK internal
+The attentive reader might have noticed the similarity between what is sought after here and the JDK internal
 annotation`jdk.internal.vm.annotation.@Stable`. This annotation is used by *JDK code* to mark scalar and
 array variables whose values or elements will change *at most once*. This annotation is powerful and often
 crucial to achieving optimal performance, but it is also easy to misuse: further updating a `@Stable` field
 after its initial update will result in undefined behavior, as the JIT compiler might have *already*
 constant-folded the (now overwritten) field value. In other words, what we are after is a *safe* and *efficient*
 wrapper around the `@Stable` mechanism - in the form of a new Java SE API which might be enjoyed by
-_all_ 3rd party Java code (and not the JDK alone).
+_all_ client and 3rd party Java code (and not the JDK alone).
 
 ## Description
 
-### Preview Feature
+### Preview feature
 
 Lazy Values & Collections is a [preview API](https://openjdk.org/jeps/12), disabled by default.
 To use the Lazy Value and Collections APIs, the JVM flag `--enable-preview` must be passed in, as follows:
@@ -215,12 +208,12 @@ The Values & Collections API define functions and an interface so that client co
 - Define and use lazy (scalar) values: [`Lazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Monotonic.html)
 - Define and use lazy collections: 
   [`List.ofLazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/List.html#ofLazy(int,java.util.function.IntFunction)), 
-  [`Set.ofLazy(Set, Predicate)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Set.html#ofLazy(java.util.Set,java.util.function.Predicate)), [`Set.ofLazy(Enum.class, Predicate`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Set.html#ofLazy(java.lang.Class,java.util.function.Predicate)) and 
+  [`Set.ofLazy(Set, Predicate)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Set.html#ofLazy(java.util.Set,java.util.function.Predicate)), [`Set.ofLazy(Enum.class, Predicate`)](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Set.html#ofLazy(java.lang.Class,java.util.function.Predicate)) and 
   [`Map.ofLazy(Set, Function)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Map.html#ofLazy(java.util.Set,java.util.function.Function)), [`Map.ofLazy(Enum.class, Function)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Map.html#ofLazy(java.lang.Class,java.util.function.Function))
 
 The Lazy Values & Collections API resides in the `java.lang` and `java.util` packages of the `java.base` module.
 
-### Lazy Values
+### Lazy values
 
 A _lazy value_ is a holder object that is bound at most once whereby it
 goes from "unbound" to "bound". It is expressed as an object of type `Lazy`,
@@ -244,7 +237,7 @@ class Bar {
 }
 ```
 
-This is similar in spirit to the holder-class idiom, and offers the same
+This is similar to the holder-class idiom in the sense it offers the same
 performance, constant-folding, and thread-safety characteristics, but is simpler
 and incurs a lower static footprint since no additional class is required.
 
@@ -274,14 +267,14 @@ class Bar {
 Calling `logger()` multiple times yields the same value from each invocation.
 Even though `Lazy::computeIfUnbound` might invoke the value supplier several times if called
 from a plurality of threads at about the same time, only one distinct witness value is 
-ever exposed to the outside world.
+ever exposed to the outside world. 
 
-Lazy reference values are faster to obtain than reference values managed via
+Lazy reference values are faster to retrieve than reference values managed via
 double-checked-idiom constructs as lazy values rely on explicit memory barriers
 rather than performing volatile access on each retrieval operation and in addition, they are eligible
 for constant folding optimizations.
 
-### Lazy Collections
+### Lazy collections
 
 While initializing a single field of type `Lazy` is cheap (remember, creating a new `Lazy`
 object only creates the *holder* for the value), this (small) initialization cost has
@@ -302,7 +295,7 @@ static <E> List<E> List.ofLazy(int size, IntFunction<? extends E> mapper) { ... 
 
 This allows for improving the handling of lists with lazily computed values and enables a much better
 implementation of the `ErrorMessages` class mentioned earlier. Here is a new version
-of the class which is using the newly proposed API:
+of the class which is now using the newly proposed API:
 
 ```
 class ErrorMessages {
@@ -310,8 +303,8 @@ class ErrorMessages {
     private static final int SIZE = 8;
 
     // 1. Declare a lazy list of default error pages to serve up
-    private static final List<String> MESSAGES = List.ofLazy(
-            SIZE, ErrorMessages::readFromFile);
+    private static final List<String> MESSAGES = 
+            List.ofLazy(SIZE, ErrorMessages::readFromFile);
 
     // 2. Define a function that is to be called the first
     //    time a particular message number is referenced
@@ -350,12 +343,12 @@ computing distinct elements simultaneously). The Lazy Values & Collections API a
 still preserving good constant-folding guarantees and integrity of updates in the case of multi-threaded access.
 
 It should be noted that even though a lazily computed list might mutate its internal state upon external access, it 
-is still _immutable_ because _no change can ever be observed by an external entity_. This is similar to other
+is _still immutable_ because _no change can ever be observed by an external entity_. This is similar to other
 immutable classes, such as `String` (which internally caches its `hash` value), where they might rely on mutable
-internal states  that are carefully kept internal and that never shine through to the outside world.
+internal states that are carefully kept internal and that never shine through to the outside world.
 
 Just as a `List` can be lazily computed, a `Map` of lazily computed values can also be defined and used similarly.
-In the example below, we lazily compute the map's values for an enumerated collection of pre-defined keys:
+In the example below, we lazily compute a map's values for an enumerated collection of pre-defined keys:
 
 ```
 class MapDemo {
@@ -371,7 +364,7 @@ class MapDemo {
 
 Finally, a `Set` of lazily computed elements can be defined and used. In the example below, the well known problem of
 efficiently determining and acting on if a logger will actually output something for a certain level is solved using
-a lazily computed `Set`. This allows constant folding of the code path and might enable the JVM to totally eliminate
+a lazily computed `Set`. This allows constant folding of the code path and might even enable the JVM to totally eliminate
 unused code paths depending on dynamic logger properties determined when first accessed:
 
 ```
@@ -397,16 +390,19 @@ unused code paths depending on dynamic logger properties determined when first a
 This last example also demonstrates how lazy constructs can be composed into more high-level, high-performance
 concepts that can leverage constant folding and other JVM optimizations transitively. 
 
+It is worth mentioning, the lazy collections all promises the provided function used to lazily compute
+elements or values are invoked at-most-once even though used from several threads. This is an additional promise
+compared to scalar `Lazy` values.
 
-### Memoized Functions
+### Memoized functions
 
-So far, we have talked about the fundamental features of lazy values and collections as a securely
-wrapped `@Stable` value holder. However, as shown above, it has become apparent, lazy primitives are amenable
+So far, we have talked about the fundamental features of Lazy Values & Collections as securely
+wrapped `@Stable` value holders. However, as briefly shown above, it has become apparent, lazy primitives are amenable
 to composition with other constructs in order to create more high-level and powerful features.
 
 [Memoized functions](https://en.wikipedia.org/wiki/Memoization) are functions where the output for a particular 
 input value is computed only once and are remembered such that remembered outputs can can be reused for subsequent
-calls with recurring input values. Here is how we could make sure the lambda `() -> Logger.getLogger("com.foo.Bar")`
+calls with recurring input values. Here is how we could make sure `Logger.getLogger("com.foo.Bar")`
 in one of the first examples above is invoked at most once (provided it executes successfully)
 in a multi-threaded environment:
 
@@ -437,12 +433,29 @@ Similarly to how a `Funcion` can be memoized using a backing lazily computed map
 for an `IntFunction` that will record its cached value in a backing _lazy list_:
 
 ```
-private static final IntFunction<String> ERROR_PAGES = List.ofLazy(
-        MAX_ERROR_CODE, ListDemo::readFromFile)::get;
+// 1. Declare a memoized (cached) IntFunction backed by a lazily computed list
+static final IntFunction<String> ERROR_PAGES = 
+        List.ofLazy(MAX_ERROR_CODE, ListDemo::readFromFile)::get;
+        
+...
+
+// 2. Access the memoized value with as-declared-final performance
+//    (evaluation made before the first access)
+String errorPage = ERROR_PAGES.apply(2);
+       
+// <!DOCTYPE html>
+// <html lang="en">
+//   <head><meta charset="utf-8"></head>
+//   <body>Payment was denied: Insufficient funds.</body>
+// </html>
 ```
 
-The same pattern can be used for creating a memoized `Supplier` (using a backing `Lazy`) or a `Predicate` 
-(backed by a lazily computed `Set`). The solution for this is left for the reader as an exercise.
+The same pattern can be used for creating a memoized `Predicate` (backed by a lazily computed `Set`).  The solution
+for this is left for the reader as an exercise. 
+
+As `Lazy::computeIfUnbound` can invoke a provided supplier several times if invoked from several threads, there is a
+convenience method `Lazy::asSupplier` that provides an out-of-the-box memoized supplier that upholds the invoke-at-most
+property also in multi-threaded environments.
 
 ## Alternatives
 
@@ -453,7 +466,7 @@ from reasoning about constantness and do not allow shifting computation _before_
 So, alternatives would be to keep using explicit double-checked locking, maps, holder classes, Atomic classes,
 and third-party frameworks.  Another alternative would be to add language support for immutable value holders.
 
-## Risks and Assumptions
+## Risks and assumptions
 
 Creating an API to provide thread-safe computed constant fields with an on-par performance with holder
 classes efficiently is a non-trivial task. It is, however, assumed that the current JIT implementations
