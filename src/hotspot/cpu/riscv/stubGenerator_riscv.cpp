@@ -5084,6 +5084,8 @@ const static uint64_t right_8_bits = right_n_bits(8);
     const uint64_t BASE = 0xfff1;
     const uint64_t NMAX = 0x15B0;
 
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
     __ mv(temp3, right_16_bits);
 
     __ mv(base, BASE);
@@ -5303,6 +5305,7 @@ const static uint64_t right_8_bits = right_n_bits(8);
     __ slli(s2, s2, 16);
     __ orr(s1, s1, s2);
 
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret();
 
     return start;
