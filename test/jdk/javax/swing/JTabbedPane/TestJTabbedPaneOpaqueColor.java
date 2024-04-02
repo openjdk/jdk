@@ -73,18 +73,17 @@ public class TestJTabbedPaneOpaqueColor {
 
     public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()
-                .title("JTabbedPane Tab and Content Area Color Test Instructions")
-                .instructions(INSTRUCTIONS)
-                .testTimeOut(10)
-                .rows(18)
-                .columns(60)
-                .build();
-        SwingUtilities.invokeAndWait(
-                TestJTabbedPaneOpaqueColor::createAndShowUI);
-        passFailJFrame.awaitAndCheck();
+            .title("JTabbedPane Tab and Content Area Color Test Instructions")
+            .instructions(INSTRUCTIONS)
+            .testTimeOut(10)
+            .rows(18)
+            .columns(60)
+            .testUI(TestJTabbedPaneOpaqueColor::createAndShowUI)
+            .build()
+            .awaitAndCheck();
     }
 
-    private static void createAndShowUI() {
+    private static JFrame createAndShowUI() {
         int NUM_TABS = 5;
         frame = new JFrame("Test JTabbedPane Opaque Color");
         JTabbedPane tabPane = new JTabbedPane();
@@ -149,6 +148,7 @@ public class TestJTabbedPaneOpaqueColor {
         frame.setSize(500, 500);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
+        return frame;
     }
 
     public static class MyAction implements ActionListener {
