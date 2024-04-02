@@ -59,7 +59,7 @@ public final class ValueLayouts {
     // Suppresses default constructor, ensuring non-instantiability.
     private ValueLayouts() {}
 
-    abstract sealed static class AbstractValueLayout<V extends AbstractValueLayout<V> & ValueLayout> extends AbstractLayout<V> {
+    abstract static sealed class AbstractValueLayout<V extends AbstractValueLayout<V> & ValueLayout> extends AbstractLayout<V> {
 
         static final int ADDRESS_SIZE_BYTES = Unsafe.ADDRESS_SIZE;
 
@@ -278,7 +278,7 @@ public final class ValueLayouts {
         }
 
         public static OfLong of(ByteOrder order) {
-            return new OfLongImpl(order, ADDRESS_SIZE_BYTES, Optional.empty());
+            return new OfLongImpl(order, Long.BYTES, Optional.empty());
         }
     }
 
@@ -294,7 +294,7 @@ public final class ValueLayouts {
         }
 
         public static OfDouble of(ByteOrder order) {
-            return new OfDoubleImpl(order, ADDRESS_SIZE_BYTES, Optional.empty());
+            return new OfDoubleImpl(order, Double.BYTES, Optional.empty());
         }
 
     }

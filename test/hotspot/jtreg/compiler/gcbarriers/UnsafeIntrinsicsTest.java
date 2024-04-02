@@ -97,7 +97,6 @@
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:-CreateCoredumpOnCrash
  *                   -XX:+ShenandoahVerify
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+ShenandoahVerifyOptoBarriers
  *                   -XX:CompileCommand=dontinline,*::mergeImpl*
  *                   compiler.gcbarriers.UnsafeIntrinsicsTest
  */

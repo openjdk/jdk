@@ -46,15 +46,15 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.*;
-import jdk.internal.classfile.instruction.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.instruction.*;
 
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static jdk.internal.classfile.Classfile.*;
-import static jdk.internal.classfile.Attributes.*;
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.classfile.Attributes.*;
 import static helpers.ClassRecord.CompatibilityFilter.By_ClassBuilder;
 
 /**
@@ -97,7 +97,7 @@ public record ClassRecord(
                 cl.constantPool(),
                 cl::elementStream, compatibilityFilter);
     }
-    public static ClassRecord ofStreamingElements(int majorVersion, int minorVersion, String thisClass, String superClass, Set<String> interfaces, int flags, ConstantPool cp, Supplier<Stream<? extends ClassfileElement>> elements, CompatibilityFilter... compatibilityFilter) {
+    public static ClassRecord ofStreamingElements(int majorVersion, int minorVersion, String thisClass, String superClass, Set<String> interfaces, int flags, ConstantPool cp, Supplier<Stream<? extends ClassFileElement>> elements, CompatibilityFilter... compatibilityFilter) {
         return new ClassRecord(
                 majorVersion,
                 minorVersion,
@@ -133,7 +133,7 @@ public record ClassRecord(
             String fieldFlags,
             AttributesRecord fieldAttributes) {
 
-        public static FieldRecord ofStreamingElements(String fieldName, String fieldType, int flags, Supplier<Stream<? extends ClassfileElement>> elements, CompatibilityFilter... compatibilityFilter) {
+        public static FieldRecord ofStreamingElements(String fieldName, String fieldType, int flags, Supplier<Stream<? extends ClassFileElement>> elements, CompatibilityFilter... compatibilityFilter) {
             return new FieldRecord(
                     fieldName,
                     fieldType,
@@ -156,7 +156,7 @@ public record ClassRecord(
             String methodFlags,
             AttributesRecord methodAttributes) {
 
-        public static MethodRecord ofStreamingElements(String methodName, String methodType, int flags, Supplier<Stream<? extends ClassfileElement>> elements, CompatibilityFilter... compatibilityFilter) {
+        public static MethodRecord ofStreamingElements(String methodName, String methodType, int flags, Supplier<Stream<? extends ClassFileElement>> elements, CompatibilityFilter... compatibilityFilter) {
             return new MethodRecord(
                     methodName,
                     methodType,
@@ -238,7 +238,7 @@ public record ClassRecord(
             String sourceIDAttribute,
             DefinedValue syntheticAttribute) {
 
-        public static AttributesRecord ofStreamingElements(Supplier<Stream<? extends ClassfileElement>> elements, ConstantPool cp, CompatibilityFilter... cf) {
+        public static AttributesRecord ofStreamingElements(Supplier<Stream<? extends ClassFileElement>> elements, ConstantPool cp, CompatibilityFilter... cf) {
             Map<String, Attribute<?>> attrs = elements.get().filter(e -> e instanceof Attribute<?>)
                     .map(e -> (Attribute<?>) e)
                     .collect(toMap(Attribute::attributeName, e -> e));
@@ -323,7 +323,7 @@ public record ClassRecord(
             Set<TypeAnnotationRecord> runtimeVisibleTypeAnnotationsAttribute,
             Set<TypeAnnotationRecord> runtimeInvisibleTypeAnnotationsAttribute) {
 
-        static CodeAttributesRecord ofStreamingElements(Supplier<Stream<? extends ClassfileElement>> elements, CodeAttribute lc, CodeNormalizerHelper code, CompatibilityFilter... cf) {
+        static CodeAttributesRecord ofStreamingElements(Supplier<Stream<? extends ClassFileElement>> elements, CodeAttribute lc, CodeNormalizerHelper code, CompatibilityFilter... cf) {
             int[] p = {0};
             var characterRanges = new HashSet<CharacterRangeRecord>();
             var lineNumbers = new HashSet<LineNumberRecord>();
@@ -501,7 +501,7 @@ public record ClassRecord(
             Set<ExceptionHandlerRecord> exceptionHandlers,
             CodeAttributesRecord codeAttributes) {
 
-        private static List<String> instructions(Supplier<Stream<? extends ClassfileElement>> elements, CodeNormalizerHelper code, CodeAttribute lr) {
+        private static List<String> instructions(Supplier<Stream<? extends ClassFileElement>> elements, CodeNormalizerHelper code, CodeAttribute lr) {
             int[] p = {0};
             return elements.get().filter(e -> e instanceof Instruction).map(e -> {
                 var ins = (Instruction)e;
@@ -566,7 +566,7 @@ public record ClassRecord(
             }).toList();
         }
 
-        public static CodeRecord ofStreamingElements(int maxStack, int maxLocals, int codeLength, Supplier<Stream<? extends ClassfileElement>> elements, CodeAttribute lc, CodeNormalizerHelper codeHelper, CompatibilityFilter... cf) {
+        public static CodeRecord ofStreamingElements(int maxStack, int maxLocals, int codeLength, Supplier<Stream<? extends ClassFileElement>> elements, CodeAttribute lc, CodeNormalizerHelper codeHelper, CompatibilityFilter... cf) {
             return new CodeRecord(
                     By_ClassBuilder.isNotDirectlyComparable(cf, maxStack),
                     By_ClassBuilder.isNotDirectlyComparable(cf, maxLocals),

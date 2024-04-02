@@ -52,9 +52,9 @@ static void inc_trampoline_stubs_count();
 static int trampoline_stubs_count();
 static int stubs_start_offset();
 
-public:
   ZBarrierStubC2(const MachNode* node);
 
+public:
   RegMask& live() const;
   Label* entry();
   Label* continuation();
@@ -128,6 +128,7 @@ protected:
                                         const Type* val_type) const;
 
 public:
+  virtual uint estimated_barrier_size(const Node* node) const;
   virtual void* create_barrier_state(Arena* comp_arena) const;
   virtual bool array_copy_requires_gc_barriers(bool tightly_coupled_alloc,
                                                BasicType type,

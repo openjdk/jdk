@@ -300,7 +300,7 @@ public class Snapshot implements AutoCloseable {
         }
         int count = 0;
         for (JavaHeapObject t : heapObjects.values()) {
-            t.setupReferers();
+            t.setupReferrers();
             ++count;
             if (calculateRefs && count % DOT_LIMIT == 0) {
                 System.out.print(".");
@@ -461,11 +461,11 @@ public class Snapshot implements AutoCloseable {
             if (curr.getRoot() != null) {
                 result.addElement(chain);
                 // Even though curr is in the rootset, we want to explore its
-                // referers, because they might be more interesting.
+                // referrers, because they might be more interesting.
             }
-            Enumeration<JavaThing> referers = curr.getReferers();
-            while (referers.hasMoreElements()) {
-                JavaHeapObject t = (JavaHeapObject) referers.nextElement();
+            Enumeration<JavaThing> referrers = curr.getReferrers();
+            while (referrers.hasMoreElements()) {
+                JavaHeapObject t = (JavaHeapObject)referrers.nextElement();
                 if (t != null && !visited.containsKey(t)) {
                     if (includeWeak || !t.refersOnlyWeaklyTo(this, curr)) {
                         visited.put(t, t);

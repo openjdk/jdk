@@ -40,8 +40,6 @@ import sun.security.util.*;
  * algorithm.
  *
  * @author Jan Luehe
- *
- *
  * @see DHPublicKey
  * @see javax.crypto.KeyAgreement
  */
@@ -49,13 +47,13 @@ final class DHPrivateKey implements PrivateKey,
         javax.crypto.interfaces.DHPrivateKey, Serializable {
 
     @java.io.Serial
-    static final long serialVersionUID = 7565477590005668886L;
+    private static final long serialVersionUID = 7565477590005668886L;
 
     // only supported version of PKCS#8 PrivateKeyInfo
     private static final BigInteger PKCS8_VERSION = BigInteger.ZERO;
 
     // the private key
-    private BigInteger x;
+    private final BigInteger x;
 
     // the key bytes, without the algorithm information
     private byte[] key;
@@ -64,13 +62,13 @@ final class DHPrivateKey implements PrivateKey,
     private byte[] encodedKey;
 
     // the prime modulus
-    private BigInteger p;
+    private final BigInteger p;
 
     // the base generator
-    private BigInteger g;
+    private final BigInteger g;
 
     // the private-value length (optional)
-    private int l;
+    private final int l;
 
     /**
      * Make a DH private key out of a private value <code>x</code>, a prime
@@ -163,6 +161,8 @@ final class DHPrivateKey implements PrivateKey,
             // Private-value length is OPTIONAL
             if (params.data.available() != 0) {
                 this.l = params.data.getInteger();
+            } else {
+                this.l = 0;
             }
             if (params.data.available() != 0) {
                 throw new InvalidKeyException("Extra parameter data");
@@ -172,7 +172,9 @@ final class DHPrivateKey implements PrivateKey,
             // privateKey
             //
             this.key = val.data.getOctetString();
-            parseKeyBits();
+
+            DerInputStream in = new DerInputStream(this.key);
+            this.x = in.getBigInteger();
 
             this.encodedKey = encodedKey.clone();
         } catch (IOException | NumberFormatException e) {
@@ -273,16 +275,6 @@ final class DHPrivateKey implements PrivateKey,
         }
     }
 
-    private void parseKeyBits() throws InvalidKeyException {
-        try {
-            DerInputStream in = new DerInputStream(this.key);
-            this.x = in.getBigInteger();
-        } catch (IOException e) {
-            throw new InvalidKeyException(
-                "Error parsing key encoding: " + e.getMessage(), e);
-        }
-    }
-
     /**
      * Calculates a hash code value for the object.
      * Objects that are equal will also have the same hashcode.
@@ -320,5 +312,29 @@ final class DHPrivateKey implements PrivateKey,
                 getAlgorithm(),
                 getFormat(),
                 encodedKey);
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     * <p>
+     * JDK 1.5+ objects use <code>KeyRep</code>s instead.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
+        if ((key == null) || (key.length == 0)) {
+            throw new InvalidObjectException("key not deserializable");
+        }
+        this.key = key.clone();
+        if ((encodedKey == null) || (encodedKey.length == 0)) {
+            throw new InvalidObjectException(
+                    "encoded key not deserializable");
+        }
+        this.encodedKey = encodedKey.clone();
     }
 }

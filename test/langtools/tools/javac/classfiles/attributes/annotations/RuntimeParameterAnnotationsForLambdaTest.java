@@ -25,12 +25,8 @@
  * @test
  * @bug 8044411 8079060 8138612
  * @summary Tests the RuntimeParameterVisibleAnnotations/RuntimeParameterInvisibleAnnotations attribute.
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  * @library /tools/lib /tools/javac/lib ../lib
@@ -40,11 +36,11 @@
  * @run main RuntimeParameterAnnotationsForLambdaTest
  */
 
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.attribute.RuntimeInvisibleParameterAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.attribute.RuntimeInvisibleParameterAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute;
 
 import java.util.List;
 import java.util.stream.Collectors;

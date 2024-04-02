@@ -15,14 +15,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ba" draft="contributed">башҡорт теле</language>
 		</languages>
 	</localeDisplayNames>
-	<layout>
-		<orientation>
-			<characterOrder>left-to-right</characterOrder>
-			<lineOrder>top-to-bottom</lineOrder>
-		</orientation>
-	</layout>
 	<characters>
-		<exemplarCharacters>[а ә б в г ғ д ҙ е ё ж з и й к ҡ л м н ң о ө п р с ҫ т у ү ф х һ ц ч ш щ ъ ы ь э ю я]</exemplarCharacters>
-		<exemplarCharacters type="index">[А Ә Б В Г Ғ Д Ҙ Е Ё Ж З И Й К Ҡ Л М Н Ң О Ө П Р С Ҫ Т У Ү Ф Х Һ Ц Ч Ш Щ Ъ Ы Ь Э Ю Я]</exemplarCharacters>
+		<exemplarCharacters>[а ә б в г ғ д ҙ её ж з и й к ҡ л м н ң о ө п р с ҫ т у ү ф х һ ц ч ш щ ъ ы ь э ю я]</exemplarCharacters>
+		<exemplarCharacters type="index">[А Ә Б В Г Ғ Д Ҙ ЕЁ Ж З И Й К Ҡ Л М Н Ң О Ө П Р С Ҫ Т У Ү Ф Х Һ Ц Ч Ш Щ Ъ Ы Ь Э Ю Я]</exemplarCharacters>
 	</characters>
 </ldml>

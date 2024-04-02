@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 */
 
 #include "precompiled.hpp"
+#include "cds/archiveBuilder.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classLoader.hpp"
@@ -257,7 +259,7 @@ static void define_javabase_module(Handle module_handle, jstring version, jstrin
 }
 
 // Caller needs ResourceMark.
-void throw_dup_pkg_exception(const char* module_name, PackageEntry* package, TRAPS) {
+static void throw_dup_pkg_exception(const char* module_name, PackageEntry* package, TRAPS) {
   const char* package_name = package->name()->as_C_string();
   if (package->module()->is_named()) {
     THROW_MSG(vmSymbols::java_lang_IllegalStateException(),
@@ -484,8 +486,7 @@ static bool _seen_system_unnamed_module = false;
 //
 // Returns true iff the oop has an archived ModuleEntry.
 bool Modules::check_archived_module_oop(oop orig_module_obj) {
-  assert(DumpSharedSpaces, "must be");
-  assert(MetaspaceShared::use_full_module_graph(), "must be");
+  assert(CDSConfig::is_dumping_full_module_graph(), "must be");
   assert(java_lang_Module::is_instance(orig_module_obj), "must be");
 
   ModuleEntry* orig_module_ent = java_lang_Module::module_entry_raw(orig_module_obj);
@@ -559,8 +560,51 @@ void Modules::verify_archived_modules() {
   ModuleEntry::verify_archived_module_entries();
 }
 
+#if INCLUDE_CDS_JAVA_HEAP
+char* Modules::_archived_main_module_name = nullptr;
+#endif
+
+void Modules::dump_main_module_name() {
+  const char* module_name = Arguments::get_property("jdk.module.main");
+  if (module_name != nullptr) {
+    _archived_main_module_name = ArchiveBuilder::current()->ro_strdup(module_name);
+  }
+  ArchivePtrMarker::mark_pointer(&_archived_main_module_name);
+}
+
+void Modules::serialize(SerializeClosure* soc) {
+  soc->do_ptr(&_archived_main_module_name);
+  if (soc->reading()) {
+    const char* runtime_main_module = Arguments::get_property("jdk.module.main");
+    log_info(cds)("_archived_main_module_name %s",
+      _archived_main_module_name != nullptr ? _archived_main_module_name : "(null)");
+    bool disable = false;
+    if (runtime_main_module == nullptr) {
+      if (_archived_main_module_name != nullptr) {
+        log_info(cds)("Module %s specified during dump time but not during runtime", _archived_main_module_name);
+        disable = true;
+      }
+    } else {
+      if (_archived_main_module_name == nullptr) {
+        log_info(cds)("Module %s specified during runtime but not during dump time", runtime_main_module);
+        disable = true;
+      } else if (strcmp(runtime_main_module, _archived_main_module_name) != 0) {
+        log_info(cds)("Mismatched modules: runtime %s dump time %s", runtime_main_module, _archived_main_module_name);
+        disable = true;
+      }
+    }
+
+    if (disable) {
+      log_info(cds)("Disabling optimized module handling");
+      CDSConfig::stop_using_optimized_module_handling();
+    }
+    log_info(cds)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
+    log_info(cds)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
+  }
+}
+
 void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_loader, TRAPS) {
-  assert(UseSharedSpaces && MetaspaceShared::use_full_module_graph(), "must be");
+  assert(CDSConfig::is_using_full_module_graph(), "must be");
 
   // We don't want the classes used by the archived full module graph to be redefined by JVMTI.
   // Luckily, such classes are loaded in the JVMTI "early" phase, and CDS is disabled if a JVMTI
@@ -596,7 +640,7 @@ void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_
 }
 
 void Modules::check_cds_restrictions(TRAPS) {
-  if (DumpSharedSpaces && Universe::is_module_initialized() && MetaspaceShared::use_full_module_graph()) {
+  if (CDSConfig::is_dumping_full_module_graph() && Universe::is_module_initialized()) {
     THROW_MSG(vmSymbols::java_lang_UnsupportedOperationException(),
               "During -Xshare:dump, module system cannot be modified after it's initialized");
   }

@@ -22,8 +22,9 @@
  */
 
 /*
- * @test 1.1 01/05/17
+ * @test
  * @bug 4459889
+ * @key printer
  * @summary No NullPointerException should occur.
  * @run main RemoveListener
 */

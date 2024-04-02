@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key printer
  * @bug 8153732 8212202 8221263 8221412 8222108 8263311
  * @requires (os.family == "Windows")
  * @summary Windows remote printer changes do not reflect in lookupPrintServices()

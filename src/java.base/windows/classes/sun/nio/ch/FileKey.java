@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,9 @@ import java.io.IOException;
  */
 public class FileKey {
 
-    private long dwVolumeSerialNumber;
-    private long nFileIndexHigh;
-    private long nFileIndexLow;
+    private int dwVolumeSerialNumber;
+    private int nFileIndexHigh;
+    private int nFileIndexLow;
 
     private FileKey() { }
 
@@ -47,9 +47,7 @@ public class FileKey {
 
     @Override
     public int hashCode() {
-        return (int)(dwVolumeSerialNumber ^ (dwVolumeSerialNumber >>> 32)) +
-               (int)(nFileIndexHigh ^ (nFileIndexHigh >>> 32)) +
-               (int)(nFileIndexLow ^ (nFileIndexLow >>> 32));
+        return dwVolumeSerialNumber + nFileIndexHigh + nFileIndexLow;
     }
 
     @Override

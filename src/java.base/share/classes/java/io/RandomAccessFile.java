@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,6 +215,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
      * @see        java.nio.channels.FileChannel#force(boolean)
      */
+    @SuppressWarnings("this-escape")
     public RandomAccessFile(File file, String mode)
         throws FileNotFoundException
     {
@@ -660,19 +661,26 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * Sets the length of this file.
      *
      * <p> If the present length of the file as returned by the
-     * {@code length} method is greater than the {@code newLength}
-     * argument then the file will be truncated.  In this case, if the file
-     * offset as returned by the {@code getFilePointer} method is greater
-     * than {@code newLength} then after this method returns the offset
-     * will be equal to {@code newLength}.
+     * {@linkplain #length length} method is greater than the desired length
+     * of the file specified by the {@code newLength} argument, then the file
+     * will be truncated.
      *
-     * <p> If the present length of the file as returned by the
-     * {@code length} method is smaller than the {@code newLength}
-     * argument then the file will be extended.  In this case, the contents of
-     * the extended portion of the file are not defined.
+     * <p> If the present length of the file is smaller than the desired length,
+     * then the file will be extended.  The contents of the extended portion of
+     * the file are not defined.
+     *
+     * <p> If the present length of the file is equal to the desired length,
+     * then the file and its length will be unchanged.
+     *
+     * <p> In all cases, after this method returns, the file offset as returned
+     * by the {@linkplain #getFilePointer getFilePointer} method will equal the
+     * minimum of the desired length and the file offset before this method was
+     * called, even if the length is unchanged.  In other words, this method
+     * constrains the file offset to the closed interval {@code [0,newLength]}.
      *
      * @param      newLength    The desired length of the file
-     * @throws     IOException  If an I/O error occurs
+     * @throws     IOException  If the argument is negative or
+     *                          if some other I/O error occurs
      * @since      1.2
      */
     public void setLength(long newLength) throws IOException {

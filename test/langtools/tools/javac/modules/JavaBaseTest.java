@@ -26,16 +26,12 @@
  * @bug 8193125 8196623
  * @summary test modifiers with java.base
  * @library /tools/lib
+ * @enablePreview
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.jvm
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.compiler/com.sun.tools.javac.platform
- *      java.base/jdk.internal.classfile
- *      java.base/jdk.internal.classfile.attribute
- *      java.base/jdk.internal.classfile.constantpool
- *      java.base/jdk.internal.classfile.instruction
- *      java.base/jdk.internal.classfile.components
  *      java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main JavaBaseTest
@@ -48,8 +44,8 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.StreamSupport;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.platform.JDKPlatformProvider;
@@ -208,7 +204,7 @@ public class JavaBaseTest {
         jct.files(tb.findJavaFiles(src1))
             .run(Task.Expect.SUCCESS);
 
-        ClassModel cm1 = Classfile.of().parse(modules1.resolve("module-info.class"));
+        ClassModel cm1 = ClassFile.of().parse(modules1.resolve("module-info.class"));
 
         ModuleAttribute modAttr1 = cm1.findAttribute(Attributes.MODULE).orElseThrow();
         List<ModuleRequireInfo> requires = Arrays.asList(new ModuleRequireInfo[modAttr1.requires().size()]);
@@ -219,8 +215,8 @@ public class JavaBaseTest {
             if (e1.requires().name().equalsString("java.base")) {
                 for (String mod : mods) {
                     switch (mod) {
-                        case "static" -> flags |= Classfile.ACC_STATIC_PHASE;
-                        case "transitive" -> flags |= Classfile.ACC_TRANSITIVE;
+                        case "static" -> flags |= ClassFile.ACC_STATIC_PHASE;
+                        case "transitive" -> flags |= ClassFile.ACC_TRANSITIVE;
                     }
                 }
                 e2 = ModuleRequireInfo.of(e1.requires(), flags, e1.requiresVersion().orElse(null));
@@ -241,7 +237,7 @@ public class JavaBaseTest {
                 modAttr1.provides());
         Path modInfo = base.resolve("test-modules").resolve("module-info.class");
         Files.createDirectories(modInfo.getParent());
-        byte[] newBytes = Classfile.of().transform(cm1, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute).
+        byte[] newBytes = ClassFile.of().transform(cm1, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute).
                 andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(modAttr2))));
         try (OutputStream out = Files.newOutputStream(modInfo)) {
             out.write(newBytes);

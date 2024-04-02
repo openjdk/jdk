@@ -1,6 +1,6 @@
 #
 # Copyright (c) 2022 SAP SE. All rights reserved.
-# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,11 @@
     .globl _SafeFetch32_fault
     .globl _SafeFetch32_continuation
 
-	.text
+    .hidden SafeFetch32_impl
+    .hidden _SafeFetch32_fault
+    .hidden _SafeFetch32_continuation
+
+    .text
 
     # Support for int SafeFetch32(int* address, int defaultval);
     #

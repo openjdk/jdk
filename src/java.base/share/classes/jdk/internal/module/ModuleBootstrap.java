@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,6 @@ public final class ModuleBootstrap {
         return getProperty("jdk.module.upgrade.path") == null &&
                getProperty("jdk.module.path") == null &&
                getProperty("jdk.module.patch.0") == null &&       // --patch-module
-               getProperty("jdk.module.main") == null &&          // --module
                getProperty("jdk.module.addmods.0") == null  &&    // --add-modules
                getProperty("jdk.module.limitmods") == null &&     // --limit-modules
                getProperty("jdk.module.addreads.0") == null &&    // --add-reads
@@ -228,7 +227,8 @@ public final class ModuleBootstrap {
                 systemModules = SystemModuleFinders.systemModules(mainModule);
                 if (systemModules != null && !isPatched) {
                     needResolution = (traceOutput != null);
-                    canArchive = true;
+                    if (CDS.isDumpingStaticArchive())
+                        canArchive = true;
                 }
             }
             if (systemModules == null) {
@@ -469,14 +469,30 @@ public final class ModuleBootstrap {
                 limitedFinder = new SafeModuleFinder(finder);
         }
 
+        // If -Xshare:dump and mainModule are specified, check if the mainModule
+        // is in the runtime image and not on the upgrade module path. If so,
+        // set canArchive to true so that the module graph can be archived.
+        if (CDS.isDumpingStaticArchive() && mainModule != null) {
+            String scheme = systemModuleFinder.find(mainModule)
+                    .stream()
+                    .map(ModuleReference::location)
+                    .flatMap(Optional::stream)
+                    .findAny()
+                    .map(URI::getScheme)
+                    .orElse(null);
+            if ("jrt".equalsIgnoreCase(scheme)) {
+                canArchive = true;
+            }
+        }
+
         // Archive module graph and boot layer can be archived at CDS dump time.
-        // Only allow the unnamed module case for now.
-        if (canArchive && (mainModule == null)) {
+        if (canArchive) {
             ArchivedModuleGraph.archive(hasSplitPackages,
                                         hasIncubatorModules,
                                         systemModuleFinder,
                                         cf,
-                                        clf);
+                                        clf,
+                                        mainModule);
             if (!hasSplitPackages && !hasIncubatorModules) {
                 ArchivedBootLayer.archive(bootLayer);
             }
@@ -772,31 +788,38 @@ public final class ModuleBootstrap {
     }
 
     private static final boolean HAS_ENABLE_NATIVE_ACCESS_FLAG;
-    private static final Set<String> NATIVE_ACCESS_MODULES;
+    private static final Set<String> USER_NATIVE_ACCESS_MODULES;
+    private static final Set<String> JDK_NATIVE_ACCESS_MODULES;
 
     public static boolean hasEnableNativeAccessFlag() {
         return HAS_ENABLE_NATIVE_ACCESS_FLAG;
     }
 
     static {
-        NATIVE_ACCESS_MODULES = decodeEnableNativeAccess();
-        HAS_ENABLE_NATIVE_ACCESS_FLAG = !NATIVE_ACCESS_MODULES.isEmpty();
+        USER_NATIVE_ACCESS_MODULES = decodeEnableNativeAccess();
+        HAS_ENABLE_NATIVE_ACCESS_FLAG = !USER_NATIVE_ACCESS_MODULES.isEmpty();
+        JDK_NATIVE_ACCESS_MODULES = ModuleLoaderMap.nativeAccessModules();
     }
 
     /**
-     * Process the --enable-native-access option to grant access to restricted methods to selected modules.
+     * Grants native access to modules selected using the --enable-native-access
+     * command line option, and also to JDK modules that need the access.
      */
     private static void addEnableNativeAccess(ModuleLayer layer) {
-        for (String name : NATIVE_ACCESS_MODULES) {
+        addEnableNativeAccess(layer, USER_NATIVE_ACCESS_MODULES, true);
+        addEnableNativeAccess(layer, JDK_NATIVE_ACCESS_MODULES, false);
+    }
+
+    /**
+     * Grants native access for the given modules in the given layer.
+     * Warns optionally about modules that were specified, but not present in the layer.
+     */
+    private static void addEnableNativeAccess(ModuleLayer layer, Set<String> moduleNames, boolean shouldWarn) {
+        for (String name : moduleNames) {
             if (name.equals("ALL-UNNAMED")) {
                 JLA.addEnableNativeAccessToAllUnnamed();
-            } else {
-                Optional<Module> module = layer.findModule(name);
-                if (module.isPresent()) {
-                    JLA.addEnableNativeAccess(module.get());
-                } else {
-                    warnUnknownModule(ENABLE_NATIVE_ACCESS, name);
-                }
+            } else if (!JLA.addEnableNativeAccess(layer, name) && shouldWarn) {
+                warnUnknownModule(ENABLE_NATIVE_ACCESS, name);
             }
         }
     }

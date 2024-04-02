@@ -1256,7 +1256,7 @@ static GtkWidget *gtk3_get_widget(WidgetType widget_type)
             if (init_result = (NULL == gtk3_widgets[_GTK_NOTEBOOK_TYPE]))
             {
                 gtk3_widgets[_GTK_NOTEBOOK_TYPE] =
-                    (*fp_gtk_notebook_new)(NULL);
+                    (*fp_gtk_notebook_new)();
             }
             result = gtk3_widgets[_GTK_NOTEBOOK_TYPE];
             break;
@@ -1264,7 +1264,7 @@ static GtkWidget *gtk3_get_widget(WidgetType widget_type)
             if (init_result = (NULL == gtk3_widgets[_GTK_TOGGLE_BUTTON_TYPE]))
             {
                 gtk3_widgets[_GTK_TOGGLE_BUTTON_TYPE] =
-                    (*fp_gtk_toggle_button_new)(NULL);
+                    (*fp_gtk_toggle_button_new)();
             }
             result = gtk3_widgets[_GTK_TOGGLE_BUTTON_TYPE];
             break;
@@ -1273,7 +1273,7 @@ static GtkWidget *gtk3_get_widget(WidgetType widget_type)
             if (init_result = (NULL == gtk3_widgets[_GTK_TOOLBAR_TYPE]))
             {
                 gtk3_widgets[_GTK_TOOLBAR_TYPE] =
-                    (*fp_gtk_toolbar_new)(NULL);
+                    (*fp_gtk_toolbar_new)();
             }
             result = gtk3_widgets[_GTK_TOOLBAR_TYPE];
             break;

@@ -22,6 +22,7 @@
  *
  */
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -147,6 +148,8 @@
 #define JAVA_21_VERSION                   65
 
 #define JAVA_22_VERSION                   66
+
+#define JAVA_23_VERSION                   67
 
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||
@@ -950,6 +953,8 @@ public:
     _field_Stable,
     _jdk_internal_vm_annotation_ReservedStackAccess,
     _jdk_internal_ValueBased,
+    _java_lang_Deprecated,
+    _java_lang_Deprecated_for_removal,
     _annotation_LIMIT
   };
   const Location _location;
@@ -1121,6 +1126,7 @@ static void parse_annotations(const ConstantPool* const cp,
     s_tag_val = 's',    // payload is String
     s_con_off = 7,    // utf8 payload, such as 'Ljava/lang/String;'
     s_size = 9,
+    b_tag_val = 'Z',  // payload is boolean
     min_size = 6        // smallest possible size (zero members)
   };
   // Cannot add min_size to index in case of overflow MAX_INT
@@ -1143,6 +1149,32 @@ static void parse_annotations(const ConstantPool* const cp,
     AnnotationCollector::ID id = coll->annotation_index(loader_data, aname, can_access_vm_annotations);
     if (AnnotationCollector::_unknown == id)  continue;
     coll->set_annotation(id);
+    if (AnnotationCollector::_java_lang_Deprecated == id) {
+      assert(count <= 2, "change this if more element-value pairs are added to the @Deprecated annotation");
+      // @Deprecated can specify forRemoval=true
+      const u1* offset = abase + member_off;
+      for (int i = 0; i < count; ++i) {
+        int member_index = Bytes::get_Java_u2((address)offset);
+        offset += 2;
+        member = check_symbol_at(cp, member_index);
+        if (member == vmSymbols::since()) {
+          assert(*((address)offset) == s_tag_val, "invariant");
+          offset += 3;
+          continue;
+        }
+        if (member == vmSymbols::for_removal()) {
+          assert(*((address)offset) == b_tag_val, "invariant");
+          const u2 boolean_value_index = Bytes::get_Java_u2((address)offset + 1);
+          if (cp->int_at(boolean_value_index) == 1) {
+            // forRemoval == true
+            coll->set_annotation(AnnotationCollector::_java_lang_Deprecated_for_removal);
+          }
+          break;
+        }
+
+      }
+      continue;
+    }
 
     if (AnnotationCollector::_jdk_internal_vm_annotation_Contended == id) {
       // @Contended can optionally specify the contention group.
@@ -1958,6 +1990,9 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
       if (!privileged)              break;  // only allow in privileged code
       return _jdk_internal_ValueBased;
     }
+    case VM_SYMBOL_ENUM_NAME(java_lang_Deprecated): {
+      return _java_lang_Deprecated;
+    }
     default: {
       break;
     }
@@ -2002,6 +2037,10 @@ void MethodAnnotationCollector::apply_to(const methodHandle& m) {
     m->set_intrinsic_candidate();
   if (has_annotation(_jdk_internal_vm_annotation_ReservedStackAccess))
     m->set_has_reserved_stack_access();
+  if (has_annotation(_java_lang_Deprecated))
+    m->set_deprecated();
+  if (has_annotation(_java_lang_Deprecated_for_removal))
+    m->set_deprecated_for_removal();
 }
 
 void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
@@ -2013,6 +2052,22 @@ void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
     ik->set_has_value_based_class_annotation();
     if (DiagnoseSyncOnValueBasedClasses) {
       ik->set_is_value_based();
+    }
+  }
+  if (has_annotation(_java_lang_Deprecated)) {
+    Array<Method*>* methods = ik->methods();
+    int length = ik->methods()->length();
+    for (int i = 0; i < length; i++) {
+      Method* m = methods->at(i);
+      m->set_deprecated();
+    }
+  }
+  if (has_annotation(_java_lang_Deprecated_for_removal)) {
+    Array<Method*>* methods = ik->methods();
+    int length = ik->methods()->length();
+    for (int i = 0; i < length; i++) {
+      Method* m = methods->at(i);
+      m->set_deprecated_for_removal();
     }
   }
 }
@@ -2852,7 +2907,7 @@ static const intArray* sort_methods(Array<Method*>* methods) {
   // We temporarily use the vtable_index field in the Method* to store the
   // class file index, so we can read in after calling qsort.
   // Put the method ordering in the shared archive.
-  if (JvmtiExport::can_maintain_original_method_order() || Arguments::is_dumping_archive()) {
+  if (JvmtiExport::can_maintain_original_method_order() || CDSConfig::is_dumping_archive()) {
     for (int index = 0; index < length; index++) {
       Method* const m = methods->at(index);
       assert(!m->valid_vtable_index(), "vtable index should not be set");
@@ -2866,7 +2921,7 @@ static const intArray* sort_methods(Array<Method*>* methods) {
   intArray* method_ordering = nullptr;
   // If JVMTI original method ordering or sharing is enabled construct int
   // array remembering the original ordering
-  if (JvmtiExport::can_maintain_original_method_order() || Arguments::is_dumping_archive()) {
+  if (JvmtiExport::can_maintain_original_method_order() || CDSConfig::is_dumping_archive()) {
     method_ordering = new intArray(length, length, -1);
     for (int index = 0; index < length; index++) {
       Method* const m = methods->at(index);
@@ -5518,7 +5573,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   assert(0 == _access_flags.as_int(), "invariant");
 
   // Figure out whether we can skip format checking (matching classic VM behavior)
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive()) {
     // verify == true means it's a 'remote' class (i.e., non-boot class)
     // Verification decision is based on BytecodeVerificationRemote flag
     // for those classes.
@@ -5849,7 +5904,7 @@ void ClassFileParser::mangle_hidden_class_name(InstanceKlass* const ik) {
   // use an illegal char such as ';' because that causes serialization issues
   // and issues with hidden classes that create their own hidden classes.
   char addr_buf[20];
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive()) {
     // We want stable names for the archived hidden classes (only for static
     // archive for now). Spaces under default_SharedBaseAddress() will be
     // occupied by the archive at run time, so we know that no dynamically

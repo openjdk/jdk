@@ -136,7 +136,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
     // It should be safe to construct the sender though it might not be valid.
 
-    frame sender(sender_sp, sender_pc);
+    frame sender(sender_sp, sender_pc, nullptr /* unextended_sp */, nullptr /* fp */, sender_blob);
 
     // Do we have a valid fp?
     address sender_fp = (address) sender.fp();
@@ -196,12 +196,12 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
   assert(map->include_argument_oops(), "should be set by clear");
 
   if (jfa->last_Java_pc() != nullptr) {
-    frame fr(jfa->last_Java_sp(), jfa->last_Java_pc());
+    frame fr(jfa->last_Java_sp(), jfa->last_Java_pc(), kind::code_blob);
     return fr;
   }
   // Last_java_pc is not set, if we come here from compiled code. The
   // constructor retrieves the PC from the stack.
-  frame fr(jfa->last_Java_sp());
+  frame fr(jfa->last_Java_sp(), nullptr, kind::code_blob);
   return fr;
 }
 
@@ -229,7 +229,7 @@ frame frame::sender_for_upcall_stub_frame(RegisterMap* map) const {
   assert(jfa->last_Java_sp() > sp(), "must be above this frame on stack");
   map->clear();
   assert(map->include_argument_oops(), "should be set by clear");
-  frame fr(jfa->last_Java_sp(), jfa->last_Java_pc());
+  frame fr(jfa->last_Java_sp(), jfa->last_Java_pc(), kind::code_blob);
 
   return fr;
 }
@@ -451,10 +451,9 @@ intptr_t *frame::initial_deoptimization_info() {
 #ifndef PRODUCT
 // This is a generic constructor which is only used by pns() in debug.cpp.
 // fp is dropped and gets determined by backlink.
-frame::frame(void* sp, void* fp, void* pc) : frame((intptr_t*)sp, (address)pc) {}
+frame::frame(void* sp, void* fp, void* pc) : frame((intptr_t*)sp, (address)pc, kind::unknown) {}
 #endif
 
-// Pointer beyond the "oldest/deepest" BasicObjectLock on stack.
 BasicObjectLock* frame::interpreter_frame_monitor_end() const {
   BasicObjectLock* result = (BasicObjectLock*) at_relative(ijava_idx(monitors));
   // make sure the pointer points inside the frame

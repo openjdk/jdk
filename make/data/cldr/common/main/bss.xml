@@ -25,25 +25,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<keys>
 			<key type="currency">mɔné</key>
 		</keys>
-		<measurementSystemNames>
-			<measurementSystemName type="metric">Metric</measurementSystemName>
-		</measurementSystemNames>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a á â ǎ ā b c d e é ê ě ē ə {ə\u0301} {ə\u0302} {ə\u030C} {ə\u0304} ɛ {ɛ\u0301} {ɛ\u0302} {ɛ\u030C} {ɛ\u0304} g h i í î ǐ ī j k l m ḿ n ń ŋ o ó ô ǒ ō ɔ {ɔ\u0301} {ɔ\u0302} {ɔ\u030C} {ɔ\u0304} p s t u ú û ǔ ū w y z ʼ]</exemplarCharacters>
+		<exemplarCharacters>[aáâǎā b c d eéêěē ə{ə́}{ə̂}{ə̌}{ə̄} ɛ{ɛ́}{ɛ̂}{ɛ̌}{ɛ̄} g h iíîǐī j k l mḿ nń ŋ oóôǒō ɔ{ɔ́}{ɔ̂}{ɔ̌}{ɔ̄} p s t uúûǔū w y z ʼ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[f q r v x]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E Ə Ɛ G H I J K L M N Ŋ O Ɔ P S T U W Y Z]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[, ; \: ! ? . ' &quot;]</exemplarCharacters>
-		<ellipsis type="final">{0}…</ellipsis>
-		<ellipsis type="initial">…{0}</ellipsis>
-		<ellipsis type="medial">{0}…{1}</ellipsis>
 	</characters>
-	<delimiters>
-		<quotationStart>“</quotationStart>
-		<quotationEnd>”</quotationEnd>
-		<alternateQuotationStart>‘</alternateQuotationStart>
-		<alternateQuotationEnd>’</alternateQuotationEnd>
-	</delimiters>
 	<dates>
 		<fields>
 			<field type="year">
@@ -69,56 +57,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>menúte</displayName>
 			</field>
 		</fields>
-		<timeZoneNames>
-			<zone type="Etc/GMT+1">
-				<exemplarCity>GMT+1</exemplarCity>
-			</zone>
-		</timeZoneNames>
 	</dates>
 	<numbers>
-		<symbols numberSystem="latn">
-			<decimal>.</decimal>
-			<group>,</group>
-			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
-			<perMille>‰</perMille>
-			<infinity>∞</infinity>
-		</symbols>
-		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern>#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<currencyFormats numberSystem="latn">
-			<currencyFormatLength>
-				<currencyFormat type="standard">
-					<pattern>¤ #,##0.00</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
-		</currencyFormats>
 		<currencies>
 			<currency type="XAF">
 				<displayName>Frânke CFA</displayName>
-				<symbol>FCFA</symbol>
 			</currency>
 		</currencies>
 	</numbers>
 	<listPatterns>
 		<listPattern>
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} {1}</listPatternPart>
-			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 </ldml>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -316,7 +316,7 @@ class Address {
   }
 
   bool xmmindex_needs_rex() const {
-    return _xmmindex->is_valid() && _xmmindex->encoding() >= 8;
+    return _xmmindex->is_valid() && ((_xmmindex->encoding() & 8) == 8);
   }
 
   relocInfo::relocType reloc() const { return _rspec.type(); }
@@ -816,8 +816,8 @@ private:
   void check_relocation(RelocationHolder const& rspec, int format);
 #endif
 
-  void emit_data(jint data, relocInfo::relocType    rtype, int format);
-  void emit_data(jint data, RelocationHolder const& rspec, int format);
+  void emit_data(jint data, relocInfo::relocType    rtype, int format = 0);
+  void emit_data(jint data, RelocationHolder const& rspec, int format = 0);
   void emit_data64(jlong data, relocInfo::relocType rtype, int format = 0);
   void emit_data64(jlong data, RelocationHolder const& rspec, int format = 0);
 
@@ -986,6 +986,7 @@ private:
 
   void addb(Address dst, int imm8);
   void addb(Address dst, Register src);
+  void addb(Register dst, int imm8);
   void addw(Register dst, Register src);
   void addw(Address dst, int imm16);
   void addw(Address dst, Register src);
@@ -1523,6 +1524,8 @@ private:
   void kordl(KRegister dst, KRegister src1, KRegister src2);
   void korql(KRegister dst, KRegister src1, KRegister src2);
 
+  void kxnorwl(KRegister dst, KRegister src1, KRegister src2);
+
   void kxorbl(KRegister dst, KRegister src1, KRegister src2);
   void kxorwl(KRegister dst, KRegister src1, KRegister src2);
   void kxordl(KRegister dst, KRegister src1, KRegister src2);
@@ -1614,6 +1617,9 @@ private:
   void evmovdqul(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
   void evmovdqul(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
 
+  void evmovntdquq(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evmovntdquq(Address dst, XMMRegister src, int vector_len);
+
   void evmovdquq(Address dst, XMMRegister src, int vector_len);
   void evmovdquq(XMMRegister dst, Address src, int vector_len);
   void evmovdquq(XMMRegister dst, XMMRegister src, int vector_len);
@@ -1655,7 +1661,6 @@ private:
 
   // Move signed 32bit immediate to 64bit extending sign
   void movslq(Address  dst, int32_t imm64);
-  void movslq(Register dst, int32_t imm64);
 
   void movslq(Register dst, Address src);
   void movslq(Register dst, Register src);
@@ -1909,8 +1914,12 @@ private:
   void pmaddwd(XMMRegister dst, XMMRegister src);
   void vpmaddwd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpmaddubsw(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
+  void vpmadd52luq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
+  void vpmadd52luq(XMMRegister dst, XMMRegister src1, Address src2, int vector_len);
   void evpmadd52luq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
   void evpmadd52luq(XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len);
+  void vpmadd52huq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
+  void vpmadd52huq(XMMRegister dst, XMMRegister src1, Address src2, int vector_len);
   void evpmadd52huq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
   void evpmadd52huq(XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len);
 
@@ -1952,6 +1961,7 @@ private:
   void pshufb(XMMRegister dst, XMMRegister src);
   void pshufb(XMMRegister dst, Address src);
   void vpshufb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpshufb(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void evpshufb(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
 
 
@@ -2004,6 +2014,8 @@ private:
   void punpckldq(XMMRegister dst, XMMRegister src);
   void punpckldq(XMMRegister dst, Address src);
   void vpunpckldq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpunpcklqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+
 
   // Interleave High Word
   void vpunpckhwd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
@@ -2013,6 +2025,7 @@ private:
 
   // Interleave High Doublewords
   void vpunpckhdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpunpckhqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   // Interleave Low Quadwords
   void punpcklqdq(XMMRegister dst, XMMRegister src);

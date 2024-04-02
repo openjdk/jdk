@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,21 +101,28 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
         if (!methods.isEmpty()) {
             Content methodDetailsHeader = getMethodDetailsHeader(detailsList);
             Content memberList = writer.getMemberList();
+            writer.tableOfContents.addLink(HtmlIds.METHOD_DETAIL, contents.methodDetailLabel);
+            writer.tableOfContents.pushNestedList();
 
             for (Element method : methods) {
                 currentMethod = (ExecutableElement)method;
                 Content methodContent = getMethodHeader(currentMethod);
-
-                buildSignature(methodContent);
-                buildDeprecationInfo(methodContent);
-                buildPreviewInfo(methodContent);
-                buildMethodComments(methodContent);
-                buildTagInfo(methodContent);
-
+                Content div = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+                buildSignature(div);
+                buildDeprecationInfo(div);
+                buildPreviewInfo(div);
+                buildRestrictedInfo(div);
+                buildMethodComments(div);
+                buildTagInfo(div);
+                methodContent.add(div);
                 memberList.add(writer.getMemberListItem(methodContent));
+                writer.tableOfContents.addLink(htmlIds.forMember(currentMethod),
+                        Text.of(utils.getSimpleName(method)
+                                + utils.makeSignature(currentMethod, typeElement, false, true)));
             }
             Content methodDetails = getMethodDetails(methodDetailsHeader, memberList);
             detailsList.add(methodDetails);
+            writer.tableOfContents.popNestedList();
         }
     }
 
@@ -132,6 +139,15 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
     @Override
     protected void buildPreviewInfo(Content target) {
         addPreview(currentMethod, target);
+    }
+
+    /**
+     * Builds the restricted method info.
+     *
+     * @param target the content to which the documentation will be added
+     */
+    protected void buildRestrictedInfo(Content target) {
+        addRestricted(currentMethod, target);
     }
 
     /**
@@ -213,6 +229,10 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
 
     protected void addPreview(ExecutableElement method, Content content) {
         addPreviewInfo(method, content);
+    }
+
+    protected void addRestricted(ExecutableElement method, Content content) {
+        addRestrictedInfo(method, content);
     }
 
     protected void addComments(TypeMirror holderType, ExecutableElement method, Content methodContent) {

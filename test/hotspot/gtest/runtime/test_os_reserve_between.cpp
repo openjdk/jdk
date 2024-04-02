@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,6 @@
 #include "testutils.hpp"
 #include "unittest.hpp"
 
-// On AIX, these tests make no sense as long as JDK-8315321 remains unfixed since the attach
-// addresses are not predictable.
-#ifndef AIX
-
 // Must be the same as in os::attempt_reserve_memory_between()
 struct ARMB_constants {
   static constexpr uintptr_t absolute_max = NOT_LP64(G * 3) LP64_ONLY(G * 128 * 1024);
@@ -55,6 +51,17 @@ static void release_if_needed(char* p, size_t s) {
   }
 }
 
+// AIX is the only platform that uses System V shm for reserving virtual memory.
+// In this case, the required alignment of the allocated size (64K) and the alignment
+// of possible start points of the memory region (256M) differ.
+// This is not reflected by os_allocation_granularity().
+// The logic here is dual to the one in pd_reserve_memory in os_aix.cpp
+static size_t allocation_granularity() {
+  return
+    AIX_ONLY(os::vm_page_size() == 4*K ? 4*K : 256*M)
+    NOT_AIX(os::vm_allocation_granularity());
+}
+
 #define ERRINFO "addr: " << ((void*)addr) << " min: " << ((void*)min) << " max: " << ((void*)max) \
                  << " bytes: " << bytes << " alignment: " << alignment << " randomized: " << randomized
 
@@ -62,7 +69,7 @@ static char* call_attempt_reserve_memory_between(char* min, char* max, size_t by
   char* const  addr = os::attempt_reserve_memory_between(min, max, bytes, alignment, randomized);
   if (addr != nullptr) {
     EXPECT_TRUE(is_aligned(addr, alignment)) << ERRINFO;
-    EXPECT_TRUE(is_aligned(addr, os::vm_allocation_granularity())) << ERRINFO;
+    EXPECT_TRUE(is_aligned(addr, allocation_granularity())) << ERRINFO;
     EXPECT_LE(addr, max - bytes) << ERRINFO;
     EXPECT_LE(addr, (char*)ARMB_constants::absolute_max - bytes) << ERRINFO;
     EXPECT_GE(addr, min) << ERRINFO;
@@ -178,7 +185,7 @@ public:
 // Test that, when reserving in a range randomly, we get random results
 static void test_attempt_reserve_memory_between_random_distribution(unsigned num_possible_attach_points) {
 
-  const size_t ag = os::vm_allocation_granularity();
+  const size_t ag = allocation_granularity();
 
   // Create a space that is mostly a hole bordered by two small stripes of reserved memory, with
   // as many attach points as we need.
@@ -257,7 +264,7 @@ TEST_VM(os, attempt_reserve_memory_randomization_threshold) {
 
   constexpr int threshold = ARMB_constants::min_random_value_range;
   const size_t ps = os::vm_page_size();
-  const size_t ag = os::vm_allocation_granularity();
+  const size_t ag = allocation_granularity();
 
   SpaceWithHole space(ag * (threshold + 2), ag, ag * threshold);
   if (!space.reserve()) {
@@ -275,12 +282,12 @@ TEST_VM(os, attempt_reserve_memory_randomization_threshold) {
 // Test all possible combos
 TEST_VM(os, attempt_reserve_memory_between_combos) {
   const size_t large_end = NOT_LP64(G) LP64_ONLY(64 * G);
-  for (size_t range_size = os::vm_allocation_granularity(); range_size <= large_end; range_size *= 2) {
+  for (size_t range_size = allocation_granularity(); range_size <= large_end; range_size *= 2) {
     for (size_t start_offset = 0; start_offset <= large_end; start_offset += (large_end / 2)) {
       char* const min = (char*)(uintptr_t)start_offset;
       char* const max = min + range_size;
       for (size_t bytes = os::vm_page_size(); bytes < large_end; bytes *= 2) {
-        for (size_t alignment = os::vm_allocation_granularity(); alignment < large_end; alignment *= 2) {
+        for (size_t alignment = allocation_granularity(); alignment < large_end; alignment *= 2) {
           test_attempt_reserve_memory_between(min, max, bytes, alignment, true, Expect::dontcare(), __LINE__);
           test_attempt_reserve_memory_between(min, max, bytes, alignment, false, Expect::dontcare(), __LINE__);
         }
@@ -291,7 +298,7 @@ TEST_VM(os, attempt_reserve_memory_between_combos) {
 
 TEST_VM(os, attempt_reserve_memory_randomization_cornercases) {
   const size_t ps = os::vm_page_size();
-  const size_t ag = os::vm_allocation_granularity();
+  const size_t ag = allocation_granularity();
   constexpr size_t quarter_address_space = NOT_LP64(nth_bit(30)) LP64_ONLY(nth_bit(62));
 
   // Zero-sized range
@@ -331,7 +338,7 @@ TEST_VM(os, attempt_reserve_memory_randomization_cornercases) {
 // as long as the range size is smaller than the number of probe attempts
 TEST_VM(os, attempt_reserve_memory_between_small_range_fill_hole) {
   const size_t ps = os::vm_page_size();
-  const size_t ag = os::vm_allocation_granularity();
+  const size_t ag = allocation_granularity();
   constexpr int num = ARMB_constants::max_attempts;
   for (int i = 0; i < num; i ++) {
     SpaceWithHole space(ag * (num + 2), ag * (i + 1), ag);
@@ -342,5 +349,3 @@ TEST_VM(os, attempt_reserve_memory_between_small_range_fill_hole) {
     }
   }
 }
-
-#endif // AIX

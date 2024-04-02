@@ -36,7 +36,7 @@ public class TestOptionsWithLocale {
             return;
         }
 
-        ProcessBuilder pb = ProcessTools.createTestJvm(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-Duser.country=DE",
                 "-Duser.language=de",
                 "-XX:FlightRecorderOptions:stackdepth=128",

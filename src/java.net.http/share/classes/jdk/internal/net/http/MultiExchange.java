@@ -101,7 +101,7 @@ class MultiExchange<T> implements Cancelable {
     );
 
     private final List<HeaderFilter> filters;
-    ResponseTimerEvent responseTimerEvent;
+    volatile ResponseTimerEvent responseTimerEvent;
     volatile boolean cancelled;
     AtomicReference<CancellationException> interrupted = new AtomicReference<>();
     final PushGroup<T> pushGroup;
@@ -231,6 +231,7 @@ class MultiExchange<T> implements Cancelable {
     private void cancelTimer() {
         if (responseTimerEvent != null) {
             client.cancelTimer(responseTimerEvent);
+            responseTimerEvent = null;
         }
     }
 
@@ -457,6 +458,7 @@ class MultiExchange<T> implements Cancelable {
                             }
                             return completedFuture(response);
                         } else {
+                            cancelTimer();
                             this.response =
                                 new HttpResponseImpl<>(currentreq, response, this.response, null, exch);
                             Exchange<T> oldExch = exch;

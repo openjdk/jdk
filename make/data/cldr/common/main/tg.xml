@@ -11,11 +11,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="tg"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern>{0} ({1})</localePattern>
-			<localeSeparator>{0}, {1}</localeSeparator>
-			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
-		</localeDisplayPattern>
 		<languages>
 			<language type="af">африкаанс</language>
 			<language type="am">амҳарӣ</language>
@@ -33,6 +28,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bs">босниягӣ</language>
 			<language type="ca">каталонӣ</language>
 			<language type="ceb">себуано</language>
+			<language type="cgg">Чига</language>
 			<language type="chm">марӣ</language>
 			<language type="chr">черокӣ</language>
 			<language type="ckb">курдии марказӣ</language>
@@ -190,16 +186,184 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zu" draft="unconfirmed">Зулу</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">Адламӣ</script>
+			<script type="Aghb">Албани Қафқозӣ</script>
+			<script type="Ahom">Ахомӣ</script>
 			<script type="Arab">Арабӣ</script>
+			<script type="Aran">Насталиқӣ</script>
+			<script type="Armi">Арамейкии Империалӣ</script>
+			<script type="Armn">Арманӣ</script>
+			<script type="Avst">Авестоӣ</script>
+			<script type="Bali">Балинесӣ</script>
+			<script type="Bamu">Бамумӣ</script>
+			<script type="Bass">Басса Вахӣ</script>
+			<script type="Batk">Батакӣ</script>
+			<script type="Beng">Бангладешӣ</script>
+			<script type="Bhks">Бхайксукӣ</script>
+			<script type="Bopo">Бопомофоӣ</script>
+			<script type="Brah">Брахмӣ</script>
+			<script type="Brai">Брайл</script>
+			<script type="Bugi">Бугинӣ</script>
+			<script type="Buhd">Бухидӣ</script>
+			<script type="Cakm">Чакама</script>
+			<script type="Cans">Низоми ягонаи ҳиҷои аборигении каннадӣ</script>
+			<script type="Cari">Карианӣ</script>
+			<script type="Cham">Чамӣ</script>
+			<script type="Cher">Черокӣ</script>
+			<script type="Chrs">Хоразмиёнӣ</script>
+			<script type="Copt">Коптӣ</script>
+			<script type="Cpmn">Кипро-Миноанӣ</script>
+			<script type="Cprt">Кипрӣ</script>
 			<script type="Cyrl">Кириллӣ</script>
+			<script type="Deva">Деванагарӣ</script>
+			<script type="Diak">Дивс Акуру</script>
+			<script type="Dogr">Догра</script>
+			<script type="Dsrt">Дезерет</script>
+			<script type="Dupl">Стенографияи Дуплоянӣ</script>
+			<script type="Egyp">Иероглифҳои Мисрӣ</script>
+			<script type="Elba">Элбасан</script>
+			<script type="Elym">Элимайӣ</script>
+			<script type="Ethi">Эфиопӣ</script>
+			<script type="Geor">Гурҷӣ</script>
+			<script type="Glag">Глаголитикӣ</script>
+			<script type="Gong">Гунҷала Гондӣ</script>
+			<script type="Gonm">Масарам Гондӣ</script>
+			<script type="Goth">Готика</script>
+			<script type="Gran">Гранта</script>
+			<script type="Grek">Юнонӣ</script>
+			<script type="Gujr">Гуҷаротӣ</script>
+			<script type="Guru">Гумрухӣ</script>
+			<script type="Hanb">Хан бо Бопомофо</script>
+			<script type="Hang">Ҳангул</script>
+			<script type="Hani">Хан</script>
+			<script type="Hano">Хануну</script>
 			<script type="Hans">Осонфаҳм</script>
 			<script type="Hans" alt="stand-alone">Хани осонфаҳм</script>
 			<script type="Hant">Анъанавӣ</script>
 			<script type="Hant" alt="stand-alone">Хани анъанавӣ</script>
-			<script type="Jpan" draft="unconfirmed">Ҷопонӣ</script>
+			<script type="Hatr">Хатран</script>
+			<script type="Hebr">Яҳудӣ</script>
+			<script type="Hira">Хирагана</script>
+			<script type="Hluw">Иероглифҳои Анатолӣ</script>
+			<script type="Hmng">Пахах Хмонг</script>
+			<script type="Hmnp">Някенг Пуачэ Хмонг</script>
+			<script type="Hrkt">Ҳиҷоҳои ҷопонӣ</script>
+			<script type="Hung">Венгерии Куҳна</script>
+			<script type="Ital">Курсиви Куҳна</script>
+			<script type="Jamo">Ҷамо</script>
+			<script type="Java">Ҷаванесӣ</script>
+			<script type="Jpan">Ҷопонӣ</script>
+			<script type="Kali">Кайя Ли</script>
+			<script type="Kana">Катакана</script>
+			<script type="Kawi">Кавӣ</script>
+			<script type="Khar">Хароштӣ</script>
+			<script type="Khmr">Хмерӣ</script>
+			<script type="Khoj">Хочки</script>
+			<script type="Kits">Хатти хурди Китонӣ</script>
+			<script type="Knda">Каннада</script>
 			<script type="Kore">Кореягӣ</script>
+			<script type="Kthi">Кайтӣ</script>
+			<script type="Lana">Ланна</script>
+			<script type="Laoo">Лао</script>
 			<script type="Latn">Лотинӣ</script>
+			<script type="Lepc">Лепча</script>
+			<script type="Limb">Лимбу</script>
+			<script type="Lina">Хати А</script>
+			<script type="Linb">Хати Б</script>
+			<script type="Lisu">Фрейзер</script>
+			<script type="Lyci">Ликия</script>
+			<script type="Lydi">Лидия</script>
+			<script type="Mahj">Махаҷанӣ</script>
+			<script type="Maka">Макасарӣ</script>
+			<script type="Mand">Мандаеан</script>
+			<script type="Mani">Манихейӣ</script>
+			<script type="Marc">Маршенӣ</script>
+			<script type="Medf">Медефаидринӣ</script>
+			<script type="Mend">Менде</script>
+			<script type="Merc">Курсиви Мероитӣ</script>
+			<script type="Mero">Мероитӣ</script>
+			<script type="Mlym">Малаяламӣ</script>
+			<script type="Modi">Модӣ</script>
+			<script type="Mong">Муғулӣ</script>
+			<script type="Mroo">Мро</script>
+			<script type="Mtei">Мейтеи Майек</script>
+			<script type="Mult">Мултанӣ</script>
+			<script type="Mymr">Мянмар</script>
+			<script type="Nagm">Наг Мундарӣ</script>
+			<script type="Nand">Нандинагарӣ</script>
+			<script type="Narb">Арабии Шимолии Куҳна</script>
+			<script type="Nbat">Набатаинӣ</script>
+			<script type="Newa">Нева</script>
+			<script type="Nkoo">Н’Ко</script>
+			<script type="Nshu">Нушу</script>
+			<script type="Ogam">Огам</script>
+			<script type="Olck">Ол Чикӣ</script>
+			<script type="Orkh">Оркон</script>
+			<script type="Orya">Одия</script>
+			<script type="Osge">Осейҷӣ</script>
+			<script type="Osma">Османияӣ</script>
+			<script type="Ougr">Уйғури Куҳна</script>
+			<script type="Palm">Палмирена</script>
+			<script type="Pauc">Пау Син Хау</script>
+			<script type="Perm">Пермикии Куҳна</script>
+			<script type="Phag">Фагс-па</script>
+			<script type="Phli">Паҳлавии Хаттӣ</script>
+			<script type="Phlp">Паҳлавии Псалтирӣ</script>
+			<script type="Phnx">Финикӣ</script>
+			<script type="Plrd">Овоии поллардӣ</script>
+			<script type="Prti">Парфияи Хаттӣ</script>
+			<script type="Qaag">Завгӯйӣ</script>
+			<script type="Rjng">Реҷанг</script>
+			<script type="Rohg">Ханифӣ</script>
+			<script type="Runr">Руникӣ</script>
+			<script type="Samr">Самаританӣ</script>
+			<script type="Sarb">Арабии Ҷанубии Куҳна</script>
+			<script type="Saur">Саураштра</script>
+			<script type="Sgnw">Аломатнависӣ</script>
+			<script type="Shaw">Шавианӣ</script>
+			<script type="Shrd">Шарада</script>
+			<script type="Sidd">Сиддам</script>
+			<script type="Sind">Худовадӣ</script>
+			<script type="Sinh">Синхала</script>
+			<script type="Sogd">Суғдӣ</script>
+			<script type="Sogo">Суғдии Куҳна</script>
+			<script type="Sora">Сора Сомпенг</script>
+			<script type="Soyo">Соёмбо</script>
+			<script type="Sund">Сунданезӣ</script>
+			<script type="Sylo">Силоти Нагрӣ</script>
+			<script type="Syrc">Сурёнӣ</script>
+			<script type="Tagb">Тагбанва</script>
+			<script type="Takr">Такрӣ</script>
+			<script type="Tale">Тай Ле</script>
+			<script type="Talu">Тай Леи Нав</script>
+			<script type="Taml">Тамилӣ</script>
+			<script type="Tang">Тангут</script>
+			<script type="Tavt">Ветнамии Тайӣ</script>
+			<script type="Telu">Телугу</script>
+			<script type="Tfng">Тифинаг</script>
+			<script type="Tglg">Тагалогӣ</script>
+			<script type="Thaa">Таана</script>
+			<script type="Thai">Тайӣ</script>
+			<script type="Tibt">Тибетӣ</script>
+			<script type="Tirh">Тирхута</script>
+			<script type="Tnsa">Тангса</script>
+			<script type="Toto">Тото</script>
+			<script type="Ugar">Угаритӣ</script>
+			<script type="Vaii">Вайӣ</script>
+			<script type="Vith">Виткукӣ</script>
+			<script type="Wara">Варанг Кшитӣ</script>
+			<script type="Wcho">Ванчо</script>
+			<script type="Xpeo">Форсии Куҳна</script>
+			<script type="Xsux">Хати Сумеро-Аккадӣ</script>
+			<script type="Yezi">Язидӣ</script>
+			<script type="Yiii">Юйӣ</script>
+			<script type="Zanb">Майдони Занабазорӣ</script>
+			<script type="Zinh">Мерос</script>
+			<script type="Zmth">Аломати риёзӣ</script>
+			<script type="Zsye">Эмоҷи</script>
+			<script type="Zsym">Аломатҳо</script>
 			<script type="Zxxx">Нонавишта</script>
+			<script type="Zyyy">Умумӣ</script>
 			<script type="Zzzz">Скрипти номаълум</script>
 		</scripts>
 		<territories>
@@ -474,12 +638,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[а б в г ғ д е ё ж з и ӣ й к қ л м н о п р с т у ӯ ф х ҳ ч ҷ ш ъ э ю я]</exemplarCharacters>
+		<exemplarCharacters>[а б в г ғ д её ж з иӣ й к қ л м н о п р с т уӯ ф х ҳ ч ҷ ш ъ э ю я]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[ц щ ы ь]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="contributed">[А Б В Г Ғ Д Е Ё Ж З И Ӣ Й К Қ Л М Н О П Р С Т У Ӯ Ф Х Ҳ Ч Ҷ Ш Ъ Э Ю Я]</exemplarCharacters>
-		<exemplarCharacters type="numbers" draft="contributed">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="contributed">[А Б В Г Ғ Д ЕЁ Ж З ИӢ Й К Қ Л М Н О П Р С Т УӮ Ф Х Ҳ Ч Ҷ Ш Ъ Э Ю Я]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” » ( ) \[ \] § @ * / \&amp; # † ‡ ′ {″«}]</exemplarCharacters>
 	</characters>
+	<delimiters>
+		<quotationStart>»</quotationStart>
+		<quotationEnd>«</quotationEnd>
+	</delimiters>
 	<dates>
 		<calendars>
 			<calendar type="generic">
@@ -531,36 +698,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Bh">h B</dateFormatItem>
-						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
-						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="Ed">d, E</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
-						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
-						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">dd-MM</dateFormatItem>
 						<dateFormatItem id="MEd">E, dd-MM</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
 						<dateFormatItem id="yyyyM">MM-y GGGGG</dateFormatItem>
@@ -576,11 +727,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="B">h B – h B</greatestDifference>
 							<greatestDifference id="h">h – h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
 							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
 							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
 						</intervalFormatItem>
@@ -641,7 +790,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">MMM d – d</greatestDifference>
-							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, MMM d – E, MMM d</greatestDifference>
@@ -702,20 +850,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">Ноя</month>
 							<month type="12">Дек</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">Я</month>
-							<month type="2">Ф</month>
-							<month type="3">М</month>
-							<month type="4">А</month>
-							<month type="5">М</month>
-							<month type="6">И</month>
-							<month type="7">И</month>
-							<month type="8">А</month>
-							<month type="9">С</month>
-							<month type="10">О</month>
-							<month type="11">Н</month>
-							<month type="12">Д</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Январ</month>
 							<month type="2">Феврал</month>
@@ -732,20 +866,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">Янв</month>
-							<month type="2">Фев</month>
-							<month type="3">Мар</month>
-							<month type="4">Апр</month>
-							<month type="5">Май</month>
-							<month type="6">Июн</month>
-							<month type="7">Июл</month>
-							<month type="8">Авг</month>
-							<month type="9">Сен</month>
-							<month type="10">Окт</month>
-							<month type="11">Ноя</month>
-							<month type="12">Дек</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">Я</month>
 							<month type="2">Ф</month>
@@ -760,43 +880,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">Н</month>
 							<month type="12">Д</month>
 						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">Январ</month>
-							<month type="2">Феврал</month>
-							<month type="3">Март</month>
-							<month type="4">Апрел</month>
-							<month type="5">Май</month>
-							<month type="6">Июн</month>
-							<month type="7">Июл</month>
-							<month type="8">Август</month>
-							<month type="9">Сентябр</month>
-							<month type="10">Октябр</month>
-							<month type="11">Ноябр</month>
-							<month type="12">Декабр</month>
-						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
-							<day type="sun">Яшб</day>
-							<day type="mon">Дшб</day>
-							<day type="tue">Сшб</day>
-							<day type="wed">Чшб</day>
-							<day type="thu">Пшб</day>
-							<day type="fri">Ҷмъ</day>
-							<day type="sat">Шнб</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun">Я</day>
-							<day type="mon">Д</day>
-							<day type="tue">С</day>
-							<day type="wed">Ч</day>
-							<day type="thu">П</day>
-							<day type="fri">Ҷ</day>
-							<day type="sat">Ш</day>
-						</dayWidth>
-						<dayWidth type="short">
 							<day type="sun">Яшб</day>
 							<day type="mon">Дшб</day>
 							<day type="tue">Сшб</day>
@@ -816,15 +904,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun">Яшб</day>
-							<day type="mon">Дшб</day>
-							<day type="tue">Сшб</day>
-							<day type="wed">Чшб</day>
-							<day type="thu">Пшб</day>
-							<day type="fri">Ҷмъ</day>
-							<day type="sat">Шнб</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">Я</day>
 							<day type="mon">Д</day>
@@ -834,60 +913,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri">Ҷ</day>
 							<day type="sat">Ш</day>
 						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">Яшб</day>
-							<day type="mon">Дшб</day>
-							<day type="tue">Сшб</day>
-							<day type="wed">Чшб</day>
-							<day type="thu">Пшб</day>
-							<day type="fri">Ҷмъ</day>
-							<day type="sat">Шнб</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">Якшанбе</day>
-							<day type="mon">Душанбе</day>
-							<day type="tue">Сешанбе</day>
-							<day type="wed">Чоршанбе</day>
-							<day type="thu">Панҷшанбе</day>
-							<day type="fri">Ҷумъа</day>
-							<day type="sat">Шанбе</day>
-						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
 					<quarterContext type="format">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">Ч1</quarter>
-							<quarter type="2">Ч2</quarter>
-							<quarter type="3">Ч3</quarter>
-							<quarter type="4">Ч4</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">1</quarter>
-							<quarter type="2">2</quarter>
-							<quarter type="3">3</quarter>
-							<quarter type="4">4</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1">Ч1</quarter>
-							<quarter type="2">Ч2</quarter>
-							<quarter type="3">Ч3</quarter>
-							<quarter type="4">Ч4</quarter>
-						</quarterWidth>
-					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">Ч1</quarter>
-							<quarter type="2">Ч2</quarter>
-							<quarter type="3">Ч3</quarter>
-							<quarter type="4">Ч4</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">1</quarter>
-							<quarter type="2">2</quarter>
-							<quarter type="3">3</quarter>
-							<quarter type="4">4</quarter>
-						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">Ч1</quarter>
 							<quarter type="2">Ч2</quarter>
@@ -896,32 +925,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
-				<dayPeriods>
-					<dayPeriodContext type="format">
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-				</dayPeriods>
 				<eras>
 					<eraNames>
 						<era type="0">Пеш аз милод</era>
@@ -966,25 +969,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>HH:mm:ss zzzz</pattern>
-							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>HH:mm:ss z</pattern>
-							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>HH:mm:ss</pattern>
-							<datetimeSkeleton>HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>HH:mm</pattern>
-							<datetimeSkeleton>HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -1010,42 +1009,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Bh">h B</dateFormatItem>
-						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
-						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="Ed">d, E</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
-						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM, y G</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
-						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
-						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
-						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">dd-MM</dateFormatItem>
 						<dateFormatItem id="MEd">E, dd-MM</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">'ҳафтаи' W, MMMM</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
-						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">MM-y</dateFormatItem>
 						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, d/M/y</dateFormatItem>
@@ -1057,17 +1037,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">'ҳафтаи' w, Y</dateFormatItem>
 					</availableFormats>
-					<appendItems>
-						<appendItem request="Timezone">{0} {1}</appendItem>
-					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="B">h B – h B</greatestDifference>
 							<greatestDifference id="h">h – h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
 							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
 							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
 						</intervalFormatItem>
@@ -1160,7 +1135,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">MMM d – d</greatestDifference>
-							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, MMM d – E, MMM d</greatestDifference>
@@ -1220,20 +1194,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">Дхул-Қ.</month>
 							<month type="12">Дхул-Ҳ.</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">1</month>
-							<month type="2">2</month>
-							<month type="3">3</month>
-							<month type="4">4</month>
-							<month type="5">5</month>
-							<month type="6">6</month>
-							<month type="7">7</month>
-							<month type="8">8</month>
-							<month type="9">9</month>
-							<month type="10">10</month>
-							<month type="11">11</month>
-							<month type="12">12</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">муҳаррам</month>
 							<month type="2">сафар</month>
@@ -1250,20 +1210,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">Муҳ.</month>
-							<month type="2">Саф.</month>
-							<month type="3">Раб. I</month>
-							<month type="4">Раб. II</month>
-							<month type="5">Ҷум. I</month>
-							<month type="6">Ҷум. II</month>
-							<month type="7">Раҷ.</month>
-							<month type="8">Ша.</month>
-							<month type="9">Рам.</month>
-							<month type="10">Шав.</month>
-							<month type="11">Дхул-Қ.</month>
-							<month type="12">Дхул-Ҳ.</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">муҳаррам</month>
 							<month type="2">сафар</month>
@@ -1313,53 +1259,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
-						<dateFormatItem id="Gy">y G</dateFormatItem>
-						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
 						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
-						<dateFormatItem id="y">y G</dateFormatItem>
-						<dateFormatItem id="yyyy">y G</dateFormatItem>
 						<dateFormatItem id="yyyyM">M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="yyyyMd">M/d/y GGGGG</dateFormatItem>
 						<dateFormatItem id="yyyyMEd">E, M/d/y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E, MMM d, y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
-						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
-						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="persian">
 				<months>
 					<monthContext type="format">
-						<monthWidth type="wide">
-							<month type="1">фарвардин</month>
-							<month type="2">урдибиҳишт</month>
-							<month type="3">хурдод</month>
-							<month type="4">тир</month>
-							<month type="5">мурдод</month>
-							<month type="6">шаҳривар</month>
-							<month type="7">меҳр</month>
-							<month type="8">обон</month>
-							<month type="9">озар</month>
-							<month type="10">дей</month>
-							<month type="11">баҳман</month>
-							<month type="12">исфанд</month>
-						</monthWidth>
-					</monthContext>
-					<monthContext type="stand-alone">
 						<monthWidth type="wide">
 							<month type="1">фарвардин</month>
 							<month type="2">урдибиҳишт</month>
@@ -1396,12 +1314,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="era">
 				<displayName>мабдаи таърих</displayName>
 			</field>
-			<field type="era-short">
-				<displayName>мабдаи таърих</displayName>
-			</field>
-			<field type="era-narrow">
-				<displayName>мабдаи таърих</displayName>
-			</field>
 			<field type="year">
 				<displayName>сол</displayName>
 				<relative type="-1">соли гузашта</relative>
@@ -1415,18 +1327,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="year-short">
-				<displayName>с.</displayName>
-				<relative type="-1">соли г.</relative>
-				<relative type="0">соли ҷ.</relative>
-				<relative type="1">соли о.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">пас аз {0} с.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} с. пеш</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="year-narrow">
 				<displayName>с.</displayName>
 				<relative type="-1">соли г.</relative>
 				<relative type="0">соли ҷ.</relative>
@@ -1459,15 +1359,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} чр. пеш</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="quarter-narrow">
-				<displayName>чр.</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">пас аз {0} чр.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} чр. пеш</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="month">
 				<displayName>моҳ</displayName>
 				<relative type="-1">моҳи гузашта</relative>
@@ -1481,18 +1372,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="month-short">
-				<displayName>м.</displayName>
-				<relative type="-1">моҳи г.</relative>
-				<relative type="0">моҳи ҷ.</relative>
-				<relative type="1">моҳи о.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">пас аз {0} м.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} м. пеш</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="month-narrow">
 				<displayName>м.</displayName>
 				<relative type="-1">моҳи г.</relative>
 				<relative type="0">моҳи ҷ.</relative>
@@ -1530,53 +1409,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 				<relativePeriod>ҳ. {0}</relativePeriod>
 			</field>
-			<field type="week-narrow">
-				<displayName>ҳ.</displayName>
-				<relative type="-1">ҳафтаи г.</relative>
-				<relative type="0">ҳафтаи ҷ.</relative>
-				<relative type="1">ҳафтаи о.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">пас аз {0} ҳ.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} ҳ. пеш</relativeTimePattern>
-				</relativeTime>
-				<relativePeriod>ҳ. {0}</relativePeriod>
-			</field>
 			<field type="weekOfMonth">
 				<displayName>ҳафтаи моҳ</displayName>
 			</field>
 			<field type="weekOfMonth-short">
 				<displayName>ҳ. м.</displayName>
 			</field>
-			<field type="weekOfMonth-narrow">
-				<displayName>ҳ. м.</displayName>
-			</field>
 			<field type="day">
-				<displayName>рӯз</displayName>
-				<relative type="-1">дирӯз</relative>
-				<relative type="0">имрӯз</relative>
-				<relative type="1">фардо</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">пас аз {0} рӯз</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} рӯз пеш</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="day-short">
-				<displayName>рӯз</displayName>
-				<relative type="-1">дирӯз</relative>
-				<relative type="0">имрӯз</relative>
-				<relative type="1">фардо</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">пас аз {0} рӯз</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} рӯз пеш</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="day-narrow">
 				<displayName>рӯз</displayName>
 				<relative type="-1">дирӯз</relative>
 				<relative type="0">имрӯз</relative>
@@ -1594,25 +1433,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="dayOfYear-short">
 				<displayName>рӯзи с.</displayName>
 			</field>
-			<field type="dayOfYear-narrow">
-				<displayName>рӯзи с.</displayName>
-			</field>
 			<field type="weekday">
 				<displayName>рӯзи ҳафта</displayName>
 			</field>
 			<field type="weekday-short">
 				<displayName>рӯзи ҳ.</displayName>
 			</field>
-			<field type="weekday-narrow">
-				<displayName>рӯзи ҳ.</displayName>
-			</field>
 			<field type="weekdayOfMonth">
 				<displayName>рӯзи ҳафтаи моҳ</displayName>
 			</field>
 			<field type="weekdayOfMonth-short">
-				<displayName>рӯзи ҳ. м.</displayName>
-			</field>
-			<field type="weekdayOfMonth-narrow">
 				<displayName>рӯзи ҳ. м.</displayName>
 			</field>
 			<field type="sun">
@@ -1641,9 +1471,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">яшб г.</relative>
 				<relative type="0">яшб ҷ.</relative>
 				<relative type="1">яшб о.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">пас аз {0} яшб</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} ябш пеш</relativeTimePattern>
 				</relativeTime>
@@ -1674,12 +1501,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">дшб г.</relative>
 				<relative type="0">дшб ҷ.</relative>
 				<relative type="1">дшб о.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">пас аз {0} дшб</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} дшб пеш</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">сешанбеи гузашта</relative>
@@ -1707,12 +1528,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">сшб г.</relative>
 				<relative type="0">сшб ҷ.</relative>
 				<relative type="1">сшб о.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">пас аз {0} сшб</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} сшб пеш</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">чоршанбеи гузашта</relative>
@@ -1740,12 +1555,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">чшб г.</relative>
 				<relative type="0">чшб ҷ.</relative>
 				<relative type="1">чшб о.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">пас аз {0} чшб</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} чшб пеш</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">панҷшанбеи гузашта</relative>
@@ -1773,12 +1582,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">пшб г.</relative>
 				<relative type="0">пшб ҷ.</relative>
 				<relative type="1">пшб о.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">пас аз {0} пшб</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} пшб пеш</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">ҷумъаи гузашта</relative>
@@ -1806,12 +1609,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">ҷмъ г.</relative>
 				<relative type="0">ҷмъ ҷ.</relative>
 				<relative type="1">ҷмъ о.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">пас аз {0} ҷмъ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} ҷмъ пеш</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">шанбеи гузашта</relative>
@@ -1839,20 +1636,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">шнб г.</relative>
 				<relative type="0">шнб ҷ.</relative>
 				<relative type="1">шнб о.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">пас аз {0} шнб</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} шнб пеш</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="dayperiod-short">
-				<displayName>AM/PM</displayName>
 			</field>
 			<field type="dayperiod">
-				<displayName>AM/PM</displayName>
-			</field>
-			<field type="dayperiod-narrow">
 				<displayName>AM/PM</displayName>
 			</field>
 			<field type="hour">
@@ -1866,15 +1651,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="hour-short">
-				<displayName>ст.</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">пас аз {0} ст.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} ст. пеш</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="hour-narrow">
 				<displayName>ст.</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">пас аз {0} ст.</relativeTimePattern>
@@ -1902,15 +1678,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} дақ. пеш</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="minute-narrow">
-				<displayName>дақ.</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">пас аз {0} дақ.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} дақ. пеш</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="second">
 				<displayName>сония</displayName>
 				<relative type="0">ҳозир</relative>
@@ -1930,33 +1697,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} сон. пеш</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="second-narrow">
-				<displayName>сон.</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">пас аз {0} сон.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} сон. пеш</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="zone">
-				<displayName>минтақаи вақт</displayName>
-			</field>
-			<field type="zone-short">
-				<displayName>минтақаи вақт</displayName>
-			</field>
-			<field type="zone-narrow">
 				<displayName>минтақаи вақт</displayName>
 			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat>+HH:mm;-HH:mm</hourFormat>
-			<gmtFormat>Вақти GMT {0}</gmtFormat>
 			<gmtZeroFormat>Вақти GMT</gmtZeroFormat>
 			<regionFormat>Вақти {0}</regionFormat>
 			<regionFormat type="daylight">Вақти рӯзонаи {0}</regionFormat>
 			<regionFormat type="standard">Вақти стандартии {0}</regionFormat>
-			<fallbackFormat>{1} ({0})</fallbackFormat>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Вақти ҷаҳонии ҳамоҳангсозӣ</standard>
@@ -2032,29 +1781,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
-		<otherNumberingSystems>
-			<native draft="contributed">latn</native>
-		</otherNumberingSystems>
-		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group> </group>
-			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
-			<exponential>E</exponential>
-			<superscriptingExponent>×</superscriptingExponent>
-			<perMille>‰</perMille>
-			<infinity>∞</infinity>
-			<nan>NaN</nan>
 		</symbols>
 		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
 			<decimalFormatLength type="long">
 				<decimalFormat>
 					<pattern type="1000" count="other">0 ҳазор</pattern>
@@ -2088,29 +1819,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
-		<scientificFormats numberSystem="latn">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern>#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern>#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
-				</currencyFormat>
-				<currencyFormat type="accounting">
-					<pattern>#,##0.00 ¤</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -2135,55 +1847,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="BRL">
 				<displayName>Реали бразилиягӣ</displayName>
 				<displayName count="other">реали бразилиягӣ</displayName>
-				<symbol draft="contributed">R$</symbol>
-				<symbol alt="narrow" draft="contributed">R$</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>Иенаи хитоӣ</displayName>
 				<displayName count="other">иенаи хитоӣ</displayName>
-				<symbol draft="contributed">CN¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>Евро</displayName>
 				<displayName count="other">евро</displayName>
-				<symbol draft="contributed">€</symbol>
-				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
 			<currency type="GBP">
 				<displayName>Фунт стерлинги британӣ</displayName>
 				<displayName count="other">фунт стерлинги британӣ</displayName>
-				<symbol draft="contributed">£</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>Рупияи ҳиндустонӣ</displayName>
 				<displayName count="other">рупияи ҳиндустонӣ</displayName>
-				<symbol draft="contributed">₹</symbol>
-				<symbol alt="narrow" draft="contributed">₹</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>Иенаи японӣ</displayName>
 				<displayName count="other">иенаи японӣ</displayName>
-				<symbol draft="contributed">JP¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>Рубли русӣ</displayName>
 				<displayName count="other">рубли русӣ</displayName>
-				<symbol draft="contributed">RUB</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
 			</currency>
 			<currency type="TJS">
 				<displayName>Сомонӣ</displayName>
-				<displayName count="other">Сомонӣ</displayName>
 				<symbol draft="contributed">сом.</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>Доллари ИМА</displayName>
 				<displayName count="other">доллари ИМА</displayName>
 				<symbol draft="contributed">$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>Асъори номаълум</displayName>
@@ -2192,30 +1888,54 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</currencies>
 		<miscPatterns numberSystem="latn">
 			<pattern type="atLeast">⩾{0}</pattern>
-			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 	</numbers>
-	<units>
-		<durationUnit type="hm">
-			<durationUnitPattern>h:mm</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="hms">
-			<durationUnitPattern>h:mm:ss</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="ms">
-			<durationUnitPattern>m:ss</durationUnitPattern>
-		</durationUnit>
-	</units>
-	<listPatterns>
-		<listPattern>
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0}, {1}</listPatternPart>
-			<listPatternPart type="2">{0}, {1}</listPatternPart>
-		</listPattern>
-	</listPatterns>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und tg</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
+		<sampleName item="nativeG">
+			<nameField type="given">Зендая</nameField>
+		</sampleName>
+		<sampleName item="nativeGS">
+			<nameField type="given">Ирене</nameField>
+			<nameField type="surname">Адлер</nameField>
+		</sampleName>
+		<sampleName item="nativeGGS">
+			<nameField type="given">Мэри Сю</nameField>
+			<nameField type="given2">Хамиш</nameField>
+			<nameField type="surname">Ватсон</nameField>
+		</sampleName>
+		<sampleName item="nativeFull">
+			<nameField type="title">∅∅∅</nameField>
+			<nameField type="given">Бертрам Вилберфорс</nameField>
+			<nameField type="given-informal">Берти</nameField>
+			<nameField type="given2">Ҳенру Роберт</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">Вустер</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
+			<nameField type="generation">∅∅∅</nameField>
+			<nameField type="credentials">∅∅∅</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">Синбад</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">Кэти</nameField>
+			<nameField type="surname">Мюлер</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">Зазилия</nameField>
+			<nameField type="given2">Ҳамиш</nameField>
+			<nameField type="surname">Стобер</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">Проф. Док.</nameField>
+			<nameField type="given">Ада Корнелиа</nameField>
+			<nameField type="given-informal">Нили</nameField>
+			<nameField type="given2">Сезар Мартин</nameField>
+			<nameField type="surname-prefix">вон</nameField>
+			<nameField type="surname-core">Брухи</nameField>
+			<nameField type="surname2">Гонзалес Доминго</nameField>
+		</sampleName>
 	</personNames>
 </ldml>

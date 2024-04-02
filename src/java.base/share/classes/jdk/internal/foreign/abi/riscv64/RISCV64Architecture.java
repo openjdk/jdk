@@ -32,7 +32,6 @@ import jdk.internal.foreign.abi.ABIDescriptor;
 import jdk.internal.foreign.abi.Architecture;
 import jdk.internal.foreign.abi.StubLocations;
 import jdk.internal.foreign.abi.VMStorage;
-import jdk.internal.foreign.abi.riscv64.linux.TypeClass;
 
 public final class RISCV64Architecture implements Architecture {
     public static final Architecture INSTANCE = new RISCV64Architecture();

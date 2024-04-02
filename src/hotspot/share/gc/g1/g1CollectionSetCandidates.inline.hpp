@@ -38,8 +38,8 @@ inline G1CollectionCandidateListIterator& G1CollectionCandidateListIterator::ope
   return *this;
 }
 
-inline HeapRegion* G1CollectionCandidateListIterator::operator*() {
-  return _which->_candidates.at(_position)._r;
+inline G1CollectionSetCandidateInfo* G1CollectionCandidateListIterator::operator*() {
+  return &_which->_candidates.at(_position);
 }
 
 inline bool G1CollectionCandidateListIterator::operator==(const G1CollectionCandidateListIterator& rhs) {

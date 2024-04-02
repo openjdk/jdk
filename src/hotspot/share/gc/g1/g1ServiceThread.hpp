@@ -120,6 +120,9 @@ class G1ServiceThread: public ConcurrentGCThread {
   // to schedule a registered task to run after the given delay.
   void schedule(G1ServiceTask* task, jlong delay, bool notify);
 
+  // Update the perf data counter for service thread.
+  void update_thread_cpu_time();
+
 public:
   G1ServiceThread();
 

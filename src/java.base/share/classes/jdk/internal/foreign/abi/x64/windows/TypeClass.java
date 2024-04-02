@@ -38,7 +38,7 @@ enum TypeClass {
     VARARG_FLOAT;
 
     private static TypeClass classifyValueType(ValueLayout type, boolean isVararg) {
-        // No 128-bit integers in the Windows C ABI. There are __m128(i|d) intrinsic types but they act just
+        // No 128-bit integers in the Windows C ABI. There are __m128(i|d) intrinsic types but, they act just
         // like a struct when passing as an argument (passed by pointer).
         // https://docs.microsoft.com/en-us/cpp/cpp/m128?view=vs-2019
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
@@ -53,6 +54,9 @@ import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder.SummaryEl
  * @param <B> a builder, to determine the elements to be included in the summary
  */
 public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends SubWriterHolderWriter {
+
+    final protected String ID_OTHER = "other";
+    final protected String ID_ALL   = "all";
 
     protected String getHeadingKey(SummaryElementKind kind) {
         return switch (kind) {
@@ -138,8 +142,10 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
                 HtmlStyle.title, getHeadContent());
         content.add(HtmlTree.DIV(HtmlStyle.header, heading));
         addContentSelectors(content);
-        content.add(HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING, contents.contentsHeading));
-        content.add(getContentsList());
+        if (showContentsList()) {
+            content.add(HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING, contents.contentsHeading));
+            content.add(getContentsList());
+        }
         addExtraSection(content);
         for (SummaryElementKind kind : SummaryElementKind.values()) {
             if (builder.hasDocumentation(kind)) {
@@ -151,16 +157,14 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
         // The script below enables checkboxes in the page and invokes their click handler
         // to restore any previous state when the page is loaded via back/forward button.
         bodyContents.addMainContent(new Script("""
-                document.addEventListener("DOMContentLoaded", function(e) {
-                    document.querySelectorAll('input[type="checkbox"]').forEach(
-                        function(c) {
+                document.addEventListener("DOMContentLoaded", (e) => {
+                    document.querySelectorAll('main input[type="checkbox"]').forEach((c) => {
                             c.disabled = false;
                             c.onclick();
                         });
                     });
                 window.addEventListener("load", function(e) {
-                    document.querySelectorAll('input[type="checkbox"]').forEach(
-                        function(c) {
+                    document.querySelectorAll('main input[type="checkbox"]').forEach((c) => {
                             c.onclick();
                         });
                     });
@@ -182,6 +186,13 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
         var li = HtmlTree.LI(links.createLink(id,
                 contents.getContent(headingKey))).setId(HtmlId.of("contents-" + id.name()));
         content.add(li);
+    }
+
+    /**
+     * {@return {@code true} if the contents list should be generated, {@code false} if not}
+     */
+    protected boolean showContentsList() {
+        return true;
     }
 
     /**
@@ -288,6 +299,25 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
     }
 
     /**
+     * Create a checkbox input element and associated label for selecting content on
+     * a summary page.
+     *
+     * @param label The label
+     * @param id the id of the selected content
+     * @param htmlPrefix the prefix for the HTML id
+     * @return a content object containing the checkbox input
+     */
+    protected Content getCheckbox(Content label, String id, String htmlPrefix) {
+        String htmlId = htmlPrefix + id;
+        return HtmlTree.LABEL(htmlId,
+                        HtmlTree.INPUT(HtmlAttr.InputType.CHECKBOX, HtmlId.of(htmlId))
+                                .put(HtmlAttr.CHECKED, "")
+                                .put(HtmlAttr.ONCLICK,
+                                        "toggleGlobal(this, '" + id + "', 3)"))
+                .add(HtmlTree.SPAN(label));
+    }
+
+    /**
      * Add an extra optional section to the content.
      *
      * @param target the content to which the section should be added
@@ -304,21 +334,23 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
     }
 
     /**
-     * Subclasses allow the user to show or hide parts of the content in the page.
-     * This method should be used to add the UI to select the visible page content.
+     * Allow Subclasses to add a content selector UI such as a row of radio buttons
+     * near the top of the page. This method does not add anything.
      *
      * @param target the content to which the UI should be added
      */
-    protected abstract void addContentSelectors(Content target);
+    protected void addContentSelectors(Content target) {}
 
     /**
-     * Some subclasses of this class display an extra column in their element tables.
-     * This methods allows them to return the content to show for {@code element}.
+     * Allow subclasses to add an extra table column for an element.
+     * This methods does not add any content by returning {@code null}.
      *
      * @param element the element
      * @return content for extra content or null
      */
-    protected abstract Content getExtraContent(Element element);
+    protected Content getExtraContent(Element element) {
+        return null;
+    }
 
     /**
      * Gets the table header to use for a table with the first column identified by {@code headerKey}.
@@ -352,10 +384,11 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
     }
 
     /**
-     * Allow subclasses to add extra tabs to the element tables.
+     * Allow subclasses to add extra tabs to the element tables. This method does not
+     * add any tabs.
      *
      * @param table the element table
      * @param headingKey the key for the caption (default tab)
      */
-    protected abstract void addTableTabs(Table<Element> table, String headingKey);
+    protected void addTableTabs(Table<Element> table, String headingKey) {}
 }

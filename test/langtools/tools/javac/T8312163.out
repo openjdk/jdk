@@ -4,6 +4,4 @@ T8312163.java:33:18: compiler.err.pattern.dominated
 T8312163.java:39:18: compiler.err.pattern.dominated
 T8312163.java:49:18: compiler.err.pattern.dominated
 T8312163.java:54:18: compiler.err.pattern.dominated
-- compiler.note.preview.filename: T8312163.java, DEFAULT
-- compiler.note.preview.recompile
 6 errors

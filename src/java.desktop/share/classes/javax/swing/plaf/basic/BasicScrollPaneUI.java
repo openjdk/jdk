@@ -998,7 +998,8 @@ public class BasicScrollPaneUI
         //
         public void mouseWheelMoved(MouseWheelEvent e) {
             if (scrollpane.isWheelScrollingEnabled() &&
-                e.getWheelRotation() != 0) {
+                    scrollpane.isEnabled() &&
+                    e.getWheelRotation() != 0) {
                 JScrollBar toScroll = scrollpane.getVerticalScrollBar();
                 int direction = e.getWheelRotation() < 0 ? -1 : 1;
                 int orientation = SwingConstants.VERTICAL;

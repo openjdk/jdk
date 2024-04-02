@@ -236,21 +236,21 @@ typedef struct {
  *      is called since this function will not leave any outstanding
  *      JNI Critical locks unreleased.
  */
-JNIEXPORT GDIWinSDOps * JNICALL
+GDIWinSDOps *
 GDIWindowSurfaceData_GetOps(JNIEnv *env, jobject sData);
 
-JNIEXPORT GDIWinSDOps * JNICALL
+GDIWinSDOps *
 GDIWindowSurfaceData_GetOpsNoSetup(JNIEnv *env, jobject sData);
 
-JNIEXPORT HWND JNICALL
+HWND
 GDIWindowSurfaceData_GetWindow(JNIEnv *env, GDIWinSDOps *wsdo);
 
-JNIEXPORT void JNICALL
+void
 GDIWinSD_InitDC(JNIEnv *env, GDIWinSDOps *wsdo, ThreadGraphicsInfo *info,
                jint type, jint *patrop,
                jobject clip, jobject comp, jint color);
 
-JNIEXPORT AwtComponent * JNICALL
+AwtComponent *
 GDIWindowSurfaceData_GetComp(JNIEnv *env, GDIWinSDOps *wsdo);
 
 } /* extern "C" */

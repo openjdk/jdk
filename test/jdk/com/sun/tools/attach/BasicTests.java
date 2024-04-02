@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ public class BasicTests {
             testClassDir + "Agent.jar",
             testClassDir + "BadAgent.jar",
             testClassDir + "RedefineAgent.jar" };
-        OutputAnalyzer output = ProcessTools.executeTestJvm(args);
+        OutputAnalyzer output = ProcessTools.executeTestJava(args);
         output.shouldHaveExitValue(0);
     }
 
@@ -171,6 +171,7 @@ public class BasicTests {
             System.out.println(" - Test: Load an agent that does not exist");
             try {
                 vm.loadAgent("SilverBullet.jar");
+                throw new RuntimeException("AgentLoadException not thrown as expected!");
             } catch (AgentLoadException x) {
                 System.out.println(" - AgentLoadException thrown as expected!");
             }

@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4922036
+ * @key printer
  * @summary Confirm that no Exception is thrown and 2 identical output is produced.
  * @run main/manual MultiThreadTest
  */

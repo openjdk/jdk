@@ -68,34 +68,30 @@ public class AllocFromTest extends CLayouts {
 
     @Benchmark
     public MemorySegment alloc_confined() {
-        Arena arena = Arena.ofConfined();
-        MemorySegment segment = arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);
-        arena.close();
-        return segment;
+        try (Arena arena = Arena.ofConfined()) {
+            return arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);
+        }
     }
 
     @Benchmark
     public MemorySegment alloc_malloc_arena() {
-        MallocArena arena = new MallocArena();
-        MemorySegment segment = arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);
-        arena.close();
-        return segment;
+        try (MallocArena arena = new MallocArena()) {
+            return arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);
+        }
     }
 
     @Benchmark
     public MemorySegment alloc_unsafe_arena() {
-        UnsafeArena arena = new UnsafeArena();
-        MemorySegment segment = arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);
-        arena.close();
-        return segment;
+        try (UnsafeArena arena = new UnsafeArena()) {
+            return arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);
+        }
     }
 
     @Benchmark
     public MemorySegment alloc_pool_arena() {
-        Arena arena = pool.acquire();
-        MemorySegment segment = arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);
-        arena.close();
-        return segment;
+        try (Arena arena = pool.acquire()) {
+            return arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);
+        }
     }
 
     static class SlicingPool {

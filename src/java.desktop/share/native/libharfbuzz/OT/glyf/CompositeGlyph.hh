@@ -87,19 +87,54 @@ struct CompositeGlyphRecord
     }
   }
 
-  void transform_points (contour_point_vector_t &points,
+  static void transform (const float (&matrix)[4],
+                         hb_array_t<contour_point_t> points)
+  {
+    if (matrix[0] != 1.f || matrix[1] != 0.f ||
+        matrix[2] != 0.f || matrix[3] != 1.f)
+      for (auto &point : points)
+        point.transform (matrix);
+  }
+
+  static void translate (const contour_point_t &trans,
+                         hb_array_t<contour_point_t> points)
+  {
+    if (HB_OPTIMIZE_SIZE_VAL)
+    {
+      if (trans.x != 0.f || trans.y != 0.f)
+        for (auto &point : points)
+          point.translate (trans);
+    }
+    else
+    {
+      if (trans.x != 0.f && trans.y != 0.f)
+        for (auto &point : points)
+          point.translate (trans);
+      else
+      {
+        if (trans.x != 0.f)
+          for (auto &point : points)
+            point.x += trans.x;
+        else if (trans.y != 0.f)
+          for (auto &point : points)
+            point.y += trans.y;
+      }
+    }
+  }
+
+  void transform_points (hb_array_t<contour_point_t> points,
                          const float (&matrix)[4],
                          const contour_point_t &trans) const
   {
     if (scaled_offsets ())
     {
-      points.translate (trans);
-      points.transform (matrix);
+      translate (trans, points);
+      transform (matrix, points);
     }
     else
     {
-      points.transform (matrix);
-      points.translate (trans);
+      transform (matrix, points);
+      translate (trans, points);
     }
   }
 
@@ -108,8 +143,8 @@ struct CompositeGlyphRecord
     float matrix[4];
     contour_point_t trans;
     get_transformation (matrix, trans);
-    if (unlikely (!points.resize (points.length + 1))) return false;
-    points[points.length - 1] = trans;
+    if (unlikely (!points.alloc (points.length + 4))) return false; // For phantom points
+    points.push (trans);
     return true;
   }
 
@@ -358,7 +393,7 @@ struct CompositeGlyph
     {
       /* last 4 points in points_with_deltas are phantom points and should not be included */
       if (i >= points_with_deltas.length - 4) {
-        free (o);
+        hb_free (o);
         return false;
       }
 

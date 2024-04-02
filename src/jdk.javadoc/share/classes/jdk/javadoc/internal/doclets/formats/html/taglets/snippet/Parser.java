@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,7 +161,7 @@ public final class Parser {
                     }
                 }
                 if (parsedTags.isEmpty()) { // (2)
-                    diags.warn(resources.getText("doclet.snippet.markup.spurious"), next.offset() + markedUpLine.start("markup"));
+                    diags.warn("doclet.snippet.markup.spurious", next.offset() + markedUpLine.start("markup"));
                     line = rawLine + (addLineTerminator ? "\n" : "");
                 } else { // (3)
                     hasMarkup = true;

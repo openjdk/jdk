@@ -125,7 +125,7 @@ public class TestG1ParallelPhases {
         // since we can not reliably guarantee that they occur (or not).
         Set<String> optPhases = of(
             // The following phases only occur on evacuation failure.
-            "RestoreRetainedRegions",
+            "RestoreEvacuationFailedRegions",
             "RemoveSelfForwards",
             "RestorePreservedMarks",
             "ProcessEvacuationFailedRegions",

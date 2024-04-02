@@ -25,15 +25,11 @@
  * @test
  * @bug 8005085 8005877 8004829 8005681 8006734 8006775 8006507
  * @summary Combinations of Target ElementTypes on (repeated)type annotations.
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  */
 
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 import java.io.File;
 import java.util.List;
 
@@ -166,7 +162,7 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
             classFile=new File(sb.insert(sb.lastIndexOf(".class"),innerClassname).toString());
             println("classfile: " + classFile.getAbsolutePath());
         }
-        ClassModel cm = Classfile.of().parse(classFile.toPath());
+        ClassModel cm = ClassFile.of().parse(classFile.toPath());
 
         //Test class,fields and method counts.
         test(cm);

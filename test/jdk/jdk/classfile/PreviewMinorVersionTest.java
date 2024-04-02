@@ -20,20 +20,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import org.junit.jupiter.api.Test;
 
 import java.lang.constant.ClassDesc;
 
 import static java.lang.constant.ConstantDescs.*;
-import static jdk.internal.classfile.Classfile.*;
+import static java.lang.classfile.ClassFile.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
  * @bug 8311172
  * @run junit PreviewMinorVersionTest
- * @summary Ensures Classfile.PREVIEW_MINOR_VERSION equals that of classes with
+ * @summary Ensures ClassFile.PREVIEW_MINOR_VERSION equals that of classes with
  *          preview minor version from ClassModel::minorVersion
  */
 public class PreviewMinorVersionTest {
@@ -42,7 +42,7 @@ public class PreviewMinorVersionTest {
     public void testMinorVersionMatches() {
         // compile a class with --enable-preview
         // uses Record feature to trigger forcePreview
-        var cf = Classfile.of();
+        var cf = ClassFile.of();
         var cd = ClassDesc.of("Test");
         var bytes = cf.build(cd, cb -> cb
                 .withSuperclass(CD_Object)
@@ -51,7 +51,7 @@ public class PreviewMinorVersionTest {
                 .withVersion(JAVA_17_VERSION, -1)
         );
 
-        var cm = Classfile.of().parse(bytes);
-        assertEquals(Classfile.PREVIEW_MINOR_VERSION, cm.minorVersion());
+        var cm = ClassFile.of().parse(bytes);
+        assertEquals(ClassFile.PREVIEW_MINOR_VERSION, cm.minorVersion());
     }
 }

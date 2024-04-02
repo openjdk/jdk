@@ -29,34 +29,35 @@
  */
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class CheckReleaseFile {
 
-    public static final String SRC_HASH_REGEXP = ":((hg)|(git)):[a-z0-9]*\\+?";
+    public static final String SRC_HASH_REGEXP = ":git:[a-z0-9]*\\+?";
 
-    private final boolean isOpenJDK;
-    CheckReleaseFile(String dataFile, boolean isOpenJDK) {
-        this.isOpenJDK = isOpenJDK;
-        // Read data files
-        readFile(dataFile);
+    public static void main(String args[]) throws IOException {
+        String jdkPath = System.getProperty("test.jdk");
+        String runtime = System.getProperty("java.runtime.name");
+
+        System.out.println("JDK Path : " + jdkPath);
+        System.out.println("Runtime Name : " + runtime);
+
+        checkReleaseFile(Path.of(jdkPath));
     }
 
-    private void readFile(String fileName) {
-        String fishForSOURCE = null;
-        String implementor = null;
+    private static void checkReleaseFile(Path javaHome) throws IOException {
+        String source = null;
         String runtimeVersion = null;
 
-        File file = new File(fileName);
+        Path releaseFile = javaHome.resolve("release");
 
         // open the stream to read in for Entries
-        try (BufferedReader buffRead =
-            new BufferedReader(new FileReader(fileName))) {
+        try (BufferedReader buffRead = Files.newBufferedReader(releaseFile)) {
 
             // this is the string read
             String readIn;
@@ -71,13 +72,7 @@ public class CheckReleaseFile {
 
                 // grab SOURCE line
                 if (readIn.startsWith("SOURCE=")) {
-                    fishForSOURCE = readIn;
-                    continue;
-                }
-
-                // grab IMPLEMENTOR line
-                if (readIn.startsWith("IMPLEMENTOR=")) {
-                    implementor = readIn;
+                    source = readIn;
                     continue;
                 }
 
@@ -87,22 +82,13 @@ public class CheckReleaseFile {
                     continue;
                 }
             }
-        } catch (FileNotFoundException fileExcept) {
-            throw new RuntimeException("File " + fileName +
-                                       " not found reading data!", fileExcept);
-        } catch (IOException ioExcept) {
-            throw new RuntimeException("Unexpected problem reading data!",
-                                       ioExcept);
         }
 
         // was SOURCE even found?
-        if (fishForSOURCE == null) {
+        if (source == null) {
             throw new RuntimeException("SOURCE line was not found!");
         }
-
-        // Check if implementor is Oracle
-        boolean isOracle = (implementor != null) && implementor.contains("Oracle Corporation");
-        checkSource(fishForSOURCE, isOracle);
+        checkSource(source);
 
         if (runtimeVersion == null) {
             throw new RuntimeException("JAVA_RUNTIME_VERSION line was not found!");
@@ -114,13 +100,13 @@ public class CheckReleaseFile {
         }
     }
 
-    private void checkSource(String fishForSOURCE, boolean isOracle) {
+    private static void checkSource(String source) {
 
-        System.out.println("The source string found: " + fishForSOURCE);
+        System.out.println("The source string found: " + source);
 
         // Extract the value of SOURCE=
         Pattern valuePattern = Pattern.compile("SOURCE=\"(.*)\"");
-        Matcher valueMatcher = valuePattern.matcher(fishForSOURCE);
+        Matcher valueMatcher = valuePattern.matcher(source);
         if (!valueMatcher.matches()) {
             throw new RuntimeException("SOURCE string has bad format, should be SOURCE=\"<value>\"");
         }
@@ -137,36 +123,19 @@ public class CheckReleaseFile {
 
         // If it's an Oracle build, it can be either OpenJDK or OracleJDK. Other
         // builds may have any number of additional elements in any format.
-        if (isOracle) {
-            if (isOpenJDK) {
-                if (values.length != 1) {
-                    throw new RuntimeException("The test failed, wrong number of elements in SOURCE list." +
-                            " Should be 1 for Oracle built OpenJDK.");
-                }
-            } else {
-                if (values.length != 2) {
-                    throw new RuntimeException("The test failed, wrong number of elements in SOURCE list." +
-                            " Should be 2 for OracleJDK.");
-                }
-                // Second value MUST start with "open:" for OracleJDK
-                String openRegexp = "open" + SRC_HASH_REGEXP;
-                if (!values[1].matches(openRegexp)) {
-                    throw new RuntimeException("The test failed, second element did not match regexp: " + openRegexp);
-                }
+        String runtime = System.getProperty("java.runtime.name");
+        String vendor = System.getProperty("java.vendor");
+        if (runtime.contains("OpenJDK") && vendor.contains("Oracle Corporation")) {
+            System.out.println("Oracle built OpenJDK, verifying SOURCE format");
+            if (values.length != 1) {
+                throw new RuntimeException("The test failed, wrong number of elements in SOURCE list." +
+                                           " Should be 1 for Oracle built OpenJDK.");
             }
+        } else {
+            System.out.println("Not Oracle built OpenJDK, skipping further SOURCE verification");
         }
 
         // Everything was fine
         System.out.println("The test passed!");
-    }
-
-    public static void main(String args[]) {
-        String jdkPath = System.getProperty("test.jdk");
-        String runtime = System.getProperty("java.runtime.name");
-
-        System.out.println("JDK Path : " + jdkPath);
-        System.out.println("Runtime Name : " + runtime);
-
-        new CheckReleaseFile(jdkPath + "/release", runtime.contains("OpenJDK"));
     }
 }

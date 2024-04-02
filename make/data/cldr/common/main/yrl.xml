@@ -13,11 +13,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<language type="yrl"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern>{0} ({1})</localePattern>
-			<localeSeparator>{0}, {1}</localeSeparator>
-			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
-		</localeDisplayPattern>
 		<languages>
 			<language type="aa">afari</language>
 			<language type="ab">abikasiyu</language>
@@ -143,7 +138,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="el">geregu</language>
 			<language type="elx">eramite</language>
 			<language type="en">ẽgirixi</language>
-			<language type="en_US" alt="short">ẽgirixi (EUA)</language>
 			<language type="enm">ẽgirixi médiu</language>
 			<language type="eo">esiperãtu</language>
 			<language type="es">isipãyu</language>
@@ -841,7 +835,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Isirayeu</territory>
 			<territory type="IM">Mã Kapuãma</territory>
 			<territory type="IN">Ĩdiya</territory>
-			<territory type="IO">Biritãniku Usuasawa Useyanu Ĩdiku</territory>
+			<territory type="IO" draft="provisional">Biritãniku Usuasawa Useyanu Ĩdiku</territory>
 			<territory type="IQ">Iraki</territory>
 			<territory type="IR">Irã</territory>
 			<territory type="IS">Isirãdiya</territory>
@@ -1077,9 +1071,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">Akayupawa Greguriuwara</type>
 			<type key="calendar" type="hebrew">Akayupawa Yudeu</type>
 			<type key="calendar" type="indian">Akayupawa Tetãmapawa Ĩdiawara</type>
-			<type key="calendar" type="islamic">Akayupawa Islãsuera</type>
-			<type key="calendar" type="islamic-civil">Akayupawa Siwiu Islãsuera</type>
-			<type key="calendar" type="islamic-umalqura" draft="contributed">Akayupawa Islãsuera (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="provisional">Akayupawa Islãsuera</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Akayupawa Siwiu Islãsuera</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Akayupawa Islãsuera (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Akayupawa ISSO-8601</type>
 			<type key="calendar" type="japanese">Akayupawa Nipõwara</type>
 			<type key="calendar" type="persian">Akayupawa Persiyawara</type>
@@ -1210,36 +1204,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</contextTransformUsage>
 	</contextTransforms>
 	<characters>
-		<exemplarCharacters>[a ã b d e ẽ g i ĩ k m n p r s t u ũ w x y]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[ª á à ă â å ä ā æ c ç é è ĕ ê ë ē f h í ì ĭ î ï ī j l ñ o º ó ò ŏ ô ö õ ø ō œ q ú ù ŭ û ü ū v ÿ ỹ z]</exemplarCharacters>
+		<exemplarCharacters>[aã b d eẽ g iĩ k m n p r s t uũ w x y]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ªáàăâåäā æ cç éèĕêëē f h íìĭîïī j l ñ oºóòŏôöõøō œ q úùŭûüū v ÿỹ z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B D E G I K M N P R S T U W X Y]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ¡ ? ¿ . … ' ‘ ’ &quot; “ ” « » ( ) \[ \] § @ * / \\ \&amp; # † ‡ ′ ″]</exemplarCharacters>
-		<ellipsis type="final">{0}…</ellipsis>
-		<ellipsis type="initial">…{0}</ellipsis>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ¡ ? ¿ . … '‘’ &quot;“” « » ( ) \[ \] § @ * / \\ \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="medial">{0}… {1}</ellipsis>
 		<ellipsis type="word-final">{0}…</ellipsis>
-		<ellipsis type="word-initial">… {0}</ellipsis>
-		<ellipsis type="word-medial">{0} … {1}</ellipsis>
-		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
-			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
-			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,，﹐︐ ٫]</parseLenient>
 		</parseLenients>
 	</characters>
 	<dates>
@@ -1249,9 +1231,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<eraNames>
 						<era type="0" draft="contributed">EB</era>
 					</eraNames>
-					<eraAbbr>
-						<era type="0">BE</era>
-					</eraAbbr>
 					<eraNarrow>
 						<era type="0" draft="contributed">EB</era>
 					</eraNarrow>
@@ -1273,64 +1252,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="10">YYP</month>
 							<month type="11">YYY</month>
 							<month type="12">YYM</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">1</month>
-							<month type="2">2</month>
-							<month type="3">3</month>
-							<month type="4">4</month>
-							<month type="5">5</month>
-							<month type="6">6</month>
-							<month type="7">7</month>
-							<month type="8">8</month>
-							<month type="9">9</month>
-							<month type="10">10</month>
-							<month type="11">11</month>
-							<month type="12">12</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">Yasí-Yepé</month>
-							<month type="2">Yasí-Mukũi</month>
-							<month type="3">Yasí-Musapíri</month>
-							<month type="4">Yasí-Irũdí</month>
-							<month type="5">Yasí-Pú</month>
-							<month type="6">Yasí-Pú-Yepé</month>
-							<month type="7">Yasí-Pú-Mukũi</month>
-							<month type="8">Yasí-Pú-Musapíri</month>
-							<month type="9">Yasí-Pú-Irũdí</month>
-							<month type="10">Yasí-Yepé-Putimaã</month>
-							<month type="11">Yasí-Yepé-Yepé</month>
-							<month type="12">Yasí-Yepé-Mukũi</month>
-						</monthWidth>
-					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">YYE</month>
-							<month type="2">YMU</month>
-							<month type="3">YMS</month>
-							<month type="4">YID</month>
-							<month type="5">YPU</month>
-							<month type="6">YPY</month>
-							<month type="7">YPM</month>
-							<month type="8">YPS</month>
-							<month type="9">YPI</month>
-							<month type="10">YYP</month>
-							<month type="11">YYY</month>
-							<month type="12">YYM</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">1</month>
-							<month type="2">2</month>
-							<month type="3">3</month>
-							<month type="4">4</month>
-							<month type="5">5</month>
-							<month type="6">6</month>
-							<month type="7">7</month>
-							<month type="8">8</month>
-							<month type="9">9</month>
-							<month type="10">10</month>
-							<month type="11">11</month>
-							<month type="12">12</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Yasí-Yepé</month>
@@ -1416,37 +1337,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Bh">h B</dateFormatItem>
-						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
-						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E, d</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
-						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
-						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, dd/MM</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E, d MMMM</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
 						<dateFormatItem id="yyyyM">MM/y GGGGG</dateFormatItem>
@@ -1458,16 +1364,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMMd">d MMMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMMEd">E, d MMMM y G</dateFormatItem>
-						<dateFormatItem id="yyyyQQQ">G y QQQ</dateFormatItem>
-						<dateFormatItem id="yyyyQQQQ">G y QQQQ</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bhm">
 							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="d">
-							<greatestDifference id="d">d–d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h'h' a – h'h' a</greatestDifference>
@@ -1481,18 +1381,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
 							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
 							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
 							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a">h a – h a v</greatestDifference>
@@ -1578,20 +1470,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11">yy</month>
 							<month type="12">ym</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">Y</month>
-							<month type="2">M</month>
-							<month type="3">M</month>
-							<month type="4">I</month>
-							<month type="5">P</month>
-							<month type="6">P</month>
-							<month type="7">P</month>
-							<month type="8">P</month>
-							<month type="9">P</month>
-							<month type="10">Y</month>
-							<month type="11">Y</month>
-							<month type="12">Y</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">yepé</month>
 							<month type="2">mukũi</month>
@@ -1608,20 +1486,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">ye</month>
-							<month type="2">mk</month>
-							<month type="3">ms</month>
-							<month type="4">id</month>
-							<month type="5">pu</month>
-							<month type="6">py</month>
-							<month type="7">pm</month>
-							<month type="8">ps</month>
-							<month type="9">pi</month>
-							<month type="10">yp</month>
-							<month type="11">yy</month>
-							<month type="12">ym</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">Y</month>
 							<month type="2">M</month>
@@ -1636,43 +1500,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11">Y</month>
 							<month type="12">Y</month>
 						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">yepé</month>
-							<month type="2">mukũi</month>
-							<month type="3">musapíri</month>
-							<month type="4">irũdí</month>
-							<month type="5">pú</month>
-							<month type="6">pú-yepé</month>
-							<month type="7">pú-mukũi</month>
-							<month type="8">pú-musapíri</month>
-							<month type="9">pú-irũdí</month>
-							<month type="10">yepé-putimaã</month>
-							<month type="11">yepé-yepé</month>
-							<month type="12">yepé-mukũi</month>
-						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
-							<day type="sun">mit</day>
-							<day type="mon">mur</day>
-							<day type="tue">mmk</day>
-							<day type="wed">mms</day>
-							<day type="thu">sup</day>
-							<day type="fri">yuk</day>
-							<day type="sat">sau</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun">M</day>
-							<day type="mon">M</day>
-							<day type="tue">M</day>
-							<day type="wed">M</day>
-							<day type="thu">S</day>
-							<day type="fri">Y</day>
-							<day type="sat">S</day>
-						</dayWidth>
-						<dayWidth type="short">
 							<day type="sun">mit</day>
 							<day type="mon">mur</day>
 							<day type="tue">mmk</day>
@@ -1692,15 +1524,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun">mit</day>
-							<day type="mon">mur</day>
-							<day type="tue">mmk</day>
-							<day type="wed">mms</day>
-							<day type="thu">sup</day>
-							<day type="fri">yuk</day>
-							<day type="sat">sau</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">M</day>
 							<day type="mon">M</day>
@@ -1709,24 +1532,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="thu">S</day>
 							<day type="fri">Y</day>
 							<day type="sat">S</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">mit</day>
-							<day type="mon">mur</day>
-							<day type="tue">mmk</day>
-							<day type="wed">mms</day>
-							<day type="thu">sup</day>
-							<day type="fri">yuk</day>
-							<day type="sat">sau</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">mituú</day>
-							<day type="mon">murakipí</day>
-							<day type="tue">murakí-mukũi</day>
-							<day type="wed">murakí-musapíri</day>
-							<day type="thu">supapá</day>
-							<day type="fri">yukuakú</day>
-							<day type="sat">saurú</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -1737,32 +1542,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<quarter type="2">M2</quarter>
 							<quarter type="3">M3</quarter>
 							<quarter type="4">M4</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">1</quarter>
-							<quarter type="2">2</quarter>
-							<quarter type="3">3</quarter>
-							<quarter type="4">4</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1">yepésáwa musapíri-yasí</quarter>
-							<quarter type="2">mukũisawa musapíri-yasí</quarter>
-							<quarter type="3">musapírisawa musapíri-yasí</quarter>
-							<quarter type="4">irũdisawa musapíri-yasí</quarter>
-						</quarterWidth>
-					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">M1</quarter>
-							<quarter type="2">M2</quarter>
-							<quarter type="3">M3</quarter>
-							<quarter type="4">M4</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">1</quarter>
-							<quarter type="2">2</quarter>
-							<quarter type="3">3</quarter>
-							<quarter type="4">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">yepésáwa musapíri-yasí</quarter>
@@ -1776,61 +1555,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="midnight">pituna pyterupé</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="noon">iandé-ara-pyturepé</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-							<dayPeriod type="morning1">kuêma ramẽ</dayPeriod>
-							<dayPeriod type="afternoon1">karuka ramẽ</dayPeriod>
-							<dayPeriod type="evening1">pituna ramẽ</dayPeriod>
-							<dayPeriod type="night1">pitunaeté ramẽ</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight">pituna pyterupé</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="noon">iandé-ara-pyturepé</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-							<dayPeriod type="morning1">kuêma ramẽ</dayPeriod>
-							<dayPeriod type="afternoon1">karuka ramẽ</dayPeriod>
-							<dayPeriod type="evening1">pituna ramẽ</dayPeriod>
-							<dayPeriod type="night1">pitunaeté ramẽ</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight">pituna pyterupé</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="noon">iandé-ara-pyturepé</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-							<dayPeriod type="morning1">kuêma ramẽ</dayPeriod>
-							<dayPeriod type="afternoon1">karuka ramẽ</dayPeriod>
-							<dayPeriod type="evening1">pituna ramẽ</dayPeriod>
-							<dayPeriod type="night1">pitunaeté ramẽ</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="midnight">pituna pyterupé</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="noon">iandé-ara-pyturepé</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-							<dayPeriod type="morning1">kuêma ramẽ</dayPeriod>
-							<dayPeriod type="afternoon1">karuka ramẽ</dayPeriod>
-							<dayPeriod type="evening1">pituna ramẽ</dayPeriod>
-							<dayPeriod type="night1">pitunaeté ramẽ</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight">pituna pyterupé</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="noon">iandé-ara-pyturepé</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-							<dayPeriod type="morning1">kuêma ramẽ</dayPeriod>
-							<dayPeriod type="afternoon1">karuka ramẽ</dayPeriod>
-							<dayPeriod type="evening1">pituna ramẽ</dayPeriod>
-							<dayPeriod type="night1">pitunaeté ramẽ</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight">pituna pyterupé</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="noon">iandé-ara-pyturepé</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">kuêma ramẽ</dayPeriod>
 							<dayPeriod type="afternoon1">karuka ramẽ</dayPeriod>
 							<dayPeriod type="evening1">pituna ramẽ</dayPeriod>
@@ -1918,13 +1643,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Bh">h B</dateFormatItem>
-						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
-						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E, d</dateFormatItem>
 						<dateFormatItem id="Ehm">E, h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E, HH:mm</dateFormatItem>
@@ -1935,28 +1653,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
-						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
-						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
-						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, dd/MM</dateFormatItem>
 						<dateFormatItem id="MMdd">dd/MM</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E, d MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="one">W'ª' 'sẽmãna' MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">W'ª' 'sẽmãna' MMMM</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
-						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">MM/y</dateFormatItem>
 						<dateFormatItem id="yMd">dd/MM/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, dd/MM/y</dateFormatItem>
@@ -1969,14 +1677,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMMEd">E, d MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
-						<dateFormatItem id="yw" count="one">w'ª' 'sẽmãna' Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">w'ª' 'sẽmãna' Y</dateFormatItem>
 					</availableFormats>
-					<appendItems>
-						<appendItem request="Timezone">{0} {1}</appendItem>
-					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">h B – h B</greatestDifference>
 							<greatestDifference id="h">h – h B</greatestDifference>
@@ -2148,41 +1851,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="era">
 				<displayName>era</displayName>
 			</field>
-			<field type="era-short">
-				<displayName>era</displayName>
-			</field>
-			<field type="era-narrow">
-				<displayName>era</displayName>
-			</field>
 			<field type="year">
-				<displayName>akayú</displayName>
-				<relative type="-1">akayú kuera</relative>
-				<relative type="0">kuá akayú</relative>
-				<relative type="1">amũ akayú</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} akayú resê</relativeTimePattern>
-					<relativeTimePattern count="other">{0} akayú itá resê</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">aikué {0} akayú</relativeTimePattern>
-					<relativeTimePattern count="other">aikué {0} akayú itá</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="year-short">
-				<displayName>akayú</displayName>
-				<relative type="-1">akayú kuera</relative>
-				<relative type="0">kuá akayú</relative>
-				<relative type="1">amũ akayú</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} akayú resê</relativeTimePattern>
-					<relativeTimePattern count="other">{0} akayú itá resê</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">aikué {0} akayú</relativeTimePattern>
-					<relativeTimePattern count="other">aikué {0} akayú itá</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="year-narrow">
 				<displayName>akayú</displayName>
 				<relative type="-1">akayú kuera</relative>
 				<relative type="0">kuá akayú</relative>
@@ -2212,23 +1881,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="quarter-short">
 				<displayName>mu-y.</displayName>
-				<relative type="-1">kasakiriwara musapíri-yasí</relative>
-				<relative type="0">kuá musapíri-yasí</relative>
-				<relative type="1">amũ musapíri-yasí</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} mu-y. resê</relativeTimePattern>
-					<relativeTimePattern count="other">{0} mu-y. itá resê</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">aikué {0} mu-y.</relativeTimePattern>
-					<relativeTimePattern count="other">aikué {0} mu-y. itá</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="quarter-narrow">
-				<displayName>mu-y.</displayName>
-				<relative type="-1">kasakiriwara musapíri-yasí</relative>
-				<relative type="0">kuá musapíri-yasí</relative>
-				<relative type="1">amũ musapíri-yasí</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} mu-y. resê</relativeTimePattern>
 					<relativeTimePattern count="other">{0} mu-y. itá resê</relativeTimePattern>
@@ -2239,34 +1891,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="month">
-				<displayName>yasí</displayName>
-				<relative type="-1">yasí kuera</relative>
-				<relative type="0">kuá yasí</relative>
-				<relative type="1">amũ yasí</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} yasí resê</relativeTimePattern>
-					<relativeTimePattern count="other">{0} yasí itá resê</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">aikué {0} yasí</relativeTimePattern>
-					<relativeTimePattern count="other">aikué {0} yasí itá</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="month-short">
-				<displayName>yasí</displayName>
-				<relative type="-1">yasí kuera</relative>
-				<relative type="0">kuá yasí</relative>
-				<relative type="1">amũ yasí</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} yasí resê</relativeTimePattern>
-					<relativeTimePattern count="other">{0} yasí itá resê</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">aikué {0} yasí</relativeTimePattern>
-					<relativeTimePattern count="other">aikué {0} yasí itá</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="month-narrow">
 				<displayName>yasí</displayName>
 				<relative type="-1">yasí kuera</relative>
 				<relative type="0">kuá yasí</relative>
@@ -2297,9 +1921,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="week-short">
 				<displayName>sẽm.</displayName>
-				<relative type="-1">sẽmãna kuera</relative>
-				<relative type="0">kuá sẽmãna</relative>
-				<relative type="1">amũ sẽmãna</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} sẽm. resê</relativeTimePattern>
 					<relativeTimePattern count="other">{0} sẽm. itá resê</relativeTimePattern>
@@ -2308,22 +1929,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="one">aikué {0} sẽm.</relativeTimePattern>
 					<relativeTimePattern count="other">aikué {0} sẽm. itá</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod>sẽmãna {0} suí</relativePeriod>
-			</field>
-			<field type="week-narrow">
-				<displayName>sẽm.</displayName>
-				<relative type="-1">sẽmãna kuera</relative>
-				<relative type="0">kuá sẽmãna</relative>
-				<relative type="1">amũ sẽmãna</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} sẽm. resê</relativeTimePattern>
-					<relativeTimePattern count="other">{0} sẽm. itá resê</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">aikué {0} sẽm.</relativeTimePattern>
-					<relativeTimePattern count="other">aikué {0} sẽm. itá</relativeTimePattern>
-				</relativeTime>
-				<relativePeriod>sẽmãna {0} suí</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
 				<displayName>sẽmãna suí yasí suí</displayName>
@@ -2341,38 +1946,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">wií</relative>
 				<relative type="1">wirãdé</relative>
 				<relative type="2">wirãdé ariré</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} ara resê</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ara itá resê</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">aikué {0} ara</relativeTimePattern>
-					<relativeTimePattern count="other">aikué {0} ara itá</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="day-short">
-				<displayName>ara</displayName>
-				<relative type="-2" draft="contributed">amũ kuesê</relative>
-				<relative type="-1">kuesê</relative>
-				<relative type="0">wií</relative>
-				<relative type="1">wirãdé</relative>
-				<relative type="2" draft="contributed">wirãdé ariré</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} ara resê</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ara itá resê</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">aikué {0} ara</relativeTimePattern>
-					<relativeTimePattern count="other">aikué {0} ara itá</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="day-narrow">
-				<displayName>ara</displayName>
-				<relative type="-2" draft="contributed">amũ kuesê</relative>
-				<relative type="-1">kuesê</relative>
-				<relative type="0">wií</relative>
-				<relative type="1">wirãdé</relative>
-				<relative type="2" draft="contributed">wirãdé ariré</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} ara resê</relativeTimePattern>
 					<relativeTimePattern count="other">{0} ara itá resê</relativeTimePattern>
@@ -2435,19 +2008,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">aikué {0} mit. itá</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="sun-narrow">
-				<relative type="-1">mit. kuera</relative>
-				<relative type="0">kuá mit.</relative>
-				<relative type="1">amũ mit.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} mit. resê</relativeTimePattern>
-					<relativeTimePattern count="other">{0} mit. itá resê</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">aikué {0} mit.</relativeTimePattern>
-					<relativeTimePattern count="other">aikué {0} mit. itá</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="mon">
 				<relative type="-1">murakipí kuera</relative>
 				<relative type="0">kuá murakipí</relative>
@@ -2462,19 +2022,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="mon-short">
-				<relative type="-1">mur. kuera</relative>
-				<relative type="0">kuá mur.</relative>
-				<relative type="1">amũ mur.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} mur. resê</relativeTimePattern>
-					<relativeTimePattern count="other">{0} mur. itá resê</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">aikué {0} mur.</relativeTimePattern>
-					<relativeTimePattern count="other">aikué {0} mur. itá</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="mon-narrow">
 				<relative type="-1">mur. kuera</relative>
 				<relative type="0">kuá mur.</relative>
 				<relative type="1">amũ mur.</relative>
@@ -2513,19 +2060,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">aikué {0} mmk. itá</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="tue-narrow">
-				<relative type="-1">mmk. kuera</relative>
-				<relative type="0">kuá mmk.</relative>
-				<relative type="1">amũ mmk.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} mmk. resê</relativeTimePattern>
-					<relativeTimePattern count="other">{0} mmk. itá resê</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">aikué {0} mmk.</relativeTimePattern>
-					<relativeTimePattern count="other">aikué {0} mmk. itá</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="wed">
 				<relative type="-1">murakí-musapíri kuera</relative>
 				<relative type="0">kuá murakí-musapíri</relative>
@@ -2540,19 +2074,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="wed-short">
-				<relative type="-1">mms. kuera</relative>
-				<relative type="0">kuá mms.</relative>
-				<relative type="1">amũ mms.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} mms. resê</relativeTimePattern>
-					<relativeTimePattern count="other">{0} mms. itá resê</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">aikué {0} mms.</relativeTimePattern>
-					<relativeTimePattern count="other">aikué {0} mms. itá</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="wed-narrow">
 				<relative type="-1">mms. kuera</relative>
 				<relative type="0">kuá mms.</relative>
 				<relative type="1">amũ mms.</relative>
@@ -2591,19 +2112,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">aikué {0} sup. itá</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="thu-narrow">
-				<relative type="-1">sup. kuera</relative>
-				<relative type="0">kuá sup.</relative>
-				<relative type="1">amũ sup.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} sup. resê</relativeTimePattern>
-					<relativeTimePattern count="other">{0} sup. itá resê</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">aikué {0} sup.</relativeTimePattern>
-					<relativeTimePattern count="other">aikué {0} sup. itá</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="fri">
 				<relative type="-1">yukuakú kuera</relative>
 				<relative type="0">kuá yukuakú</relative>
@@ -2618,19 +2126,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="fri-short">
-				<relative type="-1">yuk. kuera</relative>
-				<relative type="0">kuá yuk.</relative>
-				<relative type="1">amũ yuk.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} yuk. resê</relativeTimePattern>
-					<relativeTimePattern count="other">{0} yuk. itá resê</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">aikué {0} yuk.</relativeTimePattern>
-					<relativeTimePattern count="other">aikué {0} yuk. itá</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="fri-narrow">
 				<relative type="-1">yuk. kuera</relative>
 				<relative type="0">kuá yuk.</relative>
 				<relative type="1">amũ yuk.</relative>
@@ -2669,26 +2164,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">aikué {0} sau. itá</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="sat-narrow">
-				<relative type="-1">sau. kuera</relative>
-				<relative type="0">kuá sau.</relative>
-				<relative type="1">amũ sau.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} sau. resê</relativeTimePattern>
-					<relativeTimePattern count="other">{0} sau. itá resê</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">aikué {0} sau.</relativeTimePattern>
-					<relativeTimePattern count="other">aikué {0} sau. itá</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="dayperiod-short">
-				<displayName>AM/PM</displayName>
-			</field>
 			<field type="dayperiod">
-				<displayName>AM/PM</displayName>
-			</field>
-			<field type="dayperiod-narrow">
 				<displayName>AM/PM</displayName>
 			</field>
 			<field type="hour">
@@ -2704,17 +2180,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="hour-short">
-				<displayName>h</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} h resê</relativeTimePattern>
-					<relativeTimePattern count="other">{0} h resê itá</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">aikué {0} h</relativeTimePattern>
-					<relativeTimePattern count="other">aikué {0} h itá</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="hour-narrow">
 				<displayName>h</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} h resê</relativeTimePattern>
@@ -2748,17 +2213,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">aikué {0} min. itá</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="minute-narrow">
-				<displayName>min.</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} min. resê</relativeTimePattern>
-					<relativeTimePattern count="other">{0} min. resê itá</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">aikué {0} min.</relativeTimePattern>
-					<relativeTimePattern count="other">aikué {0} min. itá</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="second">
 				<displayName>segũdu</displayName>
 				<relative type="0">kuíri</relative>
@@ -2782,35 +2236,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">aikué {0} seg. itá</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="second-narrow">
-				<displayName>seg.</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} seg. resê</relativeTimePattern>
-					<relativeTimePattern count="other">{0} seg. resê itá</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">aikué {0} seg.</relativeTimePattern>
-					<relativeTimePattern count="other">aikué {0} seg. itá</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="zone">
 				<displayName>eimã hura suí</displayName>
 			</field>
 			<field type="zone-short">
 				<displayName>eimã</displayName>
 			</field>
-			<field type="zone-narrow">
-				<displayName>eimã</displayName>
-			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat>+HH:mm;-HH:mm</hourFormat>
-			<gmtFormat>GMT{0}</gmtFormat>
-			<gmtZeroFormat>GMT</gmtZeroFormat>
 			<regionFormat>Hurariyu {0}</regionFormat>
 			<regionFormat type="daylight">Kurasí Ara Hurariyu: {0}</regionFormat>
 			<regionFormat type="standard">Hurariyu Retewa: {0}</regionFormat>
-			<fallbackFormat>{1} ({0})</fallbackFormat>
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>Sãta Isabeu</exemplarCity>
 			</zone>
@@ -2824,9 +2260,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Andorra">
 				<exemplarCity>Ãdura</exemplarCity>
-			</zone>
-			<zone type="Asia/Dubai">
-				<exemplarCity>Dubai</exemplarCity>
 			</zone>
 			<zone type="Asia/Kabul">
 				<exemplarCity>Kabú</exemplarCity>
@@ -2851,9 +2284,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Antarctica/Palmer">
 				<exemplarCity>Paumere</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Troll">
-				<exemplarCity>Troll</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Syowa">
 				<exemplarCity>Siyowa</exemplarCity>
@@ -2954,14 +2384,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Australia/Lord_Howe">
 				<exemplarCity>Lurudi Howe</exemplarCity>
 			</zone>
-			<zone type="America/Aruba">
-				<exemplarCity>Aruba</exemplarCity>
-			</zone>
 			<zone type="Europe/Mariehamn">
 				<exemplarCity>Mariẽyã</exemplarCity>
-			</zone>
-			<zone type="Asia/Baku">
-				<exemplarCity>Baku</exemplarCity>
 			</zone>
 			<zone type="Europe/Sarajevo">
 				<exemplarCity>Sarayewo</exemplarCity>
@@ -2998,9 +2422,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Brunei">
 				<exemplarCity>Burunei</exemplarCity>
-			</zone>
-			<zone type="America/La_Paz">
-				<exemplarCity>La Paz</exemplarCity>
 			</zone>
 			<zone type="America/Kralendijk">
 				<exemplarCity>Kararẽdiki</exemplarCity>
@@ -3136,9 +2557,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>Mũkitũ</exemplarCity>
-			</zone>
-			<zone type="America/Halifax">
-				<exemplarCity>Halifax</exemplarCity>
 			</zone>
 			<zone type="America/Goose_Bay">
 				<exemplarCity>Ipekawasu Kuara</exemplarCity>
@@ -3287,9 +2705,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Atlantic/Faeroe">
 				<exemplarCity>Kapuãma-ita Faruwe</exemplarCity>
 			</zone>
-			<zone type="Europe/Paris">
-				<exemplarCity>Paris</exemplarCity>
-			</zone>
 			<zone type="Africa/Libreville">
 				<exemplarCity>Riberevili</exemplarCity>
 			</zone>
@@ -3437,12 +2852,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>Ẽdeburi</exemplarCity>
 			</zone>
-			<zone type="Pacific/Kiritimati">
-				<exemplarCity>Kiritimati</exemplarCity>
-			</zone>
-			<zone type="Pacific/Tarawa">
-				<exemplarCity>Tarawa</exemplarCity>
-			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>Kumure-ita</exemplarCity>
 			</zone>
@@ -3500,17 +2909,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Monrovia">
 				<exemplarCity>Mũruwiya</exemplarCity>
 			</zone>
-			<zone type="Africa/Maseru">
-				<exemplarCity>Maseru</exemplarCity>
-			</zone>
 			<zone type="Europe/Vilnius">
 				<exemplarCity>Viwiu-ita</exemplarCity>
 			</zone>
 			<zone type="Europe/Luxembourg">
 				<exemplarCity>Ruxẽbugu</exemplarCity>
-			</zone>
-			<zone type="Europe/Riga">
-				<exemplarCity>Riga</exemplarCity>
 			</zone>
 			<zone type="Africa/Tripoli">
 				<exemplarCity>Tiripuri</exemplarCity>
@@ -3611,9 +3014,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Matamoros">
 				<exemplarCity>Moroitayuká</exemplarCity>
 			</zone>
-			<zone type="America/Merida">
-				<exemplarCity>Mérida</exemplarCity>
-			</zone>
 			<zone type="America/Cancun">
 				<exemplarCity>Kãkũ</exemplarCity>
 			</zone>
@@ -3652,9 +3052,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Katmandu">
 				<exemplarCity>Katimãdu</exemplarCity>
-			</zone>
-			<zone type="Pacific/Nauru">
-				<exemplarCity>Nauru</exemplarCity>
 			</zone>
 			<zone type="Pacific/Niue">
 				<exemplarCity>Niwe</exemplarCity>
@@ -3701,9 +3098,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Miquelon">
 				<exemplarCity>Mikirũ</exemplarCity>
 			</zone>
-			<zone type="Pacific/Pitcairn">
-				<exemplarCity>Pitcairn</exemplarCity>
-			</zone>
 			<zone type="America/Puerto_Rico">
 				<exemplarCity>Igarapawa Riku</exemplarCity>
 			</zone>
@@ -3715,9 +3109,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Atlantic/Azores">
 				<exemplarCity>Asori-ita</exemplarCity>
-			</zone>
-			<zone type="Atlantic/Madeira">
-				<exemplarCity>Madeira</exemplarCity>
 			</zone>
 			<zone type="Europe/Lisbon">
 				<exemplarCity>Lisboa</exemplarCity>
@@ -3760,9 +3151,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kirov">
 				<exemplarCity>Kirowi</exemplarCity>
-			</zone>
-			<zone type="Europe/Samara">
-				<exemplarCity>Samara</exemplarCity>
 			</zone>
 			<zone type="Asia/Yekaterinburg">
 				<exemplarCity>Ekaterĩbugu</exemplarCity>
@@ -3857,9 +3245,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/San_Marino">
 				<exemplarCity>Sã Marinu</exemplarCity>
 			</zone>
-			<zone type="Africa/Dakar">
-				<exemplarCity>Dakar</exemplarCity>
-			</zone>
 			<zone type="Africa/Mogadishu">
 				<exemplarCity>Mugadisiku</exemplarCity>
 			</zone>
@@ -3923,12 +3308,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Port_of_Spain">
 				<exemplarCity>Esipãya Igarapawa</exemplarCity>
 			</zone>
-			<zone type="Pacific/Funafuti">
-				<exemplarCity>Funafuti</exemplarCity>
-			</zone>
-			<zone type="Asia/Taipei">
-				<exemplarCity>Taipei</exemplarCity>
-			</zone>
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>Katuawa ruka</exemplarCity>
 			</zone>
@@ -3949,9 +3328,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Midway">
 				<exemplarCity>Midiwei</exemplarCity>
-			</zone>
-			<zone type="Pacific/Wake">
-				<exemplarCity>Wake</exemplarCity>
 			</zone>
 			<zone type="America/Adak">
 				<exemplarCity>Adaki</exemplarCity>
@@ -3979,9 +3355,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Metlakatla">
 				<exemplarCity>Metirakatira</exemplarCity>
-			</zone>
-			<zone type="America/Los_Angeles">
-				<exemplarCity>Los Angeles</exemplarCity>
 			</zone>
 			<zone type="America/Boise">
 				<exemplarCity>Buwisé</exemplarCity>
@@ -4037,9 +3410,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Kentucky/Monticello">
 				<exemplarCity>Mũtiseru, Kẽtuki</exemplarCity>
 			</zone>
-			<zone type="America/Detroit">
-				<exemplarCity>Detroit</exemplarCity>
-			</zone>
 			<zone type="America/New_York">
 				<exemplarCity>Yurki Pisasú</exemplarCity>
 			</zone>
@@ -4084,12 +3454,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Africa/Johannesburg">
 				<exemplarCity>Juanesibugu</exemplarCity>
-			</zone>
-			<zone type="Africa/Lusaka">
-				<exemplarCity>Lusaka</exemplarCity>
-			</zone>
-			<zone type="Africa/Harare">
-				<exemplarCity>Harare</exemplarCity>
 			</zone>
 			<metazone type="Acre">
 				<long>
@@ -5068,27 +4432,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group>.</group>
-			<list>;</list>
-			<percentSign>%</percentSign>
-			<plusSign draft="contributed">+</plusSign>
-			<minusSign draft="contributed">-</minusSign>
-			<exponential>E</exponential>
-			<superscriptingExponent>×</superscriptingExponent>
-			<perMille>‰</perMille>
-			<infinity>∞</infinity>
-			<nan>NaN</nan>
-			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
 			<decimalFormatLength type="long">
 				<decimalFormat>
 					<pattern type="1000" count="one">0 miu</pattern>
@@ -5146,56 +4494,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
-		<scientificFormats numberSystem="latn">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern>#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern>#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
 		<currencyFormats numberSystem="latn">
-			<currencyFormatLength>
-				<currencyFormat type="standard">
-					<pattern>¤ #,##0.00</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
-				</currencyFormat>
-				<currencyFormat type="accounting">
-					<pattern>¤ #,##0.00</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="one">¤ 0 miu</pattern>
 					<pattern type="1000" count="other">¤ 0 miu</pattern>
-					<pattern type="10000" count="one">¤ 00 miu</pattern>
 					<pattern type="10000" count="other">¤ 00 miu</pattern>
-					<pattern type="100000" count="one">¤ 000 miu</pattern>
 					<pattern type="100000" count="other">¤ 000 miu</pattern>
-					<pattern type="1000000" count="one">¤ 0 mi</pattern>
 					<pattern type="1000000" count="other">¤ 0 mi</pattern>
-					<pattern type="10000000" count="one">¤ 00 mi</pattern>
 					<pattern type="10000000" count="other">¤ 00 mi</pattern>
-					<pattern type="100000000" count="one">¤ 000 mi</pattern>
 					<pattern type="100000000" count="other">¤ 000 mi</pattern>
-					<pattern type="1000000000" count="one">¤ 0 bi</pattern>
 					<pattern type="1000000000" count="other">¤ 0 bi</pattern>
-					<pattern type="10000000000" count="one">¤ 00 bi</pattern>
 					<pattern type="10000000000" count="other">¤ 00 bi</pattern>
-					<pattern type="100000000000" count="one">¤ 000 bi</pattern>
 					<pattern type="100000000000" count="other">¤ 000 bi</pattern>
-					<pattern type="1000000000000" count="one">¤ 0 tiri</pattern>
 					<pattern type="1000000000000" count="other">¤ 0 tiri</pattern>
-					<pattern type="10000000000000" count="one">¤ 00 tiri</pattern>
 					<pattern type="10000000000000" count="other">¤ 00 tiri</pattern>
-					<pattern type="100000000000000" count="one">¤ 000 tiri</pattern>
 					<pattern type="100000000000000" count="other">¤ 000 tiri</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
@@ -5212,7 +4524,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Dirhã Emiradu-ita Árabe Yepewasú</displayName>
 				<displayName count="one">Dirhã EAU suí</displayName>
 				<displayName count="other">Dirhã-ita EAU suí</displayName>
-				<symbol draft="contributed">AED</symbol>
 			</currency>
 			<currency type="AFA">
 				<displayName>Afegani (1927–2002)</displayName>
@@ -5223,7 +4534,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Afegani afegawara</displayName>
 				<displayName count="one">Afegani afegawara</displayName>
 				<displayName count="other">Afegani-ita afegawara</displayName>
-				<symbol draft="contributed">AFN</symbol>
 			</currency>
 			<currency type="ALK">
 				<displayName draft="contributed">Reki Aubaniawara (1946–1965)</displayName>
@@ -5234,26 +4544,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Reki aubanei</displayName>
 				<displayName count="one">Reki aubanei</displayName>
 				<displayName count="other">Reki-ita aubanei</displayName>
-				<symbol draft="contributed">ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>Darã arimeniawara</displayName>
 				<displayName count="one">Darã arimeniawara</displayName>
 				<displayName count="other">Darã-ita arimeniawara</displayName>
-				<symbol draft="contributed">AMD</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>Fulurĩ Ãtíria Hurãdawara</displayName>
 				<displayName count="one">Fulurĩ Ãtíria Hurãdawara</displayName>
 				<displayName count="other">Fulurĩ-ita Ãtíria Hurãdawara</displayName>
-				<symbol draft="contributed">ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>Kuãsa ãgulawara</displayName>
 				<displayName count="one">Kuãsa ãgulawara</displayName>
 				<displayName count="other">Kuãsa-ita ãgulawara</displayName>
-				<symbol draft="contributed">AOA</symbol>
-				<symbol alt="narrow" draft="contributed">Kz</symbol>
 			</currency>
 			<currency type="AOK">
 				<displayName>Kuãsa ãgulawara (1977–1990)</displayName>
@@ -5294,8 +4599,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Pusewa argẽtinu</displayName>
 				<displayName count="one">Pusewa argẽtinu</displayName>
 				<displayName count="other">Pusewa-ita argẽtinu-ita</displayName>
-				<symbol draft="contributed">ARS</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="ATS">
 				<displayName>Xirĩ ausitíriaku</displayName>
@@ -5307,13 +4610,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">Dóra Ausitaraliwara</displayName>
 				<displayName count="other">Dóra-ita Ausitaraliwara</displayName>
 				<symbol>AU$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>Fulurĩ Arubawara</displayName>
 				<displayName count="one">Fulurĩ Arubawara</displayName>
 				<displayName count="other">Fulurĩ-ita Arubawara</displayName>
-				<symbol draft="contributed">AWG</symbol>
 			</currency>
 			<currency type="AZM">
 				<displayName>Manati Aseriretãmawara (1993–2006)</displayName>
@@ -5324,7 +4625,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Manati aseri</displayName>
 				<displayName count="one">Manati aseri</displayName>
 				<displayName count="other">Manati-ita aseri-ita</displayName>
-				<symbol draft="contributed">AZN</symbol>
 			</currency>
 			<currency type="BAD">
 				<displayName>Dinari Businiya-Eseguwinawara (1992–1994)</displayName>
@@ -5335,8 +4635,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Marku yumuyerewa Businiya-Eseguwinawara</displayName>
 				<displayName count="one">Marku yumuyerewa Businiya-Eseguwinawara</displayName>
 				<displayName count="other">Marku yumuyerewa-ita Businiya-Eseguwinawara</displayName>
-				<symbol draft="contributed">BAM</symbol>
-				<symbol alt="narrow" draft="contributed">KM</symbol>
 			</currency>
 			<currency type="BAN">
 				<displayName>Dinari Pisasuwa Businiya-Eseguwinawara (1994–1997)</displayName>
@@ -5347,15 +4645,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Dóra barbaduwara</displayName>
 				<displayName count="one">Dóra barbaduwara</displayName>
 				<displayName count="other">Dóra-ita barbaduwara</displayName>
-				<symbol draft="contributed">BBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>Taka Bẽgariwara</displayName>
 				<displayName count="one">Taka Bẽgariwara</displayName>
 				<displayName count="other">Taka-ita Bẽgariwara</displayName>
-				<symbol draft="contributed">BDT</symbol>
-				<symbol alt="narrow" draft="contributed">৳</symbol>
 			</currency>
 			<currency type="BEC">
 				<displayName>Farãku Beujikawara (yumuyereuwa)</displayName>
@@ -5386,7 +4680,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Revi Bugariyawara</displayName>
 				<displayName count="one">Revi Bugariyawara</displayName>
 				<displayName count="other">Revi-ita Bugariyawara</displayName>
-				<symbol draft="contributed">BGN</symbol>
 			</currency>
 			<currency type="BGO">
 				<displayName>Revi Bugariyawara (1879–1952)</displayName>
@@ -5397,34 +4690,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Dinari Barẽiwara</displayName>
 				<displayName count="one">Dinari Barẽiwara</displayName>
 				<displayName count="other">Dinari-ita Barẽiwara</displayName>
-				<symbol draft="contributed">BHD</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>Farãku Burũdiwara</displayName>
 				<displayName count="one">Farãku Burũdiwara</displayName>
 				<displayName count="other">Farãku-ita Burũdiwara</displayName>
-				<symbol draft="contributed">BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>Dóra Bemudawara</displayName>
 				<displayName count="one">Dóra Bemudawara</displayName>
 				<displayName count="other">Dóra-ita Bemudawara</displayName>
-				<symbol draft="contributed">BMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>Dóra Buruneiwara</displayName>
 				<displayName count="one">Dóra Buruneiwara</displayName>
 				<displayName count="other">Dóra-ita Buruneiwara</displayName>
-				<symbol draft="contributed">BND</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BOB">
 				<displayName>Buriwiyanu Buríwia suí</displayName>
 				<displayName count="one">Buriwiyanu Buriwia suí</displayName>
 				<displayName count="other">Buriwiyanu-ita Buríwia suí</displayName>
 				<symbol draft="contributed">BUB</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="BOL">
 				<displayName>Buriwiyanu (1863–1963)</displayName>
@@ -5460,8 +4746,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Reau Brasiuwara</displayName>
 				<displayName count="one">Reau Brasiuwara</displayName>
 				<displayName count="other">Reau-ita Brasiuwara</displayName>
-				<symbol draft="contributed">R$</symbol>
-				<symbol alt="narrow" draft="contributed">R$</symbol>
 			</currency>
 			<currency type="BRN">
 				<displayName>Kurusadu Pisasuwa Brasiuwara (1989–1990)</displayName>
@@ -5482,14 +4766,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Dóra Bayamawara</displayName>
 				<displayName count="one">Dóra Bayamawara</displayName>
 				<displayName count="other">Dóra-ita Bayamawara</displayName>
-				<symbol draft="contributed">BSD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>Ĩguturũ Butãwara</displayName>
 				<displayName count="one">Ĩguturũ Butãwara</displayName>
 				<displayName count="other">Ĩguturũ-ita Butãwara</displayName>
-				<symbol draft="contributed">BTN</symbol>
 			</currency>
 			<currency type="BUK">
 				<displayName>Kiati Bimãniyawara</displayName>
@@ -5500,8 +4781,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Pura Butisuwanawara</displayName>
 				<displayName count="one">Pura Butisuwanawara</displayName>
 				<displayName count="other">Pura-ita Butisuwanawara</displayName>
-				<symbol draft="contributed">BWP</symbol>
-				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
 			<currency type="BYB">
 				<displayName>Ruburu Pisasuwa Bieru-rusiyawara (1994–1999)</displayName>
@@ -5512,34 +4791,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Ruburu bieruruso</displayName>
 				<displayName count="one">Ruburu bieruruso</displayName>
 				<displayName count="other">Ruburu bieruruso-ita</displayName>
-				<symbol draft="contributed">BYN</symbol>
 				<symbol alt="narrow" draft="contributed">p.</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>Ruburu bieruruso (2000–2016)</displayName>
 				<displayName count="one">Ruburu bieruruso (2000–2016)</displayName>
 				<displayName count="other">Ruburu bieruruso-ita (2000–2016)</displayName>
-				<symbol draft="contributed">BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>Dóra Belisiwara</displayName>
 				<displayName count="one">Dóra Belisiwara</displayName>
 				<displayName count="other">Dóra-ita Belisiwara</displayName>
-				<symbol draft="contributed">BZD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>Dóra Kanadáwara</displayName>
 				<displayName count="one">Dóra Kanadáwara</displayName>
 				<displayName count="other">Dóra-ita Kanadáwara</displayName>
-				<symbol draft="contributed">CA$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>Farãku Kũguwara</displayName>
 				<displayName count="one">Farãku Kũguwara</displayName>
 				<displayName count="other">Farãku-ita Kũguwara</displayName>
-				<symbol draft="contributed">CDF</symbol>
 			</currency>
 			<currency type="CHE">
 				<displayName>Euru WIR</displayName>
@@ -5550,7 +4822,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Farãku Suwisawara</displayName>
 				<displayName count="one">Farãku Suwisawara</displayName>
 				<displayName count="other">Farãku-ita Suwisawara</displayName>
-				<symbol draft="contributed">CHF</symbol>
 			</currency>
 			<currency type="CHW">
 				<displayName>Farãku WIR</displayName>
@@ -5565,20 +4836,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="CLF">
 				<displayName>Yepesawa-ita Muapiresawa Xiriwara</displayName>
 				<displayName count="one">Yepesawa Muapiresawa Xiriwara</displayName>
-				<displayName count="other">Yepesawa-ita Muapiresawa Xiriwara</displayName>
 			</currency>
 			<currency type="CLP">
 				<displayName>Pusewa Xiriwara</displayName>
 				<displayName count="one">Pusewa Xiriwara</displayName>
 				<displayName count="other">Pusewa-ita Xiriwara</displayName>
-				<symbol draft="contributed">CLP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CNH">
 				<displayName>Yuwã Xinawara (offshore)</displayName>
 				<displayName count="one">Yuwã Xinawara (offshore)</displayName>
 				<displayName count="other">Yuwã-ita Xinawara (offshore)</displayName>
-				<symbol draft="contributed">CNH</symbol>
 			</currency>
 			<currency type="CNX">
 				<displayName>Dóra Bãku Pupulari Xinawara suí</displayName>
@@ -5589,8 +4856,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Yuwã Xinawara</displayName>
 				<displayName count="one">Yuwã Xinawara</displayName>
 				<displayName count="other">Yuwã-ita Xinawara</displayName>
-				<symbol draft="contributed">CN¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>Peso Kurũbiyawara</displayName>
@@ -5608,12 +4873,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Kurũ Kupe-Rikawara</displayName>
 				<displayName count="one">Kurũ Kupe-Rikawara</displayName>
 				<displayName count="other">Kurũ-ita Kupe-Rikawara</displayName>
-				<symbol draft="contributed">CRC</symbol>
-				<symbol alt="narrow" draft="contributed">₡</symbol>
 			</currency>
 			<currency type="CSD">
 				<displayName>Dinari Sewiyawara (2002–2006)</displayName>
-				<displayName count="one">Dinari Kuxiímawara Sewiyawara</displayName>
 				<displayName count="other">Dinari Kuxiímawara Sewiyawara</displayName>
 			</currency>
 			<currency type="CSK">
@@ -5625,21 +4887,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Pusewa Kubawara Yumuyerewa</displayName>
 				<displayName count="one">Pusewa Kubawara Yumuyerewa</displayName>
 				<displayName count="other">Pusewa-ita Kubawara Yumuyerewa</displayName>
-				<symbol draft="contributed">CUC</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>Pusewa Kubawara</displayName>
 				<displayName count="one">Pusewa Kubawara</displayName>
 				<displayName count="other">Pusewa-ita Kubawara</displayName>
-				<symbol draft="contributed">CUP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>Warakapá Kabu-Suikiriwara</displayName>
 				<displayName count="one">Warakapá Kabu-Suikiriwara</displayName>
 				<displayName count="other">Warakapá-ita Kabu-Suikiriwara</displayName>
-				<symbol draft="contributed">CVE</symbol>
 			</currency>
 			<currency type="CYP">
 				<displayName>Ribara Xipiriwara</displayName>
@@ -5650,8 +4907,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Kuruwa Xekawara</displayName>
 				<displayName count="one">Kuruwa Xekawara</displayName>
 				<displayName count="other">Kuruwa-ita Xekawara</displayName>
-				<symbol draft="contributed">CZK</symbol>
-				<symbol alt="narrow" draft="contributed">Kč</symbol>
 			</currency>
 			<currency type="DDM">
 				<displayName>Ostmark Aremãya Uriẽtawara</displayName>
@@ -5667,27 +4922,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Farãku Digibutiwara</displayName>
 				<displayName count="one">Farãku Digibutiwara</displayName>
 				<displayName count="other">Farãku-ita Digibutiwara</displayName>
-				<symbol draft="contributed">DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>Kuruwa Dinamakawara</displayName>
 				<displayName count="one">Kuruwa Dinamakawara</displayName>
 				<displayName count="other">Kuruwa-ita Dinamakawara</displayName>
-				<symbol draft="contributed">DKK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>Pusewa Dominikawara</displayName>
 				<displayName count="one">Pusewa Dominikawara</displayName>
 				<displayName count="other">Pusewa-ita Dominikawara</displayName>
-				<symbol draft="contributed">DOP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>Dinari Argeriyawra</displayName>
 				<displayName count="one">Dinari Argeriyawra</displayName>
 				<displayName count="other">Dinari-ita Argeriyawra</displayName>
-				<symbol draft="contributed">DZD</symbol>
 			</currency>
 			<currency type="ECS">
 				<displayName>Sukiri Ekuaduwara</displayName>
@@ -5708,14 +4957,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Ribara Egituwara</displayName>
 				<displayName count="one">Ribara Egituwara</displayName>
 				<displayName count="other">Ribara-ita Egituwara</displayName>
-				<symbol draft="contributed">EGP</symbol>
-				<symbol alt="narrow" draft="contributed">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>Nakiwa Eritireyawara</displayName>
 				<displayName count="one">Nakiwa Eritireyawara</displayName>
 				<displayName count="other">Nakiwa-ita Eritireyawara</displayName>
-				<symbol draft="contributed">ERN</symbol>
 			</currency>
 			<currency type="ESA">
 				<displayName>Peseta Isipãyawara (kãta A)</displayName>
@@ -5736,14 +4982,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Biri Etiupiyawara</displayName>
 				<displayName count="one">Biri Etiupiyawara</displayName>
 				<displayName count="other">Biri-ita Etiupiyawara</displayName>
-				<symbol draft="contributed">ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>Euru</displayName>
 				<displayName count="one">Euru</displayName>
 				<displayName count="other">Euru-ita</displayName>
-				<symbol draft="contributed">€</symbol>
-				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
 			<currency type="FIM">
 				<displayName>Marka Firãdiyawara</displayName>
@@ -5754,15 +4997,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Dóra Fiyiwara</displayName>
 				<displayName count="one">Dóra Fiyiwara</displayName>
 				<displayName count="other">Dóra-ita Fiyiwara</displayName>
-				<symbol draft="contributed">FJD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>Ribara Mawinawara</displayName>
 				<displayName count="one">Ribara Mawinawara</displayName>
 				<displayName count="other">Ribara-ita Mawinawara</displayName>
-				<symbol draft="contributed">FKP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="FRF">
 				<displayName>Farãku Frãsawara</displayName>
@@ -5773,8 +5012,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Ribara esiterina</displayName>
 				<displayName count="one">Ribara esiterina</displayName>
 				<displayName count="other">Ribara-ita esiterina</displayName>
-				<symbol draft="contributed">£</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GEK">
 				<displayName>Kupũ Rari Geugiyawara</displayName>
@@ -5785,8 +5022,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Rari geugiyanu</displayName>
 				<displayName count="one">Rari geugiyanu</displayName>
 				<displayName count="other">Rari-ita geugiyanu</displayName>
-				<symbol draft="contributed">GEL</symbol>
-				<symbol alt="narrow" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>Sedi Ganawara (1979–2007)</displayName>
@@ -5797,27 +5032,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Sedi ganei</displayName>
 				<displayName count="one">Sedi ganei</displayName>
 				<displayName count="other">Sedi ganei-ita</displayName>
-				<symbol draft="contributed">GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>Ribara Gibarautáwara</displayName>
 				<displayName count="one">Ribara Gibarautáwara</displayName>
 				<displayName count="other">Ribara-ita Gibarautáwara</displayName>
-				<symbol draft="contributed">GIP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>Darasi Gãbiyawara</displayName>
 				<displayName count="one">Darasi Gãbiyawara</displayName>
 				<displayName count="other">Darasi-ita Gãbiyawara</displayName>
-				<symbol draft="contributed">GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>Farãku Ginewara</displayName>
 				<displayName count="one">Farãku Ginewara</displayName>
 				<displayName count="other">Farãku-ita Ginewara</displayName>
-				<symbol draft="contributed">GNF</symbol>
-				<symbol alt="narrow" draft="contributed">FG</symbol>
 			</currency>
 			<currency type="GNS">
 				<displayName>Siri Ginewara</displayName>
@@ -5838,8 +5067,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Ketisau Guatemawara</displayName>
 				<displayName count="one">Ketisau Guatemawara</displayName>
 				<displayName count="other">Ketisau-ita Guatemawara</displayName>
-				<symbol draft="contributed">GTQ</symbol>
-				<symbol alt="narrow" draft="contributed">Q</symbol>
 			</currency>
 			<currency type="GWE">
 				<displayName>Warakapá Giné Purutugesawara</displayName>
@@ -5855,22 +5082,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Dóra Gianawara</displayName>
 				<displayName count="one">Dóra Gianawara</displayName>
 				<displayName count="other">Dóra-ita Gianawara</displayName>
-				<symbol draft="contributed">GYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>Dóra Hũgi-Kũgiwara</displayName>
 				<displayName count="one">Dóra Hũgi-Kũgiwara</displayName>
 				<displayName count="other">Dóra-ita Hũgi-Kũgiwara</displayName>
-				<symbol draft="contributed">HK$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>Ribara Ũdurawara</displayName>
 				<displayName count="one">Ribara Ũdurawara</displayName>
 				<displayName count="other">Ribara-ita Ũdurawara</displayName>
-				<symbol draft="contributed">HNL</symbol>
-				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
 			<currency type="HRD">
 				<displayName>Dinari Kuruwasiyawara</displayName>
@@ -5881,28 +5102,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Kuna Kuruata</displayName>
 				<displayName count="one">Kuna Kuruata</displayName>
 				<displayName count="other">Kuna-ita Kuruata</displayName>
-				<symbol draft="contributed">HRK</symbol>
-				<symbol alt="narrow" draft="contributed">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>Gourde Aitiwara</displayName>
 				<displayName count="one">Gourde Aitiwara</displayName>
 				<displayName count="other">Gourde-ita Aitiwara</displayName>
-				<symbol draft="contributed">HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>Fulurĩ Ũgiriyawara</displayName>
 				<displayName count="one">Fulurĩ Ũgiriyawara</displayName>
 				<displayName count="other">Fulurĩ-ita Ũgiriyawara</displayName>
-				<symbol draft="contributed">HUF</symbol>
-				<symbol alt="narrow" draft="contributed">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>Rupiya Ĩdunesiyawara</displayName>
 				<displayName count="one">Rupiya Ĩdunesiyawara</displayName>
 				<displayName count="other">Rupiya-ita Ĩdunesiyawara</displayName>
-				<symbol draft="contributed">IDR</symbol>
-				<symbol alt="narrow" draft="contributed">Rp</symbol>
 			</currency>
 			<currency type="IEP">
 				<displayName>Ribara Irãdawara</displayName>
@@ -5916,46 +5130,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ILR">
 				<displayName>Xekeu Kuxiímawara Isirayerita</displayName>
-				<displayName count="one">Xekeu Kuxiímawara Isirayerita</displayName>
-				<displayName count="other">Xekeu Kuxiímawara Isirayerita</displayName>
 			</currency>
 			<currency type="ILS">
 				<displayName>Pisusawa Xekeu Isiraelẽsi</displayName>
 				<displayName count="one">Pisusawa Xekeu Isiraelẽsi</displayName>
 				<displayName count="other">Pisusawa Xekeu-ita Isiraelẽsi</displayName>
-				<symbol draft="contributed">₪</symbol>
-				<symbol alt="narrow" draft="contributed">₪</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>Rupiya Ĩdiawara</displayName>
 				<displayName count="one">Rupiya Ĩdiawara</displayName>
 				<displayName count="other">Rupiya-ita Ĩdiawara</displayName>
-				<symbol draft="contributed">₹</symbol>
-				<symbol alt="narrow" draft="contributed">₹</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>Dinari Irakiwara</displayName>
 				<displayName count="one">Dinari Irakiwara</displayName>
 				<displayName count="other">Dinari-ita Irakiwara</displayName>
-				<symbol draft="contributed">IQD</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>Riau Irãwara</displayName>
 				<displayName count="one">Riau Irãwara</displayName>
 				<displayName count="other">Riau-ita Irãwara</displayName>
-				<symbol draft="contributed">IRR</symbol>
 			</currency>
 			<currency type="ISJ">
 				<displayName>Kuruwa Kuxiímawara Isirãdiawara</displayName>
-				<displayName count="one">Kuruwa Kuxiímawara Isirãdiawara</displayName>
-				<displayName count="other">Kuruwa Kuxiímawara Isirãdiawara</displayName>
 			</currency>
 			<currency type="ISK">
 				<displayName>Kuruwa Isirãdiawara</displayName>
 				<displayName count="one">Kuruwa Isirãdiawara</displayName>
 				<displayName count="other">Kuruwa-ita Isirãdiawara</displayName>
-				<symbol draft="contributed">ISK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="ITL">
 				<displayName>Rira Itariyawara</displayName>
@@ -5966,54 +5168,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Dóra Yamaikawara</displayName>
 				<displayName count="one">Dóra Yamaikawara</displayName>
 				<displayName count="other">Dóra-ita Yamaikawara</displayName>
-				<symbol draft="contributed">JMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>Dinari Yudâniyawara</displayName>
 				<displayName count="one">Dinari Yudâniyawara</displayName>
 				<displayName count="other">Dinari-ita Yudâniyawara</displayName>
-				<symbol draft="contributed">JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>Iyene Nipõwara</displayName>
 				<displayName count="one">Iyene Nipõwara</displayName>
 				<displayName count="other">Iyene-ita Nipõwara</displayName>
-				<symbol draft="contributed">JP¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>Xirĩ Kẽniyawara</displayName>
 				<displayName count="one">Xirĩ Kẽniyawara</displayName>
 				<displayName count="other">Xirĩ-ita Kẽniyawara</displayName>
-				<symbol draft="contributed">KES</symbol>
 			</currency>
 			<currency type="KGS">
 				<displayName>Sumu Kirigiretãmawara</displayName>
 				<displayName count="one">Sumu Kirigiretãmawara</displayName>
 				<displayName count="other">Sumu-ita Kirigiretãmawara</displayName>
-				<symbol draft="contributed">KGS</symbol>
 			</currency>
 			<currency type="KHR">
 				<displayName>Rieu Kãbuyawara</displayName>
 				<displayName count="one">Rieu Kãbuyawara</displayName>
 				<displayName count="other">Rieu-ita Kãbuyawara</displayName>
-				<symbol draft="contributed">KHR</symbol>
-				<symbol alt="narrow" draft="contributed">៛</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>Farãku Kumurewara</displayName>
 				<displayName count="one">Farãku Kumurewara</displayName>
 				<displayName count="other">Farãku-ita Kumurewara</displayName>
-				<symbol draft="contributed">KMF</symbol>
-				<symbol alt="narrow" draft="contributed">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>Wõ nuti-kureyanu</displayName>
 				<displayName count="one">Wõ nuti-kureyanu</displayName>
 				<displayName count="other">Wõ-ita nuti-kureyanu</displayName>
-				<symbol draft="contributed">KPW</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KRH">
 				<displayName>Huwã Kureya-Suwara</displayName>
@@ -6029,56 +5218,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Wõ su-kureyanu</displayName>
 				<displayName count="one">Wõ su-kureyanu</displayName>
 				<displayName count="other">Wõ-ita su-kureyanu</displayName>
-				<symbol draft="contributed">₩</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KWD">
 				<displayName>Dinari Kuwaitiwara</displayName>
 				<displayName count="one">Dinari Kuwaitiwara</displayName>
 				<displayName count="other">Dinari-ita Kuwaitiwara</displayName>
-				<symbol draft="contributed">KWD</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>Dóra Kaimãwara</displayName>
 				<displayName count="one">Dóra Kaimãwara</displayName>
 				<displayName count="other">Dóra-ita Kaimãwara</displayName>
-				<symbol draft="contributed">KYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>Tẽge Kasakiwara</displayName>
 				<displayName count="one">Tẽge Kasakiwara</displayName>
 				<displayName count="other">Tẽge-ita Kasakiwara</displayName>
-				<symbol draft="contributed">KZT</symbol>
-				<symbol alt="narrow" draft="contributed">₸</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName>Kipi Rawosiwara</displayName>
 				<displayName count="one">Kipi Rawosiwara</displayName>
 				<displayName count="other">Kipi-ita Rawosiwara</displayName>
-				<symbol draft="contributed">LAK</symbol>
-				<symbol alt="narrow" draft="contributed">₭</symbol>
 			</currency>
 			<currency type="LBP">
 				<displayName>Ribara Ribanuwara</displayName>
 				<displayName count="one">Ribara Ribanuwara</displayName>
 				<displayName count="other">Ribara-ita Ribanuwara</displayName>
-				<symbol draft="contributed">LBP</symbol>
-				<symbol alt="narrow" draft="contributed">L£</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>Rupiya Sirirãkawara</displayName>
 				<displayName count="one">Rupiya Sirirãkawara</displayName>
 				<displayName count="other">Rupiya-ita Sirirãkawara</displayName>
-				<symbol draft="contributed">LKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>Dóra Riberiyawara</displayName>
 				<displayName count="one">Dóra Riberiyawara</displayName>
 				<displayName count="other">Dóra-ita Riberiyawara</displayName>
-				<symbol draft="contributed">LRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="LSL">
 				<displayName>Ruti Resutuwara</displayName>
@@ -6124,13 +5298,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Dinari Ribiyawara</displayName>
 				<displayName count="one">Dinari Ribiyawara</displayName>
 				<displayName count="other">Dinari-ita Ribiyawara</displayName>
-				<symbol draft="contributed">LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>Dirhã Marukuwara</displayName>
 				<displayName count="one">Dirhã Marukuwara</displayName>
 				<displayName count="other">Dirhã-ita Marukuwara</displayName>
-				<symbol draft="contributed">MAD</symbol>
 			</currency>
 			<currency type="MAF">
 				<displayName>Farãku Marukuwara</displayName>
@@ -6151,14 +5323,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Leyu mudawiu</displayName>
 				<displayName count="one">Leyu mudawiu</displayName>
 				<displayName count="other">Leyu-ita mudawiu-ita</displayName>
-				<symbol draft="contributed">MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>Ariyari maugaxi</displayName>
 				<displayName count="one">Ariyari maugaxi</displayName>
 				<displayName count="other">Ariyari-ita maugaxi-ita</displayName>
-				<symbol draft="contributed">MGA</symbol>
-				<symbol alt="narrow" draft="contributed">Ar</symbol>
 			</currency>
 			<currency type="MGF">
 				<displayName>Farãku Madagasikawara</displayName>
@@ -6169,7 +5338,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Dinari Maseduniyawara</displayName>
 				<displayName count="one">Dinari Maseduniyawara</displayName>
 				<displayName count="other">Dinari-ita Maseduniyawara</displayName>
-				<symbol draft="contributed">MKD</symbol>
 			</currency>
 			<currency type="MKN">
 				<displayName>Dinari Maseduniyawara (1992–1993)</displayName>
@@ -6185,33 +5353,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Kiyati Miayamawara</displayName>
 				<displayName count="one">Kiyati Miayamawara</displayName>
 				<displayName count="other">Kiyati-ita Miayamawara</displayName>
-				<symbol draft="contributed">MMK</symbol>
-				<symbol alt="narrow" draft="contributed">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>Tugiriki Mũguriyawara</displayName>
 				<displayName count="one">Tugiriki Mũguriyawara</displayName>
 				<displayName count="other">Tugiriki-ita Mũguriyawara</displayName>
-				<symbol draft="contributed">MNT</symbol>
-				<symbol alt="narrow" draft="contributed">₮</symbol>
 			</currency>
 			<currency type="MOP">
 				<displayName>Pataka Makauwara</displayName>
 				<displayName count="one">Pataka Makauwara</displayName>
 				<displayName count="other">Pataka-ita Makauwara</displayName>
-				<symbol draft="contributed">MOP</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>Wogiya Makauwara (1973–2017)</displayName>
 				<displayName count="one">Wogiya Makauwara (1973–2017)</displayName>
 				<displayName count="other">Wogiya-ita Makauwara (1973–2017)</displayName>
-				<symbol draft="contributed">MRO</symbol>
 			</currency>
 			<currency type="MRU">
 				<displayName>Wogiya Mauritaniwara</displayName>
 				<displayName count="one">Wogiya Mauritaniwara</displayName>
 				<displayName count="other">Wogiya-ita Mauritaniwara</displayName>
-				<symbol draft="contributed">MRU</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName>Rira Mautawara</displayName>
@@ -6227,27 +5388,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Rupiya Maurisiwara</displayName>
 				<displayName count="one">Rupiya Maurisiwara</displayName>
 				<displayName count="other">Rupiya-ita Maurisiwara</displayName>
-				<symbol draft="contributed">MUR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>Rupiya Maudiwawara</displayName>
 				<displayName count="one">Rupiya Maudiwawara</displayName>
 				<displayName count="other">Rupiya-ita Maudiwawara</displayName>
-				<symbol draft="contributed">MVR</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>Kuaxa Marawiwara</displayName>
 				<displayName count="one">Kuaxa Marawiwara</displayName>
 				<displayName count="other">Kuaxa-ita Marawiwara</displayName>
-				<symbol draft="contributed">MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>Pusewa Mexikuwara</displayName>
 				<displayName count="one">Pusewa Mexikuwara</displayName>
 				<displayName count="other">Pesu-ita Mexikuwara</displayName>
-				<symbol draft="contributed">MX$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="MXP">
 				<displayName>Pusewa Parata suiwara mexikanu (1861–1992)</displayName>
@@ -6263,8 +5418,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Rĩgiti malayu</displayName>
 				<displayName count="one">Rĩgiti malayu</displayName>
 				<displayName count="other">Rĩgiti-ita malayu-ita</displayName>
-				<symbol draft="contributed">MYR</symbol>
-				<symbol alt="narrow" draft="contributed">RM</symbol>
 			</currency>
 			<currency type="MZE">
 				<displayName>Warakapá Musãbikiwara</displayName>
@@ -6273,28 +5426,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="MZM">
 				<displayName>Metikau Musãbikiwara (1980–2006)</displayName>
-				<displayName count="one">Metikau Kuxiímawara Musãbikiwara</displayName>
 				<displayName count="other">Metikau Kuxiímawara Musãbikiwara</displayName>
 			</currency>
 			<currency type="MZN">
 				<displayName>Metikau Musãbikiwara</displayName>
 				<displayName count="one">Metikau Musãbikiwara</displayName>
 				<displayName count="other">Metikau-ita Musãbikiwara</displayName>
-				<symbol draft="contributed">MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>Dóra Namibiyawara</displayName>
 				<displayName count="one">Dóra Namibiyawara</displayName>
 				<displayName count="other">Dóra-ita Namibiyawara</displayName>
-				<symbol draft="contributed">NAD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>Naira Nigeriyawara</displayName>
 				<displayName count="one">Naira Nigeriyawara</displayName>
 				<displayName count="other">Naira-ita Nigeriyawara</displayName>
-				<symbol draft="contributed">NGN</symbol>
-				<symbol alt="narrow" draft="contributed">₦</symbol>
 			</currency>
 			<currency type="NIC">
 				<displayName>Koduba Nikaraguwara (1988–1991)</displayName>
@@ -6305,8 +5452,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Koduba Nikaraguwara</displayName>
 				<displayName count="one">Koduba Nikaraguwara</displayName>
 				<displayName count="other">Koduba-ita Nikaraguwara</displayName>
-				<symbol draft="contributed">NIO</symbol>
-				<symbol alt="narrow" draft="contributed">C$</symbol>
 			</currency>
 			<currency type="NLG">
 				<displayName>Fulurĩ Hurãdawara</displayName>
@@ -6317,34 +5462,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Kuruwa Nuruwegawara</displayName>
 				<displayName count="one">Kuruwa Nuruwegawara</displayName>
 				<displayName count="other">Kuruwa-ita Nuruwegawara</displayName>
-				<symbol draft="contributed">NOK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>Rupiya Nepauwara</displayName>
 				<displayName count="one">Rupiya nNpauwara</displayName>
 				<displayName count="other">Rupiya-ita Nepauwara</displayName>
-				<symbol draft="contributed">NPR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>Dóra neuserãdewa</displayName>
 				<displayName count="one">Dóra neuserãdewa</displayName>
 				<displayName count="other">Dóra-ita neuserãdewa-ita</displayName>
-				<symbol draft="contributed">NZ$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="OMR">
 				<displayName>Riyau Umãwara</displayName>
 				<displayName count="one">Riyau Umãwara</displayName>
 				<displayName count="other">Riyau-ita Umãwara</displayName>
-				<symbol draft="contributed">OMR</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>Baubowa Panamawara</displayName>
 				<displayName count="one">Baubowa Panamawara</displayName>
 				<displayName count="other">Baubowa-ita Panamawara</displayName>
-				<symbol draft="contributed">PAB</symbol>
 			</currency>
 			<currency type="PEI">
 				<displayName>Ĩti Peruwara</displayName>
@@ -6355,7 +5492,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Pisasuwa Kurasí Peruwara</displayName>
 				<displayName count="one">Pisasuwa Kurasí Peruwara</displayName>
 				<displayName count="other">Pisasuwa Kurasí-ita Peruwara</displayName>
-				<symbol draft="contributed">PEN</symbol>
 			</currency>
 			<currency type="PES">
 				<displayName>Kurasí Peruwara (1863–1965)</displayName>
@@ -6366,28 +5502,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Kina Papuwara</displayName>
 				<displayName count="one">Kina Papuwara</displayName>
 				<displayName count="other">Kina-ita Papuwara</displayName>
-				<symbol draft="contributed">PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>Pusewa Firipinawara</displayName>
 				<displayName count="one">Pusewa Firipinawara</displayName>
 				<displayName count="other">Pusewa-ita Firipinawara</displayName>
 				<symbol draft="contributed">PHP</symbol>
-				<symbol alt="narrow" draft="contributed">₱</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>Rupiya Pakiretãwara</displayName>
 				<displayName count="one">Rupiya Pakiretãwara</displayName>
 				<displayName count="other">Rupiya-ita Pakiretãwara</displayName>
-				<symbol draft="contributed">PKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>Ziroti Puruniyawara</displayName>
 				<displayName count="one">Ziroti Puruniyawara</displayName>
 				<displayName count="other">Ziroti-ita Puruniyawara</displayName>
-				<symbol draft="contributed">PLN</symbol>
-				<symbol alt="narrow" draft="contributed">zł</symbol>
 			</currency>
 			<currency type="PLZ">
 				<displayName>Ziroti Puruniyawara (1950–1995)</displayName>
@@ -6404,14 +5534,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Guwarani Paraguwaiwara</displayName>
 				<displayName count="one">Guwarani Paraguwaiwara</displayName>
 				<displayName count="other">Guwarani-ita Paraguwaiwara</displayName>
-				<symbol draft="contributed">PYG</symbol>
-				<symbol alt="narrow" draft="contributed">₲</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>Riyau Katawara</displayName>
 				<displayName count="one">Riyau Katawara</displayName>
 				<displayName count="other">Riyau-ita Katawara</displayName>
-				<symbol draft="contributed">QAR</symbol>
 			</currency>
 			<currency type="RHD">
 				<displayName>Dóra Rudesiyawara</displayName>
@@ -6427,21 +5554,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Leu Rumeniyawara</displayName>
 				<displayName count="one">Leu Rumeniyawara</displayName>
 				<displayName count="other">Leu-ita Rumeniyawara</displayName>
-				<symbol draft="contributed">RON</symbol>
 				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>Dinari Sewiyawara</displayName>
 				<displayName count="one">Dinari Sewiyawara</displayName>
 				<displayName count="other">Dinari-ita Sewiyawara</displayName>
-				<symbol draft="contributed">RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>Ruburu Rusiyawara</displayName>
 				<displayName count="one">Ruburu Rusiyawara</displayName>
 				<displayName count="other">Ruburu-ita Rusiyawara</displayName>
-				<symbol draft="contributed">RUB</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
 			</currency>
 			<currency type="RUR">
 				<displayName>Ruburu Rusiyawara (1991–1998)</displayName>
@@ -6452,21 +5575,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Farãku Ruãdawara</displayName>
 				<displayName count="one">Farãku Ruãdawara</displayName>
 				<displayName count="other">Farãku-ita Ruãdawara</displayName>
-				<symbol draft="contributed">RWF</symbol>
-				<symbol alt="narrow" draft="contributed">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>Riyau Sauditawara</displayName>
 				<displayName count="one">Riyau Sauditawara</displayName>
 				<displayName count="other">Riyau-ita Sauditawara</displayName>
-				<symbol draft="contributed">SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>Dóra Kapuãma-ita Sarumũ yara</displayName>
 				<displayName count="one">Dóra Kapuãma-ita Sarumũ yara</displayName>
 				<displayName count="other">Dóra-ita Kapuãma-ita Sarumũ yara</displayName>
-				<symbol draft="contributed">SBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>Rupiya Seixeriwara</displayName>
@@ -6476,14 +5594,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="SDD">
 				<displayName>Dinari Sudawara (1992–2007)</displayName>
-				<displayName count="one">Dinari Kuxiímawara Sudawara</displayName>
 				<displayName count="other">Dinari Kuxiímawara Sudawara</displayName>
 			</currency>
 			<currency type="SDG">
 				<displayName>Ribara Sudawara</displayName>
 				<displayName count="one">Ribara Sudawara</displayName>
 				<displayName count="other">Ribara-ita Sudawara</displayName>
-				<symbol draft="contributed">SDG</symbol>
 			</currency>
 			<currency type="SDP">
 				<displayName>Ribara Sudawara (1957–1998)</displayName>
@@ -6494,22 +5610,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Kuruwa Suwésiyawara</displayName>
 				<displayName count="one">Kuruwa Suwésiyawara</displayName>
 				<displayName count="other">Kuruwa-ita Suwésiyawara</displayName>
-				<symbol draft="contributed">SEK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>Dóra Sĩgapurawara</displayName>
 				<displayName count="one">Dóra Sĩgapurawara</displayName>
 				<displayName count="other">Dóra-ita Sĩgapurawara</displayName>
-				<symbol draft="contributed">SGD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>Ribara Sãta Herena yara</displayName>
 				<displayName count="one">Ribara Sãta Herena yara</displayName>
 				<displayName count="other">Ribara-ita Sãta Herena yara</displayName>
-				<symbol draft="contributed">SHP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SIT">
 				<displayName>Tora Katuwa Esiruweniyawara</displayName>
@@ -6521,24 +5631,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">Kuruwa Esirowaka</displayName>
 				<displayName count="other">Kuruwa-ita Esirowaka</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Rioni Iwitera Reuwa yara</displayName>
 				<displayName count="one">Rioni Iwitera Reuwa yara</displayName>
 				<displayName count="other">Rioni-ita Iwitera Reuwa yara</displayName>
-				<symbol draft="contributed">SLL</symbol>
+			</currency>
+			<currency type="SLL">
+				<displayName>Rioni Iwitera Reuwa yara (1964—2022)</displayName>
+				<displayName count="one">Rioni Iwitera Reuwa yara (1964—2022)</displayName>
+				<displayName count="other">Rioni-ita Iwitera Reuwa yara (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Xerĩ Sumariyawara</displayName>
 				<displayName count="one">Xerĩ Sumariyawara</displayName>
 				<displayName count="other">Xerĩ-ita Sumariyawara</displayName>
-				<symbol draft="contributed">SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>Dóra Surinãmiyawara</displayName>
 				<displayName count="one">Dóra Surinãmiyawara</displayName>
 				<displayName count="other">Dóra-ita Surinãmiyawara</displayName>
-				<symbol draft="contributed">SRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SRG">
 				<displayName>Fulurĩ Surinami yara</displayName>
@@ -6549,21 +5660,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Ribara Su-Sudãniyawara</displayName>
 				<displayName count="one">Ribara Su-Sudãniyawara</displayName>
 				<displayName count="other">Ribara-ita Su-Sudãniyawara</displayName>
-				<symbol draft="contributed">SSP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>Dobara Sãtu Tumé asuí Pirĩsipi yara (1977–2017)</displayName>
 				<displayName count="one">Dobara Sãtu Tumé asuí Pirĩsipi yara (1977–2017)</displayName>
 				<displayName count="other">Dobara-ita Sãtu Tumé asuí Pirĩsipi yara (1977–2017)</displayName>
-				<symbol draft="contributed">STD</symbol>
 			</currency>
 			<currency type="STN">
 				<displayName>Dobara Sãtu Tumé asuí Pirĩsipi yara</displayName>
 				<displayName count="one">Dobara Sãtu Tumé asuí Pirĩsipi yara</displayName>
 				<displayName count="other">Dobara-ita Sãtu Tumé asuí Pirĩsipi yara</displayName>
-				<symbol draft="contributed">STN</symbol>
-				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SUR">
 				<displayName>Ruburu Suwiyetikawara</displayName>
@@ -6579,21 +5685,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Ribara Síriya</displayName>
 				<displayName count="one">Ribara Síriya</displayName>
 				<displayName count="other">Ribara-ita Síriya</displayName>
-				<symbol draft="contributed">SYP</symbol>
 				<symbol alt="narrow">S£</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>Rirãgeni Suwasiretãmawara</displayName>
 				<displayName count="one">Rirãgeni Suwasiretãmawara</displayName>
 				<displayName count="other">Rirãgeni-ita Suwasiretãmawara</displayName>
-				<symbol draft="contributed">SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>Baht Tairetãmawara</displayName>
 				<displayName count="one">Baht Tairetãmawara</displayName>
 				<displayName count="other">Baht-ita Tairetãmawara</displayName>
 				<symbol>฿</symbol>
-				<symbol alt="narrow" draft="contributed">฿</symbol>
 			</currency>
 			<currency type="TJR">
 				<displayName>Ruburu Tayikiretãmawara</displayName>
@@ -6604,7 +5707,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Sumuni tayiki</displayName>
 				<displayName count="one">Sumuni tayiki</displayName>
 				<displayName count="other">Sumuni-ita tayiki-ita</displayName>
-				<symbol draft="contributed">TJS</symbol>
 			</currency>
 			<currency type="TMM">
 				<displayName>Manati Turkuranaretãma yara (1993–2009)</displayName>
@@ -6615,20 +5717,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Manati turkumenu</displayName>
 				<displayName count="one">Manati turkumenu</displayName>
 				<displayName count="other">Manati-ita turkumenu-ita</displayName>
-				<symbol draft="contributed">TMT</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>Dinari Tunisiyawara</displayName>
 				<displayName count="one">Dinari Tunisiyawara</displayName>
 				<displayName count="other">Dinari-ita Tunisiyawara</displayName>
-				<symbol draft="contributed">TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>Pawãga Tũgawara</displayName>
 				<displayName count="one">Pawãga Tũgawara</displayName>
 				<displayName count="other">Pawãga-ita Tũgawara</displayName>
-				<symbol draft="contributed">TOP</symbol>
-				<symbol alt="narrow" draft="contributed">T$</symbol>
 			</currency>
 			<currency type="TPE">
 				<displayName>Warakapá Timuwara</displayName>
@@ -6644,36 +5742,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Rira turka</displayName>
 				<displayName count="one">Rira turka</displayName>
 				<displayName count="other">Rira-ita turka-ita</displayName>
-				<symbol draft="contributed">TRY</symbol>
-				<symbol alt="narrow" draft="contributed">₺</symbol>
-				<symbol alt="variant" draft="contributed">TL</symbol>
 			</currency>
 			<currency type="TTD">
 				<displayName>Dóra Tirinidadi asuí Tobagu yara</displayName>
 				<displayName count="one">Dóra Tirinidadi asuí Tobagu yara</displayName>
 				<displayName count="other">Dóra-ita Tirinidadi asuí Tobagu yara</displayName>
-				<symbol draft="contributed">TTD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>Pisasuwa Dóra Taiwãwara</displayName>
 				<displayName count="one">Pisasuwa Dóra Taiwãwara</displayName>
 				<displayName count="other">Pisasuwa-ita Dóra-ita Taiwãwara</displayName>
-				<symbol draft="contributed">NT$</symbol>
 				<symbol alt="narrow">NT$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>Xerĩ Tãsaniyawara</displayName>
 				<displayName count="one">Xerĩ Tãsaniyawara</displayName>
 				<displayName count="other">Xerĩ-ita Tãsaniyawara</displayName>
-				<symbol draft="contributed">TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>Hiryuwiniya Ukaraniyãwara</displayName>
 				<displayName count="one">Hiryuwiniya Ukaraniyãwara</displayName>
 				<displayName count="other">Hiryuwiniya-ita Ukaraniyãwara</displayName>
-				<symbol draft="contributed">UAH</symbol>
-				<symbol alt="narrow" draft="contributed">₴</symbol>
 			</currency>
 			<currency type="UAK">
 				<displayName>Kabuwaneti Ukaraniyãwara</displayName>
@@ -6689,14 +5778,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Xerĩ Ugãdawara</displayName>
 				<displayName count="one">Xerĩ Ugãdawara</displayName>
 				<displayName count="other">Xerĩ-ita Ugãdawara</displayName>
-				<symbol draft="contributed">UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>Dóra Mexikuwara</displayName>
 				<displayName count="one">Dóra Mexikuwara</displayName>
 				<displayName count="other">Dóra-ita Mexikuwara</displayName>
-				<symbol draft="contributed">US$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="USN">
 				<displayName>Dóra nuti-amerikawa (amũ ára)</displayName>
@@ -6722,14 +5808,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Pusewa Uruguwaiwara</displayName>
 				<displayName count="one">Pusewa Uruguwaiwara</displayName>
 				<displayName count="other">Pusewa-ita Uruguwaiwara</displayName>
-				<symbol draft="contributed">UYU</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>Sumu Yũbuesara-retãmawara</displayName>
 				<displayName count="one">Sumu Yũbuesara-retãmawara</displayName>
 				<displayName count="other">Sumu-ita Yũbuesara-retãmawara</displayName>
-				<symbol draft="contributed">UZS</symbol>
 			</currency>
 			<currency type="VEB">
 				<displayName>Buriwari Wenesuerawara (1871–2008)</displayName>
@@ -6740,8 +5823,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Buriwari Wenesuerawara (2008–2018)</displayName>
 				<displayName count="one">Buriwari Wenesuerawara (2008–2018)</displayName>
 				<displayName count="other">Buriwari-ita Wenesuerawara (2008–2018)</displayName>
-				<symbol draft="contributed">VEF</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="VES">
 				<displayName>Buriwari Wenesuerawara</displayName>
@@ -6754,8 +5835,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Dong wietinamita</displayName>
 				<displayName count="one">Dong wietinamita</displayName>
 				<displayName count="other">Dong-ita wietinamita-ita</displayName>
-				<symbol draft="contributed">₫</symbol>
-				<symbol alt="narrow" draft="contributed">₫</symbol>
 			</currency>
 			<currency type="VNN">
 				<displayName>Dong wietinamita (1978–1985)</displayName>
@@ -6766,13 +5845,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Watu Wanuatu yara</displayName>
 				<displayName count="one">Watu Wanuatu yara</displayName>
 				<displayName count="other">Watu-ita Wanuatu yara-ita</displayName>
-				<symbol draft="contributed">VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>Tara Samuwara</displayName>
 				<displayName count="one">Tara Samuwara</displayName>
 				<displayName count="other">Tara-ita Samuwara</displayName>
-				<symbol draft="contributed">WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>Farãku CFC BEAC yara</displayName>
@@ -6814,8 +5891,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Dóra Karibi Uriẽtawara yara</displayName>
 				<displayName count="one">Dóra Karibi Uriẽtawara yara</displayName>
 				<displayName count="other">Dóra-ita Karibi Uriẽtawara yara</displayName>
-				<symbol draft="contributed">EC$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XDR">
 				<displayName>Yupitasukasa Yãkatuwa Musakasawa</displayName>
@@ -6883,7 +5958,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Riyau yeminita</displayName>
 				<displayName count="one">Riyau yeminita</displayName>
 				<displayName count="other">Riyau-ita yeminita-ita</displayName>
-				<symbol draft="contributed">YER</symbol>
 			</currency>
 			<currency type="YUD">
 				<displayName>Dinari kirĩbawa Yugusirawiawara (1966–1990)</displayName>
@@ -6914,20 +5988,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Rãdi-ita Afirika Su kitiwara</displayName>
 				<displayName count="one">Rãdi Su-Afirikawara</displayName>
 				<displayName count="other">Rãdi-ita Su-Afirikawara</displayName>
-				<symbol draft="contributed">ZAR</symbol>
-				<symbol alt="narrow" draft="contributed">R</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>Kuwaxa sãbianu (1968–2012)</displayName>
 				<displayName count="one">Kuwaxa Sãbiawara (1968–2012)</displayName>
 				<displayName count="other">Kuwaxa-ita Sãbiawara (1968–2012)</displayName>
-				<symbol draft="contributed">ZMK</symbol>
 			</currency>
 			<currency type="ZMW">
 				<displayName>Kuwaxa sãbianu</displayName>
 				<displayName count="one">Kuwaxa sãbianu</displayName>
 				<displayName count="other">Kuwaxa-ita sãbianu-ita</displayName>
-				<symbol draft="contributed">ZMW</symbol>
 				<symbol alt="narrow" draft="contributed">Zk</symbol>
 			</currency>
 			<currency type="ZRN">
@@ -6957,10 +6027,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
-			<pattern type="approximately">~{0}</pattern>
 			<pattern type="atLeast">+{0}</pattern>
-			<pattern type="atMost">≤{0}</pattern>
-			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
 			<pluralMinimalPairs count="one">{0} ara</pluralMinimalPairs>
@@ -6973,11 +6040,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} {1} rupi</compoundUnitPattern>
 			</compoundUnit>
-			<compoundUnit type="times">
-				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
-			</compoundUnit>
 			<unit type="acceleration-g-force">
-				<displayName>kirĩba g</displayName>
 				<unitPattern count="one">{0} kirĩba g</unitPattern>
 				<unitPattern count="other">{0} kirĩba g-ita</unitPattern>
 			</unit>
@@ -6997,7 +6060,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} radiano-ita</unitPattern>
 			</unit>
 			<unit type="angle-degree">
-				<displayName>garau</displayName>
 				<unitPattern count="one">{0} garau</unitPattern>
 				<unitPattern count="other">{0} garau-ita</unitPattern>
 			</unit>
@@ -7063,7 +6125,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="area-dunam">
 				<displayName>dunan-ita</displayName>
-				<unitPattern count="one">{0} dunan</unitPattern>
 				<unitPattern count="other">{0} dunan-ita</unitPattern>
 			</unit>
 			<unit type="concentr-karat">
@@ -7087,23 +6148,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} pisawera-ita miliãu rupi</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
-				<displayName>sẽtu rupi</displayName>
 				<unitPattern count="one">{0} sẽtu rupi</unitPattern>
 				<unitPattern count="other">{0} sẽtu rupi</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
-				<displayName>mil rupi</displayName>
 				<unitPattern count="one">{0} mil rupi</unitPattern>
 				<unitPattern count="other">{0} mil rupi</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
-				<displayName>pitusá-pitasukasá</displayName>
 				<unitPattern count="one">{0} pitusá-pitasukasá</unitPattern>
 				<unitPattern count="other">{0} pitusá-pitasukasá-ita</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<displayName>mol-ita</displayName>
-				<unitPattern count="one">{0} mol</unitPattern>
 				<unitPattern count="other">{0} mol-ita</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
@@ -7173,12 +6230,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="digital-byte">
 				<displayName>byte-ita</displayName>
-				<unitPattern count="one">{0} byte</unitPattern>
 				<unitPattern count="other">{0} byte-ita</unitPattern>
 			</unit>
 			<unit type="digital-bit">
 				<displayName>bit-ita</displayName>
-				<unitPattern count="one">{0} bit</unitPattern>
 				<unitPattern count="other">{0} bit-ita</unitPattern>
 			</unit>
 			<unit type="duration-century">
@@ -7193,13 +6248,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-year">
 				<displayName>akayú-ita</displayName>
-				<unitPattern count="one">{0} akayú</unitPattern>
 				<unitPattern count="other">{0} akayú-ita</unitPattern>
 				<perUnitPattern>{0} akayú rupi</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>yasí-ita</displayName>
-				<unitPattern count="one">{0} yasí</unitPattern>
 				<unitPattern count="other">{0} yasí-ita</unitPattern>
 				<perUnitPattern>{0} yasí rupi</perUnitPattern>
 			</unit>
@@ -7211,7 +6264,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-day">
 				<displayName>ara-ita</displayName>
-				<unitPattern count="one">{0} ara</unitPattern>
 				<unitPattern count="other">{0} ara-ita</unitPattern>
 				<perUnitPattern>{0} ara rupi</perUnitPattern>
 			</unit>
@@ -7279,9 +6331,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} karuria-ita</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Karuria</displayName>
-				<unitPattern count="one">{0} Karuria</unitPattern>
-				<unitPattern count="other">{0} Karuria-ita</unitPattern>
+				<displayName draft="provisional">Karuria</displayName>
+				<unitPattern count="one" draft="provisional">{0} Karuria</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Karuria-ita</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kirujoule-ita</displayName>
@@ -7345,8 +6397,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-em">
 				<displayName>tipografia em</displayName>
-				<unitPattern count="one">{0} em</unitPattern>
-				<unitPattern count="other">{0} em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName>pikisel-ita</displayName>
@@ -7369,14 +6419,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} pikisel-ita puregada rupi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>pitusá-ita sẽtimeturu rupi</displayName>
-				<unitPattern count="one">{0} pitusá sẽtimeturu rupi</unitPattern>
-				<unitPattern count="other">{0} pitusá-ita sẽtimeturu rupi</unitPattern>
+				<displayName draft="provisional">pitusá-ita sẽtimeturu rupi</displayName>
+				<unitPattern count="one" draft="provisional">{0} pitusá sẽtimeturu rupi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} pitusá-ita sẽtimeturu rupi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>pitusá-ita puregada rupi</displayName>
-				<unitPattern count="one">{0} pitusá puregada rupi</unitPattern>
-				<unitPattern count="other">{0} pitusá-ita puregada rupi</unitPattern>
+				<displayName draft="provisional">pitusá-ita puregada rupi</displayName>
+				<unitPattern count="one" draft="provisional">{0} pitusá puregada rupi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} pitusá-ita puregada rupi</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>apekatusawa-ita</displayName>
@@ -7433,7 +6483,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-foot">
 				<displayName>pí-ita</displayName>
-				<unitPattern count="one">{0} pí</unitPattern>
 				<unitPattern count="other">{0} pí-ita</unitPattern>
 				<perUnitPattern>{0} pí rupi</perUnitPattern>
 			</unit>
@@ -7450,7 +6499,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-light-year">
 				<displayName>akayú-werawa-ita</displayName>
-				<unitPattern count="one">{0} akayú-werawa</unitPattern>
 				<unitPattern count="other">{0} akayú-werawa-ita</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
@@ -7489,7 +6537,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} kuarasiawa-ita</unitPattern>
 			</unit>
 			<unit type="light-lux">
-				<displayName>lux</displayName>
 				<unitPattern count="one">{0} lux</unitPattern>
 				<unitPattern count="other">{0} lux</unitPattern>
 			</unit>
@@ -7619,7 +6666,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="pressure-bar">
 				<displayName>bar-ita</displayName>
-				<unitPattern count="one">{0} bar</unitPattern>
 				<unitPattern count="other">{0} bar-ita</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
@@ -7669,13 +6715,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="speed-knot">
 				<displayName>kitanga-ita</displayName>
-				<unitPattern count="one">{0} kitanga</unitPattern>
 				<unitPattern count="other">{0} kitanga-ita</unitPattern>
-			</unit>
-			<unit type="temperature-generic">
-				<displayName>°</displayName>
-				<unitPattern count="one">{0}°</unitPattern>
-				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>garau Celsius-ita</displayName>
@@ -7782,7 +6822,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>acre-pí-ita</displayName>
-				<unitPattern count="one">{0} acre-pí</unitPattern>
 				<unitPattern count="other">{0} acre-pí-ita</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
@@ -7848,184 +6887,110 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<unitLength type="short">
 			<unit type="acceleration-g-force">
 				<displayName>kirĩba g</displayName>
-				<unitPattern count="one">{0} G</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>meturu-itá/seg²</displayName>
-				<unitPattern count="one">{0} m/s²</unitPattern>
-			</unit>
-			<unit type="angle-revolution">
-				<unitPattern count="one">{0} rev</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<displayName>radiano</displayName>
-				<unitPattern count="one">{0} rad</unitPattern>
 			</unit>
 			<unit type="angle-degree">
 				<displayName>garau</displayName>
-				<unitPattern count="one">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
-				<displayName>arcmin</displayName>
-				<unitPattern count="one">{0} arcmin</unitPattern>
 				<unitPattern count="other">{0} arcmin</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
 				<displayName>arcseg</displayName>
-				<unitPattern count="one">{0} arcseg</unitPattern>
 				<unitPattern count="other">{0} arcseg</unitPattern>
-			</unit>
-			<unit type="area-square-kilometer">
-				<unitPattern count="one">{0} km²</unitPattern>
-			</unit>
-			<unit type="area-hectare">
-				<displayName>hectare</displayName>
-				<unitPattern count="one">{0} ha</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
 				<displayName>meturu-itá²</displayName>
-				<unitPattern count="one">{0} m²</unitPattern>
-			</unit>
-			<unit type="area-square-centimeter">
-				<unitPattern count="one">{0} cm²</unitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<displayName>milha-itá²</displayName>
-				<unitPattern count="one">{0} mi²</unitPattern>
-			</unit>
-			<unit type="area-acre">
-				<displayName>acre</displayName>
-				<unitPattern count="one">{0} ac</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
 				<displayName>jarda-itá²</displayName>
-				<unitPattern count="one">{0} yd²</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
 				<displayName>pí-itá²</displayName>
-				<unitPattern count="one">{0} ft²</unitPattern>
 			</unit>
 			<unit type="area-square-inch">
 				<displayName>puregada-itá²</displayName>
-				<unitPattern count="one">{0} pur²</unitPattern>
 				<unitPattern count="other">{0} pur²</unitPattern>
 				<perUnitPattern>{0} pur² rupi</perUnitPattern>
 			</unit>
 			<unit type="area-dunam">
 				<displayName>dunan</displayName>
-				<unitPattern count="one">{0} dunan</unitPattern>
 				<unitPattern count="other">{0} dunan</unitPattern>
 			</unit>
 			<unit type="concentr-karat">
 				<displayName>kirate</displayName>
-				<unitPattern count="one">{0} k</unitPattern>
 				<unitPattern count="other">{0} k</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>mg/dl</displayName>
-				<unitPattern count="one">{0} mg/dl</unitPattern>
 				<unitPattern count="other">{0} mg/dl</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<displayName>mirimol/ritru</displayName>
-				<unitPattern count="one">{0} mmol/l</unitPattern>
 				<unitPattern count="other">{0} mmol/l</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>pisawera miliãu rupi</displayName>
-				<unitPattern count="one">{0} ppm</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>sẽtu rupi</displayName>
-				<unitPattern count="one">{0}%</unitPattern>
-				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
 				<displayName>mil rupi</displayName>
-				<unitPattern count="one">{0}‰</unitPattern>
-				<unitPattern count="other">{0}‰</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>pitusá-pitasukasá</displayName>
-				<unitPattern count="one">{0}‱</unitPattern>
-			</unit>
-			<unit type="concentr-mole">
-				<unitPattern count="one">{0} mol</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ritru-itá/km</displayName>
-				<unitPattern count="one">{0} l/km</unitPattern>
 				<unitPattern count="other">{0} l/km</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>l/100 km</displayName>
-				<unitPattern count="one">{0} l/100 km</unitPattern>
 				<unitPattern count="other">{0} l/100 km</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>milha-itá/gal</displayName>
-				<unitPattern count="one">{0} mpg</unitPattern>
 				<unitPattern count="other">{0} mpg</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName>milhas/gal. imp.</displayName>
-				<unitPattern count="one">{0} mpg imp.</unitPattern>
 				<unitPattern count="other">{0} mpg imp.</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
 				<displayName>PByte</displayName>
-				<unitPattern count="one">{0} PB</unitPattern>
-				<unitPattern count="other">{0} PB</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TByte</displayName>
-				<unitPattern count="one">{0} TB</unitPattern>
-				<unitPattern count="other">{0} TB</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
 				<displayName>Tbit</displayName>
-				<unitPattern count="one">{0} Tb</unitPattern>
-				<unitPattern count="other">{0} Tb</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
 				<displayName>GByte</displayName>
-				<unitPattern count="one">{0} GB</unitPattern>
-				<unitPattern count="other">{0} GB</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
 				<displayName>Gbit</displayName>
-				<unitPattern count="one">{0} Gb</unitPattern>
-				<unitPattern count="other">{0} Gb</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
 				<displayName>MByte</displayName>
-				<unitPattern count="one">{0} MB</unitPattern>
-				<unitPattern count="other">{0} MB</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
 				<displayName>Mbit</displayName>
-				<unitPattern count="one">{0} Mb</unitPattern>
-				<unitPattern count="other">{0} Mb</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
 				<displayName>kByte</displayName>
-				<unitPattern count="one">{0} kB</unitPattern>
-				<unitPattern count="other">{0} kB</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
 				<displayName>kbit</displayName>
-				<unitPattern count="one">{0} kb</unitPattern>
-				<unitPattern count="other">{0} kb</unitPattern>
-			</unit>
-			<unit type="digital-byte">
-				<displayName>byte</displayName>
-				<unitPattern count="one">{0} byte</unitPattern>
-				<unitPattern count="other">{0} byte</unitPattern>
-			</unit>
-			<unit type="digital-bit">
-				<displayName>bit</displayName>
-				<unitPattern count="one">{0} bit</unitPattern>
-				<unitPattern count="other">{0} bit</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<displayName>sék.</displayName>
@@ -8039,13 +7004,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-year">
 				<displayName>akayú</displayName>
-				<unitPattern count="one">{0} akayú</unitPattern>
 				<unitPattern count="other">{0} akayú</unitPattern>
 				<perUnitPattern>{0}/akayú</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>yasí</displayName>
-				<unitPattern count="one">{0} yasí</unitPattern>
 				<unitPattern count="other">{0} yasí</unitPattern>
 				<perUnitPattern>{0}/yasí</perUnitPattern>
 			</unit>
@@ -8057,191 +7020,84 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-day">
 				<displayName>ara</displayName>
-				<unitPattern count="one">{0} ara</unitPattern>
 				<unitPattern count="other">{0} ara</unitPattern>
 				<perUnitPattern>{0}/ara</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>hura</displayName>
-				<unitPattern count="one">{0} h</unitPattern>
-			</unit>
-			<unit type="duration-minute">
-				<displayName>min</displayName>
-				<unitPattern count="one">{0} min</unitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>seg</displayName>
-				<unitPattern count="one">{0} seg</unitPattern>
 				<unitPattern count="other">{0} seg</unitPattern>
-				<perUnitPattern>{0}/s</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>mirisegũdu</displayName>
-				<unitPattern count="one">{0} ms</unitPattern>
-			</unit>
-			<unit type="duration-microsecond">
-				<unitPattern count="one">{0} μs</unitPattern>
-			</unit>
-			<unit type="duration-nanosecond">
-				<unitPattern count="one">{0} ns</unitPattern>
-			</unit>
-			<unit type="electric-ampere">
-				<displayName>amp</displayName>
-				<unitPattern count="one">{0} A</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
 				<displayName>miriamp</displayName>
-				<unitPattern count="one">{0} mA</unitPattern>
-			</unit>
-			<unit type="electric-ohm">
-				<displayName>ohm</displayName>
-				<unitPattern count="one">{0} Ω</unitPattern>
-			</unit>
-			<unit type="electric-volt">
-				<displayName>volt</displayName>
-				<unitPattern count="one">{0} V</unitPattern>
-			</unit>
-			<unit type="energy-kilocalorie">
-				<unitPattern count="one">{0} kcal</unitPattern>
-			</unit>
-			<unit type="energy-calorie">
-				<unitPattern count="one">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>cal</displayName>
-				<unitPattern count="one">{0} cal</unitPattern>
-				<unitPattern count="other">{0} cal</unitPattern>
+				<displayName draft="provisional">cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kirujoule</displayName>
-				<unitPattern count="one">{0} kJ</unitPattern>
-			</unit>
-			<unit type="energy-joule">
-				<displayName>joule</displayName>
-				<unitPattern count="one">{0} J</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
 				<displayName>kW-hura</displayName>
-				<unitPattern count="one">{0} kWh</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>elétron-volt</displayName>
-				<unitPattern count="one">{0} eV</unitPattern>
 			</unit>
 			<unit type="energy-british-thermal-unit">
 				<displayName>BTU</displayName>
-				<unitPattern count="one">{0} BTU</unitPattern>
 				<unitPattern count="other">{0} BTU</unitPattern>
 			</unit>
 			<unit type="energy-therm-us">
 				<displayName>thm EUA</displayName>
-				<unitPattern count="one">{0} thm EUA</unitPattern>
 				<unitPattern count="other">{0} thm EUA</unitPattern>
 			</unit>
 			<unit type="force-pound-force">
 				<displayName>libra-kirĩba</displayName>
-				<unitPattern count="one">{0} lbf</unitPattern>
 			</unit>
 			<unit type="force-newton">
 				<displayName>newton</displayName>
-				<unitPattern count="one">{0} N</unitPattern>
-			</unit>
-			<unit type="frequency-gigahertz">
-				<unitPattern count="one">{0} GHz</unitPattern>
-			</unit>
-			<unit type="frequency-megahertz">
-				<unitPattern count="one">{0} MHz</unitPattern>
-			</unit>
-			<unit type="frequency-kilohertz">
-				<unitPattern count="one">{0} kHz</unitPattern>
-			</unit>
-			<unit type="frequency-hertz">
-				<unitPattern count="one">{0} Hz</unitPattern>
-			</unit>
-			<unit type="graphics-em">
-				<unitPattern count="one">{0} em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName>pixel</displayName>
-				<unitPattern count="one">{0} px</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>megapixel</displayName>
-				<unitPattern count="one">{0} MP</unitPattern>
-			</unit>
-			<unit type="graphics-pixel-per-centimeter">
-				<unitPattern count="one">{0} ppcm</unitPattern>
-			</unit>
-			<unit type="graphics-pixel-per-inch">
-				<unitPattern count="one">{0} ppi</unitPattern>
-			</unit>
-			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
-			</unit>
-			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
-			</unit>
-			<unit type="length-kilometer">
-				<unitPattern count="one">{0} km</unitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>m</displayName>
-				<unitPattern count="one">{0} m</unitPattern>
-			</unit>
-			<unit type="length-decimeter">
-				<unitPattern count="one">{0} dm</unitPattern>
-			</unit>
-			<unit type="length-centimeter">
-				<unitPattern count="one">{0} cm</unitPattern>
-			</unit>
-			<unit type="length-millimeter">
-				<unitPattern count="one">{0} mm</unitPattern>
-			</unit>
-			<unit type="length-micrometer">
-				<unitPattern count="one">{0} μm</unitPattern>
-			</unit>
-			<unit type="length-nanometer">
-				<unitPattern count="one">{0} nm</unitPattern>
-			</unit>
-			<unit type="length-picometer">
-				<unitPattern count="one">{0} pm</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>milha</displayName>
-				<unitPattern count="one">{0} mi</unitPattern>
 			</unit>
 			<unit type="length-yard">
 				<displayName>jarda</displayName>
-				<unitPattern count="one">{0} yd</unitPattern>
 			</unit>
 			<unit type="length-foot">
 				<displayName>pí-itá</displayName>
-				<unitPattern count="one">{0} pí</unitPattern>
 				<unitPattern count="other">{0} pí</unitPattern>
 				<perUnitPattern>{0}/pí</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName>pur.</displayName>
-				<unitPattern count="one">{0} pur.</unitPattern>
 				<unitPattern count="other">{0} pur.</unitPattern>
 				<perUnitPattern>{0}/pur.</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
 				<displayName>parsec</displayName>
-				<unitPattern count="one">{0} pc</unitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<displayName>akayú-werawa</displayName>
-				<unitPattern count="one">{0} akayú-werawa</unitPattern>
 				<unitPattern count="other">{0} akayú-werawa</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
 				<displayName>ua</displayName>
-				<unitPattern count="one">{0} ua</unitPattern>
 				<unitPattern count="other">{0} ua</unitPattern>
 			</unit>
 			<unit type="length-furlong">
@@ -8249,270 +7105,139 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-fathom">
 				<displayName draft="contributed">barasa</displayName>
-				<unitPattern count="one" draft="contributed">{0} brs.</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} brs.</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>mn</displayName>
-				<unitPattern count="one">{0} mn</unitPattern>
 				<unitPattern count="other">{0} mn</unitPattern>
-			</unit>
-			<unit type="length-mile-scandinavian">
-				<unitPattern count="one">{0} smi</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName>pitusá</displayName>
-				<unitPattern count="one">{0} pt</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>kuarasiawa</displayName>
-				<unitPattern count="one">{0} R☉</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
-				<unitPattern count="one">{0} lx</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>kuarasí muturisawa</displayName>
-				<unitPattern count="one">{0} L☉</unitPattern>
-			</unit>
-			<unit type="mass-tonne">
-				<displayName>t</displayName>
-				<unitPattern count="one">{0} t</unitPattern>
-				<unitPattern count="other">{0} t</unitPattern>
-			</unit>
-			<unit type="mass-kilogram">
-				<unitPattern count="one">{0} kg</unitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>grama</displayName>
-				<unitPattern count="one">{0} g</unitPattern>
-			</unit>
-			<unit type="mass-milligram">
-				<unitPattern count="one">{0} mg</unitPattern>
-			</unit>
-			<unit type="mass-microgram">
-				<unitPattern count="one">{0} μg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>tonerada</displayName>
-				<unitPattern count="one">{0} tn</unitPattern>
-				<unitPattern count="other">{0} tn</unitPattern>
 			</unit>
 			<unit type="mass-stone">
 				<displayName draft="contributed">stones</displayName>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>libra</displayName>
-				<unitPattern count="one">{0} lb</unitPattern>
-			</unit>
-			<unit type="mass-ounce">
-				<unitPattern count="one">{0} oz</unitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
 				<displayName>oz troy</displayName>
-				<unitPattern count="one">{0} oz t</unitPattern>
 			</unit>
 			<unit type="mass-carat">
 				<displayName>cuirate</displayName>
-				<unitPattern count="one">{0} ct</unitPattern>
 				<unitPattern count="other">{0} ct</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>dalton</displayName>
-				<unitPattern count="one">{0} Da</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
 				<displayName>iwí susuẽga</displayName>
-				<unitPattern count="one">{0} M⊕</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>kuarasí susuẽga</displayName>
-				<unitPattern count="one">{0} M☉</unitPattern>
-			</unit>
-			<unit type="power-gigawatt">
-				<unitPattern count="one">{0} GW</unitPattern>
-			</unit>
-			<unit type="power-megawatt">
-				<unitPattern count="one">{0} MW</unitPattern>
-			</unit>
-			<unit type="power-kilowatt">
-				<unitPattern count="one">{0} kW</unitPattern>
-			</unit>
-			<unit type="power-watt">
-				<displayName>watt</displayName>
-				<unitPattern count="one">{0} W</unitPattern>
-			</unit>
-			<unit type="power-milliwatt">
-				<unitPattern count="one">{0} mW</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName>cv</displayName>
-				<unitPattern count="one">{0} cv</unitPattern>
 				<unitPattern count="other">{0} cv</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
 				<displayName>mmHg</displayName>
-				<unitPattern count="one">{0} mmHg</unitPattern>
 				<unitPattern count="other">{0} mmHg</unitPattern>
-			</unit>
-			<unit type="pressure-pound-force-per-square-inch">
-				<unitPattern count="one">{0} psi</unitPattern>
-			</unit>
-			<unit type="pressure-inch-ofhg">
-				<unitPattern count="one">{0} inHg</unitPattern>
-			</unit>
-			<unit type="pressure-bar">
-				<unitPattern count="one">{0} bar</unitPattern>
-				<unitPattern count="other">{0} bar</unitPattern>
-			</unit>
-			<unit type="pressure-millibar">
-				<unitPattern count="one">{0} mbar</unitPattern>
-			</unit>
-			<unit type="pressure-atmosphere">
-				<displayName>atm</displayName>
-				<unitPattern count="one">{0} atm</unitPattern>
-				<unitPattern count="other">{0} atm</unitPattern>
-			</unit>
-			<unit type="pressure-pascal">
-				<unitPattern count="one">{0} Pa</unitPattern>
-			</unit>
-			<unit type="pressure-hectopascal">
-				<unitPattern count="one">{0} hPa</unitPattern>
-			</unit>
-			<unit type="pressure-kilopascal">
-				<unitPattern count="one">{0} kPa</unitPattern>
-			</unit>
-			<unit type="pressure-megapascal">
-				<unitPattern count="one">{0} MPa</unitPattern>
-			</unit>
-			<unit type="speed-kilometer-per-hour">
-				<unitPattern count="one">{0} km/h</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
 				<displayName>meturu/seg</displayName>
-				<unitPattern count="one">{0} m/s</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<displayName>milha-itá/hura</displayName>
-				<unitPattern count="one">{0} mph</unitPattern>
 				<unitPattern count="other">{0} mph</unitPattern>
 			</unit>
 			<unit type="speed-knot">
 				<displayName>kitanga</displayName>
-				<unitPattern count="one">{0} kitanga</unitPattern>
 				<unitPattern count="other">{0} kitanga</unitPattern>
-			</unit>
-			<unit type="temperature-generic">
-				<unitPattern count="one">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>garau C</displayName>
-				<unitPattern count="one">{0} °C</unitPattern>
 				<unitPattern count="other">{0} °C</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>garau F</displayName>
-				<unitPattern count="one">{0} °F</unitPattern>
 				<unitPattern count="other">{0} °F</unitPattern>
-			</unit>
-			<unit type="temperature-kelvin">
-				<unitPattern count="one">{0} K</unitPattern>
-			</unit>
-			<unit type="torque-pound-force-foot">
-				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
-			</unit>
-			<unit type="torque-newton-meter">
-				<unitPattern count="one">{0} N⋅m</unitPattern>
-			</unit>
-			<unit type="volume-cubic-kilometer">
-				<unitPattern count="one">{0} km³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-meter">
-				<unitPattern count="one">{0} m³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-centimeter">
-				<unitPattern count="one">{0} cm³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-mile">
-				<unitPattern count="one">{0} mi³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-yard">
 				<displayName>jarda-itá³</displayName>
-				<unitPattern count="one">{0} yd³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-foot">
 				<displayName>pí-itá³</displayName>
-				<unitPattern count="one">{0} ft³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-inch">
 				<displayName>puregada-irá³</displayName>
-				<unitPattern count="one">{0} pur³</unitPattern>
 				<unitPattern count="other">{0} pur³</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
 				<displayName>Ml</displayName>
-				<unitPattern count="one">{0} Ml</unitPattern>
 				<unitPattern count="other">{0} Ml</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
 				<displayName>hl</displayName>
-				<unitPattern count="one">{0} hl</unitPattern>
 				<unitPattern count="other">{0} hl</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>litros</displayName>
-				<unitPattern count="one">{0} l</unitPattern>
 			</unit>
 			<unit type="volume-deciliter">
 				<displayName>dl</displayName>
-				<unitPattern count="one">{0} dl</unitPattern>
 				<unitPattern count="other">{0} dl</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
 				<displayName>cl</displayName>
-				<unitPattern count="one">{0} cl</unitPattern>
 				<unitPattern count="other">{0} cl</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
 				<displayName>ml</displayName>
-				<unitPattern count="one">{0} ml</unitPattern>
 				<unitPattern count="other">{0} ml</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
 				<displayName>ptm</displayName>
-				<unitPattern count="one">{0} ptm</unitPattern>
 				<unitPattern count="other">{0} ptm</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
 				<displayName>xícm</displayName>
-				<unitPattern count="one">{0} xícm</unitPattern>
 				<unitPattern count="other">{0} xícm</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>acre-pí</displayName>
-				<unitPattern count="one">{0} acre-pí</unitPattern>
 				<unitPattern count="other">{0} acre-pí</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>gal</displayName>
-				<unitPattern count="one">{0} gal</unitPattern>
 				<unitPattern count="other">{0} gal</unitPattern>
 				<perUnitPattern>{0}/gal</perUnitPattern>
 			</unit>
 			<unit type="volume-gallon-imperial">
 				<displayName>gal. imp.</displayName>
-				<unitPattern count="one">{0} gal. imp.</unitPattern>
 				<unitPattern count="other">{0} gal. imp.</unitPattern>
 				<perUnitPattern>{0}/gal. imp.</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<displayName>qts</displayName>
-				<unitPattern count="one">{0} qt</unitPattern>
 			</unit>
 			<unit type="volume-pint">
 				<displayName>pint</displayName>
-				<unitPattern count="one">{0} pt</unitPattern>
 			</unit>
 			<unit type="volume-cup">
 				<displayName>xíkara</displayName>
@@ -8521,25 +7246,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-fluid-ounce">
 				<displayName>fl oz</displayName>
-				<unitPattern count="one">{0} fl oz</unitPattern>
 				<unitPattern count="other">{0} fl oz</unitPattern>
-			</unit>
-			<unit type="volume-fluid-ounce-imperial">
-				<unitPattern count="one">{0} fl oz Imp.</unitPattern>
 			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>k. kaĩbewara</displayName>
-				<unitPattern count="one">{0} k. kaĩbewara</unitPattern>
 				<unitPattern count="other">{0} k. kaĩbewara</unitPattern>
 			</unit>
 			<unit type="volume-teaspoon">
 				<displayName>k. xawara</displayName>
-				<unitPattern count="one">{0} k. xawara</unitPattern>
 				<unitPattern count="other">{0} k. xawara</unitPattern>
 			</unit>
 			<unit type="volume-barrel">
 				<displayName>koroti</displayName>
-				<unitPattern count="one">{0} bbl</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>mupikasawa</displayName>
@@ -8550,15 +7268,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
-			<compoundUnit type="per">
-				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
-			</compoundUnit>
-			<compoundUnit type="times">
-				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
-			</compoundUnit>
-			<unit type="acceleration-g-force">
-				<displayName draft="contributed">kirĩba g</displayName>
-			</unit>
 			<unit type="angle-arc-minute">
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
@@ -8573,139 +7282,49 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
-				<unitPattern count="one">{0}%</unitPattern>
-				<unitPattern count="other">{0}%</unitPattern>
-			</unit>
-			<unit type="consumption-liter-per-100-kilometer">
-				<displayName>l/100 km</displayName>
-				<unitPattern count="one">{0} l/100 km</unitPattern>
-				<unitPattern count="other">{0} l/100 km</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
 				<displayName>PB</displayName>
-				<unitPattern count="one">{0} PB</unitPattern>
-				<unitPattern count="other">{0} PB</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
-				<unitPattern count="one">{0} TB</unitPattern>
-				<unitPattern count="other">{0} TB</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
 				<displayName>Tb</displayName>
-				<unitPattern count="one">{0} Tb</unitPattern>
-				<unitPattern count="other">{0} Tb</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
 				<displayName>GB</displayName>
-				<unitPattern count="one">{0} GB</unitPattern>
-				<unitPattern count="other">{0} GB</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
 				<displayName>Gb</displayName>
-				<unitPattern count="one">{0} Gb</unitPattern>
-				<unitPattern count="other">{0} Gb</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
 				<displayName>MB</displayName>
-				<unitPattern count="one">{0} MB</unitPattern>
-				<unitPattern count="other">{0} MB</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
 				<displayName>Mb</displayName>
-				<unitPattern count="one">{0} Mb</unitPattern>
-				<unitPattern count="other">{0} Mb</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
 				<displayName>kB</displayName>
-				<unitPattern count="one">{0} kB</unitPattern>
-				<unitPattern count="other">{0} kB</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
 				<displayName>kb</displayName>
-				<unitPattern count="one">{0} kb</unitPattern>
-				<unitPattern count="other">{0} kb</unitPattern>
 			</unit>
 			<unit type="digital-byte">
 				<displayName>B</displayName>
 				<unitPattern count="one">{0} B</unitPattern>
 				<unitPattern count="other">{0} B</unitPattern>
 			</unit>
-			<unit type="digital-bit">
-				<displayName>bit</displayName>
-				<unitPattern count="one">{0} bit</unitPattern>
-				<unitPattern count="other">{0} bit</unitPattern>
-			</unit>
-			<unit type="duration-century">
-				<displayName>sék.</displayName>
-				<unitPattern count="one">{0} sék.</unitPattern>
-				<unitPattern count="other">{0} sék</unitPattern>
-			</unit>
-			<unit type="duration-year">
-				<displayName>akayú</displayName>
-				<unitPattern count="one">{0} akayú</unitPattern>
-				<unitPattern count="other">{0} akayú</unitPattern>
-				<perUnitPattern>{0}/akayú</perUnitPattern>
-			</unit>
-			<unit type="duration-month">
-				<displayName>yasí</displayName>
-				<unitPattern count="one">{0} yasí</unitPattern>
-				<unitPattern count="other">{0} yasí</unitPattern>
-				<perUnitPattern>{0}/yasí</perUnitPattern>
-			</unit>
 			<unit type="duration-week">
 				<displayName>sem.</displayName>
-				<unitPattern count="one">{0} sem.</unitPattern>
-				<unitPattern count="other">{0} sem</unitPattern>
-				<perUnitPattern>{0}/sem.</perUnitPattern>
-			</unit>
-			<unit type="duration-day">
-				<displayName>ara</displayName>
-				<unitPattern count="one">{0} ara</unitPattern>
-				<unitPattern count="other">{0} ara</unitPattern>
-				<perUnitPattern>{0}/ara</perUnitPattern>
-			</unit>
-			<unit type="duration-hour">
-				<displayName>hura</displayName>
-				<unitPattern count="one">{0} h</unitPattern>
-				<unitPattern count="other">{0} h</unitPattern>
-			</unit>
-			<unit type="duration-minute">
-				<displayName>min</displayName>
-				<unitPattern count="one">{0} min</unitPattern>
-				<unitPattern count="other">{0} min</unitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName>seg</displayName>
 				<unitPattern count="one">{0} s</unitPattern>
 				<unitPattern count="other">{0} s</unitPattern>
 				<perUnitPattern draft="contributed">{0}/seg</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>ms</displayName>
-				<unitPattern count="one">{0} ms</unitPattern>
-				<unitPattern count="other">{0} ms</unitPattern>
-			</unit>
-			<unit type="length-kilometer">
-				<displayName>km</displayName>
-				<unitPattern count="one">{0} km</unitPattern>
-				<unitPattern count="other">{0} km</unitPattern>
-			</unit>
-			<unit type="length-meter">
-				<displayName>m</displayName>
-				<unitPattern count="one">{0} m</unitPattern>
-				<unitPattern count="other">{0} m</unitPattern>
-			</unit>
-			<unit type="length-centimeter">
-				<displayName>cm</displayName>
-				<unitPattern count="one">{0} cm</unitPattern>
-				<unitPattern count="other">{0} cm</unitPattern>
-				<perUnitPattern draft="contributed">{0}/cm</perUnitPattern>
-			</unit>
-			<unit type="length-millimeter">
-				<displayName>mm</displayName>
-				<unitPattern count="one">{0} mm</unitPattern>
-				<unitPattern count="other">{0} mm</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName draft="contributed">mil</displayName>
@@ -8714,49 +7333,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-foot">
 				<displayName draft="contributed">pí-ita</displayName>
-				<unitPattern count="one">{0} pí</unitPattern>
-				<unitPattern count="other">{0} pí</unitPattern>
-				<perUnitPattern draft="contributed">{0}/pí</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
-				<displayName draft="contributed">pur.</displayName>
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
-				<perUnitPattern draft="contributed">{0}/pur.</perUnitPattern>
-			</unit>
-			<unit type="length-parsec">
-				<displayName draft="contributed">parsec</displayName>
-			</unit>
-			<unit type="length-light-year">
-				<displayName draft="contributed">akayú-werawa</displayName>
-				<unitPattern count="one">{0} akayú-werawa</unitPattern>
-				<unitPattern count="other">{0} akayú-werawa</unitPattern>
-			</unit>
-			<unit type="length-astronomical-unit">
-				<displayName draft="contributed">ua</displayName>
-				<unitPattern count="one" draft="contributed">{0} ua</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} ua</unitPattern>
-			</unit>
-			<unit type="length-furlong">
-				<displayName draft="contributed">furlong</displayName>
 			</unit>
 			<unit type="length-fathom">
-				<displayName draft="contributed">barasa</displayName>
 				<unitPattern count="one" draft="contributed">{0} bsa.</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} bsa.</unitPattern>
 			</unit>
-			<unit type="length-nautical-mile">
-				<displayName draft="contributed">mn</displayName>
-				<unitPattern count="one" draft="contributed">{0} mn</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} mn</unitPattern>
-			</unit>
 			<unit type="mass-kilogram">
-				<displayName>kg</displayName>
 				<unitPattern count="one">{0}kg</unitPattern>
 				<unitPattern count="other">{0}kg</unitPattern>
 			</unit>
 			<unit type="mass-gram">
-				<displayName>grama</displayName>
 				<unitPattern count="one">{0}g</unitPattern>
 				<unitPattern count="other">{0}g</unitPattern>
 			</unit>
@@ -8767,18 +7357,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="contributed">stone</displayName>
 			</unit>
 			<unit type="mass-carat">
-				<displayName draft="contributed">cuirate</displayName>
 				<unitPattern count="one" draft="contributed">{0} ql</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ql</unitPattern>
-			</unit>
-			<unit type="power-horsepower">
-				<unitPattern count="one">{0} cv</unitPattern>
-				<unitPattern count="other">{0} cv</unitPattern>
-			</unit>
-			<unit type="pressure-millimeter-ofhg">
-				<displayName draft="contributed">mmHg</displayName>
-				<unitPattern count="one" draft="contributed">{0} mmHg</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} mmHg</unitPattern>
 			</unit>
 			<unit type="pressure-inch-ofhg">
 				<unitPattern count="one">{0}″ Hg</unitPattern>
@@ -8789,23 +7369,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} mb</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
-				<displayName>km/h</displayName>
 				<unitPattern count="one">{0}km/h</unitPattern>
 				<unitPattern count="other">{0}km/h</unitPattern>
 			</unit>
-			<unit type="speed-knot">
-				<displayName draft="contributed">kitanga</displayName>
-				<unitPattern count="one" draft="contributed">{0} kitanga</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} kitanga</unitPattern>
-			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
-				<unitPattern count="one">{0} °C</unitPattern>
-				<unitPattern count="other">{0} °C</unitPattern>
-			</unit>
-			<unit type="temperature-fahrenheit">
-				<unitPattern count="one">{0} °F</unitPattern>
-				<unitPattern count="other">{0} °F</unitPattern>
 			</unit>
 			<unit type="volume-cubic-foot">
 				<displayName draft="contributed">ft³</displayName>
@@ -8821,22 +7389,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0} fl. oz.</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<displayName>mupikasawa</displayName>
 				<coordinateUnitPattern type="east">{0}L</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0} N</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0} S</coordinateUnitPattern>
 				<coordinateUnitPattern type="west">{0}O</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
-		<durationUnit type="hm">
-			<durationUnitPattern>h:mm</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="hms">
-			<durationUnitPattern>h:mm:ss</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="ms">
-			<durationUnitPattern>m:ss</durationUnitPattern>
-		</durationUnit>
 	</units>
 	<listPatterns>
 		<listPattern>
@@ -8847,47 +7403,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="end">{0} u {1}</listPatternPart>
 			<listPatternPart type="2">{0} u {1}</listPatternPart>
 		</listPattern>
-		<listPattern type="or-narrow">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} u {1}</listPatternPart>
-			<listPatternPart type="2">{0} u {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="or-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} u {1}</listPatternPart>
-			<listPatternPart type="2">{0} u {1}</listPatternPart>
-		</listPattern>
 		<listPattern type="standard-narrow">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="standard-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} asuí {1}</listPatternPart>
-			<listPatternPart type="2">{0} asuí {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} asuí {1}</listPatternPart>
-			<listPatternPart type="2">{0} asuí {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-narrow">
 			<listPatternPart type="start">{0} {1}</listPatternPart>
 			<listPatternPart type="middle">{0} {1}</listPatternPart>
 			<listPatternPart type="end">{0} {1}</listPatternPart>
 			<listPatternPart type="2">{0} {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} asuí {1}</listPatternPart>
-			<listPatternPart type="2">{0} asuí {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<posix>
@@ -8898,7 +7422,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</posix>
 	<characterLabels>
 		<characterLabelPattern type="all">{0} — panhé</characterLabelPattern>
-		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
 		<characterLabelPattern type="compatibility">{0} — kũpatibilidadi</characterLabelPattern>
 		<characterLabelPattern type="enclosed">{0} — sikĩdawa</characterLabelPattern>
 		<characterLabelPattern type="extended">{0} — pukuwa</characterLabelPattern>
@@ -8916,14 +7439,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="arrows">uiwa</characterLabel>
 		<characterLabel type="body">pira</characterLabel>
 		<characterLabel type="box_drawing">patuá kuatiaresawa</characterLabel>
-		<characterLabel type="braille">braille</characterLabel>
 		<characterLabel type="building">ukaiwaté</characterLabel>
 		<characterLabel type="bullets_stars">musãgawasara ã yasitatá</characterLabel>
 		<characterLabel type="consonantal_jamo">yamu kũsunãtiku</characterLabel>
 		<characterLabel type="currency_symbols">rikuyara sĩburu</characterLabel>
 		<characterLabel type="dash_connector">murãgawasawa ã muakasara</characterLabel>
 		<characterLabel type="digits">díyitu</characterLabel>
-		<characterLabel type="dingbats">dingbat</characterLabel>
 		<characterLabel type="divination_symbols">saãgawa sĩburu</characterLabel>
 		<characterLabel type="downwards_arrows">uiwa uirpe kití</characterLabel>
 		<characterLabel type="downwards_upwards_arrows">uiwa uirpe kití asuí arpe kití</characterLabel>
@@ -9045,7 +7566,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wght" subtype="400">mayewera</styleName>
 		<styleName type="wght" subtype="500">pitérupi</styleName>
 		<styleName type="wght" subtype="600">negiritu-pisawera</styleName>
-		<styleName type="wght" subtype="600" alt="demi">negiritu-pisawera</styleName>
 		<styleName type="wght" subtype="700">negiritu</styleName>
 		<styleName type="wght" subtype="800">negiritu-retana</styleName>
 		<styleName type="wght" subtype="800" alt="ultra">negiritu-retanaeté</styleName>

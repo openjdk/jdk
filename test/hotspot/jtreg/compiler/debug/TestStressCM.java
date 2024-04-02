@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class TestStressCM {
             "-XX:CompileOnly=" + className + "::sum",
             "-XX:+TraceOptoPipelining", "-XX:+" + stressOpt,
             "-XX:StressSeed=" + stressSeed, className, "10"};
-        ProcessBuilder pb  = ProcessTools.createJavaProcessBuilder(procArgs);
+        ProcessBuilder pb  = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
         out.shouldHaveExitValue(0);
         // Extract the trace of our method (the last one after those of all

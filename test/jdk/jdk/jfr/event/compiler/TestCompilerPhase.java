@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import jdk.test.whitebox.WhiteBox;
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
+ *     -XX:-NeverActAsServerClassMachine
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:CompileOnly=jdk.jfr.event.compiler.TestCompilerPhase::dummyMethod
  *     -XX:+SegmentedCodeCache -Xbootclasspath/a:.
@@ -78,7 +79,7 @@ public class TestCompilerPhase {
             System.out.println("Event:" + event);
             Events.assertField(event, "phase").notEmpty();
             Events.assertField(event, "compileId").atLeast(0);
-            Events.assertField(event, "phaseLevel").atLeast((short)0).atMost((short)4);
+            Events.assertField(event, "phaseLevel").atLeast((short)0).atMost((short)5);
             Events.assertEventThread(event);
         }
     }

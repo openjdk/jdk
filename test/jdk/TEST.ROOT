@@ -9,17 +9,41 @@
 # should be taken to handle test failures of intermittent or
 # randomness tests.
 #
-# A "headful" test requires a graphical environment to meaningfully
-# run. Tests that are not headful are "headless".
-# A test flagged with key sound needs audio devices on the system, this
-# may be accompanied by the headful keyword since audio device access
+# A test flagged with cgroups uses cgroups.
+#
+# Notes on "client" keywords : headful sound printer multimon 
+# ===========================================================
+#
+# These keywords are there to help with test selection so that
+# tests that need a particular resource can be selected to run on a system
+# with that resource. Conversely "!somekeyword" can be used to exclude tests
+# on a system without such a resource.
+# Caution: If you are always excluding tests using any of these keywords then you
+# are likely missing many important tests.
+#
+# "headful". A "headful" test requires a graphical environment to meaningfully run.
+# This does not have to mean a physical host, since a VM can be configured as headful.
+# Tests that are not headful are "headless".
+# Note: all manual tests are assumed to be headful and do not need the keyword.
+#
+# "printer". Not all tests of printing APIs require a printer, but many do.
+# So a "printer" test requires a printer to be installed to do anything meaningful.
+# Tests may not fail if there is none, instead just silently return.
+# But they also may legitimately throw an Exception depending on the test.
+# Also printer tests are not necessarily headful, but some are, and some are automated.
+# 
+# "sound". Similarly, not all sound tests require audio devices, but many do.
+# A test flagged with key "sound" needs audio devices on the system.
+# Also they are not necessarily "headful", since they don't require a display etc.
+# But sometimes they may be accompanied by the headful keyword, since sound
 # is often linked to access to desktop resources and headful systems are
 # also more likely to have audio devices (ie meaning both input and output)
-# A test flagged with key "printer" requires a printer to succeed, else
-# throws a PrinterException or the like.
-# A test flagged with cgroups uses cgroups.
+#
+# "multimon" should be used in conjunction with headful and is used to identify
+# tests which require two displays connected.
 
-keys=2d dnd headful sound i18n intermittent printer randomness jfr cgroups
+keys=headful sound printer multimon \
+     i18n intermittent randomness jfr cgroups
 
 # Tests that must run in othervm mode
 othervm.dirs=java/awt java/beans javax/accessibility javax/imageio javax/sound javax/swing javax/print \

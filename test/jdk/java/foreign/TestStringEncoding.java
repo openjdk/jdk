@@ -22,8 +22,6 @@
  *
  */
 
-import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
@@ -33,16 +31,12 @@ import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
-import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import jdk.internal.foreign.StringSupport;
@@ -333,6 +327,27 @@ public class TestStringEncoding {
         }
     }
 
+    @Test(dataProvider = "charsetsAndSegments")
+    public void testStringGetWithCharset(Charset charset, MemorySegment segment) {
+        for (int offset = 0 ; offset < Long.BYTES ; offset++) {
+            segment.getString(offset, charset);
+        }
+    }
+
+    @Test(dataProvider = "charsetsAndSegments")
+    public void testStringSetWithCharset(Charset charset, MemorySegment segment) {
+        for (int offset = 0 ; offset < Long.BYTES ; offset++) {
+            segment.setString(offset, "H", charset);
+        }
+    }
+
+    @Test(dataProvider = "charsetsAndSegments")
+    public void testStringAllocateFromWithCharset(Charset charset, MemorySegment segment) {
+        for (int offset = 0 ; offset < Long.BYTES ; offset++) {
+            SegmentAllocator.prefixAllocator(segment.asSlice(offset)).allocateFrom("H", charset);
+        }
+    }
+
     @DataProvider
     public static Object[][] strings() {
         return new Object[][]{
@@ -361,7 +376,7 @@ public class TestStringEncoding {
                 .allMatch(c -> Character.isLetterOrDigit((char) c));
     }
 
-    boolean isStandard(Charset charset) {
+    static boolean isStandard(Charset charset) {
         for (Field standardCharset : StandardCharsets.class.getDeclaredFields()) {
             try {
                 if (standardCharset.get(null) == charset) {
@@ -374,9 +389,9 @@ public class TestStringEncoding {
         return false;
     }
 
-    List<Charset> standardCharsets() {
+    static List<Charset> standardCharsets() {
         return Charset.availableCharsets().values().stream()
-                .filter(this::isStandard)
+                .filter(TestStringEncoding::isStandard)
                 .toList();
     }
 
@@ -456,4 +471,26 @@ public class TestStringEncoding {
         }
     }
 
+    static MemorySegment[] heapSegments() {
+        return new MemorySegment[]{
+                MemorySegment.ofArray(new byte[80]),
+                MemorySegment.ofArray(new char[40]),
+                MemorySegment.ofArray(new short[40]),
+                MemorySegment.ofArray(new int[20]),
+                MemorySegment.ofArray(new float[20]),
+                MemorySegment.ofArray(new long[10]),
+                MemorySegment.ofArray(new double[10])
+        };
+    }
+
+    @DataProvider
+    public static Object[][] charsetsAndSegments() {
+        List<Object[]> values = new ArrayList<>();
+        for (Charset charset : standardCharsets()) {
+            for (MemorySegment heapSegment : heapSegments()) {
+                values.add(new Object[] { charset, heapSegment });
+            }
+        }
+        return values.toArray(Object[][]::new);
+    }
 }

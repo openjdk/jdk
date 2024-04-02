@@ -25,15 +25,18 @@
  * @test
  * @summary Test parking when pinned and emitting the JFR VirtualThreadPinnedEvent throws
  * @modules java.base/jdk.internal.event
+ * @library /test/lib
  * @compile/module=java.base jdk/internal/event/VirtualThreadPinnedEvent.java
- * @run junit VirtualThreadPinnedEventThrows
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED VirtualThreadPinnedEventThrows
  */
 
 import java.lang.ref.Reference;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import jdk.internal.event.VirtualThreadPinnedEvent;
 
+import jdk.test.lib.thread.VThreadPinner;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -82,29 +85,31 @@ class VirtualThreadPinnedEventThrows {
      * Test parking a virtual thread when pinned.
      */
     private void testParkWhenPinned() throws Exception {
-        Object lock = new Object();
+        var exception = new AtomicReference<Throwable>();
+        var done = new AtomicBoolean();
+        Thread thread = Thread.startVirtualThread(() -> {
+            try {
+                VThreadPinner.runPinned(() -> {
+                    while (!done.get()) {
+                        LockSupport.park();
+                    }
+                });
+            } catch (Throwable e) {
+                exception.set(e);
+            }
+        });
         try {
-            var completed = new AtomicBoolean();
-            Thread thread = Thread.startVirtualThread(() -> {
-                synchronized (lock) {
-                    LockSupport.park();
-                    completed.set(true);
-                }
-            });
-
             // wait for thread to park
             Thread.State state;
             while ((state = thread.getState()) != Thread.State.WAITING) {
                 assertTrue(state != Thread.State.TERMINATED);
                 Thread.sleep(10);
             }
-
-            // unpark and check that thread completed without exception
+        } finally {
+            done.set(true);
             LockSupport.unpark(thread);
             thread.join();
-            assertTrue(completed.get());
-        } finally {
-            Reference.reachabilityFence(lock);
         }
+        assertNull(exception.get());
     }
 }

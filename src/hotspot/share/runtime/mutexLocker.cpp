@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,6 @@ Monitor* Compilation_lock             = nullptr;
 Mutex*   CompileTaskAlloc_lock        = nullptr;
 Mutex*   CompileStatistics_lock       = nullptr;
 Mutex*   DirectivesStack_lock         = nullptr;
-Mutex*   MultiArray_lock              = nullptr;
 Monitor* Terminator_lock              = nullptr;
 Monitor* InitCompleted_lock           = nullptr;
 Monitor* BeforeExit_lock              = nullptr;
@@ -115,7 +114,6 @@ Monitor* Notification_lock            = nullptr;
 Monitor* PeriodicTask_lock            = nullptr;
 Monitor* RedefineClasses_lock         = nullptr;
 Mutex*   Verify_lock                  = nullptr;
-Monitor* Zip_lock                     = nullptr;
 
 #if INCLUDE_JFR
 Mutex*   JfrStacktrace_lock           = nullptr;
@@ -124,9 +122,6 @@ Mutex*   JfrBuffer_lock               = nullptr;
 Monitor* JfrThreadSampler_lock        = nullptr;
 #endif
 
-#ifndef SUPPORTS_NATIVE_CX8
-Mutex*   UnsafeJlong_lock             = nullptr;
-#endif
 Mutex*   CodeHeapStateAnalytics_lock  = nullptr;
 
 Monitor* ContinuationRelativize_lock  = nullptr;
@@ -160,6 +155,8 @@ Monitor* JVMCI_lock                   = nullptr;
 Monitor* JVMCIRuntime_lock            = nullptr;
 #endif
 
+// Only one RecursiveMutex
+RecursiveMutex* MultiArray_lock       = nullptr;
 
 #define MAX_NUM_MUTEX 128
 static Mutex* _mutex_array[MAX_NUM_MUTEX];
@@ -272,8 +269,6 @@ void mutex_init() {
   MUTEX_DEFN(CompiledIC_lock                 , PaddedMutex  , nosafepoint);  // locks VtableStubs_lock, InlineCacheBuffer_lock
   MUTEX_DEFN(MethodCompileQueue_lock         , PaddedMonitor, safepoint);
   MUTEX_DEFN(CompileStatistics_lock          , PaddedMutex  , safepoint);
-  MUTEX_DEFN(DirectivesStack_lock            , PaddedMutex  , nosafepoint);
-  MUTEX_DEFN(MultiArray_lock                 , PaddedMutex  , safepoint);
 
   MUTEX_DEFN(JvmtiThreadState_lock           , PaddedMutex  , safepoint);   // Used by JvmtiThreadState/JvmtiEventController
   MUTEX_DEFN(EscapeBarrier_lock              , PaddedMonitor, nosafepoint); // Used to synchronize object reallocation/relocking triggered by JVMTI
@@ -287,6 +282,7 @@ void mutex_init() {
   MUTEX_DEFN(PeriodicTask_lock               , PaddedMonitor, safepoint, true);
   MUTEX_DEFN(RedefineClasses_lock            , PaddedMonitor, safepoint);
   MUTEX_DEFN(Verify_lock                     , PaddedMutex  , safepoint);
+  MUTEX_DEFN(ClassLoaderDataGraph_lock       , PaddedMutex  , safepoint);
 
   if (WhiteBoxAPI) {
     MUTEX_DEFN(Compilation_lock              , PaddedMonitor, nosafepoint);
@@ -295,12 +291,8 @@ void mutex_init() {
 #if INCLUDE_JFR
   MUTEX_DEFN(JfrBuffer_lock                  , PaddedMutex  , event);
   MUTEX_DEFN(JfrMsg_lock                     , PaddedMonitor, event);
-  MUTEX_DEFN(JfrStacktrace_lock              , PaddedMutex  , stackwatermark-1);
+  MUTEX_DEFN(JfrStacktrace_lock              , PaddedMutex  , event);
   MUTEX_DEFN(JfrThreadSampler_lock           , PaddedMonitor, nosafepoint);
-#endif
-
-#ifndef SUPPORTS_NATIVE_CX8
-  MUTEX_DEFN(UnsafeJlong_lock                , PaddedMutex  , nosafepoint);
 #endif
 
   MUTEX_DEFN(ContinuationRelativize_lock     , PaddedMonitor, nosafepoint-3);
@@ -324,7 +316,6 @@ void mutex_init() {
   MUTEX_DEFN(ScratchObjects_lock             , PaddedMutex  , nosafepoint-1); // Holds DumpTimeTable_lock
 #endif // INCLUDE_CDS
   MUTEX_DEFN(Bootclasspath_lock              , PaddedMutex  , nosafepoint);
-  MUTEX_DEFN(Zip_lock                        , PaddedMonitor, nosafepoint-1); // Holds DumpTimeTable_lock
 
 #if INCLUDE_JVMCI
   // JVMCIRuntime::_lock must be acquired before JVMCI_lock to avoid deadlock
@@ -335,6 +326,7 @@ void mutex_init() {
   MUTEX_DEFL(InlineCacheBuffer_lock         , PaddedMutex  , CompiledIC_lock);
   MUTEX_DEFL(VtableStubs_lock               , PaddedMutex  , CompiledIC_lock);  // Also holds DumpTimeTable_lock
   MUTEX_DEFL(CodeCache_lock                 , PaddedMonitor, VtableStubs_lock);
+  MUTEX_DEFL(DirectivesStack_lock           , PaddedMutex  , CodeCache_lock);
   MUTEX_DEFL(CompiledMethod_lock            , PaddedMutex  , CodeCache_lock);
 
   MUTEX_DEFL(Threads_lock                   , PaddedMonitor, CompileThread_lock, true);
@@ -343,7 +335,6 @@ void mutex_init() {
 
   MUTEX_DEFL(PerfDataMemAlloc_lock          , PaddedMutex  , Heap_lock);
   MUTEX_DEFL(PerfDataManager_lock           , PaddedMutex  , Heap_lock);
-  MUTEX_DEFL(ClassLoaderDataGraph_lock      , PaddedMutex  , MultiArray_lock);
   MUTEX_DEFL(VMOperation_lock               , PaddedMonitor, Heap_lock, true);
   MUTEX_DEFL(ClassInitError_lock            , PaddedMonitor, Threads_lock);
 
@@ -366,6 +357,9 @@ void mutex_init() {
   // JVMCIRuntime_lock must be acquired before JVMCI_lock to avoid deadlock
   MUTEX_DEFL(JVMCI_lock                     , PaddedMonitor, JVMCIRuntime_lock);
 #endif
+
+  // Allocate RecursiveMutex
+  MultiArray_lock = new RecursiveMutex();
 }
 
 #undef MUTEX_DEFL

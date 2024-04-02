@@ -2,8 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8304246
  * @summary Compiler Implementation for Unnamed patterns and variables
- * @enablePreview
- * @compile/ref=TwrLintUnderscore.out --enable-preview -source ${jdk.version} -Xlint:try -XDrawDiagnostics TwrLintUnderscore.java
+ * @compile -Xlint:try -XDrawDiagnostics TwrLintUnderscore.java
  */
 class TwrLintUnderscore implements AutoCloseable {
     private static void test1() {

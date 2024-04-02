@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -91,7 +91,7 @@ class VirtualSpaceNodeTest {
     verify();
 
     const bool node_is_full = _node->used_words() == _node->word_size();
-    Metachunk* c = NULL;
+    Metachunk* c = nullptr;
     {
       MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
       c = _node->allocate_root_chunk();
@@ -258,7 +258,7 @@ class VirtualSpaceNodeTest {
 
     //freelist->print_on(tty);
 
-    Metachunk* result = NULL;
+    Metachunk* result = nullptr;
     {
       MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
       result = _node->merge(c, freelist);
@@ -293,7 +293,7 @@ public:
     _counter_reserved_words(),
     _counter_committed_words(),
     _commit_limiter(commit_limit),
-    _node(NULL),
+    _node(nullptr),
     _vs_word_size(vs_word_size),
     _commit_limit(commit_limit)
   {
@@ -327,14 +327,14 @@ public:
   }
 
   void test_exhaust_node() {
-    Metachunk* c = NULL;
+    Metachunk* c = nullptr;
     bool rc = true;
     do {
       c = alloc_root_chunk();
-      if (c != NULL) {
+      if (c != nullptr) {
         rc = commit_root_chunk(c, c->word_size());
       }
-    } while (c != NULL && rc);
+    } while (c != nullptr && rc);
   }
 
   void test_arbitrary_commits() {

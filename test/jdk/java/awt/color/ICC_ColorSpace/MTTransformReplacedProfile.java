@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public final class MTTransformReplacedProfile {
 
     public static void main(String[] args) throws Exception {
         if (args.length > 0 && args[0].equals("checkJNI")) {
-            ProcessBuilder pb = ProcessTools.createTestJvm(
+            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                     "-Xcheck:jni", MTTransformReplacedProfile.class.getName());
             OutputAnalyzer oa = ProcessTools.executeProcess(pb);
             oa.stderrShouldBeEmpty();

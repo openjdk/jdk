@@ -43,7 +43,8 @@ int DEBUG_SCREENCAST_ENABLED = FALSE;
                                       (*env)->ExceptionDescribe(env); \
                                    }
 
-static volatile gboolean sessionClosed = TRUE;
+static gboolean hasPipewireFailed = FALSE;
+static gboolean sessionClosed = TRUE;
 static GString *activeSessionToken;
 
 struct ScreenSpace screenSpace = {0};
@@ -88,12 +89,17 @@ static gboolean initScreenSpace() {
 }
 
 static void doCleanup() {
+    if (pw.loop) {
+        DEBUG_SCREENCAST("STOPPING loop\n", NULL);
+        fp_pw_thread_loop_stop(pw.loop);
+    }
+
     for (int i = 0; i < screenSpace.screenCount; ++i) {
         struct ScreenProps *screenProps = &screenSpace.screens[i];
         if (screenProps->data) {
             if (screenProps->data->stream) {
-                fp_pw_stream_disconnect(screenProps->data->stream);
                 fp_pw_thread_loop_lock(pw.loop);
+                fp_pw_stream_disconnect(screenProps->data->stream);
                 fp_pw_stream_destroy(screenProps->data->stream);
                 fp_pw_thread_loop_unlock(pw.loop);
                 screenProps->data->stream = NULL;
@@ -115,10 +121,7 @@ static void doCleanup() {
         pw.core = NULL;
     }
 
-    DEBUG_SCREENCAST("STOPPING loop\n", NULL)
-
     if (pw.loop) {
-        fp_pw_thread_loop_stop(pw.loop);
         fp_pw_thread_loop_destroy(pw.loop);
         pw.loop = NULL;
     }
@@ -127,6 +130,10 @@ static void doCleanup() {
         free(screenSpace.screens);
         screenSpace.screens = NULL;
         screenSpace.screenCount = 0;
+    }
+
+    if (!sessionClosed) {
+        fp_pw_deinit();
     }
 
     gtk->g_string_set_size(activeSessionToken, 0);
@@ -171,6 +178,7 @@ static gboolean initScreencast(const gchar *token,
     }
 
     gtk->g_string_printf(activeSessionToken, "%s", token);
+    hasPipewireFailed = FALSE;
     sessionClosed = FALSE;
     return TRUE;
 }
@@ -338,6 +346,8 @@ static void onStreamProcess(void *userdata) {
 
     DEBUG_SCREEN_PREFIX(screen, "data ready\n", NULL);
     fp_pw_stream_queue_buffer(data->stream, pwBuffer);
+
+    fp_pw_thread_loop_signal(pw.loop, FALSE);
 }
 
 static void onStreamStateChanged(
@@ -351,6 +361,12 @@ static void onStreamStateChanged(
                      old, fp_pw_stream_state_as_string(old),
                      state, fp_pw_stream_state_as_string(state),
                      error);
+    if (state == PW_STREAM_STATE_ERROR
+        || state == PW_STREAM_STATE_UNCONNECTED) {
+
+        hasPipewireFailed = TRUE;
+        fp_pw_thread_loop_signal(pw.loop, FALSE);
+    }
 }
 
 static const struct pw_stream_events streamEvents = {
@@ -473,14 +489,17 @@ static gboolean connectStream(int index) {
 
     while (!data->hasFormat) {
         fp_pw_thread_loop_wait(pw.loop);
+        fp_pw_thread_loop_accept(pw.loop);
+        if (hasPipewireFailed) {
+            fp_pw_thread_loop_unlock(pw.loop);
+            return FALSE;
+        }
     }
 
     DEBUG_SCREEN_PREFIX(data->screenProps,
             "frame size: %dx%d\n",
             data->rawFormat.size.width, data->rawFormat.size.height
     );
-
-    fp_pw_thread_loop_accept(pw.loop);
 
     return TRUE;
 }
@@ -539,7 +558,12 @@ static void onCoreError(
             "!!! pipewire error: id %u, seq: %d, res: %d (%s): %s\n",
             id, seq, res, strerror(res), message
     );
-    fp_pw_thread_loop_unlock(pw.loop);
+    if (id == PW_ID_CORE) {
+        fp_pw_thread_loop_lock(pw.loop);
+        hasPipewireFailed = TRUE;
+        fp_pw_thread_loop_signal(pw.loop, FALSE);
+        fp_pw_thread_loop_unlock(pw.loop);
+    }
 }
 
 static const struct pw_core_events coreEvents = {
@@ -553,6 +577,7 @@ static const struct pw_core_events coreEvents = {
  * @return TRUE on success
  */
 static gboolean doLoop(GdkRectangle requestedArea) {
+    gboolean isLoopLockTaken = FALSE;
     if (!pw.loop && !sessionClosed) {
         pw.loop = fp_pw_thread_loop_new("AWT Pipewire Thread", NULL);
 
@@ -581,6 +606,7 @@ static gboolean doLoop(GdkRectangle requestedArea) {
         }
 
         fp_pw_thread_loop_lock(pw.loop);
+        isLoopLockTaken = TRUE;
 
         pw.core = fp_pw_context_connect_fd(
                 pw.context,
@@ -621,12 +647,16 @@ static gboolean doLoop(GdkRectangle requestedArea) {
         DEBUG_SCREEN_PREFIX(screen, "@@@ screen processed %i\n", i);
     }
 
-    fp_pw_thread_loop_unlock(pw.loop);
+    if (isLoopLockTaken) {
+        fp_pw_thread_loop_unlock(pw.loop);
+    }
 
     return TRUE;
 
     fail:
-        fp_pw_thread_loop_unlock(pw.loop);
+        if (isLoopLockTaken) {
+            fp_pw_thread_loop_unlock(pw.loop);
+        }
         doCleanup();
         return FALSE;
 }
@@ -682,6 +712,7 @@ static gboolean loadSymbols() {
     LOAD_SYMBOL(fp_pw_stream_disconnect, "pw_stream_disconnect");
     LOAD_SYMBOL(fp_pw_stream_destroy, "pw_stream_destroy");
     LOAD_SYMBOL(fp_pw_init, "pw_init");
+    LOAD_SYMBOL(fp_pw_deinit, "pw_deinit");
     LOAD_SYMBOL(fp_pw_context_connect_fd, "pw_context_connect_fd");
     LOAD_SYMBOL(fp_pw_core_disconnect, "pw_core_disconnect");
     LOAD_SYMBOL(fp_pw_context_new, "pw_context_new");
@@ -837,6 +868,33 @@ static void arrayToRectangles(JNIEnv *env,
     (*env)->ReleaseIntArrayElements(env, boundsArray, body, 0);
 }
 
+static int makeScreencast(
+        const gchar *token,
+        GdkRectangle *requestedArea,
+        GdkRectangle *affectedScreenBounds,
+        gint affectedBoundsLength
+) {
+    if (!initScreencast(token, affectedScreenBounds, affectedBoundsLength)) {
+        return pw.pwFd;
+    }
+
+    if (!doLoop(*requestedArea)) {
+        return RESULT_ERROR;
+    }
+
+    while (!isAllDataReady()) {
+        fp_pw_thread_loop_lock(pw.loop);
+        fp_pw_thread_loop_wait(pw.loop);
+        fp_pw_thread_loop_unlock(pw.loop);
+        if (hasPipewireFailed) {
+            doCleanup();
+            return RESULT_ERROR;
+        }
+    }
+
+    return RESULT_OK;
+}
+
 /*
  * Class:     sun_awt_screencast_ScreencastHelper
  * Method:    closeSession
@@ -893,18 +951,22 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
             jx, jy, jwidth, jheight, token
     );
 
-    if (!initScreencast(token, affectedScreenBounds, affectedBoundsLength)) {
-        releaseToken(env, jtoken, token);
-        return pw.pwFd;
-    }
+    int attemptResult = makeScreencast(
+        token, &requestedArea, affectedScreenBounds, affectedBoundsLength);
 
-    if (!doLoop(requestedArea)) {
-        releaseToken(env, jtoken, token);
-        return RESULT_ERROR;
-    }
-
-    while (!isAllDataReady()) {
-        fp_pw_thread_loop_wait(pw.loop);
+    if (attemptResult) {
+        if (attemptResult == RESULT_DENIED) {
+            releaseToken(env, jtoken, token);
+            return attemptResult;
+        }
+        DEBUG_SCREENCAST("Screencast attempt failed with %i, re-trying...\n",
+                         attemptResult);
+        attemptResult = makeScreencast(
+            token, &requestedArea, affectedScreenBounds, affectedBoundsLength);
+        if (attemptResult) {
+            releaseToken(env, jtoken, token);
+            return attemptResult;
+        }
     }
 
     DEBUG_SCREENCAST("\nall data ready\n", NULL);

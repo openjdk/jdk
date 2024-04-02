@@ -3965,8 +3965,8 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::x86::_fpu_cntrl_wrd_trunc = 0x0D7F;
     // Round to nearest, 24-bit mode, exceptions masked
     StubRoutines::x86::_fpu_cntrl_wrd_24    = 0x007F;
-    // Round to nearest, 64-bit mode, exceptions masked
-    StubRoutines::x86::_mxcsr_std           = 0x1F80;
+    // Round to nearest, 64-bit mode, exceptions masked, flags specialized
+    StubRoutines::x86::_mxcsr_std           = EnableX86ECoreOpts ? 0x1FBF : 0x1F80;
     // Note: the following two constants are 80-bit values
     //       layout is critical for correct loading by FPU.
     // Bias for strict fp multiply/divide
@@ -4218,7 +4218,7 @@ class StubGenerator: public StubCodeGenerator {
 
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
     if (bs_nm != nullptr) {
-      StubRoutines::x86::_method_entry_barrier = generate_method_entry_barrier();
+      StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
     }
   }
 

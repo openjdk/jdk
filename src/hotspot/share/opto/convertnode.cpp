@@ -88,6 +88,54 @@ Node* Conv2BNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return nullptr;
 }
 
+uint ConvertNode::ideal_reg() const {
+  return _type->ideal_reg();
+}
+
+Node* ConvertNode::create_convert(BasicType source, BasicType target, Node* input) {
+  if (source == T_INT) {
+    if (target == T_LONG) {
+      return new ConvI2LNode(input);
+    } else if (target == T_FLOAT) {
+      return new ConvI2FNode(input);
+    } else if (target == T_DOUBLE) {
+      return new ConvI2DNode(input);
+    }
+  } else if (source == T_LONG) {
+    if (target == T_INT) {
+      return new ConvL2INode(input);
+    } else if (target == T_FLOAT) {
+      return new ConvL2FNode(input);
+    } else if (target == T_DOUBLE) {
+      return new ConvL2DNode(input);
+    }
+  } else if (source == T_FLOAT) {
+    if (target == T_INT) {
+      return new ConvF2INode(input);
+    } else if (target == T_LONG) {
+      return new ConvF2LNode(input);
+    } else if (target == T_DOUBLE) {
+      return new ConvF2DNode(input);
+    } else if (target == T_SHORT) {
+      return new ConvF2HFNode(input);
+    }
+  } else if (source == T_DOUBLE) {
+    if (target == T_INT) {
+      return new ConvD2INode(input);
+    } else if (target == T_LONG) {
+      return new ConvD2LNode(input);
+    } else if (target == T_FLOAT) {
+      return new ConvD2FNode(input);
+    }
+  } else if (source == T_SHORT) {
+    if (target == T_FLOAT) {
+      return new ConvHF2FNode(input);
+    }
+  }
+
+  assert(false, "Couldn't create conversion for type %s to %s", type2name(source), type2name(target));
+  return nullptr;
+}
 
 // The conversions operations are all Alpha sorted.  Please keep it that way!
 //=============================================================================
@@ -193,8 +241,9 @@ const Type* ConvF2DNode::Value(PhaseGVN* phase) const {
 const Type* ConvF2HFNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if (t == Type::TOP) return Type::TOP;
-  if (t == Type::FLOAT) return TypeInt::SHORT;
-  if (StubRoutines::f2hf_adr() == nullptr) return bottom_type();
+  if (t == Type::FLOAT || StubRoutines::f2hf_adr() == nullptr) {
+    return TypeInt::SHORT;
+  }
 
   const TypeF *tf = t->is_float_constant();
   return TypeInt::make( StubRoutines::f2hf(tf->getf()) );
@@ -263,14 +312,15 @@ Node *ConvF2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 const Type* ConvHF2FNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if (t == Type::TOP) return Type::TOP;
-  if (t == TypeInt::SHORT) return Type::FLOAT;
-  if (StubRoutines::hf2f_adr() == nullptr) return bottom_type();
+  if (t == TypeInt::SHORT || StubRoutines::hf2f_adr() == nullptr) {
+    return Type::FLOAT;
+  }
 
   const TypeInt *ti = t->is_int();
   if (ti->is_con()) {
     return TypeF::make( StubRoutines::hf2f(ti->get_con()) );
   }
-  return bottom_type();
+  return Type::FLOAT;
 }
 
 //=============================================================================
@@ -280,7 +330,7 @@ const Type* ConvI2DNode::Value(PhaseGVN* phase) const {
   if( t == Type::TOP ) return Type::TOP;
   const TypeInt *ti = t->is_int();
   if( ti->is_con() ) return TypeD::make( (double)ti->get_con() );
-  return bottom_type();
+  return Type::DOUBLE;
 }
 
 //=============================================================================
@@ -290,7 +340,7 @@ const Type* ConvI2FNode::Value(PhaseGVN* phase) const {
   if( t == Type::TOP ) return Type::TOP;
   const TypeInt *ti = t->is_int();
   if( ti->is_con() ) return TypeF::make( (float)ti->get_con() );
-  return bottom_type();
+  return Type::FLOAT;
 }
 
 //------------------------------Identity---------------------------------------
@@ -710,7 +760,7 @@ const Type* ConvL2DNode::Value(PhaseGVN* phase) const {
   if( t == Type::TOP ) return Type::TOP;
   const TypeLong *tl = t->is_long();
   if( tl->is_con() ) return TypeD::make( (double)tl->get_con() );
-  return bottom_type();
+  return Type::DOUBLE;
 }
 
 //=============================================================================
@@ -720,7 +770,7 @@ const Type* ConvL2FNode::Value(PhaseGVN* phase) const {
   if( t == Type::TOP ) return Type::TOP;
   const TypeLong *tl = t->is_long();
   if( tl->is_con() ) return TypeF::make( (float)tl->get_con() );
-  return bottom_type();
+  return Type::FLOAT;
 }
 
 //=============================================================================

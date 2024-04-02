@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,11 @@ public class DockerfileConfig {
             return version;
         }
 
+        // Ubuntu 22.04 ppc started to crash in libz inflateReset on Power8 based host
+        // those recent Ubuntu versions only work on Power9+
+        if (Platform.isPPC()) {
+            return "20.04";
+        }
         return "latest";
     }
 }

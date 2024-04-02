@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,8 +111,8 @@ class MacroAssembler: public Assembler {
         op == 0xE9 /* jmp */ ||
         op == 0xEB /* short jmp */ ||
         (op & 0xF0) == 0x70 /* short jcc */ ||
-        op == 0x0F && (branch[1] & 0xF0) == 0x80 /* jcc */ ||
-        op == 0xC7 && branch[1] == 0xF8 /* xbegin */,
+        (op == 0x0F && (branch[1] & 0xF0) == 0x80) /* jcc */ ||
+        (op == 0xC7 && branch[1] == 0xF8) /* xbegin */,
         "Invalid opcode at patch point");
 
     if (op == 0xEB || (op & 0xF0) == 0x70) {
@@ -877,6 +877,7 @@ public:
 
   void testptr(Register src, int32_t imm32) {  LP64_ONLY(testq(src, imm32)) NOT_LP64(testl(src, imm32)); }
   void testptr(Register src1, Address src2) { LP64_ONLY(testq(src1, src2)) NOT_LP64(testl(src1, src2)); }
+  void testptr(Address src, int32_t imm32) {  LP64_ONLY(testq(src, imm32)) NOT_LP64(testl(src, imm32)); }
   void testptr(Register src1, Register src2);
 
   void xorptr(Register dst, Register src) { LP64_ONLY(xorq(dst, src)) NOT_LP64(xorl(dst, src)); }
@@ -895,6 +896,8 @@ public:
 
   // Emit the CompiledIC call idiom
   void ic_call(address entry, jint method_index = 0);
+  static int ic_check_size();
+  int ic_check(int end_alignment);
 
   void emit_static_call_stub();
 
@@ -1111,6 +1114,10 @@ public:
 
   using Assembler::vbroadcastss;
   void vbroadcastss(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
+
+  // Vector float blend
+  void vblendvps(XMMRegister dst, XMMRegister nds, XMMRegister src, XMMRegister mask, int vector_len, bool compute_mask = true, XMMRegister scratch = xnoreg);
+  void vblendvpd(XMMRegister dst, XMMRegister nds, XMMRegister src, XMMRegister mask, int vector_len, bool compute_mask = true, XMMRegister scratch = xnoreg);
 
   void divsd(XMMRegister dst, XMMRegister    src) { Assembler::divsd(dst, src); }
   void divsd(XMMRegister dst, Address        src) { Assembler::divsd(dst, src); }
@@ -1795,6 +1802,12 @@ public:
   using Assembler::evporq;
   void evporq(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
+  using Assembler::vpshufb;
+  void vpshufb(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
+
+  using Assembler::vpor;
+  void vpor(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
+
   using Assembler::vpternlogq;
   void vpternlogq(XMMRegister dst, int imm8, XMMRegister src2, AddressLiteral src3, int vector_len, Register rscratch = noreg);
 
@@ -2023,8 +2036,8 @@ public:
 
   void check_stack_alignment(Register sp, const char* msg, unsigned bias = 0, Register tmp = noreg);
 
-  void lightweight_lock(Register obj, Register hdr, Register thread, Register tmp, Label& slow);
-  void lightweight_unlock(Register obj, Register hdr, Register tmp, Label& slow);
+  void lightweight_lock(Register obj, Register reg_rax, Register thread, Register tmp, Label& slow);
+  void lightweight_unlock(Register obj, Register reg_rax, Register thread, Register tmp, Label& slow);
 };
 
 /**

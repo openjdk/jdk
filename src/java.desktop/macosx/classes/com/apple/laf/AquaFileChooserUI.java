@@ -744,6 +744,10 @@ public class AquaFileChooserUI extends FileChooserUI {
         public void mouseClicked(final MouseEvent e) {
             if (e.getClickCount() != 2) return;
 
+            if (!getFileChooser().isEnabled()) {
+                return;
+            }
+
             final int index = list.locationToIndex(e.getPoint());
             if (index < 0) return;
 
@@ -1500,6 +1504,9 @@ public class AquaFileChooserUI extends FileChooserUI {
 
         // Instead of dragging, it selects which one to sort by
         public void setDraggedColumn(final TableColumn aColumn) {
+            if (!getFileChooser().isEnabled()) {
+                return;
+            }
             if (aColumn != null) {
                 final int colIndex = aColumn.getModelIndex();
                 if (colIndex != fSortColumn) {
@@ -1839,6 +1846,10 @@ public class AquaFileChooserUI extends FileChooserUI {
 
             // The autoscroller can generate drag events outside the Table's range.
             if ((column == -1) || (row == -1)) { return; }
+
+            if (!getFileChooser().isEnabled()) {
+                return;
+            }
 
             final File clickedFile = (File)(fFileList.getValueAt(row, 0));
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.windows.WindowsAArch64Linker;
 import jdk.internal.foreign.abi.fallback.FallbackLinker;
+import jdk.internal.foreign.abi.ppc64.aix.AixPPC64Linker;
 import jdk.internal.foreign.abi.ppc64.linux.LinuxPPC64Linker;
 import jdk.internal.foreign.abi.ppc64.linux.LinuxPPC64leLinker;
 import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
@@ -62,7 +63,7 @@ import java.util.Set;
 
 public abstract sealed class AbstractLinker implements Linker permits LinuxAArch64Linker, MacOsAArch64Linker,
                                                                       SysVx64Linker, WindowsAArch64Linker,
-                                                                      Windowsx64Linker,
+                                                                      Windowsx64Linker, AixPPC64Linker,
                                                                       LinuxPPC64Linker, LinuxPPC64leLinker,
                                                                       LinuxRISCV64Linker, LinuxS390Linker,
                                                                       FallbackLinker {
@@ -91,7 +92,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         return downcallHandle0(function, options);
     }
 
-    private final MethodHandle downcallHandle0(FunctionDescriptor function, Option... options) {
+    private MethodHandle downcallHandle0(FunctionDescriptor function, Option... options) {
         Objects.requireNonNull(function);
         Objects.requireNonNull(options);
         checkLayouts(function);
@@ -179,6 +180,11 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         }
     }
 
+    // some ABIs have special handling for struct members
+    protected void checkStructMember(MemoryLayout member, long offset) {
+        checkLayoutRecursive(member);
+    }
+
     private void checkLayoutRecursive(MemoryLayout layout) {
         if (layout instanceof ValueLayout vl) {
             checkSupported(vl);
@@ -190,7 +196,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                 // check element offset before recursing so that an error points at the
                 // outermost layout first
                 checkMemberOffset(sl, member, lastUnpaddedOffset, offset);
-                checkLayoutRecursive(member);
+                checkStructMember(member, offset);
 
                 offset += member.byteSize();
                 if (!(member instanceof PaddingLayout)) {
@@ -250,6 +256,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         }
     }
 
+    @SuppressWarnings("restricted")
     private static MemoryLayout stripNames(MemoryLayout ml) {
         // we don't care about transferring alignment and byte order here
         // since the linker already restricts those such that they will always be the same
@@ -258,7 +265,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             case UnionLayout ul -> MemoryLayout.unionLayout(stripNames(ul.memberLayouts()));
             case SequenceLayout sl -> MemoryLayout.sequenceLayout(sl.elementCount(), stripNames(sl.elementLayout()));
             case AddressLayout al -> al.targetLayout()
-                    .map(tl -> al.withoutName().withTargetLayout(stripNames(tl)))
+                    .map(tl -> al.withoutName().withTargetLayout(stripNames(tl))) // restricted
                     .orElseGet(al::withoutName);
             default -> ml.withoutName(); // ValueLayout and PaddingLayout
         };

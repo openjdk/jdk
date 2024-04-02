@@ -120,11 +120,12 @@ void MutableSpace::initialize(MemRegion mr,
     }
 
     if (AlwaysPreTouch) {
+      size_t pretouch_page_size = UseLargePages ? page_size : os::vm_page_size();
       PretouchTask::pretouch("ParallelGC PreTouch head", (char*)head.start(), (char*)head.end(),
-                             page_size, pretouch_workers);
+                             pretouch_page_size, pretouch_workers);
 
       PretouchTask::pretouch("ParallelGC PreTouch tail", (char*)tail.start(), (char*)tail.end(),
-                             page_size, pretouch_workers);
+                             pretouch_page_size, pretouch_workers);
     }
 
     // Remember where we stopped so that we can continue later.
@@ -235,8 +236,19 @@ void MutableSpace::oop_iterate(OopIterateClosure* cl) {
 void MutableSpace::object_iterate(ObjectClosure* cl) {
   HeapWord* p = bottom();
   while (p < top()) {
-    cl->do_object(cast_to_oop(p));
-    p += cast_to_oop(p)->size();
+    oop obj = cast_to_oop(p);
+    // When promotion-failure occurs during Young GC, eden/from space is not cleared,
+    // so we can encounter objects with "forwarded" markword.
+    // They are essentially dead, so skipping them
+    if (!obj->is_forwarded()) {
+      cl->do_object(obj);
+    }
+#ifdef ASSERT
+    else {
+      assert(obj->forwardee() != obj, "must not be self-forwarded");
+    }
+#endif
+    p += obj->size();
   }
 }
 

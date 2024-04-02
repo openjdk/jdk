@@ -248,4 +248,17 @@
     }
   }
 
+  // Is SIMD sort supported for this CPU?
+  static bool supports_simd_sort(BasicType bt) {
+    if (VM_Version::supports_avx512dq()) {
+      return true;
+    }
+    else if (VM_Version::supports_avx2() && !is_double_word_type(bt)) {
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
+
 #endif // CPU_X86_MATCHER_X86_HPP

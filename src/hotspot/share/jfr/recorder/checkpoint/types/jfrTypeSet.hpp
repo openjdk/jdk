@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ class JfrCheckpointWriter;
 
 class JfrTypeSet : AllStatic {
  public:
-  static void clear();
+  static void clear(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer);
   static size_t serialize(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer, bool class_unload, bool flushpoint);
   static size_t on_unloading_classes(JfrCheckpointWriter* writer);
 };

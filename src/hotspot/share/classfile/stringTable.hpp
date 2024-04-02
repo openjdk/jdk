@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_CLASSFILE_STRINGTABLE_HPP
 #define SHARE_CLASSFILE_STRINGTABLE_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/padded.hpp"
 #include "oops/oop.hpp"
 #include "oops/oopHandle.hpp"
@@ -37,15 +37,11 @@ class DumpedInternedStrings;
 class JavaThread;
 class SerializeClosure;
 
-class StringTable;
 class StringTableConfig;
-class StringTableCreateEntry;
 
-class StringTable : public CHeapObj<mtSymbol>{
+class StringTable : AllStatic {
   friend class VMStructs;
-  friend class Symbol;
   friend class StringTableConfig;
-  friend class StringTableCreateEntry;
 
   static volatile bool _has_work;
 
@@ -75,8 +71,6 @@ class StringTable : public CHeapObj<mtSymbol>{
 
   static void print_table_statistics(outputStream* st);
 
-  static bool do_rehash();
-
  public:
   static size_t table_size();
   static TableStatistics get_table_statistics();
@@ -98,16 +92,11 @@ class StringTable : public CHeapObj<mtSymbol>{
   // Rehash the string table if it gets out of balance
 private:
   static bool should_grow();
-
+  static bool maybe_rehash_table();
 public:
-  static bool rehash_table_expects_safepoint_rehashing();
   static void rehash_table();
   static bool needs_rehashing() { return _needs_rehashing; }
-  static inline void update_needs_rehash(bool rehash) {
-    if (rehash) {
-      _needs_rehashing = true;
-    }
-  }
+  static inline void update_needs_rehash(bool rehash);
 
   // Sharing
 #if INCLUDE_CDS_JAVA_HEAP

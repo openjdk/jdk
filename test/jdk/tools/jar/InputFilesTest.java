@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8165944
+ * @bug 8165944 8318971
  * @summary test several jar tool input file scenarios with variations on -C
  *          options with/without a --release option.  Some input files are
  *          duplicates that sometimes cause exceptions and other times do not,
@@ -151,6 +151,84 @@ public class InputFilesTest {
         touch("test1/a test2/a");
         onCompletion = () -> rm("test1 test2");
         jar("cf test.jar --release 9 -C test1 a -C test2 a");
+    }
+
+    /**
+     * Containing non-existent file in the file list
+     * The final jar should not be created and correct error message should be caught.
+     * IOException is triggered as expected.
+     */
+    @Test
+    public void testNonExistentFileInput() throws IOException {
+        touch("existingTestFile.txt");
+        onCompletion = () -> rm("existingTestFile.txt");
+        try {
+            jar("cf test.jar existingTestFile.txt nonExistentTestFile.txt");
+            Assert.fail("jar tool unexpectedly completed successfully");
+        } catch (IOException e) {
+            Assert.assertEquals(e.getMessage().trim(), "nonExistentTestFile.txt : no such file or directory");
+            Assert.assertTrue(Files.notExists(Path.of("test.jar")), "Jar file should not be created.");
+        }
+    }
+
+    /**
+     * With @File as a part of jar command line, where the File is containing one or more
+     * non-existent files or directories
+     * The final jar should not be created and correct error message should be caught.
+     * IOException is triggered as expected.
+     */
+    @Test
+    public void testNonExistentFileInputClassList() throws IOException {
+        touch("existingTestFile.txt");
+        touch("classes.list");
+        Files.writeString(Path.of("classes.list"), """
+                existingTestFile.txt
+                nonExistentTestFile.txt
+                nonExistentDirectory
+                 """);
+        onCompletion = () -> rm("existingTestFile.txt classes.list");
+        try {
+            jar("cf test.jar @classes.list");
+            Assert.fail("jar tool unexpectedly completed successfully");
+        } catch (IOException e) {
+            String msg = e.getMessage().trim();
+            Assert.assertTrue(msg.contains("nonExistentTestFile.txt : no such file or directory"));
+            Assert.assertTrue(msg.trim().contains("nonExistentDirectory : no such file or directory"));
+            Assert.assertTrue(Files.notExists(Path.of("test.jar")), "Jar file should not be created.");
+        }
+
+    }
+
+    /**
+     * Create a jar file; then with @File as a part of jar command line, where the File is containing one or more
+     * non-existent files or directories
+     * The final jar should not be created and correct error message should be caught.
+     * IOException is triggered as expected.
+     */
+    @Test
+    public void testUpdateNonExistentFileInputClassList() throws IOException {
+        touch("existingTestFileUpdate.txt");
+        touch("existingTestFileUpdate2.txt");
+        touch("classesUpdate.list");
+        Files.writeString(Path.of("classesUpdate.list"), """
+                existingTestFileUpdate2.txt
+                nonExistentTestFileUpdate.txt
+                nonExistentDirectoryUpdate
+                 """);
+        onCompletion = () -> rm("existingTestFileUpdate.txt existingTestFileUpdate2.txt " +
+                "classesUpdate.list testUpdate.jar");
+        try {
+            jar("cf testUpdate.jar existingTestFileUpdate.txt");
+            Assert.assertTrue(Files.exists(Path.of("testUpdate.jar")));
+            jar("uf testUpdate.jar @classesUpdate.list");
+            Assert.fail("jar tool unexpectedly completed successfully");
+        } catch (IOException e) {
+            String msg = e.getMessage().trim();
+            Assert.assertFalse(msg.contains("existingTestFileUpdate.txt : no such file or directory"));
+            Assert.assertTrue(msg.contains("nonExistentTestFileUpdate.txt : no such file or directory"));
+            Assert.assertTrue(msg.trim().contains("nonExistentDirectoryUpdate : no such file or directory"));
+        }
+
     }
 
     private Stream<Path> mkpath(String... args) {

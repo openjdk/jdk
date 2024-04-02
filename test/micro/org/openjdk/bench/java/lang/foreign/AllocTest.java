@@ -65,26 +65,23 @@ public class AllocTest extends CLayouts {
 
     @Benchmark
     public MemorySegment alloc_confined() {
-        Arena arena = Arena.ofConfined();
-        MemorySegment segment = arena.allocate(size);
-        arena.close();
-        return segment;
+        try (Arena arena = Arena.ofConfined()) {
+            return arena.allocate(size);
+        }
     }
 
     @Benchmark
     public long alloc_calloc_arena() {
-        CallocArena arena = new CallocArena();
-        MemorySegment segment = arena.allocate(size);
-        arena.close();
-        return segment.address();
+        try (CallocArena arena = new CallocArena()) {
+            return arena.allocate(size).address();
+        }
     }
 
     @Benchmark
     public long alloc_unsafe_arena() {
-        UnsafeArena arena = new UnsafeArena();
-        MemorySegment segment = arena.allocate(size);
-        arena.close();
-        return segment.address();
+        try (UnsafeArena arena = new UnsafeArena()) {
+            return arena.allocate(size).address();
+        }
     }
 
     public static class CallocArena implements Arena {

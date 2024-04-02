@@ -27,20 +27,16 @@ import java.util.*;
 import java.lang.constant.*;
 import java.nio.file.Paths;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.*;
 
 /*
  * @test
  * @bug 6888367
  * @summary classfile library parses signature attributes incorrectly
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  */
 
 /*
@@ -156,7 +152,7 @@ public class T6888367 {
     ClassModel getClassFile(String name) throws IOException, URISyntaxException {
         URL rsc = getClass().getResource(name + ".class");
         assert rsc != null;
-        return Classfile.of().parse(Paths.get(rsc.toURI()));
+        return ClassFile.of().parse(Paths.get(rsc.toURI()));
     }
 
     AnnotValues getDescValue(AttributedElement m) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,14 +61,14 @@ public class XCheckJSig {
             throw new RuntimeException("File libjsig not found, path: " + libjsig);
         }
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xcheck:jni", "-version");
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xcheck:jni", "-version");
         Map<String, String> env = pb.environment();
         env.put(env_var, libjsig);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("libjsig is activated");
         output.shouldHaveExitValue(0);
 
-        pb = ProcessTools.createJavaProcessBuilder("-Xcheck:jni", "-verbose:jni", "-version");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xcheck:jni", "-verbose:jni", "-version");
         env = pb.environment();
         env.put(env_var, libjsig);
         output = new OutputAnalyzer(pb.start());

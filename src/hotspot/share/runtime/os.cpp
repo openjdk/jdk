@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "interpreter/interpreter.hpp"
@@ -39,10 +39,15 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/mallocHeader.inline.hpp"
+#include "nmt/mallocTracker.hpp"
+#include "nmt/memTracker.inline.hpp"
+#include "nmt/nmtCommon.hpp"
+#include "nmt/nmtPreInit.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvmtiAgent.hpp"
 #include "prims/jvm_misc.hpp"
+#include "prims/jvmtiAgent.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
@@ -63,11 +68,6 @@
 #include "runtime/vm_version.hpp"
 #include "sanitizers/address.hpp"
 #include "services/attachListener.hpp"
-#include "services/mallocTracker.hpp"
-#include "services/mallocHeader.inline.hpp"
-#include "services/memTracker.inline.hpp"
-#include "services/nmtPreInit.hpp"
-#include "services/nmtCommon.hpp"
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
@@ -630,7 +630,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
   if (NMTPreInit::handle_malloc(&rc, size)) {
-    // No need to fill with 0 because DumpSharedSpaces doesn't use these
+    // No need to fill with 0 because CDS static dumping doesn't use these
     // early allocations.
     return rc;
   }
@@ -661,7 +661,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
   void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, memflags, stack);
 
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive()) {
     // Need to deterministically fill all the alignment gaps in C++ structures.
     ::memset(inner_ptr, 0, size);
   } else {
@@ -1104,10 +1104,11 @@ void os::print_summary_info(outputStream* st, char* buf, size_t buflen) {
   st->cr();
 }
 
+static constexpr int secs_per_day  = 86400;
+static constexpr int secs_per_hour = 3600;
+static constexpr int secs_per_min  = 60;
+
 void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
-  const int secs_per_day  = 86400;
-  const int secs_per_hour = 3600;
-  const int secs_per_min  = 60;
 
   time_t tloc;
   (void)time(&tloc);
@@ -1133,9 +1134,15 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
   }
 
   double t = os::elapsedTime();
+  st->print(" elapsed time: ");
+  print_elapsed_time(st, t);
+  st->cr();
+}
+
+void os::print_elapsed_time(outputStream* st, double time) {
   // NOTE: a crash using printf("%f",...) on Linux was historically noted here.
-  int eltime = (int)t;  // elapsed time in seconds
-  int eltimeFraction = (int) ((t - eltime) * 1000000);
+  int eltime = (int)time;  // elapsed time in seconds
+  int eltimeFraction = (int) ((time - eltime) * 1000000);
 
   // print elapsed time in a human-readable format:
   int eldays = eltime / secs_per_day;
@@ -1145,7 +1152,7 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
   int elmins = (eltime - day_secs - hour_secs) / secs_per_min;
   int minute_secs = elmins * secs_per_min;
   int elsecs = (eltime - day_secs - hour_secs - minute_secs);
-  st->print_cr(" elapsed time: %d.%06d seconds (%dd %dh %dm %ds)", eltime, eltimeFraction, eldays, elhours, elmins, elsecs);
+  st->print("%d.%06d seconds (%dd %dh %dm %ds)", eltime, eltimeFraction, eldays, elhours, elmins, elsecs);
 }
 
 
@@ -1281,7 +1288,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   st->print_cr(INTPTR_FORMAT " is an unknown value", p2i(addr));
 }
 
-bool is_pointer_bad(intptr_t* ptr) {
+static bool is_pointer_bad(intptr_t* ptr) {
   return !is_aligned(ptr, sizeof(uintptr_t)) || !os::is_readable_pointer(ptr);
 }
 
@@ -1804,20 +1811,22 @@ char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
   char* result = pd_reserve_memory(bytes, executable);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC, flags);
+    log_debug(os, map)("Reserved " RANGEFMT, RANGEFMTARGS(result, bytes));
+  } else {
+    log_info(os, map)("Reserve failed (%zu bytes)", bytes);
   }
   return result;
 }
 
-char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable) {
-  char* result = pd_attempt_reserve_memory_at(addr, bytes, executable);
+char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable, MEMFLAGS flag) {
+  char* result = SimulateFullAddressSpace ? nullptr : pd_attempt_reserve_memory_at(addr, bytes, executable);
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
-    log_debug(os)("Reserved memory at " INTPTR_FORMAT " for " SIZE_FORMAT " bytes.", p2i(addr), bytes);
+    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC, flag);
+    log_debug(os, map)("Reserved " RANGEFMT, RANGEFMTARGS(result, bytes));
   } else {
-    log_debug(os)("Attempt to reserve memory at " INTPTR_FORMAT " for "
-                 SIZE_FORMAT " bytes failed, errno %d", p2i(addr), bytes, get_last_error());
+    log_info(os, map)("Attempt to reserve " RANGEFMT " failed",
+                      RANGEFMTARGS(addr, bytes));
   }
-
   return result;
 }
 
@@ -1873,10 +1882,10 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
   // we attempt to minimize fragmentation.
   constexpr unsigned total_shuffle_threshold = 1024;
 
-#define ARGSFMT " range [" PTR_FORMAT "-" PTR_FORMAT "), size " SIZE_FORMAT_X ", alignment " SIZE_FORMAT_X ", randomize: %d"
+#define ARGSFMT "range [" PTR_FORMAT "-" PTR_FORMAT "), size " SIZE_FORMAT_X ", alignment " SIZE_FORMAT_X ", randomize: %d"
 #define ARGSFMTARGS p2i(min), p2i(max), bytes, alignment, randomize
 
-  log_trace(os, map) ("reserve_between (" ARGSFMT ")", ARGSFMTARGS);
+  log_debug(os, map) ("reserve_between (" ARGSFMT ")", ARGSFMTARGS);
 
   assert(is_power_of_2(alignment), "alignment invalid (" ARGSFMT ")", ARGSFMTARGS);
   assert(alignment < SIZE_MAX / 2, "alignment too large (" ARGSFMT ")", ARGSFMTARGS);
@@ -1886,7 +1895,16 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
   char* const absolute_max = (char*)(NOT_LP64(G * 3) LP64_ONLY(G * 128 * 1024));
   char* const absolute_min = (char*) os::vm_min_address();
 
-  const size_t alignment_adjusted = MAX2(alignment, os::vm_allocation_granularity());
+  // AIX is the only platform that uses System V shm for reserving virtual memory.
+  // In this case, the required alignment of the allocated size (64K) and the alignment
+  // of possible start points of the memory region (256M) differ.
+  // This is not reflected by os_allocation_granularity().
+  // The logic here is dual to the one in pd_reserve_memory in os_aix.cpp
+  const size_t system_allocation_granularity =
+    AIX_ONLY(os::vm_page_size() == 4*K ? 4*K : 256*M)
+    NOT_AIX(os::vm_allocation_granularity());
+
+  const size_t alignment_adjusted = MAX2(alignment, system_allocation_granularity);
 
   // Calculate first and last possible attach points:
   char* const lo_att = align_up(MAX2(absolute_min, min), alignment_adjusted);
@@ -1986,7 +2004,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     const unsigned candidate_offset = points[i];
     char* const candidate = lo_att + candidate_offset * alignment_adjusted;
     assert(candidate <= hi_att, "Invalid offset %u (" ARGSFMT ")", candidate_offset, ARGSFMTARGS);
-    result = os::pd_attempt_reserve_memory_at(candidate, bytes, false);
+    result = SimulateFullAddressSpace ? nullptr : os::pd_attempt_reserve_memory_at(candidate, bytes, false);
     if (!result) {
       log_trace(os, map)("Failed to attach at " PTR_FORMAT, p2i(candidate));
     }
@@ -2004,6 +2022,8 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     log_trace(os, map)(ERRFMT, ERRFMTARGS);
     log_debug(os, map)("successfully attached at " PTR_FORMAT, p2i(result));
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+  } else {
+    log_debug(os, map)("failed to attach anywhere in [" PTR_FORMAT "-" PTR_FORMAT ")", p2i(min), p2i(max));
   }
   return result;
 #undef ARGSFMT
@@ -2022,6 +2042,9 @@ bool os::commit_memory(char* addr, size_t bytes, bool executable) {
   bool res = pd_commit_memory(addr, bytes, executable);
   if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
+    log_debug(os, map)("Committed " RANGEFMT, RANGEFMTARGS(addr, bytes));
+  } else {
+    log_info(os, map)("Failed to commit " RANGEFMT, RANGEFMTARGS(addr, bytes));
   }
   return res;
 }
@@ -2032,6 +2055,9 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
   bool res = os::pd_commit_memory(addr, size, alignment_hint, executable);
   if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
+    log_debug(os, map)("Committed " RANGEFMT, RANGEFMTARGS(addr, size));
+  } else {
+    log_info(os, map)("Failed to commit " RANGEFMT, RANGEFMTARGS(addr, size));
   }
   return res;
 }
@@ -2054,14 +2080,21 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
-    Tracker tkr(Tracker::uncommit);
+    ThreadCritical tc;
     res = pd_uncommit_memory(addr, bytes, executable);
     if (res) {
-      tkr.record((address)addr, bytes);
+      MemTracker::record_virtual_memory_uncommit((address)addr, bytes);
     }
   } else {
     res = pd_uncommit_memory(addr, bytes, executable);
   }
+
+  if (res) {
+    log_debug(os, map)("Uncommitted " RANGEFMT, RANGEFMTARGS(addr, bytes));
+  } else {
+    log_info(os, map)("Failed to uncommit " RANGEFMT, RANGEFMTARGS(addr, bytes));
+  }
+
   return res;
 }
 
@@ -2069,17 +2102,18 @@ bool os::release_memory(char* addr, size_t bytes) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
-    // Note: Tracker contains a ThreadCritical.
-    Tracker tkr(Tracker::release);
+    ThreadCritical tc;
     res = pd_release_memory(addr, bytes);
     if (res) {
-      tkr.record((address)addr, bytes);
+      MemTracker::record_virtual_memory_release((address)addr, bytes);
     }
   } else {
     res = pd_release_memory(addr, bytes);
   }
   if (!res) {
-    log_info(os)("os::release_memory failed (" PTR_FORMAT ", " SIZE_FORMAT ")", p2i(addr), bytes);
+    log_info(os, map)("Failed to release " RANGEFMT, RANGEFMTARGS(addr, bytes));
+  } else {
+    log_debug(os, map)("Released " RANGEFMT, RANGEFMTARGS(addr, bytes));
   }
   return res;
 }
@@ -2105,33 +2139,37 @@ void os::pretouch_memory(void* start, void* end, size_t page_size) {
     // We're doing concurrent-safe touch and memory state has page
     // granularity, so we can touch anywhere in a page.  Touch at the
     // beginning of each page to simplify iteration.
-    char* cur = static_cast<char*>(align_down(start, page_size));
+    void* first = align_down(start, page_size);
     void* last = align_down(static_cast<char*>(end) - 1, page_size);
-    assert(cur <= last, "invariant");
-    // Iterate from first page through last (inclusive), being careful to
-    // avoid overflow if the last page abuts the end of the address range.
-    for ( ; true; cur += page_size) {
-      Atomic::add(reinterpret_cast<int*>(cur), 0, memory_order_relaxed);
-      if (cur >= last) break;
+    assert(first <= last, "invariant");
+    const size_t pd_page_size = pd_pretouch_memory(first, last, page_size);
+    if (pd_page_size > 0) {
+      // Iterate from first page through last (inclusive), being careful to
+      // avoid overflow if the last page abuts the end of the address range.
+      last = align_down(static_cast<char*>(end) - 1, pd_page_size);
+      for (char* cur = static_cast<char*>(first); /* break */; cur += pd_page_size) {
+        Atomic::add(reinterpret_cast<int*>(cur), 0, memory_order_relaxed);
+        if (cur >= last) break;
+      }
     }
   }
 }
 
-char* os::map_memory_to_file(size_t bytes, int file_desc) {
+char* os::map_memory_to_file(size_t bytes, int file_desc, MEMFLAGS flag) {
   // Could have called pd_reserve_memory() followed by replace_existing_mapping_with_file_mapping(),
   // but AIX may use SHM in which case its more trouble to detach the segment and remap memory to the file.
   // On all current implementations null is interpreted as any available address.
   char* result = os::map_memory_to_file(nullptr /* addr */, bytes, file_desc);
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve_and_commit(result, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve_and_commit(result, bytes, CALLER_PC, flag);
   }
   return result;
 }
 
-char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc) {
+char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc, MEMFLAGS flag) {
   char* result = pd_attempt_map_memory_to_file_at(addr, bytes, file_desc);
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, flag);
   }
   return result;
 }
@@ -2146,20 +2184,13 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
   return result;
 }
 
-char* os::remap_memory(int fd, const char* file_name, size_t file_offset,
-                             char *addr, size_t bytes, bool read_only,
-                             bool allow_exec) {
-  return pd_remap_memory(fd, file_name, file_offset, addr, bytes,
-                    read_only, allow_exec);
-}
-
 bool os::unmap_memory(char *addr, size_t bytes) {
   bool result;
   if (MemTracker::enabled()) {
-    Tracker tkr(Tracker::release);
+    ThreadCritical tc;
     result = pd_unmap_memory(addr, bytes);
     if (result) {
-      tkr.record((address)addr, bytes);
+      MemTracker::record_virtual_memory_release((address)addr, bytes);
     }
   } else {
     result = pd_unmap_memory(addr, bytes);
@@ -2184,6 +2215,9 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
   if (result != nullptr) {
     // The memory is committed
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, size, CALLER_PC);
+    log_debug(os, map)("Reserved and committed " RANGEFMT, RANGEFMTARGS(result, size));
+  } else {
+    log_info(os, map)("Reserve and commit failed (%zu bytes)", size);
   }
 
   return result;
@@ -2192,11 +2226,10 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
 bool os::release_memory_special(char* addr, size_t bytes) {
   bool res;
   if (MemTracker::enabled()) {
-    // Note: Tracker contains a ThreadCritical.
-    Tracker tkr(Tracker::release);
+    ThreadCritical tc;
     res = pd_release_memory_special(addr, bytes);
     if (res) {
-      tkr.record((address)addr, bytes);
+      MemTracker::record_virtual_memory_release((address)addr, bytes);
     }
   } else {
     res = pd_release_memory_special(addr, bytes);

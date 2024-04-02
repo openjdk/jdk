@@ -22,8 +22,8 @@
  */
 package org.openjdk.bench.jdk.classfile;
 
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Mode;
@@ -39,7 +39,7 @@ public class ParseOptions extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void transformNoDebug(Blackhole bh) {
-        var cc = Classfile.of(Classfile.DebugElementsOption.DROP_DEBUG);
+        var cc = ClassFile.of(ClassFile.DebugElementsOption.DROP_DEBUG);
         for (byte[] aClass : classes) {
             ClassModel cm = cc.parse(aClass);
             bh.consume(cc.transform(cm, threeLevelNoop));
@@ -49,7 +49,7 @@ public class ParseOptions extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void transformNoStackmap(Blackhole bh) {
-        var cc = Classfile.of(Classfile.StackMapsOption.DROP_STACK_MAPS);
+        var cc = ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS);
         for (byte[] aClass : classes) {
             ClassModel cm = cc.parse(aClass);
             bh.consume(cc.transform(cm, threeLevelNoop));
@@ -59,7 +59,7 @@ public class ParseOptions extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void transformNoLineNumbers(Blackhole bh) {
-        var cc = Classfile.of(Classfile.LineNumbersOption.DROP_LINE_NUMBERS);
+        var cc = ClassFile.of(ClassFile.LineNumbersOption.DROP_LINE_NUMBERS);
         for (byte[] aClass : classes) {
             ClassModel cm = cc.parse(aClass);
             bh.consume(cc.transform(cm, threeLevelNoop));

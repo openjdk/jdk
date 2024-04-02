@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,69 +194,6 @@ public final class WToolkit extends SunToolkit implements Runnable {
             log.fine("Win version: " + getWindowsVersion());
         }
     }
-
-    /*
-     * NOTE: The following embedded*() methods are non-public API intended
-     * for internal use only.  The methods are unsupported and could go
-     * away in future releases.
-     *
-     * New hook functions for using the AWT as an embedded service. These
-     * functions replace the global C function AwtInit() which was previously
-     * exported by awt.dll.
-     *
-     * When used as an embedded service, the AWT does NOT have its own
-     * message pump. It instead relies on the parent application to provide
-     * this functionality. embeddedInit() assumes that the thread on which it
-     * is called is the message pumping thread. Violating this assumption
-     * will lead to undefined behavior.
-     *
-     * embeddedInit must be called before the WToolkit() constructor.
-     * embeddedDispose should be called before the application terminates the
-     * Java VM. It is currently unsafe to reinitialize the toolkit again
-     * after it has been disposed. Instead, awt.dll must be reloaded and the
-     * class loader which loaded WToolkit must be finalized before it is
-     * safe to reuse AWT. Dynamic reusability may be added to the toolkit in
-     * the future.
-     */
-
-    /**
-     * Initializes the Toolkit for use in an embedded environment.
-     *
-     * @return true if the initialization succeeded; false if it failed.
-     *         The function will fail if the Toolkit was already initialized.
-     * @since 1.3
-     */
-    public static native boolean embeddedInit();
-
-    /**
-     * Disposes the Toolkit in an embedded environment. This method should
-     * not be called on exit unless the Toolkit was constructed with
-     * embeddedInit.
-     *
-     * @return true if the disposal succeeded; false if it failed. The
-     *         function will fail if the calling thread is not the same
-     *         thread which called embeddedInit(), or if the Toolkit was
-     *         already disposed.
-     * @since 1.3
-     */
-    public static native boolean embeddedDispose();
-
-    /**
-     * To be called after processing the event queue by users of the above
-     * embeddedInit() function.  The reason for this additional call is that
-     * there are some operations performed during idle time in the AwtToolkit
-     * event loop which should also be performed during idle time in any
-     * other native event loop.  Failure to do so could result in
-     * deadlocks.
-     *
-     * This method was added at the last minute of the jdk1.4 release
-     * to work around a specific customer problem.  As with the above
-     * embedded*() class, this method is non-public and should not be
-     * used by external applications.
-     *
-     * See bug #4526587 for more information.
-     */
-    public native void embeddedEventLoopIdleProcessing();
 
     static class ToolkitDisposer implements sun.java2d.DisposerRecord {
         @Override

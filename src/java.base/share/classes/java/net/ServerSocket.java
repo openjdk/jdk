@@ -266,6 +266,7 @@ public class ServerSocket implements java.io.Closeable {
      * @see SecurityManager#checkListen
      * @since   1.1
      */
+    @SuppressWarnings("this-escape")
     public ServerSocket(int port, int backlog, InetAddress bindAddr) throws IOException {
         if (port < 0 || port > 0xFFFF)
             throw new IllegalArgumentException("Port value out of range: " + port);

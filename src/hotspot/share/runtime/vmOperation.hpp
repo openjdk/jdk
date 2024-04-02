@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@
 #define VM_OPS_DO(template)                       \
   template(Halt)                                  \
   template(SafepointALot)                         \
-  template(Cleanup)                               \
   template(ThreadDump)                            \
   template(PrintThreads)                          \
   template(FindDeadlocks)                         \
@@ -81,8 +80,6 @@
   template(GetObjectMonitorUsage)                 \
   template(GetAllStackTraces)                     \
   template(GetThreadListStackTraces)              \
-  template(VirtualThreadGetStackTrace)            \
-  template(VirtualThreadGetFrameCount)            \
   template(ChangeBreakpoints)                     \
   template(GetOrSetLocal)                         \
   template(VirtualThreadGetOrSetLocal)            \
@@ -108,6 +105,8 @@
   template(ClassLoaderHierarchyOperation)         \
   template(DumpHashtable)                         \
   template(CleanClassLoaderDataMetaspaces)        \
+  template(RehashStringTable)                     \
+  template(RehashSymbolTable)                     \
   template(PrintCompileQueue)                     \
   template(PrintClassHierarchy)                   \
   template(PrintClasses)                          \

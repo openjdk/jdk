@@ -86,6 +86,7 @@ import jdk.dynalink.linker.support.Guards;
  * throw an exception of the designated type. The guard, the switch points, and
  * the exception type are all optional (a guarded invocation having none of them
  * is unconditionally valid).
+ * @since 9
  */
 public class GuardedInvocation {
     private final MethodHandle invocation;

@@ -171,6 +171,11 @@ public class Enter extends JCTree.Visitor {
      */
     ListBuffer<ClassSymbol> uncompleted;
 
+    /** The queue of classes that should have typeEnter completer installed after
+     *  all the classes are discovered.
+     */
+    List<ClassSymbol> pendingCompleter = null;
+
     /** The queue of modules whose imports still need to be checked. */
     ListBuffer<JCCompilationUnit> unfinishedModules = new ListBuffer<>();
 
@@ -201,7 +206,6 @@ public class Enter extends JCTree.Visitor {
             env.dup(tree, env.info.dup(WriteableScope.create(tree.sym)));
         localEnv.enclClass = tree;
         localEnv.outer = env;
-        localEnv.info.isSelfCall = false;
         localEnv.info.lint = null; // leave this to be filled in by Attr,
                                    // when annotations have been processed
         localEnv.info.isAnonymousDiamond = TreeInfo.isDiamond(env.tree);
@@ -254,7 +258,6 @@ public class Enter extends JCTree.Visitor {
             env.dup(tree, env.info.dup(WriteableScope.create(tree.sym)));
         localEnv.enclClass = predefClassDef;
         localEnv.outer = env;
-        localEnv.info.isSelfCall = false;
         localEnv.info.lint = null; // leave this to be filled in by Attr,
                                    // when annotations have been processed
         return localEnv;
@@ -439,7 +442,7 @@ public class Enter extends JCTree.Visitor {
                 log.error(tree.pos(),
                           Errors.ClassPublicShouldBeInFile(topElement, tree.name));
             }
-            if ((tree.mods.flags & UNNAMED_CLASS) != 0) {
+            if ((tree.mods.flags & IMPLICIT_CLASS) != 0) {
                 syms.removeClass(env.toplevel.modle, tree.name);
             }
         } else {
@@ -524,8 +527,12 @@ public class Enter extends JCTree.Visitor {
         ct.typarams_field = classEnter(tree.typarams, localEnv);
         ct.allparams_field = null;
 
-        // install further completer for this type.
-        c.completer = typeEnter;
+        // schedule installation of further completer for this type.
+        if (pendingCompleter != null) {
+            pendingCompleter = pendingCompleter.prepend(c);
+        } else {
+            c.completer = typeEnter;
+        }
 
         // Add non-local class to uncompleted, to make sure it will be
         // completed later.
@@ -604,8 +611,18 @@ public class Enter extends JCTree.Visitor {
         if (typeEnter.completionEnabled) uncompleted = new ListBuffer<>();
 
         try {
-            // enter all classes, and construct uncompleted list
-            classEnter(trees, null);
+            List<ClassSymbol> prevPendingCompleter = pendingCompleter;
+            try {
+                pendingCompleter = List.nil();
+                // enter all classes, and construct uncompleted list
+                classEnter(trees, null);
+                // install further completer for classes recognized by the above task:
+                for (ClassSymbol sym : pendingCompleter) {
+                    sym.completer = typeEnter;
+                }
+            } finally {
+                pendingCompleter = prevPendingCompleter;
+            }
 
             // complete all uncompleted classes in memberEnter
             if (typeEnter.completionEnabled) {

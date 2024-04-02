@@ -137,7 +137,10 @@ public class SocketEventOverhead {
             try {
                 nbytes = write0();
             } finally {
-                SocketWriteEvent.offer(start, nbytes, getRemoteAddress());
+                long duration = start - SocketWriteEvent.timestamp();
+                if (SocketWriteEvent.shouldCommit(duration)) {
+                    SocketWriteEvent.emit(start, duration, nbytes, getRemoteAddress());
+                }
             }
             return nbytes;
         }
@@ -155,7 +158,10 @@ public class SocketEventOverhead {
             try {
                 nbytes = read0();
             } finally {
-                SocketReadEvent.offer(start, nbytes, getRemoteAddress(), 0);
+                long duration = start - SocketReadEvent.timestamp();
+                if (SocketReadEvent.shouldCommit(duration)) {
+                    SocketReadEvent.emit(start, duration, nbytes, getRemoteAddress(), 0);
+                }
             }
             return nbytes;
         }

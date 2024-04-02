@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ public class NonSerializableTest {
                                           Paths.get(System.getProperty("user.dir")));
         assertTrue(b, "Compilation failed");
         String params[] = Arrays.copyOfRange(args, 1, args.length);
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(params);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(params);
         Process p = ProcessTools.startProcess("Serializable Test", pb);
         int exitValue = p.waitFor();
         assertEquals(exitValue, 0, "Test failed");
