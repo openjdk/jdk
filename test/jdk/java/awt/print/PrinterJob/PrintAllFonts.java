@@ -70,6 +70,8 @@ public class PrintAllFonts implements Printable {
         pj.setPrintable(new PrintAllFonts());
         if (pj.printDialog()) {
             pj.print();
+        } else {
+            PassFailJFrame.forceFail("User cancelled printing");
         }
         passFailJFrame.awaitAndCheck();
     }

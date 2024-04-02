@@ -63,8 +63,7 @@ public class ValidatePage extends Frame implements Printable {
     Label myImageableHeightLabel;
     Label myOrientationLabel;
 
-    private static String GetOrientation(int o)
-    {
+    private static String GetOrientation(int o) {
         return switch (o) {
             case PageFormat.PORTRAIT -> "PORTRAIT";
             case PageFormat.LANDSCAPE -> "LANDSCAPE";
