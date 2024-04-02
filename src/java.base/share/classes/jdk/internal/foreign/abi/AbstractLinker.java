@@ -38,6 +38,7 @@ import jdk.internal.foreign.abi.s390.linux.LinuxS390Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
 import jdk.internal.foreign.layout.AbstractLayout;
+import jdk.internal.foreign.layout.LayoutTransformer;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
@@ -256,19 +257,11 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         }
     }
 
-    @SuppressWarnings("restricted")
     private static MemoryLayout stripNames(MemoryLayout ml) {
         // we don't care about transferring alignment and byte order here
         // since the linker already restricts those such that they will always be the same
-        return switch (ml) {
-            case StructLayout sl -> MemoryLayout.structLayout(stripNames(sl.memberLayouts()));
-            case UnionLayout ul -> MemoryLayout.unionLayout(stripNames(ul.memberLayouts()));
-            case SequenceLayout sl -> MemoryLayout.sequenceLayout(sl.elementCount(), stripNames(sl.elementLayout()));
-            case AddressLayout al -> al.targetLayout()
-                    .map(tl -> al.withoutName().withTargetLayout(stripNames(tl))) // restricted
-                    .orElseGet(al::withoutName);
-            default -> ml.withoutName(); // ValueLayout and PaddingLayout
-        };
+        return LayoutTransformer.stripNames()
+                .deepTransform(ml);
     }
 
     private static MemoryLayout[] stripNames(List<MemoryLayout> layouts) {
