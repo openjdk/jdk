@@ -64,7 +64,8 @@ public class CompactSubFormats {
     public void recognizedCompactStylesTest() {
         // An exception won't be thrown since 'compact_regular' will be interpreted as a
         // subformatPattern.
-        assertEquals(new DecimalFormat("compact_regular"),
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
+        assertEquals(new DecimalFormat("compact_regular", symbols),
                 new MessageFormat("{0,number,compact_regular}", Locale.US).getFormatsByArgumentIndex()[0]);
     }
 
