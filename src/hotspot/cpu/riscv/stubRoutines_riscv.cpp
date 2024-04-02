@@ -57,7 +57,7 @@ address StubRoutines::riscv::_large_byte_array_inflate = nullptr;
 bool StubRoutines::riscv::_completed = false;
 
 /**
- *  crc_table[] from jdk/src/share/native/java/util/zip/zlib-1.2.5/crc32.h
+ *  crc_table[] from jdk/src/java.base/share/native/libzip/zlib/crc32.h
  */
 ATTRIBUTE_ALIGNED(4096) juint StubRoutines::riscv::_crc_table[] =
 {
