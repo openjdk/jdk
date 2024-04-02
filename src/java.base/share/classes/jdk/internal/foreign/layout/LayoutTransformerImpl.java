@@ -27,7 +27,6 @@
 package jdk.internal.foreign.layout;
 
 import jdk.internal.ValueBased;
-import jdk.internal.foreign.abi.AbstractLinker;
 
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.GroupLayout;
@@ -155,16 +154,16 @@ public final class LayoutTransformerImpl<T extends MemoryLayout>
                 .toArray(MemoryLayout[]::new);
     }
 
-    static final LayoutTransformer<MemoryLayout> STRIP_NAMES =
-            LayoutTransformer.of(MemoryLayout.class, LayoutTransformerImpl::stripMemberName);
+    static final LayoutTransformer<MemoryLayout> REMOVE_NAME =
+            LayoutTransformer.of(MemoryLayout.class, LayoutTransformerImpl::removeMemberName);
 
     @SuppressWarnings("restricted")
-    private static MemoryLayout stripMemberName(MemoryLayout vl) {
+    private static MemoryLayout removeMemberName(MemoryLayout vl) {
         return switch (vl) {
             case AddressLayout al -> al.targetLayout()
-                    .map(tl -> al.withoutName().withTargetLayout(STRIP_NAMES.deepTransform(tl))) // restricted
+                    .map(tl -> al.withoutName().withTargetLayout(REMOVE_NAME.deepTransform(tl))) // restricted
                     .orElseGet(al::withoutName);
-            default -> vl.withoutName(); // ValueLayout and PaddingLayout
+            default -> vl.withoutName();
         };
     }
 

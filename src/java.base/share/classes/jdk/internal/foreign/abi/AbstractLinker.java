@@ -260,7 +260,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     private static MemoryLayout stripNames(MemoryLayout ml) {
         // we don't care about transferring alignment and byte order here
         // since the linker already restricts those such that they will always be the same
-        return LayoutTransformer.stripNames()
+        return LayoutTransformer.removeName()
                 .deepTransform(ml);
     }
 

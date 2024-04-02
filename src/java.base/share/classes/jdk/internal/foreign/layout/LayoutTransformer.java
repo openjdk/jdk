@@ -75,8 +75,8 @@ public sealed interface LayoutTransformer<T extends MemoryLayout>
     /**
      * {@return a transformer that will remove all member names in memory layouts}
      */
-    static LayoutTransformer<MemoryLayout> stripNames() {
-        return LayoutTransformerImpl.STRIP_NAMES;
+    static LayoutTransformer<MemoryLayout> removeName() {
+        return LayoutTransformerImpl.REMOVE_NAME;
     }
 
     /**
