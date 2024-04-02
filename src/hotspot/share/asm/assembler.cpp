@@ -56,6 +56,7 @@ AbstractAssembler::AbstractAssembler(CodeBuffer* code) {
 void AbstractAssembler::set_code_section(CodeSection* cs) {
   assert(cs->outer() == code_section()->outer(), "sanity");
   assert(cs->is_allocated(), "need to pre-allocate this section");
+  flush_pending();
   cs->clear_mark();  // new assembly into this section kills old mark
   _code_section = cs;
 }

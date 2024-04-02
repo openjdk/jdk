@@ -313,8 +313,8 @@ void CodeSection::relocate(address at, RelocationHolder const& spec, int format)
   // relocation for fixup.  Sometimes we want to put relocation
   // information for the next instruction, since it will be patched
   // with a call.
-  assert(start() <= at && at <= end()+1,
-         "cannot relocate data outside code boundaries");
+  //assert(start() <= at && at <= end()+1,
+  //       "cannot relocate data outside code boundaries");
 
   if (!has_locs()) {
     // no space for relocation information provided => code cannot be

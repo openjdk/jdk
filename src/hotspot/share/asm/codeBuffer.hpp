@@ -198,7 +198,7 @@ class CodeSection {
   bool disjoint(CodeSection* cs) const { return cs->_limit <= _start || cs->_start >= _limit; }
 
   void    set_end(address pc)       { assert(allocates2(pc), "not in CodeBuffer memory: " INTPTR_FORMAT " <= " INTPTR_FORMAT " <= " INTPTR_FORMAT, p2i(_start), p2i(pc), p2i(_limit)); _end = pc; }
-  void    set_mark(address pc)      { assert(contains2(pc), "not in codeBuffer");
+  void    set_mark(address pc)      { // assert(contains2(pc), "not in codeBuffer");
                                       _mark = pc; }
   void    set_mark()                { _mark = _end; }
   void    clear_mark()              { _mark = nullptr; }

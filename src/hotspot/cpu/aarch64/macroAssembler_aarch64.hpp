@@ -148,6 +148,7 @@ class MacroAssembler: public Assembler {
   }
 
   void bind(Label& L) {
+    reset_fsm();
     Assembler::bind(L);
     code()->clear_last_insn();
     code()->set_last_label(pc());

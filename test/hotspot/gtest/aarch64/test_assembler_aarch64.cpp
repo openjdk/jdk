@@ -53,6 +53,7 @@ static void asm_check(const unsigned int *insns, const unsigned int *insns1, siz
 
 TEST_VM(AssemblerAArch64, validate) {
   // Smoke test for assembler
+  ResourceMark rm;
   BufferBlob* b = BufferBlob::create("aarch64Test", 500000);
   CodeBuffer code(b);
   Assembler _masm(&code);
@@ -91,6 +92,7 @@ static void asm_dump(address start, address end) {
 }
 
 TEST_VM(AssemblerAArch64, merge_dmb) {
+  ResourceMark rm;
   BufferBlob* b = BufferBlob::create("aarch64Test", 400);
   CodeBuffer code(b);
   MacroAssembler _masm(&code);
@@ -153,6 +155,7 @@ TEST_VM(AssemblerAArch64, merge_dmb) {
 }
 
 TEST_VM(AssemblerAArch64, merge_dmb_block_by_label) {
+  ResourceMark rm;
   BufferBlob* b = BufferBlob::create("aarch64Test", 400);
   CodeBuffer code(b);
   MacroAssembler _masm(&code);
@@ -196,6 +199,7 @@ TEST_VM(AssemblerAArch64, merge_dmb_after_expand) {
 }
 
 TEST_VM(AssemblerAArch64, merge_ldst) {
+  ResourceMark rm;
   BufferBlob* b = BufferBlob::create("aarch64Test", 400);
   CodeBuffer code(b);
   MacroAssembler _masm(&code);
