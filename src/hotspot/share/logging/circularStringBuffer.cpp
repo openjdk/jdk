@@ -124,17 +124,16 @@ void CircularStringBuffer::enqueue_locked(const char* str, size_t size, LogFileS
 
   if (not_enough_memory()) {
     if (_should_stall) {
-      auto stall_for_memory = [&]() {
-        while (not_enough_memory()) {
-          _producer_lock.wait(0);
-        }
-      };
       Thread* thread = Thread::current_or_null();
       if (thread != nullptr && thread->is_Java_thread()) {
         ThreadBlockInVM tbivm(JavaThread::cast(thread));
-        stall_for_memory();
+        while (not_enough_memory()) {
+          _producer_lock.wait(0);
+        }
       } else {
-        stall_for_memory();
+        while (not_enough_memory()) {
+          _producer_lock.wait(0);
+        }
       }
     } else {
       _stats_lock.lock();
