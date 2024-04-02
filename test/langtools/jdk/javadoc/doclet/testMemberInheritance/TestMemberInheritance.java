@@ -133,7 +133,7 @@ public class TestMemberInheritance extends JavadocTester {
                     <div class="col-first even-row-color method-summary-table method-summary-table-tab2 m\
                     ethod-summary-table-tab3"><code>protected abstract java.lang.String</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-tab2 \
-                    method-summary-table-tab3"><code><a href="#parentMethod(java.lang.String)" class="member-name-link">\
+                    method-summary-table-tab3"><code><a href="#parentMethod(T)" class="member-name-link">\
                     parentMethod</a><wbr>(java.lang.String&nbsp;t)</code></div>
                     <div class="col-last even-row-color method-summary-table method-summary-table-tab2 me\
                     thod-summary-table-tab3">
@@ -142,8 +142,8 @@ public class TestMemberInheritance extends JavadocTester {
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
                 """
-                    <section class="detail" id="parentMethod(java.lang.String)">
-                    <h3>parentMethod</h3>
+                    <section class="detail" id="parentMethod(T)">
+                    <h3 id="parentMethod(java.lang.Object)">parentMethod</h3>
                     <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">protected abstract</span>&\
                     nbsp;<span class="return-type">java.lang.String</span>&nbsp;<span class="element\
@@ -185,11 +185,11 @@ public class TestMemberInheritance extends JavadocTester {
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
                     ab2 method-summary-table-tab4"><code>java.lang.String</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
-                    tab2 method-summary-table-tab4"><code><a href="#method(java.lang.String)" class="member-name-li\
+                    tab2 method-summary-table-tab4"><code><a href="#method(T)" class="member-name-li\
                     nk">method</a><wbr>(java.lang.String&nbsp;t)</code></div>""",
                 """
-                    <section class="detail" id="method(java.lang.String)">
-                    <h3>method</h3>
+                    <section class="detail" id="method(T)">
+                    <h3 id="method(java.lang.Object)">method</h3>
                     <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type">java.lang.String</span>&nbsp;<span class="element-name">metho\
@@ -207,7 +207,7 @@ public class TestMemberInheritance extends JavadocTester {
                     </dd>
                     """,
                 """
-                    <dt><a href="pkg2/DocumentedNonGenericChild.html#parentMethod(java.lang.String)" class="member-\
+                    <dt><a href="pkg2/DocumentedNonGenericChild.html#parentMethod(T)" class="member-\
                     name-link">parentMethod(String)</a> - Method in class pkg2.<a href="pkg2/Documen\
                     tedNonGenericChild.html" title="class in pkg2">DocumentedNonGenericChild</a></dt>
                     <dd>
@@ -217,7 +217,7 @@ public class TestMemberInheritance extends JavadocTester {
                 """
                     {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentField"}""",
                 """
-                    {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentMethod(String)","u":"parentMethod(java.lang.String)"}""");
+                    {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentMethod(String)","u":"parentMethod(T)"}""");
         checkOutput("tag-search-index.js", true,
                 """
                     {"l":"inherited search tag","h":"pkg2.UndocumentedGenericParent.parentMethod(Str\
@@ -236,8 +236,8 @@ public class TestMemberInheritance extends JavadocTester {
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
                 """
-                    <section class="detail" id="parentMethod(java.lang.String)">
-                    <h3>parentMethod</h3>
+                    <section class="detail" id="parentMethod(T)">
+                    <h3 id="parentMethod(java.lang.Object)">parentMethod</h3>
                     <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">protected abstract</span>&\
                     nbsp;<span class="return-type">java.lang.String</span>&nbsp;<span class="element\
@@ -259,7 +259,7 @@ public class TestMemberInheritance extends JavadocTester {
                     </dd>
                     """,
                 """
-                    <dt><a href="../pkg2/DocumentedNonGenericChild.html#parentMethod(java.lang.String)" class="memb\
+                    <dt><a href="../pkg2/DocumentedNonGenericChild.html#parentMethod(T)" class="memb\
                     er-name-link">parentMethod(String)</a> - Method in class pkg2.<a href="../pkg2/D\
                     ocumentedNonGenericChild.html" title="class in pkg2">DocumentedNonGenericChild</a></dt>
                     <dd>
@@ -269,7 +269,7 @@ public class TestMemberInheritance extends JavadocTester {
                 """
                     {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentField"}""",
                 """
-                    {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentMethod(String)","u":"parentMethod(java.lang.String)"}""");
+                    {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentMethod(String)","u":"parentMethod(T)"}""");
         checkOutput("tag-search-index.js", true,
                 """
                     {"l":"inherited search tag","h":"pkg2.UndocumentedGenericParent.parentMethod(Str\

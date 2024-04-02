@@ -151,7 +151,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     arameter in TypeParameters">E</a>[]</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#methodThatReturnsTypeParameterA(\
-                    java.lang.Object%5B%5D)" class="member-name-link">methodThatReturnsTypeParameterA</a><wbr>(<a h\
+                    E%5B%5D)" class="member-name-link">methodThatReturnsTypeParameterA</a><wbr>(<a h\
                     ref="TypeParameters.html" title="type parameter in TypeParameters">E</a>[]&nbsp;\
                     e)</code>""",
                 """
@@ -264,7 +264,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     /a></span></div>""",
                 """
                     <div class="col-second even-row-color"><span class="type-name-label">ClassUseTes\
-                    t1.</span><code><a href="../ClassUseTest1.html#method(pkg2.Foo)" class="member-name-lin\
+                    t1.</span><code><a href="../ClassUseTest1.html#method(T)" class="member-name-lin\
                     k">method</a><wbr>(T&nbsp;t)</code></div>""",
                 """
                     <div class="caption"><span>Fields in <a href="../package-summary.html">pkg2</a>\
@@ -303,7 +303,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     >Foo2</a></span></div>""",
                 """
                     <div class="col-second even-row-color"><span class="type-name-label">ClassUseTes\
-                    t1.</span><code><a href="../ClassUseTest1.html#method(pkg2.Foo)" class="member-name-lin\
+                    t1.</span><code><a href="../ClassUseTest1.html#method(T)" class="member-name-lin\
                     k">method</a><wbr>(T&nbsp;t)</code></div>"""
         );
 
@@ -324,7 +324,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     ">ParamTest</a></span></div>""",
                 """
                     <div class="col-second even-row-color"><span class="type-name-label">ClassUseTes\
-                    t2.</span><code><a href="../ClassUseTest2.html#method(pkg2.ParamTest)" class="member-name-lin\
+                    t2.</span><code><a href="../ClassUseTest2.html#method(T)" class="member-name-lin\
                     k">method</a><wbr>(T&nbsp;t)</code></div>""",
                 """
                     <div class="caption"><span>Fields in <a href="../package-summary.html">pkg2</a>\
@@ -362,7 +362,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     3</a></span></div>""",
                 """
                     <div class="col-second even-row-color"><span class="type-name-label">ClassUseTes\
-                    t2.</span><code><a href="../ClassUseTest2.html#method(pkg2.ParamTest)" class="member-name-lin\
+                    t2.</span><code><a href="../ClassUseTest2.html#method(T)" class="member-name-lin\
                     k">method</a><wbr>(T&nbsp;t)</code></div>""",
                 """
                     <div class="caption"><span>Methods in <a href="../package-summary.html">pkg2</a\
@@ -394,7 +394,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     2">ParamTest2</a></span></div>""",
                 """
                     <div class="col-second even-row-color"><span class="type-name-label">ClassUseTes\
-                    t3.</span><code><a href="../ClassUseTest3.html#method(pkg2.ParamTest2)" class="member-name-lin\
+                    t3.</span><code><a href="../ClassUseTest3.html#method(T)" class="member-name-lin\
                     k">method</a><wbr>(T&nbsp;t)</code></div>""",
                 """
                     <div class="col-first even-row-color"><code>&lt;T extends <a href="../ParamTest2.htm\
@@ -421,7 +421,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     4</a></span></div>""",
                 """
                     <div class="col-second even-row-color"><span class="type-name-label">ClassUseTes\
-                    t3.</span><code><a href="../ClassUseTest3.html#method(pkg2.ParamTest2)" class="member-name-lin\
+                    t3.</span><code><a href="../ClassUseTest3.html#method(T)" class="member-name-lin\
                     k">method</a><wbr>(T&nbsp;t)</code></div>""",
                 """
                     <div class="caption"><span>Methods in <a href="../package-summary.html">pkg2</a\

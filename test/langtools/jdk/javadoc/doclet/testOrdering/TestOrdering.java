@@ -139,7 +139,7 @@ public class TestOrdering extends JavadocTester {
                     "../MethodOrder.html#m(long)",
                     "../MethodOrder.html#m(long,long)",
                     "../MethodOrder.html#m(long,java.lang.Long)",
-                    "../MethodOrder.html#m(long,java.lang.Long%5B%5D)",
+                    "../MethodOrder.html#m(long,java.lang.Long...)",
                     "../MethodOrder.html#m(java.lang.Double)",
                     "../MethodOrder.html#m(java.lang.Double,double)",
                     "../MethodOrder.html#m(java.lang.Double,java.lang.Double)",

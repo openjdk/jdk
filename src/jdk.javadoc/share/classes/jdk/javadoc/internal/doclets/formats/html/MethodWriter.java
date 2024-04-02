@@ -116,7 +116,7 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
                 buildTagInfo(div);
                 methodContent.add(div);
                 memberList.add(writer.getMemberListItem(methodContent));
-                writer.tableOfContents.addLink(htmlIds.forMember(typeElement, currentMethod),
+                writer.tableOfContents.addLink(htmlIds.forMember(currentMethod),
                         Text.of(utils.getSimpleName(method)
                                 + utils.makeSignature(currentMethod, typeElement, false, true)));
             }
@@ -204,9 +204,15 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
         Content content = new ContentBuilder();
         var heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 Text.of(name(method)));
+        HtmlId memberAnchor = htmlIds.forMember(method);
+        HtmlId erasureAnchor = htmlIds.forErasure(method);
+        if (erasureAnchor != null
+                && !erasureAnchor.name().equals(memberAnchor.name())) {
+            heading.setId(erasureAnchor);
+        }
         content.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, content)
-                .setId(htmlIds.forMember(typeElement, method));
+                .setId(htmlIds.forMember(method));
     }
 
     protected Content getSignature(ExecutableElement method) {
@@ -371,7 +377,7 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
         var codeOverriddenTypeLink = HtmlTree.CODE(overriddenTypeLink);
         Content methlink = writer.getLink(
                 new HtmlLinkInfo(writer.configuration, HtmlLinkInfo.Kind.PLAIN, holder)
-                        .fragment(writer.htmlIds.forMember((TypeElement) utils.typeUtils.asElement(overriddenType), method).name())
+                        .fragment(writer.htmlIds.forMember(method).name())
                         .label(method.getSimpleName()));
         var codeMethLink = HtmlTree.CODE(methlink);
         var dd = HtmlTree.DD(codeMethLink);

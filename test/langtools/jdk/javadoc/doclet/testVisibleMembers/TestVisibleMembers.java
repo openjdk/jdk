@@ -317,7 +317,7 @@ public class TestVisibleMembers extends JavadocTester {
                 "METHOD DETAIL",
                 "default", "void", "forEach", "java.util.function.Consumer",
                 "java.lang.Long", "action",
-                "Do you see me", "QLong.html#forEach(java.lang.Object)",
+                "Do you see me", "QLong.html#forEach(Q)",
                 "QLong.forEach(LongConsumer)",
                 "END OF CLASS DATA");
 

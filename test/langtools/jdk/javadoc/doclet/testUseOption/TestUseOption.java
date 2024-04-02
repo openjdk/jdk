@@ -121,7 +121,7 @@ public class TestUseOption extends JavadocTester {
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
             """
-                <a href="../C10.html#addAll(pkg1.UsedInterface%5B%5D)" class="member-name-link">addAll</a>"""
+                <a href="../C10.html#addAll(pkg1.UsedInterface...)" class="member-name-link">addAll</a>"""
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
             """

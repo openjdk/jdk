@@ -63,7 +63,7 @@ public class TestSeeTag extends JavadocTester {
                 <li><a href="Test.InnerOne.html#bar(java.lang.Object)"><code>Test.InnerOne.bar(Object)</code></a></li>
                 <li><a href="http://docs.oracle.com/javase/7/docs/technotes/tools/windows/javadoc.html#see">Javadoc</a></li>
                 <li><a href="Test.InnerOne.html#baz(float)">something</a></li>
-                <li><a href="Test.InnerOne.html#format(java.lang.String,java.lang.Object%5B%5D)"><code>\
+                <li><a href="Test.InnerOne.html#format(java.lang.String,java.lang.Object...)"><code>\
                 Test.InnerOne.format(java.lang.String, java.lang.Object...)</code></a></li>
                 </ul>
                 </dd>

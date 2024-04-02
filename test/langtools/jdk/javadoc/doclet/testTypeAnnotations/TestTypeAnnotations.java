@@ -578,7 +578,7 @@ public class TestTypeAnnotations extends JavadocTester {
 
         checkOutput("typeannos/RepeatingOnConstructor.Inner.html", true,
                 """
-                    <code><a href="#%3Cinit%3E(java.lang.String,java.lang.String%5B%5D)" class="member-\
+                    <code><a href="#%3Cinit%3E(java.lang.String,java.lang.String...)" class="member-\
                     name-link">Inner</a><wbr>(java.lang.String&nbsp;parameter,
                      java.lang.String <a href="RepTypeUseA.html" title="annotation interface in typeannos">@Rep\
                     TypeUseA</a> <a href="RepTypeUseA.html" title="annotation interface in typeannos">@RepType\
@@ -750,7 +750,7 @@ public class TestTypeAnnotations extends JavadocTester {
 
                 """
                     <code><a href="#test5(java.lang.String,java.lang.\
-                    String%5B%5D)" class="member-name-link">test5</a><wbr>(java.lang.String&nbsp;parameter,
+                    String...)" class="member-name-link">test5</a><wbr>(java.lang.String&nbsp;parameter,
                      java.lang.String <a href="RepTypeUseA.html" title="annotation interface in typeannos">@Re\
                     pTypeUseA</a> <a href="RepTypeUseA.html" title="annotation interface in typeannos">@RepTyp\
                     eUseA</a> <a href="RepTypeUseB.html" title="annotation interface in typeannos">@RepTypeUse\
@@ -823,13 +823,13 @@ public class TestTypeAnnotations extends JavadocTester {
                 """
                     <code>(package private) &lt;T&gt;&nbsp;java.lang.String</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
-                    tab2 method-summary-table-tab4"><code><a href="#genericMethod(java.lang.Object)" class="member-\
+                    tab2 method-summary-table-tab4"><code><a href="#genericMethod(T)" class="member-\
                     name-link">genericMethod</a><wbr>(T&nbsp;t)</code>""",
 
                 """
                     <code>(package private) &lt;T&gt;&nbsp;java.lang.String</code></div>
                     <div class="col-second odd-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4"><code><a href="#genericMethod2(java.lang.Object)" class="member-\
+                    ab2 method-summary-table-tab4"><code><a href="#genericMethod2(T)" class="member-\
                     name-link">genericMethod2</a><wbr>(<a href="RepTypeUseA.html" title="annotation \
                     interface in typeannos">@RepTypeUseA</a> <a href="RepTypeUseA.html" title="annot\
                     ation interface in typeannos">@RepTypeUseA</a> <a href="RepTypeUseB.html" title=\

@@ -231,6 +231,17 @@ public abstract class AbstractMemberWriter {
      */
     private void buildMainSummary(List<Content> summaryTreeList) {
         Set<? extends Element> members = asSortedSet(visibleMemberTable.getVisibleMembers(kind));
+        // preprocess for links
+        switch (kind) {
+            case CONSTRUCTORS, METHODS -> {
+                for (var m : members) {
+                    // nit picking: constructors are not members, see JLS 8.2. Class Members
+                    htmlIds.register(typeElement, (ExecutableElement) m);
+                }
+                htmlIds.endRegistration(typeElement, kind == CONSTRUCTORS ?
+                        ElementKind.CONSTRUCTOR : ElementKind.METHOD);
+            }
+        }
         if (!members.isEmpty()) {
             var pHelper = writer.getPropertyHelper();
             for (Element member : members) {

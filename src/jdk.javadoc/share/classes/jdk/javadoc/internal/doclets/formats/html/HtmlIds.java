@@ -25,19 +25,23 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.SequencedSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.SimpleTypeVisitor9;
@@ -161,6 +165,26 @@ public class HtmlIds {
     }
 
     /**
+     * Returns an id for an executable element, suitable for use when the
+     * simple name and argument list will be unique within the page, such as
+     * in the page for the declaration of the enclosing class or interface.
+     *
+     * @param element the element
+     *
+     * @return the id
+     */
+    HtmlId forMember(ExecutableElement element) {
+        return forExecutable((TypeElement) element.getEnclosingElement(), element);
+    }
+
+    private HtmlId forMember0(ExecutableElement element) {
+        String a = element.getSimpleName()
+                        + utils.makeSignature(element, null, true, true);
+        // utils.makeSignature includes spaces
+        return HtmlId.of(a.replaceAll("\\s", ""));
+    }
+
+    /**
      * Returns an id for an executable element, including the context
      * of its documented enclosing class or interface.
      *
@@ -170,7 +194,7 @@ public class HtmlIds {
      * @return the id
      */
     HtmlId forMember(TypeElement typeElement, ExecutableElement member) {
-        return HtmlId.of(forErasure(typeElement, member).replaceAll("\\s", ""));
+        return HtmlId.of(utils.getSimpleName(member) + utils.signature(member, typeElement));
     }
 
     /**
@@ -205,33 +229,63 @@ public class HtmlIds {
     }
 
     /**
-     * Returns a string id for the erasure of an executable element.
+     * Returns an id for the erasure of an executable element,
+     * or {@code null} if there are no type variables in the signature.
      *
-     * @param executable the element to anchor to
+     * For backward compatibility, include an anchor using the erasures of the
+     * parameters.  NOTE:  We won't need this method anymore after we fix
+     * {@code @see} tags so that they use the type instead of the erasure.
+     *
+     * @param executableElement the element to anchor to
+     * @return the 1.4.x style anchor for the executable element
      */
-    private String forErasure(TypeElement site, ExecutableElement executable) {
-        var parameterTypes = ((ExecutableType) utils.typeUtils
-                .erasure(utils.asInstantiatedMethodType(site, executable)))
-                .getParameterTypes();
-        var stv = new SimpleTypeVisitor9<String, Void>() {
-            @Override
-            public String visitArray(ArrayType t, Void p) {
-                return visit(t.getComponentType()) + utils.getDimension(t);
+    protected HtmlId forErasure(ExecutableElement executableElement) {
+        final StringBuilder buf = new StringBuilder(executableElement.getSimpleName().toString());
+        buf.append("(");
+        List<? extends VariableElement> parameters = executableElement.getParameters();
+        boolean foundTypeVariable = false;
+        for (int i = 0; i < parameters.size(); i++) {
+            if (i > 0) {
+                buf.append(",");
             }
+            TypeMirror t = parameters.get(i).asType();
+            SimpleTypeVisitor9<Boolean, Void> stv = new SimpleTypeVisitor9<>() {
+                boolean foundTypeVariable = false;
 
-            @Override
-            public String visitDeclared(DeclaredType t, Void p) {
-                return utils.getQualifiedTypeName(t);
-            }
+                @Override
+                public Boolean visitArray(ArrayType t, Void p) {
+                    visit(t.getComponentType());
+                    buf.append(utils.getDimension(t));
+                    return foundTypeVariable;
+                }
 
-            @Override
-            public String defaultAction(TypeMirror e, Void p) {
-                return String.valueOf(e);
+                @Override
+                public Boolean visitTypeVariable(TypeVariable t, Void p) {
+                    buf.append(utils.asTypeElement(t).getQualifiedName().toString());
+                    foundTypeVariable = true;
+                    return foundTypeVariable;
+                }
+
+                @Override
+                public Boolean visitDeclared(DeclaredType t, Void p) {
+                    buf.append(utils.getQualifiedTypeName(t));
+                    return foundTypeVariable;
+                }
+
+                @Override
+                protected Boolean defaultAction(TypeMirror e, Void p) {
+                    buf.append(e);
+                    return foundTypeVariable;
+                }
+            };
+
+            boolean isTypeVariable = stv.visit(t);
+            if (!foundTypeVariable) {
+                foundTypeVariable = isTypeVariable;
             }
-        };
-        return executable.getSimpleName() + parameterTypes.stream()
-                .map(stv::visit)
-                .collect(Collectors.joining(",", "(", ")"));
+        }
+        buf.append(")");
+        return foundTypeVariable ? HtmlId.of(buf.toString()) : null;
     }
 
     /**
@@ -439,7 +493,7 @@ public class HtmlIds {
      */
     public HtmlId forPreviewSection(Element el) {
         return HtmlId.of("preview-" + switch (el.getKind()) {
-            case CONSTRUCTOR, METHOD -> forMember((TypeElement) el.getEnclosingElement(), (ExecutableElement) el).name(); // fixme?
+            case CONSTRUCTOR, METHOD -> forMember((ExecutableElement) el).name();
             case PACKAGE -> forPackage((PackageElement) el).name();
             default -> utils.getFullyQualifiedName(el, false);
         });
@@ -453,7 +507,7 @@ public class HtmlIds {
      * @return the id
      */
     public HtmlId forRestrictedSection(ExecutableElement el) {
-        return HtmlId.of("restricted-" + forMember((TypeElement) el.getEnclosingElement(), el).name()); // fixme?
+        return HtmlId.of("restricted-" + forMember(el).name());
     }
 
     /**
@@ -490,5 +544,99 @@ public class HtmlIds {
             idValue = idValue + counter;
         }
         return HtmlId.of(idValue);
+    }
+
+    private final Map<TypeElement, Map<ExecutableElement, String>> ids = new HashMap<>();
+    /*
+     * This map is transient in a sense that it keeps its elements until
+     * the registration is over. The order of the elements is important
+     * for reproducibility of ids.
+     */
+    private final Map<Key, Optional<SequencedSet<ExecutableElement>>> registered = new HashMap<>();
+    /*
+     * Registration key to differentiate between methods and constructors,
+     * whose registration ends at different times.
+     */
+    private record Key(TypeElement typeElement, ElementKind elementKind) { }
+
+    /*
+     * Returns an id to a constructor or a method, from a centralised
+     * registry. Use to get an anchor to a constructor or method.
+     *
+     * The primary goal is to provide coordination, not cache.
+     */
+    private HtmlId forExecutable(TypeElement t, ExecutableElement e) {
+        var map = ids.get(t);
+        if (map != null) {
+            assert !map.isEmpty();
+            String name = map.get(e);
+            // name == null can happen when a link is processed before the
+            // page/element-type it refers to. For example, a class constructor
+            // can @link to a class method which has not been registered yet
+            // (because methods of a class are registered after the constructors
+            // of that class).
+            if (name != null)
+                return HtmlId.of(name);
+        }
+        // must be an external @link/@see, which might be processed before the
+        // methods from the page it links to has been registered; cannot do
+        // much about it, unless all constructors and methods register before
+        // even the first page is generated -- something to think about (i.e.
+        // "TODO")
+        return forMember0(e);
+    }
+
+    public void register(TypeElement t, ExecutableElement e) {
+        var opt = registered.computeIfAbsent(new Key(t, e.getKind()),
+                t_ -> Optional.of(new LinkedHashSet<>()));
+        if (opt.isEmpty())
+            throw new IllegalStateException("Registration for " + t + " has ended");
+        else
+            opt.get().add(e);
+    }
+
+    /*
+     * Declares that there won't be any more executable elements (of the
+     * specified kind) registered for the specified type element.
+     */
+    public void endRegistration(TypeElement t, ElementKind k) {
+        var prev = registered.put(new Key(t, k), Optional.empty());
+        if (prev == null)
+            return;
+        var map = ids.computeIfAbsent(t, t_ -> new HashMap<>());
+        var dups = new HashSet<>();
+        // Use simple id, unless we have to use erased id; for that, do the
+        // following _in order_:
+        // 1. Map all elements that can _only_ be addressed by the simple id
+        for (var e : prev.get()) {
+            if (forErasure(e) == null) {
+                var id = forMember0(e).name();
+                map.put(e, id);
+                boolean added = dups.add(id);
+                // we assume that the simple id for an executable member that
+                // does not use type parameters is unique
+                assert added;
+            }
+        }
+        // 2. Map all elements that can be addressed by simple id or erased id;
+        // if the simple id is not yet used, use it, otherwise use the erased id
+        for (var e : prev.get()) {
+            var erasure = forErasure(e);
+            if (erasure != null) {
+                var simpleId = forMember0(e).name();
+                if (dups.add(simpleId)) {
+                    map.put(e, simpleId);
+                } else {
+                    map.put(e, erasure.name());
+                    boolean added = dups.add(erasure.name());
+                    // Not only must an erased id not clash with any simple id,
+                    // but it must also not clash with any other erased id.
+                    // The latter is because JLS 8.4.2. Method Signature:
+                    // it is a compile-time error to declare two methods
+                    // with override-equivalent signatures in a class
+                    assert added;
+                }
+            }
+        }
     }
 }

@@ -192,7 +192,7 @@ public class TestErasure extends JavadocTester {
                 <div class="table-header col-first">Constructor</div>
                 <div class="table-header col-last">Description</div>
                 <div class="col-constructor-name even-row-color"><code>\
-                <a href="#%3Cinit%3E(java.lang.Object)" class="member-name-link">Foo</a>\
+                <a href="#%3Cinit%3E(T)" class="member-name-link">Foo</a>\
                 <wbr>(<a href="Foo.html" title="type parameter in Foo">T</a>&nbsp;arg)</code></div>
                 <div class="col-last even-row-color">&nbsp;</div>
                 <div class="col-constructor-name odd-row-color"><code>\
@@ -203,26 +203,26 @@ public class TestErasure extends JavadocTester {
         checkOutput("Foo.html", true, """
                 <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
                 <ol class="toc-list">
-                <li><a href="#%3Cinit%3E(java.lang.Object)" tabindex="0">Foo(T)</a></li>
+                <li><a href="#%3Cinit%3E(T)" tabindex="0">Foo(T)</a></li>
                 <li><a href="#%3Cinit%3E(X)" tabindex="0">Foo(T)</a></li>
                 </ol>
                 </li>""");
         checkOutput("index-all.html", true, """
-                <dt><a href="Foo.html#%3Cinit%3E(java.lang.Object)" class="member-name-link">Foo(T)</a>\
+                <dt><a href="Foo.html#%3Cinit%3E(T)" class="member-name-link">Foo(T)</a>\
                  - Constructor for class <a href="Foo.html" title="class in Unnamed Package">Foo</a></dt>
                 <dd>&nbsp;</dd>
                 <dt><a href="Foo.html#%3Cinit%3E(X)" class="member-name-link">Foo(T)</a>\
                  - Constructor for class <a href="Foo.html" title="class in Unnamed Package">Foo</a></dt>
                 <dd>&nbsp;</dd>""");
         checkOutput("member-search-index.js", true, """
-                {"p":"<Unnamed>","c":"Foo","l":"Foo(T)","u":"%3Cinit%3E(java.lang.Object)"},\
+                {"p":"<Unnamed>","c":"Foo","l":"Foo(T)","u":"%3Cinit%3E(T)"},\
                 {"p":"<Unnamed>","c":"Foo","l":"Foo(T)","u":"%3Cinit%3E(X)"}""");
         // methods
         checkOutput("Foo.html", true, """
                 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 \
                 method-summary-table-tab3"><code>abstract <a href="Foo.html" title="type parameter in Foo">T</a></code></div>
                 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 \
-                method-summary-table-tab3"><code><a href="#m(java.lang.Object)" class="member-name-link">m</a>\
+                method-summary-table-tab3"><code><a href="#m(T)" class="member-name-link">m</a>\
                 <wbr>(<a href="Foo.html" title="type parameter in Foo">T</a>&nbsp;arg)</code></div>
                 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 \
                 method-summary-table-tab3">&nbsp;</div>
@@ -235,19 +235,19 @@ public class TestErasure extends JavadocTester {
         checkOutput("Foo.html", true, """
                 <li><a href="#method-detail" tabindex="0">Method Details</a>
                 <ol class="toc-list">
-                <li><a href="#m(java.lang.Object)" tabindex="0">m(T)</a></li>
+                <li><a href="#m(T)" tabindex="0">m(T)</a></li>
                 <li><a href="#m(X)" tabindex="0">m(T)</a></li>
                 </ol>
                 </li>""");
         checkOutput("index-all.html", true, """
-                <dt><a href="Foo.html#m(java.lang.Object)" class="member-name-link">m(T)</a>\
+                <dt><a href="Foo.html#m(T)" class="member-name-link">m(T)</a>\
                  - Method in class <a href="Foo.html" title="class in Unnamed Package">Foo</a></dt>
                 <dd>&nbsp;</dd>
                 <dt><a href="Foo.html#m(X)" class="member-name-link">m(T)</a>\
                  - Method in class <a href="Foo.html" title="class in Unnamed Package">Foo</a></dt>
                 <dd>&nbsp;</dd>""");
         checkOutput("member-search-index.js", true, """
-                {"p":"<Unnamed>","c":"Foo","l":"m(T)","u":"m(java.lang.Object)"},\
+                {"p":"<Unnamed>","c":"Foo","l":"m(T)"},\
                 {"p":"<Unnamed>","c":"Foo","l":"m(T)","u":"m(X)"}""");
     }
 
@@ -357,8 +357,8 @@ public class TestErasure extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("preview-list.html", true, """
                 <div class="col-summary-item-name even-row-color method method-tab1">\
-                <a href="java.base/p/Foo.html#m(p.X)">p.Foo.m<wbr>(T)</a><sup>\
-                <a href="java.base/p/Foo.html#preview-m(p.X)">PREVIEW</a></sup></div>
+                <a href="java.base/p/Foo.html#m(T)">p.Foo.m<wbr>(T)</a><sup>\
+                <a href="java.base/p/Foo.html#preview-m(T)">PREVIEW</a></sup></div>
                 <div class="col-second even-row-color method method-tab1">Test Feature</div>
                 <div class="col-last even-row-color method method-tab1"></div>
                 <div class="col-summary-item-name odd-row-color method method-tab1">\
@@ -368,8 +368,8 @@ public class TestErasure extends JavadocTester {
                 <div class="col-last odd-row-color method method-tab1"></div>""");
         checkOutput("preview-list.html", true, """
                 <div class="col-summary-item-name even-row-color constructor constructor-tab1">\
-                <a href="java.base/p/Foo.html#%3Cinit%3E(p.X)">p.Foo<wbr>(T)</a><sup>\
-                <a href="java.base/p/Foo.html#preview-%3Cinit%3E(p.X)">PREVIEW</a></sup></div>
+                <a href="java.base/p/Foo.html#%3Cinit%3E(T)">p.Foo<wbr>(T)</a><sup>\
+                <a href="java.base/p/Foo.html#preview-%3Cinit%3E(T)">PREVIEW</a></sup></div>
                 <div class="col-second even-row-color constructor constructor-tab1">Test Feature</div>
                 <div class="col-last even-row-color constructor constructor-tab1"></div>
                 <div class="col-summary-item-name odd-row-color constructor constructor-tab1">\
