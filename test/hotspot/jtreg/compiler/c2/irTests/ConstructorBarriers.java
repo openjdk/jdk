@@ -34,71 +34,262 @@ import compiler.lib.ir_framework.*;
  * @run main compiler.c2.irTests.ConstructorBarriers
  */
 public class ConstructorBarriers {
-    private static class ClassBasic {
-        int field;
-        public ClassBasic(int i) { field = i; }
-    }
-    private static class ClassWithFinal {
-        final int field;
-        public ClassWithFinal(int i) { field = i; }
-    }
-    private static class ClassWithVolatile {
-        volatile int field;
-        public ClassWithVolatile(int i) { field = i; }
-    }
-
     public static void main(String[] args) {
         TestFramework.run();
     }
 
+    // Checks the barrier coalescing/optimization around field initializations.
+    // Uses long fields to avoid store merging.
+
+    public static class PlainPlain {
+        long f1;
+        long f2;
+        public PlainPlain(long i) {
+            f1 = i;
+            f2 = i;
+        }
+    }
+
+    private static class FinalPlain {
+        final long f1;
+        long f2;
+        public FinalPlain(long i) {
+            f1 = i;
+            f2 = i;
+        }
+    }
+
+    private static class PlainFinal {
+        long f1;
+        final long f2;
+        public PlainFinal(long i) {
+            f1 = i;
+            f2 = i;
+        }
+    }
+
+    private static class FinalFinal {
+        final long f1;
+        final long f2;
+        public FinalFinal(long i) {
+            f1 = i;
+            f2 = i;
+        }
+    }
+
+    private static class PlainVolatile {
+        long f1;
+        volatile long f2;
+        public PlainVolatile(long i) {
+            f1 = i;
+            f2 = i;
+        }
+    }
+
+    private static class VolatilePlain {
+        volatile long f1;
+        long f2;
+        public VolatilePlain(long i) {
+            f1 = i;
+            f2 = i;
+        }
+    }
+
+    private static class FinalVolatile {
+        final long f1;
+        volatile long f2;
+        public FinalVolatile(long i) {
+            f1 = i;
+            f2 = i;
+        }
+    }
+
+    private static class VolatileFinal {
+        volatile long f1;
+        final long f2;
+        public VolatileFinal(long i) {
+            f1 = i;
+            f2 = i;
+        }
+    }
+
+    private static class VolatileVolatile {
+        volatile long f1;
+        volatile long f2;
+        public VolatileVolatile(long i) {
+            f1 = i;
+            f2 = i;
+        }
+    }
+
+    long l = 42;
+
+    @DontInline
+    public void consume(Object o) {}
+
     @Test
-    @Arguments(values = {Argument.RANDOM_EACH})
-    @IR(failOn = IRNode.MEMBAR_RELEASE)
     @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
-    public Object classBasic(int i) {
-        return new ClassBasic(i);
-    }
-
-    @Test
-    @Arguments(values = {Argument.RANDOM_EACH})
-    @IR(failOn = IRNode.MEMBAR_RELEASE)
-    @IR(failOn = IRNode.MEMBAR_STORESTORE)
-    public int classBasicNoEscape(int i) {
-        return new ClassBasic(i).field;
-    }
-
-    @Test
-    @Arguments(values = {Argument.RANDOM_EACH})
-    @IR(failOn = IRNode.MEMBAR_RELEASE)
-    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
-    public Object classWithFinal(int i) {
-        return new ClassWithFinal(i);
-    }
-
-    @Test
-    @Arguments(values = {Argument.RANDOM_EACH})
-    @IR(failOn = IRNode.MEMBAR_RELEASE)
-    @IR(failOn = IRNode.MEMBAR_STORESTORE)
-    public int classWithFinalNoEscape(int i) {
-        return new ClassWithFinal(i).field;
-    }
-
-    @Test
-    @Arguments(values = {Argument.RANDOM_EACH})
-    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
-    @IR(counts = {IRNode.MEMBAR_RELEASE, "1"})
-    @IR(counts = {IRNode.MEMBAR_VOLATILE, "1"})
-    public Object classWithVolatile(int i) {
-        return new ClassWithVolatile(i);
-    }
-
-    @Test
-    @Arguments(values = {Argument.RANDOM_EACH})
-    @IR(failOn = IRNode.MEMBAR_STORESTORE)
     @IR(failOn = IRNode.MEMBAR_RELEASE)
     @IR(failOn = IRNode.MEMBAR_VOLATILE)
-    public int classWithVolatileNoEscape(int i) {
-        return new ClassWithVolatile(i).field;
+    public long escaping_plainPlain() {
+        PlainPlain c = new PlainPlain(l);
+        consume(c);
+        return c.f1 + c.f2;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_VOLATILE)
+    public long escaping_plainFinal() {
+        PlainFinal c = new PlainFinal(l);
+        consume(c);
+        return c.f1 + c.f2;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_VOLATILE)
+    public long escaping_finalPlain() {
+        FinalPlain c = new FinalPlain(l);
+        consume(c);
+        return c.f1 + c.f2;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_VOLATILE)
+    public long escaping_finalFinal() {
+        FinalFinal c = new FinalFinal(l);
+        consume(c);
+        return c.f1 + c.f2;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_RELEASE, "1"})
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(counts = {IRNode.MEMBAR_VOLATILE, "1"})
+    public long escaping_plainVolatile() {
+        PlainVolatile c = new PlainVolatile(l);
+        consume(c);
+        return c.f1 + c.f2;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_RELEASE, "1"})
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(counts = {IRNode.MEMBAR_VOLATILE, "1"})
+    public long escaping_volatilePlain() {
+        VolatilePlain c = new VolatilePlain(l);
+        consume(c);
+        return c.f1 + c.f2;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_RELEASE, "2"})
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(counts = {IRNode.MEMBAR_VOLATILE, "2"})
+    public long escaping_volatileVolatile() {
+        VolatileVolatile c = new VolatileVolatile(l);
+        consume(c);
+        return c.f1 + c.f2;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_RELEASE, "1"})
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(counts = {IRNode.MEMBAR_VOLATILE, "1"})
+    public long escaping_finalVolatile() {
+        FinalVolatile c = new FinalVolatile(l);
+        consume(c);
+        return c.f1 + c.f2;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_RELEASE, "1"})
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(counts = {IRNode.MEMBAR_VOLATILE, "1"})
+    public long escaping_volatileFinal() {
+        VolatileFinal c = new VolatileFinal(l);
+        consume(c);
+        return c.f1 + c.f2;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR)
+    public long non_escaping_plainPlain() {
+        PlainPlain c = new PlainPlain(l);
+        return c.f1 + c.f2;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR)
+    public long non_escaping_plainFinal() {
+        PlainFinal c = new PlainFinal(l);
+        return c.f1 + c.f2;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR)
+    public long non_escaping_finalPlain() {
+        FinalPlain c = new FinalPlain(l);
+        return c.f1 + c.f2;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_STORESTORE)
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    public long non_escaping_finalFinal() {
+        FinalFinal c = new FinalFinal(l);
+        return c.f1 + c.f2;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_STORESTORE)
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    public long non_escaping_plainVolatile() {
+        PlainVolatile c = new PlainVolatile(l);
+        return c.f1 + c.f2;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_STORESTORE)
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    public long non_escaping_volatilePlain() {
+        VolatilePlain c = new VolatilePlain(l);
+        return c.f1 + c.f2;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_STORESTORE)
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    public long non_escaping_volatileVolatile() {
+        VolatileVolatile c = new VolatileVolatile(l);
+        return c.f1 + c.f2;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_STORESTORE)
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    public long non_escaping_finalVolatile() {
+        FinalVolatile c = new FinalVolatile(l);
+        return c.f1 + c.f2;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_STORESTORE)
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    public long non_escaping_volatileFinal() {
+        VolatileFinal c = new VolatileFinal(l);
+        return c.f1 + c.f2;
     }
 
     @Setup
