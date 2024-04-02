@@ -63,9 +63,10 @@ bool AsyncLogWriter::write(AsyncLogMap<AnyObj::RESOURCE_AREA>& snapshot,
   int req = 0;
   CircularStringBuffer::Message msg;
   while (_circular_buffer.has_message()) {
-    CircularStringBuffer::DequeueResult result = _circular_buffer.dequeue(&msg, write_buffer, write_buffer_size);
-    assert(result != CircularStringBuffer::DequeueResult::NoMessage, "Race detected but there is only one reading thread");
-    if (result == CircularStringBuffer::DequeueResult::TooSmall) {
+    using DequeueResult = CircularStringBuffer::DequeueResult;
+    DequeueResult result = _circular_buffer.dequeue(&msg, write_buffer, write_buffer_size);
+    assert(result != DequeueResult::NoMessage, "Race detected but there is only one reading thread");
+    if (result == DequeueResult::TooSmall) {
       // Need a larger buffer
       return false;
     }
