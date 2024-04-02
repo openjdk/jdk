@@ -85,7 +85,6 @@ id="toc-external-library-requirements">External Library Requirements</a>
 <li><a href="#x11" id="toc-x11">X11</a></li>
 <li><a href="#alsa" id="toc-alsa">ALSA</a></li>
 <li><a href="#libffi" id="toc-libffi">libffi</a></li>
-<li><a href="#libsleef" id="toc-libsleef">libsleef</a></li>
 </ul></li>
 <li><a href="#build-tools-requirements"
 id="toc-build-tools-requirements">Build Tools Requirements</a>
@@ -817,19 +816,6 @@ version of Hotspot.</p>
 </ul>
 <p>Use <code>--with-libffi=&lt;path&gt;</code> if <code>configure</code>
 does not properly locate your libffi files.</p>
-<h3 id="libsleef">libsleef</h3>
-<p>libsleef, the <a href="https://sleef.org/">SIMD Library for
-Evaluating Elementary Functions</a> is optional. But it will provide
-performance enhancement for vector math operations on Linux/aarch64
-platforms.</p>
-<ul>
-<li>To install on an apt-based Linux, try running
-<code>sudo apt-get install     libsleef-dev</code>.</li>
-<li>To install on an rpm-based Linux, try running
-<code>sudo yum install     sleef-devel</code>.</li>
-</ul>
-<p>Use <code>--with-libsleef=&lt;path&gt;</code> if
-<code>configure</code> does not properly locate your libsleef files.</p>
 <h2 id="build-tools-requirements">Build Tools Requirements</h2>
 <h3 id="autoconf">Autoconf</h3>
 <p>The JDK build requires <a

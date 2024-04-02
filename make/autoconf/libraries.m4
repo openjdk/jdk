@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ m4_include([lib-ffi.m4])
 m4_include([lib-fontconfig.m4])
 m4_include([lib-freetype.m4])
 m4_include([lib-hsdis.m4])
-m4_include([lib-sleef.m4])
 m4_include([lib-std.m4])
 m4_include([lib-x11.m4])
 
@@ -88,14 +87,6 @@ AC_DEFUN_ONCE([LIB_DETERMINE_DEPENDENCIES],
   else
     NEEDS_LIB_FFI=false
   fi
-
-  # Check if sleef is needed
-  if test "x$OPENJDK_TARGET_OS" = xlinux && test "x$OPENJDK_TARGET_CPU" = xaarch64; then
-    NEEDS_LIB_SLEEF=true
-  else
-    # All other instances do not need sleef
-    NEEDS_LIB_SLEEF=false
-  fi
 ])
 
 ################################################################################
@@ -134,7 +125,6 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   LIB_SETUP_HSDIS
   LIB_SETUP_LIBFFI
   LIB_SETUP_MISC_LIBS
-  LIB_SETUP_SLEEF
   LIB_SETUP_X11
 
   LIB_TESTS_SETUP_GTEST
