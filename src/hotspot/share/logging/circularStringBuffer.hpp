@@ -146,8 +146,8 @@ private:
   // Shared memory:
   // Reader reads tail, writes to head.
   // Writer reads head, writes to tail.
-  volatile size_t tail; // Where new writes happen
-  volatile size_t head; // Where new reads happen
+  volatile size_t _tail; // Where new writes happen
+  volatile size_t _head; // Where new reads happen
 
   size_t allocated_bytes();
   size_t available_bytes();

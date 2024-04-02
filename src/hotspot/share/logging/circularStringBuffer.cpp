@@ -86,12 +86,12 @@ CircularStringBuffer::CircularStringBuffer(StatisticsMap& map, PlatformMonitor& 
     _stats(map),
     _stats_lock(stats_lock),
     circular_mapping(size),
-    tail(0),
-    head(0) {}
+    _tail(0),
+    _head(0) {}
 
 size_t CircularStringBuffer::allocated_bytes() {
-  size_t h = Atomic::load(&head);
-  size_t t = Atomic::load(&tail);
+  size_t h = Atomic::load(&_head);
+  size_t t = Atomic::load(&_tail);
   if (h <= t) {
     return t - h;
   } else {
@@ -132,7 +132,7 @@ void CircularStringBuffer::enqueue_locked(const char* str, size_t size, LogFileS
     }
   }
   // Load the tail.
-  size_t t = tail;
+  size_t t = _tail;
   // Write the Message
   Message msg{required_memory, output, decorations};
   circular_mapping.write_bytes(t, (char*)&msg, sizeof(Message));
@@ -141,7 +141,7 @@ void CircularStringBuffer::enqueue_locked(const char* str, size_t size, LogFileS
   // Write the string
   circular_mapping.write_bytes(t, str, size);
   // Finally move the tail, making the message available for consumers.
-  tail = (t + required_memory) % circular_mapping.size;
+  _tail = (t + required_memory) % circular_mapping.size;
   // We're done, notify the reader.
   _read_lock.notify();
   return;
@@ -165,8 +165,8 @@ void CircularStringBuffer::enqueue(LogFileStreamOutput& output, LogMessageBuffer
 CircularStringBuffer::DequeueResult CircularStringBuffer::dequeue(Message* out_msg, char* out, size_t out_size) {
   ConsumerLocker rl(this);
 
-  size_t h = head;
-  size_t t = tail;
+  size_t h = _head;
+  size_t t = _tail;
   // Check if there's something to read
   if (h == t) {
     return NoMessage;
@@ -185,7 +185,7 @@ CircularStringBuffer::DequeueResult CircularStringBuffer::dequeue(Message* out_m
   // Now read the string
   circular_mapping.read_bytes(h, out, str_size);
   // Done, move the head forward
-  head = (h + out_msg->size) % circular_mapping.size;
+  _head = (h + out_msg->size) % circular_mapping.size;
   // Notify a writer that more memory is available
   _write_lock.notify();
   // Release the lock
@@ -203,15 +203,15 @@ void CircularStringBuffer::signal_flush() {
 }
 
 bool CircularStringBuffer::has_message() {
-  size_t h = Atomic::load(&head);
-  size_t t = Atomic::load(&tail);
+  size_t h = Atomic::load(&_head);
+  size_t t = Atomic::load(&_tail);
   return !(h == t);
 }
 
 void CircularStringBuffer::await_message() {
   while (true) {
     ConsumerLocker rl(this);
-    while (head == tail) {
+    while (_head == tail) {
       _read_lock.wait(0 /* no timeout */);
     }
     break;
