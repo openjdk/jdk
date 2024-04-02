@@ -26,16 +26,16 @@
 include LibCommon.gmk
 
 ################################################################################
+## Build librmi
+################################################################################
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBRMI, \
     NAME := rmi, \
     OPTIMIZATION := LOW, \
-    LIBS_unix := -ljvm, \
-    LIBS_windows := jvm.lib, \
+    JDK_LIBS_unix := -ljvm, \
+    JDK_LIBS_windows := jvm.lib, \
 ))
 
 $(BUILD_LIBRMI): $(call FindLib, java.base, java)
 
 TARGETS += $(BUILD_LIBRMI)
-
-################################################################################

@@ -24,6 +24,7 @@
 import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
@@ -189,7 +190,7 @@ public final class PassFailJFrame {
 
     private static final CountDownLatch latch = new CountDownLatch(1);
 
-    private static TimeoutHandler timeoutHandler;
+    private static TimeoutHandlerPanel timeoutHandlerPanel;
 
     /**
      * The description of why the test fails.
@@ -446,10 +447,8 @@ public final class PassFailJFrame {
                                                        boolean addLogArea,
                                                        int logAreaRows) {
         JPanel main = new JPanel(new BorderLayout());
-
-        JLabel testTimeoutLabel = new JLabel("", JLabel.CENTER);
-        timeoutHandler = new TimeoutHandler(testTimeoutLabel, testTimeOut);
-        main.add(testTimeoutLabel, BorderLayout.NORTH);
+        timeoutHandlerPanel = new TimeoutHandlerPanel(testTimeOut);
+        main.add(timeoutHandlerPanel, BorderLayout.NORTH);
 
         JTextComponent text = instructions.startsWith("<html>")
                               ? configureHTML(instructions, rows, columns)
@@ -461,13 +460,13 @@ public final class PassFailJFrame {
         JButton btnPass = new JButton("Pass");
         btnPass.addActionListener((e) -> {
             latch.countDown();
-            timeoutHandler.stop();
+            timeoutHandlerPanel.stop();
         });
 
         JButton btnFail = new JButton("Fail");
         btnFail.addActionListener((e) -> {
             requestFailureReason();
-            timeoutHandler.stop();
+            timeoutHandlerPanel.stop();
         });
 
         JPanel buttonsPanel = new JPanel();
@@ -638,17 +637,35 @@ public final class PassFailJFrame {
     }
 
 
-    private static final class TimeoutHandler implements ActionListener {
-        private final long endTime;
+    private static final class TimeoutHandlerPanel
+            extends JPanel
+            implements ActionListener {
+
+        private static final String PAUSE_BUTTON_LABEL = "Pause";
+        private static final String RESUME_BUTTON_LABEL = "Resume";
+
+        private long endTime;
+        private long pauseTimeLeft;
 
         private final Timer timer;
 
         private final JLabel label;
+        private final JButton button;
 
-        public TimeoutHandler(final JLabel label, final long testTimeOut) {
-            endTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(testTimeOut);
+        public TimeoutHandlerPanel(final long testTimeOut) {
+            endTime = System.currentTimeMillis()
+                    + TimeUnit.MINUTES.toMillis(testTimeOut);
 
-            this.label = label;
+            label =  new JLabel("", JLabel.CENTER);
+            button = new JButton(PAUSE_BUTTON_LABEL);
+
+            button.setFocusPainted(false);
+            button.setFont(new Font(Font.DIALOG, Font.BOLD, 10));
+            button.addActionListener(e -> pauseToggle());
+
+            setLayout(new BorderLayout());
+            add(label, BorderLayout.CENTER);
+            add(button, BorderLayout.EAST);
 
             timer = new Timer(1000, this);
             timer.start();
@@ -678,6 +695,22 @@ public final class PassFailJFrame {
             label.setText(String.format(Locale.ENGLISH,
                                         "Test timeout: %02d:%02d:%02d",
                                         hours, minutes, seconds));
+        }
+
+
+        private void pauseToggle() {
+            if (timer.isRunning()) {
+                pauseTimeLeft = endTime - System.currentTimeMillis();
+                timer.stop();
+                label.setEnabled(false);
+                button.setText(RESUME_BUTTON_LABEL);
+            } else {
+                endTime = System.currentTimeMillis() + pauseTimeLeft;
+                updateTime(pauseTimeLeft);
+                timer.start();
+                label.setEnabled(true);
+                button.setText(PAUSE_BUTTON_LABEL);
+            }
         }
 
         public void stop() {

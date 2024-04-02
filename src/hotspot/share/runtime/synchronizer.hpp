@@ -185,7 +185,7 @@ public:
   static jlong time_since_last_async_deflation_ms();
 
   // debugging
-  static void audit_and_print_stats(bool on_exit);
+  static void audit_and_print_stats(outputStream* out, bool on_exit);
   static void chk_in_use_list(outputStream* out, int* error_cnt_p);
   static void chk_in_use_entry(ObjectMonitor* n, outputStream* out,
                                int* error_cnt_p);
