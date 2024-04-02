@@ -3107,7 +3107,7 @@ VStatus VLoopBody::construct() {
       // cross or back arc
       const int old_length = stack.length();
 
-      // If a Load and a Store depend on the same memory state, the Load is ordered before the Store.
+      // If a Load and a Store depend on the same memory state, the Load is to be ordered before the Store.
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node* use = n->fast_out(i);
         if (_vloop.in_bb(use) && !visited.test(bb_idx(use)) &&

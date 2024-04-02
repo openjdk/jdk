@@ -235,7 +235,7 @@ void VLoopDependencyGraph::compute_depth() {
   for (int i = 0; i < _body.body().length(); i++) {
     Node* n = _body.body().at(i);
     int max_pred_depth = 0;
-    if (!n->is_Phi()) {
+    if (!n->is_Phi()) { // ignore backedge
       for (PredsIterator it(*this, n); !it.done(); it.next()) {
         Node* pred = it.current();
         if (_vloop.in_bb(pred)) {
@@ -245,6 +245,22 @@ void VLoopDependencyGraph::compute_depth() {
     }
     set_depth(n, max_pred_depth + 1);
   }
+
+#ifdef ASSERT
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    int max_pred_depth = 0;
+    if (!n->is_Phi()) { // ignore backedge
+      for (PredsIterator it(*this, n); !it.done(); it.next()) {
+        Node* pred = it.current();
+        if (_vloop.in_bb(pred)) {
+          max_pred_depth = MAX2(max_pred_depth, depth(pred));
+        }
+      }
+    }
+    assert(depth(n) == max_pred_depth + 1, "must have correct depth");
+  }
+#endif
 }
 
 #ifndef PRODUCT
