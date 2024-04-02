@@ -410,7 +410,7 @@ OopStorage::Block::block_for_ptr(const OopStorage* owner, const oop* ptr) {
 // allocations until some entries in it are released.
 //
 // release() is performed lock-free. (Note: This means it can't notify the
-// service thread of pending cleanup work.  It must be lock-free because
+// ServiceThread of pending cleanup work.  It must be lock-free because
 // it is called in all kinds of contexts where even quite low ranked locks
 // may be held.)  release() first looks up the block for
 // the entry, using address alignment to find the enclosing block (thereby
@@ -705,7 +705,7 @@ void OopStorage::Block::release_entries(uintx releasing, OopStorage* owner) {
       // Only request cleanup for to-empty transitions, not for from-full.
       // There isn't any rush to process from-full transitions.  Allocation
       // will reduce deferrals before allocating new blocks, so may process
-      // some.  And the service thread will drain the entire deferred list
+      // some.  And the ServiceThread will drain the entire deferred list
       // if there are any pending to-empty transitions.
       if (releasing == old_allocated) {
         owner->record_needs_cleanup();
@@ -880,34 +880,43 @@ bool OopStorage::should_report_num_dead() const {
 }
 
 // Managing service thread notifications.
-//
-// We don't want cleanup work to linger indefinitely, but we also don't want
-// to run the service thread too often.  We're also very limited in what we
-// can do in a release operation, where cleanup work is created.
-//
+
 // When a release operation changes a block's state to empty, it records the
 // need for cleanup in both the associated storage object and in the global
-// request state.  A safepoint cleanup task notifies the service thread when
+// request state. The ServiceThread checks at timed intervals if
 // there may be cleanup work for any storage object, based on the global
-// request state.  But that notification is deferred if the service thread
-// has run recently, and we also avoid duplicate notifications.  The service
-// thread updates the timestamp and resets the state flags on every iteration.
+// request state.  We don't want to run empty block cleanup too often in the
+// face of frequent explicit ServiceThread wakeups, hence the defer period.
 
 // Global cleanup request state.
 static volatile bool needs_cleanup_requested = false;
 
+// Time after which a notification can be made.
+static jlong cleanup_permit_time = 0;
+
+// Minimum time since last ServiceThread check before cleanup is permitted.
+// The value of 500ms was an arbitrary choice; frequent, but not too frequent.
+const jlong cleanup_defer_period = 500 * NANOSECS_PER_MILLISEC;
+
 bool OopStorage::has_cleanup_work_and_reset() {
   assert_lock_strong(Service_lock);
-  // Set the request flag false and return its old value.
-  // Needs to be atomic to avoid dropping a concurrent request.
-  // Can't use Atomic::xchg, which may not support bool.
-  return Atomic::cmpxchg(&needs_cleanup_requested, true, false);
+
+  if (Atomic::load(&needs_cleanup_requested) && os::javaTimeNanos() > cleanup_permit_time) {
+    cleanup_permit_time =
+      os::javaTimeNanos() + cleanup_defer_period;
+    // Set the request flag false and return its old value.
+    // Needs to be atomic to avoid dropping a concurrent request.
+    Atomic::release_store(&needs_cleanup_requested, false);
+    return true;
+  } else {
+    return false;
+  }
 }
 
-// Record that cleanup is needed, without notifying the Service thread.
-// Used by release(), where we can't lock even Service_lock.
+// Record that cleanup is needed, without notifying the Service thread, because
+// we can't lock the Service_lock.  Used by release().
 void OopStorage::record_needs_cleanup() {
-  // Set local flag first, else service thread could wake up and miss
+  // Set local flag first, else ServiceThread could wake up and miss
   // the request.  This order may instead (rarely) unnecessarily notify.
   Atomic::release_store(&_needs_cleanup, true);
   Atomic::release_store_fence(&needs_cleanup_requested, true);
@@ -915,8 +924,8 @@ void OopStorage::record_needs_cleanup() {
 
 bool OopStorage::delete_empty_blocks() {
   // Service thread might have oopstorage work, but not for this object.
-  // Check for deferred updates even though that's not a service thread
-  // trigger; since we're here, we might as well process them.
+  // Check for deferred updates even though that's not a ServiceThread
+  // cleanup; since we're here, we might as well process them.
   if (!Atomic::load_acquire(&_needs_cleanup) &&
       (Atomic::load_acquire(&_deferred_updates) == nullptr)) {
     return false;
@@ -962,7 +971,7 @@ bool OopStorage::delete_empty_blocks() {
         // Don't interfere with an active concurrent iteration.
         // Instead, give up immediately.  There is more work to do,
         // but don't re-notify, to avoid useless spinning of the
-        // service thread.  Instead, iteration completion notifies.
+        // ServiceThread.  Instead, iteration completion notifies.
         if (_concurrent_iteration_count > 0) return true;
         _active_array->remove(block);
       }
@@ -975,8 +984,8 @@ bool OopStorage::delete_empty_blocks() {
     }
   }
   // Exceeded work limit or can't delete last block.  This will
-  // cause the service thread to loop, giving other subtasks an
-  // opportunity to run too.  There's no need for a notification,
+  // cause the ServiceThread to loop, giving other subtasks an
+  // opportunity to run too. There's no need for a notification,
   // because we are part of the service thread (unless gtesting).
   record_needs_cleanup();
   return true;
