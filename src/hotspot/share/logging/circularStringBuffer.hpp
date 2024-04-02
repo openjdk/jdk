@@ -58,19 +58,20 @@ struct CircularMapping {
 
   CircularMapping(size_t size);
   ~CircularMapping() {
-    munmap(buffer, size * 2);
-    fclose(file);
+    ::munmap(buffer, size * 2);
+    ::fclose(file);
   }
 
   void write_bytes(size_t at, const char* bytes, size_t size) {
-    memcpy(&buffer[at], bytes, size);
+    ::memcpy(&buffer[at], bytes, size);
   }
 
   void read_bytes(size_t at, char* out, size_t size) {
-    memcpy(out, &buffer[at], size);
+    ::memcpy(out, &buffer[at], size);
   }
 };
 #else
+// On other platforms we resort to a double memcpy.
 struct CircularMapping {
   char* buffer;
   size_t size;
