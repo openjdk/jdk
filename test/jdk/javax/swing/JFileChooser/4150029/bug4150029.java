@@ -123,7 +123,7 @@ public class bug4150029 {
         // check backspace key at subDir level
         clickBackSpace();
 
-        if (prevDir == crntDir) {
+        if (prevDir.equals(crntDir)) {
             throw new RuntimeException("BackSpace does not lead to parent directory");
         }
     }
