@@ -4633,6 +4633,7 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
 #undef final_jmp
 }
 
+
 void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
                                                    Register super_klass,
                                                    Register temp_reg,
@@ -4783,7 +4784,8 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
     } else {
       testq(r_array_index, r_array_index);
     }
-  }  // We test the MSB of r_array_index, i.e. its sign bit
+  }
+  // We test the MSB of r_array_index, i.e. its sign bit
   jcc(Assembler::positive, L_failure);
 
   // Get the first array index that can contain super_klass into r_array_index.
