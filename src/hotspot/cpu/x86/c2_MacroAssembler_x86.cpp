@@ -4858,7 +4858,7 @@ void C2_MacroAssembler::vector_cast_float_to_int_special_cases_avx(XMMRegister d
 
   vpxor(xtmp4, xtmp4, xtmp4, vec_enc);
   vcmpps(xtmp3, src, src, Assembler::UNORD_Q, vec_enc);
-  vblendvps(dst, dst, xtmp4, xtmp3, vec_enc);
+  vblendvps(dst, dst, xtmp4, xtmp3, vec_enc, false, xtmp4);
 
   // Recompute the mask for remaining special value.
   vpxor(xtmp2, xtmp2, xtmp3, vec_enc);
