@@ -140,6 +140,9 @@ public:
   }
 
   void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl) override;
+
+  void parallel_region_iterate_free(ShenandoahHeapRegionClosure* cl) override;
+
   void heap_region_iterate(ShenandoahHeapRegionClosure* cl) override;
 
   bool contains(ShenandoahHeapRegion* region) const override;
@@ -149,10 +152,10 @@ public:
   bool is_concurrent_mark_in_progress() override;
 
   bool entry_coalesce_and_fill();
-  virtual void prepare_gc() override;
+  void prepare_gc() override;
   void prepare_regions_and_collection_set(bool concurrent) override;
-  virtual void record_success_concurrent(bool abbreviated) override;
-  virtual void cancel_marking() override;
+  void record_success_concurrent(bool abbreviated) override;
+  void cancel_marking() override;
 
   // We leave the SATB barrier on for the entirety of the old generation
   // marking phase. In some cases, this can cause a write to a perfectly

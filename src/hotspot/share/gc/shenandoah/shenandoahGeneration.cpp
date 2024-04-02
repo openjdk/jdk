@@ -40,6 +40,7 @@
 
 #include "utilities/quickSort.hpp"
 
+
 class ShenandoahResetUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
  private:
   ShenandoahHeap* _heap;
@@ -233,7 +234,11 @@ void ShenandoahGeneration::prepare_gc() {
 
   // Capture Top At Mark Start for this generation (typically young) and reset mark bitmap.
   ShenandoahResetUpdateRegionStateClosure cl;
-  parallel_heap_region_iterate(&cl);
+  parallel_region_iterate_free(&cl);
+}
+
+void ShenandoahGeneration::parallel_region_iterate_free(ShenandoahHeapRegionClosure* cl) {
+  ShenandoahHeap::heap()->parallel_heap_region_iterate(cl);
 }
 
 void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap) {

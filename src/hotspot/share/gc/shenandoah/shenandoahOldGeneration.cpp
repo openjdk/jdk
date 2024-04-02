@@ -34,6 +34,7 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
 #include "gc/shenandoah/shenandoahMarkClosures.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
@@ -245,13 +246,13 @@ bool ShenandoahOldGeneration::contains(ShenandoahHeapRegion* region) const {
 }
 
 void ShenandoahOldGeneration::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl) {
-  ShenandoahGenerationRegionClosure<OLD> old_regions(cl);
-  ShenandoahHeap::heap()->parallel_heap_region_iterate(&old_regions);
+  ShenandoahIncludeRegionClosure<OLD_GENERATION> old_regions_cl(cl);
+  ShenandoahHeap::heap()->parallel_heap_region_iterate(&old_regions_cl);
 }
 
 void ShenandoahOldGeneration::heap_region_iterate(ShenandoahHeapRegionClosure* cl) {
-  ShenandoahGenerationRegionClosure<OLD> old_regions(cl);
-  ShenandoahHeap::heap()->heap_region_iterate(&old_regions);
+  ShenandoahIncludeRegionClosure<OLD_GENERATION> old_regions_cl(cl);
+  ShenandoahHeap::heap()->heap_region_iterate(&old_regions_cl);
 }
 
 void ShenandoahOldGeneration::set_concurrent_mark_in_progress(bool in_progress) {
@@ -272,7 +273,6 @@ void ShenandoahOldGeneration::cancel_marking() {
 }
 
 void ShenandoahOldGeneration::prepare_gc() {
-
   // Now that we have made the old generation parsable, it is safe to reset the mark bitmap.
   assert(state() != FILLING, "Cannot reset old without making it parsable");
 
@@ -568,4 +568,10 @@ void ShenandoahOldGeneration::handle_evacuation(HeapWord* obj, size_t words, boo
     // This evacuation was a promotion, track this as allocation against old gen
     increase_allocated(words * HeapWordSize);
   }
+}
+
+void ShenandoahOldGeneration::parallel_region_iterate_free(ShenandoahHeapRegionClosure* cl) {
+  // Iterate over old and free regions (exclude young).
+  ShenandoahExcludeRegionClosure<YOUNG_GENERATION> exclude_cl(cl);
+  ShenandoahGeneration::parallel_region_iterate_free(&exclude_cl);
 }

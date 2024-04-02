@@ -80,12 +80,6 @@ HeapWord* ShenandoahMarkingContext::top_bitmap(ShenandoahHeapRegion* r) {
 }
 
 void ShenandoahMarkingContext::clear_bitmap(ShenandoahHeapRegion* r) {
-  if (!r->is_affiliated()) {
-    // Heap iterators include FREE regions, which don't need to be cleared.
-    // TODO: would be better for certain iterators to not include FREE regions.
-    return;
-  }
-
   HeapWord* bottom = r->bottom();
   HeapWord* top_bitmap = _top_bitmaps[r->index()];
 
@@ -96,9 +90,6 @@ void ShenandoahMarkingContext::clear_bitmap(ShenandoahHeapRegion* r) {
     _mark_bit_map.clear_range_large(MemRegion(bottom, top_bitmap));
     _top_bitmaps[r->index()] = bottom;
   }
-
-  // TODO: Why is clear_live_data here?
-  r->clear_live_data();
 
   assert(is_bitmap_clear_range(bottom, r->end()),
          "Region " SIZE_FORMAT " should have no marks in bitmap", r->index());

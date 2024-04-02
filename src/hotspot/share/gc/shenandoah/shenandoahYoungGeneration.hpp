@@ -44,6 +44,9 @@ public:
   bool is_concurrent_mark_in_progress() override;
 
   void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl) override;
+
+  void parallel_region_iterate_free(ShenandoahHeapRegionClosure* cl) override;
+
   void heap_region_iterate(ShenandoahHeapRegionClosure* cl) override;
 
   bool contains(ShenandoahHeapRegion* region) const override;

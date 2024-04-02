@@ -3406,32 +3406,6 @@ void ShenandoahHeap::transfer_old_pointers_from_satb() {
   _old_generation->transfer_pointers_from_satb();
 }
 
-template<>
-void ShenandoahGenerationRegionClosure<YOUNG>::heap_region_do(ShenandoahHeapRegion* region) {
-  // Visit young regions
-  if (region->is_young()) {
-    _cl->heap_region_do(region);
-  }
-}
-
-template<>
-void ShenandoahGenerationRegionClosure<OLD>::heap_region_do(ShenandoahHeapRegion* region) {
-  // Visit old regions
-  if (region->is_old()) {
-    _cl->heap_region_do(region);
-  }
-}
-
-template<>
-void ShenandoahGenerationRegionClosure<GLOBAL>::heap_region_do(ShenandoahHeapRegion* region) {
-  _cl->heap_region_do(region);
-}
-
-template<>
-void ShenandoahGenerationRegionClosure<NON_GEN>::heap_region_do(ShenandoahHeapRegion* region) {
-  _cl->heap_region_do(region);
-}
-
 bool ShenandoahHeap::verify_generation_usage(bool verify_old, size_t old_regions, size_t old_bytes, size_t old_waste,
                                              bool verify_young, size_t young_regions, size_t young_bytes, size_t young_waste) {
   size_t tally_old_regions = 0;

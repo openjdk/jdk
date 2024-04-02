@@ -124,16 +124,6 @@ public:
   virtual bool is_thread_safe() { return false; }
 };
 
-template<ShenandoahGenerationType GENERATION>
-class ShenandoahGenerationRegionClosure : public ShenandoahHeapRegionClosure {
- public:
-  explicit ShenandoahGenerationRegionClosure(ShenandoahHeapRegionClosure* cl) : _cl(cl) {}
-  void heap_region_do(ShenandoahHeapRegion* r);
-  virtual bool is_thread_safe() { return _cl->is_thread_safe(); }
- private:
-  ShenandoahHeapRegionClosure* _cl;
-};
-
 typedef ShenandoahLock    ShenandoahHeapLock;
 typedef ShenandoahLocker  ShenandoahHeapLocker;
 typedef Stack<oop, mtGC>  ShenandoahScanObjectStack;
