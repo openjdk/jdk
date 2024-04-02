@@ -33,6 +33,8 @@
 // Code in this file and the vectorization.cpp contains shared logics and
 // utilities for C2's loop auto-vectorization.
 
+class VPointer;
+
 class VStatus : public StackObj {
 private:
   const char* _failure_reason;
@@ -152,6 +154,10 @@ public:
 
   bool is_trace_dependency_graph() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::DEPENDENCY_GRAPH);
+  }
+
+  bool is_trace_pointers() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::POINTERS);
   }
 
   bool is_trace_pointer_analysis() const {
@@ -446,6 +452,39 @@ private:
 };
 
 // Submodule of VLoopAnalyzer.
+// We compute and cache the VPointer for every load and store.
+class VLoopPointers : public StackObj {
+private:
+  Arena*                   _arena;
+  const VLoop&             _vloop;
+  const VLoopBody&         _body;
+
+  // Array of cached pointers
+  VPointer* _pointers;
+
+  // Map bb_idx -> index in _pointers. -1 if not mapped.
+  GrowableArray<int> _bb_idx_to_pointer;
+
+public:
+  VLoopPointers(Arena* arena,
+                const VLoop& vloop,
+                const VLoopBody& body) :
+    _arena(arena),
+    _vloop(vloop),
+    _body(body),
+    _pointers(nullptr),
+    _bb_idx_to_pointer(arena,
+                       vloop.estimated_body_length(),
+                       vloop.estimated_body_length(),
+                       -1) {}
+  NONCOPYABLE(VLoopPointers);
+
+  void compute_and_cache();
+  const VPointer& get(const MemNode* mem) const;
+  NOT_PRODUCT( void print() const; )
+};
+
+// Submodule of VLoopAnalyzer.
 // The dependency graph is used to determine if nodes are independent, and can thus potentially
 // be executed in parallel. That is a prerequisite for packing nodes into vector operations.
 // The dependency graph is a combination:
@@ -570,6 +609,7 @@ private:
   VLoopMemorySlices    _memory_slices;
   VLoopBody            _body;
   VLoopTypes           _types;
+  VLoopPointers        _pointers;
   VLoopDependencyGraph _dependency_graph;
 
 public:
@@ -581,6 +621,7 @@ public:
     _memory_slices   (&_arena, vloop),
     _body            (&_arena, vloop, vshared),
     _types           (&_arena, vloop, _body),
+    _pointers        (&_arena, vloop, _body),
     _dependency_graph(&_arena, vloop, _body, _memory_slices)
   {
     _success = setup_submodules();
@@ -595,6 +636,7 @@ public:
   const VLoopMemorySlices& memory_slices()       const { return _memory_slices; }
   const VLoopBody& body()                        const { return _body; }
   const VLoopTypes& types()                      const { return _types; }
+  const VLoopPointers& pointers()                const { return _pointers; }
   const VLoopDependencyGraph& dependency_graph() const { return _dependency_graph; }
 
 private:
@@ -719,7 +761,7 @@ class VPointer : public ArenaObj {
   static bool equal(int cmp)      { return cmp == Equal; }
   static bool comparable(int cmp) { return cmp < NotComparable; }
 
-  void print();
+  NOT_PRODUCT( void print() const; )
 
 #ifndef PRODUCT
   class Tracer {

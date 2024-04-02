@@ -31,6 +31,19 @@
 #include "opto/rootnode.hpp"
 #include "opto/vectorization.hpp"
 
+#ifndef PRODUCT
+static void print_con_or_idx(const Node* n) {
+  if (n == nullptr) {
+    tty->print("(   0)");
+  } else if (n->is_ConI()) {
+    jint val = n->as_ConI()->get_int();
+    tty->print("(%4d)", val);
+  } else {
+    tty->print("[%4d]", n->_idx);
+  }
+}
+#endif
+
 bool VLoop::check_preconditions() {
 #ifndef PRODUCT
   if (is_trace_preconditions()) {
@@ -161,10 +174,61 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
 
   _types.compute_vector_element_type();
 
+  _pointers.compute_and_cache();
+
   _dependency_graph.construct();
 
   return VStatus::make_success();
 }
+
+void VLoopPointers::compute_and_cache() {
+  int number_of_pointers = 0;
+  for (int i = 0; i < _body.body().length(); i++) {
+    MemNode* mem = _body.body().at(i)->isa_Mem();
+    if (mem != nullptr && _vloop.in_bb(mem)) {
+      number_of_pointers++;
+    }
+  }
+
+  uint bytes = number_of_pointers * sizeof(VPointer);
+  _pointers = (VPointer*)_arena->Amalloc(bytes);
+
+  int pointers_idx = 0;
+  for (int i = 0; i < _body.body().length(); i++) {
+    MemNode* mem = _body.body().at(i)->isa_Mem();
+    if (mem != nullptr && _vloop.in_bb(mem)) {
+      // Placement new: construct directly into the array.
+      ::new (&_pointers[pointers_idx]) VPointer(mem, _vloop);
+      _bb_idx_to_pointer.at_put(i, pointers_idx);
+      pointers_idx++;
+    }
+  }
+
+  NOT_PRODUCT( if (_vloop.is_trace_pointers()) { print(); } )
+}
+
+const VPointer& VLoopPointers::get(const MemNode* mem) const {
+  assert(mem != nullptr && _vloop.in_bb(mem), "only mem in loop");
+  int bb_idx = _body.bb_idx(mem);
+  int pointers_idx = _bb_idx_to_pointer.at(bb_idx);
+  assert(pointers_idx >= 0, "mem node must have a cached pointer");
+  return _pointers[pointers_idx];
+}
+
+#ifndef PRODUCT
+void VLoopPointers::print() const {
+  tty->print_cr("\nVLoopPointers::print:");
+
+  for (int i = 0; i < _body.body().length(); i++) {
+    MemNode* mem = _body.body().at(i)->isa_Mem();
+    if (mem != nullptr && _vloop.in_bb(mem)) {
+      const VPointer& p = get(mem);
+      tty->print("  ");
+      p.print();
+    }
+  }
+}
+#endif
 
 // Construct the dependency graph:
 //  - Data-dependencies: implicit (taken from C2 node inputs).
@@ -704,19 +768,24 @@ void VPointer::maybe_add_to_invar(Node* new_invar, bool negate) {
   _invar = register_if_new(add);
 }
 
-// Function for printing the fields of a VPointer
-void VPointer::print() {
 #ifndef PRODUCT
-  tty->print("base: [%d]  adr: [%d]  scale: %d  offset: %d",
-             _base != nullptr ? _base->_idx : 0,
-             _adr  != nullptr ? _adr->_idx  : 0,
-             _scale, _offset);
-  if (_invar != nullptr) {
-    tty->print("  invar: [%d]", _invar->_idx);
-  }
-  tty->cr();
-#endif
+// Function for printing the fields of a VPointer
+void VPointer::print() const {
+  tty->print("VPointer[mem: %4d %10s, ", _mem->_idx, _mem->Name());
+  tty->print("base: %4d, ", _base != nullptr ? _base->_idx : 0);
+  tty->print("adr: %4d, ", _adr != nullptr ? _adr->_idx : 0);
+
+  tty->print(" base");
+  print_con_or_idx(_base);
+
+  tty->print(" + offset(%4d)", _offset);
+
+  tty->print(" + invar");
+  print_con_or_idx(_invar);
+
+  tty->print_cr(" + scale(%4d) * iv]", _scale);
 }
+#endif
 
 // Following are functions for tracing VPointer match
 #ifndef PRODUCT
@@ -1483,17 +1552,6 @@ AlignmentSolution* AlignmentSolver::solve() const {
 }
 
 #ifdef ASSERT
-static void print_con_or_idx(const Node* n) {
-  if (n == nullptr) {
-    tty->print("(0)");
-  } else if (n->is_ConI()) {
-    jint val = n->as_ConI()->get_int();
-    tty->print("(%d)", val);
-  } else {
-    tty->print("[%d]", n->_idx);
-  }
-}
-
 void AlignmentSolver::trace_start_solve() const {
   if (is_trace()) {
     tty->print(" vector mem_ref:");
