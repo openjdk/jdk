@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,7 @@ public:
   // Returns true if there may be more work to do, false if nothing to do.
   bool delete_empty_blocks();
 
-  // Called by safepoint cleanup to notify the service thread (via
+  // Called by a periodic task to notify the service thread (via
   // Service_lock) that there may be some OopStorage objects with pending
   // cleanups to process.
   static void trigger_cleanup_if_needed();
@@ -209,6 +209,10 @@ public:
   // recognition of new requests.  Returns true if there was a pending
   // request.
   static bool has_cleanup_work_and_reset();
+
+  // Called by the service thread to initialize the perioidic task triggering
+  // occasional cleanups for the service thread to process.
+  static void initialize_periodic_cleanup_task();
 
   // Debugging and logging support.
   const char* name() const;

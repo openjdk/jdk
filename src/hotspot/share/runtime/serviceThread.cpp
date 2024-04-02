@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,10 @@ static void cleanup_oopstorages() {
 }
 
 void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
+  // Tell oop storage that we are ready to receive cleanup requests from
+  // now on, occasionally.
+  OopStorage::initialize_periodic_cleanup_task();
+
   while (true) {
     bool sensors_changed = false;
     bool has_jvmti_events = false;

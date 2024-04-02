@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/task.hpp"
 #include "utilities/align.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 #include "utilities/debug.hpp"
@@ -887,7 +888,7 @@ bool OopStorage::should_report_num_dead() const {
 //
 // When a release operation changes a block's state to empty, it records the
 // need for cleanup in both the associated storage object and in the global
-// request state.  A safepoint cleanup task notifies the service thread when
+// request state.  A periodic cleanup task notifies the service thread when
 // there may be cleanup work for any storage object, based on the global
 // request state.  But that notification is deferred if the service thread
 // has run recently, and we also avoid duplicate notifications.  The service
@@ -905,7 +906,7 @@ static jlong cleanup_trigger_permit_time = 0;
 // Minimum time since last service thread check before notification is
 // permitted.  The value of 500ms was an arbitrary choice; frequent, but not
 // too frequent.
-const jlong cleanup_trigger_defer_period = 500 * NANOSECS_PER_MILLISEC;
+const size_t cleanup_trigger_defer_period = 500;
 
 void OopStorage::trigger_cleanup_if_needed() {
   MonitorLocker ml(Service_lock, Monitor::_no_safepoint_check_flag);
@@ -926,6 +927,19 @@ bool OopStorage::has_cleanup_work_and_reset() {
   // Needs to be atomic to avoid dropping a concurrent request.
   // Can't use Atomic::xchg, which may not support bool.
   return Atomic::cmpxchg(&needs_cleanup_requested, true, false);
+}
+
+void OopStorage::initialize_periodic_cleanup_task() {
+  class OopStorageCleanupTask : public PeriodicTask {
+  public:
+    OopStorageCleanupTask() : PeriodicTask(cleanup_trigger_defer_period) {  }
+
+    virtual void task() {
+      OopStorage::trigger_cleanup_if_needed();
+    }
+  };
+  OopStorageCleanupTask* task = new OopStorageCleanupTask();
+  task->enroll();
 }
 
 // Record that cleanup is needed, without notifying the Service thread.
