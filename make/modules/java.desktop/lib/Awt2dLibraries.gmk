@@ -35,29 +35,31 @@ LIBAWT_DEFAULT_HEADER_DIRS := \
     #
 
 ################################################################################
-
-BUILD_LIBMLIB_CFLAGS := -D__USE_J2D_NAMES -D__MEDIALIB_OLD_NAMES -DMLIB_NO_LIBSUNMATH
+## Build libmlib_image
+################################################################################
 
 ifeq ($(call isTargetCpuBits, 64), true)
-  BUILD_LIBMLIB_CFLAGS += -DMLIB_OS64BIT
+  LIBMLIB_IMAGE_CFLAGS := -DMLIB_OS64BIT
 endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBMLIB_IMAGE, \
     NAME := mlib_image, \
     EXTRA_SRC := common/awt/medialib, \
     EXCLUDE_FILES := mlib_c_ImageBlendTable.c, \
-    EXCLUDE_SRC_PATTERNS := $(BUILD_LIBMLIB_EXCLUDE_SRC_PATTERNS), \
     OPTIMIZATION := HIGHEST, \
-    CFLAGS := $(BUILD_LIBMLIB_CFLAGS), \
+    CFLAGS := -D__USE_J2D_NAMES -D__MEDIALIB_OLD_NAMES -DMLIB_NO_LIBSUNMATH \
+        $(LIBMLIB_IMAGE_CFLAGS), \
     DISABLED_WARNINGS_gcc := unused-function, \
-    LIBS := $(JDKLIB_LIBS), \
-    LIBS_unix := $(LIBM) $(LIBDL), \
+    JDK_LIBS := $(JDKLIB_LIBS), \
+    LIBS_unix := $(LIBDL) $(LIBM), \
 ))
 
 $(BUILD_LIBMLIB_IMAGE): $(call FindLib, java.base, java)
 
 TARGETS += $(BUILD_LIBMLIB_IMAGE)
 
+################################################################################
+## Build libawt
 ################################################################################
 
 LIBAWT_EXTRA_SRC := \
@@ -75,18 +77,15 @@ ifeq ($(call isTargetOs, windows), true)
 endif
 
 ifeq ($(call isTargetOs, linux macosx aix), true)
-  LIBAWT_EXFILES += awt_Font.c CUPSfuncs.c fontpath.c X11Color.c
+  LIBAWT_EXCLUDE_FILES += awt_Font.c CUPSfuncs.c fontpath.c X11Color.c
 endif
 
 ifeq ($(call isTargetOs, macosx), true)
-  LIBAWT_EXFILES += initIDs.c awt/image/cvutils/img_colors.c
+  LIBAWT_EXCLUDE_FILES += initIDs.c img_colors.c
 endif
 
 ifeq ($(call isTargetOs, windows), true)
-  LIBAWT_EXFILES += \
-      java2d/d3d/D3DShaderGen.c \
-      awt/image/cvutils/img_colors.c \
-      #
+  LIBAWT_EXCLUDE_FILES += D3DShaderGen.c img_colors.c
 endif
 
 LIBAWT_EXTRA_HEADER_DIRS := \
@@ -103,9 +102,7 @@ LIBAWT_EXTRA_HEADER_DIRS := \
     java.base:libjava \
     #
 
-LIBAWT_CFLAGS += -D__MEDIALIB_OLD_NAMES -D__USE_J2D_NAMES $(X_CFLAGS)
-
-LIBAWT_CFLAGS += -DMLIB_NO_LIBSUNMATH
+LIBAWT_CFLAGS := -D__MEDIALIB_OLD_NAMES -D__USE_J2D_NAMES -DMLIB_NO_LIBSUNMATH
 
 ifeq ($(call isTargetOs, windows), true)
   LIBAWT_CFLAGS += -EHsc -DUNICODE -D_UNICODE
@@ -114,22 +111,20 @@ ifeq ($(call isTargetOs, windows), true)
   endif
 
   LIBAWT_RCFLAGS ?= -I$(TOPDIR)/src/java.base/windows/native/launcher/icons
-  LIBAWT_VERSIONINFO_RESOURCE := $(TOPDIR)/src/$(MODULE)/windows/native/libawt/windows/awt.rc
+  LIBAWT_VERSIONINFO_RESOURCE := \
+      $(TOPDIR)/src/$(MODULE)/windows/native/libawt/windows/awt.rc
 endif
 
-ifeq ($(TOOLCHAIN_TYPE), gcc)
-  # This option improves performance of MaskFill in Java2D by 20% for some gcc
-  LIBAWT_CFLAGS += -fgcse-after-reload
-endif
-
+# -fgcse-after-reload improves performance of MaskFill in Java2D by 20% for
+# some gcc
 $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     NAME := awt, \
     EXTRA_SRC := $(LIBAWT_EXTRA_SRC), \
-    EXCLUDES := $(LIBAWT_EXCLUDES), \
-    EXCLUDE_FILES := $(LIBAWT_EXFILES), \
+    EXCLUDE_FILES := $(LIBAWT_EXCLUDE_FILES), \
     OPTIMIZATION := HIGHEST, \
-    CFLAGS := $(LIBAWT_CFLAGS), \
-    CXXFLAGS := $(LIBAWT_CFLAGS), \
+    CFLAGS := $(LIBAWT_CFLAGS) $(X_CFLAGS), \
+    CXXFLAGS := $(LIBAWT_CFLAGS) $(X_CFLAGS), \
+    CFLAGS_gcc := -fgcse-after-reload, \
     EXTRA_HEADER_DIRS := $(LIBAWT_EXTRA_HEADER_DIRS), \
     DISABLED_WARNINGS_gcc_awt_LoadLibrary.c := unused-result, \
     DISABLED_WARNINGS_gcc_debug_mem.c := format-nonliteral, \
@@ -144,25 +139,26 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     DISABLED_WARNINGS_microsoft := 4244 4996, \
     DISABLED_WARNINGS_microsoft_awt_Toolkit.cpp := 4267, \
     LDFLAGS_macosx := -L$(INSTALL_LIBRARIES_HERE), \
-    LDFLAGS_windows := -delayload:user32.dll -delayload:gdi32.dll \
-        -delayload:shell32.dll -delayload:winmm.dll \
-        -delayload:winspool.drv -delayload:imm32.dll \
-        -delayload:ole32.dll -delayload:comdlg32.dll \
-        -delayload:comctl32.dll -delayload:shlwapi.dll, \
-    LIBS_unix := -ljvm -ljava $(LIBM), \
-    LIBS_linux :=  $(LIBDL), \
+    LDFLAGS_windows := -delayload:comctl32.dll -delayload:comdlg32.dll \
+        -delayload:gdi32.dll -delayload:imm32.dll -delayload:ole32.dll \
+        -delayload:shell32.dll -delayload:shlwapi.dll -delayload:user32.dll \
+        -delayload:winmm.dll -delayload:winspool.drv, \
+    JDK_LIBS_unix := -ljava -ljvm, \
+    JDK_LIBS_macosx := -lmlib_image, \
+    JDK_LIBS_windows := $(WIN_JAVA_LIB) jvm.lib, \
+    LIBS_unix := $(LIBM), \
+    LIBS_linux := $(LIBDL), \
     LIBS_aix := $(LIBDL),\
-    LIBS_macosx := -lmlib_image \
-        -framework Cocoa \
-        -framework OpenGL \
-        -framework Metal \
-        -framework JavaRuntimeSupport \
+    LIBS_macosx := \
         -framework ApplicationServices \
-        -framework AudioToolbox, \
-    LIBS_windows := kernel32.lib user32.lib gdi32.lib winspool.lib \
-        imm32.lib ole32.lib uuid.lib shell32.lib \
-        comdlg32.lib winmm.lib comctl32.lib shlwapi.lib \
-        delayimp.lib jvm.lib $(WIN_JAVA_LIB) advapi32.lib, \
+        -framework AudioToolbox \
+        -framework Cocoa \
+        -framework JavaRuntimeSupport \
+        -framework Metal \
+        -framework OpenGL, \
+    LIBS_windows := advapi32.lib comctl32.lib comdlg32.lib delayimp.lib \
+        gdi32.lib imm32.lib kernel32.lib ole32.lib shell32.lib shlwapi.lib \
+        user32.lib uuid.lib winmm.lib winspool.lib, \
     VERSIONINFO_RESOURCE := $(LIBAWT_VERSIONINFO_RESOURCE), \
     EXTRA_RCFLAGS := $(LIBAWT_RCFLAGS), \
 ))
@@ -175,146 +171,140 @@ endif
 
 TARGETS += $(BUILD_LIBAWT)
 
-################################################################################
+ifeq ($(call isTargetOs, windows macosx)+$(ENABLE_HEADLESS_ONLY), false+false)
+  ##############################################################################
+  ## Build libawt_xawt
+  ##############################################################################
 
-ifeq ($(call isTargetOs, windows macosx), false)
-  ifeq ($(ENABLE_HEADLESS_ONLY), false)
+  LIBAWT_XAWT_EXTRA_SRC := \
+      common/awt \
+      common/java2d \
+      common/font \
+      #
 
-    LIBAWT_XAWT_EXTRA_SRC := \
-        common/awt \
-        common/java2d \
-        common/font \
-        #
+  LIBAWT_XAWT_EXTRA_HEADER_DIRS := \
+      $(LIBAWT_DEFAULT_HEADER_DIRS) \
+      libawt_xawt/awt \
+      include \
+      common/awt/debug \
+      common/awt/systemscale \
+      common/font \
+      common/java2d/opengl \
+      common/java2d/x11 \
+      libpipewire/include \
+      #
 
-    LIBAWT_XAWT_EXCLUDES := medialib debug
-
-    LIBPIPEWIRE_HEADER_DIRS := \
-        $(TOPDIR)/src/$(MODULE)/unix/native/libpipewire/include
-
-    LIBAWT_XAWT_EXTRA_HEADER_DIRS := \
-        $(LIBAWT_DEFAULT_HEADER_DIRS) \
-        libawt_xawt/awt \
-        include \
-        common/awt/debug \
-        common/awt/systemscale \
-        common/font \
-        common/java2d/opengl \
-        common/java2d/x11 \
-        $(LIBPIPEWIRE_HEADER_DIRS)
-
-    LIBAWT_XAWT_CFLAGS += -DXAWT -DXAWT_HACK \
-        $(FONTCONFIG_CFLAGS) \
-        $(CUPS_CFLAGS)
-
-    ifeq ($(call isTargetOs, linux), true)
-      ifeq ($(DISABLE_XRENDER), true)
-        LIBAWT_XAWT_CFLAGS += -DDISABLE_XRENDER_BY_DEFAULT=true
-      endif
+  ifeq ($(call isTargetOs, linux), true)
+    ifeq ($(DISABLE_XRENDER), true)
+      LIBAWT_XAWT_CFLAGS += -DDISABLE_XRENDER_BY_DEFAULT=true
     endif
-
-    LIBAWT_XAWT_LIBS := $(LIBM) -lawt -lXext -lX11 -lXrender $(LIBDL) -lXtst -lXi -ljava -ljvm
-
-    ifeq ($(call isTargetOs, linux), true)
-      LIBAWT_XAWT_LIBS += -lpthread
-    endif
-
-    # These are the object files provided by the awt native
-    # library. Do not include these external (non-awt_xawt library)
-    # objects in the static library. When statically linking the java
-    # launcher with all JDK and VM static libraries, we use the
-    # --whole-archive linker option. The duplicate objects in different
-    # static libraries cause linking errors due to duplicate symbols.
-    LIBAWT_XAWT_STATIC_EXCLUDE_OBJS := systemScale.o
-
-    $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_XAWT, \
-        NAME := awt_xawt, \
-        EXTRA_SRC := $(LIBAWT_XAWT_EXTRA_SRC), \
-        EXTRA_HEADER_DIRS := $(LIBAWT_XAWT_EXTRA_HEADER_DIRS), \
-        EXCLUDES := $(LIBAWT_XAWT_EXCLUDES), \
-        OPTIMIZATION := LOW, \
-        CFLAGS := $(LIBAWT_XAWT_CFLAGS) $(X_CFLAGS), \
-        DISABLED_WARNINGS_gcc := int-to-pointer-cast, \
-        DISABLED_WARNINGS_gcc_awt_Taskbar.c := parentheses, \
-        DISABLED_WARNINGS_gcc_GLXSurfaceData.c := unused-function, \
-        DISABLED_WARNINGS_gcc_gtk2_interface.c := parentheses type-limits, \
-        DISABLED_WARNINGS_gcc_gtk3_interface.c := parentheses type-limits unused-function, \
-        DISABLED_WARNINGS_gcc_OGLBufImgOps.c := format-nonliteral, \
-        DISABLED_WARNINGS_gcc_OGLPaints.c := format-nonliteral, \
-        DISABLED_WARNINGS_gcc_screencast_pipewire.c := undef, \
-        DISABLED_WARNINGS_gcc_screencast_portal.c := undef, \
-        DISABLED_WARNINGS_gcc_sun_awt_X11_GtkFileDialogPeer.c := parentheses, \
-        DISABLED_WARNINGS_gcc_X11SurfaceData.c := implicit-fallthrough pointer-to-int-cast, \
-        DISABLED_WARNINGS_gcc_XlibWrapper.c := type-limits pointer-to-int-cast, \
-        DISABLED_WARNINGS_gcc_XRBackendNative.c := maybe-uninitialized, \
-        DISABLED_WARNINGS_gcc_XToolkit.c := unused-result, \
-        DISABLED_WARNINGS_gcc_XWindow.c := unused-function, \
-        DISABLED_WARNINGS_clang_awt_Taskbar.c := parentheses, \
-        DISABLED_WARNINGS_clang_gtk2_interface.c := parentheses, \
-        DISABLED_WARNINGS_clang_gtk3_interface.c := parentheses, \
-        DISABLED_WARNINGS_clang_OGLBufImgOps.c := format-nonliteral, \
-        DISABLED_WARNINGS_clang_OGLPaints.c := format-nonliteral, \
-        DISABLED_WARNINGS_clang_screencast_pipewire.c := format-nonliteral, \
-        DISABLED_WARNINGS_clang_sun_awt_X11_GtkFileDialogPeer.c := parentheses, \
-        DISABLED_WARNINGS_clang_aix := deprecated-non-prototype, \
-        DISABLED_WARNINGS_clang_aix_awt_Taskbar.c := parentheses, \
-        DISABLED_WARNINGS_clang_aix_OGLPaints.c := format-nonliteral, \
-        DISABLED_WARNINGS_clang_aix_OGLBufImgOps.c := format-nonliteral, \
-        DISABLED_WARNINGS_clang_aix_gtk2_interface.c := parentheses logical-op-parentheses, \
-        DISABLED_WARNINGS_clang_aix_gtk3_interface.c := parentheses logical-op-parentheses, \
-        DISABLED_WARNINGS_clang_aix_sun_awt_X11_GtkFileDialogPeer.c := parentheses, \
-        DISABLED_WARNINGS_clang_aix_awt_InputMethod.c := sign-compare, \
-        LDFLAGS := -L$(INSTALL_LIBRARIES_HERE), \
-        LIBS := $(X_LIBS) $(LIBAWT_XAWT_LIBS), \
-        STATIC_LIB_EXCLUDE_OBJS := $(LIBAWT_XAWT_STATIC_EXCLUDE_OBJS), \
-    ))
-
-    $(BUILD_LIBAWT_XAWT): $(call FindLib, java.base, java)
-
-    $(BUILD_LIBAWT_XAWT): $(BUILD_LIBAWT)
-
-    TARGETS += $(BUILD_LIBAWT_XAWT)
-
   endif
+
+  # These are the object files provided by the awt native
+  # library. Do not include these external (non-awt_xawt library)
+  # objects in the static library. When statically linking the java
+  # launcher with all JDK and VM static libraries, we use the
+  # --whole-archive linker option. The duplicate objects in different
+  # static libraries cause linking errors due to duplicate symbols.
+  LIBAWT_XAWT_STATIC_EXCLUDE_OBJS := systemScale.o
+
+  $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_XAWT, \
+      NAME := awt_xawt, \
+      EXTRA_SRC := $(LIBAWT_XAWT_EXTRA_SRC), \
+      EXTRA_HEADER_DIRS := $(LIBAWT_XAWT_EXTRA_HEADER_DIRS), \
+      EXCLUDES := medialib debug, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := -DXAWT -DXAWT_HACK $(LIBAWT_XAWT_CFLAGS) \
+          $(FONTCONFIG_CFLAGS) $(CUPS_CFLAGS) $(X_CFLAGS), \
+      DISABLED_WARNINGS_gcc := int-to-pointer-cast, \
+      DISABLED_WARNINGS_gcc_awt_Taskbar.c := parentheses, \
+      DISABLED_WARNINGS_gcc_GLXSurfaceData.c := unused-function, \
+      DISABLED_WARNINGS_gcc_gtk2_interface.c := parentheses type-limits, \
+      DISABLED_WARNINGS_gcc_gtk3_interface.c := parentheses type-limits \
+          unused-function, \
+      DISABLED_WARNINGS_gcc_OGLBufImgOps.c := format-nonliteral, \
+      DISABLED_WARNINGS_gcc_OGLPaints.c := format-nonliteral, \
+      DISABLED_WARNINGS_gcc_screencast_pipewire.c := undef, \
+      DISABLED_WARNINGS_gcc_screencast_portal.c := undef, \
+      DISABLED_WARNINGS_gcc_sun_awt_X11_GtkFileDialogPeer.c := parentheses, \
+      DISABLED_WARNINGS_gcc_X11SurfaceData.c := implicit-fallthrough \
+          pointer-to-int-cast, \
+      DISABLED_WARNINGS_gcc_XlibWrapper.c := type-limits pointer-to-int-cast, \
+      DISABLED_WARNINGS_gcc_XRBackendNative.c := maybe-uninitialized, \
+      DISABLED_WARNINGS_gcc_XToolkit.c := unused-result, \
+      DISABLED_WARNINGS_gcc_XWindow.c := unused-function, \
+      DISABLED_WARNINGS_clang_awt_Taskbar.c := parentheses, \
+      DISABLED_WARNINGS_clang_gtk2_interface.c := parentheses, \
+      DISABLED_WARNINGS_clang_gtk3_interface.c := parentheses, \
+      DISABLED_WARNINGS_clang_OGLBufImgOps.c := format-nonliteral, \
+      DISABLED_WARNINGS_clang_OGLPaints.c := format-nonliteral, \
+      DISABLED_WARNINGS_clang_screencast_pipewire.c := format-nonliteral, \
+      DISABLED_WARNINGS_clang_sun_awt_X11_GtkFileDialogPeer.c := parentheses, \
+      DISABLED_WARNINGS_clang_aix := deprecated-non-prototype, \
+      DISABLED_WARNINGS_clang_aix_awt_Taskbar.c := parentheses, \
+      DISABLED_WARNINGS_clang_aix_OGLPaints.c := format-nonliteral, \
+      DISABLED_WARNINGS_clang_aix_OGLBufImgOps.c := format-nonliteral, \
+      DISABLED_WARNINGS_clang_aix_gtk2_interface.c := parentheses \
+          logical-op-parentheses, \
+      DISABLED_WARNINGS_clang_aix_gtk3_interface.c := parentheses \
+          logical-op-parentheses, \
+      DISABLED_WARNINGS_clang_aix_sun_awt_X11_GtkFileDialogPeer.c := \
+          parentheses, \
+      DISABLED_WARNINGS_clang_aix_awt_InputMethod.c := sign-compare, \
+      LDFLAGS := -L$(INSTALL_LIBRARIES_HERE), \
+      JDK_LIBS_unix := -lawt -ljava -ljvm, \
+      LIBS_unix := $(LIBDL) $(LIBM) $(X_LIBS) -lX11 -lXext -lXi -lXrender \
+          -lXtst, \
+      LIBS_linux := -lpthread, \
+      STATIC_LIB_EXCLUDE_OBJS := $(LIBAWT_XAWT_STATIC_EXCLUDE_OBJS), \
+  ))
+
+  $(BUILD_LIBAWT_XAWT): $(call FindLib, java.base, java)
+
+  $(BUILD_LIBAWT_XAWT): $(BUILD_LIBAWT)
+
+  TARGETS += $(BUILD_LIBAWT_XAWT)
 endif
 
 ################################################################################
-
-# The fast floor code loses precision.
-LCMS_CFLAGS=-DCMS_DONT_USE_FAST_FLOOR -DCMS_NO_HALF_SUPPORT
+## Build liblcms
+################################################################################
 
 ifeq ($(USE_EXTERNAL_LCMS), true)
   # If we're using an external library, we'll just need the wrapper part.
   # By including it explicitly, all other files will be excluded.
-  BUILD_LIBLCMS_INCLUDE_FILES := LCMS.c
+  LIBLCMS_INCLUDE_FILES := LCMS.c
   # If we're using an external library, we can't include our own SRC path
   # as includes, instead the system headers should be used.
   LIBLCMS_HEADERS_FROM_SRC := false
-else
-  BUILD_LIBLCMS_INCLUDE_FILES :=
+  # FIXME: Keep old behavior and reset LCMS_CFLAGS. This is likely a bug.
+  LCMS_CFLAGS :=
 endif
 
-ifeq ($(TOOLCHAIN_TYPE), clang)
- ifeq ($(TOOLCHAIN_VERSION), 10.1)
-   # Work around an optimizer bug seen with Xcode 10.1, but fixed by 10.3
-   BUILD_LIBLCMS_cmsopt.c_CFLAGS := -O0
- endif
+ifeq ($(TOOLCHAIN_TYPE)+$(TOOLCHAIN_VERSION), clang+10.1)
+  # Work around an optimizer bug seen with Xcode 10.1, but fixed by 10.3
+  BUILD_LIBLCMS_cmsopt.c_CFLAGS := -O0
 endif
 
+# We use CMS_DONT_USE_FAST_FLOOR and CMS_NO_HALF_SUPPORT since the fast floor
+# code loses precision.
 $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
     NAME := lcms, \
-    INCLUDE_FILES := $(BUILD_LIBLCMS_INCLUDE_FILES), \
+    INCLUDE_FILES := $(LIBLCMS_INCLUDE_FILES), \
     OPTIMIZATION := HIGHEST, \
-    CFLAGS := $(LCMS_CFLAGS), \
+    CFLAGS := -DCMS_DONT_USE_FAST_FLOOR -DCMS_NO_HALF_SUPPORT $(LCMS_CFLAGS), \
     CFLAGS_windows := -DCMS_IS_WINDOWS_, \
     EXTRA_HEADER_DIRS := \
         common/awt/debug \
         libawt/java2d, \
     HEADERS_FROM_SRC := $(LIBLCMS_HEADERS_FROM_SRC), \
-    DISABLED_WARNINGS_gcc := format-nonliteral type-limits stringop-truncation, \
+    DISABLED_WARNINGS_gcc := format-nonliteral type-limits \
+        stringop-truncation, \
     DISABLED_WARNINGS_clang := format-nonliteral, \
     LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
-    LIBS_unix := -lawt -ljvm -ljava $(LCMS_LIBS) $(LIBM), \
-    LIBS_windows := $(WIN_AWT_LIB) $(WIN_JAVA_LIB), \
+    JDK_LIBS_unix := -lawt -ljava -ljvm, \
+    JDK_LIBS_windows := $(WIN_AWT_LIB) $(WIN_JAVA_LIB), \
+    LIBS_unix := $(LCMS_LIBS) $(LIBM), \
 ))
 
 TARGETS += $(BUILD_LIBLCMS)
@@ -322,6 +312,17 @@ TARGETS += $(BUILD_LIBLCMS)
 $(BUILD_LIBLCMS): $(BUILD_LIBAWT)
 
 ################################################################################
+## Build libjavajpeg
+################################################################################
+
+ifeq ($(USE_EXTERNAL_LIBJPEG), true)
+  LIBJAVAJPEG_INCLUDE_FILES := \
+      imageioJPEG.c \
+      jpegdecoder.c
+  # If we're using an external library, we can't include our own SRC path
+  # as includes, instead the system headers should be used.
+  LIBJAVAJPEG_HEADERS_FROM_SRC := false
+endif
 
 # "DISABLED_WARNINGS_gcc := clobbered" rationale:
 # Suppress gcc warnings like "variable might be clobbered by 'longjmp'
@@ -330,40 +331,29 @@ $(BUILD_LIBLCMS): $(BUILD_LIBAWT)
 # Recommended way to avoid such warning is to declare the variable as
 # volatile to prevent the optimization. However, this approach does not
 # work because we have to declare all variables as volatile in result.
-
-ifeq ($(USE_EXTERNAL_LIBJPEG), true)
-  LIBJPEG_LIBS := -ljpeg
-  BUILD_LIBJAVAJPEG_INCLUDE_FILES := \
-      imageioJPEG.c \
-      jpegdecoder.c
-  # If we're using an external library, we can't include our own SRC path
-  # as includes, instead the system headers should be used.
-  LIBJPEG_HEADERS_FROM_SRC := false
-else
-  LIBJPEG_LIBS :=
-  BUILD_LIBJAVAJPEG_INCLUDE_FILES :=
-endif
-
 $(eval $(call SetupJdkLibrary, BUILD_LIBJAVAJPEG, \
     NAME := javajpeg, \
-    INCLUDE_FILES := $(BUILD_LIBJAVAJPEG_INCLUDE_FILES), \
+    INCLUDE_FILES := $(LIBJAVAJPEG_INCLUDE_FILES), \
     OPTIMIZATION := HIGHEST, \
-    HEADERS_FROM_SRC := $(LIBJPEG_HEADERS_FROM_SRC), \
+    HEADERS_FROM_SRC := $(LIBJAVAJPEG_HEADERS_FROM_SRC), \
     DISABLED_WARNINGS_gcc_imageioJPEG.c := clobbered array-bounds, \
     DISABLED_WARNINGS_gcc_jcmaster.c := implicit-fallthrough, \
     DISABLED_WARNINGS_gcc_jdphuff.c := shift-negative-value, \
-    LIBS := $(LIBJPEG_LIBS) $(JDKLIB_LIBS), \
-    LIBS_windows := $(WIN_JAVA_LIB) jvm.lib, \
+    JDK_LIBS := $(JDKLIB_LIBS), \
+    JDK_LIBS_windows := $(WIN_JAVA_LIB) jvm.lib, \
+    LIBS := $(LIBJPEG_LIBS), \
 ))
 
 $(BUILD_LIBJAVAJPEG): $(call FindLib, java.base, java)
 
 TARGETS += $(BUILD_LIBJAVAJPEG)
 
-################################################################################
 
 # Mac and Windows only use the native AWT lib, do not build libawt_headless
 ifeq ($(call isTargetOs, windows macosx), false)
+  ##############################################################################
+  ## Build libawt_headless
+  ##############################################################################
 
   LIBAWT_HEADLESS_EXTRA_SRC := \
       common/font \
@@ -371,17 +361,12 @@ ifeq ($(call isTargetOs, windows macosx), false)
       $(TOPDIR)/src/$(MODULE)/$(OPENJDK_TARGET_OS_TYPE)/native/common/awt \
       #
 
-  LIBAWT_HEADLESS_EXCLUDES := medialib
-
   LIBAWT_HEADLESS_EXTRA_HEADER_DIRS := \
       $(LIBAWT_DEFAULT_HEADER_DIRS) \
       common/awt/debug \
       common/font \
       common/java2d/opengl \
       #
-
-  LIBAWT_HEADLESS_CFLAGS := $(CUPS_CFLAGS) $(FONTCONFIG_CFLAGS) $(X_CFLAGS) \
-      -DHEADLESS=true
 
   # These are the object files provided by the awt native
   # library. Do not include these external (non-awt_headless library)
@@ -394,49 +379,36 @@ ifeq ($(call isTargetOs, windows macosx), false)
   $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_HEADLESS, \
       NAME := awt_headless, \
       EXTRA_SRC := $(LIBAWT_HEADLESS_EXTRA_SRC), \
-      EXCLUDES := $(LIBAWT_HEADLESS_EXCLUDES), \
+      EXCLUDES := medialib, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(LIBAWT_HEADLESS_CFLAGS), \
+      CFLAGS := -DHEADLESS=true $(CUPS_CFLAGS) $(FONTCONFIG_CFLAGS) \
+          $(X_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBAWT_HEADLESS_EXTRA_HEADER_DIRS), \
       DISABLED_WARNINGS_gcc_X11Renderer.c := unused-function, \
       DISABLED_WARNINGS_gcc_X11SurfaceData.c := unused-function, \
       LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
-      LIBS_unix := -lawt -ljvm -ljava, \
-      LIBS_linux := $(LIBM) $(LIBDL), \
+      JDK_LIBS_unix := -lawt -ljava -ljvm, \
+      LIBS_linux := $(LIBDL) $(LIBM), \
       STATIC_LIB_EXCLUDE_OBJS := $(LIBAWT_HEADLESS_STATIC_EXCLUDE_OBJS), \
   ))
 
   $(BUILD_LIBAWT_HEADLESS): $(BUILD_LIBAWT)
 
   TARGETS += $(BUILD_LIBAWT_HEADLESS)
-
 endif
 
 ################################################################################
+## Build libfreetype
+################################################################################
 
-ifeq ($(FREETYPE_TO_USE), system)
-  # For use by libfontmanager:
-  LIBFREETYPE_CFLAGS := $(FREETYPE_CFLAGS)
-  LIBFREETYPE_LIBS := $(FREETYPE_LIBS)
-else
-  BUILD_LIBFREETYPE_HEADER_DIRS := $(TOPDIR)/src/$(MODULE)/share/native/libfreetype/include
-  BUILD_LIBFREETYPE_CFLAGS := -DFT2_BUILD_LIBRARY
-
-  # For use by libfontmanager:
-  LIBFREETYPE_CFLAGS := -I$(BUILD_LIBFREETYPE_HEADER_DIRS)
-  ifeq ($(call isTargetOs, windows), true)
-    LIBFREETYPE_LIBS := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfreetype/freetype.lib
-    # freetype now requires you to manually define this (see ftconfig.h)
-    BUILD_LIBFREETYPE_CFLAGS += -DDLL_EXPORT
-  else
-    LIBFREETYPE_LIBS := -lfreetype
-  endif
-
+ifeq ($(FREETYPE_TO_USE), bundled)
+  # freetype requires you to manually define DLL_EXPORT for windows (see ftconfig.h)
   $(eval $(call SetupJdkLibrary, BUILD_LIBFREETYPE, \
       NAME := freetype, \
       OPTIMIZATION := HIGHEST, \
-      CFLAGS := $(BUILD_LIBFREETYPE_CFLAGS), \
-      EXTRA_HEADER_DIRS := $(BUILD_LIBFREETYPE_HEADER_DIRS), \
+      CFLAGS := -DFT2_BUILD_LIBRARY, \
+      CFLAGS_windows := -DDLL_EXPORT, \
+      EXTRA_HEADER_DIRS := libfreetype/include, \
       DISABLED_WARNINGS_microsoft := 4267 4244 4996, \
       DISABLED_WARNINGS_gcc := dangling-pointer stringop-overflow, \
   ))
@@ -444,49 +416,54 @@ else
   TARGETS += $(BUILD_LIBFREETYPE)
 endif
 
-###########################################################################
-
+################################################################################
+## Build libfontmanager
+################################################################################
 
 ifeq ($(USE_EXTERNAL_HARFBUZZ), true)
    LIBFONTMANAGER_EXTRA_SRC =
-   BUILD_LIBFONTMANAGER_FONTLIB += $(HARFBUZZ_LIBS)
+   LIBFONTMANAGER_LIBS += $(HARFBUZZ_LIBS)
 else
    LIBFONTMANAGER_EXTRA_SRC = libharfbuzz
 
    ifeq ($(call isTargetOs, windows), false)
      HARFBUZZ_CFLAGS += -DGETPAGESIZE -DHAVE_MPROTECT -DHAVE_PTHREAD \
-                        -DHAVE_SYSCONF -DHAVE_SYS_MMAN_H -DHAVE_UNISTD_H \
-                        -DHB_NO_PRAGMA_GCC_DIAGNOSTIC
+        -DHAVE_SYSCONF -DHAVE_SYS_MMAN_H -DHAVE_UNISTD_H \
+        -DHB_NO_PRAGMA_GCC_DIAGNOSTIC
    endif
    ifeq ($(call isTargetOs, linux macosx), true)
      HARFBUZZ_CFLAGS += -DHAVE_INTEL_ATOMIC_PRIMITIVES -DHB_NO_VISIBILITY
    endif
 
    # hb-ft.cc is not presently needed, and requires freetype 2.4.2 or later.
-   # hb-subset and hb-style APIs are not needed, excluded to cut on compilation time.
-   LIBFONTMANAGER_EXCLUDE_FILES += hb-ft.cc hb-subset-cff-common.cc \
-       hb-subset-cff1.cc hb-subset-cff2.cc hb-subset-input.cc hb-subset-plan.cc \
-       hb-subset.cc hb-subset-instancer-solver.cc gsubgpos-context.cc hb-style.cc
+   # hb-subset and hb-style APIs are not needed, excluded to cut on compilation
+   # time.
+   LIBFONTMANAGER_EXCLUDE_FILES += gsubgpos-context.cc hb-ft.cc hb-style.cc \
+      hb-subset-cff-common.cc hb-subset-cff1.cc hb-subset-cff2.cc \
+      hb-subset-input.cc hb-subset-instancer-solver.cc hb-subset-plan.cc \
+      hb-subset.cc
 
-   # list of disabled warnings and the compilers for which it was specifically added.
+   # list of disabled warnings and the compilers for which it was specifically
+   # added.
    # array-bounds         -> GCC 12 on Alpine Linux
    # parentheses          -> GCC 6
    # range-loop-analysis  -> clang on Xcode12
 
-   HARFBUZZ_DISABLED_WARNINGS_gcc := missing-field-initializers strict-aliasing \
-       unused-result array-bounds parentheses
+   HARFBUZZ_DISABLED_WARNINGS_gcc := missing-field-initializers \
+       strict-aliasing unused-result array-bounds parentheses
    # noexcept-type required for GCC 7 builds. Not required for GCC 8+.
    # expansion-to-defined required for GCC 9 builds. Not required for GCC 10+.
    # maybe-uninitialized required for GCC 8 builds. Not required for GCC 9+.
-   # calloc-transposed-args required for GCC 14 builds. (fixed upstream in Harfbuzz 032c931e1c0cfb20f18e5acb8ba005775242bd92)
+   # calloc-transposed-args required for GCC 14 builds. (fixed upstream in
+   #  Harfbuzz 032c931e1c0cfb20f18e5acb8ba005775242bd92)
    HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := class-memaccess noexcept-type \
        expansion-to-defined dangling-reference maybe-uninitialized \
        calloc-transposed-args
-   HARFBUZZ_DISABLED_WARNINGS_clang := missing-field-initializers range-loop-analysis
+   HARFBUZZ_DISABLED_WARNINGS_clang := missing-field-initializers \
+      range-loop-analysis
    HARFBUZZ_DISABLED_WARNINGS_microsoft := 4267 4244
 
    LIBFONTMANAGER_CFLAGS += $(HARFBUZZ_CFLAGS)
-
 endif
 
 LIBFONTMANAGER_EXTRA_HEADER_DIRS := \
@@ -499,8 +476,19 @@ LIBFONTMANAGER_EXTRA_HEADER_DIRS := \
     libawt/java2d/loops \
     #
 
-LIBFONTMANAGER_CFLAGS += $(LIBFREETYPE_CFLAGS)
-BUILD_LIBFONTMANAGER_FONTLIB +=  $(LIBFREETYPE_LIBS)
+ifeq ($(FREETYPE_TO_USE), system)
+  LIBFONTMANAGER_CFLAGS += $(FREETYPE_CFLAGS)
+  LIBFONTMANAGER_LIBS += $(FREETYPE_LIBS)
+else
+  LIBFONTMANAGER_EXTRA_HEADER_DIRS += libfreetype/include
+
+  ifeq ($(call isTargetOs, windows), true)
+    LIBFONTMANAGER_JDK_LIBS += \
+        $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfreetype/freetype.lib
+  else
+    LIBFONTMANAGER_JDK_LIBS += -lfreetype
+  endif
+endif
 
 LIBFONTMANAGER_OPTIMIZATION := HIGHEST
 
@@ -513,17 +501,13 @@ ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )
 endif
 
 ifeq ($(call isTargetOs, windows), true)
-  LIBFONTMANAGER_EXCLUDE_FILES += X11FontScaler.c \
-      X11TextRenderer.c
+  LIBFONTMANAGER_EXCLUDE_FILES += X11FontScaler.c X11TextRenderer.c
   LIBFONTMANAGER_OPTIMIZATION := HIGHEST
 else ifeq ($(call isTargetOs, macosx), true)
-  LIBFONTMANAGER_EXCLUDE_FILES += X11FontScaler.c \
-      X11TextRenderer.c \
-      fontpath.c \
-      lcdglyph.c
+  LIBFONTMANAGER_EXCLUDE_FILES += X11FontScaler.c X11TextRenderer.c \
+      fontpath.c lcdglyph.c
 else
-  LIBFONTMANAGER_EXCLUDE_FILES += fontpath.c \
-      lcdglyph.c
+  LIBFONTMANAGER_EXCLUDE_FILES += fontpath.c lcdglyph.c
 endif
 
 LIBFONTMANAGER_CFLAGS += $(X_CFLAGS) -DLE_STANDALONE -DHEADLESS
@@ -551,11 +535,17 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
     LDFLAGS_FILTER_OUT :=-Wl$(COMMA)-z$(COMMA)defs, \
     LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
     LDFLAGS_aix := -Wl$(COMMA)-berok, \
-    LIBS := $(BUILD_LIBFONTMANAGER_FONTLIB), \
-    LIBS_unix := -lawt -ljava -ljvm $(LIBM), \
-    LIBS_macosx := -lawt_lwawt -framework CoreText -framework CoreFoundation -framework CoreGraphics, \
-    LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib user32.lib gdi32.lib \
-        $(WIN_AWT_LIB), \
+    JDK_LIBS := $(LIBFONTMANAGER_JDK_LIBS), \
+    JDK_LIBS_unix := -lawt -ljava -ljvm, \
+    JDK_LIBS_macosx := -lawt_lwawt, \
+    JDK_LIBS_windows := $(WIN_AWT_LIB) $(WIN_JAVA_LIB), \
+    LIBS := $(LIBFONTMANAGER_LIBS), \
+    LIBS_unix := $(LIBM), \
+    LIBS_macosx := \
+        -framework CoreFoundation \
+        -framework CoreGraphics \
+        -framework CoreText, \
+    LIBS_windows := advapi32.lib gdi32.lib user32.lib, \
 ))
 
 $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT)
@@ -571,13 +561,15 @@ endif
 TARGETS += $(BUILD_LIBFONTMANAGER)
 
 ################################################################################
+## Build libjawt
+################################################################################
+
+LIBJAWT_EXTRA_HEADER_DIRS := \
+    include \
+    #
 
 ifeq ($(call isTargetOs, windows), true)
-
-  LIBJAWT_CFLAGS := -EHsc -DUNICODE -D_UNICODE
-
-  LIBJAWT_EXTRA_HEADER_DIRS := \
-      include \
+  LIBJAWT_EXTRA_HEADER_DIRS += \
       common/awt/debug \
       common/awt/utility \
       libawt/awt/image/cvutils \
@@ -586,23 +578,68 @@ ifeq ($(call isTargetOs, windows), true)
       libawt/windows \
       java.base:libjava \
       #
+else
+  LIBJAWT_EXTRA_HEADER_DIRS += \
+      common/awt \
+      #
+endif
 
-  ifeq ($(call isTargetCpu, x86), true)
-    KERNEL32_LIB := kernel32.lib
+ifeq ($(call isTargetOs, macosx), true)
+  # libjawt on macosx does not use the unix code
+  LIBJAWT_EXCLUDE_SRC_PATTERNS := /unix/
+endif
+
+ifeq ($(call isTargetOs, linux)+$(ENABLE_HEADLESS_ONLY), true+true)
+  LIBJAWT_CFLAGS += -DHEADLESS
+endif
+
+ifeq ($(call isTargetOs, windows)+$(call isTargetCpu, x86), true+true)
+  LIBJAWT_LIBS_windows := kernel32.lib
+endif
+
+ifeq ($(call isTargetOsType, unix)+$(call isTargetOs, macosx), true+false)
+  LIBJAWT_JDK_LIBS_unix := -lawt
+  ifeq ($(ENABLE_HEADLESS_ONLY), false)
+    LIBJAWT_JDK_LIBS_unix += -lawt_xawt
+  else
+    LIBJAWT_JDK_LIBS_unix += -lawt_headless
   endif
+endif
 
-  $(eval $(call SetupJdkLibrary, BUILD_LIBJAWT, \
-      NAME := jawt, \
-      OPTIMIZATION := LOW, \
-      CFLAGS := $(LIBJAWT_CFLAGS), \
-      CXXFLAGS := $(LIBJAWT_CFLAGS), \
-      EXTRA_HEADER_DIRS := $(LIBJAWT_EXTRA_HEADER_DIRS), \
-      LDFLAGS := $(LDFLAGS_CXX_JDK), \
-      LIBS := $(JDKLIB_LIBS) $(KERNEL32_LIB) advapi32.lib $(WIN_AWT_LIB), \
-  ))
+$(eval $(call SetupJdkLibrary, BUILD_LIBJAWT, \
+    NAME := jawt, \
+    EXCLUDE_SRC_PATTERNS := $(LIBJAWT_EXCLUDE_SRC_PATTERNS), \
+    OPTIMIZATION := LOW, \
+    CFLAGS := $(LIBJAWT_CFLAGS), \
+    CFLAGS_windows := -EHsc -DUNICODE -D_UNICODE, \
+    CXXFLAGS_windows := -EHsc -DUNICODE -D_UNICODE, \
+    DISABLED_WARNINGS_clang_jawt.m := sign-compare, \
+    EXTRA_HEADER_DIRS := $(LIBJAWT_EXTRA_HEADER_DIRS), \
+    LDFLAGS_windows := $(LDFLAGS_CXX_JDK), \
+    LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
+    LDFLAGS_macosx := -Wl$(COMMA)-rpath$(COMMA)@loader_path, \
+    JDK_LIBS_unix := $(LIBJAWT_JDK_LIBS_unix) $(JDKLIB_LIBS), \
+    JDK_LIBS_macosx := -lawt_lwawt, \
+    JDK_LIBS_windows := $(WIN_AWT_LIB), \
+    LIBS_macosx := -framework Cocoa, \
+    LIBS_windows := advapi32.lib $(LIBJAWT_LIBS_windows), \
+))
 
+ifeq ($(call isTargetOs, windows), true)
   $(BUILD_LIBJAWT): $(BUILD_LIBAWT)
+else ifeq ($(call isTargetOs, macosx), true)
+   $(BUILD_LIBJAWT): $(call FindLib, $(MODULE), awt_lwawt)
+else
+  ifeq ($(ENABLE_HEADLESS_ONLY), false)
+    $(BUILD_LIBJAWT): $(BUILD_LIBAWT_XAWT)
+  else
+    $(BUILD_LIBJAWT): $(call FindLib, $(MODULE), awt_headless)
+  endif
+endif
 
+TARGETS += $(BUILD_LIBJAWT)
+
+ifeq ($(call isTargetOs, windows), true)
   $(eval $(call SetupCopyFiles, COPY_JAWT_LIB, \
       FILES := $(BUILD_LIBJAWT_IMPORT_LIBRARY), \
       DEST := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
@@ -611,82 +648,31 @@ ifeq ($(call isTargetOs, windows), true)
   $(COPY_JAWT_LIB): $(BUILD_LIBJAWT)
 
   TARGETS += $(COPY_JAWT_LIB)
-
-else # not windows
-
-  ifeq ($(call isTargetOs, macosx), true)
-    # libjawt on macosx do not use the unix code
-    LIBJAWT_EXCLUDE_SRC_PATTERNS := /unix/
-  endif
-
-  ifeq ($(call isTargetOs, macosx), true)
-    JAWT_LIBS := -lawt_lwawt
-  else
-    JAWT_LIBS := -lawt
-    ifeq ($(ENABLE_HEADLESS_ONLY), false)
-      JAWT_LIBS += -lawt_xawt
-    else
-      JAWT_LIBS += -lawt_headless
-      ifeq ($(call isTargetOs, linux), true)
-        JAWT_CFLAGS += -DHEADLESS
-      endif
-    endif
-  endif
-
-  $(eval $(call SetupJdkLibrary, BUILD_LIBJAWT, \
-      NAME := jawt, \
-      EXCLUDE_SRC_PATTERNS := $(LIBJAWT_EXCLUDE_SRC_PATTERNS), \
-      INCLUDE_FILES := $(JAWT_FILES), \
-      OPTIMIZATION := LOW, \
-      CFLAGS := $(JAWT_CFLAGS), \
-      DISABLED_WARNINGS_clang_jawt.m := sign-compare, \
-      EXTRA_HEADER_DIRS := \
-          include \
-          common/awt, \
-      LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
-      LDFLAGS_macosx := -Wl$(COMMA)-rpath$(COMMA)@loader_path, \
-      LIBS_unix := $(JAWT_LIBS) $(JDKLIB_LIBS), \
-      LIBS_macosx := -framework Cocoa, \
-  ))
-
-  ifeq ($(ENABLE_HEADLESS_ONLY), false)
-    $(BUILD_LIBJAWT): $(BUILD_LIBAWT_XAWT)
-  else
-    $(BUILD_LIBJAWT): $(call FindLib, $(MODULE), awt_headless)
-  endif
-
-  ifeq ($(call isTargetOs, macosx), true)
-   $(BUILD_LIBJAWT): $(call FindLib, $(MODULE), awt_lwawt)
-  endif
-
 endif
 
-TARGETS += $(BUILD_LIBJAWT)
-
+################################################################################
+## Build libsplashscreen
 ################################################################################
 
 ifeq ($(ENABLE_HEADLESS_ONLY), false)
-
   LIBSPLASHSCREEN_EXTRA_SRC := \
       common/awt/systemscale \
       #
 
-  LIBSPLASHSCREEN_HEADER_DIRS += common/awt/utility
+  LIBSPLASHSCREEN_HEADER_DIRS := \
+      common/awt/utility \
+      libosxapp \
+      java.base:libjava \
+      #
 
   ifeq ($(USE_EXTERNAL_LIBGIF), false)
     LIBSPLASHSCREEN_HEADER_DIRS += libsplashscreen/giflib
   else
-    LIBSPLASHSCREEN_EXCLUDES := giflib
-    GIFLIB_LIBS := -lgif
+    LIBSPLASHSCREEN_EXCLUDES += giflib
   endif
 
   ifeq ($(USE_EXTERNAL_LIBJPEG), false)
-    # While the following ought to work, it will currently pull in the closed
-    # additions to this library, and this was not done previously in the build.
-    # LIBSPLASHSCREEN_EXTRA_SRC += libjavajpeg
-    LIBSPLASHSCREEN_EXTRA_SRC += $(TOPDIR)/src/java.desktop/share/native/libjavajpeg
-  else
-    LIBJPEG_LIBS := -ljpeg
+    LIBSPLASHSCREEN_EXTRA_SRC += libjavajpeg
   endif
 
   ifeq ($(USE_EXTERNAL_LIBPNG), false)
@@ -699,18 +685,11 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
     LIBSPLASHSCREEN_EXTRA_SRC += java.base:libzip/zlib
   endif
 
-  ifeq ($(call isTargetOs, macosx), true)
-    # libsplashscreen on macosx do not use the unix code
-    LIBSPLASHSCREEN_EXCLUDE_SRC_PATTERNS := /unix/
-  endif
-
   LIBSPLASHSCREEN_CFLAGS += -DSPLASHSCREEN -DPNG_NO_MMX_CODE \
-                            -DPNG_ARM_NEON_OPT=0 -DPNG_ARM_NEON_IMPLEMENTATION=0
+      -DPNG_ARM_NEON_OPT=0 -DPNG_ARM_NEON_IMPLEMENTATION=0
 
-  ifeq ($(call isTargetOs, linux), true)
-    ifeq ($(call isTargetCpuArch, ppc), true)
-      LIBSPLASHSCREEN_CFLAGS += -DPNG_POWERPC_VSX_OPT=0
-    endif
+  ifeq ($(call isTargetOs, linux)+$(call isTargetCpuArch, ppc), true+true)
+    LIBSPLASHSCREEN_CFLAGS += -DPNG_POWERPC_VSX_OPT=0
   endif
 
   # The external libpng submitted in the jdk is a reduced version
@@ -722,13 +701,12 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
   # expands to true. This would results in the fact that
   # .png_init_filter_functions_vsx is needed in libpng.
   ifeq ($(call isTargetOs, aix), true)
-    ifeq ($(TOOLCHAIN_TYPE), clang)
-      LIBSPLASHSCREEN_CFLAGS += -DPNG_POWERPC_VSX_OPT=0
-    endif
+    LIBSPLASHSCREEN_CFLAGS += -DPNG_POWERPC_VSX_OPT=0
   endif
 
   ifeq ($(call isTargetOs, macosx), true)
-    LIBSPLASHSCREEN_CFLAGS += -DWITH_MACOSX
+    # libsplashscreen on macosx does not use the unix code
+    LIBSPLASHSCREEN_EXCLUDE_SRC_PATTERNS := /unix/
 
     BUILD_LIBSPLASHSCREEN_java_awt_SplashScreen.c_CFLAGS := -x objective-c -O0
     BUILD_LIBSPLASHSCREEN_splashscreen_gfx_impl.c_CFLAGS := -x objective-c -O0
@@ -737,33 +715,15 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
     BUILD_LIBSPLASHSCREEN_splashscreen_jpeg.c_CFLAGS := -x objective-c -O0
     BUILD_LIBSPLASHSCREEN_splashscreen_png.c_CFLAGS := -x objective-c -O0
     BUILD_LIBSPLASHSCREEN_splashscreen_sys.m_CFLAGS := -O0
+  endif
 
+  ifeq ($(call isTargetOs, macosx), true)
+    LIBSPLASHSCREEN_CFLAGS += -DWITH_MACOSX
   else ifeq ($(call isTargetOs, windows), true)
     LIBSPLASHSCREEN_CFLAGS += -DWITH_WIN32
   else
     LIBSPLASHSCREEN_CFLAGS += -DWITH_X11 $(X_CFLAGS)
   endif
-
-  LIBSPLASHSCREEN_LIBS :=
-
-  ifeq ($(call isTargetOs, macosx), true)
-    LIBSPLASHSCREEN_LIBS += \
-        $(LIBM) -lpthread -liconv -losxapp \
-        -framework ApplicationServices \
-        -framework Foundation \
-        -framework Security \
-        -framework Cocoa \
-        -framework Metal
-  else ifeq ($(call isTargetOs, windows), true)
-    LIBSPLASHSCREEN_LIBS += kernel32.lib user32.lib gdi32.lib delayimp.lib $(WIN_JAVA_LIB) jvm.lib
-  else
-    LIBSPLASHSCREEN_LIBS += $(X_LIBS) -lX11 -lXext $(LIBM) -lpthread -ldl
-  endif
-
-  LIBSPLASHSCREEN_HEADER_DIRS += \
-      libosxapp \
-      java.base:libjava \
-      #
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBSPLASHSCREEN, \
       NAME := splashscreen, \
@@ -782,14 +742,17 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_gcc_jdphuff.c := shift-negative-value, \
       DISABLED_WARNINGS_gcc_png.c := maybe-uninitialized, \
       DISABLED_WARNINGS_gcc_pngerror.c := maybe-uninitialized, \
-      DISABLED_WARNINGS_gcc_splashscreen_gfx_impl.c := implicit-fallthrough maybe-uninitialized, \
-      DISABLED_WARNINGS_gcc_splashscreen_impl.c := implicit-fallthrough sign-compare unused-function, \
+      DISABLED_WARNINGS_gcc_splashscreen_gfx_impl.c := implicit-fallthrough \
+          maybe-uninitialized, \
+      DISABLED_WARNINGS_gcc_splashscreen_impl.c := implicit-fallthrough \
+          sign-compare unused-function, \
       DISABLED_WARNINGS_gcc_splashscreen_sys.c := type-limits unused-result, \
       DISABLED_WARNINGS_clang := deprecated-non-prototype, \
       DISABLED_WARNINGS_clang_dgif_lib.c := sign-compare, \
       DISABLED_WARNINGS_clang_gzwrite.c := format-nonliteral, \
       DISABLED_WARNINGS_clang_splashscreen_impl.c := sign-compare, \
-      DISABLED_WARNINGS_clang_splashscreen_png.c := incompatible-pointer-types, \
+      DISABLED_WARNINGS_clang_splashscreen_png.c := \
+          incompatible-pointer-types, \
       DISABLED_WARNINGS_clang_splashscreen_sys.m := deprecated-declarations, \
       DISABLED_WARNINGS_microsoft_dgif_lib.c := 4018 4267, \
       DISABLED_WARNINGS_microsoft_splashscreen_impl.c := 4018 4267 4244, \
@@ -797,9 +760,20 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_microsoft_splashscreen_sys.c := 4267 4244, \
       LDFLAGS_macosx := -L$(INSTALL_LIBRARIES_HERE), \
       LDFLAGS_windows := -delayload:user32.dll, \
-      LIBS := $(JDKLIB_LIBS) $(LIBSPLASHSCREEN_LIBS) $(LIBZ_LIBS) \
-          $(GIFLIB_LIBS) $(LIBJPEG_LIBS) $(PNG_LIBS), \
-      LIBS_aix := -liconv, \
+      JDK_LIBS := $(JDKLIB_LIBS), \
+      JDK_LIBS_macosx := -losxapp, \
+      JDK_LIBS_windows := $(WIN_JAVA_LIB) jvm.lib, \
+      LIBS := $(GIFLIB_LIBS) $(LIBJPEG_LIBS) $(LIBZ_LIBS) $(PNG_LIBS), \
+      LIBS_unix := $(LIBM) -lpthread, \
+      LIBS_linux := $(LIBDL) $(X_LIBS) -lX11 -lXext, \
+      LIBS_macosx := -liconv \
+          -framework ApplicationServices \
+          -framework Cocoa \
+          -framework Foundation \
+          -framework Metal \
+          -framework Security, \
+      LIBS_aix := $(LIBDL) -liconv $(X_LIBS) -lX11 -lXext, \
+      LIBS_windows := delayimp.lib gdi32.lib kernel32.lib user32.lib, \
   ))
 
   TARGETS += $(BUILD_LIBSPLASHSCREEN)
@@ -807,12 +781,12 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
   ifeq ($(call isTargetOs, macosx), true)
     $(BUILD_LIBSPLASHSCREEN): $(call FindLib, $(MODULE), osxapp)
   endif
-
 endif
 
-################################################################################
-
 ifeq ($(call isTargetOs, macosx), true)
+  ##############################################################################
+  ## Build libawt_lwawt
+  ##############################################################################
 
   LIBAWT_LWAWT_EXTRA_SRC := \
       $(TOPDIR)/src/$(MODULE)/unix/native/common/awt \
@@ -832,47 +806,47 @@ ifeq ($(call isTargetOs, macosx), true)
       libosxapp \
       #
 
-  LIBAWT_LWAWT_CFLAGS := $(X_CFLAGS) $(X_LIBS)
-
-  LIBAWT_LWAWT_EXFILES := fontpath.c awt_Font.c X11Color.c
+  LIBAWT_LWAWT_EXCLUDE_FILES := fontpath.c awt_Font.c X11Color.c
   LIBAWT_LWAWT_EXCLUDES := $(TOPDIR)/src/$(MODULE)/unix/native/common/awt/medialib
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_LWAWT, \
       NAME := awt_lwawt, \
       EXTRA_SRC := $(LIBAWT_LWAWT_EXTRA_SRC), \
-      INCLUDE_FILES := $(LIBAWT_LWAWT_FILES), \
-      EXCLUDE_FILES := $(LIBAWT_LWAWT_EXFILES), \
+      EXCLUDE_FILES := $(LIBAWT_LWAWT_EXCLUDE_FILES), \
       EXCLUDES := $(LIBAWT_LWAWT_EXCLUDES), \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(LIBAWT_LWAWT_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBAWT_LWAWT_EXTRA_HEADER_DIRS), \
-      DISABLED_WARNINGS_clang := incomplete-implementation deprecated-declarations \
-          objc-method-access incompatible-pointer-types extra-tokens sign-compare undef, \
+      DISABLED_WARNINGS_clang := incomplete-implementation \
+          deprecated-declarations objc-method-access \
+          incompatible-pointer-types extra-tokens sign-compare undef, \
       DISABLED_WARNINGS_clang_AWTWindow.m := bitwise-op-parentheses, \
       DISABLED_WARNINGS_clang_CFileDialog.m := semicolon-before-method-body, \
       DISABLED_WARNINGS_clang_CGGlyphImages.m := pointer-arith, \
       DISABLED_WARNINGS_clang_CGLLayer.m := semicolon-before-method-body, \
-      DISABLED_WARNINGS_clang_ImageSurfaceData.m := enum-conversion parentheses-equality, \
+      DISABLED_WARNINGS_clang_ImageSurfaceData.m := enum-conversion \
+          parentheses-equality, \
       DISABLED_WARNINGS_clang_MTLBlitLoops.m := pointer-arith, \
-      DISABLED_WARNINGS_clang_MTLPipelineStatesStorage.m := semicolon-before-method-body, \
+      DISABLED_WARNINGS_clang_MTLPipelineStatesStorage.m := \
+          semicolon-before-method-body, \
       DISABLED_WARNINGS_clang_MTLRenderer.m := gnu-folding-constant, \
       DISABLED_WARNINGS_clang_MTLVertexCache.m := pointer-arith, \
       DISABLED_WARNINGS_clang_OGLBufImgOps.c := format-nonliteral, \
       DISABLED_WARNINGS_clang_OGLPaints.c := format-nonliteral, \
       DISABLED_WARNINGS_clang_PrinterView.m := enum-conversion, \
       LDFLAGS := -L$(INSTALL_LIBRARIES_HERE), \
-      LIBS := -lawt -lmlib_image -losxapp -ljvm $(LIBM) \
+      JDK_LIBS_macosx := -lawt -ljava -ljvm -lmlib_image -losxapp, \
+      LIBS_macosx := $(LIBM) \
           -framework Accelerate \
           -framework ApplicationServices \
           -framework AudioToolbox \
           -framework Carbon \
           -framework Cocoa \
-          -framework Metal \
-          -framework Security \
           -framework ExceptionHandling \
           -framework JavaRuntimeSupport \
+          -framework Metal \
           -framework OpenGL \
-          -framework QuartzCore -ljava, \
+          -framework QuartzCore \
+          -framework Security, \
   ))
 
   TARGETS += $(BUILD_LIBAWT_LWAWT)
@@ -885,12 +859,12 @@ ifeq ($(call isTargetOs, macosx), true)
 
   $(BUILD_LIBAWT_LWAWT): $(call FindLib, java.base, java)
 
-endif
+  ##############################################################################
+  ## Build libosxui
+  ##############################################################################
 
-################################################################################
-
-ifeq ($(call isTargetOs, macosx), true)
-  SHADERS_SRC := $(TOPDIR)/src/java.desktop/macosx/native/libawt_lwawt/java2d/metal/shaders.metal
+  SHADERS_SRC := \
+      $(TOPDIR)/src/java.desktop/macosx/native/libawt_lwawt/java2d/metal/shaders.metal
   SHADERS_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/native/java.desktop/libosxui
   SHADERS_AIR := $(SHADERS_SUPPORT_DIR)/shaders.air
   SHADERS_LIB := $(INSTALL_LIBRARIES_HERE)/shaders.metallib
@@ -921,20 +895,22 @@ ifeq ($(call isTargetOs, macosx), true)
       EXTRA_HEADER_DIRS := \
           libawt_lwawt/awt \
           libosxapp, \
-      DISABLED_WARNINGS_clang_AquaFileView.m := deprecated-declarations sign-compare, \
+      DISABLED_WARNINGS_clang_AquaFileView.m := deprecated-declarations \
+          sign-compare, \
       DISABLED_WARNINGS_clang_ScreenMenu.m := deprecated-declarations, \
       APPEND_LDFLAGS := -Wl$(COMMA)-rpath$(COMMA)@loader_path, \
       LDFLAGS := -L$(INSTALL_LIBRARIES_HERE), \
-      LIBS := -lawt -losxapp -lawt_lwawt \
-          -framework Cocoa \
-          -framework Metal \
-          -framework Carbon \
+      JDK_LIBS_macosx := -lawt -lawt_lwawt -ljava -ljvm -losxapp, \
+      LIBS_macosx := \
           -framework ApplicationServices \
+          -framework Carbon \
+          -framework Cocoa \
           -framework JavaRuntimeSupport \
-          -ljava -ljvm, \
+          -framework Metal, \
   ))
 
   TARGETS += $(BUILD_LIBOSXUI)
+
   $(BUILD_LIBOSXUI): $(SHADERS_LIB)
 
   $(BUILD_LIBOSXUI): $(BUILD_LIBAWT)
@@ -942,5 +918,4 @@ ifeq ($(call isTargetOs, macosx), true)
   $(BUILD_LIBOSXUI): $(call FindLib, $(MODULE), osxapp)
 
   $(BUILD_LIBOSXUI): $(BUILD_LIBAWT_LWAWT)
-
 endif
