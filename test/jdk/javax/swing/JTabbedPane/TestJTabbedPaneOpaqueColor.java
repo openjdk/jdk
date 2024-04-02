@@ -73,7 +73,7 @@ public class TestJTabbedPaneOpaqueColor {
 
     public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()
-                .title("JTabbedPane Arrow Direction Test Instructions")
+                .title("JTabbedPane Tab and Content Area Color Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(10)
                 .rows(18)
