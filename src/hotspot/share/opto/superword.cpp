@@ -3106,14 +3106,26 @@ VStatus VLoopBody::construct() {
     } else if (!post_visited.test(bb_idx(n))) {
       // cross or back arc
       const int old_length = stack.length();
+
+      // If a Load and a Store depend on the same memory state, the Load is ordered before the Store.
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node* use = n->fast_out(i);
         if (_vloop.in_bb(use) && !visited.test(bb_idx(use)) &&
+            use->is_Load()) { // visit Loads first
+          stack.push(use);
+        }
+      }
+
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node* use = n->fast_out(i);
+        if (_vloop.in_bb(use) && !visited.test(bb_idx(use)) &&
+            !use->is_Load() && // now visit non-Loads (including Stores)
             // Don't go around backedge
             (!use->is_Phi() || n == _vloop.cl())) {
           stack.push(use);
         }
       }
+
       if (stack.length() == old_length) {
         // There were no additional uses, post visit node now
         stack.pop(); // Remove node from stack
