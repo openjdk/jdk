@@ -1279,31 +1279,14 @@ void  os::dll_unload(void *lib) {
   }
 }
 
-static size_t format_message_fixup(char* buf, size_t end) {
-  if (end > 3) {
-    if (buf[end - 1] == '\n') end--;
-    if (buf[end - 1] == '\r') end--;
-    if (buf[end - 1] == '.')  end--;
-    buf[end] = '\0';
-  }
-  return end;
-}
-
 void* os::dll_lookup(void *lib, const char *name) {
+  GetLastError(); // Clear old pending errors
   void* ret = ::GetProcAddress((HMODULE)lib, name);
-  DWORD errval;
-  if ((errval = GetLastError()) != 0) {
+  if (ret == nullptr) {
     char buf[512];
-    size_t n = (size_t)FormatMessage(
-                                     FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
-                                     nullptr,
-                                     errval,
-                                     0,
-                                     buf,
-                                     (DWORD)sizeof(buf),
-                                     nullptr);
-    format_message_fixup(buf, n);
-    log_debug(os)("Symbol %s not found in dll: %s", name, buf);
+    if (os::lasterror(buf, sizeof(buf)) > 0) {
+      log_debug(os)("Symbol %s not found in dll: %s", name, buf);
+    }
   }
   return ret;
 }
@@ -2190,7 +2173,14 @@ size_t os::lasterror(char* buf, size_t len) {
                                      buf,
                                      (DWORD)len,
                                      nullptr);
-    return format_message_fixup(buf, n);
+    if (n > 3) {
+      // Drop final '.', CR, LF
+      if (buf[n - 1] == '\n') n--;
+      if (buf[n - 1] == '\r') n--;
+      if (buf[n - 1] == '.') n--;
+      buf[n] = '\0';
+    }
+    return n;
   }
 
   if (errno != 0) {
