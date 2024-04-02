@@ -151,7 +151,8 @@ private:
 
   size_t allocated_bytes();
   size_t available_bytes();
-  size_t calc_mem(size_t sz);
+  // How many bytes are needed to store a message of size sz?
+  size_t calculate_bytes_needed(size_t sz);
 
 public:
   // Messsage is the header of a log line and contains its associated decorations and output.

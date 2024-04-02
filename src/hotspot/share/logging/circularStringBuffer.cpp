@@ -102,14 +102,14 @@ size_t CircularStringBuffer::available_bytes() {
   return circular_mapping.size - allocated_bytes();
 }
 
-size_t CircularStringBuffer::calc_mem(size_t sz) {
+size_t CircularStringBuffer::calculate_bytes_needed(size_t sz) {
   return align_up(sz, alignof(Message));
 }
 
 // Size including NUL byte
 void CircularStringBuffer::enqueue_locked(const char* str, size_t size, LogFileStreamOutput* output,
                                    const LogDecorations decorations) {
-  const size_t required_memory = calc_mem(size);
+  const size_t required_memory = calculate_bytes_needed(size);
   size_t unused = this->available_bytes();
   auto not_enough_memory = [&]() {
     return unused < (required_memory + sizeof(Message)*(output == nullptr ? 1 : 2));
