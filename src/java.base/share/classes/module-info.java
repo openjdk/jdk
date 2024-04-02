@@ -261,8 +261,7 @@ module java.base {
         jdk.internal.vm.ci,
         jdk.incubator.vector,
         jdk.jfr,
-        jdk.unsupported,
-        jdk.crypto.ec;
+        jdk.unsupported;
     exports jdk.internal.vm.vector to
         jdk.incubator.vector;
     exports jdk.internal.util.xml to

@@ -31,17 +31,17 @@ import sun.security.util.math.intpoly.*;
 /*
  * @test
  * @key randomness
- * @modules jdk.crypto.ec/sun.security.ec java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
+ * @modules java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-UseIntPolyIntrinsics IntegerPolynomialTest
- * @summary Unit test MontgomeryPolynomialFuzzTest.
+ * @summary Unit test IntegerPolynomial.MutableIntegerModuloP.conditionalAssign().
  */
 
 /*
  * @test
  * @key randomness
- * @modules jdk.crypto.ec/sun.security.ec java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
+ * @modules java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xcomp -XX:-TieredCompilation -XX:+UseIntPolyIntrinsics IntegerPolynomialTest
- * @summary Unit test MontgomeryPolynomialFuzzTest.
+ * @summary Unit test IntegerPolynomial.MutableIntegerModuloP.conditionalAssign().
  */
 
 // This test case is NOT entirely deterministic, it uses a random seed for pseudo-random number generator
