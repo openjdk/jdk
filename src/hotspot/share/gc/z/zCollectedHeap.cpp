@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@
 #include "oops/stackChunkOop.hpp"
 #include "runtime/continuationJavaClasses.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "services/memoryUsage.hpp"
 #include "utilities/align.hpp"
 
@@ -240,10 +241,6 @@ size_t ZCollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
   return _heap.unsafe_max_tlab_alloc();
 }
 
-bool ZCollectedHeap::uses_stack_watermark_barrier() const {
-  return true;
-}
-
 MemoryUsage ZCollectedHeap::memory_usage() {
   const size_t initial_size = ZHeap::heap()->initial_capacity();
   const size_t committed    = ZHeap::heap()->capacity();
@@ -338,6 +335,7 @@ bool ZCollectedHeap::contains_null(const oop* p) const {
 }
 
 void ZCollectedHeap::safepoint_synchronize_begin() {
+  StackWatermarkSet::safepoint_synchronize_begin();
   ZGeneration::young()->synchronize_relocation();
   ZGeneration::old()->synchronize_relocation();
   SuspendibleThreadSet::synchronize();

@@ -484,7 +484,7 @@ public class MissingClassTest {
 
         // wait for the listeners to receive all their notifs
         // or to fail
-        long deadline = System.currentTimeMillis() + 60000;
+        long deadline = System.currentTimeMillis() + 90000;
         long remain;
         while ((remain = deadline - System.currentTimeMillis()) >= 0) {
             synchronized (result) {

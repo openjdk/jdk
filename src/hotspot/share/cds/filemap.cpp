@@ -289,6 +289,8 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- requested_base_address:         " INTPTR_FORMAT, p2i(_requested_base_address));
   st->print_cr("- mapped_base_address:            " INTPTR_FORMAT, p2i(_mapped_base_address));
   st->print_cr("- heap_roots_offset:              " SIZE_FORMAT, _heap_roots_offset);
+  st->print_cr("- _heap_oopmap_start_pos:         " SIZE_FORMAT, _heap_oopmap_start_pos);
+  st->print_cr("- _heap_ptrmap_start_pos:         " SIZE_FORMAT, _heap_ptrmap_start_pos);
   st->print_cr("- allow_archiving_with_java_agent:%d", _allow_archiving_with_java_agent);
   st->print_cr("- use_optimized_module_handling:  %d", _use_optimized_module_handling);
   st->print_cr("- has_full_module_graph           %d", _has_full_module_graph);
@@ -1565,11 +1567,37 @@ static size_t write_bitmap(const CHeapBitMap* map, char* output, size_t offset) 
   return offset + size_in_bytes;
 }
 
+// The start of the archived heap has many primitive arrays (String
+// bodies) that are not marked by the oop/ptr maps. So we must have
+// lots of leading zeros.
+size_t FileMapInfo::remove_bitmap_leading_zeros(CHeapBitMap* map) {
+  size_t old_zeros = map->find_first_set_bit(0);
+  size_t old_size = map->size_in_bytes();
+
+  // Slice and resize bitmap
+  map->truncate(old_zeros, map->size());
+
+  DEBUG_ONLY(
+    size_t new_zeros = map->find_first_set_bit(0);
+    assert(new_zeros == 0, "Should have removed leading zeros");
+  )
+
+  assert(map->size_in_bytes() < old_size, "Map size should have decreased");
+  return old_zeros;
+}
+
 char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap, ArchiveHeapInfo* heap_info,
                                        size_t &size_in_bytes) {
   size_in_bytes = ptrmap->size_in_bytes();
 
   if (heap_info->is_used()) {
+    // Remove leading zeros
+    size_t removed_oop_zeros = remove_bitmap_leading_zeros(heap_info->oopmap());
+    size_t removed_ptr_zeros = remove_bitmap_leading_zeros(heap_info->ptrmap());
+
+    header()->set_heap_oopmap_start_pos(removed_oop_zeros);
+    header()->set_heap_ptrmap_start_pos(removed_ptr_zeros);
+
     size_in_bytes += heap_info->oopmap()->size_in_bytes();
     size_in_bytes += heap_info->ptrmap()->size_in_bytes();
   }
