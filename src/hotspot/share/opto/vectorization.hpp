@@ -471,6 +471,7 @@ private:
 
   // Array of cached pointers
   VPointer* _vpointers;
+  int _vpointers_length;
 
   // Map bb_idx -> index in _vpointers. -1 if not mapped.
   GrowableArray<int> _bb_idx_to_vpointer;

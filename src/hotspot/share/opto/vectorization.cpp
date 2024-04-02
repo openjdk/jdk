@@ -183,13 +183,13 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
 
 void VLoopVPointers::compute_and_cache() {
   // Count
-  int number_of_vpointers = 0;
+  _vpointers_length = 0;
   _body.for_each_mem([&] (const MemNode* mem, int bb_idx) {
-    number_of_vpointers++;
+    _vpointers_length++;
   });
 
   // Allocate
-  uint bytes = number_of_vpointers * sizeof(VPointer);
+  uint bytes = _vpointers_length * sizeof(VPointer);
   _vpointers = (VPointer*)_arena->Amalloc(bytes);
 
   // Compute and Cache
@@ -208,7 +208,7 @@ const VPointer& VLoopVPointers::vpointer(const MemNode* mem) const {
   assert(mem != nullptr && _vloop.in_bb(mem), "only mem in loop");
   int bb_idx = _body.bb_idx(mem);
   int pointers_idx = _bb_idx_to_vpointer.at(bb_idx);
-  assert(pointers_idx >= 0, "mem node must have a cached pointer");
+  assert(0 <= pointers_idx && pointers_idx < _vpointers_length, "valid range");
   return _vpointers[pointers_idx];
 }
 
