@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "logging/circularStringBuffer.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.inline.hpp"
 
 // LogDecorator::None applies to 'constant initialization' because of its constexpr constructor.
@@ -110,17 +111,30 @@ size_t CircularStringBuffer::calculate_bytes_needed(size_t sz) {
 void CircularStringBuffer::enqueue_locked(const char* str, size_t size, LogFileStreamOutput* output,
                                    const LogDecorations decorations) {
   const size_t required_memory = calculate_bytes_needed(size);
+
+#ifdef ASSERT
   size_t unused = this->available_bytes();
-  auto not_enough_memory = [&]() {
-    return unused < (required_memory + sizeof(Message)*(output == nullptr ? 1 : 2));
-  };
   // We need space for an additional Message in case of a flush token
   assert(!(output == nullptr) || unused >= sizeof(Message), "invariant");
+#endif
+
+  auto not_enough_memory = [&]() {
+    return this->available_bytes() < (required_memory + sizeof(Message)*(output == nullptr ? 1 : 2));
+  };
+
   if (not_enough_memory()) {
     if (_should_stall) {
-      while (not_enough_memory()) {
-        _producer_lock.wait(0);
-        unused = this->available_bytes();
+      auto stall_for_memory = [&]() {
+        while (not_enough_memory()) {
+          _producer_lock.wait(0);
+        }
+      };
+      Thread* thread = Thread::current_or_null();
+      if (thread != nullptr && thread->is_Java_thread()) {
+        ThreadBlockInVM tbivm(JavaThread::cast(thread));
+        stall_for_memory();
+      } else {
+        stall_for_memory();
       }
     } else {
       _stats_lock.lock();
