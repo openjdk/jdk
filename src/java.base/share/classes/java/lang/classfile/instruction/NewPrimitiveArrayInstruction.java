@@ -28,6 +28,7 @@ import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.TypeKind;
+import static java.util.Objects.requireNonNull;
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.javac.PreviewFeature;
 
@@ -51,8 +52,13 @@ public sealed interface NewPrimitiveArrayInstruction extends Instruction
      * {@return a new primitive array instruction}
      *
      * @param typeKind the component type of the array
+     * @throws IllegalArgumentException when the {@code typeKind} is not a legal
+     *                                  primitive array component type
      */
     static NewPrimitiveArrayInstruction of(TypeKind typeKind) {
+        if (requireNonNull(typeKind).newarraycode() < 0) {
+            throw new IllegalArgumentException("Illegal component type: " + typeKind.typeName());
+        }
         return new AbstractInstruction.UnboundNewPrimitiveArrayInstruction(typeKind);
     }
 }
