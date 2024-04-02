@@ -378,6 +378,17 @@ void frame::deoptimize(JavaThread* thread) {
 #endif // ASSERT
 }
 
+GrowableArray<jvmtiDeferredLocalVariableSet*>* frame::deferred_locals() {
+  nmethod* nm = _cb->as_nmethod_or_null();
+  return nm->get_deferred_updates(this);
+}
+
+void frame::set_deferred_locals(GrowableArray<jvmtiDeferredLocalVariableSet*>* value) {
+  nmethod* nm = _cb->as_nmethod_or_null();
+  nm->set_deferred_updates(this, value);
+}
+
+
 frame frame::java_sender() const {
   RegisterMap map(JavaThread::current(),
                   RegisterMap::UpdateMap::skip,

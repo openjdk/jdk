@@ -385,7 +385,7 @@ static bool rematerialize_objects(JavaThread* thread, int exec_mode, CompiledMet
 static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledVFrame*>* chunk, bool realloc_failures,
                                      frame& deoptee, int exec_mode, bool& deoptimized_objects) {
   JavaThread* deoptee_thread = chunk->at(0)->thread();
-  assert(!EscapeBarrier::objs_are_deoptimized(deoptee_thread, deoptee.id()), "must relock just once");
+  assert(!EscapeBarrier::objs_are_deoptimized(deoptee_thread, deoptee), "must relock just once");
   assert(thread == Thread::current(), "should be");
   HandleMark hm(thread);
 #ifndef PRODUCT
@@ -534,7 +534,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 
 #if COMPILER2_OR_JVMCI
   if ((jvmci_enabled COMPILER2_PRESENT( || ((DoEscapeAnalysis || EliminateNestedLocks) && EliminateLocks) ))
-      && !EscapeBarrier::objs_are_deoptimized(current, deoptee.id())) {
+      && !EscapeBarrier::objs_are_deoptimized(current, deoptee)) {
     bool unused;
     restore_eliminated_locks(current, chunk, realloc_failures, deoptee, exec_mode, unused);
   }
@@ -572,7 +572,11 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // added by jvmti then we can free up that structure as the data is now in the
   // vframeArray
 
-  JvmtiDeferredUpdates::delete_updates_for_frame(current, array->original().id());
+  GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred_locals = deoptee.deferred_locals();
+  if (deferred_locals != nullptr) {
+    deoptee.set_deferred_locals(nullptr);
+    delete deferred_locals; // XXX delete individual elements too?
+  }
 
   // Compute the caller frame based on the sender sp of stub_frame and stored frame sizes info.
   CodeBlob* cb = stub_frame.cb();
@@ -1637,7 +1641,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
             if (waiting_monitor != nullptr && waiting_monitor->object() == obj()) {
               assert(fr.is_deoptimized_frame(), "frame must be scheduled for deoptimization");
               mon_info->lock()->set_displaced_header(markWord::unused_mark());
-              JvmtiDeferredUpdates::inc_relock_count_after_wait(deoptee_thread);
+              deoptee_thread->inc_relock_count_after_wait();
               continue;
             }
           }

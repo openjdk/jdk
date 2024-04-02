@@ -48,6 +48,7 @@ class Method;
 class methodHandle;
 class RegisterMap;
 class vframeArray;
+class jvmtiDeferredLocalVariableSet;
 
 enum class DerivedPointerIterationMode {
   _with_table,
@@ -275,6 +276,9 @@ class frame {
 
   // Support for deoptimization
   void deoptimize(JavaThread* thread);
+
+  GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred_locals();
+  void set_deferred_locals(GrowableArray<jvmtiDeferredLocalVariableSet*>* value);
 
   // The frame's original SP, before any extension by an interpreted callee;
   // used for packing debug info into vframeArray objects and vframeArray lookup.

@@ -34,6 +34,7 @@
 #include "interpreter/bytecode.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
+#include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/methodData.hpp"
@@ -490,6 +491,70 @@ void CompiledMethod::cleanup_inline_caches_whitebox() {
   assert_locked_or_safepoint(CodeCache_lock);
   CompiledICLocker ic_locker(this);
   cleanup_inline_caches_impl(false /* unloading_occurred */, true /* clean_all */);
+}
+
+class DeferredUpdates : public CHeapObj<mtCompiler> {
+ public:
+  address original_pc;
+  GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred_locals;
+};
+
+
+void CompiledMethod::set_original_pc(const frame* fr, address pc) {
+  *orig_pc_addr(fr) = pc;
+}
+
+address CompiledMethod::get_original_pc(const frame* fr) {
+  if (!fr->is_deoptimized_frame()) {
+    return nullptr;
+  }
+
+  address ptr = *orig_pc_addr(fr);
+  if (ptr != nullptr) {
+    if (CodeCache::contains(ptr)) {
+      return ptr;
+    }
+    DeferredUpdates* updates = (DeferredUpdates*) ptr;
+    return updates->original_pc;
+  }
+  return nullptr;
+}
+
+GrowableArray<jvmtiDeferredLocalVariableSet*>* CompiledMethod::get_deferred_updates(const frame* fr) {
+  if (!fr->is_deoptimized_frame()) {
+    guarantee(fr->is_compiled_frame(), "must at least be compiled");
+    return nullptr;
+  }
+
+  address ptr = *orig_pc_addr(fr);
+  if (ptr != nullptr) {
+    if (CodeCache::contains(ptr)) {
+      return nullptr;
+    }
+    DeferredUpdates* updates = (DeferredUpdates*) ptr;
+    return updates->deferred_locals;
+  }
+  return nullptr;
+}
+
+void CompiledMethod::set_deferred_updates(const frame* fr, GrowableArray<jvmtiDeferredLocalVariableSet*>* value) {
+  guarantee(fr->is_deoptimized_frame(), "must be deoptimized frame");
+
+  address ptr = *orig_pc_addr(fr);
+  if (value != nullptr) {
+    // deferred updates can only be set after deopt
+    guarantee(CodeCache::contains(ptr), "should currently be deopt pc");
+
+    DeferredUpdates* updates = new DeferredUpdates();
+    updates->original_pc = ptr;
+    updates->deferred_locals = value;
+  } else {
+    // Release
+    guarantee(!CodeCache::contains(ptr), "should be DeferredUpdates*");
+    DeferredUpdates* updates = (DeferredUpdates*) ptr;
+    *orig_pc_addr(fr) = updates->original_pc;
+    delete updates;
+  }
 }
 
 address* CompiledMethod::orig_pc_addr(const frame* fr) {

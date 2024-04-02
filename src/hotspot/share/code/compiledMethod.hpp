@@ -336,8 +336,11 @@ public:
   inline bool is_deopt_entry(address pc);
 
   // Accessor/mutator for the original pc of a frame before a frame was deopted.
-  address get_original_pc(const frame* fr) { return *orig_pc_addr(fr); }
-  void    set_original_pc(const frame* fr, address pc) { *orig_pc_addr(fr) = pc; }
+  void    set_original_pc(const frame* fr, address pc);
+
+  address get_original_pc(const frame* fr);
+  GrowableArray<jvmtiDeferredLocalVariableSet*>* get_deferred_updates(const frame* fr);
+  void set_deferred_updates(const frame* fr, GrowableArray<jvmtiDeferredLocalVariableSet*>* updates);
 
   virtual int orig_pc_offset() = 0;
 

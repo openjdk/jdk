@@ -59,12 +59,12 @@ class EscapeBarrier : StackObj {
   void resume_all();
 
   // Deoptimize the given frame and deoptimize objects with optimizations based on escape analysis.
-  bool deoptimize_objects_internal(JavaThread* deoptee, intptr_t* fr_id);
+  bool deoptimize_objects_internal(JavaThread* deoptee, frame fr);
 
   // Deoptimize objects, i.e. reallocate and relock them. The target frames are deoptimized.
   // The methods return false iff at least one reallocation failed.
-  bool deoptimize_objects(intptr_t* fr_id) {
-    return deoptimize_objects_internal(deoptee_thread(), fr_id);
+  bool deoptimize_objects(frame fr) {
+    return deoptimize_objects_internal(deoptee_thread(), fr);
   }
 
 public:
@@ -118,7 +118,7 @@ public:
 
 #if COMPILER2_OR_JVMCI
   // Returns true iff objects were reallocated and relocked because of access through JVMTI.
-  static bool objs_are_deoptimized(JavaThread* thread, intptr_t* fr_id);
+  static bool objs_are_deoptimized(JavaThread* thread, frame fr);
 
   ~EscapeBarrier() {
     if (!barrier_active()) return;

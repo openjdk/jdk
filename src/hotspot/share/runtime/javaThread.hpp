@@ -55,7 +55,6 @@ class DeoptResourceMark;
 class JNIHandleBlock;
 class JVMCIRuntime;
 
-class JvmtiDeferredUpdates;
 class JvmtiSampledObjectAllocEventCollector;
 class JvmtiThreadState;
 
@@ -123,10 +122,9 @@ class JavaThread: public Thread {
   CompiledMethod*       _deopt_nmethod;         // CompiledMethod that is currently being deoptimized
   vframeArray*  _vframe_array_head;              // Holds the heap of the active vframeArrays
   vframeArray*  _vframe_array_last;              // Holds last vFrameArray we popped
-  // Holds updates by JVMTI agents for compiled frames that cannot be performed immediately. They
-  // will be carried out as soon as possible which, in most cases, is just before deoptimization of
-  // the frame, when control returns to it.
-  JvmtiDeferredUpdates* _jvmti_deferred_updates;
+
+  // Relocking has to be deferred if the lock owning thread is currently waiting on the monitor.
+  int _relock_count_after_wait;
 
   // Handshake value for fixing 6243940. We need a place for the i2c
   // adapter to store the callee Method*. This value is NEVER live
@@ -672,9 +670,15 @@ private:
   void set_vframe_array_head(vframeArray* value) { _vframe_array_head = value; }
   vframeArray* vframe_array_head() const         { return _vframe_array_head;  }
 
-  // Side structure for deferring update of java frame locals until deopt occurs
-  JvmtiDeferredUpdates* deferred_updates() const      { return _jvmti_deferred_updates; }
-  void set_deferred_updates(JvmtiDeferredUpdates* du) { _jvmti_deferred_updates = du; }
+  void inc_relock_count_after_wait() {
+    _relock_count_after_wait++;
+  }
+
+  int get_and_reset_relock_count_after_wait() {
+    int result = _relock_count_after_wait;
+    _relock_count_after_wait = 0;
+    return result;
+  }
 
   // These only really exist to make debugging deopt problems simpler
 
