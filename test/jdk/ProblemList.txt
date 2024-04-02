@@ -640,6 +640,7 @@ javax/sound/sampled/Mixers/DisabledAssertionCrash.java 7067310 generic-all
 javax/sound/midi/Sequencer/Recording.java 8167580,8265485 linux-all,macosx-aarch64
 javax/sound/midi/Sequencer/Looping.java 8136897 generic-all
 javax/sound/sampled/Clip/ClipIsRunningAfterStop.java 8307574 linux-x64
+javax/sound/sampled/Clip/ClipFlushCrash.java 8308395 linux-x64
 
 ############################################################################
 
