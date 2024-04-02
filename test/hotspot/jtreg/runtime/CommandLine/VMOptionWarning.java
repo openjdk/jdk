@@ -57,10 +57,5 @@ public class VMOptionWarning {
         output = new OutputAnalyzer(pb.start());
         output.shouldNotHaveExitValue(0);
         output.shouldContain("Error: VM option 'VerifyStack' is develop and is available only in debug version of VM.");
-
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+CheckCompressedOops", "-version");
-        output = new OutputAnalyzer(pb.start());
-        output.shouldNotHaveExitValue(0);
-        output.shouldContain("Error: VM option 'CheckCompressedOops' is develop and is available only in debug version of VM.");
     }
 }
