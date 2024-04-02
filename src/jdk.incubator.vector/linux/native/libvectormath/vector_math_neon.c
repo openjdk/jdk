@@ -21,7 +21,16 @@
  * questions.
  */
 
-#include <sleef.h>
+#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+
+#include <stdint.h>
+#include <arm_neon.h>
+
+#include "misc.h"
+#include "sleefinline_advsimd.h"
+
+#endif
+
 #include <jni.h>
 
 #define DEFINE_VECTOR_MATH_UNARY(op, type) \

@@ -21,7 +21,16 @@
  * questions.
  */
 
-#include <sleef.h>
+#if defined(__ARM_FEATURE_SVE)
+
+#include <stdint.h>
+#include <arm_sve.h>
+
+#include "misc.h"
+#include "sleefinline_sve.h"
+
+#endif // __ARM_FEATURE_SVE
+
 #include <jni.h>
 
 #define DEFINE_VECTOR_MATH_UNARY_SVE(op, type) \
