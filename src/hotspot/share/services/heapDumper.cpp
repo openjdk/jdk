@@ -2645,7 +2645,7 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
   //          This is done by DumpMerger, which is performed outside safepoint
 
   DumpMerger merger(path, &writer, dumper.dump_seq());
-  // perform heapdump file merge operation in the current thread prevents us
+  // Perform heapdump file merge operation in the current thread prevents us
   // from occupying the VM Thread, which in turn affects the occurrence of
   // GC and other VM operations.
   merger.do_merge();
