@@ -2586,9 +2586,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         const char* async_tail = tail + strlen(":async");
         if (strcmp(async_tail, ":stall") == 0) {
           LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Stall);
-        } else if(strcmp(async_tail, ":drop") == 0) {
+        } else if (strcmp(async_tail, ":drop") == 0) {
           LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Drop);
-        } else if(*async_tail == '\0') {
+        } else if (*async_tail == '\0') {
           // Default is to drop.
           LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Drop);
         } else {
