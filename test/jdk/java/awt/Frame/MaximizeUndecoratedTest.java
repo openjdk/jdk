@@ -123,7 +123,7 @@ public class MaximizeUndecoratedTest {
         try {
             ImageIO.write(image, "png", new File("MaximizedFrame.png"));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
 }

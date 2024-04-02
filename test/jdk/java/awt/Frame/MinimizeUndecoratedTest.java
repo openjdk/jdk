@@ -81,20 +81,20 @@ public class MinimizeUndecoratedTest {
             robot.waitForIdle();
             robot.delay(500);
 
-            if (isMinimized.await(8, TimeUnit.SECONDS)) {
-                EventQueue.invokeAndWait(() -> System.out.println("Frame state: "
-                                               + frame.getExtendedState()));
-                Color afterColor = robot.getPixelColor(frameLoc.x + SIZE / 2,
-                                                       frameLoc.y + SIZE / 2);
-
-                if (beforeColor.equals(afterColor)) {
-                    saveScreenCapture();
-                    throw new RuntimeException("Color before & after minimization : "
-                            + beforeColor + " vs " + afterColor + "\n"
-                            + "Test Failed !! Frame not minimized.");
-                }
-            } else {
+            if (!isMinimized.await(8, TimeUnit.SECONDS)) {
                 throw new RuntimeException("Window iconified event not received.");
+            }
+
+            EventQueue.invokeAndWait(() -> System.out.println("Frame state: "
+                                                              + frame.getExtendedState()));
+            Color afterColor = robot.getPixelColor(frameLoc.x + SIZE / 2,
+                                                   frameLoc.y + SIZE / 2);
+
+            if (beforeColor.equals(afterColor)) {
+                saveScreenCapture();
+                throw new RuntimeException("Color before & after minimization : "
+                                           + beforeColor + " vs " + afterColor + "\n"
+                                           + "Test Failed !! Frame not minimized.");
             }
         } finally {
             EventQueue.invokeAndWait(() -> {
@@ -133,7 +133,7 @@ public class MinimizeUndecoratedTest {
         try {
             ImageIO.write(image, "png", new File("MinimizedFrame.png"));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
 }
