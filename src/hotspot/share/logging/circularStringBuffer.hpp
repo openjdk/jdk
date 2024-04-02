@@ -207,7 +207,7 @@ public:
   void flush();
   void signal_flush();
 
-  bool has_message();
+  bool maybe_has_message();
   void await_message();
 };
 

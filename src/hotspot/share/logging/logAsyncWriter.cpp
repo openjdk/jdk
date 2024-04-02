@@ -62,7 +62,7 @@ bool AsyncLogWriter::write(AsyncLogMap<AnyObj::RESOURCE_AREA>& snapshot,
                            char* write_buffer, size_t write_buffer_size) {
   int req = 0;
   CircularStringBuffer::Message msg;
-  while (_circular_buffer.has_message()) {
+  while (_circular_buffer.maybe_has_message()) {
     using DequeueResult = CircularStringBuffer::DequeueResult;
     DequeueResult result = _circular_buffer.dequeue(&msg, write_buffer, write_buffer_size);
     assert(result != DequeueResult::NoMessage, "Race detected but there is only one reading thread");

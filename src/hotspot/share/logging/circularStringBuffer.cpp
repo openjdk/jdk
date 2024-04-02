@@ -202,7 +202,7 @@ void CircularStringBuffer::signal_flush() {
   _flush_sem.signal();
 }
 
-bool CircularStringBuffer::has_message() {
+bool CircularStringBuffer::maybe_has_message() {
   size_t h = Atomic::load(&_head);
   size_t t = Atomic::load(&_tail);
   return !(h == t);
