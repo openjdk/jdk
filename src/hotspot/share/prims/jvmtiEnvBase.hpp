@@ -724,7 +724,7 @@ public:
 };
 
 // HandshakeClosure to get single stack trace.
-class GetSingleStackTraceClosure : public HandshakeClosure {
+class GetSingleStackTraceClosure : public JvmtiUnitedHandshakeClosure {
 private:
   JavaThread *_calling_thread;
   jthread _jthread;
@@ -733,14 +733,16 @@ private:
 public:
   GetSingleStackTraceClosure(JvmtiEnv *env, JavaThread *calling_thread,
                              jthread thread, jint max_frame_count)
-    : HandshakeClosure("GetSingleStackTrace"),
+    : JvmtiUnitedHandshakeClosure("GetSingleStackTrace"),
       _calling_thread(calling_thread),
       _jthread(thread),
       _collector(env, max_frame_count) {
   }
   void do_thread(Thread *target);
+  void do_vthread(Handle target_h);
+  void doit();
   jvmtiStackInfo *stack_info()    { return _collector.stack_info(); }
-  jvmtiError result()             { return _collector.result(); }
+  jvmtiError result()             { return _result; }
 };
 
 // HandshakeClosure to count stack frames.

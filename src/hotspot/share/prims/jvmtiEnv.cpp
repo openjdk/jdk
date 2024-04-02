@@ -1678,39 +1678,22 @@ JvmtiEnv::GetAllStackTraces(jint max_frame_count, jvmtiStackInfo** stack_info_pt
 jvmtiError
 JvmtiEnv::GetThreadListStackTraces(jint thread_count, const jthread* thread_list, jint max_frame_count, jvmtiStackInfo** stack_info_ptr) {
   jvmtiError err = JVMTI_ERROR_NONE;
-  JvmtiVTMSTransitionDisabler disabler;
 
   if (thread_count == 1) {
-
     // Use direct handshake if we need to get only one stack trace.
     JavaThread *current_thread = JavaThread::current();
-    ThreadsListHandle tlh(current_thread);
 
     jthread thread = thread_list[0];
-    JavaThread *java_thread;
-    oop thread_obj = nullptr;
-    err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
-    if (err != JVMTI_ERROR_NONE) {
-      return err;
-    }
-
-    if (java_lang_VirtualThread::is_instance(thread_obj) && java_thread == nullptr) {
-      // Target virtual thread is unmounted.
-      ResourceMark rm(current_thread);
-      MultipleStackTracesCollector collector(this, max_frame_count);
-      collector.fill_frames(thread, java_thread, thread_obj);
-      collector.allocate_and_fill_stacks(/* thread_count */ 1);
-      *stack_info_ptr = collector.stack_info();
-      return collector.result();
-    }
 
     GetSingleStackTraceClosure op(this, current_thread, thread, max_frame_count);
-    Handshake::execute(&op, &tlh, java_thread);
+    JvmtiHandshake::execute(&op, thread);
     err = op.result();
     if (err == JVMTI_ERROR_NONE) {
       *stack_info_ptr = op.stack_info();
     }
   } else {
+    JvmtiVTMSTransitionDisabler disabler;
+
     // JVMTI get stack traces at safepoint.
     VM_GetThreadListStackTraces op(this, thread_count, thread_list, max_frame_count);
     VMThread::execute(&op);
