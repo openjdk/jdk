@@ -146,7 +146,11 @@ define SetupJdkNativeCompilationBody
 
   ifeq ($$($1_OUTPUT_DIR), )
     ifneq ($$(MODULE), )
-      $1_OUTPUT_DIR := $$(SUPPORT_OUTPUTDIR)/$$($1_MODULES_PATH)/$$(strip $$(MODULE))
+      ifeq ($$($1_TYPE), STATIC_LIBRARY)
+        $1_OUTPUT_DIR := $$(SUPPORT_OUTPUTDIR)/native/$$(MODULE)
+      else
+        $1_OUTPUT_DIR := $$(SUPPORT_OUTPUTDIR)/$$($1_MODULES_PATH)/$$(strip $$(MODULE))
+      endif
     else
       $$(error Must specify OUTPUT_DIR in a MODULE free context)
     endif

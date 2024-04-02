@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,7 @@
  * questions.
  */
 
-import java.awt.print.PageFormat;
+#include "jni.h"
 
-/*
- * @test
- * @bug 4199506
- * @summary Verify PageFormat.setPaper(null) throws NullPointerException
- *          as specified
- * @run main NullPaper
- */
-public final class NullPaper {
-    public static void main(String[] args) {
-        try {
-            /* Setting the paper to null should throw an exception.
-             * The bug was the exception was not being thrown.
-             */
-            new PageFormat().setPaper(null);
-
-            throw new RuntimeException("NullPointerException is expected "
-                                       + "but not thrown");
-        } catch (NullPointerException e) {
-            System.out.println("NullPointerException caught - test passes");
-        }
-    }
-}
+JNIEXPORT
+void JNICALL Java_compiler_calls_NativeCalls_emptyStaticNative(JNIEnv* env, jclass jclazz) {}

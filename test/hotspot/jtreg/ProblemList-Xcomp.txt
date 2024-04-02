@@ -47,6 +47,8 @@ vmTestbase/vm/mlvm/indy/func/jvmti/redefineClassInTarget/TestDescription.java 83
 vmTestbase/nsk/jdi/StepRequest/addClassFilter_rt/filter_rt001/TestDescription.java 8043571 generic-all
 vmTestbase/nsk/jdi/StepRequest/addClassFilter_rt/filter_rt003/TestDescription.java 8043571 generic-all
 
-vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8299493 macosx-x64
+vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8299493 macosx-x64,windows-x64
+
+vmTestbase/nsk/stress/thread/thread006.java 8321476 linux-all
 
 gc/arguments/TestNewSizeFlags.java 8299116 macosx-aarch64
