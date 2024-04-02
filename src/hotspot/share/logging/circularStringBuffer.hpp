@@ -149,8 +149,8 @@ private:
   volatile size_t tail; // Where new writes happen
   volatile size_t head; // Where new reads happen
 
-  size_t used();
-  size_t unused();
+  size_t allocated_bytes();
+  size_t available_bytes();
   size_t calc_mem(size_t sz);
 
 public:
