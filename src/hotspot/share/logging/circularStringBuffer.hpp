@@ -122,21 +122,21 @@ private:
   PlatformMonitor _write_lock;
   Semaphore _flush_sem;
 
-  struct ReadLocker : public StackObj {
+  struct ConsumerLocker : public StackObj {
     CircularStringBuffer* buf;
-    ReadLocker(CircularStringBuffer* buf) : buf(buf) {
+    ConsumerLocker(CircularStringBuffer* buf) : buf(buf) {
       buf->_read_lock.lock();
     }
-    ~ReadLocker() {
+    ~ConsumerLocker() {
       buf->_read_lock.unlock();
     }
   };
-  struct WriteLocker : public StackObj {
+  struct ProducerLocker : public StackObj {
     CircularStringBuffer* buf;
-    WriteLocker(CircularStringBuffer* buf) : buf(buf) {
+    ProducerLocker(CircularStringBuffer* buf) : buf(buf) {
       buf->_write_lock.lock();
     }
-    ~WriteLocker() {
+    ~ProducerLocker() {
       buf->_write_lock.unlock();
     }
   };

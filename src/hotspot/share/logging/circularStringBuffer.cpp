@@ -149,12 +149,12 @@ void CircularStringBuffer::enqueue_locked(const char* str, size_t size, LogFileS
 
 void CircularStringBuffer::enqueue(const char* msg, size_t size, LogFileStreamOutput* output,
                                    const LogDecorations decorations) {
-  WriteLocker wl(this);
+  ProducerLocker wl(this);
   enqueue_locked(msg, size, output, decorations);
 }
 
 void CircularStringBuffer::enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator) {
-  WriteLocker wl(this);
+  ProducerLocker wl(this);
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
     const char* str = msg_iterator.message();
     size_t len = strlen(str);
@@ -163,7 +163,7 @@ void CircularStringBuffer::enqueue(LogFileStreamOutput& output, LogMessageBuffer
 }
 
 CircularStringBuffer::DequeueResult CircularStringBuffer::dequeue(Message* out_msg, char* out, size_t out_size) {
-  ReadLocker rl(this);
+  ConsumerLocker rl(this);
 
   size_t h = head;
   size_t t = tail;
@@ -210,7 +210,7 @@ bool CircularStringBuffer::has_message() {
 
 void CircularStringBuffer::await_message() {
   while (true) {
-    ReadLocker rl(this);
+    ConsumerLocker rl(this);
     while (head == tail) {
       _read_lock.wait(0 /* no timeout */);
     }
