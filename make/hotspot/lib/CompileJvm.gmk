@@ -96,8 +96,6 @@ ifneq ($(DEBUG_LEVEL), release)
   DISABLED_WARNINGS_gcc += strict-overflow
 endif
 
-DISABLED_WARNINGS_xlc := tautological-compare shift-negative-value
-
 DISABLED_WARNINGS_microsoft := 4624 4244 4291 4146 4127 4722
 
 ################################################################################
@@ -157,7 +155,7 @@ endif
 ifeq ($(call isTargetOs, linux), true)
   HOTSPOT_VERSION_SCRIPT := $(TOPDIR)/make/data/hotspot-symbols/version-script.txt
 
-  JVM_LDFLAGS += -Wl,--exclude-libs,ALL -Wl,-version-script=$(HOTSPOT_VERSION_SCRIPT)
+  JVM_LDFLAGS += -Wl,-version-script=$(HOTSPOT_VERSION_SCRIPT)
 endif
 
 ################################################################################
@@ -171,6 +169,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     EXCLUDES := $(JVM_EXCLUDES), \
     EXCLUDE_FILES := $(JVM_EXCLUDE_FILES), \
     EXCLUDE_PATTERNS := $(JVM_EXCLUDE_PATTERNS), \
+    DEFAULT_CFLAGS := false, \
     CFLAGS := $(JVM_CFLAGS), \
     abstract_vm_version.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     arguments.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
@@ -202,9 +201,10 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_clang_aix_debug.cpp := format-nonliteral, \
     DISABLED_WARNINGS_clang_aix_jvm.cpp := format-nonliteral, \
     DISABLED_WARNINGS_clang_aix_osThread_aix.cpp := tautological-undefined-compare, \
-    DISABLED_WARNINGS_xlc := $(DISABLED_WARNINGS_xlc), \
     DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft), \
     ASFLAGS := $(JVM_ASFLAGS), \
+    LD_SET_ORIGIN := false, \
+    DEFAULT_LDFLAGS := false, \
     LDFLAGS := $(JVM_LDFLAGS), \
     LIBS := $(JVM_LIBS), \
     OPTIMIZATION := $(JVM_OPTIMIZATION), \
