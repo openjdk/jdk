@@ -500,6 +500,7 @@ private:
   const VLoop&             _vloop;
   const VLoopBody&         _body;
   const VLoopMemorySlices& _memory_slices;
+  const VLoopPointers&     _pointers;
 
   // bb_idx -> DependenceNode*
   GrowableArray<DependencyNode*> _dependency_nodes;
@@ -511,11 +512,13 @@ public:
   VLoopDependencyGraph(Arena* arena,
                        const VLoop& vloop,
                        const VLoopBody& body,
-                       const VLoopMemorySlices& memory_slices) :
+                       const VLoopMemorySlices& memory_slices,
+                       const VLoopPointers& pointers) :
     _arena(arena),
     _vloop(vloop),
     _body(body),
     _memory_slices(memory_slices),
+    _pointers(pointers),
     _dependency_nodes(arena,
                       vloop.estimated_body_length(),
                       vloop.estimated_body_length(),
@@ -622,7 +625,7 @@ public:
     _body            (&_arena, vloop, vshared),
     _types           (&_arena, vloop, _body),
     _pointers        (&_arena, vloop, _body),
-    _dependency_graph(&_arena, vloop, _body, _memory_slices)
+    _dependency_graph(&_arena, vloop, _body, _memory_slices, _pointers)
   {
     _success = setup_submodules();
   }
@@ -720,7 +723,7 @@ class VPointer : public ArenaObj {
   int   invar_factor() const;
 
   // Comparable?
-  bool invar_equals(VPointer& q) {
+  bool invar_equals(const VPointer& q) const {
     assert(_debug_invar == NodeSentinel || q._debug_invar == NodeSentinel ||
            (_invar == q._invar) == (_debug_invar == q._debug_invar &&
                                     _debug_invar_scale == q._debug_invar_scale &&
@@ -728,7 +731,7 @@ class VPointer : public ArenaObj {
     return _invar == q._invar;
   }
 
-  int cmp(VPointer& q) {
+  int cmp(const VPointer& q) const {
     if (valid() && q.valid() &&
         (_adr == q._adr || (_base == _adr && q._base == q._adr)) &&
         _scale == q._scale   && invar_equals(q)) {
@@ -740,7 +743,7 @@ class VPointer : public ArenaObj {
     }
   }
 
-  bool overlap_possible_with_any_in(Node_List* p) {
+  bool overlap_possible_with_any_in(const Node_List* p) const {
     for (uint k = 0; k < p->size(); k++) {
       MemNode* mem = p->at(k)->as_Mem();
       VPointer p_mem(mem, _vloop);
@@ -754,9 +757,9 @@ class VPointer : public ArenaObj {
     return false;
   }
 
-  bool not_equal(VPointer& q)     { return not_equal(cmp(q)); }
-  bool equal(VPointer& q)         { return equal(cmp(q)); }
-  bool comparable(VPointer& q)    { return comparable(cmp(q)); }
+  bool not_equal(const VPointer& q)  const { return not_equal(cmp(q)); }
+  bool equal(const VPointer& q)      const { return equal(cmp(q)); }
+  bool comparable(const VPointer& q) const { return comparable(cmp(q)); }
   static bool not_equal(int cmp)  { return cmp <= NotEqual; }
   static bool equal(int cmp)      { return cmp == Equal; }
   static bool comparable(int cmp) { return cmp < NotComparable; }

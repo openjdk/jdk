@@ -257,7 +257,7 @@ void VLoopDependencyGraph::construct() {
       MemNode* n1 = slice_nodes.at(j);
       memory_pred_edges.clear();
 
-      VPointer p1(n1, _vloop);
+      const VPointer& p1 = _pointers.get(n1);
       // For all memory nodes before it, check if we need to add a memory edge.
       for (int k = slice_nodes.length() - 1; k > j; k--) {
         MemNode* n2 = slice_nodes.at(k);
@@ -265,7 +265,7 @@ void VLoopDependencyGraph::construct() {
         // Ignore Load-Load dependencies:
         if (n1->is_Load() && n2->is_Load()) { continue; }
 
-        VPointer p2(n2, _vloop);
+        const VPointer& p2 = _pointers.get(n2);
         if (!VPointer::not_equal(p1.cmp(p2))) {
           // Possibly overlapping memory
           memory_pred_edges.append(_body.bb_idx(n2));
