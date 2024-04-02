@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,12 @@
  *          java.management/com.sun.jmx.remote.security
  * @run clean SubjectDelegation1Test SimpleStandard SimpleStandardMBean
  * @run build SubjectDelegation1Test SimpleStandard SimpleStandardMBean
- * @run main SubjectDelegation1Test policy11 ok
- * @run main SubjectDelegation1Test policy12 ko
- * @run main SubjectDelegation1Test policy13 ko
- * @run main SubjectDelegation1Test policy14 ko
- * @run main SubjectDelegation1Test policy15 ok
- * @run main SubjectDelegation1Test policy16 ko
+ * @run main/othervm -Djava.security.manager=allow SubjectDelegation1Test policy11 ok
+ * @run main/othervm -Djava.security.manager=allow SubjectDelegation1Test policy12 ko
+ * @run main/othervm -Djava.security.manager=allow SubjectDelegation1Test policy13 ko
+ * @run main/othervm -Djava.security.manager=allow SubjectDelegation1Test policy14 ko
+ * @run main/othervm -Djava.security.manager=allow SubjectDelegation1Test policy15 ok
+ * @run main/othervm -Djava.security.manager=allow SubjectDelegation1Test policy16 ko
  */
 
 import com.sun.jmx.remote.security.JMXPluggableAuthenticator;

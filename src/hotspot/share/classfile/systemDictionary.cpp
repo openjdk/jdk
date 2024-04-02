@@ -723,10 +723,10 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   // Make sure we have the right class in the dictionary
   DEBUG_ONLY(verify_dictionary_entry(name, loaded_class));
 
-  // Check if the protection domain is present it has the right access
   if (protection_domain() != nullptr) {
-    // Verify protection domain. If it fails an exception is thrown
-    dictionary->validate_protection_domain(loaded_class, class_loader, protection_domain, CHECK_NULL);
+    // A SecurityManager (if installed) may prevent this protection_domain from accessing loaded_class
+    // by throwing a SecurityException.
+    dictionary->check_package_access(loaded_class, class_loader, protection_domain, CHECK_NULL);
   }
 
   return loaded_class;

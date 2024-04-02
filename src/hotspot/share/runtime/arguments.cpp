@@ -496,13 +496,17 @@ static SpecialFlag const special_jvm_flags[] = {
   // --- Non-alias flags - sorted by obsolete_in then expired_in:
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
+  { "ZGenerational",                JDK_Version::jdk(23), JDK_Version::undefined(), JDK_Version::undefined() },
   { "DumpSharedSpaces",             JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RegisterFinalizersAtInit",     JDK_Version::jdk(22), JDK_Version::jdk(23), JDK_Version::jdk(24) },
-  { "ZGenerational",                JDK_Version::jdk(23), JDK_Version::undefined(), JDK_Version::undefined() },
-
+#if defined(X86)
+  { "UseRTMLocking",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
+  { "UseRTMDeopt",                  JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
+  { "RTMRetryCount",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
+#endif // X86
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
 
@@ -531,6 +535,9 @@ static SpecialFlag const special_jvm_flags[] = {
   { "GCLockerEdenExpansionPercent", JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
   { "NUMAPageScanRate",             JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
   { "ProcessDistributionStride",    JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
+
+  { "ParallelOldDeadWoodLimiterMean",   JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "ParallelOldDeadWoodLimiterStdDev", JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
