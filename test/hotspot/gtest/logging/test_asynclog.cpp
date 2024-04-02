@@ -140,9 +140,9 @@ public:
     cb.enqueue_locked(large_message, strlen(large_message), &out, CircularStringBuffer::None);
     missing = map.get(&out);
     EXPECT_TRUE(missing !=nullptr && *missing > 0);
-    size_t old_tail = cb.tail;
+    size_t old_tail = cb._tail;
     cb.enqueue_locked(nullptr, 0, nullptr, CircularStringBuffer::None);
-    EXPECT_TRUE(cb.tail != old_tail);
+    EXPECT_TRUE(cb._tail != old_tail);
     unsigned int* new_missing = map.get(&out);
     EXPECT_TRUE(new_missing != nullptr && *missing == *new_missing);
   }
