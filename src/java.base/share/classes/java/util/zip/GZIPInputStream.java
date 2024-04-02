@@ -110,27 +110,29 @@ public class GZIPInputStream extends InflaterInputStream {
      * support for concatenated streams, and tolerance for traliling garbage.
      *
      * <p>
-     * When {@code allowConcatenation} is true, then any data following a GZIP trailer
-     * frame will be interpreted as the start of another compressed data stream, so that
-     * multiple concatenated compressed data streams will be read out as a single
-     * uncompressed stream. When {@code allowConcatenation} is false, only a single
-     * decompression stops after the end of the first compressed data stream.
+     * When {@code allowConcatenation} is true, this class will attempt to decode any
+     * data following a GZIP trailer frame as the start of a new compressed data stream
+     * and proceed to decompress it, with the result that multiple concatenated compressed
+     * data streams in the underlying input will be read back as a single uncompressed
+     * stream. When {@code allowConcatenation} is false, decompression stops after the
+     * first GZIP trailer frame encountered.
      *
      * <p>
-     * The {@code allowTrailingGarbage} flag controls the behavior when any data appears
-     * after the first GZIP trailer frame (if {@code allowConcatenation} is false)
-     * or when an invalid GZIP header frame appears after any GZIP trailer frame (if
-     * {@code allowConcatenation} is true): when {@code allowTrailingGarbage} is true,
-     * the unexpected data and/or any {@link IOException} thrown trying to read it is
-     * simply discarded and EOF is returned; when {@code allowTrailingGarbage} is false,
-     * any unexpected data triggers an {@link IOException}, and any {@link IOException}
-     * thrown by the underlying input stream is propagated to the caller.
+     * The {@code allowTrailingGarbage} flag controls the behavior when data follows
+     * the first GZIP trailer frame (if {@code allowConcatenation} is false) or when one
+     * or more bytes of invalid GZIP header frame data appear after any GZIP trailer frame
+     * (if {@code allowConcatenation} is true). When {@code allowTrailingGarbage} is true,
+     * the unexpected data and/or any {@link IOException} thrown while trying to read that
+     * data are simply discarded and EOF is returned; when {@code allowTrailingGarbage} is
+     * false, any unexpected data triggers an {@link IOException}, and any {@link IOException}
+     * thrown while trying to read that data is propagated to the caller.
      *
      * @apiNote The original behavior of this class is replicated by setting both
      * {@code allowConcatenation} and {@code allowTrailingGarbage} to true. However,
-     * enabling {@code allowTrailingGarbage} is discouraged because of its imprecision
-     * in how many additional bytes are read and how underlying {@link IOException}s
-     * are handled.
+     * enabling {@code allowTrailingGarbage} is discouraged because of its imprecision in
+     * how many additional bytes are read, how underlying {@link IOException}s are handled,
+     * and the possibility that trailing garbage could be misinterpreted as a valid GZIP
+     * header frame.
      *
      * @param in the input stream
      * @param size the input buffer size
