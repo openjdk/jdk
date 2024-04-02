@@ -33,6 +33,9 @@ import jdk.internal.event.EventHelper;
  * @run main/othervm -Xmx32m -Djava.util.logging.manager=RecursiveEventHelper RecursiveEventHelper
  */
 public class RecursiveEventHelper extends LogManager {
+    // an extra check to ensure the custom manager is in use
+    static volatile boolean customMethodCalled;
+
     public static void main(String[] args) throws Exception {
         String classname = System.getProperty("java.util.logging.manager");
         if (!classname.equals("RecursiveEventHelper")) {
@@ -45,6 +48,9 @@ public class RecursiveEventHelper extends LogManager {
         // is also on the code path of original report and triggers
         // similar recursion.
         System.getLogger("testLogger");
+        if (!customMethodCalled) {
+            throw new RuntimeException("Method not called");
+        }
     }
 
     @Override
@@ -54,6 +60,7 @@ public class RecursiveEventHelper extends LogManager {
         // a recursive call (via EventHelper.isLoggingSecurity) back into
         // logger API
         EventHelper.isLoggingSecurity();
+        customMethodCalled = true;
         return super.getProperty(p);
     }
 }
