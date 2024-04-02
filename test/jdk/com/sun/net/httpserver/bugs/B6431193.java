@@ -40,25 +40,20 @@ import com.sun.net.httpserver.*;
 
 public class B6431193 {
 
-    static boolean error = false;
-
-    public static void read (InputStream i) throws IOException {
-        while (i.read() != -1);
-        i.close();
-    }
+    static boolean handlerIsDaemon = false;
 
     public static void main(String[] args) throws IOException {
         class MyHandler implements HttpHandler {
             public void handle(HttpExchange t) throws IOException {
                 try (InputStream is = t.getRequestBody();
                      OutputStream os = t.getResponseBody()) {
-                    read(is);
+                    is.readAllBytes();
                     // .. read the request body
                     String response = "This is the response";
                     t.sendResponseHeaders(200, response.length());
                     os.write(response.getBytes());
                     os.close();
-                    error = Thread.currentThread().isDaemon();
+                    handlerIsDaemon = Thread.currentThread().isDaemon();
                 }
             }
         }
@@ -78,9 +73,10 @@ public class B6431193 {
                     .path("/apps/foo")
                     .toURL();
             InputStream is = url.openConnection(Proxy.NO_PROXY).getInputStream();
-            read(is);
-            if (error) {
-                throw new RuntimeException("error in test");
+            is.readAllBytes();
+            is.close();
+            if (handlerIsDaemon) {
+                throw new RuntimeException("request was handled by a daemon thread");
             }
         } catch (Exception e) {
             throw new AssertionError("Unexpected exception: " + e, e);
