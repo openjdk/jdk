@@ -362,6 +362,16 @@ public:
     return _body_idx.at(n->_idx);
   }
 
+  template<typename Callback>
+  void for_each_mem(Callback callback) const {
+    for (int i = 0; i < _body.length(); i++) {
+      MemNode* mem = _body.at(i)->isa_Mem();
+      if (mem != nullptr && _vloop.in_bb(mem)) {
+        callback(mem, i);
+      }
+    }
+  }
+
 private:
   void set_bb_idx(Node* n, int i) {
     _body_idx.at_put_grow(n->_idx, i);
