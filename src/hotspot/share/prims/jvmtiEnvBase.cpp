@@ -2166,6 +2166,7 @@ JvmtiEnvBase::force_early_return(jthread thread, jvalue value, TosState tos) {
   if (err != JVMTI_ERROR_NONE) {
     return err;
   }
+  Handle thread_handle(current_thread, thread_obj);
   bool self = java_thread == current_thread;
 
   err = check_non_suspended_or_opaque_frame(java_thread, thread_obj, self);
@@ -2186,12 +2187,9 @@ JvmtiEnvBase::force_early_return(jthread thread, jvalue value, TosState tos) {
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }
 
+  MutexLocker mu(JvmtiThreadState_lock);
   SetForceEarlyReturn op(state, value, tos);
-  if (self) {
-    op.doit(java_thread, self);
-  } else {
-    Handshake::execute(&op, java_thread);
-  }
+  JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
   return op.result();
 }
 

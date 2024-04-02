@@ -1748,6 +1748,7 @@ JvmtiEnv::PopFrame(jthread thread) {
   JavaThread* java_thread = nullptr;
   oop thread_obj = nullptr;
   jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
+  Handle thread_handle(current_thread, thread_obj);
 
   if (err != JVMTI_ERROR_NONE) {
     return err;
@@ -1774,11 +1775,7 @@ JvmtiEnv::PopFrame(jthread thread) {
 
   MutexLocker mu(JvmtiThreadState_lock);
   UpdateForPopTopFrameClosure op(state);
-  if (self) {
-    op.doit(java_thread, self);
-  } else {
-    Handshake::execute(&op, java_thread);
-  }
+  JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
   return op.result();
 } /* end PopFrame */
 
