@@ -648,7 +648,7 @@ static void *thread_native_entry(Thread *thread) {
     address high_address = thread->stack_base();
     lt.print("Thread is alive (tid: " UINTX_FORMAT ", kernel thread id: " UINTX_FORMAT
              ", stack [" PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k using %luk pages)).",
-             os::current_thread_id(), (uintx) kernel_thread_id, (uintptr_t)low_address, (uintptr_t)high_address,
+             os::current_thread_id(), (uintx) kernel_thread_id, p2i(low_address), p2i(high_address),
              (high_address - low_address) / K, os::Aix::query_pagesize(low_address) / K);
   }
 
@@ -1206,10 +1206,10 @@ void os::print_memory_info(outputStream* st) {
 
   os::Aix::meminfo_t mi;
   if (os::Aix::get_meminfo(&mi)) {
-    st->print_cr("physical total : " SIZE_FORMAT, (unsigned long)mi.real_total);
-    st->print_cr("physical free  : " SIZE_FORMAT, (unsigned long)mi.real_free);
-    st->print_cr("swap total     : " SIZE_FORMAT, (unsigned long)mi.pgsp_total);
-    st->print_cr("swap free      : " SIZE_FORMAT, (unsigned long)mi.pgsp_free);
+    st->print_cr("physical total : " SIZE_FORMAT, mi.real_total);
+    st->print_cr("physical free  : " SIZE_FORMAT, mi.real_free);
+    st->print_cr("swap total     : " SIZE_FORMAT, mi.pgsp_total);
+    st->print_cr("swap free      : " SIZE_FORMAT, mi.pgsp_free);
   }
   st->cr();
 
@@ -1396,7 +1396,7 @@ struct vmembk_t {
   void print_on(outputStream* os) const {
     os->print("[" PTR_FORMAT " - " PTR_FORMAT "] (" UINTX_FORMAT
       " bytes, %ld %s pages), %s",
-      (uintptr_t)addr, (uintptr_t)addr + size - 1, size, size / pagesize, describe_pagesize(pagesize),
+      p2i(addr), p2i(addr) + size - 1, size, size / pagesize, describe_pagesize(pagesize),
       (type == VMEM_SHMATED ? "shmat" : "mmap")
     );
   }
@@ -1979,7 +1979,7 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
 
   if (!rc) {
     const char* const s_errno = os::errno_name(errno);
-    warning("mprotect(" PTR_FORMAT "-" PTR_FORMAT ", 0x%X) failed (%s).", (uintptr_t)addr, (uintptr_t)addr + size, prot, s_errno);
+    warning("mprotect(" PTR_FORMAT "-" PTR_FORMAT ", 0x%X) failed (%s).", p2i(addr), p2i(addr) + size, prot, s_errno);
     return false;
   }
 
@@ -2396,7 +2396,7 @@ void os::set_native_thread_name(const char *name) {
 
 bool os::find(address addr, outputStream* st) {
 
-  st->print(PTR_FORMAT ": ", (uintptr_t)addr);
+  st->print(PTR_FORMAT ": ", p2i(addr));
 
   loaded_module_t lm;
   if (LoadedLibraries::find_for_text_address(addr, &lm) ||
