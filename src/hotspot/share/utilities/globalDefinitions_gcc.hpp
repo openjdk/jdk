@@ -72,12 +72,6 @@
 #include <sys/time.h>
 #endif // LINUX || _ALLBSD_SOURCE
 
-#ifdef _AIX
-#if !defined(__open_xl_version__) || (__open_xl_version__ < 17)
-  #error "this xlc version is not supported"
-#endif
-#endif // AIX
-
 // NULL vs NULL_WORD:
 // On Linux NULL is defined as a special type '__null'. Assigning __null to
 // integer variable will cause gcc warning. Use NULL_WORD in places where a
