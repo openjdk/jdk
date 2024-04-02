@@ -40,6 +40,14 @@ import java.util.stream.IntStream;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 2, jvmArgsAppend = "--enable-preview")
+/* 2024-04-02
+Benchmark                                 Mode  Cnt  Score   Error  Units
+MonotonicListBenchmark.instanceArrayList  avgt   10  1.033 ? 0.042  ns/op
+MonotonicListBenchmark.instanceLazyList   avgt   10  1.077 ? 0.042  ns/op
+MonotonicListBenchmark.instanceWrapped    avgt   10  1.325 ? 0.047  ns/op
+MonotonicListBenchmark.staticArrayList    avgt   10  0.922 ? 0.058  ns/op
+MonotonicListBenchmark.staticLazyList     avgt   10  0.568 ? 0.046  ns/op
+ */
 public class MonotonicListBenchmark {
 
     private static final IntFunction<Integer> FUNCTION = i -> i;

@@ -51,6 +51,15 @@ import java.util.stream.Stream;
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 2, jvmArgsAppend = "--enable-preview")
 @OperationsPerInvocation(1000)
+/* 2024-04-02
+Benchmark                                 Mode  Cnt  Score   Error  Units
+LazyListBenchmark.instanceArrayList       avgt   10  0.432 ? 0.005  ns/op
+LazyListBenchmark.instanceLazy            avgt   10  1.504 ? 0.020  ns/op
+LazyListBenchmark.instanceMonotonicEager  avgt   10  0.715 ? 0.007  ns/op
+LazyListBenchmark.staticArrayList         avgt   10  0.358 ? 0.006  ns/op
+LazyListBenchmark.staticLazy              avgt   10  0.828 ? 0.004  ns/op
+LazyListBenchmark.staticMonotonicEager    avgt   10  0.717 ? 0.004  ns/op
+ */
 public class LazyListBenchmark {
 
     private static final IntFunction<Integer> FUNCTION = i -> i;
