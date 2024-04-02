@@ -388,7 +388,6 @@ UNSAFE_LEAF(void, Unsafe_FreeMemory0(JNIEnv *env, jobject unsafe, jlong addr)) {
 UNSAFE_ENTRY_SCOPED(void, Unsafe_SetMemory0(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong size, jbyte value)) {
   size_t sz = (size_t)size;
 
-
   oop base = JNIHandles::resolve(obj);
   void* p = index_oop_from_field_offset_long(base, offset);
 
