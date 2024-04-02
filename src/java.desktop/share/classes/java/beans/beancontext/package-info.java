@@ -31,6 +31,13 @@
  * contains events and listener interface for beans being added and removed from
  * a bean context.
  *
+ * This package has been deprecated and may be removed in a future version of the Java Platform
+ * There is no replacement.
+ *
+ * All of the classes and interfaces in this package have been terminally deprecated.
+ *
+ * Users are advised to migrate their applications to other technologies.
+ *
  * @since 1.2
  */
 package java.beans.beancontext;
