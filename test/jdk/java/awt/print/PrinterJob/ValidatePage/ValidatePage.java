@@ -63,7 +63,7 @@ public class ValidatePage extends Frame implements Printable {
     Label myImageableHeightLabel;
     Label myOrientationLabel;
 
-    private static String GetOrientation(int o) {
+    private static String getOrientation(int o) {
         return switch (o) {
             case PageFormat.PORTRAIT -> "PORTRAIT";
             case PageFormat.LANDSCAPE -> "LANDSCAPE";
@@ -89,7 +89,7 @@ public class ValidatePage extends Frame implements Printable {
         myImageableHeightLabel.setText("Format ImageableHeight = "
                 + drnd(myPageFormat.getImageableHeight()));
         myOrientationLabel.setText("Format Orientation = "
-                + GetOrientation(myPageFormat.getOrientation()));
+                + getOrientation(myPageFormat.getOrientation()));
         Paper p = myPageFormat.getPaper();
         pw.setText("Paper Width = " + drnd(p.getWidth()));
         ph.setText("Paper Height = " + drnd(p.getHeight()));
@@ -245,7 +245,7 @@ public class ValidatePage extends Frame implements Printable {
         }
 
         System.out.println("Format Orientation = "
-                + GetOrientation(pageFormat.getOrientation()));
+                + getOrientation(pageFormat.getOrientation()));
 
         Graphics2D g2d = (Graphics2D) graphics;
 
