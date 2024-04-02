@@ -55,7 +55,8 @@ public class MegaIconTest {
     public static void main(String[] args) throws Exception {
         String INSTRUCTIONS = """
                 Each of the buttons in the main window represents a test
-                of certain icon functionality - transparency/opacity, scaling etc.
+                of certain icon functionality -  background transparency/opacity
+                of the icon, scaling etc.
                 Clicking on each button brings up a window displaying the graphic
                 that should appear in the corresponding icon.
                 Click on each button, minimize the resulting window, and check that
