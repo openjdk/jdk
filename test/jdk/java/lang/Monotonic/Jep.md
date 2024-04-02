@@ -205,7 +205,7 @@ To use the Lazy Value and Collections APIs, the JVM flag `--enable-preview` must
 
 The Values & Collections API define functions and an interface so that client code in libraries and applications can
 
-- Define and use lazy (scalar) values: [`Lazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Monotonic.html)
+- Define and use lazy (scalar) values: [`Lazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html)
 - Define and use lazy collections: 
   [`List.ofLazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/List.html#ofLazy(int,java.util.function.IntFunction)), 
   [`Set.ofLazy(Set, Predicate)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Set.html#ofLazy(java.util.Set,java.util.function.Predicate)), [`Set.ofLazy(Enum.class, Predicate`)](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Set.html#ofLazy(java.lang.Class,java.util.function.Predicate)) and 
