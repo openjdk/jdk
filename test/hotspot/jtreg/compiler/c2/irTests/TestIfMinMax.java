@@ -30,6 +30,7 @@ import jdk.test.lib.Utils;
 
 /*
  * @test
+ * @key randomness
  * @bug 8324655
  * @summary Test that if expressions are properly folded into min/max nodes
  * @library /test/lib /
@@ -143,9 +144,21 @@ public class TestIfMinMax {
         int[] a = new int[512];
         int[] b = new int[512];
 
-        for (int i = 0; i < 512; i++) {
+        // Fill from 1 to 50
+        for (int i = 0; i < 50; i++) {
+            a[i] = i + 1;
+            b[i] = 1;
+        }
+
+        // Fill from -1 to -50
+        for (int i = 50; i < 100; i++) {
+            a[i] = -(i - 49);
+            b[i] = 1;
+        }
+
+        for (int i = 100; i < 512; i++) {
             a[i] = RANDOM.nextInt();
-            b[i] = RANDOM.nextInt();
+            b[i] = 1;
         }
 
         return new Object[] { a, b };
@@ -156,9 +169,21 @@ public class TestIfMinMax {
         long[] a = new long[512];
         long[] b = new long[512];
 
-        for (int i = 0; i < 512; i++) {
+        // Fill from 1 to 50
+        for (int i = 0; i < 50; i++) {
+            a[i] = i + 1;
+            b[i] = 1;
+        }
+
+        // Fill from -1 to -50
+        for (int i = 50; i < 100; i++) {
+            a[i] = -(i - 49);
+            b[i] = 1;
+        }
+
+        for (int i = 100; i < 512; i++) {
             a[i] = RANDOM.nextLong();
-            b[i] = RANDOM.nextLong();
+            b[i] = 1;
         }
 
         return new Object[] { a, b };
@@ -172,22 +197,23 @@ public class TestIfMinMax {
     public Object[] testMaxIntReduction(int[] a, int[] b) {
         int r = 0;
         for (int i = 0; i < a.length; i++) {
-            int aI = a[i] * 2;
+            int aI = a[i] * b[i];
 
             r = aI > r ? aI : r;
         }
 
-        return new Object[] { a, r };
+        return new Object[] { a, b, r };
     }
 
     @Check(test = "testMaxIntReduction")
     public void checkTestMaxIntReduction(Object[] vals) {
         int[] a = (int[]) vals[0];
-        int testRet = (int) vals[1];
+        int[] b = (int[]) vals[1];
+        int testRet = (int) vals[2];
 
         int r = 0;
         for (int i = 0; i < a.length; i++) {
-            int aI = a[i] * 2;
+            int aI = a[i] * b[i];
 
             r = aI > r ? aI : r;
         }
@@ -206,22 +232,23 @@ public class TestIfMinMax {
         int r = 0;
 
         for (int i = 0; i < a.length; i++) {
-            int aI = a[i] * 2;
+            int aI = a[i] * b[i];
 
             r = aI < r ? aI : r;
         }
 
-        return new Object[] { a, r };
+        return new Object[] { a, b, r };
     }
 
     @Check(test = "testMinIntReduction")
     public void checkTestMinIntReduction(Object[] vals) {
         int[] a = (int[]) vals[0];
-        int testRet = (int) vals[1];
+        int[] b = (int[]) vals[1];
+        int testRet = (int) vals[2];
 
         int r = 0;
         for (int i = 0; i < a.length; i++) {
-            int aI = a[i] * 2;
+            int aI = a[i] * b[i];
 
             r = aI < r ? aI : r;
         }
@@ -240,22 +267,23 @@ public class TestIfMinMax {
         long r = 0;
 
         for (int i = 0; i < a.length; i++) {
-            long aI = a[i] * 2;
+            long aI = a[i] * b[i];
 
             r = aI > r ? aI : r;
         }
 
-        return new Object[] { a, r };
+        return new Object[] { a, b, r };
     }
 
     @Check(test = "testMaxLongReduction")
     public void checkTestMaxLongReduction(Object[] vals) {
         long[] a = (long[]) vals[0];
-        long testRet = (long) vals[1];
+        long[] b = (long[]) vals[1];
+        long testRet = (long) vals[2];
 
         long r = 0;
         for (int i = 0; i < a.length; i++) {
-            long aI = a[i] * 2;
+            long aI = a[i] * b[i];
 
             r = aI > r ? aI : r;
         }
@@ -274,22 +302,23 @@ public class TestIfMinMax {
         long r = 0;
 
         for (int i = 0; i < a.length; i++) {
-            long aI = a[i] * 2;
+            long aI = a[i] * b[i];
 
             r = aI < r ? aI : r;
         }
 
-        return new Object[] { a, r };
+        return new Object[] { a, b, r };
     }
 
     @Check(test = "testMinLongReduction")
     public void checkTestMinLongReduction(Object[] vals) {
         long[] a = (long[]) vals[0];
-        long testRet = (long) vals[1];
+        long[] b = (long[]) vals[1];
+        long testRet = (long) vals[2];
 
         long r = 0;
         for (int i = 0; i < a.length; i++) {
-            long aI = a[i] * 2;
+            long aI = a[i] * b[i];
 
             r = aI < r ? aI : r;
         }
