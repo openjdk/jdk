@@ -380,8 +380,7 @@ zaddress ZRelocate::relocate_object(ZForwarding* forwarding, zaddress_unsafe fro
 }
 
 zaddress ZRelocate::forward_object(ZForwarding* forwarding, zaddress_unsafe from_addr) {
-  ZForwardingCursor cursor;
-  const zaddress to_addr = forwarding->find(from_addr, &cursor);
+  const zaddress to_addr = forwarding->find(from_addr);
   assert(!is_null(to_addr), "Should be forwarded: " PTR_FORMAT, untype(from_addr));
   return to_addr;
 }
