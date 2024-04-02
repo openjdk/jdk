@@ -24,11 +24,14 @@
  */
 package jdk.tools.jlink.internal;
 
+import static jdk.tools.jlink.internal.JlinkTask.RESPATH_PATTERN;
+
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -37,6 +40,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -47,7 +51,9 @@ import jdk.tools.jlink.internal.ResourcePoolManager.CompressedModuleData;
 import jdk.tools.jlink.internal.runtimelink.RuntimeImageLinkException;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
+import jdk.tools.jlink.plugin.ResourcePoolModule;
 
 /**
  * An image (native endian.)
@@ -69,6 +75,12 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  * }</pre>
  */
 public final class ImageFileCreator {
+    private static final String JLINK_MOD_NAME = "jdk.jlink";
+    // This resource is being used in JLinkTask which passes its contents to
+    // JRTArchive for further processing.
+    private static final String RESPATH = "/" + JLINK_MOD_NAME + "/" + RESPATH_PATTERN;
+    private static final byte[] EMPTY_RESOURCE_BYTES = new byte[] {};
+
     private final Map<String, List<Entry>> entriesForModule = new HashMap<>();
     private final ImagePluginStack plugins;
     private ImageFileCreator(ImagePluginStack plugins) {
@@ -186,6 +198,8 @@ public final class ImageFileCreator {
         ResourcePool resultResources;
         try {
             resultResources = pluginSupport.visitResources(allContent);
+            // Keep track of resources for runtime image based linking
+            resultResources = addNonClassResourcesTrackFiles(resultResources, writer);
         } catch (PluginException pe) {
             if (JlinkTask.DEBUG) {
                 pe.printStackTrace();
@@ -259,11 +273,86 @@ public final class ImageFileCreator {
         return resultResources;
     }
 
+    private static ResourcePool addNonClassResourcesTrackFiles(ResourcePool resultResources, BasicImageWriter writer) {
+        // Only add resources if we have the jdk.jlink module part of the
+        // link.
+        Optional<ResourcePoolModule> jdkJlink = resultResources.moduleView().findModule(JLINK_MOD_NAME);
+        if (jdkJlink.isPresent()) {
+            Map<String, List<String>> nonClassResources = recordAndFilterEntries(resultResources);
+            return addModuleResourceEntries(resultResources, nonClassResources, writer);
+        } else {
+            return resultResources; // No-op
+        }
+    }
+
+    private static ResourcePool addModuleResourceEntries(
+            ResourcePool resultResources, Map<String, List<String>> nonClassResEntries, BasicImageWriter writer) {
+            Set<String> inputModules = resultResources.moduleView().modules()
+                                                      .map(rm -> rm.name())
+                                                      .collect(Collectors.toSet());
+            ResourcePoolManager mgr = createPoolManager(resultResources, writer);
+            ResourcePoolBuilder out = mgr.resourcePoolBuilder();
+            inputModules.stream().sorted().forEach(module -> {
+                String mResource = String.format(RESPATH, module);
+                List<String> mResources = nonClassResEntries.get(module);
+                if (mResources == null) {
+                    // We create empty resource files for modules in the resource
+                    // pool view, but which don't themselves contain native resources
+                    // or config files.
+                    out.add(ResourcePoolEntry.create(mResource, EMPTY_RESOURCE_BYTES));
+                } else {
+                    String mResContent = mResources.stream().sorted()
+                                                   .collect(Collectors.joining("\n"));
+                    out.add(ResourcePoolEntry.create(mResource, mResContent.getBytes(StandardCharsets.UTF_8)));
+                }
+            });
+            return out.build();
+    }
+
+    private static Map<String, List<String>> recordAndFilterEntries(
+            ResourcePool resultResources) {
+        final Map<String, List<String>> nonClassResEntries = new HashMap<>();
+        final Platform platform = getTargetPlatform(resultResources);
+        resultResources.entries().forEach(entry -> {
+            // Note that the jmod_resources file is a resource file, so we cannot
+            // add ourselves due to this condition. However, we want to not add
+            // an old version of the resource file again.
+            if (entry.type() != ResourcePoolEntry.Type.CLASS_OR_RESOURCE && entry.type() != ResourcePoolEntry.Type.TOP) {
+                List<String> moduleResources = nonClassResEntries.computeIfAbsent(entry.moduleName(), a -> new ArrayList<>());
+
+                JRTArchive.ResourceFileEntry rfEntry = JRTArchive.ResourceFileEntry.toResourceFileEntry(entry, platform);
+                moduleResources.add(rfEntry.encodeToString());
+            }
+        });
+        return nonClassResEntries;
+    }
+
+    private static Platform getTargetPlatform(ResourcePool in) {
+        String platform = in.moduleView().findModule("java.base")
+                .map(ResourcePoolModule::targetPlatform)
+                .orElseThrow(() -> new AssertionError("java.base not found"));
+        return Platform.parsePlatform(platform);
+    }
+
     private static ResourcePoolManager createPoolManager(Set<Archive> archives,
             Map<String, List<Entry>> entriesForModule,
             ByteOrder byteOrder,
             BasicImageWriter writer) throws IOException {
-        ResourcePoolManager resources = new ResourcePoolManager(byteOrder, new StringTable() {
+        ResourcePoolManager resources = createBasicResourcePoolManager(byteOrder, writer);
+        archives.stream()
+                .map(Archive::moduleName)
+                .sorted()
+                .flatMap(mn ->
+                    entriesForModule.get(mn).stream()
+                            .map(e -> new ArchiveEntryResourcePoolEntry(mn,
+                                    e.getResourcePoolEntryName(), e)))
+                .forEach(resources::add);
+        return resources;
+    }
+
+    private static ResourcePoolManager createBasicResourcePoolManager(
+            ByteOrder byteOrder, BasicImageWriter writer) {
+        return new ResourcePoolManager(byteOrder, new StringTable() {
 
             @Override
             public int addString(String str) {
@@ -275,14 +364,12 @@ public final class ImageFileCreator {
                 return writer.getString(id);
             }
         });
-        archives.stream()
-                .map(Archive::moduleName)
-                .sorted()
-                .flatMap(mn ->
-                    entriesForModule.get(mn).stream()
-                            .map(e -> new ArchiveEntryResourcePoolEntry(mn,
-                                    e.getResourcePoolEntryName(), e)))
-                .forEach(resources::add);
+    }
+
+    private static ResourcePoolManager createPoolManager(
+            ResourcePool resultResources, BasicImageWriter writer) {
+        ResourcePoolManager resources = createBasicResourcePoolManager(resultResources.byteOrder(), writer);
+        resultResources.entries().forEach(resources::add);
         return resources;
     }
 
