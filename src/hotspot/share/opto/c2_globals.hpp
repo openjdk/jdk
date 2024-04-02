@@ -789,6 +789,10 @@
                                                                             \
   develop(bool, StressPrunedExceptionHandlers, false,                       \
           "Always prune exception handlers")                                \
+                                                                            \
+  develop(bool, UseStoreStoreForCtor, true,                                 \
+          "Use storestore barrier instead of release barrier for"           \
+          "on constructor exit")                                            \
 
 // end of C2_FLAGS
 

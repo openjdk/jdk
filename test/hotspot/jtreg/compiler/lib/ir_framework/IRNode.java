@@ -877,6 +877,11 @@ public class IRNode {
         beforeMatchingNameRegex(MEMBAR, "MemBar");
     }
 
+    public static final String MEMBAR_ACQUIRE = PREFIX + "MEMBAR_ACQUIRE" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MEMBAR_ACQUIRE, "MemBarAcquire");
+    }
+
     public static final String MEMBAR_RELEASE = PREFIX + "MEMBAR_RELEASE" + POSTFIX;
     static {
         beforeMatchingNameRegex(MEMBAR_RELEASE, "MemBarRelease");
