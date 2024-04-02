@@ -144,8 +144,8 @@ private:
   CircularMapping circular_mapping;
 
   // Shared memory:
-  // Reader reads tail, writes to head.
-  // Writer reads head, writes to tail.
+  // Consumer reads tail, writes to head.
+  // Producer reads head, writes to tail.
   volatile size_t _tail; // Where new writes happen
   volatile size_t _head; // Where new reads happen
 
