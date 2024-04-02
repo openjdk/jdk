@@ -141,7 +141,7 @@ void CircularStringBuffer::enqueue_locked(const char* str, size_t size, LogFileS
   // Write the string
   circular_mapping.write_bytes(t, str, size);
   // Finally move the tail, making the message available for consumers.
-  _tail = (t + required_memory) % circular_mapping.size;
+  Atomic::store(&_tail, (t + required_memory) % circular_mapping.size);
   // We're done, notify the reader.
   _read_lock.notify();
   return;
@@ -185,7 +185,7 @@ CircularStringBuffer::DequeueResult CircularStringBuffer::dequeue(Message* out_m
   // Now read the string
   circular_mapping.read_bytes(h, out, str_size);
   // Done, move the head forward
-  _head = (h + out_msg->size) % circular_mapping.size;
+  Atomic::store(&_head, (h + out_msg->size) % circular_mapping.size);
   // Notify a writer that more memory is available
   _write_lock.notify();
   // Release the lock
@@ -211,7 +211,7 @@ bool CircularStringBuffer::has_message() {
 void CircularStringBuffer::await_message() {
   while (true) {
     ConsumerLocker rl(this);
-    while (_head == tail) {
+    while (_head == _tail) {
       _read_lock.wait(0 /* no timeout */);
     }
     break;
