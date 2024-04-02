@@ -79,16 +79,15 @@
                                  int needle_con_cnt, Register result, int ae);
 
   void arrays_equals(Register r1, Register r2,
-                     Register tmp3, Register tmp4,
-                     Register tmp5, Register tmp6,
-                     Register result, Register cnt1,
-                     int elem_size);
+                     Register tmp1, Register tmp2, Register tmp3,
+                     Register result, int elem_size);
 
   void arrays_hashcode(Register ary, Register cnt, Register result,
                        Register tmp1, Register tmp2,
                        Register tmp3, Register tmp4,
                        Register tmp5, Register tmp6,
                        BasicType eltype);
+
   // helper function for arrays_hashcode
   int arrays_hashcode_elsize(BasicType eltype);
   void arrays_hashcode_elload(Register dst, Address src, BasicType eltype);
@@ -156,9 +155,9 @@
     vl1r_v(v, t0);
   }
 
-  void spill_copy_vector_stack_to_stack(int src_offset, int dst_offset, int vector_length_in_bytes) {
+  void spill_copy_vector_stack_to_stack(int src_offset, int dst_offset, uint vector_length_in_bytes) {
     assert(vector_length_in_bytes % 16 == 0, "unexpected vector reg size");
-    for (int i = 0; i < vector_length_in_bytes / 8; i++) {
+    for (int i = 0; i < (int)vector_length_in_bytes / 8; i++) {
       unspill(t0, true, src_offset + (i * 8));
       spill(t0, true, dst_offset + (i * 8));
     }
@@ -227,30 +226,30 @@
 
   void minmax_fp_v(VectorRegister dst,
                   VectorRegister src1, VectorRegister src2,
-                  BasicType bt, bool is_min, int vector_length);
+                  BasicType bt, bool is_min, uint vector_length);
 
   void minmax_fp_masked_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
                           VectorRegister vmask, VectorRegister tmp1, VectorRegister tmp2,
-                          BasicType bt, bool is_min, int vector_length);
+                          BasicType bt, bool is_min, uint vector_length);
 
   void reduce_minmax_fp_v(FloatRegister dst,
                           FloatRegister src1, VectorRegister src2,
                           VectorRegister tmp1, VectorRegister tmp2,
-                          bool is_double, bool is_min, int vector_length,
+                          bool is_double, bool is_min, uint vector_length,
                           VectorMask vm = Assembler::unmasked);
 
   void reduce_integral_v(Register dst, Register src1,
                         VectorRegister src2, VectorRegister tmp,
-                        int opc, BasicType bt, int vector_length,
+                        int opc, BasicType bt, uint vector_length,
                         VectorMask vm = Assembler::unmasked);
 
-  void vsetvli_helper(BasicType bt, int vector_length, LMUL vlmul = Assembler::m1, Register tmp = t0);
+  void vsetvli_helper(BasicType bt, uint vector_length, LMUL vlmul = Assembler::m1, Register tmp = t0);
 
   void compare_integral_v(VectorRegister dst, VectorRegister src1, VectorRegister src2, int cond,
-                          BasicType bt, int vector_length, VectorMask vm = Assembler::unmasked);
+                          BasicType bt, uint vector_length, VectorMask vm = Assembler::unmasked);
 
   void compare_fp_v(VectorRegister dst, VectorRegister src1, VectorRegister src2, int cond,
-                    BasicType bt, int vector_length, VectorMask vm = Assembler::unmasked);
+                    BasicType bt, uint vector_length, VectorMask vm = Assembler::unmasked);
 
   // In Matcher::scalable_predicate_reg_slots,
   // we assume each predicate register is one-eighth of the size of
@@ -267,18 +266,18 @@
     vle8_v(v, t0);
   }
 
-  void spill_copy_vmask_stack_to_stack(int src_offset, int dst_offset, int vector_length_in_bytes) {
+  void spill_copy_vmask_stack_to_stack(int src_offset, int dst_offset, uint vector_length_in_bytes) {
     assert(vector_length_in_bytes % 4 == 0, "unexpected vector mask reg size");
-    for (int i = 0; i < vector_length_in_bytes / 4; i++) {
+    for (int i = 0; i < (int)vector_length_in_bytes / 4; i++) {
       unspill(t0, false, src_offset + (i * 4));
       spill(t0, false, dst_offset + (i * 4));
     }
   }
 
-  void integer_extend_v(VectorRegister dst, BasicType dst_bt, int vector_length,
-                        VectorRegister src, BasicType src_bt);
+  void integer_extend_v(VectorRegister dst, BasicType dst_bt, uint vector_length,
+                        VectorRegister src, BasicType src_bt, bool is_signed);
 
-  void integer_narrow_v(VectorRegister dst, BasicType dst_bt, int vector_length,
+  void integer_narrow_v(VectorRegister dst, BasicType dst_bt, uint vector_length,
                         VectorRegister src, BasicType src_bt);
 
   void vfcvt_rtz_x_f_v_safe(VectorRegister dst, VectorRegister src);

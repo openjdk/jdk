@@ -4257,7 +4257,7 @@ static void exit_process_or_thread(Ept what, int exit_code) {
   }
 
   // Should not reach here
-  os::infinite_sleep();
+  ::abort();
 }
 
 #undef EXIT_TIMEOUT

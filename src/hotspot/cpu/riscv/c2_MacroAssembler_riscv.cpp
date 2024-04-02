@@ -1536,21 +1536,20 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   BLOCK_COMMENT("} string_compare");
 }
 
-void C2_MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
-                                      Register tmp4, Register tmp5, Register tmp6, Register result,
-                                      Register cnt1, int elem_size) {
-  Label DONE, SAME, NEXT_DWORD, SHORT, TAIL, TAIL2, IS_TMP5_ZR;
-  Register tmp1 = t0;
-  Register tmp2 = t1;
-  Register cnt2 = tmp2;  // cnt2 only used in array length compare
-  Register elem_per_word = tmp6;
+void C2_MacroAssembler::arrays_equals(Register a1, Register a2,
+                                      Register tmp1, Register tmp2, Register tmp3,
+                                      Register result, int elem_size) {
+  assert(elem_size == 1 || elem_size == 2, "must be char or byte");
+  assert_different_registers(a1, a2, result, tmp1, tmp2, tmp3, t0);
+
+  int elem_per_word = wordSize/elem_size;
   int log_elem_size = exact_log2(elem_size);
   int length_offset = arrayOopDesc::length_offset_in_bytes();
   int base_offset   = arrayOopDesc::base_offset_in_bytes(elem_size == 2 ? T_CHAR : T_BYTE);
 
-  assert(elem_size == 1 || elem_size == 2, "must be char or byte");
-  assert_different_registers(a1, a2, result, cnt1, t0, t1, tmp3, tmp4, tmp5, tmp6);
-  mv(elem_per_word, wordSize / elem_size);
+  Register cnt1 = tmp3;
+  Register cnt2 = tmp1;  // cnt2 only used in array length compare
+  Label DONE, SAME, NEXT_WORD, SHORT, TAIL03, TAIL01;
 
   BLOCK_COMMENT("arrays_equals {");
 
@@ -1558,71 +1557,84 @@ void C2_MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
   beq(a1, a2, SAME);
 
   mv(result, false);
+  // if (a1 == nullptr || a2 == nullptr)
+  //     return false;
   beqz(a1, DONE);
   beqz(a2, DONE);
+
+  // if (a1.length != a2.length)
+  //      return false;
   lwu(cnt1, Address(a1, length_offset));
   lwu(cnt2, Address(a2, length_offset));
-  bne(cnt2, cnt1, DONE);
-  beqz(cnt1, SAME);
+  bne(cnt1, cnt2, DONE);
 
-  slli(tmp5, cnt1, 3 + log_elem_size);
-  sub(tmp5, zr, tmp5);
-  add(a1, a1, base_offset);
-  add(a2, a2, base_offset);
-  ld(tmp3, Address(a1, 0));
-  ld(tmp4, Address(a2, 0));
-  ble(cnt1, elem_per_word, SHORT); // short or same
+  la(a1, Address(a1, base_offset));
+  la(a2, Address(a2, base_offset));
+  // Check for short strings, i.e. smaller than wordSize.
+  addi(cnt1, cnt1, -elem_per_word);
+  bltz(cnt1, SHORT);
 
-  // Main 16 byte comparison loop with 2 exits
-  bind(NEXT_DWORD); {
-    ld(tmp1, Address(a1, wordSize));
-    ld(tmp2, Address(a2, wordSize));
-    sub(cnt1, cnt1, 2 * wordSize / elem_size);
-    blez(cnt1, TAIL);
-    bne(tmp3, tmp4, DONE);
-    ld(tmp3, Address(a1, 2 * wordSize));
-    ld(tmp4, Address(a2, 2 * wordSize));
-    add(a1, a1, 2 * wordSize);
-    add(a2, a2, 2 * wordSize);
-    ble(cnt1, elem_per_word, TAIL2);
-  } beq(tmp1, tmp2, NEXT_DWORD);
-  j(DONE);
+  // Main 8 byte comparison loop.
+  bind(NEXT_WORD); {
+    ld(tmp1, Address(a1));
+    ld(tmp2, Address(a2));
+    addi(cnt1, cnt1, -elem_per_word);
+    addi(a1, a1, wordSize);
+    addi(a2, a2, wordSize);
+    bne(tmp1, tmp2, DONE);
+  } bgez(cnt1, NEXT_WORD);
 
-  bind(TAIL);
-  xorr(tmp4, tmp3, tmp4);
-  xorr(tmp2, tmp1, tmp2);
-  sll(tmp2, tmp2, tmp5);
-  orr(tmp5, tmp4, tmp2);
-  j(IS_TMP5_ZR);
-
-  bind(TAIL2);
-  bne(tmp1, tmp2, DONE);
+  addi(tmp1, cnt1, elem_per_word);
+  beqz(tmp1, SAME);
 
   bind(SHORT);
-  xorr(tmp4, tmp3, tmp4);
-  sll(tmp5, tmp4, tmp5);
+  test_bit(tmp1, cnt1, 2 - log_elem_size);
+  beqz(tmp1, TAIL03); // 0-7 bytes left.
+  {
+    lwu(tmp1, Address(a1));
+    lwu(tmp2, Address(a2));
+    addi(a1, a1, 4);
+    addi(a2, a2, 4);
+    bne(tmp1, tmp2, DONE);
+  }
 
-  bind(IS_TMP5_ZR);
-  bnez(tmp5, DONE);
+  bind(TAIL03);
+  test_bit(tmp1, cnt1, 1 - log_elem_size);
+  beqz(tmp1, TAIL01); // 0-3 bytes left.
+  {
+    lhu(tmp1, Address(a1));
+    lhu(tmp2, Address(a2));
+    addi(a1, a1, 2);
+    addi(a2, a2, 2);
+    bne(tmp1, tmp2, DONE);
+  }
+
+  bind(TAIL01);
+  if (elem_size == 1) { // Only needed when comparing byte arrays.
+    test_bit(tmp1, cnt1, 0);
+    beqz(tmp1, SAME); // 0-1 bytes left.
+    {
+      lbu(tmp1, Address(a1));
+      lbu(tmp2, Address(a2));
+      bne(tmp1, tmp2, DONE);
+    }
+  }
 
   bind(SAME);
   mv(result, true);
   // That's it.
   bind(DONE);
 
-  BLOCK_COMMENT("} array_equals");
+  BLOCK_COMMENT("} arrays_equals");
 }
 
 // Compare Strings
 
-// For Strings we're passed the address of the first characters in a1
-// and a2 and the length in cnt1.
-// There are two implementations.  For arrays >= 8 bytes, all
-// comparisons (for hw supporting unaligned access: including the final one,
-// which may overlap) are performed 8 bytes at a time.
-// For strings < 8 bytes (and for tails of long strings when
-// AvoidUnalignedAccesses is true), we compare a
-// halfword, then a short, and then a byte.
+// For Strings we're passed the address of the first characters in a1 and a2
+// and the length in cnt1. There are two implementations.
+// For arrays >= 8 bytes, all comparisons (except for the tail) are performed
+// 8 bytes at a time. For the tail, we compare a halfword, then a short, and then a byte.
+// For strings < 8 bytes, we compare a halfword, then a short, and then a byte.
 
 void C2_MacroAssembler::string_equals(Register a1, Register a2,
                                       Register result, Register cnt1)
@@ -1635,39 +1647,24 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
 
   BLOCK_COMMENT("string_equals {");
 
-  beqz(cnt1, SAME);
   mv(result, false);
 
   // Check for short strings, i.e. smaller than wordSize.
-  sub(cnt1, cnt1, wordSize);
+  addi(cnt1, cnt1, -wordSize);
   bltz(cnt1, SHORT);
 
   // Main 8 byte comparison loop.
   bind(NEXT_WORD); {
-    ld(tmp1, Address(a1, 0));
-    add(a1, a1, wordSize);
-    ld(tmp2, Address(a2, 0));
-    add(a2, a2, wordSize);
-    sub(cnt1, cnt1, wordSize);
+    ld(tmp1, Address(a1));
+    ld(tmp2, Address(a2));
+    addi(cnt1, cnt1, -wordSize);
+    addi(a1, a1, wordSize);
+    addi(a2, a2, wordSize);
     bne(tmp1, tmp2, DONE);
   } bgez(cnt1, NEXT_WORD);
 
-  if (!AvoidUnalignedAccesses) {
-    // Last longword.  In the case where length == 4 we compare the
-    // same longword twice, but that's still faster than another
-    // conditional branch.
-    // cnt1 could be 0, -1, -2, -3, -4 for chars; -4 only happens when
-    // length == 4.
-    add(tmp1, a1, cnt1);
-    ld(tmp1, Address(tmp1, 0));
-    add(tmp2, a2, cnt1);
-    ld(tmp2, Address(tmp2, 0));
-    bne(tmp1, tmp2, DONE);
-    j(SAME);
-  } else {
-    add(tmp1, cnt1, wordSize);
-    beqz(tmp1, SAME);
-  }
+  addi(tmp1, cnt1, wordSize);
+  beqz(tmp1, SAME);
 
   bind(SHORT);
   Label TAIL03, TAIL01;
@@ -1676,10 +1673,10 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   test_bit(tmp1, cnt1, 2);
   beqz(tmp1, TAIL03);
   {
-    lwu(tmp1, Address(a1, 0));
-    add(a1, a1, 4);
-    lwu(tmp2, Address(a2, 0));
-    add(a2, a2, 4);
+    lwu(tmp1, Address(a1));
+    lwu(tmp2, Address(a2));
+    addi(a1, a1, 4);
+    addi(a2, a2, 4);
     bne(tmp1, tmp2, DONE);
   }
 
@@ -1688,10 +1685,10 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   test_bit(tmp1, cnt1, 1);
   beqz(tmp1, TAIL01);
   {
-    lhu(tmp1, Address(a1, 0));
-    add(a1, a1, 2);
-    lhu(tmp2, Address(a2, 0));
-    add(a2, a2, 2);
+    lhu(tmp1, Address(a1));
+    lhu(tmp2, Address(a2));
+    addi(a1, a1, 2);
+    addi(a2, a2, 2);
     bne(tmp1, tmp2, DONE);
   }
 
@@ -1700,8 +1697,8 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   test_bit(tmp1, cnt1, 0);
   beqz(tmp1, SAME);
   {
-    lbu(tmp1, Address(a1, 0));
-    lbu(tmp2, Address(a2, 0));
+    lbu(tmp1, Address(a1));
+    lbu(tmp2, Address(a2));
     bne(tmp1, tmp2, DONE);
   }
 
@@ -2621,7 +2618,7 @@ void C2_MacroAssembler::string_indexof_char_v(Register str1, Register cnt1,
 
 // Set dst to NaN if any NaN input.
 void C2_MacroAssembler::minmax_fp_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
-                                    BasicType bt, bool is_min, int vector_length) {
+                                    BasicType bt, bool is_min, uint vector_length) {
   assert_different_registers(dst, src1, src2);
 
   vsetvli_helper(bt, vector_length);
@@ -2640,7 +2637,7 @@ void C2_MacroAssembler::minmax_fp_v(VectorRegister dst, VectorRegister src1, Vec
 // are handled with a mask-undisturbed policy.
 void C2_MacroAssembler::minmax_fp_masked_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
                                            VectorRegister vmask, VectorRegister tmp1, VectorRegister tmp2,
-                                           BasicType bt, bool is_min, int vector_length) {
+                                           BasicType bt, bool is_min, uint vector_length) {
   assert_different_registers(src1, src2, tmp1, tmp2);
   vsetvli_helper(bt, vector_length);
 
@@ -2663,7 +2660,7 @@ void C2_MacroAssembler::minmax_fp_masked_v(VectorRegister dst, VectorRegister sr
 void C2_MacroAssembler::reduce_minmax_fp_v(FloatRegister dst,
                                            FloatRegister src1, VectorRegister src2,
                                            VectorRegister tmp1, VectorRegister tmp2,
-                                           bool is_double, bool is_min, int vector_length, VectorMask vm) {
+                                           bool is_double, bool is_min, uint vector_length, VectorMask vm) {
   assert_different_registers(dst, src1);
   assert_different_registers(src2, tmp1, tmp2);
 
@@ -2708,7 +2705,7 @@ bool C2_MacroAssembler::in_scratch_emit_size() {
 
 void C2_MacroAssembler::reduce_integral_v(Register dst, Register src1,
                                           VectorRegister src2, VectorRegister tmp,
-                                          int opc, BasicType bt, int vector_length, VectorMask vm) {
+                                          int opc, BasicType bt, uint vector_length, VectorMask vm) {
   assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
   vsetvli_helper(bt, vector_length);
   vmv_s_x(tmp, src1);
@@ -2740,7 +2737,7 @@ void C2_MacroAssembler::reduce_integral_v(Register dst, Register src1,
 
 // Set vl and vtype for full and partial vector operations.
 // (vma = mu, vta = tu, vill = false)
-void C2_MacroAssembler::vsetvli_helper(BasicType bt, int vector_length, LMUL vlmul, Register tmp) {
+void C2_MacroAssembler::vsetvli_helper(BasicType bt, uint vector_length, LMUL vlmul, Register tmp) {
   Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
   if (vector_length <= 31) {
     vsetivli(tmp, vector_length, sew, vlmul);
@@ -2753,7 +2750,7 @@ void C2_MacroAssembler::vsetvli_helper(BasicType bt, int vector_length, LMUL vlm
 }
 
 void C2_MacroAssembler::compare_integral_v(VectorRegister vd, VectorRegister src1, VectorRegister src2,
-                                           int cond, BasicType bt, int vector_length, VectorMask vm) {
+                                           int cond, BasicType bt, uint vector_length, VectorMask vm) {
   assert(is_integral_type(bt), "unsupported element type");
   assert(vm == Assembler::v0_t ? vd != v0 : true, "should be different registers");
   vsetvli_helper(bt, vector_length);
@@ -2772,7 +2769,7 @@ void C2_MacroAssembler::compare_integral_v(VectorRegister vd, VectorRegister src
 }
 
 void C2_MacroAssembler::compare_fp_v(VectorRegister vd, VectorRegister src1, VectorRegister src2,
-                                     int cond, BasicType bt, int vector_length, VectorMask vm) {
+                                     int cond, BasicType bt, uint vector_length, VectorMask vm) {
   assert(is_floating_point_type(bt), "unsupported element type");
   assert(vm == Assembler::v0_t ? vd != v0 : true, "should be different registers");
   vsetvli_helper(bt, vector_length);
@@ -2790,8 +2787,8 @@ void C2_MacroAssembler::compare_fp_v(VectorRegister vd, VectorRegister src1, Vec
   }
 }
 
-void C2_MacroAssembler::integer_extend_v(VectorRegister dst, BasicType dst_bt, int vector_length,
-                                         VectorRegister src, BasicType src_bt) {
+void C2_MacroAssembler::integer_extend_v(VectorRegister dst, BasicType dst_bt, uint vector_length,
+                                         VectorRegister src, BasicType src_bt, bool is_signed) {
   assert(type2aelembytes(dst_bt) > type2aelembytes(src_bt) && type2aelembytes(dst_bt) <= 8 && type2aelembytes(src_bt) <= 4, "invalid element size");
   assert(dst_bt != T_FLOAT && dst_bt != T_DOUBLE && src_bt != T_FLOAT && src_bt != T_DOUBLE, "unsupported element type");
   // https://github.com/riscv/riscv-v-spec/blob/master/v-spec.adoc#52-vector-operands
@@ -2801,34 +2798,60 @@ void C2_MacroAssembler::integer_extend_v(VectorRegister dst, BasicType dst_bt, i
   assert_different_registers(dst, src);
 
   vsetvli_helper(dst_bt, vector_length);
-  if (src_bt == T_BYTE) {
-    switch (dst_bt) {
-    case T_SHORT:
+  if (is_signed) {
+    if (src_bt == T_BYTE) {
+      switch (dst_bt) {
+      case T_SHORT:
+        vsext_vf2(dst, src);
+        break;
+      case T_INT:
+        vsext_vf4(dst, src);
+        break;
+      case T_LONG:
+        vsext_vf8(dst, src);
+        break;
+      default:
+        ShouldNotReachHere();
+      }
+    } else if (src_bt == T_SHORT) {
+      if (dst_bt == T_INT) {
+        vsext_vf2(dst, src);
+      } else {
+        vsext_vf4(dst, src);
+      }
+    } else if (src_bt == T_INT) {
       vsext_vf2(dst, src);
-      break;
-    case T_INT:
-      vsext_vf4(dst, src);
-      break;
-    case T_LONG:
-      vsext_vf8(dst, src);
-      break;
-    default:
-      ShouldNotReachHere();
     }
-  } else if (src_bt == T_SHORT) {
-    if (dst_bt == T_INT) {
-      vsext_vf2(dst, src);
-    } else {
-      vsext_vf4(dst, src);
+  } else {
+    if (src_bt == T_BYTE) {
+      switch (dst_bt) {
+      case T_SHORT:
+        vzext_vf2(dst, src);
+        break;
+      case T_INT:
+        vzext_vf4(dst, src);
+        break;
+      case T_LONG:
+        vzext_vf8(dst, src);
+        break;
+      default:
+        ShouldNotReachHere();
+      }
+    } else if (src_bt == T_SHORT) {
+      if (dst_bt == T_INT) {
+        vzext_vf2(dst, src);
+      } else {
+        vzext_vf4(dst, src);
+      }
+    } else if (src_bt == T_INT) {
+      vzext_vf2(dst, src);
     }
-  } else if (src_bt == T_INT) {
-    vsext_vf2(dst, src);
   }
 }
 
 // Vector narrow from src to dst with specified element sizes.
 // High part of dst vector will be filled with zero.
-void C2_MacroAssembler::integer_narrow_v(VectorRegister dst, BasicType dst_bt, int vector_length,
+void C2_MacroAssembler::integer_narrow_v(VectorRegister dst, BasicType dst_bt, uint vector_length,
                                          VectorRegister src, BasicType src_bt) {
   assert(type2aelembytes(dst_bt) < type2aelembytes(src_bt) && type2aelembytes(dst_bt) <= 4 && type2aelembytes(src_bt) <= 8, "invalid element size");
   assert(dst_bt != T_FLOAT && dst_bt != T_DOUBLE && src_bt != T_FLOAT && src_bt != T_DOUBLE, "unsupported element type");
