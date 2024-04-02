@@ -94,6 +94,8 @@ public class NativeCalls {
                                                              "-XX:CompileCommand=print," + nativeMethodName), "true", "true"),
                                          new Variant(List.of("-XX:-TieredCompilation",
                                                              "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintAssembly"), "true", "true"),
+                                         new Variant(List.of("-XX:-TieredCompilation",
+                                                             "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintNativeNMethods"), "true", "true"),
                                          new Variant(List.of("-XX:+TieredCompilation",
                                                              "-XX:CompileCommand=exclude," + nativeMethodName), "false", "false"),
                                          new Variant(List.of("-XX:-TieredCompilation",
