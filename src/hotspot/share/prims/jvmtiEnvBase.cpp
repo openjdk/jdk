@@ -1983,7 +1983,6 @@ JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, jthread target) {
 
   jvmtiError err = JvmtiEnvBase::get_threadOop_and_JavaThread(tlh.list(), target, &java_thread, &thread_obj);
   if (err != JVMTI_ERROR_NONE) {
-    printf("DBG: JvmtiHandshake::execute: err: %d\n", (int)err); fflush(0);
     hs_cl->set_result(err);
     return;
   }
