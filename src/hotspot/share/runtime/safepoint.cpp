@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/stringTable.hpp"
-#include "classfile/symbolTable.hpp"
 #include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
@@ -510,17 +507,9 @@ void SafepointSynchronize::end() {
   post_safepoint_end_event(event, safepoint_id());
 }
 
-bool SafepointSynchronize::is_cleanup_needed() {
-  // Need a safepoint if some inline cache buffers is non-empty
-  if (StringTable::needs_rehashing()) return true;
-  if (SymbolTable::needs_rehashing()) return true;
-  return false;
-}
-
 class ParallelCleanupTask : public WorkerTask {
 private:
   SubTasksDone _subtasks;
-  bool _do_lazy_roots;
 
   class Tracer {
   private:
@@ -541,58 +530,15 @@ private:
 public:
   ParallelCleanupTask() :
     WorkerTask("Parallel Safepoint Cleanup"),
-    _subtasks(SafepointSynchronize::SAFEPOINT_CLEANUP_NUM_TASKS),
-    _do_lazy_roots(!VMThread::vm_operation()->skip_thread_oop_barriers() &&
-                   Universe::heap()->uses_stack_watermark_barrier()) {}
+    _subtasks(SafepointSynchronize::SAFEPOINT_CLEANUP_NUM_TASKS) {}
 
   uint expected_num_workers() const {
     uint workers = 0;
-
-    if (SymbolTable::rehash_table_expects_safepoint_rehashing()) {
-      workers++;
-    }
-
-    if (StringTable::rehash_table_expects_safepoint_rehashing()) {
-      workers++;
-    }
-
-    if (_do_lazy_roots) {
-      workers++;
-    }
 
     return MAX2<uint>(1, workers);
   }
 
   void work(uint worker_id) {
-    // These tasks are ordered by relative length of time to execute so that potentially longer tasks start first.
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH)) {
-      if (SymbolTable::needs_rehashing()) {
-        Tracer t("rehashing symbol table");
-        SymbolTable::rehash_table();
-      }
-    }
-
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_STRING_TABLE_REHASH)) {
-      if (StringTable::needs_rehashing()) {
-        Tracer t("rehashing string table");
-        StringTable::rehash_table();
-      }
-    }
-
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING)) {
-      if (_do_lazy_roots) {
-        Tracer t("lazy partial thread root processing");
-        class LazyRootClosure : public ThreadClosure {
-        public:
-          void do_thread(Thread* thread) {
-            StackWatermarkSet::start_processing(JavaThread::cast(thread), StackWatermarkKind::gc);
-          }
-        };
-        LazyRootClosure cl;
-        Threads::java_threads_do(&cl);
-      }
-    }
-
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_REQUEST_OOPSTORAGE_CLEANUP)) {
       // Don't bother reporting event or time for this very short operation.
       // To have any utility we'd also want to report whether needed.
@@ -620,12 +566,6 @@ void SafepointSynchronize::do_cleanup_tasks() {
   } else {
     // Serial cleanup using VMThread.
     cleanup.work(0);
-  }
-
-  if (log_is_enabled(Debug, monitorinflation)) {
-    // The VMThread calls do_final_audit_and_print_stats() which calls
-    // audit_and_print_stats() at the Info level at VM exit time.
-    ObjectSynchronizer::audit_and_print_stats(false /* on_exit */);
   }
 }
 

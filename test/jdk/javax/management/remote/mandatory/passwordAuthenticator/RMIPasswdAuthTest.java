@@ -30,7 +30,7 @@
  *          java.management/com.sun.jmx.remote.security
  * @run clean RMIPasswdAuthTest
  * @run build RMIPasswdAuthTest SimpleStandard SimpleStandardMBean
- * @run main RMIPasswdAuthTest
+ * @run main/othervm -Djava.security.manager=allow RMIPasswdAuthTest
  */
 
 import java.io.File;
