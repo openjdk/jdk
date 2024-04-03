@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,26 +34,26 @@ class ClassLoaderHelper {
     private ClassLoaderHelper() {}
 
     /**
-     * Returns true if loading a native library only if
-     * it's present on the file system.
+    * Shared objects may be loaded from .a archive object on AIX and .so may not exist.
+    * This method returns false so that loading of shared library continues if libname.so is not present.
     */
     static boolean loadLibraryOnlyIfPresent() {
         return false;
     }
     /**
-    * Returns an alternate path name for the given file
-    * such that if the original pathname did not exist, then the
-    * file may be located at the alternate location.
-    * For most platforms, this behavior is not supported and returns null.
+    * AIX implementation of JVM_LoadLibrary handles the alternate path name mapping.
+    * If loading of the given library name with ".so" suffix fails, it will attempt to load the library of
+    * the same name with ".a" suffix as the alternate name.
+    * This method simply returns null.  It could implement the alternate name converting ".so" with ".a" suffix but redundant.
     */
     static File mapAlternativeName(File lib) {
         return null;
     }
 
     /**
-     * Parse a PATH env variable.
-     *
-     * Empty elements will be replaced by dot.
+    * Parse a PATH env variable.
+    *
+    * Empty elements will be replaced by dot.
     */
     static String[] parsePath(String ldPath) {
         char ps = File.pathSeparatorChar;
