@@ -46,28 +46,28 @@ public class TestFpMinMaxOpt {
 
     @Test
     @Arguments(values = {Argument.NUMBER_42})
-    @IR(counts = {IRNode.MIN_F, "1"})
+    @IR(counts = {IRNode.MIN_F, "0"})
     private static float testFloatMin(float v) {
         return Math.min(v, v);
     }
 
     @Test
     @Arguments(values = {Argument.NUMBER_42})
-    @IR(counts = {IRNode.MAX_F, "1"})
+    @IR(counts = {IRNode.MAX_F, "0"})
     private static float testFloatMax(float v) {
         return Math.max(v, v);
     }
 
     @Test
     @Arguments(values = {Argument.NUMBER_42})
-    @IR(counts = {IRNode.MIN_D, "1"})
+    @IR(counts = {IRNode.MIN_D, "0"})
     private static double testDoubleMin(double v) {
         return Math.min(v, v);
     }
 
     @Test
     @Arguments(values = {Argument.NUMBER_42})
-    @IR(counts = {IRNode.MAX_D, "1"})
+    @IR(counts = {IRNode.MAX_D, "0"})
     private static double testDoubleMax(double v) {
         return Math.max(v, v);
     }
