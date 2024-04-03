@@ -45,30 +45,30 @@ public class TestFpMinMaxOpt {
     }
 
     @Test
-    @Arguments(values = {Argument.NUMBER_42, Argument.NUMBER_42})
+    @Arguments(values = {Argument.NUMBER_42})
     @IR(counts = {IRNode.MIN_F, "1"})
-    private static float testFloatMin(float a, float b) {
-        return Math.min(a, b);
+    private static float testFloatMin(float v) {
+        return Math.min(v, v);
     }
 
     @Test
-    @Arguments(values = {Argument.NUMBER_42, Argument.NUMBER_42})
+    @Arguments(values = {Argument.NUMBER_42})
     @IR(counts = {IRNode.MAX_F, "1"})
-    private static float testFloatMax(float a, float b) {
-        return Math.max(a, b);
+    private static float testFloatMax(float v) {
+        return Math.max(v, v);
     }
 
     @Test
-    @Arguments(values = {Argument.NUMBER_42, Argument.NUMBER_42})
+    @Arguments(values = {Argument.NUMBER_42})
     @IR(counts = {IRNode.MIN_D, "1"})
-    private static double testDoubleMin(double a, double b) {
-        return Math.min(a, b);
+    private static double testDoubleMin(double v) {
+        return Math.min(v, v);
     }
 
     @Test
-    @Arguments(values = {Argument.NUMBER_42, Argument.NUMBER_42})
+    @Arguments(values = {Argument.NUMBER_42})
     @IR(counts = {IRNode.MAX_D, "1"})
-    private static double testDoubleMax(double a, double b) {
-        return Math.max(a, b);
+    private static double testDoubleMax(double v) {
+        return Math.max(v, v);
     }
 }
