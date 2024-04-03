@@ -3107,22 +3107,33 @@ VStatus VLoopBody::construct() {
       // cross or back arc
       const int old_length = stack.length();
 
-      // If a Load and a Store depend on the same memory state, the Load is to be ordered before the Store.
-      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-        Node* use = n->fast_out(i);
-        if (_vloop.in_bb(use) && !visited.test(bb_idx(use)) &&
-            use->is_Load()) { // visit Loads first
-          stack.push(use);
+      // If a Load depends on the same memory state as a Store, we must make sure that
+      // the Load is ordered before the Store.
+      //
+      //      mem
+      //       |
+      //    +--+--+
+      //    |     |
+      //    |    Load (n)
+      //    |
+      //   Store (mem_use)
+      //
+      if (n->is_Load()) {
+        Node* mem = n->in(MemNode::Memory);
+        for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
+          Node* mem_use = mem->fast_out(i);
+          if (_vloop.in_bb(mem_use) && !visited.test(bb_idx(mem_use)) && mem_use->is_Store()) {
+            stack.push(mem_use); // Ordering edge: Load (n) -> Store (mem_use)
+          }
         }
       }
 
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node* use = n->fast_out(i);
         if (_vloop.in_bb(use) && !visited.test(bb_idx(use)) &&
-            !use->is_Load() && // now visit non-Loads (including Stores)
             // Don't go around backedge
             (!use->is_Phi() || n == _vloop.cl())) {
-          stack.push(use);
+          stack.push(use); // Ordering edge: n -> use
         }
       }
 

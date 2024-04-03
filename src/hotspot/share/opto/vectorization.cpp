@@ -258,6 +258,11 @@ void VLoopDependencyGraph::compute_depth() {
         }
       }
     }
+    if (depth(n) != max_pred_depth + 1) {
+      print();
+      tty->print_cr("Incorrect depth: %d vs %d", depth(n), max_pred_depth + 1);
+      n->dump();
+    }
     assert(depth(n) == max_pred_depth + 1, "must have correct depth");
   }
 #endif
