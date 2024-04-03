@@ -1,0 +1,30 @@
+# Maintenance notes of importing sleef source code
+
+## Motivation
+In case we need to sync sleef in jdk with updates from sleef repo itself, please follow below steps.
+
+## Steps of maintenance
+
+### step 1: clone sleef repo
+location: https://github.com/shibatch/sleef
+
+### step 2: build sleef
+build steps: https://github.com/shibatch/sleef?tab=readme-ov-file#how-to-build-sleef
+
+NOTE: necessary options passed to cmake when building sleef:
+* -DSLEEF_BUILD_INLINE_HEADERS=ON
+* -DSLEEF_ENFORCE_SVE=ON
+
+### step 3: import sleef files into jdk
+sleef source and generated source:
+* ${SLEEF_SRC_DIR}/common/misc.h
+* ${SLEEF_BUILD_DIR}/include/sleefinline_advsimd.h
+* ${SLEEF_BUILD_DIR}/include/sleefinline_sve.h
+
+jdk dir:
+* ${JDK_SRC_DIR}/jdk.incubator.vector/linux/native/libvectormath/
+
+### step 4: make necessary changes to resolve any build issues in case there is any.
+
+Currently, there is only necessary change:
+* make `Sleef_rempitabdp` and `Sleef_rempitabsp` in sleefinline_advsimd.h and sleefinline_sve.h `static` to avoid multiple definitions.
