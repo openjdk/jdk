@@ -191,6 +191,7 @@ class IconTestFrame extends Frame {
         });
 
         setLayout(new BorderLayout());
+        setBackground(Color.YELLOW);
 
         //Add the icon graphic and instructions to the Frame
         add(new IconCanvas(), "Center");
