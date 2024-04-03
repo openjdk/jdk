@@ -27,13 +27,11 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
-import java.util.SequencedSet;
 import java.util.Set;
+import java.util.stream.Stream;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -174,7 +172,7 @@ public class HtmlIds {
      * @return the id
      */
     HtmlId forMember(ExecutableElement element) {
-        return forExecutable((TypeElement) element.getEnclosingElement(), element);
+        return forExecutable(element);
     }
 
     private HtmlId forMember0(ExecutableElement element) {
@@ -546,73 +544,40 @@ public class HtmlIds {
         return HtmlId.of(idValue);
     }
 
-    private final Map<TypeElement, Map<ExecutableElement, String>> ids = new HashMap<>();
-    /*
-     * This map is transient in a sense that it keeps its elements until
-     * the registration is over. The order of the elements is important
-     * for reproducibility of ids.
-     */
-    private final Map<Key, Optional<SequencedSet<ExecutableElement>>> registered = new HashMap<>();
-    /*
-     * Registration key to differentiate between methods and constructors,
-     * whose registration ends at different times.
-     */
-    private record Key(TypeElement typeElement, ElementKind elementKind) { }
+    private final Map<ExecutableElement, HtmlId> ids = new HashMap<>();
 
     /*
      * Returns an id to a constructor or a method, from a centralised
      * registry. Use to get an anchor to a constructor or method.
      *
-     * The primary goal is to provide coordination, not cache.
+     * The goal is to provide coordination, not cache.
      */
-    private HtmlId forExecutable(TypeElement t, ExecutableElement e) {
-        var map = ids.get(t);
-        if (map != null) {
-            assert !map.isEmpty();
-            String name = map.get(e);
-            // name == null can happen when a link is processed before the
-            // page/element-type it refers to. For example, a class constructor
-            // can @link to a class method which has not been registered yet
-            // (because methods of a class are registered after the constructors
-            // of that class).
-            if (name != null)
-                return HtmlId.of(name);
-        }
-        // must be an external @link/@see, which might be processed before the
-        // methods from the page it links to has been registered; cannot do
-        // much about it, unless all constructors and methods register before
-        // even the first page is generated -- something to think about (i.e.
-        // "TODO")
-        return forMember0(e);
-    }
-
-    public void register(TypeElement t, ExecutableElement e) {
-        var opt = registered.computeIfAbsent(new Key(t, e.getKind()),
-                t_ -> Optional.of(new LinkedHashSet<>()));
-        if (opt.isEmpty())
-            throw new IllegalStateException("Registration for " + t + " has ended");
-        else
-            opt.get().add(e);
-    }
-
-    /*
-     * Declares that there won't be any more executable elements (of the
-     * specified kind) registered for the specified type element.
-     */
-    public void endRegistration(TypeElement t, ElementKind k) {
-        var prev = registered.put(new Key(t, k), Optional.empty());
-        if (prev == null)
-            return;
-        var map = ids.computeIfAbsent(t, t_ -> new HashMap<>());
-        var dups = new HashSet<>();
+    private HtmlId forExecutable(ExecutableElement e) {
+        HtmlId htmlId = ids.get(e);
+        if (htmlId != null)
+            return htmlId;
+        if (e.getKind() != ElementKind.CONSTRUCTOR
+                && e.getKind() != ElementKind.METHOD)
+            throw new IllegalArgumentException(String.valueOf(e.getKind()));
+        var vmt = configuration.getVisibleMemberTable((TypeElement) e.getEnclosingElement());
+        var ctors = vmt.getVisibleMembers(VisibleMemberTable.Kind.CONSTRUCTORS);
+        var methods = vmt.getVisibleMembers(VisibleMemberTable.Kind.METHODS);
+        // for whatever reason annotation methods are not of Kind.METHODS
+        var otherMethods = vmt.getVisibleMembers(VisibleMemberTable.Kind.ANNOTATION_TYPE_MEMBER);
+        // the order of the elements is important for reproducibility of ids:
+        // the same executable element must have the same id across javadoc runs
+        var list = Stream.concat(Stream.concat(ctors.stream(), methods.stream()), otherMethods.stream())
+                .map(e1 -> (ExecutableElement) e1)
+                .toList();
+        var dups = new HashSet<String>();
         // Use simple id, unless we have to use erased id; for that, do the
         // following _in order_:
         // 1. Map all elements that can _only_ be addressed by the simple id
-        for (var e : prev.get()) {
-            if (forErasure(e) == null) {
-                var id = forMember0(e).name();
-                map.put(e, id);
-                boolean added = dups.add(id);
+        for (var m : list) {
+            if (forErasure(m) == null) {
+                var simpleId = forMember0(m);
+                ids.put(m, simpleId);
+                boolean added = dups.add(simpleId.name());
                 // we assume that the simple id for an executable member that
                 // does not use type parameters is unique
                 assert added;
@@ -620,15 +585,15 @@ public class HtmlIds {
         }
         // 2. Map all elements that can be addressed by simple id or erased id;
         // if the simple id is not yet used, use it, otherwise use the erased id
-        for (var e : prev.get()) {
-            var erasure = forErasure(e);
-            if (erasure != null) {
-                var simpleId = forMember0(e).name();
-                if (dups.add(simpleId)) {
-                    map.put(e, simpleId);
+        for (var m : list) {
+            var erasedId = forErasure(m);
+            if (erasedId != null) {
+                var simpleId = forMember0(m);
+                if (dups.add(simpleId.name())) {
+                    ids.put(m, simpleId);
                 } else {
-                    map.put(e, erasure.name());
-                    boolean added = dups.add(erasure.name());
+                    ids.put(m, erasedId);
+                    boolean added = dups.add(erasedId.name());
                     // Not only must an erased id not clash with any simple id,
                     // but it must also not clash with any other erased id.
                     // The latter is because JLS 8.4.2. Method Signature:
@@ -638,5 +603,18 @@ public class HtmlIds {
                 }
             }
         }
+        htmlId = ids.get(e);
+        if (htmlId == null) {
+            // Safety net: if for whatever reason we cannot find the element
+            // among those we just expanded, return the simple id. It might
+            // not be right, but at least it won't fail.
+            // One example where it might happen is linking to an inherited
+            // undocumented method (see test case T5093723)
+            // TODO the above will need to be revisited if and when we redesign
+            //  VisibleMemberTable, which currently cannot correctly return the
+            //  owner of such a method
+            htmlId = forMember0(e);
+        }
+        return htmlId;
     }
 }
