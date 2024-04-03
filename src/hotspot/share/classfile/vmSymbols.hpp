@@ -451,6 +451,7 @@ class SerializeClosure;
   template(refSP_name,                                "refSP")                                    \
   template(get_name,                                  "get")                                      \
   template(refersTo0_name,                            "refersTo0")                                \
+  template(reachabilityFence_name,                    "reachabilityFence")                        \
   template(put_name,                                  "put")                                      \
   template(type_name,                                 "type")                                     \
   template(findNative_name,                           "findNative")                               \

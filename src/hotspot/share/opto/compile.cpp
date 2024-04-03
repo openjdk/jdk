@@ -401,6 +401,9 @@ void Compile::remove_useless_node(Node* dead) {
   if (dead->for_post_loop_opts_igvn()) {
     remove_from_post_loop_opts_igvn(dead);
   }
+  if (dead->Opcode() == Op_ReachabilityFence) {
+    remove_reachability_fence(dead);
+  }
   if (dead->is_Call()) {
     remove_useless_late_inlines(                &_late_inlines, dead);
     remove_useless_late_inlines(         &_string_late_inlines, dead);
@@ -646,6 +649,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _template_assertion_predicate_opaqs (comp_arena(), 8, 0, nullptr),
                   _expensive_nodes   (comp_arena(), 8, 0, nullptr),
                   _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
+                  _reachability_fences(comp_arena(), 8, 0, NULL),
                   _unstable_if_traps (comp_arena(), 8, 0, nullptr),
                   _coarsened_locks   (comp_arena(), 8, 0, nullptr),
                   _congraph(nullptr),
@@ -1853,6 +1857,17 @@ void Compile::record_for_post_loop_opts_igvn(Node* n) {
 void Compile::remove_from_post_loop_opts_igvn(Node* n) {
   n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
   _for_post_loop_igvn.remove(n);
+}
+
+void Compile::add_reachability_fence(Node* n) {
+  assert(!_reachability_fences.contains(n), "duplicate entry");
+  assert(n->Opcode() == Op_ReachabilityFence, "wrong");
+  _reachability_fences.append(n);
+}
+
+void Compile::remove_reachability_fence(Node* n) {
+  assert(n->Opcode() == Op_ReachabilityFence, "not a fence");
+  _reachability_fences.remove(n);
 }
 
 void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {

@@ -503,6 +503,9 @@ Node *Node::clone() const {
   if (is_expensive()) {
     C->add_expensive_node(n);
   }
+  if (Opcode() == Op_ReachabilityFence) {
+    C->add_reachability_fence(n);
+  }
   if (for_post_loop_opts_igvn()) {
     // Don't add cloned node to Compile::_for_post_loop_opts_igvn list automatically.
     // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
@@ -618,6 +621,9 @@ void Node::destruct(PhaseValues* phase) {
   }
   if (for_post_loop_opts_igvn()) {
     compile->remove_from_post_loop_opts_igvn(this);
+  }
+  if (Opcode() == Op_ReachabilityFence) {
+    compile->remove_reachability_fence(this);
   }
 
   if (is_SafePoint()) {

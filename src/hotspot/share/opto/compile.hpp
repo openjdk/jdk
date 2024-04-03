@@ -372,6 +372,7 @@ class Compile : public Phase {
   GrowableArray<Node*>  _template_assertion_predicate_opaqs; // List of Opaque4 nodes for Template Assertion Predicates.
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
+  GrowableArray<Node*>  _reachability_fences;   // List of nodes which need to be expanded before matching.
   GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
   GrowableArray<Node_List*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
   ConnectionGraph*      _congraph;
@@ -790,6 +791,9 @@ private:
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);
   void process_for_post_loop_opts_igvn(PhaseIterGVN& igvn);
+
+  void    add_reachability_fence(Node* n);
+  void remove_reachability_fence(Node* n);
 
   void record_unstable_if_trap(UnstableIfTrap* trap);
   bool remove_unstable_if_trap(CallStaticJavaNode* unc, bool yield);

@@ -465,9 +465,12 @@ class methodHandle;
    do_signature(vectorizedMismatch_signature, "(Ljava/lang/Object;JLjava/lang/Object;JII)I")                            \
                                                                                                                         \
   /* java/lang/ref/Reference */                                                                                         \
-  do_intrinsic(_Reference_get,              java_lang_ref_Reference, get_name,       void_object_signature,    F_R)     \
-  do_intrinsic(_Reference_refersTo0,        java_lang_ref_Reference, refersTo0_name, object_boolean_signature, F_RN)    \
-  do_intrinsic(_PhantomReference_refersTo0, java_lang_ref_PhantomReference, refersTo0_name, object_boolean_signature, F_RN) \
+  do_intrinsic(_Reference_get,               java_lang_ref_Reference,               get_name,    void_object_signature, F_R)  \
+  do_intrinsic(_Reference_refersTo0,         java_lang_ref_Reference,         refersTo0_name, object_boolean_signature, F_RN) \
+  do_intrinsic(_Reference_reachabilityFence, java_lang_ref_Reference, reachabilityFence_name,    object_void_signature, F_S)  \
+                                                                                                                        \
+  /* java/lang/ref/PhantomReference */                                                                                  \
+  do_intrinsic(_PhantomReference_refersTo0,  java_lang_ref_PhantomReference, refersTo0_name, object_boolean_signature, F_RN) \
                                                                                                                         \
   /* support for com.sun.crypto.provider.AESCrypt and some of its callers */                                            \
   do_class(com_sun_crypto_provider_aescrypt,      "com/sun/crypto/provider/AESCrypt")                                   \

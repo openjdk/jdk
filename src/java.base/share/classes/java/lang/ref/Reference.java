@@ -619,6 +619,7 @@ public abstract sealed class Reference<T>
      * @since 9
      */
     @ForceInline
+    @IntrinsicCandidate
     public static void reachabilityFence(Object ref) {
         // Does nothing. This method is annotated with @ForceInline to eliminate
         // most of the overhead that using @DontInline would cause with the
