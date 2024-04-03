@@ -328,13 +328,6 @@ public class Attr extends JCTree.Visitor {
         return sym != null && sym.kind == TYP;
     }
 
-    /** The current `this' symbol.
-     *  @param env    The current environment.
-     */
-    Symbol thisSym(DiagnosticPosition pos, Env<AttrContext> env) {
-        return rs.resolveSelf(pos, env, env.enclClass.sym, names._this);
-    }
-
     /** Attribute a parsed identifier.
      * @param tree Parsed identifier name
      * @param topLevel The toplevel to use
@@ -2473,6 +2466,9 @@ public class Attr extends JCTree.Visitor {
             log.error(tree.pos(), Errors.RetOutsideMeth);
         } else if (env.info.yieldResult != null) {
             log.error(tree.pos(), Errors.ReturnOutsideSwitchExpression);
+            if (tree.expr != null) {
+                attribExpr(tree.expr, env, env.info.yieldResult.pt);
+            }
         } else if (!env.info.isLambda &&
                 !env.info.isNewClass &&
                 env.enclMethod != null &&
