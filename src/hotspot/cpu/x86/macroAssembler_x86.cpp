@@ -3528,7 +3528,7 @@ void MacroAssembler::vblendvps(XMMRegister dst, XMMRegister src1, XMMRegister sr
     scratch_available = scratch != xnoreg && scratch != dst;
     dst_available = dst != mask && (dst != src1 || dst != src2);
   }
-  
+
   if (blend_emulation_needed && scratch_available && dst_available) {
     if (compute_mask) {
       vpsrad(scratch, mask, 32, vector_len);
