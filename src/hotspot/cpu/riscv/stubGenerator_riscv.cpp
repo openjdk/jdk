@@ -5047,31 +5047,38 @@ class StubGenerator: public StubCodeGenerator {
 
     __ andi(temp, data, right_8_bits);
     __ add(acc1, acc1, temp);
+
     __ srli(temp, data, 8);
     __ andi(temp, temp, right_8_bits);
     __ add(acc2, acc2, acc1);
     __ add(acc1, acc1, temp);
+
     __ srli(temp, data, 16);
     __ andi(temp, temp, right_8_bits);
     __ add(acc2, acc2, acc1);
     __ add(acc1, acc1, temp);
+
     __ srli(temp, data, 24);
     __ andi(temp, temp, right_8_bits);
     __ add(acc2, acc2, acc1);
     __ add(acc1, acc1, temp);
+
     __ srli(temp, data, 32);
     __ andi(temp, temp, right_8_bits);
     __ add(acc2, acc2, acc1);
     __ add(acc1, acc1, temp);
+
     __ srli(temp, data, 40);
     __ andi(temp, temp, right_8_bits);
     __ add(acc2, acc2, acc1);
     __ add(acc1, acc1, temp);
+
     __ srli(temp, data, 48);
     __ andi(temp, temp, right_8_bits);
     __ add(acc2, acc2, acc1);
     __ add(acc1, acc1, temp);
     __ add(acc2, acc2, acc1);
+
     __ srli(temp, data, 56);
     __ add(acc1, acc1, temp);
     __ add(acc2, acc2, acc1);
@@ -5138,7 +5145,7 @@ const static uint64_t right_8_bits = right_n_bits(8);
     __ bgeu(len, temp0, L_nmax);
     __ beqz(len, L_combine);
 
-    __ bind(L_simple_by1_loop);
+  __ bind(L_simple_by1_loop);
     __ lbu(temp0, Address(buff, 0));
     __ addi(buff, buff, 1);
     __ add(s1, s1, temp0);
@@ -5154,19 +5161,19 @@ const static uint64_t right_8_bits = right_n_bits(8);
 
     __ j(L_combine);
 
-    __ bind(L_nmax);
+  __ bind(L_nmax);
     __ sub(len, len, nmax);
     __ sub(count, nmax, 16);
     __ bltz(len, L_by16);
 
-    __ bind(L_nmax_loop_entry);
+  __ bind(L_nmax_loop_entry);
     const Register buf_end = c_rarg6;
     // buf_end will be used as endpoint for loop below
     __ add(buf_end, buff, count); // buf_end will be used as endpoint for loop below
     __ andi(count, count, 16-1); // count = (count % 16)
     __ sub(count, count, 16); // count after all iterations
 
-    __ bind(L_nmax_loop);
+  __ bind(L_nmax_loop);
 
     __ ld(temp0, Address(buff, 0));
     generate_updateBytesAdler32_accum(s1, s2, temp0, temp1);
@@ -5186,11 +5193,11 @@ const static uint64_t right_8_bits = right_n_bits(8);
     __ sub(count, nmax, 16);
     __ bgez(len, L_nmax_loop_entry);
 
-    __ bind(L_by16);
+  __ bind(L_by16);
     __ add(len, len, count);
     __ bltz(len, L_by1);
 
-    __ bind(L_by16_loop);
+  __ bind(L_by16_loop);
 
     __ ld(temp0, Address(buff, 0));
     generate_updateBytesAdler32_accum(s1, s2, temp0, temp1);
@@ -5200,11 +5207,11 @@ const static uint64_t right_8_bits = right_n_bits(8);
     __ sub(len, len, 16);
     __ bgez(len, L_by16_loop);
 
-    __ bind(L_by1);
+  __ bind(L_by1);
     __ add(len, len, 15);
     __ bltz(len, L_do_mod);
 
-    __ bind(L_by1_loop);
+  __ bind(L_by1_loop);
     __ lbu(temp0, Address(buff, 0));
     __ addi(buff, buff, 1);
     __ add(s1, temp0, s1);
@@ -5212,7 +5219,7 @@ const static uint64_t right_8_bits = right_n_bits(8);
     __ sub(len, len, 1);
     __ bgez(len, L_by1_loop);
 
-    __ bind(L_do_mod);
+  __ bind(L_do_mod);
     // s1 = s1 % BASE
     __ remuw(s1, s1, base);
 
@@ -5221,7 +5228,7 @@ const static uint64_t right_8_bits = right_n_bits(8);
 
     // Combine lower bits and higher bits
     // adler = s1 | (s2 << 16)
-    __ bind(L_combine);
+  __ bind(L_combine);
     __ slli(s2, s2, 16);
     __ orr(s1, s1, s2);
 
