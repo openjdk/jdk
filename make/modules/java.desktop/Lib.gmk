@@ -37,10 +37,10 @@ $(call FillFindCache, $(wildcard $(TOPDIR)/src/java.desktop/*/native))
 
 include lib/Awt2dLibraries.gmk
 
-################################################################################
-# Create the libjsound library
-
 ifeq ($(call isTargetOs, aix), false)
+  ##############################################################################
+  # Build libjsound
+  ##############################################################################
 
   LIBJSOUND_CFLAGS := \
       $(ALSA_CFLAGS) \
@@ -64,49 +64,57 @@ ifeq ($(call isTargetOs, aix), false)
       CXXFLAGS := $(LIBJSOUND_CFLAGS), \
       DISABLED_WARNINGS_gcc := undef, \
       DISABLED_WARNINGS_clang := undef, \
-      LIBS_unix := -ljava -ljvm, \
+      JDK_LIBS_unix := -ljava -ljvm, \
+      JDK_LIBS_windows := $(WIN_JAVA_LIB), \
       LIBS_linux := $(ALSA_LIBS), \
-      LIBS_macosx := -framework CoreAudio -framework CoreFoundation \
-          -framework CoreServices -framework AudioUnit \
-          -framework CoreMIDI -framework AudioToolbox, \
-      LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib dsound.lib winmm.lib user32.lib ole32.lib, \
+      LIBS_macosx := \
+          -framework AudioToolbox \
+          -framework AudioUnit \
+          -framework CoreAudio \
+          -framework CoreFoundation \
+          -framework CoreMIDI \
+          -framework CoreServices, \
+      LIBS_windows := advapi32.lib dsound.lib ole32.lib user32.lib winmm.lib, \
   ))
 
   $(BUILD_LIBJSOUND): $(call FindLib, java.base, java)
 
   TARGETS += $(BUILD_LIBJSOUND)
-
 endif
 
-################################################################################
-# Create the macosx specific osxapp and osx libraries
-
 ifeq ($(call isTargetOs, macosx), true)
+  ##############################################################################
+  # Build libosxapp
+  ##############################################################################
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBOSXAPP, \
       NAME := osxapp, \
       OPTIMIZATION := LOW, \
-      DISABLED_WARNINGS_clang_NSApplicationAWT.m := deprecated-declarations format-nonliteral, \
-      DISABLED_WARNINGS_clang_QueuingApplicationDelegate.m := objc-method-access, \
-      LIBS := \
-          -ljava \
+      DISABLED_WARNINGS_clang_NSApplicationAWT.m := deprecated-declarations \
+          format-nonliteral, \
+      DISABLED_WARNINGS_clang_QueuingApplicationDelegate.m := \
+          objc-method-access, \
+      JDK_LIBS_macosx := -ljava, \
+      LIBS_macosx := \
           -framework Accelerate \
           -framework ApplicationServices \
           -framework AudioToolbox \
           -framework Carbon \
           -framework Cocoa \
-          -framework Security \
           -framework ExceptionHandling \
+          -framework IOSurface \
           -framework JavaRuntimeSupport \
           -framework OpenGL \
-          -framework IOSurface \
-          -framework QuartzCore, \
+          -framework QuartzCore \
+          -framework Security, \
   ))
 
   $(BUILD_LIBOSXAPP): $(call FindLib, java.base, java)
 
   TARGETS += $(BUILD_LIBOSXAPP)
 
+  ##############################################################################
+  # Build libosx
   ##############################################################################
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBOSX, \
@@ -115,13 +123,12 @@ ifeq ($(call isTargetOs, macosx), true)
       EXTRA_HEADER_DIRS := libosxapp, \
       DISABLED_WARNINGS_clang_CFileManager.m := deprecated-declarations, \
       LDFLAGS := -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.desktop, \
-      LIBS := \
-          -losxapp \
-          -framework Cocoa \
+      JDK_LIBS_macosx := $(JDKLIB_LIBS) -losxapp, \
+      LIBS_macosx := \
           -framework ApplicationServices \
+          -framework Cocoa \
           -framework JavaRuntimeSupport \
-          -framework SystemConfiguration \
-          $(JDKLIB_LIBS), \
+          -framework SystemConfiguration, \
   ))
 
   TARGETS += $(BUILD_LIBOSX)
@@ -129,5 +136,4 @@ ifeq ($(call isTargetOs, macosx), true)
   $(BUILD_LIBOSX): $(call FindLib, java.desktop, osxapp)
 
   $(BUILD_LIBOSX): $(call FindLib, java.base, java)
-
 endif

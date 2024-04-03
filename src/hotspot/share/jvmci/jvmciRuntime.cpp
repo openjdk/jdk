@@ -1973,7 +1973,10 @@ static bool after_compiler_upcall(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, c
     const char* pending_stack_trace = nullptr;
     JVMCIENV->pending_exception_as_string(&pending_string, &pending_stack_trace);
     if (pending_string == nullptr) pending_string = "null";
-    const char* failure_reason = os::strdup(err_msg("uncaught exception in %s [%s]", function, pending_string), mtJVMCI);
+    // Using stringStream instead of err_msg to avoid truncation
+    stringStream st;
+    st.print("uncaught exception in %s [%s]", function, pending_string);
+    const char* failure_reason = os::strdup(st.freeze(), mtJVMCI);
     if (failure_reason == nullptr) {
       failure_reason = "uncaught exception";
       reason_on_C_heap = false;
