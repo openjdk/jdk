@@ -3622,7 +3622,7 @@ MemBarNode* MemBarNode::leading_membar() const {
   return mb;
 }
 
-
+#ifndef PRODUCT
 void ReachabilityFenceNode::format(PhaseRegAlloc* ra, outputStream* st) const {
   st->print("reachability fence ");
   bool first = true;
@@ -3641,6 +3641,7 @@ void ReachabilityFenceNode::format(PhaseRegAlloc* ra, outputStream* st) const {
   }
   st->cr();
 }
+#endif
 
 //===========================InitializeNode====================================
 // SUMMARY:
