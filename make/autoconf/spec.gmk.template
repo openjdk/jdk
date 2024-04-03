@@ -555,7 +555,6 @@ SYSROOT := @SYSROOT@
 
 # LDFLAGS used to link the jdk native libraries (C-code)
 LDFLAGS_JDKLIB := @LDFLAGS_JDKLIB@
-JDKLIB_LIBS := @JDKLIB_LIBS@
 
 # LDFLAGS used to link the jdk native launchers (C-code)
 LDFLAGS_JDKEXE := @LDFLAGS_JDKEXE@
@@ -570,9 +569,6 @@ LDFLAGS_CXX_PARTIAL_LINKING := @LDFLAGS_CXX_PARTIAL_LINKING@
 LDCXX := @LDCXX@
 # The flags for linking libstdc++ linker.
 LIBCXX := @LIBCXX@
-
-# Compiler and linker flags used when building native tests
-LDFLAGS_TESTEXE := @LDFLAGS_TESTEXE@
 
 # BUILD_CC/BUILD_LD is a compiler/linker that generates code that is runnable on the
 # build platform.

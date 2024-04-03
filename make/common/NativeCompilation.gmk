@@ -84,6 +84,7 @@ include native/Paths.gmk
 #   EXTRA_FILES List of extra files not in any of the SRC dirs
 #   EXTRA_OBJECT_FILES List of extra object files to include when linking
 #   EXTRA_DEPS List of extra dependencies to be added to each compiled file
+#   EXTRA_LINK_DEPS List of extra dependencies to be added to the link stage
 #   VERSIONINFO_RESOURCE Input file for RC. Setting this implies that RC will be run
 #   RCFLAGS flags for RC.
 #   EMBED_MANIFEST if true, embed manifest on Windows.
