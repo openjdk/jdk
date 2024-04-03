@@ -2924,24 +2924,6 @@ void Compile::optimize_logic_cones(PhaseIterGVN &igvn) {
   }
 }
 
-void Compile::gather_nodes_for_merge_stores(PhaseIterGVN &igvn) {
-  ResourceMark rm;
-  Unique_Node_List worklist;
-  worklist.push(root());
-  for (uint i = 0; i < worklist.size(); i++) {
-    Node* n = worklist[i];
-    int opc = n->Opcode();
-    if (opc == Op_StoreB || opc == Op_StoreC || opc == Op_StoreI) {
-      igvn._worklist.push(n);
-    }
-    for (uint i = 0; i < n->len(); i++) {
-      if (n->in(i) != nullptr) {
-        worklist.push(n->in(i));
-      }
-    }
-  }
-}
-
 //------------------------------Code_Gen---------------------------------------
 // Given a graph, generate code for it
 void Compile::Code_Gen() {

@@ -1225,8 +1225,6 @@ private:
   Node* xform_to_MacroLogicV(PhaseIterGVN &igvn, const TypeVect* vt, Unique_Node_List& partitions, Unique_Node_List& inputs);
   void check_no_dead_use() const NOT_DEBUG_RETURN;
 
-  void gather_nodes_for_merge_stores(PhaseIterGVN &igvn);
-
  public:
 
   // Note:  Histogram array size is about 1 Kb.

@@ -2685,284 +2685,6 @@ uint StoreNode::hash() const {
   return NO_HASH;
 }
 
-//------------------------------Ideal------------------------------------------
-// Change back-to-back Store(, p, x) -> Store(m, p, y) to Store(m, p, x).
-// When a store immediately follows a relevant allocation/initialization,
-// try to capture it into the initialization, or hoist it above.
-Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  Node* p = MemNode::Ideal_common(phase, can_reshape);
-  if (p)  return (p == NodeSentinel) ? nullptr : p;
-
-  Node* mem     = in(MemNode::Memory);
-  Node* address = in(MemNode::Address);
-  Node* value   = in(MemNode::ValueIn);
-  // Back-to-back stores to same address?  Fold em up.  Generally
-  // unsafe if I have intervening uses...  Also disallowed for StoreCM
-  // since they must follow each StoreP operation.  Redundant StoreCMs
-  // are eliminated just before matching in final_graph_reshape.
-  {
-    Node* st = mem;
-    // If Store 'st' has more than one use, we cannot fold 'st' away.
-    // For example, 'st' might be the final state at a conditional
-    // return.  Or, 'st' might be used by some node which is live at
-    // the same time 'st' is live, which might be unschedulable.  So,
-    // require exactly ONE user until such time as we clone 'mem' for
-    // each of 'mem's uses (thus making the exactly-1-user-rule hold
-    // true).
-    while (st->is_Store() && st->outcnt() == 1 && st->Opcode() != Op_StoreCM) {
-      // Looking at a dead closed cycle of memory?
-      assert(st != st->in(MemNode::Memory), "dead loop in StoreNode::Ideal");
-      assert(Opcode() == st->Opcode() ||
-             st->Opcode() == Op_StoreVector ||
-             Opcode() == Op_StoreVector ||
-             st->Opcode() == Op_StoreVectorScatter ||
-             Opcode() == Op_StoreVectorScatter ||
-             phase->C->get_alias_index(adr_type()) == Compile::AliasIdxRaw ||
-             (Opcode() == Op_StoreL && st->Opcode() == Op_StoreI) || // expanded ClearArrayNode
-             (Opcode() == Op_StoreI && st->Opcode() == Op_StoreL) || // initialization by arraycopy
-             (is_mismatched_access() || st->as_Store()->is_mismatched_access()),
-             "no mismatched stores, except on raw memory: %s %s", NodeClassNames[Opcode()], NodeClassNames[st->Opcode()]);
-
-      if (st->in(MemNode::Address)->eqv_uncast(address) &&
-          st->as_Store()->memory_size() <= this->memory_size()) {
-        Node* use = st->raw_out(0);
-        if (phase->is_IterGVN()) {
-          phase->is_IterGVN()->rehash_node_delayed(use);
-        }
-        // It's OK to do this in the parser, since DU info is always accurate,
-        // and the parser always refers to nodes via SafePointNode maps.
-        use->set_req_X(MemNode::Memory, st->in(MemNode::Memory), phase);
-        return this;
-      }
-      st = st->in(MemNode::Memory);
-    }
-  }
-
-
-  // Capture an unaliased, unconditional, simple store into an initializer.
-  // Or, if it is independent of the allocation, hoist it above the allocation.
-  if (ReduceFieldZeroing && /*can_reshape &&*/
-      mem->is_Proj() && mem->in(0)->is_Initialize()) {
-    InitializeNode* init = mem->in(0)->as_Initialize();
-    intptr_t offset = init->can_capture_store(this, phase, can_reshape);
-    if (offset > 0) {
-      Node* moved = init->capture_store(this, offset, phase, can_reshape);
-      // If the InitializeNode captured me, it made a raw copy of me,
-      // and I need to disappear.
-      if (moved != nullptr) {
-        // %%% hack to ensure that Ideal returns a new node:
-        mem = MergeMemNode::make(mem);
-        return mem;             // fold me away
-      }
-    }
-  }
-
-  // Fold reinterpret cast into memory operation:
-  //    StoreX mem (MoveY2X v) => StoreY mem v
-  if (value->is_Move()) {
-    const Type* vt = value->in(1)->bottom_type();
-    if (has_reinterpret_variant(vt)) {
-      if (phase->C->post_loop_opts_phase()) {
-        return convert_to_reinterpret_store(*phase, value->in(1), vt);
-      } else {
-        phase->C->record_for_post_loop_opts_igvn(this); // attempt the transformation once loop opts are over
-      }
-    }
-  }
-
-#ifdef VM_LITTLE_ENDIAN
-  if (MergeStores && UseUnalignedAccesses) {
-    if (phase->C->post_loop_opts_phase()) {
-      Node* progress = Ideal_merge_primitive_array_stores(phase);
-      if (progress != nullptr) { return progress; }
-    } else {
-      phase->C->record_for_post_loop_opts_igvn(this);
-    }
-  }
-#endif
-
-  return nullptr;                  // No further progress
-}
-
-// Link together multiple stores (B/S/C/I) into a longer one.
-Node* StoreNode::Ideal_merge_primitive_array_stores(PhaseGVN* phase) {
-  int opc = Opcode();
-  if (opc != Op_StoreB && opc != Op_StoreC && opc != Op_StoreI) {
-    return nullptr;
-  }
-
-  // Only merge stores on arrays.
-  if (adr_type()->isa_aryptr() == nullptr) {
-    return nullptr;
-  }
-
-  // If we can merge with use, then we must process use first.
-  StoreNode* use = can_merge_primitive_array_store_with_use(phase, true);
-  if (use != nullptr) {
-    return nullptr;
-  }
-
-  // Check if we can merge with at least one def.
-  StoreNode* def = can_merge_primitive_array_store_with_def(phase, true);
-  if (def == nullptr) {
-    return nullptr;
-  }
-
-  // Now we know we can merge at least two stores.
-  ResourceMark rm;
-  Node_List merge_list;
-  merge_list.push(this);
-
-  uint merge_list_max_size = 8 / memory_size();
-  assert(merge_list_max_size >= 2 &&
-         merge_list_max_size <= 8 &&
-         is_power_of_2(merge_list_max_size),
-         "must be 2, 4 or 8");
-
-  // Collect list of stores
-  while (def != nullptr && merge_list.size() <= merge_list_max_size) {
-    merge_list.push(def);
-    def = def->can_merge_primitive_array_store_with_def(phase, true);
-  }
-
-  int pow2size = round_down_power_of_2(merge_list.size());
-  assert(pow2size >= 2, "must be merging at least 2 stores");
-
-  // Create / find new value:
-  Node* new_value = nullptr;
-  int new_memory_size = memory_size() * pow2size;
-  if (in(MemNode::ValueIn)->Opcode() == Op_ConI) {
-    // Collect all constants
-    jlong con = 0;
-    jlong bits_per_store = memory_size() * 8;
-    jlong mask = (((jlong)1) << bits_per_store) - 1;
-    for (int i = 0; i < pow2size; i++) {
-      jlong con_i = merge_list.at(i)->in(MemNode::ValueIn)->get_int();
-      con = con << bits_per_store;
-      con = con | (mask & con_i);
-    }
-    new_value = phase->longcon(con);
-  } else {
-    Node* first = merge_list.at(pow2size-1);
-    new_value = first->in(MemNode::ValueIn);
-    Node* base_last;
-    jint shift_last;
-    bool is_true = is_con_RShift(in(MemNode::ValueIn), base_last, shift_last);
-    assert(is_true, "must detect con RShift");
-    if (new_value != base_last && new_value->Opcode() == Op_ConvL2I) {
-      // look through
-      new_value = new_value->in(1);
-    }
-    if (new_value != base_last) {
-      // new_value is not the base
-      return nullptr;
-    }
-  }
-
-  if (phase->type(new_value)->isa_long() != nullptr && new_memory_size <= 4) {
-    new_value = phase->transform(new ConvL2INode(new_value));
-  }
-
-  assert((phase->type(new_value)->isa_int() != nullptr && new_memory_size <= 4) ||
-         (phase->type(new_value)->isa_long() != nullptr && new_memory_size == 8),
-         "new_value is either int or long, and new_memory_size is small enough");
-
-  Node* first = merge_list.at(pow2size-1);
-  Node* new_ctrl = in(MemNode::Control); // must take last: after all RangeChecks
-  Node* new_mem  = first->in(MemNode::Memory);
-  Node* new_adr  = first->in(MemNode::Address);
-  const TypePtr* new_adr_type = adr_type();
-  BasicType bt = T_ILLEGAL;
-  switch (new_memory_size) {
-    case 2: bt = T_SHORT; break;
-    case 4: bt = T_INT;   break;
-    case 8: bt = T_LONG;  break;
-  }
-
-  StoreNode* new_store = StoreNode::make(*phase, new_ctrl, new_mem, new_adr,
-                                         new_adr_type, new_value, bt, MemNode::unordered);
-  // Marking the store mismatched is sufficient to prevent reordering, since array stores
-  // are all on the same slice. Hence, we need no barriers.
-  new_store->set_mismatched_access();
-
-  // Constants above may now also be be packed -> put candidate on worklist
-  phase->is_IterGVN()->_worklist.push(new_mem);
-
-#ifdef ASSERT
-  if (TraceMergeStores) {
-    stringStream ss;
-    ss.print_cr("[TraceMergeStores]: Replace");
-    for (int i = pow2size - 1; i >= 0; i--) {
-      merge_list.at(i)->dump("\n", false, &ss);
-    }
-    ss.print_cr("[TraceMergeStores]: with");
-    new_store->dump("\n", false, &ss);
-    tty->print("%s", ss.as_string());
-  }
-#endif
-
-  return new_store;
-}
-
-StoreNode* StoreNode::can_merge_primitive_array_store_with_use(PhaseGVN* phase, bool check_def) {
-  int opc = Opcode();
-  assert(opc == Op_StoreB || opc == Op_StoreC || opc == Op_StoreI, "precondition");
-
-  // Uses should be:
-  // 1) the other StoreNode
-  // 2) optionally a MergeMem from the uncommon trap
-  if (outcnt() > 2) {
-    return nullptr;
-  }
-
-  StoreNode* use_store = nullptr;
-  MergeMemNode* merge_mem = nullptr;
-  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
-    Node* use = fast_out(i);
-    if (use->Opcode() == opc && use_store == nullptr) {
-      use_store = use->as_Store();
-    } else if (use->is_MergeMem() && merge_mem == nullptr) {
-      merge_mem = use->as_MergeMem();
-    } else {
-      return nullptr;
-    }
-  }
-  if (use_store == nullptr) {
-    return nullptr;
-  }
-  if (merge_mem != nullptr) {
-    // Check that merge_mem only leads to the uncommon trap between
-    // the two stores.
-    if (merge_mem->outcnt() != 1) {
-      return nullptr;
-    }
-    Node* ctrl_s1 = use_store->in(MemNode::Control);
-    Node* ctrl_s2 = this->in(MemNode::Control);
-    if (!ctrl_s1->is_IfProj() ||
-        !ctrl_s1->in(0)->is_RangeCheck() ||
-        ctrl_s1->in(0)->outcnt() != 2) {
-      return nullptr;
-    }
-    ProjNode* other_proj = ctrl_s1->as_IfProj()->other_if_proj();
-    Node* trap = other_proj->is_uncommon_trap_proj(Deoptimization::Reason_range_check);
-    if (trap != merge_mem->unique_out() ||
-        ctrl_s1->in(0)->in(0) != ctrl_s2) {
-      return nullptr;
-    }
-  }
-
-  // Having checked "def -> use", we now check "use -> def".
-  if (check_def) {
-    StoreNode* use_def = use_store->can_merge_primitive_array_store_with_def(phase, false);
-    if (use_def == nullptr) {
-      return nullptr;
-    }
-    assert(use_def == this, "def of use is this");
-  }
-
-  return use_store;
-}
-
 // Class to parse array pointers of the form:
 // pointer = base + constant_offset + (int_offset << int_offset_shift) + sum(other_offsets)
 //
@@ -3079,7 +2801,7 @@ public:
     return ArrayPointer(true, pointer, base, constant_offset, int_offset, int_offset_shift, other_offsets);
   }
 
-  bool is_adjacent_to(const ArrayPointer& other, const jlong data_size) const {
+  bool is_adjacent_to_and_before(const ArrayPointer& other, const jlong data_size) const {
     if (!_is_valid || !other._is_valid) { return false; }
 
     // Offset adjacent?
@@ -3124,6 +2846,451 @@ public:
   }
 #endif
 };
+
+// Link together multiple stores (B/S/C/I) into a longer one.
+//
+// Example: _store = StoreB[i+3]
+//
+//   RangeCheck[i+0]           RangeCheck[i+0]
+//   StoreB[i+0]
+//   RangeCheck[i+1]           RangeCheck[i+1]
+//   StoreB[i+1]         -->   pass:             fail:
+//   StoreB[i+2]               StoreI[i+0]       StoreB[i+0]
+//   StoreB[i+3]
+//
+// The 4 StoreB are merged into a single StoreI node. We have to be careful with RangeCheck[i+1]: before
+// the optimization, if this RangeCheck[i+1] fails, then we execute only StoreB[i+0], and then trap. After
+// the optimization, the new StoreI[i+0] is on the passing path of RangeCheck[i+1], and StoreB[i+0] on the
+// failing path.
+class MergePrimitiveArrayStores : public StackObj {
+private:
+  PhaseGVN* _phase;
+  StoreNode* _store;
+
+public:
+  MergePrimitiveArrayStores(PhaseGVN* phase, StoreNode* store) : _phase(phase), _store(store) {}
+
+  StoreNode* run();
+
+private:
+  class Status {
+  private:
+    StoreNode* _found_store;
+    bool       _found_range_check;
+
+  public:
+    Status(StoreNode* found_store, bool found_range_check) : _found_store(found_store), _found_range_check(found_range_check) {}
+    static Status make_failure() { return Status(nullptr, false); }
+    StoreNode* found_store() const { return _found_store; }
+    bool found_range_check() const { return _found_range_check; }
+  };
+
+  bool is_compatible_store(const StoreNode* other_store) const;
+  bool is_adjacent_pair(const StoreNode* use_store, const StoreNode* def_store) const; // TODO static
+  Status find_adjacent_use_store(const StoreNode* def_store) const;
+  Status find_adjacent_def_store(const StoreNode* use_store) const;
+  Status find_use_store(const StoreNode* def_store) const;
+  Status find_def_store(const StoreNode* use_store) const;
+  Status find_use_store_unidirectional(const StoreNode* def_store) const;
+  Status find_def_store_unidirectional(const StoreNode* use_store) const;
+};
+
+StoreNode* MergePrimitiveArrayStores::run() {
+  // Check for B/S/C/I
+  int opc = _store->Opcode();
+  if (opc != Op_StoreB && opc != Op_StoreC && opc != Op_StoreI) {
+    return nullptr;
+  }
+
+  // Only merge stores on arrays.
+  if (_store->adr_type()->isa_aryptr() == nullptr) {
+    return nullptr;
+  }
+
+  // TODO more checks about array and element type?
+
+  // If we can merge with use, then we must process use first.
+  Status status_use = find_adjacent_use_store(_store);
+  if (status_use.found_store() != nullptr) {
+    return nullptr;
+  }
+
+  // Check if we can merge with at least one def.
+  Status status_def = find_adjacent_def_store(_store);
+  if (status_def.found_store() == nullptr) {
+    return nullptr;
+  }
+
+  tty->print_cr("maybe!");
+  _store->dump();
+  return nullptr;
+}
+
+// Check compatibility between _store and other_store.
+bool MergePrimitiveArrayStores::is_compatible_store(const StoreNode* other_store) const {
+  int opc = _store->Opcode();
+  assert(opc == Op_StoreB || opc == Op_StoreC || opc == Op_StoreI, "precondition");
+  assert(_store->adr_type()->isa_aryptr() != nullptr, "must be array store");
+
+  if (other_store == nullptr ||
+      _store->Opcode() != other_store->Opcode() ||
+      other_store->adr_type()->isa_aryptr() == nullptr) {
+    return false;
+  }
+
+  // Check that the size of the stores, and the array elements are all the same.
+  const TypeAryPtr* ary_t1 = _store->adr_type()->is_aryptr();
+  const TypeAryPtr* ary_t2 = other_store->adr_type()->is_aryptr();
+  int size1 = type2aelembytes(ary_t1->elem()->array_element_basic_type());
+  int size2 = type2aelembytes(ary_t2->elem()->array_element_basic_type());
+  if (size1 != size2 ||
+      size1 != _store->memory_size() ||
+      _store->memory_size() != other_store->memory_size()) {
+    return false;
+  }
+  return true;
+}
+
+bool MergePrimitiveArrayStores::is_adjacent_pair(const StoreNode* use_store, const StoreNode* def_store) const {
+  // TODO value adjacent
+  {
+    ResourceMark rm;
+    ArrayPointer array_pointer_use = ArrayPointer::make(_phase, use_store->in(MemNode::Address));
+    ArrayPointer array_pointer_def = ArrayPointer::make(_phase, def_store->in(MemNode::Address));
+    if (!array_pointer_def.is_adjacent_to_and_before(array_pointer_use, use_store->memory_size())) {
+      return false;
+    }
+  }
+  return true;
+}
+
+MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_adjacent_use_store(const StoreNode* def_store) const {
+  Status status_use = find_use_store(def_store);
+  StoreNode* use_store = status_use.found_store();
+  if (use_store != nullptr && !is_adjacent_pair(use_store, def_store)) {
+    return Status::make_failure();
+  }
+  return status_use;
+}
+
+MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_adjacent_def_store(const StoreNode* use_store) const {
+  Status status_def = find_def_store(use_store);
+  StoreNode* def_store = status_def.found_store();
+  if (def_store != nullptr && !is_adjacent_pair(use_store, def_store)) {
+    return Status::make_failure();
+  }
+  return status_def;
+}
+
+MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_use_store(const StoreNode* def_store) const {
+  Status status_use = find_use_store_unidirectional(def_store);
+
+#ifdef ASSERT
+  StoreNode* use_store = status_use.found_store();
+  if (use_store != nullptr) {
+    Status status_def = find_def_store_unidirectional(use_store);
+    assert(status_def.found_store() == def_store &&
+           status_def.found_range_check() == status_use.found_range_check(),
+           "find_use_store and find_def_store must be symmetric");
+  }
+#endif
+
+  return status_use;
+}
+
+MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_def_store(const StoreNode* use_store) const {
+  Status status_def = find_def_store_unidirectional(use_store);
+
+#ifdef ASSERT
+  StoreNode* def_store = status_def.found_store();
+  if (def_store != nullptr) {
+    Status status_use = find_use_store_unidirectional(def_store);
+    assert(status_use.found_store() == use_store &&
+           status_use.found_range_check() == status_def.found_range_check(),
+           "find_use_store and find_def_store must be symmetric");
+  }
+#endif
+
+  return status_def;
+}
+
+MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_use_store_unidirectional(const StoreNode* def_store) const {
+  assert(is_compatible_store(def_store), "precondition: must be compatible with _store");
+
+  // Uses should be:
+  // 1) the other StoreNode
+  // 2) optionally a MergeMem from the uncommon trap
+  if (def_store->outcnt() > 2) {
+    return Status::make_failure();
+  }
+
+  StoreNode* use_store = nullptr;
+  MergeMemNode* merge_mem = nullptr;
+  for (DUIterator_Fast imax, i = def_store->fast_outs(imax); i < imax; i++) {
+    Node* use = def_store->fast_out(i);
+    if (use_store == nullptr && is_compatible_store(use->isa_Store())) {
+      use_store = use->as_Store();
+    } else if (use->is_MergeMem() && merge_mem == nullptr) {
+      merge_mem = use->as_MergeMem();
+    } else {
+      return Status::make_failure();
+    }
+  }
+  if (use_store == nullptr) {
+    return Status::make_failure();
+  }
+  if (merge_mem != nullptr) {
+    // Check that merge_mem only leads to the uncommon trap between
+    // the two stores.
+    if (merge_mem->outcnt() != 1) {
+      return Status::make_failure();
+    }
+    Node* ctrl_s1 = use_store->in(MemNode::Control);
+    Node* ctrl_s2 = def_store->in(MemNode::Control);
+    if (!ctrl_s1->is_IfProj() ||
+        !ctrl_s1->in(0)->is_RangeCheck() ||
+        ctrl_s1->in(0)->outcnt() != 2) {
+      return Status::make_failure();
+    }
+    ProjNode* other_proj = ctrl_s1->as_IfProj()->other_if_proj();
+    Node* trap = other_proj->is_uncommon_trap_proj(Deoptimization::Reason_range_check);
+    if (trap != merge_mem->unique_out() ||
+        ctrl_s1->in(0)->in(0) != ctrl_s2) {
+      return Status::make_failure();
+    }
+  }
+
+  bool found_range_check = merge_mem != nullptr;
+  return Status(use_store, found_range_check);
+}
+
+MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_def_store_unidirectional(const StoreNode* use_store) const {
+  assert(is_compatible_store(use_store), "precondition: must be compatible with _store");
+
+  StoreNode* def_store = use_store->in(MemNode::Memory)->isa_Store();
+  if (!is_compatible_store(def_store)) {
+    return Status::make_failure();
+  }
+
+  // TODO consider unifying it, maybe it is even necessary for correctness.
+  // Check ctrl compatibility
+  Node* ctrl_use = use_store->in(MemNode::Control);
+  Node* ctrl_def = def_store->in(MemNode::Control);
+  if (ctrl_use != ctrl_def) {
+    // See if we can bypass a RangeCheck
+    if (!ctrl_use->is_IfProj() ||
+        !ctrl_use->in(0)->is_RangeCheck() ||
+        ctrl_use->in(0)->outcnt() != 2) {
+      return Status::make_failure();
+    }
+    ProjNode* other_proj = ctrl_use->as_IfProj()->other_if_proj();
+    if (other_proj->is_uncommon_trap_proj(Deoptimization::Reason_range_check) == nullptr ||
+        ctrl_use->in(0)->in(0) != ctrl_def) {
+      return Status::make_failure();
+    }
+    // Success, we skipped a RangeCheck.
+    return Status(def_store, true);
+  }
+
+  // Success, no RangeCheck is in between.
+  return Status(def_store, false);
+}
+
+//------------------------------Ideal------------------------------------------
+// Change back-to-back Store(, p, x) -> Store(m, p, y) to Store(m, p, x).
+// When a store immediately follows a relevant allocation/initialization,
+// try to capture it into the initialization, or hoist it above.
+Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  Node* p = MemNode::Ideal_common(phase, can_reshape);
+  if (p)  return (p == NodeSentinel) ? nullptr : p;
+
+  Node* mem     = in(MemNode::Memory);
+  Node* address = in(MemNode::Address);
+  Node* value   = in(MemNode::ValueIn);
+  // Back-to-back stores to same address?  Fold em up.  Generally
+  // unsafe if I have intervening uses...  Also disallowed for StoreCM
+  // since they must follow each StoreP operation.  Redundant StoreCMs
+  // are eliminated just before matching in final_graph_reshape.
+  {
+    Node* st = mem;
+    // If Store 'st' has more than one use, we cannot fold 'st' away.
+    // For example, 'st' might be the final state at a conditional
+    // return.  Or, 'st' might be used by some node which is live at
+    // the same time 'st' is live, which might be unschedulable.  So,
+    // require exactly ONE user until such time as we clone 'mem' for
+    // each of 'mem's uses (thus making the exactly-1-user-rule hold
+    // true).
+    while (st->is_Store() && st->outcnt() == 1 && st->Opcode() != Op_StoreCM) {
+      // Looking at a dead closed cycle of memory?
+      assert(st != st->in(MemNode::Memory), "dead loop in StoreNode::Ideal");
+      assert(Opcode() == st->Opcode() ||
+             st->Opcode() == Op_StoreVector ||
+             Opcode() == Op_StoreVector ||
+             st->Opcode() == Op_StoreVectorScatter ||
+             Opcode() == Op_StoreVectorScatter ||
+             phase->C->get_alias_index(adr_type()) == Compile::AliasIdxRaw ||
+             (Opcode() == Op_StoreL && st->Opcode() == Op_StoreI) || // expanded ClearArrayNode
+             (Opcode() == Op_StoreI && st->Opcode() == Op_StoreL) || // initialization by arraycopy
+             (is_mismatched_access() || st->as_Store()->is_mismatched_access()),
+             "no mismatched stores, except on raw memory: %s %s", NodeClassNames[Opcode()], NodeClassNames[st->Opcode()]);
+
+      if (st->in(MemNode::Address)->eqv_uncast(address) &&
+          st->as_Store()->memory_size() <= this->memory_size()) {
+        Node* use = st->raw_out(0);
+        if (phase->is_IterGVN()) {
+          phase->is_IterGVN()->rehash_node_delayed(use);
+        }
+        // It's OK to do this in the parser, since DU info is always accurate,
+        // and the parser always refers to nodes via SafePointNode maps.
+        use->set_req_X(MemNode::Memory, st->in(MemNode::Memory), phase);
+        return this;
+      }
+      st = st->in(MemNode::Memory);
+    }
+  }
+
+
+  // Capture an unaliased, unconditional, simple store into an initializer.
+  // Or, if it is independent of the allocation, hoist it above the allocation.
+  if (ReduceFieldZeroing && /*can_reshape &&*/
+      mem->is_Proj() && mem->in(0)->is_Initialize()) {
+    InitializeNode* init = mem->in(0)->as_Initialize();
+    intptr_t offset = init->can_capture_store(this, phase, can_reshape);
+    if (offset > 0) {
+      Node* moved = init->capture_store(this, offset, phase, can_reshape);
+      // If the InitializeNode captured me, it made a raw copy of me,
+      // and I need to disappear.
+      if (moved != nullptr) {
+        // %%% hack to ensure that Ideal returns a new node:
+        mem = MergeMemNode::make(mem);
+        return mem;             // fold me away
+      }
+    }
+  }
+
+  // Fold reinterpret cast into memory operation:
+  //    StoreX mem (MoveY2X v) => StoreY mem v
+  if (value->is_Move()) {
+    const Type* vt = value->in(1)->bottom_type();
+    if (has_reinterpret_variant(vt)) {
+      if (phase->C->post_loop_opts_phase()) {
+        return convert_to_reinterpret_store(*phase, value->in(1), vt);
+      } else {
+        phase->C->record_for_post_loop_opts_igvn(this); // attempt the transformation once loop opts are over
+      }
+    }
+  }
+
+#ifdef VM_LITTLE_ENDIAN
+  if (MergeStores && UseUnalignedAccesses) {
+    if (phase->C->post_loop_opts_phase()) {
+      MergePrimitiveArrayStores merge(phase, this);
+      Node* progress = merge.run();
+      if (progress != nullptr) { return progress; }
+    } else {
+      phase->C->record_for_post_loop_opts_igvn(this);
+    }
+  }
+#endif
+
+  return nullptr;                  // No further progress
+}
+
+//  // Now we know we can merge at least two stores.
+//  ResourceMark rm;
+//  Node_List merge_list;
+//  merge_list.push(this);
+//
+//  uint merge_list_max_size = 8 / memory_size();
+//  assert(merge_list_max_size >= 2 &&
+//         merge_list_max_size <= 8 &&
+//         is_power_of_2(merge_list_max_size),
+//         "must be 2, 4 or 8");
+//
+//  // Collect list of stores
+//  while (def != nullptr && merge_list.size() <= merge_list_max_size) {
+//    merge_list.push(def);
+//    def = def->can_merge_primitive_array_store_with_def(phase, true);
+//  }
+//
+//  int pow2size = round_down_power_of_2(merge_list.size());
+//  assert(pow2size >= 2, "must be merging at least 2 stores");
+//
+//  // Create / find new value:
+//  Node* new_value = nullptr;
+//  int new_memory_size = memory_size() * pow2size;
+//  if (in(MemNode::ValueIn)->Opcode() == Op_ConI) {
+//    // Collect all constants
+//    jlong con = 0;
+//    jlong bits_per_store = memory_size() * 8;
+//    jlong mask = (((jlong)1) << bits_per_store) - 1;
+//    for (int i = 0; i < pow2size; i++) {
+//      jlong con_i = merge_list.at(i)->in(MemNode::ValueIn)->get_int();
+//      con = con << bits_per_store;
+//      con = con | (mask & con_i);
+//    }
+//    new_value = phase->longcon(con);
+//  } else {
+//    Node* first = merge_list.at(pow2size-1);
+//    new_value = first->in(MemNode::ValueIn);
+//    Node* base_last;
+//    jint shift_last;
+//    bool is_true = is_con_RShift(in(MemNode::ValueIn), base_last, shift_last);
+//    assert(is_true, "must detect con RShift");
+//    if (new_value != base_last && new_value->Opcode() == Op_ConvL2I) {
+//      // look through
+//      new_value = new_value->in(1);
+//    }
+//    if (new_value != base_last) {
+//      // new_value is not the base
+//      return nullptr;
+//    }
+//  }
+//
+//  if (phase->type(new_value)->isa_long() != nullptr && new_memory_size <= 4) {
+//    new_value = phase->transform(new ConvL2INode(new_value));
+//  }
+//
+//  assert((phase->type(new_value)->isa_int() != nullptr && new_memory_size <= 4) ||
+//         (phase->type(new_value)->isa_long() != nullptr && new_memory_size == 8),
+//         "new_value is either int or long, and new_memory_size is small enough");
+//
+//  Node* first = merge_list.at(pow2size-1);
+//  Node* new_ctrl = in(MemNode::Control); // must take last: after all RangeChecks
+//  Node* new_mem  = first->in(MemNode::Memory);
+//  Node* new_adr  = first->in(MemNode::Address);
+//  const TypePtr* new_adr_type = adr_type();
+//  BasicType bt = T_ILLEGAL;
+//  switch (new_memory_size) {
+//    case 2: bt = T_SHORT; break;
+//    case 4: bt = T_INT;   break;
+//    case 8: bt = T_LONG;  break;
+//  }
+//
+//  StoreNode* new_store = StoreNode::make(*phase, new_ctrl, new_mem, new_adr,
+//                                         new_adr_type, new_value, bt, MemNode::unordered);
+//  // Marking the store mismatched is sufficient to prevent reordering, since array stores
+//  // are all on the same slice. Hence, we need no barriers.
+//  new_store->set_mismatched_access();
+//
+//  // Constants above may now also be be packed -> put candidate on worklist
+//  phase->is_IterGVN()->_worklist.push(new_mem);
+//
+//#ifdef ASSERT
+//  if (TraceMergeStores) {
+//    stringStream ss;
+//    ss.print_cr("[TraceMergeStores]: Replace");
+//    for (int i = pow2size - 1; i >= 0; i--) {
+//      merge_list.at(i)->dump("\n", false, &ss);
+//    }
+//    ss.print_cr("[TraceMergeStores]: with");
+//    new_store->dump("\n", false, &ss);
+//    tty->print("%s", ss.as_string());
+//  }
+//#endif
+//
+//  return new_store;
+//}
 
 StoreNode* StoreNode::can_merge_primitive_array_store_with_def(PhaseGVN* phase, bool check_use) {
   int opc = Opcode();
@@ -3208,18 +3375,9 @@ StoreNode* StoreNode::can_merge_primitive_array_store_with_def(PhaseGVN* phase, 
     ResourceMark rm;
     ArrayPointer array_pointer1 = ArrayPointer::make(phase, s1->in(MemNode::Address));
     ArrayPointer array_pointer2 = ArrayPointer::make(phase, s2->in(MemNode::Address));
-    if (!array_pointer2.is_adjacent_to(array_pointer1, s1->memory_size())) {
+    if (!array_pointer2.is_adjacent_to_and_before(array_pointer1, s1->memory_size())) {
       return nullptr;
     }
-  }
-
-  // Having checked "use -> def", we now check "def -> use".
-  if (check_use) {
-    StoreNode* def_use = s2->can_merge_primitive_array_store_with_use(phase, false);
-    if (def_use == nullptr) {
-      return nullptr;
-    }
-    assert(def_use == this, "use of def is this");
   }
 
   return s2;
