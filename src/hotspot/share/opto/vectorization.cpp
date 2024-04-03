@@ -216,14 +216,11 @@ const VPointer& VLoopVPointers::vpointer(const MemNode* mem) const {
 void VLoopVPointers::print() const {
   tty->print_cr("\nVLoopVPointers::print:");
 
-  for (int i = 0; i < _body.body().length(); i++) {
-    MemNode* mem = _body.body().at(i)->isa_Mem();
-    if (mem != nullptr && _vloop.in_bb(mem)) {
-      const VPointer& p = vpointer(mem);
-      tty->print("  ");
-      p.print();
-    }
-  }
+  _body.for_each_mem([&] (const MemNode* mem, int bb_idx) {
+    const VPointer& p = vpointer(mem);
+    tty->print("  ");
+    p.print();
+  });
 }
 #endif
 
