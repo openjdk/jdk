@@ -468,7 +468,7 @@ property also in multi-threaded environments.
 ## Alternatives
 
 There are other classes in the JDK that support lazy computation including `Map`, `AtomicReference`, `ClassValue`,
-and `ThreadLocal` which are similar in the sense that they support arbitrary mutation and thus, prevent the JVM
+and `ThreadLocal` which are similar to each other in the sense that they support arbitrary mutation and thus, prevent the JVM
 from reasoning about constantness thereby preventing constant folding and other optimizations.
 
 So, alternatives would be to keep using explicit double-checked locking, maps, holder classes, Atomic classes,
