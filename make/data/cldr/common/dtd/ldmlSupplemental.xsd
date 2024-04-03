@@ -7,7 +7,7 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
 <!--
   Copyright © 1991-2024 Unicode, Inc.
   For terms of use, see http://www.unicode.org/copyright.html
-  SPDX-License-Identifier: Unicode-DFS-2016
+  SPDX-License-Identifier: Unicode-3.0
   CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 --><xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
   <xs:element name="supplementalData">
@@ -2092,9 +2092,12 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
   <xs:element name="parentLocale">
     <xs:complexType>
       <xs:attribute name="parent" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="localeRules" type="xs:NMTOKENS"/>
       <xs:attribute name="locales" type="xs:NMTOKENS" use="required"/>
     </xs:complexType>
   </xs:element>
+  
+  
   
   
   

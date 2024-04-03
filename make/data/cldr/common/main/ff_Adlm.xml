@@ -710,7 +710,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BS">𞤄𞤢𞤸𞤢𞤥𞤢𞥄𞤧</territory>
 			<territory type="BT">𞤄𞤵𞥅𞤼𞤢𞥄𞤲</territory>
 			<territory type="BV">𞤅𞤵𞤪𞤭𞥅𞤪𞤫 𞤄𞤵𞥅𞤾𞤫𞥅</territory>
-			<territory type="BW">‮𞤄𞤮𞤼𞤧𞤵𞤱𞤢𞥄𞤲𞤢</territory>
+			<territory type="BW">𞤄𞤮𞤼𞤧𞤵𞤱𞤢𞥄𞤲𞤢</territory>
 			<territory type="BY">𞤄𞤫𞤤𞤢𞤪𞤵𞥅𞤧</territory>
 			<territory type="BZ">𞤄𞤫𞤤𞤭𞥅𞥁</territory>
 			<territory type="CA">𞤑𞤢𞤲𞤢𞤣𞤢𞥄</territory>
@@ -3771,7 +3771,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>𞤐𞤵𞥅𞤳</exemplarCity>
 			</zone>
 			<zone type="America/Scoresbysund">
-				<exemplarCity>‮𞤋𞤼𞥆𞤮𞤳𞤮𞤪𞤼𞤮𞥅𞤪𞤥𞤭𞥅𞤼</exemplarCity>
+				<exemplarCity>𞤋𞤼𞥆𞤮𞤳𞤮𞤪𞤼𞤮𞥅𞤪𞤥𞤭𞥅𞤼</exemplarCity>
 			</zone>
 			<zone type="America/Danmarkshavn">
 				<exemplarCity>𞤁𞤢𞥄𞤲𞤥𞤢𞤪𞤳𞥃𞤢𞥄𞤾𞤲</exemplarCity>

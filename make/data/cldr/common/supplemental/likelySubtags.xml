@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE supplementalData SYSTEM "../../common/dtd/ldmlSupplemental.dtd">
 <!--
-Copyright © 1991-2023 Unicode, Inc.
+Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <!--
@@ -1650,7 +1650,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Zulu; ?; ? } => { Zulu; Latin; South Africa }-->
 		<likelySubtag from="zza" to="zza_Latn_TR"/>
 		<!--{ Zaza; ?; ? } => { Zaza; Latin; Türkiye }-->
-		
+
 		<!-- Retain und and und+macroregions that are in CLDR locales, except those mapping to en anyway  -->
 		<likelySubtag from="und" to="en_Latn_US"/>
 		<likelySubtag from="und_Latn" to="en_Latn_US"/>
@@ -1658,9 +1658,9 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_Latn_419" to="es_Latn_419"/>
 
 		<!--{ ?; ?; ? } => { English; Latin; United States }-->
-		
+
 		<!-- Added und_* so that all regions were handled -->
-		
+
 		<likelySubtag from="und_AC" to="en_Latn_AC"/>
 		<likelySubtag from="und_AG" to="en_Latn_AG"/>
 		<likelySubtag from="und_AI" to="en_Latn_AI"/>
@@ -1724,9 +1724,9 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_VI" to="en_Latn_VI"/>
 		<likelySubtag from="und_ZA" to="en_Latn_ZA"/>
 		<likelySubtag from="und_ZM" to="bem_Latn_ZM"/>
-		
+
 		<!-- Add und_script_region where the fallback from und_script would fail -->
-		
+
 		<likelySubtag from="und_Arab_AF" to="fa_Arab_AF"/>
 		<likelySubtag from="und_Arab_IR" to="fa_Arab_IR"/>
 		<likelySubtag from="und_Cyrl_BG" to="bg_Cyrl_BG"/>
@@ -1872,9 +1872,9 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_Latn_WS" to="sm_Latn_WS"/>
 		<likelySubtag from="und_Latn_XK" to="sq_Latn_XK"/>
 		<likelySubtag from="und_Latn_YT" to="fr_Latn_YT"/>
-		<likelySubtag from="und_Latn_ZW" to="sn_Latn_ZW"/>		
+		<likelySubtag from="und_Latn_ZW" to="sn_Latn_ZW"/>
 		<likelySubtag from="und_Tibt_BT" to="dz_Tibt_BT"/>
-		
+
 		<likelySubtag from="und_AD" to="ca_Latn_AD"/>
 		<!--{ ?; ?; Andorra } => { Catalan; Latin; Andorra }-->
 		<likelySubtag from="und_AE" to="ar_Arab_AE"/>

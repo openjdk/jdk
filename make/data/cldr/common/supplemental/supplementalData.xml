@@ -363,8 +363,8 @@ The printed version of ISO-4217:2001
             <currency iso4217="PTE" from="1911-05-22" to="1975-07-05"/>
         </region>
         <region iso3166="CW">
-            <currency iso4217="XCG" from="2024-03-31" tz="America/Curacao"/>
-            <currency iso4217="ANG" from="2010-10-10" to="2024-06-30" to-tz="America/Curacao"/>
+            <currency iso4217="XCG" from="2025-03-31" tz="America/Curacao"/>
+            <currency iso4217="ANG" from="2010-10-10" to="2025-06-30" to-tz="America/Curacao"/>
         </region>
         <region iso3166="CX">
             <currency iso4217="AUD" from="1966-02-14"/>
@@ -996,8 +996,8 @@ The printed version of ISO-4217:2001
             <currency iso4217="SVC" from="1919-11-11" to="2001-01-01"/>
         </region>
         <region iso3166="SX">
-            <currency iso4217="XCG" from="2024-03-31" tz="America/Lower_Princes"/>
-            <currency iso4217="ANG" from="2010-10-10" to="2024-06-30" to-tz="America/Lower_Princes"/>
+            <currency iso4217="XCG" from="2025-03-31" tz="America/Lower_Princes"/>
+            <currency iso4217="ANG" from="2010-10-10" to="2025-06-30" to-tz="America/Lower_Princes"/>
         </region>
         <region iso3166="SY">
             <currency iso4217="SYP" from="1948-01-01"/>
