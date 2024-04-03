@@ -29,8 +29,6 @@
 #include "nmt/nmtCommon.hpp"
 #include "runtime/globals.hpp"
 
-#ifdef ASSERT
-
 class NMT_MemoryLogRecorder : public StackObj {
 
 private:
@@ -46,14 +44,12 @@ private:
   };
 
 public:
-  static bool active(void) { return (NMTRecordMemoryAllocations>0); }
-  static void finish(void) { log(); }
-  static void log(MEMFLAGS flags = mtNone, size_t requested = 0, address ptr = nullptr, address old = nullptr,
-                  const NativeCallStack *stack = nullptr);
+  static void initialize(intx count);
+  static void finish(void);
+  static void log(MEMFLAGS flags = mtNone, size_t requested = 0, address ptr = nullptr,
+                  address old = nullptr, const NativeCallStack *stack = nullptr);
   static void rememberThreadName(const char* name);
   static void printActualSizesFor(const char* list);
 };
-
-#endif // ASSERT
 
 #endif // SHARE_NMT_MEMORYLOGRECORDER_HPP

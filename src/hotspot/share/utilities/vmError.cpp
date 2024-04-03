@@ -1856,9 +1856,8 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     fdStream fds(fd_out);
     MemTracker::final_report(&fds);
   }
-#ifdef ASSERT
-  NMT_MemoryLogRecorder::log();
-#endif
+
+  NMT_MemoryLogRecorder::finish();
 
   static bool skip_replay = ReplayCompiles && !ReplayReduce; // Do not overwrite file during replay
   if (DumpReplayDataOnError && _thread && _thread->is_Compiler_thread() && !skip_replay) {

@@ -586,6 +586,8 @@ void VM_Exit::doit() {
 
   LogConfiguration::finalize();
 
+  NMT_MemoryLogRecorder::finish();
+
   // Check for exit hook
   exit_hook_t exit_hook = Arguments::exit_hook();
   if (exit_hook != nullptr) {

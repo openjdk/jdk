@@ -658,9 +658,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   if (outer_ptr == nullptr) {
     return nullptr;
   }
-#ifdef ASSERT
   NMT_MemoryLogRecorder::log(memflags, outer_size, (address)outer_ptr, nullptr, &stack);
-#endif
 
   void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, memflags, stack);
 
@@ -733,7 +731,6 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
       return nullptr;
     }
 
-#ifdef ASSERT
 #if defined(LINUX) || defined(__APPLE__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wuse-after-free"
@@ -742,7 +739,6 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
 #if defined(LINUX) || defined(__APPLE__)
 #pragma GCC diagnostic pop
 #endif // LINUX || APPLE
-#endif // ASSERT
 
     // realloc(3) succeeded, variable header now points to invalid memory and we need to deaccount the old block.
     MemTracker::deaccount(free_info);
@@ -769,7 +765,6 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
       return nullptr;
     }
 
-#ifdef ASSERT
 #if defined(LINUX) || defined(__APPLE__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wuse-after-free"
@@ -778,7 +773,6 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
 #if defined(LINUX) || defined(__APPLE__)
 #pragma GCC diagnostic pop
 #endif // LINUX || APPLE
-#endif // ASSERT
   }
 
   DEBUG_ONLY(break_if_ptr_caught(rc);)
@@ -810,9 +804,7 @@ void  os::free(void *memblock) {
   // When NMT is enabled this checks for heap overwrites, then deaccounts the old block.
   void* const old_outer_ptr = MemTracker::record_free(memblock);
 
-#ifdef ASSERT
   NMT_MemoryLogRecorder::log(flags, 0, (address)old_outer_ptr);
-#endif
 
   ALLOW_C_FUNCTION(::free, ::free(old_outer_ptr);)
 }

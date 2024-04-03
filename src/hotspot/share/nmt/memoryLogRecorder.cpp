@@ -46,8 +46,6 @@
 #include <string.h>
 #endif
 
-#ifdef ASSERT
-
 /*
 
  This code collects malloc/realloc/free os requests (-XX:NMTRecordMemoryAllocations=XXX)
@@ -131,10 +129,15 @@ When estimating the NMT impact, from memory overhead point of view, we have a ch
 #define THREADS_LOG_FILE "hs_nmt_pid%p_threads_record.log"
 #define STATUS_LOG_FILE "hs_nmt_pid%p_status_record.log"
 
+volatile static bool _initiliazed = false;
+volatile static bool _done = false;
+volatile static intx _limit = 0;
+static int _log_fd = -1;
+
 #if defined(LINUX)
   static pthread_mutex_t _mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 #elif defined(__APPLE__)
-  static pthread_mutex_t _mutex = PTHREAD_MUTEX_INITIALIZER;
+  static pthread_mutex_t _mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER;
 #endif // LINUX || __APPLE__
 
 constexpr size_t _threads_name_length = 32;
@@ -204,47 +207,19 @@ static int _close_and_check(int fd) {
 }
 
 void NMT_MemoryLogRecorder::log(MEMFLAGS flags, size_t requested, address ptr, address old, const NativeCallStack *stack) {
-  static int _log_fd = -1;
+  //fprintf(stderr, "NMT_MemoryLogRecorder::log(%s, %ld, 0x%p, 0x%p)\n", NMTUtil::flag_to_name(flags), requested, ptr, old);
   volatile static jlong _count = 0;
-  volatile static bool _done = !NMT_MemoryLogRecorder::active();
-
-  if (!_done) {
+  jlong count = -1;
+  if (_initiliazed && !_done) {
 #if defined(LINUX) || defined(__APPLE__)
     pthread_mutex_lock(&_mutex);
 #elif defined(WINDOWS)
     // ???
 #endif
-    {
-      if (!_done && (_log_fd == -1)) {
-        _log_fd = _prepare_log_file(MEMORY_LOG_FILE);
-      }
-      if (!_done && (_log_fd != -1) && MemTracker::is_initialized()) {
-        bool triggered_by_limit = (_count >= NMTRecordMemoryAllocations);
-        bool triggered_by_request = ((requested == 0) && (ptr == nullptr));
-        if (triggered_by_limit) {
-          //fprintf(stderr, "\nNMTRecordMemoryAllocations: reached NMTRecordMemoryAllocations count: %ld/%ld\n", _count, NMTRecordMemoryAllocations);
-        } else if (triggered_by_request) {
-          //fprintf(stderr, "\nNMTRecordMemoryAllocations: triggered by exit\n");
-        }
-        _done = (triggered_by_limit || triggered_by_request);
-        if (_done) {
-          volatile int log_fd = _log_fd;
-          _log_fd = -1;
-          log_fd = _close_and_check(log_fd);
-
-          int threads_fd = _prepare_log_file(THREADS_LOG_FILE);
-          if (threads_fd != -1) {
-            _write_and_check(threads_fd, _threads_names, _threads_names_counter*sizeof(thread_name_info));
-            threads_fd = _close_and_check(threads_fd);
-          }
-
-          int status_fd = _prepare_log_file(STATUS_LOG_FILE);
-          if (status_fd != -1) {
-            NMT_TrackingLevel level = NMTUtil::parse_tracking_level(NativeMemoryTracking);
-            _write_and_check(status_fd, &level, sizeof(NMT_TrackingLevel));
-            status_fd = _close_and_check(status_fd);
-          }
-        }
+    if (_initiliazed && !_done) {
+      count = _count++;
+      if (count >= _limit) {
+        NMT_MemoryLogRecorder::finish();
       }
     }
 #if defined(LINUX) || defined(__APPLE__)
@@ -254,9 +229,13 @@ void NMT_MemoryLogRecorder::log(MEMFLAGS flags, size_t requested, address ptr, a
 #endif
   }
 
-  if (_log_fd != -1) {
+  //fprintf(stderr, " _initiliazed:%d\n", _initiliazed);
+  //fprintf(stderr, " _done:%d\n", _done);
+  //fprintf(stderr, " count:%ld\n", count);
+
+  if (!_done && (count != -1)) {
     Entry entry;
-    entry.time = _count;
+    entry.time = count;
     if (MemTracker::is_initialized())
     {
       entry.time = os::javaTimeNanos();
@@ -305,19 +284,21 @@ void NMT_MemoryLogRecorder::rememberThreadName(const char* name) {
 #elif defined(WINDOWS)
   // ???
 #endif
-  if (_threads_names == nullptr) {
-    ALLOW_C_FUNCTION(::calloc, _threads_names = (thread_name_info*)::calloc(_threads_names_capacity, sizeof(thread_name_info));)
-  }
-  if (_threads_names_counter < _threads_names_capacity) {
-    size_t counter = _threads_names_counter++;
-    if (counter < _threads_names_capacity) {
-      strncpy((char*)_threads_names[counter].name, name, _threads_name_length-1);
-      _threads_names[counter].thread = os::current_thread_id();
+  if (_initiliazed && !_done) {
+    if (_threads_names == nullptr) {
+      ALLOW_C_FUNCTION(::calloc, _threads_names = (thread_name_info*)::calloc(_threads_names_capacity, sizeof(thread_name_info));)
     }
-  } else {
-    _threads_names_capacity *= 2;
-    ALLOW_C_FUNCTION(::realloc, _threads_names = (thread_name_info*)::realloc((void*)_threads_names, _threads_names_capacity*sizeof(thread_name_info));)
-    rememberThreadName(name);
+    if (_threads_names_counter < _threads_names_capacity) {
+      size_t counter = _threads_names_counter++;
+      if (counter < _threads_names_capacity) {
+        strncpy((char*)_threads_names[counter].name, name, _threads_name_length-1);
+        _threads_names[counter].thread = os::current_thread_id();
+      }
+    } else {
+      _threads_names_capacity *= 2;
+      ALLOW_C_FUNCTION(::realloc, _threads_names = (thread_name_info*)::realloc((void*)_threads_names, _threads_names_capacity*sizeof(thread_name_info));)
+      rememberThreadName(name);
+    }
   }
 #if defined(LINUX) || defined(__APPLE__)
   pthread_mutex_unlock(&_mutex);
@@ -327,6 +308,7 @@ void NMT_MemoryLogRecorder::rememberThreadName(const char* name) {
 }
 
 void NMT_MemoryLogRecorder::printActualSizesFor(const char* list) {
+//fprintf(stderr, "NMT_MemoryLogRecorder::printActualSizesFor(%s)\n", list);
   char* string = os::strdup(NMTPrintMemoryAllocationsSizesFor, mtNMT);
   if (string != nullptr) {
     ALLOW_C_FUNCTION(::strtok, char* token = strtok(string, ",");)
@@ -354,4 +336,71 @@ void NMT_MemoryLogRecorder::printActualSizesFor(const char* list) {
   }
 }
 
-#endif // ASSERT
+void NMT_MemoryLogRecorder::initialize(intx limit) {
+  //fprintf(stderr, "NMT_MemoryLogRecorder::initialize(%ld)\n", limit);
+  if (strlen(NMTPrintMemoryAllocationsSizesFor) > 0) {
+    NMT_MemoryLogRecorder::printActualSizesFor((const char*)NMTPrintMemoryAllocationsSizesFor);
+    os::exit(0);
+  }
+
+  if (!_initiliazed) {
+#if defined(LINUX) || defined(__APPLE__)
+    pthread_mutex_lock(&_mutex);
+#elif defined(WINDOWS)
+    // ???
+#endif
+    if (!_initiliazed) {
+      _initiliazed = true;
+      _limit = limit;
+      if (_limit > 0) {
+        _log_fd = _prepare_log_file(MEMORY_LOG_FILE);
+        //fprintf(stderr, " _log_fd:%d\n", _log_fd);
+      } else {
+        _done = true;
+      }
+    }
+#if defined(LINUX) || defined(__APPLE__)
+    pthread_mutex_unlock(&_mutex);
+#elif defined(WINDOWS)
+    // ???
+#endif
+  }
+}
+
+void NMT_MemoryLogRecorder::finish(void) {
+  //fprintf(stderr, "NMT_MemoryLogRecorder::finish()\n");
+  if (_initiliazed && !_done) {
+#if defined(LINUX) || defined(__APPLE__)
+    pthread_mutex_lock(&_mutex);
+#elif defined(WINDOWS)
+      // ???
+#endif
+    if (_initiliazed && !_done) {
+      volatile int log_fd = _log_fd;
+      _log_fd = -1;
+      //fprintf(stderr, " log_fd:%d\n", log_fd);
+      log_fd = _close_and_check(log_fd);
+
+      int threads_fd = _prepare_log_file(THREADS_LOG_FILE);
+      //fprintf(stderr, " threads_fd:%d\n", threads_fd);
+      if (threads_fd != -1) {
+        _write_and_check(threads_fd, _threads_names, _threads_names_counter*sizeof(thread_name_info));
+        threads_fd = _close_and_check(threads_fd);
+      }
+      
+      int status_fd = _prepare_log_file(STATUS_LOG_FILE);
+      //fprintf(stderr, " status_fd:%d\n", status_fd);
+      if (status_fd != -1) {
+        NMT_TrackingLevel level = NMTUtil::parse_tracking_level(NativeMemoryTracking);
+        _write_and_check(status_fd, &level, sizeof(NMT_TrackingLevel));
+        status_fd = _close_and_check(status_fd);
+      }
+    }
+    _done = true;
+#if defined(LINUX) || defined(__APPLE__)
+    pthread_mutex_unlock(&_mutex);
+#elif defined(WINDOWS)
+    // ???
+#endif
+  }
+}

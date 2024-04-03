@@ -125,9 +125,6 @@ void LogConfiguration::initialize(jlong vm_start_time) {
 void LogConfiguration::finalize() {
   disable_outputs();
   FREE_C_HEAP_ARRAY(LogOutput*, _outputs);
-#ifdef ASSERT
-  NMT_MemoryLogRecorder::finish();
-#endif
 }
 
 // Normalizes the given LogOutput name to type=name form.
