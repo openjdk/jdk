@@ -1280,7 +1280,7 @@ void  os::dll_unload(void *lib) {
 }
 
 void* os::dll_lookup(void *lib, const char *name) {
-  GetLastError(); // Clear old pending errors
+  ::GetLastError(); // Clear old pending errors
   void* ret = ::GetProcAddress((HMODULE)lib, name);
   if (ret == nullptr) {
     char buf[512];
