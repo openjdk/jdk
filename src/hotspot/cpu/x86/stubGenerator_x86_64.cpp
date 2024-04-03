@@ -4003,7 +4003,7 @@ address StubGenerator::generate_klass_subtype_fallback_stub() {
 
   StubRoutines::_klass_subtype_fallback_stub = start;
 
-  for (int i = 0; i < Klass::SEC_HASH_ENTRIES; i++) {
+  for (int i = 0; i < 64; i++) {
     __ align(CodeEntryAlignment);
     StubRoutines::hashed_secondary_subklass_stubs[i] = __ pc();
     __ check_klass_subtype_slow_path(rsi, nullptr, rdx, rcx, rbx, rax, r11, rdi, i);

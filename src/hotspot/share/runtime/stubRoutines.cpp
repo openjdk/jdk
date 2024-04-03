@@ -27,7 +27,6 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/vectorSupport.hpp"
 #include "runtime/continuation.hpp"
@@ -74,7 +73,7 @@ address StubRoutines::_atomic_cmpxchg_long_entry                = nullptr;
 address StubRoutines::_atomic_add_entry                         = nullptr;
 address StubRoutines::_fence_entry                              = nullptr;
 
-address StubRoutines::hashed_secondary_subklass_stubs[Klass::SEC_HASH_ENTRIES];
+address StubRoutines::hashed_secondary_subklass_stubs[64];
 
 // Compiled code entry points default values
 // The default functions don't have separate disjoint versions.
