@@ -1919,14 +1919,23 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
     size_t rw_ptrmap_size_in_bits = header()->rw_ptrmap_size_in_bits();
     size_t ro_ptrmap_size_in_bits = header()->ro_ptrmap_size_in_bits();
 
+    char* ro_bitmap_base = bitmap_base + region_at(MetaspaceShared::ro)->mapping_offset();
+
     log_debug(cds, reloc)("mapped relocation rw bitmap @ " INTPTR_FORMAT " (" SIZE_FORMAT " bits)",
                           p2i(bitmap_base), rw_ptrmap_size_in_bits + ro_ptrmap_size_in_bits);
 
     // The rw and ro bitmaps are contiguous in memory so they can be read as a single bitmap for simplicity
-    BitMapView ptrmap((BitMap::bm_word_t*)bitmap_base, rw_ptrmap_size_in_bits + ro_ptrmap_size_in_bits);
+    //BitMapView ptrmap((BitMap::bm_word_t*)bitmap_base, rw_ptrmap_size_in_bits + ro_ptrmap_size_in_bits);
+    BitMapView rw_ptrmap((BitMap::bm_word_t*)bitmap_base, rw_ptrmap_size_in_bits);
+    BitMapView ro_ptrmap((BitMap::bm_word_t*)ro_bitmap_base, ro_ptrmap_size_in_bits);
+
+    FileMapRegion* rw_region = first_core_region();
+    FileMapRegion* ro_region = last_core_region();
 
     // Patch all pointers in the mapped region that are marked by ptrmap.
     address patch_base = (address)mapped_base();
+    address rw_patch_end  = (address)rw_region->mapped_end();
+    address ro_patch_base = (address)ro_region->mapped_base();
     address patch_end  = (address)mapped_end();
 
     // the current value of the pointers to be patched must be within this
@@ -1940,9 +1949,13 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
     address valid_new_base = (address)header()->mapped_base_address();
     address valid_new_end  = (address)mapped_end();
 
-    SharedDataRelocator patcher((address*)patch_base, (address*)patch_end, valid_old_base, valid_old_end,
+    SharedDataRelocator rw_patcher((address*)patch_base, (address*)rw_patch_end, valid_old_base, valid_old_end,
                                 valid_new_base, valid_new_end, addr_delta);
-    ptrmap.iterate(&patcher);
+    SharedDataRelocator ro_patcher((address*)ro_patch_base, (address*)patch_end, valid_old_base, valid_old_end,
+                                valid_new_base, valid_new_end, addr_delta);
+    //ptrmap.iterate(&patcher);
+    rw_ptrmap.iterate(&rw_patcher);
+    ro_ptrmap.iterate(&ro_patcher);
 
     // The MetaspaceShared::bm region will be unmapped in MetaspaceShared::initialize_shared_spaces().
 
