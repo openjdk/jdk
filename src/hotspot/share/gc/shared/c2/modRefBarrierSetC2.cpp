@@ -41,8 +41,13 @@ Node* ModRefBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool use_precise = is_array || anonymous;
   bool tightly_coupled_alloc = (decorators & C2_TIGHTLY_COUPLED_ALLOC) != 0;
+  bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
+  bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
+  bool no_keepalive = (decorators & AS_NO_KEEPALIVE) != 0;
 
-  if (!access.is_oop() || tightly_coupled_alloc || (!in_heap && !anonymous)) {
+  if (!access.is_oop() || tightly_coupled_alloc ||
+      ((on_weak || on_phantom) && !no_keepalive) ||
+      (!in_heap && !anonymous)) {
     return BarrierSetC2::store_at_resolved(access, val);
   }
 

@@ -498,7 +498,12 @@ Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue&
   const TypePtr* adr_type = access.addr().type();
   Node* adr = access.addr().node();
 
-  if (!access.is_oop()) {
+  bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
+  bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
+  bool no_keepalive = (decorators & AS_NO_KEEPALIVE) != 0;
+
+  if (!access.is_oop() ||
+      ((on_weak || on_phantom) && !no_keepalive)) {
     return BarrierSetC2::store_at_resolved(access, val);
   }
 

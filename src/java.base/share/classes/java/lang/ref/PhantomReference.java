@@ -77,6 +77,19 @@ public non-sealed class PhantomReference<T> extends Reference<T> {
     @IntrinsicCandidate
     private native boolean refersTo0(Object o);
 
+    /* Override the implementation of Reference.clear.
+     * Phantom references are weaker than finalization, so the referent
+     * access needs to be handled differently for garbage collectors that
+     * do reference processing concurrently.
+     */
+    @Override
+    void clearImpl() {
+        clear0();
+    }
+
+    @IntrinsicCandidate
+    private native void clear0();
+
     /**
      * Creates a new phantom reference that refers to the given object and
      * is registered with the given queue.

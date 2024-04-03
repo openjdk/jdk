@@ -609,6 +609,11 @@ public class IRNode {
         beforeMatchingNameRegex(LOAD, "Load(B|UB|S|US|I|L|F|D|P|N)");
     }
 
+    public static final String LOAD_PRIMITIVE = PREFIX + "LOAD" + POSTFIX;
+    static {
+       beforeMatchingNameRegex(LOAD_PRIMITIVE, "Load(B|UB|S|US|I|L|F|D)");
+    }
+
     public static final String LOAD_OF_CLASS = COMPOSITE_PREFIX + "LOAD_OF_CLASS" + POSTFIX;
     static {
         loadOfNodes(LOAD_OF_CLASS, "Load(B|UB|S|US|I|L|F|D|P|N)");
@@ -1401,6 +1406,11 @@ public class IRNode {
     public static final String STORE = PREFIX + "STORE" + POSTFIX;
     static {
         beforeMatchingNameRegex(STORE, "Store(B|C|S|I|L|F|D|P|N)");
+    }
+
+    public static final String STORE_PRIMITIVE = PREFIX + "STORE" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(STORE_PRIMITIVE, "Store(B|C|S|I|L|F|D)");
     }
 
     public static final String STORE_B = PREFIX + "STORE_B" + POSTFIX;
