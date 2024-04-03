@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -681,6 +681,7 @@ void DefNewGeneration::collect(bool   full,
 
   age_table()->clear();
   to()->clear(SpaceDecorator::Mangle);
+  set_to_saved_mark_word();
   // The preserved marks should be empty at the start of the GC.
   _preserved_marks_set.init(1);
 
@@ -744,7 +745,9 @@ void DefNewGeneration::collect(bool   full,
   if (!_promotion_failed) {
     // Swap the survivor spaces.
     eden()->clear(SpaceDecorator::Mangle);
+    set_eden_saved_mark_word();
     from()->clear(SpaceDecorator::Mangle);
+    set_from_saved_mark_word();
     if (ZapUnusedHeapArea) {
       // This is now done here because of the piece-meal mangling which
       // can check for valid mangling at intermediate points in the
@@ -901,16 +904,16 @@ void DefNewGeneration::drain_promo_failure_scan_stack() {
 }
 
 void DefNewGeneration::save_marks() {
-  eden()->set_saved_mark();
-  to()->set_saved_mark();
-  from()->set_saved_mark();
+  _eden_saved_mark_word = eden()->top();
+  _from_saved_mark_word = from()->top();
+  _to_saved_mark_word = to()->top();
 }
 
 
 bool DefNewGeneration::no_allocs_since_save_marks() {
-  assert(eden()->saved_mark_at_top(), "Violated spec - alloc in eden");
-  assert(from()->saved_mark_at_top(), "Violated spec - alloc in from");
-  return to()->saved_mark_at_top();
+  assert(eden_saved_mark_at_top(), "Violated spec - alloc in eden");
+  assert(from_saved_mark_at_top(), "Violated spec - alloc in from");
+  return to_saved_mark_at_top();
 }
 
 void DefNewGeneration::contribute_scratch(void*& scratch, size_t& num_words) {

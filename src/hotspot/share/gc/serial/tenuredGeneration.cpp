@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,7 +268,7 @@ HeapWord* TenuredGeneration::block_start(const void* p) const {
 }
 
 void TenuredGeneration::scan_old_to_young_refs() {
-  _rs->scan_old_to_young_refs(space());
+  _rs->scan_old_to_young_refs(space(), saved_mark_word());
 }
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
@@ -304,6 +304,7 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   HeapWord* bottom = (HeapWord*) _virtual_space.low();
   HeapWord* end    = (HeapWord*) _virtual_space.high();
   _the_space  = new TenuredSpace(_bts, MemRegion(bottom, end));
+  set_saved_mark_word();
   // If we don't shrink the heap in steps, '_shrink_factor' is always 100%.
   _shrink_factor = ShrinkHeapInSteps ? 0 : 100;
   _capacity_at_prologue = 0;
@@ -492,11 +493,11 @@ void TenuredGeneration::complete_loaded_archive_space(MemRegion archive_space) {
 }
 
 void TenuredGeneration::save_marks() {
-  _the_space->set_saved_mark();
+  set_saved_mark_word();
 }
 
 bool TenuredGeneration::no_allocs_since_save_marks() {
-  return _the_space->saved_mark_at_top();
+  return saved_mark_at_top();
 }
 
 void TenuredGeneration::gc_epilogue() {

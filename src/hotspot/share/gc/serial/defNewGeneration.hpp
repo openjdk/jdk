@@ -138,6 +138,10 @@ class DefNewGeneration: public Generation {
   ContiguousSpace* _eden_space;
   ContiguousSpace* _from_space;
   ContiguousSpace* _to_space;
+  // Saved mark word
+  HeapWord* _eden_saved_mark_word;
+  HeapWord* _from_saved_mark_word;
+  HeapWord* _to_saved_mark_word;
 
   STWGCTimer* _gc_timer;
 
@@ -167,6 +171,21 @@ class DefNewGeneration: public Generation {
   ContiguousSpace* eden() const           { return _eden_space; }
   ContiguousSpace* from() const           { return _from_space; }
   ContiguousSpace* to()   const           { return _to_space;   }
+
+  // Access saved mark word
+  HeapWord* eden_saved_mark_word() const    { return _eden_saved_mark_word; }
+  HeapWord* from_saved_mark_word() const    { return _from_saved_mark_word; }
+  HeapWord* to_saved_mark_word()   const    { return _to_saved_mark_word;   }
+
+  // Set saved mark word.
+  void set_eden_saved_mark_word()           { _eden_saved_mark_word = eden()->top(); }
+  void set_from_saved_mark_word()           { _from_saved_mark_word = from()->top(); }
+  void set_to_saved_mark_word()             { _to_saved_mark_word   = to()->top();   }
+
+  // Verify saved mark word
+  bool eden_saved_mark_at_top()             { return _eden_saved_mark_word == _eden_space->top(); }
+  bool from_saved_mark_at_top()             { return _from_saved_mark_word == _from_space->top(); }
+  bool to_saved_mark_at_top()               { return _to_saved_mark_word   == _to_space->top();   }
 
   // Space enquiries
   size_t capacity() const;
