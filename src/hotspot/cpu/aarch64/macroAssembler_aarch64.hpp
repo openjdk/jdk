@@ -1008,8 +1008,7 @@ public:
                                      Register temp3,
                                      Register temp4,
                                      FloatRegister vtemp,
-                                     Register result,
-                                     int hash_slot = -1);
+                                     Register result);
 
   void verify_klass_subtype_slow_path(Register sub_klass,
                                       Klass *super_klass,

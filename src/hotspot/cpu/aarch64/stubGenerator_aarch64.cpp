@@ -79,10 +79,6 @@
 
 // Stub Code definitions
 
-void poo() {
-  asm("nop");
-}
-
 class StubGenerator: public StubCodeGenerator {
  private:
 
@@ -6780,24 +6776,8 @@ class StubGenerator: public StubCodeGenerator {
   address generate_klass_subtype_fallback_stub() {
     StubCodeMark mark(this, "StubRoutines", "klass_subtype_fallback");
 
-    __ align(CodeEntryAlignment);
     address start = __ pc();
-    StubRoutines::_klass_subtype_fallback_stub = start;
     __ klass_subtype_fallback();
-    __ ret(lr);
-
-    if (! InlineSecondarySupersTest) {
-      for (int i = 0; i < Klass::SEC_HASH_ENTRIES; i++) {
-        __ align(CodeEntryAlignment);
-        StubRoutines::hashed_secondary_subklass_stubs[i] = __ pc();
-        __ enter();
-        // __ lea(lr, ExternalAddress(CAST_FROM_FN_PTR(address, poo)));
-        // __ blr(lr);
-        __ check_klass_subtype_slow_path(r4, nullptr, r2, r0, r1, r3, v0, r5, i);
-        __ leave();
-        __ ret(lr);
-      }
-    }
 
     return start;
   }

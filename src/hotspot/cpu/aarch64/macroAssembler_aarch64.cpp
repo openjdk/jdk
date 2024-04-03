@@ -1593,13 +1593,6 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   bind(L_fallthrough);
 }
 
-static void debug_helper(Klass* sub, Klass* super, bool expected, bool result, const char* msg) {
-  super->print();
-  sub->print();
-  printf("%s: sub %p implements %p, expected %d actual %d\n", msg,
-        sub, super, expected, result);
-}
-
 // Ensure that the inline code and the stub are using the same registers.
 #define CHECK_KLASS_SUBTYPE_SLOW_REGISTERS                              \
 do {                                                                    \
@@ -1608,15 +1601,21 @@ do {                                                                    \
          r_sub_klass == r4 && result == r5, "registers must match aarch64.ad"); \
 } while(0)
 
-void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,  // r4
+static void debug_helper(Klass* sub, Klass* super, bool expected, bool result, const char* msg) {
+  super->print();
+  sub->print();
+  printf("%s: sub %p implements %p, expected %d actual %d\n", msg,
+        sub, super, expected, result);
+}
+
+void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
                                                    Klass *super_klass,
-                                                   Register temp,         // r2
-                                                   Register temp2,        // r0
-                                                   Register temp3,        // r1
-                                                   Register temp4,        // r3
-                                                   FloatRegister vtemp,   // v0
-                                                   Register result,       // r5
-                                                   int hash_slot) {
+                                                   Register temp,
+                                                   Register temp2,
+                                                   Register temp3,
+                                                   Register temp4,
+                                                   FloatRegister vtemp,
+                                                   Register result) {
   assert_different_registers(r_sub_klass, temp, temp2, temp3, temp4, rscratch1, rscratch2);
 
   Label L_fallthrough, L_success, L_failure;
@@ -1638,23 +1637,22 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,  // r4
 
   CHECK_KLASS_SUBTYPE_SLOW_REGISTERS;
 
-  u1 slot = hash_slot < 0 ? super_klass->hash_slot(): hash_slot;
-
   // We're going to need the bitmap in a vector reg and in a core reg,
   // so load both now.
   ldr(r_bitmap, Address(r_sub_klass, Klass::bitmap_offset()));
-  if (slot != 0) {
+  if (super_klass->hash() != 0) {
     ldrd(vtemp, Address(r_sub_klass, Klass::bitmap_offset()));
   }
 
   // First check the bitmap to see if super_klass might be present. If
   // the bit is zero, we are certain that super_klass is not one of
   // the secondary supers.
-  tbz(r_bitmap, slot, L_failure);
+  u1 bit = super_klass->hash_slot();
+  tbz(r_bitmap, bit, L_failure);
 
   // Get the first array index that can contain super_klass into r_array_index.
-  if (slot != 0) {
-    shld(vtemp, vtemp, Klass::SEC_HASH_MASK - slot);
+  if (bit != 0) {
+    shld(vtemp, vtemp, Klass::SEC_HASH_MASK - bit);
     cnt(vtemp, T8B, vtemp);
     addv(vtemp, T8B, vtemp);
     fmovd(r_array_index, vtemp);
@@ -1662,9 +1660,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,  // r4
     mov(r_array_index, (u1)1);
   }
 
-  if (hash_slot < 0) {
-    mov_metadata(r_super_klass, super_klass);
-  }
+  mov_metadata(r_super_klass, super_klass);
 
   // We will consult the secondary-super array.
   ldr(r_array_base, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
@@ -1680,17 +1676,21 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,  // r4
   cbz(result, L_fallthrough); // Found a match
 
   // Is there another entry to check? Consult the bitmap.
-  tbz(r_bitmap, (slot + 1) & Klass::SEC_HASH_MASK, L_failure);
+  tbz(r_bitmap, (bit+1) & Klass::SEC_HASH_MASK, L_failure);
 
   // Linear probe.
-  if (slot != 0) {
-    ror(r_bitmap, r_bitmap, slot);
+  if (bit != 0) {
+    ror(r_bitmap, r_bitmap, bit);
   }
-  far_call(RuntimeAddress(StubRoutines::_klass_subtype_fallback_stub));
-  b(L_fallthrough);
+  adr(result, L_success);
+  trampoline_call(RuntimeAddress(StubRoutines::_klass_subtype_fallback_stub));
 
   bind(L_failure);
   mov(result, (u1)1);
+  b(L_fallthrough);
+
+  bind(L_success);
+  mov(result, (u1)0);
 
   BLOCK_COMMENT("} hashed check_klass_subtype_slow_path");
 
@@ -1721,15 +1721,13 @@ void MacroAssembler::klass_subtype_fallback() {
   add(r_array_base, r_array_base, Array<Klass*>::base_offset_in_bytes());
 
   // Linear probe
-  Label LOOPY, L_failure, L_fallthrough, huge;
+  Label LOOPY, L_failure, L_success, huge;
 
   // The bitmap is full to bursting: >= 64 entries.
   cmn(bitmap, (u1)1);
   br(EQ, huge);
 
   {
-    Label LOOPY;
-
     // This is conventional linear probing, but instead of terminating
     // when a null entry is found in the table, we maintain a bitmap
     // in which a 0 indicates missing entries.
@@ -1739,11 +1737,10 @@ void MacroAssembler::klass_subtype_fallback() {
     csel(r_array_index, zr, r_array_index, GE);
 
     ldr(rscratch1, Address(r_array_base, r_array_index, Address::lsl(LogBytesPerWord)));
-    eor(result, rscratch1, r_super_klass);
-    cbz(result, L_fallthrough);
+    cmp(rscratch1, r_super_klass);
+    br(EQ, L_success);
 
-    // We just tested Bit 1, so now test Bit 2
-    tbz(bitmap, 2, L_failure); // End of run
+    tbz(bitmap, 1, L_failure); // End of run
 
     ror(bitmap, bitmap, 1);
     add(r_array_index, r_array_index, 1);
@@ -1751,8 +1748,7 @@ void MacroAssembler::klass_subtype_fallback() {
   }
 
   bind(L_failure);
-  mov(result, 1);
-  b(L_fallthrough);
+  ret(lr);
 
   // Degenerate case: more than 64 secondary supers
   bind(huge);
@@ -1764,15 +1760,17 @@ void MacroAssembler::klass_subtype_fallback() {
     Label again;
     bind(again);
     ldr(rscratch1, Address(r_array_base, r_array_index, Address::lsl(LogBytesPerWord)));
-    eor(result, rscratch1, r_super_klass);
-    cbz(result, L_fallthrough);
+    cmp(rscratch1, r_super_klass);
+    br(EQ, L_success);
     add(r_array_index, r_array_index, 1);
     cmp(r_array_index, r_array_length);
     br(LT, again);
-    // Fallthrough with non-zero result.
+
+    ret(lr); // We failed
   }
 
-  bind(L_fallthrough);
+  bind(L_success);
+  br(result);
 }
 
 // Make sure that the hashed lookup and a linear scan agree.
@@ -1798,10 +1796,6 @@ void MacroAssembler::verify_klass_subtype_slow_path(Register r_sub_klass,
     auto pushed_regs = RegSet::of(result, r_super_klass, r0, r2);
     push(pushed_regs, sp);
 
-    if (super_klass != nullptr) {
-      mov_metadata(r_super_klass, super_klass);
-    }
-
     // We will consult the secondary-super array.
     ldr(r_array_base, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
 
@@ -1809,6 +1803,8 @@ void MacroAssembler::verify_klass_subtype_slow_path(Register r_sub_klass,
     ldrw(r_array_length, Address(r_array_base, Array<Klass*>::length_offset_in_bytes()));
     // And adjust the array base to point to the data.
     add(r_array_base, r_array_base, Array<Klass*>::base_offset_in_bytes());
+
+    mov_metadata(r_super_klass, super_klass);
 
     cmp(sp, zr); // Clear Z flag; SP is never zero
     // Scan R2 words at [R5] for an occurrence of R0.
@@ -1825,8 +1821,8 @@ void MacroAssembler::verify_klass_subtype_slow_path(Register r_sub_klass,
       br(EQ, passed);
       mov(r7, /*expected*/rscratch1);
       push_call_clobbered_registers();
-      mov(r1, r_super_klass);
       mov(r0, r_sub_klass /*r4*/);
+      mov_metadata(r1, super_klass);
       mov(r2, /*expected*/r7);
       mov(r3, result);
       mov(r4, (address)("mismatch"));
