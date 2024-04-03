@@ -789,6 +789,9 @@
                                                                             \
   develop(bool, StressPrunedExceptionHandlers, false,                       \
           "Always prune exception handlers")                                \
+                                                                            \
+  product(bool, InlineSecondarySupersTest, false, DIAGNOSTIC,               \
+          "Inline the secondary supers hash lookup.")                       \
 
 // end of C2_FLAGS
 

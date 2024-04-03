@@ -1998,18 +1998,14 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseSecondarySuperCache, true, DIAGNOSTIC,                   \
                 "Use secondary supers cache during subtype checks.")        \
                                                                             \
-  product(bool, HashSecondarySupers,  false, DIAGNOSTIC,                    \
+  product(bool, UseSecondarySupersTable, false, DIAGNOSTIC,                 \
                 "Use hash table to lookup secondary supers.")               \
                                                                             \
   product(bool, VerifySecondarySupers, false, DIAGNOSTIC,                   \
           "Check that linear and hashed secondary lookups return the same result.") \
                                                                             \
-  product(bool, StressSecondarySuperHash, false, DIAGNOSTIC,                \
+  product(bool, StressSecondarySupers, false, DIAGNOSTIC,                   \
           "Use a terrible hash function in order to generate many collisions.") \
-                                                                            \
-  product(bool, InlineSecondarySupersTest, false,                           \
-          "Inline the secondary supers hash lookup.")                       \
-                                                                            \
 
 // end of RUNTIME_FLAGS
 

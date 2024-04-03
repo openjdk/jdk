@@ -448,10 +448,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UsePopCountInstruction, true);
   }
 
-  if (FLAG_IS_DEFAULT(HashSecondarySupers)) {
-    HashSecondarySupers = true;
-  }
-
   if (!UsePopCountInstruction) {
     warning("UsePopCountInstruction is always enabled on this CPU");
     UsePopCountInstruction = true;

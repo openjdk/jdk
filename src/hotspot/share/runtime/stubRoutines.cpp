@@ -74,8 +74,6 @@ address StubRoutines::_atomic_cmpxchg_long_entry                = nullptr;
 address StubRoutines::_atomic_add_entry                         = nullptr;
 address StubRoutines::_fence_entry                              = nullptr;
 
-address StubRoutines::hashed_secondary_subklass_stubs[Klass::SEC_HASH_ENTRIES];
-
 // Compiled code entry points default values
 // The default functions don't have separate disjoint versions.
 address StubRoutines::_jbyte_arraycopy          = CAST_FROM_FN_PTR(address, StubRoutines::jbyte_copy);
@@ -193,7 +191,10 @@ JFR_ONLY(RuntimeStub* StubRoutines::_jfr_return_lease_stub = nullptr;)
 JFR_ONLY(address StubRoutines::_jfr_return_lease = nullptr;)
 
 address StubRoutines::_upcall_stub_exception_handler = nullptr;
-address StubRoutines::_klass_subtype_fallback_stub = nullptr;
+
+address StubRoutines::_lookup_secondary_supers_table_slow_path_stub = nullptr;
+address StubRoutines::_lookup_secondary_supers_table_stubs[Klass::SECONDARY_SUPERS_TABLE_SIZE] = { nullptr };
+
 
 // Initialization
 //

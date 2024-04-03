@@ -6772,12 +6772,27 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Used by HashSecondarySupers.
-  address generate_klass_subtype_fallback_stub() {
-    StubCodeMark mark(this, "StubRoutines", "klass_subtype_fallback");
+  // Slow path implementation for UseSecondarySupersTable.
+  address generate_lookup_secondary_supers_table_slow_path_stub() {
+    StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table_slow_path");
 
     address start = __ pc();
-    __ klass_subtype_fallback();
+
+    const Register
+        r_super_klass  = r0,        // argument
+        r_array_base   = r1,        // argument
+        temp1          = r2,        // temp
+        r_array_index  = r3,        // argument
+        r_bitmap       = rscratch2, // argument
+        result         = r5;        // argument
+
+    Label L_success;
+    __ lookup_secondary_supers_table_slow_path(r_super_klass, r_array_base, r_array_index, r_bitmap, temp1, &L_success);
+    // bind(L_failure);
+    __ ret(lr);
+
+    __ bind(L_success);
+    __ br(result);
 
     return start;
   }
@@ -8432,7 +8447,9 @@ class StubGenerator: public StubCodeGenerator {
 
 #endif // LINUX
 
-    StubRoutines::_klass_subtype_fallback_stub = generate_klass_subtype_fallback_stub();
+    if (UseSecondarySupersTable) {
+      StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
+    }
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
 

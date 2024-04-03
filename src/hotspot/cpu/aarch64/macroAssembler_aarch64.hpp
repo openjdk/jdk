@@ -1001,26 +1001,28 @@ public:
 
   // As above, but with a constant super_klass.
   // The result is in Register result, not the condition codes.
-  void check_klass_subtype_slow_path(Register sub_klass,
-                                     Klass *super_klass,
+  void lookup_secondary_supers_table(Register r_sub_klass,
+                                     Register r_super_klass,
                                      Register temp1,
                                      Register temp2,
                                      Register temp3,
-                                     Register temp4,
                                      FloatRegister vtemp,
+                                     Register result,
+                                     u1 super_klass_slot);
+
+  void verify_secondary_supers_table(Register r_sub_klass,
+                                     Register r_super_klass,
+                                     Register temp1,
+                                     Register temp2,
                                      Register result);
 
-  void verify_klass_subtype_slow_path(Register sub_klass,
-                                      Klass *super_klass,
-                                      Register r_super_klass,
-                                      Register temp1,
-                                      Register temp2,
-                                      Register temp3,
-                                      Register temp4,
-                                      FloatRegister vtemp,
-                                      Register result);
-
-  void klass_subtype_fallback();
+  void lookup_secondary_supers_table_slow_path(Register r_super_klass,
+                                               Register r_array_base,
+                                               Register r_array_index,
+                                               Register r_bitmap,
+                                               Register temp1,
+                                               Label* L_success = nullptr,
+                                               Label* L_failure = nullptr);
 
   // Simplified, combined version, good for typical uses.
   // Falls through on failure.

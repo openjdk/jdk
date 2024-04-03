@@ -4729,44 +4729,40 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 #ifdef _LP64
 
 // Ensure that the inline code and the stub are using the same registers.
-#define CHECK_KLASS_SUBTYPE_SLOW_REGISTERS                              \
-do {                                                                    \
-  assert(r_super_klass == rax && r_array_base == rbx &&                 \
-         r_array_length == rcx && r_array_index == rdx &&               \
-         r_sub_klass == rsi && r_bitmap == r11 && result == rdi,        \
-         "registers must match aarch64.ad");                            \
+#define LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS                      \
+do {                                                                 \
+  assert(r_super_klass  == rax, "mismatch");                         \
+  assert(r_array_base   == rbx, "mismatch");                         \
+  assert(r_array_length == rcx, "mismatch");                         \
+  assert(r_array_index  == rdx, "mismatch");                         \
+  assert(r_sub_klass    == rsi || r_sub_klass == noreg, "mismatch"); \
+  assert(r_bitmap       == r11 || r_bitmap    == noreg, "mismatch"); \
+  assert(result         == rdi || result      == noreg, "mismatch"); \
 } while(0)
 
-void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
-                                                   Klass *super_klass,
+void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
+                                                   Register r_super_klass,
                                                    Register temp1,
                                                    Register temp2,
                                                    Register temp3,
                                                    Register temp4,
-                                                   Register temp5,
                                                    Register result,
-                                                   int hash_slot) {
-  assert_different_registers(r_sub_klass, temp1, temp2, temp3, temp4, temp5,
-                             result);
+                                                   u1 super_klass_slot) {
+  assert_different_registers(r_sub_klass, r_super_klass, temp1, temp2, temp3, temp4, result);
 
   Label L_fallthrough, L_success, L_failure;
 
-  // a couple of useful fields in r_sub_klass:
-  int ss_offset = in_bytes(Klass::secondary_supers_offset());
-  int sc_offset = in_bytes(Klass::secondary_super_cache_offset());
-  Address secondary_supers_addr(r_sub_klass, ss_offset);
-  Address super_cache_addr(     r_sub_klass, sc_offset);
-
-  BLOCK_COMMENT("Hashed check_klass_subtype_slow_path {");
+  BLOCK_COMMENT("lookup_secondary_supers_table {");
 
   const Register
-    r_array_index = temp1,  // rdx
-    r_array_length = temp2, // rcx
-    r_array_base = temp3,   // rbx
-    r_super_klass = temp4,  // rax
-    r_bitmap = temp5;       // r11
+    r_array_index  = temp1,
+    r_array_length = temp2,
+    r_array_base   = temp3,
+    r_bitmap       = temp4;
 
-  CHECK_KLASS_SUBTYPE_SLOW_REGISTERS;
+  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
+
+  xorq(result, result); // = 0
 
   movq(r_bitmap, Address(r_sub_klass, Klass::bitmap_offset()));
   movq(r_array_index, r_bitmap);
@@ -4774,11 +4770,11 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   // First check the bitmap to see if super_klass might be present. If
   // the bit is zero, we are certain that super_klass is not one of
   // the secondary supers.
-  u1 bit = hash_slot < 0 ? super_klass->hash_slot(): hash_slot;
+  u1 bit = super_klass_slot;
   {
     // NB: If the count in a x86 shift instruction is 0, the flags are
     // not affected, so we do a testq instead.
-    int shift_count = Klass::SEC_HASH_MASK - bit;
+    int shift_count = Klass::SECONDARY_SUPERS_TABLE_MASK - bit;
     if (shift_count != 0) {
       salq(r_array_index, shift_count);
     } else {
@@ -4792,12 +4788,9 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   if (bit != 0) {
     popcntq(r_array_index, r_array_index);
   } else {
-    movl(r_array_index, (u1)1);
+    movl(r_array_index, 1);
   }
-
-  if (hash_slot < 0) {
-    mov_metadata(r_super_klass, super_klass);
-  }
+  // NB! r_array_index is off by 1. It is compensated by keeping r_array_base off by 1 word.
 
   // We will consult the secondary-super array.
   movptr(r_array_base, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
@@ -4809,11 +4802,11 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   assert(Array<Klass*>::length_offset_in_bytes() == 0, "Adjust this code");
 
   cmpq(r_super_klass, Address(r_array_base, r_array_index, Address::times_8));
-  jcc(Assembler::equal, L_success);
+  jccb(Assembler::equal, L_success);
 
   // Is there another entry to check? Consult the bitmap.
-  btq(r_bitmap, (bit+1) & Klass::SEC_HASH_MASK);
-  jcc(Assembler::carryClear, L_failure);
+  btq(r_bitmap, (bit + 1) & Klass::SECONDARY_SUPERS_TABLE_MASK);
+  jccb(Assembler::carryClear, L_failure);
 
   // Linear probe. Rotate the bitmap so that the next bit to test is
   // in Bit 1.
@@ -4821,40 +4814,76 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
     rorq(r_bitmap, bit);
   }
 
-  call(RuntimeAddress(StubRoutines::_klass_subtype_fallback_stub));
-  // Result is in the Z flag
-  jcc(Assembler::equal, L_success);
+  // Calls into the stub generated by lookup_secondary_supers_table_slow_path.
+  // Arguments: r_super_klass, r_array_base, r_array_index, r_bitmap.
+  // Kills: r_array_length.
+  // Returns: result.
+  call(RuntimeAddress(StubRoutines::lookup_secondary_supers_table_slow_path_stub()));
+  // Result (0/1) is in rdi
+  jmpb(L_fallthrough);
 
   bind(L_failure);
-  cmpptr(rsp, 0);
-  movl(result, (u1)1);
-  jmp(L_fallthrough);
+  incq(result); // 0 => 1
 
   bind(L_success);
-  movl(result, (u1)0);
-
-  BLOCK_COMMENT("} hashed check_klass_subtype_slow_path");
+  // result = 0;
 
   bind(L_fallthrough);
+  BLOCK_COMMENT("} lookup_secondary_supers_table");
 
-  verify_klass_subtype_slow_path(r_sub_klass, super_klass, r_super_klass,
-                                 temp1, temp2, temp3, temp4, temp5, result);
+  if (VerifySecondarySupers) {
+    verify_secondary_supers_table(r_sub_klass, r_super_klass, result,
+                                  temp1, temp2, temp3);
+  }
+}
+
+void MacroAssembler::repne_scanq(Register addr, Register value, Register count, Register limit,
+                                 Label* L_success, Label* L_failure) {
+  Label L_loop, L_fallthrough;
+  {
+    int label_nulls = 0;
+    if (L_success == nullptr) { L_success = &L_fallthrough; label_nulls++; }
+    if (L_failure == nullptr) { L_failure = &L_fallthrough; label_nulls++; }
+    assert(label_nulls <= 1, "at most one null in the batch");
+  }
+  bind(L_loop);
+  cmpq(value, Address(addr, count, Address::times_8));
+  jcc(Assembler::equal, *L_success);
+  addl(count, 1);
+  cmpl(count, limit);
+  jcc(Assembler::less, L_loop);
+
+  if (&L_fallthrough != L_failure) {
+    jmp(*L_failure);
+  }
+  bind(L_fallthrough);
 }
 
 // Called by code generated by check_klass_subtype_slow_path
 // above. This is called when there is a collision in the hashed
 // lookup in the secondary supers array.
-void MacroAssembler::klass_subtype_fallback() {
-  const Register
-    r_super_klass = rax,
-    r_array_base = rbx,
-    r_array_length = rcx,
-    r_array_index = rdx,
-    r_sub_klass = rsi,
-    result = rdi,
-    r_bitmap = r11;
+void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_klass,
+                                                             Register r_array_base,
+                                                             Register r_array_index,
+                                                             Register r_bitmap,
+                                                             Register temp1,
+                                                             Register temp2,
+                                                             Label* L_success,
+                                                             Label* L_failure) {
+  assert_different_registers(r_super_klass, r_array_base, r_array_index, r_bitmap, temp1, temp2);
 
-  CHECK_KLASS_SUBTYPE_SLOW_REGISTERS;
+  const Register
+    r_array_length = temp1,
+    r_sub_klass    = noreg,
+    result         = noreg;
+
+  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
+
+  Label L_fallthrough;
+  int label_nulls = 0;
+  if (L_success == nullptr)   { L_success   = &L_fallthrough; label_nulls++; }
+  if (L_failure == nullptr)   { L_failure   = &L_fallthrough; label_nulls++; }
+  assert(label_nulls <= 1, "at most one null in the batch");
 
   // Load the array length.
   movl(r_array_length, Address(r_array_base, Array<Klass*>::length_offset_in_bytes()));
@@ -4862,156 +4891,131 @@ void MacroAssembler::klass_subtype_fallback() {
   addptr(r_array_base, Array<Klass*>::base_offset_in_bytes());
 
   // Linear probe
-  Label L_failure, L_success, huge;
+  Label L_huge;
 
   // The bitmap is full to bursting: >= 64 entries.
-  cmpq(r_bitmap, ~0);
-  jcc(Assembler::equal, huge);
+  // Implicit invariant: BITMAP_FULL => length > 0
+  assert(Klass::SECONDARY_SUPERS_BITMAP_FULL == ~uintx(0), "");
+  cmpq(r_bitmap, (int32_t)-1); // sign-extends immediate to 64-bit value
+  jcc(Assembler::equal, L_huge);
 
-  {
-    // This is conventional linear probing, but instead of terminating
+  { // This is conventional linear probing, but instead of terminating
     // when a null entry is found in the table, we maintain a bitmap
     // in which a 0 indicates missing entries.
-    movl(result, 0);
+    // The check above guarantees there are 0s in the bitmap, so the loop
+    // eventually terminates.
 
-    Label again;
-    bind(again);
+    xorl(temp2, temp2); // = 0;
+
+    Label L_again;
+    bind(L_again);
 
     // Check for array wraparound.
     cmpl(r_array_index, r_array_length);
-    cmovl(Assembler::greaterEqual, r_array_index, result);
+    cmovl(Assembler::greaterEqual, r_array_index, temp2);
 
     cmpq(r_super_klass, Address(r_array_base, r_array_index, Address::times_8));
-    jcc(Assembler::equal, L_success);
+    jcc(Assembler::equal, *L_success);
 
     // If the next bit in bitmap is zero, we're done.
-    // We just tested Bit 1, so now test Bit 2
-    btq(r_bitmap, 2);
-    jcc(Assembler::carryClear, L_failure);
+    btq(r_bitmap, 1); // We just tested Bit 1, so now test Bit 2
+    jcc(Assembler::carryClear, *L_failure);
 
     rorq(r_bitmap, 1);
     addl(r_array_index, 1);
 
-    jmp(again);
+    jmp(L_again);
   }
 
   // Degenerate case: more than 64 secondary supers
-  bind(huge);
-  movl(r_array_index, 0);
-  {
-    // FIXME: We could do something smarter here, maybe a vectorized
-    // comparison or a binary search, but is that worth any added
-    // complexity?
-    Label again;
-    bind(again);
-    cmpq(r_super_klass, Address(r_array_base, r_array_index, Address::times_8));
-    jcc(Assembler::equal, L_success);
-    addl(r_array_index, 1);
-    cmpl(r_array_index, r_array_length);
-    jcc(Assembler::less, again);
-  }
+  // FIXME: We could do something smarter here, maybe a vectorized
+  // comparison or a binary search, but is that worth any added
+  // complexity?
+  bind(L_huge);
+  xorl(r_array_index, r_array_index); // = 0
+  repne_scanq(r_array_base, r_super_klass, r_array_index, r_array_length,
+              L_success,
+              (&L_fallthrough != L_failure ? L_failure : nullptr));
 
-  bind(L_failure);
-  cmpptr(rsp, 0);
-
-  bind(L_success);
-  ret(0);
+  bind(L_fallthrough);
 }
 
-#ifdef ASSERT
-static void debug_helper(Klass* sub, Klass* super, bool expected, bool result, const char* msg) {
-  super->print();
-  sub->print();
-  printf("%s: sub %p implements %p, expected %d actual %d\n", msg,
-        sub, super, expected, result);
+struct VerifyHelperArguments {
+  Klass* _super;
+  Klass* _sub;
+  intptr_t _linear_result;
+  intptr_t _table_result;
+};
+
+static void verify_secondary_supers_table_helper(const char* msg, VerifyHelperArguments* args) {
+  Klass::on_secondary_supers_verification_failure(args->_super,
+                                                  args->_sub,
+                                                  args->_linear_result,
+                                                  args->_table_result,
+                                                  msg);
 }
-#endif
 
 // Make sure that the hashed lookup and a linear scan agree.
-void MacroAssembler::verify_klass_subtype_slow_path(Register r_sub_klass,
-                                                    Klass *super_klass,
-                                                    Register r_super_klass,
-                                                    Register temp,
-                                                    Register temp2,
-                                                    Register temp3,
-                                                    Register temp4,
-                                                    Register temp5,
-                                                    Register result) {
-  if (VerifySecondarySupers) {
+void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
+                                                   Register r_super_klass,
+                                                   Register result,
+                                                   Register temp1,
+                                                   Register temp2,
+                                                   Register temp3) {
+  const Register
+      r_array_index  = temp1,
+      r_array_length = temp2,
+      r_array_base   = temp3,
+      r_bitmap       = noreg;
 
-    push(rax);
-    push(rax);
-    push(rcx);
-    push(rdi);
+  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
 
-    // We will consult the secondary-super array.
-    movptr(rdi, Address(r_sub_klass, Klass::secondary_supers_offset()));
-    // Load the array length.  (Positive movl does right thing on LP64.)
-    movl(rcx, Address(rdi, Array<Klass*>::length_offset_in_bytes()));
-    // Skip to start of data.
-    addptr(rdi, Array<Klass*>::base_offset_in_bytes());
+  BLOCK_COMMENT("verify_secondary_supers_table {");
 
-    mov_metadata(rax, super_klass);
+  Label L_success, L_failure, L_check, L_done;
 
-    // Scan RCX words at [RDI] for an occurrence of RAX.
-    // Set NZ/Z based on last compare.
-    // Z flag value will not be set by 'repne' if RCX == 0 since 'repne' does
-    // not change flags (only scas instruction which is repeated sets flags).
-    // Set Z = 0 (not equal) before 'repne' to indicate that class was not found.
-    testptr(rax,rax); // Set Z = 0
-    repne_scan();
+  movptr(r_array_base, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
+  movl(r_array_length, Address(r_array_base, Array<Klass*>::length_offset_in_bytes()));
+  // And adjust the array base to point to the data.
+  addptr(r_array_base, Array<Klass*>::base_offset_in_bytes());
 
-    pop(rdi);
-    pop(rcx);
-    pop(rax);
-    pop(rax);
+  testl(r_array_length, r_array_length); // array_length == 0?
+  jcc(Assembler::zero, L_failure);
 
-    Label hit, fail, done;
+  movl(r_array_index, 0);
+  repne_scanq(r_array_base, r_super_klass, r_array_index, r_array_length, &L_success);
+  // fall through to L_failure
 
-    jcc(Assembler::equal, hit);
+  const Register linear_result = r_array_index; // reuse temp1
 
-    // Not present
-    cmpl(result, 0);
-    jcc(Assembler::notEqual, done);  // Agree.
+  bind(L_failure); // not present
+  movl(linear_result, 1);
+  jmp(L_check);
 
-#ifdef ASSERT
-    push(r_sub_klass);
+  bind(L_success); // present
+  movl(linear_result, 0);
+
+  bind(L_check);
+  cmpl(linear_result, result);
+  jcc(Assembler::equal, L_done);
+
+  { // To avoid calling convention issues, build a record on the stack
+    // and pass the pointer to that instead.
     push(result);
-
-    movptr(c_rarg4, (uintptr_t)"VerifySecondarySupers 1 failed");
-    pop(c_rarg3); // result
-    movptr(c_rarg2, 0);  // expected;
-    mov_metadata(c_rarg1, super_klass);
-    pop(c_rarg0);  // r_sub_klass
-
-    call(RuntimeAddress(CAST_FROM_FN_PTR(address, debug_helper)));
-#endif
-
-    STOP("VerifySecondarySupers 1 failed");
-
-    // Present
-    bind(hit);
-    cmpl(result, 0);
-    jcc(Assembler::equal, done); // Agree.
-
-#ifdef ASSERT
+    push(linear_result);
     push(r_sub_klass);
-    push(result);
-
-    movptr(c_rarg4, (uintptr_t)"VerifySecondarySupers 2 failed");
-    pop(c_rarg3); // result
-    movptr(c_rarg2, 0);  // expected;
-    mov_metadata(c_rarg1, super_klass);
-    pop(c_rarg0);  // r_sub_klass
-
-    call(RuntimeAddress(CAST_FROM_FN_PTR(address, debug_helper)));
-#endif
-
-    STOP("VerifySecondarySupers 2 failed");
-
-    bind(done);
+    push(r_super_klass);
+    movptr(c_rarg1, rsp);
+    movptr(c_rarg0, (uintptr_t) "mismatch");
+    call(RuntimeAddress(CAST_FROM_FN_PTR(address, verify_secondary_supers_table_helper)));
+    should_not_reach_here();
   }
+  bind(L_done);
+
+  BLOCK_COMMENT("} verify_secondary_supers_table");
 }
+
+#undef LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS
 
 #endif // LP64
 

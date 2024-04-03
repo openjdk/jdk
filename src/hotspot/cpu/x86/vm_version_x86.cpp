@@ -1773,28 +1773,18 @@ void VM_Version::get_processor_features() {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
       UsePopCountInstruction = true;
     }
-#ifdef _LP64
-    if (FLAG_IS_DEFAULT(HashSecondarySupers)) {
-      HashSecondarySupers = true;
-    }
-#endif // LP64
   } else {
     if (UsePopCountInstruction) {
       warning("POPCNT instruction is not available on this CPU");
       FLAG_SET_DEFAULT(UsePopCountInstruction, false);
     }
-    if (HashSecondarySupers) {
-      warning("HashSecondarySupers is not available on this CPU");
-      FLAG_SET_DEFAULT(HashSecondarySupers, false);
+    if (UseSecondarySupersTable) {
+      if (!FLAG_IS_DEFAULT(UseSecondarySupersTable)) {
+        warning("UseSecondarySupersTable is not supported on this CPU");
+      }
+      FLAG_SET_DEFAULT(UseSecondarySupersTable, false);
     }
   }
-
-#ifndef _LP64
-  if (HashSecondarySupers) {
-    warning("HashSecondarySupers is not available on this CPU");
-    FLAG_SET_DEFAULT(HashSecondarySupers, false);
-  }
-#endif // ! LP64
 
   // Use fast-string operations if available.
   if (supports_erms()) {

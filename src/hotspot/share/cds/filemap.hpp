@@ -192,6 +192,7 @@ private:
   CompressedOops::Mode _narrow_oop_mode;          // compressed oop encoding mode
   bool    _compressed_oops;                       // save the flag UseCompressedOops
   bool    _compressed_class_ptrs;                 // save the flag UseCompressedClassPointers
+  bool    _use_secondary_supers_table;            // save the flag UseSecondarySupersTable
   size_t  _cloned_vtables_offset;                 // The address of the first cloned vtable
   size_t  _serialized_data_offset;                // Data accessed using {ReadClosure,WriteClosure}::serialize()
   bool _has_non_jar_in_classpath;                 // non-jar file entry exists in classpath
@@ -270,6 +271,7 @@ public:
   size_t ptrmap_size_in_bits()             const { return _ptrmap_size_in_bits; }
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
+  bool use_secondary_supers_table()        const { return _use_secondary_supers_table; }
   size_t heap_roots_offset()               const { return _heap_roots_offset; }
   size_t heap_oopmap_start_pos()           const { return _heap_oopmap_start_pos;}
   size_t heap_ptrmap_start_pos()           const { return _heap_ptrmap_start_pos;}

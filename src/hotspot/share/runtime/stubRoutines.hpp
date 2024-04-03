@@ -273,7 +273,9 @@ class StubRoutines: AllStatic {
   static address _vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
 
   static address _upcall_stub_exception_handler;
-  static address _klass_subtype_fallback_stub;
+
+  static address _lookup_secondary_supers_table_stubs[];
+  static address _lookup_secondary_supers_table_slow_path_stub;
 
  public:
   // Initialization/Testing
@@ -480,6 +482,17 @@ class StubRoutines: AllStatic {
     return _upcall_stub_exception_handler;
   }
 
+  static address lookup_secondary_supers_table_stub(u1 slot) {
+    assert(slot < Klass::SECONDARY_SUPERS_TABLE_SIZE, "out of bounds");
+    assert(_lookup_secondary_supers_table_stubs[slot] != nullptr, "not implemented");
+    return _lookup_secondary_supers_table_stubs[slot];
+  }
+
+  static address lookup_secondary_supers_table_slow_path_stub() {
+    assert(_lookup_secondary_supers_table_slow_path_stub != nullptr, "not implemented");
+    return _lookup_secondary_supers_table_slow_path_stub;
+  }
+
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
 
   //
@@ -499,8 +512,6 @@ class StubRoutines: AllStatic {
   static void arrayof_jlong_copy     (HeapWord* src, HeapWord* dest, size_t count);
   static void arrayof_oop_copy       (HeapWord* src, HeapWord* dest, size_t count);
   static void arrayof_oop_copy_uninit(HeapWord* src, HeapWord* dest, size_t count);
-
-  static address hashed_secondary_subklass_stubs[];
 };
 
 #endif // SHARE_RUNTIME_STUBROUTINES_HPP
