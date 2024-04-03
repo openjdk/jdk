@@ -5043,7 +5043,6 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void generate_updateBytesAdler32_accum(const Register acc1, const Register acc2, const Register data, const Register temp) {
-    assert_different_registers(data, temp, acc1, acc2);
 
     __ andi(temp, data, right_8_bits);
     __ add(acc1, acc1, temp);
@@ -5177,7 +5176,7 @@ const static uint64_t right_8_bits = right_n_bits(8);
 
     __ ld(temp0, Address(buff, 0));
     generate_updateBytesAdler32_accum(s1, s2, temp0, temp1);
-    __ ld(temp1, Address(buff, sizeof(jlong)));
+    __ ld(temp0, Address(buff, sizeof(jlong)));
     generate_updateBytesAdler32_accum(s1, s2, temp0, temp1);
 
     __ addi(buff, buff, 16);
@@ -5201,9 +5200,10 @@ const static uint64_t right_8_bits = right_n_bits(8);
 
     __ ld(temp0, Address(buff, 0));
     generate_updateBytesAdler32_accum(s1, s2, temp0, temp1);
-    __ ld(temp1, Address(buff, sizeof(jlong)));
+    __ ld(temp0, Address(buff, sizeof(jlong)));
     generate_updateBytesAdler32_accum(s1, s2, temp0, temp1);
 
+    __ addi(buff, buff, 16);
     __ sub(len, len, 16);
     __ bgez(len, L_by16_loop);
 
