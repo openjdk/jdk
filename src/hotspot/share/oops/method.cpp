@@ -2197,7 +2197,7 @@ jmethodID Method::make_jmethod_id(ClassLoaderData* cld, Method* m) {
   assert(JmethodIdCreation_lock->owned_by_self(), "sanity check");
 
   ResourceMark rm;
-  log_info(jmethod)("Creating jmethodID for Method %s", m->external_name());
+  log_debug(jmethod)("Creating jmethodID for Method %s", m->external_name());
   if (cld->jmethod_ids() == nullptr) {
     cld->set_jmethod_ids(new JNIMethodBlock());
   }

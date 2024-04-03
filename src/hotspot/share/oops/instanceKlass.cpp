@@ -2269,12 +2269,12 @@ void InstanceKlass::set_enclosing_method_indices(u2 class_index,
 
 jmethodID InstanceKlass::update_jmethod_id(jmethodID* jmeths, Method* method, int idnum) {
   if (method->is_old() && !method->is_obsolete()) {
-    // If the method passed in is old (but not obsolete), use the current version
+    // If the method passed in is old (but not obsolete), use the current version.
     method = method_with_idnum((int)idnum);
     assert(method != nullptr, "old and but not obsolete, so should exist");
   }
   jmethodID new_id = Method::make_jmethod_id(class_loader_data(), method);
-  Atomic::release_store(&jmeths[idnum+1], new_id);
+  Atomic::release_store(&jmeths[idnum + 1], new_id);
   return new_id;
 }
 
@@ -2311,7 +2311,7 @@ jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
       size_t size = idnum_allocated_count();
       assert(size > (size_t)idnum, "should already have space");
       jmeths = NEW_C_HEAP_ARRAY(jmethodID, size+1, mtClass);
-      memset(jmeths, 0, (size+1)*sizeof(jmethodID));
+      memset(jmeths, 0, (size + 1) * sizeof(jmethodID));
       // cache size is stored in element[0], other elements offset by one
       jmeths[0] = (jmethodID)size;
       jmethodID new_id = update_jmethod_id(jmeths, method, idnum);
@@ -2322,10 +2322,10 @@ jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
     }
   }
 
-  jmethodID id = Atomic::load_acquire(&jmeths[idnum+1]);
+  jmethodID id = Atomic::load_acquire(&jmeths[idnum + 1]);
   if (id == nullptr) {
     MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
-    id = jmeths[idnum+1];
+    id = jmeths[idnum + 1];
     // Still null?
     if (id == nullptr) {
       return update_jmethod_id(jmeths, method, idnum);
@@ -2340,12 +2340,12 @@ void InstanceKlass::update_methods_jmethod_cache() {
   if (cache != nullptr) {
     size_t size = idnum_allocated_count();
     size_t old_size = (size_t)cache[0];
-    if (old_size < size+1) {
-      // allocate a larger one and copy entries to the new one.
-      // They've already been updated to point to new methods where applicable (ie. not obsolete)
+    if (old_size < size + 1) {
+      // Allocate a larger one and copy entries to the new one.
+      // They've already been updated to point to new methods where applicable (i.e., not obsolete).
       jmethodID* new_cache = NEW_C_HEAP_ARRAY(jmethodID, size+1, mtClass);
-      memset(new_cache, 0, (size+1)*sizeof(jmethodID));
-      // cache size is stored in element[0], other elements offset by one
+      memset(new_cache, 0, (size + 1) * sizeof(jmethodID));
+      // The cache size is stored in element[0]; the other elements are offset by one.
       new_cache[0] = (jmethodID)size;
 
       for (int i = 1; i <= (int)old_size; i++) {
@@ -2381,7 +2381,7 @@ void InstanceKlass::ensure_space_for_methodids(int start_offset) {
 jmethodID InstanceKlass::jmethod_id_or_null(Method* method) {
   int idnum = method->method_idnum();
   jmethodID* jmeths = methods_jmethod_ids_acquire();
-  return (jmeths != nullptr) ? jmeths[idnum+1] : nullptr;
+  return (jmeths != nullptr) ? jmeths[idnum + 1] : nullptr;
 }
 
 inline DependencyContext InstanceKlass::dependencies() {
