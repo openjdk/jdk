@@ -5169,8 +5169,6 @@ const static uint64_t right_8_bits = right_n_bits(8);
   __ bind(L_nmax_loop_entry);
     // buf_end will be used as endpoint for loop below
     __ add(buf_end, buff, count); // buf_end will be used as endpoint for loop below
-    __ andi(count, count, 16-1); // count = (count % 16)
-    __ sub(count, count, 16); // count after all iterations
 
   __ bind(L_nmax_loop);
 
