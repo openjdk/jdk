@@ -16278,7 +16278,7 @@ instruct partialSubtypeCheck(iRegP_R4 sub, iRegP_R0 super, iRegP_R2 temp, iRegP_
   ins_pipe(pipe_class_memory);
 %}
 
-instruct partialSubtypeCheckI(iRegP_R4 sub, immP super, vRegD vtemp, iRegP_R5 result,
+instruct partialSubtypeCheckI(iRegP_R4 sub, immP super, vRegD_V0 vtemp, iRegP_R5 result,
                               iRegP_R1 temp3, iRegP_R0 temp2, iRegP_R2 temp, iRegP_R3 temp4,
                               rFlagsReg cr)
 %{
@@ -16290,9 +16290,16 @@ instruct partialSubtypeCheckI(iRegP_R4 sub, immP super, vRegD vtemp, iRegP_R5 re
   format %{ "partialSubtypeCheck $result, $sub, super" %}
 
   ins_encode %{
-    __ check_klass_subtype_slow_path($sub$$Register, (Klass*)$super$$constant, $temp$$Register, $temp2$$Register,
-                                     $temp3$$Register, $temp4$$Register, as_FloatRegister($vtemp$$reg),
-                                     $result$$Register);
+    Klass *superklass = (Klass*)$super$$constant;
+
+    if (InlineSecondarySupersTest) {
+      __ check_klass_subtype_slow_path($sub$$Register, superklass, $temp$$Register, $temp2$$Register,
+                                       $temp3$$Register, $temp4$$Register, as_FloatRegister($vtemp$$reg),
+                                       $result$$Register);
+    } else {
+      __ mov_metadata($temp2$$Register, superklass);
+      __ trampoline_call(RuntimeAddress(StubRoutines::hashed_secondary_subklass_stubs[superklass->hash_slot()]));
+    }
   %}
 
   opcode(0x1); // Force zero of result reg on hit

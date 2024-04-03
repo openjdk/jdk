@@ -12122,7 +12122,7 @@ instruct partialSubtypeCheckI(rsi_RegP sub, immP super, rdi_RegP result,
                                        $temp3$$Register, $temp4$$Register, $temp5$$Register,
                                        $result$$Register);
     } else {
-      __ movptr($temp4$$Register, (intptr_t)superklass);
+      __ mov_metadata($temp4$$Register, (intptr_t)superklass);
       __ call(RuntimeAddress(StubRoutines::hashed_secondary_subklass_stubs[superklass->hash_slot()]));
     }
   %}
