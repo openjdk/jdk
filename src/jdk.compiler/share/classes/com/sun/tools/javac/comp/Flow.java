@@ -2195,15 +2195,7 @@ public class Flow {
 
         @Override
         protected void markDead() {
-            if (!isConstructor) {
-                inits.inclRange(returnadr, nextadr);
-            } else {
-                for (int address = returnadr; address < nextadr; address++) {
-                    if (!(isFinalUninitializedStaticField(vardecls[address].sym))) {
-                        inits.incl(address);
-                    }
-                }
-            }
+            inits.inclRange(returnadr, nextadr);
             uninits.inclRange(returnadr, nextadr);
         }
 
@@ -2223,10 +2215,6 @@ public class Flow {
             return sym.owner.kind == TYP &&
                    ((sym.flags() & (FINAL | HASINIT | PARAMETER)) == FINAL &&
                    classDef.sym.isEnclosedBy((ClassSymbol)sym.owner));
-        }
-
-        boolean isFinalUninitializedStaticField(VarSymbol sym) {
-            return isFinalUninitializedField(sym) && sym.isStatic();
         }
 
         /** Initialize new trackable variable by setting its address field
@@ -2447,7 +2435,7 @@ public class Flow {
                         clearPendingExits(false);
                     });
 
-                    // verify all static final fields got initailized
+                    // verify all static final fields got initialized
                     for (int i = firstadr; i < nextadr; i++) {
                         JCVariableDecl vardecl = vardecls[i];
                         VarSymbol var = vardecl.sym;
