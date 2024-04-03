@@ -5043,6 +5043,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void generate_updateBytesAdler32_accum(const Register acc1, const Register acc2, const Register data, const Register temp) {
+    assert_different_registers(acc1, acc2, data, temp);
 
     __ andi(temp, data, right_8_bits);
     __ add(acc1, acc1, temp);
@@ -5128,16 +5129,20 @@ const static uint64_t right_8_bits = right_n_bits(8);
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-    __ mv(temp3, right_16_bits);
-
     __ mv(base, BASE);
     __ mv(nmax, NMAX);
 
+    __ srli(s2, adler, 16); // s2 = ((adler >> 16) & 0xffff)
     // s1 is initialized to the lower 16 bits of adler
     // s2 is initialized to the upper 16 bits of adler
-    __ srli(s2, adler, 16); // s2 = ((adler >> 16) & 0xffff)
-    __ andr(s2, s2, temp3);
-    __ andr(s1, adler, temp3); // s1 = (adler & 0xffff)
+    if (!UseZbb) {
+      __ mv(temp3, right_16_bits);
+      __ andr(s2, s2, temp3);
+      __ andr(s1, adler, temp3); // s1 = (adler & 0xffff)
+    } else {
+      __ zext_h(s2, s2);
+      __ zext_h(s1, adler);
+    }
 
     // The pipelined loop needs at least 16 elements for 1 iteration
     // It does check this, but it is more effective to skip to the cleanup loop
