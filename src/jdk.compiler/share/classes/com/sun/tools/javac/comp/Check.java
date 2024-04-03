@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,7 @@ import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.code.TypeTag.WILDCARD;
 
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+import java.util.function.Function;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -4907,6 +4908,92 @@ public class Check {
             }
             return false;
         }
+
+    void checkDerivedInstanceBlockStructure(JCDerivedInstance instance) {
+        new TreeScanner() {
+            private final Set<JCTree> seenTrees =
+                    Collections.newSetFromMap(new IdentityHashMap<>());
+            private final Set<VarSymbol> seenVariables = new HashSet<>();
+            @Override
+            public void scan(JCTree tree) {
+                seenTrees.add(tree);
+                super.scan(tree);
+            }
+            @Override
+            public void visitClassDef(JCClassDecl tree) {
+                //no limits on the inside of the nested class decl
+            }
+            @Override
+            public void visitReturn(JCReturn tree) {
+                log.error(tree.pos(), Errors.WithReturnNotAllowed);
+                super.visitReturn(tree);
+            }
+
+            @Override
+            public void visitBreak(JCBreak tree) {
+                if (!seenTrees.contains(tree.target)) {
+                    log.error(tree.pos(), Errors.WithBreakNotAllowed);
+                }
+                super.visitBreak(tree);
+            }
+
+            @Override
+            public void visitContinue(JCContinue tree) {
+                if (!seenTrees.contains(tree.target)) {
+                    log.error(tree.pos(), Errors.WithContinueNotAllowed);
+                }
+                super.visitContinue(tree);
+            }
+
+            @Override
+            public void visitYield(JCYield tree) {
+                if (!seenTrees.contains(tree.target)) {
+                    log.error(tree.pos(), Errors.WithYieldNotAllowed);
+                }
+                super.visitYield(tree);
+            }
+
+            @Override
+            public void visitVarDef(JCVariableDecl tree) {
+                seenVariables.add(tree.sym);
+                super.visitVarDef(tree);
+            }
+            @Override
+            public void visitAssign(JCAssign tree) {
+                checkInvalidAssignTarget(tree.lhs);
+                super.visitAssign(tree);
+            }
+
+            @Override
+            public void visitAssignop(JCAssignOp tree) {
+                checkInvalidAssignTarget(tree.lhs);
+                super.visitAssignop(tree);
+            }
+
+            @Override
+            public void visitUnary(JCUnary tree) {
+                switch (tree.getTag()) {
+                    case PREDEC, PREINC, POSTDEC, POSTINC -> {
+                        checkInvalidAssignTarget(tree.arg);
+                    }
+                }
+                super.visitUnary(tree);
+            }
+
+            private void checkInvalidAssignTarget(JCTree operand) {
+                if (operand instanceof JCIdent var &&
+                    !seenVariables.contains(var.sym)) {
+                    log.error(var.pos(), Errors.WithAssignmentNotAllowed(var.sym));
+                }
+            }
+
+            @Override
+            public void visitDerivedInstance(JCDerivedInstance tree) {
+                seenVariables.addAll(tree.componentLocalVariables);
+                super.visitDerivedInstance(tree);
+            }
+        }.scan(instance);
+    }
 
     /** check if a type is a subtype of Externalizable, if that is available. */
     boolean isExternalizable(Type t) {

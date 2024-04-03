@@ -591,6 +591,10 @@ public class TreeInfo {
                 JCStringTemplate node = (JCStringTemplate) tree;
                 return node.processor == null ? node.pos : getStartPos(node.processor);
             }
+            case DERIVEDRECORDCREATION: {
+                JCDerivedInstance node = (JCDerivedInstance) tree;
+                return getStartPos(node.expr);
+            }
             case ERRONEOUS: {
                 JCErroneous node = (JCErroneous)tree;
                 if (node.errs != null && node.errs.nonEmpty()) {

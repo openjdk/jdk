@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3964,6 +3964,45 @@ public class Attr extends JCTree.Visitor {
         Symbol sym = TreeInfo.symbol(tree);
         if (sym != null && sym.kind.matches(KindSelector.TYP_PCK) && sym.kind != Kind.ERR)
             log.error(tree.pos(), Errors.IllegalParenthesizedExpression);
+    }
+
+    @Override
+    public void visitDerivedInstance(JCDerivedInstance tree) {
+        Type exprType = attribExpr(tree.expr, env);
+        Env<AttrContext> blockEnv =
+            env.dup(tree, env.info.dup(env.info.scope.dup()));
+
+        try {
+            ListBuffer<VarSymbol> componentLocalVariables = new ListBuffer<>();
+
+            if ((exprType.tsym.flags() & RECORD) == 0) {
+                log.error(tree, Errors.DerivedExpressionNoRecord);
+            } else {
+                ClassSymbol recordType = (ClassSymbol) exprType.tsym;
+
+                for (RecordComponent component : recordType.getRecordComponents()) {
+                    VarSymbol outgoing = new VarSymbol(COMPONENT_LOCAL_VARIABLE,
+                                                       component.name,
+                                                       types.memberType(exprType, component),
+                                                       env.info.scope.owner);
+
+                    outgoing.pos = tree.pos;
+                    componentLocalVariables.append(outgoing);
+                    blockEnv.info.scope.enter(outgoing);
+                }
+            }
+
+            tree.componentLocalVariables = componentLocalVariables.toList();
+
+            attribStat(tree.block, blockEnv);
+
+            chk.checkDerivedInstanceBlockStructure(tree);
+
+            result = check(tree, exprType, KindSelector.VAL, resultInfo);;
+        } finally {
+            blockEnv.info.scope.leave();
+        }
+
     }
 
     public void visitAssign(JCAssign tree) {

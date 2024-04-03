@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -354,6 +354,14 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         JCParens t = (JCParens) node;
         JCExpression expr = copy(t.expr, p);
         return M.at(t.pos).Parens(expr);
+    }
+
+    @DefinedBy(Api.COMPILER_TREE)
+    public JCTree visitDerivedInstance(DerivedInstanceTree node, P p) {
+        JCDerivedInstance t = (JCDerivedInstance) node;
+        JCExpression expr = copy(t.expr, p);
+        JCBlock block = copy(t.block, p);
+        return M.at(t.pos).DerivedInstance(expr, block);
     }
 
     @DefinedBy(Api.COMPILER_TREE)

@@ -1820,6 +1820,17 @@ public class JavacParser implements Parser {
                 if (typeArgs != null) return illegal();
                 accept(COLCOL);
                 t = memberReferenceSuffix(pos1, t);
+            } else if (isMode(EXPR) && token.kind == IDENTIFIER &&
+                       token.name() == names.with && peekToken(LBRACE)) {
+                int pos = token.pos;
+
+                checkSourceLevel(pos, Feature.DERIVED_INSTANCE);
+
+                nextToken();
+
+                JCBlock block = block();
+
+                t = F.at(pos).DerivedInstance(t, block);
             } else {
                 if (!annos.isEmpty()) {
                     if (permitTypeAnnotationsPushBack)

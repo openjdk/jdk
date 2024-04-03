@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,10 +98,12 @@ import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.tree.JCTree.JCPattern;
 import com.sun.tools.javac.tree.JCTree.JCPatternCaseLabel;
+import com.sun.tools.javac.tree.JCTree.JCDerivedInstance;
 import com.sun.tools.javac.tree.JCTree.JCRecordPattern;
 import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.tree.JCTree.JCSwitchExpression;
 import com.sun.tools.javac.tree.JCTree.JCTry;
+import com.sun.tools.javac.tree.JCTree.JCYield;
 import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
@@ -1356,6 +1358,63 @@ public class TransPatterns extends TreeTranslator {
                     new PatternMatchingCatch(patternMatchingCatch, deconstructorCalls);
             deconstructorCalls = null;
         }
+    }
+
+    @Override
+    public void visitDerivedInstance(JCDerivedInstance tree) {
+        ListBuffer<JCStatement> newBlock = new ListBuffer<>();
+        VarSymbol temp;
+        if (tree.expr instanceof JCIdent i &&
+            i.sym.kind == Kind.VAR &&
+            (i.sym.owner.kind == Kind.MTH || i.sym.owner.kind == Kind.VAR)) {
+            temp = (VarSymbol) i.sym;
+        } else {
+            temp = new VarSymbol(Flags.SYNTHETIC,
+                    names.fromString("expr" + variableIndex++ + target.syntheticNameChar() + "temp"),
+                    tree.expr.type,
+                    currentMethodSym);
+            newBlock.add(make.VarDef(temp, translate(tree.expr)));
+        }
+
+
+        ClassSymbol recordClass = (ClassSymbol) tree.expr.type.tsym;
+        List<VarSymbol> outgoingBindingsIt = tree.componentLocalVariables;
+        List<? extends RecordComponent> recordComponentsIt = recordClass.getRecordComponents();
+
+        while (outgoingBindingsIt.nonEmpty()) {
+            Type erasedComponentType = types.erasure(recordComponentsIt.head.type);
+            newBlock.add(make.VarDef(outgoingBindingsIt.head,
+                                     make.App(make.Select(make.Ident(temp),
+                                                          recordComponentsIt.head.accessor))
+                                         .setType(erasedComponentType)));
+            outgoingBindingsIt = outgoingBindingsIt.tail;
+            recordComponentsIt = recordComponentsIt.tail;
+        }
+
+        newBlock.add(translate(tree.block));
+
+        JCNewClass createNew = make.NewClass(null,
+                                             List.nil(),
+                                             make.QualIdent(recordClass),
+                                             tree.componentLocalVariables.map(make::Ident),
+                                             null);
+
+        createNew.type = tree.type;
+
+        List<Type> canonicalConstructorTypes =
+                recordClass.getRecordComponents()
+                           .stream()
+                           .map(c -> types.erasure(c.type))
+                           .collect(List.collector());
+        MethodSymbol init = rs.resolveInternalMethod(tree.pos(),
+                                                     env,
+                                                     tree.type,
+                                                     names.init,
+                                                     canonicalConstructorTypes,
+                                                     List.nil());
+        createNew.constructor = init;
+
+        result = make.LetExpr(newBlock.toList(), createNew).setType(tree.type);
     }
 
     public JCTree translateTopLevelClass(Env<AttrContext> env, JCTree cdef, TreeMaker make) {
