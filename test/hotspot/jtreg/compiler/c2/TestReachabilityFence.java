@@ -26,6 +26,14 @@ package compiler.c2;
 import java.lang.ref.Reference;
 import java.lang.ref.Cleaner;
 
+/*
+ * @test
+ * @bug 8290892
+ * @summary reachabilityFence() doesn’t always work
+ *
+ * @run main/othervm compiler.c2.TestReachabilityFence
+ */
+
 public class TestReachabilityFence {
     static class A {
         public B obj;
