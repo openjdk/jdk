@@ -673,19 +673,17 @@ extern "C" bool dbg_is_safe(const void* p, intptr_t errvalue) {
 
 
 extern "C" bool dbg_is_good_oop(oopDesc* o) {
-  return dbg_is_safe(o, -1) && dbg_is_safe(o->klass(), -1) && oopDesc::is_oop(o) && o->klass()->is_klass();
-}
-
-// Additional "good oop" checks, separate method to not disturb existing asserts.
-extern "C" bool dbg_is_good_oop_detailed(oopDesc* o) {
   bool good = dbg_is_safe(o, -1)
-              && *(uintptr_t*) o != 0
-              && *((uintptr_t*) o + (sizeof(uintptr_t))) != 0;
+              && *(uintptr_t*) o != 0;
 
   if (good) {
+    // Check Klass ptr or narrowKlass ptr is not null.
+    // No accessor for private o._metadata
+    good = (*((uintptr_t*) ((uintptr_t) o + sizeof(uintptr_t))) != 0);
+  }
+  if (good) {
     if (!UseCompressedClassPointers) {
-      good = dbg_is_safe(o->klass(), -1)
-             && o->klass()->is_klass();
+      good = dbg_is_safe(o->klass(), -1);
     } else {
       // Fetch compressed class pointer (no accessor for o._metadata._compressed_klass)
       uintptr_t ccpAddr = (uintptr_t) o + sizeof(uintptr_t);
@@ -695,7 +693,8 @@ extern "C" bool dbg_is_good_oop_detailed(oopDesc* o) {
     }
   }
   if (good) {
-    good = good && oopDesc::is_oop(o);
+    good = good && oopDesc::is_oop(o)
+           && o->klass()->is_klass();
   }
   return good;
 }

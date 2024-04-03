@@ -1267,7 +1267,7 @@ void VMInspectDCmd::execute(DCmdSource source, TRAPS) {
           output()->print_cr("misaligned oop");
           return;
         }
-        if (!dbg_is_good_oop_detailed((oopDesc*) x)) {
+        if (!dbg_is_good_oop((oopDesc*) x)) {
           output()->print_cr("bad oop");
           return;
         }
