@@ -469,10 +469,10 @@ property also in multi-threaded environments.
 
 There are other classes in the JDK that support lazy computation including `Map`, `AtomicReference`, `ClassValue`,
 and `ThreadLocal` which are similar in the sense that they support arbitrary mutation and thus, prevent the JVM
-from reasoning about constantness and do not allow shifting computation _before_ being used.
+from reasoning about constantness thereby preventing constant folding and other optimizations.
 
 So, alternatives would be to keep using explicit double-checked locking, maps, holder classes, Atomic classes,
-and third-party frameworks.  Another alternative would be to add language support for immutable value holders.
+and third-party frameworks. Another alternative would be to add language support for immutable value holders.
 
 ## Risks and assumptions
 

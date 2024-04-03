@@ -209,8 +209,9 @@ public sealed interface Lazy<V> permits LazyImpl {
     /**
      * {@return an unmodifiable, shallowly immutable, thread-safe, lazy,
      * {@linkplain List} containing {@code size} elements which are
-     * lazily computed upon being first accessed (e.g. via {@linkplain List#get(int)})
-     * by invoking the provided {@code mapper} at most once per element}
+     * lazily computed upon being first accessed (e.g. via
+     * {@linkplain List#get(int) List::get}) by invoking the provided {@code mapper}
+     * at most once per element}
      * <p>
      * The provided {@code mapper} must not return {@code null} values.
      * <p>
@@ -237,10 +238,10 @@ public sealed interface Lazy<V> permits LazyImpl {
 
     /**
      * {@return an unmodifiable, shallowly immutable, thread-safe, lazy,
-     * {@linkplain Set } where the computation of the
-     * {@linkplain java.util.Set#contains(Object) contains()} operation is deferred to
-     * when first being called and can only be made for the distinct provided set of
-     * {@code candidates} and where the elements' existence is lazily computed upon
+     * {@linkplain Set } where the computation of each distinct
+     * {@linkplain java.util.Set#contains(Object) contains(candidate)} operation is
+     * deferred to when first being called and can only be made for the distinct provided
+     * set of {@code candidates} and where the elements' existence is lazily computed upon
      * being first queried by invoking the provided {@code predicate}
      * at most once per candidate}
      * <p>
@@ -264,11 +265,12 @@ public sealed interface Lazy<V> permits LazyImpl {
 
     /**
      * {@return an unmodifiable, shallowly immutable, thread-safe, lazy,
-     * {@linkplain Set } where the computation of the
-     * {@linkplain java.util.Set#contains(Object) contains()} operation is deferred to
-     * when first being called and can only be made for the enum elements of the provided
-     * {@code enumType} and where the elements' existence is lazily computed upon being
-     * first queried by invoking the provided {@code predicate} at most once per candidate}
+     * {@linkplain Set } where the computation of each distinct
+     * {@linkplain java.util.Set#contains(Object) contains(candidate)} operation is
+     * deferred to when first being called and can only be made for the enum elements
+     * of the provided {@code enumType} and where the elements' existence is lazily
+     * computed upon being first queried by invoking the provided {@code predicate}
+     * at most once per candidate}
      * <p>
      * The returned set is not {@linkplain Serializable}.
      * <p>
@@ -293,8 +295,8 @@ public sealed interface Lazy<V> permits LazyImpl {
      * {@linkplain Map } where the {@linkplain java.util.Map#keySet() keys}
      * contains precisely the distinct provided set of {@code keys} and where the
      * values are lazily computed upon being first accessed
-     * (e.g. via {@linkplain Map#get(Object) get()}) by invoking the provided {@code mapper}
-     * at most once per key}
+     * (e.g. via {@linkplain Map#get(Object) get(key)}) by invoking the provided
+     * {@code mapper} at most once per key}
      * <p>
      * The provided {@code mapper} must not return {@code null} values.
      * <p>
@@ -322,8 +324,8 @@ public sealed interface Lazy<V> permits LazyImpl {
      * {@linkplain Map } where the {@linkplain java.util.Map#keySet() keys}
      * contains the enum elements of the provided {@code enumType} and where the
      * values are lazily computed upon being first accessed
-     * (e.g. via {@linkplain Map#get(Object) get()}) by invoking the provided {@code mapper}
-     * at most once per key}
+     * (e.g. via {@linkplain Map#get(Object) get(key)}) by invoking the provided
+     * {@code mapper} at most once per key}
      * <p>
      * The provided {@code mapper} must not return {@code null} values.
      * <p>
