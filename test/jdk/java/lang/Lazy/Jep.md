@@ -209,8 +209,8 @@ The Values & Collections API define functions and an interface so that client co
 - Define and use lazy (scalar) values: [`Lazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html)
 - Define and use lazy collections: 
   [`Lazy.ofList`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofList(int,java.util.function.IntFunction)), 
-  [`Lazy.ofSet(Set, Predicate)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofSet(java.util.Set,java.util.function.Predicate)), [`Lazy.ofSet(Enum.class, Predicate`)](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofSet(java.lang.Class,java.util.function.Predicate)) and 
-  [`Lazy.ofMap(Set, Function)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofMap(java.util.Set,java.util.function.Function)), [`Lazy.ofMap(Enum.class, Function)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofMap(java.lang.Class,java.util.function.Function))
+  [`Lazy.ofSet(Set, Predicate)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofSet(java.util.Set,java.util.function.Predicate)), [`Lazy.ofSet(Enum.class, Predicate`)](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofSet(java.lang.Class,java.util.function.Predicate)),  
+  [`Lazy.ofMap(Set, Function)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofMap(java.util.Set,java.util.function.Function)), and [`Lazy.ofMap(Enum.class, Function)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofMap(java.lang.Class,java.util.function.Function))
 
 The Lazy Values & Collections API resides in the [java.lang](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/package-summary.html) package of the [java.base](https://cr.openjdk.org/~pminborg/lazy/api/java.base/module-summary.html) module.
 
@@ -458,8 +458,8 @@ String errorPage = ERROR_PAGES.apply(2);
 // </html>
 ```
 
-The same paradigm can be used for creating a memoized `Predicate` (backed by a lazily computed `Set`). The solution
-for this is left for the reader as an exercise. 
+The same paradigm can be used for creating a memoized `Predicate` (backed by a lazily computed `Set`). An astute reader
+will be able to write such a predicate on a single line. 
 
 As `Lazy::computeIfUnset` can invoke a provided supplier several times if invoked from several threads, there is a
 convenience method `Lazy::asSupplier` that provides an out-of-the-box memoized supplier that upholds the invoke-at-most
