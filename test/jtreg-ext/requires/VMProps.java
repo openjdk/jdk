@@ -27,6 +27,7 @@ import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
 import java.io.BufferedInputStream;
+import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -684,24 +685,18 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     private String runtimeLinkable() {
-        // jdk.jlink module has the following resource listing native libs
-        // belonging to the java.base module for runtime linkable jimages.
-        String linkableRuntimeResource = "jdk/tools/jlink/internal/runtimelink/fs_java.base_files";
-        try {
-            ModuleFinder finder = ModuleFinder.ofSystem();
-            Optional<ModuleReference> ref = finder.find("jdk.jlink");
-            if (ref.isEmpty()) {
-                // No jdk.jlink in the current image
+        // Only runtime-linkable JDK images have the delta file with the
+        // appropriate integer header in the JDK tree.
+        Path deltaFile = Path.of(System.getProperty("java.home"),
+                                 "lib",
+                                 "runtime-image-link.delta");
+        try (DataInputStream din = new DataInputStream(new FileInputStream(deltaFile.toFile()))) {
+            int header = din.readInt();
+            int expected = 0xabba;
+            if (header == expected) {
+                return Boolean.TRUE.toString();
+            } else {
                 return Boolean.FALSE.toString();
-            }
-            try (ModuleReader reader = ref.get().open()) {
-                Optional<InputStream> inOpt = reader.open(linkableRuntimeResource);
-                if (inOpt.isPresent()) {
-                    inOpt.get().close();
-                    return Boolean.TRUE.toString();
-                } else {
-                    return Boolean.FALSE.toString();
-                }
             }
         } catch (Throwable t) {
             return Boolean.FALSE.toString();

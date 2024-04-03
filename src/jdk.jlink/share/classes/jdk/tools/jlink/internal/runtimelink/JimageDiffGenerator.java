@@ -22,23 +22,25 @@
  */
 package jdk.tools.jlink.internal.runtimelink;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
- * Used by the build-only jlink plugin CreateLinkableRuntimePlugin.
+ * Generates a delta between packaged modules (as an ImageResource) and an
+ * optimized jimage (lib/modules) as an ImageResource. The result can be
+ * serialized to a file using {@link ResourceDiff}.
  */
 public class JimageDiffGenerator {
 
-    private static final boolean DEBUG = false;
-
+    /**
+     * A resource used for linking jimages. Either packaged modules or
+     * an existing JDK jimage. The canonical source, the packaged modules,
+     * are being used to devise a delta to a JDK jimage which can then be
+     * also used for jlink input together *with* that delta.
+     */
     @SuppressWarnings("try")
     public interface ImageResource extends AutoCloseable {
         public List<String> getEntries();
@@ -93,41 +95,6 @@ public class JimageDiffGenerator {
             diffs.add(diff);
         }
         return diffs;
-    }
-
-    public static void main(String[] args) throws Exception {
-        if (args.length != 3) {
-            System.out.println("Usage: java -cp jrt-fs.jar:. JimageDiffGenerator <packaged-modules> <image-to-compare> <output-file>");
-            System.exit(1);
-        }
-        ImageResource base = new JmodsReader(Path.of(args[0]));
-        ImageResource opt = new ImageReader(Path.of(args[1]));
-        JimageDiffGenerator diffGen = new JimageDiffGenerator();
-        List<ResourceDiff> diffs = diffGen.generateDiff(base, opt);
-
-        if (DEBUG) {
-            printDiffs(diffs);
-        }
-        FileOutputStream fout = new FileOutputStream(new File(args[2]));
-        ResourceDiff.write(diffs, fout);
-    }
-
-    private static void printDiffs(List<ResourceDiff> diffs) {
-        for (ResourceDiff diff: diffs.stream().sorted().collect(Collectors.toList())) {
-            switch (diff.getKind()) {
-            case ADDED:
-                System.out.println("Only added in opt: " + diff.getName());
-                break;
-            case MODIFIED:
-                System.out.println("Modified in opt: " + diff.getName());
-                break;
-            case REMOVED:
-                System.out.println("Removed in opt: " + diff.getName());
-                break;
-            default:
-                break;
-            }
-        }
     }
 
 }

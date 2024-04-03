@@ -28,6 +28,7 @@ import static jdk.tools.jlink.internal.TaskHelper.JLINK_BUNDLE;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -73,6 +74,7 @@ import jdk.tools.jlink.internal.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.internal.TaskHelper.BadArgs;
 import jdk.tools.jlink.internal.TaskHelper.Option;
 import jdk.tools.jlink.internal.TaskHelper.OptionsHelper;
+import jdk.tools.jlink.internal.runtimelink.ResourceDiff;
 import jdk.tools.jlink.plugin.PluginException;
 
 /**
@@ -89,6 +91,9 @@ public class JlinkTask {
     private static final TaskHelper taskHelper
             = new TaskHelper(JLINK_BUNDLE);
     private static final String JLINK_MOD_NAME = "jdk.jlink";
+    private static final Path RUNTIME_DELTA_FILE = Path.of(System.getProperty("java.home"),
+                                                           "lib",
+                                                           "runtime-image-link.delta");
 
     private static final Option<?>[] recognizedOptions = {
         new Option<JlinkTask>(false, (task, opt, arg) -> {
@@ -235,8 +240,6 @@ public class JlinkTask {
 
     public static final String OPTIONS_RESOURCE = "jdk/tools/jlink/internal/options";
     public static final String RESPATH_PATTERN = "jdk/tools/jlink/internal/runtimelink/fs_%s_files";
-    // The diff file per module
-    public static final String DIFF_PATTERN = "jdk/tools/jlink/internal/runtimelink/diff_%s";
 
     int run(String[] args) {
         if (log == null) {
@@ -589,17 +592,20 @@ public class JlinkTask {
             });
 
         // Perform some setup for run-time image based links
+        Map<String, List<ResourceDiff>> perModuleDiffs = null;
         if (config.linkFromRuntimeImage()) {
             // Catch the case where we don't have a linkable runtime. In that
-            // case, fs_$m_files don't exist in the jdk.jlink module. Check
-            // existence of the file for the java.base module.
-            String resourceName = String.format(RESPATH_PATTERN, "java.base");
-            InputStream inStream = JlinkTask.class.getModule().getResourceAsStream(resourceName);
-            if (inStream == null) {
-                // Only linkable runtimes have those resources. Abort otherwise.
+            // case, we don't have a delta file in $JAVA_HOME/lib
+            List<ResourceDiff> diffs = null;
+            try (FileInputStream fin = new FileInputStream(RUNTIME_DELTA_FILE.toFile())) {
+                diffs = ResourceDiff.read(fin);
+            } catch (IOException e) {
+                // Only linkable runtimes have the delta file. Any other read
+                // error is also fatal.
                 String msg = taskHelper.getMessage("err.runtime.link.not.linkable.runtime");
                 throw new IllegalArgumentException(msg);
             }
+            perModuleDiffs = preparePerModuleDiffs(diffs, cf.modules());
             // Disallow a runtime-image-based-link with jdk.jlink included
             if (cf.findModule(JLINK_MOD_NAME).isPresent()) {
                 String msg = taskHelper.getMessage("err.runtime.link.jdk.jlink.prohibited");
@@ -611,6 +617,7 @@ public class JlinkTask {
                 log.println(taskHelper.getMessage("runtime.link.info"));
             }
         }
+        final Map<String, List<ResourceDiff>> perModDiffs = perModuleDiffs;
 
         if (verbose && log != null) {
             // print modules to be linked in
@@ -673,13 +680,42 @@ public class JlinkTask {
                         .orElse(Runtime.version());
 
         Set<Archive> archives = mods.entrySet().stream()
-                .map(e -> newArchive(e.getKey(), e.getValue(), version, ignoreSigning, config))
+                .map(e -> newArchive(e.getKey(), e.getValue(), version, ignoreSigning, config, perModDiffs))
                 .collect(Collectors.toSet());
 
         return new ImageHelper(archives, targetPlatform, retainModulesPath);
     }
 
-    private static Archive newArchive(String module, Path path, Runtime.Version version, boolean ignoreSigning, JlinkConfiguration config) {
+    private static Map<String, List<ResourceDiff>> preparePerModuleDiffs(List<ResourceDiff> resDiffs, Set<ResolvedModule> modules) {
+        Map<String, List<ResourceDiff>> modToDiff = new HashMap<>();
+        resDiffs.forEach(d -> {
+            int secondSlash = d.getName().indexOf("/", 1);
+            if (secondSlash == -1) {
+                throw new AssertionError("Module name not present");
+            }
+            String module = d.getName().substring(1, secondSlash);
+            List<ResourceDiff> perModDiff = modToDiff.computeIfAbsent(module, a -> new ArrayList<>());
+            perModDiff.add(d);
+        });
+        Map<String, List<ResourceDiff>> allModsToDiff = new HashMap<>();
+        modules.stream().map(ResolvedModule::name).forEach(m -> {
+            List<ResourceDiff> d = modToDiff.get(m);
+            if (d == null) {
+                // Not all modules will have a diff
+                allModsToDiff.put(m, Collections.emptyList());
+            } else {
+                allModsToDiff.put(m, d);
+            }
+        });
+        return allModsToDiff;
+    }
+
+    private static Archive newArchive(String module,
+                                      Path path,
+                                      Runtime.Version version,
+                                      boolean ignoreSigning,
+                                      JlinkConfiguration config,
+                                      Map<String, List<ResourceDiff>> perModuleDiffs) {
         if (path.toString().endsWith(".jmod")) {
             return new JmodArchive(module, path);
         } else if (path.toString().endsWith(".jar")) {
@@ -711,7 +747,7 @@ public class JlinkTask {
             // mode custom - JDK external modules - are only supported via the
             // module path. Directory module paths are not supported since those
             // clash with JRT-FS based archives of JRTArchive.
-            return new JRTArchive(module, path, !config.ignoreModifiedRuntime());
+            return new JRTArchive(module, path, !config.ignoreModifiedRuntime(), perModuleDiffs.get(module));
         } else if (Files.isDirectory(path)) {
             Path modInfoPath = path.resolve("module-info.class");
             if (Files.isRegularFile(modInfoPath)) {

@@ -27,15 +27,17 @@ import java.io.StringWriter;
 import java.lang.module.ModuleDescriptor;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import jdk.tools.jlink.internal.PluginRepository;
 import jdk.tools.jlink.plugin.Plugin;
+import jdk.tools.jlink.internal.PluginRepository;
 import tests.Helper;
 import tests.JImageGenerator;
 
@@ -260,12 +262,6 @@ public class JLinkTest {
                 throw new AssertionError("--list-plugins not presented in alphabetical order");
             }
 
-            // Verify that --create-linkable-runtime plugin is not present as
-            // it's a build-only plugin.
-            if (commands.stream()
-                    .anyMatch(s -> s.contains("create-linkable-runtime"))) {
-                throw new AssertionError("--create-linkable-runtime plugin not expected");
-            }
         }
 
         // filter out files and resources + Skip debug + compress

@@ -78,21 +78,30 @@ public class JmodsReader implements JimageDiffGenerator.ImageResource {
 
     @Override
     public byte[] getResourceBytes(String name) {
-        int secondSlash = name.indexOf("/", 1);
-        String moduleName = null;
-        if (secondSlash != -1) {
-            moduleName = name.substring(1, secondSlash);
-        }
+        String moduleName = moduleName(name);
         if (moduleName == null) {
             throw new IllegalArgumentException("Module name not found in " + name);
         }
         ModuleReference ref = finder.find(moduleName).orElseThrow();
-        String refName = name.substring(secondSlash + 1); // omit the leading slash
+        String refName = stripModuleName(name);
         try (ModuleReader reader = ref.open()) {
             return reader.open(refName).orElseThrow().readAllBytes();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private String moduleName(String name) {
+        int secondSlash = name.indexOf("/", 1);
+        if (secondSlash != -1) {
+            return name.substring(1, secondSlash);
+        }
+        return null;
+    }
+
+    private String stripModuleName(String name) {
+        int secondSlash = name.indexOf("/", 1);
+        return name.substring(secondSlash + 1); // omit the leading slash
     }
 
 }

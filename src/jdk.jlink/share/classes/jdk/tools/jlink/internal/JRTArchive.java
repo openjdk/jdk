@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Red Hat, Inc.
+ * Copyright (c) 2024, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package jdk.tools.jlink.internal;
 
-import static jdk.tools.jlink.internal.JlinkTask.DIFF_PATTERN;
 import static jdk.tools.jlink.internal.JlinkTask.RESPATH_PATTERN;
 
 import java.io.ByteArrayInputStream;
@@ -52,11 +51,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.util.OperatingSystem;
-import jdk.tools.jlink.internal.Archive.Entry;
 import jdk.tools.jlink.internal.Archive.Entry.EntryType;
 import jdk.tools.jlink.internal.runtimelink.ResourceDiff;
 import jdk.tools.jlink.internal.runtimelink.RuntimeImageLinkException;
-import jdk.tools.jlink.internal.runtimelink.ResourceDiff.Kind;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
 
@@ -74,7 +71,7 @@ public class JRTArchive implements Archive {
     private final Map<String, ResourceDiff> resDiff;
     private final boolean errorOnModifiedFile;
 
-    JRTArchive(String module, Path path, boolean errorOnModifiedFile) {
+    JRTArchive(String module, Path path, boolean errorOnModifiedFile, List<ResourceDiff> perModDiff) {
         this.module = module;
         this.path = path;
         this.ref = ModuleFinder.ofSystem()
@@ -83,7 +80,7 @@ public class JRTArchive implements Archive {
                                     new IllegalArgumentException("Module " + module + " not part of the JDK install"));
         this.errorOnModifiedFile = errorOnModifiedFile;
         this.otherRes = readModuleResourceFile(module);
-        this.resDiff = readModuleResourceDiff(module);
+        this.resDiff = prepareDiffMap(Objects.requireNonNull(perModDiff));
     }
 
     @Override
@@ -427,7 +424,7 @@ public class JRTArchive implements Archive {
         }
     }
 
-    static List<String> readModuleResourceFile(String modName) {
+    private static List<String> readModuleResourceFile(String modName) {
         String resName = String.format(RESPATH_PATTERN, modName);
         try {
             try (InputStream inStream = JRTArchive.class.getModule().getResourceAsStream(resName)) {
@@ -444,17 +441,9 @@ public class JRTArchive implements Archive {
         }
     }
 
-    static Map<String, ResourceDiff> readModuleResourceDiff(String modName) {
-        String resName = String.format(DIFF_PATTERN, modName);
-        try {
-            try (InputStream inStream = JRTArchive.class.getModule().getResourceAsStream(resName)) {
-                List<ResourceDiff> diffs = ResourceDiff.read(inStream);
-                Map<String, ResourceDiff> resDiffsAsMap = new HashMap<>();
-                diffs.forEach(r -> resDiffsAsMap.put(r.getName(), r));
-                return resDiffsAsMap;
-            }
-        } catch (IOException e) {
-            throw new InternalError("Failed to process run-time image diff file for " + modName);
-        }
+    private static Map<String, ResourceDiff> prepareDiffMap(List<ResourceDiff> diffs) {
+        Map<String, ResourceDiff> resDiffsAsMap = new HashMap<>();
+        diffs.forEach(r -> resDiffsAsMap.put(r.getName(), r));
+        return resDiffsAsMap;
     }
 }
