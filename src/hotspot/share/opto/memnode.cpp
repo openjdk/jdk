@@ -136,6 +136,15 @@ void MemNode::dump_adr_type(const Node* mem, const TypePtr* adr_type, outputStre
 
 extern void print_alias_types();
 
+int MemBarNode::_barriers_generated = 0;
+int MemBarNode::_barriers_eliminated = 0;
+
+void MemBarNode::print_statistics() {
+  tty->print_cr("Barriers generated = %d, Barriers eliminated = %d",
+                Atomic::load(&_barriers_generated),
+                Atomic::load(&_barriers_eliminated));
+}
+
 #endif
 
 Node *MemNode::optimize_simple_memory_chain(Node *mchain, const TypeOopPtr *t_oop, Node *load, PhaseGVN *phase) {
@@ -3342,6 +3351,7 @@ bool MemBarNode::cmp( const Node &n ) const {
 
 //------------------------------make-------------------------------------------
 MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
+  NOT_PRODUCT(Atomic::inc(&MemBarNode::_barriers_generated));
   switch (opcode) {
   case Op_MemBarAcquire:     return new MemBarAcquireNode(C, atp, pn);
   case Op_LoadFence:         return new LoadFenceNode(C, atp, pn);
@@ -3377,6 +3387,7 @@ void MemBarNode::remove(PhaseIterGVN *igvn) {
   if (proj_out_or_null(TypeFunc::Control) != nullptr) {
     igvn->replace_node(proj_out(TypeFunc::Control), in(TypeFunc::Control));
   }
+  NOT_PRODUCT(Atomic::inc(&MemBarNode::_barriers_eliminated));
 }
 
 //------------------------------Ideal------------------------------------------
