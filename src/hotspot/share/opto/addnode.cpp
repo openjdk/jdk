@@ -57,6 +57,7 @@ Node* AddNode::Identity(PhaseGVN* phase) {
   const Type *zero = add_id();  // The additive identity
   if( phase->type( in(1) )->higher_equal( zero ) ) return in(2);
   if( phase->type( in(2) )->higher_equal( zero ) ) return in(1);
+  if ( in(1) == in(2) ) return in(1);
   return this;
 }
 
