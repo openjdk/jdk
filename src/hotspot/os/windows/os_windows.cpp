@@ -5167,22 +5167,6 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
   return base;
 }
 
-
-// Remap a block of memory.
-char* os::pd_remap_memory(int fd, const char* file_name, size_t file_offset,
-                          char *addr, size_t bytes, bool read_only,
-                          bool allow_exec) {
-  // This OS does not allow existing memory maps to be remapped so we
-  // would have to unmap the memory before we remap it.
-
-  // Because there is a small window between unmapping memory and mapping
-  // it in again with different protections, CDS archives are mapped RW
-  // on windows, so this function isn't called.
-  ShouldNotReachHere();
-  return nullptr;
-}
-
-
 // Unmap a block of memory.
 // Returns true=success, otherwise false.
 

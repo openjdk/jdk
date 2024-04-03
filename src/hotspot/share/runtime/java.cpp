@@ -316,10 +316,12 @@ void print_statistics() {
     CompileBroker::print_heapinfo(nullptr, "all", 4096); // details
   }
 
+#ifndef PRODUCT
   if (PrintCodeCache2) {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::print_internals();
   }
+#endif
 
   if (VerifyOops && Verbose) {
     tty->print_cr("+VerifyOops count: %d", StubRoutines::verify_oop_count());

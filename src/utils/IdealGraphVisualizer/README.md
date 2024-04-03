@@ -8,7 +8,7 @@ tool itself is fairly general with only a few modules that contain C2 specific
 elements.
 
 The tool is built on top of the NetBeans Platform, and requires a JDK version
-between 11 and 17 (the JDKs supported by the current NetBeans Platform).
+between 17 and 21 (the JDKs supported by the current NetBeans Platform).
 
 # Building and Running
 

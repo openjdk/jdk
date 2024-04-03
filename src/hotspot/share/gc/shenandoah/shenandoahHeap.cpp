@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -660,7 +660,7 @@ void ShenandoahHeap::post_initialize() {
 
   _heuristics->initialize();
 
-  JFR_ONLY(ShenandoahJFRSupport::register_jfr_type_serializers());
+  JFR_ONLY(ShenandoahJFRSupport::register_jfr_type_serializers();)
 }
 
 size_t ShenandoahHeap::used() const {
@@ -1003,7 +1003,11 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
 }
 
 HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req, bool& in_new_region) {
-  ShenandoahHeapLocker locker(lock());
+  // If we are dealing with mutator allocation, then we may need to block for safepoint.
+  // We cannot block for safepoint for GC allocations, because there is a high chance
+  // we are already running at safepoint or from stack watermark machinery, and we cannot
+  // block again.
+  ShenandoahHeapLocker locker(lock(), req.is_mutator_alloc());
   return _free_set->allocate(req, in_new_region);
 }
 

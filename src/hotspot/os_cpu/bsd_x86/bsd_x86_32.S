@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #endif
 
         .globl SYMBOL(fixcw)
+        .globl SYMBOL(SpinPause)
 
         # NOTE WELL!  The _Copy functions are called directly
         # from server-compiler-generated code via CallLeafNoFP,
@@ -50,6 +51,20 @@
         .globl SYMBOL(_Atomic_cmpxchg_long)
         .globl SYMBOL(_Atomic_move_long)
 
+#ifdef __APPLE__
+        .private_extern SYMBOL(fixcw)
+        .private_extern SYMBOL(SpinPause)
+        .private_extern SYMBOL(_Copy_arrayof_conjoint_bytes)
+        .private_extern SYMBOL(_Copy_conjoint_jshorts_atomic)
+        .private_extern SYMBOL(_Copy_arrayof_conjoint_jshorts)
+        .private_extern SYMBOL(_Copy_conjoint_jints_atomic)
+        .private_extern SYMBOL(_Copy_arrayof_conjoint_jints)
+        .private_extern SYMBOL(_Copy_conjoint_jlongs_atomic)
+        .private_extern SYMBOL(_mmx_Copy_arrayof_conjoint_jshorts)
+        .private_extern SYMBOL(_Atomic_cmpxchg_long)
+        .private_extern SYMBOL(_Atomic_move_long)
+#endif
+
         .text
 
 # Support for void os::Solaris::init_thread_fpu_state() in os_solaris_i486.cpp
@@ -62,7 +77,6 @@ SYMBOL(fixcw):
         popl     %eax
         ret
 
-        .globl  SYMBOL(SpinPause)
         ELF_TYPE(SpinPause,@function)
         .p2align 4,,15
 SYMBOL(SpinPause):

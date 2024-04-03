@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,17 +122,15 @@ import javax.security.sasl.SaslException;
 public final class Connection implements Runnable {
 
     private static final boolean debug = false;
-    private static final int dump = 0; // > 0 r, > 1 rw
-
 
     private final Thread worker;    // Initialized in constructor
 
-    private boolean v3 = true;       // Set in setV3()
+    private boolean v3 = true;     // Set in setV3()
 
     public final String host;  // used by LdapClient for generating exception messages
-                         // used by StartTlsResponse when creating an SSL socket
+                               // used by StartTlsResponse when creating an SSL socket
     public final int port;     // used by LdapClient for generating exception messages
-                         // used by StartTlsResponse when creating an SSL socket
+                               // used by StartTlsResponse when creating an SSL socket
 
     private boolean bound = false;   // Set in setBound()
 
@@ -324,30 +322,37 @@ public final class Connection implements Runnable {
     }
 
     private Socket createConnectionSocket(String host, int port, SocketFactory factory,
-                                          int connectTimeout) throws Exception {
+                                          int connectTimeout) throws IOException {
         Socket socket = null;
 
+        // if timeout is supplied, try to use unconnected socket for connecting with timeout
         if (connectTimeout > 0) {
-            // create unconnected socket and then connect it if timeout
-            // is supplied
-            InetSocketAddress endpoint =
-                    createInetSocketAddress(host, port);
-            // unconnected socket
-            socket = factory.createSocket();
-            // connect socket with a timeout
-            socket.connect(endpoint, connectTimeout);
             if (debug) {
-                System.err.println("Connection: creating socket with " +
-                        "a connect timeout");
+                System.err.println("Connection: creating socket with a connect timeout");
+            }
+            try {
+                // unconnected socket
+                socket = factory.createSocket();
+            } catch (IOException e) {
+                // unconnected socket is likely not supported by the SocketFactory
+                if (debug) {
+                    System.err.println("Connection: unconnected socket not supported by SocketFactory");
+                }
+            }
+            if (socket != null) {
+                InetSocketAddress endpoint = createInetSocketAddress(host, port);
+                // connect socket with a timeout
+                socket.connect(endpoint, connectTimeout);
             }
         }
+
+        // either no timeout was supplied or unconnected socket did not work
         if (socket == null) {
             // create connected socket
-            socket = factory.createSocket(host, port);
             if (debug) {
-                System.err.println("Connection: creating connected socket with" +
-                        " no connect timeout");
+                System.err.println("Connection: creating connected socket with no connect timeout");
             }
+            socket = factory.createSocket(host, port);
         }
         return socket;
     }
@@ -356,7 +361,7 @@ public final class Connection implements Runnable {
     // the SSL handshake following socket connection as part of the timeout.
     // So explicitly set a socket read timeout, trigger the SSL handshake,
     // then reset the timeout.
-    private void initialSSLHandshake(SSLSocket sslSocket , int connectTimeout) throws Exception {
+    private void initialSSLHandshake(SSLSocket sslSocket, int connectTimeout) throws Exception {
 
             if (!IS_HOSTNAME_VERIFICATION_DISABLED) {
                 SSLParameters param = sslSocket.getSSLParameters();
