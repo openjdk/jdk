@@ -49,33 +49,19 @@ Compiler::Compiler() : AbstractCompiler(compiler_c1) {
 }
 
 void Compiler::init_c1_runtime() {
-  BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
-  Runtime1::initialize(buffer_blob);
-  FrameMap::initialize();
-  // initialize data structures
-  ValueType::initialize();
-  GraphBuilder::initialize();
-  // note: to use more than one instance of LinearScan at a time this function call has to
-  //       be moved somewhere outside of this constructor:
-  Interval::initialize();
+  Runtime1::initialize(CompilerThread::current()->get_buffer_blob());
 }
 
-
 void Compiler::initialize() {
-  // Buffer blob must be allocated per C1 compiler thread at startup
-  //##@@
-  tty->print_cr("Compiler::initialize");
-  BufferBlob* buffer_blob = init_buffer_blob();
-
   if (should_perform_init()) {
-    if (buffer_blob == nullptr) {
-      // When we come here we are in state 'initializing'; entire C1 compilation
-      // can be shut down.
-      set_state(failed);
-    } else {
-      init_c1_runtime();
-      set_state(initialized);
-    }
+    FrameMap::initialize();
+    // initialize data structures
+    ValueType::initialize();
+    GraphBuilder::initialize();
+    // note: to use more than one instance of LinearScan at a time this function call has to
+    //       be moved somewhere outside of this constructor:
+    Interval::initialize();
+    set_state(initialized);
   }
 }
 
@@ -90,12 +76,21 @@ BufferBlob* Compiler::init_buffer_blob() {
 
   // setup CodeBuffer.  Preallocate a BufferBlob of size
   // NMethodSizeLimit plus some extra space for constants.
-  BufferBlob* buffer_blob = BufferBlob::create("C1 temporary CodeBuffer", code_buffer_size(), CompilerScratchBuffersCodeHeapAllocation);
+  BufferBlob* buffer_blob = BufferBlob::create("C1 temporary CodeBuffer", code_buffer_size(),
+    true); // must be: CompilerScratchBuffersCodeHeapAllocation);
+    // Note. C1 testing is not passed with malloc'ed buffers. There is a SEGV in generated code after a couple of compiled methods.
   if (buffer_blob != nullptr) {
     CompilerThread::current()->set_buffer_blob(buffer_blob);
   }
 
+  init_c1_runtime();
   return buffer_blob;
+}
+
+void Compiler::release_buffer_blob() {
+  BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
+  CompilerThread::current()->set_buffer_blob(nullptr);
+  BufferBlob::free(buffer_blob);
 }
 
 bool Compiler::is_intrinsic_supported(const methodHandle& method) {
@@ -248,14 +243,12 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
 }
 
 void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci, bool install_code, DirectiveSet* directive) {
-  BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
+  BufferBlob* buffer_blob = init_buffer_blob();
   if (buffer_blob == nullptr) {
-    //##@@ buffer_blob can be nullptr if it was released after the previous compilation
-    Compiler::init_buffer_blob();
-    buffer_blob = CompilerThread::current()->get_buffer_blob();
+    warning("no space to run C1 compiler");
+    return;
   }
 
-  assert(buffer_blob != nullptr, "Must exist");
   // invoke compilation
   {
     // We are nested here because we need for the destructor
@@ -265,9 +258,7 @@ void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci, bool 
     Compilation c(this, env, method, entry_bci, buffer_blob, install_code, directive);
   }
 
-  //##@@ release the buffer_blob after compilation
-  CompilerThread::current()->set_buffer_blob(nullptr);
-  BufferBlob::free(buffer_blob);
+  release_buffer_blob();
 }
 
 
