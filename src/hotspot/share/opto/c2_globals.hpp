@@ -790,7 +790,7 @@
   develop(bool, StressPrunedExceptionHandlers, false,                       \
           "Always prune exception handlers")                                \
                                                                             \
-  develop(bool, UseStoreStoreForCtor, true,                                 \
+  product(bool, UseStoreStoreForCtor, true, DIAGNOSTIC,                     \
           "Use storestore barrier instead of release barrier for"           \
           "on constructor exit")                                            \
 
