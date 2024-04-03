@@ -582,4 +582,41 @@ public class ImportModule extends TestRunner {
         }
     }
 
+    @Test
+    public void testModelDisambiguation(Path base) throws Exception {
+        Path current = base.resolve(".");
+        Path src = current.resolve("src");
+        Path classes = current.resolve("classes");
+        tb.writeJavaFiles(src,
+                          """
+                          package test;
+                          import module.*;
+                          import module.ModuleClass;
+                          import module.module.*;
+                          import module.module.ModuleModuleClass;
+                          public class Test {
+                          }
+                          """,
+                          """
+                          package module;
+                          public class ModuleClass{
+                          }
+                          """,
+                          """
+                          package module.module;
+                          public class ModuleModuleClass {
+                          }
+                          """);
+
+        Files.createDirectories(classes);
+        List<String> kinds = new ArrayList<>();
+
+        new JavacTask(tb)
+            .options("--enable-preview", "--release", SOURCE_VERSION)
+            .outdir(classes)
+            .files(tb.findJavaFiles(src))
+            .run(Task.Expect.SUCCESS)
+            .writeAll();
+    }
+
 }

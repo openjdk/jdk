@@ -4204,7 +4204,8 @@ public class JavacParser implements Parser {
         if (token.kind == STATIC) {
             importStatic = true;
             nextToken();
-        } else if (token.kind == IDENTIFIER && token.name() == names.module) {
+        } else if (token.kind == IDENTIFIER && token.name() == names.module &&
+                   peekToken(TokenKind.IDENTIFIER)) {
             checkSourceLevel(Feature.MODULE_IMPORTS);
             nextToken();
             JCExpression moduleName = qualident(false);
