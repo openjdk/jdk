@@ -2726,10 +2726,16 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
 #else  // MUSL_LIBC
 #define byteVal rdx
     {
+#ifdef _WIN32
+      __ movq(rcx, rdi); // Restore c_rarg*
+      __ movq(rdx, rsi);
+      __ movq(r8, rdx);
+      restore_arg_regs();
+#endif
       // rax has expanded byte value
-      __ movq(byteVal, rax);
+      __ movq(c_rarg2, rax);
 
-      __ xchgq(size, byteVal);
+      __ xchgq(c_rarg1, c_rarg2);
       __ jump_cc(Assembler::notZero, RuntimeAddress(byte_fill_entry));
     }
 #endif  // MUSL_LIBC
