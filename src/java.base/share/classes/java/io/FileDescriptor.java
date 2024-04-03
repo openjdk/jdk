@@ -207,11 +207,11 @@ public final class FileDescriptor {
      * @since     1.1
      */
     public void sync() throws SyncFailedException {
-        long comp = Blocker.begin();
+        boolean attempted = Blocker.begin();
         try {
             sync0();
         } finally {
-            Blocker.end(comp);
+            Blocker.end(attempted);
         }
     }
 

@@ -626,7 +626,7 @@ final class ProcessImpl extends Process {
      */
     private static class ProcessPipeOutputStream extends BufferedOutputStream {
         ProcessPipeOutputStream(int fd) {
-            super(new FileOutputStream(newFileDescriptor(fd)));
+            super(new PipeOutputStream(newFileDescriptor(fd)));
         }
 
         /** Called by the process reaper thread when the process exits. */

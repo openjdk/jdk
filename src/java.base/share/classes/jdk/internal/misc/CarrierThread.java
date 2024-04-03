@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.security.ProtectionDomain;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinWorkerThread;
 import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.JavaUtilConcurrentFJPAccess;
 import jdk.internal.access.SharedSecrets;
 
 /**
@@ -49,7 +50,12 @@ public class CarrierThread extends ForkJoinWorkerThread {
     private static final long INHERITABLETHREADLOCALS;
     private static final long INHERITEDACCESSCONTROLCONTEXT;
 
-    private boolean blocking;    // true if in blocking op
+    // compensating state
+    private static final int NOT_COMPENSATING = 0;
+    private static final int COMPENSATE_IN_PROGRESS = 1;
+    private static final int COMPENSATING = 2;
+    private int compensating;
+    private long compensateValue;   // FJP value to adjust release counts
 
     @SuppressWarnings("this-escape")
     public CarrierThread(ForkJoinPool pool) {
@@ -60,27 +66,43 @@ public class CarrierThread extends ForkJoinWorkerThread {
     }
 
     /**
-     * For use by {@link Blocker} to test if the thread is in a blocking operation.
+     * Mark the start of a blocking operation.
      */
-    boolean inBlocking() {
-        //assert JLA.currentCarrierThread() == this;
-        return blocking;
+    public void beginBlocking() {
+        assert Thread.currentThread().isVirtual() && JLA.currentCarrierThread() == this;
+        if (compensating == NOT_COMPENSATING) {
+            compensating = COMPENSATE_IN_PROGRESS;
+
+            // FJP.tryCompensate to create or re-activate a spare thread
+            long value;
+            try {
+                value = ForkJoinPools.beginCompensatedBlock(getPool());
+            } catch (Throwable e) {
+                if (compensating == COMPENSATE_IN_PROGRESS) {
+                    compensating = NOT_COMPENSATING;
+                }
+                throw e;
+            }
+
+            if (compensating == COMPENSATE_IN_PROGRESS) {
+                compensateValue = value;
+                compensating = COMPENSATING;
+            } else {
+                // forced preemption or preempted when attempting to compensate
+                ForkJoinPools.endCompensatedBlock(getPool(), value);
+            }
+        }
     }
 
     /**
-     * For use by {@link Blocker} to mark the start of a blocking operation.
+     * Mark the end of a blocking operation.
      */
-    void beginBlocking() {
-        //assert JLA.currentCarrierThread() == this && !blocking;
-        blocking = true;
-    }
-
-    /**
-     * For use by {@link Blocker} to mark the end of a blocking operation.
-     */
-    void endBlocking() {
-        //assert JLA.currentCarrierThread() == this && blocking;
-        blocking = false;
+    public void endBlocking() {
+        assert Thread.currentThread() == this || JLA.currentCarrierThread() == this;
+        if (compensating == COMPENSATING) {
+            ForkJoinPools.endCompensatedBlock(getPool(), compensateValue);
+            compensating = NOT_COMPENSATING;
+        }
     }
 
     @Override
@@ -95,7 +117,7 @@ public class CarrierThread extends ForkJoinWorkerThread {
      * The thread group for the carrier threads.
      */
     @SuppressWarnings("removal")
-    private static final ThreadGroup carrierThreadGroup() {
+    private static ThreadGroup carrierThreadGroup() {
         return AccessController.doPrivileged(new PrivilegedAction<ThreadGroup>() {
             public ThreadGroup run() {
                 ThreadGroup group = JLA.currentCarrierThread().getThreadGroup();
@@ -115,6 +137,21 @@ public class CarrierThread extends ForkJoinWorkerThread {
         return new AccessControlContext(new ProtectionDomain[] {
                 new ProtectionDomain(null, null)
         });
+    }
+
+    /**
+     * Defines static methods to invoke non-public ForkJoinPool methods via the
+     * shared secret support.
+     */
+    private static class ForkJoinPools {
+        private static final JavaUtilConcurrentFJPAccess FJP_ACCESS =
+                SharedSecrets.getJavaUtilConcurrentFJPAccess();
+        static long beginCompensatedBlock(ForkJoinPool pool) {
+            return FJP_ACCESS.beginCompensatedBlock(pool);
+        }
+        static void endCompensatedBlock(ForkJoinPool pool, long post) {
+            FJP_ACCESS.endCompensatedBlock(pool, post);
+        }
     }
 
     static {

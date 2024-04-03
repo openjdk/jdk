@@ -120,11 +120,11 @@ class KQueueSelectorImpl extends SelectorImpl {
 
             do {
                 long startTime = timedPoll ? System.nanoTime() : 0;
-                long comp = Blocker.begin(blocking);
+                boolean attempted = Blocker.begin(blocking);
                 try {
                     numEntries = KQueue.poll(kqfd, pollArrayAddress, MAX_KEVENTS, to);
                 } finally {
-                    Blocker.end(comp);
+                    Blocker.end(attempted);
                 }
                 if (numEntries == IOStatus.INTERRUPTED && timedPoll) {
                     // timed poll interrupted so need to adjust timeout

@@ -98,13 +98,13 @@ import jdk.internal.misc.Unsafe;
             long offset = mappingOffset(address, index);
             long mappingAddress = mappingAddress(address, offset, index);
             long mappingLength = mappingLength(offset, length);
-            long comp = Blocker.begin();
+            boolean attempted = Blocker.begin();
             try {
                 force0(fd, mappingAddress, mappingLength);
             } catch (IOException cause) {
                 throw new UncheckedIOException(cause);
             } finally {
-                Blocker.end(comp);
+                Blocker.end(attempted);
             }
         }
     }
