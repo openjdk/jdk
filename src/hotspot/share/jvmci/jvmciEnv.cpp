@@ -36,11 +36,11 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/javaCalls.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/os.hpp"
 #include "jvmci/jniAccessMark.inline.hpp"
 #include "jvmci/jvmciCompiler.hpp"
@@ -415,6 +415,11 @@ class ExceptionTranslation: public StackObj {
   // Decodes the exception in `buffer` in `_to_env` and throws it.
   virtual void decode(JavaThread* THREAD, DecodeFormat format, jlong buffer) = 0;
 
+  static bool debug_translated_exception() {
+      const char* prop_value = Arguments::get_property("jdk.internal.vm.TranslatedException.debug");
+      return prop_value != nullptr && strcmp("true", prop_value) == 0;
+  }
+
  public:
   void doit(JavaThread* THREAD) {
     int buffer_size = 2048;
@@ -510,7 +515,7 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
     JNIAccessMark jni(_to_env, THREAD);
     jni()->CallStaticVoidMethod(JNIJVMCI::VMSupport::clazz(),
                                 JNIJVMCI::VMSupport::decodeAndThrowThrowable_method(),
-                                format, buffer, false);
+                                format, buffer, false, debug_translated_exception());
   }
  public:
   HotSpotToSharedLibraryExceptionTranslation(JVMCIEnv* hotspot_env, JVMCIEnv* jni_env, const Handle& throwable) :
@@ -543,6 +548,7 @@ class SharedLibraryToHotSpotExceptionTranslation : public ExceptionTranslation {
     jargs.push_int(format);
     jargs.push_long(buffer);
     jargs.push_int(true);
+    jargs.push_int(debug_translated_exception());
     JavaValue result(T_VOID);
     JavaCalls::call_static(&result,
                             vmSupport,
