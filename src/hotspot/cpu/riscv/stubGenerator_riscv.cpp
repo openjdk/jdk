@@ -5132,7 +5132,7 @@ const static uint64_t right_8_bits = right_n_bits(8);
     StubCodeMark mark(this, "StubRoutines", "updateBytesAdler32");
     address start = __ pc();
 
-    Label L_simple_by1_loop, L_nmax, L_nmax_loop, L_by16, L_by16_loop, L_by1_loop, L_do_mod, L_combine, L_by1;
+    Label L_simple_by1_loop, L_nmax, L_nmax_loop, L_nmax_loop_entry, L_by16, L_by16_loop, L_by1_loop, L_do_mod, L_combine, L_by1;
 
     // Aliases
     Register adler  = c_rarg0;
@@ -5193,12 +5193,16 @@ const static uint64_t right_8_bits = right_n_bits(8);
     __ sub(count, nmax, 16);
     __ bltz(len, L_by16);
 
+    __ bind(L_nmax_loop_entry);
+    const Register buf_end = c_rarg6;
+    // buf_end will be used as endpoint for loop below
+    __ add(buf_end, buff, count); // buf_end will be used as endpoint for loop below
+    __ andi(count, count, 16-1); // count = (count % 16)
+    __ sub(count, count, 16); // count after all iterations
+
     __ bind(L_nmax_loop);
-
     generate_updateBytesAdler32_accum(buff, s1, s2, temp0, temp1, temp2);
-
-    __ sub(count, count, 16);
-    __ bgez(count, L_nmax_loop);
+    __ ble(buff, buf_end, L_nmax_loop);
 
     // s1 = s1 % BASE
     __ remuw(s1, s1, base);
@@ -5208,7 +5212,7 @@ const static uint64_t right_8_bits = right_n_bits(8);
 
     __ sub(len, len, nmax);
     __ sub(count, nmax, 16);
-    __ bgez(len, L_nmax_loop);
+    __ bgez(len, L_nmax_loop_entry);
 
     __ bind(L_by16);
     __ add(len, len, count);
