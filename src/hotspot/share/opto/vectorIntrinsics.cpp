@@ -1743,7 +1743,9 @@ bool LibraryCallKit::inline_vector_reduction() {
     value = gvn().transform(new VectorBlendNode(reduce_identity, value, mask));
   }
 
-  value = ReductionNode::make(opc, nullptr, init, value, elem_bt, /* is_associative */ true);
+  // Make an unordered Reduction node. This affects only AddReductionVF/VD and MulReductionVF/VD,
+  // as these operations are allowed to be associative (not requiring strict order) in VectorAPI.
+  value = ReductionNode::make(opc, nullptr, init, value, elem_bt, /* requires_strict_order */ false);
 
   if (mask != nullptr && use_predicate) {
     value->add_req(mask);

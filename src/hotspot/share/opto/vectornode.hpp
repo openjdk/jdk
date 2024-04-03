@@ -206,8 +206,8 @@ class ReductionNode : public Node {
   }
 
   static ReductionNode* make(int opc, Node* ctrl, Node* in1, Node* in2, BasicType bt,
-                             // Currently, this only effects floating-point add reductions.
-                             bool is_associative = false);
+                             // This only effects floating-point add and mul reductions.
+                             bool requires_strict_order = true);
   static int  opcode(int opc, BasicType bt);
   static bool implemented(int opc, uint vlen, BasicType bt);
   // Make an identity scalar (zero for add, one for mul, etc) for scalar opc.
@@ -231,14 +231,14 @@ class ReductionNode : public Node {
   virtual uint size_of() const { return sizeof(*this); }
 
   // Floating-point addition and multiplication are non-associative, so
-  // AddReductionVF/D and MulReductionVF/D require strict-ordering
-  // in auto-vectorization. Currently, Vector API allows
-  // AddReductionVF/VD to be associative (no need of strict ordering)
-  // which can benefit some platforms.
+  // AddReductionVF/D and MulReductionVF/D require strict ordering
+  // in auto-vectorization. Vector API can generate AddReductionVF/D
+  // and MulReductionVF/VD without strict ordering, which can benefit
+  // some platforms.
   //
-  // Other reductions are associative (do not need strict ordering).
-  virtual bool is_associative() const {
-    return true;
+  // Other reductions don't need strict ordering.
+  virtual bool requires_strict_order() const {
+    return false;
   }
 };
 
@@ -262,24 +262,24 @@ public:
 // Vector add float as a reduction
 class AddReductionVFNode : public ReductionNode {
 private:
-  // True if add reduction of floats is associative.
-  // The value is true when add reduction for floats is generated through VectorAPI
-  // as VectorAPI allows it to be associative (no strict ordering). The value is false
-  // when it is auto-vectorized as auto-vectorization mandates the operation to be
-  // non-associative (strictly ordered).
-  bool _is_associative;
+  // True if add reduction operation for floats requires strict ordering.
+  // As an example - The value is true when add reduction for floats is auto-vectorized
+  // as auto-vectorization mandates strict ordering but the value is false when this node
+  // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
+  const bool _requires_strict_order;
 public:
-  AddReductionVFNode(Node *ctrl, Node* in1, Node* in2, bool is_associative) :
-    ReductionNode(ctrl, in1, in2), _is_associative(is_associative) {}
+  //_requires_strict_order is set to true by default as mandated by auto-vectorization
+  AddReductionVFNode(Node *ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
+    ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
 
   virtual int Opcode() const;
 
-  virtual bool is_associative() const { return _is_associative; }
+  virtual bool requires_strict_order() const { return _requires_strict_order; }
 
-  virtual uint hash() const { return Node::hash() + _is_associative; }
+  virtual uint hash() const { return Node::hash() + _requires_strict_order; }
 
   virtual bool cmp(const Node& n) const {
-    return Node::cmp(n) && _is_associative == ((ReductionNode&)n).is_associative();
+    return Node::cmp(n) && _requires_strict_order == ((ReductionNode&)n).requires_strict_order();
   }
 
   virtual uint size_of() const { return sizeof(*this); }
@@ -289,24 +289,24 @@ public:
 // Vector add double as a reduction
 class AddReductionVDNode : public ReductionNode {
 private:
-  // True if add reduction of doubles is associative.
-  // The value is true when add reduction for doubles is generated through VectorAPI
-  // as VectorAPI allows it to be associative (no strict ordering). The value is false
-  // when it is auto-vectorized as auto-vectorization mandates the operation to be
-  // non-associative (strictly ordered).
-  bool _is_associative;
+  // True if add reduction operation for doubles requires strict ordering.
+  // As an example - The value is true when add reduction for doubles is auto-vectorized
+  // as auto-vectorization mandates strict ordering but the value is false when this node
+  // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
+  const bool _requires_strict_order;
 public:
-  AddReductionVDNode(Node *ctrl, Node* in1, Node* in2, bool is_associative) :
-    ReductionNode(ctrl, in1, in2), _is_associative(is_associative) {}
+  //_requires_strict_order is set to true by default as mandated by auto-vectorization
+  AddReductionVDNode(Node *ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
+    ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
 
   virtual int Opcode() const;
 
-  virtual bool is_associative() const { return _is_associative; }
+  virtual bool requires_strict_order() const { return _requires_strict_order; }
 
-  virtual uint hash() const { return Node::hash() + _is_associative; }
+  virtual uint hash() const { return Node::hash() + _requires_strict_order; }
 
   virtual bool cmp(const Node& n) const {
-    return Node::cmp(n) && _is_associative == ((ReductionNode&)n).is_associative();
+    return Node::cmp(n) && _requires_strict_order == ((ReductionNode&)n).requires_strict_order();
   }
 
   virtual uint size_of() const { return sizeof(*this); }
@@ -461,23 +461,53 @@ public:
 //------------------------------MulReductionVFNode--------------------------------------
 // Vector multiply float as a reduction
 class MulReductionVFNode : public ReductionNode {
+  // True if mul reduction operation for floats requires strict ordering.
+  // As an example - The value is true when mul reduction for floats is auto-vectorized
+  // as auto-vectorization mandates strict ordering but the value is false when this node
+  // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
+  const bool _requires_strict_order;
 public:
-  MulReductionVFNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  //_requires_strict_order is set to true by default as mandated by auto-vectorization
+  MulReductionVFNode(Node *ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
+    ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
+
   virtual int Opcode() const;
 
-  // Since no real case can benefit from the operation being associative, return false currently.
-  virtual bool is_associative() const { return false; }
+  virtual bool requires_strict_order() const { return _requires_strict_order; }
+
+  virtual uint hash() const { return Node::hash() + _requires_strict_order; }
+
+  virtual bool cmp(const Node& n) const {
+    return Node::cmp(n) && _requires_strict_order == ((ReductionNode&)n).requires_strict_order();
+  }
+
+  virtual uint size_of() const { return sizeof(*this); }
 };
 
 //------------------------------MulReductionVDNode--------------------------------------
 // Vector multiply double as a reduction
 class MulReductionVDNode : public ReductionNode {
+  // True if mul reduction operation for doubles requires strict ordering.
+  // As an example - The value is true when mul reduction for doubles is auto-vectorized
+  // as auto-vectorization mandates strict ordering but the value is false when this node
+  // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
+  const bool _requires_strict_order;
 public:
-  MulReductionVDNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  //_requires_strict_order is set to true by default as mandated by auto-vectorization
+  MulReductionVDNode(Node *ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
+    ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
+
   virtual int Opcode() const;
 
-  // Since no real case can benefit from the operation being associative, return false currently.
-  virtual bool is_associative() const { return false; }
+  virtual bool requires_strict_order() const { return _requires_strict_order; }
+
+  virtual uint hash() const { return Node::hash() + _requires_strict_order; }
+
+  virtual bool cmp(const Node& n) const {
+    return Node::cmp(n) && _requires_strict_order == ((ReductionNode&)n).requires_strict_order();
+  }
+
+  virtual uint size_of() const { return sizeof(*this); }
 };
 
 //------------------------------DivVFNode--------------------------------------
