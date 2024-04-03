@@ -26,5 +26,6 @@ jdk dir:
 
 ### step 4: make necessary changes to resolve any build issues in case there is any.
 
-Currently, there is only necessary change:
+Currently, the only necessary change is:
 * make `Sleef_rempitabdp` and `Sleef_rempitabsp` in sleefinline_advsimd.h and sleefinline_sve.h `static` to avoid multiple definitions.
+* * a further step is to make some changes in sleef itself, so to avoid make these changes when importing the source into jdk
