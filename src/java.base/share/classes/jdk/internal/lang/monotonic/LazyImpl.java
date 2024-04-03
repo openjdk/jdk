@@ -25,9 +25,15 @@
 
 package jdk.internal.lang.monotonic;
 
+import jdk.internal.access.JavaUtilCollectionAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
+
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 import static jdk.internal.lang.monotonic.MonotonicUtil.*;
@@ -50,7 +56,7 @@ public final class LazyImpl<V> implements Lazy<V> {
 
     @ForceInline
     @Override
-    public boolean isBound() {
+    public boolean isSet() {
         return value != null || valueVolatile() != null;
     }
 
@@ -76,7 +82,7 @@ public final class LazyImpl<V> implements Lazy<V> {
 
     @ForceInline
     @Override
-    public void bindOrThrow(V value) {
+    public void setOrThrow(V value) {
         Object v = toObject(value);
         if (caeValue(v) != null) {
             throw new IllegalStateException("A value is already bound: " + orThrow());
@@ -85,8 +91,8 @@ public final class LazyImpl<V> implements Lazy<V> {
 
     @ForceInline
     @Override
-    public V bindIfUnbound(V value) {
-        if (isBound()) {
+    public V setIfUnset(V value) {
+        if (isSet()) {
            return orThrow();
         }
         return caeWitness(value);
@@ -94,7 +100,7 @@ public final class LazyImpl<V> implements Lazy<V> {
 
     @ForceInline
     @Override
-    public V computeIfUnbound(Supplier<? extends V> supplier) {
+    public V computeIfUnset(Supplier<? extends V> supplier) {
         // Optimistically try plain semantics first
         Object v = value;
         if (v != null) {
@@ -117,7 +123,7 @@ public final class LazyImpl<V> implements Lazy<V> {
     @Override
     public String toString() {
         return "Monotonic" +
-                (isBound()
+                (isSet()
                         ? "[" + orThrow() + "]"
                         : ".unbound");
     }
@@ -161,7 +167,7 @@ public final class LazyImpl<V> implements Lazy<V> {
         Thread.ofVirtual()
                 .start(() -> {
                     try {
-                        lazy.computeIfUnbound(supplier);
+                        lazy.computeIfUnset(supplier);
                     } catch (Exception _) {}
                 });
         return lazy;
@@ -173,7 +179,7 @@ public final class LazyImpl<V> implements Lazy<V> {
             @Override
             public V get() {
                 synchronized (lazy) {
-                    if (lazy.isBound()) {
+                    if (lazy.isSet()) {
                         return lazy.orThrow();
                     }
                 }
@@ -183,9 +189,23 @@ public final class LazyImpl<V> implements Lazy<V> {
         return new Supplier<>() {
             @Override
             public V get() {
-                return lazy.computeIfUnbound(guardedSupplier);
+                return lazy.computeIfUnset(guardedSupplier);
             }
         };
     }
+
+    // Collections factories
+
+    private static final JavaUtilCollectionAccess ACCESS =
+            SharedSecrets.getJavaUtilCollectionAccess();
+
+    public static <E> List<E> ofList(int size, IntFunction<? extends E> mapper) {
+        if (size < 0) {
+            throw new IllegalArgumentException();
+        }
+        Objects.requireNonNull(mapper);
+        return ACCESS.lazyList(size, mapper);
+    }
+
 
 }

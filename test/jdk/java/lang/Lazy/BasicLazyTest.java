@@ -54,65 +54,65 @@ final class BasicLazyTest {
 
     @Test
     void unbound() {
-        assertFalse(m.isBound());
+        assertFalse(m.isSet());
         assertThrows(NoSuchElementException.class, m::orThrow);
     }
 
     void bind() {
-        m.bindOrThrow(FIRST);
-        assertTrue(m.isBound());
+        m.setOrThrow(FIRST);
+        assertTrue(m.isSet());
         assertEquals(FIRST, m.orThrow());
-        assertThrows(IllegalStateException.class, () -> m.bindOrThrow(SECOND));
-        assertTrue(m.isBound());
+        assertThrows(IllegalStateException.class, () -> m.setOrThrow(SECOND));
+        assertTrue(m.isSet());
         assertEquals(FIRST, m.orThrow());
     }
 
     @Test
     void bindIfAbsent() {
-        Integer i = m.bindIfUnbound(FIRST);
-        assertTrue(m.isBound());
+        Integer i = m.setIfUnset(FIRST);
+        assertTrue(m.isSet());
         assertEquals(FIRST, i);
         assertEquals(FIRST, m.orThrow());
 
-        assertEquals(FIRST, m.bindIfUnbound(FIRST));
-        assertEquals(FIRST, m.bindIfUnbound(SECOND));
-        assertEquals(FIRST, m.bindIfUnbound(null));
+        assertEquals(FIRST, m.setIfUnset(FIRST));
+        assertEquals(FIRST, m.setIfUnset(SECOND));
+        assertEquals(FIRST, m.setIfUnset(null));
     }
 
     @Test
     void bindIfAbsentNull() {
-        Integer i = m.bindIfUnbound(null);
-        assertTrue(m.isBound());
+        Integer i = m.setIfUnset(null);
+        assertTrue(m.isSet());
         assertNull(i);
         assertNull(m.orThrow());
 
-        assertNull(m.bindIfUnbound(null));
-        assertNull(m.bindIfUnbound(FIRST));
-        assertNull(m.bindIfUnbound(SECOND));
+        assertNull(m.setIfUnset(null));
+        assertNull(m.setIfUnset(FIRST));
+        assertNull(m.setIfUnset(SECOND));
     }
 
     @Test
     void computeIfAbsent() {
-        m.computeIfUnbound(() -> FIRST);
+        m.computeIfUnset(() -> FIRST);
         assertEquals(FIRST, m.orThrow());
 
         Supplier<Integer> throwingSupplier = () -> {
             throw new UnsupportedOperationException();
         };
-        assertDoesNotThrow(() -> m.computeIfUnbound(throwingSupplier));
+        assertDoesNotThrow(() -> m.computeIfUnset(throwingSupplier));
 
         var m2 = Lazy.of();
-        m2.computeIfUnbound(() -> FIRST);
+        m2.computeIfUnset(() -> FIRST);
         assertEquals(FIRST, m2.orThrow());
     }
 
     @Test
     void computeIfAbsentNull() {
         CountingSupplier<Integer> c = new CountingSupplier<>(() -> null);
-        m.computeIfUnbound(c);
+        m.computeIfUnset(c);
         assertNull(m.orThrow());
         assertEquals(1, c.cnt());
-        m.computeIfUnbound(c);
+        m.computeIfUnset(c);
         assertEquals(1, c.cnt());
     }
 
@@ -120,7 +120,7 @@ final class BasicLazyTest {
     void memoized() {
         CountingSupplier<Integer> cSup = new CountingSupplier<>(() -> FIRST);
         Lazy<Integer> m3 = Lazy.of();
-        Supplier<Integer> memoized = () -> m3.computeIfUnbound(cSup);
+        Supplier<Integer> memoized = () -> m3.computeIfUnset(cSup);
         assertEquals(FIRST, memoized.get());
         // Make sure the original supplier is not invoked more than once
         assertEquals(FIRST, memoized.get());
@@ -130,20 +130,19 @@ final class BasicLazyTest {
     @Test
     void reflection() throws NoSuchFieldException {
         final class Holder {
-            private final Lazy<Integer> monotonic = Lazy.of();
+            private final Lazy<Integer> lazy = Lazy.of();
         }
         final class HolderNonFinal {
-            private Lazy<Integer> monotonic = Lazy.of();
+            private Lazy<Integer> lazy = Lazy.of();
         }
 
-        Field field = Holder.class.getDeclaredField("monotonic");
+        Field field = Holder.class.getDeclaredField("lazy");
         assertThrows(InaccessibleObjectException.class, () ->
                         field.setAccessible(true)
                 );
 
-        Field fieldNonFinal = HolderNonFinal.class.getDeclaredField("monotonic");
+        Field fieldNonFinal = HolderNonFinal.class.getDeclaredField("lazy");
         assertDoesNotThrow(() -> fieldNonFinal.setAccessible(true));
-
     }
 
     @Test
@@ -153,9 +152,9 @@ final class BasicLazyTest {
         sun.misc.Unsafe unsafe = (sun.misc.Unsafe)unsafeField.get(null);
 
         final class Holder {
-            private final Lazy<Integer> monotonic = Lazy.of();
+            private final Lazy<Integer> lazy = Lazy.of();
         }
-        Field field = Holder.class.getDeclaredField("monotonic");
+        Field field = Holder.class.getDeclaredField("lazy");
         assertThrows(UnsupportedOperationException.class, () ->
                 unsafe.objectFieldOffset(field)
         );

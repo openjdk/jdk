@@ -21,7 +21,7 @@
  * questions.
  */
 
-package org.openjdk.bench.java.lang.monotonic;
+package org.openjdk.bench.java.lang.lazy;
 
 import org.openjdk.jmh.annotations.*;
 
@@ -40,10 +40,10 @@ import java.util.stream.IntStream;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 2, jvmArgsAppend = "--enable-preview")
-@OperationsPerInvocation(1000)
-public class MonotonicSmallListBenchmark {
+@OperationsPerInvocation(1_000_000)
+public class LazyBigListBenchmark {
 
-    private static final int SIZE = 1_000;
+    private static final int SIZE = 1_000_000;
 
     //private static final List<Monotonic<Integer>> MONOTONIC_LAZY = randomMono(Monotonic.ofList(SIZE));
     private final List<Lazy<Integer>> Lazy_EAGER = randomMono(IntStream.range(0, SIZE)
@@ -119,7 +119,7 @@ public class MonotonicSmallListBenchmark {
     private static List<Lazy<Integer>> randomMono(List<Lazy<Integer>> list) {
         Random rnd = new Random();
         for (int i = 0; i < SIZE; i++) {
-            list.get(i).bindOrThrow(rnd.nextInt(0, SIZE));
+            list.get(i).setOrThrow(rnd.nextInt(0, SIZE));
         }
         return list;
     }

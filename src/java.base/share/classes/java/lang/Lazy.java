@@ -28,6 +28,7 @@ package java.lang;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.lang.monotonic.LazyImpl;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -42,22 +43,22 @@ import static jdk.internal.javac.PreviewFeature.*;
 
 /**
  * An atomic, thread-safe, non-blocking, lazy value holder for which the value can
- * be bound at most once.
+ * be set at most once.
  * <p>
  * Lazy values are eligible for constant folding and other optimizations by the JVM.
  * <p>
- * A Lazy value is monotonic because the state of a lazy value can only go from
- * <em>unbound</em> to <em>bound</em> and consequently, a value can only be bound
+ * A Lazy value is said to be monotonic because the state of a lazy value can only go from
+ * <em>unset</em> to <em>set</em> and consequently, a value can only be set
  * at most once.
  * <p>
  * Lazy collections, that are operating directly on element/values, are available via
  * the factories:
  * <ul>
- *     <li>{@linkplain List#ofLazy(int, IntFunction)}</li>
- *     <li>{@linkplain Set#ofLazy(Set, Predicate)}</li>
- *     <li>{@linkplain Set#ofLazy(Class, Predicate)}</li>
- *     <li>{@linkplain Map#ofLazy(Set, Function)}</li>
- *     <li>{@linkplain Map#ofLazy(Class, Function)}</li>
+ *     <li>{@linkplain #ofList(int, IntFunction)}</li>
+ *     <li>{@linkplain #ofSet(Set, Predicate)}</li>
+ *     <li>{@linkplain #ofSet(Class, Predicate)}</li>
+ *     <li>{@linkplain #ofMap(Set, Function)}</li>
+ *     <li>{@linkplain #ofMap(Class, Function)}</li>
  * </ul>
  * The returned collections above are all eligible for constant folding optimizations.
  * <p>
@@ -85,51 +86,51 @@ import static jdk.internal.javac.PreviewFeature.*;
 public sealed interface Lazy<V> permits LazyImpl {
 
     /**
-     * {@return the bound value (nullable) if bound, otherwise throws
+     * {@return the set value (nullable) if set, otherwise throws
      * {@code NoSuchElementException}}
      *
-     * @throws NoSuchElementException if no value is bound
+     * @throws NoSuchElementException if no value is set
      */
     V orThrow();
 
     /**
-     * {@return {@code true} if a value is bound, otherwise {@code false}}
+     * {@return {@code true} if a value is set, otherwise {@code false}}
      */
-    boolean isBound();
+    boolean isSet();
 
     /**
-     * Binds the lazy value to the provided (nullable) {@code value} or throws an
-     * {@linkplain IllegalStateException} if a value is already bound.
+     * Sets the lazy value to the provided (nullable) {@code value} or throws an
+     * {@linkplain IllegalStateException} if a value is already set.
      *
-     * @param value to bind
-     * @throws IllegalStateException if a value is already bound
+     * @param value to set
+     * @throws IllegalStateException if a value is already set
      */
-    void bindOrThrow(V value);
+    void setOrThrow(V value);
 
     /**
-     * If no value is bound, binds the lazy value to the provided (nullable)
-     * {@code value}, returning the (pre-existing or newly bound) value.
+     * If no value is set, sets the lazy value to the provided (nullable)
+     * {@code value}, returning the (pre-existing or newly set) value.
      * <p>
      * If several threads invoke this method simultaneously, only one thread will succeed
-     * in binding a value and that (witness) value will be returned to all threads.
+     * in setting a value and that (witness) value will be returned to all threads.
      *
-     * @param value to bind
+     * @param value to set
      * @return the bound value
      */
-    V bindIfUnbound(V value);
+    V setIfUnset(V value);
 
     /**
-     * If no value {@linkplain #isBound() is bound}, attempts to compute and bind a
+     * If no value {@linkplain #isSet() is set}, attempts to compute and set a
      * new (nullable) value using the provided {@code supplier}, returning the
-     * (pre-existing or newly bound) value.
+     * (pre-existing or newly set) value.
      *
      * <p>
      * If the supplier throws an (unchecked) exception, the exception is rethrown, and no
-     * value is bound. The most common usage is to construct a new object serving as a
+     * value is set. The most common usage is to construct a new object serving as a
      * lazily computed value or memoized result, as in:
      *
      * <pre> {@code
-     * Value witness = lazy.computeIfUnbound(Value::new);
+     * Value witness = lazy.computeIfUnset(Value::new);
      * }</pre>
      *
      * @implSpec The implementation logic is equivalent to the following steps for this
@@ -151,12 +152,12 @@ public sealed interface Lazy<V> permits LazyImpl {
      * @param supplier to be used for computing a value
      * @return the current (pre-existing or computed) value
      */
-    V computeIfUnbound(Supplier<? extends V> supplier);
+    V computeIfUnset(Supplier<? extends V> supplier);
 
     // Factories
 
     /**
-     * {@return a fresh lazy with an unbound value}
+     * {@return a fresh lazy with an unset value}
      *
      * @param <V> the value type to bind
      */
@@ -165,14 +166,14 @@ public sealed interface Lazy<V> permits LazyImpl {
     }
 
     /**
-     * {@return a fresh lazy with an unbound value where the returned lazy's
+     * {@return a fresh lazy with an unset value where the returned lazy's
      * value is computed in a separate fresh background thread using the provided
      * {@code supplier}}
      * <p>
      * If the supplier throws an (unchecked) exception, the exception is ignored, and no
-     * value is bound.
+     * value is set.
      *
-     * @param <V>      the value type to bind
+     * @param <V>      the value type to set
      * @param supplier to be used for computing a value
      * @see Lazy#of
      */
@@ -193,15 +194,156 @@ public sealed interface Lazy<V> permits LazyImpl {
      *}
      * except it promises the provided {@code supplier} is invoked at most once once
      * even though the returned memoized Supplier is invoked simultaneously
-     * by several threads. The method will block, if a computation is already in progress.
+     * by several threads. The returned Supplier's {@linkplain Supplier#get()} method
+     * will block, if a computation is already in progress.
      *
      * @param supplier   to be used for computing a value
      * @param <V>        the type of the value to memoize
-     * @see Lazy#computeIfUnbound(Supplier)
+     * @see Lazy#computeIfUnset(Supplier)
      */
     static <V> Supplier<V> asSupplier(Supplier<? extends V> supplier) {
         Objects.requireNonNull(supplier);
         return LazyImpl.asMemoized(supplier);
+    }
+
+    /**
+     * {@return an unmodifiable, shallowly immutable, thread-safe, lazy,
+     * {@linkplain List} containing {@code size} elements which are
+     * lazily computed upon being first accessed (e.g. via {@linkplain List#get(int)})
+     * by invoking the provided {@code mapper} at most once per element}
+     * <p>
+     * The provided {@code mapper} must not return {@code null} values.
+     * <p>
+     * The returned List is not {@linkplain Serializable}.
+     * <p>
+     * The returned monotonic map is eligible for constant folding and other
+     * optimizations by the JVM.
+     *
+     * @param <E>    the {@code List}'s element type
+     * @param size   the number of elements in the list
+     * @param mapper to invoke upon lazily computing element values
+     * @throws IllegalArgumentException if the provided {@code size} is negative
+     * @throws NullPointerException if the provided {@code mapper} is {@code null}
+     *
+     * @since 23
+     */
+    static <E> List<E> ofList(int size, IntFunction<? extends E> mapper) {
+        if (size < 0) {
+            throw new IllegalArgumentException();
+        }
+        Objects.requireNonNull(mapper);
+        return LazyImpl.ofList(size, mapper);
+    }
+
+    /**
+     * {@return an unmodifiable, shallowly immutable, thread-safe, lazy,
+     * {@linkplain Set } where the computation of the
+     * {@linkplain java.util.Set#contains(Object) contains()} operation is deferred to
+     * when first being called and can only be made for the distinct provided set of
+     * {@code candidates} and where the elements' existence is lazily computed upon
+     * being first queried by invoking the provided {@code predicate}
+     * at most once per candidate}
+     * <p>
+     * The returned set is not {@linkplain Serializable}.
+     * <p>
+     * The returned set is eligible for constant folding and other
+     * optimizations by the JVM.
+     *
+     * @param candidates the potential elements in the set
+     * @param predicate  to apply when lazily computing containment
+     * @param <E>        the type of elements maintained by this set
+     * @throws NullPointerException if the provided {@code keys} or the provided
+     *         {@code mapper} is null
+     */
+    static <E> Set<E> ofSet(Set<? extends E> candidates,
+                            Predicate<? super E> predicate) {
+        Objects.requireNonNull(candidates);
+        Objects.requireNonNull(predicate);
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@return an unmodifiable, shallowly immutable, thread-safe, lazy,
+     * {@linkplain Set } where the computation of the
+     * {@linkplain java.util.Set#contains(Object) contains()} operation is deferred to
+     * when first being called and can only be made for the enum elements of the provided
+     * {@code enumType} and where the elements' existence is lazily computed upon being
+     * first queried by invoking the provided {@code predicate} at most once per candidate}
+     * <p>
+     * The returned set is not {@linkplain Serializable}.
+     * <p>
+     * The returned set is eligible for constant folding and other
+     * optimizations by the JVM.
+     *
+     * @param enumType  the enum type signifying the potential enum elements
+     * @param predicate to apply when lazily computing containment
+     * @param <E>       the type of elements maintained by this set
+     * @throws NullPointerException if the provided {@code enumType} or the provided
+     *         {@code mapper} is null
+     */
+    static <E extends Enum<E>> Set<E> ofSet(Class<E> enumType,
+                                            Predicate<? super E> predicate) {
+        Objects.requireNonNull(enumType);
+        Objects.requireNonNull(predicate);
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@return an unmodifiable, shallowly immutable, thread-safe, value-lazy,
+     * {@linkplain Map } where the {@linkplain java.util.Map#keySet() keys}
+     * contains precisely the distinct provided set of {@code keys} and where the
+     * values are lazily computed upon being first accessed
+     * (e.g. via {@linkplain Map#get(Object) get()}) by invoking the provided {@code mapper}
+     * at most once per key}
+     * <p>
+     * The provided {@code mapper} must not return {@code null} values.
+     * <p>
+     * The returned map is not {@linkplain Serializable}.
+     * <p>
+     * The returned map is eligible for constant folding and other
+     * optimizations by the JVM.
+     *
+     * @param keys   the keys in the map
+     * @param mapper to apply when lazily computing values
+     * @param <K>    the type of keys maintained by the returned map
+     * @param <V>    the type of mapped values
+     * @throws NullPointerException if the provided {@code keys} or the provided
+     *         {@code mapper} is null
+     */
+    static <K, V> Map<K, V> ofMap(Set<? extends K> keys,
+                                  Function<? super K, ? extends V> mapper) {
+        Objects.requireNonNull(keys);
+        Objects.requireNonNull(mapper);
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@return an unmodifiable, shallowly immutable, thread-safe, value-lazy,
+     * {@linkplain Map } where the {@linkplain java.util.Map#keySet() keys}
+     * contains the enum elements of the provided {@code enumType} and where the
+     * values are lazily computed upon being first accessed
+     * (e.g. via {@linkplain Map#get(Object) get()}) by invoking the provided {@code mapper}
+     * at most once per key}
+     * <p>
+     * The provided {@code mapper} must not return {@code null} values.
+     * <p>
+     * The returned map is not {@linkplain Serializable}.
+     * <p>
+     * The returned map is eligible for constant folding and other
+     * optimizations by the JVM.
+     *
+     * @param enumType the enum type signifying the enum key elements
+     * @param mapper   to apply when lazily computing values
+     * @param <K>      the type of enum keys maintained by the returned map
+     * @param <V>      the type of mapped values
+     * @throws NullPointerException if the provided {@code enumType} or the provided
+     *         {@code mapper} is null
+     */
+    static <K extends Enum<K>, V> Map<K, V> ofMap(Class<K> enumType,
+                                                  Function<? super K, ? extends V> mapper) {
+        Objects.requireNonNull(enumType);
+        Objects.requireNonNull(mapper);
+        throw new UnsupportedOperationException();
     }
 
 }

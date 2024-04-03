@@ -21,7 +21,7 @@
  * questions.
  */
 
-package org.openjdk.bench.java.lang.monotonic;
+package org.openjdk.bench.java.lang.lazy;
 
 import org.openjdk.jmh.annotations.*;
 
@@ -57,7 +57,7 @@ MonotonicBenchmark.staticDCL          avgt   10  1.238 ? 0.042  ns/op
 MonotonicBenchmark.staticMonotonic    avgt   10  0.576 ? 0.044  ns/op
 
  */
-public class MonotonicBenchmark {
+public class LazyBenchmark {
 
     private static final int VALUE = 42;
 
@@ -101,7 +101,7 @@ public class MonotonicBenchmark {
     }
 
     private static Lazy<Integer> init(Lazy<Integer> m) {
-        m.bindOrThrow(VALUE);
+        m.setOrThrow(VALUE);
         return m;
     }
 

@@ -21,7 +21,7 @@
  * questions.
  */
 
-package org.openjdk.bench.java.lang.monotonic;
+package org.openjdk.bench.java.lang.lazy;
 
 import org.openjdk.jmh.annotations.*;
 
@@ -48,7 +48,7 @@ MonotonicListBenchmark.instanceWrapped    avgt   10  1.325 ? 0.047  ns/op
 MonotonicListBenchmark.staticArrayList    avgt   10  0.922 ? 0.058  ns/op
 MonotonicListBenchmark.staticLazyList     avgt   10  0.568 ? 0.046  ns/op
  */
-public class MonotonicListBenchmark {
+public class LazyListBenchmark {
 
     private static final IntFunction<Integer> FUNCTION = i -> i;
     private static final int SIZE = 100;
@@ -58,23 +58,23 @@ public class MonotonicListBenchmark {
                     .mapToObj(_ -> Lazy.<Integer>of())
                     .toList();
     static {
-        WRAPPED.get(8).bindOrThrow(8);
+        WRAPPED.get(8).setOrThrow(8);
     }
 
     //private static final List<Monotonic<Integer>> MONOTONIC_LIST = initMono(Monotonic.ofList(SIZE));
     private static final List<Integer> ARRAY_LIST = initList(new ArrayList<>(SIZE));
-    private static final List<Integer> LAZY_LIST = List.ofLazy(SIZE, FUNCTION);
+    private static final List<Integer> LAZY_LIST = Lazy.ofList(SIZE, FUNCTION);
 
     //private final List<Monotonic<Integer>> referenceList = initMono(Monotonic.ofList(SIZE));
     private final List<Integer> arrayList = initList(new ArrayList<>(SIZE));
-    private final List<Integer> lazyList = List.ofLazy(SIZE, FUNCTION);
+    private final List<Integer> lazyList = Lazy.ofList(SIZE, FUNCTION);
     private final List<Lazy<Integer>> wrappedList;
 
-    public MonotonicListBenchmark() {
+    public LazyListBenchmark() {
         this.wrappedList = IntStream.range(0, SIZE)
                 .mapToObj(i -> Lazy.<Integer>of())
                 .toList();
-        wrappedList.get(8).bindOrThrow(8);
+        wrappedList.get(8).setOrThrow(8);
     }
 
     @Setup
@@ -122,7 +122,7 @@ public class MonotonicListBenchmark {
 
     private static List<Lazy<Integer>> initMono(List<Lazy<Integer>> list) {
         int index = 8;
-        list.get(index).bindOrThrow(FUNCTION.apply(index));
+        list.get(index).setOrThrow(FUNCTION.apply(index));
         return list;
     }
 

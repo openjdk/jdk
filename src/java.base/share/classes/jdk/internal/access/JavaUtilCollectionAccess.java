@@ -26,8 +26,10 @@
 package jdk.internal.access;
 
 import java.util.List;
+import java.util.function.IntFunction;
 
 public interface JavaUtilCollectionAccess {
     <E> List<E> listFromTrustedArray(Object[] array);
     <E> List<E> listFromTrustedArrayNullsAllowed(Object[] array);
+    <E> List<E> lazyList(int size, IntFunction<? extends E> mapper);
 }

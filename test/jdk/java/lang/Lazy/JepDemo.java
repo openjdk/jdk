@@ -53,16 +53,16 @@ final class JepDemo {
 
     static
     class Bar {
-        // 1. Declare a monotonic value
+        // 1. Declare a Lazy field
         private static final Lazy<Logger> LOGGER = Lazy.of();
 
         static void init() {
-            // 2. Bind the monotonic value _after_ being declared.
-            LOGGER.bindOrThrow(Logger.getLogger("com.foo.Bar"));
+            // 2. Set the lazy value _after_ the field was declared
+            LOGGER.setOrThrow(Logger.getLogger("com.foo.Bar"));
         }
 
         static Logger logger() {
-            // 3. Access the monotonic value with as-declared-final performance
+            // 3. Access the lazy value with as-declared-final performance
             return LOGGER.orThrow();
         }
 
@@ -70,13 +70,13 @@ final class JepDemo {
 
     static
     class Bar2 {
-        // 1. Declare a monotonic value
+        // 1. Declare a Lazy field
         private static final Lazy<Logger> LOGGER = Lazy.of();
 
         static Logger logger() {
-            // 2. Access the monotonic value with as-declared-final performance
+            // 2. Access the lazy value with as-declared-final performance
             //    (evaluation made before the first access)
-            return LOGGER.computeIfUnbound( () -> Logger.getLogger("com.foo.Bar") );
+            return LOGGER.computeIfUnset( () -> Logger.getLogger("com.foo.Bar") );
         }
     }
 
@@ -87,7 +87,7 @@ final class JepDemo {
 
         // 2. Declare a memoized (cached) Supplier backed by the monotonic value
         private static final Supplier<Logger> LOGGER = () -> LAZY
-                .computeIfUnbound( () -> Logger.getLogger("com.foo.Bar") );
+                .computeIfUnset( () -> Logger.getLogger("com.foo.Bar") );
 
         static Logger logger() {
             // 2. Access the memoized value with as-declared-final performance
@@ -116,7 +116,7 @@ final class JepDemo {
         private final List<Integer> numCache;
 
         public Fibonacci(int upperBound) {
-            numCache = List.ofLazy(upperBound, this::number);
+            numCache = Lazy.ofList(upperBound, this::number);
         }
 
         public int number(int n) {
@@ -132,7 +132,7 @@ final class JepDemo {
     class MapDemo {
 
         static final Map<String, Logger> LOGGERS =
-                Map.ofLazy(Set.of("com.foo.Bar", "com.foo.Baz"), Logger::getLogger);
+                Lazy.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"), Logger::getLogger);
 
         static Logger logger(String name) {
             return LOGGERS.get(name);
@@ -144,7 +144,7 @@ final class JepDemo {
     class SetDemo {
 
         static final Set<String> INFO_LOGGABLE =
-                Set.ofLazy(Set.of("com.foo.Bar", "com.foo.Baz"),
+                Lazy.ofSet(Set.of("com.foo.Bar", "com.foo.Baz"),
                         name -> MapDemo.logger(name).isLoggable(Level.INFO));
 
         static boolean isInfoLoggable(String name) {
@@ -169,7 +169,7 @@ final class JepDemo {
 
             // 1. Declare a memoized (cached) function backed by a lazily computed map
             private static final Function<String, Logger> LOGGERS =
-                    Map.ofLazy(Set.of("com.foo.Bar", "com.foo.Baz"), Logger::getLogger)::get;
+                    Lazy.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"), Logger::getLogger)::get;
 
             static Logger logger(String name) {
                 // 2. Access the memoized value with as-declared-final performance
@@ -219,7 +219,7 @@ final class JepDemo {
 
             // 1. Declare a lazy list of default error pages to serve up
             private static final List<String> MESSAGES =
-                    List.ofLazy(SIZE, ErrorMessages::readFromFile);
+                    Lazy.ofList(SIZE, ErrorMessages::readFromFile);
 
             // 2. Define a function that is to be called the first
             //    time a particular message number is referenced
@@ -258,8 +258,8 @@ final class JepDemo {
 
 
         // 1. Declare a lazy list of default error pages to serve up
-        private static final IntFunction<String> ERROR_PAGES = List.ofLazy(
-                SIZE, ListDemo2::readFromFile)::get;
+        private static final IntFunction<String> ERROR_PAGES =
+                Lazy.ofList(SIZE, ListDemo2::readFromFile)::get;
 
         // 2. Define a function that is to be called for the first
         //    time a particular index is referenced

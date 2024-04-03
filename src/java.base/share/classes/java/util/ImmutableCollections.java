@@ -41,7 +41,6 @@ import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.lang.monotonic.MonotonicUtil;
 import jdk.internal.misc.CDS;
-import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.Stable;
 
 import static jdk.internal.lang.monotonic.MonotonicUtil.*;
@@ -122,7 +121,7 @@ class ImmutableCollections {
         }
     }
 
-    static class Access {
+    static final class Access {
         static {
             SharedSecrets.setJavaUtilCollectionAccess(new JavaUtilCollectionAccess() {
                 public <E> List<E> listFromTrustedArray(Object[] array) {
@@ -130,6 +129,10 @@ class ImmutableCollections {
                 }
                 public <E> List<E> listFromTrustedArrayNullsAllowed(Object[] array) {
                     return ImmutableCollections.listFromTrustedArrayNullsAllowed(array);
+                }
+                @Override
+                public <E> List<E> lazyList(int size, IntFunction<? extends E> mapper) {
+                    return ImmutableCollections.lazyList(size, mapper);
                 }
             });
         }
@@ -1368,6 +1371,20 @@ class ImmutableCollections {
 
 
     // Lazy collections
+
+    static <E> List<E> lazyList(int size, IntFunction<? extends E> mapper) {
+        if (size < 0) {
+            throw new IllegalArgumentException();
+        }
+        Objects.requireNonNull(mapper);
+        if (size == 0) {
+            return ImmutableCollections.LazyListEmpty.instance();
+        }
+        if (size == 1) {
+            return ImmutableCollections.LazyListSingleton.create(mapper);
+        }
+        return ImmutableCollections.LazyListN.create(size, mapper);
+    }
 
     // We need a special non-serializable version of an empty list
     @jdk.internal.ValueBased

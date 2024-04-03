@@ -240,11 +240,11 @@ public final class MonotonicMap<K, V>
                                             K key,
                                             Function<? super K, ? extends V> mapper) {
         Lazy<V> lazy = monotonicOrThrow(map, key);
-        if (lazy.isBound()) {
+        if (lazy.isSet()) {
             return lazy.orThrow();
         }
         V newValue = mapper.apply(key);
-        return lazy.bindIfUnbound(newValue);
+        return lazy.setIfUnset(newValue);
     }
 
 /*

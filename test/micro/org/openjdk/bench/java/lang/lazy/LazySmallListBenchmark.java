@@ -21,28 +21,18 @@
  * questions.
  */
 
-package org.openjdk.bench.java.lang.monotonic;
+package org.openjdk.bench.java.lang.lazy;
 
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.Fork;
-import org.openjdk.jmh.annotations.Measurement;
-import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.OperationsPerInvocation;
-import org.openjdk.jmh.annotations.OutputTimeUnit;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.annotations.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import java.util.function.IntFunction;
-import java.util.stream.Stream;
+import java.util.stream.IntStream;
 
 /**
- * Benchmark measuring lazy list performance
+ * Benchmark measuring monotonic list performance
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -51,32 +41,22 @@ import java.util.stream.Stream;
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 2, jvmArgsAppend = "--enable-preview")
 @OperationsPerInvocation(1000)
-/* 2024-04-02
-Benchmark                                 Mode  Cnt  Score   Error  Units
-LazyListBenchmark.instanceArrayList       avgt   10  0.432 ? 0.005  ns/op
-LazyListBenchmark.instanceLazy            avgt   10  1.504 ? 0.020  ns/op
-LazyListBenchmark.instanceMonotonicEager  avgt   10  0.715 ? 0.007  ns/op
-LazyListBenchmark.staticArrayList         avgt   10  0.358 ? 0.006  ns/op
-LazyListBenchmark.staticLazy              avgt   10  0.828 ? 0.004  ns/op
-LazyListBenchmark.staticMonotonicEager    avgt   10  0.717 ? 0.004  ns/op
- */
-public class LazyListBenchmark {
+public class LazySmallListBenchmark {
 
-    private static final IntFunction<Integer> FUNCTION = i -> i;
     private static final int SIZE = 1_000;
 
-    private static final List<Integer> LAZY = List.ofLazy(SIZE, FUNCTION);
-    private final List<Lazy<Integer>> Lazy_EAGER = initMonotonic(Stream.generate(Lazy::<Integer>of)
-            .limit(SIZE)
+    //private static final List<Monotonic<Integer>> MONOTONIC_LAZY = randomMono(Monotonic.ofList(SIZE));
+    private final List<Lazy<Integer>> Lazy_EAGER = randomMono(IntStream.range(0, SIZE)
+            .mapToObj(_ -> Lazy.<Integer>of())
             .toList());
 
-    private static final List<Integer> ARRAY_LIST = init(new ArrayList<>(SIZE));
+    private static final List<Integer> ARRAY_LIST = random(new ArrayList<>(SIZE));
 
-    private final List<Integer> lazy = List.ofLazy(SIZE, FUNCTION);
-    private final List<Lazy<Integer>> lazyEager = initMonotonic(Stream.generate(Lazy::<Integer>of)
-            .limit(SIZE)
-            .toList());
-    private static final List<Integer> arrayList = init(new ArrayList<>(SIZE));
+    //private final List<Monotonic<Integer>> monotonicLazy = randomMono(Monotonic.ofList(SIZE));
+    private final List<Lazy<Integer>> lazyEager = randomMono(IntStream.range(0, SIZE)
+                     .mapToObj(_ -> Lazy.<Integer>of())
+                     .toList());
+    private static final List<Integer> arrayList = random(new ArrayList<>(SIZE));
 
     @Setup
     public void setup() {
@@ -100,14 +80,14 @@ public class LazyListBenchmark {
         return sum;
     }
 
-    @Benchmark
-    public int instanceLazy() {
+/*    @Benchmark
+    public int instanceMonotonicLazy() {
         int sum = 0;
-        for (int i = 0; i < lazy.size(); i++) {
-            sum += lazy.get(i);
+        for (int i = 0; i < monotonicLazy.size(); i++) {
+            sum += monotonicLazy.get(i).orThrow();
         }
         return sum;
-    }
+    }*/
 
     @Benchmark
     public int staticArrayList() {
@@ -127,25 +107,27 @@ public class LazyListBenchmark {
         return sum;
     }
 
-    @Benchmark
-    public int staticLazy() {
+/*    @Benchmark
+    public int staticMonotonicLazy() {
         int sum = 0;
-        for (int i = 0; i < LAZY.size(); i++) {
-            sum += LAZY.get(i);
+        for (int i = 0; i < MONOTONIC_LAZY.size(); i++) {
+            sum += MONOTONIC_LAZY.get(i).orThrow();
         }
         return sum;
-    }
+    }*/
 
-    private static List<Lazy<Integer>> initMonotonic(List<Lazy<Integer>> list) {
+    private static List<Lazy<Integer>> randomMono(List<Lazy<Integer>> list) {
+        Random rnd = new Random();
         for (int i = 0; i < SIZE; i++) {
-            list.get(i).bindOrThrow(FUNCTION.apply(i));
+            list.get(i).setOrThrow(rnd.nextInt(0, SIZE));
         }
         return list;
     }
 
-    private static List<Integer> init(List<Integer> list) {
+    private static List<Integer> random(List<Integer> list) {
+        Random rnd = new Random();
         for (int i = 0; i < SIZE; i++) {
-            list.add(FUNCTION.apply(i));
+            list.add(rnd.nextInt(0, Integer.SIZE));
         }
         return list;
     }

@@ -116,7 +116,8 @@ as non-final. This is not ideal for several reasons:
   in a `static final` field, allowing the runtime to generate machine code that is competitive
   with direct invocation of the corresponding method.
 
-Furthermore, the idiom does not work for `null` values.
+Furthermore, the idiom shown above needs to be modified to properly handle `null` values, for example using
+a [sentinel](https://en.wikipedia.org/wiki/Sentinel_value) value.
 
 The situation is even worse when clients need to operate on a _collection_ of immutable values.
 
@@ -207,27 +208,27 @@ The Values & Collections API define functions and an interface so that client co
 
 - Define and use lazy (scalar) values: [`Lazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html)
 - Define and use lazy collections: 
-  [`List.ofLazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/List.html#ofLazy(int,java.util.function.IntFunction)), 
-  [`Set.ofLazy(Set, Predicate)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Set.html#ofLazy(java.util.Set,java.util.function.Predicate)), [`Set.ofLazy(Enum.class, Predicate`)](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Set.html#ofLazy(java.lang.Class,java.util.function.Predicate)) and 
-  [`Map.ofLazy(Set, Function)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Map.html#ofLazy(java.util.Set,java.util.function.Function)), [`Map.ofLazy(Enum.class, Function)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/util/Map.html#ofLazy(java.lang.Class,java.util.function.Function))
+  [`Lazy.ofList`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofList(int,java.util.function.IntFunction)), 
+  [`Lazy.ofSet(Set, Predicate)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofSet(java.util.Set,java.util.function.Predicate)), [`Lazy.ofSet(Enum.class, Predicate`)](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofSet(java.lang.Class,java.util.function.Predicate)) and 
+  [`Lazy.ofMap(Set, Function)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofMap(java.util.Set,java.util.function.Function)), [`Lazy.ofMap(Enum.class, Function)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofMap(java.lang.Class,java.util.function.Function))
 
-The Lazy Values & Collections API resides in the `java.lang` and `java.util` packages of the `java.base` module.
+The Lazy Values & Collections API resides in the [java.lang](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/package-summary.html) package of the [java.base](https://cr.openjdk.org/~pminborg/lazy/api/java.base/module-summary.html) module.
 
 ### Lazy values
 
-A _lazy value_ is a holder object that is bound at most once whereby it
-goes from "unbound" to "bound". It is expressed as an object of type `Lazy`,
+A _lazy value_ is a holder object that is set at most once whereby it
+goes from "unset" to "set". It is expressed as an object of type `Lazy`,
 which, like `Future`, is a holder for some computation that may or may not have occurred yet.
-Fresh (unbound) `Lazy` instances are created via the factory method `Lazy::of`:
+Fresh (unset) `Lazy` instances are created via the factory method `Lazy::of`:
 
 ```
 class Bar {
-    // 1. Declare a Lazy
+    // 1. Declare a Lazy field
     private static final Lazy<Logger> LOGGER = Lazy.of();
     
     static void init() {
-        // 2. Bind the lazy value _after_ being declared
-        LOGGER.bindOrThrow(Logger.getLogger("com.foo.Bar"));
+        // 2. Set the lazy value _after_ the field was declared
+        LOGGER.setOrThrow(Logger.getLogger("com.foo.Bar"));
     }
     
     static Logger logger() {
@@ -241,31 +242,31 @@ This is similar to the holder-class idiom in the sense it offers the same
 performance, constant-folding, and thread-safety characteristics, but is simpler
 and incurs a lower static footprint since no additional class is required.
 
-Binding a lazy value is an atomic, thread-safe, non-blocking operation, e.g. `Lazy::bindOrThrow`,
+Setting a lazy value is an atomic, thread-safe, non-blocking operation, e.g. `Lazy::setOrThrow`,
 either results in successfully initializing the `Lazy` to a value, or fails
 with an exception. This is true regardless of whether the lazy value is accessed by a single
 thread, or concurrently, by multiple threads.
 
-A lazy value may be bound to `null` which then will be considered its bound value.
+A lazy value may be set to `null` which then will be considered its set value.
 Null-averse applications can also use `Lazy<Optional<V>>`.
 
-In case a lazy value cannot be pre-bound as in the example above, it is possible
-to compute and bind an unbound value on-demand as shown in this example:
+In case a lazy value cannot be pre-set as in the example above, it is possible
+to compute and set an unset value on-demand as shown in this example:
 
 ```
 class Bar {
-    // 1. Declare a lazy value
+    // 1. Declare a Lazy field
     private static final Lazy<Logger> LOGGER = Lazy.of();
     
     static Logger logger() {
         // 2. Access the lazy value with as-declared-final performance
         //    (evaluation made before the first access)
-        return LOGGER.computeIfUnbound( () -> Logger.getLogger("com.foo.Bar") );
+        return LOGGER.computeIfUnset( () -> Logger.getLogger("com.foo.Bar") );
     }
 }
 ```
 Calling `logger()` multiple times yields the same value from each invocation.
-Even though `Lazy::computeIfUnbound` might invoke the value supplier several times if called
+Even though `Lazy::computeIfUnset` might invoke the value supplier several times if called
 from a plurality of threads at about the same time, only one distinct witness value is 
 ever exposed to the outside world. 
 
@@ -290,7 +291,7 @@ Like a `Lazy` object, a lazily computed `List` object is created via a factory m
 of the desired `List` and an `IntFunction` to be used to lazily compute its elements:
 
 ```
-static <E> List<E> List.ofLazy(int size, IntFunction<? extends E> mapper) { ... }
+static <E> List<E> Lazy.ofList(int size, IntFunction<? extends E> mapper) { ... }
 ```
 
 This allows for improving the handling of lists with lazily computed values and enables a much better
@@ -304,7 +305,7 @@ class ErrorMessages {
 
     // 1. Declare a lazy list of default error pages to serve up
     private static final List<String> MESSAGES = 
-            List.ofLazy(SIZE, ErrorMessages::readFromFile);
+            Lazy.ofList(SIZE, ErrorMessages::readFromFile);
 
     // 2. Define a function that is to be called the first
     //    time a particular message number is referenced
@@ -354,7 +355,7 @@ In the example below, we lazily compute a map's values for an enumerated collect
 class MapDemo {
 
     static final Map<String, Logger> LOGGERS =
-            Map.ofLazy(Set.of("com.foo.Bar", "com.foo.Baz"), Logger::getLogger);
+            Lazy.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"), Logger::getLogger);
 
     static Logger logger(String name) {
         return LOGGERS.get(name);
@@ -371,7 +372,7 @@ unused code paths depending on dynamic logger properties determined when first a
  class SetDemo {
  
     static final Set<String> INFO_LOGGABLE =
-            Set.ofLazy(Set.of("com.foo.Bar", "com.foo.Baz"),
+            Lazy.ofSet(Set.of("com.foo.Bar", "com.foo.Baz"),
                     name -> MapDemo.logger(name).isLoggable(Level.INFO));
                     
     static boolean isInfoLoggable(String name) {
@@ -382,7 +383,7 @@ unused code paths depending on dynamic logger properties determined when first a
     
     public void servlet() {
         if (INFO_LOGGABLE.contains(NAME)) {
-            MapDemo.LOGGERS.get(NAME).log(Level.INFO, "This is fast...");
+            MapDemo.LOGGERS.get(NAME).log(Level.INFO, "Lazy is great!");
         }
     }
 }
@@ -411,7 +412,7 @@ class Memoized {
 
     // 1. Declare a memoized (cached) function backed by a lazily computed map
     private static final Function<String, Logger> LOGGERS =
-            Map.ofLazy(Set.of("com.foo.Bar", "com.foo.Baz"), Logger::getLogger)::get;
+            Lazy.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"), Logger::getLogger)::get;
 
     static Logger logger(String name) {
         // 2. Access the memoized value with as-declared-final performance
@@ -435,7 +436,7 @@ for an `IntFunction` that will record its cached value in a backing _lazy list_:
 ```
 // 1. Declare a memoized (cached) IntFunction backed by a lazily computed list
 static final IntFunction<String> ERROR_PAGES = 
-        List.ofLazy(MAX_ERROR_CODE, ListDemo::readFromFile)::get;
+        Lazy.ofList(MAX_ERROR_CODE, ListDemo::readFromFile)::get;
         
 ...
 
@@ -450,10 +451,10 @@ String errorPage = ERROR_PAGES.apply(2);
 // </html>
 ```
 
-The same pattern can be used for creating a memoized `Predicate` (backed by a lazily computed `Set`).  The solution
+The same paradigm can be used for creating a memoized `Predicate` (backed by a lazily computed `Set`).  The solution
 for this is left for the reader as an exercise. 
 
-As `Lazy::computeIfUnbound` can invoke a provided supplier several times if invoked from several threads, there is a
+As `Lazy::computeIfUnset` can invoke a provided supplier several times if invoked from several threads, there is a
 convenience method `Lazy::asSupplier` that provides an out-of-the-box memoized supplier that upholds the invoke-at-most
 property also in multi-threaded environments.
 

@@ -137,7 +137,7 @@ final class BasicLazyListTest {
     }
 
     private void newList(int size) {
-        list = List.ofLazy(size, function);
+        list = Lazy.ofList(size, function);
     }
 
     private static Stream<Arguments> sizes() {

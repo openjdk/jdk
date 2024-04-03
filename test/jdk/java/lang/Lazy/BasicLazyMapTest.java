@@ -70,7 +70,7 @@ final class BasicLazyMapTest {
         assertEquals(SIZE, map.size());
 
         for (String key : KEYS) {
-            assertFalse(map.get(key).isBound());
+            assertFalse(map.get(key).isSet());
         }
 
         for (String key : KEYS) {

@@ -128,11 +128,11 @@ public final class MonotonicList<V>
                                          int index,
                                          IntFunction<? extends V> mapper) {
         Lazy<V> lazy = list.get(index);
-        if (lazy.isBound()) {
+        if (lazy.isSet()) {
             return lazy.orThrow();
         }
         V newValue = mapper.apply(index);
-        return lazy.bindIfUnbound(newValue);
+        return lazy.setIfUnset(newValue);
     }
 
 /*    public static <V> IntFunction<V> asMemoized(int size,
