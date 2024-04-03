@@ -430,6 +430,12 @@ void HeapShared::archive_strings() {
   StringTable::set_shared_strings_array_index(append_root(shared_strings_array));
 }
 
+int HeapShared::archive_exception_instance(oop exception) {
+  bool success = archive_reachable_objects_from(1, _default_subgraph_info, exception);
+  assert(success, "sanity");
+  return append_root(exception);
+}
+
 void HeapShared::mark_native_pointers(oop orig_obj) {
   if (java_lang_Class::is_instance(orig_obj)) {
     ArchiveHeapWriter::mark_native_pointer(orig_obj, java_lang_Class::klass_offset());
@@ -589,6 +595,7 @@ void HeapShared::copy_special_objects() {
   init_seen_objects_table();
   archive_java_mirrors();
   archive_strings();
+  Universe::archive_exception_instances();
   delete_seen_objects_table();
 }
 
@@ -1387,11 +1394,15 @@ void HeapShared::check_default_subgraph_classes() {
           i, subgraph_k->external_name());
     }
 
-    guarantee(subgraph_k->name()->equals("java/lang/Class") ||
-              subgraph_k->name()->equals("java/lang/String") ||
-              subgraph_k->name()->equals("[Ljava/lang/Object;") ||
-              subgraph_k->name()->equals("[C") ||
-              subgraph_k->name()->equals("[B"),
+    Symbol* name = ArchiveBuilder::current()->get_source_addr(subgraph_k->name());
+    guarantee(name == vmSymbols::java_lang_Class() ||
+              name == vmSymbols::java_lang_String() ||
+              name == vmSymbols::java_lang_ArithmeticException() ||
+              name == vmSymbols::java_lang_NullPointerException() ||
+              name == vmSymbols::java_lang_VirtualMachineError() ||
+              name == vmSymbols::object_array_signature() ||
+              name == vmSymbols::byte_array_signature() ||
+              name == vmSymbols::char_array_signature(),
               "default subgraph can have only these objects");
   }
 }

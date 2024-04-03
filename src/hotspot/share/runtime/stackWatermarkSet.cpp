@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,9 @@
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/stackWatermark.inline.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
+#include "runtime/threadSMR.hpp"
+#include "runtime/vmOperation.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/preserveException.hpp"
@@ -118,7 +121,6 @@ void StackWatermarkSet::on_safepoint(JavaThread* jt) {
 
 void StackWatermarkSet::start_processing(JavaThread* jt, StackWatermarkKind kind) {
   verify_processing_context();
-  assert(!jt->is_terminated(), "Poll after termination is a bug");
   StackWatermark* watermark = get(jt, kind);
   if (watermark != nullptr) {
     watermark->start_processing();
@@ -156,5 +158,15 @@ uintptr_t StackWatermarkSet::lowest_watermark(JavaThread* jt) {
     return 0;
   } else {
     return watermark;
+  }
+}
+
+void StackWatermarkSet::safepoint_synchronize_begin() {
+  if (VMThread::vm_operation()->skip_thread_oop_barriers()) {
+    return;
+  }
+
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
+    StackWatermarkSet::start_processing(thread, StackWatermarkKind::gc);
   }
 }
