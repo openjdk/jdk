@@ -75,16 +75,25 @@ void ArchivePtrMarker::initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap
   _rw_ptrmap = rw_ptrmap;
   _ro_ptrmap = ro_ptrmap;
 
-  _rw_ptrmap->initialize(rw_region_size);
+  size_t offset = _ptrmap->size() - rw_region_size - ro_region_size;
+
+  _rw_ptrmap->initialize(rw_region_size + offset + 1);
   _ro_ptrmap->initialize(ro_region_size);
 
   for (size_t rw_bit = 0; rw_bit < _rw_ptrmap->size(); rw_bit++) {
     _rw_ptrmap->at_put(rw_bit, _ptrmap->at(rw_bit));
   }
-  size_t ro_start = align_up(_rw_ptrmap->size(), MetaspaceShared::core_region_alignment());
+
+  size_t ro_start = _rw_ptrmap->size();
+
+  bool found_first = false;
+  size_t index = 0;
   for(size_t ro_bit = ro_start; ro_bit < _ptrmap->size(); ro_bit++) {
     _ro_ptrmap->at_put(ro_bit-ro_start, _ptrmap->at(ro_bit));
+    if (!found_first && _ptrmap->at(ro_bit) == true) { index = ro_bit; found_first = true; }
   }
+  tty->print_cr("First set: %ld(%ld)", index, index - ro_start);
+  //assert(_ptrmap->size() - ro_start == _ro_ptrmap->size(), "%ld vs %ld", _ptrmap->size() - ro_start, _ro_ptrmap->size());
   // Free _ptrmap?
 }
 
