@@ -481,7 +481,6 @@ public class Flow {
         }
 
         // Do something with all static or non-static field initializers and initialization blocks.
-        // Note: This method also sends nested class definitions to the handler.
         protected void forEachInitializer(JCClassDecl classDef, boolean isStatic, Consumer<? super JCTree> handler) {
             if (classDef == initScanClass)          // avoid infinite loops
                 return;
@@ -490,6 +489,11 @@ public class Flow {
             try {
                 for (List<JCTree> defs = classDef.defs; defs.nonEmpty(); defs = defs.tail) {
                     JCTree def = defs.head;
+
+                    // Don't recurse into nested classes
+                    if (def.hasTag(CLASSDEF))
+                        continue;
+
                     /* we need to check for flags in the symbol too as there could be cases for which implicit flags are
                      * represented in the symbol but not in the tree modifiers as they were not originally in the source
                      * code
@@ -566,6 +570,13 @@ public class Flow {
             lint = lint.augment(tree.sym);
 
             try {
+                // process all the nested classes
+                for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
+                    if (l.head.hasTag(CLASSDEF)) {
+                        scan(l.head);
+                    }
+                }
+
                 // process all the static initializers
                 forEachInitializer(tree, true, def -> {
                     scanDef(def);
@@ -1459,6 +1470,13 @@ public class Flow {
             lint = lint.augment(tree.sym);
 
             try {
+                // process all the nested classes
+                for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
+                    if (l.head.hasTag(CLASSDEF)) {
+                        scan(l.head);
+                    }
+                }
+
                 // process all the static initializers
                 forEachInitializer(tree, true, def -> {
                     scan(def);
@@ -2454,6 +2472,13 @@ public class Flow {
                     // process all the methods
                     for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
                         if (l.head.hasTag(METHODDEF)) {
+                            scan(l.head);
+                        }
+                    }
+
+                    // process all the nested classes
+                    for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
+                        if (l.head.hasTag(CLASSDEF)) {
                             scan(l.head);
                         }
                     }
