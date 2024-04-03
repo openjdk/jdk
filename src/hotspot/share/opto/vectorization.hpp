@@ -490,9 +490,14 @@ public:
                         -1) {}
   NONCOPYABLE(VLoopVPointers);
 
-  void compute_and_cache();
+  void compute_vpointers();
   const VPointer& vpointer(const MemNode* mem) const;
   NOT_PRODUCT( void print() const; )
+
+private:
+  void count_vpointers();
+  void allocate_vpointers_array();
+  void compute_and_cache_vpointers();
 };
 
 // Submodule of VLoopAnalyzer.

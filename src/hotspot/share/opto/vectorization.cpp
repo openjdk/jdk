@@ -174,25 +174,33 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
 
   _types.compute_vector_element_type();
 
-  _vpointers.compute_and_cache();
+  _vpointers.compute_vpointers();
 
   _dependency_graph.construct();
 
   return VStatus::make_success();
 }
 
-void VLoopVPointers::compute_and_cache() {
-  // Count
+void VLoopVPointers::compute_vpointers() {
+  count_vpointers();
+  allocate_vpointers_array();
+  compute_and_cache_vpointers();
+  NOT_PRODUCT( if (_vloop.is_trace_vpointers()) { print(); } )
+}
+
+void VLoopVPointers::count_vpointers() {
   _vpointers_length = 0;
   _body.for_each_mem([&] (const MemNode* mem, int bb_idx) {
     _vpointers_length++;
   });
+}
 
-  // Allocate
+void VLoopVPointers::allocate_vpointers_array() {
   uint bytes = _vpointers_length * sizeof(VPointer);
   _vpointers = (VPointer*)_arena->Amalloc(bytes);
+}
 
-  // Compute and Cache
+void VLoopVPointers::compute_and_cache_vpointers() {
   int pointers_idx = 0;
   _body.for_each_mem([&] (const MemNode* mem, int bb_idx) {
     // Placement new: construct directly into the array.
@@ -200,8 +208,6 @@ void VLoopVPointers::compute_and_cache() {
     _bb_idx_to_vpointer.at_put(bb_idx, pointers_idx);
     pointers_idx++;
   });
-
-  NOT_PRODUCT( if (_vloop.is_trace_vpointers()) { print(); } )
 }
 
 const VPointer& VLoopVPointers::vpointer(const MemNode* mem) const {
