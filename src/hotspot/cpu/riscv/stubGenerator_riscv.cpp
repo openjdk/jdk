@@ -5042,72 +5042,38 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
-  void generate_updateBytesAdler32_accum(const Register buff, const Register acc1, const Register acc2,
-    const Register temp0, const Register temp1, const Register temp2) {
-    __ ld(temp0, Address(buff, 0));
-    __ ld(temp1, Address(buff, sizeof(jlong)));
-    __ addi(buff, buff, 16);
+  void generate_updateBytesAdler32_accum(const Register acc1, const Register acc2, const Register data, const Register temp) {
+    assert_different_registers(data, temp, acc1, acc2);
 
-    __ andi(temp2, temp0, right_8_bits);
-    __ add(acc1, acc1, temp2);
-    __ srli(temp2, temp0, 8);
-    __ andi(temp2, temp2, right_8_bits);
+    __ andi(temp, data, right_8_bits);
+    __ add(acc1, acc1, temp);
+    __ srli(temp, data, 8);
+    __ andi(temp, temp, right_8_bits);
     __ add(acc2, acc2, acc1);
-    __ add(acc1, acc1, temp2);
-    __ srli(temp2, temp0, 16);
-    __ andi(temp2, temp2, right_8_bits);
+    __ add(acc1, acc1, temp);
+    __ srli(temp, data, 16);
+    __ andi(temp, temp, right_8_bits);
     __ add(acc2, acc2, acc1);
-    __ add(acc1, acc1, temp2);
-    __ srli(temp2, temp0, 24);
-    __ andi(temp2, temp2, right_8_bits);
+    __ add(acc1, acc1, temp);
+    __ srli(temp, data, 24);
+    __ andi(temp, temp, right_8_bits);
     __ add(acc2, acc2, acc1);
-    __ add(acc1, acc1, temp2);
-    __ srli(temp2, temp0, 32);
-    __ andi(temp2, temp2, right_8_bits);
+    __ add(acc1, acc1, temp);
+    __ srli(temp, data, 32);
+    __ andi(temp, temp, right_8_bits);
     __ add(acc2, acc2, acc1);
-    __ add(acc1, acc1, temp2);
-    __ srli(temp2, temp0, 40);
-    __ andi(temp2, temp2, right_8_bits);
+    __ add(acc1, acc1, temp);
+    __ srli(temp, data, 40);
+    __ andi(temp, temp, right_8_bits);
     __ add(acc2, acc2, acc1);
-    __ add(acc1, acc1, temp2);
-    __ srli(temp2, temp0, 48);
-    __ andi(temp2, temp2, right_8_bits);
+    __ add(acc1, acc1, temp);
+    __ srli(temp, data, 48);
+    __ andi(temp, temp, right_8_bits);
     __ add(acc2, acc2, acc1);
-    __ add(acc1, acc1, temp2);
+    __ add(acc1, acc1, temp);
     __ add(acc2, acc2, acc1);
-    __ srli(temp2, temp0, 56);
-    __ add(acc1, acc1, temp2);
-    __ add(acc2, acc2, acc1);
-
-    __ andi(temp2, temp1, right_8_bits);
-    __ add(acc1, acc1, temp2);
-    __ srli(temp2, temp1, 8);
-    __ andi(temp2, temp2, right_8_bits);
-    __ add(acc2, acc2, acc1);
-    __ add(acc1, acc1, temp2);
-    __ srli(temp2, temp1, 16);
-    __ andi(temp2, temp2, right_8_bits);
-    __ add(acc2, acc2, acc1);
-    __ add(acc1, acc1, temp2);
-    __ srli(temp2, temp1, 24);
-    __ andi(temp2, temp2, right_8_bits);
-    __ add(acc2, acc2, acc1);
-    __ add(acc1, acc1, temp2);
-    __ srli(temp2, temp1, 32);
-    __ andi(temp2, temp2, right_8_bits);
-    __ add(acc2, acc2, acc1);
-    __ add(acc1, acc1, temp2);
-    __ srli(temp2, temp1, 40);
-    __ andi(temp2, temp2, right_8_bits);
-    __ add(acc2, acc2, acc1);
-    __ add(acc1, acc1, temp2);
-    __ srli(temp2, temp1, 48);
-    __ andi(temp2, temp2, right_8_bits);
-    __ add(acc2, acc2, acc1);
-    __ add(acc1, acc1, temp2);
-    __ add(acc2, acc2, acc1);
-    __ srli(temp2, temp1, 56);
-    __ add(acc1, acc1, temp2);
+    __ srli(temp, data, 56);
+    __ add(acc1, acc1, temp);
     __ add(acc2, acc2, acc1);
   }
 
@@ -5201,7 +5167,13 @@ const static uint64_t right_8_bits = right_n_bits(8);
     __ sub(count, count, 16); // count after all iterations
 
     __ bind(L_nmax_loop);
-    generate_updateBytesAdler32_accum(buff, s1, s2, temp0, temp1, temp2);
+
+    __ ld(temp0, Address(buff, 0));
+    generate_updateBytesAdler32_accum(s1, s2, temp0, temp1);
+    __ ld(temp1, Address(buff, sizeof(jlong)));
+    generate_updateBytesAdler32_accum(s1, s2, temp0, temp1);
+
+    __ addi(buff, buff, 16);
     __ ble(buff, buf_end, L_nmax_loop);
 
     // s1 = s1 % BASE
@@ -5220,7 +5192,10 @@ const static uint64_t right_8_bits = right_n_bits(8);
 
     __ bind(L_by16_loop);
 
-    generate_updateBytesAdler32_accum(buff, s1, s2, temp0, temp1, temp2);
+    __ ld(temp0, Address(buff, 0));
+    generate_updateBytesAdler32_accum(s1, s2, temp0, temp1);
+    __ ld(temp1, Address(buff, sizeof(jlong)));
+    generate_updateBytesAdler32_accum(s1, s2, temp0, temp1);
 
     __ sub(len, len, 16);
     __ bgez(len, L_by16_loop);
