@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,8 +88,9 @@ public class PrintingProcessor extends AbstractProcessor {
     /**
      * Used for the -Xprint option and called by Elements.printElements
      */
+    @SuppressWarnings("preview")
     public static class PrintingElementVisitor
-        extends SimpleElementVisitor14<PrintingElementVisitor, Boolean> {
+        extends SimpleElementVisitorPreview<PrintingElementVisitor, Boolean> {
         int indentation; // Indentation level;
         final PrintWriter writer;
         final Elements elementUtils;
