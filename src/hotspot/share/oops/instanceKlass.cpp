@@ -2267,6 +2267,17 @@ void InstanceKlass::set_enclosing_method_indices(u2 class_index,
   }
 }
 
+jmethodID InstanceKlass::update_jmethod_id(jmethodID* jmeths, Method* method, int idnum) {
+  if (method->is_old() && !method->is_obsolete()) {
+    // If the method passed in is old (but not obsolete), use the current version
+    method = method_with_idnum((int)idnum);
+    assert(method != nullptr, "old and but not obsolete, so should exist");
+  }
+  jmethodID new_id = Method::make_jmethod_id(class_loader_data(), method);
+  Atomic::release_store(&jmeths[idnum+1], new_id);
+  return new_id;
+}
+
 // Lookup or create a jmethodID.
 // This code is called by the VMThread and JavaThreads so the
 // locking has to be done very carefully to avoid deadlocks
@@ -2274,7 +2285,7 @@ void InstanceKlass::set_enclosing_method_indices(u2 class_index,
 //
 jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
   Method* method = method_h();
-  int idnum = method_h->method_idnum();
+  int idnum = method->method_idnum();
   jmethodID* jmeths = methods_jmethod_ids_acquire();
 
   // We use a double-check locking idiom here because this cache is
@@ -2287,7 +2298,7 @@ jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
   // seen either. Cache reads of existing jmethodIDs proceed without a
   // lock, but cache writes of a new jmethodID requires uniqueness and
   // creation of the cache itself requires no leaks so a lock is
-  // generally acquired in those two cases.
+  // acquired in those two cases.
   //
   // If the RedefineClasses() API has been used, then this cache grows
   // in the redefinition safepoint.
@@ -2303,15 +2314,7 @@ jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
       memset(jmeths, 0, (size+1)*sizeof(jmethodID));
       // cache size is stored in element[0], other elements offset by one
       jmeths[0] = (jmethodID)size;
-
-      // method_with_idnum
-      if (method->is_old() && !method->is_obsolete()) {
-        // The method passed in is old (but not obsolete), we need to use the current version
-        method = method_with_idnum((int)idnum);
-        assert(method != nullptr, "old and but not obsolete, so should exist");
-      }
-      jmethodID new_id = Method::make_jmethod_id(class_loader_data(), method);
-      Atomic::release_store(&jmeths[idnum+1], new_id);
+      jmethodID new_id = update_jmethod_id(jmeths, method, idnum);
 
       // publish jmeths
       release_set_methods_jmethod_ids(jmeths);
@@ -2325,17 +2328,9 @@ jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
     id = jmeths[idnum+1];
     // Still null?
     if (id == nullptr) {
-      if (method->is_old() && !method->is_obsolete()) {
-        // The method passed in is old (but not obsolete), we need to use the current version
-        method = method_with_idnum((int)idnum);
-        assert(method != nullptr, "old and but not obsolete, so should exist");
-      }
-      jmethodID new_id = Method::make_jmethod_id(class_loader_data(), method);
-      Atomic::release_store(&jmeths[idnum+1], new_id);
-      return new_id;
+      return update_jmethod_id(jmeths, method, idnum);
     }
   }
-
   return id;
 }
 

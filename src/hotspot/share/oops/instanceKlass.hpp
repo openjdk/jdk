@@ -1072,6 +1072,7 @@ public:
   inline void release_set_methods_jmethod_ids(jmethodID* jmeths);
   // This nulls out jmethodIDs for all methods in 'klass'
   static void clear_jmethod_ids(InstanceKlass* klass);
+  jmethodID update_jmethod_id(jmethodID* jmeths, Method* method, int idnum);
 
 public:
   // Returns the array class for the n'th dimension
