@@ -131,9 +131,13 @@ final class JepDemo {
     static
     class MapDemo {
 
+        // 1. Declare a lazy map of loggers with two allowable keys:
+        //    "com.foo.Bar" and "com.foo.Baz"
         static final Map<String, Logger> LOGGERS =
                 Lazy.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"), Logger::getLogger);
 
+        // 2. Access the memoized map with as-declared-final performance
+        //    (evaluation made before the first access)
         static Logger logger(String name) {
             return LOGGERS.get(name);
         }

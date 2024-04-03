@@ -121,7 +121,7 @@ a [sentinel](https://en.wikipedia.org/wiki/Sentinel_value) value.
 
 The situation is even worse when clients need to operate on a _collection_ of immutable values.
 
-An example of this is a `List` that holds HTML pages that corresponds to an error code in the range [0, 7]
+An example of this is an array that holds HTML pages that corresponds to an error code in the range [0, 7]
  where each element is pulled in from the file system on-demand, once actually used:
 
 ```
@@ -167,8 +167,8 @@ String errorPage = ErrorMessages.errorPage(2);
 ```
 
 Unfortunately, this approach provides a number of challenges. First, retrieving the values
-from an array is slow, as said values cannot be [constant-folded](https://en.wikipedia.org/wiki/Constant_folding). Even worse, access to
-the array is guarded by synchronization that is slow and will block access to the array for
+from a static array is slow, as said values cannot be [constant-folded](https://en.wikipedia.org/wiki/Constant_folding). Even worse, access to
+the array is guarded by synchronization that is not only slow but will block access to the array for
 all elements whenever one of the elements is under computation. Furthermore, the class holder idiom (see above)
 is clearly insufficient in this case, as the number of required holder classes is *statically unbounded* - it 
 depends on the value of the parameter `SIZE` which may change in future variants of the code.
@@ -217,7 +217,7 @@ The Lazy Values & Collections API resides in the [java.lang](https://cr.openjdk.
 ### Lazy values
 
 A _lazy value_ is a holder object that is set at most once whereby it
-goes from "unset" to "set". It is expressed as an object of type `Lazy`,
+goes from "unset" to "set". It is expressed as an object of type `java.lang.Lazy`,
 which, like `Future`, is a holder for some computation that may or may not have occurred yet.
 Fresh (unset) `Lazy` instances are created via the factory method `Lazy::of`:
 
@@ -295,7 +295,7 @@ static <E> List<E> Lazy.ofList(int size, IntFunction<? extends E> mapper) { ... 
 ```
 
 This allows for improving the handling of lists with lazily computed values and enables a much better
-implementation of the `ErrorMessages` class mentioned earlier. Here is a new version
+implementation of the `ErrorMessages` class mentioned earlier. Here is an improved version
 of the class which is now using the newly proposed API:
 
 ```
@@ -354,18 +354,25 @@ In the example below, we lazily compute a map's values for an enumerated collect
 ```
 class MapDemo {
 
+    // 1. Declare a lazy map of loggers with two allowable keys:
+    //    "com.foo.Bar" and "com.foo.Baz"
     static final Map<String, Logger> LOGGERS =
             Lazy.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"), Logger::getLogger);
 
+    // 2. Access the memoized map with as-declared-final performance
+    //    (evaluation made before the first access)
     static Logger logger(String name) {
         return LOGGERS.get(name);
     }
 }
 ```
 
+This concept allows declaring a large number of lazy values which can be easily retrieved using arbitrarily, but
+pre-specified, keys in a resource-efficient and performant way.  
+
 Finally, a `Set` of lazily computed elements can be defined and used. In the example below, the well known problem of
 efficiently determining and acting on if a logger will actually output something for a certain level is solved using
-a lazily computed `Set`. This allows constant folding of the code path and might even enable the JVM to totally eliminate
+a lazily computed `Set`. This allows constant folding and might even enable the JVM to totally eliminate
 unused code paths depending on dynamic logger properties determined when first accessed:
 
 ```
@@ -451,7 +458,7 @@ String errorPage = ERROR_PAGES.apply(2);
 // </html>
 ```
 
-The same paradigm can be used for creating a memoized `Predicate` (backed by a lazily computed `Set`).  The solution
+The same paradigm can be used for creating a memoized `Predicate` (backed by a lazily computed `Set`). The solution
 for this is left for the reader as an exercise. 
 
 As `Lazy::computeIfUnset` can invoke a provided supplier several times if invoked from several threads, there is a
