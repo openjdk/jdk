@@ -40,7 +40,7 @@
   nonstatic_field(Generation::StatRecord,            accumulated_time,       elapsedTimer)                  \
                                                                                                             \
   nonstatic_field(TenuredGeneration,                 _rs,                    CardTableRS*)                  \
-  nonstatic_field(TenuredGeneration,                 _bts,                   SerialBlockOffsetTable*) \
+  nonstatic_field(TenuredGeneration,                 _bts,                   SerialBlockOffsetTable*)       \
   nonstatic_field(TenuredGeneration,                 _shrink_factor,         size_t)                        \
   nonstatic_field(TenuredGeneration,                 _capacity_at_prologue,  size_t)                        \
   nonstatic_field(TenuredGeneration,                 _used_at_prologue,      size_t)                        \
