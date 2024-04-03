@@ -5119,6 +5119,7 @@ const static uint64_t right_8_bits = right_n_bits(8);
     Register temp1 = c_rarg5;
     Register temp2 = t2;
     Register temp3 = x28; // t3
+    Register buf_end = c_rarg6;
 
     // Max number of bytes we can process before having to take the mod
     // 0x15B0 is 5552 in decimal, the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
@@ -5166,7 +5167,6 @@ const static uint64_t right_8_bits = right_n_bits(8);
     __ bltz(len, L_by16);
 
   __ bind(L_nmax_loop_entry);
-    const Register buf_end = c_rarg6;
     // buf_end will be used as endpoint for loop below
     __ add(buf_end, buff, count); // buf_end will be used as endpoint for loop below
     __ andi(count, count, 16-1); // count = (count % 16)
