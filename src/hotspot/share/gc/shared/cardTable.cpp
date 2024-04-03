@@ -40,7 +40,6 @@
 #endif
 
 uint CardTable::_card_shift = 0;
-uint CardTable::_card_shift_in_words = 0;
 uint CardTable::_card_size = 0;
 uint CardTable::_card_size_in_words = 0;
 
@@ -51,7 +50,6 @@ void CardTable::initialize_card_size() {
   _card_size = GCCardSizeInBytes;
   _card_shift = log2i_exact(_card_size);
   _card_size_in_words = _card_size / sizeof(HeapWord);
-  _card_shift_in_words = _card_shift - LogHeapWordSize;
 
   log_info_p(gc, init)("CardTable entry size: " UINT32_FORMAT,  _card_size);
 }
@@ -206,10 +204,7 @@ void CardTable::dirty_MemRegion(MemRegion mr) {
   assert(align_up  (mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
   CardValue* cur  = byte_for(mr.start());
   CardValue* last = byte_after(mr.last());
-  while (cur < last) {
-    *cur = dirty_card;
-    cur++;
-  }
+  memset(cur, dirty_card, pointer_delta(last, cur, sizeof(CardValue)));
 }
 
 void CardTable::clear_MemRegion(MemRegion mr) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,33 +45,6 @@ class OopStorage;
 class ReservedHeapSpace;
 class SerializeClosure;
 
-// A helper class for caching a Method* when the user of the cache
-// only cares about the latest version of the Method*.  This cache safely
-// interacts with the RedefineClasses API.
-
-class LatestMethodCache : public CHeapObj<mtClass> {
-  // We save the Klass* and the idnum of Method* in order to get
-  // the current cached Method*.
- private:
-  Klass*                _klass;
-  int                   _method_idnum;
-
- public:
-  LatestMethodCache()   { _klass = nullptr; _method_idnum = -1; }
-  ~LatestMethodCache()  { _klass = nullptr; _method_idnum = -1; }
-
-  void   init(Klass* k, Method* m);
-  Klass* klass() const           { return _klass; }
-  int    method_idnum() const    { return _method_idnum; }
-
-  Method* get_method();
-
-  // CDS support.  Replace the klass in this with the archive version
-  // could use this for Enhanced Class Redefinition also.
-  void serialize(SerializeClosure* f);
-  void metaspace_pointers_do(MetaspaceClosure* it);
-};
-
 class Universe: AllStatic {
   // Ugh.  Universe is much too friendly.
   friend class MarkSweep;
@@ -115,12 +88,6 @@ class Universe: AllStatic {
   // preallocated cause message for delayed StackOverflowError
   static OopHandle    _delayed_stack_overflow_error_message;
 
-  static LatestMethodCache* _finalizer_register_cache; // static method for registering finalizable objects
-  static LatestMethodCache* _loader_addClass_cache;    // method for registering loaded classes in class loader vector
-  static LatestMethodCache* _throw_illegal_access_error_cache; // Unsafe.throwIllegalAccessError() method
-  static LatestMethodCache* _throw_no_such_method_error_cache; // Unsafe.throwNoSuchMethodError() method
-  static LatestMethodCache* _do_stack_walk_cache;      // method for stack walker callback
-
   static Array<int>*            _the_empty_int_array;            // Canonicalized int array
   static Array<u2>*             _the_empty_short_array;          // Canonicalized short array
   static Array<Klass*>*         _the_empty_klass_array;          // Canonicalized klass array
@@ -138,10 +105,6 @@ class Universe: AllStatic {
   // preallocated message detail strings for error objects
   static OopHandle _msg_metaspace;
   static OopHandle _msg_class_metaspace;
-
-  static OopHandle    _null_ptr_exception_instance;   // preallocated exception object
-  static OopHandle    _arithmetic_exception_instance; // preallocated exception object
-  static OopHandle    _virtual_machine_error_instance; // preallocated exception object
 
   // References waiting to be transferred to the ReferenceHandler
   static OopHandle    _reference_pending_list;
@@ -244,9 +207,10 @@ class Universe: AllStatic {
 
   static oop java_mirror(BasicType t);
 
+  static void load_archived_object_instances() NOT_CDS_JAVA_HEAP_RETURN;
 #if INCLUDE_CDS_JAVA_HEAP
   static void set_archived_basic_type_mirror_index(BasicType t, int index);
-  static void update_archived_basic_type_mirrors();
+  static void archive_exception_instances();
 #endif
 
   static oop      main_thread_group();
@@ -266,19 +230,18 @@ class Universe: AllStatic {
   static oop          vm_exception()                  { return virtual_machine_error_instance(); }
 
   static Array<Klass*>* the_array_interfaces_array()  { return _the_array_interfaces_array;   }
-  static Method*      finalizer_register_method()     { return _finalizer_register_cache->get_method(); }
-  static Method*      loader_addClass_method()        { return _loader_addClass_cache->get_method(); }
 
-  static Method*      throw_illegal_access_error()    { return _throw_illegal_access_error_cache->get_method(); }
-  static Method*      throw_no_such_method_error()    { return _throw_no_such_method_error_cache->get_method(); }
-
-  static Method*      do_stack_walk_method()          { return _do_stack_walk_cache->get_method(); }
+  static Method*      finalizer_register_method();
+  static Method*      loader_addClass_method();
+  static Method*      throw_illegal_access_error();
+  static Method*      throw_no_such_method_error();
+  static Method*      do_stack_walk_method();
 
   static oop          the_null_sentinel();
   static address      the_null_sentinel_addr()        { return (address) &_the_null_sentinel;  }
 
   // Function to initialize these
-  static void initialize_known_methods(TRAPS);
+  static void initialize_known_methods(JavaThread* current);
 
   static void create_preallocated_out_of_memory_errors(TRAPS);
 
