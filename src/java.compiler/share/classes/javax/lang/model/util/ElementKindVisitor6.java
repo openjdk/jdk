@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package javax.lang.model.util;
+
+import jdk.internal.javac.PreviewFeature;
 
 import javax.lang.model.element.*;
 import javax.annotation.processing.SupportedSourceVersion;
@@ -264,6 +266,9 @@ public class ElementKindVisitor6<R, P>
         case BINDING_VARIABLE:
             return visitVariableAsBindingVariable(e, p);
 
+        case COMPONENT_LOCAL_VARIABLE:
+            return visitVariableAsComponentLocalVariable(e, p);
+
         default:
             throw new AssertionError("Bad kind " + k + " for VariableElement" + e);
         }
@@ -361,6 +366,22 @@ public class ElementKindVisitor6<R, P>
      * @since 14
      */
     public R visitVariableAsBindingVariable(VariableElement e, P p) {
+        return visitUnknown(e, p);
+    }
+
+    /**
+     * Visits a {@code COMPONENT_LOCAL_VARIABLE} variable element.
+     *
+     * @implSpec This implementation calls {@code visitUnknown}.
+     *
+     * @param e the element to visit
+     * @param p a visitor-specified parameter
+     * @return  the result of {@code visitUnknown}
+     *
+     * @since 23
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.DERIVED_RECORD_CREATION, reflective=true)
+    public R visitVariableAsComponentLocalVariable(VariableElement e, P p) {
         return visitUnknown(e, p);
     }
 

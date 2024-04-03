@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8222430 8282411
+ * @bug 8222430 8282411 8329556
  * @summary Test various predicates of ElementKind.
  */
 
@@ -86,7 +86,7 @@ public class TestElementKindPredicates {
 
         // isVariable: Returns true if this is a kind of variable: one of
         // ENUM_CONSTANT, FIELD, PARAMETER, LOCAL_VARIABLE, EXCEPTION_PARAMETER
-        // RESOURCE_VARIABLE, BINDING_VARIABLE
+        // RESOURCE_VARIABLE, BINDING_VARIABLE, COMPONENT_LOCAL_VARIABLE
         test(ALL_KINDS,
              (ElementKind k) -> Set.of(ElementKind.ENUM_CONSTANT,
                                        ElementKind.FIELD,
@@ -94,7 +94,8 @@ public class TestElementKindPredicates {
                                        ElementKind.LOCAL_VARIABLE,
                                        ElementKind.EXCEPTION_PARAMETER,
                                        ElementKind.RESOURCE_VARIABLE,
-                                       ElementKind.BINDING_VARIABLE).contains(k),
+                                       ElementKind.BINDING_VARIABLE,
+                                       ElementKind.COMPONENT_LOCAL_VARIABLE).contains(k),
              (ElementKind k) -> k.isVariable(), "isVariable");
     }
 

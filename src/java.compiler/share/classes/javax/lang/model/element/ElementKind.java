@@ -209,7 +209,8 @@ public enum ElementKind {
      * Returns {@code true} if this is a kind of variable: including
      * {@code ENUM_CONSTANT}, {@code FIELD}, {@code PARAMETER},
      * {@code LOCAL_VARIABLE}, {@code EXCEPTION_PARAMETER},
-     * {@code RESOURCE_VARIABLE}, and {@code BINDING_VARIABLE}.
+     * {@code RESOURCE_VARIABLE}, {@code BINDING_VARIABLE}, and
+     * {@code COMPONENT_LOCAL_VARIABLE}
      *
      * @return {@code true} if this is a kind of variable
      * @since 19
@@ -218,7 +219,7 @@ public enum ElementKind {
         return switch(this) {
         case ENUM_CONSTANT, FIELD, PARAMETER,
              LOCAL_VARIABLE, EXCEPTION_PARAMETER, RESOURCE_VARIABLE,
-             BINDING_VARIABLE -> true;
+             BINDING_VARIABLE, COMPONENT_LOCAL_VARIABLE -> true;
         default -> false;
         };
     }
