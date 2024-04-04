@@ -48,7 +48,7 @@ public class RuntimeImageLinkDeltaProducer {
 
     public static void main(String[] args) throws Exception {
         if (args.length != 3) {
-            System.out.println("Usage: java --add-module jdk.jlink " +
+            System.out.println("Usage: java --add-modules jdk.jlink " +
                                    "--add-exports=jdk.jlink/jdk.tools.jlink.internal.runtimelink=ALL-UNNAMED" +
                                    "--add-exports=java.base/jdk.internal.module=ALL-UNNAMED" +
                                    "--add-exports=java.base/jdk.internal.jimage=ALL-UNNAMED" +
