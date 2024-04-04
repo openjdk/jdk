@@ -59,7 +59,8 @@ HeapWord* TenuredGeneration::par_allocate(size_t word_size,
 
 template <typename OopClosureType>
 void TenuredGeneration::oop_since_save_marks_iterate(OopClosureType* blk) {
-  Generation::oop_since_save_marks_iterate_impl(blk, _the_space, &_saved_mark_word);
+  Generation::oop_since_save_marks_iterate_impl(blk, _the_space, _saved_mark_word);
+  set_saved_mark_word();
 }
 
 #endif // SHARE_GC_SERIAL_TENUREDGENERATION_INLINE_HPP
