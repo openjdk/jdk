@@ -511,6 +511,15 @@ class ImmutableCollections {
             return -1;
         }
 
+        public int indexOf(Predicate<? super E> filter) {
+            for (int i = 0, s = size(); i < s; i++) {
+                if (filter.test(get(i))) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
         @Override
         public int lastIndexOf(Object o) {
             if (!allowNulls() && o == null) {
@@ -518,6 +527,15 @@ class ImmutableCollections {
             }
             for (int i = size() - 1; i >= 0; i--) {
                 if (Objects.equals(o, get(i))) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        public int lastIndexOf(Predicate<? super E> filter) {
+            for (int i = size() - 1; i >= 0; i--) {
+                if (filter.test(get(i))) {
                     return i;
                 }
             }
