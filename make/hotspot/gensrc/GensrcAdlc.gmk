@@ -83,6 +83,7 @@ ifeq ($(call check-jvm-feature, compiler2), true)
       DEFAULT_LDFLAGS := false, \
       LDFLAGS := $(ADLC_LDFLAGS), \
       LIBS := $(ADLC_LIBS), \
+      DEFAULT_VERSIONINFO_RESOURCE := false, \
       OBJECT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/adlc/objs, \
       OUTPUT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/adlc, \
       DEBUG_SYMBOLS := false, \
