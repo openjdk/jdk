@@ -164,8 +164,10 @@ define SetupJdkNativeCompilationBody
     endif
   endif
 
-  ifeq ($$($1_LINK_TYPE), C++)
-    $1_LIBS += $(LIBCXX)
+  ifneq ($$($1_DEFAULT_LIBCXX), false)
+    ifeq ($$($1_LINK_TYPE), C++)
+      $1_LIBS += $(LIBCXX)
+    endif
   endif
 
   ifeq ($$($1_SRC), )
