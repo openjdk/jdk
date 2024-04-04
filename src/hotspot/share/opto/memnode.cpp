@@ -2705,7 +2705,7 @@ private:
   const Node* _base;             // Base address of the array
   const jlong _constant_offset;  // Sum of collected constant offsets
   const Node* _int_offset;       // (optional) Offset behind LShiftL and ConvI2L
-  const jint _int_offset_shift;  // (optional) Shift value for int_offset
+  const jint  _int_offset_shift; // (optional) Shift value for int_offset
   const GrowableArray<Node*>* _other_offsets; // List of other AddP offsets
 
   ArrayPointer(const bool is_valid,
@@ -3064,14 +3064,14 @@ bool MergePrimitiveArrayStores::is_adjacent_pair(const StoreNode* use_store, con
                               def_store->memory_size())) {
     return false;
   }
-  {
-    ResourceMark rm;
-    ArrayPointer array_pointer_use = ArrayPointer::make(_phase, use_store->in(MemNode::Address));
-    ArrayPointer array_pointer_def = ArrayPointer::make(_phase, def_store->in(MemNode::Address));
-    if (!array_pointer_def.is_adjacent_to_and_before(array_pointer_use, use_store->memory_size())) {
-      return false;
-    }
+
+  ResourceMark rm;
+  ArrayPointer array_pointer_use = ArrayPointer::make(_phase, use_store->in(MemNode::Address));
+  ArrayPointer array_pointer_def = ArrayPointer::make(_phase, def_store->in(MemNode::Address));
+  if (!array_pointer_def.is_adjacent_to_and_before(array_pointer_use, use_store->memory_size())) {
+    return false;
   }
+
   return true;
 }
 
