@@ -681,7 +681,6 @@ void DefNewGeneration::collect(bool   full,
 
   age_table()->clear();
   to()->clear(SpaceDecorator::Mangle);
-  set_to_saved_mark_word();
   // The preserved marks should be empty at the start of the GC.
   _preserved_marks_set.init(1);
 
@@ -745,9 +744,7 @@ void DefNewGeneration::collect(bool   full,
   if (!_promotion_failed) {
     // Swap the survivor spaces.
     eden()->clear(SpaceDecorator::Mangle);
-    set_eden_saved_mark_word();
     from()->clear(SpaceDecorator::Mangle);
-    set_from_saved_mark_word();
     if (ZapUnusedHeapArea) {
       // This is now done here because of the piece-meal mangling which
       // can check for valid mangling at intermediate points in the
@@ -904,16 +901,12 @@ void DefNewGeneration::drain_promo_failure_scan_stack() {
 }
 
 void DefNewGeneration::save_marks() {
-  _eden_saved_mark_word = eden()->top();
-  _from_saved_mark_word = from()->top();
-  _to_saved_mark_word = to()->top();
+  set_saved_mark_word();
 }
 
 
 bool DefNewGeneration::no_allocs_since_save_marks() {
-  assert(eden_saved_mark_at_top(), "Violated spec - alloc in eden");
-  assert(from_saved_mark_at_top(), "Violated spec - alloc in from");
-  return to_saved_mark_at_top();
+  return saved_mark_at_top();
 }
 
 void DefNewGeneration::contribute_scratch(void*& scratch, size_t& num_words) {

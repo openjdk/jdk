@@ -36,12 +36,8 @@
 
 template <typename OopClosureType>
 void DefNewGeneration::oop_since_save_marks_iterate(OopClosureType* cl) {
-  // No allocation in eden and from spaces, so no iteration required.
-  assert(eden_saved_mark_at_top(), "inv");
-  assert(from_saved_mark_at_top(), "inv");
-
-  Generation::oop_since_save_marks_iterate_impl(cl, to(), _to_saved_mark_word);
-  set_to_saved_mark_word();
+  Generation::oop_since_save_marks_iterate_impl(cl, to(), _saved_mark_word);
+  set_saved_mark_word();
 }
 
 #endif // SHARE_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP
