@@ -365,6 +365,7 @@ private:
     return _archived_object_cache;
   }
 
+  static int archive_exception_instance(oop exception);
   static void archive_objects(ArchiveHeapInfo* heap_info);
   static void copy_objects();
   static void copy_special_objects();
