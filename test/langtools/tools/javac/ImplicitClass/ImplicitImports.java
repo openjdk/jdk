@@ -64,7 +64,7 @@ public class ImplicitImports extends TestRunner {
     }
 
     @Test
-    public void testImplicitImports(Path base) throws Exception {
+    public void testImplicitJavaBaseImport(Path base) throws Exception {
         Path current = base.resolve(".");
         Path src = current.resolve("src");
         Path classes = current.resolve("classes");
@@ -126,6 +126,68 @@ public class ImplicitImports extends TestRunner {
                                           ", actual: " + out);
 
             }
+        }
+    }
+
+    @Test
+    public void testImplicitSimpleIOImport(Path base) throws Exception {
+        Path current = base.resolve(".");
+
+        Path patchSrc = current.resolve("patch-src");
+        Path patchClasses = current.resolve("patch-classes");
+        tb.writeJavaFiles(patchSrc,
+                          """
+                          package java.io;
+                          public class SimpleIO {
+                              public static void println(Object o) {
+                                  System.out.println(o);
+                              }
+                          }
+                          """);
+
+        Files.createDirectories(patchClasses);
+
+        new JavacTask(tb)
+            .options("--patch-module", "java.base=" + patchSrc)
+            .outdir(patchClasses)
+            .files(tb.findJavaFiles(patchSrc))
+            .run(Task.Expect.SUCCESS)
+            .writeAll();
+
+        Path src = current.resolve("src");
+        Path classes = current.resolve("classes");
+        tb.writeFile(src.resolve("Test.java"),
+                     """
+                     public static void main(String... args) {
+                         println("Hello, World!");
+                     }
+                     """);
+
+        Files.createDirectories(classes);
+
+        new JavacTask(tb)
+            .options("--enable-preview", "--release", SOURCE_VERSION,
+                     "--patch-module", "java.base=" + patchClasses)
+            .outdir(classes)
+            .files(tb.findJavaFiles(src))
+            .run(Task.Expect.SUCCESS)
+            .writeAll();
+
+        var out = new JavaTask(tb)
+                .classpath(classes.toString())
+                .className("Test")
+                .vmOptions("--enable-preview",
+                           "--patch-module", "java.base=" + patchClasses)
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.STDOUT);
+
+        var expectedOut = List.of("Hello, World!");
+
+        if (!Objects.equals(expectedOut, out)) {
+            throw new AssertionError("Incorrect Output, expected: " + expectedOut +
+                                      ", actual: " + out);
+
         }
     }
 

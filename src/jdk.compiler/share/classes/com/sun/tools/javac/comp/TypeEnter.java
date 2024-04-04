@@ -52,6 +52,7 @@ import com.sun.tools.javac.tree.JCTree.*;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.ANNOTATION;
+import com.sun.tools.javac.code.Kinds.Kind;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
@@ -102,6 +103,7 @@ public class TypeEnter implements Completer {
     private final Log log;
     private final Check chk;
     private final Attr attr;
+    private final DeferredAttr deferredAttr;
     private final Symtab syms;
     private final TreeMaker make;
     private final Todo todo;
@@ -130,6 +132,7 @@ public class TypeEnter implements Completer {
         log = Log.instance(context);
         chk = Check.instance(context);
         attr = Attr.instance(context);
+        deferredAttr = DeferredAttr.instance(context);
         syms = Symtab.instance(context);
         make = TreeMaker.instance(context);
         todo = Todo.instance(context);
@@ -368,9 +371,19 @@ public class TypeEnter implements Completer {
                     (cls.mods.flags & IMPLICIT_CLASS) != 0;
             if (isImplicitClass) {
                 doModuleImport(make.ModuleImport(make.QualIdent(syms.java_base)));
-//                doImport(make.Import(make.Select((JCFieldAccess)make.QualIdent(syms.simpleIOType.tsym),
-//                        names.asterisk), true));
+                if (peekTypeExists(env, syms.simpleIOType.tsym)) {
+                    doImport(make.Import(make.Select(make.QualIdent(syms.simpleIOType.tsym),
+                            names.asterisk), true));
+                }
             }
+        }
+
+        //check if the given class exists, without producing side-effects:
+        private boolean peekTypeExists(Env<AttrContext> env, TypeSymbol type) {
+            JCExpression expr = make.Select(make.QualIdent(type), names._class);
+            return !deferredAttr.attribSpeculative(expr, env, attr.unknownExprInfo)
+                                .type
+                                .isErroneous();
         }
 
         private void resolveImports(JCCompilationUnit tree, Env<AttrContext> env) {
