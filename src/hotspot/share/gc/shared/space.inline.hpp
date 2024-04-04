@@ -38,7 +38,7 @@
 inline HeapWord* TenuredSpace::allocate(size_t size) {
   HeapWord* res = ContiguousSpace::allocate(size);
   if (res != nullptr) {
-    _offsets.update_for_block(res, res + size);
+    _offsets->update_for_block(res, res + size);
   }
   return res;
 }
@@ -46,13 +46,13 @@ inline HeapWord* TenuredSpace::allocate(size_t size) {
 inline HeapWord* TenuredSpace::par_allocate(size_t size) {
   HeapWord* res = ContiguousSpace::par_allocate(size);
   if (res != nullptr) {
-    _offsets.update_for_block(res, res + size);
+    _offsets->update_for_block(res, res + size);
   }
   return res;
 }
 
 inline void TenuredSpace::update_for_block(HeapWord* start, HeapWord* end) {
-  _offsets.update_for_block(start, end);
+  _offsets->update_for_block(start, end);
 }
 #endif // INCLUDE_SERIALGC
 

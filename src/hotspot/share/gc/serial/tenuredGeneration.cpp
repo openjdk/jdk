@@ -287,8 +287,8 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   assert((uintptr_t(start) & 3) == 0, "bad alignment");
   assert((reserved_byte_size & 3) == 0, "bad alignment");
   MemRegion reserved_mr(start, heap_word_size(reserved_byte_size));
-  _bts = new SerialBlockOffsetSharedArray(reserved_mr,
-                                          heap_word_size(initial_byte_size));
+  _bts = new SerialBlockOffsetTable(reserved_mr,
+                                    heap_word_size(initial_byte_size));
   MemRegion committed_mr(start, heap_word_size(initial_byte_size));
   _rs->resize_covered_region(committed_mr);
 

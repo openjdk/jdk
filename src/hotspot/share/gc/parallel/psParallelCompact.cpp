@@ -1147,6 +1147,7 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id) {
     _mark_bitmap.mark_obj(obj_beg, obj_len);
     _summary_data.addr_to_region_ptr(obj_beg)->add_live_obj(1);
     region_after_dense_prefix->set_partial_obj_size(1);
+    region_after_dense_prefix->set_partial_obj_addr(obj_beg);
     assert(start_array(id) != nullptr, "sanity");
     start_array(id)->update_for_block(obj_beg, obj_beg + obj_len);
   }

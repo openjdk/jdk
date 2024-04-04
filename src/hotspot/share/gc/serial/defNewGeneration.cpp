@@ -644,7 +644,7 @@ void DefNewGeneration::adjust_desired_tenuring_threshold() {
     gc_counters->desired_survivor_size()->set_value(desired_survivor_size * oopSize);
   }
 
-  age_table()->print_age_table(_tenuring_threshold);
+  age_table()->print_age_table();
 }
 
 void DefNewGeneration::collect(bool   full,

@@ -194,13 +194,13 @@ public:
 class TenuredSpace: public ContiguousSpace {
   friend class VMStructs;
  protected:
-  SerialBlockOffsetTable _offsets;
+  SerialBlockOffsetTable* _offsets;
 
   // Mark sweep support
   size_t allowed_dead_ratio() const override;
  public:
   // Constructor
-  TenuredSpace(SerialBlockOffsetSharedArray* sharedOffsetArray,
+  TenuredSpace(SerialBlockOffsetTable* offsets,
                MemRegion mr);
 
   HeapWord* block_start_const(const void* addr) const override;
