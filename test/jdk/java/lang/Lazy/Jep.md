@@ -243,9 +243,9 @@ This is similar to the holder-class idiom and offers the same
 performance, constant-folding, and thread-safety characteristics, but is simpler
 and incurs a lower static footprint since no additional class is required.
 
-Setting a lazy value is an atomic, thread-safe, non-blocking operation, e.g. `Lazy::setOrThrow`,
-either results in successfully initializing the `Lazy` to a value, or fails
-with an exception. This is true regardless of whether the lazy value is accessed by a single
+Setting a lazy value is an atomic, thread-safe, non-blocking operation, e.g. `Lazy::setIfUnset`,
+either results in successfully initializing the `Lazy` to a value, or returns
+an already set value. This is true regardless of whether the lazy value is accessed by a single
 thread, or concurrently, by multiple threads.
 
 A lazy value may be set to `null` which then will be considered its set value.
