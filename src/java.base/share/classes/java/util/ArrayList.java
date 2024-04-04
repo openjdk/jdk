@@ -306,6 +306,27 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * Returns the index of the first occurrence of a matching element
+     * in this list, or -1 if this list does not contain a matching element.
+     * More formally, returns the lowest index {@code i} such that
+     * {@code filter.test(get(i))},
+     * or -1 if there is no such index.
+     */
+    public int indexOf(Predicate<? super E> filter) {
+        return indexOfRange(filter, 0, size);
+    }
+
+    int indexOfRange(Predicate<? super E> filter, int start, int end) {
+        Object[] es = elementData;
+        for (int i = start; i < end; i++) {
+            if (filter.test(elementAt(es, i))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
      * Returns the index of the last occurrence of the specified element
      * in this list, or -1 if this list does not contain the element.
      * More formally, returns the highest index {@code i} such that
@@ -329,6 +350,27 @@ public class ArrayList<E> extends AbstractList<E>
                 if (o.equals(es[i])) {
                     return i;
                 }
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Returns the index of the last occurrence of a matching element
+     * in this list, or -1 if this list does not contain a matching element.
+     * More formally, returns the highest index {@code i} such that
+     * {@code filter.test(get(i))},
+     * or -1 if there is no such index.
+     */
+    public int lastIndexOf(Predicate<? super E> filter) {
+        return lastIndexOfRange(filter, 0, size);
+    }
+
+    int lastIndexOfRange(Predicate<? super E> filter, int start, int end) {
+        Object[] es = elementData;
+        for (int i = end - 1; i >= start; i--) {
+            if (filter.test(elementAt(es, i))) {
+                return i;
             }
         }
         return -1;
