@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/serial/cardTableRS.hpp"
-#include "gc/serial/genMarkSweep.hpp"
+#include "gc/serial/markSweep.hpp"
 #include "gc/serial/serialBlockOffsetTable.inline.hpp"
 #include "gc/serial/serialHeap.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
@@ -444,15 +444,15 @@ void TenuredGeneration::collect(bool   full,
                                 bool   is_tlab) {
   SerialHeap* gch = SerialHeap::heap();
 
-  STWGCTimer* gc_timer = GenMarkSweep::gc_timer();
+  STWGCTimer* gc_timer = MarkSweep::gc_timer();
   gc_timer->register_gc_start();
 
-  SerialOldTracer* gc_tracer = GenMarkSweep::gc_tracer();
+  SerialOldTracer* gc_tracer = MarkSweep::gc_tracer();
   gc_tracer->report_gc_start(gch->gc_cause(), gc_timer->gc_start());
 
   gch->pre_full_gc_dump(gc_timer);
 
-  GenMarkSweep::invoke_at_safepoint(clear_all_soft_refs);
+  MarkSweep::invoke_at_safepoint(clear_all_soft_refs);
 
   gch->post_full_gc_dump(gc_timer);
 
