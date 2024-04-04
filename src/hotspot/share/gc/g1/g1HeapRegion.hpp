@@ -74,7 +74,7 @@ class HeapRegion : public CHeapObj<mtGC> {
 
   HeapWord* volatile _top;
 
-  G1BlockOffsetTablePart _bot_part;
+  G1BlockOffsetTable _bot;
 
   // When we need to retire an allocation region, while other threads
   // are also concurrently trying to allocate into it, we typically
@@ -277,7 +277,6 @@ private:
 
 public:
   HeapRegion(uint hrm_index,
-             G1BlockOffsetTable* bot,
              MemRegion mr,
              G1CardSetConfiguration* config);
 

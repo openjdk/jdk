@@ -33,7 +33,6 @@
 #include "utilities/globalDefinitions.hpp"
 
 // Forward declarations
-class G1BlockOffsetTable;
 class HeapRegion;
 
 // This implementation of "G1BlockOffsetTable" divides the covered region
@@ -41,18 +40,20 @@ class HeapRegion;
 // for each such subregion indicates how far back one must go to find the
 // start of the chunk that includes the first word of the subregion.
 //
-// Each G1BlockOffsetTablePart is owned by a HeapRegion.
+// Each G1BlockOffsetTable is owned by a HeapRegion.
 
 class G1BlockOffsetTable: public CHeapObj<mtGC> {
-  friend class G1BlockOffsetTablePart;
   friend class VMStructs;
 
 private:
   // The reserved region covered by the table.
-  MemRegion _reserved;
+  static MemRegion _reserved;
 
   // Biased array-start of BOT array for fast BOT entry translation
-  volatile uint8_t* _offset_base;
+  static volatile uint8_t* _offset_base;
+
+  // The region that owns this BOT.
+  HeapRegion* _hr;
 
   void check_offset(size_t offset, const char* msg) const {
     assert(offset < CardTable::card_size_in_words(),
@@ -73,41 +74,6 @@ private:
 
   void check_address(uint8_t* addr, const char* msg) const NOT_DEBUG_RETURN;
 
-public:
-
-  // Return the number of slots needed for an offset array
-  // that covers mem_region_words words.
-  static size_t compute_size(size_t mem_region_words) {
-    size_t number_of_slots = (mem_region_words / CardTable::card_size_in_words());
-    return ReservedSpace::allocation_align_size_up(number_of_slots);
-  }
-
-  // Returns how many bytes of the heap a single byte of the BOT corresponds to.
-  static size_t heap_map_factor() {
-    return CardTable::card_size();
-  }
-
-  // Initialize the Block Offset Table to cover the memory region passed
-  // in the heap parameter.
-  G1BlockOffsetTable(MemRegion heap, G1RegionToSpaceMapper* storage);
-
-  // Mapping from address to object start array entry
-  uint8_t* entry_for_addr(const void* const p) const;
-
-  // Mapping from object start array entry to address of first word
-  HeapWord* addr_for_entry(const uint8_t* const p) const;
-};
-
-class G1BlockOffsetTablePart {
-  friend class G1BlockOffsetTable;
-  friend class VMStructs;
-private:
-  // This is the global BlockOffsetTable.
-  G1BlockOffsetTable* _bot;
-
-  // The region that owns this part of the BOT.
-  HeapRegion* _hr;
-
   // Sets the entries corresponding to the cards starting at "start" and ending
   // at "end" to point back to the card before "start"; [start, end]
   void set_remainder_to_point_to_start_incl(uint8_t* start, uint8_t* end);
@@ -124,7 +90,31 @@ private:
   void update_for_block(HeapWord* blk_start, size_t size) {
     update_for_block(blk_start, blk_start + size);
   }
+
 public:
+  static void initialize(MemRegion heap, G1RegionToSpaceMapper* storage);
+
+  // Return the number of slots needed for an offset array
+  // that covers mem_region_words words.
+  static size_t compute_size(size_t mem_region_words) {
+    size_t number_of_slots = (mem_region_words / CardTable::card_size_in_words());
+    return ReservedSpace::allocation_align_size_up(number_of_slots);
+  }
+
+  // Returns how many bytes of the heap a single byte of the BOT corresponds to.
+  static size_t heap_map_factor() {
+    return CardTable::card_size();
+  }
+
+  // Initialize the Block Offset Table to cover the region.
+  G1BlockOffsetTable(HeapRegion* hr);
+
+  // Mapping from address to object start array entry
+  uint8_t* entry_for_addr(const void* const p) const;
+
+  // Mapping from object start array entry to address of first word
+  HeapWord* addr_for_entry(const uint8_t* const p) const;
+
   static bool is_crossing_card_boundary(HeapWord* const obj_start,
                                         HeapWord* const obj_end) {
     HeapWord* cur_card_boundary = align_up_by_card_size(obj_start);
@@ -132,13 +122,9 @@ public:
     return obj_end > cur_card_boundary;
   }
 
-  //  The elements of the array are initialized to zero.
-  G1BlockOffsetTablePart(G1BlockOffsetTable* array, HeapRegion* hr);
-
   void verify() const;
 
-  // Returns the address of the start of the block reaching into the card containing
-  // "addr".
+  // Returns the address of the start of the block reaching into the card containing "addr".
   inline HeapWord* block_start_reaching_into_card(const void* addr) const;
 
   void update_for_block(HeapWord* blk_start, HeapWord* blk_end) {

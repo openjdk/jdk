@@ -155,7 +155,7 @@ uint G1CollectedHeap::get_chunks_per_region() {
 
 HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
                                              MemRegion mr) {
-  return new HeapRegion(hrs_index, bot(), mr, &_card_set_config);
+  return new HeapRegion(hrs_index, mr, &_card_set_config);
 }
 
 // Private methods.
@@ -532,7 +532,7 @@ HeapWord* G1CollectedHeap::alloc_archive_region(size_t word_size, HeapWord* pref
   return start_addr;
 }
 
-void G1CollectedHeap::populate_archive_regions_bot_part(MemRegion range) {
+void G1CollectedHeap::populate_archive_regions_bot(MemRegion range) {
   assert(!is_init_completed(), "Expect to be called at JVM init time");
 
   iterate_regions_in_range(range,
@@ -1363,7 +1363,7 @@ jint G1CollectedHeap::initialize() {
 
   FreeRegionList::set_unrealistically_long_length(max_regions() + 1);
 
-  _bot = new G1BlockOffsetTable(reserved(), bot_storage);
+  G1BlockOffsetTable::initialize(reserved(), bot_storage);
 
   {
     size_t granularity = HeapRegion::GrainBytes;

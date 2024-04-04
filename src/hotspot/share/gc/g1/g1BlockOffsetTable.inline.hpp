@@ -32,29 +32,39 @@
 #include "runtime/atomic.hpp"
 #include "oops/oop.inline.hpp"
 
-inline HeapWord* G1BlockOffsetTablePart::block_start_reaching_into_card(const void* addr) const {
+inline void G1BlockOffsetTable::initialize(MemRegion heap, G1RegionToSpaceMapper* storage) {
+  _reserved = heap;
+  MemRegion bot_reserved = storage->reserved();
+  _offset_base = ((uint8_t*)bot_reserved.start() - (uintptr_t(_reserved.start()) >> CardTable::card_shift()));
+
+  log_trace(gc, bot)("G1BlockOffsetTable::initialize: ");
+  log_trace(gc, bot)("    rs.base(): " PTR_FORMAT "  rs.size(): " SIZE_FORMAT "  rs end(): " PTR_FORMAT,
+                     p2i(bot_reserved.start()), bot_reserved.byte_size(), p2i(bot_reserved.end()));
+}
+
+inline HeapWord* G1BlockOffsetTable::block_start_reaching_into_card(const void* addr) const {
   assert(addr >= _hr->bottom() && addr < _hr->top(), "invalid address");
 
 #ifdef ASSERT
   if (!_hr->is_continues_humongous()) {
     // For non-ContinuesHumongous regions, the first obj always starts from bottom.
-    uint8_t offset = _bot->offset_array(_bot->entry_for_addr(_hr->bottom()));
+    uint8_t offset = offset_array(entry_for_addr(_hr->bottom()));
     assert(offset == 0, "Found offset %u instead of 0 for region %u %s",
            offset, _hr->hrm_index(), _hr->get_short_type_str());
   }
 #endif
 
-  uint8_t* entry = _bot->entry_for_addr(addr);
-  uint8_t offset = _bot->offset_array(entry);
+  uint8_t* entry = entry_for_addr(addr);
+  uint8_t offset = offset_array(entry);
   while (offset >= CardTable::card_size_in_words()) {
     // The excess of the offset from N_words indicates a power of Base
     // to go back by.
     size_t n_cards_back = BOTConstants::entry_to_cards_back(offset);
     entry -= n_cards_back;
-    offset = _bot->offset_array(entry);
+    offset = offset_array(entry);
   }
   assert(offset < CardTable::card_size_in_words(), "offset too large");
-  HeapWord* q = _bot->addr_for_entry(entry);
+  HeapWord* q = addr_for_entry(entry);
   return q - offset;
 }
 
