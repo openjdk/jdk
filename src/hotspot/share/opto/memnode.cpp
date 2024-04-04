@@ -1163,11 +1163,37 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
       if (store_Opcode() != st->Opcode()) {
         return nullptr;
       }
-      // LoadVector/StoreVector needs additional check to ensure the types match.
+      // LoadVector/StoreVector need additional checks
       if (st->is_StoreVector()) {
+        // Ensure that types match
         const TypeVect*  in_vt = st->as_StoreVector()->vect_type();
         const TypeVect* out_vt = as_LoadVector()->vect_type();
         if (in_vt != out_vt) {
+          return nullptr;
+        }
+        // Ensure offsets match
+        if (st->is_StoreVectorScatter()) {
+          const Node* offsets = st->as_StoreVectorScatter()->in(StoreVectorScatterNode::Offsets);
+          if (!is_LoadVectorGather() || !offsets->eqv_uncast(as_LoadVectorGather()->in(LoadVectorGatherNode::Offsets))) {
+            return nullptr;
+          }
+        // Ensure masks match
+        } else if (st->is_StoreVectorMasked()) {
+          const Node* mask = st->as_StoreVectorMasked()->in(StoreVectorMaskedNode::Mask);
+          if (!is_LoadVectorMasked() || !mask->eqv_uncast(as_LoadVectorMasked()->in(LoadVectorMaskedNode::Mask))) {
+            return nullptr;
+          }
+        // Ensure offsets and masks match
+        } else if (st->is_StoreVectorScatterMasked()) {
+          const StoreVectorScatterMaskedNode* stv = st->as_StoreVectorScatterMasked();
+          const Node* offsets = stv->in(StoreVectorScatterMaskedNode::Offsets);
+          const Node* mask = stv->in(StoreVectorScatterMaskedNode::Mask);
+          if (!is_LoadVectorGatherMasked() ||
+              !offsets->eqv_uncast(as_LoadVectorGatherMasked()->in(LoadVectorGatherMaskedNode::Offsets)) ||
+              !mask->eqv_uncast(as_LoadVectorGatherMasked()->in(LoadVectorGatherMaskedNode::Mask))) {
+            return nullptr;
+          }
+        } else {
           return nullptr;
         }
       }
@@ -2800,7 +2826,9 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
   if (val->is_Load() &&
       val->in(MemNode::Address)->eqv_uncast(adr) &&
       val->in(MemNode::Memory )->eqv_uncast(mem) &&
-      val->as_Load()->store_Opcode() == Opcode()) {
+      val->as_Load()->store_Opcode() == Opcode() &&
+      !is_StoreVectorScatter() && !is_StoreVectorMasked() && !is_StoreVectorScatterMasked() &&
+      !val->is_LoadVectorGather() && !val->is_LoadVectorMasked() && !val->is_LoadVectorGatherMasked()) {
     result = mem;
   }
 
@@ -2809,7 +2837,9 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       mem->is_Store() &&
       mem->in(MemNode::Address)->eqv_uncast(adr) &&
       mem->in(MemNode::ValueIn)->eqv_uncast(val) &&
-      mem->Opcode() == Opcode()) {
+      mem->Opcode() == Opcode() &&
+      !is_StoreVectorScatter() && !is_StoreVectorMasked() && !is_StoreVectorScatterMasked() &&
+      !mem->is_StoreVectorScatter() && !mem->is_StoreVectorMasked() && !mem->is_StoreVectorScatterMasked()) {
     result = mem;
   }
 

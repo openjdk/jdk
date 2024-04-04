@@ -890,6 +890,7 @@ class LoadVectorNode : public LoadNode {
 // Load Vector from memory via index map
 class LoadVectorGatherNode : public LoadVectorNode {
  public:
+  enum { Offsets = 3 };
   LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGather);
@@ -900,7 +901,6 @@ class LoadVectorGatherNode : public LoadVectorNode {
 
   virtual int Opcode() const;
   virtual uint match_edge(uint idx) const { return idx == MemNode::Address || idx == MemNode::ValueIn; }
-  virtual Node* Identity(PhaseGVN* phase);
 };
 
 //------------------------------StoreVectorNode--------------------------------
@@ -948,6 +948,7 @@ class StoreVectorNode : public StoreNode {
 
  class StoreVectorScatterNode : public StoreVectorNode {
   public:
+   enum { Offsets = 4 };
    StoreVectorScatterNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, Node* indices)
      : StoreVectorNode(c, mem, adr, at, val) {
      init_class_id(Class_StoreVectorScatter);
@@ -959,13 +960,13 @@ class StoreVectorNode : public StoreNode {
    virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
                                                     idx == MemNode::ValueIn ||
                                                     idx == MemNode::ValueIn + 1; }
-   virtual Node* Identity(PhaseGVN* phase);
 };
 
 //------------------------------StoreVectorMaskedNode--------------------------------
 // Store Vector to memory under the influence of a predicate register(mask).
 class StoreVectorMaskedNode : public StoreVectorNode {
  public:
+  enum { Mask = 4 };
   StoreVectorMaskedNode(Node* c, Node* mem, Node* dst, Node* src, const TypePtr* at, Node* mask)
    : StoreVectorNode(c, mem, dst, at, src) {
     init_class_id(Class_StoreVectorMasked);
@@ -979,13 +980,13 @@ class StoreVectorMaskedNode : public StoreVectorNode {
     return idx > 1;
   }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  virtual Node* Identity(PhaseGVN* phase);
 };
 
 //------------------------------LoadVectorMaskedNode--------------------------------
 // Load Vector from memory under the influence of a predicate register(mask).
 class LoadVectorMaskedNode : public LoadVectorNode {
  public:
+  enum { Mask = 3 };
   LoadVectorMaskedNode(Node* c, Node* mem, Node* src, const TypePtr* at, const TypeVect* vt, Node* mask,
                        ControlDependency control_dependency = LoadNode::DependsOnlyOnTest)
    : LoadVectorNode(c, mem, src, at, vt, control_dependency) {
@@ -1000,13 +1001,15 @@ class LoadVectorMaskedNode : public LoadVectorNode {
     return idx > 1;
   }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  virtual Node* Identity(PhaseGVN* phase);
 };
 
 //-------------------------------LoadVectorGatherMaskedNode---------------------------------
 // Load Vector from memory via index map under the influence of a predicate register(mask).
 class LoadVectorGatherMaskedNode : public LoadVectorNode {
  public:
+  enum { Offsets = 3,
+         Mask
+  };
   LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGatherMasked);
@@ -1021,13 +1024,15 @@ class LoadVectorGatherMaskedNode : public LoadVectorNode {
   virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
                                                    idx == MemNode::ValueIn ||
                                                    idx == MemNode::ValueIn + 1; }
-  virtual Node* Identity(PhaseGVN* phase);
 };
 
 //------------------------------StoreVectorScatterMaskedNode--------------------------------
 // Store Vector into memory via index map under the influence of a predicate register(mask).
 class StoreVectorScatterMaskedNode : public StoreVectorNode {
   public:
+   enum { Offsets = 4,
+          Mask
+   };
    StoreVectorScatterMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, Node* indices, Node* mask)
      : StoreVectorNode(c, mem, adr, at, val) {
      init_class_id(Class_StoreVectorScatterMasked);
@@ -1042,7 +1047,6 @@ class StoreVectorScatterMaskedNode : public StoreVectorNode {
                                                     idx == MemNode::ValueIn ||
                                                     idx == MemNode::ValueIn + 1 ||
                                                     idx == MemNode::ValueIn + 2; }
-   virtual Node* Identity(PhaseGVN* phase);
 };
 
 // Verify that memory address (adr) is aligned. The mask specifies the
