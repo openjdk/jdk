@@ -253,7 +253,6 @@
   nonstatic_field(InstanceKlass,               _jni_ids,                                      JNIid*)                                \
   nonstatic_field(InstanceKlass,               _osr_nmethods_head,                            nmethod*)                              \
   JVMTI_ONLY(nonstatic_field(InstanceKlass,    _breakpoints,                                  BreakpointInfo*))                      \
-  volatile_nonstatic_field(InstanceKlass,      _methods_jmethod_ids,                          jmethodID*)                            \
   volatile_nonstatic_field(InstanceKlass,      _idnum_allocated_count,                        u2)                                    \
   nonstatic_field(InstanceKlass,               _annotations,                                  Annotations*)                          \
   nonstatic_field(InstanceKlass,               _method_ordering,                              Array<int>*)                           \
