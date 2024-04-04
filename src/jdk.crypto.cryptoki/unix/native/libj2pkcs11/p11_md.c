@@ -91,7 +91,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
     jobject globalPKCS11ImplementationReference;
     char *systemErrorMessage;
     char *exceptionMessage;
-    const char *getFunctionListStr = "C_GetFunctionList";
+    const char *getFunctionListStr = NULL;
 
     const char *libraryNameStr = (*env)->GetStringUTFChars(env,
             jPkcs11ModulePath, 0);
@@ -160,10 +160,13 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
         if (C_GetInterface != NULL) {
             TRACE0("Connect: Found C_GetInterface func\n");
             rv = (C_GetInterface)(NULL, NULL, &interface, 0L);
-            if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
+            // don't use ckAssertReturnValueOK as we want to continue trying
+            // C_GetFunctionList() or method named by "getFunctionListStr"
+            if (rv == CKR_OK) {
                 goto setModuleData;
             }
         }
+        getFunctionListStr = "C_GetFunctionList";
     } else {
         getFunctionListStr = (*env)->GetStringUTFChars(env,
             jGetFunctionList, 0);
