@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/heapRegionBounds.inline.hpp"
+#include "gc/g1/g1HeapRegionBounds.inline.hpp"
 #include "gc/g1/jvmFlagConstraintsG1.hpp"
 #include "gc/shared/bufferNode.hpp"
 #include "gc/shared/ptrQueue.hpp"

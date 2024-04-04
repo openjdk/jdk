@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,19 @@
 
 include LibCommon.gmk
 
-################################################################################
-
-ifeq ($(call isTargetOs, linux macosx windows), true)
+ifeq ($(call isTargetOs, aix), false)
+  ##############################################################################
+  ## Build lible
+  ##############################################################################
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBLE, \
       NAME := le, \
-      TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
+      LINK_TYPE := C++, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CXXFLAGS_JDKLIB), \
-      LDFLAGS := $(LDFLAGS_JDKLIB), \
-      LIBS_unix := $(JDKLIB_LIBS) $(LIBCXX), \
-      LIBS_windows := $(JDKLIB_LIBS) user32.lib, \
+      LD_SET_ORIGIN := false, \
+      JDK_LIBS := $(JDKLIB_LIBS), \
+      LIBS_windows := user32.lib, \
   ))
 
   TARGETS += $(BUILD_LIBLE)
-
 endif
-
-################################################################################

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,14 +35,14 @@
 #include "gc/g1/g1FromCardCache.hpp"
 #include "gc/g1/g1GCParPhaseTimesTracker.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionManager.inline.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1_globals.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionManager.inline.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/shared/bufferNode.hpp"
 #include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
@@ -531,7 +531,7 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
       return;
     }
 
-    HeapWord* scan_end = MIN2(card_start + (num_cards << BOTConstants::log_card_size_in_words()), top);
+    HeapWord* scan_end = MIN2(card_start + (num_cards << (CardTable::card_shift() - LogHeapWordSize)), top);
     if (_scanned_to >= scan_end) {
       return;
     }
@@ -1133,7 +1133,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // so the bitmap for the regions in the collection set must be cleared if not already.
       if (should_clear_region(hr)) {
         _g1h->clear_bitmap_for_region(hr);
-        hr->reset_top_at_mark_start();
+        _g1h->concurrent_mark()->reset_top_at_mark_start(hr);
       } else {
         assert_bitmap_clear(hr, _g1h->concurrent_mark()->mark_bitmap());
       }
@@ -1174,24 +1174,27 @@ class G1MergeHeapRootsTask : public WorkerTask {
       }
 
       HeapRegion* r = g1h->region_at(region_index);
-      if (r->rem_set()->is_empty()) {
-        return false;
-      }
+
+      assert(r->rem_set()->is_complete(), "humongous candidates must have complete remset");
 
       guarantee(r->rem_set()->occupancy_less_or_equal_than(G1EagerReclaimRemSetThreshold),
                 "Found a not-small remembered set here. This is inconsistent with previous assumptions.");
 
-      _cl.merge_card_set_for_region(r);
+      if (!r->rem_set()->is_empty()) {
+        _cl.merge_card_set_for_region(r);
 
-      // We should only clear the card based remembered set here as we will not
-      // implicitly rebuild anything else during eager reclaim. Note that at the moment
-      // (and probably never) we do not enter this path if there are other kind of
-      // remembered sets for this region.
-      // We want to continue collecting remembered set entries for humongous regions
-      // that were not reclaimed.
-      r->rem_set()->clear(true /* only_cardset */, true /* keep_tracked */);
+        // We should only clear the card based remembered set here as we will not
+        // implicitly rebuild anything else during eager reclaim. Note that at the moment
+        // (and probably never) we do not enter this path if there are other kind of
+        // remembered sets for this region.
+        // We want to continue collecting remembered set entries for humongous regions
+        // that were not reclaimed.
+        r->rem_set()->clear(true /* only_cardset */, true /* keep_tracked */);
+      }
 
-      assert(r->rem_set()->is_empty() && r->rem_set()->is_complete(), "must be for eager reclaim candidates");
+      // Postcondition
+      assert(r->rem_set()->is_empty(), "must be empty after flushing");
+      assert(r->rem_set()->is_complete(), "should still be after flushing");
 
       return false;
     }
@@ -1255,39 +1258,90 @@ class G1MergeHeapRootsTask : public WorkerTask {
     size_t cards_skipped() const { return _cards_skipped; }
   };
 
-  HeapRegionClaimer _hr_claimer;
+  uint _num_workers;
   G1RemSetScanState* _scan_state;
-  BufferNode::Stack _dirty_card_buffers;
+
+  // To mitigate contention due multiple threads accessing and popping BufferNodes from a shared
+  // G1DirtyCardQueueSet, we implement a sequential distribution phase. Here, BufferNodes are
+  // distributed to worker threads in a sequential manner utilizing the _dirty_card_buffers. By doing
+  // so, we effectively alleviate the bottleneck encountered during pop operations on the
+  // G1DirtyCardQueueSet. Importantly, this approach preserves the helping aspect among worker
+  // threads, allowing them to assist one another in case of imbalances in work distribution.
+  BufferNode::Stack* _dirty_card_buffers;
+
   bool _initial_evacuation;
 
   volatile bool _fast_reclaim_handled;
 
   void apply_closure_to_dirty_card_buffers(G1MergeLogBufferCardsClosure* cl, uint worker_id) {
     G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-    while (BufferNode* node = _dirty_card_buffers.pop()) {
-      cl->apply_to_buffer(node, worker_id);
-      dcqs.deallocate_buffer(node);
+    for (uint i = 0; i < _num_workers; i++) {
+      uint index = (worker_id + i) % _num_workers;
+      while (BufferNode* node = _dirty_card_buffers[index].pop()) {
+        cl->apply_to_buffer(node, worker_id);
+        dcqs.deallocate_buffer(node);
+      }
     }
   }
 
 public:
   G1MergeHeapRootsTask(G1RemSetScanState* scan_state, uint num_workers, bool initial_evacuation) :
     WorkerTask("G1 Merge Heap Roots"),
-    _hr_claimer(num_workers),
+    _num_workers(num_workers),
     _scan_state(scan_state),
-    _dirty_card_buffers(),
+    _dirty_card_buffers(nullptr),
     _initial_evacuation(initial_evacuation),
     _fast_reclaim_handled(false)
   {
     if (initial_evacuation) {
+      Ticks start = Ticks::now();
+
+      _dirty_card_buffers = NEW_C_HEAP_ARRAY(BufferNode::Stack, num_workers, mtGC);
+      for (uint i = 0; i < num_workers; i++) {
+        new (&_dirty_card_buffers[i]) BufferNode::Stack();
+      }
+
       G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
       BufferNodeList buffers = dcqs.take_all_completed_buffers();
-      if (buffers._entry_count != 0) {
-        _dirty_card_buffers.prepend(*buffers._head, *buffers._tail);
+
+      size_t entries_per_thread = ceil(buffers._entry_count / (double)num_workers);
+
+      BufferNode* head = buffers._head;
+      BufferNode* tail = head;
+
+      uint worker = 0;
+      while (tail != nullptr) {
+        size_t count = tail->size();
+        BufferNode* cur = tail->next();
+
+        while (count < entries_per_thread && cur != nullptr) {
+          tail = cur;
+          count += tail->size();
+          cur = tail->next();
+        }
+
+        tail->set_next(nullptr);
+        _dirty_card_buffers[worker++ % num_workers].prepend(*head, *tail);
+
+        assert(cur != nullptr || tail == buffers._tail, "Must be");
+        head = cur;
+        tail = cur;
       }
+
+      Tickspan total = Ticks::now() - start;
+      G1CollectedHeap::heap()->phase_times()->record_distribute_log_buffers_time_ms(total.seconds() * 1000.0);
     }
   }
 
+  ~G1MergeHeapRootsTask() {
+    if (_dirty_card_buffers != nullptr) {
+      using Stack = BufferNode::Stack;
+      for (uint i = 0; i < _num_workers; i++) {
+        _dirty_card_buffers[i].~Stack();
+      }
+      FREE_C_HEAP_ARRAY(Stack, _dirty_card_buffers);
+    }
+  }
   virtual void work(uint worker_id) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     G1GCPhaseTimes* p = g1h->phase_times();

@@ -66,7 +66,7 @@ class SerialHeap : public CollectedHeap {
   friend class Generation;
   friend class DefNewGeneration;
   friend class TenuredGeneration;
-  friend class GenMarkSweep;
+  friend class MarkSweep;
   friend class VM_GenCollectForAllocation;
   friend class VM_GenCollectFull;
   friend class VM_GC_HeapInspection;
@@ -141,7 +141,6 @@ private:
 public:
   // Returns JNI_OK on success
   jint initialize() override;
-  virtual CardTableRS* create_rem_set(const MemRegion& reserved_region);
 
   // Does operations required after initialization has been done.
   void post_initialize() override;
@@ -248,10 +247,6 @@ public:
    public:
     virtual void do_generation(Generation* gen) = 0;
   };
-
-  // Apply "cl.do_generation" to all generations in the heap
-  // If "old_to_young" determines the order.
-  void generation_iterate(GenClosure* cl, bool old_to_young);
 
   // Return "true" if all generations have reached the
   // maximal committed limit that they can reach, without a garbage
@@ -371,10 +366,6 @@ public:
   template <typename OopClosureType1, typename OopClosureType2>
   void oop_since_save_marks_iterate(OopClosureType1* cur,
                                     OopClosureType2* older);
-
-  void young_process_roots(OopClosure* root_closure,
-                           OopIterateClosure* old_gen_closure,
-                           CLDClosure* cld_closure);
 
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;

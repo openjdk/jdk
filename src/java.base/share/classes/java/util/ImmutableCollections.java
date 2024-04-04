@@ -161,7 +161,7 @@ class ImmutableCollections {
      * Null argument or null elements in the argument will result in NPE.
      *
      * @param <E> the List's element type
-     * @param input the input array
+     * @param coll the input collection
      * @return the new list
      */
     @SuppressWarnings("unchecked")

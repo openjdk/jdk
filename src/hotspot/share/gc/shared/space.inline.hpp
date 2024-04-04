@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,15 +34,11 @@
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/safepoint.hpp"
 
-inline HeapWord* Space::block_start(const void* p) {
-  return block_start_const(p);
-}
-
 #if INCLUDE_SERIALGC
 inline HeapWord* TenuredSpace::allocate(size_t size) {
   HeapWord* res = ContiguousSpace::allocate(size);
   if (res != nullptr) {
-    _offsets.update_for_block(res, res + size);
+    _offsets->update_for_block(res, res + size);
   }
   return res;
 }
@@ -50,13 +46,13 @@ inline HeapWord* TenuredSpace::allocate(size_t size) {
 inline HeapWord* TenuredSpace::par_allocate(size_t size) {
   HeapWord* res = ContiguousSpace::par_allocate(size);
   if (res != nullptr) {
-    _offsets.update_for_block(res, res + size);
+    _offsets->update_for_block(res, res + size);
   }
   return res;
 }
 
 inline void TenuredSpace::update_for_block(HeapWord* start, HeapWord* end) {
-  _offsets.update_for_block(start, end);
+  _offsets->update_for_block(start, end);
 }
 #endif // INCLUDE_SERIALGC
 

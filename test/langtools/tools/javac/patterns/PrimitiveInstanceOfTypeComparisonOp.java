@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,17 @@
 
 /*
  * @test
- * @bug 8304487
+ * @bug 8304487 8325257
  * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Preview)
  * @enablePreview
  * @compile PrimitiveInstanceOfTypeComparisonOp.java
  * @run main/othervm PrimitiveInstanceOfTypeComparisonOp
  */
 public class PrimitiveInstanceOfTypeComparisonOp {
+    public static final int qualI = 42;
 
     public static void main(String[] args) {
+        assertEquals(true,  qualifiedExprConversion());
         assertEquals(true,  identityPrimitiveConversion());
         assertEquals(true,  wideningPrimitiveConversion());
         assertEquals(true,  narrowingPrimitiveConversion());
@@ -41,6 +43,7 @@ public class PrimitiveInstanceOfTypeComparisonOp {
         assertEquals(true,  unboxing());
         assertEquals(true,  unboxingWithObject());
         assertEquals(true,  wideningReferenceConversionUnboxing(42));
+        assertEquals(true,  wideningReferenceConversionUnboxing2(Byte.valueOf((byte) 42)));
         assertEquals(true,  wideningReferenceConversionUnboxingAndWideningPrimitive(42));
         assertEquals(true,  unboxingAndWideningPrimitiveExact());
         assertEquals(false, unboxingAndWideningPrimitiveNotExact());
@@ -49,6 +52,10 @@ public class PrimitiveInstanceOfTypeComparisonOp {
         assertEquals(true,  patternExtractRecordComponent());
         assertEquals(true,  exprMethod());
         assertEquals(true,  exprStaticallyQualified());
+    }
+
+    public static boolean qualifiedExprConversion() {
+        return PrimitiveInstanceOfTypeComparisonOp.qualI instanceof int;
     }
 
     public static boolean identityPrimitiveConversion() {
@@ -100,14 +107,18 @@ public class PrimitiveInstanceOfTypeComparisonOp {
         Object o1 = (int) 42;
         Object o2 = (byte) 42;
 
-        return o1 instanceof int i1 &&
-                o2 instanceof byte b1 &&
-                !(o1 instanceof byte b2 &&
-                !(o2 instanceof int i2));
+        return o1 instanceof int &&
+                o2 instanceof byte &&
+                !(o1 instanceof byte &&
+                !(o2 instanceof int));
     }
 
     public static <T extends Integer> boolean wideningReferenceConversionUnboxing(T i) {
         return i instanceof int;
+    }
+
+    public static <T extends Byte> boolean wideningReferenceConversionUnboxing2(T i) {
+        return i instanceof byte;
     }
 
     public static <T extends Integer> boolean wideningReferenceConversionUnboxingAndWideningPrimitive(T i) {

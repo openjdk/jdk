@@ -21,7 +21,7 @@
  * questions.
  */
 #include "jni.h"
-#include "native_thread.h"
+#include "native_thread.hpp"
 #ifdef _WIN32
 #include <windows.h>
 #include <process.h>
@@ -31,7 +31,7 @@
 #include <unistd.h>
 #include <signal.h>
 #endif /* _WIN32 */
-#include "jni_tools.h"
+#include "jni_tools.hpp"
 
 extern "C" {
 

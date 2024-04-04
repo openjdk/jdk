@@ -524,8 +524,9 @@ class ConcurrentHashTable : public CHeapObj<F> {
   void statistics_to(Thread* thread, VALUE_SIZE_FUNC& vs_f, outputStream* st,
                      const char* table_name);
 
-  // Moves all nodes from this table to to_cht
-  bool try_move_nodes_to(Thread* thread, ConcurrentHashTable<CONFIG, F>* to_cht);
+  // Moves all nodes from this table to to_cht with new hash code.
+  // Must be done at a safepoint.
+  void rehash_nodes_to(Thread* thread, ConcurrentHashTable<CONFIG, F>* to_cht);
 
   // Scoped multi getter.
   class MultiGetHandle : private ScopedCS {
