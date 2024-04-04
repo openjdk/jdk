@@ -126,6 +126,13 @@ public class StartOptionTest {
         check(usererr, null, "usererr");
     }
 
+    protected void startCheckUserOutput(Consumer<String> checkUserOutput,
+            String... args) {
+        runShell(args);
+        check(userout, checkUserOutput, "userout");
+        check(usererr, null, "usererr");
+    }
+
     // Start with an exit code and command error check
     protected void startExCe(int eec, Consumer<String> checkError, String... args) {
         StartOptionTest.this.startExCoUoCeCn(
@@ -363,18 +370,10 @@ public class StartOptionTest {
                 "System.out.println(MethodHandle.class.getName());\n" +
                 "System.out.println(\"suffix\");\n" +
                 "/exit\n");
-        startExCoUoCeCn(e -> assertEquals(e.intValue(), 0),
-                        s -> {},
-                        s -> assertEquals(s, "prefix\nsuffix\n"),
-                        s -> {},
-                        s -> {},
-                        fn);
-        startExCoUoCeCn(e -> assertEquals(e.intValue(), 0),
-                        s -> {},
-                        s -> assertEquals(s, "prefix\njava.lang.invoke.MethodHandle\nsuffix\n"),
-                        s -> {},
-                        s -> {},
-                        "--enable-preview", fn);
+        startCheckUserOutput(s -> assertEquals(s, "prefix\nsuffix\n"),
+                             fn);
+        startCheckUserOutput(s -> assertEquals(s, "prefix\njava.lang.invoke.MethodHandle\nsuffix\n"),
+                             "--enable-preview", fn);
     }
 
     @AfterMethod
