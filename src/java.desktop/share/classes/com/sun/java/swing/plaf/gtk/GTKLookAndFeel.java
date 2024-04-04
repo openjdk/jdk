@@ -348,7 +348,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         Double defaultCaretAspectRatio = Double.valueOf(0.025);
         Color caretColor = table.getColor("caretColor");
         Color controlText = table.getColor("controlText");
-        Color tabbedPaneBg = new Color(238, 238, 238);
+        Color tabbedPaneBg = new ColorUIResource(238, 238, 238);
 
         Object fieldInputMap = new UIDefaults.LazyInputMap(new Object[] {
                        "ctrl C", DefaultEditorKit.copyAction,

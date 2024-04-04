@@ -770,10 +770,9 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
             } else {
                 g.setColor(selectColor);
             }
+            // fill content area rect for both GTK and Nimbus LAF here
+            g.fillRect(x, y, w, h);
         }
-
-        // fill content area rect for both GTK and Nimbus LAF here
-        g.fillRect(x, y, w, h);
 
         ss.getPainter().paintTabbedPaneContentBackground(ss, g, x, y,
                                                            w, h);

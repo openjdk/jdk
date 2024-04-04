@@ -52,24 +52,21 @@ public class TestJTabbedPaneOpaqueColor {
     private static JFrame frame;
     private static JTabbedPane tabPane;
     private static final String INSTRUCTIONS = """
-            The background color of panel (which contains the tabbed pane
-                    is green.
+            The background color of panel (which contains the tabbed pane is green).
             The background color of the tabbed pane is red.
 
-             Check the default behaviour of the tabbed pane:
-                - the area behind tabs is transparent (it must be green).
-                - the tabs area is opaque (it must be red, except the selected
-                    "tab which must be gray).
-                - the content area is opaque(it must be gray).
+            Check the default behaviour of the tabbed pane:
+              - the area behind tabs is transparent (it must be green).
+              - the tabs area is opaque (it must be red, except the selected tab which must be gray).
+              - the content area is opaque (it must be gray).
 
-             Click to the check box 'opaque'. And be sure that
-                - the area behind tabs is opaque (it must be red).
-                - the tabs area is opaque (it must be red, except the selected
-                    "tab which must be gray).
-                - the content area is opaque (it must be gray).
+            Click to the check box 'opaque'. And be sure that
+              - the area behind tabs is opaque (it must be red).
+              - the tabs area is opaque (it must be red, except the selected tab which must be gray).
+              - the content area is opaque (it must be gray).
 
-             Check this behaviour for other LAFs and tab layout.
-             NOTE: For Nimbus LAF, tabs color are specific to nimbus style.""";
+            Check this behaviour for other LAFs and tab layout.
+            NOTE: For Nimbus LAF, tabs color are specific to nimbus style.""";
 
     public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()
