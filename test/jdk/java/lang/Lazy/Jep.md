@@ -225,20 +225,21 @@ Fresh (unset) `Lazy` instances are created via the factory method `Lazy::of`:
 class Bar {
     // 1. Declare a Lazy field
     private static final Lazy<Logger> LOGGER = Lazy.of();
-    
-    static void init() {
-        // 2. Set the lazy value _after_ the field was declared
-        LOGGER.setOrThrow(Logger.getLogger("com.foo.Bar"));
-    }
-    
+
     static Logger logger() {
+
+        if (!LOGGER.isSet()) {
+            // 2. Set the lazy value _after_ the field was declared
+            return LOGGER.setIfUnset(Logger.getLogger("com.foo.Bar"));
+        }
+        
         // 3. Access the lazy value with as-declared-final performance
         return LOGGER.orThrow();
     }
 }
 ```
 
-This is similar to the holder-class idiom in the sense it offers the same
+This is similar to the holder-class idiom and offers the same
 performance, constant-folding, and thread-safety characteristics, but is simpler
 and incurs a lower static footprint since no additional class is required.
 

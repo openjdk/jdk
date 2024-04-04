@@ -56,12 +56,13 @@ final class JepDemo {
         // 1. Declare a Lazy field
         private static final Lazy<Logger> LOGGER = Lazy.of();
 
-        static void init() {
-            // 2. Set the lazy value _after_ the field was declared
-            LOGGER.setOrThrow(Logger.getLogger("com.foo.Bar"));
-        }
-
         static Logger logger() {
+
+            if (!LOGGER.isSet()) {
+                // 2. Set the lazy value _after_ the field was declared
+                return LOGGER.setIfUnset(Logger.getLogger("com.foo.Bar"));
+            }
+
             // 3. Access the lazy value with as-declared-final performance
             return LOGGER.orThrow();
         }
