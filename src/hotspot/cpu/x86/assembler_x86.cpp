@@ -11710,7 +11710,7 @@ int Assembler::vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, VexS
     }
   }
 
-  if (UseAVX > 2) {
+  if (UseAVX > 2 && !attributes->uses_vl()) {
     // All the scalar fp instructions (with uses_vl as false) can have legacy_mode as false
     // Instruction with uses_vl true are vector instructions
     // All the vector instructions with AVX_512bit length can have legacy_mode as false
