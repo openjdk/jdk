@@ -34,6 +34,7 @@ import java.util.AbstractCollection;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collector;
 
 /** A class for generic linked lists. Links are supposed to be
@@ -504,11 +505,30 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
         return -1;
     }
 
+    public int indexOf(Predicate<? super A> filter) {
+        int i = 0;
+        for (List<A> l = this; l.tail != null; l = l.tail, i++) {
+            if (filter.test(l.head))
+                return i;
+        }
+        return -1;
+    }
+
     public int lastIndexOf(Object o) {
         int last = -1;
         int i = 0;
         for (List<A> l = this; l.tail != null; l = l.tail, i++) {
             if (l.head == null ? o == null : l.head.equals(o))
+                last = i;
+        }
+        return last;
+    }
+
+    public int lastIndexOf(Predicate<? super A> filter) {
+        int last = -1;
+        int i = 0;
+        for (List<A> l = this; l.tail != null; l = l.tail, i++) {
+            if (filter.test(l.head))
                 last = i;
         }
         return last;
