@@ -392,7 +392,7 @@ public class TransPatterns extends TreeTranslator {
                               boolean hasUnconditionalPattern,
                               boolean patternSwitch) {
         if (patternSwitch) {
-            Type seltype = selector.type.hasTag(BOT)
+            Type seltype = selector.type.hasTag(BOT) || target.usesReferenceOnlySelectorTypes()
                     ? syms.objectType
                     : selector.type;
 
@@ -499,12 +499,8 @@ public class TransPatterns extends TreeTranslator {
             MethodSymbol bsm = rs.resolveInternalMethod(tree.pos(), env, syms.switchBootstrapsType,
                     bootstrapName, staticArgTypes, List.nil());
 
-            Type resolvedSelectorType = seltype;
-            if (target.usesReferenceOnlySelectorTypes())
-                resolvedSelectorType = syms.objectType;
-
             MethodType indyType = new MethodType(
-                    List.of(resolvedSelectorType, syms.intType),
+                    List.of(seltype, syms.intType),
                     syms.intType,
                     List.nil(),
                     syms.methodClass
