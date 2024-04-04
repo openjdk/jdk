@@ -53,8 +53,8 @@ public class bug4419914 {
         PassFailJFrame.builder()
                 .title("Tab movement Instructions")
                 .instructions(INSTRUCTIONS)
-                .rows(12)
-                .columns(42)
+                .rows((int) INSTRUCTIONS.lines().count() + 2)
+                .columns(48)
                 .testUI(bug4419914::createTestUI)
                 .build()
                 .awaitAndCheck();
