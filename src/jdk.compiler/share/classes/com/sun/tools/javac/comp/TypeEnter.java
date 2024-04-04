@@ -52,7 +52,6 @@ import com.sun.tools.javac.tree.JCTree.*;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.ANNOTATION;
-import com.sun.tools.javac.code.Kinds.Kind;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
@@ -335,34 +334,19 @@ public class TypeEnter implements Completer {
                 sym.owner.complete();
         }
 
-        private PackageSymbol javaLangSymbol() {
-            ModuleSymbol javaBase = syms.java_base;
-            PackageSymbol javaLang = syms.enterPackage(javaBase, names.java_lang);
-            return javaLang.members().isEmpty() && !javaLang.exists() ? null : javaLang;
-        }
-
         private void implicitImports(JCCompilationUnit tree, Env<AttrContext> env) {
             // Import-on-demand java.lang.
-            PackageSymbol javaLang = javaLangSymbol();
-            if (javaLang == null) {
+            PackageSymbol javaLang = syms.enterPackage(syms.java_base, names.java_lang);
+            if (javaLang.members().isEmpty() && !javaLang.exists()) {
                 log.error(Errors.NoJavaLang);
                 throw new Abort();
             }
             importAll(make.at(tree.pos()).Import(make.Select(make.QualIdent(javaLang.owner), javaLang), false),
-                      javaLang, env);
+                javaLang, env);
 
-            if (tree.getModuleDecl() == null) {
-                try {
-                    TypeSymbol stringTemplateSym = syms.stringTemplateType.tsym;
-                    if (allowStringTemplates &&
-                            tree.modle.visiblePackages != null &&
-                            !stringTemplateSym.members().isEmpty() &&
-                            (stringTemplateSym.flags() & PREVIEW_API) == 0) {
-                        doImport(make.Import(make.Select(make.QualIdent(stringTemplateSym), names.STR), true));
-                    }
-                } catch (CompletionFailure ex) {
-                    // fall thru - StringTemplate not available for completion
-                }
+            if (allowStringTemplates &&
+                peekTypeExists(env, syms.stringTemplateType.tsym)) {
+                doImport(make.Import(make.Select(make.QualIdent(syms.stringTemplateType.tsym), names.STR), true));
             }
 
             List<JCTree> defs = tree.defs;
