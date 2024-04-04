@@ -28,12 +28,14 @@ package javax.lang.model.util;
 import jdk.internal.javac.PreviewFeature;
 
 import javax.annotation.processing.SupportedSourceVersion;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.SourceVersion;
 import static javax.lang.model.SourceVersion.*;
 
 /**
  * A simple visitor of types with default behavior appropriate for a
- * preview source version.
+ * {@linkplain ProcessingEnvironment#isPreviewEnabled preview} source
+ * version.
  *
  * Visit methods corresponding to {@code RELEASE_14} and earlier
  * language constructs call {@link #defaultAction defaultAction},

@@ -27,15 +27,17 @@ package javax.lang.model.util;
 
 import jdk.internal.javac.PreviewFeature;
 
-import javax.lang.model.element.*;
 import javax.annotation.processing.SupportedSourceVersion;
-import static javax.lang.model.SourceVersion.*;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.*;
 import javax.lang.model.SourceVersion;
+import static javax.lang.model.SourceVersion.*;
 
 /**
  * A visitor of program elements based on their {@linkplain
- * ElementKind kind} with default behavior appropriate for a preview
- * source version.
+ * ElementKind kind} with default behavior appropriate for a
+ * {@linkplain ProcessingEnvironment#isPreviewEnabled preview} source
+ * version.
  *
  * For {@linkplain
  * Element elements} <code><i>Xyz</i></code> that may have more than one

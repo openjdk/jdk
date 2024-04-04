@@ -30,10 +30,12 @@ import jdk.internal.javac.PreviewFeature;
 import static javax.lang.model.SourceVersion.*;
 import javax.lang.model.SourceVersion;
 import javax.annotation.processing.SupportedSourceVersion;
+import javax.annotation.processing.ProcessingEnvironment;
 
 /**
  * A skeletal visitor for annotation values with default behavior
- * appropriate for a preview source version.
+ * appropriate for a {@linkplain
+ * ProcessingEnvironment#isPreviewEnabled preview} source version.
  *
  * @param <R> the return type of this visitor's methods
  * @param <P> the type of the additional parameter to this visitor's methods.

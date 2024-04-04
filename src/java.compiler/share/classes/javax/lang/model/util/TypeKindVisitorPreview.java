@@ -28,13 +28,15 @@ package javax.lang.model.util;
 import jdk.internal.javac.PreviewFeature;
 
 import javax.annotation.processing.SupportedSourceVersion;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.type.*;
 import static javax.lang.model.SourceVersion.*;
 
 /**
  * A visitor of types based on their {@linkplain TypeKind kind} with
- * default behavior appropriate for a preview source version.
+ * default behavior appropriate for a {@linkplain
+ * ProcessingEnvironment#isPreviewEnabled preview} source version.
  *
  * For {@linkplain
  * TypeMirror types} <code><i>Xyz</i></code> that may have more than one

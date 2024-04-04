@@ -28,6 +28,7 @@ package javax.lang.model.util;
 import jdk.internal.javac.PreviewFeature;
 
 import javax.annotation.processing.SupportedSourceVersion;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ElementVisitor;
 import javax.lang.model.element.RecordComponentElement;
@@ -35,7 +36,8 @@ import static javax.lang.model.SourceVersion.*;
 
 /**
  * A simple visitor of program elements with default behavior
- * appropriate for a preview source version.
+ * appropriate for a {@linkplain
+ * ProcessingEnvironment#isPreviewEnabled preview} source version.
  *
  * Visit methods corresponding to {@code RELEASE_14} and earlier
  * language constructs call {@link #defaultAction defaultAction},

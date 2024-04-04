@@ -28,12 +28,14 @@ package javax.lang.model.util;
 import jdk.internal.javac.PreviewFeature;
 
 import javax.annotation.processing.SupportedSourceVersion;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.SourceVersion;
 import static javax.lang.model.SourceVersion.*;
 
 /**
  * A simple visitor for annotation values with default behavior
- * appropriate for a preview source version.
+ * appropriate for a {@linkplain
+ * ProcessingEnvironment#isPreviewEnabled preview} source version.
  *
  * Visit methods call {@link #defaultAction
  * defaultAction} passing their arguments to {@code defaultAction}'s

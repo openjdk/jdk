@@ -29,15 +29,17 @@ import jdk.internal.javac.PreviewFeature;
 
 import java.util.List;
 import java.util.ArrayList;
-import javax.lang.model.element.*;
 import javax.annotation.processing.SupportedSourceVersion;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ElementVisitor;
 import static javax.lang.model.SourceVersion.*;
 
 /**
  * A scanning visitor of program elements with default behavior
- * appropriate for a preview source version.
+ * appropriate for a {@linkplain
+ * ProcessingEnvironment#isPreviewEnabled preview} source version.
  *
  * The <code>visit<i>Xyz</i></code> methods in this class scan their
  * component elements by calling {@link ElementScanner6#scan(Element,
