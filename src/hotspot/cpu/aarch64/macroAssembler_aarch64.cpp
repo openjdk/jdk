@@ -68,10 +68,6 @@
 
 #include <sys/types.h>
 
-void poo() {
-  asm("nop");
-}
-
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
 #else
@@ -1634,10 +1630,8 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
 
   u1 bit = super_klass_slot;
 
+  // Make sure that result is nonzero if the TBZ below misses.
   mov(result, 1);
-
-  lea(lr, ExternalAddress(CAST_FROM_FN_PTR(address, poo)));
-  blr(lr);
 
   // We're going to need the bitmap in a vector reg and in a core reg,
   // so load both now.
@@ -1675,7 +1669,7 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   cbz(result, L_fallthrough); // Found a match
 
   // Is there another entry to check? Consult the bitmap.
-  tbz(r_bitmap, (bit+1) & Klass::SECONDARY_SUPERS_TABLE_MASK, L_fallthrough);
+  tbz(r_bitmap, (bit + 1) & Klass::SECONDARY_SUPERS_TABLE_MASK, L_fallthrough);
 
   // Linear probe.
   if (bit != 0) {
@@ -1743,13 +1737,12 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
     eor(result, rscratch1, r_super_klass);
     cbz(result, L_fallthrough);
 
-    tbz(r_bitmap, 2, L_fallthrough); // End of run
+    tbz(r_bitmap, 2, L_fallthrough); // End of run. result is nonzero.
 
     ror(r_bitmap, r_bitmap, 1);
     add(r_array_index, r_array_index, 1);
     b(LOOPY);
   }
-
 
   // Degenerate case: more than 64 secondary supers
   bind(huge);

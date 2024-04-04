@@ -4894,7 +4894,7 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
   Label L_huge;
 
   // The bitmap is full to bursting: >= 64 entries.
-  // Implicit invariant: BITMAP_FULL => length > 0
+  // Implicit invariant: BITMAP_FULL >= length > 0
   assert(Klass::SECONDARY_SUPERS_BITMAP_FULL == ~uintx(0), "");
   cmpq(r_bitmap, (int32_t)-1); // sign-extends immediate to 64-bit value
   jcc(Assembler::equal, L_huge);
@@ -4918,7 +4918,7 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
     jcc(Assembler::equal, *L_success);
 
     // If the next bit in bitmap is zero, we're done.
-    btq(r_bitmap, 1); // We just tested Bit 1, so now test Bit 2
+    btq(r_bitmap, 1); // We just tested Bit 0, so now test Bit 1
     jcc(Assembler::carryClear, *L_failure);
 
     rorq(r_bitmap, 1);
