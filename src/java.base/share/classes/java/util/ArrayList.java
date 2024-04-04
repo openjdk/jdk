@@ -1391,8 +1391,20 @@ public class ArrayList<E> extends AbstractList<E>
             return index >= 0 ? index - offset : -1;
         }
 
+        public int indexOf(Predicate<? super E> filter) {
+            int index = root.indexOfRange(filter, offset, offset + size);
+            checkForComodification();
+            return index >= 0 ? index - offset : -1;
+        }
+
         public int lastIndexOf(Object o) {
             int index = root.lastIndexOfRange(o, offset, offset + size);
+            checkForComodification();
+            return index >= 0 ? index - offset : -1;
+        }
+
+        public int lastIndexOf(Predicate<? super E> filter) {
+            int index = root.lastIndexOfRange(filter, offset, offset + size);
             checkForComodification();
             return index >= 0 ? index - offset : -1;
         }
