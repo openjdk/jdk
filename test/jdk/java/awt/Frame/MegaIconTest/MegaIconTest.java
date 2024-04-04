@@ -79,7 +79,7 @@ public class MegaIconTest {
         //Create the iconTestFrames and add to IconTestButtons
         IconTestButtons itb = new IconTestButtons(new IconTestFrame[]{
                 new IconTestFrame("Opaque, Scaled Icon Test",
-                        "fight.gif"),
+                        "duke_404.gif"),
 
                 new IconTestFrame("Transparent Icon",
                         "dukeWave.gif"),
