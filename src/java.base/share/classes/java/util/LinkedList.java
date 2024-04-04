@@ -1507,8 +1507,16 @@ public class LinkedList<E>
             return rlist.lastIndexOf(o);
         }
 
+        public int lastIndexOf(Predicate<? super E> filter) {
+            return rlist.lastIndexOf(filter);
+        }
+
         public int indexOf(Object o) {
             return rlist.indexOf(o);
+        }
+
+        public int indexOf(Predicate<? super E> filter) {
+            return rlist.indexOf(filter);
         }
 
         public E remove(int index) {
