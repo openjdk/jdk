@@ -54,7 +54,7 @@ public class TestLargeCompilation {
         byte[] aB = generateB();
         byte[] bB = generateB();
         byte[] cB = generateB();
- 
+
         for (int i = 1; i < 100; i++) {
             testUUBBBH(aB, bB, cB);
         }
