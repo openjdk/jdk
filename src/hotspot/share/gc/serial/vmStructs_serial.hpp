@@ -40,7 +40,7 @@
   nonstatic_field(Generation::StatRecord,            accumulated_time,       elapsedTimer)                  \
                                                                                                             \
   nonstatic_field(TenuredGeneration,                 _rs,                    CardTableRS*)                  \
-  nonstatic_field(TenuredGeneration,                 _bts,                   SerialBlockOffsetSharedArray*) \
+  nonstatic_field(TenuredGeneration,                 _bts,                   SerialBlockOffsetTable*)       \
   nonstatic_field(TenuredGeneration,                 _shrink_factor,         size_t)                        \
   nonstatic_field(TenuredGeneration,                 _capacity_at_prologue,  size_t)                        \
   nonstatic_field(TenuredGeneration,                 _used_at_prologue,      size_t)                        \
@@ -54,13 +54,11 @@
   nonstatic_field(DefNewGeneration,                  _from_space,            ContiguousSpace*)              \
   nonstatic_field(DefNewGeneration,                  _to_space,              ContiguousSpace*)              \
                                                                                                             \
-  nonstatic_field(SerialBlockOffsetTable,            _array,                 SerialBlockOffsetSharedArray*) \
+  nonstatic_field(SerialBlockOffsetTable,            _reserved,              MemRegion)                     \
+  nonstatic_field(SerialBlockOffsetTable,            _vs,                    VirtualSpace)                  \
+  nonstatic_field(SerialBlockOffsetTable,            _offset_base,           u_char*)                       \
                                                                                                             \
-  nonstatic_field(SerialBlockOffsetSharedArray,      _reserved,              MemRegion)                     \
-  nonstatic_field(SerialBlockOffsetSharedArray,      _vs,                    VirtualSpace)                  \
-  nonstatic_field(SerialBlockOffsetSharedArray,      _offset_base,           u_char*)                       \
-                                                                                                            \
-  nonstatic_field(TenuredSpace,                      _offsets,               SerialBlockOffsetTable)        \
+  nonstatic_field(TenuredSpace,                      _offsets,               SerialBlockOffsetTable*)       \
                                                                                                             \
   nonstatic_field(SerialHeap,                        _young_gen,             DefNewGeneration*)             \
   nonstatic_field(SerialHeap,                        _old_gen,               TenuredGeneration*)            \
@@ -78,7 +76,6 @@
   declare_type(CardTableRS, CardTable)                                        \
                                                                               \
   declare_toplevel_type(TenuredGeneration*)                                   \
-  declare_toplevel_type(SerialBlockOffsetSharedArray)                         \
   declare_toplevel_type(SerialBlockOffsetTable)
 
 #define VM_INT_CONSTANTS_SERIALGC(declare_constant,                           \

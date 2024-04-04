@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -78,7 +78,6 @@ define_pd_global(intx, InlineSmallCode,          1000);
 
 #define ARCH_FLAGS(develop,                                                      \
                    product,                                                      \
-                   notproduct,                                                   \
                    range,                                                        \
                    constraint)                                                   \
                                                                                  \

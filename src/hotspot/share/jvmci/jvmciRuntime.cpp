@@ -256,7 +256,7 @@ extern void vm_exit(int code);
 // been deoptimized. If that is the case we return the deopt blob
 // unpack_with_exception entry instead. This makes life for the exception blob easier
 // because making that same check and diverting is painful from assembly language.
-JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* current, oopDesc* ex, address pc, CompiledMethod*& cm))
+JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* current, oopDesc* ex, address pc, nmethod*& nm))
   // Reset method handle flag.
   current->set_is_method_handle_return(false);
 
@@ -267,10 +267,9 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
   // has updated oops.
   StackWatermarkSet::after_unwind(current);
 
-  cm = CodeCache::find_compiled(pc);
-  assert(cm != nullptr, "this is not a compiled method");
+  nm = CodeCache::find_nmethod(pc);
   // Adjust the pc as needed/
-  if (cm->is_deopt_pc(pc)) {
+  if (nm->is_deopt_pc(pc)) {
     RegisterMap map(current,
                     RegisterMap::UpdateMap::skip,
                     RegisterMap::ProcessFrames::include,
@@ -291,10 +290,10 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
   if (log_is_enabled(Info, exceptions)) {
     ResourceMark rm;
     stringStream tempst;
-    assert(cm->method() != nullptr, "Unexpected null method()");
+    assert(nm->method() != nullptr, "Unexpected null method()");
     tempst.print("JVMCI compiled method <%s>\n"
                  " at PC" INTPTR_FORMAT " for thread " INTPTR_FORMAT,
-                 cm->method()->print_value_string(), p2i(pc), p2i(current));
+                 nm->method()->print_value_string(), p2i(pc), p2i(current));
     Exceptions::log_exception(exception, tempst.as_string());
   }
   // for AbortVMOnException flag
@@ -332,10 +331,10 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
 
   // ExceptionCache is used only for exceptions at call sites and not for implicit exceptions
   if (guard_pages_enabled) {
-    address fast_continuation = cm->handler_for_exception_and_pc(exception, pc);
+    address fast_continuation = nm->handler_for_exception_and_pc(exception, pc);
     if (fast_continuation != nullptr) {
       // Set flag if return address is a method handle call site.
-      current->set_is_method_handle_return(cm->is_method_handle_return(pc));
+      current->set_is_method_handle_return(nm->is_method_handle_return(pc));
       return fast_continuation;
     }
   }
@@ -356,7 +355,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
     current->clear_exception_oop_and_pc();
 
     bool recursive_exception = false;
-    continuation = SharedRuntime::compute_compiled_exc_handler(cm, pc, exception, false, false, recursive_exception);
+    continuation = SharedRuntime::compute_compiled_exc_handler(nm, pc, exception, false, false, recursive_exception);
     // If an exception was thrown during exception dispatch, the exception oop may have changed
     current->set_exception_oop(exception());
     current->set_exception_pc(pc);
@@ -368,12 +367,12 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
     // Checking for exception oop equality is not
     // sufficient because some exceptions are pre-allocated and reused.
     if (continuation != nullptr && !recursive_exception && !SharedRuntime::deopt_blob()->contains(continuation)) {
-      cm->add_handler_for_exception_and_pc(exception, pc, continuation);
+      nm->add_handler_for_exception_and_pc(exception, pc, continuation);
     }
   }
 
   // Set flag if return address is a method handle call site.
-  current->set_is_method_handle_return(cm->is_method_handle_return(pc));
+  current->set_is_method_handle_return(nm->is_method_handle_return(pc));
 
   if (log_is_enabled(Info, exceptions)) {
     ResourceMark rm;
@@ -395,18 +394,18 @@ address JVMCIRuntime::exception_handler_for_pc(JavaThread* current) {
   address pc = current->exception_pc();
   // Still in Java mode
   DEBUG_ONLY(NoHandleMark nhm);
-  CompiledMethod* cm = nullptr;
+  nmethod* nm = nullptr;
   address continuation = nullptr;
   {
     // Enter VM mode by calling the helper
     ResetNoHandleMark rnhm;
-    continuation = exception_handler_for_pc_helper(current, exception, pc, cm);
+    continuation = exception_handler_for_pc_helper(current, exception, pc, nm);
   }
   // Back in JAVA, use no oops DON'T safepoint
 
   // Now check to see if the compiled method we were called from is now deoptimized.
   // If so we must return to the deopt blob and deoptimize the nmethod
-  if (cm != nullptr && caller_is_deopted()) {
+  if (nm != nullptr && caller_is_deopted()) {
     continuation = SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
   }
 
@@ -675,7 +674,7 @@ static void decipher(jlong v, bool ignoreZero) {
     if (cb) {
       if (cb->is_nmethod()) {
         char buf[O_BUFLEN];
-        tty->print("%s [" INTPTR_FORMAT "+" JLONG_FORMAT "]", cb->as_nmethod_or_null()->method()->name_and_sig_as_C_string(buf, O_BUFLEN), p2i(cb->code_begin()), (jlong)((address)v - cb->code_begin()));
+        tty->print("%s [" INTPTR_FORMAT "+" JLONG_FORMAT "]", cb->as_nmethod()->method()->name_and_sig_as_C_string(buf, O_BUFLEN), p2i(cb->code_begin()), (jlong)((address)v - cb->code_begin()));
         return;
       }
       cb->print_value_on(tty);
@@ -2208,7 +2207,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
           assert(!nmethod_mirror.is_hotspot() || data->get_nmethod_mirror(nm, /* phantom_ref */ false) == nullptr, "must be");
           if (entry_bci == InvocationEntryBci) {
             // If there is an old version we're done with it
-            CompiledMethod* old = method->code();
+            nmethod* old = method->code();
             if (TraceMethodReplacement && old != nullptr) {
               ResourceMark rm;
               char *method_name = method->name_and_sig_as_C_string();

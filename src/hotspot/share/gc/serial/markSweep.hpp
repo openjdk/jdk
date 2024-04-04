@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,6 +128,8 @@ class MarkSweep : AllStatic {
   static AdjustPointerClosure adjust_pointer_closure;
   static CLDToOopClosure      adjust_cld_closure;
 
+  static void invoke_at_safepoint(bool clear_all_softrefs);
+
   // Accessors
   static uint total_invocations() { return _total_invocations; }
 
@@ -152,6 +154,13 @@ class MarkSweep : AllStatic {
   template <class T> static void mark_and_push(T* p);
 
  private:
+  // Mark live objects
+  static void phase1_mark(bool clear_all_softrefs);
+
+  // Temporary data structures for traversal and storing/restoring marks
+  static void allocate_stacks();
+  static void deallocate_stacks();
+
   // Call backs for marking
   static void mark_object(oop obj);
   // Mark pointer and follow contents.  Empty marking stack afterwards.

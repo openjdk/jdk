@@ -336,7 +336,7 @@ public:
     _hr(hr), _failures(false) {}
 
   void do_code_blob(CodeBlob* cb) {
-    nmethod* nm = (cb == nullptr) ? nullptr : cb->as_compiled_method()->as_nmethod_or_null();
+    nmethod* nm = (cb == nullptr) ? nullptr : cb->as_nmethod_or_null();
     if (nm != nullptr) {
       // Verify that the nemthod is live
       VerifyCodeRootOopClosure oop_cl(_hr);
