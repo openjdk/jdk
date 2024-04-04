@@ -134,6 +134,10 @@ define SetupBuildLauncherBody
     $1_EXTRA_FILES += $(TOPDIR)/make/data/lsan/lsan_default_options.c
   endif
 
+  ##############################################################################
+  ## Build launcher "$1"
+  ##############################################################################
+
   $$(eval $$(call SetupJdkExecutable, BUILD_LAUNCHER_$1, \
       NAME := $1, \
       EXTRA_FILES := $$($1_EXTRA_FILES), \

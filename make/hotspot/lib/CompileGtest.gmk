@@ -44,7 +44,8 @@ else
 endif
 
 ################################################################################
-
+## Build libgtest
+################################################################################
 
 $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBGTEST, \
     NAME := gtest, \
@@ -75,8 +76,10 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBGTEST, \
 TARGETS += $(BUILD_GTEST_LIBGTEST)
 
 ################################################################################
-# Additional disabled warnings are due to code in the test source.
+## Build libjvm (for gtest)
+################################################################################
 
+# Additional disabled warnings are due to code in the test source.
 $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
     NAME := jvm, \
     LINK_TYPE := C++, \
@@ -128,6 +131,8 @@ endif
 
 TARGETS += $(BUILD_GTEST_LIBJVM)
 
+################################################################################
+## Build gtestLauncher
 ################################################################################
 
 $(eval $(call SetupJdkExecutable, BUILD_GTEST_LAUNCHER, \

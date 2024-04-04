@@ -128,7 +128,7 @@ endif
 JVM_OPTIMIZATION ?= HIGHEST_JVM
 
 # Need to set JVM_STRIPFLAGS to the default value from SPEC since the STRIPFLAGS
-# parameter to SetupNativeCompilation allows an empty value to override the
+# parameter to SetupJdkLibrary allows an empty value to override the
 # default.
 JVM_STRIPFLAGS ?= $(STRIPFLAGS)
 
@@ -159,7 +159,8 @@ ifeq ($(call isTargetOs, linux), true)
 endif
 
 ################################################################################
-# Now set up the actual compilation of the main hotspot native library
+## Build libjvm
+################################################################################
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     NAME := jvm, \

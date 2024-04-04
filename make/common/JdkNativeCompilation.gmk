@@ -172,7 +172,9 @@ define SetupJdkNativeCompilationBody
     ifneq ($$(MODULE), )
       $1_SRC := $$(call FindSrcDirsForComponent, $$(MODULE), $$($1_NATIVE_DIR_PREFIX)$$($1_NAME))
     else
-      $$(error Must specify SRC in a MODULE free context)
+      ifeq ($$($1_EXTRA_FILES), )
+        $$(error Must specify SRC or EXTRA_FILES in a MODULE free context)
+      endif
     endif
   else
     $1_SRC := $$(foreach dir, $$($1_SRC), $$(call ProcessDir, $$(dir)))
@@ -208,7 +210,9 @@ define SetupJdkNativeCompilationBody
   endif
 
   # Add the module specific java header dir
-  $1_SRC_HEADER_FLAGS += $$(addprefix -I, $$(call GetJavaHeaderDir, $$(MODULE)))
+  ifneq ($$(MODULE), )
+    $1_SRC_HEADER_FLAGS += $$(addprefix -I, $$(call GetJavaHeaderDir, $$(MODULE)))
+  endif
 
   $1_JDK_LIBS += $$($1_JDK_LIBS_$$(OPENJDK_TARGET_OS))
   $1_JDK_LIBS += $$($1_JDK_LIBS_$$(OPENJDK_TARGET_OS_TYPE))
