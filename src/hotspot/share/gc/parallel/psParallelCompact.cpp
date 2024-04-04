@@ -913,12 +913,6 @@ void PSParallelCompact::pre_compact()
     Universe::verify("Before GC");
   }
 
-  // Verify object start arrays
-  if (VerifyObjectStartArray &&
-      VerifyBeforeGC) {
-    heap->old_gen()->verify_object_start_array();
-  }
-
   DEBUG_ONLY(mark_bitmap()->verify_clear();)
   DEBUG_ONLY(summary_data().verify_clear();)
 
@@ -1106,16 +1100,28 @@ void PSParallelCompact::summarize_spaces_quick()
 }
 
 void PSParallelCompact::fill_dense_prefix_end(SpaceId id) {
-  // Since both markword and klass takes 1 heap word, the min-obj-size is 2
-  // heap words.
-  // If min-fill-size decreases to 1, this whole method becomes redundant.
-  assert(CollectedHeap::min_fill_size() == 2, "inv");
+  // Comparing two sizes to decide if filling is required:
+  //
+  // The size of the filler (min-obj-size) is 2 heap words with the default
+  // MinObjAlignment, since both markword and klass take 1 heap word.
+  //
+  // The size of the gap (if any) right before dense-prefix-end is
+  // MinObjAlignment.
+  //
+  // Need to fill in the gap only if it's smaller than min-obj-size, and the
+  // filler obj will extend to next region.
+
+  // Note: If min-fill-size decreases to 1, this whole method becomes redundant.
+  assert(CollectedHeap::min_fill_size() >= 2, "inv");
 #ifndef _LP64
-  // In 32-bit system, min-obj-alignment is >= 8 bytes, so the gap (if any)
-  // right before denses-prefix must be greater than min-fill-size; nothing to
-  // do.
+  // In 32-bit system, each heap word is 4 bytes, so MinObjAlignment == 2.
+  // The gap is always equal to min-fill-size, so nothing to do.
   return;
 #endif
+  if (MinObjAlignment > 1) {
+    return;
+  }
+  assert(CollectedHeap::min_fill_size() == 2, "inv");
   HeapWord* const dense_prefix_end = dense_prefix(id);
   RegionData* const region_after_dense_prefix = _summary_data.addr_to_region_ptr(dense_prefix_end);
   idx_t const dense_prefix_bit = _mark_bitmap.addr_to_bit(dense_prefix_end);
@@ -1135,6 +1141,7 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id) {
     _mark_bitmap.mark_obj(obj_beg, obj_len);
     _summary_data.addr_to_region_ptr(obj_beg)->add_live_obj(1);
     region_after_dense_prefix->set_partial_obj_size(1);
+    region_after_dense_prefix->set_partial_obj_addr(obj_beg);
     assert(start_array(id) != nullptr, "sanity");
     start_array(id)->update_for_block(obj_beg, obj_beg + obj_len);
   }
@@ -1520,12 +1527,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
   if (VerifyAfterGC && heap->total_collections() >= VerifyGCStartAt) {
     Universe::verify("After GC");
-  }
-
-  // Re-verify object start arrays
-  if (VerifyObjectStartArray &&
-      VerifyAfterGC) {
-    old_gen->verify_object_start_array();
   }
 
   if (ZapUnusedHeapArea) {

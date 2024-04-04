@@ -36,7 +36,7 @@
  *     stack overflow, and then tries to provoke similar stack overflows
  *     10 times in each of 10 threads. Each provocation consists of
  *     invoking that recursive method for the given fixed depth
- *     of invocations which is 10 times that depth measured before.
+ *     of invocations which is 100 times that depth measured before.
  *     The test is deemed passed, if VM have not crashed, and
  *     if exception other than due to stack overflow was not
  *     thrown.
@@ -75,7 +75,7 @@ public class Stack011 extends Thread {
         Stack011 threads[] = new Stack011[THREADS];
         for (int i = 0; i < threads.length; i++) {
             threads[i] = new Stack011();
-            threads[i].depthToTry = 10 * maxDepth;
+            threads[i].depthToTry = 100 * maxDepth;
             threads[i].start();
         }
         for (int i = 0; i < threads.length; i++) {
