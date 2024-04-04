@@ -5407,8 +5407,16 @@ public class Collections {
             return contains(o) ? 0 : -1;
         }
 
+        public int indexOf(Predicate<? super E> filter) {
+            return filter.test(element) ? 0 : -1;
+        }
+
         public int lastIndexOf(Object o) {
             return contains(o) ? n - 1 : -1;
+        }
+
+        public int lastIndexOf(Predicate<? super E> filter) {
+            return filter.test(element) ? n - 1 : -1;
         }
 
         public E get(int index) {
