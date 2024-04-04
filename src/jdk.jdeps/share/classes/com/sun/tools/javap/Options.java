@@ -86,6 +86,7 @@ public class Options {
     public boolean showConstants;
     public boolean sysInfo;
     public boolean showInnerClasses;
+    public boolean verify;
     public int indentWidth = 2;   // #spaces per indentWidth level; must be > 0
     public int tabColumn = 40;    // column number for comments; must be > 0
     public String moduleName;

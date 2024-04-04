@@ -221,6 +221,13 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             }
         },
 
+        new Option(false, "-verify") {
+            @Override
+            void process(JavapTask task, String opt, String arg) {
+                task.options.verify = true;
+            }
+        },
+
         new Option(false, "-XDdetails") {
             @Override
             void process(JavapTask task, String opt, String arg) {
