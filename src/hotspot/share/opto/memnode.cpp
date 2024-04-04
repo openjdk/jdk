@@ -2905,7 +2905,7 @@ StoreNode* MergePrimitiveArrayStores::run() {
   }
 
   // Only merge stores on arrays, and the stores must have the same size as the elements.
-  const TypeAryPtr* aryptr_t = _store->adr_type()->is_aryptr();
+  const TypeAryPtr* aryptr_t = _store->adr_type()->isa_aryptr();
   if (aryptr_t == nullptr ||
       type2aelembytes(aryptr_t->elem()->array_element_basic_type()) != _store->memory_size()) {
     return nullptr;
