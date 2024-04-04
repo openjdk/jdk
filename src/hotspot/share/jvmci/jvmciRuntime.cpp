@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@
 #include "runtime/java.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mutex.hpp"
-#include "runtime/reflectionUtils.hpp"
+#include "runtime/reflection.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/synchronizer.hpp"
 #if INCLUDE_G1GC
@@ -1973,7 +1973,10 @@ static bool after_compiler_upcall(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, c
     const char* pending_stack_trace = nullptr;
     JVMCIENV->pending_exception_as_string(&pending_string, &pending_stack_trace);
     if (pending_string == nullptr) pending_string = "null";
-    const char* failure_reason = os::strdup(err_msg("uncaught exception in %s [%s]", function, pending_string), mtJVMCI);
+    // Using stringStream instead of err_msg to avoid truncation
+    stringStream st;
+    st.print("uncaught exception in %s [%s]", function, pending_string);
+    const char* failure_reason = os::strdup(st.freeze(), mtJVMCI);
     if (failure_reason == nullptr) {
       failure_reason = "uncaught exception";
       reason_on_C_heap = false;

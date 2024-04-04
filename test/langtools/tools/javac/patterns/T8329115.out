@@ -1,0 +1,3 @@
+T8329115.java:14:17: compiler.err.return.outside.switch.expression
+T8329115.java:12:16: compiler.err.switch.expression.no.result.expressions
+2 errors

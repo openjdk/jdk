@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,7 +259,7 @@ import static java.lang.invoke.MethodType.methodType;
     private Class<?> spinInnerClass() throws LambdaConversionException {
         // CDS does not handle disableEagerInitialization or useImplMethodHandle
         if (!disableEagerInitialization && !useImplMethodHandle) {
-            if (CDS.isSharingEnabled()) {
+            if (CDS.isUsingArchive()) {
                 // load from CDS archive if present
                 Class<?> innerClass = LambdaProxyClassArchive.find(targetClass,
                                                                    interfaceMethodName,

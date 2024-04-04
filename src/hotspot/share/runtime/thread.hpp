@@ -207,6 +207,7 @@ class Thread: public ThreadShadow {
  private:
   DEBUG_ONLY(bool _suspendible_thread;)
   DEBUG_ONLY(bool _indirectly_suspendible_thread;)
+  DEBUG_ONLY(bool _indirectly_safepoint_thread;)
 
  public:
   // Determines if a heap allocation failure will be retried
@@ -225,6 +226,10 @@ class Thread: public ThreadShadow {
   void set_indirectly_suspendible_thread()   { _indirectly_suspendible_thread = true; }
   void clear_indirectly_suspendible_thread() { _indirectly_suspendible_thread = false; }
   bool is_indirectly_suspendible_thread()    { return _indirectly_suspendible_thread; }
+
+  void set_indirectly_safepoint_thread()   { _indirectly_safepoint_thread = true; }
+  void clear_indirectly_safepoint_thread() { _indirectly_safepoint_thread = false; }
+  bool is_indirectly_safepoint_thread()    { return _indirectly_safepoint_thread; }
 #endif
 
  private:
@@ -652,15 +657,17 @@ protected:
 class ThreadInAsgct {
  private:
   Thread* _thread;
+  bool _saved_in_asgct;
  public:
   ThreadInAsgct(Thread* thread) : _thread(thread) {
     assert(thread != nullptr, "invariant");
-    assert(!thread->in_asgct(), "invariant");
+    // Allow AsyncGetCallTrace to be reentrant - save the previous state.
+    _saved_in_asgct = thread->in_asgct();
     thread->set_in_asgct(true);
   }
   ~ThreadInAsgct() {
     assert(_thread->in_asgct(), "invariant");
-    _thread->set_in_asgct(false);
+    _thread->set_in_asgct(_saved_in_asgct);
   }
 };
 

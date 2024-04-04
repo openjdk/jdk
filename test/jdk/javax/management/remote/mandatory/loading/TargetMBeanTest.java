@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,13 +49,13 @@
   will use the wrong loader for deserialization and the attempt to
   invoke the target MBean with the deserialized object will fail.
 
-  We test this as follows.  We fabricate an MLet that has the same set
+  We test this as follows.  We create an MBean that has the same set
   of URLs as the 160 class loader, which we assume is the system class
-  loader (or at least, it is a URLClassLoader).  This MLet is
+  loader (or at least, it is a URLClassLoader).  This MBean is
   therefore a "shadow class loader" -- for every class name known to
   the 160 class loader, it can load the same name, but the result is
   not the same class, since it has not been loaded by the same loader.
-  Then, we use the MLet to create an RMIConnectorServer MBean.  This
+  Then, we use the MBean to create an RMIConnectorServer MBean.  This
   MBean is an instance of "shadow RMIConnectorServer", and its
   constructor has a parameter of type "shadow JMXServiceURL".  If the
   constructor is invoked with "real JMXServiceURL" it will fail.
@@ -72,10 +72,10 @@ import javax.management.remote.*;
 import javax.management.remote.rmi.RMIConnectorServer;
 
 public class TargetMBeanTest {
-    private static final ObjectName mletName;
+    private static final ObjectName mbeanName;
     static {
         try {
-            mletName = new ObjectName("x:type=mlet");
+            mbeanName = new ObjectName("x:type=TestMBean");
         } catch (Exception e) {
             e.printStackTrace();
             throw new Error();
@@ -101,17 +101,16 @@ public class TargetMBeanTest {
 
         URLClassLoader jrcl = (URLClassLoader) jmxRemoteClassLoader;
         URL[] urls = jrcl.getURLs();
-        @SuppressWarnings("removal")
-        PrivateMLet mlet = new PrivateMLet(urls, null, false);
-        Class shadowClass = mlet.loadClass(JMXServiceURL.class.getName());
+        TestMBean mbean = new Test(urls);
+        Class shadowClass = mbean.loadClass(JMXServiceURL.class.getName());
         if (shadowClass == JMXServiceURL.class) {
-            System.out.println("TEST INVALID: MLet got original " +
+            System.out.println("TEST INVALID: Test MBean got original " +
                                "JMXServiceURL not shadow");
             System.exit(1);
         }
 
         MBeanServer mbs = MBeanServerFactory.newMBeanServer();
-        mbs.registerMBean(mlet, mletName);
+        mbs.registerMBean(mbean, mbeanName);
 
         final String[] protos = {"rmi", "iiop", "jmxmp"};
         boolean ok = true;
@@ -155,7 +154,7 @@ public class TargetMBeanTest {
         ObjectName on = new ObjectName("x:proto=" + proto + ",ok=yes");
         mbsc.createMBean(RMIConnectorServer.class.getName(),
                          on,
-                         mletName,
+                         mbeanName,
                          new Object[] {rmiurl, null},
                          new String[] {JMXServiceURL.class.getName(),
                                        Map.class.getName()});
@@ -165,5 +164,19 @@ public class TargetMBeanTest {
         client.close();
         cs.stop();
         return true;
+    }
+
+    public static interface TestMBean {
+        public Class<?> loadClass(String name) throws ClassNotFoundException;
+    }
+
+    public static class Test extends URLClassLoader implements TestMBean {
+        public Test(URL[] urls) {
+            super(urls, null);
+        }
+
+        public Class<?> loadClass(String name) throws ClassNotFoundException {
+            return loadClass(name, false);
+        }
     }
 }

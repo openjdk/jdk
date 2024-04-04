@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,10 @@
  * questions.
  */
 
-/* @test
-   @bug 5049549 7132413
-   @summary Tests that the proper icon is used for different states.
-   @library ../../regtesthelpers
-   @build Blocker
-   @run main/manual bug5049549
-*/
-
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
 import javax.swing.BoxLayout;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -39,17 +35,39 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
+/*
+ * @test
+ * @bug 5049549 7132413
+ * @summary Tests that the proper icon is used for different states.
+ * @library ../../regtesthelpers
+ * @build Blocker
+ * @run main/manual bug5049549
+ */
 public class bug5049549 {
 
-    private static ImageIcon DE = new ImageIcon(bug5049549.class.getResource("DE1.gif"));
-    private static ImageIcon DI = new ImageIcon(bug5049549.class.getResource("DI1.gif"));
-    private static ImageIcon DS = new ImageIcon(bug5049549.class.getResource("DS1.gif"));
-    private static ImageIcon RO = new ImageIcon(bug5049549.class.getResource("RO1.gif"));
-    private static ImageIcon RS = new ImageIcon(bug5049549.class.getResource("RS1.gif"));
-    private static ImageIcon SE = new ImageIcon(bug5049549.class.getResource("SE1.gif"));
-    private static ImageIcon PR = new ImageIcon(bug5049549.class.getResource("PR1.gif"));
+    private static final Icon DE = generateImage("DE");
+    private static final Icon DI = generateImage("DI");
+    private static final Icon DS = generateImage("DS");
+    private static final Icon RO = generateImage("RO");
+    private static final Icon RS = generateImage("RS");
+    private static final Icon SE = generateImage("SE");
+    private static final Icon PR = generateImage("PR");
 
-    private static Blocker blocker = new Blocker();
+    private static final Blocker blocker = new Blocker();
+
+    private static Icon generateImage(String str) {
+        BufferedImage img = new BufferedImage(40, 30,
+                BufferedImage.TYPE_INT_RGB);
+        Graphics g = img.createGraphics();
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, img.getWidth(), img.getHeight());
+        g.setColor(Color.RED);
+        Font font = new Font(Font.SANS_SERIF, Font.BOLD, 22);
+        g.setFont(font);
+        g.drawString(str, 5, 25);
+        g.dispose();
+        return new ImageIcon(img);
+    }
 
     private static class KButton extends JButton {
 

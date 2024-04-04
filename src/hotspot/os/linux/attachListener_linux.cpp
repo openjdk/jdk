@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,6 +183,8 @@ int LinuxAttachListener::init() {
   char path[UNIX_PATH_MAX];          // socket file
   char initial_path[UNIX_PATH_MAX];  // socket file during setup
   int listener;                      // listener socket (file descriptor)
+
+  static_assert(sizeof(off_t) == 8, "Expected Large File Support in this file");
 
   // register function to cleanup
   if (!_atexit_registered) {
@@ -446,14 +448,14 @@ AttachOperation* AttachListener::dequeue() {
 
 void AttachListener::vm_start() {
   char fn[UNIX_PATH_MAX];
-  struct stat64 st;
+  struct stat st;
   int ret;
 
   int n = snprintf(fn, UNIX_PATH_MAX, "%s/.java_pid%d",
            os::get_temp_directory(), os::current_process_id());
   assert(n < (int)UNIX_PATH_MAX, "java_pid file name buffer overflow");
 
-  RESTARTABLE(::stat64(fn, &st), ret);
+  RESTARTABLE(::stat(fn, &st), ret);
   if (ret == 0) {
     ret = ::unlink(fn);
     if (ret == -1) {
@@ -473,8 +475,8 @@ int AttachListener::pd_init() {
 
 bool AttachListener::check_socket_file() {
   int ret;
-  struct stat64 st;
-  ret = stat64(LinuxAttachListener::path(), &st);
+  struct stat st;
+  ret = stat(LinuxAttachListener::path(), &st);
   if (ret == -1) { // need to restart attach listener.
     log_debug(attach)("Socket file %s does not exist - Restart Attach Listener",
                       LinuxAttachListener::path());
@@ -513,14 +515,14 @@ bool AttachListener::is_init_trigger() {
   }
   char fn[PATH_MAX + 1];
   int ret;
-  struct stat64 st;
+  struct stat st;
   os::snprintf_checked(fn, sizeof(fn), ".attach_pid%d", os::current_process_id());
-  RESTARTABLE(::stat64(fn, &st), ret);
+  RESTARTABLE(::stat(fn, &st), ret);
   if (ret == -1) {
     log_trace(attach)("Failed to find attach file: %s, trying alternate", fn);
     snprintf(fn, sizeof(fn), "%s/.attach_pid%d",
              os::get_temp_directory(), os::current_process_id());
-    RESTARTABLE(::stat64(fn, &st), ret);
+    RESTARTABLE(::stat(fn, &st), ret);
     if (ret == -1) {
       log_debug(attach)("Failed to find attach file: %s", fn);
     }

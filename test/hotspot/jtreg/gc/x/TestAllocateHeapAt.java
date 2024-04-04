@@ -41,16 +41,16 @@ public class TestAllocateHeapAt {
         final String heapBackingFile = "Heap Backing File: " + directory;
         final String failedToCreateFile = "Failed to create file " + directory;
 
-        ProcessTools.executeProcess(ProcessTools.createLimitedTestJavaProcessBuilder(
-                "-XX:+UseZGC",
-                "-XX:-ZGenerational",
-                "-Xlog:gc*",
-                "-Xms32M",
-                "-Xmx32M",
-                "-XX:AllocateHeapAt=" + directory,
-                "-version"))
-            .shouldContain(exists ? heapBackingFile : failedToCreateFile)
-            .shouldNotContain(exists ? failedToCreateFile : heapBackingFile)
-            .shouldHaveExitValue(exists ? 0 : 1);
+        ProcessTools.executeLimitedTestJava(
+            "-XX:+UseZGC",
+            "-XX:-ZGenerational",
+            "-Xlog:gc*",
+            "-Xms32M",
+            "-Xmx32M",
+            "-XX:AllocateHeapAt=" + directory,
+            "-version")
+                .shouldContain(exists ? heapBackingFile : failedToCreateFile)
+                .shouldNotContain(exists ? failedToCreateFile : heapBackingFile)
+                .shouldHaveExitValue(exists ? 0 : 1);
     }
 }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -56,21 +56,24 @@ define SetupTestFilesCompilationBody
     $$(error There are duplicate test file names for $1: $$($1_DUPLICATED_NAMES))
   endif
 
+  # Always include common test functionality
+  TEST_CFLAGS := -I$(TOPDIR)/test/lib/native
+
   # The list to depend on starts out empty
   $1 :=
   ifeq ($$($1_TYPE), LIBRARY)
     $1_PREFIX = lib
     $1_OUTPUT_SUBDIR := lib
-    $1_BASE_CFLAGS := $(CFLAGS_JDKLIB)
-    $1_BASE_CXXFLAGS := $(CXXFLAGS_JDKLIB)
+    $1_BASE_CFLAGS := $(CFLAGS_JDKLIB) $$(TEST_CFLAGS)
+    $1_BASE_CXXFLAGS := $(CXXFLAGS_JDKLIB) $$(TEST_CFLAGS)
     $1_LDFLAGS := $(LDFLAGS_JDKLIB) $$(call SET_SHARED_LIBRARY_ORIGIN)
     $1_COMPILATION_TYPE := LIBRARY
     $1_LOG_TYPE := library
   else ifeq ($$($1_TYPE), PROGRAM)
     $1_PREFIX = exe
     $1_OUTPUT_SUBDIR := bin
-    $1_BASE_CFLAGS := $(CFLAGS_JDKEXE)
-    $1_BASE_CXXFLAGS := $(CXXFLAGS_JDKEXE)
+    $1_BASE_CFLAGS := $(CFLAGS_JDKEXE) $$(TEST_CFLAGS)
+    $1_BASE_CXXFLAGS := $(CXXFLAGS_JDKEXE) $$(TEST_CFLAGS)
     $1_LDFLAGS := $(LDFLAGS_JDKEXE) $(LDFLAGS_TESTEXE)
     $1_COMPILATION_TYPE := EXECUTABLE
     $1_LOG_TYPE := executable
@@ -103,6 +106,7 @@ define SetupTestFilesCompilationBody
     $$(eval $$(call SetupNativeCompilation, BUILD_TEST_$$(name), \
         NAME := $$(unprefixed_name), \
         TYPE := $$($1_COMPILATION_TYPE), \
+        LINK_TYPE := $(if $$(filter %.cpp, $$(file)), C++, C), \
         EXTRA_FILES := $$(file) $$($1_EXTRA_FILES), \
         OBJECT_DIR := $$($1_OUTPUT_DIR)/support/$$(name), \
         OUTPUT_DIR := $$($1_OUTPUT_DIR)/$$($1_OUTPUT_SUBDIR), \
@@ -113,7 +117,6 @@ define SetupTestFilesCompilationBody
         DISABLED_WARNINGS_clang := undef format-nonliteral \
             missing-field-initializers sometimes-uninitialized, \
         LIBS := $$($1_LIBS_$$(name)), \
-        TOOLCHAIN := $(if $$(filter %.cpp, $$(file)), TOOLCHAIN_LINK_CXX, TOOLCHAIN_DEFAULT), \
         OPTIMIZATION := $$(if $$($1_OPTIMIZATION_$$(name)),$$($1_OPTIMIZATION_$$(name)),LOW), \
         COPY_DEBUG_SYMBOLS := $$($1_COPY_DEBUG_SYMBOLS), \
         STRIP_SYMBOLS := $$(if $$($1_STRIP_SYMBOLS_$$(name)),$$($1_STRIP_SYMBOLS_$$(name)),false), \

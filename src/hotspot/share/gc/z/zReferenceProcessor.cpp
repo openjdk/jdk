@@ -113,6 +113,7 @@ static void list_append(zaddress& head, zaddress& tail, zaddress reference) {
 ZReferenceProcessor::ZReferenceProcessor(ZWorkers* workers)
   : _workers(workers),
     _soft_reference_policy(nullptr),
+    _clear_all_soft_refs(false),
     _encountered_count(),
     _discovered_count(),
     _enqueued_count(),
@@ -124,8 +125,9 @@ void ZReferenceProcessor::set_soft_reference_policy(bool clear) {
   static AlwaysClearPolicy always_clear_policy;
   static LRUMaxHeapPolicy lru_max_heap_policy;
 
+  _clear_all_soft_refs = clear;
+
   if (clear) {
-    log_info(gc, ref)("Clearing All SoftReferences");
     _soft_reference_policy = &always_clear_policy;
   } else {
     _soft_reference_policy = &lru_max_heap_policy;
@@ -437,6 +439,10 @@ public:
 
 void ZReferenceProcessor::process_references() {
   ZStatTimerOld timer(ZSubPhaseConcurrentReferencesProcess);
+
+  if (_clear_all_soft_refs) {
+    log_info(gc, ref)("Clearing All SoftReferences");
+  }
 
   // Process discovered lists
   ZReferenceProcessorTask task(this);

@@ -3666,15 +3666,15 @@ void TemplateTable::prepare_invoke(Register Rcache, Register recv) {
   // load receiver if needed (after extra argument is pushed so parameter size is correct)
   if (load_receiver) {
     __ ldrh(recv, Address(Rcache, in_bytes(ResolvedMethodEntry::num_parameters_offset())));
-    Address recv_addr = __ receiver_argument_address(Rstack_top, Rtemp, recv);
-    __ ldr(recv, recv_addr);
+    __ add(recv, Rstack_top, AsmOperand(recv, lsl, Interpreter::logStackElementSize));
+    __ ldr(recv, Address(recv, -Interpreter::stackElementSize));
     __ verify_oop(recv);
   }
 
   // load return address
   { const address table = (address) Interpreter::invoke_return_entry_table_for(code);
-    __ mov_slow(Rtemp, table);
-    __ ldr(LR, Address::indexed_ptr(Rtemp, ret_type));
+    __ mov_slow(LR, table);
+    __ ldr(LR, Address::indexed_ptr(LR, ret_type));
   }
 }
 
@@ -3744,10 +3744,13 @@ void TemplateTable::invokevirtual(int byte_no) {
 void TemplateTable::invokespecial(int byte_no) {
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
+
   const Register Rrecv  = R2_tmp;
-  load_resolved_method_entry_special_or_static(R2_tmp,  // ResolvedMethodEntry*
+  const Register Rflags = R3_tmp;
+
+  load_resolved_method_entry_special_or_static(Rrecv,  // ResolvedMethodEntry*
                                                Rmethod, // Method*
-                                               R3_tmp); // Flags
+                                               Rflags); // Flags
   prepare_invoke(Rrecv, Rrecv);
   __ verify_oop(Rrecv);
   __ null_check(Rrecv, Rtemp);
@@ -3760,12 +3763,16 @@ void TemplateTable::invokespecial(int byte_no) {
 void TemplateTable::invokestatic(int byte_no) {
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
-  load_resolved_method_entry_special_or_static(R2_tmp,  // ResolvedMethodEntry*
+
+  const Register Rrecv  = R2_tmp;
+  const Register Rflags = R3_tmp;
+
+  load_resolved_method_entry_special_or_static(Rrecv,  // ResolvedMethodEntry*
                                                Rmethod, // Method*
-                                               R3_tmp); // Flags
-  prepare_invoke(R2_tmp, R2_tmp);
+                                               Rflags); // Flags
+  prepare_invoke(Rrecv, Rrecv);
   // do the call
-  __ profile_call(R2_tmp);
+  __ profile_call(Rrecv);
   __ jump_from_interpreted(Rmethod);
 }
 
@@ -3788,10 +3795,10 @@ void TemplateTable::invokeinterface(int byte_no) {
   const Register Rflags  = R3_tmp;
   const Register Rklass  = R2_tmp; // Note! Same register with Rrecv
 
-  load_resolved_method_entry_interface(R2_tmp,  // ResolvedMethodEntry*
-                                       R1_tmp,  // Klass*
+  load_resolved_method_entry_interface(Rrecv,   // ResolvedMethodEntry*
+                                       Rinterf, // Klass*
                                        Rmethod, // Method* or itable/vtable index
-                                       R3_tmp); // Flags
+                                       Rflags); // Flags
   prepare_invoke(Rrecv, Rrecv);
 
   // First check for Object case, then private interface method,
