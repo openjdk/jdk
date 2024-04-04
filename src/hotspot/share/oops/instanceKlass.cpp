@@ -2310,7 +2310,7 @@ jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
     if (jmeths == nullptr) {
       size_t size = idnum_allocated_count();
       assert(size > (size_t)idnum, "should already have space");
-      jmeths = NEW_C_HEAP_ARRAY(jmethodID, size+1, mtClass);
+      jmeths = NEW_C_HEAP_ARRAY(jmethodID, size + 1, mtClass);
       memset(jmeths, 0, (size + 1) * sizeof(jmethodID));
       // cache size is stored in element[0], other elements offset by one
       jmeths[0] = (jmethodID)size;
@@ -2343,7 +2343,7 @@ void InstanceKlass::update_methods_jmethod_cache() {
     if (old_size < size + 1) {
       // Allocate a larger one and copy entries to the new one.
       // They've already been updated to point to new methods where applicable (i.e., not obsolete).
-      jmethodID* new_cache = NEW_C_HEAP_ARRAY(jmethodID, size+1, mtClass);
+      jmethodID* new_cache = NEW_C_HEAP_ARRAY(jmethodID, size + 1, mtClass);
       memset(new_cache, 0, (size + 1) * sizeof(jmethodID));
       // The cache size is stored in element[0]; the other elements are offset by one.
       new_cache[0] = (jmethodID)size;
