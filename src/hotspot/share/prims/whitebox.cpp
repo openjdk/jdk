@@ -769,7 +769,6 @@ class VM_WhiteBoxDeoptimizeFrames : public VM_WhiteBoxOperation {
             Deoptimization::deoptimize(t, *f);
             if (_make_not_entrant) {
                 nmethod* nm = CodeCache::find_nmethod(f->pc());
-                assert(nm != nullptr, "sanity check");
                 nm->make_not_entrant();
             }
             ++_result;
@@ -1098,7 +1097,7 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThrea
   // Check code again because compilation may be finished before Compile_lock is acquired.
   if (bci == InvocationEntryBci) {
     nmethod* code = mh->code();
-    if (code != nullptr && code->as_nmethod_or_null() != nullptr) {
+    if (code != nullptr) {
       return true;
     }
   } else if (mh->lookup_osr_nmethod_for(bci, comp_level, false) != nullptr) {
@@ -1608,7 +1607,7 @@ CodeBlob* WhiteBox::allocate_code_blob(int size, CodeBlobType blob_type) {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = (BufferBlob*) CodeCache::allocate(full_size, blob_type);
     if (blob != nullptr) {
-      ::new (blob) BufferBlob("WB::DummyBlob", Blob_Buffer, full_size);
+      ::new (blob) BufferBlob("WB::DummyBlob", CodeBlobKind::Blob_Buffer, full_size);
     }
   }
   // Track memory usage statistic after releasing CodeCache_lock

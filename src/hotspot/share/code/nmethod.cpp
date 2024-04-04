@@ -655,7 +655,7 @@ address nmethod::oops_reloc_begin() const {
   // assert(BarrierSet::barrier_set()->barrier_set_nmethod() == nullptr, "Not safe oop scan");
 
   address low_boundary = verified_entry_point();
-  if (!is_in_use() && is_nmethod()) {
+  if (!is_in_use()) {
     low_boundary += NativeJump::instruction_size;
     // %%% Note:  On SPARC we patch only a 4-byte trap, not a full NativeJump.
     // This means that the low_boundary is going to be a little too high.
@@ -809,8 +809,8 @@ void nmethod::run_nmethod_entry_barrier() {
     // nmethods found in safepoints have gone through an entry barrier and are not armed.
     // By calling this nmethod entry barrier, it plays along and acts
     // like any other nmethod found on the stack of a thread (fewer surprises).
-    nmethod* nm = as_nmethod_or_null();
-    if (nm != nullptr && bs_nm->is_armed(nm)) {
+    nmethod* nm = this;
+    if (bs_nm->is_armed(nm)) {
       bool alive = bs_nm->nmethod_entry_barrier(nm);
       assert(alive, "should be alive");
     }
@@ -1006,9 +1006,9 @@ const char* nmethod::compiler_name() const {
 
 // Fill in default values for various flag fields
 void nmethod::init_defaults() {
-  { // avoid uninitialized fields, even for short time periods
-    _exception_cache            = nullptr;
-  }
+  // avoid uninitialized fields, even for short time periods
+  _exception_cache            = nullptr;
+
   _has_unsafe_access          = 0;
   _has_method_handle_invokes  = 0;
   _has_wide_vectors           = 0;
@@ -1211,7 +1211,7 @@ nmethod::nmethod(
   ByteSize basic_lock_owner_sp_offset,
   ByteSize basic_lock_sp_offset,
   OopMapSet* oop_maps )
-  : CodeBlob("native nmethod", Blob_Nmethod, code_buffer, nmethod_size, sizeof(nmethod),
+  : CodeBlob("native nmethod", CodeBlobKind::Blob_Nmethod, code_buffer, nmethod_size, sizeof(nmethod),
              offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
   _deoptimization_generation(0),
   _method(method),
@@ -1356,7 +1356,7 @@ nmethod::nmethod(
   JVMCINMethodData* jvmci_data
 #endif
   )
-  : CodeBlob("nmethod", Blob_Nmethod, code_buffer, nmethod_size, sizeof(nmethod),
+  : CodeBlob("nmethod", CodeBlobKind::Blob_Nmethod, code_buffer, nmethod_size, sizeof(nmethod),
              offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
   _deoptimization_generation(0),
   _method(method),
@@ -2161,7 +2161,7 @@ void nmethod::post_compiled_method_unload() {
   assert(_method != nullptr, "just checking");
   DTRACE_METHOD_UNLOAD_PROBE(method());
 
-  // If a JVMTI agent has enabled the nmethod Unload event then
+  // If a JVMTI agent has enabled the CompiledMethodUnload event then
   // post the event. The Method* will not be valid when this is freed.
 
   // Don't bother posting the unload if the load event wasn't posted.

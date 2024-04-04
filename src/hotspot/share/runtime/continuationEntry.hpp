@@ -32,8 +32,8 @@
 
 #include CPU_HEADER(continuationEntry)
 
-class nmethod;
 class JavaThread;
+class nmethod;
 class OopMap;
 class RegisterMap;
 
@@ -56,7 +56,7 @@ public:
 
 public:
   static int _return_pc_offset; // friend gen_continuation_enter
-  static void set_enter_code(nmethod* cm, int interpreted_entry_offset);
+  static void set_enter_code(nmethod* nm, int interpreted_entry_offset);
   static bool is_interpreted_call(address call_address);
 
 private:

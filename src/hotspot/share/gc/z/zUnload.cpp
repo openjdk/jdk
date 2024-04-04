@@ -74,8 +74,7 @@ public:
 
 class ZIsUnloadingBehaviour : public IsUnloadingBehaviour {
 public:
-  virtual bool has_dead_oop(nmethod* method) const {
-    nmethod* const nm = method->as_nmethod();
+  virtual bool has_dead_oop(nmethod* const nm) const {
     ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
     ZLocker<ZReentrantLock> locker(lock);
     if (!ZNMethod::is_armed(nm)) {
@@ -90,25 +89,22 @@ public:
 
 class ZCompiledICProtectionBehaviour : public CompiledICProtectionBehaviour {
 public:
-  virtual bool lock(nmethod* method) {
-    nmethod* const nm = method->as_nmethod();
+  virtual bool lock(nmethod* const nm) {
     ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
     lock->lock();
     return true;
   }
 
-  virtual void unlock(nmethod* method) {
-    nmethod* const nm = method->as_nmethod();
+  virtual void unlock(nmethod* const nm) {
     ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
     lock->unlock();
   }
 
-  virtual bool is_safe(nmethod* method) {
-    if (SafepointSynchronize::is_at_safepoint() || method->is_unloading()) {
+  virtual bool is_safe(nmethod* const nm) {
+    if (SafepointSynchronize::is_at_safepoint() || nm->is_unloading()) {
       return true;
     }
 
-    nmethod* const nm = method->as_nmethod();
     ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
     return lock->is_owned();
   }

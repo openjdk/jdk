@@ -2058,7 +2058,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
 #if INCLUDE_JVMCI
     jlong           speculation = current->pending_failed_speculation();
     if (nm->is_compiled_by_jvmci()) {
-      nm->as_nmethod()->update_speculation(current);
+      nm->update_speculation(current);
     } else {
       assert(speculation == 0, "There should not be a speculation for methods compiled by non-JVMCI compilers");
     }
@@ -2178,8 +2178,8 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
                  trap_scope->bci(), p2i(fr.pc()), fr.pc() - nm->code_begin() JVMCI_ONLY(COMMA debug_id));
         st.print(" compiler=%s compile_id=%d", nm->compiler_name(), nm->compile_id());
 #if INCLUDE_JVMCI
-        if (nm->is_nmethod()) {
-          const char* installed_code_name = nm->as_nmethod()->jvmci_name();
+        if (nm->is_compiled_by_jvmci()) {
+          const char* installed_code_name = nm->jvmci_name();
           if (installed_code_name != nullptr) {
             st.print(" (JVMCI: installed code name=%s) ", installed_code_name);
           }
@@ -2433,7 +2433,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
       // Assume that in new recompiled code the statistic could be different,
       // for example, due to different inlining.
       if ((reason != Reason_rtm_state_change) && (trap_mdo != nullptr) &&
-          UseRTMDeopt && (nm->as_nmethod()->rtm_state() != ProfileRTM)) {
+          UseRTMDeopt && (nm->rtm_state() != ProfileRTM)) {
         trap_mdo->atomic_set_rtm_state(ProfileRTM);
       }
 #endif

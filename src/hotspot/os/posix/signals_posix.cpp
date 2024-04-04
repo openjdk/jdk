@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
-#include "code/nmethod.hpp"
 #include "code/nativeInst.hpp"
+#include "code/nmethod.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "os_posix.hpp"

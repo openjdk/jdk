@@ -30,24 +30,23 @@
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
 
+class AbstractCompiler;
+class CompiledDirectCall;
+class CompiledIC;
 class CompiledICData;
 class CompileTask;
 class DepChange;
+class Dependencies;
 class DirectiveSet;
 class DebugInformationRecorder;
-class JvmtiThreadState;
-class OopIterateClosure;
-
-class Dependencies;
 class ExceptionHandlerTable;
 class ImplicitExceptionTable;
-class AbstractCompiler;
-class xmlStream;
-class CompiledDirectCall;
-class NativeCallWrapper;
-class ScopeDesc;
-class CompiledIC;
+class JvmtiThreadState;
 class MetadataClosure;
+class NativeCallWrapper;
+class OopIterateClosure;
+class ScopeDesc;
+class xmlStream;
 
 // This class is used internally by nmethods, to cache
 // exception/pc/handler information.
@@ -902,7 +901,7 @@ public:
   void decode(outputStream* st) const { decode2(st); } // just delegate here.
 
   // printing support
-  void print()                          const override;
+  virtual void print()                  const override;
   void print(outputStream* st)          const;
   void print_code();
 

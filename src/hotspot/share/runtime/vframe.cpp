@@ -72,7 +72,7 @@ vframe* vframe::new_vframe(const frame* f, const RegisterMap* reg_map, JavaThrea
   CodeBlob* cb = f->cb();
   if (cb != nullptr) {
     if (cb->is_nmethod()) {
-      nmethod* nm = cb->as_nmethod();;
+      nmethod* nm = cb->as_nmethod();
       return new compiledVFrame(f, reg_map, thread, nm);
     }
 

@@ -206,6 +206,7 @@ void RegisterMap::print() const {
 address frame::raw_pc() const {
   if (is_deoptimized_frame()) {
     nmethod* nm = cb()->as_nmethod_or_null();
+    assert(nm != nullptr, "only nmethod is expected here");
     if (nm->is_method_handle_return(pc()))
       return nm->deopt_mh_handler_begin() - pc_return_offset;
     else

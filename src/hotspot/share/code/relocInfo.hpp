@@ -34,11 +34,10 @@
 
 #include <new>
 
-class nmethod;
 class CodeBlob;
-class nmethod;
 class Metadata;
 class NativeMovConstReg;
+class nmethod;
 
 // Types in this file:
 //    relocInfo

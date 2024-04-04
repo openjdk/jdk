@@ -78,8 +78,7 @@ public:
 
 class ShenandoahIsUnloadingBehaviour : public IsUnloadingBehaviour {
 public:
-  virtual bool has_dead_oop(nmethod* method) const {
-    nmethod* const nm = method->as_nmethod();
+  virtual bool has_dead_oop(nmethod* const nm) const {
     assert(ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress(), "Only for this phase");
     ShenandoahNMethod* data = ShenandoahNMethod::gc_data(nm);
     ShenandoahReentrantLocker locker(data->lock());
@@ -91,27 +90,24 @@ public:
 
 class ShenandoahCompiledICProtectionBehaviour : public CompiledICProtectionBehaviour {
 public:
-  virtual bool lock(nmethod* method) {
-    nmethod* const nm = method->as_nmethod();
+  virtual bool lock(nmethod* const nm) {
     ShenandoahReentrantLock* const lock = ShenandoahNMethod::lock_for_nmethod(nm);
     assert(lock != nullptr, "Not yet registered?");
     lock->lock();
     return true;
   }
 
-  virtual void unlock(nmethod* method) {
-    nmethod* const nm = method->as_nmethod();
+  virtual void unlock(nmethod* const nm) {
     ShenandoahReentrantLock* const lock = ShenandoahNMethod::lock_for_nmethod(nm);
     assert(lock != nullptr, "Not yet registered?");
     lock->unlock();
   }
 
-  virtual bool is_safe(nmethod* method) {
-    if (SafepointSynchronize::is_at_safepoint() || method->is_unloading()) {
+  virtual bool is_safe(nmethod* const nm) {
+    if (SafepointSynchronize::is_at_safepoint() || nm->is_unloading()) {
       return true;
     }
 
-    nmethod* const nm = method->as_nmethod();
     ShenandoahReentrantLock* const lock = ShenandoahNMethod::lock_for_nmethod(nm);
     assert(lock != nullptr, "Not yet registered?");
     return lock->owned_by_self();

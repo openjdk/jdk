@@ -268,7 +268,6 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
   StackWatermarkSet::after_unwind(current);
 
   nm = CodeCache::find_nmethod(pc);
-  assert(nm != nullptr, "this is not a compiled method");
   // Adjust the pc as needed/
   if (nm->is_deopt_pc(pc)) {
     RegisterMap map(current,
@@ -675,7 +674,7 @@ static void decipher(jlong v, bool ignoreZero) {
     if (cb) {
       if (cb->is_nmethod()) {
         char buf[O_BUFLEN];
-        tty->print("%s [" INTPTR_FORMAT "+" JLONG_FORMAT "]", cb->as_nmethod_or_null()->method()->name_and_sig_as_C_string(buf, O_BUFLEN), p2i(cb->code_begin()), (jlong)((address)v - cb->code_begin()));
+        tty->print("%s [" INTPTR_FORMAT "+" JLONG_FORMAT "]", cb->as_nmethod()->method()->name_and_sig_as_C_string(buf, O_BUFLEN), p2i(cb->code_begin()), (jlong)((address)v - cb->code_begin()));
         return;
       }
       cb->print_value_on(tty);

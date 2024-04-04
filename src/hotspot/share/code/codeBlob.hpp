@@ -74,7 +74,7 @@ enum class CodeBlobType {
 //     - instruction space
 //   - data space
 
-enum CodeBlobKind : u1 {
+enum class CodeBlobKind : u1 {
   Blob_None,
   Blob_Nmethod,
   Blob_Buffer,
@@ -155,17 +155,17 @@ public:
   virtual void purge(bool free_code_cache_data, bool unregister_nmethod);
 
   // Typing
-  bool is_nmethod() const                     { return _kind == Blob_Nmethod; }
-  bool is_buffer_blob() const                 { return _kind == Blob_Buffer; }
-  bool is_runtime_stub() const                { return _kind == Blob_Runtime_Stub; }
-  bool is_deoptimization_stub() const         { return _kind == Blob_Deoptimization; }
-  bool is_uncommon_trap_stub() const          { return _kind == Blob_Uncommon_Trap; }
-  bool is_exception_stub() const              { return _kind == Blob_Exception; }
-  bool is_safepoint_stub() const              { return _kind == Blob_Safepoint; }
-  bool is_adapter_blob() const                { return _kind == Blob_Adapter; }
-  bool is_vtable_blob() const                 { return _kind == Blob_Vtable; }
-  bool is_method_handles_adapter_blob() const { return _kind == Blob_MH_Adapter; }
-  bool is_upcall_stub() const                 { return _kind == Blob_Upcall; }
+  bool is_nmethod() const                     { return _kind == CodeBlobKind::Blob_Nmethod; }
+  bool is_buffer_blob() const                 { return _kind == CodeBlobKind::Blob_Buffer; }
+  bool is_runtime_stub() const                { return _kind == CodeBlobKind::Blob_Runtime_Stub; }
+  bool is_deoptimization_stub() const         { return _kind == CodeBlobKind::Blob_Deoptimization; }
+  bool is_uncommon_trap_stub() const          { return _kind == CodeBlobKind::Blob_Uncommon_Trap; }
+  bool is_exception_stub() const              { return _kind == CodeBlobKind::Blob_Exception; }
+  bool is_safepoint_stub() const              { return _kind == CodeBlobKind::Blob_Safepoint; }
+  bool is_adapter_blob() const                { return _kind == CodeBlobKind::Blob_Adapter; }
+  bool is_vtable_blob() const                 { return _kind == CodeBlobKind::Blob_Vtable; }
+  bool is_method_handles_adapter_blob() const { return _kind == CodeBlobKind::Blob_MH_Adapter; }
+  bool is_upcall_stub() const                 { return _kind == CodeBlobKind::Blob_Upcall; }
 
   // Casting
   nmethod* as_nmethod_or_null()               { return is_nmethod() ? (nmethod*) this : nullptr; }
@@ -362,7 +362,7 @@ public:
 
 class MethodHandlesAdapterBlob: public BufferBlob {
 private:
-  MethodHandlesAdapterBlob(int size): BufferBlob("MethodHandles adapters", Blob_MH_Adapter, size) {}
+  MethodHandlesAdapterBlob(int size): BufferBlob("MethodHandles adapters", CodeBlobKind::Blob_MH_Adapter, size) {}
 
 public:
   // Creation
@@ -425,13 +425,13 @@ class SingletonBlob: public RuntimeBlob {
 
  public:
    SingletonBlob(
-     const char* name,
+     const char*  name,
      CodeBlobKind kind,
-     CodeBuffer* cb,
-     int         size,
-     int         header_size,
-     int         frame_size,
-     OopMapSet*  oop_maps
+     CodeBuffer*  cb,
+     int          size,
+     int          header_size,
+     int          frame_size,
+     OopMapSet*   oop_maps
    )
    : RuntimeBlob(name, kind, cb, size, header_size, CodeOffsets::frame_never_safe, frame_size, oop_maps)
   {};
