@@ -885,6 +885,7 @@ oop frame::interpreter_callee_receiver(Symbol* signature) {
 void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool query_oop_map_cache) const {
   assert(is_interpreted_frame(), "Not an interpreted frame");
   Thread *thread = Thread::current();
+  DEBUG_ONLY(ResourceMark rm(thread);) // ~InterpreterOopMap already handles possible deallocation of bitmask
   methodHandle m (thread, interpreter_frame_method());
   jint      bci = interpreter_frame_bci();
 
