@@ -319,7 +319,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
 
   __ movb(Address(card_addr, 0), G1CardTable::dirty_card_val());
 
-  // Generated code assumes that buffer index is pointer sized.
+  // The code below assumes that buffer index is pointer sized.
   STATIC_ASSERT(in_bytes(G1DirtyCardQueue::byte_width_of_index()) == sizeof(intptr_t));
 
   __ movptr(tmp2, queue_index);
