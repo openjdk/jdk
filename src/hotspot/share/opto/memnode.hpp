@@ -1199,11 +1199,6 @@ public:
   static void set_load_store_pair(MemBarNode* leading, MemBarNode* trailing);
 
   void remove(PhaseIterGVN *igvn);
-#ifndef PRODUCT
-  static int _barriers_generated;
-  static int _barriers_eliminated;
-  static void print_statistics();
-#endif
 };
 
 // "Acquire" - no following ref can move before (but earlier refs can
