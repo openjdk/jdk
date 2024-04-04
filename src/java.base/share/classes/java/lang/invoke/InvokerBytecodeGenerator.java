@@ -95,6 +95,20 @@ class InvokerBytecodeGenerator {
     private static final MethodRefEntry MRE_Class_isInstance = CP.methodRefEntry(CD_Class, "isInstance", MethodTypeDesc.of(CD_boolean, CD_Object));
     private static final MethodRefEntry MRE_LF_interpretWithArguments = CP.methodRefEntry(CD_LF, "interpretWithArguments", MethodTypeDesc.of(CD_Object, CD_Object.arrayType()));
 
+    // Static builders to avoid lambdas
+    private static final Consumer<FieldBuilder> STATIC_FINAL_FIELD = new Consumer<FieldBuilder>() {
+        @Override
+        public void accept(FieldBuilder fb) {
+            fb.withFlags(ACC_STATIC | ACC_FINAL);
+        }
+    };
+    record MethodBody(Consumer<CodeBuilder> code) implements Consumer<MethodBuilder> {
+        @Override
+        public void accept(MethodBuilder mb) {
+            mb.withCode(code);
+        }
+    };
+
     /** Name of its super class*/
     static final ClassDesc INVOKER_SUPER_DESC = CD_Object;
 
@@ -326,10 +340,10 @@ class InvokerBytecodeGenerator {
 
         for (ClassData p : classData) {
             // add the static field
-            clb.withField(p.name, p.desc, ACC_STATIC|ACC_FINAL);
+            clb.withField(p.name, p.desc, STATIC_FINAL_FIELD);
         }
 
-        clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, new Consumer<CodeBuilder>() {
+        clb.withMethod(CLASS_INIT_NAME, MTD_void, ACC_STATIC, new MethodBody(new Consumer<CodeBuilder>() {
             @Override
             public void accept(CodeBuilder cob) {
                 cob.constantInstruction(classDesc)
@@ -353,7 +367,7 @@ class InvokerBytecodeGenerator {
                 }
                 cob.return_();
             }
-        });
+        }));
     }
 
     private void emitLoadInsn(CodeBuilder cob, TypeKind type, int index) {
@@ -1685,14 +1699,14 @@ class InvokerBytecodeGenerator {
      */
     private void bogusMethod(ClassBuilder clb, Object os) {
         if (dumper().isEnabled()) {
-            clb.withMethodBody("dummy", MTD_void, ACC_STATIC, new Consumer<CodeBuilder>() {
+            clb.withMethod("dummy", MTD_void, ACC_STATIC, new MethodBody(new Consumer<CodeBuilder>() {
                 @Override
                 public void accept(CodeBuilder cob) {
                     cob.constantInstruction(os.toString());
                     cob.pop();
                     cob.return_();
                 }
-            });
+            }));
         }
     }
 

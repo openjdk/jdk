@@ -35,6 +35,8 @@ import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
 import static java.lang.classfile.ClassFile.*;
 import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.FieldBuilder;
+import java.lang.classfile.MethodBuilder;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.TypeKind;
 import java.lang.constant.ClassDesc;
@@ -42,7 +44,6 @@ import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.DynamicConstantDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
 import java.util.function.Consumer;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -61,11 +62,11 @@ import static java.lang.invoke.MethodType.methodType;
 /* package */ final class InnerClassLambdaMetafactory extends AbstractValidatingLambdaMetafactory {
     private static final String LAMBDA_INSTANCE_FIELD = "LAMBDA_INSTANCE$";
 
-    //Serialization support
-    private static final ClassDesc CD_SERIALIZED_LAMBDA = ClassDesc.ofInternalName("java/lang/invoke/SerializedLambda");
-    private static final ClassDesc CD_NOT_SERIALIZABLE_EXCEPTION = ClassDesc.ofInternalName("java/io/NotSerializableException");
-    private static final ClassDesc CD_OBJECTOUTPUTSTREAM = ClassDesc.ofInternalName("java/io/ObjectOutputStream");
-    private static final ClassDesc CD_OBJECTINPUTSTREAM = ClassDesc.ofInternalName("java/io/ObjectInputStream");
+    // Serialization support
+    private static final ClassDesc CD_SERIALIZED_LAMBDA = ClassDesc.ofDescriptor("Ljava/lang/invoke/SerializedLambda;");
+    private static final ClassDesc CD_NOT_SERIALIZABLE_EXCEPTION = ClassDesc.ofDescriptor("Ljava/io/NotSerializableException;");
+    private static final ClassDesc CD_OBJECTOUTPUTSTREAM = ClassDesc.ofDescriptor("Ljava/io/ObjectOutputStream;");
+    private static final ClassDesc CD_OBJECTINPUTSTREAM = ClassDesc.ofDescriptor("Ljava/io/ObjectInputStream;");
     private static final MethodTypeDesc MTD_METHOD_WRITE_REPLACE = MethodTypeDesc.of(CD_Object);
     private static final MethodTypeDesc MTD_METHOD_WRITE_OBJECT = MethodTypeDesc.of(CD_void, CD_OBJECTOUTPUTSTREAM);
     private static final MethodTypeDesc MTD_METHOD_READ_OBJECT = MethodTypeDesc.of(CD_void, CD_OBJECTINPUTSTREAM);
@@ -82,6 +83,19 @@ import static java.lang.invoke.MethodType.methodType;
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
     private static final ClassDesc[] EMPTY_CLASSDESC_ARRAY = new ClassDesc[0];
 
+    // Static builders to avoid lambdas
+    record FieldFlags(int flags) implements Consumer<FieldBuilder> {
+        @Override
+        public void accept(FieldBuilder fb) {
+            fb.withFlags(flags);
+        }
+    };
+    record MethodBody(Consumer<CodeBuilder> code) implements Consumer<MethodBuilder> {
+        @Override
+        public void accept(MethodBuilder mb) {
+            mb.withCode(code);
+        }
+    };
 
     // For dumping generated classes to disk, for debugging purposes
     private static final ClassFileDumper lambdaProxyClassFileDumper;
@@ -325,7 +339,7 @@ import static java.lang.invoke.MethodType.methodType;
                    .withInterfaceSymbols(interfaces);
                 // Generate final fields to be filled in by constructor
                 for (int i = 0; i < argDescs.length; i++) {
-                    clb.withField(argNames[i], argDescs[i], ACC_PRIVATE + ACC_FINAL);
+                    clb.withField(argNames[i], argDescs[i], new FieldFlags(ACC_PRIVATE | ACC_FINAL));
                 }
 
                 generateConstructor(clb);
@@ -335,7 +349,7 @@ import static java.lang.invoke.MethodType.methodType;
                 }
 
                 // Forward the SAM method
-                clb.withMethodBody(interfaceMethodName,
+                clb.withMethod(interfaceMethodName,
                         methodDesc(interfaceMethodType),
                         ACC_PUBLIC,
                         forwardingMethod(interfaceMethodType));
@@ -343,7 +357,7 @@ import static java.lang.invoke.MethodType.methodType;
                 // Forward the bridges
                 if (altMethods != null) {
                     for (MethodType mt : altMethods) {
-                        clb.withMethodBody(interfaceMethodName,
+                        clb.withMethod(interfaceMethodName,
                                 methodDesc(mt),
                                 ACC_PUBLIC | ACC_BRIDGE,
                                 forwardingMethod(mt));
@@ -377,10 +391,10 @@ import static java.lang.invoke.MethodType.methodType;
         ClassDesc lambdaTypeDescriptor = classDesc(factoryType.returnType());
 
         // Generate the static final field that holds the lambda singleton
-        clb.withField(LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor, ACC_PRIVATE | ACC_STATIC | ACC_FINAL);
+        clb.withField(LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor, new FieldFlags(ACC_PRIVATE | ACC_STATIC | ACC_FINAL));
 
         // Instantiate the lambda and store it to the static final field
-        clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, new Consumer<CodeBuilder>() {
+        clb.withMethod(CLASS_INIT_NAME, MTD_void, ACC_STATIC, new MethodBody(new Consumer<CodeBuilder>() {
             @Override
             public void accept(CodeBuilder cob) {
                 assert factoryType.parameterCount() == 0;
@@ -390,7 +404,7 @@ import static java.lang.invoke.MethodType.methodType;
                    .putstatic(lambdaClassDesc, LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor)
                    .return_();
             }
-        });
+        }));
     }
 
     /**
@@ -398,8 +412,8 @@ import static java.lang.invoke.MethodType.methodType;
      */
     private void generateConstructor(ClassBuilder clb) {
         // Generate constructor
-        clb.withMethodBody(INIT_NAME, constructorTypeDesc, ACC_PRIVATE,
-                new Consumer<CodeBuilder>() {
+        clb.withMethod(INIT_NAME, constructorTypeDesc, ACC_PRIVATE,
+                new MethodBody(new Consumer<CodeBuilder>() {
                     @Override
                     public void accept(CodeBuilder cob) {
                         cob.aload(0)
@@ -413,15 +427,15 @@ import static java.lang.invoke.MethodType.methodType;
                         }
                         cob.return_();
                     }
-                });
+                }));
     }
 
     /**
      * Generate a writeReplace method that supports serialization
      */
     private void generateSerializationFriendlyMethods(ClassBuilder clb) {
-        clb.withMethodBody(NAME_METHOD_WRITE_REPLACE, MTD_METHOD_WRITE_REPLACE, ACC_PRIVATE | ACC_FINAL,
-                new Consumer<CodeBuilder>() {
+        clb.withMethod(NAME_METHOD_WRITE_REPLACE, MTD_METHOD_WRITE_REPLACE, ACC_PRIVATE | ACC_FINAL,
+                new MethodBody(new Consumer<CodeBuilder>() {
                     @Override
                     public void accept(CodeBuilder cob) {
                         cob.new_(CD_SERIALIZED_LAMBDA)
@@ -448,15 +462,15 @@ import static java.lang.invoke.MethodType.methodType;
                         cob.invokespecial(CD_SERIALIZED_LAMBDA, INIT_NAME, MTD_CTOR_SERIALIZED_LAMBDA)
                            .areturn();
                     }
-                });
+                }));
     }
 
     /**
      * Generate a readObject/writeObject method that is hostile to serialization
      */
     private void generateSerializationHostileMethods(ClassBuilder clb) {
-        clb.withMethodBody(NAME_METHOD_WRITE_OBJECT, MTD_METHOD_WRITE_OBJECT, ACC_PRIVATE + ACC_FINAL,
-            new Consumer<CodeBuilder>() {
+        clb.withMethod(NAME_METHOD_WRITE_OBJECT, MTD_METHOD_WRITE_OBJECT, ACC_PRIVATE + ACC_FINAL,
+            new MethodBody(new Consumer<CodeBuilder>() {
                 @Override
                 public void accept(CodeBuilder cob) {
                     cob.new_(CD_NOT_SERIALIZABLE_EXCEPTION)
@@ -465,9 +479,9 @@ import static java.lang.invoke.MethodType.methodType;
                        .invokespecial(CD_NOT_SERIALIZABLE_EXCEPTION, INIT_NAME, MTD_CTOR_NOT_SERIALIZABLE_EXCEPTION)
                        .throwInstruction();
                 }
-            });
-        clb.withMethodBody(NAME_METHOD_READ_OBJECT, MTD_METHOD_READ_OBJECT, ACC_PRIVATE + ACC_FINAL,
-            new Consumer<CodeBuilder>() {
+            }));
+        clb.withMethod(NAME_METHOD_READ_OBJECT, MTD_METHOD_READ_OBJECT, ACC_PRIVATE + ACC_FINAL,
+            new MethodBody(new Consumer<CodeBuilder>() {
                 @Override
                 public void accept(CodeBuilder cob) {
                     cob.new_(CD_NOT_SERIALIZABLE_EXCEPTION)
@@ -476,15 +490,15 @@ import static java.lang.invoke.MethodType.methodType;
                        .invokespecial(CD_NOT_SERIALIZABLE_EXCEPTION, INIT_NAME, MTD_CTOR_NOT_SERIALIZABLE_EXCEPTION)
                        .throwInstruction();
                 }
-            });
+            }));
     }
 
     /**
      * This method generates a method body which calls the lambda implementation
      * method, converting arguments, as needed.
      */
-    Consumer<CodeBuilder> forwardingMethod(MethodType methodType) {
-        return new Consumer<CodeBuilder>() {
+    Consumer<MethodBuilder> forwardingMethod(MethodType methodType) {
+        return new MethodBody(new Consumer<CodeBuilder>() {
             @Override
             public void accept(CodeBuilder cob) {
                 if (implKind == MethodHandleInfo.REF_newInvokeSpecial) {
@@ -519,7 +533,7 @@ import static java.lang.invoke.MethodType.methodType;
                 TypeConvertingMethodAdapter.convertType(cob, implReturnClass, samReturnClass, samReturnClass);
                 cob.returnInstruction(TypeKind.from(samReturnClass));
             }
-        };
+        });
     }
 
     private void convertArgumentTypes(CodeBuilder cob, MethodType samType) {
