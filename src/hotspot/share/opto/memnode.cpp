@@ -2898,8 +2898,11 @@ private:
   Status find_def_store(const StoreNode* use_store) const;
   Status find_use_store_unidirectional(const StoreNode* def_store) const;
   Status find_def_store_unidirectional(const StoreNode* use_store) const;
+
+  Node* merged_input_value(const Node_List& merge_listi, const int new_memory_size);
 };
 
+// TODO desc
 StoreNode* MergePrimitiveArrayStores::run() {
   // Check for B/S/C/I
   int opc = _store->Opcode();
@@ -2952,51 +2955,15 @@ StoreNode* MergePrimitiveArrayStores::run() {
     }
   }
 
-  int pow2size = round_down_power_of_2(merge_list.size());
+  // Truncate the merge_list to a power of 2.
+  uint pow2size = round_down_power_of_2(merge_list.size());
   assert(pow2size >= 2, "must be merging at least 2 stores");
+  while (merge_list.size() > pow2size) { merge_list.pop(); }
+  int new_memory_size = _store->memory_size() * merge_list.size();
 
-  // TODO maybe put in its own method
-  // Create / find new value:
-  Node* new_value = nullptr;
-  int new_memory_size = _store->memory_size() * pow2size;
-  if (_store->in(MemNode::ValueIn)->Opcode() == Op_ConI) {
-    // Collect all constants
-    jlong con = 0;
-    jlong bits_per_store = _store->memory_size() * 8;
-    jlong mask = (((jlong)1) << bits_per_store) - 1;
-    for (int i = 0; i < pow2size; i++) {
-      jlong con_i = merge_list.at(i)->in(MemNode::ValueIn)->get_int();
-      con = con << bits_per_store;
-      con = con | (mask & con_i);
-    }
-    new_value = _phase->longcon(con);
-  } else {
-    // TODO description
-    Node* first = merge_list.at(pow2size-1);
-    new_value = first->in(MemNode::ValueIn);
-    Node const* base_last;
-    jint shift_last;
-    bool is_true = is_con_RShift(_store->in(MemNode::ValueIn), base_last, shift_last);
-    assert(is_true, "must detect con RShift");
-    if (new_value != base_last && new_value->Opcode() == Op_ConvL2I) {
-      // look through
-      new_value = new_value->in(1);
-    }
-    if (new_value != base_last) {
-      // new_value is not the base
-      return nullptr;
-    }
-  }
+  Node* new_value = merged_input_value(merge_list, new_memory_size);
 
-  if (_phase->type(new_value)->isa_long() != nullptr && new_memory_size <= 4) {
-    new_value = _phase->transform(new ConvL2INode(new_value));
-  }
-
-  assert((_phase->type(new_value)->isa_int() != nullptr && new_memory_size <= 4) ||
-         (_phase->type(new_value)->isa_long() != nullptr && new_memory_size == 8),
-         "new_value is either int or long, and new_memory_size is small enough");
-
-  Node* first = merge_list.at(pow2size-1);
+  Node* first    = merge_list.at(merge_list.size()-1);
   Node* new_ctrl = _store->in(MemNode::Control); // must take last: after all RangeChecks
   Node* new_mem  = first->in(MemNode::Memory);
   Node* new_adr  = first->in(MemNode::Address);
@@ -3021,7 +2988,7 @@ StoreNode* MergePrimitiveArrayStores::run() {
   if (TraceMergeStores) {
     stringStream ss;
     ss.print_cr("[TraceMergeStores]: Replace");
-    for (int i = pow2size - 1; i >= 0; i--) {
+    for (int i = (int)merge_list.size() - 1; i >= 0; i--) {
       merge_list.at(i)->dump("\n", false, &ss);
     }
     ss.print_cr("[TraceMergeStores]: with");
@@ -3257,6 +3224,58 @@ MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_def_store_unid
     return Status::make_failure();
   }
   return Status(def_store, cfg_status == CFGStatus::SuccessWithRangeCheck);
+}
+
+// Merge the input values of the smaller stores to a single larger input value.
+Node* MergePrimitiveArrayStores::merged_input_value(const Node_List& merge_list, const int new_memory_size) {
+  Node* first = merge_list.at(merge_list.size()-1);
+  Node* new_value = nullptr;
+  if (_store->in(MemNode::ValueIn)->Opcode() == Op_ConI) {
+    // Pattern: [ConI, ConI, ...] -> new constant
+    jlong con = 0;
+    jlong bits_per_store = _store->memory_size() * 8;
+    jlong mask = (((jlong)1) << bits_per_store) - 1;
+    for (uint i = 0; i < merge_list.size(); i++) {
+      jlong con_i = merge_list.at(i)->in(MemNode::ValueIn)->get_int();
+      con = con << bits_per_store;
+      con = con | (mask & con_i);
+    }
+    new_value = _phase->longcon(con);
+  } else {
+    // Pattern: [base >> 24, base >> 16, base >> 8, base] -> base
+    //             |                                  |
+    //           _store                             first
+    //
+    new_value = first->in(MemNode::ValueIn);
+    Node const* base_last;
+    jint shift_last;
+    bool is_true = is_con_RShift(_store->in(MemNode::ValueIn), base_last, shift_last);
+    assert(is_true, "must detect con RShift");
+    if (new_value != base_last && new_value->Opcode() == Op_ConvL2I) {
+      // look through
+      new_value = new_value->in(1);
+    }
+    if (new_value != base_last) {
+      // new_value is not the base
+      return nullptr;
+    }
+  }
+
+  if (_phase->type(new_value)->isa_long() != nullptr && new_memory_size <= 4) {
+    // Example:
+    //
+    //   long base = ...;
+    //   a[0] = (byte)(base >> 0);
+    //   a[1] = (byte)(base >> 8);
+    //
+    new_value = _phase->transform(new ConvL2INode(new_value));
+  }
+
+  assert((_phase->type(new_value)->isa_int() != nullptr && new_memory_size <= 4) ||
+         (_phase->type(new_value)->isa_long() != nullptr && new_memory_size == 8),
+         "new_value is either int or long, and new_memory_size is small enough");
+
+  return new_value;
 }
 
 //------------------------------Ideal------------------------------------------
