@@ -2727,12 +2727,17 @@ public class Collections {
         public E remove(int index) {
             synchronized (mutex) {return list.remove(index);}
         }
-
         public int indexOf(Object o) {
             synchronized (mutex) {return list.indexOf(o);}
         }
+        public int indexOf(Predicate<? super E> filter) {
+            synchronized (mutex) {return list.indexOf(filter);}
+        }
         public int lastIndexOf(Object o) {
             synchronized (mutex) {return list.lastIndexOf(o);}
+        }
+        public int lastIndexOf(Predicate<? super E> filter) {
+            synchronized (mutex) {return list.lastIndexOf(filter);}
         }
 
         public boolean addAll(int index, Collection<? extends E> c) {
