@@ -636,10 +636,10 @@ public abstract sealed class Reference<T>
      * update, even if the call to {@code action} was the last use of this
      * object.  This might be the case if, for example, a usage in a user program
      * had the form {@code new Resource().action();} which retains no other
-     * reference to this {@code Resource}.  The
-     * {@code reachabilityFence} call is placed in a {@code finally} block to ensure
-     * that it is invoked across all paths in the method. A more complex method
-     * might need further precautions to ensure that
+     * reference to this {@code Resource}.
+     * The {@code reachabilityFence} call is placed in a {@code finally} block to
+     * ensure that it is invoked across all paths in the method. A more complex
+     * method might need further precautions to ensure that
      * {@code reachabilityFence} is encountered along all code paths.
      *
      * <p> Method {@code reachabilityFence} is not required in constructions
