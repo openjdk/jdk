@@ -125,8 +125,9 @@ public class VMSupport {
      *            </pre>
      * @param buffer encoded info about the exception to throw (depends on {@code format})
      * @param inJVMHeap [@code true} if executing in the JVM heap, {@code false} otherwise
+     * @param debug specifies whether debug stack traces should be enabled in case of translation failure
      */
-    public static void decodeAndThrowThrowable(int format, long buffer, boolean inJVMHeap) throws Throwable {
+    public static void decodeAndThrowThrowable(int format, long buffer, boolean inJVMHeap, boolean debug) throws Throwable {
         if (format != 0) {
             String context = String.format("while encoding an exception to translate it %s the JVM heap",
                     inJVMHeap ? "to" : "from");
@@ -142,7 +143,7 @@ public class VMSupport {
             }
             throw new InternalError("unexpected problem occurred " + context);
         }
-        throw TranslatedException.decodeThrowable(bufferToBytes(buffer));
+        throw TranslatedException.decodeThrowable(bufferToBytes(buffer), debug);
     }
 
     private static byte[] bufferToBytes(long buffer) {

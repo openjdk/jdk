@@ -31,7 +31,7 @@
 #include "gc/shared/space.hpp"
 #include "utilities/macros.hpp"
 
-class SerialBlockOffsetSharedArray;
+class SerialBlockOffsetTable;
 class CardTableRS;
 class ContiguousSpace;
 
@@ -50,7 +50,7 @@ class TenuredGeneration: public Generation {
   // This is shared with other generations.
   CardTableRS* _rs;
   // This is local to this generation.
-  SerialBlockOffsetSharedArray* _bts;
+  SerialBlockOffsetTable* _bts;
 
   // Current shrinking effect: this damps shrinking when the heap gets empty.
   size_t _shrink_factor;

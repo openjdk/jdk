@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
+import java.nio.file.Path;
 import java.util.Map;
 import jdk.test.lib.process.ProcessTools;
 import sun.tools.attach.HotSpotVirtualMachine;
@@ -53,7 +54,7 @@ public class CheckOrigin {
         if (args.length == 0) {
             // start a process that has options set in a number of different ways
 
-            File flagsFile = File.createTempFile("CheckOriginFlags", null);
+            File flagsFile = File.createTempFile("CheckOriginFlags", null, Path.of(".").toFile());
             try (PrintWriter pw =
                    new PrintWriter(new FileWriter(flagsFile))) {
                 pw.println("+PrintCodeCache");

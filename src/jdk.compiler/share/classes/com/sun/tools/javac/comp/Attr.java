@@ -328,13 +328,6 @@ public class Attr extends JCTree.Visitor {
         return sym != null && sym.kind == TYP;
     }
 
-    /** The current `this' symbol.
-     *  @param env    The current environment.
-     */
-    Symbol thisSym(DiagnosticPosition pos, Env<AttrContext> env) {
-        return rs.resolveSelf(pos, env, env.enclClass.sym, names._this);
-    }
-
     /** Attribute a parsed identifier.
      * @param tree Parsed identifier name
      * @param topLevel The toplevel to use
