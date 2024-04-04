@@ -270,8 +270,8 @@ public:
   bool has_platform_or_app_classes()       const { return _has_platform_or_app_classes; }
   bool has_non_jar_in_classpath()          const { return _has_non_jar_in_classpath; }
   size_t ptrmap_size_in_bits()             const { return _ptrmap_size_in_bits; }
-  size_t rw_ptrmap_size_in_bits()             const { return _rw_ptrmap_size_in_bits; }
-  size_t ro_ptrmap_size_in_bits()             const { return _ro_ptrmap_size_in_bits; }
+  size_t rw_ptrmap_size_in_bits()          const { return _rw_ptrmap_size_in_bits; }
+  size_t ro_ptrmap_size_in_bits()          const { return _ro_ptrmap_size_in_bits; }
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
   size_t heap_roots_offset()               const { return _heap_roots_offset; }

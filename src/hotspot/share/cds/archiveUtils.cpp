@@ -71,29 +71,34 @@ void ArchivePtrMarker::initialize(CHeapBitMap* ptrmap, VirtualSpace* vs) {
   _ptrmap->initialize(estimated_archive_size / sizeof(intptr_t));
 }
 
-void ArchivePtrMarker::initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap, size_t rw_region_size, size_t ro_region_size) {
+void ArchivePtrMarker::initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap) {
+  address* rw_bottom = (address*)ArchiveBuilder::current()->rw_region()->base();
+  address* ro_bottom = (address*)ArchiveBuilder::current()->ro_region()->base();
+
   _rw_ptrmap = rw_ptrmap;
   _ro_ptrmap = ro_ptrmap;
 
-  size_t offset = _ptrmap->size() - rw_region_size - ro_region_size;
+  size_t rw_size = ArchiveBuilder::current()->rw_region()->used() / sizeof(address);
+  size_t ro_size = ArchiveBuilder::current()->ro_region()->used() / sizeof(address);
+  // ro_start is the first bit in _ptrmap that covers the pointer that would sit at ro_bottom.
+  // E.g., if rw_bottom = (address*)100
+  //          ro_bottom = (address*)116
+  //       then ro_bottom - rw_bottom = (116 - 100) / sizeof(address) = 4;
+  size_t ro_start = ro_bottom - rw_bottom;
 
-  _rw_ptrmap->initialize(rw_region_size + offset + 1);
-  _ro_ptrmap->initialize(ro_region_size);
+  // Note: ptrmap is big enough only to cover the last pointer in ro_region.
+  // See ArchivePtrMarker::compact()
+  _rw_ptrmap->initialize(rw_size);
+  _ro_ptrmap->initialize(_ptrmap->size() - ro_start);
 
   for (size_t rw_bit = 0; rw_bit < _rw_ptrmap->size(); rw_bit++) {
     _rw_ptrmap->at_put(rw_bit, _ptrmap->at(rw_bit));
   }
 
-  size_t ro_start = _rw_ptrmap->size();
-
-  bool found_first = false;
-  size_t index = 0;
   for(size_t ro_bit = ro_start; ro_bit < _ptrmap->size(); ro_bit++) {
     _ro_ptrmap->at_put(ro_bit-ro_start, _ptrmap->at(ro_bit));
-    if (!found_first && _ptrmap->at(ro_bit) == true) { index = ro_bit; found_first = true; }
   }
-  tty->print_cr("First set: %ld(%ld)", index, index - ro_start);
-  //assert(_ptrmap->size() - ro_start == _ro_ptrmap->size(), "%ld vs %ld", _ptrmap->size() - ro_start, _ro_ptrmap->size());
+  assert(_ptrmap->size() - ro_start == _ro_ptrmap->size(), "must be");
   // Free _ptrmap?
 }
 
