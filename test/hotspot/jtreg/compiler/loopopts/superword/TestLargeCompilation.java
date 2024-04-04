@@ -28,9 +28,9 @@ package compiler.loopopts.superword;
  * @bug 8327978
  * @summary Test compile time for large compilation, where SuperWord takes especially much time.
  * @requires vm.compiler2.enabled
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:RepeatCompilation=5 -XX:LoopUnrollLimit=1000 -Xbatch
- *                   -XX:CompileCommand=compileonly,compiler.loopopts.superword.TestLargeCompilation::test*
- *                   compiler.loopopts.superword.TestLargeCompilation
+ * @run main/othervm/timeout=30 -XX:LoopUnrollLimit=1000 -Xbatch
+ *                              -XX:CompileCommand=compileonly,compiler.loopopts.superword.TestLargeCompilation::test*
+ *                              compiler.loopopts.superword.TestLargeCompilation
  */
 
 import java.util.Random;
