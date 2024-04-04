@@ -7292,7 +7292,7 @@ instruct negD_reg(regD dst, regD src, flagsReg cr) %{
 
 // Sqrt float precision
 instruct sqrtF_reg(regF dst, regF src) %{
-  match(Set dst (ConvD2F (SqrtD (ConvF2D src))));
+  match(Set dst (SqrtF src));
   // CC remains unchanged.
   ins_cost(ALU_REG_COST);
   size(4);
@@ -7315,7 +7315,7 @@ instruct sqrtD_reg(regD dst, regD src) %{
 %}
 
 instruct sqrtF_mem(regF dst, memoryRX src) %{
-  match(Set dst (ConvD2F (SqrtD (ConvF2D src))));
+  match(Set dst (SqrtF src));
   // CC remains unchanged.
   ins_cost(ALU_MEMORY_COST);
   size(6);

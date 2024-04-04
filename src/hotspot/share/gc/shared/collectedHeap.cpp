@@ -518,13 +518,6 @@ void CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, bool 
   CollectedHeap::fill_with_object(start, end, zap);
 }
 
-HeapWord* CollectedHeap::allocate_new_tlab(size_t min_size,
-                                           size_t requested_size,
-                                           size_t* actual_size) {
-  guarantee(false, "thread-local allocation buffers not supported");
-  return nullptr;
-}
-
 void CollectedHeap::ensure_parsability(bool retire_tlabs) {
   assert(SafepointSynchronize::is_at_safepoint() || !is_init_completed(),
          "Should only be called at a safepoint or at start-up");
