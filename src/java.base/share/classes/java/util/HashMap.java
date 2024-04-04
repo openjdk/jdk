@@ -500,10 +500,10 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      *           avoid an unnecessarily large capacity if {@code m} contains many
      *           duplicate keys. This can lead to a potentially expensive, extra
      *           resize operation. To avoid such an additional resize operation,
-     *           callers of {@code putAll()} can use the
-     *           {@code HashMap(int initialCapacity)} constructor or
-     *           {@code newHashMap(int numMappings)} to create a map with a large
-     *           enough capacity before calling {@code putAll()} to ensure that the
+     *           callers of {@link putAll} can use the
+     *           {@link #HashMap(int) HashMap(int initialCapacity)} constructor or
+     *           {@link #newHashMap(int) newHashMap} to create a map with a large
+     *           enough capacity before calling {@link putAll} to ensure that the
      *           map is only resized and copied once.
      *
      * @param m the map
