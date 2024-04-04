@@ -681,8 +681,7 @@ public interface List<E> extends SequencedCollection<E> {
      * @param filter a predicate to search for
      * @return the index of the first occurrence of the specified element in
      *         this list, or -1 if this list does not contain the element
-     * @throws NullPointerException if the specified element is null and this
-     *         list does not permit null elements
+     * @throws NullPointerException if passed filter is null
      *         (<a href="Collection.html#optional-restrictions">optional</a>)
      */
     int indexOf(Predicate<? super E> filter);
@@ -697,8 +696,7 @@ public interface List<E> extends SequencedCollection<E> {
      * @param filter a predicate to search for
      * @return the index of the last occurrence of the specified element in
      *         this list, or -1 if this list does not contain the element
-     * @throws NullPointerException if the specified element is null and this
-     *         list does not permit null elements
+     * @throws NullPointerException if passed filter is null
      *         (<a href="Collection.html#optional-restrictions">optional</a>)
      */
     int lastIndexOf(Predicate<? super E> filter);
