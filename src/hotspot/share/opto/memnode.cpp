@@ -2886,7 +2886,9 @@ private:
   };
 
   bool is_compatible_store(const StoreNode* other_store) const;
-  bool is_adjacent_pair(const StoreNode* use_store, const StoreNode* def_store) const; // TODO static
+  bool is_adjacent_pair(const StoreNode* use_store, const StoreNode* def_store) const;
+  bool is_adjacent_input_pair(const Node* n1, const Node* n2, const int memory_size) const;
+  static bool is_con_RShift(const Node* n, Node const*& base_out, jint& shift_out);
   Status find_adjacent_use_store(const StoreNode* def_store) const;
   Status find_adjacent_def_store(const StoreNode* use_store) const;
   Status find_use_store(const StoreNode* def_store) const;
@@ -2907,8 +2909,6 @@ StoreNode* MergePrimitiveArrayStores::run() {
     return nullptr;
   }
 
-  // TODO more checks about array and element type?
-
   // If we can merge with use, then we must process use first.
   Status status_use = find_adjacent_use_store(_store);
   if (status_use.found_store() != nullptr) {
@@ -2920,6 +2920,8 @@ StoreNode* MergePrimitiveArrayStores::run() {
   if (status_def.found_store() == nullptr) {
     return nullptr;
   }
+
+  // TODO
 
   tty->print_cr("maybe!");
   _store->dump();
@@ -2952,7 +2954,11 @@ bool MergePrimitiveArrayStores::is_compatible_store(const StoreNode* other_store
 }
 
 bool MergePrimitiveArrayStores::is_adjacent_pair(const StoreNode* use_store, const StoreNode* def_store) const {
-  // TODO value adjacent
+  if (!is_adjacent_input_pair(def_store->in(MemNode::ValueIn),
+                              use_store->in(MemNode::ValueIn),
+                              def_store->memory_size())) {
+    return false;
+  }
   {
     ResourceMark rm;
     ArrayPointer array_pointer_use = ArrayPointer::make(_phase, use_store->in(MemNode::Address));
@@ -2962,6 +2968,64 @@ bool MergePrimitiveArrayStores::is_adjacent_pair(const StoreNode* use_store, con
     }
   }
   return true;
+}
+
+bool MergePrimitiveArrayStores::is_adjacent_input_pair(const Node* n1, const Node* n2, const int memory_size) const {
+  // Pattern: [n1 = ConI, n2 = ConI]
+  if (n1->Opcode() == Op_ConI) {
+    return n2->Opcode() == Op_ConI;
+  }
+
+  // Pattern: [n1 = base >> shift, n2 = base >> (shift + memory_size)]
+  Node const* base_n2;
+  jint shift_n2;
+  if (!is_con_RShift(n2, base_n2, shift_n2)) {
+    return false;
+  }
+  Node const* base_n1;
+  jint shift_n1;
+  if (n1->Opcode() == Op_ConvL2I) {
+    // look through
+    n1 = n1->in(1);
+  }
+  if (n1 == base_n2) {
+    // This is the "shift by zero" case.
+    base_n1 = n1;
+    shift_n1 = 0;
+  } else if (!is_con_RShift(n1, base_n1, shift_n1)) {
+    return false;
+  }
+  int bits_per_store = memory_size * 8;
+  if (base_n1 != base_n2 ||
+      shift_n1 + bits_per_store != shift_n2 ||
+      shift_n1 % bits_per_store != 0) {
+    return false;
+  }
+
+  // both load from same value with correct shift
+  return true;
+}
+
+bool MergePrimitiveArrayStores::is_con_RShift(const Node* n, Node const*& base_out, jint& shift_out) {
+  assert(n != nullptr, "precondition");
+
+  int opc = n->Opcode();
+  if (opc == Op_ConvL2I) {
+    n = n->in(1);
+    opc = n->Opcode();
+  }
+
+  if ((opc == Op_RShiftI ||
+       opc == Op_RShiftL ||
+       opc == Op_URShiftI ||
+       opc == Op_URShiftL) &&
+      n->in(2)->is_ConI()) {
+    base_out = n->in(1);
+    shift_out = n->in(2)->get_int();
+    assert(shift_out >= 0, "must be positive");
+    return true;
+  }
+  return false;
 }
 
 MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_adjacent_use_store(const StoreNode* def_store) const {
@@ -3291,97 +3355,6 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 //
 //  return new_store;
 //}
-
-StoreNode* StoreNode::can_merge_primitive_array_store_with_def(PhaseGVN* phase, bool check_use) {
-  int opc = Opcode();
-  assert(opc == Op_StoreB || opc == Op_StoreC || opc == Op_StoreI, "precondition");
-
-  StoreNode* def = in(MemNode::Memory)->isa_Store();
-  if (def == nullptr ||
-      def->Opcode() != opc ||
-      def->adr_type()->isa_aryptr() == nullptr) {
-    return nullptr;
-  }
-
-  StoreNode* s1 = this;
-  StoreNode* s2 = def->as_Store();
-  assert(s1->memory_size() == s2->memory_size(), "same size");
-
-  // Check ctrl compatibility
-  Node* ctrl_s1 = s1->in(MemNode::Control);
-  Node* ctrl_s2 = s2->in(MemNode::Control);
-  if (ctrl_s1 != ctrl_s2) {
-    // See if we can bypass a RangeCheck
-    if (!ctrl_s1->is_IfProj() ||
-        !ctrl_s1->in(0)->is_RangeCheck() ||
-        ctrl_s1->in(0)->outcnt() != 2) {
-      return nullptr;
-    }
-    ProjNode* other_proj = ctrl_s1->as_IfProj()->other_if_proj();
-    if (other_proj->is_uncommon_trap_proj(Deoptimization::Reason_range_check) == nullptr ||
-        ctrl_s1->in(0)->in(0) != ctrl_s2) {
-      return nullptr;
-    }
-    // Success, we skipped a RangeCheck
-  }
-
-  // Check value compatibility
-  Node* value_s1 = s1->in(MemNode::ValueIn);
-  Node* value_s2 = s2->in(MemNode::ValueIn);
-
-  if (value_s1->Opcode() == Op_ConI) {
-    if (value_s2->Opcode() != Op_ConI) {
-      return nullptr;
-    }
-    // both are int con
-  } else {
-    Node* base_s1;
-    jint shift_s1;
-    if (!is_con_RShift(value_s1, base_s1, shift_s1)) {
-      return nullptr;
-    }
-    Node* base_s2;
-    jint shift_s2;
-    if (value_s2->Opcode() == Op_ConvL2I) {
-      // look through
-      value_s2 = value_s2->in(1);
-    }
-    if (value_s2 == base_s1) {
-      // This is the "shift by zero" case.
-      base_s2 = value_s2;
-      shift_s2 = 0;
-    } else if (!is_con_RShift(value_s2, base_s2, shift_s2)) {
-      return nullptr;
-    }
-    int bits_per_store = memory_size() * 8;
-    if (base_s1 != base_s2 ||
-        shift_s2 + bits_per_store != shift_s1 ||
-        shift_s1 % bits_per_store != 0) {
-      return nullptr;
-    }
-    // both load from same value with correct shift
-  }
-
-  // Check address adjacency
-  // -> make sure that we are operating on an array, and the sizes match.
-  int size_ptr1 = type2aelembytes(s1->adr_type()->is_aryptr()->elem()->array_element_basic_type());
-  int size_ptr2 = type2aelembytes(s2->adr_type()->is_aryptr()->elem()->array_element_basic_type());
-  if (size_ptr1 != size_ptr2 ||
-      size_ptr1 != s1->memory_size() ||
-      s1->memory_size() != s2->memory_size()) {
-    return nullptr;
-  }
-  {
-    ResourceMark rm;
-    ArrayPointer array_pointer1 = ArrayPointer::make(phase, s1->in(MemNode::Address));
-    ArrayPointer array_pointer2 = ArrayPointer::make(phase, s2->in(MemNode::Address));
-    if (!array_pointer2.is_adjacent_to_and_before(array_pointer1, s1->memory_size())) {
-      return nullptr;
-    }
-  }
-
-  return s2;
-}
 
 //------------------------------Value-----------------------------------------
 const Type* StoreNode::Value(PhaseGVN* phase) const {

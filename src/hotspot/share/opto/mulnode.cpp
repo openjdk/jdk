@@ -1268,28 +1268,6 @@ const Type* LShiftLNode::Value(PhaseGVN* phase) const {
   return TypeLong::make( (jlong)r1->get_con() << (jint)shift );
 }
 
-bool is_con_RShift(Node* n, Node*& base_out, jint& shift_out) {
-  assert(n != nullptr, "precondition");
-
-  int opc = n->Opcode();
-  if (opc == Op_ConvL2I) {
-    n = n->in(1);
-    opc = n->Opcode();
-  }
-
-  if ((opc == Op_RShiftI ||
-       opc == Op_RShiftL ||
-       opc == Op_URShiftI ||
-       opc == Op_URShiftL) &&
-      n->in(2)->is_ConI()) {
-    base_out = n->in(1);
-    shift_out = n->in(2)->get_int();
-    assert(shift_out >= 0, "must be positive");
-    return true;
-  }
-  return false;
-}
-
 //=============================================================================
 //------------------------------Identity---------------------------------------
 Node* RShiftINode::Identity(PhaseGVN* phase) {

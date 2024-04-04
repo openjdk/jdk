@@ -287,8 +287,6 @@ class RotateRightNode : public TypeNode {
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
-bool is_con_RShift(Node* n, Node*& base_out, jint& shift_out);
-
 //------------------------------RShiftINode------------------------------------
 // Signed shift right
 class RShiftINode : public Node {
