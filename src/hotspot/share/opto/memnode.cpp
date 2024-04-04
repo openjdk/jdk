@@ -2904,8 +2904,10 @@ StoreNode* MergePrimitiveArrayStores::run() {
     return nullptr;
   }
 
-  // Only merge stores on arrays.
-  if (_store->adr_type()->isa_aryptr() == nullptr) {
+  // Only merge stores on arrays, and the stores must have the same size as the elements.
+  const TypeAryPtr* aryptr_t = _store->adr_type()->is_aryptr();
+  if (aryptr_t == nullptr ||
+      type2aelembytes(aryptr_t->elem()->array_element_basic_type()) != _store->memory_size()) {
     return nullptr;
   }
 
@@ -2921,11 +2923,109 @@ StoreNode* MergePrimitiveArrayStores::run() {
     return nullptr;
   }
 
-  // TODO
+  // Now we know we can merge at least two stores.
+  ResourceMark rm;
+  Node_List merge_list;
 
-  tty->print_cr("maybe!");
-  _store->dump();
-  return nullptr;
+  uint merge_list_max_size = 8 / _store->memory_size();
+  assert(merge_list_max_size >= 2 &&
+         merge_list_max_size <= 8 &&
+         is_power_of_2(merge_list_max_size),
+         "must be 2, 4 or 8");
+
+  // Collect list of stores
+  StoreNode* current = _store;
+  while (current != nullptr && merge_list.size() <= merge_list_max_size) {
+    merge_list.push(current);
+    Status status = find_adjacent_def_store(current);
+    current = status.found_store();
+
+    // We can have at most one RangeCheck.
+    if (status.found_range_check()) {
+      merge_list.push(current);
+      break;
+    }
+  }
+
+  int pow2size = round_down_power_of_2(merge_list.size());
+  assert(pow2size >= 2, "must be merging at least 2 stores");
+
+  // TODO maybe put in its own method
+  // Create / find new value:
+  Node* new_value = nullptr;
+  int new_memory_size = _store->memory_size() * pow2size;
+  if (_store->in(MemNode::ValueIn)->Opcode() == Op_ConI) {
+    // Collect all constants
+    jlong con = 0;
+    jlong bits_per_store = _store->memory_size() * 8;
+    jlong mask = (((jlong)1) << bits_per_store) - 1;
+    for (int i = 0; i < pow2size; i++) {
+      jlong con_i = merge_list.at(i)->in(MemNode::ValueIn)->get_int();
+      con = con << bits_per_store;
+      con = con | (mask & con_i);
+    }
+    new_value = _phase->longcon(con);
+  } else {
+    // TODO description
+    Node* first = merge_list.at(pow2size-1);
+    new_value = first->in(MemNode::ValueIn);
+    Node const* base_last;
+    jint shift_last;
+    bool is_true = is_con_RShift(_store->in(MemNode::ValueIn), base_last, shift_last);
+    assert(is_true, "must detect con RShift");
+    if (new_value != base_last && new_value->Opcode() == Op_ConvL2I) {
+      // look through
+      new_value = new_value->in(1);
+    }
+    if (new_value != base_last) {
+      // new_value is not the base
+      return nullptr;
+    }
+  }
+
+  if (_phase->type(new_value)->isa_long() != nullptr && new_memory_size <= 4) {
+    new_value = _phase->transform(new ConvL2INode(new_value));
+  }
+
+  assert((_phase->type(new_value)->isa_int() != nullptr && new_memory_size <= 4) ||
+         (_phase->type(new_value)->isa_long() != nullptr && new_memory_size == 8),
+         "new_value is either int or long, and new_memory_size is small enough");
+
+  Node* first = merge_list.at(pow2size-1);
+  Node* new_ctrl = _store->in(MemNode::Control); // must take last: after all RangeChecks
+  Node* new_mem  = first->in(MemNode::Memory);
+  Node* new_adr  = first->in(MemNode::Address);
+  const TypePtr* new_adr_type = _store->adr_type();
+  BasicType bt = T_ILLEGAL;
+  switch (new_memory_size) {
+    case 2: bt = T_SHORT; break;
+    case 4: bt = T_INT;   break;
+    case 8: bt = T_LONG;  break;
+  }
+
+  StoreNode* new_store = StoreNode::make(*_phase, new_ctrl, new_mem, new_adr,
+                                         new_adr_type, new_value, bt, MemNode::unordered);
+  // Marking the store mismatched is sufficient to prevent reordering, since array stores
+  // are all on the same slice. Hence, we need no barriers.
+  new_store->set_mismatched_access();
+
+  // Constants above may now also be be packed -> put candidate on worklist
+  _phase->is_IterGVN()->_worklist.push(new_mem);
+
+#ifdef ASSERT
+  if (TraceMergeStores) {
+    stringStream ss;
+    ss.print_cr("[TraceMergeStores]: Replace");
+    for (int i = pow2size - 1; i >= 0; i--) {
+      merge_list.at(i)->dump("\n", false, &ss);
+    }
+    ss.print_cr("[TraceMergeStores]: with");
+    new_store->dump("\n", false, &ss);
+    tty->print("%s", ss.as_string());
+  }
+#endif
+
+  return new_store;
 }
 
 // Check compatibility between _store and other_store.
@@ -2941,10 +3041,10 @@ bool MergePrimitiveArrayStores::is_compatible_store(const StoreNode* other_store
   }
 
   // Check that the size of the stores, and the array elements are all the same.
-  const TypeAryPtr* ary_t1 = _store->adr_type()->is_aryptr();
-  const TypeAryPtr* ary_t2 = other_store->adr_type()->is_aryptr();
-  int size1 = type2aelembytes(ary_t1->elem()->array_element_basic_type());
-  int size2 = type2aelembytes(ary_t2->elem()->array_element_basic_type());
+  const TypeAryPtr* aryptr_t1 = _store->adr_type()->is_aryptr();
+  const TypeAryPtr* aryptr_t2 = other_store->adr_type()->is_aryptr();
+  int size1 = type2aelembytes(aryptr_t1->elem()->array_element_basic_type());
+  int size2 = type2aelembytes(aryptr_t2->elem()->array_element_basic_type());
   if (size1 != size2 ||
       size1 != _store->memory_size() ||
       _store->memory_size() != other_store->memory_size()) {
@@ -3259,102 +3359,6 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   return nullptr;                  // No further progress
 }
-
-//  // Now we know we can merge at least two stores.
-//  ResourceMark rm;
-//  Node_List merge_list;
-//  merge_list.push(this);
-//
-//  uint merge_list_max_size = 8 / memory_size();
-//  assert(merge_list_max_size >= 2 &&
-//         merge_list_max_size <= 8 &&
-//         is_power_of_2(merge_list_max_size),
-//         "must be 2, 4 or 8");
-//
-//  // Collect list of stores
-//  while (def != nullptr && merge_list.size() <= merge_list_max_size) {
-//    merge_list.push(def);
-//    def = def->can_merge_primitive_array_store_with_def(phase, true);
-//  }
-//
-//  int pow2size = round_down_power_of_2(merge_list.size());
-//  assert(pow2size >= 2, "must be merging at least 2 stores");
-//
-//  // Create / find new value:
-//  Node* new_value = nullptr;
-//  int new_memory_size = memory_size() * pow2size;
-//  if (in(MemNode::ValueIn)->Opcode() == Op_ConI) {
-//    // Collect all constants
-//    jlong con = 0;
-//    jlong bits_per_store = memory_size() * 8;
-//    jlong mask = (((jlong)1) << bits_per_store) - 1;
-//    for (int i = 0; i < pow2size; i++) {
-//      jlong con_i = merge_list.at(i)->in(MemNode::ValueIn)->get_int();
-//      con = con << bits_per_store;
-//      con = con | (mask & con_i);
-//    }
-//    new_value = phase->longcon(con);
-//  } else {
-//    Node* first = merge_list.at(pow2size-1);
-//    new_value = first->in(MemNode::ValueIn);
-//    Node* base_last;
-//    jint shift_last;
-//    bool is_true = is_con_RShift(in(MemNode::ValueIn), base_last, shift_last);
-//    assert(is_true, "must detect con RShift");
-//    if (new_value != base_last && new_value->Opcode() == Op_ConvL2I) {
-//      // look through
-//      new_value = new_value->in(1);
-//    }
-//    if (new_value != base_last) {
-//      // new_value is not the base
-//      return nullptr;
-//    }
-//  }
-//
-//  if (phase->type(new_value)->isa_long() != nullptr && new_memory_size <= 4) {
-//    new_value = phase->transform(new ConvL2INode(new_value));
-//  }
-//
-//  assert((phase->type(new_value)->isa_int() != nullptr && new_memory_size <= 4) ||
-//         (phase->type(new_value)->isa_long() != nullptr && new_memory_size == 8),
-//         "new_value is either int or long, and new_memory_size is small enough");
-//
-//  Node* first = merge_list.at(pow2size-1);
-//  Node* new_ctrl = in(MemNode::Control); // must take last: after all RangeChecks
-//  Node* new_mem  = first->in(MemNode::Memory);
-//  Node* new_adr  = first->in(MemNode::Address);
-//  const TypePtr* new_adr_type = adr_type();
-//  BasicType bt = T_ILLEGAL;
-//  switch (new_memory_size) {
-//    case 2: bt = T_SHORT; break;
-//    case 4: bt = T_INT;   break;
-//    case 8: bt = T_LONG;  break;
-//  }
-//
-//  StoreNode* new_store = StoreNode::make(*phase, new_ctrl, new_mem, new_adr,
-//                                         new_adr_type, new_value, bt, MemNode::unordered);
-//  // Marking the store mismatched is sufficient to prevent reordering, since array stores
-//  // are all on the same slice. Hence, we need no barriers.
-//  new_store->set_mismatched_access();
-//
-//  // Constants above may now also be be packed -> put candidate on worklist
-//  phase->is_IterGVN()->_worklist.push(new_mem);
-//
-//#ifdef ASSERT
-//  if (TraceMergeStores) {
-//    stringStream ss;
-//    ss.print_cr("[TraceMergeStores]: Replace");
-//    for (int i = pow2size - 1; i >= 0; i--) {
-//      merge_list.at(i)->dump("\n", false, &ss);
-//    }
-//    ss.print_cr("[TraceMergeStores]: with");
-//    new_store->dump("\n", false, &ss);
-//    tty->print("%s", ss.as_string());
-//  }
-//#endif
-//
-//  return new_store;
-//}
 
 //------------------------------Value-----------------------------------------
 const Type* StoreNode::Value(PhaseGVN* phase) const {
