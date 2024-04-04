@@ -26,6 +26,7 @@
 package java.util;
 
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * This class provides a skeletal implementation of the {@link List}
@@ -201,6 +202,27 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      * {@inheritDoc}
      *
      * @implSpec
+     * This implementation first gets a list iterator (with
+     * {@code listIterator()}).  Then, it iterates over the list until a
+     * matching element is found or the beginning of the list is reached.
+     *
+     * @throws NullPointerException {@inheritDoc}
+     */
+    public int indexOf(Predicate<? super E> filter) {
+        ListIterator<E> it = listIterator();
+        while (it.hasNext()) {
+            E e = it.next();
+            if (filter.test(e)) {
+                return it.previousIndex();
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec
      * This implementation first gets a list iterator that points to the end
      * of the list (with {@code listIterator(size())}).  Then, it iterates
      * backwards over the list until the specified element is found, or the
@@ -219,6 +241,28 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
             while (it.hasPrevious())
                 if (o.equals(it.previous()))
                     return it.nextIndex();
+        }
+        return -1;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec
+     * This implementation first gets a list iterator that points to the end
+     * of the list (with {@code listIterator(size())}).  Then, it iterates
+     * backwards over the list until the matching element is found, or the
+     * beginning of the list is reached.
+     *
+     * @throws NullPointerException {@inheritDoc}
+     */
+    public int lastIndexOf(Predicate<? super E> filter) {
+        ListIterator<E> it = listIterator(size());
+        while (it.hasPrevious()) {
+            E e = it.previous();
+            if (filter.test(e)) {
+                return it.nextIndex();
+            }
         }
         return -1;
     }
