@@ -31,16 +31,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.concurrent.ForkJoinPool;
-import java.util.function.BinaryOperator;
-import java.util.function.Consumer;
-import java.util.function.DoubleBinaryOperator;
-import java.util.function.IntBinaryOperator;
-import java.util.function.IntFunction;
-import java.util.function.IntToDoubleFunction;
-import java.util.function.IntToLongFunction;
-import java.util.function.IntUnaryOperator;
-import java.util.function.LongBinaryOperator;
-import java.util.function.UnaryOperator;
+import java.util.function.*;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -4246,6 +4237,15 @@ public final class Arrays {
                     if (o.equals(a[i]))
                         return i;
             }
+            return -1;
+        }
+
+        @Override
+        public int indexOf(Predicate<? super E> filter) {
+            E[] a = this.a;
+            for (int i = 0; i < a.length; i++)
+                if (filter.test(a[i]))
+                    return i;
             return -1;
         }
 
