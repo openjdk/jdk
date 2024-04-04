@@ -174,6 +174,7 @@ class VM_Version : public Abstract_VM_Version {
   //  RVA20U64
   //  RVA22U64
   //  RVA23U64
+  // NOTE: we only enable the mandatory extensions, not optional extension.
   #define RV_ENABLE_EXTENSION(UseExtension)     \
     if (FLAG_IS_DEFAULT(UseExtension)) {        \
       FLAG_SET_DEFAULT(UseExtension, true);     \
@@ -188,11 +189,9 @@ class VM_Version : public Abstract_VM_Version {
   // https://github.com/riscv/riscv-profiles/blob/main/profiles.adoc#rva22-profiles
   #define RV_USE_RVA22U64                            \
     RV_ENABLE_EXTENSION(UseRVC)                      \
-    RV_ENABLE_EXTENSION(UseRVV)                      \
     RV_ENABLE_EXTENSION(UseZba)                      \
     RV_ENABLE_EXTENSION(UseZbb)                      \
     RV_ENABLE_EXTENSION(UseZbs)                      \
-    RV_ENABLE_EXTENSION(UseZfh)                      \
     RV_ENABLE_EXTENSION(UseZic64b)                   \
     RV_ENABLE_EXTENSION(UseZicbom)                   \
     RV_ENABLE_EXTENSION(UseZicbop)                   \
@@ -205,18 +204,15 @@ class VM_Version : public Abstract_VM_Version {
   #define RV_USE_RVA23U64                           \
     RV_ENABLE_EXTENSION(UseRVC)                     \
     RV_ENABLE_EXTENSION(UseRVV)                     \
-    RV_ENABLE_EXTENSION(UseZacas)                   \
     RV_ENABLE_EXTENSION(UseZba)                     \
     RV_ENABLE_EXTENSION(UseZbb)                     \
     RV_ENABLE_EXTENSION(UseZbs)                     \
-    RV_ENABLE_EXTENSION(UseZfh)                     \
     RV_ENABLE_EXTENSION(UseZcb)                     \
     RV_ENABLE_EXTENSION(UseZic64b)                  \
     RV_ENABLE_EXTENSION(UseZicbom)                  \
     RV_ENABLE_EXTENSION(UseZicbop)                  \
     RV_ENABLE_EXTENSION(UseZicboz)                  \
     RV_ENABLE_EXTENSION(UseZihintpause)             \
-    RV_ENABLE_EXTENSION(UseZvfh)                    \
 
   static void useRVA23U64Profile();
 
