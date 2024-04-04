@@ -129,7 +129,7 @@ bool ScavengableNMethods::has_scavengable_oops(nmethod* nm) {
 }
 
 // Walk the list of methods which might contain oops to the java heap.
-void ScavengableNMethods::nmethods_do_and_prune(CodeBlobToOopClosure* cl) {
+void ScavengableNMethods::nmethods_do_and_prune(NMethodToOopClosure* cl) {
   assert_locked_or_safepoint(CodeCache_lock);
 
   debug_only(mark_on_list_nmethods());
@@ -142,7 +142,7 @@ void ScavengableNMethods::nmethods_do_and_prune(CodeBlobToOopClosure* cl) {
     assert(data.on_list(), "else shouldn't be on this list");
 
     if (cl != nullptr) {
-      cl->do_code_blob(cur);
+      cl->do_nmethod(cur);
     }
 
     nmethod* const next = data.next();
@@ -192,7 +192,7 @@ void ScavengableNMethods::prune_unlinked_nmethods() {
 }
 
 // Walk the list of methods which might contain oops to the java heap.
-void ScavengableNMethods::nmethods_do(CodeBlobToOopClosure* cl) {
+void ScavengableNMethods::nmethods_do(NMethodToOopClosure* cl) {
   nmethods_do_and_prune(cl);
 }
 

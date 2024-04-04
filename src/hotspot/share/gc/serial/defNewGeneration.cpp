@@ -702,9 +702,9 @@ void DefNewGeneration::collect(bool   full,
     RootScanClosure root_cl{this};
     CLDScanClosure cld_cl{this};
 
-    MarkingCodeBlobClosure code_cl(&root_cl,
-                                   CodeBlobToOopClosure::FixRelocations,
-                                   false /* keepalive_nmethods */);
+    MarkingNMethodClosure code_cl(&root_cl,
+                                  NMethodToOopClosure::FixRelocations,
+                                  false /* keepalive_nmethods */);
 
     heap->process_roots(SerialHeap::SO_ScavengeCodeCache,
                         &root_cl,

@@ -286,7 +286,7 @@ void HeapRegion::remove_code_root(nmethod* nm) {
   rem_set()->remove_code_root(nm);
 }
 
-void HeapRegion::code_roots_do(CodeBlobClosure* blk) const {
+void HeapRegion::code_roots_do(NMethodClosure* blk) const {
   rem_set()->code_roots_do(blk);
 }
 
@@ -328,28 +328,27 @@ public:
   bool has_oops_in_region() { return _has_oops_in_region; }
 };
 
-class VerifyCodeRootCodeBlobClosure: public CodeBlobClosure {
+class VerifyCodeRootNMethodClosure: public NMethodClosure {
   const HeapRegion* _hr;
   bool _failures;
 public:
-  VerifyCodeRootCodeBlobClosure(const HeapRegion* hr) :
+  VerifyCodeRootNMethodClosure(const HeapRegion* hr) :
     _hr(hr), _failures(false) {}
 
-  void do_code_blob(CodeBlob* cb) {
-    nmethod* nm = (cb == nullptr) ? nullptr : cb->as_nmethod_or_null();
-    if (nm != nullptr) {
-      // Verify that the nemthod is live
-      VerifyCodeRootOopClosure oop_cl(_hr);
-      nm->oops_do(&oop_cl);
-      if (!oop_cl.has_oops_in_region()) {
-        log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has nmethod " PTR_FORMAT " in its code roots with no pointers into region",
-                              p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
-        _failures = true;
-      } else if (oop_cl.failures()) {
-        log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has other failures for nmethod " PTR_FORMAT,
-                              p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
-        _failures = true;
-      }
+  void do_nmethod(nmethod* nm) {
+    assert(nm != nullptr, "Sanity");
+
+    // Verify that the nmethod is live
+    VerifyCodeRootOopClosure oop_cl(_hr);
+    nm->oops_do(&oop_cl);
+    if (!oop_cl.has_oops_in_region()) {
+      log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has nmethod " PTR_FORMAT " in its code roots with no pointers into region",
+          p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
+      _failures = true;
+    } else if (oop_cl.failures()) {
+      log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has other failures for nmethod " PTR_FORMAT,
+          p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
+      _failures = true;
     }
   }
 
@@ -395,10 +394,10 @@ bool HeapRegion::verify_code_roots(VerifyOption vo) const {
     return has_code_roots;
   }
 
-  VerifyCodeRootCodeBlobClosure cb_cl(this);
-  code_roots_do(&cb_cl);
+  VerifyCodeRootNMethodClosure nm_cl(this);
+  code_roots_do(&nm_cl);
 
-  return cb_cl.failures();
+  return nm_cl.failures();
 }
 
 void HeapRegion::print() const { print_on(tty); }
