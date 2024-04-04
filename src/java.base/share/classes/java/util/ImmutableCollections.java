@@ -604,12 +604,34 @@ class ImmutableCollections {
             }
         }
 
+        @SuppressWarnings("unchecked")
+        public int indexOf(Predicate<? super E> filter) {
+            if (filter.test(e0)) {
+                return 0;
+            } else if (e1 != EMPTY && filter.test((E)e1)) {
+                return 1;
+            } else {
+                return -1;
+            }
+        }
+
         @Override
         public int lastIndexOf(Object o) {
             Objects.requireNonNull(o);
             if (e1 != EMPTY && o.equals(e1)) {
                 return 1;
             } else if (o.equals(e0)) {
+                return 0;
+            } else {
+                return -1;
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        public int lastIndexOf(Predicate<? super E> filter) {
+            if (e1 != EMPTY && filter.test((E)e1)) {
+                return 1;
+            } else if (filter.test(e0)) {
                 return 0;
             } else {
                 return -1;
