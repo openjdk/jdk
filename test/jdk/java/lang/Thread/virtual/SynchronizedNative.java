@@ -100,7 +100,7 @@ class SynchronizedNative {
             }
             assertFalse(Thread.holdsLock(lock));
 
-            // enter with synchronized native method, renter with synchronized statement
+            // enter with synchronized native method, reenter with synchronized statement
             runWithSynchronizedNative(() -> {
                 assertTrue(Thread.holdsLock(lock));
                 synchronized (lock) {
@@ -271,7 +271,7 @@ class SynchronizedNative {
             }
             assertFalse(Thread.holdsLock(lock));
 
-            // enter with JNI MonitorEnter, renter with synchronized statement
+            // enter with JNI MonitorEnter, reenter with synchronized statement
             runWithMonitorEnteredInNative(lock, () -> {
                 assertTrue(Thread.holdsLock(lock));
                 synchronized (lock) {
@@ -281,7 +281,7 @@ class SynchronizedNative {
             });
             assertFalse(Thread.holdsLock(lock));
 
-            // enter with JNI MonitorEnter, renter with JNI MonitorEnter
+            // enter with JNI MonitorEnter, reenter with JNI MonitorEnter
             runWithMonitorEnteredInNative(lock, () -> {
                 assertTrue(Thread.holdsLock(lock));
                 runWithMonitorEnteredInNative(lock, () -> {
