@@ -1148,12 +1148,12 @@ public abstract class PathGraphics extends ProxyGraphics2D {
 
     public static BufferedImage convertToBufferedImage(MultiResolutionImage multiResolutionImage,
                                                        double width, double height ) {
-        Image resolutionImage = multiResolutionImage.getResolutionVariant(width,height);
+        Image resolutionImage = multiResolutionImage.getResolutionVariant(width, height);
         BufferedImage bufferedImage = new BufferedImage(resolutionImage.getWidth(null),
                                                         resolutionImage.getHeight(null),
                                                         BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = bufferedImage.createGraphics();
-        g2d.drawImage(resolutionImage, 0, 0, (int)width, (int)height,null);
+        g2d.drawImage(resolutionImage, 0, 0, (int)width, (int)height, null);
         return bufferedImage;
     }
 
