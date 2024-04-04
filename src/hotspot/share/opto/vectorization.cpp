@@ -296,8 +296,7 @@ void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& memory_pred_
 // before use. With a single pass, we can compute the depth of every node, since we can
 // assume that the depth of all preds is already computed when we compute the depth of use.
 void VLoopDependencyGraph::compute_depth() {
-  for (int i = 0; i < _body.body().length(); i++) {
-    Node* n = _body.body().at(i);
+  auto find_max_pred_depth = [&] (const Node* n) {
     int max_pred_depth = 0;
     if (!n->is_Phi()) { // ignore backedge
       for (PredsIterator it(*this, n); !it.done(); it.next()) {
@@ -307,21 +306,18 @@ void VLoopDependencyGraph::compute_depth() {
         }
       }
     }
-    set_depth(n, max_pred_depth + 1);
+    return max_pred_depth;
+  };
+
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    set_depth(n, find_max_pred_depth(n) + 1);
   }
 
 #ifdef ASSERT
   for (int i = 0; i < _body.body().length(); i++) {
     Node* n = _body.body().at(i);
-    int max_pred_depth = 0;
-    if (!n->is_Phi()) { // ignore backedge
-      for (PredsIterator it(*this, n); !it.done(); it.next()) {
-        Node* pred = it.current();
-        if (_vloop.in_bb(pred)) {
-          max_pred_depth = MAX2(max_pred_depth, depth(pred));
-        }
-      }
-    }
+    int max_pred_depth = find_max_pred_depth(n);
     if (depth(n) != max_pred_depth + 1) {
       print();
       tty->print_cr("Incorrect depth: %d vs %d", depth(n), max_pred_depth + 1);
