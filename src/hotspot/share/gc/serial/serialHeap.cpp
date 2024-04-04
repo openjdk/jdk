@@ -31,7 +31,7 @@
 #include "compiler/oopMap.hpp"
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/defNewGeneration.inline.hpp"
-#include "gc/serial/markSweep.hpp"
+#include "gc/serial/serialFullGC.hpp"
 #include "gc/serial/serialHeap.hpp"
 #include "gc/serial/serialMemoryPools.hpp"
 #include "gc/serial/serialVMOperations.hpp"
@@ -249,7 +249,7 @@ void SerialHeap::post_initialize() {
 
   def_new_gen->ref_processor_init();
 
-  MarkSweep::initialize();
+  SerialFullGC::initialize();
 
   ScavengableNMethods::initialize(&_is_scavengable);
 }
@@ -560,7 +560,7 @@ void SerialHeap::do_collection(bool full,
 
   if (do_full_collection) {
     GCIdMark gc_id_mark;
-    GCTraceCPUTime tcpu(MarkSweep::gc_tracer());
+    GCTraceCPUTime tcpu(SerialFullGC::gc_tracer());
     GCTraceTime(Info, gc) t("Pause Full", nullptr, gc_cause(), true);
 
     print_heap_before_gc();

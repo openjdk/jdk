@@ -41,7 +41,7 @@
 //
 // Generation                      - abstract base class
 // - DefNewGeneration              - allocation area (copy collected)
-// - TenuredGeneration             - tenured (old object) space (markSweepCompact)
+// - TenuredGeneration             - tenured (old object) space (mark-compact)
 //
 // The system configuration currently allowed is:
 //

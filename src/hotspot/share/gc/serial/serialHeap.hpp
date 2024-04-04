@@ -66,7 +66,7 @@ class SerialHeap : public CollectedHeap {
   friend class Generation;
   friend class DefNewGeneration;
   friend class TenuredGeneration;
-  friend class MarkSweep;
+  friend class SerialFullGC;
   friend class VM_GenCollectForAllocation;
   friend class VM_GenCollectFull;
   friend class VM_GC_HeapInspection;
