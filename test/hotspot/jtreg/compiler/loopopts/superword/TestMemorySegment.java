@@ -42,7 +42,7 @@ import java.lang.foreign.*;
  */
 
 public class TestMemorySegment {
-    static int RANGE = 1024*8;
+    static int RANGE = 1024*64;
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final Random RANDOM = Utils.getRandomInstance();
 
@@ -84,8 +84,15 @@ public class TestMemorySegment {
         bL = generateL();
 
         // Add all tests to list
-        tests.put("testArrayBB", () -> { return testArrayBB(aB.clone(), bB.clone()); });
-        tests.put("testMemorySegmentB", () -> { return testMemorySegmentB(MemorySegment.ofArray(aB.clone())); });
+        tests.put("testArrayBB", () -> {
+          return testArrayBB(aB.clone(), bB.clone());
+        });
+        tests.put("testMemorySegmentBadExitCheck", () -> {
+          return testMemorySegmentBadExitCheck(MemorySegment.ofArray(aB.clone()));
+        });
+        tests.put("testMemorySegmentB", () -> {
+          return testMemorySegmentB(MemorySegment.ofArray(aB.clone()));
+        });
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -96,8 +103,8 @@ public class TestMemorySegment {
         }
     }
 
-    @Warmup(100)
     @Run(test = {"testArrayBB",
+                 "testMemorySegmentBadExitCheck",
                  "testMemorySegmentB"})
     public void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -250,14 +257,28 @@ public class TestMemorySegment {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.STORE_VECTOR,  "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static Object[] testMemorySegmentBadExitCheck(MemorySegment m) {
+        // Exit check: iv < long_value
+	// Is not properly recognized by either CountedLoop or LongCountedLoop
+        for (int i = 0; i < m.byteSize(); i++) {
+            byte v = m.get(ValueLayout.JAVA_BYTE, i);
+            m.set(ValueLayout.JAVA_BYTE, i, (byte)(v + 1));
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testMemorySegmentB(MemorySegment m) {
-        for (int i = 0; i < m.byteSize(); i++) {
-            byte v = (byte)(m.get(ValueLayout.JAVA_BYTE, i) + 1);
-            m.set(ValueLayout.JAVA_BYTE, i, v);
+        for (int i = 0; i < (int)m.byteSize(); i++) {
+            byte v = m.get(ValueLayout.JAVA_BYTE, i);
+            m.set(ValueLayout.JAVA_BYTE, i, (byte)(v + 1));
         }
         return new Object[]{ m };
     }
