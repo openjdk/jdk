@@ -178,11 +178,11 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
     dlerror(); // clear any old error message not fetched
     C_GetFunctionList = (CK_C_GetFunctionList) dlsym(hModule,
             getFunctionListStr);
-    if ((systemErrorMessage = dlerror()) != NULL){
-        p11ThrowIOException(env, systemErrorMessage);
-        goto cleanup;
-    }
     if (C_GetFunctionList == NULL) {
+        if ((systemErrorMessage = dlerror()) != NULL){
+            p11ThrowIOException(env, systemErrorMessage);
+            goto cleanup;
+        }
         TRACE1("Connect: No %s func\n", getFunctionListStr);
         p11ThrowIOException(env, "ERROR: C_GetFunctionList == NULL");
         goto cleanup;
