@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import javax.swing.table.DefaultTableModel;
 /*
  * @test
  * @key headful
- * @bug 8210807
+ * @bug 8210807 8322140
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Test to check if JTable can be printed when JScrollPane added to it.
