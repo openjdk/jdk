@@ -106,10 +106,6 @@ class Universe: AllStatic {
   static OopHandle _msg_metaspace;
   static OopHandle _msg_class_metaspace;
 
-  static OopHandle    _null_ptr_exception_instance;   // preallocated exception object
-  static OopHandle    _arithmetic_exception_instance; // preallocated exception object
-  static OopHandle    _virtual_machine_error_instance; // preallocated exception object
-
   // References waiting to be transferred to the ReferenceHandler
   static OopHandle    _reference_pending_list;
 
@@ -211,9 +207,10 @@ class Universe: AllStatic {
 
   static oop java_mirror(BasicType t);
 
+  static void load_archived_object_instances() NOT_CDS_JAVA_HEAP_RETURN;
 #if INCLUDE_CDS_JAVA_HEAP
   static void set_archived_basic_type_mirror_index(BasicType t, int index);
-  static void update_archived_basic_type_mirrors();
+  static void archive_exception_instances();
 #endif
 
   static oop      main_thread_group();

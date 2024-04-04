@@ -913,12 +913,6 @@ void PSParallelCompact::pre_compact()
     Universe::verify("Before GC");
   }
 
-  // Verify object start arrays
-  if (VerifyObjectStartArray &&
-      VerifyBeforeGC) {
-    heap->old_gen()->verify_object_start_array();
-  }
-
   DEBUG_ONLY(mark_bitmap()->verify_clear();)
   DEBUG_ONLY(summary_data().verify_clear();)
 
@@ -1147,6 +1141,7 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id) {
     _mark_bitmap.mark_obj(obj_beg, obj_len);
     _summary_data.addr_to_region_ptr(obj_beg)->add_live_obj(1);
     region_after_dense_prefix->set_partial_obj_size(1);
+    region_after_dense_prefix->set_partial_obj_addr(obj_beg);
     assert(start_array(id) != nullptr, "sanity");
     start_array(id)->update_for_block(obj_beg, obj_beg + obj_len);
   }
@@ -1532,12 +1527,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
   if (VerifyAfterGC && heap->total_collections() >= VerifyGCStartAt) {
     Universe::verify("After GC");
-  }
-
-  // Re-verify object start arrays
-  if (VerifyObjectStartArray &&
-      VerifyAfterGC) {
-    old_gen->verify_object_start_array();
   }
 
   if (ZapUnusedHeapArea) {

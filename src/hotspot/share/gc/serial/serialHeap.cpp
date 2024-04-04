@@ -31,7 +31,6 @@
 #include "compiler/oopMap.hpp"
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/defNewGeneration.inline.hpp"
-#include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/markSweep.hpp"
 #include "gc/serial/serialHeap.hpp"
 #include "gc/serial/serialMemoryPools.hpp"
@@ -561,7 +560,7 @@ void SerialHeap::do_collection(bool full,
 
   if (do_full_collection) {
     GCIdMark gc_id_mark;
-    GCTraceCPUTime tcpu(GenMarkSweep::gc_tracer());
+    GCTraceCPUTime tcpu(MarkSweep::gc_tracer());
     GCTraceTime(Info, gc) t("Pause Full", nullptr, gc_cause(), true);
 
     print_heap_before_gc();
