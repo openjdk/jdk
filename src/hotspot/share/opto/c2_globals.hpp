@@ -791,8 +791,8 @@
           "Always prune exception handlers")                                \
                                                                             \
   product(bool, UseStoreStoreForCtor, true, DIAGNOSTIC,                     \
-          "Use storestore barrier instead of release barrier for"           \
-          "on constructor exit")                                            \
+          "Use StoreStore barrier instead of Release barrier at the end of" \
+          "constructors")                                                   \
 
 // end of C2_FLAGS
 
