@@ -83,7 +83,6 @@
   template(ChangeBreakpoints)                     \
   template(GetOrSetLocal)                         \
   template(VirtualThreadGetOrSetLocal)            \
-  template(VirtualThreadGetCurrentLocation)       \
   template(ChangeSingleStep)                      \
   template(SetNotifyJvmtiEventsMode)              \
   template(HeapWalkOperation)                     \
