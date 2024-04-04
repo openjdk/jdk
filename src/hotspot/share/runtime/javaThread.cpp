@@ -930,9 +930,12 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     thread_name = os::strdup(name());
   }
 
-  log_info(os, thread)("JavaThread %s (tid: " UINTX_FORMAT ").",
-    exit_type == JavaThread::normal_exit ? "exiting" : "detaching",
-    os::current_thread_id());
+  if (log_is_enabled(Info, os, thread)) {
+    ResourceMark rm(this);
+    log_info(os, thread)("JavaThread %s (name: \"%s\", tid: " UINTX_FORMAT ").",
+                         exit_type == JavaThread::normal_exit ? "exiting" : "detaching",
+                         name(), os::current_thread_id());
+  }
 
   if (log_is_enabled(Debug, os, thread, timer)) {
     _timer_exit_phase3.stop();
