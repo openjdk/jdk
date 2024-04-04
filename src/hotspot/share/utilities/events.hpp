@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,6 +220,9 @@ class Events : AllStatic {
   // A log for generic messages that aren't well categorized.
   static StringEventLog* _messages;
 
+  // A log for generic messages that aren't well categorized and appear rather often/frequent
+  static StringEventLog* _frequent_messages;
+
   // A log for VM Operations
   static StringEventLog* _vm_operations;
 
@@ -259,6 +262,8 @@ class Events : AllStatic {
   // Logs a generic message with timestamp and format as printf.
   static void log(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
+  static void log_frequent(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+
   static void log_vm_operation(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
   static void log_zgc_phase_switch(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
@@ -286,6 +291,15 @@ inline void Events::log(Thread* thread, const char* format, ...) {
     va_list ap;
     va_start(ap, format);
     _messages->logv(thread, format, ap);
+    va_end(ap);
+  }
+}
+
+inline void Events::log_frequent(Thread* thread, const char* format, ...) {
+  if (LogEvents && _frequent_messages != nullptr) {
+    va_list ap;
+    va_start(ap, format);
+    _frequent_messages->logv(thread, format, ap);
     va_end(ap);
   }
 }

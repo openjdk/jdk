@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 
 EventLog* Events::_logs = nullptr;
 StringEventLog* Events::_messages = nullptr;
+StringEventLog* Events::_frequent_messages = nullptr;
 StringEventLog* Events::_vm_operations = nullptr;
 StringEventLog* Events::_zgc_phase_switch = nullptr;
 ExceptionsEventLog* Events::_exceptions = nullptr;
@@ -97,6 +98,7 @@ void Events::print() {
 void Events::init() {
   if (LogEvents) {
     _messages = new StringEventLog("Events", "events");
+    _frequent_messages = new StringEventLog("Frequent Events", "freqevents");
     _vm_operations = new StringEventLog("VM Operations", "vmops");
     if (UseZGC) {
       _zgc_phase_switch = new StringEventLog("ZGC Phase Switch", "zgcps");
