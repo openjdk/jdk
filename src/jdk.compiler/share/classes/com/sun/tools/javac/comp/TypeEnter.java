@@ -344,9 +344,16 @@ public class TypeEnter implements Completer {
             importAll(make.at(tree.pos()).Import(make.Select(make.QualIdent(javaLang.owner), javaLang), false),
                 javaLang, env);
 
-            if (allowStringTemplates &&
-                peekTypeExists(env, syms.stringTemplateType.tsym)) {
-                doImport(make.Import(make.Select(make.QualIdent(syms.stringTemplateType.tsym), names.STR), true));
+            boolean prevPreviewCheck = chk.disablePreviewCheck;
+
+            try {
+                chk.disablePreviewCheck = true;
+                if (allowStringTemplates &&
+                    peekTypeExists(env, syms.stringTemplateType.tsym)) {
+                    doImport(make.Import(make.Select(make.QualIdent(syms.stringTemplateType.tsym), names.STR), true));
+                }
+            } finally {
+                chk.disablePreviewCheck = prevPreviewCheck;
             }
 
             List<JCTree> defs = tree.defs;
