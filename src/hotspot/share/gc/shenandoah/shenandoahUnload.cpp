@@ -78,7 +78,7 @@ public:
 
 class ShenandoahIsUnloadingBehaviour : public IsUnloadingBehaviour {
 public:
-  virtual bool has_dead_oop(nmethod* const nm) const {
+  virtual bool has_dead_oop(nmethod* nm) const {
     assert(ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress(), "Only for this phase");
     ShenandoahNMethod* data = ShenandoahNMethod::gc_data(nm);
     ShenandoahReentrantLocker locker(data->lock());
@@ -90,20 +90,20 @@ public:
 
 class ShenandoahCompiledICProtectionBehaviour : public CompiledICProtectionBehaviour {
 public:
-  virtual bool lock(nmethod* const nm) {
+  virtual bool lock(nmethod* nm) {
     ShenandoahReentrantLock* const lock = ShenandoahNMethod::lock_for_nmethod(nm);
     assert(lock != nullptr, "Not yet registered?");
     lock->lock();
     return true;
   }
 
-  virtual void unlock(nmethod* const nm) {
+  virtual void unlock(nmethod* nm) {
     ShenandoahReentrantLock* const lock = ShenandoahNMethod::lock_for_nmethod(nm);
     assert(lock != nullptr, "Not yet registered?");
     lock->unlock();
   }
 
-  virtual bool is_safe(nmethod* const nm) {
+  virtual bool is_safe(nmethod* nm) {
     if (SafepointSynchronize::is_at_safepoint() || nm->is_unloading()) {
       return true;
     }

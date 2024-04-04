@@ -1778,7 +1778,7 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
     return;
   }
 
-  // The check above makes sure this is a nmethod.
+  // The check above makes sure this is an nmethod.
   nmethod* caller = cb->as_nmethod();
 
   // Get the return PC for the passed caller PC.

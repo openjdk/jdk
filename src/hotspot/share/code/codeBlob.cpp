@@ -264,7 +264,7 @@ BufferBlob* BufferBlob::create(const char* name, uint buffer_size) {
   assert(name != nullptr, "must provide a name");
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) BufferBlob(name, CodeBlobKind::Blob_Buffer, size);
+    blob = new (size) BufferBlob(name, CodeBlobKind::Buffer, size);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
@@ -286,7 +286,7 @@ BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
   assert(name != nullptr, "must provide a name");
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) BufferBlob(name, CodeBlobKind::Blob_Buffer, cb, size);
+    blob = new (size) BufferBlob(name, CodeBlobKind::Buffer, cb, size);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
@@ -307,7 +307,7 @@ void BufferBlob::free(BufferBlob *blob) {
 // Implementation of AdapterBlob
 
 AdapterBlob::AdapterBlob(int size, CodeBuffer* cb) :
-  BufferBlob("I2C/C2I adapters", CodeBlobKind::Blob_Adapter, cb, size) {
+  BufferBlob("I2C/C2I adapters", CodeBlobKind::Adapter, cb, size) {
   CodeCache::commit(this);
 }
 
@@ -342,7 +342,7 @@ void* VtableBlob::operator new(size_t s, unsigned size) throw() {
 }
 
 VtableBlob::VtableBlob(const char* name, int size) :
-  BufferBlob(name, CodeBlobKind::Blob_Vtable, size) {
+  BufferBlob(name, CodeBlobKind::Vtable, size) {
 }
 
 VtableBlob* VtableBlob::create(const char* name, int buffer_size) {
@@ -413,7 +413,7 @@ RuntimeStub::RuntimeStub(
   OopMapSet*  oop_maps,
   bool        caller_must_gc_arguments
 )
-: RuntimeBlob(name, CodeBlobKind::Blob_Runtime_Stub, cb, size, sizeof(RuntimeStub),
+: RuntimeBlob(name, CodeBlobKind::Runtime_Stub, cb, size, sizeof(RuntimeStub),
               frame_complete, frame_size, oop_maps, caller_must_gc_arguments)
 {
 }
@@ -470,7 +470,7 @@ DeoptimizationBlob::DeoptimizationBlob(
   int         unpack_with_reexecution_offset,
   int         frame_size
 )
-: SingletonBlob("DeoptimizationBlob", CodeBlobKind::Blob_Deoptimization, cb,
+: SingletonBlob("DeoptimizationBlob", CodeBlobKind::Deoptimization, cb,
                 size, sizeof(DeoptimizationBlob), frame_size, oop_maps)
 {
   _unpack_offset           = unpack_offset;
@@ -520,7 +520,7 @@ UncommonTrapBlob::UncommonTrapBlob(
   OopMapSet*  oop_maps,
   int         frame_size
 )
-: SingletonBlob("UncommonTrapBlob", CodeBlobKind::Blob_Uncommon_Trap, cb,
+: SingletonBlob("UncommonTrapBlob", CodeBlobKind::Uncommon_Trap, cb,
                 size, sizeof(UncommonTrapBlob), frame_size, oop_maps)
 {}
 
@@ -557,7 +557,7 @@ ExceptionBlob::ExceptionBlob(
   OopMapSet*  oop_maps,
   int         frame_size
 )
-: SingletonBlob("ExceptionBlob", CodeBlobKind::Blob_Exception, cb,
+: SingletonBlob("ExceptionBlob", CodeBlobKind::Exception, cb,
                 size, sizeof(ExceptionBlob), frame_size, oop_maps)
 {}
 
@@ -593,7 +593,7 @@ SafepointBlob::SafepointBlob(
   OopMapSet*  oop_maps,
   int         frame_size
 )
-: SingletonBlob("SafepointBlob", CodeBlobKind::Blob_Safepoint, cb,
+: SingletonBlob("SafepointBlob", CodeBlobKind::Safepoint, cb,
                 size, sizeof(SafepointBlob), frame_size, oop_maps)
 {}
 
@@ -620,7 +620,7 @@ SafepointBlob* SafepointBlob::create(
 // Implementation of UpcallStub
 
 UpcallStub::UpcallStub(const char* name, CodeBuffer* cb, int size, jobject receiver, ByteSize frame_data_offset) :
-  RuntimeBlob(name, CodeBlobKind::Blob_Upcall, cb, size, sizeof(UpcallStub),
+  RuntimeBlob(name, CodeBlobKind::Upcall, cb, size, sizeof(UpcallStub),
               CodeOffsets::frame_never_safe, 0 /* no frame size */,
               /* oop maps = */ nullptr, /* caller must gc arguments = */ false),
   _receiver(receiver),

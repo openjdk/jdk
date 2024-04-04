@@ -75,7 +75,7 @@ public:
 
 class XIsUnloadingBehaviour : public IsUnloadingBehaviour {
 public:
-  virtual bool has_dead_oop(nmethod* const nm) const {
+  virtual bool has_dead_oop(nmethod* nm) const {
     XReentrantLock* const lock = XNMethod::lock_for_nmethod(nm);
     XLocker<XReentrantLock> locker(lock);
     XIsUnloadingOopClosure cl;
@@ -86,18 +86,18 @@ public:
 
 class XCompiledICProtectionBehaviour : public CompiledICProtectionBehaviour {
 public:
-  virtual bool lock(nmethod* const nm) {
+  virtual bool lock(nmethod* nm) {
     XReentrantLock* const lock = XNMethod::lock_for_nmethod(nm);
     lock->lock();
     return true;
   }
 
-  virtual void unlock(nmethod* const nm) {
+  virtual void unlock(nmethod* nm) {
     XReentrantLock* const lock = XNMethod::lock_for_nmethod(nm);
     lock->unlock();
   }
 
-  virtual bool is_safe(nmethod* const nm) {
+  virtual bool is_safe(nmethod* nm) {
     if (SafepointSynchronize::is_at_safepoint() || nm->is_unloading()) {
       return true;
     }

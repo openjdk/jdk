@@ -54,7 +54,7 @@ inline bool nmethod::is_deopt_mh_entry(address pc) {
 // nmethod::get_deopt_original_pc
 //
 // Return the original PC for the given PC if:
-// (a) the given PC belongs to a nmethod and
+// (a) the given PC belongs to an nmethod and
 // (b) it is a deopt PC
 
 inline address nmethod::get_deopt_original_pc(const frame* fr) {

@@ -75,19 +75,19 @@ enum class CodeBlobType {
 //   - data space
 
 enum class CodeBlobKind : u1 {
-  Blob_None,
-  Blob_Nmethod,
-  Blob_Buffer,
-  Blob_Adapter,
-  Blob_Vtable,
-  Blob_MH_Adapter,
-  Blob_Runtime_Stub,
-  Blob_Deoptimization,
-  Blob_Exception,
-  Blob_Safepoint,
-  Blob_Uncommon_Trap,
-  Blob_Upcall,
-  Blob_Number_Of_Kinds
+  None,
+  Nmethod,
+  Buffer,
+  Adapter,
+  Vtable,
+  MH_Adapter,
+  Runtime_Stub,
+  Deoptimization,
+  Exception,
+  Safepoint,
+  Uncommon_Trap,
+  Upcall,
+  Number_Of_Kinds
 };
 
 class UpcallStub; // for as_upcall_stub()
@@ -155,17 +155,17 @@ public:
   virtual void purge(bool free_code_cache_data, bool unregister_nmethod);
 
   // Typing
-  bool is_nmethod() const                     { return _kind == CodeBlobKind::Blob_Nmethod; }
-  bool is_buffer_blob() const                 { return _kind == CodeBlobKind::Blob_Buffer; }
-  bool is_runtime_stub() const                { return _kind == CodeBlobKind::Blob_Runtime_Stub; }
-  bool is_deoptimization_stub() const         { return _kind == CodeBlobKind::Blob_Deoptimization; }
-  bool is_uncommon_trap_stub() const          { return _kind == CodeBlobKind::Blob_Uncommon_Trap; }
-  bool is_exception_stub() const              { return _kind == CodeBlobKind::Blob_Exception; }
-  bool is_safepoint_stub() const              { return _kind == CodeBlobKind::Blob_Safepoint; }
-  bool is_adapter_blob() const                { return _kind == CodeBlobKind::Blob_Adapter; }
-  bool is_vtable_blob() const                 { return _kind == CodeBlobKind::Blob_Vtable; }
-  bool is_method_handles_adapter_blob() const { return _kind == CodeBlobKind::Blob_MH_Adapter; }
-  bool is_upcall_stub() const                 { return _kind == CodeBlobKind::Blob_Upcall; }
+  bool is_nmethod() const                     { return _kind == CodeBlobKind::Nmethod; }
+  bool is_buffer_blob() const                 { return _kind == CodeBlobKind::Buffer; }
+  bool is_runtime_stub() const                { return _kind == CodeBlobKind::Runtime_Stub; }
+  bool is_deoptimization_stub() const         { return _kind == CodeBlobKind::Deoptimization; }
+  bool is_uncommon_trap_stub() const          { return _kind == CodeBlobKind::Uncommon_Trap; }
+  bool is_exception_stub() const              { return _kind == CodeBlobKind::Exception; }
+  bool is_safepoint_stub() const              { return _kind == CodeBlobKind::Safepoint; }
+  bool is_adapter_blob() const                { return _kind == CodeBlobKind::Adapter; }
+  bool is_vtable_blob() const                 { return _kind == CodeBlobKind::Vtable; }
+  bool is_method_handles_adapter_blob() const { return _kind == CodeBlobKind::MH_Adapter; }
+  bool is_upcall_stub() const                 { return _kind == CodeBlobKind::Upcall; }
 
   // Casting
   nmethod* as_nmethod_or_null()               { return is_nmethod() ? (nmethod*) this : nullptr; }
@@ -325,11 +325,11 @@ class BufferBlob: public RuntimeBlob {
   static void free(BufferBlob* buf);
 
   // GC/Verification support
-  virtual void preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f) override { /* nothing to do */ }
+  void preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f) override { /* nothing to do */ }
 
-  virtual void verify() override;
-  virtual void print_on(outputStream* st) const override;
-  virtual void print_value_on(outputStream* st) const override;
+  void verify() override;
+  void print_on(outputStream* st) const override;
+  void print_value_on(outputStream* st) const override;
 };
 
 
@@ -362,7 +362,7 @@ public:
 
 class MethodHandlesAdapterBlob: public BufferBlob {
 private:
-  MethodHandlesAdapterBlob(int size): BufferBlob("MethodHandles adapters", CodeBlobKind::Blob_MH_Adapter, size) {}
+  MethodHandlesAdapterBlob(int size): BufferBlob("MethodHandles adapters", CodeBlobKind::MH_Adapter, size) {}
 
 public:
   // Creation
@@ -406,11 +406,11 @@ class RuntimeStub: public RuntimeBlob {
   address entry_point() const                    { return code_begin(); }
 
   // GC/Verification support
-  virtual void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f) override { /* nothing to do */ }
+  void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f) override { /* nothing to do */ }
 
-  virtual void verify() override;
-  virtual void print_on(outputStream* st) const override;
-  virtual void print_value_on(outputStream* st) const override;
+  void verify() override;
+  void print_on(outputStream* st) const override;
+  void print_value_on(outputStream* st) const override;
 };
 
 
@@ -439,10 +439,10 @@ class SingletonBlob: public RuntimeBlob {
   address entry_point()                          { return code_begin(); }
 
   // GC/Verification support
-  virtual void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f) override { /* nothing to do */ }
-  virtual void verify() override; // does nothing
-  virtual void print_on(outputStream* st) const override;
-  virtual void print_value_on(outputStream* st) const override;
+  void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f) override { /* nothing to do */ }
+  void verify() override; // does nothing
+  void print_on(outputStream* st) const override;
+  void print_value_on(outputStream* st) const override;
 };
 
 
@@ -488,7 +488,7 @@ class DeoptimizationBlob: public SingletonBlob {
   );
 
   // Printing
-  virtual void print_value_on(outputStream* st) const override;
+  void print_value_on(outputStream* st) const override;
 
   address unpack() const                         { return code_begin() + _unpack_offset;           }
   address unpack_with_exception() const          { return code_begin() + _unpack_with_exception;   }
@@ -632,12 +632,12 @@ class UpcallStub: public RuntimeBlob {
 
   // GC/Verification support
   void oops_do(OopClosure* f, const frame& frame);
-  virtual void preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f) override;
-  virtual void verify() override;
+  void preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f) override;
+  void verify() override;
 
   // Misc.
-  virtual void print_on(outputStream* st) const override;
-  virtual void print_value_on(outputStream* st) const override;
+  void print_on(outputStream* st) const override;
+  void print_value_on(outputStream* st) const override;
 };
 
 #endif // SHARE_CODE_CODEBLOB_HPP

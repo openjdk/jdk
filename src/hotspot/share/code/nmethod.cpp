@@ -1211,7 +1211,7 @@ nmethod::nmethod(
   ByteSize basic_lock_owner_sp_offset,
   ByteSize basic_lock_sp_offset,
   OopMapSet* oop_maps )
-  : CodeBlob("native nmethod", CodeBlobKind::Blob_Nmethod, code_buffer, nmethod_size, sizeof(nmethod),
+  : CodeBlob("native nmethod", CodeBlobKind::Nmethod, code_buffer, nmethod_size, sizeof(nmethod),
              offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
   _deoptimization_generation(0),
   _method(method),
@@ -1356,7 +1356,7 @@ nmethod::nmethod(
   JVMCINMethodData* jvmci_data
 #endif
   )
-  : CodeBlob("nmethod", CodeBlobKind::Blob_Nmethod, code_buffer, nmethod_size, sizeof(nmethod),
+  : CodeBlob("nmethod", CodeBlobKind::Nmethod, code_buffer, nmethod_size, sizeof(nmethod),
              offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
   _deoptimization_generation(0),
   _method(method),

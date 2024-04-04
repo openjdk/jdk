@@ -28,7 +28,7 @@
 #include "memory/iterator.hpp"
 #include "oops/oopsHierarchy.hpp"
 
-// This is the behaviour for checking if a nmethod is unloading
+// This is the behaviour for checking if an nmethod is unloading
 // or has unloaded due to having phantomly dead oops in it after a GC.
 class IsUnloadingBehaviour {
   static IsUnloadingBehaviour* _current;

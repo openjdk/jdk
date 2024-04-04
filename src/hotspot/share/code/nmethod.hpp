@@ -750,7 +750,7 @@ public:
     return (addr >= code_begin() && addr < verified_entry_point());
   }
 
-  virtual void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f) override;
+  void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f) override;
 
   // implicit exceptions support
   address continuation_for_implicit_div0_exception(address pc) { return continuation_for_implicit_exception(pc, true); }
@@ -768,7 +768,7 @@ public:
   // Serial version used by whitebox test
   void cleanup_inline_caches_whitebox();
 
-  virtual void clear_inline_caches();
+  void clear_inline_caches();
 
   // Execute nmethod barrier code, as if entering through nmethod call.
   void run_nmethod_entry_barrier();
@@ -801,7 +801,7 @@ public:
   void unlink();
 
   // Deallocate this nmethod - called by the GC
-  virtual void purge(bool free_code_cache_data, bool unregister_nmethod) override;
+  void purge(bool free_code_cache_data, bool unregister_nmethod) override;
 
   // See comment at definition of _last_seen_on_stack
   void mark_as_maybe_on_stack();
@@ -889,7 +889,7 @@ public:
   void post_compiled_method_load_event(JvmtiThreadState* state = nullptr);
 
   // verify operations
-  virtual void verify() override;
+  void verify() override;
   void verify_scopes();
   void verify_interrupt_point(address interrupt_point, bool is_inline_cache);
 
@@ -901,8 +901,8 @@ public:
   void decode(outputStream* st) const { decode2(st); } // just delegate here.
 
   // printing support
-  virtual void print()                  const override;
-  void print(outputStream* st)          const;
+  void print()                 const override;
+  void print(outputStream* st) const;
   void print_code();
 
 #if defined(SUPPORT_DATA_STRUCTS)
@@ -931,7 +931,7 @@ public:
   void print_nmethod(bool print_code);
 
   // need to re-define this from CodeBlob else the overload hides it
-  virtual void print_on(outputStream* st) const override { CodeBlob::print_on(st); }
+  void print_on(outputStream* st) const override { CodeBlob::print_on(st); }
   void print_on(outputStream* st, const char* msg) const;
 
   // Logging
@@ -940,7 +940,7 @@ public:
   void log_state_change() const;
 
   // Prints block-level comments, including nmethod specific block labels:
-  virtual void print_block_comment(outputStream* stream, address block_begin) const override {
+  void print_block_comment(outputStream* stream, address block_begin) const override {
 #if defined(SUPPORT_ASSEMBLY) || defined(SUPPORT_ABSTRACT_ASSEMBLY)
     print_nmethod_labels(stream, block_begin);
     CodeBlob::print_block_comment(stream, block_begin);
