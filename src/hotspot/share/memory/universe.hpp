@@ -65,11 +65,11 @@ class Universe: AllStatic {
 
  private:
   // Known classes in the VM
-  static Klass* _typeArrayKlassObjs[T_LONG+1];
-  static Klass* _objectArrayKlassObj;
+  static Klass* _typeArrayKlasses[T_LONG+1];
+  static Klass* _objectArrayKlass;
   // Special int-Array that represents filler objects that are used by GC to overwrite
   // dead objects. References to them are generally an error.
-  static Klass* _fillerArrayKlassObj;
+  static Klass* _fillerArrayKlass;
 
   // Known objects in the VM
   static OopHandle    _main_thread_group;             // Reference to the main thread group object
@@ -174,24 +174,24 @@ class Universe: AllStatic {
   static void set_verify_data(uintptr_t mask, uintptr_t bits) PRODUCT_RETURN;
 
   // Known classes in the VM
-  static Klass* boolArrayKlassObj()                 { return typeArrayKlassObj(T_BOOLEAN); }
-  static Klass* byteArrayKlassObj()                 { return typeArrayKlassObj(T_BYTE); }
-  static Klass* charArrayKlassObj()                 { return typeArrayKlassObj(T_CHAR); }
-  static Klass* intArrayKlassObj()                  { return typeArrayKlassObj(T_INT); }
-  static Klass* shortArrayKlassObj()                { return typeArrayKlassObj(T_SHORT); }
-  static Klass* longArrayKlassObj()                 { return typeArrayKlassObj(T_LONG); }
-  static Klass* floatArrayKlassObj()                { return typeArrayKlassObj(T_FLOAT); }
-  static Klass* doubleArrayKlassObj()               { return typeArrayKlassObj(T_DOUBLE); }
+  static Klass* boolArrayKlass()                 { return typeArrayKlass(T_BOOLEAN); }
+  static Klass* byteArrayKlass()                 { return typeArrayKlass(T_BYTE); }
+  static Klass* charArrayKlass()                 { return typeArrayKlass(T_CHAR); }
+  static Klass* intArrayKlass()                  { return typeArrayKlass(T_INT); }
+  static Klass* shortArrayKlass()                { return typeArrayKlass(T_SHORT); }
+  static Klass* longArrayKlass()                 { return typeArrayKlass(T_LONG); }
+  static Klass* floatArrayKlass()                { return typeArrayKlass(T_FLOAT); }
+  static Klass* doubleArrayKlass()               { return typeArrayKlass(T_DOUBLE); }
 
-  static Klass* objectArrayKlassObj()               { return _objectArrayKlassObj; }
+  static Klass* objectArrayKlass()               { return _objectArrayKlass; }
 
-  static Klass* fillerArrayKlassObj()               { return _fillerArrayKlassObj; }
+  static Klass* fillerArrayKlass()               { return _fillerArrayKlass; }
 
-  static Klass* typeArrayKlassObj(BasicType t) {
+  static Klass* typeArrayKlass(BasicType t) {
     assert((uint)t >= T_BOOLEAN, "range check for type: %s", type2name(t));
     assert((uint)t < T_LONG+1,   "range check for type: %s", type2name(t));
-    assert(_typeArrayKlassObjs[t] != nullptr, "domain check");
-    return _typeArrayKlassObjs[t];
+    assert(_typeArrayKlasses[t] != nullptr, "domain check");
+    return _typeArrayKlasses[t];
   }
 
   // Known objects in the VM
