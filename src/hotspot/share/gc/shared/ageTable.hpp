@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,8 @@ class AgeTable: public CHeapObj<mtGC> {
 
   // Calculate new tenuring threshold based on age information.
   uint compute_tenuring_threshold(size_t desired_survivor_size);
-  void print_age_table(uint tenuring_threshold);
-  void print_on(outputStream* st, uint tenuring_threshold);
+  void print_age_table();
+  void print_on(outputStream* st);
 
  private:
   bool _use_perf_data;
