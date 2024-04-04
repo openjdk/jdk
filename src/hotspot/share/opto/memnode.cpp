@@ -3078,6 +3078,7 @@ bool MergePrimitiveArrayStores::is_adjacent_input_pair(const Node* n1, const Nod
   return true;
 }
 
+// Detect pattern: n = base_out >> shift_out
 bool MergePrimitiveArrayStores::is_con_RShift(const Node* n, Node const*& base_out, jint& shift_out) {
   assert(n != nullptr, "precondition");
 
