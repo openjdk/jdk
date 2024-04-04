@@ -314,9 +314,11 @@ public final class ImageFileCreator {
         final Map<String, List<String>> nonClassResEntries = new HashMap<>();
         final Platform platform = getTargetPlatform(resultResources);
         resultResources.entries().forEach(entry -> {
-            // Note that the jmod_resources file is a resource file, so we cannot
-            // add ourselves due to this condition. However, we want to not add
-            // an old version of the resource file again.
+            // Note that the fs_$module_files file is a resource file itself, so
+            // we cannot add fs_$module_files themselves due to the not(class_or_resources)
+            // condition. However, we also don't want to track 'release' file
+            // entries (not(top) condition) as those are handled by the release
+            // info plugin.
             if (entry.type() != ResourcePoolEntry.Type.CLASS_OR_RESOURCE && entry.type() != ResourcePoolEntry.Type.TOP) {
                 List<String> moduleResources = nonClassResEntries.computeIfAbsent(entry.moduleName(), a -> new ArrayList<>());
 
@@ -369,6 +371,10 @@ public final class ImageFileCreator {
     private static ResourcePoolManager createPoolManager(
             ResourcePool resultResources, BasicImageWriter writer) {
         ResourcePoolManager resources = createBasicResourcePoolManager(resultResources.byteOrder(), writer);
+        // Note that resources are already sorted in the correct order.
+        // The underlying ResourcePoolManager keeps track of entries via
+        // LinkedHashMap, which keeps values in insertion order. Therefore
+        // adding resources here, preserving that same order is OK.
         resultResources.entries().forEach(resources::add);
         return resources;
     }
