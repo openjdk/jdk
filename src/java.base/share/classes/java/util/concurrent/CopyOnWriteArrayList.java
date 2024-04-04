@@ -277,7 +277,7 @@ public class CopyOnWriteArrayList<E>
      *
      * @param filter the predicate to search matching element for
      * @return the index of the last occurrence of the element in
-     * this list at position less than or equal to {@code index};
+     * this list;
      * -1 if the element is not found.
      */
     @SuppressWarnings("unchecked")
@@ -296,7 +296,7 @@ public class CopyOnWriteArrayList<E>
      *
      * @param filter the predicate to search matching element for
      * @return the index of the last occurrence of the element in
-     * this list at position less than or equal to {@code index};
+     * this list;
      * -1 if the element is not found.
      */
     @SuppressWarnings("unchecked")
