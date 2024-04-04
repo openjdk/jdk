@@ -33,6 +33,8 @@
 // Code in this file and the vectorization.cpp contains shared logics and
 // utilities for C2's loop auto-vectorization.
 
+class VPointer;
+
 class VStatus : public StackObj {
 private:
   const char* _failure_reason;
@@ -152,6 +154,10 @@ public:
 
   bool is_trace_dependency_graph() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::DEPENDENCY_GRAPH);
+  }
+
+  bool is_trace_vpointers() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::POINTERS);
   }
 
   bool is_trace_pointer_analysis() const {
@@ -356,6 +362,16 @@ public:
     return _body_idx.at(n->_idx);
   }
 
+  template<typename Callback>
+  void for_each_mem(Callback callback) const {
+    for (int i = 0; i < _body.length(); i++) {
+      MemNode* mem = _body.at(i)->isa_Mem();
+      if (mem != nullptr && _vloop.in_bb(mem)) {
+        callback(mem, i);
+      }
+    }
+  }
+
 private:
   void set_bb_idx(Node* n, int i) {
     _body_idx.at_put_grow(n->_idx, i);
@@ -446,6 +462,45 @@ private:
 };
 
 // Submodule of VLoopAnalyzer.
+// We compute and cache the VPointer for every load and store.
+class VLoopVPointers : public StackObj {
+private:
+  Arena*                   _arena;
+  const VLoop&             _vloop;
+  const VLoopBody&         _body;
+
+  // Array of cached pointers
+  VPointer* _vpointers;
+  int _vpointers_length;
+
+  // Map bb_idx -> index in _vpointers. -1 if not mapped.
+  GrowableArray<int> _bb_idx_to_vpointer;
+
+public:
+  VLoopVPointers(Arena* arena,
+                 const VLoop& vloop,
+                 const VLoopBody& body) :
+    _arena(arena),
+    _vloop(vloop),
+    _body(body),
+    _vpointers(nullptr),
+    _bb_idx_to_vpointer(arena,
+                        vloop.estimated_body_length(),
+                        vloop.estimated_body_length(),
+                        -1) {}
+  NONCOPYABLE(VLoopVPointers);
+
+  void compute_vpointers();
+  const VPointer& vpointer(const MemNode* mem) const;
+  NOT_PRODUCT( void print() const; )
+
+private:
+  void count_vpointers();
+  void allocate_vpointers_array();
+  void compute_and_cache_vpointers();
+};
+
+// Submodule of VLoopAnalyzer.
 // The dependency graph is used to determine if nodes are independent, and can thus potentially
 // be executed in parallel. That is a prerequisite for packing nodes into vector operations.
 // The dependency graph is a combination:
@@ -461,6 +516,7 @@ private:
   const VLoop&             _vloop;
   const VLoopBody&         _body;
   const VLoopMemorySlices& _memory_slices;
+  const VLoopVPointers&    _vpointers;
 
   // bb_idx -> DependenceNode*
   GrowableArray<DependencyNode*> _dependency_nodes;
@@ -472,11 +528,13 @@ public:
   VLoopDependencyGraph(Arena* arena,
                        const VLoop& vloop,
                        const VLoopBody& body,
-                       const VLoopMemorySlices& memory_slices) :
+                       const VLoopMemorySlices& memory_slices,
+                       const VLoopVPointers& pointers) :
     _arena(arena),
     _vloop(vloop),
     _body(body),
     _memory_slices(memory_slices),
+    _vpointers(pointers),
     _dependency_nodes(arena,
                       vloop.estimated_body_length(),
                       vloop.estimated_body_length(),
@@ -570,6 +628,7 @@ private:
   VLoopMemorySlices    _memory_slices;
   VLoopBody            _body;
   VLoopTypes           _types;
+  VLoopVPointers       _vpointers;
   VLoopDependencyGraph _dependency_graph;
 
 public:
@@ -581,7 +640,8 @@ public:
     _memory_slices   (&_arena, vloop),
     _body            (&_arena, vloop, vshared),
     _types           (&_arena, vloop, _body),
-    _dependency_graph(&_arena, vloop, _body, _memory_slices)
+    _vpointers       (&_arena, vloop, _body),
+    _dependency_graph(&_arena, vloop, _body, _memory_slices, _vpointers)
   {
     _success = setup_submodules();
   }
@@ -595,6 +655,7 @@ public:
   const VLoopMemorySlices& memory_slices()       const { return _memory_slices; }
   const VLoopBody& body()                        const { return _body; }
   const VLoopTypes& types()                      const { return _types; }
+  const VLoopVPointers& vpointers()              const { return _vpointers; }
   const VLoopDependencyGraph& dependency_graph() const { return _dependency_graph; }
 
 private:
@@ -678,7 +739,7 @@ class VPointer : public ArenaObj {
   int   invar_factor() const;
 
   // Comparable?
-  bool invar_equals(VPointer& q) {
+  bool invar_equals(const VPointer& q) const {
     assert(_debug_invar == NodeSentinel || q._debug_invar == NodeSentinel ||
            (_invar == q._invar) == (_debug_invar == q._debug_invar &&
                                     _debug_invar_scale == q._debug_invar_scale &&
@@ -686,7 +747,7 @@ class VPointer : public ArenaObj {
     return _invar == q._invar;
   }
 
-  int cmp(VPointer& q) {
+  int cmp(const VPointer& q) const {
     if (valid() && q.valid() &&
         (_adr == q._adr || (_base == _adr && q._base == q._adr)) &&
         _scale == q._scale   && invar_equals(q)) {
@@ -698,7 +759,7 @@ class VPointer : public ArenaObj {
     }
   }
 
-  bool overlap_possible_with_any_in(Node_List* p) {
+  bool overlap_possible_with_any_in(const Node_List* p) const {
     for (uint k = 0; k < p->size(); k++) {
       MemNode* mem = p->at(k)->as_Mem();
       VPointer p_mem(mem, _vloop);
@@ -712,14 +773,14 @@ class VPointer : public ArenaObj {
     return false;
   }
 
-  bool not_equal(VPointer& q)     { return not_equal(cmp(q)); }
-  bool equal(VPointer& q)         { return equal(cmp(q)); }
-  bool comparable(VPointer& q)    { return comparable(cmp(q)); }
+  bool not_equal(const VPointer& q)  const { return not_equal(cmp(q)); }
+  bool equal(const VPointer& q)      const { return equal(cmp(q)); }
+  bool comparable(const VPointer& q) const { return comparable(cmp(q)); }
   static bool not_equal(int cmp)  { return cmp <= NotEqual; }
   static bool equal(int cmp)      { return cmp == Equal; }
   static bool comparable(int cmp) { return cmp < NotComparable; }
 
-  void print();
+  NOT_PRODUCT( void print() const; )
 
 #ifndef PRODUCT
   class Tracer {
