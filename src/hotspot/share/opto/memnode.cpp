@@ -2935,15 +2935,17 @@ StoreNode* MergePrimitiveArrayStores::run() {
 
   // Collect list of stores
   StoreNode* current = _store;
-  while (current != nullptr && merge_list.size() <= merge_list_max_size) {
-    merge_list.push(current);
+  merge_list.push(current);
+  while (current != nullptr && merge_list.size() < merge_list_max_size) {
     Status status = find_adjacent_def_store(current);
     current = status.found_store();
-
-    // We can have at most one RangeCheck.
-    if (status.found_range_check()) {
+    if (current != nullptr) {
       merge_list.push(current);
-      break;
+
+      // We can have at most one RangeCheck.
+      if (status.found_range_check()) {
+        break;
+      }
     }
   }
 
