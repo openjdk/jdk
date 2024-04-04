@@ -268,6 +268,44 @@ public class CopyOnWriteArrayList<E>
     }
 
     /**
+     * Returns the index of the first occurrence of a matching element in
+     * this list, searching backwards from {@code index}, or returns -1 if
+     * the element is not found.
+     * More formally, returns the lowest index {@code i} such that
+     * {@code filter.test(get(i))},
+     * or -1 if there is no such index.
+     *
+     * @param filter the predicate to search matching element for
+     * @return the index of the last occurrence of the element in
+     * this list at position less than or equal to {@code index};
+     * -1 if the element is not found.
+     */
+    @SuppressWarnings("unchecked")
+    public int indexOf(Predicate<? super E> filter) {
+        E[] es = (E[]) getArray();
+        return indexOfRange(filter, es, 0, es.length);
+    }
+
+    /**
+     * Returns the index of the last occurrence of a matching element in
+     * this list, searching backwards from {@code index}, or returns -1 if
+     * the element is not found.
+     * More formally, returns the highest index {@code i} such that
+     * {@code filter.test(get(i))},
+     * or -1 if there is no such index.
+     *
+     * @param filter the predicate to search matching element for
+     * @return the index of the last occurrence of the element in
+     * this list at position less than or equal to {@code index};
+     * -1 if the element is not found.
+     */
+    @SuppressWarnings("unchecked")
+    public int lastIndexOf(Predicate<? super E> filter) {
+        E[] es = (E[]) getArray();
+        return lastIndexOfRange(filter, es, 0, es.length);
+    }
+
+    /**
      * Returns the index of the first occurrence of the specified element in
      * this list, searching forwards from {@code index}, or returns -1 if
      * the element is not found.
