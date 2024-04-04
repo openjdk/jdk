@@ -33,6 +33,7 @@
  * @run main ImplicitImports
 */
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,6 +44,7 @@ import toolbox.TestRunner;
 import toolbox.JavacTask;
 import toolbox.JavaTask;
 import toolbox.Task;
+import toolbox.Task.OutputKind;
 import toolbox.ToolBox;
 
 public class ImplicitImports extends TestRunner {
@@ -133,26 +135,7 @@ public class ImplicitImports extends TestRunner {
     public void testImplicitSimpleIOImport(Path base) throws Exception {
         Path current = base.resolve(".");
 
-        Path patchSrc = current.resolve("patch-src");
-        Path patchClasses = current.resolve("patch-classes");
-        tb.writeJavaFiles(patchSrc,
-                          """
-                          package java.io;
-                          public class SimpleIO {
-                              public static void println(Object o) {
-                                  System.out.println(o);
-                              }
-                          }
-                          """);
-
-        Files.createDirectories(patchClasses);
-
-        new JavacTask(tb)
-            .options("--patch-module", "java.base=" + patchSrc)
-            .outdir(patchClasses)
-            .files(tb.findJavaFiles(patchSrc))
-            .run(Task.Expect.SUCCESS)
-            .writeAll();
+        Path patchClasses = prepareSimpleIOPatch(current);
 
         Path src = current.resolve("src");
         Path classes = current.resolve("classes");
@@ -191,4 +174,72 @@ public class ImplicitImports extends TestRunner {
         }
     }
 
+    @Test
+    public void testNoImplicitImportsForOrdinaryClasses(Path base) throws Exception {
+        Path current = base.resolve(".");
+
+        Path patchClasses = prepareSimpleIOPatch(current);
+
+        Path src = current.resolve("src");
+        Path classes = current.resolve("classes");
+        tb.writeFile(src.resolve("Test.java"),
+                     """
+                     public class Test {
+                         public static void main(String... args) {
+                             List<String> l = new ArrayList<>();
+                             println("Hello, World!");
+                         }
+                     }
+                     """);
+
+        Files.createDirectories(classes);
+
+        var log = new JavacTask(tb)
+                .options("--enable-preview", "--release", SOURCE_VERSION,
+                        "--patch-module", "java.base=" + patchClasses,
+                        "-XDrawDiagnostics")
+                .outdir(classes)
+                .files(tb.findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+        var expectedLog = List.of(
+            "Test.java:3:9: compiler.err.cant.resolve.location: kindname.class, List, , , (compiler.misc.location: kindname.class, Test, null)",
+            "Test.java:3:30: compiler.err.cant.resolve.location: kindname.class, ArrayList, , , (compiler.misc.location: kindname.class, Test, null)",
+            "Test.java:4:9: compiler.err.cant.resolve.location.args: kindname.method, println, , java.lang.String, (compiler.misc.location: kindname.class, Test, null)",
+            "3 errors"
+        );
+
+        if (!Objects.equals(expectedLog, log)) {
+            throw new AssertionError("Incorrect Output, expected: " + expectedLog +
+                                      ", actual: " + log);
+
+        }
+    }
+
+    private Path prepareSimpleIOPatch(Path base) throws IOException {
+        Path patchSrc = base.resolve("patch-src");
+        Path patchClasses = base.resolve("patch-classes");
+        tb.writeJavaFiles(patchSrc,
+                          """
+                          package java.io;
+                          public class SimpleIO {
+                              public static void println(Object o) {
+                                  System.out.println(o);
+                              }
+                          }
+                          """);
+
+        Files.createDirectories(patchClasses);
+
+        new JavacTask(tb)
+            .options("--patch-module", "java.base=" + patchSrc)
+            .outdir(patchClasses)
+            .files(tb.findJavaFiles(patchSrc))
+            .run(Task.Expect.SUCCESS)
+            .writeAll();
+
+        return patchClasses;
+    }
 }
