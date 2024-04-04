@@ -2417,7 +2417,7 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
         // Neither sourcename nor linenumber
         buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "Unknown Source)");
       }
-      CompiledMethod* nm = method->code();
+      nmethod* nm = method->code();
       if (WizardMode && nm != nullptr) {
         os::snprintf_checked(buf + buf_off, buf_size - buf_off, "(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
       }
@@ -2543,7 +2543,7 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
                   RegisterMap::ProcessFrames::skip,
                   RegisterMap::WalkContinuation::include);
   int decode_offset = 0;
-  CompiledMethod* nm = nullptr;
+  nmethod* nm = nullptr;
   bool skip_fillInStackTrace_check = false;
   bool skip_throwableInit_check = false;
   bool skip_hidden = !ShowHiddenFrames;
@@ -2587,10 +2587,10 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
         // HMMM QQQ might be nice to have frame return nm as null if cb is non-null
         // but non nmethod
         fr = fr.sender(&map);
-        if (cb == nullptr || !cb->is_compiled()) {
+        if (cb == nullptr || !cb->is_nmethod()) {
           continue;
         }
-        nm = cb->as_compiled_method();
+        nm = cb->as_nmethod();
         assert(nm->method() != nullptr, "must be");
         if (nm->method()->is_native()) {
           method = nm->method();
