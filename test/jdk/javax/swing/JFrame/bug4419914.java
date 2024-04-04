@@ -65,11 +65,12 @@ public class bug4419914 {
         frame.setFocusCycleRoot(true);
         frame.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
         frame.setLocale(Locale.ENGLISH);
-
         frame.enableInputMethods(false);
-        frame.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
-        frame.setLocale(Locale.ENGLISH);
-        frame.setLayout(new BorderLayout());
+
+        frame.getContentPane().setComponentOrientation(
+                               ComponentOrientation.RIGHT_TO_LEFT);
+        frame.getContentPane().setLocale(Locale.ENGLISH);
+        frame.getContentPane().setLayout(new BorderLayout());
         frame.add(new JButton("SOUTH"), BorderLayout.SOUTH);
         frame.add(new JButton("CENTER"), BorderLayout.CENTER);
         frame.add(new JButton("END"), BorderLayout.LINE_END);
