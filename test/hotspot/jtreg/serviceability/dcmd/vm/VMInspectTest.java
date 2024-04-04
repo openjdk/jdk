@@ -99,11 +99,21 @@ public class VMInspectTest {
         output.shouldContain("Syntax : VM.inspect"); // but help is available
 
         testInspectAddress(executor);
+        testInspectAddressThread(executor);
+        testInspectAddressNMethod(executor);
+        testInspectAddressMetadata(executor);
+
+        // Some tests put ZGC options in test.java.opts, not test.vm.opts
+        String testOpts = System.getProperty("test.vm.opts", "")
+                          + System.getProperty("test.java.opts", "");
+
+        boolean isZGC = testOpts.contains("-XX:+UseZGC");
+        boolean isGenZGC = testOpts.contains("-XX:+ZGenerational");
+
+        testInspectJavaObject(executor, isZGC, isGenZGC);
     }
 
     public void testInspectAddress(CommandExecutor executor) {
-        boolean testMisaligned = true;
-
         // Test that address is mandatory:
         // java.lang.IllegalArgumentException: The argument 'address' is mandatory.
         OutputAnalyzer output = executor.execute("VM.inspect");
@@ -114,14 +124,16 @@ public class VMInspectTest {
         output.shouldContain("address not safe");
         output = executor.execute("VM.inspect -1");
         output.shouldContain("address not safe");
+    }
 
+    public void testInspectAddressThread(CommandExecutor executor) {
         // Find and test a thread id:
         OutputAnalyzer jcmdOutput = executor.execute("Thread.print", true /* silent */);
         BigInteger ptr = findPointer(jcmdOutput, thread_id_line, 1, true);
-        output = executor.execute("VM.inspect " + pointerText(ptr));
+        OutputAnalyzer output = executor.execute("VM.inspect " + pointerText(ptr));
         output.shouldContain(" is a thread");
 
-        // -verbose shows output like:
+        // Using -verbose on a thread pointer shows output like:
         // "main" #1 [17235] prio=5 os_prio=0 cpu=1265.79ms elapsed=6.12s tid=0x000014e37802bd80 nid=17235 in Object.wait()  [0x000014e3817d4000]
         //    java.lang.Thread.State: WAITING (on object monitor)
         // Thread: 0x000014e37802bd80  [0x4353] State: _running _at_poll_safepoint 0
@@ -130,22 +142,27 @@ public class VMInspectTest {
         // ...
         output = executor.execute("VM.inspect -verbose " + pointerText(ptr));
         output.shouldContain("java.lang.Thread.State: WAITING");
+    }
 
+    public void testInspectAddressNMethod(CommandExecutor executor) {
         // Find and test a compiled method:
-        jcmdOutput = executor.execute("VM.info", true /* silent */);
-        ptr = findPointer(jcmdOutput, compilation_event, 1, false);
+        OutputAnalyzer jcmdOutput = executor.execute("VM.info", true /* silent */);
+        BigInteger ptr = findPointer(jcmdOutput, compilation_event, 1, false);
         if (ptr != null) {
-            output = executor.execute("VM.inspect " + pointerText(ptr));
+            OutputAnalyzer output = executor.execute("VM.inspect " + pointerText(ptr));
             System.out.println(output);
             output.shouldContain("Compiled method ");
         } else{
             System.out.println("No compilation event found.");
         }
+    }
 
+    public void testInspectAddressMetadata(CommandExecutor executor) {
         // Test pointer into metadata:
-        ptr = findPointer(jcmdOutput, compressed_class_space, 1, false);
+        OutputAnalyzer jcmdOutput = executor.execute("VM.info", true /* silent */);
+        BigInteger ptr = findPointer(jcmdOutput, compressed_class_space, 1, false);
         if (ptr != null) {
-            output = executor.execute("VM.inspect " + pointerText(ptr));
+            OutputAnalyzer output = executor.execute("VM.inspect " + pointerText(ptr));
             System.out.println(output);
             output.shouldContain("metadata");
         } else{
@@ -154,49 +171,70 @@ public class VMInspectTest {
 
         ptr = findPointer(jcmdOutput, narrow_klass_base, 1, false);
         if (ptr != null) {
-            output = executor.execute("VM.inspect " + pointerText(ptr));
+            OutputAnalyzer output = executor.execute("VM.inspect " + pointerText(ptr));
             System.out.println(output);
             output.shouldContain("metadata");
-        } else{
+        } else {
             System.out.println("No narrow klass base found.");
         }
+    }
 
+    public static final int OBJECT_TRIES = 3;
+
+    public void testInspectJavaObject(CommandExecutor executor, boolean isZGC, boolean isGenZGC) {
         // Find and test a Java Object:
-        jcmdOutput = executor.execute("Thread.print");
-        ptr = findPointer(jcmdOutput, waiting_on_mylock, 1, true);
-        output = executor.execute("VM.inspect " + pointerText(ptr));
-        System.out.println(output);
-
-        // Some tests put ZGC options in test.java.opts, not test.vm.opts
-        String testOpts = System.getProperty("test.vm.opts", "")
-                          + System.getProperty("test.java.opts", "");
-        if (!testOpts.contains("-XX:+UseZGC")) {
-            output.shouldContain(" is an oop: ");
-        } else {
-            // ZGC has two variations:
-            if (testOpts.contains("-XX:+ZGenerational")) {
-                output.shouldContain("is a zaddress");
-                testMisaligned = false;
-            } else {
-                output.shouldContain("is a good oop");
+        // Process is live.  Very rarely, an Object seen in Thread.print may move due to GC,
+        // so make a few attempts.
+        BigInteger ptr = null;
+        for (int i=0; i < OBJECT_TRIES; i++) {
+            System.gc();
+            ptr = testInspectJavaObjectPointer(executor, isZGC, isGenZGC);
+            if (ptr != null) {
+                break;
             }
         }
-        output.shouldContain(" - ---- fields (total size");
-        // " - private 'myInt' 'I' @12  12345 (0x00003039)"
-        output.shouldContain(" - private 'myInt' 'I'");
-        output.shouldContain(" 12345 (");
+        if (ptr == null) {
+            throw new RuntimeException("Failed to inspect Java object from thread dump.");
+        }
 
+        // Test misaligned object pointer:
         // ZGenerational will show the raw memory of our misaligned pointer, e.g.
         // 0x0000040001852491 points into unknown readable memory: 0b 00 d8 57 14 00 00
-        // ...so don't check for that error.
-        if (testMisaligned) {
+        // ...so don't check for this error.
+        if (!isGenZGC) {
             BigInteger badPtr = ptr.add(BigInteger.ONE);
-            output = executor.execute("VM.inspect " + pointerText(badPtr));
+            OutputAnalyzer output = executor.execute("VM.inspect " + pointerText(badPtr));
             output.shouldContain("misaligned");
             badPtr = badPtr.add(BigInteger.ONE);
             output = executor.execute("VM.inspect " + pointerText(badPtr));
             output.shouldContain("misaligned");
         }
+    }
+
+    public BigInteger testInspectJavaObjectPointer(CommandExecutor executor, boolean isZGC, boolean isGenZGC) {
+        // Inspect the MyLock object found in Thread.print output.
+        String expected = " is an oop: ";
+        if (isZGC) {
+            // ZGC has two variations:
+            if (isGenZGC) {
+                expected = "is a zaddress";
+            } else {
+                expected = "is a good oop";
+            }
+        }
+        OutputAnalyzer jcmdOutput = executor.execute("Thread.print");
+        BigInteger ptr = findPointer(jcmdOutput, waiting_on_mylock, 1, true);
+        OutputAnalyzer output = executor.execute("VM.inspect " + pointerText(ptr));
+        if (!output.contains(expected)) {
+            System.out.println("VM.inspect does not find expected text for 0x" + ptr.toString(16));
+            return null;
+        }
+
+        output.shouldContain(" - ---- fields (total size");
+        // " - private 'myInt' 'I' @12  12345 (0x00003039)"
+        output.shouldContain(" - private 'myInt' 'I'");
+        output.shouldContain(" 12345 (");
+        return ptr;
     }
 
     public BigInteger findPointer(OutputAnalyzer output, Pattern pattern, int regexGroup, boolean mustFind) {
