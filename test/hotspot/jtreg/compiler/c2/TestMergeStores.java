@@ -155,12 +155,14 @@ public class TestMergeStores {
         testGroups.get("test501").put("test501a", (_,i) -> { return test501a(aB.clone(), RANGE - 20 + (i % 30), vL1); });
         //                                                                               +-------------------+
         // Create offsets that are sometimes going to pass all RangeChecks, and sometimes one, and sometimes none.
+	// Consequence: all RangeChecks stay in the final compilation.
 
         testGroups.put("test502", new HashMap<String,TestFunction>());
         testGroups.get("test502").put("test500R", (w,i) -> { return test500R(aB.clone(), w ? offset1 : RANGE - 20 + (i % 30), vL1); });
         testGroups.get("test502").put("test502a", (w,i) -> { return test502a(aB.clone(), w ? offset1 : RANGE - 20 + (i % 30), vL1); });
         //                                                                                   +-----+   +-------------------+
         // First use something in range, and after warmup randomize going outside the range.
+	// Consequence: all RangeChecks stay in the final compilation.
     }
 
     @Warmup(100)
@@ -1124,6 +1126,10 @@ public class TestMergeStores {
     }
 
     @Test
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8", // No optimization because of too many RangeChecks
+                  IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"})
     static Object[] test501a(byte[] a, int offset, long v) {
         int idx = 0;
         try {
@@ -1148,6 +1154,10 @@ public class TestMergeStores {
     }
 
     @Test
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8", // No optimization because of too many RangeChecks
+                  IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"})
     static Object[] test502a(byte[] a, int offset, long v) {
         int idx = 0;
         try {
