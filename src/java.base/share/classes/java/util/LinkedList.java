@@ -899,7 +899,7 @@ public class LinkedList<E>
     /**
      * Returns a list-iterator of the elements in this list (in proper
      * sequence), starting at the specified position in the list.
-     * Obeys the general contract of {@code List.listIterator(int)}.<p>
+     * Obeys the general contract of {@code List.listIterator(int)}.
      * <p>
      * The list-iterator is <i>fail-fast</i>: if the list is structurally
      * modified at any time after the Iterator is created, in any way except
