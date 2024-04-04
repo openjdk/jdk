@@ -68,6 +68,10 @@
 
 #include <sys/types.h>
 
+void poo() {
+  asm("nop");
+}
+
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
 #else
@@ -1612,10 +1616,11 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
                                                    Register temp3,
                                                    FloatRegister vtemp,
                                                    Register result,
-                                                   u1 super_klass_slot) {
+                                                   u1 super_klass_slot,
+                                                   bool stub_is_near) {
   assert_different_registers(r_sub_klass, temp1, temp2, temp3, result, rscratch1, rscratch2);
 
-  Label L_fallthrough, L_success, L_failure;
+  Label L_fallthrough;
 
   BLOCK_COMMENT("lookup_secondary_supers_table {");
 
@@ -1629,6 +1634,11 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
 
   u1 bit = super_klass_slot;
 
+  mov(result, 1);
+
+  lea(lr, ExternalAddress(CAST_FROM_FN_PTR(address, poo)));
+  blr(lr);
+
   // We're going to need the bitmap in a vector reg and in a core reg,
   // so load both now.
   ldr(r_bitmap, Address(r_sub_klass, Klass::bitmap_offset()));
@@ -1638,7 +1648,7 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   // First check the bitmap to see if super_klass might be present. If
   // the bit is zero, we are certain that super_klass is not one of
   // the secondary supers.
-  tbz(r_bitmap, bit, L_failure);
+  tbz(r_bitmap, bit, L_fallthrough);
 
   // Get the first array index that can contain super_klass into r_array_index.
   if (bit != 0) {
@@ -1665,21 +1675,19 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   cbz(result, L_fallthrough); // Found a match
 
   // Is there another entry to check? Consult the bitmap.
-  tbz(r_bitmap, (bit+1) & Klass::SECONDARY_SUPERS_TABLE_MASK, L_failure);
+  tbz(r_bitmap, (bit+1) & Klass::SECONDARY_SUPERS_TABLE_MASK, L_fallthrough);
 
   // Linear probe.
   if (bit != 0) {
     ror(r_bitmap, r_bitmap, bit);
   }
-  adr(result, L_success);
-  trampoline_call(RuntimeAddress(StubRoutines::lookup_secondary_supers_table_slow_path_stub()));
 
-  bind(L_failure);
-  mov(result, (u1)1);
-  b(L_fallthrough);
-
-  bind(L_success);
-  mov(result, (u1)0);
+  Address stub = RuntimeAddress(StubRoutines::lookup_secondary_supers_table_slow_path_stub());
+  if (stub_is_near) {
+    bl(stub);
+  } else {
+    trampoline_call(stub);
+  }
 
   BLOCK_COMMENT("} lookup_secondary_supers_table");
 
@@ -1699,24 +1707,18 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
                                                              Register r_array_index,
                                                              Register r_bitmap,
                                                              Register temp1,
-                                                             Label* L_success,
-                                                             Label* L_failure) {
-  assert_different_registers(r_super_klass, r_array_base, r_array_index, r_bitmap, temp1, rscratch1);
+                                                             Register result) {
+  assert_different_registers(r_super_klass, r_array_base, r_array_index, r_bitmap, temp1, result, rscratch1);
 
   const Register
     r_array_length = temp1,
-    r_sub_klass    = noreg, // unused
-    result         = noreg; // unused
+    r_sub_klass    = noreg; // unused
 
   LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
 
   Label L_fallthrough;
-  int label_nulls = 0;
-  if (L_success == nullptr) { L_success   = &L_fallthrough; label_nulls++; }
-  if (L_failure == nullptr) { L_failure   = &L_fallthrough; label_nulls++; }
-  assert(label_nulls <= 1, "at most one null in the batch");
 
-    // Load the array length.
+  // Load the array length.
   ldrw(r_array_length, Address(r_array_base, Array<Klass*>::length_offset_in_bytes()));
   // And adjust the array base to point to the data.
   add(r_array_base, r_array_base, Array<Klass*>::base_offset_in_bytes());
@@ -1738,10 +1740,10 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
     csel(r_array_index, zr, r_array_index, GE);
 
     ldr(rscratch1, Address(r_array_base, r_array_index, Address::lsl(LogBytesPerWord)));
-    cmp(rscratch1, r_super_klass);
-    br(EQ, *L_success);
+    eor(result, rscratch1, r_super_klass);
+    cbz(result, L_fallthrough);
 
-    tbz(r_bitmap, 1, *L_failure); // End of run
+    tbz(r_bitmap, 2, L_fallthrough); // End of run
 
     ror(r_bitmap, r_bitmap, 1);
     add(r_array_index, r_array_index, 1);
@@ -1759,15 +1761,11 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
     Label again;
     bind(again);
     ldr(rscratch1, Address(r_array_base, r_array_index, Address::lsl(LogBytesPerWord)));
-    cmp(rscratch1, r_super_klass);
-    br(EQ, *L_success);
+    eor(result, rscratch1, r_super_klass);
+    cbz(result, L_fallthrough);
     add(r_array_index, r_array_index, 1);
     cmp(r_array_index, r_array_length);
     br(LT, again);
-
-    if (&L_fallthrough != L_failure) {
-      b(*L_failure);
-    }
   }
 
   bind(L_fallthrough);

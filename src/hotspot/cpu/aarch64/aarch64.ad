@@ -16278,7 +16278,7 @@ instruct partialSubtypeCheck(iRegP_R4 sub, iRegP_R0 super, iRegP_R2 temp, iRegP_
   ins_pipe(pipe_class_memory);
 %}
 
-instruct partialSubtypeCheckConstSuper(iRegP_R4 sub, iRegP_R0 super_reg, immP super_con, vRegD vtemp, iRegP_R5 result,
+instruct partialSubtypeCheckConstSuper(iRegP_R4 sub, iRegP_R0 super_reg, immP super_con, vRegD_V0 vtemp, iRegP_R5 result,
                                        iRegP_R1 tempR1, iRegP_R2 tempR2, iRegP_R3 tempR3,
                                        rFlagsReg cr)
 %{
@@ -16291,11 +16291,15 @@ instruct partialSubtypeCheckConstSuper(iRegP_R4 sub, iRegP_R0 super_reg, immP su
 
   ins_encode %{
     u1 super_klass_slot = ((Klass*)$super_con$$constant)->hash_slot();
-    __ lookup_secondary_supers_table($sub$$Register, $super_reg$$Register,
-                                     $tempR1$$Register, $tempR2$$Register, $tempR3$$Register,
-                                     $vtemp$$FloatRegister,
-                                     $result$$Register,
-                                     super_klass_slot);
+    if (InlineSecondarySupersTest) {
+      __ lookup_secondary_supers_table($sub$$Register, $super_reg$$Register,
+                                       $tempR1$$Register, $tempR2$$Register, $tempR3$$Register,
+                                       $vtemp$$FloatRegister,
+                                       $result$$Register,
+                                       super_klass_slot);
+    } else {
+      __ trampoline_call(RuntimeAddress(StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot)));
+    }
   %}
 
   ins_pipe(pipe_class_memory);

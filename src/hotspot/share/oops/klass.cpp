@@ -326,7 +326,11 @@ uintx Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) {
     return uintx(1) << hash_slot;
   }
 
-  if (length >= SECONDARY_SUPERS_TABLE_SIZE) {
+  // For performance reasons we don't use a hashed table unless there
+  // are at least two empty slots in it. If there were only one empty
+  // slot it'd take a long time to create the table and the resulting
+  // search would be no faster than linear probing.
+  if (length > SECONDARY_SUPERS_TABLE_SIZE - 2) {
     return SECONDARY_SUPERS_BITMAP_FULL;
   }
 

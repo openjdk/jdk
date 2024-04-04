@@ -1008,7 +1008,8 @@ public:
                                      Register temp3,
                                      FloatRegister vtemp,
                                      Register result,
-                                     u1 super_klass_slot);
+                                     u1 super_klass_slot,
+                                     bool stub_is_near = false);
 
   void verify_secondary_supers_table(Register r_sub_klass,
                                      Register r_super_klass,
@@ -1021,8 +1022,7 @@ public:
                                                Register r_array_index,
                                                Register r_bitmap,
                                                Register temp1,
-                                               Label* L_success = nullptr,
-                                               Label* L_failure = nullptr);
+                                               Register result);
 
   // Simplified, combined version, good for typical uses.
   // Falls through on failure.

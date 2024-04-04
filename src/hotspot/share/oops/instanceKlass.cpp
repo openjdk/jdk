@@ -3668,7 +3668,7 @@ void InstanceKlass::print_on(outputStream* st) const {
           int distance = (i - home_slot) & SECONDARY_SUPERS_TABLE_MASK;
           st->print(" dist:%02d:", distance);
         }
-        st->print(" %p %s", secondary_super, secondary_super->external_name());
+        st->print_cr(" %p %s", secondary_super, secondary_super->external_name());
       }
     }
   }
