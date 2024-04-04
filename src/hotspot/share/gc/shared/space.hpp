@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,13 +225,13 @@ public:
 class TenuredSpace: public ContiguousSpace {
   friend class VMStructs;
  protected:
-  SerialBlockOffsetTable _offsets;
+  SerialBlockOffsetTable* _offsets;
 
   // Mark sweep support
   size_t allowed_dead_ratio() const override;
  public:
   // Constructor
-  TenuredSpace(SerialBlockOffsetSharedArray* sharedOffsetArray,
+  TenuredSpace(SerialBlockOffsetTable* offsets,
                MemRegion mr);
 
   HeapWord* block_start_const(const void* addr) const override;

@@ -31,7 +31,6 @@
 #include "compiler/oopMap.hpp"
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/defNewGeneration.inline.hpp"
-#include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/markSweep.hpp"
 #include "gc/serial/serialHeap.hpp"
 #include "gc/serial/serialMemoryPools.hpp"
@@ -50,6 +49,7 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/genArguments.hpp"
+#include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
@@ -74,7 +74,6 @@
 #include "runtime/vmThread.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memoryService.hpp"
-#include "utilities/autoRestore.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
@@ -497,7 +496,7 @@ void SerialHeap::do_collection(bool full,
 
   ClearedAllSoftRefs casr(do_clear_all_soft_refs, soft_ref_policy());
 
-  AutoModifyRestore<bool> temporarily(_is_gc_active, true);
+  IsGCActiveMark active_gc_mark;
 
   bool complete = full && (max_generation == OldGen);
   bool old_collects_young = complete && !ScavengeBeforeFullGC;
@@ -561,7 +560,7 @@ void SerialHeap::do_collection(bool full,
 
   if (do_full_collection) {
     GCIdMark gc_id_mark;
-    GCTraceCPUTime tcpu(GenMarkSweep::gc_tracer());
+    GCTraceCPUTime tcpu(MarkSweep::gc_tracer());
     GCTraceTime(Info, gc) t("Pause Full", nullptr, gc_cause(), true);
 
     print_heap_before_gc();

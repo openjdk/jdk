@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -131,7 +131,7 @@ public:
   // Print threads busy compiling, and returns the number of printed threads.
   static unsigned print_threads_compiling(outputStream* st, char* buf, int buflen, bool short_form = false);
 
-  // Get Java threads that are waiting to enter a monitor.
+  // Get count of Java threads that are waiting to enter or re-enter the specified monitor.
   static GrowableArray<JavaThread*>* get_pending_threads(ThreadsList * t_list,
                                                          int count, address monitor);
 

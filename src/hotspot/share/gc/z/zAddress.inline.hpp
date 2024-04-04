@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -452,13 +452,6 @@ inline zaddress_unsafe ZPointer::uncolor_unsafe(zpointer ptr) {
   assert(ZPointer::is_store_bad(ptr), "Unexpected ptr");
   const uintptr_t raw_addr = untype(ptr);
   return to_zaddress_unsafe(raw_addr >> ZPointer::load_shift_lookup(raw_addr));
-}
-
-inline zpointer ZPointer::set_remset_bits(zpointer ptr) {
-  uintptr_t raw_addr = untype(ptr);
-  assert(raw_addr != 0, "raw nulls should have been purged in promotion to old gen");
-  raw_addr |= ZPointerRemembered0 | ZPointerRemembered1;
-  return to_zpointer(raw_addr);
 }
 
 inline bool ZPointer::is_load_bad(zpointer ptr) {

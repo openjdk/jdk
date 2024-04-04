@@ -3283,66 +3283,86 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Does the real work of generating a pattern.  */
+     * Implementation of producing a pattern. This method returns a positive and
+     * negative (if needed), pattern string in the form of : Prefix (optional)
+     * Number Suffix (optional). A NegativePattern is only produced if the
+     * prefix or suffix patterns differs.
+     */
     private String toPattern(boolean localized) {
+        // Determine symbol values; use DFS if localized
+        char zeroSymbol = localized ? symbols.getZeroDigit() : PATTERN_ZERO_DIGIT;
+        char digitSymbol = localized ? symbols.getDigit() : PATTERN_DIGIT;
+        char groupingSymbol = localized ?
+                (isCurrencyFormat ? symbols.getMonetaryGroupingSeparator() : symbols.getGroupingSeparator()) :
+                PATTERN_GROUPING_SEPARATOR;
+        char decimalSymbol = localized ?
+                (isCurrencyFormat ? symbols.getMonetaryDecimalSeparator() : symbols.getDecimalSeparator()) :
+                PATTERN_DECIMAL_SEPARATOR;
+        String exponentSymbol = localized ? symbols.getExponentSeparator() : PATTERN_EXPONENT;
+        char patternSeparator = localized ? symbols.getPatternSeparator() : PATTERN_SEPARATOR;
+
         StringBuilder result = new StringBuilder();
+        // j == 1 denotes PositivePattern, j == 0 denotes NegativePattern
         for (int j = 1; j >= 0; --j) {
-            if (j == 1)
-                appendAffix(result, posPrefixPattern, positivePrefix, localized);
-            else appendAffix(result, negPrefixPattern, negativePrefix, localized);
-            int i;
-            int digitCount = useExponentialNotation
-                        ? getMaximumIntegerDigits()
-                        : Math.max(groupingSize, getMinimumIntegerDigits())+1;
-            for (i = digitCount; i > 0; --i) {
-                if (i != digitCount && isGroupingUsed() && groupingSize != 0 &&
-                    i % groupingSize == 0) {
-                    result.append(localized ?
-                        (isCurrencyFormat ? symbols.getMonetaryGroupingSeparator() : symbols.getGroupingSeparator()) :
-                        PATTERN_GROUPING_SEPARATOR);
-                }
-                result.append(i <= getMinimumIntegerDigits()
-                    ? (localized ? symbols.getZeroDigit() : PATTERN_ZERO_DIGIT)
-                    : (localized ? symbols.getDigit() : PATTERN_DIGIT));
-            }
-            if (getMaximumFractionDigits() > 0 || decimalSeparatorAlwaysShown)
-                result.append(localized ?
-                    (isCurrencyFormat ? symbols.getMonetaryDecimalSeparator() : symbols.getDecimalSeparator()) :
-                    PATTERN_DECIMAL_SEPARATOR);
-            for (i = 0; i < getMaximumFractionDigits(); ++i) {
-                if (i < getMinimumFractionDigits()) {
-                    result.append(localized ? symbols.getZeroDigit() :
-                                  PATTERN_ZERO_DIGIT);
-                } else {
-                    result.append(localized ? symbols.getDigit() :
-                                  PATTERN_DIGIT);
-                }
-            }
-        if (useExponentialNotation)
-        {
-            result.append(localized ? symbols.getExponentSeparator() :
-                  PATTERN_EXPONENT);
-        for (i=0; i<minExponentDigits; ++i)
-                    result.append(localized ? symbols.getZeroDigit() :
-                                  PATTERN_ZERO_DIGIT);
-        }
             if (j == 1) {
-                appendAffix(result, posSuffixPattern, positiveSuffix, localized);
-                if ((negSuffixPattern == posSuffixPattern && // n == p == null
-                     negativeSuffix.equals(positiveSuffix))
-                    || (negSuffixPattern != null &&
-                        negSuffixPattern.equals(posSuffixPattern))) {
-                    if ((negPrefixPattern != null && posPrefixPattern != null &&
-                         negPrefixPattern.equals("'-" + posPrefixPattern)) ||
-                        (negPrefixPattern == posPrefixPattern && // n == p == null
-                         negativePrefix.equals(symbols.getMinusSignText() + positivePrefix)))
-                        break;
+                // Append positive and negative (if needed) prefix pattern
+                appendAffix(result, posPrefixPattern, positivePrefix, localized);
+            } else {
+                appendAffix(result, negPrefixPattern, negativePrefix, localized);
+            }
+            // Append integer digits
+            int digitCount = useExponentialNotation ? getMaximumIntegerDigits() :
+                    Math.max(groupingSize, getMinimumIntegerDigits()) + 1;
+            for (int i = digitCount; i > 0; --i) {
+                if (i != digitCount && isGroupingUsed() && groupingSize != 0 &&
+                        i % groupingSize == 0) {
+                    result.append(groupingSymbol);
                 }
-                result.append(localized ? symbols.getPatternSeparator() :
-                              PATTERN_SEPARATOR);
-            } else appendAffix(result, negSuffixPattern, negativeSuffix, localized);
+                result.append(i <= getMinimumIntegerDigits() ? zeroSymbol : digitSymbol);
+            }
+            // Append decimal symbol
+            if (getMaximumFractionDigits() > 0 || decimalSeparatorAlwaysShown) {
+                result.append(decimalSymbol);
+            }
+            // Append fraction digits
+            result.repeat(zeroSymbol, getMinimumFractionDigits());
+            result.repeat(digitSymbol, getMaximumFractionDigits() - getMinimumFractionDigits());
+            // Append exponent symbol and digits
+            if (useExponentialNotation) {
+                result.append(exponentSymbol);
+                result.repeat(zeroSymbol, minExponentDigits);
+            }
+            if (j == 1) {
+                // Append positive suffix pattern
+                appendAffix(result, posSuffixPattern, positiveSuffix, localized);
+                if (posEqualsNegPattern()) {
+                    // Negative pattern not needed if suffix/prefix are equivalent
+                    break;
+                }
+                result.append(patternSeparator);
+            } else {
+                appendAffix(result, negSuffixPattern, negativeSuffix, localized);
+            }
         }
         return result.toString();
+    }
+
+    /**
+     * This method returns true if the positive and negative prefix/suffix
+     * values are equivalent. This is used to determine if an explicit NegativePattern
+     * is required.
+     */
+    private boolean posEqualsNegPattern() {
+        // Check suffix
+        return ((negSuffixPattern == posSuffixPattern && // n == p == null
+                negativeSuffix.equals(positiveSuffix))
+                || (negSuffixPattern != null &&
+                negSuffixPattern.equals(posSuffixPattern)))
+                && // Check prefix
+                ((negPrefixPattern != null && posPrefixPattern != null &&
+                negPrefixPattern.equals("'-" + posPrefixPattern)) ||
+                (negPrefixPattern == posPrefixPattern && // n == p == null
+                negativePrefix.equals(symbols.getMinusSignText() + positivePrefix)));
     }
 
     /**
@@ -3712,7 +3732,9 @@ public class DecimalFormat extends NumberFormat {
             setMinimumIntegerDigits(0);
             setMaximumIntegerDigits(MAXIMUM_INTEGER_DIGITS);
             setMinimumFractionDigits(0);
-            setMaximumFractionDigits(MAXIMUM_FRACTION_DIGITS);
+            // As maxFracDigits are fully displayed unlike maxIntDigits
+            // Prevent OOME by setting to a much more reasonable value.
+            setMaximumFractionDigits(DOUBLE_FRACTION_DIGITS);
         }
 
         // If there was no negative pattern, or if the negative pattern is

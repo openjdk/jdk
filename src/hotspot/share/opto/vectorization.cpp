@@ -31,6 +31,19 @@
 #include "opto/rootnode.hpp"
 #include "opto/vectorization.hpp"
 
+#ifndef PRODUCT
+static void print_con_or_idx(const Node* n) {
+  if (n == nullptr) {
+    tty->print("(   0)");
+  } else if (n->is_ConI()) {
+    jint val = n->as_ConI()->get_int();
+    tty->print("(%4d)", val);
+  } else {
+    tty->print("[%4d]", n->_idx);
+  }
+}
+#endif
+
 bool VLoop::check_preconditions() {
 #ifndef PRODUCT
   if (is_trace_preconditions()) {
@@ -161,7 +174,219 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
 
   _types.compute_vector_element_type();
 
+  _vpointers.compute_vpointers();
+
+  _dependency_graph.construct();
+
   return VStatus::make_success();
+}
+
+void VLoopVPointers::compute_vpointers() {
+  count_vpointers();
+  allocate_vpointers_array();
+  compute_and_cache_vpointers();
+  NOT_PRODUCT( if (_vloop.is_trace_vpointers()) { print(); } )
+}
+
+void VLoopVPointers::count_vpointers() {
+  _vpointers_length = 0;
+  _body.for_each_mem([&] (const MemNode* mem, int bb_idx) {
+    _vpointers_length++;
+  });
+}
+
+void VLoopVPointers::allocate_vpointers_array() {
+  uint bytes = _vpointers_length * sizeof(VPointer);
+  _vpointers = (VPointer*)_arena->Amalloc(bytes);
+}
+
+void VLoopVPointers::compute_and_cache_vpointers() {
+  int pointers_idx = 0;
+  _body.for_each_mem([&] (const MemNode* mem, int bb_idx) {
+    // Placement new: construct directly into the array.
+    ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop);
+    _bb_idx_to_vpointer.at_put(bb_idx, pointers_idx);
+    pointers_idx++;
+  });
+}
+
+const VPointer& VLoopVPointers::vpointer(const MemNode* mem) const {
+  assert(mem != nullptr && _vloop.in_bb(mem), "only mem in loop");
+  int bb_idx = _body.bb_idx(mem);
+  int pointers_idx = _bb_idx_to_vpointer.at(bb_idx);
+  assert(0 <= pointers_idx && pointers_idx < _vpointers_length, "valid range");
+  return _vpointers[pointers_idx];
+}
+
+#ifndef PRODUCT
+void VLoopVPointers::print() const {
+  tty->print_cr("\nVLoopVPointers::print:");
+
+  _body.for_each_mem([&] (const MemNode* mem, int bb_idx) {
+    const VPointer& p = vpointer(mem);
+    tty->print("  ");
+    p.print();
+  });
+}
+#endif
+
+// Construct the dependency graph:
+//  - Data-dependencies: implicit (taken from C2 node inputs).
+//  - Memory-dependencies:
+//    - No edges between different slices.
+//    - No Load-Load edges.
+//    - Inside a slice, add all Store-Load, Load-Store, Store-Store edges,
+//      except if we can prove that the memory does not overlap.
+void VLoopDependencyGraph::construct() {
+  const GrowableArray<PhiNode*>& mem_slice_heads = _memory_slices.heads();
+  const GrowableArray<MemNode*>& mem_slice_tails = _memory_slices.tails();
+
+  ResourceMark rm;
+  GrowableArray<MemNode*> slice_nodes;
+  GrowableArray<int> memory_pred_edges;
+
+  // For each memory slice, create the memory subgraph
+  for (int i = 0; i < mem_slice_heads.length(); i++) {
+    PhiNode* head = mem_slice_heads.at(i);
+    MemNode* tail = mem_slice_tails.at(i);
+
+    _memory_slices.get_slice_in_reverse_order(head, tail, slice_nodes);
+
+    // In forward order (reverse of reverse), visit all memory nodes in the slice.
+    for (int j = slice_nodes.length() - 1; j >= 0 ; j--) {
+      MemNode* n1 = slice_nodes.at(j);
+      memory_pred_edges.clear();
+
+      const VPointer& p1 = _vpointers.vpointer(n1);
+      // For all memory nodes before it, check if we need to add a memory edge.
+      for (int k = slice_nodes.length() - 1; k > j; k--) {
+        MemNode* n2 = slice_nodes.at(k);
+
+        // Ignore Load-Load dependencies:
+        if (n1->is_Load() && n2->is_Load()) { continue; }
+
+        const VPointer& p2 = _vpointers.vpointer(n2);
+        if (!VPointer::not_equal(p1.cmp(p2))) {
+          // Possibly overlapping memory
+          memory_pred_edges.append(_body.bb_idx(n2));
+        }
+      }
+      if (memory_pred_edges.is_nonempty()) {
+        // Data edges are taken implicitly from the C2 graph, thus we only add
+        // a dependency node if we have memory edges.
+        add_node(n1, memory_pred_edges);
+      }
+    }
+    slice_nodes.clear();
+  }
+
+  compute_depth();
+
+  NOT_PRODUCT( if (_vloop.is_trace_dependency_graph()) { print(); } )
+}
+
+void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& memory_pred_edges) {
+  assert(_dependency_nodes.at_grow(_body.bb_idx(n), nullptr) == nullptr, "not yet created");
+  assert(!memory_pred_edges.is_empty(), "no need to create a node without edges");
+  DependencyNode* dn = new (_arena) DependencyNode(n, memory_pred_edges, _arena);
+  _dependency_nodes.at_put_grow(_body.bb_idx(n), dn, nullptr);
+}
+
+// We iterate over the body, which is already ordered by the dependencies, i.e. pred comes
+// before use. With a single pass, we can compute the depth of every node, since we can
+// assume that the depth of all preds is already computed when we compute the depth of use.
+void VLoopDependencyGraph::compute_depth() {
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    int max_pred_depth = 0;
+    if (n->is_Phi()) {
+      for (PredsIterator it(*this, n); !it.done(); it.next()) {
+        Node* pred = it.current();
+        if (_vloop.in_bb(pred)) {
+          max_pred_depth = MAX2(max_pred_depth, depth(pred));
+        }
+      }
+    }
+    set_depth(n, max_pred_depth + 1);
+  }
+}
+
+#ifndef PRODUCT
+void VLoopDependencyGraph::print() const {
+  tty->print_cr("\nVLoopDependencyGraph::print:");
+
+  tty->print_cr(" Memory pred edges:");
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    const DependencyNode* dn = dependency_node(n);
+    if (dn != nullptr) {
+      tty->print("  DependencyNode[%d %s:", n->_idx, n->Name());
+      for (uint j = 0; j < dn->memory_pred_edges_length(); j++) {
+        Node* pred = _body.body().at(dn->memory_pred_edge(j));
+        tty->print("  %d %s", pred->_idx, pred->Name());
+      }
+      tty->print_cr("]");
+    }
+  }
+  tty->cr();
+
+  tty->print_cr(" Complete dependency graph:");
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    tty->print("  d%02d Dependencies[%d %s:", depth(n), n->_idx, n->Name());
+    for (PredsIterator it(*this, n); !it.done(); it.next()) {
+      Node* pred = it.current();
+      tty->print("  %d %s", pred->_idx, pred->Name());
+    }
+    tty->print_cr("]");
+  }
+}
+#endif
+
+VLoopDependencyGraph::DependencyNode::DependencyNode(MemNode* n,
+                                                     GrowableArray<int>& memory_pred_edges,
+                                                     Arena* arena) :
+    _node(n),
+    _memory_pred_edges_length(memory_pred_edges.length()),
+    _memory_pred_edges(nullptr)
+{
+  assert(memory_pred_edges.is_nonempty(), "not empty");
+  uint bytes = memory_pred_edges.length() * sizeof(int);
+  _memory_pred_edges = (int*)arena->Amalloc(bytes);
+  memcpy(_memory_pred_edges, memory_pred_edges.adr_at(0), bytes);
+}
+
+VLoopDependencyGraph::PredsIterator::PredsIterator(const VLoopDependencyGraph& dependency_graph,
+                                                   const Node* node) :
+    _dependency_graph(dependency_graph),
+    _node(node),
+    _dependency_node(dependency_graph.dependency_node(node)),
+    _current(nullptr),
+    _next_pred(0),
+    _end_pred(node->req()),
+    _next_memory_pred(0),
+    _end_memory_pred((_dependency_node != nullptr) ? _dependency_node->memory_pred_edges_length() : 0)
+{
+  if (_node->is_Store() || _node->is_Load()) {
+    // Load: address
+    // Store: address, value
+    _next_pred = MemNode::Address;
+  } else {
+    assert(!_node->is_Mem(), "only loads and stores are expected mem nodes");
+    _next_pred = 1; // skip control
+  }
+  next();
+}
+
+void VLoopDependencyGraph::PredsIterator::next() {
+  if (_next_pred < _end_pred) {
+    _current = _node->in(_next_pred++);
+  } else if (_next_memory_pred < _end_memory_pred) {
+    int pred_bb_idx = _dependency_node->memory_pred_edge(_next_memory_pred++);
+    _current = _dependency_graph._body.body().at(pred_bb_idx);
+  } else {
+    _current = nullptr; // done
+  }
 }
 
 #ifndef PRODUCT
@@ -231,6 +456,25 @@ VPointer::VPointer(const MemNode* mem, const VLoop& vloop,
 
   NOT_PRODUCT(if(_tracer._is_trace_alignment) _tracer.restore_depth();)
   NOT_PRODUCT(_tracer.ctor_6(mem);)
+
+  // In the pointer analysis, and especially the AlignVector, analysis we assume that
+  // stride and scale are not too large. For example, we multiply "scale * stride",
+  // and assume that this does not overflow the int range. We also take "abs(scale)"
+  // and "abs(stride)", which would overflow for min_int = -(2^31). Still, we want
+  // to at least allow small and moderately large stride and scale. Therefore, we
+  // allow values up to 2^30, which is only a factor 2 smaller than the max/min int.
+  // Normal performance relevant code will have much lower values. And the restriction
+  // allows us to keep the rest of the autovectorization code much simpler, since we
+  // do not have to deal with overflows.
+  jlong long_scale  = _scale;
+  jlong long_stride = _vloop.iv_stride();
+  jlong max_val = 1 << 30;
+  if (abs(long_scale) >= max_val ||
+      abs(long_stride) >= max_val ||
+      abs(long_scale * long_stride) >= max_val) {
+    assert(!valid(), "adr stride*scale is too large");
+    return;
+  }
 
   _base = base;
   _adr  = adr;
@@ -543,19 +787,24 @@ void VPointer::maybe_add_to_invar(Node* new_invar, bool negate) {
   _invar = register_if_new(add);
 }
 
-// Function for printing the fields of a VPointer
-void VPointer::print() {
 #ifndef PRODUCT
-  tty->print("base: [%d]  adr: [%d]  scale: %d  offset: %d",
-             _base != nullptr ? _base->_idx : 0,
-             _adr  != nullptr ? _adr->_idx  : 0,
-             _scale, _offset);
-  if (_invar != nullptr) {
-    tty->print("  invar: [%d]", _invar->_idx);
-  }
-  tty->cr();
-#endif
+// Function for printing the fields of a VPointer
+void VPointer::print() const {
+  tty->print("VPointer[mem: %4d %10s, ", _mem->_idx, _mem->Name());
+  tty->print("base: %4d, ", _base != nullptr ? _base->_idx : 0);
+  tty->print("adr: %4d, ", _adr != nullptr ? _adr->_idx : 0);
+
+  tty->print(" base");
+  print_con_or_idx(_base);
+
+  tty->print(" + offset(%4d)", _offset);
+
+  tty->print(" + invar");
+  print_con_or_idx(_invar);
+
+  tty->print_cr(" + scale(%4d) * iv]", _scale);
 }
+#endif
 
 // Following are functions for tracing VPointer match
 #ifndef PRODUCT
@@ -1322,17 +1571,6 @@ AlignmentSolution* AlignmentSolver::solve() const {
 }
 
 #ifdef ASSERT
-static void print_con_or_idx(const Node* n) {
-  if (n == nullptr) {
-    tty->print("(0)");
-  } else if (n->is_ConI()) {
-    jint val = n->as_ConI()->get_int();
-    tty->print("(%d)", val);
-  } else {
-    tty->print("[%d]", n->_idx);
-  }
-}
-
 void AlignmentSolver::trace_start_solve() const {
   if (is_trace()) {
     tty->print(" vector mem_ref:");
