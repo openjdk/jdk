@@ -3122,7 +3122,7 @@ VStatus VLoopBody::construct() {
         Node* mem = n->in(MemNode::Memory);
         for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
           Node* mem_use = mem->fast_out(i);
-          if (_vloop.in_bb(mem_use) && !visited.test(bb_idx(mem_use)) && mem_use->is_Store()) {
+          if (mem_use->is_Store() && _vloop.in_bb(mem_use) && !visited.test(bb_idx(mem_use))) {
             stack.push(mem_use); // Ordering edge: Load (n) -> Store (mem_use)
           }
         }
