@@ -23,7 +23,7 @@
  * questions.
  */
 
-package build.tools.runtimelink;
+package build.tools.runtimeimagelinkdeltaproducer;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -44,7 +44,7 @@ import jdk.tools.jlink.internal.runtimelink.ResourceDiff;
 @SuppressWarnings("try")
 public class RuntimeImageLinkDeltaProducer {
 
-    private static final boolean DEBUG = Boolean.getBoolean("build.tools.runtimelink.debug");
+    private static final boolean DEBUG = Boolean.getBoolean("build.tools.runtimeimagelinkdeltaproducer.debug");
 
     public static void main(String[] args) throws Exception {
         if (args.length != 3) {
@@ -52,7 +52,7 @@ public class RuntimeImageLinkDeltaProducer {
                                    "--add-exports=jdk.jlink/jdk.tools.jlink.internal.runtimelink=ALL-UNNAMED" +
                                    "--add-exports=java.base/jdk.internal.module=ALL-UNNAMED" +
                                    "--add-exports=java.base/jdk.internal.jimage=ALL-UNNAMED" +
-                                   "RuntimeImageLinkDeltaProducer <packaged-modules> <jimage-to-compare> <output-file>");
+                                   "build.tools.runtimeimagelinkdeltaproducer.RuntimeImageLinkDeltaProducer <packaged-modules> <jimage-to-compare> <output-file>");
             System.exit(1);
         }
         List<ResourceDiff> diffs = null;

@@ -112,8 +112,7 @@ $(eval $(call SetupExecute, jlink_jdk, \
 JLINK_JDK_TARGETS := $(jlink_jdk)
 
 ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
-
-  RL_BUILD_CLASSES := runtime-image-link-classes
+  RL_BUILD_CLASSES := runtimeimagelinkdeltaproducer-classes
   RL_DELTA_GEN_CLASSES := $(BUILDTOOLS_OUTPUTDIR)/$(RL_BUILD_CLASSES)
 
   # We need to use FixPath for correct path handling on Windows. Avoid space
@@ -121,12 +120,12 @@ ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
   RL_JIMAGE_PATH_ARG := $(JDK_LINK_OUTPUT_DIR)/lib/modules
   RL_DIFFS_OUTPUT_FILE_ARG := $(JDK_LINK_OUTPUT_DIR)/lib/runtime-image-link.delta
   RL_MOD_PATH_ARG := $(IMAGES_OUTPUTDIR)/jmods
-  GENERATE_DIFF_TOOL := $(BUILD_JAVA) --add-modules jdk.jlink \
+  TOOL_RUNTIME_IMAGE_LINK_DELTA_PRODUCER := $(BUILD_JAVA) --add-modules jdk.jlink \
       --add-exports=jdk.jlink/jdk.tools.jlink.internal.runtimelink=ALL-UNNAMED \
       --add-exports=java.base/jdk.internal.module=ALL-UNNAMED \
       --add-exports=java.base/jdk.internal.jimage=ALL-UNNAMED \
       -cp $(RL_DELTA_GEN_CLASSES) \
-      build.tools.runtimelink.RuntimeImageLinkDeltaProducer \
+      build.tools.runtimeimagelinkdeltaproducer.RuntimeImageLinkDeltaProducer \
       #
 
   # Compile diff generator classes with the 'buildjdk' compiler, as it
@@ -134,7 +133,7 @@ ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
   $(eval $(call SetupJavaCompilation, BUILD_JDK_RUNLINK_CLASSES, \
       COMPILER := buildjdk, \
       SRC := $(TOPDIR)/make/jdk/src/classes, \
-      INCLUDES := build/tools/runtimelink, \
+      INCLUDES := build/tools/runtimeimagelinkdeltaproducer, \
       BIN := $(RL_DELTA_GEN_CLASSES), \
       JAVAC_FLAGS := \
           --add-modules jdk.jlink \
@@ -148,14 +147,13 @@ ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
       DEPS := $(BUILD_JDK_RUNLINK_CLASSES) $(jlink_jdk), \
       OUTPUT_DIR := $(JDK_IMAGE_DIR), \
       SUPPORT_DIR := $(DEFAULT_JDK_IMAGE_SUPPORT_DIR), \
-      COMMAND := $(GENERATE_DIFF_TOOL) \
+      COMMAND := $(TOOL_RUNTIME_IMAGE_LINK_DELTA_PRODUCER) \
                  $(RL_MOD_PATH_ARG) \
                  $(RL_JIMAGE_PATH_ARG) \
                  $(RL_DIFFS_OUTPUT_FILE_ARG), \
   ))
 
   JLINK_JDK_TARGETS += $(diff_runtime_jdk)
-
 endif
 
 ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
