@@ -231,6 +231,8 @@ class nmethod : public CompiledMethod {
 
   int _compile_id;                           // which compilation made this nmethod
 
+  int _num_stack_arg_slots;                  // Number of arguments passed on the stack
+
 #if INCLUDE_RTM_OPT
   // RTM state at compile time. Used during deoptimization to decide
   // whether to restart collecting RTM locking abort statistic again.
@@ -516,6 +518,10 @@ public:
   void  invalidate_osr_method();
   nmethod* osr_link() const                       { return _osr_link; }
   void     set_osr_link(nmethod *n)               { _osr_link = n; }
+
+  int num_stack_arg_slots(bool rounded = true) const {
+    return rounded ? align_up(_num_stack_arg_slots, 2) : _num_stack_arg_slots;
+  }
 
   // Verify calls to dead methods have been cleaned.
   void verify_clean_inline_caches();

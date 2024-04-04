@@ -369,7 +369,7 @@ inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
 
 inline int frame::compiled_frame_stack_argsize() const {
   assert(cb()->is_compiled(), "");
-  return (cb()->as_compiled_method()->method()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord;
+  return (cb()->as_nmethod()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord;
 }
 
 inline void frame::interpreted_frame_oop_map(InterpreterOopMap* mask) const {
