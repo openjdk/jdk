@@ -2442,8 +2442,6 @@ void Compile::Optimize() {
 
   C->clear_major_progress(); // ensure that major progress is now clear
 
-  if (failing())  return;
-
   process_for_post_loop_opts_igvn(igvn);
 
   if (failing())  return;
