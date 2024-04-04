@@ -110,7 +110,7 @@ $(eval $(call SetupExecute, jlink_jdk, \
 JLINK_JDK_TARGETS := $(jlink_jdk)
 
 ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
-  RL_DELTA_GEN_CLASSES := $(BUILDTOOLS_OUTPUTDIR)/link-delta-classes
+  RL_DELTA_GEN_CLASSES := $(BUILDTOOLS_OUTPUTDIR)/linkdeltaproducer-classes
 
   FLAGS_DIFF_GEN := --add-modules jdk.jlink \
       --add-exports=jdk.jlink/jdk.tools.jlink.internal.runtimelink=ALL-UNNAMED \
@@ -123,7 +123,7 @@ ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
   $(eval $(call SetupJavaCompilation, BUILD_JDK_RUNLINK_CLASSES, \
       COMPILER := buildjdk, \
       SRC := $(TOPDIR)/make/jdk/src/classes, \
-      INCLUDES := build/tools/runtimeimagelinkdeltaproducer, \
+      INCLUDES := build/tools/linkdeltaproducer, \
       BIN := $(RL_DELTA_GEN_CLASSES), \
       JAVAC_FLAGS := $(FLAGS_DIFF_GEN), \
   ))
@@ -136,7 +136,7 @@ ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
       COMMAND := $(BUILD_JAVA) \
                  $(FLAGS_DIFF_GEN) \
                  -cp $(RL_DELTA_GEN_CLASSES) \
-                 build.tools.runtimeimagelinkdeltaproducer.RuntimeImageLinkDeltaProducer \
+                 build.tools.linkdeltaproducer.LinkDeltaProducer \
                  $(IMAGES_OUTPUTDIR)/jmods \
                  $(JDK_IMAGE_DIR)/lib/modules \
                  $(JDK_IMAGE_DIR)/lib/runtime-image-link.delta, \

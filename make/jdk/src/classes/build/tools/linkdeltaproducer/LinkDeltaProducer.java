@@ -23,7 +23,7 @@
  * questions.
  */
 
-package build.tools.runtimeimagelinkdeltaproducer;
+package build.tools.linkdeltaproducer;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -42,7 +42,7 @@ import jdk.tools.jlink.internal.runtimelink.ResourceDiff;
  * jimage so as to be able to use a jimage for runtime-image-based jlinking.
  */
 @SuppressWarnings("try")
-public class RuntimeImageLinkDeltaProducer {
+public class LinkDeltaProducer {
 
     private static final boolean DEBUG = Boolean.getBoolean("build.tools.runtimeimagelinkdeltaproducer.debug");
 
@@ -52,7 +52,7 @@ public class RuntimeImageLinkDeltaProducer {
                                    "--add-exports=jdk.jlink/jdk.tools.jlink.internal.runtimelink=ALL-UNNAMED" +
                                    "--add-exports=java.base/jdk.internal.module=ALL-UNNAMED" +
                                    "--add-exports=java.base/jdk.internal.jimage=ALL-UNNAMED" +
-                                   "build.tools.runtimeimagelinkdeltaproducer.RuntimeImageLinkDeltaProducer <packaged-modules> <jimage-to-compare> <output-file>");
+                                   "build.tools.linkdeltaproducer.LinkDeltaProducer <packaged-modules> <jimage-to-compare> <output-file>");
             System.exit(1);
         }
         List<ResourceDiff> diffs = null;
