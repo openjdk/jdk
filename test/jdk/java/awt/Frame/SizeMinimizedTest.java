@@ -22,22 +22,19 @@
  */
 
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Point;
 import java.awt.Robot;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-
-import javax.swing.SwingUtilities;
 
 /*
  * @test
  * @key headful
  * @bug 4065534
  * @summary Frame.setSize() doesn't change size if window is in an iconified state
- * @run main SizeMinimizedTest
+ * @run main/manual SizeMinimizedTest
  */
 
 public class SizeMinimizedTest {
@@ -70,38 +67,42 @@ public class SizeMinimizedTest {
                     System.out.println("Initial Frame Location: " + frame.getLocationOnScreen());
                 }
             });
-            frame.addComponentListener(new ComponentAdapter() {
+
+            frame.addWindowStateListener(new WindowAdapter() {
                 @Override
-                public void componentResized(ComponentEvent e) {
-                    System.out.println("Frame Size: " + frame.getSize());
+                public void windowStateChanged(WindowEvent e) {
+                    if (e.getNewState() == Frame.NORMAL) {
+                        System.out.println("Frame Size: " + frame.getSize());
+                        System.out.println("Frame Location: " + frame.getLocationOnScreen());
+                        expectedSize = new Dimension(RESET_WIDTH, RESET_HEIGHT);
+                        frameSize = frame.getSize();
 
-                    expectedSize = new Dimension(RESET_WIDTH, RESET_HEIGHT);
-                    frameSize = frame.getSize();
+                        if (!expectedSize.equals(frameSize)) {
+                            throw new RuntimeException("Test Failed due to size mismatch.");
+                        }
 
-                    if (!expectedSize.equals(frameSize)) {
-                        throw new RuntimeException("Test Failed due to size mismatch.");
-                    }
-                }
+                        expectedLoc = new Point(INITIAL_X + OFFSET * iterationCnt, INITIAL_Y);
+                        frameLoc = frame.getLocationOnScreen();
 
-                @Override
-                public void componentMoved(ComponentEvent e) {
-                    System.out.println("Frame Location: " + frame.getLocationOnScreen());
-
-                    expectedLoc = new Point(INITIAL_X + OFFSET * iterationCnt, INITIAL_Y);
-                    frameLoc = frame.getLocationOnScreen();
-
-                    if (!expectedLoc.equals(frameLoc)) {
-                        throw new RuntimeException("Test Failed due to location mismatch.");
+                        if (!expectedLoc.equals(frameLoc)) {
+                            throw new RuntimeException("Test Failed due to location mismatch.");
+                        }
                     }
                 }
             });
 
-            frame.setSize(RESET_WIDTH, RESET_HEIGHT);
+            EventQueue.invokeAndWait(() -> {
+                frame.setState(Frame.ICONIFIED);
+            });
             robot.waitForIdle();
             robot.delay(100);
-
+            EventQueue.invokeAndWait(() -> {
+                frame.setSize(RESET_WIDTH, RESET_HEIGHT);
+            });
+            robot.waitForIdle();
+            robot.delay(100);
             for (int i = 0; i < 5; i++) {
-                SwingUtilities.invokeAndWait(() -> {
+                EventQueue.invokeAndWait(() -> {
                     Point pt = frame.getLocation();
                     frame.setLocation(pt.x + OFFSET, pt.y);
                 });
@@ -109,9 +110,14 @@ public class SizeMinimizedTest {
                 robot.waitForIdle();
                 robot.delay(100);
             }
+            EventQueue.invokeAndWait(() -> {
+                frame.setState(Frame.NORMAL);
+            });
+            robot.waitForIdle();
+            robot.delay(100);
             System.out.println("Test Passed!");
         } finally {
-            SwingUtilities.invokeAndWait(() -> {
+            EventQueue.invokeAndWait(() -> {
                 if (frame != null) {
                     frame.dispose();
                 }
