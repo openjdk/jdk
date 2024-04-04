@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -566,41 +567,44 @@ public class HtmlIds {
         var otherMethods = vmt.getVisibleMembers(VisibleMemberTable.Kind.ANNOTATION_TYPE_MEMBER);
         // the order of the elements is important for reproducibility of ids:
         // the same executable element must have the same id across javadoc runs
-        var list = Stream.concat(Stream.concat(ctors.stream(), methods.stream()), otherMethods.stream())
+
+        record Erased(ExecutableElement element, HtmlId id) { }
+        // split elements into two buckets:
+        //  - elements whose erased id is present
+        //  - elements whose erased id is absent (i.e. is null)
+        enum ErasedId { PRESENT, ABSENT }
+        var buckets = Stream.concat(Stream.concat(ctors.stream(), methods.stream()), otherMethods.stream())
                 .map(e1 -> (ExecutableElement) e1)
-                .toList();
+                .map(e1 -> new Erased(e1, forErasure(e1)))
+                .collect(Collectors.groupingBy(erased -> erased.id == null ?
+                        ErasedId.ABSENT : ErasedId.PRESENT));
         var dups = new HashSet<String>();
         // Use simple id, unless we have to use erased id; for that, do the
         // following _in order_:
         // 1. Map all elements that can _only_ be addressed by the simple id
-        for (var m : list) {
-            if (forErasure(m) == null) {
-                var simpleId = forMember0(m);
-                ids.put(m, simpleId);
-                boolean added = dups.add(simpleId.name());
-                // we assume that the simple id for an executable member that
-                // does not use type parameters is unique
-                assert added;
-            }
+        for (var m : buckets.getOrDefault(ErasedId.ABSENT, List.of())) {
+            var simpleId = forMember0(m.element);
+            ids.put(m.element, simpleId);
+            boolean added = dups.add(simpleId.name());
+            // we assume that the simple id for an executable member that
+            // does not use type parameters is unique
+            assert added;
         }
         // 2. Map all elements that can be addressed by simple id or erased id;
         // if the simple id is not yet used, use it, otherwise use the erased id
-        for (var m : list) {
-            var erasedId = forErasure(m);
-            if (erasedId != null) {
-                var simpleId = forMember0(m);
-                if (dups.add(simpleId.name())) {
-                    ids.put(m, simpleId);
-                } else {
-                    ids.put(m, erasedId);
-                    boolean added = dups.add(erasedId.name());
-                    // Not only must an erased id not clash with any simple id,
-                    // but it must also not clash with any other erased id.
-                    // The latter is because JLS 8.4.2. Method Signature:
-                    // it is a compile-time error to declare two methods
-                    // with override-equivalent signatures in a class
-                    assert added;
-                }
+        for (var m : buckets.getOrDefault(ErasedId.PRESENT, List.of())) {
+            var simpleId = forMember0(m.element);
+            if (dups.add(simpleId.name())) {
+                ids.put(m.element, simpleId);
+            } else {
+                ids.put(m.element, m.id);
+                boolean added = dups.add(m.id.name());
+                // Not only must an erased id not clash with any simple id,
+                // but it must also not clash with any other erased id.
+                // The latter is because JLS 8.4.2. Method Signature:
+                // it is a compile-time error to declare two methods
+                // with override-equivalent signatures in a class
+                assert added;
             }
         }
         htmlId = ids.get(e);
