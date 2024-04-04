@@ -854,9 +854,6 @@ bool SerialHeap::is_in(const void* p) const {
   return _young_gen->is_in(p) || _old_gen->is_in(p);
 }
 
-#ifdef ASSERT
-#endif
-
 void SerialHeap::object_iterate(ObjectClosure* cl) {
   _young_gen->object_iterate(cl);
   _old_gen->object_iterate(cl);

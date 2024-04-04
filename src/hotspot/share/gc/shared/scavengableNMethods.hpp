@@ -62,7 +62,7 @@ private:
   static bool has_scavengable_oops(nmethod* nm);
 
   static void mark_on_list_nmethods() PRODUCT_RETURN;
-  static void verify_unlisted_nmethods() PRODUCT_RETURN;
+  static void verify_nmethods() PRODUCT_RETURN;
 };
 
 #endif // SHARE_GC_SHARED_SCAVENGABLENMETHODS_HPP

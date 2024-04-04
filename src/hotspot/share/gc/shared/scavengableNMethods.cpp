@@ -157,7 +157,7 @@ void ScavengableNMethods::nmethods_do_and_prune(CodeBlobToOopClosure* cl) {
   }
 
   // Check for stray marks.
-  debug_only(verify_unlisted_nmethods());
+  debug_only(verify_nmethods());
 }
 
 void ScavengableNMethods::prune_nmethods_not_into_young() {
@@ -188,7 +188,7 @@ void ScavengableNMethods::prune_unlinked_nmethods() {
   }
 
   // Check for stray marks.
-  debug_only(verify_unlisted_nmethods());
+  debug_only(verify_nmethods());
 }
 
 // Walk the list of methods which might contain oops to the java heap.
@@ -228,7 +228,7 @@ void ScavengableNMethods::mark_on_list_nmethods() {
 }
 
 // Make sure that the effects of mark_on_list_nmethods is gone.
-void ScavengableNMethods::verify_unlisted_nmethods() {
+void ScavengableNMethods::verify_nmethods() {
   NMethodIterator iter(NMethodIterator::all_blobs);
   while(iter.next()) {
     nmethod* nm = iter.method();
