@@ -88,10 +88,28 @@ public class TestMemorySegment {
           return testArrayBB(aB.clone(), bB.clone());
         });
         tests.put("testMemorySegmentBadExitCheck", () -> {
-          return testMemorySegmentBadExitCheck(MemorySegment.ofArray(aB.clone()));
+          MemorySegment data = MemorySegment.ofArray(aB.clone());
+          return testMemorySegmentBadExitCheck(data);
         });
         tests.put("testMemorySegmentB", () -> {
-          return testMemorySegmentB(MemorySegment.ofArray(aB.clone()));
+          MemorySegment data = MemorySegment.ofArray(aB.clone());
+          return testMemorySegmentB(data);
+        });
+        tests.put("testMemorySegmentBInvarI", () -> {
+          MemorySegment data = MemorySegment.ofArray(aB.clone());
+          return testMemorySegmentBInvarI(data, 101, RANGE-200);
+        });
+        tests.put("testMemorySegmentBInvarL", () -> {
+          MemorySegment data = MemorySegment.ofArray(aB.clone());
+          return testMemorySegmentBInvarL(data, 101, RANGE-200);
+        });
+        tests.put("testMemorySegmentBInvarIAdr", () -> {
+          MemorySegment data = MemorySegment.ofArray(aB.clone());
+          return testMemorySegmentBInvarI(data, 101, RANGE-200);
+        });
+        tests.put("testMemorySegmentBInvarLAdr", () -> {
+          MemorySegment data = MemorySegment.ofArray(aB.clone());
+          return testMemorySegmentBInvarL(data, 101, RANGE-200);
         });
 
         // Compute gold value for all test methods before compilation
@@ -105,7 +123,11 @@ public class TestMemorySegment {
 
     @Run(test = {"testArrayBB",
                  "testMemorySegmentBadExitCheck",
-                 "testMemorySegmentB"})
+                 "testMemorySegmentB",
+                 "testMemorySegmentBInvarI",
+                 "testMemorySegmentBInvarL",
+                 "testMemorySegmentBInvarIAdr",
+                 "testMemorySegmentBInvarLAdr"})
     public void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -260,9 +282,10 @@ public class TestMemorySegment {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // FAILS
+    // Exit check: iv < long_value
+    // Is not properly recognized by either CountedLoop or LongCountedLoop
     static Object[] testMemorySegmentBadExitCheck(MemorySegment m) {
-        // Exit check: iv < long_value
-	// Is not properly recognized by either CountedLoop or LongCountedLoop
         for (int i = 0; i < m.byteSize(); i++) {
             byte v = m.get(ValueLayout.JAVA_BYTE, i);
             m.set(ValueLayout.JAVA_BYTE, i, (byte)(v + 1));
@@ -279,6 +302,63 @@ public class TestMemorySegment {
         for (int i = 0; i < (int)m.byteSize(); i++) {
             byte v = m.get(ValueLayout.JAVA_BYTE, i);
             m.set(ValueLayout.JAVA_BYTE, i, (byte)(v + 1));
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.STORE_VECTOR,  "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // FAILS
+    // Note: the very similar "testMemorySegmentBInvarLAdr" does vectorize
+    static Object[] testMemorySegmentBInvarI(MemorySegment m, int invar, int size) {
+        for (int i = 0; i < size; i++) {
+            byte v = m.get(ValueLayout.JAVA_BYTE, i + invar);
+            m.set(ValueLayout.JAVA_BYTE, i + invar, (byte)(v + 1));
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.STORE_VECTOR,  "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // FAILS
+    // Note: the very similar "testMemorySegmentBInvarLAdr" does vectorize
+    static Object[] testMemorySegmentBInvarL(MemorySegment m, long invar, int size) {
+        for (int i = 0; i < size; i++) {
+            byte v = m.get(ValueLayout.JAVA_BYTE, i + invar);
+            m.set(ValueLayout.JAVA_BYTE, i + invar, (byte)(v + 1));
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.STORE_VECTOR,  "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // FAILS
+    // Note: the very similar "testMemorySegmentBInvarLAdr" does vectorize
+    static Object[] testMemorySegmentBInvarIAdr(MemorySegment m, int invar, int size) {
+        for (int i = 0; i < size; i++) {
+            long adr = i + invar;
+            byte v = m.get(ValueLayout.JAVA_BYTE, adr);
+            m.set(ValueLayout.JAVA_BYTE, adr, (byte)(v + 1));
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static Object[] testMemorySegmentBInvarLAdr(MemorySegment m, long invar, int size) {
+        for (int i = 0; i < size; i++) {
+            long adr = i + invar;
+            byte v = m.get(ValueLayout.JAVA_BYTE, adr);
+            m.set(ValueLayout.JAVA_BYTE, adr, (byte)(v + 1));
         }
         return new Object[]{ m };
     }
