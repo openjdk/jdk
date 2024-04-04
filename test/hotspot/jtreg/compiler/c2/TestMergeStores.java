@@ -114,6 +114,10 @@ public class TestMergeStores {
         testGroups.get("test6").put("test6R", (_,_) -> { return test6R(aB.clone(), bB.clone(), offset1, offset2); });
         testGroups.get("test6").put("test6a", (_,_) -> { return test6a(aB.clone(), bB.clone(), offset1, offset2); });
 
+        testGroups.put("test7", new HashMap<String,TestFunction>());
+        testGroups.get("test7").put("test7R", (_,_) -> { return test7R(aB.clone(), offset1, vI1); });
+        testGroups.get("test7").put("test7a", (_,_) -> { return test7a(aB.clone(), offset1, vI1); });
+
         testGroups.put("test100", new HashMap<String,TestFunction>());
         testGroups.get("test100").put("test100R", (_,_) -> { return test100R(aS.clone(), offset1); });
         testGroups.get("test100").put("test100a", (_,_) -> { return test100a(aS.clone(), offset1); });
@@ -184,6 +188,7 @@ public class TestMergeStores {
                  "test4a",
                  "test5a",
                  "test6a",
+                 "test7a",
                  "test100a",
                  "test101a",
                  "test102a",
@@ -742,6 +747,26 @@ public class TestMergeStores {
         b[offset1 +  8] = (byte)0x55;
         b[offset1 + 10] = (byte)0x66;
         return new Object[]{ a, b };
+    }
+
+    @DontCompile
+    static Object[] test7R(byte[] a, int offset1, int v1) {
+        a[offset1 +  1] = (byte)(v1 >> 8);
+        a[offset1 +  2] = (byte)(v1 >> 16);
+        a[offset1 +  3] = (byte)(v1 >> 24);
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "3",
+                  IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"})
+    static Object[] test7a(byte[] a, int offset1, int v1) {
+        a[offset1 +  1] = (byte)(v1 >> 8);
+        a[offset1 +  2] = (byte)(v1 >> 16);
+        a[offset1 +  3] = (byte)(v1 >> 24);
+        return new Object[]{ a };
     }
 
     @DontCompile

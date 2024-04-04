@@ -2902,7 +2902,6 @@ private:
   Node* merged_input_value(const Node_List& merge_listi, const int new_memory_size);
 };
 
-// TODO desc
 StoreNode* MergePrimitiveArrayStores::run() {
   // Check for B/S/C/I
   int opc = _store->Opcode();
@@ -2961,7 +2960,8 @@ StoreNode* MergePrimitiveArrayStores::run() {
   while (merge_list.size() > pow2size) { merge_list.pop(); }
   int new_memory_size = _store->memory_size() * merge_list.size();
 
-  Node* new_value = merged_input_value(merge_list, new_memory_size);
+  Node* new_input_value = merged_input_value(merge_list, new_memory_size);
+  if (new_input_value == nullptr) { return nullptr; }
 
   Node* first    = merge_list.at(merge_list.size()-1);
   Node* new_ctrl = _store->in(MemNode::Control); // must take last: after all RangeChecks
@@ -2976,7 +2976,7 @@ StoreNode* MergePrimitiveArrayStores::run() {
   }
 
   StoreNode* new_store = StoreNode::make(*_phase, new_ctrl, new_mem, new_adr,
-                                         new_adr_type, new_value, bt, MemNode::unordered);
+                                         new_adr_type, new_input_value, bt, MemNode::unordered);
   // Marking the store mismatched is sufficient to prevent reordering, since array stores
   // are all on the same slice. Hence, we need no barriers.
   new_store->set_mismatched_access();
@@ -3229,7 +3229,7 @@ MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_def_store_unid
 // Merge the input values of the smaller stores to a single larger input value.
 Node* MergePrimitiveArrayStores::merged_input_value(const Node_List& merge_list, const int new_memory_size) {
   Node* first = merge_list.at(merge_list.size()-1);
-  Node* new_value = nullptr;
+  Node* new_input_value = nullptr;
   if (_store->in(MemNode::ValueIn)->Opcode() == Op_ConI) {
     // Pattern: [ConI, ConI, ...] -> new constant
     jlong con = 0;
@@ -3240,42 +3240,42 @@ Node* MergePrimitiveArrayStores::merged_input_value(const Node_List& merge_list,
       con = con << bits_per_store;
       con = con | (mask & con_i);
     }
-    new_value = _phase->longcon(con);
+    new_input_value = _phase->longcon(con);
   } else {
     // Pattern: [base >> 24, base >> 16, base >> 8, base] -> base
     //             |                                  |
     //           _store                             first
     //
-    new_value = first->in(MemNode::ValueIn);
+    new_input_value = first->in(MemNode::ValueIn);
     Node const* base_last;
     jint shift_last;
     bool is_true = is_con_RShift(_store->in(MemNode::ValueIn), base_last, shift_last);
     assert(is_true, "must detect con RShift");
-    if (new_value != base_last && new_value->Opcode() == Op_ConvL2I) {
+    if (new_input_value != base_last && new_input_value->Opcode() == Op_ConvL2I) {
       // look through
-      new_value = new_value->in(1);
+      new_input_value = new_input_value->in(1);
     }
-    if (new_value != base_last) {
-      // new_value is not the base
+    if (new_input_value != base_last) {
+      // new_input_value is not the base
       return nullptr;
     }
   }
 
-  if (_phase->type(new_value)->isa_long() != nullptr && new_memory_size <= 4) {
+  if (_phase->type(new_input_value)->isa_long() != nullptr && new_memory_size <= 4) {
     // Example:
     //
     //   long base = ...;
     //   a[0] = (byte)(base >> 0);
     //   a[1] = (byte)(base >> 8);
     //
-    new_value = _phase->transform(new ConvL2INode(new_value));
+    new_input_value = _phase->transform(new ConvL2INode(new_input_value));
   }
 
-  assert((_phase->type(new_value)->isa_int() != nullptr && new_memory_size <= 4) ||
-         (_phase->type(new_value)->isa_long() != nullptr && new_memory_size == 8),
-         "new_value is either int or long, and new_memory_size is small enough");
+  assert((_phase->type(new_input_value)->isa_int() != nullptr && new_memory_size <= 4) ||
+         (_phase->type(new_input_value)->isa_long() != nullptr && new_memory_size == 8),
+         "new_input_value is either int or long, and new_memory_size is small enough");
 
-  return new_value;
+  return new_input_value;
 }
 
 //------------------------------Ideal------------------------------------------
