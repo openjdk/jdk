@@ -2027,8 +2027,10 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       int index = state()->stack_size() - (target->arg_size_no_receiver() + 1);
       receiver = state()->stack_at(index);
       ciType* type = receiver->exact_type();
-      if (type != nullptr && type->is_loaded() &&
-          type->is_instance_klass() && !type->as_instance_klass()->is_interface()) {
+      if (type != nullptr) {
+        // Detects non-interface instances, primitive arrays, and some object arrays.
+        // Array receivers can only call Object methods, so we should be able to allow
+        // all object arrays here too, even those with unloaded types.
         receiver_klass = (ciInstanceKlass*) type;
         type_is_exact = true;
       }
@@ -2133,23 +2135,11 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     if ((code == Bytecodes::_invokestatic && klass->is_initialized()) || // invokestatic involves an initialization barrier on declaring class
         code == Bytecodes::_invokespecial ||
         (code == Bytecodes::_invokevirtual && target->is_final_method()) ||
-        code == Bytecodes::_invokedynamic ||
-        target->get_Method()->intrinsic_id() == vmIntrinsics::_clone) {
+        code == Bytecodes::_invokedynamic) {
       // static binding => check if callee is ok
       ciMethod* inline_target = (cha_monomorphic_target != nullptr) ? cha_monomorphic_target : target;
       bool holder_known = (cha_monomorphic_target != nullptr) || (exact_target != nullptr);
-      bool success;
-      // Clone intrinsic and inlining can only kick when instance is a primitive array,
-      // or when the target of the clone is not a Phi node
-      ciType* receiver_type;
-      if (target->get_Method()->intrinsic_id() == vmIntrinsics::_clone &&
-          ((receiver_type = state()->stack_at(state()->stack_size() - inline_target->arg_size())->exact_type()) == nullptr || // clone target is phi
-           !receiver_type->is_array_klass() || // not array
-           !receiver_type->as_array_klass()->element_type()->is_primitive_type())) { // not primitive array
-        success = false;
-      } else {
-        success = try_inline(inline_target, holder_known, false /* ignore_return */, code, better_receiver);
-      }
+      bool success = try_inline(inline_target, holder_known, false /* ignore_return */, code, better_receiver);
 
       CHECK_BAILOUT();
       clear_inline_bailout();
@@ -3667,6 +3657,9 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
   default:
     break;
   }
+  if (_inline_bailout_msg != nullptr) {
+    return;
+  }
 
   // create intrinsic node
   const bool has_receiver = !callee->is_static();
@@ -3728,6 +3721,9 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
     }
   }
   build_graph_for_intrinsic(callee, ignore_return);
+  if (_inline_bailout_msg != nullptr) {
+    return false;
+  }
   return true;
 }
 
@@ -4442,6 +4438,20 @@ void GraphBuilder::append_char_access(ciMethod* callee, bool is_store) {
 }
 
 void GraphBuilder::append_alloc_array_copy(ciMethod* callee) {
+  {
+    // Peek at receiver
+    Value recv = apop();
+    apush(recv);
+    ciType* receiver_type = recv->exact_type();
+    if (receiver_type == nullptr || // clone target is phi
+        !receiver_type->is_type_array_klass()) // not primtive array
+    {
+      // not primitive array
+      inline_bailout("clone array not primitive");
+      return;
+    }
+  }
+
   ValueStack* state_before = copy_state_before();
   state_before->set_force_reexecute();
   Value src = apop();
