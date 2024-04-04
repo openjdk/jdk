@@ -183,11 +183,11 @@ class ReplaceInitAndCloneStrideStrategy : public TransformStrategyForOpaqueLoopN
         _phase(phase) {}
   NONCOPYABLE(ReplaceInitAndCloneStrideStrategy);
 
-  Node* transform_opaque_init(OpaqueLoopInitNode* opaque_init) override {
+  Node* transform_opaque_init(OpaqueLoopInitNode* opaque_init) const override {
     return _new_init;
   }
 
-  Node* transform_opaque_stride(OpaqueLoopStrideNode* opaque_stride) override {
+  Node* transform_opaque_stride(OpaqueLoopStrideNode* opaque_stride) const override {
     return _phase->clone_and_register(opaque_stride, _new_ctrl)->as_OpaqueLoopStride();
   }
 };
@@ -204,11 +204,11 @@ class ReplaceInitAndStrideStrategy : public TransformStrategyForOpaqueLoopNodes 
         _new_stride(new_stride) {}
   NONCOPYABLE(ReplaceInitAndStrideStrategy);
 
-  Node* transform_opaque_init(OpaqueLoopInitNode* opaque_init) override {
+  Node* transform_opaque_init(OpaqueLoopInitNode* opaque_init) const override {
     return _new_init;
   }
 
-  Node* transform_opaque_stride(OpaqueLoopStrideNode* opaque_stride) override {
+  Node* transform_opaque_stride(OpaqueLoopStrideNode* opaque_stride) const override {
     return _new_stride;
   }
 };
