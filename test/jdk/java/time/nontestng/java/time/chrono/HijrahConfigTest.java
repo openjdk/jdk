@@ -68,7 +68,7 @@ public class HijrahConfigTest {
 
         // Run tests
         Path launcher = outputPath.resolve("bin").resolve("java");
-        OutputAnalyzer analyzer =  ProcessTools.executeCommand(launcher.toAbsolutePath().toString(),"-ea", "-esa", "HijrahConfigCheck");
+        OutputAnalyzer analyzer =  ProcessTools.executeCommand(launcher.toAbsolutePath().toString(), "-ea", "-esa", "HijrahConfigCheck");
         analyzer.shouldHaveExitValue(0);
     }
 }
