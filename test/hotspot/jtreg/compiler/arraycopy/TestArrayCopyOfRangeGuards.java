@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,41 @@
  * questions.
  */
 
-import java.awt.print.PageFormat;
-
 /*
  * @test
- * @bug 4199506
- * @summary Verify PageFormat.setPaper(null) throws NullPointerException
- *          as specified
- * @run main NullPaper
+ * @bug 8323682
+ * @summary Test that the appropriate guards are generated for the copyOfRange
+ *          intrinsic, even if the result of the array copy is not used.
+ *
+ * @run main/othervm -XX:-TieredCompilation
+ *                   -XX:CompileCommand=compileonly,compiler.arraycopy.TestArrayCopyOfRangeGuards::test
+ *                   -Xbatch
+ *                   compiler.arraycopy.TestArrayCopyOfRangeGuards
  */
-public final class NullPaper {
-    public static void main(String[] args) {
-        try {
-            /* Setting the paper to null should throw an exception.
-             * The bug was the exception was not being thrown.
-             */
-            new PageFormat().setPaper(null);
 
-            throw new RuntimeException("NullPointerException is expected "
-                                       + "but not thrown");
-        } catch (NullPointerException e) {
-            System.out.println("NullPointerException caught - test passes");
+package compiler.arraycopy;
+
+import java.util.Arrays;
+
+public class TestArrayCopyOfRangeGuards {
+    static int counter = 0;
+
+    public static void main(String[] args) {
+        Object[] array = new Object[10];
+        for (int i = 0; i < 50_000; i++) {
+            test(array);
+        }
+        if (counter != 50_000) {
+            throw new RuntimeException("Test failed");
+        }
+    }
+
+    static void test(Object[] array) {
+        try {
+            Arrays.copyOfRange(array, 15, 20, Object[].class);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            // Expected
+            counter++;
         }
     }
 }
