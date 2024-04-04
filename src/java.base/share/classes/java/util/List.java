@@ -25,6 +25,7 @@
 
 package java.util;
 
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 /**
@@ -668,6 +669,39 @@ public interface List<E> extends SequencedCollection<E> {
      *         (<a href="Collection.html#optional-restrictions">optional</a>)
      */
     int lastIndexOf(Object o);
+
+
+    /**
+     * Returns the index of the first occurrence of matching element
+     * in this list, or -1 if this list does not contain the element.
+     * More formally, returns the lowest index {@code i} such that
+     * {@code filter.test(get(i))},
+     * or -1 if there is no such index.
+     *
+     * @param filter a predicate to search for
+     * @return the index of the first occurrence of the specified element in
+     *         this list, or -1 if this list does not contain the element
+     * @throws NullPointerException if the specified element is null and this
+     *         list does not permit null elements
+     *         (<a href="Collection.html#optional-restrictions">optional</a>)
+     */
+    int indexOf(Predicate<? super E> filter);
+
+    /**
+     * Returns the index of the last occurrence of matching element
+     * in this list, or -1 if this list does not contain the element.
+     * More formally, returns the highest index {@code i} such that
+     * {@code Objects.equals(o, get(i))},
+     * or -1 if there is no such index.
+     *
+     * @param filter a predicate to search for
+     * @return the index of the last occurrence of the specified element in
+     *         this list, or -1 if this list does not contain the element
+     * @throws NullPointerException if the specified element is null and this
+     *         list does not permit null elements
+     *         (<a href="Collection.html#optional-restrictions">optional</a>)
+     */
+    int lastIndexOf(Predicate<? super E> filter);
 
 
     // List Iterators
