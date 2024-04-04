@@ -152,12 +152,6 @@ ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
   JLINK_JDK_TARGETS += $(diff_runtime_jdk)
 endif
 
-ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
-  FINAL_JDK_JLINK := $(diff_runtime_jdk)
-else
-  FINAL_JDK_JLINK := $(jlink_jdk)
-endif
-
 $(eval $(call SetupExecute, jlink_jre, \
     WARN := Creating legacy jre image, \
     DEPS := $(JRE_JMODS) $(BASE_RELEASE_FILE) \
@@ -205,7 +199,7 @@ define CreateCDSArchive
   $$(eval $$(call SetupExecute, $1_$2_gen_cds_archive_jdk, \
       WARN := Creating CDS$$($1_$2_DUMP_TYPE) archive for jdk image for $1, \
       INFO := Using CDS flags for $1: $$($1_$2_CDS_DUMP_FLAGS), \
-      DEPS := $$(FINAL_JDK_JLINK), \
+      DEPS := $$(jlink_jdk), \
       OUTPUT_FILE := $$(JDK_IMAGE_DIR)/$$($1_$2_CDS_ARCHIVE), \
       SUPPORT_DIR := $$(JDK_IMAGE_SUPPORT_DIR), \
       COMMAND := $$(FIXPATH) $$(JDK_IMAGE_DIR)/bin/java -Xshare:dump \
