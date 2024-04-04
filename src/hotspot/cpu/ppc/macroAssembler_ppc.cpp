@@ -1879,7 +1879,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   int log_vte_size= exact_log2(vtableEntry::size_in_bytes());
 
   lwz(scan_temp, in_bytes(Klass::vtable_length_offset()), recv_klass);
-  // %%% We should store the aligned, prescaled offset in the klass.
+  // We should store the aligned, prescaled offset in the klass.
   // Then the next several instructions would fold away.
 
   sldi(scan_temp, scan_temp, log_vte_size);

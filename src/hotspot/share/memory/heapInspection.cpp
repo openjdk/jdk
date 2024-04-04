@@ -196,7 +196,7 @@ KlassInfoTable::~KlassInfoTable() {
 }
 
 uint KlassInfoTable::hash(const Klass* p) {
-  return (uint)(((uintptr_t)p - (uintptr_t)_ref) >> 2);
+  return (uint)(((uintptr_t)p - _ref) >> 2);
 }
 
 KlassInfoEntry* KlassInfoTable::lookup(Klass* k) {
