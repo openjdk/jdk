@@ -86,26 +86,24 @@ JLINK_TOOL := $(JLINK) -J-Djlink.debug=true \
 
 JLINK_JRE_EXTRA_OPTS := --no-man-pages --no-header-files --strip-debug
 
-JDK_LINK_OUTPUT_DIR := $(JDK_IMAGE_DIR)
-JDK_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jdk
-
 ifeq ($(JLINK_KEEP_PACKAGED_MODULES), true)
-  JLINK_JDK_EXTRA_OPTS := --keep-packaged-modules $(JDK_LINK_OUTPUT_DIR)/jmods
+  JLINK_JDK_EXTRA_OPTS := --keep-packaged-modules $(JDK_IMAGE_DIR)/jmods
 endif
 
 JLINK_DISABLE_WARNINGS := | ( $(GREP) -v -e "WARNING: Using incubator module" || test "$$?" = "1" )
 
+JDK_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jdk
 JRE_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jre
 
 $(eval $(call SetupExecute, jlink_jdk, \
     WARN := Creating jdk image, \
     DEPS := $(JDK_JMODS) $(BASE_RELEASE_FILE) \
         $(call DependOnVariable, JDK_MODULES_LIST, $(JDK_IMAGE_SUPPORT_DIR)/_jlink_jdk.vardeps), \
-    OUTPUT_DIR := $(JDK_LINK_OUTPUT_DIR), \
+    OUTPUT_DIR := $(JDK_IMAGE_DIR), \
     SUPPORT_DIR := $(JDK_IMAGE_SUPPORT_DIR), \
-    PRE_COMMAND := $(RM) -r $(JDK_LINK_OUTPUT_DIR), \
+    PRE_COMMAND := $(RM) -r $(JDK_IMAGE_DIR), \
     COMMAND := $(JLINK_TOOL) --add-modules $(JDK_MODULES_LIST) \
-        $(JLINK_JDK_EXTRA_OPTS) --output $(JDK_LINK_OUTPUT_DIR) \
+        $(JLINK_JDK_EXTRA_OPTS) --output $(JDK_IMAGE_DIR) \
         $(JLINK_DISABLE_WARNINGS), \
 ))
 
@@ -115,10 +113,8 @@ ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
   RL_BUILD_CLASSES := runtimeimagelinkdeltaproducer-classes
   RL_DELTA_GEN_CLASSES := $(BUILDTOOLS_OUTPUTDIR)/$(RL_BUILD_CLASSES)
 
-  # We need to use FixPath for correct path handling on Windows. Avoid space
-  # in FixPath call in order to avoid needing to use strip.
-  RL_JIMAGE_PATH_ARG := $(JDK_LINK_OUTPUT_DIR)/lib/modules
-  RL_DIFFS_OUTPUT_FILE_ARG := $(JDK_LINK_OUTPUT_DIR)/lib/runtime-image-link.delta
+  RL_JIMAGE_PATH_ARG := $(JDK_IMAGE_DIR)/lib/modules
+  RL_DIFFS_OUTPUT_FILE_ARG := $(JDK_IMAGE_DIR)/lib/runtime-image-link.delta
   RL_MOD_PATH_ARG := $(IMAGES_OUTPUTDIR)/jmods
   TOOL_RUNTIME_IMAGE_LINK_DELTA_PRODUCER := $(BUILD_JAVA) --add-modules jdk.jlink \
       --add-exports=jdk.jlink/jdk.tools.jlink.internal.runtimelink=ALL-UNNAMED \
