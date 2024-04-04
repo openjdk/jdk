@@ -1994,7 +1994,7 @@ const int ObjectAlignmentInBytes = 8;
                 "rewriting/transformation independently of the JVMTI "      \
                 "can_{retransform/redefine}_classes capabilities.")         \
                                                                             \
-  product(bool, UseSecondarySuperCache, true, DIAGNOSTIC,                   \
+  product(bool, UseSecondarySupersCache, true, DIAGNOSTIC,                  \
                 "Use secondary supers cache during subtype checks.")        \
                                                                             \
   product(bool, UseSecondarySupersTable, false, DIAGNOSTIC,                 \
