@@ -3765,6 +3765,8 @@ public class Collections {
         public E remove(int index)       { return list.remove(index); }
         public int indexOf(Object o)     { return list.indexOf(o); }
         public int lastIndexOf(Object o) { return list.lastIndexOf(o); }
+        public int indexOf(Predicate<? super E> filter) { return list.indexOf(filter); }
+        public int lastIndexOf(Predicate<? super E> filter) { return list.lastIndexOf(filter); }
 
         public E set(int index, E element) {
             return list.set(index, typeCheck(element));
