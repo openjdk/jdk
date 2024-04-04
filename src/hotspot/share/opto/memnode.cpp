@@ -2889,6 +2889,9 @@ private:
   bool is_adjacent_pair(const StoreNode* use_store, const StoreNode* def_store) const;
   bool is_adjacent_input_pair(const Node* n1, const Node* n2, const int memory_size) const;
   static bool is_con_RShift(const Node* n, Node const*& base_out, jint& shift_out);
+  enum CFGStatus { SuccessNoRangeCheck, SuccessWithRangeCheck, Failure };
+  static CFGStatus cfg_status_for_pair(const StoreNode* use_store, const StoreNode* def_store);
+
   Status find_adjacent_use_store(const StoreNode* def_store) const;
   Status find_adjacent_def_store(const StoreNode* use_store) const;
   Status find_use_store(const StoreNode* def_store) const;
@@ -3130,6 +3133,51 @@ bool MergePrimitiveArrayStores::is_con_RShift(const Node* n, Node const*& base_o
   return false;
 }
 
+MergePrimitiveArrayStores::CFGStatus MergePrimitiveArrayStores::cfg_status_for_pair(const StoreNode* use_store, const StoreNode* def_store) {
+  assert(use_store->in(MemNode::Memory) == def_store, "use-def relationship");
+
+  Node* ctrl_use = use_store->in(MemNode::Control);
+  Node* ctrl_def = def_store->in(MemNode::Control);
+  if (ctrl_use == nullptr || ctrl_def == nullptr) {
+    return CFGStatus::Failure;
+  }
+
+  if (ctrl_use == ctrl_def) {
+    // Same ctrl -> no RangeCheck in between.
+    // Check: use_store must be the only use of def_store.
+    if (def_store->outcnt() > 1) {
+      return CFGStatus::Failure;
+    }
+    return CFGStatus::SuccessNoRangeCheck;
+  }
+
+  // Different ctrl -> could have RangeCheck in between.
+  // Check: 1. def_store only has these uses: use_store and MergeMem for uncommon trap, and
+  //        2. ctrl separated by RangeCheck.
+  if (def_store->outcnt() != 2) {
+    return CFGStatus::Failure; // Cannot have exactly these uses: use_store and MergeMem for uncommon trap.
+  }
+  int use_store_out_idx = def_store->raw_out(0) == use_store ? 0 : 1;
+  Node* merge_mem = def_store->raw_out(1 - use_store_out_idx)->isa_MergeMem();
+  if (merge_mem == nullptr ||
+      merge_mem->outcnt() != 1) {
+    return CFGStatus::Failure; // Does not have MergeMem for uncommon trap.
+  }
+  if (!ctrl_use->is_IfProj() ||
+      !ctrl_use->in(0)->is_RangeCheck() ||
+      ctrl_use->in(0)->outcnt() != 2) {
+    return CFGStatus::Failure; // Not RangeCheck.
+  }
+  ProjNode* other_proj = ctrl_use->as_IfProj()->other_if_proj();
+  Node* trap = other_proj->is_uncommon_trap_proj(Deoptimization::Reason_range_check);
+  if (trap != merge_mem->unique_out() ||
+      ctrl_use->in(0)->in(0) != ctrl_def) {
+    return CFGStatus::Failure; // Not RangeCheck with merge_mem leading to uncommon trap.
+  }
+
+  return CFGStatus::SuccessWithRangeCheck;
+}
+
 MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_adjacent_use_store(const StoreNode* def_store) const {
   Status status_use = find_use_store(def_store);
   StoreNode* use_store = status_use.found_store();
@@ -3183,51 +3231,17 @@ MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_def_store(cons
 MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_use_store_unidirectional(const StoreNode* def_store) const {
   assert(is_compatible_store(def_store), "precondition: must be compatible with _store");
 
-  // Uses should be:
-  // 1) the other StoreNode
-  // 2) optionally a MergeMem from the uncommon trap
-  if (def_store->outcnt() > 2) {
-    return Status::make_failure();
-  }
-
-  StoreNode* use_store = nullptr;
-  MergeMemNode* merge_mem = nullptr;
   for (DUIterator_Fast imax, i = def_store->fast_outs(imax); i < imax; i++) {
-    Node* use = def_store->fast_out(i);
-    if (use_store == nullptr && is_compatible_store(use->isa_Store())) {
-      use_store = use->as_Store();
-    } else if (use->is_MergeMem() && merge_mem == nullptr) {
-      merge_mem = use->as_MergeMem();
-    } else {
-      return Status::make_failure();
+    StoreNode* use_store = def_store->fast_out(i)->isa_Store();
+    if (is_compatible_store(use_store)) {
+      CFGStatus cfg_status = cfg_status_for_pair(use_store, def_store);
+      if (cfg_status == CFGStatus::Failure) {
+        return Status::make_failure();
+      }
+      return Status(use_store, cfg_status == CFGStatus::SuccessWithRangeCheck);
     }
   }
-  if (use_store == nullptr) {
-    return Status::make_failure();
-  }
-  if (merge_mem != nullptr) {
-    // Check that merge_mem only leads to the uncommon trap between
-    // the two stores.
-    if (merge_mem->outcnt() != 1) {
-      return Status::make_failure();
-    }
-    Node* ctrl_s1 = use_store->in(MemNode::Control);
-    Node* ctrl_s2 = def_store->in(MemNode::Control);
-    if (!ctrl_s1->is_IfProj() ||
-        !ctrl_s1->in(0)->is_RangeCheck() ||
-        ctrl_s1->in(0)->outcnt() != 2) {
-      return Status::make_failure();
-    }
-    ProjNode* other_proj = ctrl_s1->as_IfProj()->other_if_proj();
-    Node* trap = other_proj->is_uncommon_trap_proj(Deoptimization::Reason_range_check);
-    if (trap != merge_mem->unique_out() ||
-        ctrl_s1->in(0)->in(0) != ctrl_s2) {
-      return Status::make_failure();
-    }
-  }
-
-  bool found_range_check = merge_mem != nullptr;
-  return Status(use_store, found_range_check);
+  return Status::make_failure();
 }
 
 MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_def_store_unidirectional(const StoreNode* use_store) const {
@@ -3238,28 +3252,11 @@ MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_def_store_unid
     return Status::make_failure();
   }
 
-  // TODO consider unifying it, maybe it is even necessary for correctness.
-  // Check ctrl compatibility
-  Node* ctrl_use = use_store->in(MemNode::Control);
-  Node* ctrl_def = def_store->in(MemNode::Control);
-  if (ctrl_use != ctrl_def) {
-    // See if we can bypass a RangeCheck
-    if (!ctrl_use->is_IfProj() ||
-        !ctrl_use->in(0)->is_RangeCheck() ||
-        ctrl_use->in(0)->outcnt() != 2) {
-      return Status::make_failure();
-    }
-    ProjNode* other_proj = ctrl_use->as_IfProj()->other_if_proj();
-    if (other_proj->is_uncommon_trap_proj(Deoptimization::Reason_range_check) == nullptr ||
-        ctrl_use->in(0)->in(0) != ctrl_def) {
-      return Status::make_failure();
-    }
-    // Success, we skipped a RangeCheck.
-    return Status(def_store, true);
+  CFGStatus cfg_status = cfg_status_for_pair(use_store, def_store);
+  if (cfg_status == CFGStatus::Failure) {
+    return Status::make_failure();
   }
-
-  // Success, no RangeCheck is in between.
-  return Status(def_store, false);
+  return Status(def_store, cfg_status == CFGStatus::SuccessWithRangeCheck);
 }
 
 //------------------------------Ideal------------------------------------------
