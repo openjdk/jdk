@@ -229,7 +229,7 @@ public enum Target {
 
     /** Releases prior to JDK 23 expect a less precise SwitchBootstraps.typeSwitch signature on the selectorType
      */
-    public boolean releaseAfterJEP455() {
-        return compareTo(Target.JDK1_23) >= 0;
+    public boolean usesReferenceOnlySelectorTypes() {
+        return compareTo(Target.JDK1_23) < 0;
     }
 }

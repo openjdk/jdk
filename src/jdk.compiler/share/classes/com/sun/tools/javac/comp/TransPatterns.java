@@ -495,14 +495,13 @@ public class TransPatterns extends TreeTranslator {
                          .toArray(s -> new LoadableConstant[s]);
 
             boolean enumSelector = seltype.tsym.isEnum();
-            boolean primitiveSelector = seltype.isPrimitive();
             Name bootstrapName = enumSelector ? names.enumSwitch : names.typeSwitch;
             MethodSymbol bsm = rs.resolveInternalMethod(tree.pos(), env, syms.switchBootstrapsType,
                     bootstrapName, staticArgTypes, List.nil());
 
-            Type resolvedSelectorType = syms.objectType;
-            if (target.releaseAfterJEP455())
-                resolvedSelectorType = seltype;
+            Type resolvedSelectorType = seltype;
+            if (target.usesReferenceOnlySelectorTypes())
+                resolvedSelectorType = syms.objectType;
 
             MethodType indyType = new MethodType(
                     List.of(resolvedSelectorType, syms.intType),
