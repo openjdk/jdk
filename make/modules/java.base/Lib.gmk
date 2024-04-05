@@ -192,8 +192,10 @@ ifeq ($(ENABLE_FALLBACK_LINKER), true)
   ## Build libfallbackLinker
   ##############################################################################
 
+
   $(eval $(call SetupJdkLibrary, BUILD_LIBFALLBACKLINKER, \
       NAME := fallbackLinker, \
+      EXTRA_HEADER_DIRS := java.base:libjava, \
       CFLAGS := $(LIBFFI_CFLAGS), \
       LIBS := $(LIBFFI_LIBS), \
       LIBS_windows := ws2_32.lib, \
