@@ -1008,8 +1008,6 @@ int CodeCache::nmethod_count() {
   int count = 0;
   for (CodeHeap* heap : *_nmethod_heaps) {
     count += heap->nmethod_count();
-//  for (GrowableArrayIterator<CodeHeap*> heap = _nmethod_heaps->begin(); heap != _nmethod_heaps->end(); ++heap) {
-//    count += (*heap)->nmethod_count();
   }
   return count;
 }
