@@ -4308,9 +4308,9 @@ The \f[V]-Xlog\f[R] option supports the following types of outputs:
 .IP \[bu] 2
 \f[V]file=\f[R]\f[I]filename\f[R] --- Sends output to text file(s).
 .PP
-When using \f[V]file=\f[R]\f[I]filename\f[R], specifying \f[V]%p\f[R]
-and/or \f[V]%t\f[R] in the file name expands to the JVM\[aq]s PID and
-startup timestamp, respectively.
+When using \f[V]file=\f[R]\f[I]filename\f[R], specifying \f[V]%p\f[R],
+\f[V]%t\f[R] and/or \f[V]%hn\f[R] in the file name expands to the
+JVM\[aq]s PID, startup timestamp and host name, respectively.
 You can also configure text files to handle file rotation based on file
 size and a number of files to rotate.
 For example, to rotate the log file every 10 MB and keep 5 files in
