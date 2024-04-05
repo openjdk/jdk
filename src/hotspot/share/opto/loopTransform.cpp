@@ -299,7 +299,7 @@ bool IdealLoopTree::is_associative(Node* n, Node* base) {
     return op == base_op;
   } else {
     // Integer "add/sub/mul/and/or/xor" operations are associative. Integer
-    // "cmp" operations are virtual if it is an equality comparison.
+    // "cmp" operations are associative if it is an equality comparison.
     return op == Op_AddI || op == Op_AddL
         || op == Op_SubI || op == Op_SubL
         || op == Op_MulI || op == Op_MulL
