@@ -2685,19 +2685,30 @@ uint StoreNode::hash() const {
   return NO_HASH;
 }
 
-// Class to parse array pointers of the form:
-// pointer = base + constant_offset + (int_offset << int_offset_shift) + sum(other_offsets)
+// Class to parse array pointers, and determine if they are adjacent. We parse the form:
 //
-// The goal is to check if two such ArrayPointers are adjacent for a load or store.
+//   pointer =   base
+//             + constant_offset
+//             + LShiftL( ConvI2L(int_offset + int_con), int_offset_shift)
+//             + sum(other_offsets)
+//
 //
 // Note: we accumulate all constant offsets into constant_offset, even the int constant behind
-//       the LShiftL(ConvI2L(...)) pattern. For this, we convert "ConvI2L(x + int_con)" to
-//       "ConvI2L(x) + int_con", which is only safe if we can assume that either all compared
-//       addresses have an overflow for "x + int_con" or none.
+//       the "LShiftL(ConvI2L(...))" pattern. We convert "ConvI2L(int_offset + int_con)" to
+//       "ConvI2L(int_offset) + int_con", which is only safe if we can assume that either all
+//       compared addresses have an overflow for "int_offset + int_con" or none.
 //       For loads and stores on arrays, we know that if one overflows and the other not, then
 //       the two addresses lay almost max_int indices apart, but the maximal array size is
 //       only about half of that. Therefore, the RangeCheck on at least one of them must have
 //       failed.
+//
+//   constant_offset += LShiftL( ConvI2L(int_con), int_offset_shift)
+//
+//   pointer =   base
+//             + constant_offset
+//             + LShiftL( ConvI2L(int_offset), int_offset_shift)
+//             + sum(other_offsets)
+//
 class ArrayPointer {
 private:
   const bool _is_valid;          // The parsing succeeded
@@ -2770,7 +2781,12 @@ public:
     if (count <= 0) { return ArrayPointer::make_invalid(pointer); }
 
     // We extract the form:
-    // pointer = base + constant_offset + (int_offset << int_offset_shift) + sum(other_offsets)
+    //
+    //   pointer =   base
+    //             + constant_offset
+    //             + LShiftL( ConvI2L(int_offset + int_con), int_offset_shift)
+    //             + sum(other_offsets)
+    //
     jlong constant_offset = 0;
     Node* int_offset = nullptr;
     jint int_offset_shift = 0;
@@ -2899,7 +2915,8 @@ private:
   Status find_use_store_unidirectional(const StoreNode* def_store) const;
   Status find_def_store_unidirectional(const StoreNode* use_store) const;
 
-  Node* merged_input_value(const Node_List& merge_listi, const int new_memory_size);
+  void collect_merge_list(Node_List& merge_list) const;
+  Node* merged_input_value(const Node_List& merge_list, const int new_memory_size);
 };
 
 StoreNode* MergePrimitiveArrayStores::run() {
@@ -2916,48 +2933,23 @@ StoreNode* MergePrimitiveArrayStores::run() {
     return nullptr;
   }
 
-  // If we can merge with use, then we must process use first.
+  // The _store must be the "last" store in a chain. If we find a use we could merge with
+  // then that use or a store further down is the "last" store.
   Status status_use = find_adjacent_use_store(_store);
   if (status_use.found_store() != nullptr) {
     return nullptr;
   }
 
-  // Check if we can merge with at least one def.
+  // Check if we can merge with at least one def, so that we have at least 2 stores to merge.
   Status status_def = find_adjacent_def_store(_store);
   if (status_def.found_store() == nullptr) {
     return nullptr;
   }
 
-  // Now we know we can merge at least two stores.
+  // Collect list of stores
   ResourceMark rm;
   Node_List merge_list;
-
-  uint merge_list_max_size = 8 / _store->memory_size();
-  assert(merge_list_max_size >= 2 &&
-         merge_list_max_size <= 8 &&
-         is_power_of_2(merge_list_max_size),
-         "must be 2, 4 or 8");
-
-  // Collect list of stores
-  StoreNode* current = _store;
-  merge_list.push(current);
-  while (current != nullptr && merge_list.size() < merge_list_max_size) {
-    Status status = find_adjacent_def_store(current);
-    current = status.found_store();
-    if (current != nullptr) {
-      merge_list.push(current);
-
-      // We can have at most one RangeCheck.
-      if (status.found_range_check()) {
-        break;
-      }
-    }
-  }
-
-  // Truncate the merge_list to a power of 2.
-  uint pow2size = round_down_power_of_2(merge_list.size());
-  assert(pow2size >= 2, "must be merging at least 2 stores");
-  while (merge_list.size() > pow2size) { merge_list.pop(); }
+  collect_merge_list(merge_list);
   int new_memory_size = _store->memory_size() * merge_list.size();
 
   Node* new_input_value = merged_input_value(merge_list, new_memory_size);
@@ -3225,6 +3217,36 @@ MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_def_store_unid
     return Status::make_failure();
   }
   return Status(def_store, cfg_status == CFGStatus::SuccessWithRangeCheck);
+}
+
+void MergePrimitiveArrayStores::collect_merge_list(Node_List& merge_list) const {
+  // The merged store can be at most 8 bytes.
+  const uint merge_list_max_size = 8 / _store->memory_size();
+  assert(merge_list_max_size >= 2 &&
+         merge_list_max_size <= 8 &&
+         is_power_of_2(merge_list_max_size),
+         "must be 2, 4 or 8");
+
+  // Collect list of stores
+  StoreNode* current = _store;
+  merge_list.push(current);
+  while (current != nullptr && merge_list.size() < merge_list_max_size) {
+    Status status = find_adjacent_def_store(current);
+    current = status.found_store();
+    if (current != nullptr) {
+      merge_list.push(current);
+
+      // We can have at most one RangeCheck.
+      if (status.found_range_check()) {
+        break;
+      }
+    }
+  }
+
+  // Truncate the merge_list to a power of 2.
+  const uint pow2size = round_down_power_of_2(merge_list.size());
+  assert(pow2size >= 2, "must be merging at least 2 stores");
+  while (merge_list.size() > pow2size) { merge_list.pop(); }
 }
 
 // Merge the input values of the smaller stores to a single larger input value.
