@@ -141,7 +141,8 @@ public class ServerSocket implements java.io.Closeable {
      * indication arrives when the queue is full, the connection is refused.
      * <p>
      * If the application has specified a server socket implementation
-     * factory, that factory's {@code createSocketImpl} method is called to
+     * factory, that {@linkplain SocketImplFactory#createSocketImpl()
+     * factory's createSocketImpl method} is called to
      * create the actual socket implementation. Otherwise a system-default
      * socket implementation is created.
      * <p>
@@ -163,7 +164,6 @@ public class ServerSocket implements java.io.Closeable {
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
      *
-     * @see        java.net.SocketImpl
      * @see        SecurityManager#checkListen
      */
     public ServerSocket(int port) throws IOException {
@@ -184,8 +184,9 @@ public class ServerSocket implements java.io.Closeable {
      * connection is refused.
      * <p>
      * If the application has specified a server socket implementation
-     * factory, that factory's {@code createSocketImpl} method is called to
-     * create the actual socket implementation. Otherwise a system-default
+     * factory, that {@linkplain SocketImplFactory#createSocketImpl()
+     * factory's createSocketImpl method} is called to create
+     * the actual socket implementation. Otherwise a system-default
      * socket implementation is created.
      * <p>
      * If there is a security manager,
@@ -214,7 +215,6 @@ public class ServerSocket implements java.io.Closeable {
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
      *
-     * @see        java.net.SocketImpl
      * @see        SecurityManager#checkListen
      */
     public ServerSocket(int port, int backlog) throws IOException {
@@ -261,8 +261,6 @@ public class ServerSocket implements java.io.Closeable {
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
      *
-     * @see StandardSocketOptions
-     * @see SocketImpl
      * @see SecurityManager#checkListen
      * @since   1.1
      */

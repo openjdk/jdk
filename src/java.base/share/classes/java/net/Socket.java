@@ -173,7 +173,8 @@ public class Socket implements java.io.Closeable {
      * Creates an unconnected Socket.
      * <p>
      * If the application has specified a client socket implementation
-     * factory, that factory's {@code createSocketImpl} method is called to
+     * factory, that {@linkplain SocketImplFactory#createSocketImpl()
+     * factory's createSocketImpl method} is called to
      * create the actual socket implementation. Otherwise a system-default
      * socket implementation is created.
      *
@@ -296,7 +297,8 @@ public class Socket implements java.io.Closeable {
      * loopback interface. </p>
      * <p>
      * If the application has specified a client socket implementation
-     * factory, that factory's {@code createSocketImpl} method is called to
+     * factory, that {@linkplain SocketImplFactory#createSocketImpl()
+     * factory's createSocketImpl method} is called to
      * create the actual socket implementation. Otherwise a system-default
      * socket implementation is created.
      * <p>
@@ -317,7 +319,6 @@ public class Socket implements java.io.Closeable {
      * @throws     IllegalArgumentException if the port parameter is outside
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
-     * @see        java.net.SocketImpl
      * @see        SecurityManager#checkConnect
      */
     @SuppressWarnings("this-escape")
@@ -334,7 +335,8 @@ public class Socket implements java.io.Closeable {
      * number at the specified IP address.
      * <p>
      * If the application has specified a client socket implementation
-     * factory, that factory's {@code createSocketImpl} method is called to
+     * factory, that {@linkplain SocketImplFactory#createSocketImpl()
+     * factory's createSocketImpl method} is called to
      * create the actual socket implementation. Otherwise a system-default
      * socket implementation is created.
      * <p>
@@ -352,7 +354,6 @@ public class Socket implements java.io.Closeable {
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
      * @throws     NullPointerException if {@code address} is null.
-     * @see        java.net.SocketImpl
      * @see        SecurityManager#checkConnect
      */
     @SuppressWarnings("this-escape")
@@ -462,7 +463,8 @@ public class Socket implements java.io.Closeable {
      * creates a datagram socket.
      * <p>
      * If the application has specified a client socket implementation
-     * factory, that factory's {@code createSocketImpl} method is called to
+     * factory, {@linkplain SocketImplFactory#createSocketImpl()
+     * factory's createSocketImpl method} is called to
      * create the actual socket implementation. Otherwise a system-default
      * socket implementation is created.
      * <p>
@@ -483,7 +485,6 @@ public class Socket implements java.io.Closeable {
      * @throws     IllegalArgumentException if the port parameter is outside
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
-     * @see        java.net.SocketImpl
      * @see        SecurityManager#checkConnect
      * @deprecated Use DatagramSocket instead for UDP transport.
      */
@@ -504,7 +505,8 @@ public class Socket implements java.io.Closeable {
      * creates a datagram socket.
      * <p>
      * If the application has specified a client socket implementation
-     * factory, that factory's {@code createSocketImpl} method is called to
+     * factory, that {@linkplain SocketImplFactory#createSocketImpl()
+     * factory's createSocketImpl method} is called to
      * create the actual socket implementation. Otherwise a system-default
      * socket implementation is created.
      *
@@ -526,7 +528,6 @@ public class Socket implements java.io.Closeable {
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
      * @throws     NullPointerException if {@code host} is null.
-     * @see        java.net.SocketImpl
      * @see        SecurityManager#checkConnect
      * @deprecated Use DatagramSocket instead for UDP transport.
      */
