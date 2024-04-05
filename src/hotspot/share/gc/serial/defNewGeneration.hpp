@@ -171,7 +171,6 @@ class DefNewGeneration: public Generation {
   ContiguousSpace* from() const           { return _from_space; }
   ContiguousSpace* to()   const           { return _to_space;   }
 
-  // Access saved mark word
   HeapWord* saved_mark_word()   const    { return _saved_mark_word; }
   void set_saved_mark_word()             { _saved_mark_word = to()->top(); }
   bool saved_mark_at_top()               { return _saved_mark_word == _to_space->top(); }
