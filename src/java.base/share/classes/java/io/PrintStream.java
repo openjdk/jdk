@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1160,7 +1160,6 @@ public class PrintStream extends FilterOutputStream
         }
     }
 
-
     /**
      * Prints a String and then terminates the line.  This method behaves as
      * though it invokes {@link #print(String)} and then
@@ -1440,7 +1439,6 @@ public class PrintStream extends FilterOutputStream
             formatter = new Formatter(this, l);
         formatter.format(l, format, args);
     }
-
 
     /**
      * Appends the specified character sequence to this output stream.
