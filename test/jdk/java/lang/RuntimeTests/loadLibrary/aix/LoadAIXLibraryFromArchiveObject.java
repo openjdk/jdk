@@ -35,8 +35,7 @@ public class LoadAIXLibraryFromArchiveObject {
         File perfstatSharedObjectPath = new File("/usr/lib/libperfstat.so");
         // If .a file is not present and .so file is present.
         if (!perfstatPath.exists() || !perfstatSharedObjectPath.exists())
-           throw new RuntimeException("LoadAIXLibraryFromArchiveObject : .so should be non existent.")
- 
+           throw new RuntimeException("LoadAIXLibraryFromArchiveObject : .so should be non existent.");
         System.loadLibrary(libraryName);
     }
 }
