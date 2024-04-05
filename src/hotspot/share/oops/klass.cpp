@@ -298,7 +298,7 @@ void Klass::set_secondary_supers(Array<Klass*>* secondaries, uintx bitmap) {
     NonInterleavingLogStream log {LogLevel::Debug, msg};
     if (log.is_enabled()) {
       ResourceMark rm;
-      log.print_cr("set_secondary_supers: klass: %s", external_name());
+      log.print_cr("set_secondary_supers: hash_slot: %d; klass: %s", hash_slot(), external_name());
       print_secondary_supers_on(&log);
     }
   }
@@ -1192,13 +1192,11 @@ class LookupStats : StackObj {
   }
 
   void print_on(outputStream* st) const {
+    st->print("best: %2d (%4.1f%%)", _best, (100.0 * _best_count) / _no_of_samples);
     if (_best_count < _no_of_samples) {
-      st->print("best: %2d (%4.1f%%); average: %4.1f; worst: %2d (%4.1f%%)",
-                _best, (100.0 * _best_count) / _no_of_samples,
+      st->print("; average: %4.1f; worst: %2d (%4.1f%%)",
                 (1.0 * _average) / _no_of_samples,
                 _worst, (100.0 * _worst_count) / _no_of_samples);
-    } else {
-      st->print(" %.1f ", float(_average));
     }
   }
 };
@@ -1236,7 +1234,8 @@ void Klass::print_secondary_supers_on(outputStream* st) const {
     if (UseSecondarySupersTable) {
       st->print("  - "); st->print("%d elements;", _secondary_supers->length());
       st->print_cr(" bitmap: " UINTX_FORMAT_X_0 ";", _bitmap);
-      if (_bitmap != SECONDARY_SUPERS_BITMAP_FULL) {
+      if (_bitmap != SECONDARY_SUPERS_BITMAP_EMPTY &&
+          _bitmap != SECONDARY_SUPERS_BITMAP_FULL) {
         st->print("  - "); print_positive_lookup_stats(secondary_supers(), _bitmap, st); st->cr();
         st->print("  - "); print_negative_lookup_stats(_bitmap, st); st->cr();
       }

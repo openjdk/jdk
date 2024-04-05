@@ -16290,15 +16290,21 @@ instruct partialSubtypeCheckConstSuper(iRegP_R4 sub, iRegP_R0 super_reg, immP su
   format %{ "partialSubtypeCheck $result, $sub, super" %}
 
   ins_encode %{
+    bool success = false;
     u1 super_klass_slot = ((Klass*)$super_con$$constant)->hash_slot();
     if (InlineSecondarySupersTest) {
-      __ lookup_secondary_supers_table($sub$$Register, $super_reg$$Register,
-                                       $tempR1$$Register, $tempR2$$Register, $tempR3$$Register,
-                                       $vtemp$$FloatRegister,
-                                       $result$$Register,
-                                       super_klass_slot);
+      success = __ lookup_secondary_supers_table($sub$$Register, $super_reg$$Register,
+                                                 $tempR1$$Register, $tempR2$$Register, $tempR3$$Register,
+                                                 $vtemp$$FloatRegister,
+                                                 $result$$Register,
+                                                 super_klass_slot);
     } else {
-      __ trampoline_call(RuntimeAddress(StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot)));
+      address call = __ trampoline_call(RuntimeAddress(StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot)));
+      success = (call != nullptr);
+    }
+    if (!success) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
     }
   %}
 
