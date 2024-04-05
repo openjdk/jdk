@@ -482,3 +482,27 @@ will likely suffice to reach the goals of this JEP.
 
 The work described here will likely enable subsequent work to provide pre-evaluated computed
 constant fields at compile, condensation, and/or runtime.
+
+# Log
+
+Dropping Lazy would not allow for imperative use.
+Lazy lists can currently not hold null (but this can be added).
+A singleton lazy lists occupies more space than a Lazy.
+Lazy and a singleton lazy lists are equally fast:
+
+Benchmark                   Mode  Cnt  Score   Error  Units
+LazyBenchmark.instanceDCL   avgt   10  1.431 ? 0.017  ns/op
+LazyBenchmark.instanceLazy  avgt   10  0.890 ? 0.020  ns/op
+LazyBenchmark.instanceList  avgt   10  0.892 ? 0.020  ns/op
+
+Benchmark                   Mode  Cnt  Score   Error  Units
+LazyBenchmark.staticCHI     avgt   10  0.589 ? 0.087  ns/op
+LazyBenchmark.staticDCL     avgt   10  1.253 ? 0.041  ns/op
+LazyBenchmark.staticLazy    avgt   10  0.562 ? 0.002  ns/op
+LazyBenchmark.staticList    avgt   10  0.563 ? 0.006  ns/op
+
+Usage in sample parts of the JDK:
+
+Single  : 
+Multiple:
+

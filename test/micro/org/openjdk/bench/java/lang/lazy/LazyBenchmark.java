@@ -25,6 +25,7 @@ package org.openjdk.bench.java.lang.lazy;
 
 import org.openjdk.jmh.annotations.*;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -63,9 +64,11 @@ public class LazyBenchmark {
 
     private static final Lazy<Integer> LAZY = init(Lazy.of());
     private static final Supplier<Integer> DCL = new Dcl<>(() -> VALUE);
+    private static final List<Integer> LIST = Lazy.ofList(1, _ -> VALUE);
 
     private final Lazy<Integer> lazy = init(Lazy.of());
     private final Supplier<Integer> dcl = new Dcl<>(() -> VALUE);
+    private final List<Integer> list = Lazy.ofList(1, _ -> VALUE);
 
     @Setup
     public void setup() {
@@ -74,6 +77,11 @@ public class LazyBenchmark {
     @Benchmark
     public int staticLazy() {
         return LAZY.orThrow();
+    }
+
+    @Benchmark
+    public int staticList() {
+        return LIST.get(0);
     }
 
     @Benchmark
@@ -93,6 +101,11 @@ public class LazyBenchmark {
     @Benchmark
     public int instanceLazy() {
         return lazy.orThrow();
+    }
+
+    @Benchmark
+    public int instanceList() {
+        return list.get(0);
     }
 
     @Benchmark
