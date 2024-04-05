@@ -553,10 +553,11 @@ ifeq ($(call isTargetOs, windows)+$(call isTargetCpu, x86), true+true)
 endif
 
 ifeq ($(call isTargetOsType, unix)+$(call isTargetOs, macosx), true+false)
+  LIBJAWT_JDK_LIBS_unix := @:awt
   ifeq ($(ENABLE_HEADLESS_ONLY), false)
-    LIBJAWT_JDK_LIBS_unix := @:awt_xawt
+    LIBJAWT_JDK_LIBS_unix += @:awt_xawt
   else
-    LIBJAWT_JDK_LIBS_unix := @:awt_headless
+    LIBJAWT_JDK_LIBS_unix += @:awt_headless
   endif
 endif
 
@@ -571,7 +572,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAWT, \
     EXTRA_HEADER_DIRS := $(LIBJAWT_EXTRA_HEADER_DIRS), \
     LDFLAGS_windows := $(LDFLAGS_CXX_JDK), \
     LDFLAGS_macosx := -Wl$(COMMA)-rpath$(COMMA)@loader_path, \
-    JDK_LIBS_unix := @:awt $(LIBJAWT_JDK_LIBS_unix), \
+    JDK_LIBS_unix := $(LIBJAWT_JDK_LIBS_unix), \
     JDK_LIBS_windows := @:awt, \
     JDK_LIBS_macosx := @:awt_lwawt, \
     LIBS_macosx := -framework Cocoa, \
