@@ -121,6 +121,11 @@ class frame {
   // is deoptimization. It likely no one else should ever use it.
   address raw_pc() const;
 
+  // Return the original PC for the given PC if:
+  // (a) the given PC belongs to an nmethod and
+  // (b) it is a deopt PC
+  address get_deopt_original_pc() const;
+
   void set_pc(address newpc);
 
   intptr_t* sp() const           { assert_absolute(); return _sp; }

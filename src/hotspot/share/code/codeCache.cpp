@@ -664,8 +664,8 @@ CodeBlob* CodeCache::find_blob(void* start) {
 
 nmethod* CodeCache::find_nmethod(void* start) {
   CodeBlob* cb = find_blob(start);
-  assert(cb != nullptr, "did not find an nmethod");
-  return cb->as_nmethod();
+  assert(cb == nullptr || cb->is_nmethod(), "did not find an nmethod");
+  return (nmethod*)cb;
 }
 
 void CodeCache::blobs_do(void f(CodeBlob* nm)) {
@@ -679,7 +679,7 @@ void CodeCache::blobs_do(void f(CodeBlob* nm)) {
 
 void CodeCache::nmethods_do(void f(nmethod* nm)) {
   assert_locked_or_safepoint(CodeCache_lock);
-  NMethodIterator iter(NMethodIterator::all_blobs);
+  NMethodIterator iter(NMethodIterator::all);
   while(iter.next()) {
     f(iter.method());
   }
@@ -687,7 +687,7 @@ void CodeCache::nmethods_do(void f(nmethod* nm)) {
 
 void CodeCache::metadata_do(MetadataClosure* f) {
   assert_locked_or_safepoint(CodeCache_lock);
-  NMethodIterator iter(NMethodIterator::all_blobs);
+  NMethodIterator iter(NMethodIterator::all);
   while(iter.next()) {
     iter.method()->metadata_do(f);
   }
@@ -877,7 +877,7 @@ void CodeCache::arm_all_nmethods() {
 // Mark nmethods for unloading if they contain otherwise unreachable oops.
 void CodeCache::do_unloading(bool unloading_occurred) {
   assert_locked_or_safepoint(CodeCache_lock);
-  NMethodIterator iter(NMethodIterator::all_blobs);
+  NMethodIterator iter(NMethodIterator::all);
   while(iter.next()) {
     iter.method()->do_unloading(unloading_occurred);
   }
@@ -1006,8 +1006,10 @@ int CodeCache::nmethod_count(CodeBlobType code_blob_type) {
 
 int CodeCache::nmethod_count() {
   int count = 0;
-  for (GrowableArrayIterator<CodeHeap*> heap = _nmethod_heaps->begin(); heap != _nmethod_heaps->end(); ++heap) {
-    count += (*heap)->nmethod_count();
+  for (CodeHeap* heap : *_nmethod_heaps) {
+    count += heap->nmethod_count();
+//  for (GrowableArrayIterator<CodeHeap*> heap = _nmethod_heaps->begin(); heap != _nmethod_heaps->end(); ++heap) {
+//    count += (*heap)->nmethod_count();
   }
   return count;
 }
@@ -1318,7 +1320,7 @@ void CodeCache::mark_dependents_for_evol_deoptimization(DeoptimizationScope* deo
   // So delete old method table and create a new one.
   reset_old_method_table();
 
-  NMethodIterator iter(NMethodIterator::all_blobs);
+  NMethodIterator iter(NMethodIterator::all);
   while(iter.next()) {
     nmethod* nm = iter.method();
     // Walk all alive nmethods to check for old Methods.
@@ -1333,7 +1335,7 @@ void CodeCache::mark_dependents_for_evol_deoptimization(DeoptimizationScope* deo
 
 void CodeCache::mark_all_nmethods_for_evol_deoptimization(DeoptimizationScope* deopt_scope) {
   assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
-  NMethodIterator iter(NMethodIterator::all_blobs);
+  NMethodIterator iter(NMethodIterator::all);
   while(iter.next()) {
     nmethod* nm = iter.method();
     if (!nm->method()->is_method_handle_intrinsic()) {
@@ -1647,7 +1649,7 @@ void CodeCache::print_internals() {
   int *buckets = NEW_C_HEAP_ARRAY(int, bucketLimit, mtCode);
   memset(buckets, 0, sizeof(int) * bucketLimit);
 
-  NMethodIterator iter(NMethodIterator::all_blobs);
+  NMethodIterator iter(NMethodIterator::all);
   while(iter.next()) {
     nmethod* nm = iter.method();
     if(nm->method() != nullptr && nm->is_java_method()) {

@@ -1291,7 +1291,7 @@ void JavaThread::deoptimize() {
         // consists of comma or carriage return separated numbers so
         // search for the current bci in that string.
         address pc = fst.current()->pc();
-        nmethod* nm =  (nmethod*) fst.current()->cb();
+        nmethod* nm =   fst.current()->cb()->as_nmethod();
         ScopeDesc* sd = nm->scope_desc_at(pc);
         char buffer[8];
         jio_snprintf(buffer, sizeof(buffer), "%d", sd->bci());

@@ -819,7 +819,7 @@ WB_ENTRY(jint, WB_DeoptimizeMethod(JNIEnv* env, jobject o, jobject method, jbool
     if (is_osr) {
       result += mh->method_holder()->mark_osr_nmethods(&deopt_scope, mh());
     } else {
-      MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker ml(NMethod_lock, Mutex::_no_safepoint_check_flag);
       if (mh->code() != nullptr) {
         deopt_scope.mark(mh->code());
         ++result;

@@ -337,7 +337,7 @@ class CodeCache : AllStatic {
 // The relaxed iterators only hold the CodeCache_lock across next calls
 template <class T, class Filter, bool is_relaxed> class CodeBlobIterator : public StackObj {
  public:
-  enum LivenessFilter { all_blobs, only_not_unloading };
+  enum LivenessFilter { all, only_not_unloading };
 
  private:
   CodeBlob* _code_blob;   // Current CodeBlob
