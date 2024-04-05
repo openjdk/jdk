@@ -33,6 +33,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
@@ -333,12 +335,32 @@ public class Table<T> extends Content {
         int colIndex = 0;
         for (Content c : contents) {
             HtmlStyle cellStyle = columnStyles.get(colIndex);
+
+            // Add tab order to plain text
+            String regex = "<a|<area|<button|<input|<object|<select|<textarea";
+            Pattern pattern = Pattern.compile(regex);
+            Matcher matcher = pattern.matcher(c.toString());
+
             // Always add content to make sure the cell isn't dropped
             var cell = HtmlTree.DIV(cellStyle).addUnchecked(c.isEmpty() ? Text.EMPTY : c);
-            cell.addStyle(rowStyle);
+            if(matcher.find()) {
+                cell.addStyle(rowStyle);
+            } else {
+                cell.addStyle(rowStyle)
+                    .put(HtmlAttr.ROLE, "tablist")
+                    .put(HtmlAttr.TABINDEX, "0");
+            }
+            
 
             for (String tabClass : tabClasses) {
-                cell.addStyle(tabClass);
+                if(matcher.find()) {
+                    cell.addStyle(tabClass);
+                } else {
+                    cell.addStyle(tabClass)
+                        .put(HtmlAttr.ROLE, "tablist")
+                        .put(HtmlAttr.TABINDEX, "0");
+                }
+                
             }
             row.add(cell);
             colIndex++;
