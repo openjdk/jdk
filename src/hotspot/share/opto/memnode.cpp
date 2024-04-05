@@ -2889,24 +2889,33 @@ public:
   StoreNode* run();
 
 private:
-  class Status {
-  private:
-    StoreNode* _found_store;
-    bool       _found_range_check;
-
-  public:
-    Status(StoreNode* found_store, bool found_range_check) : _found_store(found_store), _found_range_check(found_range_check) {}
-    static Status make_failure() { return Status(nullptr, false); }
-    StoreNode* found_store() const { return _found_store; }
-    bool found_range_check() const { return _found_range_check; }
-  };
-
   bool is_compatible_store(const StoreNode* other_store) const;
   bool is_adjacent_pair(const StoreNode* use_store, const StoreNode* def_store) const;
   bool is_adjacent_input_pair(const Node* n1, const Node* n2, const int memory_size) const;
   static bool is_con_RShift(const Node* n, Node const*& base_out, jint& shift_out);
   enum CFGStatus { SuccessNoRangeCheck, SuccessWithRangeCheck, Failure };
   static CFGStatus cfg_status_for_pair(const StoreNode* use_store, const StoreNode* def_store);
+
+  class Status {
+  private:
+    StoreNode* _found_store;
+    bool       _found_range_check;
+
+    Status(StoreNode* found_store, bool found_range_check)
+      : _found_store(found_store), _found_range_check(found_range_check) {}
+
+  public:
+    StoreNode* found_store() const { return _found_store; }
+    bool found_range_check() const { return _found_range_check; }
+    static Status make_failure() { return Status(nullptr, false); }
+
+    static Status make(StoreNode* found_store, const CFGStatus cfg_status) {
+      if (cfg_status == CFGStatus::Failure) {
+        return Status::make_failure();
+      }
+      return Status(found_store, cfg_status == CFGStatus::SuccessWithRangeCheck);
+    }
+  };
 
   Status find_adjacent_use_store(const StoreNode* def_store) const;
   Status find_adjacent_def_store(const StoreNode* use_store) const;
@@ -3165,11 +3174,7 @@ MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_use_store_unid
   for (DUIterator_Fast imax, i = def_store->fast_outs(imax); i < imax; i++) {
     StoreNode* use_store = def_store->fast_out(i)->isa_Store();
     if (is_compatible_store(use_store)) {
-      CFGStatus cfg_status = cfg_status_for_pair(use_store, def_store);
-      if (cfg_status == CFGStatus::Failure) {
-        return Status::make_failure();
-      }
-      return Status(use_store, cfg_status == CFGStatus::SuccessWithRangeCheck);
+      return Status::make(use_store, cfg_status_for_pair(use_store, def_store));
     }
   }
   return Status::make_failure();
@@ -3183,11 +3188,7 @@ MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_def_store_unid
     return Status::make_failure();
   }
 
-  CFGStatus cfg_status = cfg_status_for_pair(use_store, def_store);
-  if (cfg_status == CFGStatus::Failure) {
-    return Status::make_failure();
-  }
-  return Status(def_store, cfg_status == CFGStatus::SuccessWithRangeCheck);
+  return Status::make(def_store, cfg_status_for_pair(use_store, def_store));
 }
 
 void MergePrimitiveArrayStores::collect_merge_list(Node_List& merge_list) const {
