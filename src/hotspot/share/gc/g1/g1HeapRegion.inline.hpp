@@ -105,7 +105,7 @@ inline HeapWord* HeapRegion::advance_to_block_containing_addr(const void* addr,
 }
 
 inline HeapWord* HeapRegion::block_start(const void* addr, HeapWord* const pb) const {
-  HeapWord* first_block = _bot.block_start_reaching_into_card(addr);
+  HeapWord* first_block = _bot->block_start_reaching_into_card(addr);
   return advance_to_block_containing_addr(addr, pb, first_block);
 }
 
@@ -262,7 +262,7 @@ inline void HeapRegion::update_bot_for_obj(HeapWord* obj_start, size_t obj_size)
          HR_FORMAT_PARAMS(this),
          p2i(obj_start), p2i(obj_end));
 
-  _bot.update_for_block(obj_start, obj_end);
+  _bot->update_for_block(obj_start, obj_end);
 }
 
 inline HeapWord* HeapRegion::parsable_bottom() const {

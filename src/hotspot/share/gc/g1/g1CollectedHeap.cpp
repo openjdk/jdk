@@ -155,7 +155,7 @@ uint G1CollectedHeap::get_chunks_per_region() {
 
 HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
                                              MemRegion mr) {
-  return new HeapRegion(hrs_index, mr, &_card_set_config);
+  return new HeapRegion(hrs_index, bot(), mr, &_card_set_config);
 }
 
 // Private methods.
@@ -1363,7 +1363,7 @@ jint G1CollectedHeap::initialize() {
 
   FreeRegionList::set_unrealistically_long_length(max_regions() + 1);
 
-  G1BlockOffsetTable::initialize(reserved(), bot_storage);
+  _bot = new G1BlockOffsetTable(reserved(), bot_storage);
 
   {
     size_t granularity = HeapRegion::GrainBytes;

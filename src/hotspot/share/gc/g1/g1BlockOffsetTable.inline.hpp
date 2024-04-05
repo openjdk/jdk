@@ -32,27 +32,8 @@
 #include "runtime/atomic.hpp"
 #include "oops/oop.inline.hpp"
 
-inline void G1BlockOffsetTable::initialize(MemRegion heap, G1RegionToSpaceMapper* storage) {
-  _reserved = heap;
-  MemRegion bot_reserved = storage->reserved();
-  _offset_base = ((uint8_t*)bot_reserved.start() - (uintptr_t(_reserved.start()) >> CardTable::card_shift()));
-
-  log_trace(gc, bot)("G1BlockOffsetTable::initialize: ");
-  log_trace(gc, bot)("    rs.base(): " PTR_FORMAT "  rs.size(): " SIZE_FORMAT "  rs end(): " PTR_FORMAT,
-                     p2i(bot_reserved.start()), bot_reserved.byte_size(), p2i(bot_reserved.end()));
-}
-
 inline HeapWord* G1BlockOffsetTable::block_start_reaching_into_card(const void* addr) const {
-  assert(addr >= _hr->bottom() && addr < _hr->top(), "invalid address");
-
-#ifdef ASSERT
-  if (!_hr->is_continues_humongous()) {
-    // For non-ContinuesHumongous regions, the first obj always starts from bottom.
-    uint8_t offset = offset_array(entry_for_addr(_hr->bottom()));
-    assert(offset == 0, "Found offset %u instead of 0 for region %u %s",
-           offset, _hr->hrm_index(), _hr->get_short_type_str());
-  }
-#endif
+  assert(_reserved.contains(addr), "invalid address");
 
   uint8_t* entry = entry_for_addr(addr);
   uint8_t offset = offset_array(entry);

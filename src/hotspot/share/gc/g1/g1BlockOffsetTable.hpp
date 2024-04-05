@@ -47,13 +47,10 @@ class G1BlockOffsetTable: public CHeapObj<mtGC> {
 
 private:
   // The reserved region covered by the table.
-  static MemRegion _reserved;
+  MemRegion _reserved;
 
   // Biased array-start of BOT array for fast BOT entry translation
-  static volatile uint8_t* _offset_base;
-
-  // The region that owns this BOT.
-  HeapRegion* _hr;
+  volatile uint8_t* _offset_base;
 
   void check_offset(size_t offset, const char* msg) const {
     assert(offset < CardTable::card_size_in_words(),
@@ -92,7 +89,6 @@ private:
   }
 
 public:
-  static void initialize(MemRegion heap, G1RegionToSpaceMapper* storage);
 
   // Return the number of slots needed for an offset array
   // that covers mem_region_words words.
@@ -106,8 +102,9 @@ public:
     return CardTable::card_size();
   }
 
-  // Initialize the Block Offset Table to cover the region.
-  G1BlockOffsetTable(HeapRegion* hr);
+  // Initialize the Block Offset Table to cover the memory region passed
+  // in the heap parameter.
+  G1BlockOffsetTable(MemRegion heap, G1RegionToSpaceMapper* storage);
 
   // Mapping from address to object start array entry
   uint8_t* entry_for_addr(const void* const p) const;
@@ -122,9 +119,10 @@ public:
     return obj_end > cur_card_boundary;
   }
 
-  void verify() const;
+  void verify(const HeapRegion* hr) const;
 
-  // Returns the address of the start of the block reaching into the card containing "addr".
+  // Returns the address of the start of the block reaching into the card containing
+  // "addr".
   inline HeapWord* block_start_reaching_into_card(const void* addr) const;
 
   void update_for_block(HeapWord* blk_start, HeapWord* blk_end) {
@@ -133,9 +131,7 @@ public:
     }
   }
 
-  void set_for_starts_humongous(HeapWord* obj_top, size_t fill_size);
-
-  void print_on(outputStream* out) PRODUCT_RETURN;
+  void set_for_starts_humongous(HeapRegion* hr, HeapWord* obj_top, size_t fill_size);
 };
 
 #endif // SHARE_GC_G1_G1BLOCKOFFSETTABLE_HPP

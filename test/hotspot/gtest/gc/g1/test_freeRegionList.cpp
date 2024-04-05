@@ -58,7 +58,7 @@ TEST_VM(FreeRegionList, length) {
                                          HeapRegion::GrainBytes,
                                          CardTable::card_size(),
                                          mtGC);
-  G1BlockOffsetTable::initialize(heap, bot_storage);
+  G1BlockOffsetTable bot(heap, bot_storage);
   bot_storage->commit_regions(0, num_regions_in_test);
 
   // Set up memory regions for the heap regions.
@@ -70,11 +70,11 @@ TEST_VM(FreeRegionList, length) {
 
   G1CardSetConfiguration config;
 
-  HeapRegion hr0(0, mr0, &config);
-  HeapRegion hr1(1, mr1, &config);
-  HeapRegion hr2(2, mr2, &config);
-  HeapRegion hr3(3, mr3, &config);
-  HeapRegion hr4(4, mr4, &config);
+  HeapRegion hr0(0, &bot, mr0, &config);
+  HeapRegion hr1(1, &bot, mr1, &config);
+  HeapRegion hr2(2, &bot, mr2, &config);
+  HeapRegion hr3(3, &bot, mr3, &config);
+  HeapRegion hr4(4, &bot, mr4, &config);
 
   l.add_ordered(&hr1);
   l.add_ordered(&hr0);

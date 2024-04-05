@@ -31,11 +31,17 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 
-MemRegion G1BlockOffsetTable::_reserved;
-volatile uint8_t* G1BlockOffsetTable::_offset_base;
+G1BlockOffsetTable::G1BlockOffsetTable(MemRegion heap, G1RegionToSpaceMapper* storage) :
+  _reserved(heap), _offset_base(nullptr) {
 
-G1BlockOffsetTable::G1BlockOffsetTable(HeapRegion* hr) :
-  _hr(hr) {}
+  MemRegion bot_reserved = storage->reserved();
+
+  _offset_base = ((uint8_t*)bot_reserved.start() - (uintptr_t(_reserved.start()) >> CardTable::card_shift()));
+
+  log_trace(gc, bot)("G1BlockOffsetTable::G1BlockOffsetTable: ");
+  log_trace(gc, bot)("    rs.base(): " PTR_FORMAT "  rs.size(): " SIZE_FORMAT "  rs end(): " PTR_FORMAT,
+                     p2i(bot_reserved.start()), bot_reserved.byte_size(), p2i(bot_reserved.end()));
+}
 
 #ifdef ASSERT
 void G1BlockOffsetTable::check_address(uint8_t* addr, const char* msg) const {
@@ -86,7 +92,6 @@ void G1BlockOffsetTable::check_address(uint8_t* addr, const char* msg) const {
 //
 void G1BlockOffsetTable::set_remainder_to_point_to_start_incl(uint8_t* start_card, uint8_t* end_card) {
   assert(start_card <= end_card, "precondition");
-  assert(start_card > entry_for_addr(_hr->bottom()), "Cannot be first card");
   assert(offset_array(start_card-1) < CardTable::card_size_in_words(),
          "Offset card has an unexpected value");
   uint8_t* start_card_for_region = start_card;
@@ -219,10 +224,10 @@ void G1BlockOffsetTable::update_for_block_work(HeapWord* blk_start,
 #endif
 }
 
-void G1BlockOffsetTable::verify() const {
-  assert(_hr->bottom() < _hr->top(), "Only non-empty regions should be verified.");
-  uint8_t* start_card = entry_for_addr(_hr->bottom());
-  uint8_t* end_card = entry_for_addr(_hr->top() - 1);
+void G1BlockOffsetTable::verify(const HeapRegion* hr) const {
+  assert(hr->bottom() < hr->top(), "Only non-empty regions should be verified.");
+  uint8_t* start_card = entry_for_addr(hr->bottom());
+  uint8_t* end_card = entry_for_addr(hr->top() - 1);
 
   for (uint8_t* current_card = start_card; current_card < end_card; current_card++) {
     uint8_t entry = offset_array(current_card);
@@ -234,11 +239,11 @@ void G1BlockOffsetTable::verify() const {
       HeapWord* obj_end = card_address - entry;
       while (obj_end < card_address) {
         HeapWord* obj = obj_end;
-        size_t obj_size = _hr->block_size(obj);
+        size_t obj_size = hr->block_size(obj);
         obj_end = obj + obj_size;
-        guarantee(obj_end > obj && obj_end <= _hr->top(),
+        guarantee(obj_end > obj && obj_end <= hr->top(),
                   "Invalid object end. obj: " PTR_FORMAT " obj_size: " SIZE_FORMAT " obj_end: " PTR_FORMAT " top: " PTR_FORMAT,
-                  p2i(obj), obj_size, p2i(obj_end), p2i(_hr->top()));
+                  p2i(obj), obj_size, p2i(obj_end), p2i(hr->top()));
       }
     } else {
       // Because we refine the BOT based on which cards are dirty there is not much we can verify here.
@@ -253,30 +258,15 @@ void G1BlockOffsetTable::verify() const {
                 p2i(start_card), p2i(current_card), backskip);
 
       HeapWord* backskip_address = addr_for_entry(current_card - backskip);
-      guarantee(backskip_address >= _hr->bottom(),
+      guarantee(backskip_address >= hr->bottom(),
                 "Going backwards beyond bottom of the region: bottom: " PTR_FORMAT ", backskip_address: " PTR_FORMAT,
-                p2i(_hr->bottom()), p2i(backskip_address));
+                p2i(hr->bottom()), p2i(backskip_address));
     }
   }
 }
 
-#ifndef PRODUCT
-void G1BlockOffsetTable::print_on(outputStream* out) {
-  uint8_t* from_card = entry_for_addr(_hr->bottom());
-  uint8_t* to_card = entry_for_addr(_hr->end());
-  out->print_cr(">> BOT for area [" PTR_FORMAT "," PTR_FORMAT ") "
-                "cards [" SIZE_FORMAT "," SIZE_FORMAT ")",
-                p2i(_hr->bottom()), p2i(_hr->end()), p2i(from_card), p2i(to_card));
-  for (uint8_t* i = from_card; i < to_card; ++i) {
-    out->print_cr("  entry " SIZE_FORMAT_W(8) " | " PTR_FORMAT " : %3u",
-                  p2i(i), p2i(addr_for_entry(i)),
-                  (uint) offset_array(i));
-  }
-}
-#endif // !PRODUCT
-
-void G1BlockOffsetTable::set_for_starts_humongous(HeapWord* obj_top, size_t fill_size) {
-  update_for_block(_hr->bottom(), obj_top);
+void G1BlockOffsetTable::set_for_starts_humongous(HeapRegion* hr, HeapWord* obj_top, size_t fill_size) {
+  update_for_block(hr->bottom(), obj_top);
   if (fill_size > 0) {
     update_for_block(obj_top, fill_size);
   }
