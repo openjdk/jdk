@@ -184,19 +184,6 @@ public class HtmlIds {
     }
 
     /**
-     * Returns an id for an executable element, including the context
-     * of its documented enclosing class or interface.
-     *
-     * @param typeElement the enclosing class or interface
-     * @param member      the element
-     *
-     * @return the id
-     */
-    HtmlId forMember(TypeElement typeElement, ExecutableElement member) {
-        return HtmlId.of(utils.getSimpleName(member) + utils.signature(member, typeElement));
-    }
-
-    /**
      * Returns an id for a field, suitable for use when the simple name
      * will be unique within the page, such as in the page for the
      * declaration of the enclosing class or interface.
