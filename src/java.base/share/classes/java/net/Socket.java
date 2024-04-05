@@ -1247,7 +1247,7 @@ public class Socket implements java.io.Closeable {
      * Enable/disable {@link StandardSocketOptions#TCP_NODELAY TCP_NODELAY}
      * (disable/enable Nagle's algorithm).
      *
-     * @param on {@code true} to enable TCP_NODELAY,
+     * @param on {@code true} to enable {@code TCP_NODELAY},
      * {@code false} to disable.
      *
      * @throws    SocketException if there is an error
@@ -1267,7 +1267,7 @@ public class Socket implements java.io.Closeable {
      * Tests if {@link StandardSocketOptions#TCP_NODELAY TCP_NODELAY} is enabled.
      *
      * @return a {@code boolean} indicating whether or not
-     *         {@link StandardSocketOptions#TCP_NODELAY TCP_NODELAY} is enabled.
+     *         {@code TCP_NODELAY} is enabled.
      * @throws    SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
      * @since   1.1
@@ -1316,7 +1316,7 @@ public class Socket implements java.io.Closeable {
      *
      * The setting only affects socket close.
      *
-     * @return the setting for {@link StandardSocketOptions#SO_LINGER SO_LINGER}.
+     * @return the setting for {@code SO_LINGER}.
      * @throws    SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
      * @since   1.1
@@ -1364,8 +1364,7 @@ public class Socket implements java.io.Closeable {
      * and there is no capability to distinguish between normal data and urgent
      * data unless provided by a higher level protocol.
      *
-     * @param on {@code true} to enable
-     *           {@link SocketOptions#SO_OOBINLINE SO_OOBINLINE},
+     * @param on {@code true} to enable {@code SO_OOBINLINE},
      *           {@code false} to disable.
      *
      * @throws    SocketException if there is an error
@@ -1385,7 +1384,7 @@ public class Socket implements java.io.Closeable {
      * Tests if {@link SocketOptions#SO_OOBINLINE SO_OOBINLINE} is enabled.
      *
      * @return a {@code boolean} indicating whether or not
-     *         {@link SocketOptions#SO_OOBINLINE SO_OOBINLINE} is enabled.
+     *         {@code SO_OOBINLINE} is enabled.
      *
      * @throws    SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
@@ -1427,7 +1426,7 @@ public class Socket implements java.io.Closeable {
      * Returns setting for {@link SocketOptions#SO_TIMEOUT SO_TIMEOUT}.
      * 0 returns implies that the option is disabled (i.e., timeout of infinity).
      *
-     * @return the setting for {@link SocketOptions#SO_TIMEOUT SO_TIMEOUT}
+     * @return the setting for {@code SO_TIMEOUT}
      * @throws    SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
      *
@@ -1449,13 +1448,11 @@ public class Socket implements java.io.Closeable {
     /**
      * Sets the {@link StandardSocketOptions#SO_SNDBUF SO_SNDBUF} option to the
      * specified value for this {@code Socket}.
-     * The {@link StandardSocketOptions#SO_SNDBUF SO_SNDBUF} option is used by the
-     * platform's networking code as a hint for the size to set the underlying
-     * network I/O buffers.
+     * The {@code SO_SNDBUF} option is used by the platform's networking code
+     * as a hint for the size to set the underlying network I/O buffers.
      *
-     * <p>Because {@link StandardSocketOptions#SO_SNDBUF SO_SNDBUF} is a hint,
-     * applications that want to verify what size the buffers were set to
-     * should call {@link #getSendBufferSize()}.
+     * <p>Because {@code SO_SNDBUF} is a hint, applications that want to verify
+     * what size the buffers were set to should call {@link #getSendBufferSize()}.
      *
      * @throws    SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
@@ -1481,8 +1478,7 @@ public class Socket implements java.io.Closeable {
      * Get value of the {@link StandardSocketOptions#SO_SNDBUF SO_SNDBUF} option
      * for this {@code Socket}, that is the buffer size used by the platform
      * for output on this {@code Socket}.
-     * @return the value of the {@link StandardSocketOptions#SO_SNDBUF SO_SNDBUF}
-     *         option for this {@code Socket}.
+     * @return the value of the {@code SO_SNDBUF} option for this {@code Socket}.
      *
      * @throws    SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
@@ -1504,20 +1500,18 @@ public class Socket implements java.io.Closeable {
     /**
      * Sets the {@link StandardSocketOptions#SO_RCVBUF SO_RCVBUF} option to the
      * specified value for this {@code Socket}. The
-     * {@link StandardSocketOptions#SO_RCVBUF SO_RCVBUF} option is
-     * used by the platform's networking code as a hint for the size to set
-     * the underlying network I/O buffers.
+     * {@code SO_RCVBUF} option is used by the platform's networking code
+     * as a hint for the size to set the underlying network I/O buffers.
      *
      * <p>Increasing the receive buffer size can increase the performance of
      * network I/O for high-volume connection, while decreasing it can
      * help reduce the backlog of incoming data.
      *
-     * <p>Because {@link StandardSocketOptions#SO_RCVBUF SO_RCVBUF} is a hint,
-     * applications that want to verify what size the buffers were set to
-     * should call {@link #getReceiveBufferSize()}.
+     * <p>Because {@code SO_RCVBUF} is a hint, applications that want to verify
+     * what size the buffers were set to should call {@link #getReceiveBufferSize()}.
      *
-     * <p>The value of {@link StandardSocketOptions#SO_RCVBUF SO_RCVBUF} is also used
-     * to set the TCP receive window that is advertised to the remote peer.
+     * <p>The value of {@code SO_RCVBUF} is also used to set the TCP receive window
+     * that is advertised to the remote peer.
      * Generally, the window size can be modified at any time when a socket is
      * connected. However, if a receive window larger than 64K is required then
      * this must be requested <B>before</B> the socket is connected to the
@@ -1554,8 +1548,7 @@ public class Socket implements java.io.Closeable {
      * for this {@code Socket}, that is the buffer size used by the platform
      * for input on this {@code Socket}.
      *
-     * @return the value of the {@link StandardSocketOptions#SO_RCVBUF SO_RCVBUF}
-     *         option for this {@code Socket}.
+     * @return the value of the {@code SO_RCVBUF} option for this {@code Socket}.
      * @throws    SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
      * @see #setReceiveBufferSize(int)
@@ -1591,7 +1584,7 @@ public class Socket implements java.io.Closeable {
      * Tests if {@link StandardSocketOptions#SO_KEEPALIVE SO_KEEPALIVE} is enabled.
      *
      * @return a {@code boolean} indicating whether or not
-     *         {@link StandardSocketOptions#SO_KEEPALIVE SO_KEEPALIVE} is enabled.
+     *         {@code SO_KEEPALIVE} is enabled.
      * @throws    SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
      * @since   1.3
@@ -1690,21 +1683,19 @@ public class Socket implements java.io.Closeable {
      * {@code SocketAddress} if there is a connection in the
      * timeout state involving the socket address or port.
      * <p>
-     * Enabling {@link StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR}
-     * prior to binding the socket using {@link #bind(SocketAddress)} allows
-     * the socket to be bound even though a previous connection is in a timeout
-     * state.
+     * Enabling {@code SO_REUSEADDR} prior to binding the socket using
+     * {@link #bind(SocketAddress)} allows the socket to be bound even
+     * though a previous connection is in a timeout state.
      * <p>
      * When a {@code Socket} is created the initial setting
-     * of {@link StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} is disabled.
+     * of {@code SO_REUSEADDR} is disabled.
      * <p>
-     * The behaviour when {@link StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} is
-     * enabled or disabled after a socket is bound (See {@link #isBound()})
-     * is not defined.
+     * The behaviour when {@code SO_REUSEADDR} is enabled or disabled after
+     * a socket is bound (See {@link #isBound()}) is not defined.
      *
      * @param on  whether to enable or disable the socket option
      * @throws    SocketException if an error occurs enabling or
-     *            disabling the {@link StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR}
+     *            disabling the {@code SO_REUSEADDR}
      *            socket option, or the socket is closed.
      * @since 1.4
      * @see #getReuseAddress()
@@ -1722,7 +1713,7 @@ public class Socket implements java.io.Closeable {
      * Tests if {@link StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} is enabled.
      *
      * @return a {@code boolean} indicating whether or not
-     *         {@link StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} is enabled.
+     *         {@code SO_REUSEADDR} is enabled.
      * @throws    SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
      * @since   1.4

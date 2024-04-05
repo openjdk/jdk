@@ -855,22 +855,22 @@ public class ServerSocket implements java.io.Closeable {
      * {@code SocketAddress} if there is a connection in the
      * timeout state involving the socket address or port.
      * <p>
-     * Enabling {@link StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} prior to
-     * binding the socket using {@link #bind(SocketAddress)} allows the socket
-     * to be bound even though a previous connection is in a timeout state.
+     * Enabling {@code SO_REUSEADDR} prior to binding the socket using
+     * {@link #bind(SocketAddress)} allows the socket to be bound even
+     * though a previous connection is in a timeout state.
      * <p>
      * When a {@code ServerSocket} is created the initial setting
-     * of {@link StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} is not defined.
-     * Applications can use {@link #getReuseAddress()} to determine the initial
-     * setting of {@link StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR}.
+     * of {@code SO_REUSEADDR} is not defined. Applications can use
+     * {@link #getReuseAddress()} to determine the initial
+     * setting of {@code SO_REUSEADDR}.
      * <p>
-     * The behaviour when {@link StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} is
-     * enabled or disabled after a socket is bound (See {@link #isBound()})
+     * The behaviour when {@code SO_REUSEADDR} is enabled or disabled
+     * after a socket is bound (See {@link #isBound()})
      * is not defined.
      *
      * @param on  whether to enable or disable the socket option
      * @throws    SocketException if an error occurs enabling or
-     *            disabling the {@link StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR}
+     *            disabling the {@code SO_REUSEADDR}
      *            socket option, or the socket is closed.
      * @since 1.4
      * @see #getReuseAddress()
@@ -888,7 +888,7 @@ public class ServerSocket implements java.io.Closeable {
      * Tests if {@link StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} is enabled.
      *
      * @return a {@code boolean} indicating whether or not
-     *         {@link StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} is enabled.
+     *         {@code SO_REUSEADDR} is enabled.
      * @throws    SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
      * @since   1.4
@@ -987,8 +987,8 @@ public class ServerSocket implements java.io.Closeable {
      * {@link Socket#getReceiveBufferSize()} after the socket
      * is returned by {@link #accept()}.
      * <p>
-     * The value of {@link StandardSocketOptions#SO_RCVBUF SO_RCVBUF} is used both to
-     * set the size of the internal socket receive buffer, and to set the size
+     * The value of {@code SO_RCVBUF} is used both to set the size of
+     * the internal socket receive buffer, and to set the size
      * of the TCP receive window that is advertised to the remote peer.
      * <p>
      * It is possible to change the value subsequently, by calling
@@ -1030,8 +1030,7 @@ public class ServerSocket implements java.io.Closeable {
      *
      * <p>Note, the value actually set in the accepted socket is determined by
      * calling {@link Socket#getReceiveBufferSize()}.
-     * @return the value of the {@link StandardSocketOptions#SO_RCVBUF SO_RCVBUF}
-     *         option for this {@code Socket}.
+     * @return the value of the {@code SO_RCVBUF} option for this {@code Socket}.
      * @throws    SocketException if there is an error
      *            in the underlying protocol, such as a TCP error.
      * @see #setReceiveBufferSize(int)
