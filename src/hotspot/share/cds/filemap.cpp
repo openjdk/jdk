@@ -1898,8 +1898,6 @@ char* FileMapInfo::map_bitmap_region() {
   return bitmap_base;
 }
 
-address* rw_region_start;
-
 // This is called when we cannot map the archive at the requested[ base address (usually 0x800000000).
 // We relocate all pointers in the 2 core regions (ro, rw).
 bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
