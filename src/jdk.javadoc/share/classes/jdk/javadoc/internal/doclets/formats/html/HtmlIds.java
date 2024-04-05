@@ -550,8 +550,6 @@ public class HtmlIds {
         var vmt = configuration.getVisibleMemberTable((TypeElement) e.getEnclosingElement());
         var ctors = vmt.getVisibleMembers(VisibleMemberTable.Kind.CONSTRUCTORS);
         var methods = vmt.getVisibleMembers(VisibleMemberTable.Kind.METHODS);
-        // for whatever reason annotation methods are not of Kind.METHODS
-        var otherMethods = vmt.getVisibleMembers(VisibleMemberTable.Kind.ANNOTATION_TYPE_MEMBER);
         // the order of the elements is important for reproducibility of ids:
         // the same executable element must have the same id across javadoc runs
 
@@ -560,7 +558,7 @@ public class HtmlIds {
         //  - elements whose erased id is present
         //  - elements whose erased id is absent (i.e. is null)
         enum ErasedId { PRESENT, ABSENT }
-        var buckets = Stream.concat(Stream.concat(ctors.stream(), methods.stream()), otherMethods.stream())
+        var buckets = Stream.concat(ctors.stream(), methods.stream())
                 .map(e1 -> (ExecutableElement) e1)
                 .map(e1 -> new Erased(e1, forErasure(e1)))
                 .collect(Collectors.groupingBy(erased -> erased.id == null ?
@@ -598,12 +596,15 @@ public class HtmlIds {
         if (htmlId == null) {
             // Safety net: if for whatever reason we cannot find the element
             // among those we just expanded, return the simple id. It might
-            // not be right, but at least it won't fail.
+            // not be always right, but at least it won't fail.
             // One example where it might happen is linking to an inherited
             // undocumented method (see test case T5093723)
             // TODO the above will need to be revisited if and when we redesign
             //  VisibleMemberTable, which currently cannot correctly return the
             //  owner of such a method
+            // Another example is annotation interface methods: they are not
+            // included in VisibleMemberTable.Kind.METHODS and so cannot be
+            // found among them
             htmlId = forMember0(e);
         }
         return htmlId;
