@@ -1081,7 +1081,7 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
   ObjectSynchronizer::dec_in_use_list_ceiling();
 
   // Since Events::log uses a lock, we grab it outside the Threads_lock
-  Events::log(Thread::current(), "exited thread: " INTPTR_FORMAT, p2i(p));
+  Events::log(Thread::current(), "removed thread: " INTPTR_FORMAT, p2i(p));
 }
 
 // Operations on the Threads list for GC.  These are not explicitly locked,
