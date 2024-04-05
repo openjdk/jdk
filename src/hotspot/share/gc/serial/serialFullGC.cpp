@@ -96,9 +96,8 @@ class DeadSpacer : StackObj {
   ContiguousSpace* _space;
 
 public:
-  DeadSpacer(ContiguousSpace* space) : _allowed_deadspace_words(0), _space(space) {
-    size_t ratio = _space->allowed_dead_ratio();
-    _active = ratio > 0;
+  DeadSpacer(ContiguousSpace* space, size_t allowed_dead_ratio) : _allowed_deadspace_words(0), _space(space) {
+    _active = allowed_dead_ratio > 0;
 
     if (_active) {
       // We allow some amount of garbage towards the bottom of the space, so
@@ -106,7 +105,7 @@ public:
       // Occasionally, we want to ensure a full compaction, which is determined
       // by the MarkSweepAlwaysCompactCount parameter.
       if ((SerialFullGC::total_invocations() % MarkSweepAlwaysCompactCount) != 0) {
-        _allowed_deadspace_words = (space->capacity() * ratio / 100) / HeapWordSize;
+        _allowed_deadspace_words = (space->capacity() * allowed_dead_ratio / 100) / HeapWordSize;
       } else {
         _active = false;
       }
@@ -150,11 +149,15 @@ class Compacter {
     // The first dead word in this contiguous space. It's an optimization to
     // skip large chunk of live objects at the beginning.
     HeapWord* _first_dead;
+    // The maximum percentage of objects that can be dead in the compacted
+    // live part of a compacted space.
+    size_t _allowed_dead_ratio;
 
-    void init(ContiguousSpace* space) {
+    void init(ContiguousSpace* space, size_t allowed_dead_ratio) {
       _space = space;
       _compaction_top = space->bottom();
       _first_dead = nullptr;
+      _allowed_dead_ratio = allowed_dead_ratio;
     }
   };
 
@@ -174,6 +177,10 @@ class Compacter {
 
   ContiguousSpace* get_space(uint index) const {
     return _spaces[index]._space;
+  }
+
+  size_t get_allowed_dead_ratio(uint index) const {
+    return _spaces[index]._allowed_dead_ratio;
   }
 
   void record_first_dead(uint index, HeapWord* first_dead) {
@@ -261,13 +268,13 @@ class Compacter {
 public:
   explicit Compacter(SerialHeap* heap) {
     // In this order so that heap is compacted towards old-gen.
-    _spaces[0].init(heap->old_gen()->space());
-    _spaces[1].init(heap->young_gen()->eden());
-    _spaces[2].init(heap->young_gen()->from());
+    _spaces[0].init(heap->old_gen()->space(), MarkSweepDeadRatio);
+    _spaces[1].init(heap->young_gen()->eden(), 0);
+    _spaces[2].init(heap->young_gen()->from(), 0);
 
     bool is_promotion_failed = (heap->young_gen()->from()->next_compaction_space() != nullptr);
     if (is_promotion_failed) {
-      _spaces[3].init(heap->young_gen()->to());
+      _spaces[3].init(heap->young_gen()->to(), 0);
       _num_spaces = 4;
     } else {
       _num_spaces = 3;
@@ -283,7 +290,7 @@ public:
 
       bool record_first_dead_done = false;
 
-      DeadSpacer dead_spacer(space);
+      DeadSpacer dead_spacer(space, get_allowed_dead_ratio(i));
 
       while (cur_addr < top) {
         oop obj = cast_to_oop(cur_addr);
