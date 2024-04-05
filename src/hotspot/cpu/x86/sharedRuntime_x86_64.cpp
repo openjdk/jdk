@@ -1369,6 +1369,7 @@ void static continuation_enter_cleanup(MacroAssembler* masm) {
     // If the held monitor count is > 0 and this vthread is terminating then
     // it failed to release a JNI monitor. So we issue the same log message
     // that JavaThread::exit does.
+    // rax may hold an exception oop, save it before the call
     __ push(rax);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::log_jni_monitor_still_held));
     __ pop(rax);
