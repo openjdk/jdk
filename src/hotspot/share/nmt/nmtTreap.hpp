@@ -115,7 +115,7 @@ public:
   const K& key() const {
     return _key;
   }
-  V& val() const {
+  V& val() {
     return _value;
   }
 
