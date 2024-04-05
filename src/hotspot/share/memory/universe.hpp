@@ -65,8 +65,8 @@ class Universe: AllStatic {
 
  private:
   // Known classes in the VM
-  static Klass* _typeArrayKlasses[T_LONG+1];
-  static Klass* _objectArrayKlass;
+  static TypeArrayKlass* _typeArrayKlasses[T_LONG+1];
+  static ObjArrayKlass* _objectArrayKlass;
   // Special int-Array that represents filler objects that are used by GC to overwrite
   // dead objects. References to them are generally an error.
   static Klass* _fillerArrayKlass;
@@ -174,20 +174,20 @@ class Universe: AllStatic {
   static void set_verify_data(uintptr_t mask, uintptr_t bits) PRODUCT_RETURN;
 
   // Known classes in the VM
-  static Klass* boolArrayKlass()                 { return typeArrayKlass(T_BOOLEAN); }
-  static Klass* byteArrayKlass()                 { return typeArrayKlass(T_BYTE); }
-  static Klass* charArrayKlass()                 { return typeArrayKlass(T_CHAR); }
-  static Klass* intArrayKlass()                  { return typeArrayKlass(T_INT); }
-  static Klass* shortArrayKlass()                { return typeArrayKlass(T_SHORT); }
-  static Klass* longArrayKlass()                 { return typeArrayKlass(T_LONG); }
-  static Klass* floatArrayKlass()                { return typeArrayKlass(T_FLOAT); }
-  static Klass* doubleArrayKlass()               { return typeArrayKlass(T_DOUBLE); }
+  static TypeArrayKlass* boolArrayKlass()        { return typeArrayKlass(T_BOOLEAN); }
+  static TypeArrayKlass* byteArrayKlass()        { return typeArrayKlass(T_BYTE); }
+  static TypeArrayKlass* charArrayKlass()        { return typeArrayKlass(T_CHAR); }
+  static TypeArrayKlass* intArrayKlass()         { return typeArrayKlass(T_INT); }
+  static TypeArrayKlass* shortArrayKlass()       { return typeArrayKlass(T_SHORT); }
+  static TypeArrayKlass* longArrayKlass()        { return typeArrayKlass(T_LONG); }
+  static TypeArrayKlass* floatArrayKlass()       { return typeArrayKlass(T_FLOAT); }
+  static TypeArrayKlass* doubleArrayKlass()      { return typeArrayKlass(T_DOUBLE); }
 
-  static Klass* objectArrayKlass()               { return _objectArrayKlass; }
+  static ObjArrayKlass* objectArrayKlass()       { return _objectArrayKlass; }
 
   static Klass* fillerArrayKlass()               { return _fillerArrayKlass; }
 
-  static Klass* typeArrayKlass(BasicType t) {
+  static TypeArrayKlass* typeArrayKlass(BasicType t) {
     assert((uint)t >= T_BOOLEAN, "range check for type: %s", type2name(t));
     assert((uint)t < T_LONG+1,   "range check for type: %s", type2name(t));
     assert(_typeArrayKlasses[t] != nullptr, "domain check");
