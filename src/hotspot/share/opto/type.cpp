@@ -614,12 +614,12 @@ void Type::Initialize_shared(Compile* current) {
   TypeInstKlassPtr::OBJECT = TypeInstKlassPtr::make(TypePtr::NotNull, current->env()->Object_klass(), 0);
   TypeInstKlassPtr::OBJECT_OR_NULL = TypeInstKlassPtr::make(TypePtr::BotPTR, current->env()->Object_klass(), 0);
 
-  const Type** fgetfromcache =(const Type**)shared_type_arena->AmallocWords(3*sizeof(Type*));
+  const Type** fgetfromcache = (const Type**)shared_type_arena->AmallocWords(3*sizeof(Type*));
   fgetfromcache[0] = TypeInt::BOOL;
   fgetfromcache[1] = TypeInstPtr::BOTTOM;
   fgetfromcache[2] = TypeAryPtr::OOPS;
   TypeTuple::make(3, fgetfromcache);
-  const Type** fsvgetresult =(const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
+  const Type** fsvgetresult = (const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
   fsvgetresult[0] = Type::CONTROL;
   fsvgetresult[1] = TypeInstPtr::BOTTOM;
   TypeTuple::SV_GET_RESULT = TypeTuple::make(2, fsvgetresult);
@@ -6355,7 +6355,8 @@ const Type    *TypeAryKlassPtr::xmeet( const Type *t ) const {
       // For instances when a subclass meets a superclass we fall
       // below the centerline when the superclass is exact. We need to
       // do the same here.
-      if (tp->klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces->intersection_with(tp_interfaces)->eq(tp_interfaces) && !tp->klass_is_exact()) {
+      if (tp->klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces->contains(tp_interfaces) &&
+          !tp->klass_is_exact()) {
         return TypeAryKlassPtr::make(ptr, _elem, _klass, offset);
       } else {
         // cannot subclass, so the meet has to fall badly below the centerline
@@ -6373,7 +6374,8 @@ const Type    *TypeAryKlassPtr::xmeet( const Type *t ) const {
         // For instances when a subclass meets a superclass we fall
         // below the centerline when the superclass is exact. We need
         // to do the same here.
-        if (tp->klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces->intersection_with(tp_interfaces)->eq(tp_interfaces) && !tp->klass_is_exact()) {
+        if (tp->klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces->contains(tp_interfaces) &&
+            !tp->klass_is_exact()) {
           // that is, my array type is a subtype of 'tp' klass
           return make(ptr, _elem, _klass, offset);
         }
@@ -6407,7 +6409,8 @@ template <class T1, class T2> bool TypePtr::is_java_subtype_of_helper_for_array(
   }
 
   if (this_one->is_instance_type(other)) {
-    return other->klass() == ciEnv::current()->Object_klass() && other->_interfaces->intersection_with(this_one->_interfaces)->eq(other->_interfaces) && other_exact;
+    return other->klass() == ciEnv::current()->Object_klass() && this_one->_interfaces->contains(other->_interfaces) &&
+           other_exact;
   }
 
   assert(this_one->is_array_type(other), "");
@@ -6469,14 +6472,20 @@ template <class T1, class T2> bool TypePtr::maybe_java_subtype_of_helper_for_arr
   if (other->klass() == ciEnv::current()->Object_klass() && other->_interfaces->empty() && other_exact) {
     return true;
   }
-  int dummy;
-  bool this_top_or_bottom = (this_one->base_element_type(dummy) == Type::TOP || this_one->base_element_type(dummy) == Type::BOTTOM);
-  if (!this_one->is_loaded() || !other->is_loaded() || this_top_or_bottom) {
+  if (!this_one->is_loaded() || !other->is_loaded()) {
     return true;
   }
   if (this_one->is_instance_type(other)) {
-    return other->klass()->equals(ciEnv::current()->Object_klass()) && other->_interfaces->intersection_with(this_one->_interfaces)->eq(other->_interfaces);
+    return other->klass()->equals(ciEnv::current()->Object_klass()) &&
+           this_one->_interfaces->contains(other->_interfaces);
   }
+
+  int dummy;
+  bool this_top_or_bottom = (this_one->base_element_type(dummy) == Type::TOP || this_one->base_element_type(dummy) == Type::BOTTOM);
+  if (this_top_or_bottom) {
+    return true;
+  }
+
   assert(this_one->is_array_type(other), "");
 
   const T1* other_ary = this_one->is_array_type(other);

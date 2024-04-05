@@ -1879,7 +1879,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   int log_vte_size= exact_log2(vtableEntry::size_in_bytes());
 
   lwz(scan_temp, in_bytes(Klass::vtable_length_offset()), recv_klass);
-  // %%% We should store the aligned, prescaled offset in the klassoop.
+  // We should store the aligned, prescaled offset in the klass.
   // Then the next several instructions would fold away.
 
   sldi(scan_temp, scan_temp, log_vte_size);
@@ -2010,7 +2010,7 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
     // super_check_offset is register.
     assert_different_registers(sub_klass, super_klass, cached_super, super_check_offset.as_register());
   }
-  // The loaded value is the offset from KlassOopDesc.
+  // The loaded value is the offset from Klass.
 
   ld(cached_super, super_check_offset, sub_klass);
   cmpd(CCR0, cached_super, super_klass);

@@ -312,7 +312,7 @@ public final class ScopedValue<T> {
      */
     @PreviewFeature(feature = PreviewFeature.Feature.SCOPED_VALUES)
     public static final class Carrier {
-        // Bit masks: a 1 in postion n indicates that this set of bound values
+        // Bit masks: a 1 in position n indicates that this set of bound values
         // hits that slot in the cache.
         final int bitmask;
         final ScopedValue<?> key;

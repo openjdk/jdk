@@ -793,13 +793,14 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   }
 #endif
 
-  jlong stride_con = head->stride_con();
-  assert(stride_con != 0, "missed some peephole opt");
+  jlong stride_con_long = head->stride_con();
+  assert(stride_con_long != 0, "missed some peephole opt");
   // We can't iterate for more than max int at a time.
-  if (stride_con != (jint)stride_con) {
+  if (stride_con_long != (jint)stride_con_long || stride_con_long == min_jint) {
     assert(bt == T_LONG, "only for long loops");
     return false;
   }
+  jint stride_con = checked_cast<jint>(stride_con_long);
   // The number of iterations for the integer count loop: guarantee no
   // overflow: max_jint - stride_con max. -1 so there's no need for a
   // loop limit check if the exit test is <= or >=.
@@ -941,11 +942,19 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   // inner_iters_max may not fit in a signed integer (iterating from
   // Long.MIN_VALUE to Long.MAX_VALUE for instance). Use an unsigned
   // min.
-  Node* inner_iters_actual = MaxNode::unsigned_min(inner_iters_max, inner_iters_limit, TypeInteger::make(0, iters_limit, Type::WidenMin, bt), _igvn);
+  const TypeInteger* inner_iters_actual_range = TypeInteger::make(0, iters_limit, Type::WidenMin, bt);
+  Node* inner_iters_actual = MaxNode::unsigned_min(inner_iters_max, inner_iters_limit, inner_iters_actual_range, _igvn);
 
   Node* inner_iters_actual_int;
   if (bt == T_LONG) {
     inner_iters_actual_int = new ConvL2INode(inner_iters_actual);
+    _igvn.register_new_node_with_optimizer(inner_iters_actual_int);
+    // When the inner loop is transformed to a counted loop, a loop limit check is not expected to be needed because
+    // the loop limit is less or equal to max_jint - stride - 1 (if stride is positive but a similar argument exists for
+    // a negative stride). We add a CastII here to guarantee that, when the counted loop is created in a subsequent loop
+    // opts pass, an accurate range of values for the limits is found.
+    const TypeInt* inner_iters_actual_int_range = TypeInt::make(0, iters_limit, Type::WidenMin);
+    inner_iters_actual_int = new CastIINode(outer_head, inner_iters_actual_int, inner_iters_actual_int_range, ConstraintCastNode::UnconditionalDependency);
     _igvn.register_new_node_with_optimizer(inner_iters_actual_int);
   } else {
     inner_iters_actual_int = inner_iters_actual;
@@ -959,7 +968,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   }
 
   // Clone the iv data nodes as an integer iv
-  Node* int_stride = _igvn.intcon(checked_cast<int>(stride_con));
+  Node* int_stride = _igvn.intcon(stride_con);
   set_ctrl(int_stride, C->root());
   Node* inner_phi = new PhiNode(x->in(0), TypeInt::INT);
   Node* inner_incr = new AddINode(inner_phi, int_stride);
@@ -1054,7 +1063,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     register_new_node(outer_phi, outer_head);
   }
 
-  transform_long_range_checks(checked_cast<int>(stride_con), range_checks, outer_phi, inner_iters_actual_int,
+  transform_long_range_checks(stride_con, range_checks, outer_phi, inner_iters_actual_int,
                               inner_phi, iv_add, inner_head);
   // Peel one iteration of the loop and use the safepoint at the end
   // of the peeled iteration to insert Parse Predicates. If no well
@@ -1091,7 +1100,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   return true;
 }
 
-int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong stride_con, int iters_limit, PhiNode* phi,
+int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jint stride_con, int iters_limit, PhiNode* phi,
                                               Node_List& range_checks) {
   const jlong min_iters = 2;
   jlong reduced_iters_limit = iters_limit;
@@ -1107,7 +1116,9 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
         jlong scale = 0;
         if (loop->is_range_check_if(if_proj, this, T_LONG, phi, range, offset, scale) &&
             loop->is_invariant(range) && loop->is_invariant(offset) &&
-            original_iters_limit / ABS(scale * stride_con) >= min_iters) {
+            scale != min_jlong &&
+            original_iters_limit / ABS(scale) >= min_iters * ABS(stride_con)) {
+          assert(scale == (jint)scale, "scale should be an int");
           reduced_iters_limit = MIN2(reduced_iters_limit, original_iters_limit/ABS(scale));
           range_checks.push(c);
         }
@@ -5180,100 +5191,125 @@ void PhaseIdealLoop::test_and_load_from_cache(Node* load_of_cache, Node* mem, No
 
 bool PhaseIdealLoop::optimize_scoped_value_get_nodes() {
   bool progress = false;
+  // Iterate in reverse order so we can remove the element we're processing from the `_scoped_value_get_nodes` list.
   for (uint i = _scoped_value_get_nodes.size(); i > 0; i--) {
     Node* n = _scoped_value_get_nodes.at(i - 1);
-    if (n->Opcode() == Op_ScopedValueGetHitsInCache) {
-      ScopedValueGetHitsInCacheNode* hits_in_cache = n->as_ScopedValueGetHitsInCache();
-      hits_in_cache->verify();
-      ScopedValueGetLoadFromCacheNode* load_from_cache = hits_in_cache->load_from_cache();
-      if (load_from_cache != nullptr) {
-        load_from_cache->verify();
+    // Look for a node that dominates n and can replace it.
+    for (uint j = 0; j < _scoped_value_get_nodes.size(); j++) {
+      Node* m = _scoped_value_get_nodes.at(j);
+      if (m == n) {
+        continue;
       }
-      IfNode* iff = hits_in_cache->success_proj()->in(0)->as_If();
-      for (uint j = 0; j < _scoped_value_get_nodes.size(); j++) {
-        Node* m = _scoped_value_get_nodes.at(j);
-        if (m == n) {
-          continue;
-        }
-        if (m->Opcode() == Op_ScopedValueGetHitsInCache) {
-          ScopedValueGetHitsInCacheNode* hits_in_cache_dom = m->as_ScopedValueGetHitsInCache();
-          ScopedValueGetLoadFromCacheNode* load_from_cache_dom = hits_in_cache_dom->load_from_cache();
-          IfProjNode* dom_proj = hits_in_cache_dom->success_proj();
-          if (hits_in_cache_dom->scoped_value() == hits_in_cache->scoped_value() &&
-              is_dominator(dom_proj, iff)) {
-            // The success projection of a dominating ScopedValueGetHitsInCache dominates this ScopedValueGetHitsInCache
-            // for the same ScopedValue object: replace this ScopedValueGetHitsInCache by the dominating one
-            _igvn.replace_node(hits_in_cache, hits_in_cache_dom);
-            if (load_from_cache_dom != nullptr && load_from_cache != nullptr) {
-              _igvn.replace_node(load_from_cache, load_from_cache_dom);
-            }
-            Node* bol = iff->in(1);
-            dominated_by(dom_proj, iff, false, false);
-            _igvn.replace_node(bol, C->top());
-            progress = true;
-            _scoped_value_get_nodes.delete_at(i-1);
-            break;
-          }
-        } else {
-          ScopedValueGetResultNode* get_result_dom = m->as_ScopedValueGetResult();
-          if (get_result_dom->scoped_value() == hits_in_cache->scoped_value() &&
-              is_dominator(get_result_dom, iff)) {
-            // A ScopedValueGetResult dominates this ScopedValueGetHitsInCache for the same ScopedValue object:
-            // the result of the dominating ScopedValue.get() makes this ScopedValueGetHitsInCache useless
-            Node* one = _igvn.intcon(1);
-            set_ctrl(one, C->root());
-            _igvn.replace_input_of(iff, 1, one);
-            if (load_from_cache != nullptr) {
-              Node* result_out = get_result_dom->result_out_or_null();
-              if (result_out == nullptr) {
-                result_out = new ProjNode(get_result_dom, ScopedValueGetResultNode::Result);
-                register_new_node(result_out, get_result_dom);
-              }
-              _igvn.replace_node(load_from_cache, result_out);
-            }
-            _igvn.replace_node(hits_in_cache, C->top());
-            progress = true;
-            _scoped_value_get_nodes.delete_at(i-1);
-            break;
-          }
-        }
-      }
-    } else {
-      ScopedValueGetResultNode* get_result = n->as_ScopedValueGetResult();
-      for (uint j = 0; j < _scoped_value_get_nodes.size(); j++) {
-        Node* m = _scoped_value_get_nodes.at(j);
-        if (m == n) {
-          continue;
-        }
-        if (m->Opcode() == Op_ScopedValueGetHitsInCache) {
-          ScopedValueGetHitsInCacheNode* hits_in_cache_dom = m->as_ScopedValueGetHitsInCache();
-          IfProjNode* dom_proj = hits_in_cache_dom->success_proj();
-          if (replace_scoped_value_result_by_dominator(get_result, hits_in_cache_dom->scoped_value(), dom_proj)) {
-            // This ScopedValueGetResult is dominated by the success projection of ScopedValueGetHitsInCache for the same
-            // ScopedValue object: either the ScopedValueGetResult and ScopedValueGetHitsInCache are from the same
-            // ScopedValue.get() and we remove the ScopedValueGetResult because it's only useful to optimize
-            // ScopedValue.get() where the slow path is taken. Or They are from difference ScopedValue.get() and we
-            // remove the ScopedValueGetResult. Its companion ScopedValueGetHitsInCache should be removed as well as part
-            // of this round of optimizations.
-            progress = true;
-            _scoped_value_get_nodes.delete_at(i-1);
-            break;
-          }
-        } else {
-          assert(m->Opcode() == Op_ScopedValueGetResult, "There's no other ScopedValue,get() related nodes");
-          ScopedValueGetResultNode* get_result_dom = m->as_ScopedValueGetResult();
-          if (replace_scoped_value_result_by_dominator(get_result, get_result_dom->scoped_value(), get_result_dom)) {
-            // This ScopedValueGetResult is dominated by another ScopedValueGetResult for the same ScopedValue object:
-            // remove this one and use the result from the dominating ScopedValue.get()
-            progress = true;
-            _scoped_value_get_nodes.delete_at(i-1);
-            break;
-          }
-        }
+
+      if (hits_in_cache_replaced_by_dominating_hits_in_cache(n, m) ||
+          hits_in_cache_replaced_by_dominating_get_result(n, m) ||
+          get_result_replaced_by_dominating_hits_in_cache(n, m) ||
+          get_result_replaced_by_dominating_get_result(n, m)) {
+        _scoped_value_get_nodes.delete_at(i - 1);
+        progress = true;
+        break;
       }
     }
   }
   return progress;
+}
+
+bool PhaseIdealLoop::hits_in_cache_replaced_by_dominating_hits_in_cache(Node* n, Node* m) {
+  if (!n->is_ScopedValueGetHitsInCache() || !m->is_ScopedValueGetHitsInCache()) {
+    return false;
+  }
+  ScopedValueGetHitsInCacheNode* hits_in_cache = n->as_ScopedValueGetHitsInCache();
+  hits_in_cache->verify();
+  ScopedValueGetLoadFromCacheNode* load_from_cache = hits_in_cache->load_from_cache();
+  if (load_from_cache != nullptr) {
+    load_from_cache->verify();
+  }
+  IfNode* iff = hits_in_cache->success_proj()->in(0)->as_If();
+  ScopedValueGetHitsInCacheNode* hits_in_cache_dom = m->as_ScopedValueGetHitsInCache();
+  ScopedValueGetLoadFromCacheNode* load_from_cache_dom = hits_in_cache_dom->load_from_cache();
+  IfProjNode* dom_proj = hits_in_cache_dom->success_proj();
+  if (hits_in_cache_dom->scoped_value() != hits_in_cache->scoped_value() ||
+      !is_dominator(dom_proj, iff)) {
+    return false;
+  }
+  // The success projection of a dominating ScopedValueGetHitsInCache dominates this ScopedValueGetHitsInCache
+  // for the same ScopedValue object: replace this ScopedValueGetHitsInCache by the dominating one
+  _igvn.replace_node(hits_in_cache, hits_in_cache_dom);
+  if (load_from_cache_dom != nullptr && load_from_cache != nullptr) {
+    _igvn.replace_node(load_from_cache, load_from_cache_dom);
+  }
+  Node* bol = iff->in(1);
+  dominated_by(dom_proj, iff, false, false);
+  _igvn.replace_node(bol, C->top());
+
+  return true;
+}
+
+bool PhaseIdealLoop::hits_in_cache_replaced_by_dominating_get_result(Node* n, Node* m) {
+  if (!n->is_ScopedValueGetHitsInCache() || !m->is_ScopedValueGetResult()) {
+    return false;
+  }
+  ScopedValueGetHitsInCacheNode* hits_in_cache = n->as_ScopedValueGetHitsInCache();
+  hits_in_cache->verify();
+  ScopedValueGetLoadFromCacheNode* load_from_cache = hits_in_cache->load_from_cache();
+  if (load_from_cache != nullptr) {
+    load_from_cache->verify();
+  }
+  IfNode* iff = hits_in_cache->success_proj()->in(0)->as_If();
+  ScopedValueGetResultNode* get_result_dom = m->as_ScopedValueGetResult();
+  if (get_result_dom->scoped_value() != hits_in_cache->scoped_value() ||
+      !is_dominator(get_result_dom, iff)) {
+    return false;
+  }
+  // A ScopedValueGetResult dominates this ScopedValueGetHitsInCache for the same ScopedValue object:
+  // the result of the dominating ScopedValue.get() makes this ScopedValueGetHitsInCache useless
+  Node* one = _igvn.intcon(1);
+  set_ctrl(one, C->root());
+  _igvn.replace_input_of(iff, 1, one);
+  if (load_from_cache != nullptr) {
+    Node* result_out = get_result_dom->result_out_or_null();
+    if (result_out == nullptr) {
+      result_out = new ProjNode(get_result_dom, ScopedValueGetResultNode::Result);
+      register_new_node(result_out, get_result_dom);
+    }
+    _igvn.replace_node(load_from_cache, result_out);
+  }
+  _igvn.replace_node(hits_in_cache, C->top());
+
+  return true;
+}
+
+bool PhaseIdealLoop::get_result_replaced_by_dominating_hits_in_cache(Node* n, Node* m) {
+  if (!n->is_ScopedValueGetResult() || !m->is_ScopedValueGetHitsInCache()) {
+    return false;
+  }
+  ScopedValueGetResultNode* get_result = n->as_ScopedValueGetResult();
+  ScopedValueGetHitsInCacheNode* hits_in_cache_dom = m->as_ScopedValueGetHitsInCache();
+  IfProjNode* dom_proj = hits_in_cache_dom->success_proj();
+  if (replace_scoped_value_result_by_dominator(get_result, hits_in_cache_dom->scoped_value(), dom_proj)) {
+    // This ScopedValueGetResult is dominated by the success projection of ScopedValueGetHitsInCache for the same
+    // ScopedValue object: either the ScopedValueGetResult and ScopedValueGetHitsInCache are from the same
+    // ScopedValue.get() and we remove the ScopedValueGetResult because it's only useful to optimize
+    // ScopedValue.get() where the slow path is taken. Or They are from difference ScopedValue.get() and we
+    // remove the ScopedValueGetResult. Its companion ScopedValueGetHitsInCache should be removed as well as part
+    // of this round of optimizations.
+    return true;
+  }
+  return false;
+}
+
+bool PhaseIdealLoop::get_result_replaced_by_dominating_get_result(Node* n, Node* m) {
+  if (!n->is_ScopedValueGetResult() || !m->is_ScopedValueGetResult()) {
+    return false;
+  }
+  ScopedValueGetResultNode* get_result = n->as_ScopedValueGetResult();
+  ScopedValueGetResultNode* get_result_dom = m->as_ScopedValueGetResult();
+  if (replace_scoped_value_result_by_dominator(get_result, get_result_dom->scoped_value(), get_result_dom)) {
+    // This ScopedValueGetResult is dominated by another ScopedValueGetResult for the same ScopedValue object:
+    // remove this one and use the result from the dominating ScopedValue.get()
+    return true;
+  }
+  return false;
 }
 
 bool PhaseIdealLoop::replace_scoped_value_result_by_dominator(ScopedValueGetResultNode* get_result, Node* scoped_value_object, Node* dom_ctrl) {

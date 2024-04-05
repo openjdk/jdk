@@ -57,6 +57,8 @@
  */
 #define ROUND_TO_INT(num)     ((int) floor((num) + 0.5))
 
+jfieldID AwtPrintDialog::pageID;
+
 /************************************************************************
  * WPrintJob native methods
  */
@@ -209,7 +211,6 @@ static const double POINTS_TO_HIMETRIC = (2540.0 / 72.0);
  */
 static const double POINTS_TO_LOMETRIC = (254.0 / 72.0);
 
-jfieldID AwtPrintDialog::pageID;
 
 
 /*** Private Macros ***/
@@ -493,6 +494,18 @@ Java_sun_awt_windows_WPageDialog_initIDs(JNIEnv *env, jclass cls)
  * WPageDialogPeer native methods
  */
 
+#define CLEANUP_SHOW {                      \
+    env->DeleteGlobalRef(peerGlobalRef);    \
+    if (target != NULL) {                   \
+        env->DeleteLocalRef(target);        \
+    }                                       \
+    if (parent != NULL) {                   \
+        env->DeleteLocalRef(parent);        \
+    }                                       \
+    env->DeleteLocalRef(page);              \
+    env->DeleteLocalRef(self);              \
+}
+
 /*
  * Class:     sun_awt_windows_WPageDialogPeer
  * Method:    show
@@ -521,8 +534,6 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
     AwtComponent *awtParent = (parent != NULL) ? (AwtComponent *)JNI_GET_PDATA(parent) : NULL;
     HWND hwndOwner = awtParent ? awtParent->GetHWnd() : NULL;
 
-
-    jboolean doIt = JNI_FALSE; // Assume the user will cancel the dialog.
     PAGESETUPDLG setup;
     memset(&setup, 0, sizeof(setup));
 
@@ -572,13 +583,13 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
      */
     if (AwtPrintControl::getPrintHDMode(env, self) == NULL ||
         AwtPrintControl::getPrintHDName(env,self) == NULL) {
-        (void)::PageSetupDlg(&setup);
+        static_cast<void>(::PageSetupDlg(&setup));
         /* check if hDevMode and hDevNames are set.
          * If both are null, then there is no default printer.
          */
         if ((setup.hDevMode == NULL) && (setup.hDevNames == NULL)) {
-            doIt = JNI_FALSE;
-            goto done;
+            CLEANUP_SHOW;
+            return JNI_FALSE;
         }
     } else {
         int measure = PSD_INTHOUSANDTHSOFINCHES;
@@ -605,8 +616,8 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
      */
     pageFormatToSetup(env, self, page, &setup, AwtPrintControl::getPrintDC(env, self));
     if (env->ExceptionCheck()) {
-        doIt = JNI_FALSE;
-        goto done;
+        CLEANUP_SHOW;
+        return JNI_FALSE;
     }
 
     setup.lpfnPageSetupHook = reinterpret_cast<LPPAGESETUPHOOK>(pageDlgHook);
@@ -619,8 +630,8 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
 
         jobject paper = getPaper(env, page);
         if (paper == NULL) {
-            doIt = JNI_FALSE;
-            goto done;
+            CLEANUP_SHOW;
+            return JNI_FALSE;
         }
         int units = setup.Flags & PSD_INTHOUSANDTHSOFINCHES ?
                                                 MM_HIENGLISH :
@@ -660,9 +671,9 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
          * and place them into a Paper instance.
          */
         setPaperValues(env, paper, &paperSize, &margins, units);
-         if (env->ExceptionCheck()) {
-             doIt = JNI_FALSE;
-             goto done;
+        if (env->ExceptionCheck()) {
+            CLEANUP_SHOW;
+            return JNI_FALSE;
          }
         /*
          * Put the updated Paper instance and the orientation into
@@ -670,13 +681,13 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
          */
         setPaper(env, page, paper);
         if (env->ExceptionCheck()) {
-             doIt = JNI_FALSE;
-             goto done;
+            CLEANUP_SHOW;
+            return JNI_FALSE;
         }
         setPageFormatOrientation(env, page, orientation);
         if (env->ExceptionCheck()) {
-             doIt = JNI_FALSE;
-             goto done;
+            CLEANUP_SHOW;
+            return JNI_FALSE;
         }
         if (setup.hDevMode != NULL) {
             DEVMODE *devmode = (DEVMODE *)::GlobalLock(setup.hDevMode);
@@ -684,14 +695,13 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
                 if (devmode->dmFields & DM_PAPERSIZE) {
                     jboolean err = setPrintPaperSize(env, self, devmode->dmPaperSize);
                     if (err) {
-                        doIt = JNI_FALSE;
-                        goto done;
+                        CLEANUP_SHOW;
+                        return JNI_FALSE;
                     }
                 }
             }
             ::GlobalUnlock(setup.hDevMode);
         }
-        doIt = JNI_TRUE;
     }
 
     AwtDialog::CheckUninstallModalHook();
@@ -708,18 +718,9 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
         AwtPrintControl::setPrintHDName(env, self, setup.hDevNames);
     }
 
-done:
-    env->DeleteGlobalRef(peerGlobalRef);
-    if (target != NULL) {
-        env->DeleteLocalRef(target);
-    }
-    if (parent != NULL) {
-        env->DeleteLocalRef(parent);
-    }
-    env->DeleteLocalRef(page);
-    env->DeleteLocalRef(self);
+    CLEANUP_SHOW;
 
-    return doIt;
+    return JNI_TRUE;
 
     CATCH_BAD_ALLOC_RET(0);
 }
@@ -881,6 +882,21 @@ done:
 
 }
 
+#define CLEANUP_VALIDATE_PAPER {                                               \
+    if (privateDC == TRUE) {                                                   \
+        if (printDC != NULL) {                                                 \
+            /* In this case we know that this DC has no GDI objects to free */ \
+             ::DeleteDC(printDC);                                              \
+        }                                                                      \
+        if (hDevMode != NULL) {                                                \
+            ::GlobalFree(hDevMode);                                            \
+        }                                                                      \
+        if (hDevNames != NULL) {                                               \
+            ::GlobalFree(hDevNames);                                           \
+        }                                                                      \
+    }                                                                          \
+}
+
 /*
  * Class:     sun_awt_windows_WPrinterJob
  * Method:    validatePaper
@@ -919,7 +935,12 @@ Java_sun_awt_windows_WPrinterJob_validatePaper(JNIEnv *env, jobject self,
         }
     }
 
-    JNI_CHECK_NULL_GOTO(printDC, "Invalid printDC", done);
+    if (printDC == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "Invalid printDC");
+        CLEANUP_VALIDATE_PAPER;
+        return;
+    }
 
     /* We try to mitigate the effects of floating point rounding errors
      * by only setting a value if it would differ from the value in the
@@ -932,7 +953,10 @@ Java_sun_awt_windows_WPrinterJob_validatePaper(JNIEnv *env, jobject self,
     jdouble paperWidth, paperHeight;
     jboolean err;
     WORD dmPaperSize = getPrintPaperSize(env, &err, self);
-    if (err) goto done;
+    if (err) {
+        CLEANUP_VALIDATE_PAPER;
+        return;
+    }
 
     double ix, iy, iw, ih, pw, ph;
 
@@ -940,24 +964,59 @@ Java_sun_awt_windows_WPrinterJob_validatePaper(JNIEnv *env, jobject self,
     jmethodID getID;
 
     jclass paperClass = env->GetObjectClass(origPaper);
-    JNI_CHECK_NULL_GOTO(paperClass, "paper class not found", done);
+    if (paperClass == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "paper class not found");
+        CLEANUP_VALIDATE_PAPER;
+        return;
+    }
     getID = env->GetMethodID(paperClass, GETWIDTH_STR, GETWIDTH_SIG);
-    JNI_CHECK_NULL_GOTO(getID, "no getWidth method", done);
+    if (getID == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "no getWidth method");
+        CLEANUP_VALIDATE_PAPER;
+        return;
+    }
     pw = env->CallDoubleMethod(origPaper, getID);
     getID = env->GetMethodID(paperClass, GETHEIGHT_STR, GETHEIGHT_SIG);
-    JNI_CHECK_NULL_GOTO(getID, "no getHeight method", done);
+    if (getID == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "no getHeight method");
+        CLEANUP_VALIDATE_PAPER;
+        return;
+    }
     ph = env->CallDoubleMethod(origPaper, getID);
     getID = env->GetMethodID(paperClass, GETIMG_X_STR, GETIMG_X_SIG);
-    JNI_CHECK_NULL_GOTO(getID, "no getX method", done);
+    if (getID == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "no getX method");
+        CLEANUP_VALIDATE_PAPER;
+        return;
+    }
     ix = env->CallDoubleMethod(origPaper, getID);
     getID = env->GetMethodID(paperClass, GETIMG_Y_STR, GETIMG_Y_SIG);
-    JNI_CHECK_NULL_GOTO(getID, "no getY method", done);
+    if (getID == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "no getY method");
+        CLEANUP_VALIDATE_PAPER;
+        return;
+    }
     iy = env->CallDoubleMethod(origPaper, getID);
     getID = env->GetMethodID(paperClass, GETIMG_W_STR, GETIMG_W_SIG);
-    JNI_CHECK_NULL_GOTO(getID, "no getW method", done);
+    if (getID == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "no getW method");
+        CLEANUP_VALIDATE_PAPER;
+        return;
+    }
     iw = env->CallDoubleMethod(origPaper, getID);
     getID = env->GetMethodID(paperClass, GETIMG_H_STR, GETIMG_H_SIG);
-    JNI_CHECK_NULL_GOTO(getID, "no getH method", done);
+    if (getID == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "no getH method");
+        CLEANUP_VALIDATE_PAPER;
+        return;
+    }
     ih = env->CallDoubleMethod(origPaper, getID);
 
     matchPaperSize(printDC, hDevMode, hDevNames, pw, ph,
@@ -1050,29 +1109,27 @@ Java_sun_awt_windows_WPrinterJob_validatePaper(JNIEnv *env, jobject self,
 
     jmethodID setSizeID = env->GetMethodID(paperClass,
                                         SETSIZE_STR, SETSIZE_SIG);
-    JNI_CHECK_NULL_GOTO(setSizeID, "no setSize method", done);
+    if (setSizeID == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "no setSize method");
+        CLEANUP_VALIDATE_PAPER;
+        return;
+    }
 
     jmethodID setImageableID = env->GetMethodID(paperClass,
                                         SETIMAGEABLE_STR, SETIMAGEABLE_SIG);
-    JNI_CHECK_NULL_GOTO(setImageableID, "no setImageable method", done);
+    if (setImageableID == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "no setImageable method");
+        CLEANUP_VALIDATE_PAPER;
+        return;
+    }
 
     env->CallVoidMethod(newPaper, setSizeID, paperWidth, paperHeight);
     env->CallVoidMethod(newPaper, setImageableID, ix, iy, iw, ih);
 
-done:
     /* Free any resources allocated */
-    if (privateDC == TRUE) {
-        if (printDC != NULL) {
-            /* In this case we know that this DC has no GDI objects to free */
-             ::DeleteDC(printDC);
-        }
-        if (hDevMode != NULL) {
-            ::GlobalFree(hDevMode);
-        }
-        if (hDevNames != NULL) {
-            ::GlobalFree(hDevNames);
-        }
-    }
+    CLEANUP_VALIDATE_PAPER;
 
     CATCH_BAD_ALLOC;
 }
