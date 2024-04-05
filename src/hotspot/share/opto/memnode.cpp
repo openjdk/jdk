@@ -3282,28 +3282,54 @@ Node* MergePrimitiveArrayStores::make_merged_input_value(const Node_List& merge_
   return merged_input_value;
 }
 
+//                                                                                                          //
+// first_ctrl    first_mem   first_adr                first_ctrl    first_mem         first_adr             //
+//  |                |           |                     |                |                 |                 //
+//  |                |           |                     |                +---------------+ |                 //
+//  |                |           |                     |                |               | |                 //
+//  |                | +---------+                     |                | +---------------+                 //
+//  |                | |                               |                | |             | |                 //
+//  +--------------+ | |  v1                           +------------------------------+ | |  v1             //
+//  |              | | |  |                            |                | |           | | |  |              //
+// RangeCheck     first_store                         RangeCheck        | |          first_store            //
+//  |                |  |                              |                | |                |                //
+// last_ctrl         |  +----> unc_trap               last_ctrl         | |                +----> unc_trap  //
+//  |                |                       ===>      |                | |                                 //
+//  +--------------+ | a2 v2                           |                | |                                 //
+//  |              | | |  |                            |                | |                                 //
+//  |             second_store                         |                | |                                 //
+//  |                |                                 |                | | [v1 v2   ...   vn]              //
+// ...              ...                                |                | |         |                       //
+//  |                |                                 |                | |         v                       //
+//  +--------------+ | an vn                           +--------------+ | | merged_input_value              //
+//                 | | |  |                                           | | |  |                              //
+//                last_store (= _store)                              merged_store                           //
+//                                                                                                          //
 StoreNode* MergePrimitiveArrayStores::make_merged_store(const Node_List& merge_list, Node* merged_input_value) {
-  Node* first    = merge_list.at(merge_list.size()-1);
-  Node* new_ctrl = _store->in(MemNode::Control); // must take last: after all RangeChecks
-  Node* new_mem  = first->in(MemNode::Memory);
-  Node* new_adr  = first->in(MemNode::Address);
+  Node* first_store = merge_list.at(merge_list.size()-1);
+  Node* last_ctrl   = _store->in(MemNode::Control); // after (optional) RangeCheck
+  Node* first_mem   = first_store->in(MemNode::Memory);
+  Node* first_adr   = first_store->in(MemNode::Address);
+
   const TypePtr* new_adr_type = _store->adr_type();
-  BasicType bt = T_ILLEGAL;
+
   int new_memory_size = _store->memory_size() * merge_list.size();
+  BasicType bt = T_ILLEGAL;
   switch (new_memory_size) {
     case 2: bt = T_SHORT; break;
     case 4: bt = T_INT;   break;
     case 8: bt = T_LONG;  break;
   }
 
-  StoreNode* merged_store = StoreNode::make(*_phase, new_ctrl, new_mem, new_adr,
+  StoreNode* merged_store = StoreNode::make(*_phase, last_ctrl, first_mem, first_adr,
                                             new_adr_type, merged_input_value, bt, MemNode::unordered);
+
   // Marking the store mismatched is sufficient to prevent reordering, since array stores
   // are all on the same slice. Hence, we need no barriers.
   merged_store->set_mismatched_access();
 
   // Constants above may now also be be packed -> put candidate on worklist
-  _phase->is_IterGVN()->_worklist.push(new_mem);
+  _phase->is_IterGVN()->_worklist.push(first_mem);
 
   return merged_store;
 }
