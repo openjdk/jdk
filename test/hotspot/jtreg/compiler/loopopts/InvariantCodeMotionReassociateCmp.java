@@ -33,7 +33,7 @@ import java.util.Random;
  * @bug 8323220
  * @summary Test loop invariant code motion for cmp nodes through reassociation
  * @library /test/lib /
- * @run main compiler.c2.loopopts.InvariantCodeMotionReassociateCmp
+ * @run driver compiler.c2.loopopts.InvariantCodeMotionReassociateCmp
  */
 public class InvariantCodeMotionReassociateCmp {
     private static final Random RANDOM = Utils.getRandomInstance();
