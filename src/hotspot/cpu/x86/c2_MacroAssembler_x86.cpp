@@ -1008,7 +1008,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
 
     // Check if recursive.
     cmpptr(thread, rax_reg);
-    jcc(Assembler::notEqual, slow_path);
+    jccb(Assembler::notEqual, slow_path);
 
     // Recursive.
     increment(Address(tagged_monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
@@ -1022,15 +1022,18 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
 #ifdef ASSERT
   // Check that locked label is reached with ZF set.
   Label zf_correct;
+  Label zf_bad_zero;
   jcc(Assembler::zero, zf_correct);
-  stop("Fast Lock ZF != 1");
+  jmp(zf_bad_zero);
 #endif
 
   bind(slow_path);
 #ifdef ASSERT
   // Check that slow_path label is reached with ZF not set.
-  jccb(Assembler::notZero, zf_correct);
+  jcc(Assembler::notZero, zf_correct);
   stop("Fast Lock ZF != 0");
+  bind(zf_bad_zero);
+  stop("Fast Lock ZF != 1");
   bind(zf_correct);
 #endif
   // C2 uses the value of ZF to determine the continuation.
