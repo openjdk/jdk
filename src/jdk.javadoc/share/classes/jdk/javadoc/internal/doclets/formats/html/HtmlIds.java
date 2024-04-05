@@ -592,23 +592,19 @@ public class HtmlIds {
                 assert added;
             }
         }
-        htmlId = ids.get(e);
-        if (htmlId == null) {
-            // Safety net: if for whatever reason we cannot find the element
-            // among those we just expanded, return the simple id. It might
-            // not be always right, but at least it won't fail.
-            //
-            // - one example where it might happen is linking to an inherited
-            //   undocumented method (see test case T5093723)
-            //   TODO the above will need to be revisited if and when we redesign
-            //    VisibleMemberTable, which currently cannot correctly return the
-            //    owner of such a method
-            //
-            // - another example is annotation interface methods: they are not
-            //   included in VisibleMemberTable.Kind.METHODS and so cannot be
-            //   found among them
-            htmlId = forMember0(e);
-        }
-        return htmlId;
+        // Safety net: if for whatever reason we cannot find the element
+        // among those we just expanded, return the simple id. It might
+        // not be always right, but at least it won't fail.
+        //
+        // - one example where it might happen is linking to an inherited
+        //   undocumented method (see test case T5093723)
+        //   TODO the above will need to be revisited if and when we redesign
+        //    VisibleMemberTable, which currently cannot correctly return the
+        //    owner of such a method
+        //
+        // - another example is annotation interface methods: they are not
+        //   included in VisibleMemberTable.Kind.METHODS and so cannot be
+        //   found among them
+        return ids.computeIfAbsent(e, this::forMember0);
     }
 }
