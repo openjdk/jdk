@@ -34,17 +34,15 @@ import java.awt.event.WindowEvent;
  * @key headful
  * @bug 4065534
  * @summary Frame.setSize() doesn't change size if window is in an iconified state
- * @run main/manual SizeMinimizedTest
+ * @run main SizeMinimizedTest
  */
 
 public class SizeMinimizedTest {
     private static Frame frame;
-    private static final int INITIAL_WIDTH = 100;
-    private static final int INITIAL_HEIGHT = 100;
+    private static final int INITIAL_SIZE = 100;
     private static final int INITIAL_X = 150;
     private static final int INITIAL_Y = 50;
-    private static final int RESET_WIDTH = 200;
-    private static final int RESET_HEIGHT = 200;
+    private static final int RESET_SIZE = 200;
     private static final int OFFSET = 10;
     private static int iterationCnt = 0;
     private static Dimension expectedSize;
@@ -55,49 +53,18 @@ public class SizeMinimizedTest {
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
         try {
-            frame = new Frame("frame size test");
-            frame.setSize(INITIAL_WIDTH, INITIAL_HEIGHT);
-            frame.setLocation(INITIAL_X, INITIAL_Y);
-            frame.setVisible(true);
-
-            frame.addWindowListener(new WindowAdapter() {
-                @Override
-                public void windowOpened(WindowEvent e) {
-                    System.out.println("Initial Frame Size: " + frame.getSize());
-                    System.out.println("Initial Frame Location: " + frame.getLocationOnScreen());
-                }
+            EventQueue.invokeAndWait(() -> {
+                createUI();
             });
-
-            frame.addWindowStateListener(new WindowAdapter() {
-                @Override
-                public void windowStateChanged(WindowEvent e) {
-                    if (e.getNewState() == Frame.NORMAL) {
-                        System.out.println("Frame Size: " + frame.getSize());
-                        System.out.println("Frame Location: " + frame.getLocationOnScreen());
-                        expectedSize = new Dimension(RESET_WIDTH, RESET_HEIGHT);
-                        frameSize = frame.getSize();
-
-                        if (!expectedSize.equals(frameSize)) {
-                            throw new RuntimeException("Test Failed due to size mismatch.");
-                        }
-
-                        expectedLoc = new Point(INITIAL_X + OFFSET * iterationCnt, INITIAL_Y);
-                        frameLoc = frame.getLocationOnScreen();
-
-                        if (!expectedLoc.equals(frameLoc)) {
-                            throw new RuntimeException("Test Failed due to location mismatch.");
-                        }
-                    }
-                }
-            });
-
+            robot.waitForIdle();
+            robot.delay(100);
             EventQueue.invokeAndWait(() -> {
                 frame.setState(Frame.ICONIFIED);
             });
             robot.waitForIdle();
             robot.delay(100);
             EventQueue.invokeAndWait(() -> {
-                frame.setSize(RESET_WIDTH, RESET_HEIGHT);
+                frame.setSize(RESET_SIZE, RESET_SIZE);
             });
             robot.waitForIdle();
             robot.delay(100);
@@ -123,5 +90,47 @@ public class SizeMinimizedTest {
                 }
             });
         }
+    }
+
+    public static void createUI() {
+        frame = new Frame("Frame size test");
+        frame.setSize(INITIAL_SIZE, INITIAL_SIZE);
+        frame.setLocation(INITIAL_X, INITIAL_Y);
+
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowOpened(WindowEvent e) {
+                System.out.println("Initial Frame Size: " + frame.getSize());
+                System.out.println("Initial Frame Location: " +
+                        frame.getLocationOnScreen());
+            }
+        });
+
+        frame.addWindowStateListener(new WindowAdapter() {
+            @Override
+            public void windowStateChanged(WindowEvent e) {
+                if (e.getNewState() == Frame.NORMAL) {
+                    System.out.println("Frame Size: " + frame.getSize());
+                    System.out.println("Frame Location: " +
+                            frame.getLocationOnScreen());
+                    expectedSize = new Dimension(RESET_SIZE, RESET_SIZE);
+                    frameSize = frame.getSize();
+
+                    if (!expectedSize.equals(frameSize)) {
+                        throw new RuntimeException("Test Failed due to size mismatch.");
+                    }
+
+                    expectedLoc = new Point(INITIAL_X + OFFSET * iterationCnt,
+                            INITIAL_Y);
+                    frameLoc = frame.getLocationOnScreen();
+
+                    if (!expectedLoc.equals(frameLoc)) {
+                        throw new RuntimeException("Test Failed due to " +
+                                "location mismatch.");
+                    }
+                }
+            }
+        });
+        frame.setVisible(true);
     }
 }
