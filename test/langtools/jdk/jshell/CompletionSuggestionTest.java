@@ -324,7 +324,8 @@ public class CompletionSuggestionTest extends KullaTesting {
                 "String(char[], int, int)");
         assertSignature("String.format(|",
                 "String String.format(String, Object...)",
-                "String String.format(java.util.Locale, String, Object...)");
+                "String String.format(java.util.Locale, String, Object...)"
+                );
         assertSignature("\"\".getBytes(\"\"|", "void String.getBytes(int, int, byte[], int)",
                                                     "byte[] String.getBytes(String) throws java.io.UnsupportedEncodingException",
                                                     "byte[] String.getBytes(java.nio.charset.Charset)");

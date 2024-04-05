@@ -365,6 +365,15 @@ public interface JavaLangAccess {
     char getUTF16Char(byte[] bytes, int index);
 
     /**
+     * Put the char at index in a byte[] in internal UTF-16 representation,
+     * with no bounds checks.
+     *
+     * @param bytes the UTF-16 encoded bytes
+     * @param index of the char to retrieve, 0 <= index < (bytes.length >> 1)
+     */
+    void putCharUTF16(byte[] bytes, int index, int ch);
+
+    /**
      * Encode the given string into a sequence of bytes using utf8.
      *
      * @param s the string to encode
@@ -418,6 +427,12 @@ public interface JavaLangAccess {
     MethodHandle stringConcatHelper(String name, MethodType methodType);
 
     /**
+     * Prepends constant and the stringly representation of value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     */
+    long stringConcatHelperPrepend(long indexCoder, byte[] buf, String value);
+
+    /**
      * Get the string concat initial coder
      */
     long stringConcatInitialCoder();
@@ -427,20 +442,10 @@ public interface JavaLangAccess {
      */
     long stringConcatMix(long lengthCoder, String constant);
 
-   /**
-    * Get the coder for the supplied character.
-    */
-   long stringConcatCoder(char value);
-
-   /**
-    * Update lengthCoder for StringBuilder.
-    */
-   long stringBuilderConcatMix(long lengthCoder, StringBuilder sb);
-
     /**
-     * Prepend StringBuilder content.
-    */
-   long stringBuilderConcatPrepend(long lengthCoder, byte[] buf, StringBuilder sb);
+     * Mix value length and coder into current length and coder.
+     */
+    long stringConcatMix(long lengthCoder, char value);
 
     /**
      * Join strings
@@ -453,6 +458,12 @@ public interface JavaLangAccess {
      * @see java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
      */
     Object classData(Class<?> c);
+
+    int stringSize(long i);
+
+    int getCharsLatin1(long i, int index, byte[] buf);
+
+    int getCharsUTF16(long i, int index, byte[] buf);
 
     long findNative(ClassLoader loader, String entry);
 

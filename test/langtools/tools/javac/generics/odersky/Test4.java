@@ -52,9 +52,12 @@ class Test4 {
     static Integer i = new Integer(1);
     static Number n = i;
 
+    static void test(String arg) {}
+    static void test(Object arg) {}
+
     public static void main(String[] args) {
         Number x = f(n, i);
         String xy = g(cons("abc", Test4.<String>nil()), Test4.<String>nil());
-        System.out.println(g(cons("abc", nil()), nil()));
+        test(g(cons("abc", nil()), nil()));
     }
 }
