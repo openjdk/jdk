@@ -4989,7 +4989,10 @@ public class Check {
 
             @Override
             public void visitDerivedInstance(JCDerivedInstance tree) {
-                seenVariables.addAll(tree.componentLocalVariables);
+                tree.componentLocalVariableDeclarations
+                    .stream()
+                    .map(var -> var.sym)
+                    .forEach(seenVariables::add);
                 super.visitDerivedInstance(tree);
             }
         }.scan(instance);

@@ -2111,10 +2111,9 @@ public class Flow {
         final Bits uninitsWhenTrue;
         final Bits uninitsWhenFalse;
 
-        /** A mapping from addresses to variable symbols, and their diagnostic
-         *  position.
+        /** A mapping from addresses to variable symbols.
          */
-        protected VarAndDeclarationTree[] vars;
+        protected JCVariableDecl[] vardecls;
 
         /** The current class being defined.
          */
@@ -2182,7 +2181,7 @@ public class Flow {
                 inits.inclRange(returnadr, nextadr);
             } else {
                 for (int address = returnadr; address < nextadr; address++) {
-                    if (!(isFinalUninitializedStaticField(vars[address].variable()))) {
+                    if (!(isFinalUninitializedStaticField(vardecls[address].sym))) {
                         inits.incl(address);
                     }
                 }
@@ -2217,20 +2216,13 @@ public class Flow {
          *  index into the vars array.
          */
         void newVar(JCVariableDecl varDecl) {
-            newVar(varDecl, varDecl.sym);
-        }
-
-        /** Initialize new trackable variable by setting its address field
-         *  to the next available sequence number and entering it under that
-         *  index into the vars array.
-         */
-        void newVar(JCTree pos,VarSymbol sym) {
-            vars = ArrayUtils.ensureCapacity(vars, nextadr);
+            VarSymbol sym = varDecl.sym;
+            vardecls = ArrayUtils.ensureCapacity(vardecls, nextadr);
             if ((sym.flags() & FINAL) == 0) {
                 sym.flags_field |= EFFECTIVELY_FINAL;
             }
             sym.adr = nextadr;
-            vars[nextadr] = new VarAndDeclarationTree(sym, pos);
+            vardecls[nextadr] = varDecl;
             inits.excl(nextadr);
             uninits.incl(nextadr);
             nextadr++;
@@ -2306,7 +2298,7 @@ public class Flow {
             if ((sym.adr >= firstadr || sym.owner.kind != TYP) &&
                 trackable(sym) &&
                 !inits.isMember(sym.adr) &&
-                (sym.flags_field & (CLASH | COMPONENT_LOCAL_VARIABLE)) == 0) {
+                (sym.flags_field & CLASH) == 0) {
                     log.error(pos, errkey);
                 inits.incl(sym.adr);
             }
@@ -2439,9 +2431,9 @@ public class Flow {
 
                     // verify all static final fields got initailized
                     for (int i = firstadr; i < nextadr; i++) {
-                        VarSymbol var = vars[i].variable();
+                        JCVariableDecl vardecl = vardecls[i];
+                        VarSymbol var = vardecl.sym;
                         if (var.owner == classDef.sym && var.isStatic()) {
-                            JCTree vardecl = vars[i].declarationTree();
                             checkInit(TreeInfo.diagnosticPositionFor(var, vardecl), var);
                         }
                     }
@@ -2526,8 +2518,8 @@ public class Flow {
                         boolean isSynthesized = (tree.sym.flags() &
                                                  GENERATEDCONSTR) != 0;
                         for (int i = firstadr; i < nextadr; i++) {
-                            VarSymbol var = vars[i].variable();
-                            JCTree vardecl = vars[i].declarationTree();
+                            JCVariableDecl vardecl = vardecls[i];
+                            VarSymbol var = vardecl.sym;
                             if (var.owner == classDef.sym && !var.isStatic()) {
                                 // choose the diagnostic position based on whether
                                 // the ctor is default(synthesized) or not
@@ -2584,7 +2576,7 @@ public class Flow {
                     Assert.check(exit instanceof AssignPendingExit);
                     inits.assign(((AssignPendingExit) exit).exit_inits);
                     for (int i = firstadr; i < nextadr; i++) {
-                        checkInit(exit.tree.pos(), vars[i].variable());
+                        checkInit(exit.tree.pos(), vardecls[i].sym);
                     }
                 }
             }
@@ -3052,7 +3044,7 @@ public class Flow {
                 // If this(): at this point all final uninitialized fields will get initialized
                 else if (name == names._this) {
                     for (int address = firstadr; address < nextadr; address++) {
-                        VarSymbol sym = vars[address].variable();
+                        VarSymbol sym = vardecls[address].sym;
                         if (isFinalUninitializedField(sym) && !sym.isStatic())
                             letInit(tree.pos(), sym);
                     }
@@ -3218,9 +3210,9 @@ public class Flow {
         public void visitDerivedInstance(JCDerivedInstance tree) {
             scan(tree.expr);
             int nextadrPrev = nextadr;
-            for (VarSymbol component : tree.componentLocalVariables) {
-                newVar(tree, component);
-                letInit(tree.pos(), component);
+            for (JCVariableDecl component : tree.componentLocalVariableDeclarations) {
+                newVar(component);
+                letInit(tree.pos(), component.sym);
             }
             scan(tree.block);
             nextadr = nextadrPrev;
@@ -3253,11 +3245,11 @@ public class Flow {
             try {
                 startPos = tree.pos().getStartPosition();
 
-                if (vars == null)
-                    vars = new VarAndDeclarationTree[32];
+                if (vardecls == null)
+                    vardecls = new JCVariableDecl[32];
                 else
-                    for (int i=0; i<vars.length; i++)
-                        vars[i] = null;
+                    for (int i=0; i<vardecls.length; i++)
+                        vardecls[i] = null;
                 firstadr = 0;
                 nextadr = 0;
                 Flow.this.make = make;
@@ -3270,9 +3262,9 @@ public class Flow {
                 startPos = -1;
                 resetBits(inits, uninits, uninitsTry, initsWhenTrue,
                         initsWhenFalse, uninitsWhenTrue, uninitsWhenFalse);
-                if (vars != null) {
-                    for (int i=0; i<vars.length; i++)
-                        vars[i] = null;
+                if (vardecls != null) {
+                    for (int i=0; i<vardecls.length; i++)
+                        vardecls[i] = null;
                 }
                 firstadr = 0;
                 nextadr = 0;
@@ -3282,8 +3274,6 @@ public class Flow {
                 unrefdResources = null;
             }
         }
-
-        record VarAndDeclarationTree(VarSymbol variable, JCTree declarationTree) {}
     }
 
     /**
@@ -3473,7 +3463,10 @@ public class Flow {
         @Override
         public void visitDerivedInstance(JCDerivedInstance tree) {
             if (declaredInsideGuard != null) {
-                tree.componentLocalVariables.forEach(declaredInsideGuard::enter);
+                tree.componentLocalVariableDeclarations
+                    .stream()
+                    .map(var -> var.sym)
+                    .forEach(declaredInsideGuard::enter);
             }
             super.visitDerivedInstance(tree);
         }

@@ -3966,7 +3966,7 @@ public class Attr extends JCTree.Visitor {
             env.dup(tree, env.info.dup(env.info.scope.dup()));
 
         try {
-            ListBuffer<VarSymbol> componentLocalVariables = new ListBuffer<>();
+            ListBuffer<JCVariableDecl> componentLocalVariableDeclaration = new ListBuffer<>();
 
             if ((exprType.tsym.flags() & RECORD) == 0) {
                 log.error(tree, Errors.DerivedExpressionNoRecord);
@@ -3980,12 +3980,12 @@ public class Attr extends JCTree.Visitor {
                                                        env.info.scope.owner);
 
                     outgoing.pos = tree.pos;
-                    componentLocalVariables.append(outgoing);
+                    componentLocalVariableDeclaration.append(make.at(tree).VarDef(outgoing, null));
                     blockEnv.info.scope.enter(outgoing);
                 }
             }
 
-            tree.componentLocalVariables = componentLocalVariables.toList();
+            tree.componentLocalVariableDeclarations = componentLocalVariableDeclaration.toList();
 
             attribStat(tree.block, blockEnv);
 

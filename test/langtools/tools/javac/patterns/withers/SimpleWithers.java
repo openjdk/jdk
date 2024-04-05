@@ -105,10 +105,17 @@ public class SimpleWithers {
             } instanceof R(var v1, var v2, var v3) && (v1 != 1 || v2 != 2 || v3 != 3)) {
             throw new AssertionError("Incorrect value(s): " + v1 + ", " + v2 + ", " + v3);
         }
+        R3<String> r3 = new R3<>("");
+        if (r3 with {
+                t = "new";
+            } instanceof R3(var t) && !"new".equals(t)) {
+            throw new AssertionError("Incorrect value: " + t);
+        }
     }
 
     record R(int val1, int val2, int val3) {}
     record R2(R val1) {}
+    record R3<T>(T t) {}
     interface C {
         R apply(R r);
     }

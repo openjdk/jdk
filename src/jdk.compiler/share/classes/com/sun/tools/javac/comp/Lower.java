@@ -4442,6 +4442,20 @@ public class Lower extends TreeTranslator {
 
     @Override
     public void visitDerivedInstance(JCDerivedInstance tree) {
+        //for record R(C1, C2, ..., Cn), and a derived record creation expression:
+        //expr with { ...body... }
+        //generate let expression:
+        //{
+        //    R $temp = expr; //skipped if "expr" is a local variable
+        //    typeof(C1) c1 = $temp.c1();
+        //    typeof(C2) c2 = $temp.c2();
+        //    ...
+        //    typeof(Cn) cn = $temp.cn();
+        //
+        //    { ...body...}
+        //
+        //    "yield" new R(c1, c2, ..., cn);
+        //}
         ListBuffer<JCStatement> newBlock = new ListBuffer<>();
         VarSymbol temp;
         if (tree.expr instanceof JCIdent i &&
@@ -4459,15 +4473,17 @@ public class Lower extends TreeTranslator {
 
 
         ClassSymbol recordClass = (ClassSymbol) tree.expr.type.tsym;
-        List<VarSymbol> outgoingBindingsIt = tree.componentLocalVariables;
+        List<JCVariableDecl> outgoingBindingsIt = tree.componentLocalVariableDeclarations;
         List<? extends RecordComponent> recordComponentsIt = recordClass.getRecordComponents();
 
         while (outgoingBindingsIt.nonEmpty()) {
             Type erasedComponentType = types.erasure(recordComponentsIt.head.type);
-            newBlock.add(make.VarDef(outgoingBindingsIt.head,
-                                     make.App(make.Select(make.Ident(temp),
-                                                          recordComponentsIt.head.accessor))
-                                         .setType(erasedComponentType)));
+            JCVariableDecl var = outgoingBindingsIt.head;
+
+            var.init = make.App(make.Select(make.Ident(temp),
+                                            recordComponentsIt.head.accessor))
+                           .setType(erasedComponentType);
+            newBlock.append(var);
             outgoingBindingsIt = outgoingBindingsIt.tail;
             recordComponentsIt = recordComponentsIt.tail;
         }
@@ -4477,7 +4493,7 @@ public class Lower extends TreeTranslator {
         JCNewClass createNew = make.NewClass(null,
                                              List.nil(),
                                              make.QualIdent(recordClass),
-                                             tree.componentLocalVariables.map(make::Ident),
+                                             tree.componentLocalVariableDeclarations.map(decl -> make.Ident(decl.sym)),
                                              null);
 
         createNew.type = tree.type;
