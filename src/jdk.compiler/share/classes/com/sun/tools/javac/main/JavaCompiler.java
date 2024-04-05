@@ -1568,12 +1568,6 @@ public class JavaCompiler {
                 hasPatterns |= tree.patternSwitch;
                 super.visitSwitchExpression(tree);
             }
-
-            @Override
-            public void visitDerivedInstance(JCDerivedInstance tree) {
-                hasPatterns |= true;
-                super.visitDerivedInstance(tree);
-            }
         }
         ScanNested scanner = new ScanNested();
         scanner.scan(env.tree);

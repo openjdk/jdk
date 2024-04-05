@@ -2114,8 +2114,7 @@ public class Flow {
         /** A mapping from addresses to variable symbols, and their diagnostic
          *  position.
          */
-        protected VarSymbol[] vars;
-        protected JCTree[]    vardecls;
+        protected VarAndDeclarationTree[] vars;
 
         /** The current class being defined.
          */
@@ -2183,7 +2182,7 @@ public class Flow {
                 inits.inclRange(returnadr, nextadr);
             } else {
                 for (int address = returnadr; address < nextadr; address++) {
-                    if (!(isFinalUninitializedStaticField(vars[address]))) {
+                    if (!(isFinalUninitializedStaticField(vars[address].variable()))) {
                         inits.incl(address);
                     }
                 }
@@ -2227,13 +2226,11 @@ public class Flow {
          */
         void newVar(JCTree pos,VarSymbol sym) {
             vars = ArrayUtils.ensureCapacity(vars, nextadr);
-            vardecls = ArrayUtils.ensureCapacity(vardecls, nextadr);
             if ((sym.flags() & FINAL) == 0) {
                 sym.flags_field |= EFFECTIVELY_FINAL;
             }
             sym.adr = nextadr;
-            vars[nextadr] = sym;
-            vardecls[nextadr] = pos;
+            vars[nextadr] = new VarAndDeclarationTree(sym, pos);
             inits.excl(nextadr);
             uninits.incl(nextadr);
             nextadr++;
@@ -2442,9 +2439,9 @@ public class Flow {
 
                     // verify all static final fields got initailized
                     for (int i = firstadr; i < nextadr; i++) {
-                        VarSymbol var = vars[i];
+                        VarSymbol var = vars[i].variable();
                         if (var.owner == classDef.sym && var.isStatic()) {
-                            JCTree vardecl = vardecls[i];
+                            JCTree vardecl = vars[i].declarationTree();
                             checkInit(TreeInfo.diagnosticPositionFor(var, vardecl), var);
                         }
                     }
@@ -2529,8 +2526,8 @@ public class Flow {
                         boolean isSynthesized = (tree.sym.flags() &
                                                  GENERATEDCONSTR) != 0;
                         for (int i = firstadr; i < nextadr; i++) {
-                            VarSymbol var = vars[i];
-                            JCTree vardecl = vardecls[i];
+                            VarSymbol var = vars[i].variable();
+                            JCTree vardecl = vars[i].declarationTree();
                             if (var.owner == classDef.sym && !var.isStatic()) {
                                 // choose the diagnostic position based on whether
                                 // the ctor is default(synthesized) or not
@@ -2587,7 +2584,7 @@ public class Flow {
                     Assert.check(exit instanceof AssignPendingExit);
                     inits.assign(((AssignPendingExit) exit).exit_inits);
                     for (int i = firstadr; i < nextadr; i++) {
-                        checkInit(exit.tree.pos(), vars[i]);
+                        checkInit(exit.tree.pos(), vars[i].variable());
                     }
                 }
             }
@@ -3055,7 +3052,7 @@ public class Flow {
                 // If this(): at this point all final uninitialized fields will get initialized
                 else if (name == names._this) {
                     for (int address = firstadr; address < nextadr; address++) {
-                        VarSymbol sym = vars[address];
+                        VarSymbol sym = vars[address].variable();
                         if (isFinalUninitializedField(sym) && !sym.isStatic())
                             letInit(tree.pos(), sym);
                     }
@@ -3257,15 +3254,10 @@ public class Flow {
                 startPos = tree.pos().getStartPosition();
 
                 if (vars == null)
-                    vars = new VarSymbol[32];
+                    vars = new VarAndDeclarationTree[32];
                 else
                     for (int i=0; i<vars.length; i++)
                         vars[i] = null;
-                if (vardecls == null)
-                    vardecls = new JCTree[32];
-                else
-                    for (int i=0; i<vardecls.length; i++)
-                        vardecls[i] = null;
                 firstadr = 0;
                 nextadr = 0;
                 Flow.this.make = make;
@@ -3282,10 +3274,6 @@ public class Flow {
                     for (int i=0; i<vars.length; i++)
                         vars[i] = null;
                 }
-                if (vardecls != null) {
-                    for (int i=0; i<vardecls.length; i++)
-                        vardecls[i] = null;
-                }
                 firstadr = 0;
                 nextadr = 0;
                 Flow.this.make = null;
@@ -3294,6 +3282,8 @@ public class Flow {
                 unrefdResources = null;
             }
         }
+
+        record VarAndDeclarationTree(VarSymbol variable, JCTree declarationTree) {}
     }
 
     /**

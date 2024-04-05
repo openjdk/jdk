@@ -4440,6 +4440,65 @@ public class Lower extends TreeTranslator {
         super.visitTry(tree);
     }
 
+    @Override
+    public void visitDerivedInstance(JCDerivedInstance tree) {
+        ListBuffer<JCStatement> newBlock = new ListBuffer<>();
+        VarSymbol temp;
+        if (tree.expr instanceof JCIdent i &&
+            i.sym.kind == Kinds.Kind.VAR &&
+            (i.sym.owner.kind == Kinds.Kind.MTH || i.sym.owner.kind == Kinds.Kind.VAR)) {
+            temp = (VarSymbol) i.sym;
+        } else {
+            temp = new VarSymbol(Flags.SYNTHETIC,
+                    names.fromString("expr" + tree.pos().getPreferredPosition() +
+                                     target.syntheticNameChar() + "temp"),
+                    tree.expr.type,
+                    currentMethodSym);
+            newBlock.add(make.VarDef(temp, translate(tree.expr)));
+        }
+
+
+        ClassSymbol recordClass = (ClassSymbol) tree.expr.type.tsym;
+        List<VarSymbol> outgoingBindingsIt = tree.componentLocalVariables;
+        List<? extends RecordComponent> recordComponentsIt = recordClass.getRecordComponents();
+
+        while (outgoingBindingsIt.nonEmpty()) {
+            Type erasedComponentType = types.erasure(recordComponentsIt.head.type);
+            newBlock.add(make.VarDef(outgoingBindingsIt.head,
+                                     make.App(make.Select(make.Ident(temp),
+                                                          recordComponentsIt.head.accessor))
+                                         .setType(erasedComponentType)));
+            outgoingBindingsIt = outgoingBindingsIt.tail;
+            recordComponentsIt = recordComponentsIt.tail;
+        }
+
+        newBlock.add(translate(tree.block));
+
+        JCNewClass createNew = make.NewClass(null,
+                                             List.nil(),
+                                             make.QualIdent(recordClass),
+                                             tree.componentLocalVariables.map(make::Ident),
+                                             null);
+
+        createNew.type = tree.type;
+
+        List<Type> canonicalConstructorTypes =
+                recordClass.getRecordComponents()
+                           .stream()
+                           .map(c -> types.erasure(c.type))
+                           .collect(List.collector());
+        MethodSymbol init = rs.resolveInternalMethod(tree.pos(),
+                                                     attrEnv,
+                                                     tree.type,
+                                                     names.init,
+                                                     canonicalConstructorTypes,
+                                                     List.nil());
+        createNew.constructor = init;
+
+        result = make.LetExpr(newBlock.toList(), createNew).setType(tree.type);
+    }
+
+
 /**************************************************************************
  * main method
  *************************************************************************/
