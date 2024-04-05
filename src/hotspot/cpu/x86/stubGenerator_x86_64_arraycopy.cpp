@@ -152,8 +152,8 @@ void StubGenerator::generate_arraycopy_stubs() {
   StubRoutines::_arrayof_jshort_fill = generate_fill(T_SHORT, true, "arrayof_jshort_fill");
   StubRoutines::_arrayof_jint_fill = generate_fill(T_INT, true, "arrayof_jint_fill");
 
-  StubRoutines::_unsafe_setmemory = generate_unsafe_setmemory(
-      "unsafe_setmemory", StubRoutines::_arrayof_jbyte_fill);
+  StubRoutines::_unsafe_setmemory =
+      generate_unsafe_setmemory("unsafe_setmemory", StubRoutines::_jbyte_fill);
 
   // We don't generate specialized code for HeapWord-aligned source
   // arrays, so just use the code we've already generated
@@ -2736,7 +2736,7 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
       __ movq(c_rarg2, rax);
 
       __ xchgq(c_rarg1, c_rarg2);
-      __ jump_cc(Assembler::notZero, RuntimeAddress(byte_fill_entry));
+      __ jump(RuntimeAddress(byte_fill_entry));
     }
 #endif  // MUSL_LIBC
     __ BIND(L_exit);
