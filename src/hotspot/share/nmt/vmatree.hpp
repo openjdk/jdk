@@ -155,7 +155,7 @@ public:
   }
 private:
   template<typename F>
-  void in_order_traversal_doer(F f, const VTreap* node) const {
+  void in_order_traversal_doer(F f, VTreap* node) const {
     if (node == nullptr) return;
     in_order_traversal_doer(f, node->left());
     f(node);

@@ -42,8 +42,8 @@ void MemoryFileTracker::free_memory(MemoryFile* device, size_t offset, size_t si
 void MemoryFileTracker::print_report_on(const MemoryFile* device, outputStream* stream, size_t scale) {
   stream->print_cr("Memory map of %s", device->_descriptive_name);
   stream->cr();
-  const VMATree::VTreap* prev = nullptr;
-  device->_tree.in_order_traversal([&](const VMATree::VTreap* current) {
+  VMATree::VTreap* prev = nullptr;
+  device->_tree.in_order_traversal([&](VMATree::VTreap* current) {
     if (prev == nullptr) {
       // Must be first node.
       prev = current;
