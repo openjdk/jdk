@@ -691,7 +691,7 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
             "must be boot class");
       check_allowed_klass(InstanceKlass::cast(ObjArrayKlass::cast(orig_k)->bottom_klass()));
     }
-    if (buffered_k == Universe::objectArrayKlassObj()) {
+    if (buffered_k == Universe::objectArrayKlass()) {
       // Initialized early during Universe::genesis. No need to be added
       // to the list.
       return;

@@ -65,9 +65,6 @@ private:
   HeapWord* _bottom;
   HeapWord* _end;
 
-  // Used in support of save_marks()
-  HeapWord* _saved_mark_word;
-
   ContiguousSpace* _next_compaction_space;
 
   HeapWord* _top;
@@ -89,20 +86,6 @@ public:
   HeapWord* end() const            { return _end;    }
   void set_bottom(HeapWord* value) { _bottom = value; }
   void set_end(HeapWord* value)    { _end = value; }
-
-  HeapWord* saved_mark_word() const  { return _saved_mark_word; }
-
-  // Returns a region that is guaranteed to contain (at least) all objects
-  // allocated at the time of the last call to "save_marks".  If the space
-  // initializes its DirtyCardToOopClosure's specifying the "contig" option
-  // (that is, if the space is contiguous), then this region must contain only
-  // such objects: the memregion will be from the bottom of the region to the
-  // saved mark.  Otherwise, the "obj_allocated_since_save_marks" method of
-  // the space must distinguish between objects in the region allocated before
-  // and after the call to save marks.
-  MemRegion used_region_at_save_marks() const {
-    return MemRegion(bottom(), saved_mark_word());
-  }
 
   // Testers
   bool is_empty() const              { return used() == 0; }
@@ -160,10 +143,6 @@ public:
   HeapWord* top() const            { return _top;    }
   void set_top(HeapWord* value)    { _top = value; }
 
-  void set_saved_mark()            { _saved_mark_word = top();    }
-
-  bool saved_mark_at_top() const { return saved_mark_word() == top(); }
-
   // Used to save the space's current top for later use during mangling.
   void set_top_for_allocations() PRODUCT_RETURN;
 
@@ -193,16 +172,6 @@ public:
 
   // Iteration
   void object_iterate(ObjectClosure* blk);
-
-  // Apply "blk->do_oop" to the addresses of all reference fields in objects
-  // starting with the _saved_mark_word, which was noted during a generation's
-  // save_marks and is required to denote the head of an object.
-  // Fields in objects allocated by applications of the closure
-  // *are* included in the iteration.
-  // Updates _saved_mark_word to point to just after the last object
-  // iterated over.
-  template <typename OopClosureType>
-  void oop_since_save_marks_iterate(OopClosureType* blk);
 
   // If "p" is in the space, returns the address of the start of the
   // "block" that contains "p".  We say "block" instead of "object" since

@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #include "gc/serial/cardTableRS.hpp"
-#include "gc/serial/markSweep.hpp"
 #include "gc/serial/serialBlockOffsetTable.inline.hpp"
+#include "gc/serial/serialFullGC.hpp"
 #include "gc/serial/serialHeap.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
@@ -268,7 +268,7 @@ HeapWord* TenuredGeneration::block_start(const void* p) const {
 }
 
 void TenuredGeneration::scan_old_to_young_refs() {
-  _rs->scan_old_to_young_refs(space());
+  _rs->scan_old_to_young_refs(space(), saved_mark_word());
 }
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
@@ -444,15 +444,15 @@ void TenuredGeneration::collect(bool   full,
                                 bool   is_tlab) {
   SerialHeap* gch = SerialHeap::heap();
 
-  STWGCTimer* gc_timer = MarkSweep::gc_timer();
+  STWGCTimer* gc_timer = SerialFullGC::gc_timer();
   gc_timer->register_gc_start();
 
-  SerialOldTracer* gc_tracer = MarkSweep::gc_tracer();
+  SerialOldTracer* gc_tracer = SerialFullGC::gc_tracer();
   gc_tracer->report_gc_start(gch->gc_cause(), gc_timer->gc_start());
 
   gch->pre_full_gc_dump(gc_timer);
 
-  MarkSweep::invoke_at_safepoint(clear_all_soft_refs);
+  SerialFullGC::invoke_at_safepoint(clear_all_soft_refs);
 
   gch->post_full_gc_dump(gc_timer);
 
@@ -492,11 +492,11 @@ void TenuredGeneration::complete_loaded_archive_space(MemRegion archive_space) {
 }
 
 void TenuredGeneration::save_marks() {
-  _the_space->set_saved_mark();
+  set_saved_mark_word();
 }
 
 bool TenuredGeneration::no_allocs_since_save_marks() {
-  return _the_space->saved_mark_at_top();
+  return saved_mark_at_top();
 }
 
 void TenuredGeneration::gc_epilogue() {

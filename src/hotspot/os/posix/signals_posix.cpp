@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
-#include "code/compiledMethod.hpp"
 #include "code/nativeInst.hpp"
+#include "code/nmethod.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "os_posix.hpp"
@@ -613,17 +613,17 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
   if (!signal_was_handled && pc != nullptr && os::is_readable_pointer(pc)) {
     if (NativeDeoptInstruction::is_deopt_at(pc)) {
       CodeBlob* cb = CodeCache::find_blob(pc);
-      if (cb != nullptr && cb->is_compiled()) {
+      if (cb != nullptr && cb->is_nmethod()) {
         MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, t);) // can call PcDescCache::add_pc_desc
-        CompiledMethod* cm = cb->as_compiled_method();
-        assert(cm->insts_contains_inclusive(pc), "");
-        address deopt = cm->is_method_handle_return(pc) ?
-          cm->deopt_mh_handler_begin() :
-          cm->deopt_handler_begin();
+        nmethod* nm = cb->as_nmethod();
+        assert(nm->insts_contains_inclusive(pc), "");
+        address deopt = nm->is_method_handle_return(pc) ?
+          nm->deopt_mh_handler_begin() :
+          nm->deopt_handler_begin();
         assert(deopt != nullptr, "");
 
         frame fr = os::fetch_frame_from_context(uc);
-        cm->set_original_pc(&fr, pc);
+        nm->set_original_pc(&fr, pc);
 
         os::Posix::ucontext_set_pc(uc, deopt);
         signal_was_handled = true;

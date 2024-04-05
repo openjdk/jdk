@@ -1421,7 +1421,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     DerivedPointerTable::set_active(false);
 #endif
 
-    // adjust_roots() updates Universe::_intArrayKlassObj which is
+    // adjust_roots() updates Universe::_intArrayKlass which is
     // needed by the compaction for filling holes in the dense prefix.
     adjust_roots();
 
