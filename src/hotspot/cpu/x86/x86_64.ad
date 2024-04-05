@@ -10059,7 +10059,7 @@ instruct round_float_reg(rRegI dst, regF src, rRegL rtmp, rcx_RegL rcx, rFlagsRe
   ins_pipe(pipe_slow);
 %}
 
-instruct convI2F_reg_reg(regF dst, rRegI src)
+instruct convI2F_reg_reg(vlRegF dst, rRegI src)
 %{
   predicate(!UseXmmI2F);
   match(Set dst (ConvI2F src));
@@ -10086,7 +10086,7 @@ instruct convI2F_reg_mem(regF dst, memory src)
   ins_pipe(pipe_slow); // XXX
 %}
 
-instruct convI2D_reg_reg(regD dst, rRegI src)
+instruct convI2D_reg_reg(vlRegD dst, rRegI src)
 %{
   predicate(!UseXmmI2D);
   match(Set dst (ConvI2D src));
@@ -10141,7 +10141,7 @@ instruct convXI2D_reg(regD dst, rRegI src)
   ins_pipe(pipe_slow); // XXX
 %}
 
-instruct convL2F_reg_reg(regF dst, rRegL src)
+instruct convL2F_reg_reg(vlRegF dst, rRegL src)
 %{
   match(Set dst (ConvL2F src));
 
@@ -10167,7 +10167,7 @@ instruct convL2F_reg_mem(regF dst, memory src)
   ins_pipe(pipe_slow); // XXX
 %}
 
-instruct convL2D_reg_reg(regD dst, rRegL src)
+instruct convL2D_reg_reg(vlRegD dst, rRegL src)
 %{
   match(Set dst (ConvL2D src));
 
