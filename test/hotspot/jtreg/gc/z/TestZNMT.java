@@ -87,7 +87,7 @@ public class TestZNMT {
             oa.shouldContain("Address Space Type: Discontiguous");
         }
         // We expect to have a report of this type.
-        oa.shouldMatch("ZGC heap backing device");
+        oa.shouldMatch("ZGC heap backing file");
         oa.shouldMatch("allocated \\d+ for Java Heap");
     }
 
