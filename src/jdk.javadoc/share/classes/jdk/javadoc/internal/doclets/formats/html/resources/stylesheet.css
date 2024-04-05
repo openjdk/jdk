@@ -726,8 +726,8 @@ div.checkboxes > label > input {
     font-size:0.93em;
 }
 .col-first, .col-second, .col-constructor-name {
-    overflow: auto;
     vertical-align:top;
+    overflow: auto;
 }
 .col-last {
     white-space:normal;
