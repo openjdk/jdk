@@ -163,8 +163,7 @@ void G1BlockOffsetTable::check_all_cards(uint8_t* start_card, uint8_t* end_card)
 //       ( ^    ]
 //         blk_start
 //
-void G1BlockOffsetTable::update_for_block_work(HeapWord* blk_start,
-                                                   HeapWord* blk_end) {
+void G1BlockOffsetTable::update_for_block_work(HeapWord* blk_start, HeapWord* blk_end) {
   HeapWord* const cur_card_boundary = align_up_by_card_size(blk_start);
   uint8_t* const offset_card = entry_for_addr(cur_card_boundary);
 
