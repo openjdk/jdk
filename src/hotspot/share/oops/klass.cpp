@@ -81,23 +81,31 @@ void Klass::set_is_cloneable() {
 }
 
 uint8_t Klass::compute_hash_slot(Symbol* n) {
-  auto s = (const jbyte*) n->bytes();
-  uint hash_code = java_lang_String::hash_code(s, n->utf8_length());
-  // We use String::hash_code here (rather than e.g.
-  // Symbol::identity_hash()) in order to have a hash code that
-  // does not change from run to run. We want that because the
-  // hash value for a secondary superclass appears in generated
-  // code as a constant.
+  uint hash_code;
+  // Special cases for the two superclasses of all Array instances.
+  if (n == vmSymbols::java_lang_Cloneable()) {
+    hash_code = 0;
+  } else if (n == vmSymbols::java_io_Serializable()) {
+    hash_code = SECONDARY_SUPERS_TABLE_SIZE / 2;
+  } else {
+    auto s = (const jbyte*) n->bytes();
+    hash_code = java_lang_String::hash_code(s, n->utf8_length());
+    // We use String::hash_code here (rather than e.g.
+    // Symbol::identity_hash()) in order to have a hash code that
+    // does not change from run to run. We want that because the
+    // hash value for a secondary superclass appears in generated
+    // code as a constant.
 
-  // This constant is magic: see Knuth, "Fibonacci Hashing".
-  const uint hash_shift = sizeof(hash_code) * 8 - 6;
-  hash_code = (hash_code * 2654435769) >> hash_shift;
+    // This constant is magic: see Knuth, "Fibonacci Hashing".
+    const uint hash_shift = sizeof(hash_code) * 8 - 6;
+    hash_code = (hash_code * 2654435769) >> hash_shift;
 
-  if (StressSecondarySupers) {
-    // Generate many hash collisions in order to stress-test the
-    // linear search fallback.
-    hash_code = hash_code % 3;
-    hash_code = hash_code * (SECONDARY_SUPERS_TABLE_SIZE / 3);
+    if (StressSecondarySupers) {
+      // Generate many hash collisions in order to stress-test the
+      // linear search fallback.
+      hash_code = hash_code % 3;
+      hash_code = hash_code * (SECONDARY_SUPERS_TABLE_SIZE / 3);
+    }
   }
 
   return (hash_code & SECONDARY_SUPERS_TABLE_MASK);
