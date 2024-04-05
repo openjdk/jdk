@@ -33,7 +33,7 @@ import java.util.Random;
  * @bug 8323220
  * @summary Test loop invariant code motion for cmp nodes through reassociation
  * @library /test/lib /
- * @run driver compiler.c2.loopopts.InvariantCodeMotionReassociateCmp
+ * @run main compiler.c2.loopopts.InvariantCodeMotionReassociateCmp
  */
 public class InvariantCodeMotionReassociateCmp {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -63,8 +63,8 @@ public class InvariantCodeMotionReassociateCmp {
     }
 
     public void fail(int returnValue) {
-        throw new RuntimeException("Illegal reassociation: i=" + returnValue + ", inv1=" + inv1
-                + ", inv2=" + inv2);
+        throw new RuntimeException("Illegal reassociation: returnValue=" + returnValue + ", inv1=" + inv1
+                + ", inv2=" + inv2 + ", size=" + size);
     }
 
     public void checkEq(int returnValue) {
