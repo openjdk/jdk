@@ -149,7 +149,6 @@ class PSOldGen : public CHeapObj<mtGC> {
   virtual void print_on(outputStream* st) const;
 
   void verify();
-  void verify_object_start_array();
 
   // Performance Counter support
   void update_counters();

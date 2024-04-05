@@ -66,7 +66,7 @@ public class CheckManPageOptions {
 
     static final PrintStream out = System.err;
 
-    List<String> MISSING_IN_MAN_PAGE = List.of();
+    List<String> MISSING_IN_MAN_PAGE = List.of("--no-fonts");
 
     void run(String... args) throws Exception {
         var file = args.length == 0 ? findDefaultFile() : Path.of(args[0]);

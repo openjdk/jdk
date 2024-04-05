@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.inline.hpp"
-#include "code/compiledMethod.inline.hpp"
+#include "code/nmethod.inline.hpp"
 #include "code/vmreg.inline.hpp"
 #include "compiler/oopMap.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
@@ -1070,8 +1070,8 @@ void FreezeBase::patch(const frame& f, frame& hf, const frame& caller, bool is_b
   if (hf.is_compiled_frame()) {
     if (f.is_deoptimized_frame()) { // TODO DEOPT: long term solution: unroll on freeze and patch pc
       log_develop_trace(continuations)("Freezing deoptimized frame");
-      assert(f.cb()->as_compiled_method()->is_deopt_pc(f.raw_pc()), "");
-      assert(f.cb()->as_compiled_method()->is_deopt_pc(ContinuationHelper::Frame::real_pc(f)), "");
+      assert(f.cb()->as_nmethod()->is_deopt_pc(f.raw_pc()), "");
+      assert(f.cb()->as_nmethod()->is_deopt_pc(ContinuationHelper::Frame::real_pc(f)), "");
     }
   }
 #endif
@@ -1470,7 +1470,7 @@ void FreezeBase::throw_stack_overflow_on_humongous_chunk() {
 
 #if INCLUDE_JVMTI
 static int num_java_frames(ContinuationWrapper& cont) {
-  ResourceMark rm; // used for scope traversal in num_java_frames(CompiledMethod*, address)
+  ResourceMark rm; // used for scope traversal in num_java_frames(nmethod*, address)
   int count = 0;
   for (stackChunkOop chunk = cont.tail(); chunk != nullptr; chunk = chunk->parent()) {
     count += chunk->num_java_frames();
@@ -2290,7 +2290,7 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
   if (hf.is_deoptimized_frame()) {
     maybe_set_fastpath(f.sp());
   } else if (_thread->is_interp_only_mode()
-              || (_cont.is_preempted() && f.cb()->as_compiled_method()->is_marked_for_deoptimization())) {
+              || (_cont.is_preempted() && f.cb()->as_nmethod()->is_marked_for_deoptimization())) {
     // The caller of the safepoint stub when the continuation is preempted is not at a call instruction, and so
     // cannot rely on nmethod patching for deopt.
     assert(_thread->is_interp_only_mode() || stub_caller, "expected a stub-caller");
@@ -2309,7 +2309,7 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
     _cont.tail()->fix_thawed_frame(caller, SmallRegisterMap::instance);
   } else if (_cont.tail()->has_bitmap() && added_argsize > 0) {
     address start = (address)(heap_frame_top + ContinuationHelper::CompiledFrame::size(hf) + frame::metadata_words_at_top);
-    int stack_args_slots = f.cb()->as_compiled_method()->method()->num_stack_arg_slots(false /* rounded */);
+    int stack_args_slots = f.cb()->as_nmethod()->method()->num_stack_arg_slots(false /* rounded */);
     int argsize_in_bytes = stack_args_slots * VMRegImpl::stack_slot_size;
     clear_bitmap_bits(start, start + argsize_in_bytes);
   }
@@ -2404,7 +2404,7 @@ void ThawBase::finish_thaw(frame& f) {
 }
 
 void ThawBase::push_return_frame(frame& f) { // see generate_cont_thaw
-  assert(!f.is_compiled_frame() || f.is_deoptimized_frame() == f.cb()->as_compiled_method()->is_deopt_pc(f.raw_pc()), "");
+  assert(!f.is_compiled_frame() || f.is_deoptimized_frame() == f.cb()->as_nmethod()->is_deopt_pc(f.raw_pc()), "");
   assert(!f.is_compiled_frame() || f.is_deoptimized_frame() == (f.pc() != f.raw_pc()), "");
 
   LogTarget(Trace, continuations) lt;
@@ -2491,10 +2491,10 @@ static void do_deopt_after_thaw(JavaThread* thread) {
   fst.register_map()->set_include_argument_oops(false);
   ContinuationHelper::update_register_map_with_callee(*fst.current(), fst.register_map());
   for (; !fst.is_done(); fst.next()) {
-    if (fst.current()->cb()->is_compiled()) {
-      CompiledMethod* cm = fst.current()->cb()->as_compiled_method();
-      if (!cm->method()->is_continuation_native_intrinsic()) {
-        cm->make_deoptimized();
+    if (fst.current()->cb()->is_nmethod()) {
+      nmethod* nm = fst.current()->cb()->as_nmethod();
+      if (!nm->method()->is_continuation_native_intrinsic()) {
+        nm->make_deoptimized();
       }
     }
   }
@@ -2540,7 +2540,7 @@ static bool do_verify_after_thaw(JavaThread* thread, stackChunkOop chunk, output
   fst.register_map()->set_include_argument_oops(false);
   ContinuationHelper::update_register_map_with_callee(*fst.current(), fst.register_map());
   for (; !fst.is_done() && !Continuation::is_continuation_enterSpecial(*fst.current()); fst.next()) {
-    if (fst.current()->cb()->is_compiled() && fst.current()->cb()->as_compiled_method()->is_marked_for_deoptimization()) {
+    if (fst.current()->cb()->is_nmethod() && fst.current()->cb()->as_nmethod()->is_marked_for_deoptimization()) {
       st->print_cr(">>> do_verify_after_thaw deopt");
       fst.current()->deoptimize(nullptr);
       fst.current()->print_on(st);
