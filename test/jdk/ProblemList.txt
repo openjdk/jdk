@@ -534,8 +534,6 @@ javax/management/remote/mandatory/connection/RMIConnector_NPETest.java 8267887 g
 
 javax/management/remote/mandatory/connection/BrokenConnectionTest.java 8262312 linux-all
 
-javax/management/remote/mandatory/subjectDelegation/SubjectDelegation1Test.java 8149084 linux-aarch64
-
 ############################################################################
 
 # jdk_net

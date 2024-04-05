@@ -867,7 +867,7 @@ static bool is_always_within_branch_range(Address entry) {
     // Non-compiled methods stay forever in CodeCache.
     // We check whether the longest possible branch is within the branch range.
     assert(CodeCache::find_blob(target) != nullptr &&
-          !CodeCache::find_blob(target)->is_compiled(),
+          !CodeCache::find_blob(target)->is_nmethod(),
           "runtime call of compiled method");
     const address right_longest_branch_start = CodeCache::high_bound() - NativeInstruction::instruction_size;
     const address left_longest_branch_start = CodeCache::low_bound();
