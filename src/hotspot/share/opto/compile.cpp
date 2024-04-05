@@ -604,6 +604,18 @@ void Compile::print_ideal_ir(const char* phase_name) {
 }
 #endif
 
+void Compile::initialize_stress_seed(DirectiveSet* directive) {
+  if (FLAG_IS_DEFAULT(StressSeed) || (FLAG_IS_ERGO(StressSeed) && directive->RepeatCompilationOption)) {
+    _stress_seed = static_cast<uint>(Ticks::now().nanoseconds());
+    FLAG_SET_ERGO(StressSeed, _stress_seed);
+  } else {
+    _stress_seed = StressSeed;
+  }
+  if (_log != nullptr) {
+    _log->elem("stress_test seed='%u'", _stress_seed);
+  }
+}
+
 // ============================================================================
 //------------------------------Compile standard-------------------------------
 
@@ -848,15 +860,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   // generation and log the seed for repeatability.
   if (StressLCM || StressGCM || StressIGVN || StressCCP ||
       StressIncrementalInlining || StressMacroExpansion) {
-    if (FLAG_IS_DEFAULT(StressSeed) || (FLAG_IS_ERGO(StressSeed) && directive->RepeatCompilationOption)) {
-      _stress_seed = static_cast<uint>(Ticks::now().nanoseconds());
-      FLAG_SET_ERGO(StressSeed, _stress_seed);
-    } else {
-      _stress_seed = StressSeed;
-    }
-    if (_log != nullptr) {
-      _log->elem("stress_test seed='%u'", _stress_seed);
-    }
+    initialize_stress_seed(directive);
   }
 
   // Now optimize
@@ -986,16 +990,8 @@ Compile::Compile( ciEnv* ci_env,
 
   // If any phase is randomized for stress testing, seed random number
   // generation and log the seed for repeatability.
-  if (StressLCM || StressGCM || StressIGVN || StressCCP || StressIncrementalInlining || StressMacroExpansion) {
-    if (FLAG_IS_DEFAULT(StressSeed) || (FLAG_IS_ERGO(StressSeed) && directive->RepeatCompilationOption)) {
-      _stress_seed = static_cast<uint>(Ticks::now().nanoseconds());
-      FLAG_SET_ERGO(StressSeed, _stress_seed);
-    } else {
-      _stress_seed = StressSeed;
-    }
-    if (_log != nullptr) {
-      _log->elem("stress_test seed='%u'", _stress_seed);
-    }
+  if (StressLCM || StressGCM) {
+    initialize_stress_seed(directive);
   }
 
   {
