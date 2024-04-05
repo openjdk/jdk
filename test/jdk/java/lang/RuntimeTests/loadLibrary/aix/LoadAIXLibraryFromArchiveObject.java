@@ -28,6 +28,7 @@
  * @run  main/othervm -Djava.library.path=/usr/lib LoadAIXLibraryFromArchiveObject
  */
 
+import java.io.*;
 public class LoadAIXLibraryFromArchiveObject {
     public static void main(String[] args) throws Exception {
         String libraryName = "perfstat";
