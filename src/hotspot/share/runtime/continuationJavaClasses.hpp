@@ -107,8 +107,6 @@ class jdk_internal_vm_StackChunk: AllStatic {
   static inline int size(oop chunk);
   static inline void set_size(HeapWord* chunk, int value);
 
-  static inline void set_bottom(HeapWord* chunk, int value);
-
   static inline int sp(oop chunk);
   static inline void set_sp(oop chunk, int value);
   static inline void set_sp(HeapWord* chunk, int value); // used while allocating
@@ -116,6 +114,7 @@ class jdk_internal_vm_StackChunk: AllStatic {
   static inline void set_pc(oop chunk, address value);
   static inline int bottom(oop chunk);
   static inline void set_bottom(oop chunk, int value);
+  static inline void set_bottom(HeapWord* chunk, int value);
   static inline uint8_t flags(oop chunk);
   static inline void set_flags(oop chunk, uint8_t value);
   static inline uint8_t flags_acquire(oop chunk);

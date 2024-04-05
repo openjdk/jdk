@@ -645,11 +645,11 @@ bool FreezeBase::freeze_fast_new_chunk(stackChunkOop chunk) {
     return false;
   }
 
+  chunk->set_max_thawing_size(cont_size());
+
   // in a fresh chunk, we freeze *with* the bottom-most frame's stack arguments.
   // They'll then be stored twice: in the chunk and in the parent chunk's top frame
   const int chunk_start_sp = cont_size() + frame::metadata_words;
-
-  chunk->set_max_thawing_size(cont_size());
 
   DEBUG_ONLY(_orig_chunk_sp = chunk->start_address() + chunk_start_sp;)
 

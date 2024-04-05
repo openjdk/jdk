@@ -110,11 +110,7 @@ inline void stackChunkOopDesc::set_cont_access(oop value) { jdk_internal_vm_Stac
 
 inline int stackChunkOopDesc::argsize() const {
   assert(!is_empty(), "should not ask for argsize in empty chunk");
-  if (is_empty()) {
-    return 0;
-  } else {
-    return stack_size() - bottom() - frame::metadata_words_at_top;
-  }
+  return stack_size() - bottom() - frame::metadata_words_at_top;
 }
 
 inline HeapWord* stackChunkOopDesc::start_of_stack() const {
