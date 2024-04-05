@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 7093691
+ * @bug 7093691 8310072
  * @summary Tests if JComboBox has correct font color when disabled/enabled
+ * @key headful
  * @run main/othervm -Dsun.java2d.uiScale=1 DisabledComboBoxFontTestAuto
  */
 
@@ -51,6 +52,7 @@ public class DisabledComboBoxFontTestAuto {
     private static String lafName;
     private static StringBuffer failingLafs;
     private static int COMBO_HEIGHT, COMBO_WIDTH, COMBO2_HEIGHT, COMBO2_WIDTH;
+    private static final int TOLERANCE = 20;
 
     private static void createCombo() {
         combo = new JComboBox();
@@ -99,11 +101,10 @@ public class DisabledComboBoxFontTestAuto {
         ImageIO.write(disabledImage2, "png", new File(testDir
                 + "/" + lafName + "DisabledDLCR.png"));
 
-        boolean isIdentical = true;
         Color eColor1, eColor2, dColor1, dColor2;
 
         // Use center line to compare RGB values
-        int y = 10;
+        int y = enabledImage.getHeight() / 2;
         for (int x = (enabledImage.getWidth() / 2) - 20;
              x < (enabledImage.getWidth() / 2) + 20; x++) {
             // Nimbus has a pixel offset in coordinates since Nimbus is 2px
@@ -113,6 +114,22 @@ public class DisabledComboBoxFontTestAuto {
                 eColor2 = new Color(enabledImage2.getRGB(x, y));
                 dColor1 = new Color(disabledImage.getRGB(x + 1, y));
                 dColor2 = new Color(disabledImage2.getRGB(x, y));
+            } else if (lafName.equals("Windows")) {
+                // In Windows LAF, the ComboBox sizes are different.
+                // Combo size is 116 x 22 where as Combo2 size is 115 X 20 and
+                // that results in pixel offset of 1px for width and 1px for height.
+                eColor1 = new Color(enabledImage.getRGB(x, y));
+                eColor2 = new Color(enabledImage2.getRGB(x + 1, y - 1));
+                dColor1 = new Color(disabledImage.getRGB(x, y));
+                dColor2 = new Color(disabledImage2.getRGB(x + 1, y - 1));
+            } else if (lafName.equals("GTK+")) {
+                // In GTK LAF, the ComboBox sizes are different.
+                // Combo size is 159 x 30 where as Combo2 size is 179 X 34 and
+                // that results in pixel offset of 10px for width and 2px for height.
+                eColor1 = new Color(enabledImage.getRGB(x, y));
+                eColor2 = new Color(enabledImage2.getRGB(x + 10, y + 2));
+                dColor1 = new Color(disabledImage.getRGB(x, y));
+                dColor2 = new Color(disabledImage2.getRGB(x + 10, y + 2));
             } else {
                 eColor1 = new Color(enabledImage.getRGB(x, y));
                 eColor2 = new Color(enabledImage2.getRGB(x, y));
@@ -120,23 +137,22 @@ public class DisabledComboBoxFontTestAuto {
                 dColor2 = new Color(disabledImage2.getRGB(x, y));
             }
             if ((!isColorMatching(eColor1, eColor2)) || (!isColorMatching(dColor1, dColor2))) {
-                isIdentical = false;
-                break;
+                failingLafs.append(lafName + ", ");
+                return;
             }
         }
-
-        if (isIdentical) {
-            System.out.println("PASSED");
-        } else {
-            failingLafs.append(lafName + ", ");
-        }
+        System.out.println("Test Passed: "+lafName);
     }
 
     private static boolean isColorMatching(Color c1, Color c2) {
-        if ((c1.getRed() != c2.getRed())
-                || (c1.getBlue() != c2.getBlue())
-                || (c1.getGreen() != c2.getGreen())) {
+        int redDiff = c1.getRed() - c2.getRed();
+        int blueDiff = c1.getBlue() - c2.getBlue();
+        int greenDiff = c1.getGreen() - c2.getGreen();
 
+        // Added TOLERANCE for pixel color difference. In Windows LAF the
+        // background color between disabled and disabled DLCR image is slightly
+        // different (240, 240, 240 vs 255, 255, 255).
+        if ((redDiff > TOLERANCE) || (blueDiff > TOLERANCE) || (greenDiff > TOLERANCE)) {
             System.out.println(lafName + " Enabled RGB failure: "
                     + c1.getRed() + ", "
                     + c1.getBlue() + ", "
