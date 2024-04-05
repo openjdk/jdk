@@ -2027,7 +2027,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       int index = state()->stack_size() - (target->arg_size_no_receiver() + 1);
       receiver = state()->stack_at(index);
       ciType* type = receiver->exact_type();
-      if (type != nullptr) {
+      if (type != nullptr && type->is_loaded()) {
         // Detects non-interface instances, primitive arrays, and some object arrays.
         // Array receivers can only call Object methods, so we should be able to allow
         // all object arrays here too, even those with unloaded types.
@@ -2059,7 +2059,6 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       }
     }
     if (receiver_klass != nullptr &&
-        receiver_klass->is_loaded() &&
         receiver_klass->is_subtype_of(actual_recv) &&
         actual_recv->is_initialized()) {
       actual_recv = receiver_klass;
