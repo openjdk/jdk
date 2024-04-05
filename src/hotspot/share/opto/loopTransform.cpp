@@ -1496,6 +1496,9 @@ Node* PhaseIdealLoop::clone_assertion_predicate_and_initialize(Node* iff, Node* 
   TemplateAssertionPredicateExpression template_assertion_predicate_expression(iff->in(1)->as_Opaque4());
   Opaque4Node* new_opaque4_node;
   if (new_stride == nullptr) {
+    // Only set a new OpaqueLoopInitNode node and clone the existing OpaqueLoopStrideNode without modification.
+    // This is done when creating a new Template Assertion Predicate for the main loop which requires a new init node.
+    assert(new_init->is_OpaqueLoopInit(), "only for creating new Template Assertion Predicates");
     new_opaque4_node = template_assertion_predicate_expression.clone_and_replace_init(new_init, control, this);
   } else {
     new_opaque4_node = template_assertion_predicate_expression.clone_and_replace_init_and_stride(new_init, new_stride,
