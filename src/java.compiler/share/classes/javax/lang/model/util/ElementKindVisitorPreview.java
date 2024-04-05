@@ -86,4 +86,21 @@ public class ElementKindVisitorPreview<R, P> extends ElementKindVisitor14<R, P> 
     protected ElementKindVisitorPreview(R defaultValue) {
         super(defaultValue);
     }
+
+    /**
+     * {@inheritDoc ElementKindVisitor6}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
+     *
+     * @param e {@inheritDoc ElementKindVisitor6}
+     * @param p {@inheritDoc ElementKindVisitor6}
+     * @return  the result of {@code defaultAction}
+     *
+     * @since 23
+     */
+    @Override
+    @PreviewFeature(feature=PreviewFeature.Feature.DERIVED_RECORD_CREATION, reflective=true)
+    public R visitVariableAsComponentLocalVariable(VariableElement e, P p) {
+        return defaultAction(e, p);
+     }
 }
