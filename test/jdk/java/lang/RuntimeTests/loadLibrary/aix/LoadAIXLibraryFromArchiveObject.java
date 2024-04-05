@@ -25,16 +25,12 @@
  * @test
  * @bug 8319516
  * @requires os.family == "aix"
- * @run  main/native/othervm -Djava.library.path=/usr/lib LoadLibraryTestAIX
+ * @run  main/othervm -Djava.library.path=/usr/lib LoadLibraryTestAIX
  */
 
-public class LoadLibraryTestAIX {
+public class LoadAIXLibraryFromArchiveObject {
     public static void main(String[] args) throws Exception {
-        String libraryName="perfstat";
-        try {
-            System.loadLibrary(libraryName);
-        } catch (Exception e) {
-            throw new RuntimeException("LoadLibraryTestAIX : could not load libperfstat.a"+e);
-        }
+        String libraryName = "perfstat";
+        System.loadLibrary(libraryName);
     }
 }
