@@ -367,20 +367,20 @@ gss_import_name(OM_uint32 *minor_status,
         input = input + mechLen + 8;
     }
 
-    SEC_WCHAR* value = new SEC_WCHAR[len + 1];
-    if (value == NULL) {
-        goto err;
+    std::unique_ptr<SEC_WCHAR[]> value(new SEC_WCHAR[len + 1]);
+    if (value == nullptr) {
+        return GSS_S_FAILURE;
     }
 
-    len = MultiByteToWideChar(CP_UTF8, 0, input, len, value, len+1);
+    len = MultiByteToWideChar(CP_UTF8, 0, input, len, value.get(), len+1);
     if (len == 0) {
-        goto err;
+        return GSS_S_FAILURE;
     }
     value[len] = 0;
 
-    PP("import_name from %ls", value);
+    PP("import_name from %ls", value.get());
 
-    if (len > 33 && !wcscmp(value+len-33, L"@WELLKNOWN:ORG.H5L.REFERALS-REALM")) {
+    if (len > 33 && !wcscmp(value.get()+len-33, L"@WELLKNOWN:ORG.H5L.REFERALS-REALM")) {
         // Remove the wellknown referrals realms
         value[len-33] = 0;
         len -= 33;
@@ -390,7 +390,7 @@ gss_import_name(OM_uint32 *minor_status,
         len--;
     }
     if (len == 0) {
-        goto err;
+        return GSS_S_FAILURE;
     }
 
     if (input_name_type != NULL
@@ -406,19 +406,16 @@ gss_import_name(OM_uint32 *minor_status,
                 break;
             }
         }
-        PP("Host-based service now %ls", value);
+        PP("Host-based service now %ls", value.get());
     }
-    PP("import_name to %ls", value);
+    PP("import_name to %ls", value.get());
     gss_name_struct* name = new gss_name_struct;
     if (name == nullptr) {
-        goto err;
+        return GSS_S_FAILURE;
     }
-    name->name = value;
+    name->name = value.get();
     *output_name = (gss_name_t) name;
     return GSS_S_COMPLETE;
-err:
-    delete[] value;
-    return GSS_S_FAILURE;
 }
 
 __declspec(dllexport) OM_uint32
