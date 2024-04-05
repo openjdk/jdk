@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8310886
+ * @bug 8310886 8325252
  * @summary Test MulAddS2I vectorization.
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMulAddS2I
@@ -36,14 +36,20 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 
 public class TestMulAddS2I {
-    static final int RANGE = 1024;
+    static final int RANGE = 1024*16;
     static final int ITER  = RANGE/2 - 1;
 
     static short[] sArr1 = new short[RANGE];
     static short[] sArr2 = new short[RANGE];
+    static int[] ioutArr = new int[RANGE];
     static final int[] GOLDEN_A;
     static final int[] GOLDEN_B;
     static final int[] GOLDEN_C;
+    static final int[] GOLDEN_D;
+    static final int[] GOLDEN_E;
+    static final int[] GOLDEN_F;
+    static final int[] GOLDEN_G;
+    static final int[] GOLDEN_H;
 
     static {
         for (int i = 0; i < RANGE; i++) {
@@ -53,6 +59,11 @@ public class TestMulAddS2I {
         GOLDEN_A = testa();
         GOLDEN_B = testb();
         GOLDEN_C = testc();
+        GOLDEN_D = testd();
+        GOLDEN_E = teste();
+        GOLDEN_F = testf();
+        GOLDEN_G = testg();
+        GOLDEN_H = testh();
     }
 
 
@@ -65,12 +76,17 @@ public class TestMulAddS2I {
         }
     }
 
-    @Run(test = {"testa", "testb", "testc"})
+    @Run(test = {"testa", "testb", "testc", "testd", "teste", "testf", "testg", "testh"})
     @Warmup(0)
     public static void run() {
         compare(testa(), GOLDEN_A, "testa");
         compare(testb(), GOLDEN_B, "testb");
-        compare(testb(), GOLDEN_C, "testc");
+        compare(testc(), GOLDEN_C, "testc");
+        compare(testd(), GOLDEN_D, "testd");
+        compare(teste(), GOLDEN_E, "teste");
+        compare(testf(), GOLDEN_F, "testf");
+        compare(testg(), GOLDEN_G, "testg");
+        compare(testh(), GOLDEN_H, "testh");
     }
 
     public static void compare(int[] out, int[] golden, String name) {
@@ -130,6 +146,101 @@ public class TestMulAddS2I {
         int[] out = new int[ITER];
         for (int i = 0; i < ITER; i++) {
             out[i] += ((sArr1[2*i] * sArr2[2*i]) + (sArr1[2*i+1] * sArr2[2*i+1]));
+        }
+        return out;
+    }
+
+    @Test
+    @IR(applyIfCPUFeature = {"sse2", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        applyIf = {"MaxVectorSize", "16"}, // AD file requires vector_length = 16
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
+    @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
+    public static int[] testd() {
+        int[] out = ioutArr;
+        for (int i = 0; i < ITER-2; i+=2) {
+            // Unrolled, with the same structure.
+            out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1]));
+            out[i+1] += ((sArr1[2*i+2] * sArr2[2*i+2]) + (sArr1[2*i+3] * sArr2[2*i+3]));
+        }
+        return out;
+    }
+
+    @Test
+    @IR(applyIfCPUFeature = {"sse2", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        applyIf = {"MaxVectorSize", "16"}, // AD file requires vector_length = 16
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
+    @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
+    public static int[] teste() {
+        int[] out = ioutArr;
+        for (int i = 0; i < ITER-2; i+=2) {
+            // Unrolled, with some swaps.
+            out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1]));
+            out[i+1] += ((sArr2[2*i+2] * sArr1[2*i+2]) + (sArr1[2*i+3] * sArr2[2*i+3])); // swap(1 2)
+        }
+        return out;
+    }
+
+    @Test
+    @IR(applyIfCPUFeature = {"sse2", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        applyIf = {"MaxVectorSize", "16"}, // AD file requires vector_length = 16
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
+    @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
+    public static int[] testf() {
+        int[] out = ioutArr;
+        for (int i = 0; i < ITER-2; i+=2) {
+            // Unrolled, with some swaps.
+            out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1]));
+            out[i+1] += ((sArr2[2*i+2] * sArr1[2*i+2]) + (sArr2[2*i+3] * sArr1[2*i+3])); // swap(1 2), swap(3 4)
+        }
+        return out;
+    }
+
+    @Test
+    @IR(applyIfCPUFeature = {"sse2", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        applyIf = {"MaxVectorSize", "16"}, // AD file requires vector_length = 16
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
+    @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
+    public static int[] testg() {
+        int[] out = ioutArr;
+        for (int i = 0; i < ITER-2; i+=2) {
+            // Unrolled, with some swaps.
+            out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1]));
+            out[i+1] += ((sArr1[2*i+3] * sArr2[2*i+3]) + (sArr1[2*i+2] * sArr2[2*i+2])); // swap(1 3), swap(2 4)
+        }
+        return out;
+    }
+
+    @Test
+    @IR(applyIfCPUFeature = {"sse2", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        applyIf = {"MaxVectorSize", "16"}, // AD file requires vector_length = 16
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
+    @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
+    public static int[] testh() {
+        int[] out = ioutArr;
+        for (int i = 0; i < ITER-2; i+=2) {
+            // Unrolled, with some swaps.
+            out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1]));
+            out[i+1] += ((sArr2[2*i+3] * sArr1[2*i+3]) + (sArr2[2*i+2] * sArr1[2*i+2])); // swap(1 4), swap(2 3)
         }
         return out;
     }

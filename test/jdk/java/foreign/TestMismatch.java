@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8323552
  * @run testng TestMismatch
  */
 
@@ -44,7 +45,7 @@ import static org.testng.Assert.assertThrows;
 
 public class TestMismatch {
 
-    // stores a increasing sequence of values into the memory of the given segment
+    // stores an increasing sequence of values into the memory of the given segment
     static MemorySegment initializeSegment(MemorySegment segment) {
         for (int i = 0 ; i < segment.byteSize() ; i++) {
             segment.set(ValueLayout.JAVA_BYTE, i, (byte)i);
@@ -276,6 +277,32 @@ public class TestMismatch {
                 }
             }
         }
+    }
+
+    @Test
+    public void testSameSegment() {
+        var segment = MemorySegment.ofArray(new byte[]{
+                1,2,3,4,  1,2,3,4,  1,4});
+
+        long match = MemorySegment.mismatch(
+                segment, 0L, 4L,
+                segment, 4L, 8L);
+        assertEquals(match, -1);
+
+        long noMatch = MemorySegment.mismatch(
+                segment, 0L, 4L,
+                segment, 1L, 5L);
+        assertEquals(noMatch, 0);
+
+        long noMatchEnd = MemorySegment.mismatch(
+                segment, 0L, 2L,
+                segment, 8L, 10L);
+        assertEquals(noMatchEnd, 1);
+
+        long same = MemorySegment.mismatch(
+                segment, 0L, 8L,
+                segment, 0L, 8L);
+        assertEquals(same, -1);
     }
 
     enum SegmentKind {
