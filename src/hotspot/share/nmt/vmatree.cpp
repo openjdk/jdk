@@ -138,11 +138,14 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
       int cmp_A = addr_cmp(head->key(), A);
       int cmp_B = addr_cmp(head->key(), B);
       if (cmp_B > 0) {
+        // head > B
         to_visit.push(head->left());
       } else if (cmp_A <= 0) {
+        // head <= A
         to_visit.push(head->right());
       } else if (cmp_A > 0 && cmp_B <= 0) {
-        to_visit.push(head->left());
+        // A < head <= B
+                to_visit.push(head->left());
         to_visit.push(head->right());
 
         stB.out = head->val().out;
@@ -161,6 +164,9 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
           B_needs_insert = false;
         } else { /* Unreachable */
         }
+      } else {
+        // Impossible.
+        assert(false, "cannot happen.");
       }
     }
   }
