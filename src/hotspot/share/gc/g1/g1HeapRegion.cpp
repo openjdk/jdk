@@ -592,7 +592,6 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
   template <class T>
   void do_oop_work(T* p) {
     assert(_containing_obj != nullptr, "must be");
-    assert(!G1CollectedHeap::heap()->is_obj_dead_cond(_containing_obj, _vo), "Precondition");
 
     if (num_failures() >= G1MaxVerifyFailures) {
       return;
@@ -624,6 +623,7 @@ public:
     _num_failures(0) { }
 
   void set_containing_obj(oop const obj) {
+    assert(!G1CollectedHeap::heap()->is_obj_dead_cond(obj, _vo), "Precondition");
     _containing_obj = obj;
   }
 
