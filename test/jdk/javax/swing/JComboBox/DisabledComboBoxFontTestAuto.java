@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 7093691 8310072
- * @summary Tests if JComboBox has correct font color when disabled/enabled
- * @key headful
- * @run main/othervm -Dsun.java2d.uiScale=1 DisabledComboBoxFontTestAuto
- */
-
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -44,6 +36,14 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
+
+/*
+ * @test
+ * @bug 7093691 8310072
+ * @summary Tests if JComboBox has correct font color when disabled/enabled
+ * @key headful
+ * @run main/othervm -Dsun.java2d.uiScale=1 DisabledComboBoxFontTestAuto
+ */
 
 public class DisabledComboBoxFontTestAuto {
     private static JComboBox combo, combo2;
@@ -115,16 +115,14 @@ public class DisabledComboBoxFontTestAuto {
                 dColor1 = new Color(disabledImage.getRGB(x + 1, y));
                 dColor2 = new Color(disabledImage2.getRGB(x, y));
             } else if (lafName.equals("Windows")) {
-                // In Windows LAF, the ComboBox sizes are different.
-                // Combo size is 116 x 22 where as Combo2 size is 115 X 20 and
+                // In Windows LAF, the ComboBox sizes are different and
                 // that results in pixel offset of 1px for width and 1px for height.
                 eColor1 = new Color(enabledImage.getRGB(x, y));
                 eColor2 = new Color(enabledImage2.getRGB(x + 1, y - 1));
                 dColor1 = new Color(disabledImage.getRGB(x, y));
                 dColor2 = new Color(disabledImage2.getRGB(x + 1, y - 1));
             } else if (lafName.equals("GTK+")) {
-                // In GTK LAF, the ComboBox sizes are different.
-                // Combo size is 159 x 30 where as Combo2 size is 179 X 34 and
+                // In GTK LAF, the ComboBox sizes are different and
                 // that results in pixel offset of 10px for width and 2px for height.
                 eColor1 = new Color(enabledImage.getRGB(x, y));
                 eColor2 = new Color(enabledImage2.getRGB(x + 10, y + 2));
@@ -141,13 +139,13 @@ public class DisabledComboBoxFontTestAuto {
                 return;
             }
         }
-        System.out.println("Test Passed: "+lafName);
+        System.out.println("Test Passed: " + lafName);
     }
 
     private static boolean isColorMatching(Color c1, Color c2) {
-        int redDiff = c1.getRed() - c2.getRed();
-        int blueDiff = c1.getBlue() - c2.getBlue();
-        int greenDiff = c1.getGreen() - c2.getGreen();
+        int redDiff = Math.abs(c1.getRed() - c2.getRed());
+        int blueDiff = Math.abs(c1.getBlue() - c2.getBlue());
+        int greenDiff = Math.abs(c1.getGreen() - c2.getGreen());
 
         // Added TOLERANCE for pixel color difference. In Windows LAF the
         // background color between disabled and disabled DLCR image is slightly
