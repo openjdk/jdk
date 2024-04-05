@@ -312,6 +312,7 @@ public class TestMemorySegment {
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // FAILS
     // Note: the very similar "testMemorySegmentBInvarLAdr" does vectorize
+    // TODO investigate reason
     static Object[] testMemorySegmentBInvarI(MemorySegment m, int invar, int size) {
         for (int i = 0; i < size; i++) {
             byte v = m.get(ValueLayout.JAVA_BYTE, i + invar);
@@ -326,6 +327,15 @@ public class TestMemorySegment {
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // FAILS
     // Note: the very similar "testMemorySegmentBInvarLAdr" does vectorize
+    // The reason seems to be that the load and store have a different invariant:
+    //
+    //   VPointer[mem:  676      LoadB, base:  482, adr:  482,  base[ 482] + offset(  63) + invar[3125] + scale(   1) * iv]
+    //   VPointer[mem: 1229     StoreB, base:  482, adr:  482,  base[ 482] + offset(  63) + invar[3127] + scale(   1) * iv]
+    //
+    //   3125 AddL = ((CastLL(Param 11) + ConvI2L(1460  Phi)) + 530  LoadL)
+    //   3127 AddL = (ConvI2L(1460  Phi) + (11 Param + 530  LoadL))
+    //
+    // TODO investigate reason. Maybe we can compare the invariants in a smarter way, if they are composite?
     static Object[] testMemorySegmentBInvarL(MemorySegment m, long invar, int size) {
         for (int i = 0; i < size; i++) {
             byte v = m.get(ValueLayout.JAVA_BYTE, i + invar);
@@ -340,6 +350,7 @@ public class TestMemorySegment {
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // FAILS
     // Note: the very similar "testMemorySegmentBInvarLAdr" does vectorize
+    // TODO investigate reason
     static Object[] testMemorySegmentBInvarIAdr(MemorySegment m, int invar, int size) {
         for (int i = 0; i < size; i++) {
             long adr = i + invar;
