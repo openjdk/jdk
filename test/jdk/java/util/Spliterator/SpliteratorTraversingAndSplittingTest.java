@@ -78,13 +78,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.PriorityBlockingQueue;
-import java.util.function.Consumer;
-import java.util.function.DoubleConsumer;
-import java.util.function.Function;
-import java.util.function.IntConsumer;
-import java.util.function.LongConsumer;
-import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
+import java.util.function.*;
 
 public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper {
 
@@ -436,8 +430,18 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
                 }
 
                 @Override
+                public int indexOf(Predicate<? super Integer> filter) {
+                    return l.indexOf(filter);
+                }
+
+                @Override
                 public int lastIndexOf(Object o) {
                     return Arrays.asList(ia).lastIndexOf(o);
+                }
+
+                @Override
+                public int lastIndexOf(Predicate<? super Integer> filter) {
+                    return l.lastIndexOf(filter);
                 }
 
                 @Override
