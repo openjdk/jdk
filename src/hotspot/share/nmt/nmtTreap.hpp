@@ -243,7 +243,7 @@ public:
     CTreap* gtB = nullptr;
     CTreap* head = tree;
     while (head != nullptr) {
-      int cmp_r = addr_cmp(head->key(), key);
+      int cmp_r = CMP(head->key(), key);
       if (cmp_r == 0) { // Exact match
         gtB = head;
         break; // Can't become better than that.
@@ -262,7 +262,7 @@ public:
     CTreap* leqA_n = nullptr;
     CTreap* head = tree;
     while (head != nullptr) {
-      int cmp_r = addr_cmp(head->key(), key);
+      int cmp_r = CMP(head->key(), key);
       if (cmp_r == 0) { // Exact match
         leqA_n = head;
         break; // Can't become better than that.
