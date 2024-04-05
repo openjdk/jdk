@@ -39,9 +39,6 @@ class HeapRegion;
 // into "N"-word subregions (where "N" = 2^"LogN".  An array with an entry
 // for each such subregion indicates how far back one must go to find the
 // start of the chunk that includes the first word of the subregion.
-//
-// Each G1BlockOffsetTable is owned by a HeapRegion.
-
 class G1BlockOffsetTable: public CHeapObj<mtGC> {
   friend class VMStructs;
 
