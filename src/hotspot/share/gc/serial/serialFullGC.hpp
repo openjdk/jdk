@@ -37,7 +37,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/stack.hpp"
 
-class DataLayout;
 class SerialOldTracer;
 class STWGCTimer;
 
@@ -82,15 +81,6 @@ class SerialFullGC : AllStatic {
     virtual void do_oop(narrowOop* p);
   };
 
-  //
-  // Friend decls
-  //
-  friend class AdjustPointerClosure;
-  friend class KeepAliveClosure;
-
-  //
-  // Vars
-  //
  protected:
   // Total invocations of serial full GC
   static uint _total_invocations;
