@@ -34,7 +34,7 @@ import java.lang.annotation.Native;
  * {@link #setOption(int, Object)} methods of this interface in order to support their own options.
  * <P>
  * The methods and constants defined in this interface are
- * for internal implementation use only. If you're not subclassing {@code SocketImpl} or
+ * for implementation only. If you're not subclassing {@code SocketImpl} or
  * {@code DatagramSocketImpl}, then you won't use these directly. There are
  * type-safe methods to get/set each of these options in {@link Socket}, {@link ServerSocket},
  *  {@link DatagramSocket} and {@link MulticastSocket}.
@@ -165,9 +165,10 @@ public interface SocketOptions {
     @Native public static final int IP_MULTICAST_IF = 0x10;
 
     /**
-     * Set the outgoing interface on which to send multicast packets. Useful on hosts with
-     * multiple network interfaces, where applications want to use other than the system default.
-     * This option supports setting outgoing interfaces with either IPv4 and IPv6 addresses.
+     * This option is used to both set and fetch the outgoing interface on which the multicast
+     * packets are sent. Useful on hosts with multiple network interfaces, where applications
+     * want to use other than the system default. This option supports setting outgoing interfaces
+     * with either IPv4 and IPv6 addresses.
      *
      * @see MulticastSocket#setNetworkInterface(NetworkInterface)
      * @see MulticastSocket#getNetworkInterface()
