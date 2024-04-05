@@ -133,19 +133,17 @@ public:
     to_visit.push(tree.tree);
     VTreap* head = nullptr;
     while (!to_visit.is_empty()) {
-      head = to_visit.top();
-      to_visit.pop();
+      head = to_visit.pop();
       if (head == nullptr) continue;
 
       int cmp_from = addr_cmp(head->key(), from);
       int cmp_to = addr_cmp(head->key(), to);
-      if (cmp_to >= 0) {
-        return;
+      if (cmp_from >= 0 && cmp_to < 0) {
+        f(head);
       }
-      if (cmp_from >= 0) {
-        if (cmp_to < 0) {
-          f(head);
-        }
+      if (cmp_to >= 0) {
+        to_visit.push(head->left());
+      } else if (cmp_from >= 0 ) {
         to_visit.push(head->left());
         to_visit.push(head->right());
       } else {
