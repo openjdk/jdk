@@ -45,7 +45,7 @@ import java.security.SecurityObject;
  * @since 1.2
  */
 
-public abstract class CRL implements SecurityObject {
+public abstract non-sealed class CRL implements SecurityObject {
 
     // the CRL type
     private final String type;

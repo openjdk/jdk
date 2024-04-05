@@ -61,4 +61,4 @@ import java.security.SecurityObject;
  * @since 1.2
  */
 
-public interface KeySpec extends SecurityObject { }
+public non-sealed interface KeySpec extends SecurityObject { }
