@@ -2916,7 +2916,8 @@ private:
   Status find_def_store_unidirectional(const StoreNode* use_store) const;
 
   void collect_merge_list(Node_List& merge_list) const;
-  Node* merged_input_value(const Node_List& merge_list, const int new_memory_size);
+  Node* merged_input_value(const Node_List& merge_list);
+  StoreNode* make_merged_store(const Node_List& merge_list, Node* new_input_value);
 };
 
 StoreNode* MergePrimitiveArrayStores::run() {
@@ -2946,35 +2947,14 @@ StoreNode* MergePrimitiveArrayStores::run() {
     return nullptr;
   }
 
-  // Collect list of stores
   ResourceMark rm;
   Node_List merge_list;
   collect_merge_list(merge_list);
-  int new_memory_size = _store->memory_size() * merge_list.size();
 
-  Node* new_input_value = merged_input_value(merge_list, new_memory_size);
+  Node* new_input_value = merged_input_value(merge_list);
   if (new_input_value == nullptr) { return nullptr; }
 
-  Node* first    = merge_list.at(merge_list.size()-1);
-  Node* new_ctrl = _store->in(MemNode::Control); // must take last: after all RangeChecks
-  Node* new_mem  = first->in(MemNode::Memory);
-  Node* new_adr  = first->in(MemNode::Address);
-  const TypePtr* new_adr_type = _store->adr_type();
-  BasicType bt = T_ILLEGAL;
-  switch (new_memory_size) {
-    case 2: bt = T_SHORT; break;
-    case 4: bt = T_INT;   break;
-    case 8: bt = T_LONG;  break;
-  }
-
-  StoreNode* new_store = StoreNode::make(*_phase, new_ctrl, new_mem, new_adr,
-                                         new_adr_type, new_input_value, bt, MemNode::unordered);
-  // Marking the store mismatched is sufficient to prevent reordering, since array stores
-  // are all on the same slice. Hence, we need no barriers.
-  new_store->set_mismatched_access();
-
-  // Constants above may now also be be packed -> put candidate on worklist
-  _phase->is_IterGVN()->_worklist.push(new_mem);
+  StoreNode* new_store = make_merged_store(merge_list, new_input_value);
 
 #ifdef ASSERT
   if (TraceMergeStores) {
@@ -3250,7 +3230,8 @@ void MergePrimitiveArrayStores::collect_merge_list(Node_List& merge_list) const 
 }
 
 // Merge the input values of the smaller stores to a single larger input value.
-Node* MergePrimitiveArrayStores::merged_input_value(const Node_List& merge_list, const int new_memory_size) {
+Node* MergePrimitiveArrayStores::merged_input_value(const Node_List& merge_list) {
+  int new_memory_size = _store->memory_size() * merge_list.size();
   Node* first = merge_list.at(merge_list.size()-1);
   Node* new_input_value = nullptr;
   if (_store->in(MemNode::ValueIn)->Opcode() == Op_ConI) {
@@ -3299,6 +3280,32 @@ Node* MergePrimitiveArrayStores::merged_input_value(const Node_List& merge_list,
          "new_input_value is either int or long, and new_memory_size is small enough");
 
   return new_input_value;
+}
+
+StoreNode* MergePrimitiveArrayStores::make_merged_store(const Node_List& merge_list, Node* new_input_value) {
+  Node* first    = merge_list.at(merge_list.size()-1);
+  Node* new_ctrl = _store->in(MemNode::Control); // must take last: after all RangeChecks
+  Node* new_mem  = first->in(MemNode::Memory);
+  Node* new_adr  = first->in(MemNode::Address);
+  const TypePtr* new_adr_type = _store->adr_type();
+  BasicType bt = T_ILLEGAL;
+  int new_memory_size = _store->memory_size() * merge_list.size();
+  switch (new_memory_size) {
+    case 2: bt = T_SHORT; break;
+    case 4: bt = T_INT;   break;
+    case 8: bt = T_LONG;  break;
+  }
+
+  StoreNode* new_store = StoreNode::make(*_phase, new_ctrl, new_mem, new_adr,
+                                         new_adr_type, new_input_value, bt, MemNode::unordered);
+  // Marking the store mismatched is sufficient to prevent reordering, since array stores
+  // are all on the same slice. Hence, we need no barriers.
+  new_store->set_mismatched_access();
+
+  // Constants above may now also be be packed -> put candidate on worklist
+  _phase->is_IterGVN()->_worklist.push(new_mem);
+
+  return new_store;
 }
 
 //------------------------------Ideal------------------------------------------
