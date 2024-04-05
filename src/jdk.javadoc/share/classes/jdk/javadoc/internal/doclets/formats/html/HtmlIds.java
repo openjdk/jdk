@@ -164,15 +164,16 @@ public class HtmlIds {
     }
 
     /**
-     * Returns an id for an executable element, suitable for use when the
-     * simple name and argument list will be unique within the page, such as
-     * in the page for the declaration of the enclosing class or interface.
+     * Returns a non-empty list of ids for an executable element, suitable for
+     * use when the simple name and argument list will be unique within the
+     * page, such as in the page for the declaration of the enclosing class or
+     * interface.
      *
      * @param element the element
      *
      * @return the id
      */
-    HtmlId forMember(ExecutableElement element) {
+    List<HtmlId> forMember(ExecutableElement element) {
         return forExecutable(element);
     }
 
@@ -225,7 +226,7 @@ public class HtmlIds {
      * @param executableElement the element to anchor to
      * @return the 1.4.x style anchor for the executable element
      */
-    protected HtmlId forErasure(ExecutableElement executableElement) {
+    private HtmlId forErasure(ExecutableElement executableElement) {
         final StringBuilder buf = new StringBuilder(executableElement.getSimpleName().toString());
         buf.append("(");
         List<? extends VariableElement> parameters = executableElement.getParameters();
@@ -479,7 +480,7 @@ public class HtmlIds {
      */
     public HtmlId forPreviewSection(Element el) {
         return HtmlId.of("preview-" + switch (el.getKind()) {
-            case CONSTRUCTOR, METHOD -> forMember((ExecutableElement) el).name();
+            case CONSTRUCTOR, METHOD -> forMember((ExecutableElement) el).getFirst().name();
             case PACKAGE -> forPackage((PackageElement) el).name();
             default -> utils.getFullyQualifiedName(el, false);
         });
@@ -493,7 +494,7 @@ public class HtmlIds {
      * @return the id
      */
     public HtmlId forRestrictedSection(ExecutableElement el) {
-        return HtmlId.of("restricted-" + forMember(el).name());
+        return HtmlId.of("restricted-" + forMember(el).getFirst().name());
     }
 
     /**
@@ -532,16 +533,15 @@ public class HtmlIds {
         return HtmlId.of(idValue);
     }
 
-    private final Map<ExecutableElement, HtmlId> ids = new HashMap<>();
+    private final Map<ExecutableElement, List<HtmlId>> ids = new HashMap<>();
 
     /*
-     * Returns an id to a constructor or a method, from a centralised
-     * registry. Use to get an anchor to a constructor or method.
-     *
-     * The goal is to provide coordination, not cache.
+     * Returns a _non-empty_ list of alternative ids to a constructor or a
+     * method, from a centralised registry. The goal is too coordinate call
+     * sites that create anchors and links to those anchors.
      */
-    private HtmlId forExecutable(ExecutableElement e) {
-        HtmlId htmlId = ids.get(e);
+    private List<HtmlId> forExecutable(ExecutableElement e) {
+        var htmlId = ids.get(e);
         if (htmlId != null)
             return htmlId;
         if (e.getKind() != ElementKind.CONSTRUCTOR
@@ -569,7 +569,7 @@ public class HtmlIds {
         // 1. Map all elements that can _only_ be addressed by the simple id
         for (var m : buckets.getOrDefault(ErasedId.ABSENT, List.of())) {
             var simpleId = forMember0(m.element);
-            ids.put(m.element, simpleId);
+            ids.put(m.element, List.of(simpleId));
             boolean added = dups.add(simpleId.name());
             // we assume that the simple id for an executable member that
             // does not use type parameters is unique
@@ -580,9 +580,9 @@ public class HtmlIds {
         for (var m : buckets.getOrDefault(ErasedId.PRESENT, List.of())) {
             var simpleId = forMember0(m.element);
             if (dups.add(simpleId.name())) {
-                ids.put(m.element, simpleId);
+                ids.put(m.element, List.of(simpleId, m.id));
             } else {
-                ids.put(m.element, m.id);
+                ids.put(m.element, List.of(m.id));
                 boolean added = dups.add(m.id.name());
                 // Not only must an erased id not clash with any simple id,
                 // but it must also not clash with any other erased id.
@@ -605,6 +605,6 @@ public class HtmlIds {
         // - another example is annotation interface methods: they are not
         //   included in VisibleMemberTable.Kind.METHODS and so cannot be
         //   found among them
-        return ids.computeIfAbsent(e, this::forMember0);
+        return ids.computeIfAbsent(e, e1 -> List.of(forMember0(e1)));
     }
 }

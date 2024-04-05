@@ -128,7 +128,7 @@ public class HtmlIndexBuilder extends IndexBuilder {
                     item.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(element)));
                 }
                 if (utils.isExecutableElement(element)) {
-                    String url = HtmlTree.encodeURL(htmlIds.forMember((ExecutableElement) element).name());
+                    String url = HtmlTree.encodeURL(htmlIds.forMember((ExecutableElement) element).getFirst().name());
                     if (!url.equals(item.getLabel())) {
                         item.setUrl(url);
                     }
