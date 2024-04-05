@@ -812,9 +812,6 @@ private:
   // Sort expensive nodes to locate similar expensive nodes
   void sort_expensive_nodes();
 
-  // seed random number generation and log the seed for repeatability.
-  void initialize_stress_seed(DirectiveSet* directive);
-
   // Compilation environment.
   Arena*      comp_arena()           { return &_comp_arena; }
   ciEnv*      env() const            { return _env; }
@@ -1280,6 +1277,9 @@ private:
   // Auxiliary methods for randomized fuzzing/stressing
   int random();
   bool randomized_select(int count);
+
+  // seed random number generation and log the seed for repeatability.
+  void initialize_stress_seed(DirectiveSet* directive);
 
   // supporting clone_map
   CloneMap&     clone_map();
