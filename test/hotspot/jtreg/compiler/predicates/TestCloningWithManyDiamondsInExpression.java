@@ -35,7 +35,7 @@
  *                              -XX:CompileCommand=compileonly,*TestCloningWithManyDiamondsInExpression::test*
  *                              -XX:CompileCommand=inline,*TestCloningWithManyDiamondsInExpression::create*
  *                              compiler.predicates.TestCloningWithManyDiamondsInExpression
- * @run main/othervm/timeout=30 compiler.predicates.TestCloningWithManyDiamondsInExpression
+ * @run main/timeout=30 compiler.predicates.TestCloningWithManyDiamondsInExpression
  */
 
  /*
