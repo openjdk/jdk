@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
- * Benchmark measuring monotonic list performance
+ * Benchmark measuring Lazy performance
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -72,7 +72,7 @@ public class LazyBenchmark {
     }
 
     @Benchmark
-    public int staticMonotonic() {
+    public int staticLazy() {
         return LAZY.orThrow();
     }
 
@@ -91,7 +91,7 @@ public class LazyBenchmark {
 
 
     @Benchmark
-    public int instanceMonotonic() {
+    public int instanceLazy() {
         return lazy.orThrow();
     }
 

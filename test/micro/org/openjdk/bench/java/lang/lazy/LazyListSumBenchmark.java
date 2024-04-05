@@ -66,14 +66,14 @@ public class LazyListSumBenchmark {
     private static final int SIZE = 1_000;
 
     private static final List<Integer> LAZY = Lazy.ofList(SIZE, FUNCTION);
-    private final List<Lazy<Integer>> Lazy_EAGER = initMonotonic(Stream.generate(Lazy::<Integer>of)
+    private final List<Lazy<Integer>> Lazy_EAGER = initLazy(Stream.generate(Lazy::<Integer>of)
             .limit(SIZE)
             .toList());
 
     private static final List<Integer> ARRAY_LIST = init(new ArrayList<>(SIZE));
 
     private final List<Integer> lazy = Lazy.ofList(SIZE, FUNCTION);
-    private final List<Lazy<Integer>> lazyEager = initMonotonic(Stream.generate(Lazy::<Integer>of)
+    private final List<Lazy<Integer>> lazyEager = initLazy(Stream.generate(Lazy::<Integer>of)
             .limit(SIZE)
             .toList());
     private static final List<Integer> arrayList = init(new ArrayList<>(SIZE));
@@ -92,7 +92,7 @@ public class LazyListSumBenchmark {
     }
 
     @Benchmark
-    public int instanceMonotonicEager() {
+    public int instanceLazyEager() {
         int sum = 0;
         for (int i = 0; i < lazyEager.size(); i++) {
             sum += lazyEager.get(i).orThrow();
@@ -119,7 +119,7 @@ public class LazyListSumBenchmark {
     }
 
     @Benchmark
-    public int staticMonotonicEager() {
+    public int staticLazyEager() {
         int sum = 0;
         for (int i = 0; i < Lazy_EAGER.size(); i++) {
             sum += Lazy_EAGER.get(i).orThrow();
@@ -136,7 +136,7 @@ public class LazyListSumBenchmark {
         return sum;
     }
 
-    private static List<Lazy<Integer>> initMonotonic(List<Lazy<Integer>> list) {
+    private static List<Lazy<Integer>> initLazy(List<Lazy<Integer>> list) {
         for (int i = 0; i < SIZE; i++) {
             list.get(i).setOrThrow(FUNCTION.apply(i));
         }

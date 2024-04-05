@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 /**
- * Benchmark measuring monotonic list performance
+ * Benchmark measuring lazy list performance
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -46,14 +46,14 @@ public class LazySmallListBenchmark {
     private static final int SIZE = 1_000;
 
     //private static final List<Monotonic<Integer>> MONOTONIC_LAZY = randomMono(Monotonic.ofList(SIZE));
-    private final List<Lazy<Integer>> Lazy_EAGER = randomMono(IntStream.range(0, SIZE)
+    private final List<Lazy<Integer>> Lazy_EAGER = randomLazy(IntStream.range(0, SIZE)
             .mapToObj(_ -> Lazy.<Integer>of())
             .toList());
 
     private static final List<Integer> ARRAY_LIST = random(new ArrayList<>(SIZE));
 
     //private final List<Monotonic<Integer>> monotonicLazy = randomMono(Monotonic.ofList(SIZE));
-    private final List<Lazy<Integer>> lazyEager = randomMono(IntStream.range(0, SIZE)
+    private final List<Lazy<Integer>> lazyEager = randomLazy(IntStream.range(0, SIZE)
                      .mapToObj(_ -> Lazy.<Integer>of())
                      .toList());
     private static final List<Integer> arrayList = random(new ArrayList<>(SIZE));
@@ -72,7 +72,7 @@ public class LazySmallListBenchmark {
     }
 
     @Benchmark
-    public int instanceMonotonicEager() {
+    public int instanceLazyEager() {
         int sum = 0;
         for (int i = 0; i < lazyEager.size(); i++) {
             sum += lazyEager.get(i).orThrow();
@@ -99,7 +99,7 @@ public class LazySmallListBenchmark {
     }
 
     @Benchmark
-    public int staticMonotonicEager() {
+    public int staticLazyEager() {
         int sum = 0;
         for (int i = 0; i < Lazy_EAGER.size(); i++) {
             sum += Lazy_EAGER.get(i).orThrow();
@@ -116,7 +116,7 @@ public class LazySmallListBenchmark {
         return sum;
     }*/
 
-    private static List<Lazy<Integer>> randomMono(List<Lazy<Integer>> list) {
+    private static List<Lazy<Integer>> randomLazy(List<Lazy<Integer>> list) {
         Random rnd = new Random();
         for (int i = 0; i < SIZE; i++) {
             list.get(i).setOrThrow(rnd.nextInt(0, SIZE));

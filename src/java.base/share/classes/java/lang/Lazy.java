@@ -42,8 +42,7 @@ import java.util.function.Supplier;
 import static jdk.internal.javac.PreviewFeature.*;
 
 /**
- * An atomic, thread-safe, non-blocking, lazy value holder for which the value can
- * be set at most once.
+ * An atomic, thread-safe, lazy value holder for which the value can be set at most once.
  * <p>
  * Lazy values are eligible for constant folding and other optimizations by the JVM.
  * <p>
@@ -180,30 +179,6 @@ public sealed interface Lazy<V> permits LazyImpl {
     static <V> Lazy<V> ofBackground(Supplier<? extends V> supplier) {
         Objects.requireNonNull(supplier);
         return LazyImpl.ofBackground(supplier);
-    }
-
-    /**
-     * {@return a wrapped, thread-safe, memoized supplier backed by a new empty
-     * lazy value where the memoized value is obtained by invoking the provided
-     * {@code suppler} at most once}
-     * <p>
-     * The returned memoized {@code Supplier} is equivalent to the following supplier:
-     * {@snippet lang = java:
-     * Lazy<V> lazy = Lazy.of();
-     * Supplier<V> memoized = () -> lazy.computeIfUnbound(supplier);
-     *}
-     * except it promises the provided {@code supplier} is invoked at most once once
-     * even though the returned memoized Supplier is invoked simultaneously
-     * by several threads. The returned Supplier's {@linkplain Supplier#get()} method
-     * will block, if a computation is already in progress.
-     *
-     * @param supplier   to be used for computing a value
-     * @param <V>        the type of the value to memoize
-     * @see Lazy#computeIfUnset(Supplier)
-     */
-    static <V> Supplier<V> asSupplier(Supplier<? extends V> supplier) {
-        Objects.requireNonNull(supplier);
-        return LazyImpl.asMemoized(supplier);
     }
 
     /**

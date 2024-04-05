@@ -97,7 +97,7 @@ final class JepDemo {
         }
     }
 
-    static
+/*    static
     class Bar4 {
         // 1. Declare a memoized (cached) Supplier (backed by an
         //    internal lazy value) that is invoked at most once
@@ -109,7 +109,7 @@ final class JepDemo {
             //    (evaluation made before the first access)
             return LOGGER.get();
         }
-    }
+    }*/
 
     static
     class Fibonacci {

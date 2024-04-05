@@ -32,7 +32,7 @@ import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 
 /**
- * Benchmark measuring monotonic list performance
+ * Benchmark measuring lazy list performance
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -120,7 +120,7 @@ public class LazyListBenchmark {
         return wrappedList.get(8).orThrow();
     }
 
-    private static List<Lazy<Integer>> initMono(List<Lazy<Integer>> list) {
+    private static List<Lazy<Integer>> initLazy(List<Lazy<Integer>> list) {
         int index = 8;
         list.get(index).setOrThrow(FUNCTION.apply(index));
         return list;
