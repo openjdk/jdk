@@ -8598,7 +8598,7 @@ class StubGenerator: public StubCodeGenerator {
         StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libvectormath, ebuf);
       }
     } else {
-      log_info(library)("Failed to load native vector math library!");
+      log_info(library)("Failed to load native vector math library, %s!", ebuf);
     }
 #endif // COMPILER2
 

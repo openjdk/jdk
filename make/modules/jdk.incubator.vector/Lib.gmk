@@ -41,7 +41,9 @@ endif
 ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, aarch64)+$(INCLUDE_COMPILER2), true+true+true)
   $(eval $(call SetupJdkLibrary, BUILD_LIBVECTORMATH, \
       NAME := vectormath, \
-      CFLAGS := $(CFLAGS_JDKLIB) -Wno-error=unused-function, \
+      DISABLED_WARNINGS_gcc := unused-function, \
+      DISABLED_WARNINGS_clang := unused-function, \
+      CFLAGS := $(CFLAGS_JDKLIB), \
       vector_math_sve.c_CFLAGS := $(SVE_CFLAGS), \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \

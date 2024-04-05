@@ -4371,6 +4371,8 @@ void StubGenerator::generate_compiler_stubs() {
       snprintf(ebuf, sizeof(ebuf), "__jsvml_%s4_ha_%s", VectorSupport::mathname[op], avx_sse_str);
       StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_256][op] = (address)os::dll_lookup(libjsvml, ebuf);
     }
+  } else {
+    log_info(library)("Failed to load native vector math library, %s!", ebuf);
   }
 #endif // COMPILER2
 #endif // COMPILER2_OR_JVMCI
