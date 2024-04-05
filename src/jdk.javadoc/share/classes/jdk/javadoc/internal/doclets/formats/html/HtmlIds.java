@@ -550,9 +550,6 @@ public class HtmlIds {
         var vmt = configuration.getVisibleMemberTable((TypeElement) e.getEnclosingElement());
         var ctors = vmt.getVisibleMembers(VisibleMemberTable.Kind.CONSTRUCTORS);
         var methods = vmt.getVisibleMembers(VisibleMemberTable.Kind.METHODS);
-        // the order of the elements is important for reproducibility of ids:
-        // the same executable element must have the same id across javadoc runs
-
         record Erased(ExecutableElement element, HtmlId id) { }
         // split elements into two buckets:
         //  - elements whose erased id is present
@@ -564,6 +561,9 @@ public class HtmlIds {
                 .collect(Collectors.groupingBy(erased -> erased.id == null ?
                         ErasedId.ABSENT : ErasedId.PRESENT));
         var dups = new HashSet<String>();
+        // the order of elements in each bucket is important for reproducibility
+        // of ids: the same executable element must have the same id in any
+        // javadoc run
         // Use simple id, unless we have to use erased id; for that, do the
         // following _in order_:
         // 1. Map all elements that can _only_ be addressed by the simple id
@@ -597,14 +597,16 @@ public class HtmlIds {
             // Safety net: if for whatever reason we cannot find the element
             // among those we just expanded, return the simple id. It might
             // not be always right, but at least it won't fail.
-            // One example where it might happen is linking to an inherited
-            // undocumented method (see test case T5093723)
-            // TODO the above will need to be revisited if and when we redesign
-            //  VisibleMemberTable, which currently cannot correctly return the
-            //  owner of such a method
-            // Another example is annotation interface methods: they are not
-            // included in VisibleMemberTable.Kind.METHODS and so cannot be
-            // found among them
+            //
+            // - one example where it might happen is linking to an inherited
+            //   undocumented method (see test case T5093723)
+            //   TODO the above will need to be revisited if and when we redesign
+            //    VisibleMemberTable, which currently cannot correctly return the
+            //    owner of such a method
+            //
+            // - another example is annotation interface methods: they are not
+            //   included in VisibleMemberTable.Kind.METHODS and so cannot be
+            //   found among them
             htmlId = forMember0(e);
         }
         return htmlId;
