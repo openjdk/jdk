@@ -22,6 +22,7 @@
  */
 
 import java.util.*;
+import java.util.function.Predicate;
 
 /**
  * A complete List implementation that inherits the reversed() method
@@ -126,9 +127,15 @@ public class SimpleList<E> implements List<E> {
         return list.indexOf(o);
     }
 
+    public int indexOf(Predicate<? super E> filter) {
+        return list.indexOf(filter);
+    }
+
     public int lastIndexOf(Object o) {
         return list.lastIndexOf(o);
     }
+
+    public int lastIndexOf(Predicate<? super E> filter) { return list.lastIndexOf(filter); }
 
     public ListIterator<E> listIterator() {
         return list.listIterator();

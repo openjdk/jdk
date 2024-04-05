@@ -261,12 +261,12 @@ public class ListFactories {
 
     @Test(dataProvider="all", expectedExceptions=NullPointerException.class)
     public void indexOfNullShouldThrowNPE(List<String> act, List<String> exp) {
-        act.indexOf(null);
+        act.indexOf((String) null);
     }
 
     @Test(dataProvider="all", expectedExceptions=NullPointerException.class)
     public void lastIndexOfNullShouldThrowNPE(List<String> act, List<String> exp) {
-        act.lastIndexOf(null);
+        act.lastIndexOf((String) null);
     }
 
     // List.of().subList views should not be Serializable
