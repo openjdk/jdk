@@ -121,7 +121,7 @@ a [sentinel](https://en.wikipedia.org/wiki/Sentinel_value) value.
 
 The situation is even worse when clients need to operate on a _collection_ of immutable values.
 
-An example of this is an array that holds HTML pages that corresponds to an error code in the range [0, 7]
+An example of this is an array that holds HTML pages that correspond to an error code in the range [0, 7]
  where each element is pulled in from the file system on-demand, once actually used:
 
 ```
@@ -186,7 +186,7 @@ array variables whose values or elements will change *at most once*. This annota
 crucial to achieving optimal performance, but it is also easy to misuse: further updating a `@Stable` field
 after its initial update will result in undefined behavior, as the JIT compiler might have *already*
 constant-folded the (now overwritten) field value. In other words, what we are after is a *safe* and *efficient*
-wrapper around the `@Stable` mechanism - in the form of a new Java SE API which might be enjoyed by
+wrapper around the `@Stable` mechanism - in the form of a new Java SE API that might be enjoyed by
 _all_ client and 3rd party Java code (and not the JDK alone).
 
 ## Description
@@ -204,7 +204,7 @@ To use the Lazy Value and Collections APIs, the JVM flag `--enable-preview` must
 
 ### Outline
 
-The Values & Collections API define functions and an interface so that client code in libraries and applications can
+The Lazy Values & Collections API define functions and an interface so that client code in libraries and applications can
 
 - Define and use lazy (scalar) values: [`Lazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html)
 - Define and use lazy collections: 
@@ -238,7 +238,7 @@ class Bar {
     }
 }
 ```
-Setting a lazy value is an atomic, thread-safe operation, e.g. `Lazy::setIfUnset`,
+Setting a lazy value is an atomic, thread-safe operation, i.e. `Lazy::setIfUnset`,
 either results in successfully initializing the `Lazy` to a value, or returns
 an already set value. This is true regardless of whether the lazy value is accessed by a single
 thread, or concurrently, by multiple threads.
@@ -273,8 +273,8 @@ class Bar {
 
 Lazy reference values are faster to retrieve than reference values managed via
 double-checked-idiom constructs as lazy values rely on explicit memory barriers
-rather than performing volatile access on each retrieval operation and in addition, they are eligible
-for constant folding optimizations.
+rather than performing volatile access on each retrieval operation. In addition,
+lazy values are eligible for constant folding optimizations.
 
 ### Lazy collections
 
@@ -284,9 +284,9 @@ to be paid for each field of type `Lazy` declared by the class. As a result, the
 and/or instance initializer will keep growing with the number of `Lazy` fields, thus degrading performance.
 
 To handle these cases, the Lazy Values & Collections API provides constructs that allow the creation and handling of a
-*`List` of lazily computed elements*. Such a `List` is a list whose elements are created lazily on demand
+*`List` of lazily computed elements*. Such a `List` is a list whose elements are created lazily on-demand
 before a particular element is first accessed. Lists of lazily computed values are objects of type `List<E>`.
-Consequently, each element in the list enjoys the same properties as a `Lazy` but may require less resources.
+Consequently, each element in the list enjoys the same properties as a `Lazy` but may require fewer resources.
 
 Like a `Lazy` object, a lazily computed `List` object is created via a factory method by providing the size
 of the desired `List` and an `IntFunction` to be used to lazily compute its elements:
@@ -342,13 +342,13 @@ String errorPage = ErrorMessages.errorPage(2);
 Note how there's only one field of type `List<String>` to initialize even though every computation is
 performed independently of the other element of the list when accessed (i.e. no blocking will occur across threads 
 computing distinct elements simultaneously). Also, the `IntSupplier` provided at construction is only invoked 
-at-most-once for each distinct index. The Lazy Values & Collections API allows modeling this cleanly, while
+at most once for each distinct index. The Lazy Values & Collections API allows modeling this cleanly, while
 still preserving good constant-folding guarantees and integrity of updates in the case of multi-threaded access.
 
 It should be noted that even though a lazily computed list might mutate its internal state upon external access, it 
 is _still immutable_ because _no change can ever be observed by an external entity_. This is similar to other
 immutable classes, such as `String` (which internally caches its `hash` value), where they might rely on mutable
-internal states that are carefully kept internal and that never shine through to the outside world.
+internal states that are carefully kept internally and that never shine through to the outside world.
 
 Just as a `List` can be lazily computed, a `Map` of lazily computed values can also be defined and used similarly.
 In the example below, we lazily compute a map's values for an enumerated collection of pre-defined keys:
@@ -372,7 +372,7 @@ class MapDemo {
 This concept allows declaring a large number of lazy values which can be easily retrieved using arbitrarily, but
 pre-specified, keys in a resource-efficient and performant way.  
 
-Finally, a `Set` of lazily computed elements can be defined and used. In the example below, the well known problem of
+Finally, a `Set` of lazily computed elements can be defined and used. In the example below, the well-known problem of
 efficiently determining and acting on if a logger will actually output something for a certain level is solved using
 a lazily computed `Set`. This allows constant folding and might even enable the JVM to totally eliminate
 unused code paths depending on dynamic logger properties determined when first accessed:
@@ -400,8 +400,8 @@ unused code paths depending on dynamic logger properties determined when first a
 This last example also demonstrates how lazy constructs can be composed into more high-level, high-performance
 concepts that can leverage constant folding and other JVM optimizations transitively. 
 
-It is worth remembering, the lazy collections all promise the provided function used to lazily compute
-elements or values are invoked at-most-once per index/key/element even though used from several threads.
+It is worth remembering, that the lazy collections all promise the function provided at construction (used to 
+lazily compute elements or values) are invoked at most once per index, key, or element; even though used from several threads.
 
 ### Memoized functions
 
@@ -410,7 +410,7 @@ wrapped `@Stable` value holders. However, as briefly shown above, it has become 
 to composition with other constructs in order to create more high-level and powerful features.
 
 [Memoized functions](https://en.wikipedia.org/wiki/Memoization) are functions where the output for a particular 
-input value is computed only once and are remembered such that remembered outputs can can be reused for subsequent
+input value is computed only once and is remembered such that remembered outputs can be reused for subsequent
 calls with recurring input values. Here is how we could make sure `Logger.getLogger("com.foo.Bar")`
 in one of the first examples above is invoked at most once (provided it executes successfully)
 in a multi-threaded environment:
@@ -436,7 +436,7 @@ most once into any given `ClassLoader`) as it is backed by a `Map` with lazily
 computed values which upholds the invoke-at-most-once-per-key invariant.
 
 It should be noted that the enumerated collection of keys given at creation time
-constitutes the only valid inputs for the memoized function.
+constitutes the only valid input keys for the memoized function.
 
 Similarly to how a `Funcion` can be memoized using a backing lazily computed map, the same pattern can be used
 for an `IntFunction` that will record its cached value in a backing _lazy list_:
@@ -466,9 +466,8 @@ on a single line.
 ## Alternatives
 
 There are other classes in the JDK that support lazy computation including `Map`, `AtomicReference`, `ClassValue`,
-and `ThreadLocal` all of which, unfortunately, are similar to each other in the sense that they support arbitrary
-mutation and thus, hinder the JVM from reasoning about constantness thereby preventing constant folding and other
-optimizations.
+and `ThreadLocal` all of which, unfortunately, support arbitrary mutation and thus, hinder the JVM from reasoning
+about constantness thereby preventing constant folding and other optimizations.
 
 So, alternatives would be to keep using explicit double-checked locking, maps, holder classes, Atomic classes,
 and third-party frameworks. Another alternative would be to add language support for immutable value holders.
