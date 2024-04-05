@@ -238,15 +238,20 @@ class Bar {
     }
 }
 ```
-
-This is similar to the holder-class idiom and offers the same
-performance, constant-folding, and thread-safety characteristics, but is simpler
-and incurs a lower static footprint since no additional class is required.
-
 Setting a lazy value is an atomic, thread-safe, non-blocking operation, e.g. `Lazy::setIfUnset`,
 either results in successfully initializing the `Lazy` to a value, or returns
 an already set value. This is true regardless of whether the lazy value is accessed by a single
 thread, or concurrently, by multiple threads.
+
+In many ways, this is similar to the holder-class idiom in the sense if offers the same
+performance and constant-folding characteristics. It also incurs a lower static footprint
+since no additional class is required. 
+
+However, there is _an important distinction_; several threads may invoke the `Logger::getLogger`
+if they invoke the `logger()` method at about the same time. Even though `Lazy` will guarantee, only
+one of these results will ever be exposed to the many competing threads, there might be applications where
+it is a requirement, a supplying method is only called once. The Lazy Values & Collection API is
+also capable of modelling such constructs as can be seen in the [very end of this JEP](#memoized-functions).
 
 A lazy value may be set to `null` which then will be considered its set value.
 Null-averse applications can also use `Lazy<Optional<V>>`.
@@ -266,10 +271,6 @@ class Bar {
     }
 }
 ```
-Calling `logger()` multiple times yields the same value from each invocation.
-Even though `Lazy::computeIfUnset` might invoke the value supplier several times if called
-from a plurality of threads at about the same time, only one distinct witness value is 
-ever exposed to the outside world. 
 
 Lazy reference values are faster to retrieve than reference values managed via
 double-checked-idiom constructs as lazy values rely on explicit memory barriers
@@ -462,9 +463,28 @@ String errorPage = ERROR_PAGES.apply(2);
 The same paradigm can be used for creating a memoized `Predicate` (backed by a lazily computed `Set`). An astute reader
 will be able to write such a predicate on a single line. 
 
-As `Lazy::computeIfUnset` can invoke a provided supplier several times if invoked from several threads, there is a
-convenience method `Lazy::asSupplier` that provides an out-of-the-box memoized supplier that upholds the invoke-at-most
-property also in multi-threaded environments.
+As mentioned earlier, `Lazy::computeIfUnset` can invoke a provided supplier several times if invoked from several threads.
+To avoid this, there is a convenience method `Lazy::asSupplier` that provides an 
+out-of-the-box memoized supplier that upholds the invoke-at-most property also in multi-threaded environments. Here
+is an example of how it can be used:
+
+```
+class Bar {
+    // 1. Declare a memoized (cached) Supplier (backed by an
+    //    internal lazy value) that is invoked at most once
+    private static final Supplier<Logger> LOGGER = Lazy.asSupplier(
+                    () -> Logger.getLogger("com.foo.Bar"));
+
+    static Logger logger() {
+        // 2. Access the memoized value with as-declared-final performance
+        //    (evaluation made before the first access)
+        return LOGGER.get();
+    }
+}
+```
+
+It should be noted, in order to uphold the invoke-at-most-once invariant, memoized functions might block.
+
 
 ## Alternatives
 

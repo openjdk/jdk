@@ -83,10 +83,10 @@ final class JepDemo {
 
     static
     class Bar3 {
-        // 1. Declare a backing monotonic value
+        // 1. Declare a backing lazy value
         private static final Lazy<Logger> LAZY = Lazy.of();
 
-        // 2. Declare a memoized (cached) Supplier backed by the monotonic value
+        // 2. Declare a memoized (cached) Supplier backed by the lazy value
         private static final Supplier<Logger> LOGGER = () -> LAZY
                 .computeIfUnset( () -> Logger.getLogger("com.foo.Bar") );
 
@@ -100,7 +100,7 @@ final class JepDemo {
     static
     class Bar4 {
         // 1. Declare a memoized (cached) Supplier (backed by an
-        //    internal monotonic value) that is invoked at most once
+        //    internal lazy value) that is invoked at most once
         private static final Supplier<Logger> LOGGER = Lazy.asSupplier(
                         () -> Logger.getLogger("com.foo.Bar"));
 
