@@ -41,6 +41,7 @@
 #include <cstring>
 #include <Strsafe.h>
 #include <ntsecapi.h>
+#include <memory>
 #include <new>
 
 #define GSS_DLL_FILE
