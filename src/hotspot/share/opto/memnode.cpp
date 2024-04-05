@@ -2918,6 +2918,8 @@ private:
   void collect_merge_list(Node_List& merge_list) const;
   Node* make_merged_input_value(const Node_List& merge_list);
   StoreNode* make_merged_store(const Node_List& merge_list, Node* merged_input_value);
+
+  DEBUG_ONLY( void trace(const Node_List& merge_list, const Node* merged_input_value, const StoreNode* merged_store) const; )
 };
 
 StoreNode* MergePrimitiveArrayStores::run() {
@@ -2956,18 +2958,7 @@ StoreNode* MergePrimitiveArrayStores::run() {
 
   StoreNode* merged_store = make_merged_store(merge_list, merged_input_value);
 
-#ifdef ASSERT
-  if (TraceMergeStores) {
-    stringStream ss;
-    ss.print_cr("[TraceMergeStores]: Replace");
-    for (int i = (int)merge_list.size() - 1; i >= 0; i--) {
-      merge_list.at(i)->dump("\n", false, &ss);
-    }
-    ss.print_cr("[TraceMergeStores]: with");
-    merged_store->dump("\n", false, &ss);
-    tty->print("%s", ss.as_string());
-  }
-#endif
+  DEBUG_ONLY( if(TraceMergeStores) { trace(merge_list, merged_input_value, merged_store); } )
 
   return merged_store;
 }
@@ -3333,6 +3324,20 @@ StoreNode* MergePrimitiveArrayStores::make_merged_store(const Node_List& merge_l
 
   return merged_store;
 }
+
+#ifdef ASSERT
+void MergePrimitiveArrayStores::trace(const Node_List& merge_list, const Node* merged_input_value, const StoreNode* merged_store) const {
+  stringStream ss;
+  ss.print_cr("[TraceMergeStores]: Replace");
+  for (int i = (int)merge_list.size() - 1; i >= 0; i--) {
+    merge_list.at(i)->dump("\n", false, &ss);
+  }
+  ss.print_cr("[TraceMergeStores]: with");
+  merged_input_value->dump("\n", false, &ss);
+  merged_store->dump("\n", false, &ss);
+  tty->print("%s", ss.as_string());
+}
+#endif
 
 //------------------------------Ideal------------------------------------------
 // Change back-to-back Store(, p, x) -> Store(m, p, y) to Store(m, p, x).
