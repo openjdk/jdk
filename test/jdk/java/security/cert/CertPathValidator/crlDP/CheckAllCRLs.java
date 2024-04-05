@@ -61,7 +61,6 @@ import sun.security.testlibrary.CertificateBuilder;
  *          CRLDP extension after CRL fetching errors and exhibits same
  *          behavior whether CRL cache is fresh or stale.
  * @modules java.base/sun.security.x509
- *          java.base/sun.security.provider.certpath
  *          java.base/sun.security.util
  * @library ../../../../../java/security/testlibrary
  * @build CertificateBuilder CheckAllCRLs
