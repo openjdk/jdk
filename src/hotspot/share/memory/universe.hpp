@@ -47,7 +47,7 @@ class SerializeClosure;
 
 class Universe: AllStatic {
   // Ugh.  Universe is much too friendly.
-  friend class MarkSweep;
+  friend class SerialFullGC;
   friend class oopDesc;
   friend class ClassLoader;
   friend class SystemDictionary;
