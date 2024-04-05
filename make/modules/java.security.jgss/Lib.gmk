@@ -66,6 +66,7 @@ ifneq ($(BUILD_CRYPTO), false)
     $(eval $(call SetupJdkLibrary, BUILD_LIBW2K_LSA_AUTH, \
         NAME := w2k_lsa_auth, \
         OPTIMIZATION := LOW, \
+        EXTRA_HEADER_DIRS := java.base:libjava, \
         LIBS_windows := advapi32.lib kernel32.lib secur32.lib ws2_32.lib, \
     ))
 
