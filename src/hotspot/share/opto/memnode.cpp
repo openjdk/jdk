@@ -2916,8 +2916,8 @@ private:
   Status find_def_store_unidirectional(const StoreNode* use_store) const;
 
   void collect_merge_list(Node_List& merge_list) const;
-  Node* merged_input_value(const Node_List& merge_list);
-  StoreNode* make_merged_store(const Node_List& merge_list, Node* new_input_value);
+  Node* make_merged_input_value(const Node_List& merge_list);
+  StoreNode* make_merged_store(const Node_List& merge_list, Node* merged_input_value);
 };
 
 StoreNode* MergePrimitiveArrayStores::run() {
@@ -2951,10 +2951,10 @@ StoreNode* MergePrimitiveArrayStores::run() {
   Node_List merge_list;
   collect_merge_list(merge_list);
 
-  Node* new_input_value = merged_input_value(merge_list);
-  if (new_input_value == nullptr) { return nullptr; }
+  Node* merged_input_value = make_merged_input_value(merge_list);
+  if (merged_input_value == nullptr) { return nullptr; }
 
-  StoreNode* new_store = make_merged_store(merge_list, new_input_value);
+  StoreNode* merged_store = make_merged_store(merge_list, merged_input_value);
 
 #ifdef ASSERT
   if (TraceMergeStores) {
@@ -2964,12 +2964,12 @@ StoreNode* MergePrimitiveArrayStores::run() {
       merge_list.at(i)->dump("\n", false, &ss);
     }
     ss.print_cr("[TraceMergeStores]: with");
-    new_store->dump("\n", false, &ss);
+    merged_store->dump("\n", false, &ss);
     tty->print("%s", ss.as_string());
   }
 #endif
 
-  return new_store;
+  return merged_store;
 }
 
 // Check compatibility between _store and other_store.
@@ -3230,10 +3230,10 @@ void MergePrimitiveArrayStores::collect_merge_list(Node_List& merge_list) const 
 }
 
 // Merge the input values of the smaller stores to a single larger input value.
-Node* MergePrimitiveArrayStores::merged_input_value(const Node_List& merge_list) {
+Node* MergePrimitiveArrayStores::make_merged_input_value(const Node_List& merge_list) {
   int new_memory_size = _store->memory_size() * merge_list.size();
   Node* first = merge_list.at(merge_list.size()-1);
-  Node* new_input_value = nullptr;
+  Node* merged_input_value = nullptr;
   if (_store->in(MemNode::ValueIn)->Opcode() == Op_ConI) {
     // Pattern: [ConI, ConI, ...] -> new constant
     jlong con = 0;
@@ -3244,45 +3244,45 @@ Node* MergePrimitiveArrayStores::merged_input_value(const Node_List& merge_list)
       con = con << bits_per_store;
       con = con | (mask & con_i);
     }
-    new_input_value = _phase->longcon(con);
+    merged_input_value = _phase->longcon(con);
   } else {
     // Pattern: [base >> 24, base >> 16, base >> 8, base] -> base
     //             |                                  |
     //           _store                             first
     //
-    new_input_value = first->in(MemNode::ValueIn);
+    merged_input_value = first->in(MemNode::ValueIn);
     Node const* base_last;
     jint shift_last;
     bool is_true = is_con_RShift(_store->in(MemNode::ValueIn), base_last, shift_last);
     assert(is_true, "must detect con RShift");
-    if (new_input_value != base_last && new_input_value->Opcode() == Op_ConvL2I) {
+    if (merged_input_value != base_last && merged_input_value->Opcode() == Op_ConvL2I) {
       // look through
-      new_input_value = new_input_value->in(1);
+      merged_input_value = merged_input_value->in(1);
     }
-    if (new_input_value != base_last) {
-      // new_input_value is not the base
+    if (merged_input_value != base_last) {
+      // merged_input_value is not the base
       return nullptr;
     }
   }
 
-  if (_phase->type(new_input_value)->isa_long() != nullptr && new_memory_size <= 4) {
+  if (_phase->type(merged_input_value)->isa_long() != nullptr && new_memory_size <= 4) {
     // Example:
     //
     //   long base = ...;
     //   a[0] = (byte)(base >> 0);
     //   a[1] = (byte)(base >> 8);
     //
-    new_input_value = _phase->transform(new ConvL2INode(new_input_value));
+    merged_input_value = _phase->transform(new ConvL2INode(merged_input_value));
   }
 
-  assert((_phase->type(new_input_value)->isa_int() != nullptr && new_memory_size <= 4) ||
-         (_phase->type(new_input_value)->isa_long() != nullptr && new_memory_size == 8),
-         "new_input_value is either int or long, and new_memory_size is small enough");
+  assert((_phase->type(merged_input_value)->isa_int() != nullptr && new_memory_size <= 4) ||
+         (_phase->type(merged_input_value)->isa_long() != nullptr && new_memory_size == 8),
+         "merged_input_value is either int or long, and new_memory_size is small enough");
 
-  return new_input_value;
+  return merged_input_value;
 }
 
-StoreNode* MergePrimitiveArrayStores::make_merged_store(const Node_List& merge_list, Node* new_input_value) {
+StoreNode* MergePrimitiveArrayStores::make_merged_store(const Node_List& merge_list, Node* merged_input_value) {
   Node* first    = merge_list.at(merge_list.size()-1);
   Node* new_ctrl = _store->in(MemNode::Control); // must take last: after all RangeChecks
   Node* new_mem  = first->in(MemNode::Memory);
@@ -3296,16 +3296,16 @@ StoreNode* MergePrimitiveArrayStores::make_merged_store(const Node_List& merge_l
     case 8: bt = T_LONG;  break;
   }
 
-  StoreNode* new_store = StoreNode::make(*_phase, new_ctrl, new_mem, new_adr,
-                                         new_adr_type, new_input_value, bt, MemNode::unordered);
+  StoreNode* merged_store = StoreNode::make(*_phase, new_ctrl, new_mem, new_adr,
+                                            new_adr_type, merged_input_value, bt, MemNode::unordered);
   // Marking the store mismatched is sufficient to prevent reordering, since array stores
   // are all on the same slice. Hence, we need no barriers.
-  new_store->set_mismatched_access();
+  merged_store->set_mismatched_access();
 
   // Constants above may now also be be packed -> put candidate on worklist
   _phase->is_IterGVN()->_worklist.push(new_mem);
 
-  return new_store;
+  return merged_store;
 }
 
 //------------------------------Ideal------------------------------------------
