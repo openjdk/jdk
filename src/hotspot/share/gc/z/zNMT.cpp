@@ -33,7 +33,7 @@
 
 MemoryFileTracker::MemoryFile* ZNMT::_device = nullptr;
 
-void ZNMT::init() {
+void ZNMT::initialize() {
   _device = MemTracker::register_device("ZGC heap backing file");
 }
 

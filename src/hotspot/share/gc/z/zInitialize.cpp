@@ -47,7 +47,7 @@ ZInitialize::ZInitialize(ZBarrierSet* barrier_set) {
                      VM_Version::jdk_debug_level());
 
   // Early initialization
-  ZNMT::init();
+  ZNMT::initialize();
   ZGlobalsPointers::initialize();
   ZNUMA::initialize();
   ZCPU::initialize();
