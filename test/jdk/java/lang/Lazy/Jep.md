@@ -265,7 +265,7 @@ class Bar {
     
     static Logger logger() {
         // 2. Access the lazy value with as-declared-final performance
-        //    (evaluation made before the first access)
+        //    (single evaluation made before the first access)
         return LOGGER.computeIfUnset( () -> Logger.getLogger("com.foo.Bar") );
     }
 }
@@ -341,7 +341,8 @@ String errorPage = ErrorMessages.errorPage(2);
 
 Note how there's only one field of type `List<String>` to initialize even though every computation is
 performed independently of the other element of the list when accessed (i.e. no blocking will occur across threads 
-computing distinct elements simultaneously). The Lazy Values & Collections API allows modeling this cleanly, while
+computing distinct elements simultaneously). Also, the `IntSupplier` provided at construction is only invoked 
+at-most-once for each distinct index. The Lazy Values & Collections API allows modeling this cleanly, while
 still preserving good constant-folding guarantees and integrity of updates in the case of multi-threaded access.
 
 It should be noted that even though a lazily computed list might mutate its internal state upon external access, it 
@@ -399,9 +400,8 @@ unused code paths depending on dynamic logger properties determined when first a
 This last example also demonstrates how lazy constructs can be composed into more high-level, high-performance
 concepts that can leverage constant folding and other JVM optimizations transitively. 
 
-It is worth mentioning, the lazy collections all promises the provided function used to lazily compute
-elements or values are invoked at-most-once even though used from several threads. This is an additional promise
-compared to scalar `Lazy` values.
+It is worth remembering, the lazy collections all promise the provided function used to lazily compute
+elements or values are invoked at-most-once per index/key/element even though used from several threads.
 
 ### Memoized functions
 
@@ -460,14 +460,15 @@ String errorPage = ERROR_PAGES.apply(2);
 ```
 
 The same paradigm can be used for creating a memoized `Supplier` (backed by a single `Lazy` instance) or 
-a memoized `Predicate`(backed by a lazily computed `Set`). An astute reader will be able to write such a
-predicate on a single line. 
+a memoized `Predicate`(backed by a lazily computed `Set`). An astute reader will be able to write such constructs
+on a single line. 
 
 ## Alternatives
 
 There are other classes in the JDK that support lazy computation including `Map`, `AtomicReference`, `ClassValue`,
-and `ThreadLocal` which are similar to each other in the sense that they support arbitrary mutation and thus, prevent the JVM
-from reasoning about constantness thereby preventing constant folding and other optimizations.
+and `ThreadLocal` all of which, unfortunately, are similar to each other in the sense that they support arbitrary
+mutation and thus, hinder the JVM from reasoning about constantness thereby preventing constant folding and other
+optimizations.
 
 So, alternatives would be to keep using explicit double-checked locking, maps, holder classes, Atomic classes,
 and third-party frameworks. Another alternative would be to add language support for immutable value holders.

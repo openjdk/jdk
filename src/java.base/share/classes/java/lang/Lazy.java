@@ -140,13 +140,13 @@ public sealed interface Lazy<V> permits LazyImpl {
      *     return lazy.get();
      * } else {
      *     V newValue = supplier.get();
-     *     lazy.put(newValue);
+     *     lazy.setOrThrow(newValue);
      *     return newValue;
      * }
      * }</pre>
      * Except it is atomic, thread-safe and will only return the same witness value
-     * regardless if invoked by several threads. However, the provided {@code supplier}
-     * may be invoked several times if invoked from several threads 
+     * regardless if invoked by several threads. Also, the provided {@code supplier}
+     * will only be invoked once even if invoked from several threads.
      *
      * @param supplier to be used for computing a value
      * @return the current (pre-existing or computed) value

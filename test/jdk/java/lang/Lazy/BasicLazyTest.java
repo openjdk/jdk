@@ -45,61 +45,62 @@ final class BasicLazyTest {
     private static final int FIRST = 42;
     private static final int SECOND = 13;
 
-    private Lazy<Integer> m;
+    private Lazy<Integer> lazy;
 
     @BeforeEach
     void setup() {
-        m = Lazy.of();
+        lazy = Lazy.of();
     }
 
     @Test
-    void unbound() {
-        assertFalse(m.isSet());
-        assertThrows(NoSuchElementException.class, m::orThrow);
-    }
-
-    void bind() {
-        m.setOrThrow(FIRST);
-        assertTrue(m.isSet());
-        assertEquals(FIRST, m.orThrow());
-        assertThrows(IllegalStateException.class, () -> m.setOrThrow(SECOND));
-        assertTrue(m.isSet());
-        assertEquals(FIRST, m.orThrow());
+    void unset() {
+        assertFalse(lazy.isSet());
+        assertThrows(NoSuchElementException.class, lazy::orThrow);
     }
 
     @Test
-    void bindIfAbsent() {
-        Integer i = m.setIfUnset(FIRST);
-        assertTrue(m.isSet());
+    void setOrThrow() {
+        lazy.setOrThrow(FIRST);
+        assertTrue(lazy.isSet());
+        assertEquals(FIRST, lazy.orThrow());
+        assertThrows(IllegalStateException.class, () -> lazy.setOrThrow(SECOND));
+        assertTrue(lazy.isSet());
+        assertEquals(FIRST, lazy.orThrow());
+    }
+
+    @Test
+    void setIfUnset() {
+        Integer i = lazy.setIfUnset(FIRST);
+        assertTrue(lazy.isSet());
         assertEquals(FIRST, i);
-        assertEquals(FIRST, m.orThrow());
+        assertEquals(FIRST, lazy.orThrow());
 
-        assertEquals(FIRST, m.setIfUnset(FIRST));
-        assertEquals(FIRST, m.setIfUnset(SECOND));
-        assertEquals(FIRST, m.setIfUnset(null));
+        assertEquals(FIRST, lazy.setIfUnset(FIRST));
+        assertEquals(FIRST, lazy.setIfUnset(SECOND));
+        assertEquals(FIRST, lazy.setIfUnset(null));
     }
 
     @Test
-    void bindIfAbsentNull() {
-        Integer i = m.setIfUnset(null);
-        assertTrue(m.isSet());
+    void setIfUnsetNull() {
+        Integer i = lazy.setIfUnset(null);
+        assertTrue(lazy.isSet());
         assertNull(i);
-        assertNull(m.orThrow());
+        assertNull(lazy.orThrow());
 
-        assertNull(m.setIfUnset(null));
-        assertNull(m.setIfUnset(FIRST));
-        assertNull(m.setIfUnset(SECOND));
+        assertNull(lazy.setIfUnset(null));
+        assertNull(lazy.setIfUnset(FIRST));
+        assertNull(lazy.setIfUnset(SECOND));
     }
 
     @Test
-    void computeIfAbsent() {
-        m.computeIfUnset(() -> FIRST);
-        assertEquals(FIRST, m.orThrow());
+    void computeIfUnset() {
+        lazy.computeIfUnset(() -> FIRST);
+        assertEquals(FIRST, lazy.orThrow());
 
         Supplier<Integer> throwingSupplier = () -> {
             throw new UnsupportedOperationException();
         };
-        assertDoesNotThrow(() -> m.computeIfUnset(throwingSupplier));
+        assertDoesNotThrow(() -> lazy.computeIfUnset(throwingSupplier));
 
         var m2 = Lazy.of();
         m2.computeIfUnset(() -> FIRST);
@@ -107,12 +108,12 @@ final class BasicLazyTest {
     }
 
     @Test
-    void computeIfAbsentNull() {
+    void computeIfUnsetNull() {
         CountingSupplier<Integer> c = new CountingSupplier<>(() -> null);
-        m.computeIfUnset(c);
-        assertNull(m.orThrow());
+        lazy.computeIfUnset(c);
+        assertNull(lazy.orThrow());
         assertEquals(1, c.cnt());
-        m.computeIfUnset(c);
+        lazy.computeIfUnset(c);
         assertEquals(1, c.cnt());
     }
 
@@ -125,6 +126,13 @@ final class BasicLazyTest {
         // Make sure the original supplier is not invoked more than once
         assertEquals(FIRST, memoized.get());
         assertEquals(1, cSup.cnt());
+    }
+
+    @Test
+    void testToString() {
+        assertEquals("Lazy.unset", lazy.toString());
+        lazy.setOrThrow(1);
+        assertEquals("Lazy[1]", lazy.toString());
     }
 
     @Test

@@ -76,7 +76,7 @@ final class JepDemo {
 
         static Logger logger() {
             // 2. Access the lazy value with as-declared-final performance
-            //    (evaluation made before the first access)
+            //    (single evaluation made before the first access)
             return LOGGER.computeIfUnset( () -> Logger.getLogger("com.foo.Bar") );
         }
     }

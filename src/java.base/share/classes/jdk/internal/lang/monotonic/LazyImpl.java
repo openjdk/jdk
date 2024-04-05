@@ -50,7 +50,8 @@ public final class LazyImpl<V> implements Lazy<V> {
     private static final byte SET = 1;
 
     /**
-     * If non-null, holds the set value.
+     * If null, may be unset or hold a set null value
+     * If non-null, holds a set value.
      */
     @Stable
     private V value;
@@ -158,10 +159,10 @@ public final class LazyImpl<V> implements Lazy<V> {
 
     @Override
     public String toString() {
-        return "Monotonic" +
+        return "Lazy" +
                 (isSet()
                         ? "[" + orThrow() + "]"
-                        : ".unbound");
+                        : ".unset");
     }
 
     @SuppressWarnings("unchecked")
