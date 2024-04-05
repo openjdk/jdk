@@ -3026,14 +3026,14 @@ bool MergePrimitiveArrayStores::is_adjacent_input_pair(const Node* n1, const Nod
   if (!is_con_RShift(n2, base_n2, shift_n2)) {
     return false;
   }
-  Node const* base_n1;
-  jint shift_n1;
   if (n1->Opcode() == Op_ConvL2I) {
     // look through
     n1 = n1->in(1);
   }
+  Node const* base_n1;
+  jint shift_n1;
   if (n1 == base_n2) {
-    // This is the "shift by zero" case.
+    // n1 = base = base >> 0
     base_n1 = n1;
     shift_n1 = 0;
   } else if (!is_con_RShift(n1, base_n1, shift_n1)) {
@@ -3073,6 +3073,7 @@ bool MergePrimitiveArrayStores::is_con_RShift(const Node* n, Node const*& base_o
   return false;
 }
 
+// Check if there is nothing between the two stores, except optionally a RangeCheck leading to an uncommon trap.
 MergePrimitiveArrayStores::CFGStatus MergePrimitiveArrayStores::cfg_status_for_pair(const StoreNode* use_store, const StoreNode* def_store) {
   assert(use_store->in(MemNode::Memory) == def_store, "use-def relationship");
 
@@ -3177,6 +3178,7 @@ MergePrimitiveArrayStores::Status MergePrimitiveArrayStores::find_use_store_unid
       return Status::make(use_store, cfg_status_for_pair(use_store, def_store));
     }
   }
+
   return Status::make_failure();
 }
 
@@ -3199,7 +3201,7 @@ void MergePrimitiveArrayStores::collect_merge_list(Node_List& merge_list) const 
          is_power_of_2(merge_list_max_size),
          "must be 2, 4 or 8");
 
-  // Collect list of stores
+  // Traverse up the chain of adjacent def stores.
   StoreNode* current = _store;
   merge_list.push(current);
   while (current != nullptr && merge_list.size() < merge_list_max_size) {

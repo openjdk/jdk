@@ -37,7 +37,16 @@ import java.util.Random;
  * @summary Test merging of consecutive stores
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver compiler.c2.TestMergeStores
+ * @run main compiler.c2.TestMergeStores aligned
+ */
+
+/*
+ * @test
+ * @bug 8318446
+ * @summary Test merging of consecutive stores
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib /
+ * @run main compiler.c2.TestMergeStores unaligned
  */
 
 public class TestMergeStores {
@@ -73,8 +82,15 @@ public class TestMergeStores {
     Map<String, Map<String, TestFunction>> testGroups = new HashMap<String, Map<String, TestFunction>>();
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("--add-modules", "java.base",
-                                   "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
+        TestFramework framework = new TestFramework(TestMergeStores.class);
+        framework.addFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
+
+        switch (args[0]) {
+            case "aligned"     -> { framework.addFlags("-XX:-UseUnalignedAccesses"); }
+            case "unaligned"   -> { framework.addFlags("-XX:+UseUnalignedAccesses"); }
+            default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
+        }
+        framework.start();
     }
 
     public TestMergeStores() {
@@ -159,14 +175,14 @@ public class TestMergeStores {
         testGroups.get("test501").put("test501a", (_,i) -> { return test501a(aB.clone(), RANGE - 20 + (i % 30), vL1); });
         //                                                                               +-------------------+
         // Create offsets that are sometimes going to pass all RangeChecks, and sometimes one, and sometimes none.
-	// Consequence: all RangeChecks stay in the final compilation.
+        // Consequence: all RangeChecks stay in the final compilation.
 
         testGroups.put("test502", new HashMap<String,TestFunction>());
         testGroups.get("test502").put("test500R", (w,i) -> { return test500R(aB.clone(), w ? offset1 : RANGE - 20 + (i % 30), vL1); });
         testGroups.get("test502").put("test502a", (w,i) -> { return test502a(aB.clone(), w ? offset1 : RANGE - 20 + (i % 30), vL1); });
         //                                                                                   +-----+   +-------------------+
         // First use something in range, and after warmup randomize going outside the range.
-	// Consequence: all RangeChecks stay in the final compilation.
+        // Consequence: all RangeChecks stay in the final compilation.
     }
 
     @Warmup(100)
@@ -430,7 +446,8 @@ public class TestMergeStores {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test1a(byte[] a) {
         a[0] = (byte)0xbe;
         a[1] = (byte)0xba;
@@ -444,7 +461,8 @@ public class TestMergeStores {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test1b(byte[] a) {
         // Add custom null check, to ensure the unsafe access always recognizes its type as an array store
         if (a == null) {return null;}
@@ -453,14 +471,16 @@ public class TestMergeStores {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test1c(byte[] a) {
         storeLongLE(a, 0, 0xdeadbeefbaadbabeL);
         return new Object[]{ a };
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test1d(byte[] a) {
         storeIntLE(a, 0, 0xbaadbabe);
         storeIntLE(a, 4, 0xdeadbeef);
@@ -468,7 +488,8 @@ public class TestMergeStores {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test1e(byte[] a) {
         storeShortLE(a, 0, (short)0xbabe);
         storeShortLE(a, 2, (short)0xbaad);
@@ -478,7 +499,8 @@ public class TestMergeStores {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test1f(byte[] a) {
         UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0, (byte)0xbe);
         UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1, (byte)0xba);
@@ -494,7 +516,8 @@ public class TestMergeStores {
     @Test
     // Do not optimize these, just to be sure we do not mess with store ordering.
     @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
-                  IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8"})
+                  IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test1g(byte[] a) {
         UNSAFE.putByteRelease(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0, (byte)0xbe);
         UNSAFE.putByteRelease(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1, (byte)0xba);
@@ -510,7 +533,8 @@ public class TestMergeStores {
     @Test
     // Do not optimize these, just to be sure we do not mess with store ordering.
     @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
-                  IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8"})
+                  IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test1h(byte[] a) {
         UNSAFE.putByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0, (byte)0xbe);
         UNSAFE.putByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1, (byte)0xba);
@@ -526,7 +550,8 @@ public class TestMergeStores {
     @Test
     // Do not optimize these, just to be sure we do not mess with store ordering.
     @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
-                  IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8"})
+                  IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test1i(byte[] a) {
         UNSAFE.putByteOpaque(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0, (byte)0xbe);
         UNSAFE.putByteOpaque(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1, (byte)0xba);
@@ -553,7 +578,8 @@ public class TestMergeStores {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test2a(byte[] a, int offset, long v) {
         a[offset + 0] = (byte)(v >> 0);
         a[offset + 1] = (byte)(v >> 8);
@@ -567,7 +593,8 @@ public class TestMergeStores {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test2b(byte[] a, int offset, long v) {
         // Add custom null check, to ensure the unsafe access always recognizes its type as an array store
         if (a == null) {return null;}
@@ -576,7 +603,8 @@ public class TestMergeStores {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test2c(byte[] a, int offset, long v) {
         storeLongLE(a, offset, v);
         return new Object[]{ a };
@@ -614,7 +642,8 @@ public class TestMergeStores {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2"})
+    @IR(counts = {IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test3a(byte[] a, int offset, long v) {
         a[offset + 0] = (byte)(v >> 0);
         a[offset + 1] = (byte)(v >> 8);
@@ -653,7 +682,8 @@ public class TestMergeStores {
     @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "4", // 3 (+ 1 for uncommon trap)
                   IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "3",
                   IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2",
-                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"})
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test4a(byte[] a, int offset, long v1, int v2, short v3, byte v4) {
         a[offset +  0] = (byte)0x00; // individual load expected to go into state of RC
         a[offset +  1] = (byte)0xFF;
@@ -699,7 +729,8 @@ public class TestMergeStores {
     @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
                   IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
                   IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
-                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test5a(byte[] a, int offset) {
         a[offset +  0] = (byte)0x01;
         a[offset +  1] = (byte)0x02;
@@ -793,7 +824,8 @@ public class TestMergeStores {
     @IR(counts = {IRNode.STORE_B_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_C_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
                   IRNode.STORE_I_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
-                  IRNode.STORE_L_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "3"})
+                  IRNode.STORE_L_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "3"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test100a(short[] a, int offset) {
         a[offset +  0] = (short)0x0100; // stays unchanged -> both used for RC and Return path
         a[offset +  1] = (short)0x0200; //    I
@@ -836,7 +868,8 @@ public class TestMergeStores {
     @IR(counts = {IRNode.STORE_B_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_C_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1", // only for RC
                   IRNode.STORE_I_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
-                  IRNode.STORE_L_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "3"})
+                  IRNode.STORE_L_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "3"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test101a(short[] a, int offset) {
         a[offset +  0] = (short)0x0100; //    I plus kept unchanged for RC
         a[offset +  1] = (short)0x0200; //    I
@@ -881,7 +914,8 @@ public class TestMergeStores {
     @IR(counts = {IRNode.STORE_B_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_C_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "4", // 3 (+1 that goes into RC)
                   IRNode.STORE_I_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "3",
-                  IRNode.STORE_L_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2"})
+                  IRNode.STORE_L_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test102a(short[] a, int offset, long v1, int v2, short v3) {
         a[offset +  0] = (short)0x0000; // store goes into RC
         a[offset +  1] = (short)0xFFFF;
@@ -927,7 +961,8 @@ public class TestMergeStores {
     @IR(counts = {IRNode.STORE_B_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_C_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_I_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
-                  IRNode.STORE_L_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "7"})
+                  IRNode.STORE_L_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "7"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test200a(int[] a, int offset) {
         a[offset +  0] = 0x01001236; // stays unchanged -> both used for RC and Return path
         a[offset +  1] = 0x02001284; //       L
@@ -970,7 +1005,8 @@ public class TestMergeStores {
     @IR(counts = {IRNode.STORE_B_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_C_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_I_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1", // only for RC
-                  IRNode.STORE_L_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "7"})
+                  IRNode.STORE_L_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "7"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test201a(int[] a, int offset) {
         a[offset +  0] = 0x01001236; //       L and also kept unchanged for RC
         a[offset +  1] = 0x02001284; //       L
@@ -1015,7 +1051,8 @@ public class TestMergeStores {
     @IR(counts = {IRNode.STORE_B_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_C_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_I_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "6", // 5 (+1 that goes into RC)
-                  IRNode.STORE_L_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "6"})
+                  IRNode.STORE_L_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "6"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test202a(int[] a, int offset, long v1, int v2) {
         a[offset +  0] = 0x00000000; // merged with store below, but also kept unchanged for RC
         a[offset +  1] = 0xFFFFFFFF;
@@ -1048,7 +1085,8 @@ public class TestMergeStores {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_L_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2"})
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test300a(int[] a) {
         a[2] = 42;
         a[3] = 42;
@@ -1126,7 +1164,8 @@ public class TestMergeStores {
     @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1", // for RangeCheck trap
                   IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
-                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"}) // expect merged
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"}, // expect merged
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test500a(byte[] a, int offset, long v) {
         int idx = 0;
         try {
