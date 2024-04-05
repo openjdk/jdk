@@ -2059,6 +2059,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       }
     }
     if (receiver_klass != nullptr &&
+        receiver_klass->is_loaded() &&
         receiver_klass->is_subtype_of(actual_recv) &&
         actual_recv->is_initialized()) {
       actual_recv = receiver_klass;
