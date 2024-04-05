@@ -197,7 +197,7 @@ public interface SocketOptions {
     @Native public static final int SO_LINGER = 0x0080;
 
     /**
-     * Set a timeout on blocking {@code Socket} operations:
+     * This option is used to both set and fetch a timeout on blocking {@code Socket} operations:
      * <ul>
      *     <li>{@linkplain ServerSocket#accept() ServerSocket.accept()}</li>
      *     <li>{@linkplain Socket#getInputStream()  Socket InputStream.read()}</li>
