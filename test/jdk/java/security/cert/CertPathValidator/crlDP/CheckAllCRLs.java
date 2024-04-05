@@ -57,17 +57,17 @@ import sun.security.testlibrary.CertificateBuilder;
 /*
  * @test
  * @bug 8200566
- * @summary Check that CRL validation continues to check other CRLs on CRL
- *          fetching errors and exhibits same behavior whether cache is fresh
- *          or stale.
+ * @summary Check that CRL validation continues to check other CRLs in
+ *          CRLDP extension after CRL fetching errors and exhibits same
+ *          behavior whether CRL cache is fresh or stale.
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.provider.certpath
  *          java.base/sun.security.util
  * @library ../../../../../java/security/testlibrary
- * @build CertificateBuilder CRLCacheIssue
- * @run main/othervm -Dcom.sun.security.enableCRLDP=true CRLCacheIssue
+ * @build CertificateBuilder CheckAllCRLs
+ * @run main/othervm -Dcom.sun.security.enableCRLDP=true CheckAllCRLs
  */
-public class CRLCacheIssue {
+public class CheckAllCRLs {
 
     public static void main(String[] args) throws Exception {
 
@@ -77,51 +77,38 @@ public class CRLCacheIssue {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
         KeyPair rootKeyPair = kpg.genKeyPair();
         X509Certificate rootCert = createCert(cb, "CN=Root CA",
-            rootKeyPair, rootKeyPair, null, "SHA384withRSA", true);
+            rootKeyPair, rootKeyPair, null, "SHA384withRSA", true, false);
 
         // Create EE cert. This EE cert will contain a CRL Distribution
         // Points extension with two DistributionPoints - one will be a HTTP
         // URL to a non-existant HTTP server, and the other will be a File
         // URL to a file containing the CRL.
         KeyPair eeKeyPair = kpg.genKeyPair();
-        X509Certificate eeCert = createCert(cb, "CN=End Entity",
-            rootKeyPair, eeKeyPair, rootCert, "SHA384withRSA", false);
+        X509Certificate eeCert1 = createCert(cb, "CN=End Entity",
+            rootKeyPair, eeKeyPair, rootCert, "SHA384withRSA", false, true);
+
+        // Create another EE cert. This EE cert is similar in that it contains
+        // a CRL Distribution Points extension but with one DistributionPoint
+        // containing 2 GeneralName URLs as above.
+        X509Certificate eeCert2 = createCert(cb, "CN=End Entity",
+            rootKeyPair, eeKeyPair, rootCert, "SHA384withRSA", false, false);
 
         // Create a CRL with no revoked certificates and store it in a file
         X509CRL crl = createCRL(new X500Name("CN=Root CA"), rootKeyPair,
             "SHA384withRSA");
         Files.write(Path.of("root.crl"), crl.getEncoded());
 
-        // Create certification path and set up PKIXParameters.
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        CertPath cp = cf.generateCertPath(List.of(eeCert));
-        PKIXParameters pp =
-            new PKIXParameters(Set.of(new TrustAnchor(rootCert, null)));
-        pp.setRevocationEnabled(true);
+        // Validate path containing eeCert1
+        validatePath(eeCert1, rootCert);
 
-        CertPathValidator cpv = CertPathValidator.getInstance("PKIX");
-
-        // Validate path twice in succession, making sure we get consistent
-        // results the second time when the CRL cache is fresh.
-        System.out.println("First time validating path");
-        validate(cpv, cp, pp);
-        System.out.println("Second time validating path");
-        validate(cpv, cp, pp);
-
-        // CRL lookup cache time is 30s. Sleep for 35 seconds to ensure
-        // cache is stale, and validate one more time to ensure we get
-        // consistent results.
-        System.out.println("Waiting for CRL cache to be cleared");
-        Thread.sleep(30500);
-
-        System.out.println("Third time validating path");
-        validate(cpv, cp, pp);
+        // Validate path containing eeCert2
+        validatePath(eeCert2, rootCert);
     }
 
     private static X509Certificate createCert(CertificateBuilder cb,
             String subjectDN, KeyPair issuerKeyPair, KeyPair subjectKeyPair,
-            X509Certificate issuerCert, String sigAlg, boolean isCA)
-            throws Exception {
+            X509Certificate issuerCert, String sigAlg, boolean isCA,
+            boolean twoDPs) throws Exception {
         cb.setSubjectName(subjectDN);
         cb.setPublicKey(subjectKeyPair.getPublic());
         cb.setSerialNumber(new BigInteger("1"));
@@ -143,14 +130,20 @@ public class CRLCacheIssue {
             cb.addKeyUsageExt(new boolean[]
                 {true, false, false, false, false, false, false, false, false});
             cb.addExtendedKeyUsageExt(List.of("1.3.6.1.5.5.7.3.1"));
-            GeneralNames first = new GeneralNames().add(new GeneralName(
-                new URIName(
-                    "http://127.0.0.1:48180/crl/will/always/fail/root.crl")));
-            GeneralNames second = new GeneralNames().add(new GeneralName(
-                new URIName("file:./root.crl")));
-            DistributionPoint dp1 = new DistributionPoint(first, null, null);
-            DistributionPoint dp2 = new DistributionPoint(second, null, null);
-            cb.addExtension(new CRLDistributionPointsExtension(List.of(dp1, dp2)));
+            GeneralName first = new GeneralName(new URIName(
+                    "http://127.0.0.1:48180/crl/will/always/fail/root.crl"));
+            GeneralName second = new GeneralName(new URIName("file:./root.crl"));
+            if (twoDPs) {
+                GeneralNames gn1 = new GeneralNames().add(first);
+                DistributionPoint dp1 = new DistributionPoint(gn1, null, null);
+                GeneralNames gn2 = new GeneralNames().add(second);
+                DistributionPoint dp2 = new DistributionPoint(gn2, null, null);
+                cb.addExtension(new CRLDistributionPointsExtension(List.of(dp1, dp2)));
+            } else {
+                GeneralNames gn = new GeneralNames().add(first).add(second);
+                DistributionPoint dp = new DistributionPoint(gn, null, null);
+                cb.addExtension(new CRLDistributionPointsExtension(List.of(dp)));
+            }
         }
         cb.addSubjectKeyIdExt(subjectKeyPair.getPublic());
 
@@ -181,6 +174,35 @@ public class CRLCacheIssue {
 
         // return signed CRL
         return X509CRLImpl.newSigned(tcl, caKeyPair.getPrivate(), sigAlg);
+    }
+
+    private static void validatePath(X509Certificate eeCert,
+            X509Certificate rootCert) throws Exception {
+
+        // Create certification path and set up PKIXParameters.
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        CertPath cp = cf.generateCertPath(List.of(eeCert));
+        PKIXParameters pp =
+            new PKIXParameters(Set.of(new TrustAnchor(rootCert, null)));
+        pp.setRevocationEnabled(true);
+
+        CertPathValidator cpv = CertPathValidator.getInstance("PKIX");
+
+        // Validate path twice in succession, making sure we get consistent
+        // results the second time when the CRL cache is fresh.
+        System.out.println("First time validating path");
+        validate(cpv, cp, pp);
+        System.out.println("Second time validating path");
+        validate(cpv, cp, pp);
+
+        // CRL lookup cache time is 30s. Sleep for 35 seconds to ensure
+        // cache is stale, and validate one more time to ensure we get
+        // consistent results.
+        System.out.println("Waiting for CRL cache to be cleared");
+        Thread.sleep(30500);
+
+        System.out.println("Third time validating path");
+        validate(cpv, cp, pp);
     }
 
     private static void validate(CertPathValidator cpv, CertPath cp,
