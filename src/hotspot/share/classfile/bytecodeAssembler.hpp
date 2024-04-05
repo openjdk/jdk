@@ -128,8 +128,8 @@ class BytecodeConstantPool : public ResourceObj {
       &BytecodeCPEntry::hash, &BytecodeCPEntry::equals> IndexHash;
 
   ConstantPool* _orig;
-  GrowableArray<BytecodeCPEntry> _entries;
-  IndexHash _indices;
+  GrowableArray<BytecodeCPEntry> _added_entries;
+  IndexHash _index_map;
   int _orig_cp_added;
 
   u2 find_or_add(BytecodeCPEntry const& bcpe, TRAPS);
@@ -141,7 +141,7 @@ class BytecodeConstantPool : public ResourceObj {
     init();
   }
 
-  BytecodeCPEntry const& at(u2 index) const { return _entries.at(index); }
+  BytecodeCPEntry const& at(u2 index) const { return _added_entries.at(index); }
 
   InstanceKlass* pool_holder() const {
     return _orig->pool_holder();

@@ -57,10 +57,10 @@ void BytecodeConstantPool::init() {
     }
     if (entry._tag != BytecodeCPEntry::tag::ERROR_TAG) {
       bool created = false;
-      u2* probe =_indices.put_if_absent(entry, i, &created);
+      _index_map.put_if_absent(entry, i, &created);
       if (created) {
         _orig_cp_added += 1;
-        _entries.append(entry);
+        _added_entries.append(entry);
       }
     }
   }
@@ -69,16 +69,16 @@ void BytecodeConstantPool::init() {
 u2 BytecodeConstantPool::find_or_add(BytecodeCPEntry const& bcpe, TRAPS) {
 
   // Check for overflow
-  int new_size = _orig->length() + _entries.length() - _orig_cp_added;
+  int new_size = _orig->length() + _added_entries.length() - _orig_cp_added;
   if (new_size > USHRT_MAX) {
     THROW_MSG_0(vmSymbols::java_lang_InternalError(), "default methods constant pool overflowed");
   }
 
   u2 index = checked_cast<u2>(new_size);
   bool created = false;
-  u2* probe = _indices.put_if_absent(bcpe, index, &created);
+  u2* probe = _index_map.put_if_absent(bcpe, index, &created);
   if (created) {
-    _entries.append(bcpe);
+    _added_entries.append(bcpe);
   } else {
     index = *probe;
   }
@@ -86,11 +86,11 @@ u2 BytecodeConstantPool::find_or_add(BytecodeCPEntry const& bcpe, TRAPS) {
 }
 
 ConstantPool* BytecodeConstantPool::create_constant_pool(TRAPS) const {
-  if (_entries.length() == 0) {
+  if (_added_entries.length() == 0) {
     return _orig;
   }
 
-  int new_size = _orig->length() + _entries.length() - _orig_cp_added;
+  int new_size = _orig->length() + _added_entries.length() - _orig_cp_added;
   ConstantPool* cp = ConstantPool::allocate(
       _orig->pool_holder()->class_loader_data(),
       new_size, CHECK_NULL);
@@ -102,9 +102,12 @@ ConstantPool* BytecodeConstantPool::create_constant_pool(TRAPS) const {
   // Preserve dynamic constant information from the original pool
   cp->copy_fields(_orig);
 
-  for (int i = _orig_cp_added; i < _entries.length(); ++i) {
-    BytecodeCPEntry entry = _entries.at(i);
-    u2* value = _indices.get(entry);
+  for (int i = _orig_cp_added; i < _added_entries.length(); ++i) {
+    // Add new entries that we added to the temporary constant pool, to the
+    // newly creatd constant pool.
+    BytecodeCPEntry entry = _added_entries.at(i);
+    // Get the constant pool index saved in the hashtable for this new entry.
+    u2* value = _index_map.get(entry);
     int idx = *value;
     switch (entry._tag) {
       case BytecodeCPEntry::UTF8:
