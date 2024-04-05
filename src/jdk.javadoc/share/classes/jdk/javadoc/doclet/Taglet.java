@@ -96,6 +96,7 @@ public interface Taglet {
      * @return true if this taglet supports block tags
      * @implSpec This implementation returns the inverse
      * result to {@code isInlineTag}.
+     *
      * @since 15
      */
     default boolean isBlockTag() {
