@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,15 +53,9 @@ void DebugInfoWriteStream::write_metadata(Metadata* h) {
 }
 
 oop DebugInfoReadStream::read_oop() {
-  nmethod* nm = const_cast<CompiledMethod*>(code())->as_nmethod_or_null();
-  oop o;
-  if (nm != nullptr) {
-    // Despite these oops being found inside nmethods that are on-stack,
-    // they are not kept alive by all GCs (e.g. G1 and Shenandoah).
-    o = nm->oop_at_phantom(read_int());
-  } else {
-    o = code()->oop_at(read_int());
-  }
+  // Despite these oops being found inside nmethods that are on-stack,
+  // they are not kept alive by all GCs (e.g. G1 and Shenandoah).
+  oop o = code()->oop_at_phantom(read_int());
   assert(oopDesc::is_oop_or_null(o), "oop only");
   return o;
 }

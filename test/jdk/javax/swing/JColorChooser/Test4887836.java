@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,42 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 4887836
- * @summary Checks if no tooltip modification when no KeyStroke modifier
- * @author Konstantin Eremin
- * @run applet/manual=yesno Test4887836.html
- */
-
 import java.awt.Color;
 import java.awt.Font;
-import javax.swing.JApplet;
 import javax.swing.JColorChooser;
 import javax.swing.UIManager;
 
-public class Test4887836 extends JApplet {
-    public void init() {
-        UIManager.put("Label.font", new Font("Perpetua", 0, 36)); // NON-NLS: property and font names
-        add(new JColorChooser(Color.LIGHT_GRAY));
+/*
+ * @test
+ * @bug 4887836
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @summary Checks for white area under the JColorChooser Swatch tab
+ * @run main/manual Test4887836
+ */
+
+public class Test4887836 {
+
+    public static void main(String[] args) throws Exception {
+        String instructions = """
+                                If you do not see white area under the \"Swatches\" tab,
+                                then test passed, otherwise it failed.""";
+
+        PassFailJFrame.builder()
+                .title("Test4759306")
+                .instructions(instructions)
+                .rows(5)
+                .columns(40)
+                .testTimeOut(10)
+                .testUI(Test4887836::createColorChooser)
+                .build()
+                .awaitAndCheck();
+    }
+
+    private static JColorChooser createColorChooser() {
+        JColorChooser chooser = new JColorChooser(Color.LIGHT_GRAY);
+
+        UIManager.put("Label.font", new Font("Font.DIALOG", 0, 36));
+        return chooser;
     }
 }

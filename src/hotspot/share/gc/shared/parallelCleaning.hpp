@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@ class CodeCacheUnloadingTask {
   const uint                _num_workers;
 
   // Variables used to claim nmethods.
-  CompiledMethod* _first_nmethod;
-  CompiledMethod* volatile _claimed_nmethod;
+  nmethod* _first_nmethod;
+  nmethod* volatile _claimed_nmethod;
 
 public:
   CodeCacheUnloadingTask(uint num_workers, bool unloading_occurred);
@@ -45,7 +45,7 @@ public:
 
 private:
   static const int MaxClaimNmethods = 16;
-  void claim_nmethods(CompiledMethod** claimed_nmethods, int *num_claimed_nmethods);
+  void claim_nmethods(nmethod** claimed_nmethods, int *num_claimed_nmethods);
 
 public:
   // Cleaning and unloading of nmethods.
