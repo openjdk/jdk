@@ -309,15 +309,24 @@ public class Attr extends JCTree.Visitor {
             return;
         }
 
-        // Illegal to assign an instance field inherited from a superclass in a constructor prologue
+        // Check instance field assignments that appear in constructor prologues
         if (env.info.ctorPrologue &&
-                v.owner.kind == TYP &&
-                types.isSubtype(env.enclClass.type, v.owner.type) &&
-                v.owner != env.enclClass.sym &&
-                (v.flags() & STATIC) == 0 &&
-                (base == null ||
-                  TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.type, base))) {
-            log.error(pos, Errors.CantRefBeforeCtorCalled(v));
+            v.owner.kind == TYP &&
+            (v.flags() & STATIC) == 0 &&
+            types.isSubtype(env.enclClass.type, v.owner.type) &&
+            (base == null || TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.type, base))) {
+
+            // Field may not be inherited from a superclass
+            if (v.owner != env.enclClass.sym) {
+                log.error(pos, Errors.CantRefBeforeCtorCalled(v));
+                return;
+            }
+
+            // Field may not have an initializer
+            if ((v.flags() & HASINIT) != 0) {
+                log.error(pos, Errors.CantAssignInitializedBeforeCtorCalled(v));
+                return;
+            }
         }
     }
 

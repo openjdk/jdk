@@ -140,4 +140,22 @@ public class EarlyAssignments {
             super();
         }
     }
+
+    public static class Inner6 {
+        public int x = 1;
+
+        public Inner6() {
+            x = 2;                              // FAIL - illegal early access
+            super();
+        }
+    }
+
+    public static class Inner7 {
+        public final int x = 1;
+
+        public Inner7() {
+            x = 2;                              // FAIL - illegal early access
+            super();
+        }
+    }
 }
