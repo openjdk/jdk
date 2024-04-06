@@ -27,12 +27,11 @@
 #define SHARE_NMT_VMATREE_HPP
 
 #include "memory/resourceArea.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/nmtTreap.hpp"
 #include "runtime/os.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
-#include "nmt/nmtNativeCallStackStorage.hpp"
-
 
 class VMATree {
   static int addr_cmp(size_t a, size_t b) {
@@ -43,11 +42,7 @@ class VMATree {
   }
 
 public:
-  enum class StateType : uint8_t {
-    Reserved,
-    Committed,
-    Released
-  };
+  enum class StateType : uint8_t { Reserved, Committed, Released };
 
   // Each node has some stack and a flag associated with it.
   struct Metadata {
@@ -73,27 +68,32 @@ public:
     Metadata data;
 
     void merge(const Arrow& b) {
-      if (this->type == StateType::Committed) {
+      if (this->type == StateType::Released) {
         this->data.flag = b.data.flag;
+        this->data.stack_idx = b.data.stack_idx;
+      } else if (this->type == StateType::Committed) {
+        if (this->type == StateType::Committed) {
+          this->data.flag = b.data.flag;
+        }
       }
     }
   };
+
   // A node has an arrow going into it and an arrow going out of it.
   struct NodeState {
     Arrow in;
     Arrow out;
 
     bool is_noop() {
-      return
-          (in.type == StateType::Released && out.type == StateType::Released) ||
-          (in.type == out.type && Metadata::equals(in.data, out.data));
+      return (in.type == StateType::Released && out.type == StateType::Released) ||
+             (in.type == out.type && Metadata::equals(in.data, out.data));
     }
   };
 
   using VTreap = TreapNode<size_t, NodeState, addr_cmp>;
   TreapCHeap<size_t, NodeState, addr_cmp> tree;
   VMATree()
-  : tree() {
+    : tree() {
   }
 
   struct SingleDiff {
@@ -104,7 +104,7 @@ public:
     SingleDiff flag[mt_number_of_types];
     SummaryDiff() {
       for (int i = 0; i < mt_number_of_types; i++) {
-        flag[i] = {0,0};
+        flag[i] = {0, 0};
       }
     }
   };
@@ -143,7 +143,7 @@ public:
       }
       if (cmp_to >= 0) {
         to_visit.push(head->left());
-      } else if (cmp_from >= 0 ) {
+      } else if (cmp_from >= 0) {
         to_visit.push(head->left());
         to_visit.push(head->right());
       } else {
@@ -151,6 +151,7 @@ public:
       }
     }
   }
+
 private:
   template<typename F>
   void in_order_traversal_doer(F f, VTreap* node) const {
@@ -159,6 +160,7 @@ private:
     f(node);
     in_order_traversal_doer(f, node->right());
   }
+
 public:
   template<typename F>
   void in_order_traversal(F f) const {
