@@ -170,6 +170,52 @@ class VM_Version : public Abstract_VM_Version {
   RV_FEATURE_FLAGS(DECLARE_RV_FEATURE)
   #undef DECLARE_RV_FEATURE
 
+  // enable extensions based on profile, current supported profiles:
+  //  RVA20U64
+  //  RVA22U64
+  //  RVA23U64
+  // NOTE: we only enable the mandatory extensions, not optional extension.
+  #define RV_ENABLE_EXTENSION(UseExtension)     \
+    if (FLAG_IS_DEFAULT(UseExtension)) {        \
+      FLAG_SET_DEFAULT(UseExtension, true);     \
+    }                                           \
+
+  // https://github.com/riscv/riscv-profiles/blob/main/profiles.adoc#rva20-profiles
+  #define RV_USE_RVA20U64                            \
+    RV_ENABLE_EXTENSION(UseRVC)                      \
+
+  static void useRVA20U64Profile();
+
+  // https://github.com/riscv/riscv-profiles/blob/main/profiles.adoc#rva22-profiles
+  #define RV_USE_RVA22U64                            \
+    RV_ENABLE_EXTENSION(UseRVC)                      \
+    RV_ENABLE_EXTENSION(UseZba)                      \
+    RV_ENABLE_EXTENSION(UseZbb)                      \
+    RV_ENABLE_EXTENSION(UseZbs)                      \
+    RV_ENABLE_EXTENSION(UseZic64b)                   \
+    RV_ENABLE_EXTENSION(UseZicbom)                   \
+    RV_ENABLE_EXTENSION(UseZicbop)                   \
+    RV_ENABLE_EXTENSION(UseZicboz)                   \
+    RV_ENABLE_EXTENSION(UseZihintpause)              \
+
+  static void useRVA22U64Profile();
+
+  // https://github.com/riscv/riscv-profiles/blob/main/rva23-profile.adoc#rva23u64-profile
+  #define RV_USE_RVA23U64                           \
+    RV_ENABLE_EXTENSION(UseRVC)                     \
+    RV_ENABLE_EXTENSION(UseRVV)                     \
+    RV_ENABLE_EXTENSION(UseZba)                     \
+    RV_ENABLE_EXTENSION(UseZbb)                     \
+    RV_ENABLE_EXTENSION(UseZbs)                     \
+    RV_ENABLE_EXTENSION(UseZcb)                     \
+    RV_ENABLE_EXTENSION(UseZic64b)                  \
+    RV_ENABLE_EXTENSION(UseZicbom)                  \
+    RV_ENABLE_EXTENSION(UseZicbop)                  \
+    RV_ENABLE_EXTENSION(UseZicboz)                  \
+    RV_ENABLE_EXTENSION(UseZihintpause)             \
+
+  static void useRVA23U64Profile();
+
   // VM modes (satp.mode) privileged ISA 1.10
   enum VM_MODE : int {
     VM_NOTSET = -1,
