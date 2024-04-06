@@ -123,7 +123,7 @@ public:
     return _left;
   }
   Nd* right() const {
-    return _left;
+    return _right;
   }
 
   static Nd* find(Nd* node, const K& k) {
