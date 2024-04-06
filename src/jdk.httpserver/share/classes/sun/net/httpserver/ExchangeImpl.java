@@ -134,6 +134,7 @@ class ExchangeImpl {
          * c) if the close of the input/outpu stream fails
          */
         try {
+
             if (uis_orig == null || uos == null) {
                 connection.close();
                 return;
@@ -207,7 +208,7 @@ class ExchangeImpl {
         }
         this.rcode = rCode;
         String statusLine = "HTTP/1.1 "+rCode+Code.msg(rCode)+"\r\n";
-        OutputStream tmpout = new BufferedOutputStream (ros);
+        ByteArrayOutputStream tmpout = new ByteArrayOutputStream();
         PlaceholderOutputStream o = getPlaceholderResponseBody();
         tmpout.write (bytes(statusLine, 0), 0, statusLine.length());
         boolean noContentToSend = false; // assume there is content
@@ -278,11 +279,11 @@ class ExchangeImpl {
 
         write (rspHdrs, tmpout);
         this.rspContentLen = contentLen;
-        tmpout.flush() ;
-        tmpout = null;
+        tmpout.writeTo(ros);
         sentHeaders = true;
         logger.log(Level.TRACE, "Sent headers: noContentToSend=" + noContentToSend);
         if (noContentToSend) {
+            ros.flush();
             close();
         }
         server.logReply (rCode, req.requestLine(), null);

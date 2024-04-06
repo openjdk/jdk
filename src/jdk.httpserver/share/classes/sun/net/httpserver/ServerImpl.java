@@ -36,10 +36,7 @@ import sun.net.httpserver.HttpConnection.State;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.net.BindException;
@@ -686,6 +683,7 @@ class ServerImpl {
                             ServerImpl.this, chan
                         );
                     }
+                    rawout = new BufferedOutputStream(rawout);
                     connection.raw = rawin;
                     connection.rawout = rawout;
                 }
