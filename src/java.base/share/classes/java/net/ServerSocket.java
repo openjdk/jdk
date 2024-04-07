@@ -140,10 +140,10 @@ public class ServerSocket implements java.io.Closeable {
      * request to connect) is set to {@code 50}. If a connection
      * indication arrives when the queue is full, the connection is refused.
      * <p>
-     * If the application has specified a server socket implementation
-     * factory, that {@linkplain SocketImplFactory#createSocketImpl()
-     * factory's createSocketImpl method} is called to
-     * create the actual socket implementation. Otherwise a system-default
+     * If the application has specified a {@linkplain SocketImplFactory server
+     * socket implementation factory}, that factory's
+     * {@linkplain SocketImplFactory#createSocketImpl() createSocketImpl} method
+     * is called to create the actual socket implementation. Otherwise a system-default
      * socket implementation is created.
      * <p>
      * If there is a security manager,
@@ -183,10 +183,10 @@ public class ServerSocket implements java.io.Closeable {
      * a connection indication arrives when the queue is full, the
      * connection is refused.
      * <p>
-     * If the application has specified a server socket implementation
-     * factory, that {@linkplain SocketImplFactory#createSocketImpl()
-     * factory's createSocketImpl method} is called to create
-     * the actual socket implementation. Otherwise a system-default
+     * If the application has specified a {@linkplain SocketImplFactory server
+     * socket implementation factory}, that factory's
+     * {@linkplain SocketImplFactory#createSocketImpl() createSocketImpl} method
+     * is called to create the actual socket implementation. Otherwise a system-default
      * socket implementation is created.
      * <p>
      * If there is a security manager,
