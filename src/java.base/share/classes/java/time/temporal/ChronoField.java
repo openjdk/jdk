@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -587,7 +587,8 @@ public enum ChronoField implements TemporalField {
      * This field is strictly defined to have the same meaning in all calendar systems.
      * This is necessary to ensure interoperation between calendars.
      */
-    INSTANT_SECONDS("InstantSeconds", SECONDS, FOREVER, ValueRange.of(Long.MIN_VALUE, Long.MAX_VALUE)),
+    // ValueRange matches the min and max epoch second supported by java.time.Instant
+    INSTANT_SECONDS("InstantSeconds", SECONDS, FOREVER, ValueRange.of(-31557014167219200L, 31556889864403199L)),
     /**
      * The offset from UTC/Greenwich.
      * <p>
