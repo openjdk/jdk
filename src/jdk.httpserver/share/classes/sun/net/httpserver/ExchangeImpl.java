@@ -134,7 +134,6 @@ class ExchangeImpl {
          * c) if the close of the input/outpu stream fails
          */
         try {
-
             if (uis_orig == null || uos == null) {
                 connection.close();
                 return;
