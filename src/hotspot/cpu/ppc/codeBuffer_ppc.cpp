@@ -1,5 +1,5 @@
 /*
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2024, Alibaba Group Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,15 +19,9 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
 #include "precompiled.hpp"
-#include "asm/codeBuffer.inline.hpp"
-#include "asm/macroAssembler.hpp"
-
-bool CodeBuffer::pd_finalize_stubs() {
-  return emit_shared_stubs_to_interp<MacroAssembler, Assembler::imm_operand>(this, _shared_stub_to_interp_requests);
-}
+#include "asm/codeBuffer.hpp"
 
 int CodeBuffer::pending_insts_size() const { return 0; }

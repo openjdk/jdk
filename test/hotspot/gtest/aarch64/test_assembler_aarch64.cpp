@@ -120,6 +120,7 @@ TEST_VM(AssemblerAArch64, merge_dmb) {
     __ membar(Assembler::Membar_mask_bits::StoreStore);
     __ membar(Assembler::Membar_mask_bits::LoadStore);
     __ membar(Assembler::Membar_mask_bits::StoreStore);
+    __ flush();
   }
   asm_dump(code.insts()->start(), code.insts()->end());
   // AlwaysMergeDMB
@@ -166,6 +167,7 @@ TEST_VM(AssemblerAArch64, merge_dmb_block_by_label) {
     __ membar(Assembler::Membar_mask_bits::StoreStore);
     __ bind(l);
     __ membar(Assembler::Membar_mask_bits::StoreStore);
+    __ flush();
   }
   asm_dump(code.insts()->start(), code.insts()->end());
   static const unsigned int insns[] = {
@@ -189,6 +191,7 @@ TEST_VM(AssemblerAArch64, merge_dmb_after_expand) {
     __ membar(Assembler::Membar_mask_bits::StoreStore);
     code.insts()->maybe_expand_to_ensure_remaining(50000);
     __ membar(Assembler::Membar_mask_bits::StoreStore);
+    __ flush();
   }
   asm_dump(code.insts()->start(), code.insts()->end());
   static const unsigned int insns[] = {
@@ -230,6 +233,7 @@ TEST_VM(AssemblerAArch64, merge_ldst) {
     __ bind(l);                     // block by label
     __ str(r1, Address(sp, 8));
     __ nop();
+    __ flush();
   }
   asm_dump(code.insts()->start(), code.insts()->end());
   static const unsigned int insns1[] = {
@@ -273,6 +277,7 @@ TEST_VM(AssemblerAArch64, merge_ldst_after_expand) {
     code.insts()->maybe_expand_to_ensure_remaining(100000);
     __ str(r1, Address(sp, 8));
     __ nop();
+    __ flush();
   }
   asm_dump(code.insts()->start(), code.insts()->end());
   static const unsigned int insns[] = {

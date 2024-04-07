@@ -164,38 +164,6 @@ using namespace asm_util;
 
 class Assembler;
 
-class MergeableInst;
-/* Finite State Machine for merging instruction */
-class InstructionFSM_AArch64 : public ResourceObj {
-public:
-  enum PendingState {
-    NoPending,
-    PendingDmbLd   = 0b1001, // Assembler::barrier::ISHLD,
-    PendingDmbSt,            // Assembler::barrier::ISHST,
-    PendingDmbISH,           // Assembler::barrier::ISH,
-    PendingDmbLdSt,
-    PendingLd,
-    PendingSt
-  };
-
-private:
-  Assembler*   _assem;
-  PendingState _state;
-  int          _merged;
-
-public:
-  InstructionFSM_AArch64(Assembler* assem) { _assem = assem; _state = NoPending; _merged = 0;}
-  // reset state, emit pending instruction
-  void reset();
-  // transition state with current instruction, may emit instructions
-  void transition(MergeableInst* inst);
-  int  pending_size() const {
-    if (_state == NoPending) return 0;
-    if (_state == PendingDmbLdSt) return 8;  // It may shrink to PendingDmbISH ?
-    return 4;
-  }
-};
-
 class Instruction_aarch64 {
   unsigned insn;
 #ifdef ASSERT
@@ -335,7 +303,7 @@ public:
   }
 };
 
-#define starti this->reset_fsm(); Instruction_aarch64 current_insn(this);
+#define starti this->flush_pending(); Instruction_aarch64 current_insn(this);
 
 class PrePost {
   int _offset;
@@ -747,10 +715,6 @@ typedef enum {
 
 class Assembler : public AbstractAssembler {
 
-private:
-  // finite state machine for instruction merging
-  InstructionFSM_AArch64 *_fsm;
-
 public:
 
 #ifndef PRODUCT
@@ -770,12 +734,12 @@ public:
   enum { instruction_size = 4 };
 
   void flush() {
-    reset_fsm();
+    flush_pending();
     AbstractAssembler::flush();
   }
 
-  virtual int pending_size() const { return _fsm->pending_size(); }
-  virtual void flush_pending()     { reset_fsm(); }
+  virtual int pending_size() const { return _code_section->outer()->pending_insts_size(); }
+  virtual void flush_pending()     { _code_section->outer()->flush_pending(this); }
 
   //---<  calculate length of instruction  >---
   // We just use the values set above.
@@ -1511,8 +1475,8 @@ public:
 
 #define INSN(NAME, opc, V)                                              \
   void NAME(address dest, prfop op = PLDL1KEEP) {                       \
-    starti;                                                             \
     int64_t offset = (dest - pc()) >> 2;                                \
+    starti;                                                             \
     f(opc, 31, 30), f(0b011, 29, 27), f(V, 26), f(0b00, 25, 24),        \
       sf(offset, 23, 5);                                                \
     f(op, 4, 0);                                                        \
@@ -4197,12 +4161,7 @@ public:
   INSN(sve_eor3, 0b001); // Bitwise exclusive OR of three vectors
 #undef INSN
 
-  Assembler(CodeBuffer* code) : AbstractAssembler(code) {
-    _fsm = new InstructionFSM_AArch64(this);
-  }
-
-  // flush pending instruction in fsm and reset state
-  void reset_fsm() { _fsm->reset(); }
+  Assembler(CodeBuffer* code) : AbstractAssembler(code) { }
 
   // Stack overflow checking
   virtual void bang_stack_with_offset(int offset);
@@ -4245,23 +4204,5 @@ inline Assembler::Condition operator~(const Assembler::Condition cond) {
 }
 
 extern "C" void das(uint64_t start, int len);
-
-// dmb/ld/st
-class MergeableInst : public StackObj {
-private:
-  bool _is_dmb;
-  bool _is_ld;
-  bool _is_st;
-  Assembler::barrier  _barrier_kind;
-
-public:
-  MergeableInst(Assembler::barrier kind): _is_dmb(true), _is_ld(false), _is_st(false), _barrier_kind(kind) {
-  }
-
-  bool is_dmb ()                    const { return _is_dmb; };
-  bool is_ld ()                     const { return _is_ld; };
-  bool is_st ()                     const { return _is_st; };
-  Assembler::barrier barrier_kind() const { assert(_is_dmb, "must be"); return _barrier_kind; }
-};
 
 #endif // CPU_AARCH64_ASSEMBLER_AARCH64_HPP

@@ -152,7 +152,7 @@ void Address::lea(MacroAssembler *as, Register r) const {
 
 #undef __
 
-#define starti this->reset_fsm(); Instruction_aarch64 current_insn(this);
+#define starti this->flush_pending(); Instruction_aarch64 current_insn(this);
 
 #define f current_insn.f
 #define sf current_insn.sf
@@ -525,89 +525,12 @@ address Assembler::locate_next_instruction(address inst) {
 }
 
 void Assembler::dmb(barrier imm) {
-  // try to merge with previous dmb
-  MergeableInst newdmb(imm);
-  _fsm->transition(&newdmb);
-}
-
-void InstructionFSM_AArch64::reset() {
-  if (_state == NoPending) return;
-
-  PendingState old_state = _state;
-  _state = NoPending; // reset state for emit
-  switch (old_state) {
-    case PendingDmbLd:
-      _assem->_dmb(Assembler::ISHLD);
-      break;
-    case PendingDmbSt:
-      _assem->_dmb(Assembler::ISHST);
-      break;
-    case PendingDmbLdSt:
-      _assem->_dmb(Assembler::ISHLD);
-      _assem->_dmb(Assembler::ISHST);
-      break;
-    case PendingDmbISH:
-      _assem->_dmb(Assembler::ISH);
-      break;
-    case PendingLd:
-    case PendingSt:
-      assert(false, "not implemented");
-      break;
-    default:
-      assert(false, "should not reach here");
-      break;
-  }
-  // TODO: add "merged" comment
-  _merged = 0;
-}
-
-void InstructionFSM_AArch64::transition(MergeableInst* inst) {
-  assert(inst != nullptr, "unexpected");
-  if (inst->is_dmb()) {
-    Assembler::barrier kind = inst->barrier_kind();
-    assert(kind == Assembler::ISHLD || kind == Assembler::ISHST || kind == Assembler::ISH,
-           "barrier kind(%d) is unexpected", kind);
-    PendingState new_state = (PendingState) kind;
-    switch (_state) {
-      case NoPending:
-        _state = new_state;
-        break;
-      case PendingDmbLd:
-      case PendingDmbSt:
-        if (_state == new_state || new_state == PendingDmbISH) {
-          _state = new_state;
-          _merged++;
-        } else if (AlwaysMergeDMB) {
-          _state = PendingDmbISH;
-          _merged++;
-        } else {
-          _state = PendingDmbLdSt;
-        }
-        break;
-      case PendingDmbISH:
-        _merged++;
-        break;
-      case PendingDmbLdSt:
-        assert(!AlwaysMergeDMB, "must be");
-        if (new_state == PendingDmbISH) {
-          _state = new_state;
-          _merged += 2;
-        } else {
-          _merged++;
-        }
-        break;
-      case PendingLd:
-      case PendingSt:
-        assert(false, "not implemented");
-        // reset();
-        // _state = new_state;
-        break;
-      default:
-        assert(false, "should not reach here");
-        break;
-    }
+  if (imm >= ISHLD && imm <= ISH) {
+    // try to merge with previous dmb
+    CodeBuffer::MergeableInst newdmb(imm);
+    _code_section->outer()->fsm()->transition(&newdmb, this);
   } else {
-    reset();
-    return;
+    // HotSpot only use other barrier kind for test
+    _dmb(imm);
   }
 }

@@ -47,6 +47,7 @@ class CodeBuffer;
 class Label;
 class ciMethod;
 class SharedStubToInterpRequest;
+class Assembler;
 
 class CodeOffsets: public StackObj {
 public:
@@ -492,6 +493,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     assert(!_stubs.is_allocated(),  "no garbage here");
     assert(!_consts.is_allocated(), "no garbage here");
     _oop_recorder = &_default_oop_recorder;
+    pd_initialize();
   }
 
   void initialize_section_size(CodeSection* cs, csize_t size);
@@ -525,7 +527,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // Helper for expand.
   csize_t figure_expanded_capacities(CodeSection* which_cs, csize_t amount, csize_t* new_capacity);
 
- public:
+public:
   // (1) code buffer referring to pre-allocated instruction memory
   CodeBuffer(address code_start, csize_t code_size)
     DEBUG_ONLY(: Scrubber(this, sizeof(*this)))
@@ -615,7 +617,8 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   // Properties relative to the insts section:
   address       insts_begin() const      { return _insts.start();      }
-  address       insts_end() const        { return _insts.end();        }
+  address       insts_end() const        { assert(pending_insts_size()==0, "no pending instruction");
+                                           return _insts.end();        }
   void      set_insts_end(address end)   {        _insts.set_end(end); }
   address       insts_mark() const       { return _insts.mark();       }
   void      set_insts_mark()             {        _insts.set_mark();   }
@@ -624,7 +627,10 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   bool    is_pure() const                { return insts_size() == total_content_size(); }
 
   // size in bytes of output so far in the insts sections
-  csize_t insts_size() const             { return _insts.size(); }
+  csize_t insts_size() const             { return _insts.size() + pending_insts_size(); }
+
+  // size of pending instructions, like dmb in aarch64
+  int pending_insts_size() const;
 
   // same as insts_size(), except that it asserts there is no non-code here
   csize_t pure_insts_size() const        { assert(is_pure(), "no non-code");

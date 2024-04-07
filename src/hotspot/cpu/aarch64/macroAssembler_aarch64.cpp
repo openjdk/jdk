@@ -2112,6 +2112,8 @@ int MacroAssembler::corrected_idivq(Register result, Register ra, Register rb,
 }
 
 void MacroAssembler::membar(Membar_mask_bits order_constraint) {
+  dmb(Assembler::barrier(order_constraint));
+  return;
   /*
   address prev = pc() - NativeMembar::instruction_size;
   address last = code()->last_insn();
@@ -2141,12 +2143,12 @@ void MacroAssembler::membar(Membar_mask_bits order_constraint) {
     }
   }
   code()->set_last_insn(pc());
+  _dmb(Assembler::barrier(order_constraint));
   */
-  dmb(Assembler::barrier(order_constraint));
 }
 
 bool MacroAssembler::try_merge_ldst(Register rt, const Address &adr, size_t size_in_bytes, bool is_store) {
-  Assembler::reset_fsm();  // TODO: rewrite ld/st merge with fsm
+  Assembler::flush_pending();  // TODO: rewrite ld/st merge with fsm
   if (ldst_can_merge(rt, adr, size_in_bytes, is_store)) {
     merge_ldst(rt, adr, size_in_bytes, is_store);
     code()->clear_last_insn();
