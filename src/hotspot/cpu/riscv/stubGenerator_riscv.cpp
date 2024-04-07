@@ -5042,50 +5042,44 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
-  void generate_updateBytesAdler32_accum(const Register acc1, const Register acc2, const Register data, const Register temp) {
-    assert_different_registers(acc1, acc2, data, temp);
+  void generate_updateBytesAdler32_accum(Register buff, Register temp0,
+          VectorRegister vtemp1, VectorRegister vtemp2, VectorRegister vtemp3, VectorRegister vzero,
+          VectorRegister vbytes, VectorRegister vs1acc, VectorRegister vs2acc, VectorRegister vtable) {
+    // Below is a vectorized implementation of updating s1 and s2 for 16 bytes.
+    // We use b1, b2, ..., b16 to denote the 16 bytes loaded in each iteration.
+    // In non-vectorized code, we update s1 and s2 as:
+    //   s1 <- s1 + b1
+    //   s2 <- s2 + s1
+    //   s1 <- s1 + b2
+    //   s2 <- s2 + b1
+    //   ...
+    //   s1 <- s1 + b16
+    //   s2 <- s2 + s1
+    // Putting above assignments together, we have:
+    //   s1_new = s1 + b1 + b2 + ... + b16
+    //   s2_new = s2 + (s1 + b1) + (s1 + b1 + b2) + ... + (s1 + b1 + b2 + ... + b16)
+    //          = s2 + s1 * 16 + (b1 * 16 + b2 * 15 + ... + b16 * 1)
+    //          = s2 + s1 * 16 + (b1, b2, ... b16) dot (16, 15, ... 1)
+    //
+    // To add more acceleration, it is possible to postpone final summation
+    // until all unrolled calculations are done.
 
-    __ andi(temp, data, right_8_bits);
-    __ add(acc1, acc1, temp);
+    __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
 
-    __ srli(temp, data, 8);
-    __ andi(temp, temp, right_8_bits);
-    __ add(acc2, acc2, acc1);
-    __ add(acc1, acc1, temp);
+    // Load data
+    __ vle8_v(vbytes, buff);
+    __ addi(buff, buff, 16);
 
-    __ srli(temp, data, 16);
-    __ andi(temp, temp, right_8_bits);
-    __ add(acc2, acc2, acc1);
-    __ add(acc1, acc1, temp);
+    // vs1acc = b1 + b2 + b3 + ... + b16
+    __ vwredsumu_vs(vs1acc, vbytes, vzero);
 
-    __ srli(temp, data, 24);
-    __ andi(temp, temp, right_8_bits);
-    __ add(acc2, acc2, acc1);
-    __ add(acc1, acc1, temp);
-
-    __ srli(temp, data, 32);
-    __ andi(temp, temp, right_8_bits);
-    __ add(acc2, acc2, acc1);
-    __ add(acc1, acc1, temp);
-
-    __ srli(temp, data, 40);
-    __ andi(temp, temp, right_8_bits);
-    __ add(acc2, acc2, acc1);
-    __ add(acc1, acc1, temp);
-
-    __ srli(temp, data, 48);
-    __ andi(temp, temp, right_8_bits);
-    __ add(acc2, acc2, acc1);
-    __ add(acc1, acc1, temp);
-    __ add(acc2, acc2, acc1);
-
-    __ srli(temp, data, 56);
-    __ add(acc1, acc1, temp);
-    __ add(acc2, acc2, acc1);
+    // vs2acc = (b1 * 16) + (b2 * 15) + (b3 * 14) + ... + (b16 * 1)
+    __ vwmulu_vv(vtemp1, vtable, vbytes); // vtemp2 now contains the second part of multiplication
+    __ vsetivli(temp0, 8, Assembler::e16, Assembler::m1);
+    __ vadd_vv(vtemp3, vtemp1, vtemp2);   // 0x14 * 0xFF * 2 = 0x27D8 -- max value per element, 
+                                          // so no need to do vector-widening operation
+    __ vwredsumu_vs(vs2acc, vtemp3, vzero);
   }
-
-const static uint64_t right_16_bits = right_n_bits(16);
-const static uint64_t right_8_bits = right_n_bits(8);
 
   /***
    *  int java.util.zip.Adler32.updateBytes(int adler, byte[] b, int off, int len)
@@ -5118,9 +5112,18 @@ const static uint64_t right_8_bits = right_n_bits(8);
     Register count = x31; // t6
     Register temp0 = c_rarg4;
     Register temp1 = c_rarg5;
-    Register temp2 = t2;
-    Register temp3 = x28; // t3
     Register buf_end = c_rarg6;
+    VectorRegister vbytes = v1;
+    VectorRegister vtable = v3;
+    VectorRegister vtemp1 = v4;
+    VectorRegister vtemp2 = v5;
+    VectorRegister vtemp3 = v30;
+    VectorRegister vzero = v12;
+
+    VectorRegister unroll_regs[] = {
+      v13, v14, v15, v16, v17, v18, v19, v20,
+      v21, v22, v23, v24, v25, v26, v27, v28,
+    };
 
     // Max number of bytes we can process before having to take the mod
     // 0x15B0 is 5552 in decimal, the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
@@ -5128,17 +5131,33 @@ const static uint64_t right_8_bits = right_n_bits(8);
     const uint64_t NMAX = 0x15B0;
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
+    __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
+
+    // Generating accumulation coefficients for further calculations
+    __ vid_v(vtemp1);
+    __ li(temp0, 16);
+    __ vmv_v_x(vtable, temp0);
+    __ vsub_vv(vtable, vtable, vtemp1);
+    // vtable now contains { 0x10, 0xf, 0xe, ..., 0x3, 0x2, 0x1 }
+
+    __ vmv_v_i(vzero, 0);
 
     __ mv(base, BASE);
     __ mv(nmax, NMAX);
+
+    // Zeroing all unroll registers
+    for (int i = 0; i < 16; i++) {
+      __ vmv_v_i(unroll_regs[i], 0);
+    }
 
     __ srli(s2, adler, 16); // s2 = ((adler >> 16) & 0xffff)
     // s1 is initialized to the lower 16 bits of adler
     // s2 is initialized to the upper 16 bits of adler
     if (!UseZbb) {
-      __ mv(temp3, right_16_bits);
-      __ andr(s2, s2, temp3);
-      __ andr(s1, adler, temp3); // s1 = (adler & 0xffff)
+      const uint64_t right_16_bits = right_n_bits(16);
+      __ mv(temp0, right_16_bits);
+      __ andr(s2, s2, temp0);
+      __ andr(s1, adler, temp0); // s1 = (adler & 0xffff)
     } else {
       __ zext_h(s2, s2);
       __ zext_h(s1, adler);
@@ -5174,16 +5193,45 @@ const static uint64_t right_8_bits = right_n_bits(8);
   __ bind(L_nmax_loop_entry);
     // buf_end will be used as endpoint for loop below
     __ add(buf_end, buff, count); // buf_end will be used as endpoint for loop below
+    __ sub(buf_end, buf_end, 32); // After partial unrolling 3 additional iterations are required,
+                                  // and bytes for one of them are already subtracted
 
   __ bind(L_nmax_loop);
+    for (int i = 0; i < 8; i++)
+      generate_updateBytesAdler32_accum(buff, temp0, vtemp1, vtemp2, vtemp3, vzero, vbytes, unroll_regs[i], unroll_regs[i + 8], vtable);
 
-    __ ld(temp0, Address(buff, 0));
-    generate_updateBytesAdler32_accum(s1, s2, temp0, temp1);
-    __ ld(temp0, Address(buff, sizeof(jlong)));
-    generate_updateBytesAdler32_accum(s1, s2, temp0, temp1);
+    // Summing up
+    __ vsetivli(temp0, 2, Assembler::e64, Assembler::m1); // Set SEW to 64 to avoid sign-extension
+                                                          // in the next instructions
+    for (int i = 0; i < 8; i++) {
+      // s2 = s2 + s1 * 16
+      __ slli(temp1, s1, 4);
+      __ add(s2, s2, temp1);
 
-    __ addi(buff, buff, 16);
-    __ ble(buff, buf_end, L_nmax_loop);
+      __ vmv_x_s(temp0, unroll_regs[i]);
+      __ vmv_x_s(temp1, unroll_regs[i + 8]);
+      __ add(s1, s1, temp0);
+      __ add(s2, s2, temp1);
+    }
+    __ blt(buff, buf_end, L_nmax_loop);
+
+    // Do the calculations for remaining 48 bytes
+    generate_updateBytesAdler32_accum(buff, temp0, vtemp1, vtemp2, vtemp3, vzero, vbytes, unroll_regs[0], unroll_regs[8], vtable);
+    generate_updateBytesAdler32_accum(buff, temp0, vtemp1, vtemp2, vtemp3, vzero, vbytes, unroll_regs[1], unroll_regs[9], vtable);
+    generate_updateBytesAdler32_accum(buff, temp0, vtemp1, vtemp2, vtemp3, vzero, vbytes, unroll_regs[2], unroll_regs[10], vtable);
+    // Summing up
+    __ vsetivli(temp0, 2, Assembler::e64, Assembler::m1); // Set SEW to 64 to avoid sign-extension
+                                                          // in the next instructions
+    for (int i = 0; i < 3; i++) {
+      // s2 = s2 + s1 * 16
+      __ slli(temp1, s1, 4);
+      __ add(s2, s2, temp1);
+
+      __ vmv_x_s(temp0, unroll_regs[i]);
+      __ vmv_x_s(temp1, unroll_regs[i + 8]);
+      __ add(s1, s1, temp0);
+      __ add(s2, s2, temp1);
+    }
 
     // s1 = s1 % BASE
     __ remuw(s1, s1, base);
@@ -5200,13 +5248,18 @@ const static uint64_t right_8_bits = right_n_bits(8);
     __ bltz(len, L_by1);
 
   __ bind(L_by16_loop);
+    generate_updateBytesAdler32_accum(buff, temp0, vtemp1, vtemp2, vtemp3, vzero, vbytes, unroll_regs[0], unroll_regs[8], vtable);
+    // s1 = s1 + unroll_regs[0], s2 = s2 + unroll_regs[8]
+    __ vsetivli(temp0, 2, Assembler::e64, Assembler::m1); // Set SEW to 64 to avoid sign-extension
+                                                          // in the next instructions
+    // s2 = s2 + s1 * 16
+    __ slli(temp1, s1, 4);
+    __ add(s2, s2, temp1);
+    __ vmv_x_s(temp0, unroll_regs[0]);
+    __ vmv_x_s(temp1, unroll_regs[8]);
+    __ add(s1, s1, temp0);
+    __ add(s2, s2, temp1);
 
-    __ ld(temp0, Address(buff, 0));
-    generate_updateBytesAdler32_accum(s1, s2, temp0, temp1);
-    __ ld(temp0, Address(buff, sizeof(jlong)));
-    generate_updateBytesAdler32_accum(s1, s2, temp0, temp1);
-
-    __ addi(buff, buff, 16);
     __ sub(len, len, 16);
     __ bgez(len, L_by16_loop);
 

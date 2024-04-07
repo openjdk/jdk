@@ -141,10 +141,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
   }
 
-  if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
-    FLAG_SET_DEFAULT(UseAdler32Intrinsics, true);
-  }
-
   if (UseVectorizedMismatchIntrinsic) {
     warning("VectorizedMismatch intrinsic is not available on this CPU.");
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
@@ -236,6 +232,18 @@ void VM_Version::initialize() {
   // NOTE: Make sure codes dependent on UseRVV are put after c2_initialize(),
   //       as there are extra checks inside it which could disable UseRVV
   //       in some situations.
+
+  // Adler32
+  if (UseRVV) {
+    if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
+      FLAG_SET_DEFAULT(UseAdler32Intrinsics, true);
+    }
+  } else if (UseAdler32Intrinsics) {
+    if (!FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
+      warning("Adler32 intrinsic requires RVV instructions (not available on this CPU).");
+    }
+    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
+  }
 
   // ChaCha20
   if (UseRVV) {
