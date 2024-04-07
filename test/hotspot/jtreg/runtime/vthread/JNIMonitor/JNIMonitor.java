@@ -104,72 +104,6 @@ import java.util.regex.Pattern;
 
 public class JNIMonitor {
 
-    // straight-forward interface to JNI monitor functions
-    static native int monitorEnter(Object o);
-    static native int monitorExit(Object o);
-
-    static {
-        System.loadLibrary("JNIMonitor");
-    }
-
-    // This gives us a way to control the scheduler used for our virtual threads. The test
-    // only works as intended then the virtual threads run on the same carrier thread (as
-    // that carrier maintains ownership of the monitor if the virtual thread fails to unlock it.
-    // The original issue was also only discovered due to the carrier thread terminating
-    // unexpectedly, so we can force that condition too by shutting down our custom scheduler.
-    private static Thread.Builder.OfVirtual virtualThreadBuilder(Executor scheduler) {
-        Thread.Builder.OfVirtual builder = Thread.ofVirtual();
-        try {
-            Class<?> clazz = Class.forName("java.lang.ThreadBuilders$VirtualThreadBuilder");
-            Constructor<?> ctor = clazz.getDeclaredConstructor(Executor.class);
-            ctor.setAccessible(true);
-            return (Thread.Builder.OfVirtual) ctor.newInstance(scheduler);
-        } catch (InvocationTargetException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof RuntimeException re) {
-                throw re;
-            }
-            throw new RuntimeException(e);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    // The number of threads for a multi tests. Arbitrarily chosen to be > 1 but small
-    // enough to not waste too much time.
-    static final int MULTI_THREAD_COUNT = 5;
-
-
-    // The logging message for leaving a monitor JNI locked has the form
-    //   [0.187s][debug][jni] VirtualThread (tid: 28, carrier id: 29) exiting with Objects still locked by JNI MonitorEnter.
-    // but if the test is run with other logging options then whitespace may get introduced in the
-    // log decorator sections, so ignore those.
-    static final String stillLocked = "VirtualThread \\(tid:.*exiting with Objects still locked by JNI MonitorEnter";
-    // The carrier thread termination logging has the form:
-    // [1.394s][info][os,thread] JavaThread exiting (name: "pool-1-thread-1", tid: 3090592).
-    static final String terminated = "JavaThread exiting \\(name: \"pool-1-thread-1\"";
-
-    // Check the process logging output for the given pattern to see if the expected number of
-    // lines are found.
-    private static void parseOutputForPattern(List<String> lines, String pattern, int expected) {
-        Pattern p = Pattern.compile(pattern);
-        int found = 0;
-        for (String line : lines) {
-            Matcher m = p.matcher(line);
-            if (m.find()) {
-                found++;
-            }
-        }
-        if (found != expected) {
-            throw new RuntimeException("Checking for pattern \"" + pattern + "\": expected "
-                                       + expected + " but found " + found);
-        }
-    }
-
-    static final String throwMsg = "Terminating via exception as requested";
-
-
-
     public static void main(String[] args) throws Exception {
         String test = args[0];
         String[] cmdArgs = new String[] {
@@ -215,72 +149,143 @@ public class JNIMonitor {
         oa.reportDiagnosticSummary();
     }
 
-    static void runTest(int nThreads, boolean skipUnlock, boolean throwOnExit) throws Throwable {
-        final Object monitor = new Object();
-        final AtomicReference<Throwable> exception = new AtomicReference();
-        // Ensure all our VT's operate of the same carrier, sequentially.
-        ExecutorService scheduler = Executors.newSingleThreadExecutor();
-        ThreadFactory factory = virtualThreadBuilder(scheduler).factory();
-        for (int i = 0 ; i < nThreads; i++) {
-            Thread th = factory.newThread(() -> {
-                    try {
-                        int res = monitorEnter(monitor);
-                        Asserts.assertTrue(res == 0, "monitorEnter should return 0.");
-                        Asserts.assertTrue(Thread.holdsLock(monitor), "monitor should be owned");
-                        Thread.yield();
-                        if (!skipUnlock) {
-                            res = monitorExit(monitor);
-                            Asserts.assertTrue(res == 0, "monitorExit should return 0.");
-                            Asserts.assertFalse(Thread.holdsLock(monitor), "monitor should be unowned");
-                        }
-                    } catch (Throwable t) {
-                        exception.set(t);
-                    }
-                    if (throwOnExit) {
-                        throw new RuntimeException(throwMsg);
-                    }
-                });
-            th.start();
-            th.join();
-            if (exception.get() != null) {
-                throw exception.get();
+    // The number of threads for a multi tests. Arbitrarily chosen to be > 1 but small
+    // enough to not waste too much time.
+    static final int MULTI_THREAD_COUNT = 5;
+
+    // The logging message for leaving a monitor JNI locked has the form
+    //   [0.187s][debug][jni] VirtualThread (tid: 28, carrier id: 29) exiting with Objects still locked by JNI MonitorEnter.
+    // but if the test is run with other logging options then whitespace may get introduced in the
+    // log decorator sections, so ignore those.
+    static final String stillLocked = "VirtualThread \\(tid:.*exiting with Objects still locked by JNI MonitorEnter";
+    // The carrier thread termination logging has the form:
+    // [1.394s][info][os,thread] JavaThread exiting (name: "pool-1-thread-1", tid: 3090592).
+    static final String terminated = "JavaThread exiting \\(name: \"pool-1-thread-1\"";
+
+    static final String throwMsg = "Terminating via exception as requested";
+
+    // Check the process logging output for the given pattern to see if the expected number of
+    // lines are found.
+    private static void parseOutputForPattern(List<String> lines, String pattern, int expected) {
+        Pattern p = Pattern.compile(pattern);
+        int found = 0;
+        for (String line : lines) {
+            Matcher m = p.matcher(line);
+            if (m.find()) {
+                found++;
             }
         }
-        // Now force carrier thread to shutdown.
-        scheduler.shutdown();
+        if (found != expected) {
+            throw new RuntimeException("Checking for pattern \"" + pattern + "\": expected "
+                                       + expected + " but found " + found);
+        }
     }
 
-    static class Normal {
+
+    // straight-forward interface to JNI monitor functions
+    static native int monitorEnter(Object o);
+    static native int monitorExit(Object o);
+
+    // Isolate the native library loading to the actual test cases, not the class that
+    // jtreg Driver will load and execute.
+    static class TestBase {
+
+        static {
+            System.loadLibrary("JNIMonitor");
+        }
+
+        // This gives us a way to control the scheduler used for our virtual threads. The test
+        // only works as intended then the virtual threads run on the same carrier thread (as
+        // that carrier maintains ownership of the monitor if the virtual thread fails to unlock it.
+        // The original issue was also only discovered due to the carrier thread terminating
+        // unexpectedly, so we can force that condition too by shutting down our custom scheduler.
+        private static Thread.Builder.OfVirtual virtualThreadBuilder(Executor scheduler) {
+            Thread.Builder.OfVirtual builder = Thread.ofVirtual();
+            try {
+                Class<?> clazz = Class.forName("java.lang.ThreadBuilders$VirtualThreadBuilder");
+                Constructor<?> ctor = clazz.getDeclaredConstructor(Executor.class);
+                ctor.setAccessible(true);
+                return (Thread.Builder.OfVirtual) ctor.newInstance(scheduler);
+            } catch (InvocationTargetException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof RuntimeException re) {
+                    throw re;
+                }
+                throw new RuntimeException(e);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        static void runTest(int nThreads, boolean skipUnlock, boolean throwOnExit) throws Throwable {
+            final Object monitor = new Object();
+            final AtomicReference<Throwable> exception = new AtomicReference();
+            // Ensure all our VT's operate of the same carrier, sequentially.
+            ExecutorService scheduler = Executors.newSingleThreadExecutor();
+            ThreadFactory factory = virtualThreadBuilder(scheduler).factory();
+            for (int i = 0 ; i < nThreads; i++) {
+                Thread th = factory.newThread(() -> {
+                        try {
+                            int res = monitorEnter(monitor);
+                            Asserts.assertTrue(res == 0, "monitorEnter should return 0.");
+                            Asserts.assertTrue(Thread.holdsLock(monitor), "monitor should be owned");
+                            Thread.yield();
+                            if (!skipUnlock) {
+                                res = monitorExit(monitor);
+                                Asserts.assertTrue(res == 0, "monitorExit should return 0.");
+                                Asserts.assertFalse(Thread.holdsLock(monitor), "monitor should be unowned");
+                            }
+                        } catch (Throwable t) {
+                            exception.set(t);
+                        }
+                        if (throwOnExit) {
+                            throw new RuntimeException(throwMsg);
+                        }
+                    });
+                th.start();
+                th.join();
+                if (exception.get() != null) {
+                    throw exception.get();
+                }
+            }
+            // Now force carrier thread to shutdown.
+            scheduler.shutdown();
+        }
+    }
+
+    // These are the actual test case classes that get exec'd.
+
+    static class Normal extends TestBase {
         public static void main(String[] args) throws Throwable {
             runTest(1, false, false);
         }
     }
 
-    static class MultiNormal {
+    static class MultiNormal extends TestBase {
         public static void main(String[] args) throws Throwable {
             runTest(MULTI_THREAD_COUNT, false, false);
         }
     }
 
-    static class MissingUnlock {
+    static class MissingUnlock extends TestBase  {
         public static void main(String[] args) throws Throwable {
             runTest(1, true, false);
         }
     }
 
-    static class MultiMissingUnlock {
+    static class MultiMissingUnlock extends TestBase {
         public static void main(String[] args) throws Throwable {
             runTest(MULTI_THREAD_COUNT, true, false);
         }
     }
 
-    static class MissingUnlockWithThrow {
+    static class MissingUnlockWithThrow extends TestBase {
         public static void main(String[] args) throws Throwable {
             runTest(1, true, true);
         }
     }
 
-    static class MultiMissingUnlockWithThrow {
+    static class MultiMissingUnlockWithThrow extends TestBase {
         public static void main(String[] args) throws Throwable {
             runTest(MULTI_THREAD_COUNT, true, true);
         }
