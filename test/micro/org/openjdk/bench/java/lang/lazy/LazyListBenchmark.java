@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntFunction;
-import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * Benchmark measuring lazy list performance
@@ -44,18 +44,22 @@ import java.util.stream.IntStream;
 Benchmark                                 Mode  Cnt  Score   Error  Units
 MonotonicListBenchmark.instanceArrayList  avgt   10  1.033 ? 0.042  ns/op
 MonotonicListBenchmark.instanceLazyList   avgt   10  1.077 ? 0.042  ns/op
-MonotonicListBenchmark.instanceWrapped    avgt   10  1.325 ? 0.047  ns/op
+MonotonicListBenchmark.instanceWrapped    avgt   10  1.325 ? 0.047  ns/op <- Stored
 MonotonicListBenchmark.staticArrayList    avgt   10  0.922 ? 0.058  ns/op
 MonotonicListBenchmark.staticLazyList     avgt   10  0.568 ? 0.046  ns/op
 
 2024-04-08
 Benchmark                            Mode  Cnt  Score   Error  Units
-LazyListBenchmark.instanceArrayList  avgt   10  1.067 ? 0.012  ns/op
-LazyListBenchmark.instanceDelegated  avgt   10  1.193 ? 0.047  ns/op
-LazyListBenchmark.instanceLazyList   avgt   10  1.058 ? 0.066  ns/op
-LazyListBenchmark.instanceWrapped    avgt   10  1.383 ? 0.083  ns/op
-LazyListBenchmark.staticArrayList    avgt   10  0.852 ? 0.034  ns/op
-LazyListBenchmark.staticLazyList     avgt   10  0.588 ? 0.079  ns/op
+LazyListBenchmark.instanceArrayList  avgt   10  1.130 ? 0.021  ns/op
+LazyListBenchmark.instanceDelegated  avgt   10  1.402 ? 0.012  ns/op
+LazyListBenchmark.instanceLazyList   avgt   10  1.227 ? 0.042  ns/op
+LazyListBenchmark.instanceStored     avgt   10  1.512 ? 0.014  ns/op
+
+LazyListBenchmark.staticArrayList    avgt   10  0.979 ? 0.007  ns/op
+LazyListBenchmark.staticDelegated    avgt   10  0.557 ? 0.001  ns/op
+LazyListBenchmark.staticLazyList     avgt   10  0.573 ? 0.079  ns/op
+LazyListBenchmark.staticStored       avgt   10  0.556 ? 0.001  ns/op
+
 
  */
 public class LazyListBenchmark {
@@ -63,12 +67,14 @@ public class LazyListBenchmark {
     private static final IntFunction<Integer> FUNCTION = i -> i;
     private static final int SIZE = 100;
 
-    private static final List<Lazy<Integer>> WRAPPED =
-            IntStream.range(0, SIZE)
-                    .mapToObj(_ -> Lazy.<Integer>of())
-                    .toList();
+    private static final List<Lazy<Integer>> STORED = Stream.generate(Lazy::<Integer>of)
+            .limit(SIZE)
+            .toList();
+    private static final List<Lazy<Integer>> DELEGATED_LIST = Lazy.ofWrappedList(SIZE);
+
     static {
-        WRAPPED.get(8).setOrThrow(8);
+        initLazy(STORED);
+        initLazy(DELEGATED_LIST);
     }
 
     //private static final List<Monotonic<Integer>> MONOTONIC_LIST = initMono(Monotonic.ofList(SIZE));
@@ -78,70 +84,66 @@ public class LazyListBenchmark {
     //private final List<Monotonic<Integer>> referenceList = initMono(Monotonic.ofList(SIZE));
     private final List<Integer> arrayList = initList(new ArrayList<>(SIZE));
     private final List<Integer> lazyList = Lazy.ofList(SIZE, FUNCTION);
-    private final List<Lazy<Integer>> wrappedList;
+    private final List<Lazy<Integer>> storedList;
     private final List<Lazy<Integer>> delegatedList;
 
+
     public LazyListBenchmark() {
-        this.wrappedList = IntStream.range(0, SIZE)
-                .mapToObj(i -> Lazy.<Integer>of())
+        this.storedList = Stream.generate(Lazy::<Integer>of)
+                .limit(SIZE)
                 .toList();
-        wrappedList.get(8).setOrThrow(8);
+        initLazy(storedList);
         delegatedList = Lazy.ofWrappedList(SIZE);
-        delegatedList.get(8).setOrThrow(8);
+        initLazy(delegatedList);
     }
 
     @Setup
     public void setup() {
     }
 
-/*
     @Benchmark
-    public Integer staticMonotonic() {
-        return MONOTONIC_LIST.get(8).orThrow();
-    }
-*/
-
-    @Benchmark
-    public Integer staticArrayList() {
-        return ARRAY_LIST.get(8);
-    }
-
-    @Benchmark
-    public Integer staticLazyList() {
-        return LAZY_LIST.get(8);
-    }
-
-/*
-    @Benchmark
-    public Integer instanceMonotonic() {
-        return referenceList.get(8).orThrow();
-    }
-*/
-
-    @Benchmark
-    public Integer instanceArrayList() {
+    public int instanceArrayList() {
         return arrayList.get(8);
     }
 
     @Benchmark
-    public Integer instanceLazyList() {
+    public int instanceLazyList() {
         return lazyList.get(8);
     }
 
     @Benchmark
-    public Integer instanceWrapped() {
-        return wrappedList.get(8).orThrow();
+    public int instanceStored() {
+        return storedList.get(8).orThrow();
     }
 
     @Benchmark
-    public Integer instanceDelegated() {
+    public int instanceDelegated() {
         return delegatedList.get(8).orThrow();
     }
 
-    private static List<Lazy<Integer>> initLazy(List<Lazy<Integer>> list) {
+    @Benchmark
+    public int staticArrayList() {
+        return ARRAY_LIST.get(8);
+    }
+
+    @Benchmark
+    public int staticLazyList() {
+        return LAZY_LIST.get(8);
+    }
+
+    @Benchmark
+    public int staticStored() {
+        return STORED.get(8).orThrow();
+    }
+
+    @Benchmark
+    public int staticDelegated() {
+        return DELEGATED_LIST.get(8).orThrow();
+    }
+
+    private static void initLazy(List<Lazy<Integer>> list) {
         int index = 8;
         list.get(index).setOrThrow(FUNCTION.apply(index));
-        return list;
     }
 
     private static List<Integer> initList(List<Integer> list) {

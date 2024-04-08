@@ -64,7 +64,7 @@ public class LazyBigListBenchmark {
     }
 
     @Benchmark
-    public Integer instanceArrayList() {
+    public int instanceArrayList() {
         int sum = 0;
         for (int i = 0; i < arrayList.size(); i++) {
             sum += arrayList.get(i);
