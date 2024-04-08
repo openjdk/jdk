@@ -4833,9 +4833,13 @@ jint os::init_2(void) {
       (Linux::_release_major > 5 ||
        (Linux::_release_major == 5 && Linux::_release_minor >= 14)) &&
       (::madvise(0, 0, MADV_POPULATE_WRITE) == 0);
-    if (!FLAG_IS_DEFAULT(UseMadvPopulateWrite) && !supportMadvPopulateWrite)
-      warning("Platform is supposed not to support MADV_POPULATE_WRITE, "
-              "disabling using it to pretouch (-XX:-UseMadvPopulateWrite)");
+    if (!supportMadvPopulateWrite) {
+      if (!FLAG_IS_DEFAULT(UseMadvPopulateWrite)) {
+        warning("Platform does not support MADV_POPULATE_WRITE, "
+                "disabling using it to pretouch (-XX:-UseMadvPopulateWrite)");
+      }
+      UseMadvPopulateWrite = false;
+    }
   }
 
   return JNI_OK;
