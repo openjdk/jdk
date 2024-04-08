@@ -44,15 +44,20 @@ import java.awt.print.PrinterJob;
  */
 public class Orient implements Printable {
     private static final String INSTRUCTIONS =
-            "This test will automatically initiate a print.\n\n" +
-            "A passing test will print three pages each containing a large oval\n" +
-            "with the text describing the orientation: PORTRAIT, LANDSCAPE\n" +
-            "or REVERSE_LANDSCAPE, inside of it. The first page will\n" +
-            "be emitted in portrait orientation, the second page in landscape\n" +
-            "orientation and the third page in reverse-landscape orientation.\n\n" +
-            "On each page the oval will be wholly within the imageable area of the page.\n" +
-            "Axes will indicate the direction of increasing X and Y\n\n" +
-            "Test failed if the oval on the page clipped against the imageable area.";
+            """
+             This test will automatically initiate a print.
+
+             A passing test will print three pages each containing a large oval
+             with the text describing the orientation: PORTRAIT, LANDSCAPE
+             or REVERSE_LANDSCAPE, inside of it. The first page will
+             be emitted in portrait orientation, the second page in landscape
+             orientation and the third page in reverse-landscape orientation.
+
+             On each page the oval will be wholly within the imageable area of the page.
+             Axes will indicate the direction of increasing X and Y.
+
+             Test failed if the oval on the page clipped against the imageable area.
+            """;
 
     private static void printOrientationJob() throws PrinterException {
         PrinterJob pjob = PrinterJob.getPrinterJob();
