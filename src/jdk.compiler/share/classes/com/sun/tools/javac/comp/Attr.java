@@ -954,10 +954,10 @@ public class Attr extends JCTree.Visitor {
                 // make sure class has been completed:
                 c.complete();
 
-                // If this class appears as an anonymous class in a constructor
-                // prologue, disable implicit outer instance from being passed.
-                // (This would be an illegal access to "this before super").
-                if (ctorProloguePrev && env.tree.hasTag(NEWCLASS)) {
+                // If a class declaration appears in a constructor prologue,
+                // that means it's either a local class or an anonymous class.
+                // Either way, there is no immediately enclosing instance.
+                if (ctorProloguePrev) {
                     c.flags_field |= NOOUTERTHIS;
                 }
                 attribClass(tree.pos(), c);

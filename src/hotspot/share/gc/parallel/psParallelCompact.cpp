@@ -913,12 +913,6 @@ void PSParallelCompact::pre_compact()
     Universe::verify("Before GC");
   }
 
-  // Verify object start arrays
-  if (VerifyObjectStartArray &&
-      VerifyBeforeGC) {
-    heap->old_gen()->verify_object_start_array();
-  }
-
   DEBUG_ONLY(mark_bitmap()->verify_clear();)
   DEBUG_ONLY(summary_data().verify_clear();)
 
@@ -1427,7 +1421,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     DerivedPointerTable::set_active(false);
 #endif
 
-    // adjust_roots() updates Universe::_intArrayKlassObj which is
+    // adjust_roots() updates Universe::_intArrayKlass which is
     // needed by the compaction for filling holes in the dense prefix.
     adjust_roots();
 
@@ -1533,12 +1527,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
   if (VerifyAfterGC && heap->total_collections() >= VerifyGCStartAt) {
     Universe::verify("After GC");
-  }
-
-  // Re-verify object start arrays
-  if (VerifyObjectStartArray &&
-      VerifyAfterGC) {
-    old_gen->verify_object_start_array();
   }
 
   if (ZapUnusedHeapArea) {

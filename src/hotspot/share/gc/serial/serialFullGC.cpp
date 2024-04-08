@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,11 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/compileBroker.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/defNewGeneration.hpp"
-#include "gc/serial/generation.hpp"
-#include "gc/serial/genMarkSweep.hpp"
-#include "gc/serial/markSweep.inline.hpp"
+#include "gc/serial/serialFullGC.inline.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/serial/serialHeap.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
@@ -44,28 +43,52 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/modRefBarrierSet.hpp"
-#include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
+#include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
+#include "oops/access.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/instanceRefKlass.hpp"
+#include "oops/methodData.hpp"
+#include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvmtiExport.hpp"
-#include "runtime/handles.inline.hpp"
-#include "runtime/javaThread.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
-#include "runtime/synchronizer.hpp"
-#include "runtime/vmThread.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
 #include "utilities/stack.inline.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #endif
+
+uint                    SerialFullGC::_total_invocations = 0;
+
+Stack<oop, mtGC>              SerialFullGC::_marking_stack;
+Stack<ObjArrayTask, mtGC>     SerialFullGC::_objarray_stack;
+
+PreservedMarksSet       SerialFullGC::_preserved_overflow_stack_set(false /* in_c_heap */);
+size_t                  SerialFullGC::_preserved_count = 0;
+size_t                  SerialFullGC::_preserved_count_max = 0;
+PreservedMark*          SerialFullGC::_preserved_marks = nullptr;
+STWGCTimer*             SerialFullGC::_gc_timer        = nullptr;
+SerialOldTracer*        SerialFullGC::_gc_tracer       = nullptr;
+
+AlwaysTrueClosure   SerialFullGC::_always_true_closure;
+ReferenceProcessor* SerialFullGC::_ref_processor;
+
+StringDedup::Requests*  SerialFullGC::_string_dedup_requests = nullptr;
+
+SerialFullGC::FollowRootClosure  SerialFullGC::follow_root_closure;
+
+MarkAndPushClosure SerialFullGC::mark_and_push_closure(ClassLoaderData::_claim_stw_fullgc_mark);
+CLDToOopClosure    SerialFullGC::follow_cld_closure(&mark_and_push_closure, ClassLoaderData::_claim_stw_fullgc_mark);
+CLDToOopClosure    SerialFullGC::adjust_cld_closure(&adjust_pointer_closure, ClassLoaderData::_claim_stw_fullgc_adjust);
 
 class DeadSpacer : StackObj {
   size_t _allowed_deadspace_words;
@@ -82,7 +105,7 @@ public:
       // we don't start compacting before there is a significant gain to be made.
       // Occasionally, we want to ensure a full compaction, which is determined
       // by the MarkSweepAlwaysCompactCount parameter.
-      if ((MarkSweep::total_invocations() % MarkSweepAlwaysCompactCount) != 0) {
+      if ((SerialFullGC::total_invocations() % MarkSweepAlwaysCompactCount) != 0) {
         _allowed_deadspace_words = (space->capacity() * ratio / 100) / HeapWordSize;
       } else {
         _active = false;
@@ -302,7 +325,7 @@ public:
       while (cur_addr < top) {
         prefetch_write_scan(cur_addr);
         if (cur_addr < first_dead || cast_to_oop(cur_addr)->is_gc_marked()) {
-          size_t size = MarkSweep::adjust_pointers(cast_to_oop(cur_addr));
+          size_t size = SerialFullGC::adjust_pointers(cast_to_oop(cur_addr));
           cur_addr += size;
         } else {
           assert(*(HeapWord**)cur_addr > cur_addr, "forward progress");
@@ -341,7 +364,102 @@ public:
   }
 };
 
-void GenMarkSweep::phase1_mark(bool clear_all_softrefs) {
+template <class T> void SerialFullGC::KeepAliveClosure::do_oop_work(T* p) {
+  mark_and_push(p);
+}
+
+void SerialFullGC::push_objarray(oop obj, size_t index) {
+  ObjArrayTask task(obj, index);
+  assert(task.is_valid(), "bad ObjArrayTask");
+  _objarray_stack.push(task);
+}
+
+void SerialFullGC::follow_array(objArrayOop array) {
+  mark_and_push_closure.do_klass(array->klass());
+  // Don't push empty arrays to avoid unnecessary work.
+  if (array->length() > 0) {
+    SerialFullGC::push_objarray(array, 0);
+  }
+}
+
+void SerialFullGC::follow_object(oop obj) {
+  assert(obj->is_gc_marked(), "should be marked");
+  if (obj->is_objArray()) {
+    // Handle object arrays explicitly to allow them to
+    // be split into chunks if needed.
+    SerialFullGC::follow_array((objArrayOop)obj);
+  } else {
+    obj->oop_iterate(&mark_and_push_closure);
+  }
+}
+
+void SerialFullGC::follow_array_chunk(objArrayOop array, int index) {
+  const int len = array->length();
+  const int beg_index = index;
+  assert(beg_index < len || len == 0, "index too large");
+
+  const int stride = MIN2(len - beg_index, (int) ObjArrayMarkingStride);
+  const int end_index = beg_index + stride;
+
+  array->oop_iterate_range(&mark_and_push_closure, beg_index, end_index);
+
+  if (end_index < len) {
+    SerialFullGC::push_objarray(array, end_index); // Push the continuation.
+  }
+}
+
+void SerialFullGC::follow_stack() {
+  do {
+    while (!_marking_stack.is_empty()) {
+      oop obj = _marking_stack.pop();
+      assert (obj->is_gc_marked(), "p must be marked");
+      follow_object(obj);
+    }
+    // Process ObjArrays one at a time to avoid marking stack bloat.
+    if (!_objarray_stack.is_empty()) {
+      ObjArrayTask task = _objarray_stack.pop();
+      follow_array_chunk(objArrayOop(task.obj()), task.index());
+    }
+  } while (!_marking_stack.is_empty() || !_objarray_stack.is_empty());
+}
+
+SerialFullGC::FollowStackClosure SerialFullGC::follow_stack_closure;
+
+void SerialFullGC::FollowStackClosure::do_void() { follow_stack(); }
+
+template <class T> void SerialFullGC::follow_root(T* p) {
+  assert(!Universe::heap()->is_in(p),
+         "roots shouldn't be things within the heap");
+  T heap_oop = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(heap_oop)) {
+    oop obj = CompressedOops::decode_not_null(heap_oop);
+    if (!obj->mark().is_marked()) {
+      mark_object(obj);
+      follow_object(obj);
+    }
+  }
+  follow_stack();
+}
+
+void SerialFullGC::FollowRootClosure::do_oop(oop* p)       { follow_root(p); }
+void SerialFullGC::FollowRootClosure::do_oop(narrowOop* p) { follow_root(p); }
+
+// We preserve the mark which should be replaced at the end and the location
+// that it will go.  Note that the object that this markWord belongs to isn't
+// currently at that address but it will be after phase4
+void SerialFullGC::preserve_mark(oop obj, markWord mark) {
+  // We try to store preserved marks in the to space of the new generation since
+  // this is storage which should be available.  Most of the time this should be
+  // sufficient space for the marks we need to preserve but if it isn't we fall
+  // back to using Stacks to keep track of the overflow.
+  if (_preserved_count < _preserved_count_max) {
+    _preserved_marks[_preserved_count++] = PreservedMark(obj, mark);
+  } else {
+    _preserved_overflow_stack_set.get()->push_always(obj, mark);
+  }
+}
+
+void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
   // Recursively traverse all live objects and mark them
   GCTraceTime(Info, gc, phases) tm("Phase 1: Mark live objects", _gc_timer);
 
@@ -425,7 +543,115 @@ void GenMarkSweep::phase1_mark(bool clear_all_softrefs) {
   }
 }
 
-void GenMarkSweep::invoke_at_safepoint(bool clear_all_softrefs) {
+void SerialFullGC::allocate_stacks() {
+  void* scratch = nullptr;
+  size_t num_words;
+  DefNewGeneration* young_gen = (DefNewGeneration*)SerialHeap::heap()->young_gen();
+  young_gen->contribute_scratch(scratch, num_words);
+
+  if (scratch != nullptr) {
+    _preserved_count_max = num_words * HeapWordSize / sizeof(PreservedMark);
+  } else {
+    _preserved_count_max = 0;
+  }
+
+  _preserved_marks = (PreservedMark*)scratch;
+  _preserved_count = 0;
+
+  _preserved_overflow_stack_set.init(1);
+}
+
+void SerialFullGC::deallocate_stacks() {
+  if (_preserved_count_max != 0) {
+    DefNewGeneration* young_gen = (DefNewGeneration*)SerialHeap::heap()->young_gen();
+    young_gen->reset_scratch();
+  }
+
+  _preserved_overflow_stack_set.reclaim();
+  _marking_stack.clear();
+  _objarray_stack.clear(true);
+}
+
+void SerialFullGC::mark_object(oop obj) {
+  if (StringDedup::is_enabled() &&
+      java_lang_String::is_instance(obj) &&
+      SerialStringDedup::is_candidate_from_mark(obj)) {
+    _string_dedup_requests->add(obj);
+  }
+
+  // some marks may contain information we need to preserve so we store them away
+  // and overwrite the mark.  We'll restore it at the end of serial full GC.
+  markWord mark = obj->mark();
+  obj->set_mark(markWord::prototype().set_marked());
+
+  ContinuationGCSupport::transform_stack_chunk(obj);
+
+  if (obj->mark_must_be_preserved(mark)) {
+    preserve_mark(obj, mark);
+  }
+}
+
+template <class T> void SerialFullGC::mark_and_push(T* p) {
+  T heap_oop = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(heap_oop)) {
+    oop obj = CompressedOops::decode_not_null(heap_oop);
+    if (!obj->mark().is_marked()) {
+      mark_object(obj);
+      _marking_stack.push(obj);
+    }
+  }
+}
+
+template <typename T>
+void MarkAndPushClosure::do_oop_work(T* p)            { SerialFullGC::mark_and_push(p); }
+void MarkAndPushClosure::do_oop(      oop* p)         { do_oop_work(p); }
+void MarkAndPushClosure::do_oop(narrowOop* p)         { do_oop_work(p); }
+
+AdjustPointerClosure SerialFullGC::adjust_pointer_closure;
+
+void SerialFullGC::adjust_marks() {
+  // adjust the oops we saved earlier
+  for (size_t i = 0; i < _preserved_count; i++) {
+    PreservedMarks::adjust_preserved_mark(_preserved_marks + i);
+  }
+
+  // deal with the overflow stack
+  _preserved_overflow_stack_set.get()->adjust_during_full_gc();
+}
+
+void SerialFullGC::restore_marks() {
+  log_trace(gc)("Restoring " SIZE_FORMAT " marks", _preserved_count + _preserved_overflow_stack_set.get()->size());
+
+  // restore the marks we saved earlier
+  for (size_t i = 0; i < _preserved_count; i++) {
+    _preserved_marks[i].set_mark();
+  }
+
+  // deal with the overflow
+  _preserved_overflow_stack_set.restore(nullptr);
+}
+
+SerialFullGC::IsAliveClosure   SerialFullGC::is_alive;
+
+bool SerialFullGC::IsAliveClosure::do_object_b(oop p) { return p->is_gc_marked(); }
+
+SerialFullGC::KeepAliveClosure SerialFullGC::keep_alive;
+
+void SerialFullGC::KeepAliveClosure::do_oop(oop* p)       { SerialFullGC::KeepAliveClosure::do_oop_work(p); }
+void SerialFullGC::KeepAliveClosure::do_oop(narrowOop* p) { SerialFullGC::KeepAliveClosure::do_oop_work(p); }
+
+void SerialFullGC::initialize() {
+  SerialFullGC::_gc_timer = new STWGCTimer();
+  SerialFullGC::_gc_tracer = new SerialOldTracer();
+  SerialFullGC::_string_dedup_requests = new StringDedup::Requests();
+
+  // The Full GC operates on the entire heap so all objects should be subject
+  // to discovery, hence the _always_true_closure.
+  SerialFullGC::_ref_processor = new ReferenceProcessor(&_always_true_closure);
+  mark_and_push_closure.set_ref_discoverer(_ref_processor);
+}
+
+void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
 
   SerialHeap* gch = SerialHeap::heap();
@@ -497,7 +723,7 @@ void GenMarkSweep::invoke_at_safepoint(bool clear_all_softrefs) {
 
   deallocate_stacks();
 
-  MarkSweep::_string_dedup_requests->flush();
+  SerialFullGC::_string_dedup_requests->flush();
 
   bool is_young_gen_empty = (gch->young_gen()->used() == 0);
   gch->rem_set()->maintain_old_to_young_invariant(gch->old_gen(), is_young_gen_empty);
@@ -512,33 +738,4 @@ void GenMarkSweep::invoke_at_safepoint(bool clear_all_softrefs) {
   Universe::heap()->record_whole_heap_examined_timestamp();
 
   gch->trace_heap_after_gc(_gc_tracer);
-}
-
-void GenMarkSweep::allocate_stacks() {
-  void* scratch = nullptr;
-  size_t num_words;
-  DefNewGeneration* young_gen = (DefNewGeneration*)SerialHeap::heap()->young_gen();
-  young_gen->contribute_scratch(scratch, num_words);
-
-  if (scratch != nullptr) {
-    _preserved_count_max = num_words * HeapWordSize / sizeof(PreservedMark);
-  } else {
-    _preserved_count_max = 0;
-  }
-
-  _preserved_marks = (PreservedMark*)scratch;
-  _preserved_count = 0;
-
-  _preserved_overflow_stack_set.init(1);
-}
-
-void GenMarkSweep::deallocate_stacks() {
-  if (_preserved_count_max != 0) {
-    DefNewGeneration* young_gen = (DefNewGeneration*)SerialHeap::heap()->young_gen();
-    young_gen->reset_scratch();
-  }
-
-  _preserved_overflow_stack_set.reclaim();
-  _marking_stack.clear();
-  _objarray_stack.clear(true);
 }
