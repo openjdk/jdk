@@ -26,7 +26,7 @@
 #define SHARE_GC_SERIAL_SERIALFULLGC_HPP
 
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -48,7 +48,6 @@ class STWGCTimer;
 // Class unloading will only occur when a full gc is invoked.
 
 // declared at end
-class PreservedMark;
 class MarkAndPushClosure;
 class AdjustPointerClosure;
 
