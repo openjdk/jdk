@@ -18,10 +18,10 @@ public:
     stack._stack[3] = (address)d;
     return stack;
   }
-  NativeCallStack stack1 = make_stack(0x00007bece59b89ac,
-                                      0x00007bece59b1fdd,
-                                      0x00007bece59b2997,
-                                      0x00007bece59b2add);
+  NativeCallStack stack1 = make_stack(size_t{0x00007bece59b89ac},
+                                      size_t{0x00007bece59b1fdd},
+                                      size_t{0x00007bece59b2997},
+                                      size_t{0x00007bece59b2add});
   NativeCallStack stack2 = make_stack(0x123, 0x456,0x789, 0xAAAA);
 };
 
