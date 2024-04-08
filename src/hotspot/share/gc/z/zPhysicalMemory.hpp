@@ -33,7 +33,7 @@
 class ZPhysicalMemorySegment : public CHeapObj<mtGC> {
 private:
   zoffset _start;
-  zoffset _end;
+  zoffset_end _end;
   bool    _committed;
 
 public:
@@ -41,7 +41,7 @@ public:
   ZPhysicalMemorySegment(zoffset start, size_t size, bool committed);
 
   zoffset start() const;
-  zoffset end() const;
+  zoffset_end end() const;
   size_t size() const;
 
   bool is_committed() const;
