@@ -1333,6 +1333,7 @@ void JavaThread::make_zombies() {
     if (fst.current()->can_be_deoptimized()) {
       // it is a Java nmethod
       nmethod* nm = CodeCache::find_nmethod(fst.current()->pc());
+      assert(nm != nullptr, "did not find nmethod");
       nm->make_not_entrant();
     }
   }

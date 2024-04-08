@@ -272,7 +272,7 @@ class nmethod : public CodeBlob {
   // used by jvmti to track if an event has been posted for this nmethod.
   bool _load_reported;
 
-  // Protected by NMethod_lock
+  // Protected by NMethodState_lock
   volatile signed char _state;         // {not_installed, in_use, not_entrant}
 
   // set during construction

@@ -899,7 +899,7 @@ void CodeCache::blobs_do(CodeBlobClosure* f) {
 
 void CodeCache::verify_clean_inline_caches() {
 #ifdef ASSERT
-  NMethodIterator iter(NMethodIterator::only_not_unloading);
+  NMethodIterator iter(NMethodIterator::not_unloading);
   while(iter.next()) {
     nmethod* nm = iter.method();
     nm->verify_clean_inline_caches();
@@ -978,7 +978,7 @@ CodeCache::UnlinkingScope::~UnlinkingScope() {
 void CodeCache::verify_oops() {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   VerifyOopClosure voc;
-  NMethodIterator iter(NMethodIterator::only_not_unloading);
+  NMethodIterator iter(NMethodIterator::not_unloading);
   while(iter.next()) {
     nmethod* nm = iter.method();
     nm->oops_do(&voc);
@@ -1173,7 +1173,7 @@ bool CodeCache::has_nmethods_with_dependencies() {
 
 void CodeCache::clear_inline_caches() {
   assert_locked_or_safepoint(CodeCache_lock);
-  NMethodIterator iter(NMethodIterator::only_not_unloading);
+  NMethodIterator iter(NMethodIterator::not_unloading);
   while(iter.next()) {
     iter.method()->clear_inline_caches();
   }
@@ -1182,7 +1182,7 @@ void CodeCache::clear_inline_caches() {
 // Only used by whitebox API
 void CodeCache::cleanup_inline_caches_whitebox() {
   assert_locked_or_safepoint(CodeCache_lock);
-  NMethodIterator iter(NMethodIterator::only_not_unloading);
+  NMethodIterator iter(NMethodIterator::not_unloading);
   while(iter.next()) {
     iter.method()->cleanup_inline_caches_whitebox();
   }
@@ -1210,7 +1210,7 @@ static void check_live_nmethods_dependencies(DepChange& changes) {
 
   // Iterate over live nmethods and check dependencies of all nmethods that are not
   // marked for deoptimization. A particular dependency is only checked once.
-  NMethodIterator iter(NMethodIterator::only_not_unloading);
+  NMethodIterator iter(NMethodIterator::not_unloading);
   while(iter.next()) {
     nmethod* nm = iter.method();
     // Only notify for live nmethods
@@ -1354,7 +1354,7 @@ void CodeCache::mark_directives_matches(bool top_only) {
   Thread *thread = Thread::current();
   HandleMark hm(thread);
 
-  NMethodIterator iter(NMethodIterator::only_not_unloading);
+  NMethodIterator iter(NMethodIterator::not_unloading);
   while(iter.next()) {
     nmethod* nm = iter.method();
     methodHandle mh(thread, nm->method());
@@ -1372,7 +1372,7 @@ void CodeCache::recompile_marked_directives_matches() {
 
   // Try the max level and let the directives be applied during the compilation.
   int comp_level = CompilationPolicy::highest_compile_level();
-  RelaxedNMethodIterator iter(RelaxedNMethodIterator::only_not_unloading);
+  RelaxedNMethodIterator iter(RelaxedNMethodIterator::not_unloading);
   while(iter.next()) {
     nmethod* nm = iter.method();
     methodHandle mh(thread, nm->method());
@@ -1413,7 +1413,7 @@ void CodeCache::recompile_marked_directives_matches() {
 // Mark methods for deopt (if safe or possible).
 void CodeCache::mark_all_nmethods_for_deoptimization(DeoptimizationScope* deopt_scope) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  NMethodIterator iter(NMethodIterator::only_not_unloading);
+  NMethodIterator iter(NMethodIterator::not_unloading);
   while(iter.next()) {
     nmethod* nm = iter.method();
     if (!nm->is_native_method()) {
@@ -1425,7 +1425,7 @@ void CodeCache::mark_all_nmethods_for_deoptimization(DeoptimizationScope* deopt_
 void CodeCache::mark_for_deoptimization(DeoptimizationScope* deopt_scope, Method* dependee) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-  NMethodIterator iter(NMethodIterator::only_not_unloading);
+  NMethodIterator iter(NMethodIterator::not_unloading);
   while(iter.next()) {
     nmethod* nm = iter.method();
     if (nm->is_dependent_on_method(dependee)) {
@@ -1435,7 +1435,7 @@ void CodeCache::mark_for_deoptimization(DeoptimizationScope* deopt_scope, Method
 }
 
 void CodeCache::make_marked_nmethods_deoptimized() {
-  RelaxedNMethodIterator iter(RelaxedNMethodIterator::only_not_unloading);
+  RelaxedNMethodIterator iter(RelaxedNMethodIterator::not_unloading);
   while(iter.next()) {
     nmethod* nm = iter.method();
     if (nm->is_marked_for_deoptimization() && !nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
@@ -1838,7 +1838,7 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
 void CodeCache::print_codelist(outputStream* st) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-  NMethodIterator iter(NMethodIterator::only_not_unloading);
+  NMethodIterator iter(NMethodIterator::not_unloading);
   while (iter.next()) {
     nmethod* nm = iter.method();
     ResourceMark rm;
@@ -1881,7 +1881,7 @@ void CodeCache::write_perf_map(const char* filename) {
     return;
   }
 
-  AllCodeBlobsIterator iter(AllCodeBlobsIterator::only_not_unloading);
+  AllCodeBlobsIterator iter(AllCodeBlobsIterator::not_unloading);
   while (iter.next()) {
     CodeBlob *cb = iter.method();
     ResourceMark rm;
