@@ -33,9 +33,10 @@ public class LoadAIXLibraryFromArchiveObject {
     public static void main(String[] args) throws Exception {
         String libraryName = "awt";
         File awtSharedObjectPath = new File("/test/lib/libawt.so");
-        
         File awtArchivePath = new File("/test/lib/libawt.a");
         awtSharedObjectPath.renameTo(awtArchivePath);
+        if ( awtSharedObjectPath.exists() || !awtArchivePath.exists() )
+         throw new RuntimeException("shouldn ot be there");
         System.loadLibrary(libraryName);
     }
 }
