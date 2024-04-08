@@ -57,17 +57,20 @@ public class SizeMinimizedTest {
                 createUI();
             });
             robot.waitForIdle();
-            robot.delay(100);
+            robot.delay(1000);
+
             EventQueue.invokeAndWait(() -> {
                 frame.setState(Frame.ICONIFIED);
             });
             robot.waitForIdle();
             robot.delay(100);
+
             EventQueue.invokeAndWait(() -> {
                 frame.setSize(RESET_SIZE, RESET_SIZE);
             });
             robot.waitForIdle();
             robot.delay(100);
+
             for (int i = 0; i < 5; i++) {
                 EventQueue.invokeAndWait(() -> {
                     Point pt = frame.getLocation();
@@ -82,6 +85,7 @@ public class SizeMinimizedTest {
             });
             robot.waitForIdle();
             robot.delay(100);
+
             System.out.println("Test Passed!");
         } finally {
             EventQueue.invokeAndWait(() -> {
