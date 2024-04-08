@@ -4339,7 +4339,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   movl(scan_temp, Address(recv_klass, Klass::vtable_length_offset()));
 
-  // %%% Could store the aligned, prescaled offset in the klassoop.
+  // Could store the aligned, prescaled offset in the klass.
   lea(scan_temp, Address(recv_klass, scan_temp, times_vte_scale, vtable_base));
 
   if (return_method) {
@@ -9398,6 +9398,17 @@ void MacroAssembler::vpshufb(XMMRegister dst, XMMRegister nds, AddressLiteral sr
   } else {
     lea(rscratch, src);
     vpshufb(dst, nds, Address(rscratch, 0), vector_len);
+  }
+}
+
+void MacroAssembler::vpor(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    Assembler::vpor(dst, nds, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::vpor(dst, nds, Address(rscratch, 0), vector_len);
   }
 }
 

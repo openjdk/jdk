@@ -117,34 +117,34 @@ DeoptimizationScope::~DeoptimizationScope() {
   assert(_deopted, "Deopt not executed");
 }
 
-void DeoptimizationScope::mark(CompiledMethod* cm, bool inc_recompile_counts) {
+void DeoptimizationScope::mark(nmethod* nm, bool inc_recompile_counts) {
   ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
 
   // If it's already marked but we still need it to be deopted.
-  if (cm->is_marked_for_deoptimization()) {
-    dependent(cm);
+  if (nm->is_marked_for_deoptimization()) {
+    dependent(nm);
     return;
   }
 
-  CompiledMethod::DeoptimizationStatus status =
-    inc_recompile_counts ? CompiledMethod::deoptimize : CompiledMethod::deoptimize_noupdate;
-  Atomic::store(&cm->_deoptimization_status, status);
+  nmethod::DeoptimizationStatus status =
+    inc_recompile_counts ? nmethod::deoptimize : nmethod::deoptimize_noupdate;
+  Atomic::store(&nm->_deoptimization_status, status);
 
   // Make sure active is not committed
   assert(DeoptimizationScope::_committed_deopt_gen < DeoptimizationScope::_active_deopt_gen, "Must be");
-  assert(cm->_deoptimization_generation == 0, "Is already marked");
+  assert(nm->_deoptimization_generation == 0, "Is already marked");
 
-  cm->_deoptimization_generation = DeoptimizationScope::_active_deopt_gen;
+  nm->_deoptimization_generation = DeoptimizationScope::_active_deopt_gen;
   _required_gen                  = DeoptimizationScope::_active_deopt_gen;
 }
 
-void DeoptimizationScope::dependent(CompiledMethod* cm) {
+void DeoptimizationScope::dependent(nmethod* nm) {
   ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
 
   // A method marked by someone else may have a _required_gen lower than what we marked with.
   // Therefore only store it if it's higher than _required_gen.
-  if (_required_gen < cm->_deoptimization_generation) {
-    _required_gen = cm->_deoptimization_generation;
+  if (_required_gen < nm->_deoptimization_generation) {
+    _required_gen = nm->_deoptimization_generation;
   }
 }
 
@@ -321,7 +321,7 @@ static void print_objects(JavaThread* deoptee_thread,
   tty->print_raw(st.freeze());
 }
 
-static bool rematerialize_objects(JavaThread* thread, int exec_mode, CompiledMethod* compiled_method,
+static bool rematerialize_objects(JavaThread* thread, int exec_mode, nmethod* compiled_method,
                                   frame& deoptee, RegisterMap& map, GrowableArray<compiledVFrame*>* chunk,
                                   bool& deoptimized_objects) {
   bool realloc_failures = false;
@@ -439,7 +439,7 @@ bool Deoptimization::deoptimize_objects_internal(JavaThread* thread, GrowableArr
                                                  bool& realloc_failures) {
   frame deoptee = chunk->at(0)->fr();
   JavaThread* deoptee_thread = chunk->at(0)->thread();
-  CompiledMethod* cm = deoptee.cb()->as_compiled_method_or_null();
+  nmethod* nm = deoptee.cb()->as_nmethod_or_null();
   RegisterMap map(chunk->at(0)->register_map());
   bool deoptimized_objects = false;
 
@@ -448,7 +448,7 @@ bool Deoptimization::deoptimize_objects_internal(JavaThread* thread, GrowableArr
   // Reallocate the non-escaping objects and restore their fields.
   if (jvmci_enabled COMPILER2_PRESENT(|| (DoEscapeAnalysis && EliminateAllocations)
                                       || EliminateAutoBox || EnableVectorAggressiveReboxing)) {
-    realloc_failures = rematerialize_objects(thread, Unpack_none, cm, deoptee, map, chunk, deoptimized_objects);
+    realloc_failures = rematerialize_objects(thread, Unpack_none, nm, deoptee, map, chunk, deoptimized_objects);
   }
 
   // MonitorInfo structures used in eliminate_locks are not GC safe.
@@ -492,8 +492,8 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   frame deoptee = stub_frame.sender(&map);
   // Set the deoptee nmethod
   assert(current->deopt_compiled_method() == nullptr, "Pending deopt!");
-  CompiledMethod* cm = deoptee.cb()->as_compiled_method_or_null();
-  current->set_deopt_compiled_method(cm);
+  nmethod* nm = deoptee.cb()->as_nmethod_or_null();
+  current->set_deopt_compiled_method(nm);
 
   if (VerifyStack) {
     current->validate_frame_layout();
@@ -522,7 +522,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   if (jvmci_enabled COMPILER2_PRESENT( || (DoEscapeAnalysis && EliminateAllocations)
                                        || EliminateAutoBox || EnableVectorAggressiveReboxing )) {
     bool unused;
-    realloc_failures = rematerialize_objects(current, exec_mode, cm, deoptee, map, chunk, unused);
+    realloc_failures = rematerialize_objects(current, exec_mode, nm, deoptee, map, chunk, unused);
   }
 #endif // COMPILER2_OR_JVMCI
 
@@ -1220,8 +1220,8 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
     bool cache_init_error = false;
     if (k->is_instance_klass()) {
 #if INCLUDE_JVMCI
-      CompiledMethod* cm = fr->cb()->as_compiled_method_or_null();
-      if (cm->is_compiled_by_jvmci() && sv->is_auto_box()) {
+      nmethod* nm = fr->cb()->as_nmethod_or_null();
+      if (nm->is_compiled_by_jvmci() && sv->is_auto_box()) {
         AutoBoxObjectValue* abv = (AutoBoxObjectValue*) sv;
         obj = get_cached_box(abv, fr, reg_map, cache_init_error, THREAD);
         if (obj != nullptr) {
@@ -1747,14 +1747,14 @@ void Deoptimization::deoptimize_single_frame(JavaThread* thread, frame fr, Deopt
   gather_statistics(reason, Action_none, Bytecodes::_illegal);
 
   if (LogCompilation && xtty != nullptr) {
-    CompiledMethod* cm = fr.cb()->as_compiled_method_or_null();
-    assert(cm != nullptr, "only compiled methods can deopt");
+    nmethod* nm = fr.cb()->as_nmethod_or_null();
+    assert(nm != nullptr, "only compiled methods can deopt");
 
     ttyLocker ttyl;
     xtty->begin_head("deoptimized thread='" UINTX_FORMAT "' reason='%s' pc='" INTPTR_FORMAT "'",(uintx)thread->osthread()->thread_id(), trap_reason_name(reason), p2i(fr.pc()));
-    cm->log_identity(xtty);
+    nm->log_identity(xtty);
     xtty->end_head();
-    for (ScopeDesc* sd = cm->scope_desc_at(fr.pc()); ; sd = sd->sender()) {
+    for (ScopeDesc* sd = nm->scope_desc_at(fr.pc()); ; sd = sd->sender()) {
       xtty->begin_elem("jvms bci='%d'", sd->bci());
       xtty->method(sd->method());
       xtty->end_elem();
@@ -1782,9 +1782,9 @@ void Deoptimization::deoptimize(JavaThread* thread, frame fr, DeoptReason reason
 }
 
 #if INCLUDE_JVMCI
-address Deoptimization::deoptimize_for_missing_exception_handler(CompiledMethod* cm) {
+address Deoptimization::deoptimize_for_missing_exception_handler(nmethod* nm) {
   // there is no exception handler for this pc => deoptimize
-  cm->make_not_entrant();
+  nm->make_not_entrant();
 
   // Use Deoptimization::deoptimize for all of its side-effects:
   // gathering traps statistics, logging...
@@ -1797,7 +1797,7 @@ address Deoptimization::deoptimize_for_missing_exception_handler(CompiledMethod*
                       RegisterMap::WalkContinuation::skip);
   frame runtime_frame = thread->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
-  assert(caller_frame.cb()->as_compiled_method_or_null() == cm, "expect top frame compiled method");
+  assert(caller_frame.cb()->as_nmethod_or_null() == nm, "expect top frame compiled method");
   vframe* vf = vframe::new_vframe(&caller_frame, &reg_map, thread);
   compiledVFrame* cvf = compiledVFrame::cast(vf);
   ScopeDesc* imm_scope = cvf->scope();
@@ -1815,7 +1815,7 @@ address Deoptimization::deoptimize_for_missing_exception_handler(CompiledMethod*
 
   Deoptimization::deoptimize(thread, caller_frame, Deoptimization::Reason_not_compiled_exception_handler);
 
-  MethodData* trap_mdo = get_method_data(thread, methodHandle(thread, cm->method()), true);
+  MethodData* trap_mdo = get_method_data(thread, methodHandle(thread, nm->method()), true);
   if (trap_mdo != nullptr) {
     trap_mdo->inc_trap_count(Deoptimization::Reason_not_compiled_exception_handler);
   }
@@ -1950,7 +1950,7 @@ static void register_serializers() {
   JfrSerializer::register_serializer(TYPE_DEOPTIMIZATIONACTION, true, new DeoptActionSerializer());
 }
 
-static void post_deoptimization_event(CompiledMethod* nm,
+static void post_deoptimization_event(nmethod* nm,
                                       const Method* method,
                                       int trap_bci,
                                       int instruction,
@@ -1979,7 +1979,7 @@ static void post_deoptimization_event(CompiledMethod* nm,
 
 #endif // INCLUDE_JFR
 
-static void log_deopt(CompiledMethod* nm, Method* tm, intptr_t pc, frame& fr, int trap_bci,
+static void log_deopt(nmethod* nm, Method* tm, intptr_t pc, frame& fr, int trap_bci,
                               const char* reason_name, const char* reason_action) {
   LogTarget(Debug, deoptimization) lt;
   if (lt.is_enabled()) {
@@ -2041,7 +2041,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
     vframe*  vf  = vframe::new_vframe(&fr, &reg_map, current);
     compiledVFrame* cvf = compiledVFrame::cast(vf);
 
-    CompiledMethod* nm = cvf->code();
+    nmethod* nm = cvf->code();
 
     ScopeDesc*      trap_scope  = cvf->scope();
 
@@ -2058,7 +2058,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
 #if INCLUDE_JVMCI
     jlong           speculation = current->pending_failed_speculation();
     if (nm->is_compiled_by_jvmci()) {
-      nm->as_nmethod()->update_speculation(current);
+      nm->update_speculation(current);
     } else {
       assert(speculation == 0, "There should not be a speculation for methods compiled by non-JVMCI compilers");
     }
@@ -2178,8 +2178,8 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
                  trap_scope->bci(), p2i(fr.pc()), fr.pc() - nm->code_begin() JVMCI_ONLY(COMMA debug_id));
         st.print(" compiler=%s compile_id=%d", nm->compiler_name(), nm->compile_id());
 #if INCLUDE_JVMCI
-        if (nm->is_nmethod()) {
-          const char* installed_code_name = nm->as_nmethod()->jvmci_name();
+        if (nm->is_compiled_by_jvmci()) {
+          const char* installed_code_name = nm->jvmci_name();
           if (installed_code_name != nullptr) {
             st.print(" (JVMCI: installed code name=%s) ", installed_code_name);
           }
@@ -2433,7 +2433,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
       // Assume that in new recompiled code the statistic could be different,
       // for example, due to different inlining.
       if ((reason != Reason_rtm_state_change) && (trap_mdo != nullptr) &&
-          UseRTMDeopt && (nm->as_nmethod()->rtm_state() != ProfileRTM)) {
+          UseRTMDeopt && (nm->rtm_state() != ProfileRTM)) {
         trap_mdo->atomic_set_rtm_state(ProfileRTM);
       }
 #endif

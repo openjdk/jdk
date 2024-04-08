@@ -867,7 +867,7 @@ static bool is_always_within_branch_range(Address entry) {
     // Non-compiled methods stay forever in CodeCache.
     // We check whether the longest possible branch is within the branch range.
     assert(CodeCache::find_blob(target) != nullptr &&
-          !CodeCache::find_blob(target)->is_compiled(),
+          !CodeCache::find_blob(target)->is_nmethod(),
           "runtime call of compiled method");
     const address right_longest_branch_start = CodeCache::high_bound() - NativeInstruction::instruction_size;
     const address left_longest_branch_start = CodeCache::low_bound();
@@ -1199,7 +1199,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   ldrw(scan_temp, Address(recv_klass, Klass::vtable_length_offset()));
 
-  // %%% Could store the aligned, prescaled offset in the klassoop.
+  // Could store the aligned, prescaled offset in the klass.
   // lea(scan_temp, Address(recv_klass, scan_temp, times_vte_scale, vtable_base));
   lea(scan_temp, Address(recv_klass, scan_temp, Address::lsl(3)));
   add(scan_temp, scan_temp, vtable_base);
@@ -3949,7 +3949,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     add(table2, table0, 2*256*sizeof(juint));
     add(table3, table0, 3*256*sizeof(juint));
 
-  if (UseNeon) {
+    { // Neon code start
       cmp(len, (u1)64);
       br(Assembler::LT, L_by16);
       eor(v16, T16B, v16, v16);
@@ -4081,7 +4081,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
       update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, true);
 
       add(len, len, 32);
-  }
+    } // Neon code end
 
   BIND(L_by16);
     subs(len, len, 16);

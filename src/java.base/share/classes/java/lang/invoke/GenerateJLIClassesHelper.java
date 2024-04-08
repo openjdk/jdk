@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.lang.invoke;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import sun.invoke.util.Wrapper;
+import sun.util.logging.PlatformLogger;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -136,9 +137,7 @@ class GenerateJLIClassesHelper {
             for (String invokerType : invokerTypes) {
                 MethodType mt = asMethodType(invokerType);
                 final int lastParam = mt.parameterCount() - 1;
-                if (mt.parameterCount() < 2 ||
-                        mt.parameterType(0) != Object.class ||
-                        mt.parameterType(lastParam) != Object.class) {
+                if (!checkInvokerTypeParams(mt)) {
                     throw new RuntimeException(
                             "Invoker type parameter must start and end with Object: " + invokerType);
                 }
@@ -190,7 +189,7 @@ class GenerateJLIClassesHelper {
             return result;
         }
 
-        private static MethodType asMethodType(String basicSignatureString) {
+        public static MethodType asMethodType(String basicSignatureString) {
             String[] parts = basicSignatureString.split("_");
             assert (parts.length == 2);
             assert (parts[1].length() == 1);
@@ -205,6 +204,13 @@ class GenerateJLIClassesHelper {
                 }
                 return MethodType.methodType(rtype, ptypes);
             }
+        }
+
+        public static boolean checkInvokerTypeParams(MethodType mt) {
+            final int lastParam = mt.parameterCount() - 1;
+            return (mt.parameterCount() >= 2 &&
+                    mt.parameterType(0) == Object.class &&
+                    mt.parameterType(lastParam) == Object.class);
         }
 
         private void addDMHMethodType(String dmh, String methodType) {
@@ -315,7 +321,14 @@ class GenerateJLIClassesHelper {
                                         "linkToCallSite".equals(parts[2])) {
                                     builder.addCallSiteType(methodType);
                                 } else {
-                                    builder.addInvokerType(methodType);
+                                    MethodType mt = HolderClassBuilder.asMethodType(methodType);
+                                    // Work around JDK-8327499
+                                    if (HolderClassBuilder.checkInvokerTypeParams(mt)) {
+                                        builder.addInvokerType(methodType);
+                                    } else {
+                                        PlatformLogger.getLogger("java.lang.invoke")
+                                                .warning("Invalid LF_RESOLVE " + parts[1] + " " + parts[2] + " " + parts[3]);
+                                    }
                                 }
                             } else if (parts[1].contains("DirectMethodHandle")) {
                                 String dmh = parts[2];
