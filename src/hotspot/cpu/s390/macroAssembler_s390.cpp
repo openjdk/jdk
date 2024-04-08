@@ -3196,12 +3196,14 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   Register temp = temp2;
   NearLabel done, object_has_monitor;
 
-  assert_different_registers(temp1, temp2);
+  const int hdr_offset = oopDesc::mark_offset_in_bytes();
+
+  assert_different_registers(temp1, temp2, oop, box);
 
   BLOCK_COMMENT("compiler_fast_lock_object {");
 
   // Load markWord from oop into mark.
-  z_lg(displacedHeader, oopDesc::mark_offset_in_bytes(), oop);
+  z_lg(displacedHeader, hdr_offset, oop);
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(temp, oop);
@@ -3233,7 +3235,7 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
 
     // Compare object markWord with mark and if equal, exchange box with object markWork.
     // If the compare-and-swap succeeds, then we found an unlocked object and have now locked it.
-    z_csg(displacedHeader, box, oopDesc::mark_offset_in_bytes(), oop);
+    z_csg(displacedHeader, box, hdr_offset, oop);
     assert(currentHeader == displacedHeader, "must be same register"); // Identified two registers from z/Architecture.
     z_bre(done);
 
@@ -3300,6 +3302,8 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   Register temp = temp1;
 
   const int hdr_offset = oopDesc::mark_offset_in_bytes();
+
+  assert_different_registers(temp1, temp2, oop, box);
 
   Label done, object_has_monitor, not_recursive;
 
