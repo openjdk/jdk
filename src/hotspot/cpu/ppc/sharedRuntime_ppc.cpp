@@ -1657,12 +1657,12 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
   if (CheckJNICalls) {
     // Check if this is a virtual thread continuation
     Label L_skip_vthread_code;
-    __ lwz(R0, in_bytes(ContinuationEntry::flags_offset()), R1_SP);
+    __ ld(R0, in_bytes(ContinuationEntry::flags_offset()), R1_SP);
     __ cmpwi(CCR0, R0, 0);
     __ beq(CCR0, L_skip_vthread_code);
 
     Label L_no_warn;
-    __ lwz(R0, in_bytes(JavaThread::jni_monitor_count_offset()), R16_thread);
+    __ ld(R0, in_bytes(JavaThread::jni_monitor_count_offset()), R16_thread);
     __ cmpwi(CCR0, R0, 0);
     __ beq(CCR0, L_no_warn);
     // If the held monitor count is > 0 and this vthread is terminating then
@@ -1688,7 +1688,7 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
   else {
     // Check if this is a virtual thread continuation
     Label L_skip_vthread_code;
-    __ lwz(R0, in_bytes(ContinuationEntry::flags_offset()), R1_SP);
+    __ ld(R0, in_bytes(ContinuationEntry::flags_offset()), R1_SP);
     __ cmpwi(CCR0, R0, 0);
     __ beq(CCR0, L_skip_vthread_code);
 
