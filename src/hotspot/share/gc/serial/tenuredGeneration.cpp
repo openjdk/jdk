@@ -268,7 +268,7 @@ HeapWord* TenuredGeneration::block_start(const void* p) const {
 }
 
 void TenuredGeneration::scan_old_to_young_refs() {
-  _rs->scan_old_to_young_refs(space());
+  _rs->scan_old_to_young_refs(space(), saved_mark_word());
 }
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
@@ -492,11 +492,11 @@ void TenuredGeneration::complete_loaded_archive_space(MemRegion archive_space) {
 }
 
 void TenuredGeneration::save_marks() {
-  _the_space->set_saved_mark();
+  set_saved_mark_word();
 }
 
 bool TenuredGeneration::no_allocs_since_save_marks() {
-  return _the_space->saved_mark_at_top();
+  return saved_mark_at_top();
 }
 
 void TenuredGeneration::gc_epilogue() {

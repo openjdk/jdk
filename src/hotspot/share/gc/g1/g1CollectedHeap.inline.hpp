@@ -248,7 +248,7 @@ inline bool G1CollectedHeap::requires_barriers(stackChunkOop obj) const {
 }
 
 inline bool G1CollectedHeap::is_obj_filler(const oop obj) {
-  Klass* k = obj->klass_raw();
+  Klass* k = obj->klass_without_asserts();
   return k == Universe::fillerArrayKlass() || k == vmClasses::FillerObject_klass();
 }
 

@@ -69,7 +69,6 @@ void ContiguousSpace::initialize(MemRegion mr,
 
 void ContiguousSpace::clear(bool mangle_space) {
   set_top(bottom());
-  set_saved_mark();
   if (ZapUnusedHeapArea && mangle_space) {
     mangle_unused_area();
   }
