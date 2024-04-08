@@ -71,7 +71,7 @@ class DefNewGeneration: public Generation {
   void   init_assuming_no_promotion_failure();
   // True iff a promotion has failed in the current collection.
   bool   _promotion_failed;
-  bool promotion_failed() { return _promotion_failed; }
+  bool   promotion_failed() { return _promotion_failed; }
   PromotionFailedInfo _promotion_failed_info;
 
   // Handling promotion failure.  A young generation collection
