@@ -1107,12 +1107,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             boolean isCommon = (pool.workerNamePrefix == null);
             @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
-            if (sm == null) {
-                if (isCommon)
-                    return new ForkJoinWorkerThread.InnocuousForkJoinWorkerThread(pool);
-                else
-                    return new ForkJoinWorkerThread(null, pool, true, false);
-            } else if (isCommon)
+            if (sm != null && isCommon)
                 return newCommonWithACC(pool);
             else
                 return newRegularWithACC(pool);

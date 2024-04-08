@@ -34,7 +34,6 @@
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
-#include "libo4.hpp"
 #include "libperfstat_aix.hpp"
 #include "libodm_aix.hpp"
 #include "loadlib_aix.hpp"
@@ -175,9 +174,6 @@ julong    os::Aix::_physical_memory = 0;
 
 pthread_t os::Aix::_main_thread = ((pthread_t)0);
 
-// -1 = uninitialized, 0 if AIX, 1 if OS/400 pase
-int       os::Aix::_on_pase = -1;
-
 // 0 = uninitialized, otherwise 32 bit number:
 //  0xVVRRTTSS
 //  VV - major version
@@ -267,10 +263,6 @@ julong os::available_memory() {
 }
 
 julong os::Aix::available_memory() {
-  // Avoid expensive API call here, as returned value will always be null.
-  if (os::Aix::on_pase()) {
-    return 0x0LL;
-  }
   os::Aix::meminfo_t mi;
   if (os::Aix::get_meminfo(&mi)) {
     return mi.real_free;
@@ -300,7 +292,7 @@ julong os::physical_memory() {
 }
 
 // Helper function, emulates disclaim64 using multiple 32bit disclaims
-// because we cannot use disclaim64() on AS/400 and old AIX releases.
+// because we cannot use disclaim64() on old AIX releases.
 static bool my_disclaim64(char* addr, size_t size) {
 
   if (size == 0) {
@@ -355,7 +347,7 @@ size_t os::Aix::query_pagesize(void* addr) {
   if (::vmgetinfo(&pi, VM_PAGE_INFO, sizeof(pi)) == 0) {
     return pi.pagesize;
   } else {
-    trcVerbose("vmgetinfo(VM_PAGE_INFO) failed (errno: %d)", errno);
+    log_warning(pagesize)("vmgetinfo(VM_PAGE_INFO) failed (errno: %d)", errno);
     assert(false, "vmgetinfo failed to retrieve page size");
     return 4*K;
   }
@@ -444,29 +436,19 @@ static void query_multipage_support() {
     g_multipage_support.textpsize = os::Aix::query_pagesize(any_function);
   }
 
-  // Now probe for support of 64K pages and 16M pages.
-
-  // Before OS/400 V6R1, there is no support for pages other than 4K.
-  if (os::Aix::on_pase_V5R4_or_older()) {
-    trcVerbose("OS/400 < V6R1 - no large page support.");
-    g_multipage_support.error = ERROR_MP_OS_TOO_OLD;
-    goto query_multipage_support_end;
-  }
-
   // Now check which page sizes the OS claims it supports, and of those, which actually can be used.
   {
     const int MAX_PAGE_SIZES = 4;
     psize_t sizes[MAX_PAGE_SIZES];
     const int num_psizes = ::vmgetinfo(sizes, VMINFO_GETPSIZES, MAX_PAGE_SIZES);
     if (num_psizes == -1) {
-      trcVerbose("vmgetinfo(VMINFO_GETPSIZES) failed (errno: %d)", errno);
-      trcVerbose("disabling multipage support.");
+      log_warning(pagesize)("vmgetinfo(VMINFO_GETPSIZES) failed (errno: %d), disabling multipage support.", errno);
       g_multipage_support.error = ERROR_MP_VMGETINFO_FAILED;
       goto query_multipage_support_end;
     }
     guarantee(num_psizes > 0, "vmgetinfo(.., VMINFO_GETPSIZES, ...) failed.");
     assert(num_psizes <= MAX_PAGE_SIZES, "Surprise! more than 4 page sizes?");
-    trcVerbose("vmgetinfo(.., VMINFO_GETPSIZES, ...) returns %d supported page sizes: ", num_psizes);
+    log_info(pagesize)("vmgetinfo(.., VMINFO_GETPSIZES, ...) returns %d supported page sizes: ", num_psizes);
     for (int i = 0; i < num_psizes; i ++) {
       trcVerbose(" %s ", describe_pagesize(sizes[i]));
     }
@@ -488,7 +470,7 @@ static void query_multipage_support() {
       if (::shmctl(shmid, SHM_PAGESIZE, &shm_buf) != 0) {
         const int en = errno;
         ::shmctl(shmid, IPC_RMID, nullptr); // As early as possible!
-        trcVerbose("shmctl(SHM_PAGESIZE) failed with errno=%d", errno);
+        log_warning(pagesize)("shmctl(SHM_PAGESIZE) failed with errno=%d", errno);
       } else {
         // Attach and double check pageisze.
         void* p = ::shmat(shmid, nullptr, 0);
@@ -496,7 +478,7 @@ static void query_multipage_support() {
         guarantee0(p != (void*) -1); // Should always work.
         const size_t real_pagesize = os::Aix::query_pagesize(p);
         if (real_pagesize != pagesize) {
-          trcVerbose("real page size (" SIZE_FORMAT_X ") differs.", real_pagesize);
+          log_warning(pagesize)("real page size (" SIZE_FORMAT_X ") differs.", real_pagesize);
         } else {
           can_use = true;
         }
@@ -619,66 +601,33 @@ void os::init_system_properties_values() {
 bool os::Aix::get_meminfo(meminfo_t* pmi) {
 
   assert(pmi, "get_meminfo: invalid parameter");
-
   memset(pmi, 0, sizeof(meminfo_t));
 
-  if (os::Aix::on_pase()) {
-    // On PASE, use the libo4 porting library.
-
-    unsigned long long virt_total = 0;
-    unsigned long long real_total = 0;
-    unsigned long long real_free = 0;
-    unsigned long long pgsp_total = 0;
-    unsigned long long pgsp_free = 0;
-    if (libo4::get_memory_info(&virt_total, &real_total, &real_free, &pgsp_total, &pgsp_free)) {
-      pmi->virt_total = virt_total;
-      pmi->real_total = real_total;
-      pmi->real_free = real_free;
-      pmi->pgsp_total = pgsp_total;
-      pmi->pgsp_free = pgsp_free;
-      return true;
-    }
+  // dynamically loaded perfstat library is used to retrieve memory statistics
+  perfstat_memory_total_t psmt;
+  memset (&psmt, '\0', sizeof(psmt));
+  const int rc = libperfstat::perfstat_memory_total(nullptr, &psmt, sizeof(psmt), 1);
+  if (rc == -1) {
+    log_warning(os)("perfstat_memory_total() failed (errno=%d)", errno);
+    assert(0, "perfstat_memory_total() failed");
     return false;
-
-  } else {
-
-    // On AIX, I use the (dynamically loaded) perfstat library to retrieve memory statistics
-    // See:
-    // http://publib.boulder.ibm.com/infocenter/systems/index.jsp
-    //        ?topic=/com.ibm.aix.basetechref/doc/basetrf1/perfstat_memtot.htm
-    // http://publib.boulder.ibm.com/infocenter/systems/index.jsp
-    //        ?topic=/com.ibm.aix.files/doc/aixfiles/libperfstat.h.htm
-
-    perfstat_memory_total_t psmt;
-    memset (&psmt, '\0', sizeof(psmt));
-    const int rc = libperfstat::perfstat_memory_total(nullptr, &psmt, sizeof(psmt), 1);
-    if (rc == -1) {
-      trcVerbose("perfstat_memory_total() failed (errno=%d)", errno);
-      assert(0, "perfstat_memory_total() failed");
-      return false;
-    }
-
-    assert(rc == 1, "perfstat_memory_total() - weird return code");
-
-    // excerpt from
-    // http://publib.boulder.ibm.com/infocenter/systems/index.jsp
-    //        ?topic=/com.ibm.aix.files/doc/aixfiles/libperfstat.h.htm
-    // The fields of perfstat_memory_total_t:
-    // u_longlong_t virt_total         Total virtual memory (in 4 KB pages).
-    // u_longlong_t real_total         Total real memory (in 4 KB pages).
-    // u_longlong_t real_free          Free real memory (in 4 KB pages).
-    // u_longlong_t pgsp_total         Total paging space (in 4 KB pages).
-    // u_longlong_t pgsp_free          Free paging space (in 4 KB pages).
-
-    pmi->virt_total = psmt.virt_total * 4096;
-    pmi->real_total = psmt.real_total * 4096;
-    pmi->real_free = psmt.real_free * 4096;
-    pmi->pgsp_total = psmt.pgsp_total * 4096;
-    pmi->pgsp_free = psmt.pgsp_free * 4096;
-
-    return true;
-
   }
+
+  assert(rc == 1, "perfstat_memory_total() - weird return code");
+
+  // The fields of perfstat_memory_total_t:
+  // u_longlong_t virt_total         Total virtual memory (in 4 KB pages).
+  // u_longlong_t real_total         Total real memory (in 4 KB pages).
+  // u_longlong_t real_free          Free real memory (in 4 KB pages).
+  // u_longlong_t pgsp_total         Total paging space (in 4 KB pages).
+  // u_longlong_t pgsp_free          Free paging space (in 4 KB pages).
+  pmi->virt_total = psmt.virt_total * 4096;
+  pmi->real_total = psmt.real_total * 4096;
+  pmi->real_free = psmt.real_free * 4096;
+  pmi->pgsp_total = psmt.pgsp_total * 4096;
+  pmi->pgsp_free = psmt.pgsp_free * 4096;
+
+  return true;
 } // end os::Aix::get_meminfo
 
 //////////////////////////////////////////////////////////////////////////////
@@ -957,44 +906,15 @@ double os::elapsedVTime() {
 //
 // See: https://www.ibm.com/support/knowledgecenter/ssw_aix_61/com.ibm.aix.basetrf2/read_real_time.htm
 //
-// On PASE: mread_real_time will always return RTC_POWER_PC data, so no
-// conversion is necessary. However, mread_real_time will not return
-// monotonic results but merely matches read_real_time. So we need a tweak
-// to ensure monotonic results.
-//
-// For PASE no public documentation exists, just word by IBM
 jlong os::javaTimeNanos() {
   timebasestruct_t time;
   int rc = mread_real_time(&time, TIMEBASE_SZ);
-  if (os::Aix::on_pase()) {
-    assert(rc == RTC_POWER, "expected time format RTC_POWER from mread_real_time in PASE");
-    jlong now = jlong(time.tb_high) * NANOSECS_PER_SEC + jlong(time.tb_low);
-    jlong prev = max_real_time;
-    if (now <= prev) {
-      return prev;   // same or retrograde time;
-    }
-    jlong obsv = Atomic::cmpxchg(&max_real_time, prev, now);
-    assert(obsv >= prev, "invariant");   // Monotonicity
-    // If the CAS succeeded then we're done and return "now".
-    // If the CAS failed and the observed value "obsv" is >= now then
-    // we should return "obsv".  If the CAS failed and now > obsv > prv then
-    // some other thread raced this thread and installed a new value, in which case
-    // we could either (a) retry the entire operation, (b) retry trying to install now
-    // or (c) just return obsv.  We use (c).   No loop is required although in some cases
-    // we might discard a higher "now" value in deference to a slightly lower but freshly
-    // installed obsv value.   That's entirely benign -- it admits no new orderings compared
-    // to (a) or (b) -- and greatly reduces coherence traffic.
-    // We might also condition (c) on the magnitude of the delta between obsv and now.
-    // Avoiding excessive CAS operations to hot RW locations is critical.
-    // See https://blogs.oracle.com/dave/entry/cas_and_cache_trivia_invalidate
-    return (prev == obsv) ? now : obsv;
-  } else {
-    if (rc != RTC_POWER) {
-      rc = time_base_to_time(&time, TIMEBASE_SZ);
-      assert(rc != -1, "error calling time_base_to_time()");
-    }
-    return jlong(time.tb_high) * NANOSECS_PER_SEC + jlong(time.tb_low);
+
+  if (rc != RTC_POWER) {
+    rc = time_base_to_time(&time, TIMEBASE_SZ);
+    assert(rc != -1, "error calling time_base_to_time()");
   }
+  return jlong(time.tb_high) * NANOSECS_PER_SEC + jlong(time.tb_low);
 }
 
 void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
@@ -1564,12 +1484,6 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
     return nullptr;
   }
 
-  // For old AS/400's (V5R4 and older) we should not even be here - System V shared memory is not
-  // really supported (max size 4GB), so reserve_mmapped_memory should have been used instead.
-  if (os::Aix::on_pase_V5R4_or_older()) {
-    ShouldNotReachHere();
-  }
-
   // Align size of shm up to 64K to avoid errors if we later try to change the page size.
   const size_t size = align_up(bytes, 64*K);
 
@@ -1686,7 +1600,7 @@ static bool uncommit_shmated_memory(char* addr, size_t size) {
   const bool rc = my_disclaim64(addr, size);
 
   if (!rc) {
-    trcVerbose("my_disclaim64(" PTR_FORMAT ", " UINTX_FORMAT ") failed.\n", p2i(addr), size);
+    log_warning(os)("my_disclaim64(" PTR_FORMAT ", " UINTX_FORMAT ") failed.\n", p2i(addr), size);
     return false;
   }
   return true;
@@ -1876,7 +1790,7 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
   guarantee0(vmi);
   vmi->assert_is_valid_subrange(addr, size);
 
-  trcVerbose("commit_memory [" PTR_FORMAT " - " PTR_FORMAT "].", p2i(addr), p2i(addr + size - 1));
+  log_info(os)("commit_memory [" PTR_FORMAT " - " PTR_FORMAT "].", p2i(addr), p2i(addr + size - 1));
 
   if (UseExplicitCommit) {
     // AIX commits memory on touch. So, touch all pages to be committed.
@@ -2086,27 +2000,6 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
     } else {
       rc = read_protected;
     }
-
-    if (!rc) {
-      if (os::Aix::on_pase()) {
-        // There is an issue on older PASE systems where mprotect() will return success but the
-        // memory will not be protected.
-        // This has nothing to do with the problem of using mproect() on SPEC1170 incompatible
-        // machines; we only see it rarely, when using mprotect() to protect the guard page of
-        // a stack. It is an OS error.
-        //
-        // A valid strategy is just to try again. This usually works. :-/
-
-        ::usleep(1000);
-        Events::log(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
-        if (::mprotect(addr, size, prot) == 0) {
-          const bool read_protected_2 =
-            (SafeFetch32((int*)addr, 0x12345678) == 0x12345678 &&
-            SafeFetch32((int*)addr, 0x76543210) == 0x76543210) ? true : false;
-          rc = true;
-        }
-      }
-    }
   }
 
   assert(rc == true, "mprotect failed.");
@@ -2232,7 +2125,6 @@ void os::naked_yield() {
 // (Actually, I doubt this even has an impact on AIX, as we do kernel
 // scheduling there; however, this still leaves iSeries.)
 //
-// We use the same values for AIX and PASE.
 int os::java_to_os_priority[CriticalPriority + 1] = {
   54,             // 0 Entry should never be used
 
@@ -2278,7 +2170,7 @@ OSReturn os::set_native_priority(Thread* thread, int newpri) {
   int ret = pthread_setschedparam(thr, policy, &param);
 
   if (ret != 0) {
-    trcVerbose("Could not change priority for thread %d to %d (error %d, %s)",
+    log_warning(os)("Could not change priority for thread %d to %d (error %d, %s)",
         (int)thr, newpri, ret, os::errno_name(ret));
   }
   return (ret == 0) ? OS_OK : OS_ERR;
@@ -2320,8 +2212,7 @@ void os::init(void) {
   g_brk_at_startup = (address) ::sbrk(0);
   assert(g_brk_at_startup != (address) -1, "sbrk failed");
 
-  // First off, we need to know whether we run on AIX or PASE, and
-  // the OS level we run on.
+  // First off, we need to know the OS level we run on.
   os::Aix::initialize_os_info();
 
   // Scan environment (SPEC1170 behaviour, etc).
@@ -2343,7 +2234,7 @@ void os::init(void) {
   //
   // So, we do the following:
   // LDR_CNTRL    can_use_64K_pages_dynamically       what we do                      remarks
-  // 4K           no                                  4K                              old systems (aix 5.2, as/400 v5r4) or new systems with AME activated
+  // 4K           no                                  4K                              old systems (aix 5.2) or new systems with AME activated
   // 4k           yes                                 64k (treat 4k stacks as 64k)    different loader than java and standard settings
   // 64k          no              --- AIX 5.2 ? ---
   // 64k          yes                                 64k                             new systems and standard java loader (we set datapsize=64k when linking)
@@ -2396,12 +2287,8 @@ void os::init(void) {
   // debug trace
   trcVerbose("os::vm_page_size %s", describe_pagesize(os::vm_page_size()));
 
-  // Next, we need to initialize libo4 and libperfstat libraries.
-  if (os::Aix::on_pase()) {
-    os::Aix::initialize_libo4();
-  } else {
-    os::Aix::initialize_libperfstat();
-  }
+  // Next, we need to initialize libperfstat
+  os::Aix::initialize_libperfstat();
 
   // Reset the perfstat information provided by ODM.
   libperfstat::perfstat_reset();
@@ -2424,12 +2311,6 @@ jint os::init_2(void) {
   DEBUG_ONLY(os::set_mutex_init_done();)
 
   os::Posix::init_2();
-
-  if (os::Aix::on_pase()) {
-    trcVerbose("Running on PASE.");
-  } else {
-    trcVerbose("Running on AIX (not PASE).");
-  }
 
   trcVerbose("processor count: %d", os::_processor_count);
   trcVerbose("physical memory: %lu", Aix::_physical_memory);
@@ -2753,33 +2634,16 @@ int os::loadavg(double values[], int nelem) {
   guarantee(nelem >= 0 && nelem <= 3, "argument error");
   guarantee(values, "argument error");
 
-  if (os::Aix::on_pase()) {
-
-    // AS/400 PASE: use libo4 porting library
-    double v[3] = { 0.0, 0.0, 0.0 };
-
-    if (libo4::get_load_avg(v, v + 1, v + 2)) {
-      for (int i = 0; i < nelem; i ++) {
-        values[i] = v[i];
-      }
-      return nelem;
-    } else {
-      return -1;
+  // AIX: use libperfstat
+  libperfstat::cpuinfo_t ci;
+  if (libperfstat::get_cpuinfo(&ci)) {
+    for (int i = 0; i < nelem; i++) {
+      values[i] = ci.loadavg[i];
     }
-
   } else {
-
-    // AIX: use libperfstat
-    libperfstat::cpuinfo_t ci;
-    if (libperfstat::get_cpuinfo(&ci)) {
-      for (int i = 0; i < nelem; i++) {
-        values[i] = ci.loadavg[i];
-      }
-    } else {
-      return -1;
-    }
-    return nelem;
+    return -1;
   }
+  return nelem;
 }
 
 bool os::is_primordial_thread(void) {
@@ -2790,20 +2654,19 @@ bool os::is_primordial_thread(void) {
   }
 }
 
-// OS recognitions (PASE/AIX, OS level) call this before calling any
-// one of Aix::on_pase(), Aix::os_version() static
+// OS recognitions (OS level) call this before calling Aix::os_version()
 void os::Aix::initialize_os_info() {
 
-  assert(_on_pase == -1 && _os_version == 0, "already called.");
+  assert(_os_version == 0, "already called.");
 
   struct utsname uts;
   memset(&uts, 0, sizeof(uts));
   strcpy(uts.sysname, "?");
   if (::uname(&uts) == -1) {
-    trcVerbose("uname failed (%d)", errno);
-    guarantee(0, "Could not determine whether we run on AIX or PASE");
+    log_warning(os)("uname failed (%d)", errno);
+    guarantee(0, "Could not determine uname information");
   } else {
-    trcVerbose("uname says: sysname \"%s\" version \"%s\" release \"%s\" "
+    log_info(os)("uname says: sysname \"%s\" version \"%s\" release \"%s\" "
                "node \"%s\" machine \"%s\"\n",
                uts.sysname, uts.version, uts.release, uts.nodename, uts.machine);
     const int major = atoi(uts.version);
@@ -2813,22 +2676,13 @@ void os::Aix::initialize_os_info() {
     _os_version = (major << 24) | (minor << 16);
     char ver_str[20] = {0};
     const char* name_str = "unknown OS";
-    if (strcmp(uts.sysname, "OS400") == 0) {
-      // We run on AS/400 PASE. We do not support versions older than V5R4M0.
-      _on_pase = 1;
-      if (os_version_short() < 0x0504) {
-        trcVerbose("OS/400 releases older than V5R4M0 not supported.");
-        assert(false, "OS/400 release too old.");
-      }
-      name_str = "OS/400 (pase)";
-      jio_snprintf(ver_str, sizeof(ver_str), "%u.%u", major, minor);
-    } else if (strcmp(uts.sysname, "AIX") == 0) {
+
+    if (strcmp(uts.sysname, "AIX") == 0) {
       // We run on AIX. We do not support versions older than AIX 7.1.
-      _on_pase = 0;
       // Determine detailed AIX version: Version, Release, Modification, Fix Level.
       odmWrapper::determine_os_kernel_version(&_os_version);
       if (os_version_short() < 0x0701) {
-        trcVerbose("AIX releases older than AIX 7.1 are not supported.");
+        log_warning(os)("AIX releases older than AIX 7.1 are not supported.");
         assert(false, "AIX release too old.");
       }
       name_str = "AIX";
@@ -2837,10 +2691,10 @@ void os::Aix::initialize_os_info() {
     } else {
       assert(false, "%s", name_str);
     }
-    trcVerbose("We run on %s %s", name_str, ver_str);
+    log_info(os)("We run on %s %s", name_str, ver_str);
   }
 
-  guarantee(_on_pase != -1 && _os_version, "Could not determine AIX/OS400 release");
+  guarantee(_os_version, "Could not determine AIX release");
 } // end: os::Aix::initialize_os_info()
 
 // Scan environment for important settings which might effect the VM.
@@ -2862,7 +2716,7 @@ void os::Aix::scan_environment() {
   trcVerbose("EXTSHM=%s.", p ? p : "<unset>");
   if (p && strcasecmp(p, "ON") == 0) {
     _extshm = 1;
-    trcVerbose("*** Unsupported mode! Please remove EXTSHM from your environment! ***");
+    log_warning(os)("*** Unsupported mode! Please remove EXTSHM from your environment! ***");
     if (!AllowExtshm) {
       // We allow under certain conditions the user to continue. However, we want this
       // to be a fatal error by default. On certain AIX systems, leaving EXTSHM=ON means
@@ -2886,7 +2740,7 @@ void os::Aix::scan_environment() {
   trcVerbose("XPG_SUS_ENV=%s.", p ? p : "<unset>");
   if (p && strcmp(p, "ON") == 0) {
     _xpg_sus_mode = 1;
-    trcVerbose("Unsupported setting: XPG_SUS_ENV=ON");
+    log_warning(os)("Unsupported setting: XPG_SUS_ENV=ON");
     // This is not supported. Worst of all, it changes behaviour of mmap MAP_FIXED to
     // clobber address ranges. If we ever want to support that, we have to do some
     // testing first.
@@ -2895,39 +2749,17 @@ void os::Aix::scan_environment() {
     _xpg_sus_mode = 0;
   }
 
-  if (os::Aix::on_pase()) {
-    p = ::getenv("QIBM_MULTI_THREADED");
-    trcVerbose("QIBM_MULTI_THREADED=%s.", p ? p : "<unset>");
-  }
-
   p = ::getenv("LDR_CNTRL");
   trcVerbose("LDR_CNTRL=%s.", p ? p : "<unset>");
-  if (os::Aix::on_pase() && os::Aix::os_version_short() == 0x0701) {
-    if (p && ::strstr(p, "TEXTPSIZE")) {
-      trcVerbose("*** WARNING - LDR_CNTRL contains TEXTPSIZE. "
-        "you may experience hangs or crashes on OS/400 V7R1.");
-    }
-  }
 
   p = ::getenv("AIXTHREAD_GUARDPAGES");
   trcVerbose("AIXTHREAD_GUARDPAGES=%s.", p ? p : "<unset>");
 
 } // end: os::Aix::scan_environment()
 
-// PASE: initialize the libo4 library (PASE porting library).
-void os::Aix::initialize_libo4() {
-  guarantee(os::Aix::on_pase(), "OS/400 only.");
-  if (!libo4::init()) {
-    trcVerbose("libo4 initialization failed.");
-    assert(false, "libo4 initialization failed");
-  } else {
-    trcVerbose("libo4 initialized.");
-  }
-}
-
 void os::Aix::initialize_libperfstat() {
   if (!libperfstat::init()) {
-    trcVerbose("libperfstat initialization failed.");
+    log_warning(os)("libperfstat initialization failed.");
     assert(false, "libperfstat initialization failed");
   } else {
     trcVerbose("libperfstat initialized.");

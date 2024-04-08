@@ -367,7 +367,7 @@ Klass* SystemDictionary::resolve_array_class_or_null(Symbol* class_name,
       k = k->array_klass(ndims, CHECK_NULL);
     }
   } else {
-    k = Universe::typeArrayKlassObj(t);
+    k = Universe::typeArrayKlass(t);
     k = TypeArrayKlass::cast(k)->array_klass(ndims, CHECK_NULL);
   }
   return k;
@@ -782,7 +782,7 @@ Klass* SystemDictionary::find_instance_or_array_klass(Thread* current,
     int ndims = ss.skip_array_prefix();  // skip all '['s
     BasicType t = ss.type();
     if (t != T_OBJECT) {
-      k = Universe::typeArrayKlassObj(t);
+      k = Universe::typeArrayKlass(t);
     } else {
       k = SystemDictionary::find_instance_klass(current, ss.as_symbol(), class_loader, protection_domain);
     }
@@ -1727,7 +1727,7 @@ Klass* SystemDictionary::find_constrained_instance_or_array_klass(
     int ndims = ss.skip_array_prefix();  // skip all '['s
     BasicType t = ss.type();
     if (t != T_OBJECT) {
-      klass = Universe::typeArrayKlassObj(t);
+      klass = Universe::typeArrayKlass(t);
     } else {
       MutexLocker mu(current, SystemDictionary_lock);
       klass = LoaderConstraintTable::find_constrained_klass(ss.as_symbol(), class_loader_data(class_loader));
