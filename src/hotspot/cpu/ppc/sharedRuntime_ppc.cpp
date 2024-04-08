@@ -1657,7 +1657,7 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
   if (CheckJNICalls) {
     // Check if this is a virtual thread continuation
     Label L_skip_vthread_code;
-    __ ld(R0, in_bytes(ContinuationEntry::flags_offset()), R1_SP);
+    __ lwz(R0, in_bytes(ContinuationEntry::flags_offset()), R1_SP);
     __ cmpwi(CCR0, R0, 0);
     __ beq(CCR0, L_skip_vthread_code);
 
@@ -1688,7 +1688,7 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
   else {
     // Check if this is a virtual thread continuation
     Label L_skip_vthread_code;
-    __ ld(R0, in_bytes(ContinuationEntry::flags_offset()), R1_SP);
+    __ lwz(R0, in_bytes(ContinuationEntry::flags_offset()), R1_SP);
     __ cmpwi(CCR0, R0, 0);
     __ beq(CCR0, L_skip_vthread_code);
 
