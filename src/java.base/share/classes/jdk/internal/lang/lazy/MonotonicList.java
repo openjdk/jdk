@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.lang.monotonic;
+package jdk.internal.lang.lazy;
 
 import jdk.internal.vm.annotation.Stable;
 
@@ -35,7 +35,7 @@ import java.util.Objects;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
-import static jdk.internal.lang.monotonic.MonotonicUtil.*;
+import static jdk.internal.lang.lazy.LazyUtil.*;
 
 public final class MonotonicList<V>
         extends AbstractList<Lazy<V>>

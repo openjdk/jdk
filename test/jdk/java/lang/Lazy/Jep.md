@@ -486,6 +486,7 @@ constant fields at compile, condensation, and/or runtime.
 # Log
 
 Dropping Lazy would not allow for imperative use.
+Dropping Lazy would require a lambda/class being created for each collection.
 Lazy lists can currently not hold null (but this can be added).
 A singleton lazy lists occupies more space than a Lazy.
 Lazy and a singleton lazy lists are equally fast:
@@ -503,6 +504,6 @@ LazyBenchmark.staticList    avgt   10  0.563 ? 0.006  ns/op
 
 Usage in sample parts of the JDK:
 
-Single  : 
-Multiple:
+Occurrences: 11112111111111111111111111111111112211911121
+
 

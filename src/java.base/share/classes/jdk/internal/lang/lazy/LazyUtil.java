@@ -23,15 +23,15 @@
  * questions.
  */
 
-package jdk.internal.lang.monotonic;
+package jdk.internal.lang.lazy;
 
 import jdk.internal.misc.Unsafe;
 
 import static jdk.internal.misc.Unsafe.*;
 
-public final class MonotonicUtil {
+public final class LazyUtil {
 
-    private MonotonicUtil() {
+    private LazyUtil() {
     }
 
     public static final Unsafe UNSAFE = Unsafe.getUnsafe();
@@ -56,6 +56,10 @@ public final class MonotonicUtil {
 
     public static long objectOffset(int index) {
         return ARRAY_OBJECT_BASE_OFFSET + (long) index * ARRAY_OBJECT_INDEX_SCALE;
+    }
+
+    public static long byteOffset(int index) {
+        return ARRAY_BYTE_BASE_OFFSET + (long) index * ARRAY_BYTE_INDEX_SCALE;
     }
 
 }

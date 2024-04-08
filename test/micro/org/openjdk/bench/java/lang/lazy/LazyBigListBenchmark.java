@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * Benchmark measuring lazy list performance
@@ -46,8 +47,8 @@ public class LazyBigListBenchmark {
     private static final int SIZE = 1_000_000;
 
     //private static final List<Monotonic<Integer>> MONOTONIC_LAZY = randomMono(Monotonic.ofList(SIZE));
-    private final List<Lazy<Integer>> Lazy_EAGER = randomLazy(IntStream.range(0, SIZE)
-            .mapToObj(_ -> Lazy.<Integer>of())
+    private static final List<Lazy<Integer>> LAZY_EAGER = randomLazy(Stream.generate(Lazy::<Integer>of)
+            .limit(SIZE)
             .toList());
 
     private static final List<Integer> ARRAY_LIST = random(new ArrayList<>(SIZE));
@@ -56,7 +57,7 @@ public class LazyBigListBenchmark {
     private final List<Lazy<Integer>> lazyEager = randomLazy(IntStream.range(0, SIZE)
                      .mapToObj(_ -> Lazy.<Integer>of())
                      .toList());
-    private static final List<Integer> arrayList = random(new ArrayList<>(SIZE));
+    private final List<Integer> arrayList = random(new ArrayList<>(SIZE));
 
     @Setup
     public void setup() {
@@ -101,8 +102,8 @@ public class LazyBigListBenchmark {
     @Benchmark
     public int staticLazyEager() {
         int sum = 0;
-        for (int i = 0; i < Lazy_EAGER.size(); i++) {
-            sum += Lazy_EAGER.get(i).orThrow();
+        for (int i = 0; i < LAZY_EAGER.size(); i++) {
+            sum += LAZY_EAGER.get(i).orThrow();
         }
         return sum;
     }

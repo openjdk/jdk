@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.lang.monotonic;
+package jdk.internal.lang.lazy;
 
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
@@ -36,7 +36,7 @@ import java.util.Objects;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
-import static jdk.internal.lang.monotonic.MonotonicUtil.*;
+import static jdk.internal.lang.lazy.LazyUtil.*;
 
 public final class LazyImpl<V> implements Lazy<V> {
 
@@ -183,7 +183,7 @@ public final class LazyImpl<V> implements Lazy<V> {
         // under normal memory semantics.
         freeze();
         if (!UNSAFE.compareAndSetReference(this, VALUE_OFFSET, null, value)) {
-            throw new InternalError("Should not reach here");
+            throw new IllegalStateException("A value is already set: " + orThrow());
         }
     }
 
@@ -197,8 +197,8 @@ public final class LazyImpl<V> implements Lazy<V> {
 
     private void casSet() {
         if (!UNSAFE.compareAndSetByte(this, SET_OFFSET, NOT_SET, SET)) {
-            throw new InternalError("Should not reach here");
-        };
+            throw new IllegalStateException("A value is already set: " + orThrow());
+        }
     }
 
     // Factories

@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.lang.monotonic;
+package jdk.internal.lang.lazy;
 
 import jdk.internal.vm.annotation.Stable;
 
@@ -36,8 +36,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-
-import static jdk.internal.lang.monotonic.MonotonicUtil.*;
 
 public final class MonotonicMap<K, V>
         extends AbstractMap<K, Lazy<V>>
@@ -72,7 +70,7 @@ public final class MonotonicMap<K, V>
             }
         }
 
-        freeze(); // ensure keys are visible if table is visible
+        LazyUtil.freeze(); // ensure keys are visible if table is visible
         this.table = table;
     }
 
@@ -119,13 +117,13 @@ public final class MonotonicMap<K, V>
     }
 
     private Object tableItemVolatile(int index) {
-        return UNSAFE.getReferenceVolatile(table, objectOffset(index));
+        return LazyUtil.UNSAFE.getReferenceVolatile(table, LazyUtil.objectOffset(index));
     }
 
     private Object caeTableItemWitness(int index, Object o) {
         // Make sure no reordering of store operations
-        freeze();
-        var w = UNSAFE.compareAndExchangeReference(table, objectOffset(index), null, o);
+        LazyUtil.freeze();
+        var w = LazyUtil.UNSAFE.compareAndExchangeReference(table, LazyUtil.objectOffset(index), null, o);
         return w == null ? o : w;
     }
 
@@ -216,19 +214,19 @@ public final class MonotonicMap<K, V>
     }
 
     // all mutating methods throw UnsupportedOperationException
-    @Override public Lazy<V> put(K key, Lazy<V> value) {throw uoe();}
-    @Override public Lazy<V> remove(Object key) {throw uoe();}
-    @Override public void putAll(Map<? extends K, ? extends Lazy<V>> m) {throw uoe();}
-    @Override public void clear() {throw uoe();}
-    @Override public void replaceAll(BiFunction<? super K, ? super Lazy<V>, ? extends Lazy<V>> function) {throw uoe();}
-    @Override public Lazy<V> putIfAbsent(K key, Lazy<V> value) {throw uoe();}
-    @Override public boolean remove(Object key, Object value) {throw uoe();}
-    @Override public boolean replace(K key, Lazy<V> oldValue, Lazy<V> newValue) {throw uoe();}
-    @Override public Lazy<V> replace(K key, Lazy<V> value) {throw uoe();}
-    @Override public Lazy<V> computeIfAbsent(K key, Function<? super K, ? extends Lazy<V>> mappingFunction) {throw uoe();}
-    @Override public Lazy<V> computeIfPresent(K key, BiFunction<? super K, ? super Lazy<V>, ? extends Lazy<V>> remappingFunction) {throw uoe();}
-    @Override public Lazy<V> compute(K key, BiFunction<? super K, ? super Lazy<V>, ? extends Lazy<V>> remappingFunction) {throw uoe();}
-    @Override public Lazy<V> merge(K key, Lazy<V> value, BiFunction<? super Lazy<V>, ? super Lazy<V>, ? extends Lazy<V>> remappingFunction) {throw uoe();}
+    @Override public Lazy<V> put(K key, Lazy<V> value) {throw LazyUtil.uoe();}
+    @Override public Lazy<V> remove(Object key) {throw LazyUtil.uoe();}
+    @Override public void putAll(Map<? extends K, ? extends Lazy<V>> m) {throw LazyUtil.uoe();}
+    @Override public void clear() {throw LazyUtil.uoe();}
+    @Override public void replaceAll(BiFunction<? super K, ? super Lazy<V>, ? extends Lazy<V>> function) {throw LazyUtil.uoe();}
+    @Override public Lazy<V> putIfAbsent(K key, Lazy<V> value) {throw LazyUtil.uoe();}
+    @Override public boolean remove(Object key, Object value) {throw LazyUtil.uoe();}
+    @Override public boolean replace(K key, Lazy<V> oldValue, Lazy<V> newValue) {throw LazyUtil.uoe();}
+    @Override public Lazy<V> replace(K key, Lazy<V> value) {throw LazyUtil.uoe();}
+    @Override public Lazy<V> computeIfAbsent(K key, Function<? super K, ? extends Lazy<V>> mappingFunction) {throw LazyUtil.uoe();}
+    @Override public Lazy<V> computeIfPresent(K key, BiFunction<? super K, ? super Lazy<V>, ? extends Lazy<V>> remappingFunction) {throw LazyUtil.uoe();}
+    @Override public Lazy<V> compute(K key, BiFunction<? super K, ? super Lazy<V>, ? extends Lazy<V>> remappingFunction) {throw LazyUtil.uoe();}
+    @Override public Lazy<V> merge(K key, Lazy<V> value, BiFunction<? super Lazy<V>, ? super Lazy<V>, ? extends Lazy<V>> remappingFunction) {throw LazyUtil.uoe();}
 
     // Factories
 

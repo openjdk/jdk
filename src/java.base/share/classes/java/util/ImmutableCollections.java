@@ -39,11 +39,11 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.lang.monotonic.MonotonicUtil;
+import jdk.internal.lang.lazy.LazyUtil;
 import jdk.internal.misc.CDS;
 import jdk.internal.vm.annotation.Stable;
 
-import static jdk.internal.lang.monotonic.MonotonicUtil.*;
+import static jdk.internal.lang.lazy.LazyUtil.*;
 
 /**
  * Container class for immutable collections. Not part of the public API.
@@ -1715,7 +1715,7 @@ class ImmutableCollections {
 
         @SuppressWarnings("unchecked")
         private E elementVolatile(int index) {
-            return (E) UNSAFE.getReferenceVolatile(elements, MonotonicUtil.objectOffset(index));
+            return (E) UNSAFE.getReferenceVolatile(elements, LazyUtil.objectOffset(index));
         }
 
         @SuppressWarnings("unchecked")
@@ -1727,7 +1727,7 @@ class ImmutableCollections {
         }
 
         private Object mutexVolatile(int index) {
-            return UNSAFE.getReferenceVolatile(mutexes, MonotonicUtil.objectOffset(index));
+            return UNSAFE.getReferenceVolatile(mutexes, LazyUtil.objectOffset(index));
         }
 
         private Object casMutex(int index) {

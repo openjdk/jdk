@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * Benchmark measuring lazy list performance
@@ -41,32 +42,57 @@ import java.util.stream.IntStream;
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 2, jvmArgsAppend = "--enable-preview")
 @OperationsPerInvocation(1000)
+
+/*
+2024-04-08
+Benchmark                                     Mode  Cnt  Score   Error  Units
+LazySmallListBenchmark.instanceArrayList      avgt   10  0.363 ? 0.002  ns/op
+LazySmallListBenchmark.instanceDelegatedList  avgt   10  0.377 ? 0.006  ns/op
+LazySmallListBenchmark.instanceLazyEager      avgt   10  0.616 ? 0.009  ns/op
+LazySmallListBenchmark.staticArrayList        avgt   10  0.359 ? 0.004  ns/op
+LazySmallListBenchmark.staticLazyDelegated    avgt   10  0.376 ? 0.002  ns/op
+LazySmallListBenchmark.staticLazyEager        avgt   10  0.645 ? 0.001  ns/op
+
+ */
+
 public class LazySmallListBenchmark {
 
     private static final int SIZE = 1_000;
 
     //private static final List<Monotonic<Integer>> MONOTONIC_LAZY = randomMono(Monotonic.ofList(SIZE));
-    private final List<Lazy<Integer>> Lazy_EAGER = randomLazy(IntStream.range(0, SIZE)
-            .mapToObj(_ -> Lazy.<Integer>of())
+    private static final List<Lazy<Integer>> Lazy_EAGER = randomLazy(Stream.generate(Lazy::<Integer>of)
+            .limit(SIZE)
             .toList());
 
     private static final List<Integer> ARRAY_LIST = random(new ArrayList<>(SIZE));
+    private final List<Lazy<Integer>> DELEGATED_LIST = randomLazy(Lazy.ofWrappedList(SIZE));
+
 
     //private final List<Monotonic<Integer>> monotonicLazy = randomMono(Monotonic.ofList(SIZE));
     private final List<Lazy<Integer>> lazyEager = randomLazy(IntStream.range(0, SIZE)
                      .mapToObj(_ -> Lazy.<Integer>of())
                      .toList());
-    private static final List<Integer> arrayList = random(new ArrayList<>(SIZE));
+    private final List<Integer> arrayList = random(new ArrayList<>(SIZE));
+    private final List<Lazy<Integer>> delegatedList = randomLazy(Lazy.ofWrappedList(SIZE));
 
     @Setup
     public void setup() {
     }
 
     @Benchmark
-    public Integer instanceArrayList() {
+    public int instanceArrayList() {
         int sum = 0;
         for (int i = 0; i < arrayList.size(); i++) {
             sum += arrayList.get(i);
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public int instanceDelegatedList() {
+        int sum = 0;
+        for (int i = 0; i < delegatedList.size(); i++) {
+            sum += delegatedList.get(i).orThrow();
         }
         return sum;
     }
@@ -94,6 +120,15 @@ public class LazySmallListBenchmark {
         int sum = 0;
         for (int i = 0; i < ARRAY_LIST.size(); i++) {
             sum += ARRAY_LIST.get(i);
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public int staticLazyDelegated() {
+        int sum = 0;
+        for (int i = 0; i < DELEGATED_LIST.size(); i++) {
+            sum += DELEGATED_LIST.get(i).orThrow();
         }
         return sum;
     }

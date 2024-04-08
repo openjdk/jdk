@@ -66,7 +66,7 @@ public class LazyListSumBenchmark {
     private static final int SIZE = 1_000;
 
     private static final List<Integer> LAZY = Lazy.ofList(SIZE, FUNCTION);
-    private final List<Lazy<Integer>> Lazy_EAGER = initLazy(Stream.generate(Lazy::<Integer>of)
+    private static final List<Lazy<Integer>> LAZY_EAGER = initLazy(Stream.generate(Lazy::<Integer>of)
             .limit(SIZE)
             .toList());
 
@@ -76,7 +76,7 @@ public class LazyListSumBenchmark {
     private final List<Lazy<Integer>> lazyEager = initLazy(Stream.generate(Lazy::<Integer>of)
             .limit(SIZE)
             .toList());
-    private static final List<Integer> arrayList = init(new ArrayList<>(SIZE));
+    private final List<Integer> arrayList = init(new ArrayList<>(SIZE));
 
     @Setup
     public void setup() {
@@ -121,8 +121,8 @@ public class LazyListSumBenchmark {
     @Benchmark
     public int staticLazyEager() {
         int sum = 0;
-        for (int i = 0; i < Lazy_EAGER.size(); i++) {
-            sum += Lazy_EAGER.get(i).orThrow();
+        for (int i = 0; i < LAZY_EAGER.size(); i++) {
+            sum += LAZY_EAGER.get(i).orThrow();
         }
         return sum;
     }

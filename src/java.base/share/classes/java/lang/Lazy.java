@@ -26,7 +26,9 @@
 package java.lang;
 
 import jdk.internal.javac.PreviewFeature;
-import jdk.internal.lang.monotonic.LazyImpl;
+import jdk.internal.lang.lazy.LazyImpl;
+import jdk.internal.lang.lazy.LazyList;
+import jdk.internal.lang.lazy.LazyListElement;
 
 import java.io.Serializable;
 import java.util.List;
@@ -82,7 +84,7 @@ import static jdk.internal.javac.PreviewFeature.*;
  * @since 23
  */
 @PreviewFeature(feature = Feature.LAZY_VALUES_AND_COLLECTIONS)
-public sealed interface Lazy<V> permits LazyImpl {
+public sealed interface Lazy<V> permits LazyImpl, LazyListElement {
 
     /**
      * {@return the set value (nullable) if set, otherwise throws
@@ -192,7 +194,7 @@ public sealed interface Lazy<V> permits LazyImpl {
      * <p>
      * The returned List is not {@linkplain Serializable}.
      * <p>
-     * The returned monotonic map is eligible for constant folding and other
+     * The returned lazy map is eligible for constant folding and other
      * optimizations by the JVM.
      *
      * @param <E>    the {@code List}'s element type
@@ -321,6 +323,28 @@ public sealed interface Lazy<V> permits LazyImpl {
         Objects.requireNonNull(enumType);
         Objects.requireNonNull(mapper);
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@return an unmodifiable, shallowly immutable, thread-safe, lazy,
+     * {@linkplain List} containing {@code size} {@linkplain Lazy} elements}
+     * <p>
+     * The returned List is not {@linkplain Serializable}.
+     * <p>
+     * The returned lazy map is eligible for constant folding and other
+     * optimizations by the JVM.
+     *
+     * @param <E>    the {@code List}'s element type
+     * @param size   the number of elements in the list
+     * @throws IllegalArgumentException if the provided {@code size} is negative
+     *
+     * @since 23
+     */
+    static <E> List<Lazy<E>> ofWrappedList(int size) {
+        if (size < 0) {
+            throw new IllegalArgumentException();
+        }
+        return LazyList.of(size);
     }
 
 }
