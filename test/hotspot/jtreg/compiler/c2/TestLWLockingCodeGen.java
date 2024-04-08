@@ -25,7 +25,7 @@
  * @test
  * @summary Tests correct code generation of lightweight locking when using -XX:+ShowMessageBoxOnError; times-out on failure
  * @bug 8329726
- * @run main/othervm/timeout=15 -XX:+ShowMessageBoxOnError -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestLWLockingCodeGen::sync TestLWLockingCodeGen
+ * @run main/othervm -XX:+ShowMessageBoxOnError -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestLWLockingCodeGen::sync TestLWLockingCodeGen
  */
 public class TestLWLockingCodeGen {
     private static int val = 0;
