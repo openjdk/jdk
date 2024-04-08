@@ -31,6 +31,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathValidator;
 import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertPathValidatorException.BasicReason;
 import java.security.cert.PKIXParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
@@ -50,6 +51,7 @@ import sun.security.x509.GeneralNames;
 import sun.security.x509.KeyIdentifier;
 import sun.security.x509.URIName;
 import sun.security.x509.X500Name;
+import sun.security.x509.X509CRLEntryImpl;
 import sun.security.x509.X509CRLImpl;
 import static sun.security.x509.X509CRLImpl.TBSCertList;
 import sun.security.testlibrary.CertificateBuilder;
@@ -59,7 +61,8 @@ import sun.security.testlibrary.CertificateBuilder;
  * @bug 8200566
  * @summary Check that CRL validation continues to check other CRLs in
  *          CRLDP extension after CRL fetching errors and exhibits same
- *          behavior whether CRL cache is fresh or stale.
+ *          behavior (fails because cert is revoked) whether CRL cache is
+ *          fresh or stale.
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
  * @library ../../../../../java/security/testlibrary
@@ -98,9 +101,13 @@ public class CheckAllCRLs {
         Files.write(Path.of("root.crl"), crl.getEncoded());
 
         // Validate path containing eeCert1
+        System.out.println("Validating cert with CRLDP containing one "
+            + "DistributionPoint with 2 entries, the first non-existent");
         validatePath(eeCert1, rootCert);
 
         // Validate path containing eeCert2
+        System.out.println("Validating cert with CRLDP containing two "
+            + "DistributionPoints with 1 entry each, the first non-existent");
         validatePath(eeCert2, rootCert);
     }
 
@@ -165,11 +172,15 @@ public class CheckAllCRLs {
         ext = new CRLNumberExtension(1);
         crlExts.setExtension(ext.getId(), ext);
 
+        // revoke cert
+        X509CRLEntryImpl crlEntry =
+            new X509CRLEntryImpl(new BigInteger("1"), new Date());
+
         // Create a 1 year validity CRL starting from 7 days ago
         long start = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(7);
         long end = start + TimeUnit.DAYS.toMillis(365);
         TBSCertList tcl = new TBSCertList(caIssuer, new Date(start),
-            new Date(end), null, crlExts);
+            new Date(end), new X509CRLEntryImpl[]{ crlEntry }, crlExts);
 
         // return signed CRL
         return X509CRLImpl.newSigned(tcl, caKeyPair.getPrivate(), sigAlg);
@@ -209,9 +220,12 @@ public class CheckAllCRLs {
 
         try {
             cpv.validate(cp, pp);
-            System.out.println("Validation passed as expected");
+            throw new Exception("Validation passed unexpectedly");
         } catch (CertPathValidatorException cpve) {
-            throw new Exception("Validation should have passed", cpve);
+            if (cpve.getReason() != BasicReason.REVOKED) {
+                throw new Exception("Validation failed with unexpected reason", cpve);
+            }
+            System.out.println("Validation failed as expected: " + cpve);
         }
     }
 }
