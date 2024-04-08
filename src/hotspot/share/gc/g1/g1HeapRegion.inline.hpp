@@ -105,6 +105,7 @@ inline HeapWord* HeapRegion::advance_to_block_containing_addr(const void* addr,
 }
 
 inline HeapWord* HeapRegion::block_start(const void* addr, HeapWord* const pb) const {
+  assert(addr >= bottom() && addr < top(), "invalid address");
   HeapWord* first_block = _bot->block_start_reaching_into_card(addr);
   return advance_to_block_containing_addr(addr, pb, first_block);
 }
