@@ -28,17 +28,24 @@ package java.lang.invoke;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.javac.PreviewFeature;
+import jdk.internal.misc.VM;
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.MethodVisitor;
+import jdk.internal.util.ClassFileDumper;
 import jdk.internal.util.FormatConcatItem;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
+import java.lang.classfile.ClassFile;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
+import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
 import static java.lang.invoke.MethodType.methodType;
+import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 /**
  * <p>Methods to facilitate the creation of String concatenation methods, that
@@ -98,6 +105,13 @@ import static java.lang.invoke.MethodType.methodType;
  * @since 9
  */
 public final class StringConcatFactory {
+
+    private static final int HIGH_ARITY_THRESHOLD;
+
+    static {
+        String highArity = VM.getSavedProperty("java.lang.invoke.StringConcat.highArityThreshold");
+        HIGH_ARITY_THRESHOLD = Integer.parseInt(highArity != null ? highArity : "10");
+    }
 
     /**
      * Tag used to demarcate an ordinary argument.
@@ -361,9 +375,14 @@ public final class StringConcatFactory {
         }
 
         try {
-            return new ConstantCallSite(
-                    generateMHInlineCopy(concatType, constantStrings)
-                            .viewAsType(concatType, true));
+            if (concatType.parameterCount() < HIGH_ARITY_THRESHOLD) {
+                return new ConstantCallSite(
+                        generateMHInlineCopy(concatType, constantStrings)
+                                .viewAsType(concatType, true));
+            } else {
+                return new ConstantCallSite(
+                        SimpleStringBuilderStrategy.generate(lookup, concatType, constantStrings));
+            }
         } catch (Error e) {
             // Pass through any error
             throw e;
@@ -1346,4 +1365,224 @@ public final class StringConcatFactory {
 
         return mh;
     }
+
+    /**
+     * Bytecode StringBuilder strategy.
+     *
+     * <p>This strategy emits StringBuilder chains as similar as possible
+     * to what javac would. No exact sizing of parameters or estimates.
+     */
+    private static final class SimpleStringBuilderStrategy {
+        static final int CLASSFILE_VERSION = ClassFile.latestMajorVersion();
+        static final String METHOD_NAME = "concat";
+        static final ClassFileDumper DUMPER;
+        static {
+            DUMPER = ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
+        }
+        private SimpleStringBuilderStrategy() {
+            // no instantiation
+        }
+
+        private static MethodHandle generate(Lookup lookup, MethodType args, String[] constants) throws Exception {
+            String className = getClassName(lookup.lookupClass());
+            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
+
+            cw.visit(CLASSFILE_VERSION,
+                    ACC_SUPER + ACC_PUBLIC + ACC_FINAL + ACC_SYNTHETIC,
+                    className,
+                    null,
+                    "java/lang/Object",
+                    null
+            );
+
+            MethodVisitor mv = cw.visitMethod(
+                    ACC_PUBLIC + ACC_STATIC + ACC_FINAL,
+                    METHOD_NAME,
+                    args.toMethodDescriptorString(),
+                    null,
+                    null);
+
+            //mv.visitAnnotation("Ljdk/internal/vm/annotation/ForceInline;", true);
+            mv.visitCode();
+
+
+            // Prepare StringBuilder instance
+            mv.visitTypeInsn(NEW, "java/lang/StringBuilder");
+            mv.visitInsn(DUP);
+
+            mv.visitMethodInsn(
+                    INVOKESPECIAL,
+                    "java/lang/StringBuilder",
+                    "<init>",
+                    "()V",
+                    false
+            );
+
+
+            // At this point, we have a blank StringBuilder on stack, fill it in with .append calls.
+            {
+                int off = 0;
+                for (int c = 0; c < args.parameterCount(); c++) {
+                    if (constants[c] != null) {
+                        mv.visitLdcInsn(constants[c]);
+                        sbAppend(mv, "(Ljava/lang/String;)Ljava/lang/StringBuilder;");
+                    }
+                    Class<?> cl = args.parameterType(c);
+                    mv.visitVarInsn(getLoadOpcode(cl), off);
+                    off += getParameterSize(cl);
+                    String desc = getSBAppendDesc(cl);
+                    sbAppend(mv, desc);
+                }
+                if (constants[constants.length - 1] != null) {
+                    mv.visitLdcInsn(constants[constants.length - 1]);
+                    sbAppend(mv, "(Ljava/lang/String;)Ljava/lang/StringBuilder;");
+                }
+            }
+
+            mv.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    "java/lang/StringBuilder",
+                    "toString",
+                    "()Ljava/lang/String;",
+                    false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(-1, -1);
+            mv.visitEnd();
+            cw.visitEnd();
+
+            byte[] classBytes = cw.toByteArray();
+            try {
+                Class<?> innerClass = lookup.defineHiddenClass(classBytes, true, STRONG).lookupClass();
+                DUMPER.dumpClass(className, innerClass, classBytes);
+                MethodHandle mh = lookup.findStatic(innerClass, METHOD_NAME, args);
+                return mh;
+            } catch (Exception e) {
+                DUMPER.dumpFailedClass(className, classBytes);
+                throw new StringConcatException("Exception while spinning the class", e);
+            }
+        }
+
+
+        private static void sbAppend(MethodVisitor mv, String desc) {
+            mv.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    "java/lang/StringBuilder",
+                    "append",
+                    desc,
+                    false
+            );
+        }
+
+        /**
+         * The generated class is in the same package as the host class as
+         * it's the implementation of the string concatenation for the host
+         * class.
+         */
+        private static String getClassName(Class<?> hostClass) {
+            String name = hostClass.isHidden() ? hostClass.getName().replace('/', '_')
+                    : hostClass.getName();
+            return name.replace('.', '/') + "$$StringConcat";
+        }
+
+        private static String getSBAppendDesc(Class<?> cl) {
+            if (cl.isPrimitive()) {
+                if (cl == Integer.TYPE || cl == Byte.TYPE || cl == Short.TYPE) {
+                    return "(I)Ljava/lang/StringBuilder;";
+                } else if (cl == Boolean.TYPE) {
+                    return "(Z)Ljava/lang/StringBuilder;";
+                } else if (cl == Character.TYPE) {
+                    return "(C)Ljava/lang/StringBuilder;";
+                } else if (cl == Double.TYPE) {
+                    return "(D)Ljava/lang/StringBuilder;";
+                } else if (cl == Float.TYPE) {
+                    return "(F)Ljava/lang/StringBuilder;";
+                } else if (cl == Long.TYPE) {
+                    return "(J)Ljava/lang/StringBuilder;";
+                } else {
+                    throw new IllegalStateException("Unhandled primitive StringBuilder.append: " + cl);
+                }
+            } else if (cl == String.class) {
+                return "(Ljava/lang/String;)Ljava/lang/StringBuilder;";
+            } else {
+                return "(Ljava/lang/Object;)Ljava/lang/StringBuilder;";
+            }
+        }
+
+        private static String getStringValueOfDesc(Class<?> cl) {
+            if (cl.isPrimitive()) {
+                if (cl == Integer.TYPE || cl == Byte.TYPE || cl == Short.TYPE) {
+                    return "(I)Ljava/lang/String;";
+                } else if (cl == Boolean.TYPE) {
+                    return "(Z)Ljava/lang/String;";
+                } else if (cl == Character.TYPE) {
+                    return "(C)Ljava/lang/String;";
+                } else if (cl == Double.TYPE) {
+                    return "(D)Ljava/lang/String;";
+                } else if (cl == Float.TYPE) {
+                    return "(F)Ljava/lang/String;";
+                } else if (cl == Long.TYPE) {
+                    return "(J)Ljava/lang/String;";
+                } else {
+                    throw new IllegalStateException("Unhandled String.valueOf: " + cl);
+                }
+            } else if (cl == String.class) {
+                return "(Ljava/lang/String;)Ljava/lang/String;";
+            } else {
+                return "(Ljava/lang/Object;)Ljava/lang/String;";
+            }
+        }
+
+        /**
+         * The following method is copied from
+         * org.objectweb.asm.commons.InstructionAdapter. Part of ASM: a very small
+         * and fast Java bytecode manipulation framework.
+         * Copyright (c) 2000-2005 INRIA, France Telecom All rights reserved.
+         */
+        private static void iconst(MethodVisitor mv, final int cst) {
+            if (cst >= -1 && cst <= 5) {
+                mv.visitInsn(ICONST_0 + cst);
+            } else if (cst >= Byte.MIN_VALUE && cst <= Byte.MAX_VALUE) {
+                mv.visitIntInsn(BIPUSH, cst);
+            } else if (cst >= Short.MIN_VALUE && cst <= Short.MAX_VALUE) {
+                mv.visitIntInsn(SIPUSH, cst);
+            } else {
+                mv.visitLdcInsn(cst);
+            }
+        }
+
+        private static int getLoadOpcode(Class<?> c) {
+            if (c == Void.TYPE) {
+                throw new InternalError("Unexpected void type of load opcode");
+            }
+            return ILOAD + getOpcodeOffset(c);
+        }
+
+        private static int getOpcodeOffset(Class<?> c) {
+            if (c.isPrimitive()) {
+                if (c == Long.TYPE) {
+                    return 1;
+                } else if (c == Float.TYPE) {
+                    return 2;
+                } else if (c == Double.TYPE) {
+                    return 3;
+                }
+                return 0;
+            } else {
+                return 4;
+            }
+        }
+
+        private static int getParameterSize(Class<?> c) {
+            if (c == Void.TYPE) {
+                return 0;
+            } else if (c == Long.TYPE || c == Double.TYPE) {
+                return 2;
+            }
+            return 1;
+        }
+    }
+
 }
