@@ -77,8 +77,6 @@ public:
 #endif
   }
 
-  ~InstructionFSM_AArch64() {}
-
   // reset state, emit pending instruction
   void flush_and_reset(Assembler* assem);
 

@@ -91,7 +91,6 @@ int CodeBuffer::pending_insts_size() const {
 void CodeBuffer::InstructionFSM_AArch64::flush_and_reset(Assembler* assem) {
   if (_state == NoPending) return;
 
-  log_debug(jit,verify)("emit dmb %d", _state);
   PendingState old_state = _state;
   _state = NoPending; // reset state for emit
   assert( _cs == assem->code_section(), "mismatched code section");

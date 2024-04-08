@@ -4161,7 +4161,8 @@ public:
   INSN(sve_eor3, 0b001); // Bitwise exclusive OR of three vectors
 #undef INSN
 
-  Assembler(CodeBuffer* code) : AbstractAssembler(code) { }
+  Assembler(CodeBuffer* code) : AbstractAssembler(code) {
+  }
 
   // Stack overflow checking
   virtual void bang_stack_with_offset(int offset);
