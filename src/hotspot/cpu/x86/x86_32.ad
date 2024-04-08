@@ -11695,8 +11695,7 @@ instruct rep_stos_large_evex(eCXRegI cnt, eDIRegP base, legRegD tmp, kReg ktmp, 
 // Small constant length ClearArray for AVX512 targets.
 instruct rep_stos_im(immI cnt, kReg ktmp, eRegP base, regD tmp, rRegI zero, Universe dummy, eFlagsReg cr)
 %{
-  predicate(!((ClearArrayNode*)n)->is_large() &&
-               ((UseAVX > 2) && VM_Version::supports_avx512vl()));
+  predicate(!((ClearArrayNode*)n)->is_large() && (MaxVectorSize >= 32) && VM_Version::supports_avx512vl());
   match(Set dummy (ClearArray cnt base));
   ins_cost(100);
   effect(TEMP tmp, TEMP zero, TEMP ktmp, KILL cr);
