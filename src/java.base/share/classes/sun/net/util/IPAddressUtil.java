@@ -675,7 +675,7 @@ public class IPAddressUtil {
      *
      * @param input a String representing an IPv4 address in POSIX format
      * @return a byte array representing the IPv4 numeric address
-     * if input string is a parsable BSD style IPv4 address literal,
+     * if input string is a parsable POSIX formatted IPv4 address literal,
      * {@code null} otherwise.
      */
     public static byte[] parseBsdLiteralV4(String input) {
