@@ -891,17 +891,18 @@ bool OopStorage::should_report_num_dead() const {
 // Global cleanup request state.
 static volatile bool needs_cleanup_requested = false;
 
-// Time after which a notification can be made.
+// Time after which a cleanup is permitted.
 static jlong cleanup_permit_time = 0;
 
-// Minimum time since last ServiceThread check before cleanup is permitted.
+// Minimum time between ServiceThread cleanups.
 // The value of 500ms was an arbitrary choice; frequent, but not too frequent.
 const jlong cleanup_defer_period = 500 * NANOSECS_PER_MILLISEC;
 
 bool OopStorage::has_cleanup_work_and_reset() {
   assert_lock_strong(Service_lock);
 
-  if (Atomic::load(&needs_cleanup_requested) && os::javaTimeNanos() > cleanup_permit_time) {
+  if (Atomic::load_acquire(&needs_cleanup_requested) &&
+      os::javaTimeNanos() > cleanup_permit_time) {
     cleanup_permit_time =
       os::javaTimeNanos() + cleanup_defer_period;
     // Set the request flag false and return its old value.
@@ -917,15 +918,14 @@ bool OopStorage::has_cleanup_work_and_reset() {
 // we can't lock the Service_lock.  Used by release().
 void OopStorage::record_needs_cleanup() {
   // Set local flag first, else ServiceThread could wake up and miss
-  // the request.  This order may instead (rarely) unnecessarily notify.
+  // the request.
   Atomic::release_store(&_needs_cleanup, true);
   Atomic::release_store_fence(&needs_cleanup_requested, true);
 }
 
 bool OopStorage::delete_empty_blocks() {
-  // Service thread might have oopstorage work, but not for this object.
-  // Check for deferred updates even though that's not a ServiceThread
-  // cleanup; since we're here, we might as well process them.
+  // ServiceThread might have oopstorage work, but not for this object.
+  // But check for deferred updates, which might provide cleanup work.
   if (!Atomic::load_acquire(&_needs_cleanup) &&
       (Atomic::load_acquire(&_deferred_updates) == nullptr)) {
     return false;
@@ -985,8 +985,7 @@ bool OopStorage::delete_empty_blocks() {
   }
   // Exceeded work limit or can't delete last block.  This will
   // cause the ServiceThread to loop, giving other subtasks an
-  // opportunity to run too. There's no need for a notification,
-  // because we are part of the service thread (unless gtesting).
+  // opportunity to run too.
   record_needs_cleanup();
   return true;
 }

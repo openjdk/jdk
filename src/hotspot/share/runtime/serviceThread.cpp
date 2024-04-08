@@ -127,7 +127,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
               (jvmti_tagmap_work = JvmtiTagMap::has_object_free_events_and_reset())
              ) == 0) {
         // Wait until notified that there is some work to do or timer expires.
-        // OopStorage work needs to be done at periodic intervals.
+        // Some cleanup requests don't notify the ServiceThread so work needs to be done at periodic intervals.
         ml.wait(ServiceThreadCleanupInterval);
       }
 
