@@ -297,7 +297,7 @@ class Inet4Address extends InetAddress {
      * {@code 255} for {@code "0255"}, {@linkplain Inet4Address#parseAddressStringPosix this}
      * method interprets the numbers based on their prefix (hexadecimal {@code "0x"},
      * octal {@code "0"}) and returns {@code 173} for {@code "0255"}.
-     * 
+     *
      * @param addressLiteral IPv4 address literal to parse
      * @param throwIAE whether to throw {@code IllegalArgumentException} if the
      *                 given {@code addressLiteral} string cannot be parsed as
