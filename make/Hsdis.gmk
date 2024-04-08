@@ -136,6 +136,10 @@ ifeq ($(HSDIS_BACKEND), binutils)
   endif
 endif
 
+################################################################################
+## Build libhsdis
+################################################################################
+
 $(eval $(call SetupJdkLibrary, BUILD_HSDIS, \
     NAME := hsdis, \
     LINK_TYPE := $(HSDIS_LINK_TYPE), \

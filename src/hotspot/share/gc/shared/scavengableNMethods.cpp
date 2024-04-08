@@ -157,7 +157,7 @@ void ScavengableNMethods::nmethods_do_and_prune(CodeBlobToOopClosure* cl) {
   }
 
   // Check for stray marks.
-  debug_only(verify_unlisted_nmethods(nullptr));
+  debug_only(verify_nmethods());
 }
 
 void ScavengableNMethods::prune_nmethods_not_into_young() {
@@ -188,25 +188,13 @@ void ScavengableNMethods::prune_unlinked_nmethods() {
   }
 
   // Check for stray marks.
-  debug_only(verify_unlisted_nmethods(nullptr));
+  debug_only(verify_nmethods());
 }
 
 // Walk the list of methods which might contain oops to the java heap.
 void ScavengableNMethods::nmethods_do(CodeBlobToOopClosure* cl) {
   nmethods_do_and_prune(cl);
 }
-
-#ifndef PRODUCT
-void ScavengableNMethods::asserted_non_scavengable_nmethods_do(CodeBlobClosure* cl) {
-  // While we are here, verify the integrity of the list.
-  mark_on_list_nmethods();
-  for (nmethod* cur = _head; cur != nullptr; cur = gc_data(cur).next()) {
-    assert(gc_data(cur).on_list(), "else shouldn't be on this list");
-    gc_data(cur).clear_marked();
-  }
-  verify_unlisted_nmethods(cl);
-}
-#endif // PRODUCT
 
 void ScavengableNMethods::unlist_nmethod(nmethod* nm, nmethod* prev) {
   assert_locked_or_safepoint(CodeCache_lock);
@@ -239,9 +227,8 @@ void ScavengableNMethods::mark_on_list_nmethods() {
   }
 }
 
-// If the closure is given, run it on the unlisted nmethods.
-// Also make sure that the effects of mark_on_list_nmethods is gone.
-void ScavengableNMethods::verify_unlisted_nmethods(CodeBlobClosure* cl) {
+// Make sure that the effects of mark_on_list_nmethods is gone.
+void ScavengableNMethods::verify_nmethods() {
   NMethodIterator iter(NMethodIterator::all_blobs);
   while(iter.next()) {
     nmethod* nm = iter.method();
@@ -249,10 +236,6 @@ void ScavengableNMethods::verify_unlisted_nmethods(CodeBlobClosure* cl) {
     // Can not verify already unlinked nmethods as they are partially invalid already.
     if (!nm->is_unlinked()) {
       verify_nmethod(nm);
-    }
-
-    if (cl != nullptr && !gc_data(nm).on_list()) {
-      cl->do_code_blob(nm);
     }
   }
 }
