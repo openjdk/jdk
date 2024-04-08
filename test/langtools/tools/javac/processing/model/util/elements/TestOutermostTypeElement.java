@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,24 @@
 /*
  * @test
  * @bug 8140442
+ * @enablePreview
  * @summary Test Elements.getOutermostTypeElement
  * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestOutermostTypeElement
- * @compile -processor TestOutermostTypeElement -proc:only TestOutermostTypeElement.java
+ * @compile -J--enable-preview -processor TestOutermostTypeElement -proc:only TestOutermostTypeElement.java
  */
 
-import java.io.Writer;
+import com.sun.source.tree.AssignmentTree;
+import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.DerivedInstanceTree;
+import com.sun.source.tree.ExpressionStatementTree;
+import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.StatementTree;
+import com.sun.source.tree.Tree.Kind;
+import com.sun.source.tree.VariableTree;
+import com.sun.source.util.TreePath;
+import com.sun.source.util.TreePathScanner;
+import com.sun.source.util.Trees;
 import java.util.*;
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
@@ -44,6 +55,7 @@ public class TestOutermostTypeElement extends JavacTestingAbstractProcessor {
                            RoundEnvironment roundEnv) {
         if (!roundEnv.processingOver()) {
             Elements vacuousElts = new VacuousElements();
+            Trees trees = Trees.instance(processingEnv);
 
             ModuleElement javaBaseMod = eltUtils.getModuleElement("java.base");
             checkOuter(javaBaseMod, null, vacuousElts);
@@ -62,6 +74,10 @@ public class TestOutermostTypeElement extends JavacTestingAbstractProcessor {
                 var outerScaner = new OuterScanner(e);
                 outerScaner.scan(e, vacuousElts);
                 outerScaner.scan(e, eltUtils);
+
+                var treeBasedScanner = new OuterTreeBaseScanner();
+                treeBasedScanner.scan(e, vacuousElts);
+                treeBasedScanner.scan(e, eltUtils);
              }
         }
         return true;
@@ -88,6 +104,78 @@ public class TestOutermostTypeElement extends JavacTestingAbstractProcessor {
                                                      actualOuter,
                                                      e,
                                                      expectedOuter));
+        }
+    }
+
+    private class OuterTreeBaseScanner extends TreePathScanner<Void, Elements> {
+        private final Trees trees;
+        private TypeElement topLevel;
+
+        public OuterTreeBaseScanner() {
+            this.trees = Trees.instance(processingEnv);
+        }
+
+        public void scan(TypeElement el, Elements elts) {
+            TreePath topLevelPath = trees.getPath(el);
+
+            topLevel = el;
+            scan(topLevelPath, elts);
+        }
+
+        @Override
+        public Void visitClass(ClassTree node, Elements p) {
+            handleDeclaration(p);
+            return super.visitClass(node, p);
+        }
+
+        @Override
+        public Void visitVariable(VariableTree node, Elements p) {
+            handleDeclaration(p);
+            return super.visitVariable(node, p);
+        }
+
+        @Override
+        public Void visitMethod(MethodTree node, Elements p) {
+            handleDeclaration(p);
+            return super.visitMethod(node, p);
+        }
+
+        @Override
+        public Void visitDerivedInstance(DerivedInstanceTree node, Elements p) {
+            for (StatementTree st : node.getBlock().getStatements()) {
+                if (st.getKind() == Kind.EXPRESSION_STATEMENT) {
+                    ExpressionStatementTree est = (ExpressionStatementTree) st;
+
+                    if (est.getExpression().getKind() == Kind.ASSIGNMENT) {
+                        AssignmentTree at = (AssignmentTree) est.getExpression();
+                        TreePath left = TreePath.getPath(getCurrentPath(), at.getVariable());
+                        Element componentVariable = trees.getElement(left);
+
+                        assertNotNull(componentVariable);
+
+                        if (componentVariable.getKind() != ElementKind.COMPONENT_LOCAL_VARIABLE) {
+                            throw new RuntimeException("Unexpected variable kind: " + componentVariable.getKind());
+                        }
+
+                        checkOuter(componentVariable, topLevel, p);
+                    }
+                }
+            }
+
+            return super.visitDerivedInstance(node, p);
+        }
+
+        private void handleDeclaration(Elements els) {
+            Element el = trees.getElement(getCurrentPath());
+
+            assertNotNull(el);
+            checkOuter(el, topLevel, els);
+        }
+
+        private static void assertNotNull(Object o) {
+            if (o == null) {
+                throw new RuntimeException("Unexpected null value.");
+            }
         }
     }
 }
@@ -120,6 +208,20 @@ class Outer {
 
         private class InnerInnerClass {
             public InnerInnerClass() {}
+        }
+
+        private void nested() {
+            int i = 0;
+            try (AutoCloseable a = null) {
+                boolean b = a instanceof Runnable r;
+            } catch (Exception ex) {
+            }
+            record R(int i) {}
+            R r = null;
+            r = r with { i = 0; };
+            new Runnable() {
+                public void run() {}
+            };
         }
     }
 

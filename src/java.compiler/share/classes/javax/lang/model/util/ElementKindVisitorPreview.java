@@ -102,5 +102,5 @@ public class ElementKindVisitorPreview<R, P> extends ElementKindVisitor14<R, P> 
     @PreviewFeature(feature=PreviewFeature.Feature.DERIVED_RECORD_CREATION, reflective=true)
     public R visitVariableAsComponentLocalVariable(VariableElement e, P p) {
         return defaultAction(e, p);
-     }
+    }
 }
