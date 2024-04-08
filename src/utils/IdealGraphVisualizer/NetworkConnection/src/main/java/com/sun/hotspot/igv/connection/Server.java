@@ -83,7 +83,8 @@ public class Server implements PreferenceChangeListener {
                             clientSocket.close();
                             return;
                         }
-                        RequestProcessor.getDefault().post(new Client(clientSocket, callback), 0, Thread.MAX_PRIORITY);
+                        RequestProcessor requestProcessor = new RequestProcessor();
+                        requestProcessor.post(new Client(clientSocket, callback), 0, Thread.MAX_PRIORITY);
                     } catch (IOException ex) {
                         serverSocket = null;
                         NotifyDescriptor message = new NotifyDescriptor.Message("Error during listening for incoming connections. Listening for incoming data is disabled.", NotifyDescriptor.ERROR_MESSAGE);
