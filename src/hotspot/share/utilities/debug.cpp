@@ -687,7 +687,7 @@ extern "C" bool dbg_is_good_oop(oopDesc* o) {
     } else {
       // Fetch compressed class pointer (no accessor for o._metadata._compressed_klass)
       uintptr_t ccpAddr = (uintptr_t) o + sizeof(uintptr_t);
-      uintptr_t* ccp =  (uintptr_t*) CompressedKlassPointers::decode_raw(*(uintptr_t*) ccpAddr);
+      uintptr_t* ccp =  (uintptr_t*) CompressedKlassPointers::decode_without_asserts(*(uintptr_t*) ccpAddr);
       good = dbg_is_safe(ccp, -1)
              && dbg_is_safe((void*) *ccp, -1);
     }
