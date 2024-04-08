@@ -100,7 +100,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     int found_nodes = 0;
     tree.visit(0, 999999, [&](Node* x) {
       found_nodes++;
-      VMATree::NodeState& v = x->val();
+      VMATree::IntervalChange& v = x->val();
       EXPECT_TRUE((v.in.type == VMATree::StateType::Released && v.out.type == VMATree::StateType::Committed) ||
                   (v.in.type == VMATree::StateType::Committed && v.out.type == VMATree::StateType::Released));
     });
@@ -141,7 +141,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     tree.visit(0, 99999, [&](Node* x) {
       EXPECT_TRUE(x->key() == 0 || x->key() == 100);
       if (x->key() == 0) {
-        EXPECT_EQ(x->val().out.data.flag, mtTest);
+        EXPECT_EQ(x->val().out.mdata().flag, mtTest);
       }
       found_nodes++;
     });
@@ -178,10 +178,10 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     tree.commit_mapping(0, 100, md2);
     tree.visit(0, 99999, [&](Node* x) {
       if (x->key() == 0) {
-        EXPECT_EQ(mtNMT, x->val().out.data.flag);
+        EXPECT_EQ(mtNMT, x->val().out.mdata().flag);
       }
       if (x->key() == 100) {
-        EXPECT_EQ(mtNMT, x->val().in.data.flag);
+        EXPECT_EQ(mtNMT, x->val().in.mdata().flag);
       }
     });
   }
@@ -197,10 +197,10 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     tree.visit(0, 99999, [&](Node* x) {
       EXPECT_TRUE(x->key() == 0 || x->key() == 100);
       if (x->key() == 0) {
-        EXPECT_EQ(x->val().out.data.flag, mtTest);
+        EXPECT_EQ(x->val().out.mdata().flag, mtTest);
       }
       if (x->key() == 100) {
-        EXPECT_EQ(x->val().in.data.flag, mtTest);
+        EXPECT_EQ(x->val().in.mdata().flag, mtTest);
       }
       found_nodes++;
     });

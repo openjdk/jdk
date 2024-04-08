@@ -33,6 +33,11 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 
+// A VMATree stores a sequence of points on the natural number line.
+// Each of these points stores information about a state change.
+// For example, the state may go from released memory to committed memory,
+// or from committed memory of a certain MEMFLAGS to committed memory of a different MEMFLAGS.
+// The set of points is stored in a balanced binary tree for efficient querying and updating.
 class VMATree {
   static int addr_cmp(size_t a, size_t b) {
     if (a < b) return -1;
@@ -63,11 +68,11 @@ public:
     }
   };
 
-  struct Arrow {
-    StateType type;
+  struct IntervalState {
     Metadata data;
+    StateType type;
 
-    void merge(const Arrow& b) {
+    void merge(const IntervalState& b) {
       if (this->type == StateType::Released) {
         this->data.flag = b.data.flag;
         this->data.stack_idx = b.data.stack_idx;
@@ -77,12 +82,16 @@ public:
         }
       }
     }
+    Metadata mdata() const {
+      return data;
+    }
   };
 
-  // A node has an arrow going into it and an arrow going out of it.
-  struct NodeState {
-    Arrow in;
-    Arrow out;
+  // An IntervalChange indicates a change in state between two intervals. The incoming state
+  // is denoted by in, and the outgoing state is denoted by out.
+  struct IntervalChange {
+    IntervalState in;
+    IntervalState out;
 
     bool is_noop() {
       return (in.type == StateType::Released && out.type == StateType::Released) ||
@@ -90,8 +99,8 @@ public:
     }
   };
 
-  using VTreap = TreapNode<size_t, NodeState, addr_cmp>;
-  TreapCHeap<size_t, NodeState, addr_cmp> tree;
+  using VTreap = TreapNode<size_t, IntervalChange, addr_cmp>;
+  TreapCHeap<size_t, IntervalChange, addr_cmp> tree;
   VMATree()
     : tree() {
   }

@@ -29,9 +29,9 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
   // AddressState saves the necessary information for performing online summary accounting.
   struct AddressState {
     size_t address;
-    NodeState state;
+    IntervalChange state;
     MEMFLAGS flag_out() const {
-      return state.out.data.flag;
+      return state.out.mdata().flag;
     }
   };
 
@@ -50,13 +50,13 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
   }
 
   SummaryDiff diff;
-  NodeState stA{
-      Arrow{StateType::Released, Metadata{}},
-      Arrow{              state,   metadata}
+  IntervalChange stA{
+      IntervalState{StateType::Released, Metadata{}},
+      IntervalState{              state,   metadata}
   };
-  NodeState stB{
-      Arrow{              state,   metadata},
-      Arrow{StateType::Released, Metadata{}}
+  IntervalChange stB{
+      IntervalState{              state,   metadata},
+      IntervalState{StateType::Released, Metadata{}}
   };
   // First handle A.
   // Find closest node that is LEQ A
@@ -173,7 +173,7 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
   // Insert B node if needed
   if (B_needs_insert && // Was not already inserted
       (!stB.is_noop() || // The operation is differing Or
-       !Metadata::equals(stB.out.data, Metadata{})) // The metadata was changed from empty earlier
+       !Metadata::equals(stB.out.mdata(), Metadata{})) // The metadata was changed from empty earlier
   ) {
     tree.upsert(B, stB);
   }
