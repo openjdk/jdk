@@ -350,17 +350,12 @@ public class Table<T> extends Content {
                     .put(HtmlAttr.TABINDEX, "0");
             }
             
-            if(matcher.find()) {
-                for (String tabClass : tabClasses) {
-                    cell.addStyle(tabClass);
-                }
-            } else {
-                for (String tabClass : tabClasses) {
-                    cell.addStyle(tabClass)
-                        .put(HtmlAttr.ROLE, "tablist")
-                        .put(HtmlAttr.TABINDEX, "0");
-                }
+            for (String tabClass : tabClasses) {
+                System.out.println("Print tabClass is " +tabClass);
+                System.out.println("tabClass content is " +c.toString();)
+                cell.addStyle(tabClass);
             }
+            
             row.add(cell);
             colIndex++;
         }
