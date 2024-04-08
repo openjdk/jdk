@@ -129,6 +129,9 @@ public class OfLiteralTest {
         // 127.1.1.1 address bytes
         byte[] ipv4_127_1_1_1 = new byte[]{127, 1, 1, 1};
 
+        // 255.255.255.255 address bytes
+        byte[] ipv4_255_255_255_255 = new byte[]{(byte)255, (byte)255, (byte)255, (byte)255};
+
         Stream<Arguments> validLiterals = Stream.of(
                 // IPv6 address literals are parsable by Inet6Address.ofLiteral
                 // and InetAddress.ofLiteral methods
@@ -215,6 +218,10 @@ public class OfLiteralTest {
                 //      with leading 0 treated as octal segment prefix
                 Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
                         "127.010.0.1", ipv4_127_8_0_1),
+                //      form:'x.x.x.x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0 treated as octal segment prefix
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "0377.0377.0377.0377", ipv4_255_255_255_255),
                 //      form:'x.x.x' method:InetAddress.ofPosixLiteral -
                 //      with leading 0x treated as hexadecimal segment prefixes
                 Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
@@ -231,6 +238,14 @@ public class OfLiteralTest {
                 //      with leading 0 treated as octal segment prefix
                 Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
                         "02130706433", ipv4_17_99_141_27),
+                //      form:'x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0 treated as octal segment prefix
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "037777777777", ipv4_255_255_255_255),
+                //      form:'x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0x treated as hex prefix
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "0xFFFFFFFF", ipv4_255_255_255_255),
                 //      form:'x' method:InetAddress.ofPosixLiteral -
                 //      without leading 0 treated as decimal
                 Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
@@ -333,7 +348,8 @@ public class OfLiteralTest {
                 Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "048"),
                 Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, ""),            // empty
                 Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "0x1FFFFFFFF"), // 2^33 - 1 is too large
-                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "0x100000000")  // 2^32 is too large
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "0x100000000"), // 2^32 is too large
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "040000000000")
         );
         // Construct arguments for a test case with IPv6-scoped address with scope-id
         // specified as a string with non-existing network interface name

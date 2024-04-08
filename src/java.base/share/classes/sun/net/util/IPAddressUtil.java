@@ -671,9 +671,9 @@ public class IPAddressUtil {
 
     /**
      * Parse String as IPv4 address literal by following
-     * BSD-style formatting rules.
+     * POSIX-style formatting rules.
      *
-     * @param input a String representing an IPv4 address in BSD format
+     * @param input a String representing an IPv4 address in POSIX format
      * @return a byte array representing the IPv4 numeric address
      * if input string is a parsable BSD style IPv4 address literal,
      * {@code null} otherwise.
