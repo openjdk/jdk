@@ -43,9 +43,7 @@ import java.util.regex.Pattern;
  * definition so that we can run each sub-test independently.
  *
  * The original bug was only discovered because the ForkJoinPool worker thread terminated
- * and trigerred an assertion failure. So we use a trick below to trigger that
- * termination. If this proves to be unreliable for some reason then we can just skip
- * that part and rely on the active detection that is now in place.
+ * and trigerred an assertion failure. So we use a custom scheduler to give us control.
  */
 
 /**
@@ -54,6 +52,7 @@ import java.util.regex.Pattern;
  * @summary Normal lock then unlock
  * @library /test/lib
  * @modules java.base/java.lang:+open
+ * @requires vm.continuations
  * @run driver JNIMonitor Normal
  */
 
@@ -63,6 +62,7 @@ import java.util.regex.Pattern;
  * @summary Normal lock then unlock by multiple threads
  * @library /test/lib
  * @modules java.base/java.lang:+open
+ * @requires vm.continuations
  * @run driver JNIMonitor MultiNormal
  */
 
@@ -72,6 +72,7 @@ import java.util.regex.Pattern;
  * @summary Don't do the unlock and exit normally
  * @library /test/lib
  * @modules java.base/java.lang:+open
+ * @requires vm.continuations
  * @run driver JNIMonitor MissingUnlock
  */
 
@@ -81,6 +82,7 @@ import java.util.regex.Pattern;
  * @summary Don't do the unlock and exit normally, by multiple threads
  * @library /test/lib
  * @modules java.base/java.lang:+open
+ * @requires vm.continuations
  * @run driver JNIMonitor MultiMissingUnlock
  */
 
@@ -90,6 +92,7 @@ import java.util.regex.Pattern;
  * @summary Don't do the unlock and exit by throwing
  * @library /test/lib
  * @modules java.base/java.lang:+open
+ * @requires vm.continuations
  * @run driver JNIMonitor MissingUnlockWithThrow
  */
 
@@ -99,6 +102,7 @@ import java.util.regex.Pattern;
  * @summary Don't do the unlock and exit by throwing, by multiple threads
  * @library /test/lib
  * @modules java.base/java.lang:+open
+ * @requires vm.continuations
  * @run driver JNIMonitor MultiMissingUnlockWithThrow
  */
 
