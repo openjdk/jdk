@@ -33,6 +33,7 @@ import org.openide.util.NbBundle;
 import org.openide.util.actions.NodeAction;
 
 /**
+ *
  * @author Thomas Wuerthinger
  */
 public final class RemoveAction extends NodeAction {

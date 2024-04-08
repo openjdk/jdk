@@ -57,14 +57,11 @@ import org.openide.windows.WindowManager;
 
 
 /**
+ *
  * @author Thomas Wuerthinger
  */
 public final class EditorTopComponent extends TopComponent implements TopComponent.Cloneable {
 
-    private static final JPanel quickSearchPresenter = (JPanel) ((Presenter.Toolbar) Utilities.actionsForPath("Actions/Search").get(0)).getToolbarPresenter();
-    private static final String PREFERRED_ID = "EditorTopComponent";
-    private static final String SATELLITE_STRING = "satellite";
-    private static final String SCENE_STRING = "scene";
     private final DiagramViewer scene;
     private final InstanceContent graphContent;
     private final JComponent satelliteComponent;
@@ -72,8 +69,10 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
     private final CardLayout cardLayout;
     private final Toolbar quickSearchToolbar;
     private boolean useBoldDisplayName = false;
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JCheckBox jCheckBox1;
+    private static final JPanel quickSearchPresenter = (JPanel) ((Presenter.Toolbar) Utilities.actionsForPath("Actions/Search").get(0)).getToolbarPresenter();
+    private static final String PREFERRED_ID = "EditorTopComponent";
+    private static final String SATELLITE_STRING = "satellite";
+    private static final String SCENE_STRING = "scene";
 
     public EditorTopComponent(DiagramViewModel diagramViewModel) {
         initComponents();
@@ -151,8 +150,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
             }
 
             @Override
-            public void mouseMoved(MouseEvent e) {
-            }
+            public void mouseMoved(MouseEvent e) {}
         });
         centerPanel.add(SCENE_STRING, scene.getComponent());
         centerPanel.add(SATELLITE_STRING, satelliteComponent);
@@ -161,7 +159,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         ToolbarPool.getDefault().setPreferredIconSize(16);
         Toolbar toolBar = new Toolbar();
         toolBar.setBorder((Border) UIManager.get("Nb.Editor.Toolbar.border")); //NOI18N
-        toolBar.setMinimumSize(new Dimension(0, 0)); // MacOS BUG with ToolbarWithOverflow
+        toolBar.setMinimumSize(new Dimension(0,0)); // MacOS BUG with ToolbarWithOverflow
 
         toolBar.add(PrevDiagramAction.get(PrevDiagramAction.class));
         toolBar.add(NextDiagramAction.get(NextDiagramAction.class));
@@ -251,35 +249,6 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         graphChanged(diagramViewModel);
     }
 
-    public static boolean isOpen(EditorTopComponent editor) {
-        return WindowManager.getDefault().isOpenedEditorTopComponent(editor);
-    }
-
-    public static EditorTopComponent getActive() {
-        TopComponent topComponent = getRegistry().getActivated();
-        if (topComponent instanceof EditorTopComponent) {
-            return (EditorTopComponent) topComponent;
-        }
-        return null;
-    }
-
-    public static EditorTopComponent findEditorForGraph(InputGraph graph) {
-        WindowManager manager = WindowManager.getDefault();
-        for (Mode m : manager.getModes()) {
-            List<TopComponent> l = new ArrayList<>();
-            l.add(m.getSelectedTopComponent());
-            l.addAll(Arrays.asList(manager.getOpenedTopComponents(m)));
-            for (TopComponent t : l) {
-                if (t instanceof EditorTopComponent etc) {
-                    if (etc.getModel().getGroup().getGraphs().contains(graph)) {
-                        return etc;
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
     private void graphChanged(DiagramViewModel model) {
         setDisplayName(model.getGraph().getDisplayName());
         setToolTipText(model.getGroup().getDisplayName());
@@ -318,6 +287,35 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
 
     public void setZoomLevel(int percentage) {
         scene.setZoomPercentage(percentage);
+    }
+
+    public static boolean isOpen(EditorTopComponent editor) {
+        return WindowManager.getDefault().isOpenedEditorTopComponent(editor);
+    }
+
+    public static EditorTopComponent getActive() {
+        TopComponent topComponent = getRegistry().getActivated();
+        if (topComponent instanceof EditorTopComponent) {
+            return (EditorTopComponent) topComponent;
+        }
+        return null;
+    }
+
+    public static EditorTopComponent findEditorForGraph(InputGraph graph) {
+        WindowManager manager = WindowManager.getDefault();
+        for (Mode m : manager.getModes()) {
+            List<TopComponent> l = new ArrayList<>();
+            l.add(m.getSelectedTopComponent());
+            l.addAll(Arrays.asList(manager.getOpenedTopComponents(m)));
+            for (TopComponent t : l) {
+                if (t instanceof EditorTopComponent etc) {
+                    if (etc.getModel().getGroup().getGraphs().contains(graph)) {
+                        return etc;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     @Override
@@ -448,8 +446,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         return etc;
     }
 
-    /**
-     * This method is called from within the constructor to
+    /** This method is called from within the constructor to
      * initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is
      * always regenerated by the Form Editor.
@@ -465,5 +462,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         setLayout(new java.awt.BorderLayout());
 
     }// </editor-fold>//GEN-END:initComponents
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JCheckBox jCheckBox1;
     // End of variables declaration//GEN-END:variables
 }

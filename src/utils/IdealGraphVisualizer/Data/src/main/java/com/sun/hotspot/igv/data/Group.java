@@ -26,14 +26,16 @@ package com.sun.hotspot.igv.data;
 import java.util.*;
 
 /**
+ *
  * @author Thomas Wuerthinger
  */
 public class Group extends Properties.Entity implements ChangedEventProvider<Group>, Folder, FolderElement {
 
     private final List<InputGraph> graphs;
+    private InputMethod method;
     private final transient ChangedEvent<Group> changedEvent;
     private final ChangedEvent<Group> displayNameChangedEvent = new ChangedEvent<>(this);
-    private InputMethod method;
+
     private Folder parent;
 
     public Group(Folder parent) {
@@ -45,12 +47,12 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
         getProperties().setProperty("name", "");
     }
 
-    public InputMethod getMethod() {
-        return method;
-    }
-
     public void setMethod(InputMethod method) {
         this.method = method;
+    }
+
+    public InputMethod getMethod() {
+        return method;
     }
 
     @Override
@@ -112,14 +114,14 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
     }
 
     @Override
-    public String getName() {
-        return getProperties().get("name");
-    }
-
-    @Override
     public void setName(String name) {
         getProperties().setProperty("name", name);
         displayNameChangedEvent.fire();
+    }
+
+    @Override
+    public String getName() {
+        return getProperties().get("name");
     }
 
     @Override
@@ -171,9 +173,8 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
 
     @Override
     public Folder getParent() {
-        return parent;
+         return parent;
     }
-
     @Override
     public void setParent(Folder parent) {
         this.parent = parent;

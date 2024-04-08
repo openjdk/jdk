@@ -31,6 +31,10 @@ import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle;
 import org.openide.util.actions.CallableSystemAction;
 
+/**
+ *
+ * @author Thomas Wuerthinger
+ */
 
 public final class ImportAction extends CallableSystemAction {
 

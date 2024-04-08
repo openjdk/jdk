@@ -45,6 +45,7 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 
 /**
+ *
  * @author Thomas Wuerthinger
  */
 public class Parser implements GraphParser {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public final class ExportAction extends CallableSystemAction implements LookupLi
 
     public ExportAction() {
         putValue(Action.SHORT_DESCRIPTION, NbBundle.getMessage(ExportAction.class, "HINT_ExportAction"));
-        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
+        putValue(Action.SMALL_ICON , ImageUtilities.loadImageIcon(iconResource(), true));
         Lookup lookup = Utilities.actionsGlobalContext();
         result = lookup.lookup(new Lookup.Template<>(ExportCookie.class));
         result.addLookupListener(this);
@@ -78,8 +78,8 @@ public final class ExportAction extends CallableSystemAction implements LookupLi
             public boolean accept(File f) {
                 String lcFileName = f.getName().toLowerCase();
                 return lcFileName.endsWith(".pdf") ||
-                        lcFileName.endsWith(".svg") ||
-                        f.isDirectory();
+                       lcFileName.endsWith(".svg") ||
+                       f.isDirectory();
             }
 
             @Override

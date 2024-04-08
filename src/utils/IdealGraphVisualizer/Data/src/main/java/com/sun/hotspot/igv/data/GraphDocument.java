@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ *
  * @author Thomas Wuerthinger
  */
 public class GraphDocument extends Properties.Entity implements ChangedEventProvider<GraphDocument>, Folder {
@@ -62,13 +63,13 @@ public class GraphDocument extends Properties.Entity implements ChangedEventProv
         getChangedEvent().fire();
     }
 
-    public String getName() {
-        return name;
-    }
-
     @Override
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getName() {
+        return name;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,14 @@ package com.sun.hotspot.igv.filterwindow.actions;
 import com.sun.hotspot.igv.filterwindow.FilterTopComponent;
 import javax.swing.Action;
 import org.openide.util.HelpCtx;
-import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle;
 import org.openide.util.actions.CallableSystemAction;
 
 /**
+ *
  * @author Thomas Wuerthinger
  */
 public final class SaveFilterSettingsAction extends CallableSystemAction {
-
-    public SaveFilterSettingsAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Save filter configuration as profile...");
-        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
-    }
 
     @Override
     public void performAction() {
@@ -48,6 +43,10 @@ public final class SaveFilterSettingsAction extends CallableSystemAction {
     @Override
     public String getName() {
         return NbBundle.getMessage(SaveFilterSettingsAction.class, "CTL_SaveFilterSettingsAction");
+    }
+
+    public SaveFilterSettingsAction() {
+        putValue(Action.SHORT_DESCRIPTION, "Save filter configuration as profile...");
     }
 
     @Override

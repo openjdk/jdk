@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
+ *
  * @author Thomas Wuerthinger
  */
 public class Printer {

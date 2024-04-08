@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,14 @@ package com.sun.hotspot.igv.filterwindow.actions;
 import com.sun.hotspot.igv.filterwindow.FilterTopComponent;
 import javax.swing.Action;
 import org.openide.util.HelpCtx;
-import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle;
 import org.openide.util.actions.CallableSystemAction;
 
 /**
+ *
  * @author Thomas Wuerthinger
  */
 public final class RemoveFilterSettingsAction extends CallableSystemAction {
-
-    public RemoveFilterSettingsAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Delete current filter profile");
-        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
-    }
 
     @Override
     public void performAction() {
@@ -48,6 +43,10 @@ public final class RemoveFilterSettingsAction extends CallableSystemAction {
     @Override
     public String getName() {
         return NbBundle.getMessage(RemoveFilterSettingsAction.class, "CTL_RemoveFilterSettingsAction");
+    }
+
+    public RemoveFilterSettingsAction() {
+        putValue(Action.SHORT_DESCRIPTION, "Delete current filter profile");
     }
 
     @Override
