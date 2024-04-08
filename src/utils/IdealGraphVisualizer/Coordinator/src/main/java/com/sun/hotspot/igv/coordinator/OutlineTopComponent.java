@@ -533,7 +533,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             try {
                 if (file.getName().endsWith(".xml")) {
                     final Parser parser = new Parser(channel, monitor, null);
-                    parser.setInvokeLater(false);
                     final SerialData<GraphDocument> parsedData = parser.parse();
                     final GraphDocument parsedDoc = parsedData.data();
                     if (loadContext) {

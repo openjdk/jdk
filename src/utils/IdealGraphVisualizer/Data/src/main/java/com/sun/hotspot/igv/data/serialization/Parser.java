@@ -299,7 +299,6 @@ public class Parser implements GraphParser {
             return serialData;
         }
     };
-    private boolean invokeLater = true;
     // <group>
     private final ElementHandler<SerialData<Group>, SerialData<? extends Folder>> groupHandler = new XMLParser.ElementHandler<>(GROUP_ELEMENT) {
 
@@ -317,12 +316,7 @@ public class Parser implements GraphParser {
             }
 
             if (groupCallback == null || folder instanceof Group) {
-                Runnable addToParent = () -> folder.addElement(group);
-                if (invokeLater) {
-                    SwingUtilities.invokeLater(addToParent);
-                } else {
-                    addToParent.run();
-                }
+                folder.addElement(group);
             }
 
             return new SerialData<>(group, getParentObject().contexts());
@@ -411,16 +405,8 @@ public class Parser implements GraphParser {
             }
             blockConnections.clear();
 
-            Runnable addToParent = () -> parent.addElement(graph);
-            Runnable addContext = () -> getParentObject().contexts().addAll(getObject().contexts());
-            if (invokeLater) {
-                SwingUtilities.invokeLater(addToParent);
-                SwingUtilities.invokeLater(addContext);
-
-            } else {
-                addToParent.run();
-                addContext.run();
-            }
+            parent.addElement(graph);
+            getParentObject().contexts().addAll(getObject().contexts());
         }
     };
     // <properties>
@@ -430,12 +416,7 @@ public class Parser implements GraphParser {
         public void end(String text) {
             final Group group = getParentObject().data();
             if (groupCallback != null && group.getParent() instanceof GraphDocument) {
-                Runnable addStarted = () -> groupCallback.started(group);
-                if (invokeLater) {
-                    SwingUtilities.invokeLater(addStarted);
-                } else {
-                    addStarted.run();
-                }
+                groupCallback.started(group);
             }
         }
     };
@@ -542,12 +523,6 @@ public class Parser implements GraphParser {
         }
 
         return serialData;
-    }
-
-    // Whether the parser is allowed to defer connecting the parsed elements.
-    // Setting to false is useful for synchronization in unit tests.
-    public void setInvokeLater(boolean invokeLater) {
-        this.invokeLater = invokeLater;
     }
 
     private XMLReader createReader() throws SAXException {
