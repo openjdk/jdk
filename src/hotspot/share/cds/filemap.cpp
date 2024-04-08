@@ -294,7 +294,8 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- allow_archiving_with_java_agent:%d", _allow_archiving_with_java_agent);
   st->print_cr("- use_optimized_module_handling:  %d", _use_optimized_module_handling);
   st->print_cr("- has_full_module_graph           %d", _has_full_module_graph);
-  st->print_cr("- ptrmap_size_in_bits:            " SIZE_FORMAT, _ptrmap_size_in_bits);
+  st->print_cr("- rw_ptrmap_size_in_bits:         " SIZE_FORMAT, region_at(MetaspaceShared::rw)->ptrmap_size_in_bits());
+  st->print_cr("- ro_ptrmap_size_in_bits:         " SIZE_FORMAT, region_at(MetaspaceShared::ro)->ptrmap_size_in_bits());
 }
 
 void SharedClassPathEntry::init_as_non_existent(const char* path, TRAPS) {
@@ -1609,10 +1610,12 @@ char* FileMapInfo::write_bitmap_region(const CHeapBitMap* rw_ptrmap, const CHeap
   // heap_info->ptrmap(): metaspace pointers in the heap region
   char* buffer = NEW_C_HEAP_ARRAY(char, size_in_bytes, mtClassShared);
   size_t written = 0;
+
+  region_at(MetaspaceShared::rw)->init_ptrmap(0, rw_ptrmap->size());
   written = write_bitmap(rw_ptrmap, buffer, written);
-  header()->set_rw_ptrmap_size_in_bits(rw_ptrmap->size());
+
+  region_at(MetaspaceShared::ro)->init_ptrmap(written, ro_ptrmap->size());
   written = write_bitmap(ro_ptrmap, buffer, written);
-  header()->set_ro_ptrmap_size_in_bits(ro_ptrmap->size());
 
   if (heap_info->is_used()) {
     FileMapRegion* r = region_at(MetaspaceShared::hp);
@@ -1907,17 +1910,14 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
   if (bitmap_base == nullptr) {
     return false; // OOM, or CRC check failure
   } else {
-    size_t rw_ptrmap_size_in_bits = header()->rw_ptrmap_size_in_bits();
-    size_t ro_ptrmap_size_in_bits = header()->ro_ptrmap_size_in_bits();
-
-    BitMapView rw_ptrmap((BitMap::bm_word_t*)bitmap_base, rw_ptrmap_size_in_bits);
+    BitMapView rw_ptrmap = region_at(MetaspaceShared::rw)->ptrmap_view();
     char* ro_bitmap_base = bitmap_base + rw_ptrmap.size_in_bytes();
-    BitMapView ro_ptrmap((BitMap::bm_word_t*)ro_bitmap_base, ro_ptrmap_size_in_bits);
+    BitMapView ro_ptrmap = region_at(MetaspaceShared::ro)->ptrmap_view();
 
     log_debug(cds, reloc)("mapped relocation rw bitmap @ " INTPTR_FORMAT " (" SIZE_FORMAT " bits)",
-                          p2i(bitmap_base), rw_ptrmap_size_in_bits);
+                          p2i(bitmap_base), rw_ptrmap.size());
     log_debug(cds, reloc)("mapped relocation ro bitmap @ " INTPTR_FORMAT " (" SIZE_FORMAT " bits)",
-                          p2i(ro_bitmap_base), ro_ptrmap_size_in_bits);
+                          p2i(ro_bitmap_base), ro_ptrmap.size());
 
     FileMapRegion* rw_region = first_core_region();
     FileMapRegion* ro_region = last_core_region();

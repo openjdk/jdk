@@ -99,7 +99,6 @@ void ArchivePtrMarker::initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap
     _ro_ptrmap->at_put(ro_bit-ro_start, _ptrmap->at(ro_bit));
   }
   assert(_ptrmap->size() - ro_start == _ro_ptrmap->size(), "must be");
-  // Free _ptrmap?
 }
 
 void ArchivePtrMarker::mark_pointer(address* ptr_loc) {

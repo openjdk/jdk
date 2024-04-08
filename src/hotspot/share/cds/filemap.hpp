@@ -158,6 +158,7 @@ public:
   bool   mapped_from_file()         const { return _mapped_from_file != 0; }
   size_t oopmap_offset()            const { assert_is_heap_region();     return _oopmap_offset; }
   size_t oopmap_size_in_bits()      const { assert_is_heap_region();     return _oopmap_size_in_bits; }
+  size_t ptrmap_size_in_bits()      const { return _ptrmap_size_in_bits; }
 
   void set_file_offset(size_t s)     { _file_offset = s; }
   void set_read_only(bool v)         { _read_only = v; }
@@ -225,9 +226,6 @@ private:
   bool   _use_optimized_module_handling;// No module-relation VM options were specified, so we can skip
                                         // some expensive operations.
   bool   _has_full_module_graph;        // Does this CDS archive contain the full archived module graph?
-  size_t _ptrmap_size_in_bits;          // Size of pointer relocation bitmap
-  size_t _rw_ptrmap_size_in_bits;       // Size of pointer relocation map for read-write region
-  size_t _ro_ptrmap_size_in_bits;       // Size of pointer relocation map for read-only region
   size_t _heap_roots_offset;            // Offset of the HeapShared::roots() object, from the bottom
                                         // of the archived heap objects, in bytes.
   size_t _heap_oopmap_start_pos;        // The first bit in the oopmap corresponds to this position in the heap.
@@ -269,9 +267,6 @@ public:
   char* mapped_base_address()              const { return _mapped_base_address; }
   bool has_platform_or_app_classes()       const { return _has_platform_or_app_classes; }
   bool has_non_jar_in_classpath()          const { return _has_non_jar_in_classpath; }
-  size_t ptrmap_size_in_bits()             const { return _ptrmap_size_in_bits; }
-  size_t rw_ptrmap_size_in_bits()          const { return _rw_ptrmap_size_in_bits; }
-  size_t ro_ptrmap_size_in_bits()          const { return _ro_ptrmap_size_in_bits; }
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
   size_t heap_roots_offset()               const { return _heap_roots_offset; }
@@ -286,9 +281,6 @@ public:
   void set_has_platform_or_app_classes(bool v)   { _has_platform_or_app_classes = v; }
   void set_cloned_vtables(char* p)               { set_as_offset(p, &_cloned_vtables_offset); }
   void set_serialized_data(char* p)              { set_as_offset(p, &_serialized_data_offset); }
-  void set_ptrmap_size_in_bits(size_t s)         { _ptrmap_size_in_bits = s; }
-  void set_rw_ptrmap_size_in_bits(size_t s)      { _rw_ptrmap_size_in_bits = s; }
-  void set_ro_ptrmap_size_in_bits(size_t s)      { _ro_ptrmap_size_in_bits = s; }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
   void set_heap_roots_offset(size_t n)           { _heap_roots_offset = n; }
   void set_heap_oopmap_start_pos(size_t n)       { _heap_oopmap_start_pos = n; }
