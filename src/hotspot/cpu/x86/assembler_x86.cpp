@@ -934,6 +934,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     case 0x6F: // movdq
     case 0x7F: // movdq
     case 0xAE: // ldmxcsr, stmxcsr, fxrstor, fxsave, clflush
+    case 0xD6: // movq
     case 0xFE: // paddd
       debug_only(has_disp32 = true);
       break;
