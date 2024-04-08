@@ -245,28 +245,6 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
         return -1;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @implSpec
-     * This implementation first gets a list iterator that points to the end
-     * of the list (with {@code listIterator(size())}).  Then, it iterates
-     * backwards over the list until the matching element is found, or the
-     * beginning of the list is reached.
-     *
-     * @throws NullPointerException {@inheritDoc}
-     */
-    public int lastIndexOf(Predicate<? super E> filter) {
-        ListIterator<E> it = listIterator(size());
-        while (it.hasPrevious()) {
-            E e = it.previous();
-            if (filter.test(e)) {
-                return it.nextIndex();
-            }
-        }
-        return -1;
-    }
-
 
     // Bulk Operations
 
