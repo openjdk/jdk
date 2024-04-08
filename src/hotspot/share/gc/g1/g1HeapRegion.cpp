@@ -433,22 +433,30 @@ void HeapRegion::print_on(outputStream* st) const {
 }
 
 static bool is_oop_safe(oop obj) {
-  if (!oopDesc::is_oop(obj)) {
-    log_error(gc, verify)(PTR_FORMAT " not an oop", p2i(obj));
+  // Make a few sanity checks of the class before calling the full-fledged
+  // is_oop check (which also performs its own klass verification).
+  Klass* klass = obj->klass_without_asserts();
+
+  if (klass == nullptr) {
+    log_error(gc, verify)("Object " PTR_FORMAT " has a null klass", p2i(obj));
     return false;
   }
 
-  // Now examine the Klass a little more closely.
-  Klass* klass = obj->klass_raw();
-
-  bool is_metaspace_object = Metaspace::contains(klass);
-  if (!is_metaspace_object) {
+  if (!Metaspace::contains(klass)) {
     log_error(gc, verify)("klass " PTR_FORMAT " of object " PTR_FORMAT " "
-                          "not metadata", p2i(klass), p2i(obj));
+                          "is not in metaspace", p2i(klass), p2i(obj));
     return false;
-  } else if (!klass->is_klass()) {
+  }
+
+  if (!klass->is_klass()) {
     log_error(gc, verify)("klass " PTR_FORMAT " of object " PTR_FORMAT " "
                           "not a klass", p2i(klass), p2i(obj));
+    return false;
+  }
+
+  // Now, perform the more in-depth verification of the object.
+  if (!oopDesc::is_oop(obj)) {
+    log_error(gc, verify)(PTR_FORMAT " not an oop", p2i(obj));
     return false;
   }
 
