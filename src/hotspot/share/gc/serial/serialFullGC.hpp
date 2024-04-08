@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_SERIAL_MARKSWEEP_HPP
-#define SHARE_GC_SERIAL_MARKSWEEP_HPP
+#ifndef SHARE_GC_SERIAL_SERIALFULLGC_HPP
+#define SHARE_GC_SERIAL_SERIALFULLGC_HPP
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
@@ -41,7 +41,7 @@ class DataLayout;
 class SerialOldTracer;
 class STWGCTimer;
 
-// MarkSweep takes care of global mark-compact garbage collection for a
+// Serial full GC takes care of global mark-compact garbage collection for a
 // SerialHeap using a four-phase pointer forwarding algorithm.  All
 // generations are assumed to support marking; those that can also support
 // compaction.
@@ -53,7 +53,7 @@ class PreservedMark;
 class MarkAndPushClosure;
 class AdjustPointerClosure;
 
-class MarkSweep : AllStatic {
+class SerialFullGC : AllStatic {
   //
   // Inline closure decls
   //
@@ -92,7 +92,7 @@ class MarkSweep : AllStatic {
   // Vars
   //
  protected:
-  // Total invocations of a MarkSweep collection
+  // Total invocations of serial full GC
   static uint _total_invocations;
 
   // Traversal stacks used during phase1
@@ -196,4 +196,4 @@ class AdjustPointerClosure: public BasicOopIterateClosure {
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
 };
 
-#endif // SHARE_GC_SERIAL_MARKSWEEP_HPP
+#endif // SHARE_GC_SERIAL_SERIALFULLGC_HPP

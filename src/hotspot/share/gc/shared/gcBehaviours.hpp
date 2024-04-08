@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,14 @@
 #include "memory/iterator.hpp"
 #include "oops/oopsHierarchy.hpp"
 
-// This is the behaviour for checking if a CompiledMethod is unloading
+// This is the behaviour for checking if an nmethod is unloading
 // or has unloaded due to having phantomly dead oops in it after a GC.
 class IsUnloadingBehaviour {
   static IsUnloadingBehaviour* _current;
 
 public:
-  static bool is_unloading(CompiledMethod* cm);
-  virtual bool has_dead_oop(CompiledMethod* cm) const = 0;
+  static bool is_unloading(nmethod* nm);
+  virtual bool has_dead_oop(nmethod* nm) const = 0;
   static IsUnloadingBehaviour* current() { return _current; }
   static void set_current(IsUnloadingBehaviour* current) { _current = current; }
 };
@@ -48,7 +48,7 @@ public:
     : _cl(is_alive)
   { }
 
-  virtual bool has_dead_oop(CompiledMethod* cm) const;
+  virtual bool has_dead_oop(nmethod* nm) const;
 };
 
 #endif // SHARE_GC_SHARED_GCBEHAVIOURS_HPP
