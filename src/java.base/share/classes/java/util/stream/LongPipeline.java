@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 package java.util.stream;
 
+import jdk.internal.vm.annotation.Stable;
+
 import java.util.LongSummaryStatistics;
 import java.util.Objects;
 import java.util.OptionalDouble;
@@ -34,6 +36,7 @@ import java.util.Spliterators;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
 import java.util.function.IntFunction;
+import java.util.function.IntPredicate;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongConsumer;
 import java.util.function.LongFunction;
@@ -279,43 +282,35 @@ abstract class LongPipeline<E_IN>
                 StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
-                return new Sink.ChainedLong<>(sink) {
-                    // true if cancellationRequested() has been called
-                    boolean cancellationRequestedCalled;
+                class FlatMap extends Sink.ChainedLong<Long> implements LongPredicate {
+                    @Stable boolean cancel;
 
-                    // cache the consumer to avoid creation on every accepted element
-                    LongConsumer downstreamAsLong = downstream::accept;
+                    FlatMap() { super(sink); }
 
-                    @Override
-                    public void begin(long size) {
-                        downstream.begin(-1);
-                    }
+                    @Override public void begin(long size) { downstream.begin(-1); }
 
                     @Override
-                    public void accept(long t) {
-                        try (LongStream result = mapper.apply(t)) {
-                            if (result != null) {
-                                if (!cancellationRequestedCalled) {
-                                    result.sequential().forEach(downstreamAsLong);
-                                } else {
-                                    var s = result.sequential().spliterator();
-                                    do {
-                                    } while (!downstream.cancellationRequested() && s.tryAdvance(downstreamAsLong));
-                                }
-                            }
+                    public void accept(long input) {
+                        try (LongStream result = mapper.apply(input)) {
+                            if (result != null)
+                                result.sequential().allMatch(this);
                         }
                     }
 
                     @Override
                     public boolean cancellationRequested() {
-                        // If this method is called then an operation within the stream
-                        // pipeline is short-circuiting (see AbstractPipeline.copyInto).
-                        // Note that we cannot differentiate between an upstream or
-                        // downstream operation
-                        cancellationRequestedCalled = true;
-                        return downstream.cancellationRequested();
+                        return cancel || (cancel |= downstream.cancellationRequested());
                     }
-                };
+
+                    @Override
+                    public boolean test(long output) {
+                        if (cancel)
+                            return false;
+                        downstream.accept(output);
+                        return !cancellationRequested();
+                    }
+                }
+                return new FlatMap();
             }
         };
     }

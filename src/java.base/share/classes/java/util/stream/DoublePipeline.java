@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 package java.util.stream;
 
+import jdk.internal.vm.annotation.Stable;
+
 import java.util.DoubleSummaryStatistics;
 import java.util.Objects;
 import java.util.OptionalDouble;
@@ -40,6 +42,7 @@ import java.util.function.DoubleToIntFunction;
 import java.util.function.DoubleToLongFunction;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.IntFunction;
+import java.util.function.LongPredicate;
 import java.util.function.ObjDoubleConsumer;
 import java.util.function.Supplier;
 
@@ -263,43 +266,35 @@ abstract class DoublePipeline<E_IN>
                 StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<Double> opWrapSink(int flags, Sink<Double> sink) {
-                return new Sink.ChainedDouble<>(sink) {
-                    // true if cancellationRequested() has been called
-                    boolean cancellationRequestedCalled;
+                class FlatMap extends Sink.ChainedDouble<Double> implements DoublePredicate {
+                    @Stable boolean cancel;
 
-                    // cache the consumer to avoid creation on every accepted element
-                    DoubleConsumer downstreamAsDouble = downstream::accept;
+                    FlatMap() { super(sink); }
 
-                    @Override
-                    public void begin(long size) {
-                        downstream.begin(-1);
-                    }
+                    @Override public void begin(long size) { downstream.begin(-1); }
 
                     @Override
-                    public void accept(double t) {
-                        try (DoubleStream result = mapper.apply(t)) {
-                            if (result != null) {
-                                if (!cancellationRequestedCalled) {
-                                    result.sequential().forEach(downstreamAsDouble);
-                                } else {
-                                    var s = result.sequential().spliterator();
-                                    do {
-                                    } while (!downstream.cancellationRequested() && s.tryAdvance(downstreamAsDouble));
-                                }
-                            }
+                    public void accept(double input) {
+                        try (DoubleStream result = mapper.apply(input)) {
+                            if (result != null)
+                                result.sequential().allMatch(this);
                         }
                     }
 
                     @Override
                     public boolean cancellationRequested() {
-                        // If this method is called then an operation within the stream
-                        // pipeline is short-circuiting (see AbstractPipeline.copyInto).
-                        // Note that we cannot differentiate between an upstream or
-                        // downstream operation
-                        cancellationRequestedCalled = true;
-                        return downstream.cancellationRequested();
+                        return cancel || (cancel |= downstream.cancellationRequested());
                     }
-                };
+
+                    @Override
+                    public boolean test(double output) {
+                        if (cancel)
+                            return false;
+                        downstream.accept(output);
+                        return !cancellationRequested();
+                    }
+                }
+                return new FlatMap();
             }
         };
     }
