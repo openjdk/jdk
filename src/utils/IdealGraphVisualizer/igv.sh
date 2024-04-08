@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -20,13 +20,4 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 
-DEFAULT_WORKSPACE="$(pwd)/workspace"
-DEFAULT_WORKSPACE=${IGV_WORKSPACE:-$DEFAULT_WORKSPACE}
-WORKSPACE=${1:-$DEFAULT_WORKSPACE}
-echo "The IGV workspace in which the imported graphs are saved can be set as follows:"
-echo "  1) export IGV_WORKSPACE=path/to/workspace"
-echo "  2) ./igv.sh path/to/workspace"
-echo "  3) default is ./workspace"
-echo
-echo "IGV workspace : $WORKSPACE";
-mvn --batch-mode -f application/pom.xml --define netbeans.userdir=$WORKSPACE nbm:run-platform >.igv.log 2>&1
+mvn --batch-mode -f application/pom.xml nbm:run-platform >.igv.log 2>&1
