@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,14 @@ import org.openide.util.NbBundle;
 import org.openide.util.actions.CookieAction;
 
 /**
- *
  * @author Thomas Wuerthinger
  */
 public final class MoveFilterUpAction extends CookieAction {
+
+    public MoveFilterUpAction() {
+        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
+        putValue(Action.SHORT_DESCRIPTION, "Move selected filter upwards");
+    }
 
     @Override
     protected void performAction(Node[] activatedNodes) {
@@ -51,11 +55,6 @@ public final class MoveFilterUpAction extends CookieAction {
         return CookieAction.MODE_EXACTLY_ONE;
     }
 
-    public MoveFilterUpAction() {
-        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
-        putValue(Action.SHORT_DESCRIPTION, "Move selected filter upwards");
-    }
-
     @Override
     public String getName() {
         return NbBundle.getMessage(MoveFilterUpAction.class, "CTL_MoveFilterUpAction");
@@ -64,7 +63,7 @@ public final class MoveFilterUpAction extends CookieAction {
     @Override
     protected Class[] cookieClasses() {
         return new Class[]{
-            Filter.class
+                Filter.class
         };
     }
 

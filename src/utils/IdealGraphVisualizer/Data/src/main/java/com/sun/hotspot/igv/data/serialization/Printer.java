@@ -24,10 +24,10 @@
 package com.sun.hotspot.igv.data.serialization;
 
 import com.sun.hotspot.igv.data.*;
-import com.sun.hotspot.igv.data.Properties;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -37,16 +37,8 @@ import java.util.stream.Collectors;
 public class Printer {
 
 
-    public record GraphContext(InputGraph inputGraph, AtomicInteger posDiff, Set<Integer> hiddenNodes) {}
-
-    public record SerialData<T extends Properties.Provider>(T data, Set<GraphContext> contexts) implements Properties.Provider {
-        @Override
-        public Properties getProperties() {
-            return data.getProperties();
-        }
+    public Printer() {
     }
-
-    public Printer() {}
 
     public void exportGraphDocument(Writer writer, SerialData<Folder> serialData) {
         Folder folder = serialData.data();
@@ -187,7 +179,6 @@ public class Printer {
         writer.endTag(); // Parser.GRAPH_ELEMENT
     }
 
-
     private void exportStates(XMLWriter writer, InputGraph exportingGraph, Set<GraphContext> contexts) throws IOException {
         Set<GraphContext> contextsContainingGraph = contexts.stream()
                 .filter(context -> context.inputGraph().equals(exportingGraph))
@@ -218,7 +209,6 @@ public class Printer {
 
         writer.endTag(); // Parser.GRAPH_STATE_ELEMENT
     }
-
 
     private void exportInputMethod(XMLWriter w, InputMethod method) throws IOException {
         w.startTag(Parser.METHOD_ELEMENT, new Properties(Parser.METHOD_BCI_PROPERTY, method.getBci() + "", Parser.METHOD_NAME_PROPERTY, method.getName(), Parser.METHOD_SHORT_NAME_PROPERTY, method.getShortName()));
@@ -262,5 +252,16 @@ public class Printer {
         p.setProperty(Parser.FROM_PROPERTY, Integer.toString(edge.getFrom()));
         p.setProperty(Parser.TYPE_PROPERTY, edge.getType());
         return p;
+    }
+
+    public record GraphContext(InputGraph inputGraph, AtomicInteger posDiff, Set<Integer> hiddenNodes) {
+    }
+
+    public record SerialData<T extends Properties.Provider>(T data,
+                                                            Set<GraphContext> contexts) implements Properties.Provider {
+        @Override
+        public Properties getProperties() {
+            return data.getProperties();
+        }
     }
 }

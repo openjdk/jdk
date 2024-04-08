@@ -26,11 +26,18 @@ package com.sun.hotspot.igv.coordinator.actions;
 
 import com.sun.hotspot.igv.coordinator.OutlineTopComponent;
 import javax.swing.Action;
-import org.openide.util.*;
+import org.openide.util.HelpCtx;
+import org.openide.util.ImageUtilities;
+import org.openide.util.NbBundle;
 import org.openide.util.actions.CallableSystemAction;
 
 
 public final class ImportAction extends CallableSystemAction {
+
+    public ImportAction() {
+        putValue(Action.SHORT_DESCRIPTION, "Import from XML...");
+        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
+    }
 
     @Override
     public void performAction() {
@@ -40,11 +47,6 @@ public final class ImportAction extends CallableSystemAction {
     @Override
     public String getName() {
         return NbBundle.getMessage(ImportAction.class, "CTL_ImportAction");
-    }
-
-    public ImportAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Import from XML...");
-        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
     }
 
     @Override

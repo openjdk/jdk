@@ -29,10 +29,9 @@ import com.sun.hotspot.igv.difference.Difference;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
- *
  * @author Thomas Wuerthinger
  */
-@ServiceProvider(service=GraphViewer.class)
+@ServiceProvider(service = GraphViewer.class)
 public class GraphViewerImplementation implements GraphViewer {
 
     @Override

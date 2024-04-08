@@ -33,10 +33,14 @@ import org.openide.util.NbBundle;
 import org.openide.util.actions.NodeAction;
 
 /**
- *
  * @author Thomas Wuerthinger
  */
 public final class RemoveAction extends NodeAction {
+
+    public RemoveAction() {
+        putValue(Action.SHORT_DESCRIPTION, getName());
+        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
+    }
 
     @Override
     protected void performAction(Node[] activatedNodes) {
@@ -46,11 +50,6 @@ public final class RemoveAction extends NodeAction {
                 removeCookie.remove();
             }
         }
-    }
-
-    public RemoveAction() {
-        putValue(Action.SHORT_DESCRIPTION, getName());
-        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
     }
 
     @Override

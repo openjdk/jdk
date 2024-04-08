@@ -26,10 +26,20 @@ package com.sun.hotspot.igv.coordinator.actions;
 
 import com.sun.hotspot.igv.coordinator.OutlineTopComponent;
 import javax.swing.Action;
-import org.openide.util.*;
+import org.openide.util.HelpCtx;
+import org.openide.util.ImageUtilities;
+import org.openide.util.NbBundle;
+import org.openide.util.Utilities;
 import org.openide.util.actions.CallableSystemAction;
 
 public final class OpenAction extends CallableSystemAction {
+
+    public OpenAction() {
+        putValue(Action.SHORT_DESCRIPTION, "Open...");
+        // D is the Control key on most platforms, the Command (meta) key on Macintosh
+        putValue(Action.ACCELERATOR_KEY, Utilities.stringToKey("D-O"));
+        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
+    }
 
     @Override
     public void performAction() {
@@ -39,13 +49,6 @@ public final class OpenAction extends CallableSystemAction {
     @Override
     public String getName() {
         return NbBundle.getMessage(OpenAction.class, "CTL_OpenAction");
-    }
-
-    public OpenAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Open...");
-        // D is the Control key on most platforms, the Command (meta) key on Macintosh
-        putValue(Action.ACCELERATOR_KEY, Utilities.stringToKey("D-O"));
-        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
     }
 
     @Override

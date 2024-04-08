@@ -25,7 +25,10 @@ package com.sun.hotspot.igv.coordinator;
 
 import com.sun.hotspot.igv.connection.Server;
 import com.sun.hotspot.igv.coordinator.actions.*;
-import com.sun.hotspot.igv.data.*;
+import com.sun.hotspot.igv.data.ChangedListener;
+import com.sun.hotspot.igv.data.GraphDocument;
+import com.sun.hotspot.igv.data.Group;
+import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.serialization.ParseMonitor;
 import com.sun.hotspot.igv.data.serialization.Parser;
 import com.sun.hotspot.igv.data.serialization.Printer;
@@ -59,31 +62,45 @@ import org.openide.explorer.ExplorerManager;
 import org.openide.explorer.ExplorerUtils;
 import org.openide.explorer.view.BeanTreeView;
 import org.openide.nodes.Node;
-import org.openide.util.*;
+import org.openide.util.Exceptions;
+import org.openide.util.Lookup;
+import org.openide.util.NbBundle;
+import org.openide.util.RequestProcessor;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 
 /**
- *
  * @author Thomas Wuerthinger
  */
 public final class OutlineTopComponent extends TopComponent implements ExplorerManager.Provider, ChangedListener<InputGraphProvider> {
 
-    public static OutlineTopComponent instance;
     public static final String PREFERRED_ID = "OutlineTopComponent";
-    private ExplorerManager manager;
     private static final GraphDocument document = new GraphDocument();
+    private static final int WORK_UNITS = 10000;
+    private static final RequestProcessor RP = new RequestProcessor("OutlineTopComponent", 1);
+    private static final FileFilter xmlFileFilter = new FileFilter() {
+        @Override
+        public boolean accept(File f) {
+            return f.getName().toLowerCase().endsWith(".xml") || f.isDirectory();
+        }
+
+        @Override
+        public String getDescription() {
+            return "Graph files (*.xml)";
+        }
+    };
+    public static OutlineTopComponent instance;
+    private final Set<FolderNode> selectedFolders = new HashSet<>();
+    private ExplorerManager manager;
     private FolderNode root;
     private SaveAction saveAction;
     private SaveAsAction saveAsAction;
     private RemoveAllAction removeAllAction;
     private GraphNode[] selectedGraphs = new GraphNode[0];
-    private final Set<FolderNode> selectedFolders = new HashSet<>();
-    private static final int WORK_UNITS = 10000;
-    private static final RequestProcessor RP = new RequestProcessor("OutlineTopComponent", 1);
     private Path documentPath = null;
-
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private JScrollPane treeView;
 
     private OutlineTopComponent() {
         initComponents();
@@ -92,6 +109,84 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         initListView();
         initToolbar();
         initReceivers();
+    }
+
+    public static GraphDocument getDocument() {
+        return document;
+    }
+
+    /**
+     * Gets default instance. Do not use directly: reserved for *.settings files only,
+     * i.e. deserialization routines; otherwise you could get a non-deserialized instance.
+     * To obtain the singleton instance, use {@link #findInstance()}.
+     */
+    public static synchronized OutlineTopComponent getDefault() {
+        if (instance == null) {
+            instance = new OutlineTopComponent();
+        }
+        return instance;
+    }
+
+    /**
+     * Obtain the OutlineTopComponent instance. Never call {@link #getDefault} directly!
+     */
+    public static synchronized OutlineTopComponent findInstance() {
+        TopComponent win = WindowManager.getDefault().findTopComponent(PREFERRED_ID);
+        if (win == null) {
+            ErrorManager.getDefault().log(ErrorManager.WARNING, "Cannot find Outline component. It will not be located properly in the window system.");
+            return getDefault();
+        }
+        if (win instanceof OutlineTopComponent) {
+            return (OutlineTopComponent) win;
+        }
+        ErrorManager.getDefault().log(ErrorManager.WARNING, "There seem to be multiple components with the '" + PREFERRED_ID + "' ID. That is a potential source of errors and unexpected behavior.");
+        return getDefault();
+    }
+
+    public static void exportToXML(GraphDocument doc) {
+        JFileChooser fc = new JFileChooser();
+        fc.setFileFilter(xmlFileFilter);
+        fc.setCurrentDirectory(new File(Settings.get().get(Settings.DIRECTORY, Settings.DIRECTORY_DEFAULT)));
+        if (fc.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+            String path = fc.getSelectedFile().getAbsolutePath();
+            try {
+                saveGraphDocument(doc, path, false);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private static void saveGraphDocument(GraphDocument doc, String path, boolean saveContext) throws IOException {
+        if (path == null) {
+            return;
+        }
+
+        Set<GraphContext> saveContexts = new HashSet<>();
+        if (saveContext) {
+            WindowManager manager = WindowManager.getDefault();
+            for (Mode mode : manager.getModes()) {
+                List<TopComponent> compList = new ArrayList<>(Arrays.asList(manager.getOpenedTopComponents(mode)));
+                for (TopComponent comp : compList) {
+                    if (comp instanceof EditorTopComponent etc) {
+                        GraphContext graphContext = getGraphContext(etc);
+                        saveContexts.add(graphContext);
+                    }
+                }
+            }
+        }
+
+        try (Writer writer = new OutputStreamWriter(new FileOutputStream(path))) {
+            Printer printer = new Printer();
+            printer.exportGraphDocument(writer, new SerialData<>(doc, saveContexts));
+        }
+    }
+
+    private static GraphContext getGraphContext(EditorTopComponent etc) {
+        InputGraph openedGraph = etc.getModel().getFirstGraph();
+        int posDiff = etc.getModel().getSecondPosition() - etc.getModel().getFirstPosition();
+        Set<Integer> hiddenNodes = new HashSet<>(etc.getModel().getHiddenNodes());
+        return new GraphContext(openedGraph, new AtomicInteger(posDiff), hiddenNodes);
     }
 
     private void initListView() {
@@ -108,7 +203,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     private void initToolbar() {
         Toolbar toolbar = new Toolbar();
         toolbar.setBorder((Border) UIManager.get("Nb.Editor.Toolbar.border")); //NOI18N
-        toolbar.setMinimumSize(new Dimension(0,0)); // MacOS BUG with ToolbarWithOverflow
+        toolbar.setMinimumSize(new Dimension(0, 0)); // MacOS BUG with ToolbarWithOverflow
 
         this.add(toolbar, BorderLayout.NORTH);
 
@@ -149,7 +244,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
 
     private void initReceivers() {
         final GroupCallback callback = g -> {
-            synchronized(OutlineTopComponent.this) {
+            synchronized (OutlineTopComponent.this) {
                 g.setParent(getDocument());
                 getDocument().addElement(g);
             }
@@ -161,38 +256,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     @Override
     public ExplorerManager getExplorerManager() {
         return manager;
-    }
-
-    public static GraphDocument getDocument() {
-        return document;
-    }
-
-    /**
-     * Gets default instance. Do not use directly: reserved for *.settings files only,
-     * i.e. deserialization routines; otherwise you could get a non-deserialized instance.
-     * To obtain the singleton instance, use {@link #findInstance()}.
-     */
-    public static synchronized OutlineTopComponent getDefault() {
-        if (instance == null) {
-            instance = new OutlineTopComponent();
-        }
-        return instance;
-    }
-
-    /**
-     * Obtain the OutlineTopComponent instance. Never call {@link #getDefault} directly!
-     */
-    public static synchronized OutlineTopComponent findInstance() {
-        TopComponent win = WindowManager.getDefault().findTopComponent(PREFERRED_ID);
-        if (win == null) {
-            ErrorManager.getDefault().log(ErrorManager.WARNING, "Cannot find Outline component. It will not be located properly in the window system.");
-            return getDefault();
-        }
-        if (win instanceof OutlineTopComponent) {
-            return (OutlineTopComponent) win;
-        }
-        ErrorManager.getDefault().log(ErrorManager.WARNING, "There seem to be multiple components with the '" + PREFERRED_ID + "' ID. That is a potential source of errors and unexpected behavior.");
-        return getDefault();
     }
 
     @Override
@@ -290,6 +353,10 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         return true;
     }
 
+    private String getDocumentPath() {
+        return documentPath.toAbsolutePath().toString();
+    }
+
     private void setDocumentPath(String path) {
         if (path != null) {
             documentPath = Paths.get(path);
@@ -298,13 +365,9 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         } else {
             documentPath = null;
             setHtmlDisplayName("<html><i>untitled</i></html>");
-            setToolTipText("No file" );
+            setToolTipText("No file");
         }
 
-    }
-
-    private String getDocumentPath() {
-        return documentPath.toAbsolutePath().toString();
     }
 
     public void clearWorkspace() {
@@ -333,7 +396,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
 
     private boolean overwriteDialog(String filename) {
         JFrame frame = new JFrame();
-        String message = "Do you want to overwrite " +filename + "?";
+        String message = "Do you want to overwrite " + filename + "?";
         int result = JOptionPane.showConfirmDialog(frame, message, "Confirm Overwrite", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         if (result == JOptionPane.YES_OPTION) {
             frame.dispose();
@@ -376,34 +439,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             setDocumentPath(path);
             try {
                 saveGraphDocument(getDocument(), path, true);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-
-    private static final FileFilter xmlFileFilter = new FileFilter() {
-        @Override
-        public boolean accept(File f) {
-            return f.getName().toLowerCase().endsWith(".xml") || f.isDirectory();
-        }
-
-        @Override
-        public String getDescription() {
-            return "Graph files (*.xml)";
-        }
-    };
-
-
-    public static void exportToXML(GraphDocument doc) {
-        JFileChooser fc = new JFileChooser();
-        fc.setFileFilter(xmlFileFilter);
-        fc.setCurrentDirectory(new File(Settings.get().get(Settings.DIRECTORY, Settings.DIRECTORY_DEFAULT)));
-        if (fc.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
-            String path = fc.getSelectedFile().getAbsolutePath();
-            try {
-                saveGraphDocument(doc, path, false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -459,8 +494,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         });
     }
 
-
-    private void loadGraphDocument(String path,  boolean loadContext) throws IOException {
+    private void loadGraphDocument(String path, boolean loadContext) throws IOException {
         RP.post(() -> {
             if (path == null || Files.notExists(Path.of(path))) {
                 return;
@@ -485,8 +519,10 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
                     try {
                         int prog = (int) (WORK_UNITS * (double) channel.position() / (double) start);
                         handle.progress(prog);
-                    } catch (IOException ignored) {}
+                    } catch (IOException ignored) {
+                    }
                 }
+
                 @Override
                 public void setState(String state) {
                     updateProgress();
@@ -513,39 +549,8 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         });
     }
 
-    private static void saveGraphDocument(GraphDocument doc, String path, boolean saveContext) throws IOException {
-        if (path == null) {
-            return;
-        }
-
-        Set<GraphContext> saveContexts = new HashSet<>();
-        if (saveContext) {
-            WindowManager manager = WindowManager.getDefault();
-            for (Mode mode : manager.getModes()) {
-                List<TopComponent> compList = new ArrayList<>(Arrays.asList(manager.getOpenedTopComponents(mode)));
-                for (TopComponent comp : compList) {
-                    if (comp instanceof EditorTopComponent etc) {
-                        GraphContext graphContext = getGraphContext(etc);
-                        saveContexts.add(graphContext);
-                    }
-                }
-            }
-        }
-
-        try (Writer writer = new OutputStreamWriter(new FileOutputStream(path))) {
-            Printer printer = new Printer();
-            printer.exportGraphDocument(writer, new SerialData<>(doc, saveContexts));
-        }
-    }
-
-    private static GraphContext getGraphContext(EditorTopComponent etc) {
-        InputGraph openedGraph = etc.getModel().getFirstGraph();
-        int posDiff = etc.getModel().getSecondPosition() - etc.getModel().getFirstPosition();
-        Set<Integer> hiddenNodes = new HashSet<>(etc.getModel().getHiddenNodes());
-        return new GraphContext(openedGraph, new AtomicInteger(posDiff), hiddenNodes);
-    }
-
-    /** This method is called from within the constructor to
+    /**
+     * This method is called from within the constructor to
      * initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is
      * always regenerated by the Form Editor.
@@ -558,8 +563,5 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         setLayout(new BorderLayout());
         add(treeView, BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
-
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private JScrollPane treeView;
     // End of variables declaration//GEN-END:variables
 }

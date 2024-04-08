@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,16 +36,20 @@ import org.openide.util.actions.CookieAction;
 import org.openide.windows.WindowManager;
 
 /**
- *
  * @author Thomas Wuerthinger
  */
 public final class RemoveFilterAction extends CookieAction {
 
+    public RemoveFilterAction() {
+        putValue(Action.SHORT_DESCRIPTION, "Remove selected filter");
+        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
+    }
+
     @Override
     protected void performAction(Node[] activatedNodes) {
         Object[] options = {"Yes",
-            "No",
-            "Cancel"
+                "No",
+                "Cancel"
         };
         int n = JOptionPane.showOptionDialog(WindowManager.getDefault().getMainWindow(),
                 "Do you really want to delete " + activatedNodes.length + " filter(s)?", "Delete Filters",
@@ -72,15 +76,10 @@ public final class RemoveFilterAction extends CookieAction {
         return NbBundle.getMessage(RemoveFilterAction.class, "CTL_RemoveFilterAction");
     }
 
-    public RemoveFilterAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Remove selected filter");
-        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
-    }
-
     @Override
     protected Class[] cookieClasses() {
         return new Class[]{
-            Filter.class
+                Filter.class
         };
     }
 
