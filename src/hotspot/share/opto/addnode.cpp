@@ -57,7 +57,6 @@ Node* AddNode::Identity(PhaseGVN* phase) {
   const Type *zero = add_id();  // The additive identity
   if( phase->type( in(1) )->higher_equal( zero ) ) return in(2);
   if( phase->type( in(2) )->higher_equal( zero ) ) return in(1);
-  if ( ( this->Opcode() == this->max_opcode() || this->Opcode() == this->min_opcode() ) && in(1) == in(2) ) return in(1);
   return this;
 }
 
@@ -1415,6 +1414,12 @@ Node* MinLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return fold_subI_no_underflow_pattern(this, phase);
   }
   return nullptr;
+}
+
+Node* MaxNode::Identity(PhaseGVN* phase) {
+  if ( in(1) == in(2) ) return in(1);
+
+  return AddNode::Identity(phase);
 }
 
 //------------------------------add_ring---------------------------------------

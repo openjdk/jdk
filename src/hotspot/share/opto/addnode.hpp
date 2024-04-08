@@ -269,6 +269,7 @@ public:
   virtual int max_opcode() const = 0;
   virtual int min_opcode() const = 0;
   Node* IdealI(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
 
   static Node* unsigned_max(Node* a, Node* b, const Type* t, PhaseGVN& gvn) {
     return build_min_max(a, b, true, true, t, gvn);
