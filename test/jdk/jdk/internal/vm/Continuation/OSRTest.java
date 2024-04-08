@@ -74,7 +74,7 @@ public class OSRTest {
         while (!cont.isDone()) {
             cont.run();
             if (freezeFast && !thawFast && fooCallCount == 2) {
-                // All frames freezed in last yield should be compiled
+                // All frames frozen in last yield should be compiled
                 // including OSR version of foo. Invoke full GC now so
                 // that chunk is marked and we force thaw slow path.
                 System.gc();
