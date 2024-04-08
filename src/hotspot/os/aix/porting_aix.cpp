@@ -906,10 +906,11 @@ struct TableLocker {
   ~TableLocker() { pthread_mutex_unlock(&g_handletable_mutex); }
 };
 struct handletableentry{
-    void*   handle;
-    ino64_t inode;
-    dev64_t devid;
-    uint    refcount;
+    void*         handle;
+    ino64_t       inode;
+    dev64_t       devid;
+    unsigned long hash;
+    uint          refcount;
 };
 constexpr unsigned init_num_handles = 128;
 static unsigned max_handletable = 0;
@@ -1049,6 +1050,16 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
     return nullptr;
   }
   else {
+    // extract member string if exist and generate hash of it
+    unsigned long hash = 0;
+    const char* substr;
+    if (filename[strlen(filename) - 1] == ')' && (substr = strrchr(filename, '('))) {
+      // Mocklisp hash function.
+      while (*substr) {
+        hash = (hash << 5) - hash + (unsigned long)*substr++;
+      }
+    }
+
     unsigned i = 0;
     TableLocker lock;
     // check if library belonging to filename is already loaded.
@@ -1056,7 +1067,8 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
     for (i = 0; i < g_handletable_used; i++) {
       if ((p_handletable + i)->handle &&
           (p_handletable + i)->inode == libstat.st_ino &&
-          (p_handletable + i)->devid == libstat.st_dev) {
+          (p_handletable + i)->devid == libstat.st_dev &&
+          (p_handletable + i)->hash == hash) {
         (p_handletable + i)->refcount++;
         result = (p_handletable + i)->handle;
         break;
@@ -1084,6 +1096,7 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
         (p_handletable + i)->handle = result;
         (p_handletable + i)->inode = libstat.st_ino;
         (p_handletable + i)->devid = libstat.st_dev;
+        (p_handletable + i)->hash = hash;
         (p_handletable + i)->refcount = 1;
       }
       else {
