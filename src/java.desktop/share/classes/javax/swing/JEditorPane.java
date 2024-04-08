@@ -474,71 +474,77 @@ public class JEditorPane extends JTextComponent {
         }
         URL loaded = getPage();
 
-
         // reset scrollbar
         if (!page.equals(loaded) && page.getRef() == null) {
-            scrollRectToVisible(new Rectangle(0,0,1,1));
+            scrollRectToVisible(new Rectangle(0, 0, 1, 1));
         }
-        boolean reloaded = false;
+        if ((loaded != null) && loaded.sameFile(page)) {
+            if (page.getRef() != null) {
+                scrollToReference(page.getRef());
+            }
+            return;
+        }
+
         Object postData = getPostData();
-        if ((loaded == null) || !loaded.sameFile(page) || (postData != null)) {
-            // different url or POST method, load the new content
+        if ((postData == null) && (kit == null)) {
+            return;
+        }
 
-            int p = getAsynchronousLoadPriority(getDocument());
-            if (p < 0) {
-                // open stream synchronously
-                InputStream in = getStream(page);
-                if (kit != null) {
-                    Document doc = initializeModel(kit, page);
+        // different url or POST method, load the new content
+        synchronized (this) {
+            // we need to cancel background loading
+            if (pageLoader != null) {
+                pageLoader.cancel(true);
+            }
+        }
 
-                    // At this point, one could either load up the model with no
-                    // view notifications slowing it down (i.e. best synchronous
-                    // behavior) or set the model and start to feed it on a separate
-                    // thread (best asynchronous behavior).
-                    p = getAsynchronousLoadPriority(doc);
-                    if (p >= 0) {
-                        // load asynchronously
-                        setDocument(doc);
-                        synchronized(this) {
-                            pageLoader = new PageLoader(doc, in, loaded, page);
-                            pageLoader.execute();
-                        }
-                        return;
-                    }
-                    read(in, doc);
-                    setDocument(doc);
-                    reloaded = true;
-                }
-            } else {
-                // we may need to cancel background loading
-                if (pageLoader != null) {
-                    pageLoader.cancel(true);
-                }
-
+        int p = getAsynchronousLoadPriority(getDocument());
+        if (p >= 0) {
+            synchronized (this) {
                 // Do everything in a background thread.
                 // Model initialization is deferred to that thread, too.
                 pageLoader = new PageLoader(null, null, loaded, page);
                 pageLoader.execute();
-                return;
             }
+            return;
         }
+
+        // open stream synchronously
+        InputStream in = getStream(page);
+
+        Document doc = initializeModel(kit, page);
+
+        // At this point, one could either load up the model with no
+        // view notifications slowing it down (i.e. best synchronous
+        // behavior) or set the model and start to feed it on a separate
+        // thread (best asynchronous behavior).
+        p = getAsynchronousLoadPriority(doc);
+        if (p >= 0) {
+            // load asynchronously
+            setDocument(doc);
+            synchronized (this) {
+                pageLoader = new PageLoader(doc, in, loaded, page);
+                pageLoader.execute();
+            }
+            return;
+        }
+        read(in, doc);
+        setDocument(doc);
+
         final String reference = page.getRef();
         if (reference != null) {
-            if (!reloaded) {
-                scrollToReference(reference);
-            }
-            else {
-                // Have to scroll after painted.
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        scrollToReference(reference);
-                    }
-                });
-            }
+            // Have to scroll after painted.
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    scrollToReference(reference);
+                }
+            });
+
             getDocument().putProperty(Document.StreamDescriptionProperty, page);
         }
         firePropertyChange("page", loaded, page);
     }
+
 
     /**
      * Create model and initialize document properties from page properties.
