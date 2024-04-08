@@ -545,7 +545,6 @@ public class JEditorPane extends JTextComponent {
         firePropertyChange("page", loaded, page);
     }
 
-
     /**
      * Create model and initialize document properties from page properties.
      */
