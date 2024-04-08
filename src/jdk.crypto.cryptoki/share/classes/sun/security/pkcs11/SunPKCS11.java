@@ -1311,7 +1311,7 @@ public final class SunPKCS11 extends AuthProvider {
             if (ds == null) {
                 continue;
             }
-            boolean disableLegacy = config.getDisableLegacy();
+            boolean allowLegacy = config.getAllowLegacy();
             descLoop:
             for (Descriptor d : ds) {
                 Integer oldMech = supportedAlgs.get(d);
@@ -1329,7 +1329,7 @@ public final class SunPKCS11 extends AuthProvider {
                     }
 
                     // assume full support if no mech info available
-                    if (disableLegacy && mechInfo != null) {
+                    if (!allowLegacy && mechInfo != null) {
                         if ((d.type == CIP &&
                                 (mechInfo.flags & CKF_ENCRYPT) == 0) ||
                                 (d.type == SIG &&

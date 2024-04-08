@@ -121,8 +121,8 @@ final class Config {
     // whether to print debug info during startup
     private boolean showInfo = false;
 
-    // whether to disable legacy mechanisms
-    private boolean disableLegacy = true;
+    // whether to allow legacy mechanisms
+    private boolean allowLegacy = false;
 
     // template manager, initialized from parsed attributes
     private TemplateManager templateManager;
@@ -254,8 +254,8 @@ final class Config {
         return (SunPKCS11.debug != null) || showInfo;
     }
 
-    boolean getDisableLegacy() {
-        return disableLegacy;
+    boolean getAllowLegacy() {
+        return allowLegacy;
     }
 
     TemplateManager getTemplateManager() {
@@ -460,8 +460,8 @@ final class Config {
                 destroyTokenAfterLogout = parseBooleanEntry(st.sval);
             case "showInfo"->
                 showInfo = parseBooleanEntry(st.sval);
-            case "disableLegacy"->
-                disableLegacy = parseBooleanEntry(st.sval);
+            case "allowLegacy"->
+                allowLegacy = parseBooleanEntry(st.sval);
             case "keyStoreCompatibilityMode"->
                 keyStoreCompatibilityMode = parseBooleanEntry(st.sval);
             case "explicitCancel"->
