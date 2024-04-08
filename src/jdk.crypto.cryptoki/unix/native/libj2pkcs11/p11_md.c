@@ -180,11 +180,13 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
             getFunctionListStr);
     if (C_GetFunctionList == NULL) {
         if ((systemErrorMessage = dlerror()) != NULL){
+            TRACE2("Connect: error finding %s func: %s\n", getFunctionListStr,
+                systemErrorMessage);
             p11ThrowIOException(env, systemErrorMessage);
-            goto cleanup;
+        } else {
+            TRACE1("Connect: No %s func\n", getFunctionListStr);
+            p11ThrowIOException(env, "ERROR: C_GetFunctionList == NULL");
         }
-        TRACE1("Connect: No %s func\n", getFunctionListStr);
-        p11ThrowIOException(env, "ERROR: C_GetFunctionList == NULL");
         goto cleanup;
     }
     TRACE1("Connect: Found %s func\n", getFunctionListStr);
