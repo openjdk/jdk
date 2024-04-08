@@ -1251,8 +1251,8 @@ VMInspectDCmd::VMInspectDCmd(outputStream* output, bool heap) :
 void VMInspectDCmd::execute(DCmdSource source, TRAPS) {
   DebuggingContext dc{}; // avoid asserts
 
-  if (!UnlockDiagnosticVMOptions) {
-    output()->print_cr("-XX:+UnlockDiagnosticVMOptions is required");
+  if (!UnlockDiagnosticVMFeatures) {
+    output()->print_cr("-XX:+UnlockDiagnosticVMFeatures is required");
     return;
   }
   if (!_address.has_value()) {

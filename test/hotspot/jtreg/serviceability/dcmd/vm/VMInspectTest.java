@@ -27,7 +27,7 @@
  * @summary Test of diagnostic command VM.inspect
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run testng/othervm -Dvminspect.enabled=true -XX:+UnlockDiagnosticVMOptions VMInspectTest
+ * @run testng/othervm -Dvminspect.enabled=true -XX:+UnlockDiagnosticVMFeatures VMInspectTest
  */
 
 /*
@@ -81,14 +81,14 @@ public class VMInspectTest {
         BigInteger ptr = null;
         OutputAnalyzer output = null;
 
-        // Testing VM.inspect requires UnlockDiagnosticVMOptions or a debug JVM.
-        // This test runs with a System Property set as a hint whether UnlockDiagnosticVMOptions is set.
+        // Testing VM.inspect requires UnlockDiagnosticVMFeatures or a debug JVM.
+        // This test runs with a System Property set as a hint whether UnlockDiagnosticVMFeatures is set.
         boolean enabled = Platform.isDebugBuild() || Boolean.getBoolean("vminspect.enabled");
         System.out.println("VM.inspect should be enabled = " + enabled);
         if (!enabled) {
             // Use any pointer, command should be refused:
             output = executor.execute("VM.inspect 0x0");
-            output.shouldContain("-XX:+UnlockDiagnosticVMOptions is required");
+            output.shouldContain("-XX:+UnlockDiagnosticVMFeatures is required");
             return; // no more testing
         }
 
