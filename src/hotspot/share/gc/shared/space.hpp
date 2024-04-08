@@ -120,10 +120,6 @@ public:
   // had allocation performed in it, but is now to be considered empty.
   void clear(bool mangle_space);
 
-  // The maximum percentage of objects that can be dead in the compacted
-  // live part of a compacted space ("deadwood" support.)
-  virtual size_t allowed_dead_ratio() const { return 0; };
-
   // Accessors
   HeapWord* top() const            { return _top;    }
   void set_top(HeapWord* value)    { _top = value; }
@@ -181,8 +177,6 @@ class TenuredSpace: public ContiguousSpace {
  protected:
   SerialBlockOffsetTable* _offsets;
 
-  // Mark sweep support
-  size_t allowed_dead_ratio() const override;
  public:
   // Constructor
   TenuredSpace(SerialBlockOffsetTable* offsets,

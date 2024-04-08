@@ -97,7 +97,8 @@ class DeadSpacer : StackObj {
 
 public:
   DeadSpacer(ContiguousSpace* space) : _allowed_deadspace_words(0), _space(space) {
-    size_t ratio = _space->allowed_dead_ratio();
+    size_t ratio = (_space == SerialHeap::heap()->old_gen()->space())
+                   ? MarkSweepDeadRatio : 0;
     _active = ratio > 0;
 
     if (_active) {

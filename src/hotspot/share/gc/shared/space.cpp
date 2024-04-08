@@ -211,8 +211,4 @@ TenuredSpace::TenuredSpace(SerialBlockOffsetTable* offsets,
 {
   initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);
 }
-
-size_t TenuredSpace::allowed_dead_ratio() const {
-  return MarkSweepDeadRatio;
-}
 #endif // INCLUDE_SERIALGC
