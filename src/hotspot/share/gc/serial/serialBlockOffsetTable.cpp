@@ -77,9 +77,9 @@ void SerialBlockOffsetTable::resize(size_t new_word_size) {
   }
 }
 
-static void fill_range(uint8_t* start, uint8_t* end, uint8_t v) {
-  // + 1 for inclusive
-  memset(start, v, pointer_delta(end, start, sizeof(uint8_t)) + 1);
+static void fill_range(uint8_t* start, uint8_t* end, uint8_t value) {
+  // + 1 for inclusive.
+  memset(start, value, pointer_delta(end, start, sizeof(uint8_t)) + 1);
 }
 
 // Write the backskip value for each logarithmic region (array slots containing the same entry value).

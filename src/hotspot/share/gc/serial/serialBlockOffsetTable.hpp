@@ -62,10 +62,10 @@ class SerialBlockOffsetTable: public CHeapObj<mtGC> {
     return ReservedSpace::allocation_align_size_up(number_of_slots);
   }
 
-  // Mapping from address to object start array entry
+  // Mapping from address to object start array entry.
   uint8_t* entry_for_addr(const void* const p) const;
 
-  // Mapping from object start array entry to address of first word
+  // Mapping from object start array entry to address of first word.
   HeapWord* addr_for_entry(const uint8_t* const p) const;
 
   void update_for_block_work(HeapWord* blk_start, HeapWord* blk_end);
