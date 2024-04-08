@@ -1652,9 +1652,57 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
 #endif
 
   __ ld_ptr(tmp1, ContinuationEntry::parent_cont_fastpath_offset(), R1_SP);
+  __ st_ptr(tmp1, JavaThread::cont_fastpath_offset(), R16_thread);
+
+  if (CheckJNICalls) {
+    // Check if this is a virtual thread continuation
+    Label L_skip_vthread_code;
+    __ ldw(R0, in_bytes(ContinuationEntry::flags_offset()), R1_SP);
+    __ cmpwi(CCR0, R0, 0);
+    __ be(CCR0, L_skip_vthread_code);
+
+    Label L_no_warn;
+    __ ldw(R0, in_bytes(JavaThread::jni_monitor_count_offset()), R16_thread);
+    __ cmpwi(CCR0, R0, 0);
+    __ be(CCR0, L_no_warn);
+    // If the held monitor count is > 0 and this vthread is terminating then
+    // it failed to release a JNI monitor. So we issue the same log message
+    // that JavaThread::exit does.
+    // Save return value potentially containing the exception oop
+    Register ex_oop = R15_esp;   // nonvolatile register
+    __ mr(ex_oop, R3_RET);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::log_jni_monitor_still_held));
+    // Restore potentional return value
+    __ mr(R3_RET, ex_oop);
+    __ bind(L_no_warn);
+
+    // For vthreads we have to explicitly zero the JNI monitor count of the carrier
+    // on termination. The held count is implicitly zeroed below when we restore from
+    // the parent held count (which has to be zero).
+    __ li(tmp1, 0);
+    __ std(tmp1, JavaThread::jni_monitor_count_offset(), R16_thread);
+
+    __ bind(L_skip_vthread_code);
+  }
+#ifdef ASSERT
+  else {
+    // Check if this is a virtual thread continuation
+    Label L_skip_vthread_code;
+    __ ldw(R0, in_bytes(ContinuationEntry::flags_offset()), R1_SP);
+    __ cmpwi(CCR0, R0, 0);
+    __ be(CCR0, L_skip_vthread_code);
+
+    // See comment just above. If not checking JNI calls the JNI count is only
+    // needed for assertion checking.
+    __ li(tmp1, 0);
+    __ std(tmp1, JavaThread::jni_monitor_count_offset(), R16_thread);
+
+    __ bind(L_skip_vthread_code);
+  }
+#endif
+
   __ ld(tmp2, in_bytes(ContinuationEntry::parent_held_monitor_count_offset()), R1_SP);
   __ ld_ptr(tmp3, ContinuationEntry::parent_offset(), R1_SP);
-  __ st_ptr(tmp1, JavaThread::cont_fastpath_offset(), R16_thread);
   __ std(tmp2, in_bytes(JavaThread::held_monitor_count_offset()), R16_thread);
   __ st_ptr(tmp3, JavaThread::cont_entry_offset(), R16_thread);
   DEBUG_ONLY(__ block_comment("} clean"));
