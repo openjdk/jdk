@@ -340,7 +340,6 @@ public class Table<T> extends Content {
             String regex = "<a|<area|<button|<input|<object|<select|<textarea";
             Pattern pattern = Pattern.compile(regex);
             Matcher matcher = pattern.matcher(c.toString());
-
             // Always add content to make sure the cell isn't dropped
             var cell = HtmlTree.DIV(cellStyle).addUnchecked(c.isEmpty() ? Text.EMPTY : c);
             if(matcher.find()) {
@@ -351,7 +350,6 @@ public class Table<T> extends Content {
                     .put(HtmlAttr.TABINDEX, "0");
             }
             
-
             for (String tabClass : tabClasses) {
                 if(matcher.find()) {
                     cell.addStyle(tabClass);
