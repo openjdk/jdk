@@ -909,7 +909,7 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
   if (CheckJNICalls) {
     // Check if this is a virtual thread continuation
     Label L_skip_vthread_code;
-    __ lw(t0, Address(sp, ContinuationEntry::flags_offset()));
+    __ lwu(t0, Address(sp, ContinuationEntry::flags_offset()));
     __ beqz(t0, L_skip_vthread_code);
 
     Label L_no_warn;
@@ -936,7 +936,7 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
   else {
     // Check if this is a virtual thread continuation
     Label L_skip_vthread_code;
-    __ lw(t0, Address(sp, ContinuationEntry::flags_offset()));
+    __ lwu(t0, Address(sp, ContinuationEntry::flags_offset()));
     __ beqz(t0, L_skip_vthread_code);
 
     // See comment just above. If not checking JNI calls the JNI count is only
