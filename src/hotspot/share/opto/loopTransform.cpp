@@ -274,7 +274,7 @@ bool IdealLoopTree::is_associative_cmp(Node* n) {
     return false;
   }
   for (DUIterator i = n->outs(); n->has_out(i); i++) {
-    BoolNode *bool_out = n->out(i)->isa_Bool();
+    BoolNode* bool_out = n->out(i)->isa_Bool();
     if (bool_out == nullptr || !(bool_out->_test._test == BoolTest::eq ||
                                  bool_out->_test._test == BoolTest::ne)) {
       return false;
