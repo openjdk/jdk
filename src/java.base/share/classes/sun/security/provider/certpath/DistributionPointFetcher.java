@@ -113,7 +113,11 @@ public class DistributionPointFetcher {
                         certStores, trustAnchors, validity, variant, anchor);
                     results.addAll(crls);
                 } catch (CertStoreException cse) {
-                    savedCSE = cse;
+                    if (savedCSE == null) {
+                        savedCSE = cse;
+                    } else {
+                        savedCSE.addSuppressed(cse);
+                    }
                 }
             }
             // only throw CertStoreException if no CRLs are retrieved
@@ -190,7 +194,11 @@ public class DistributionPointFetcher {
                     }
                 }
             } catch (CertStoreException cse) {
-                savedCSE = cse;
+                if (savedCSE == null) {
+                    savedCSE = cse;
+                } else {
+                    savedCSE.addSuppressed(cse);
+                }
             }
         }
         // only throw CertStoreException if no CRLs are retrieved
