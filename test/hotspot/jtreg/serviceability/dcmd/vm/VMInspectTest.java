@@ -186,7 +186,7 @@ public class VMInspectTest {
         // Process is live.  Very rarely, an Object seen in Thread.print may move due to GC,
         // so make a few attempts.
         BigInteger ptr = null;
-        for (int i=0; i < OBJECT_TRIES; i++) {
+        for (int i = 0; i < OBJECT_TRIES; i++) {
             System.gc();
             ptr = testInspectJavaObjectPointer(executor, isZGC, isGenZGC);
             if (ptr != null) {
@@ -216,11 +216,7 @@ public class VMInspectTest {
         String expected = " is an oop: ";
         if (isZGC) {
             // ZGC has two variations:
-            if (isGenZGC) {
-                expected = "is a zaddress";
-            } else {
-                expected = "is a good oop";
-            }
+            expected =  isGenZGC ? "is a zaddress" : "is a good oop";
         }
         OutputAnalyzer jcmdOutput = executor.execute("Thread.print");
         BigInteger ptr = findPointer(jcmdOutput, waiting_on_mylock, 1, true);
