@@ -35,8 +35,8 @@ public class LoadAIXLibraryFromArchiveObject {
         File awtSharedObjectPath = new File("/test/lib/libawt.so");
         File awtArchivePath = new File("/test/lib/libawt.a");
         awtSharedObjectPath.renameTo(awtArchivePath);
-        if ( awtSharedObjectPath.exists() || !awtArchivePath.exists() )
-         throw new RuntimeException("shouldn ot be there");
+        if (awtSharedObjectPath.exists() || !awtArchivePath.exists())
+         throw new RuntimeException("LoadAIXLibraryFromArchiveObject: .so should not exist.");
         System.loadLibrary(libraryName);
     }
 }
