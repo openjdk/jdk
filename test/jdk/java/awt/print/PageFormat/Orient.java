@@ -35,7 +35,7 @@ import java.awt.print.PrinterJob;
  * @test
  * @bug 4236095
  * @summary  Confirm that you get three pages of output, one
- *           each in portrait, landscape, and reverse landscape
+ *           each in portrait, landscape and reverse landscape
  *           orientations.
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
@@ -54,7 +54,7 @@ public class Orient implements Printable {
             "Axes will indicate the direction of increasing X and Y\n\n" +
             "Test failed if the oval on the page clipped against the imageable area.";
 
-    private static void init() throws PrinterException {
+    private static void printOrientationJob() throws PrinterException {
         PrinterJob pjob = PrinterJob.getPrinterJob();
         Book book = new Book();
         // Page 1
@@ -113,7 +113,7 @@ public class Orient implements Printable {
                 .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
                 .build();
-        init();
+        printOrientationJob();
         passFailJFrame.awaitAndCheck();
     }
 }
