@@ -28,6 +28,7 @@ import com.sun.hotspot.igv.data.Properties;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -36,16 +37,25 @@ import java.util.stream.Collectors;
 public class Printer {
 
 
-    public record GraphContext(InputGraph openedGraph, int posDiff, Set<Integer> hiddenNodes, Set<Integer> selectedNodes) {}
+    public record GraphContext(InputGraph inputGraph, AtomicInteger posDiff, Set<Integer> hiddenNodes) {}
+
+    public record SerialData<T extends Properties.Provider>(T data, Set<GraphContext> contexts) implements Properties.Provider {
+        @Override
+        public Properties getProperties() {
+            return data.getProperties();
+        }
+    }
 
     public Printer() {}
 
-    public void exportGraphDocument(Writer writer, GraphDocument document, Set<GraphContext> contexts) {
+    public void exportGraphDocument(Writer writer, SerialData<Folder> serialData) {
+        Folder folder = serialData.data();
+        Set<GraphContext> contexts = serialData.contexts();
         XMLWriter xmlWriter = new XMLWriter(writer);
         try {
             xmlWriter.startTag(Parser.ROOT_ELEMENT);
-            xmlWriter.writeProperties(document.getProperties());
-            for (FolderElement e : document.getElements()) {
+            xmlWriter.writeProperties(folder.getProperties());
+            for (FolderElement e : folder.getElements()) {
                 if (e instanceof Group group) {
                     exportGroup(xmlWriter, group, contexts);
                 } else if (e instanceof InputGraph graph) {
@@ -180,7 +190,7 @@ public class Printer {
 
     private void exportStates(XMLWriter writer, InputGraph exportingGraph, Set<GraphContext> contexts) throws IOException {
         Set<GraphContext> contextsContainingGraph = contexts.stream()
-                .filter(context -> context.openedGraph().equals(exportingGraph))
+                .filter(context -> context.inputGraph().equals(exportingGraph))
                 .collect(Collectors.toSet());
 
         if (contextsContainingGraph.isEmpty()) {
@@ -190,24 +200,18 @@ public class Printer {
         writer.startTag(Parser.GRAPH_STATES_ELEMENT);
 
         for (GraphContext context : contextsContainingGraph) {
-            assert exportingGraph == context.openedGraph();
+            assert exportingGraph == context.inputGraph();
 
             writer.startTag(Parser.STATE_ELEMENT);
 
             writer.simpleTag(Parser.STATE_POSITION_DIFFERENCE,
-                    new Properties(Parser.POSITION_DIFFERENCE_PROPERTY, Integer.toString(context.posDiff())));
+                    new Properties(Parser.POSITION_DIFFERENCE_PROPERTY, Integer.toString(context.posDiff().get())));
 
             writer.startTag(Parser.HIDDEN_NODES_ELEMENT);
             for (Integer hiddenNodeID : context.hiddenNodes()) {
                 writer.simpleTag(Parser.NODE_ELEMENT, new Properties(Parser.NODE_ID_PROPERTY, hiddenNodeID.toString()));
             }
             writer.endTag(); // Parser.HIDDEN_NODES_ELEMENT
-
-            writer.startTag(Parser.SELECTED_NODES_ELEMENT);
-            for (Integer selectedNodeID : context.selectedNodes()) {
-                writer.simpleTag(Parser.NODE_ELEMENT, new Properties(Parser.NODE_ID_PROPERTY, selectedNodeID.toString()));
-            }
-            writer.endTag(); // Parser.SELECTED_NODES_ELEMENT
 
             writer.endTag(); // Parser.STATES_ELEMENT
         }

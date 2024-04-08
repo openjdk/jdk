@@ -24,9 +24,9 @@
  */
 package com.sun.hotspot.igv.data.serialization;
 
-import com.sun.hotspot.igv.data.GraphDocument;
 import java.io.IOException;
+import com.sun.hotspot.igv.data.serialization.Printer.SerialData;
 
 public interface GraphParser {
-    GraphDocument parse() throws IOException;
+    SerialData parse() throws IOException;
 }

@@ -65,7 +65,7 @@ public class ParserTest {
     private void test(GraphDocument document) {
         final Printer printer = new Printer();
         final CharArrayWriter writer = new CharArrayWriter();
-        printer.exportGraphDocument(writer, document, new HashSet<>());
+        printer.exportGraphDocument(writer, new Printer.SerialData<>(document, new HashSet<>()));
         test(document, writer.toString());
     }
 
@@ -74,7 +74,8 @@ public class ParserTest {
         try {
             Parser parser = new Parser(Channels.newChannel(in));
             parser.setInvokeLater(false);
-            final GraphDocument parsedDocument = parser.parse();
+            final Printer.SerialData<GraphDocument> exportData = parser.parse();
+            final GraphDocument parsedDocument = exportData.data();
             Util.assertGraphDocumentEquals(document, parsedDocument);
         } catch (IOException ex) {
             fail(ex.toString());

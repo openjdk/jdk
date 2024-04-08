@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,18 @@
 package com.sun.hotspot.igv.data.serialization;
 
 import com.sun.hotspot.igv.data.*;
+import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.serialization.XMLParser.ElementHandler;
 import com.sun.hotspot.igv.data.serialization.XMLParser.HandoverElementHandler;
 import com.sun.hotspot.igv.data.serialization.XMLParser.TopElementHandler;
 import com.sun.hotspot.igv.data.services.GroupCallback;
+import com.sun.hotspot.igv.data.serialization.Printer.SerialData;
+import com.sun.hotspot.igv.data.serialization.Printer.GraphContext;
 import java.io.IOException;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.SwingUtilities;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
@@ -63,7 +64,6 @@ public class Parser implements GraphParser {
     public static final String EDGE_ELEMENT = "edge";
     public static final String NODE_ELEMENT = "node";
     public static final String NODES_ELEMENT = "nodes";
-    public static final String SELECTED_NODES_ELEMENT = "selectedNodes";
     public static final String HIDDEN_NODES_ELEMENT = "hiddenNodes";
 
     public static final String REMOVE_EDGE_ELEMENT = "removeEdge";
@@ -90,14 +90,14 @@ public class Parser implements GraphParser {
     public static final String SUCCESSORS_ELEMENT = "successors";
     public static final String SUCCESSOR_ELEMENT = "successor";
     public static final String DIFFERENCE_PROPERTY = "difference";
-    private final TopElementHandler<GraphDocument> xmlDocument = new TopElementHandler<>();
+    private final TopElementHandler<SerialData<GraphDocument>> xmlData = new TopElementHandler<>();
     private final Map<Group, Boolean> differenceEncoding = new HashMap<>();
     private final Map<Group, InputGraph> lastParsedGraph = new HashMap<>();
     private final GroupCallback groupCallback;
     private final HashMap<String, Integer> idCache = new HashMap<>();
     private final ArrayList<Pair<String, String>> blockConnections = new ArrayList<>();
     private int maxId = 0;
-    private GraphDocument graphDocument;
+    private SerialData<GraphDocument> serialData;
     private final ParseMonitor monitor;
     private final ReadableByteChannel channel;
     private boolean invokeLater = true;
@@ -117,20 +117,21 @@ public class Parser implements GraphParser {
     }
 
     // <graphDocument>
-    private ElementHandler<GraphDocument, Object> topHandler = new ElementHandler<GraphDocument, Object>(TOP_ELEMENT) {
+    private final ElementHandler<SerialData<GraphDocument>, Object> topHandler = new ElementHandler<>(TOP_ELEMENT) {
 
         @Override
-        protected GraphDocument start() throws SAXException {
-            graphDocument = new GraphDocument();
-            return graphDocument;
+        protected SerialData<GraphDocument> start() {
+            serialData = new SerialData<>(new GraphDocument(), new HashSet<>());
+            return serialData;
         }
     };
     // <group>
-    private ElementHandler<Group, Folder> groupHandler = new XMLParser.ElementHandler<Group, Folder>(GROUP_ELEMENT) {
+    private final ElementHandler<SerialData<Group>, SerialData<? extends Folder>> groupHandler = new XMLParser.ElementHandler<>(GROUP_ELEMENT) {
 
         @Override
-        protected Group start() throws SAXException {
-            final Group group = new Group(this.getParentObject());
+        protected SerialData<Group> start() {
+            final Folder folder = getParentObject().data();
+            final Group group = new Group(folder);
 
             String differenceProperty = this.readAttribute(DIFFERENCE_PROPERTY);
             Parser.this.differenceEncoding.put(group, (differenceProperty != null && (differenceProperty.equals("1") || differenceProperty.equals("true"))));
@@ -140,9 +141,8 @@ public class Parser implements GraphParser {
                 monitor.setState(group.getName());
             }
 
-            final Folder parent = getParentObject();
-            if (groupCallback == null || parent instanceof Group) {
-                Runnable addToParent = () -> parent.addElement(group);
+            if (groupCallback == null || folder instanceof Group) {
+                Runnable addToParent = () -> folder.addElement(group);
                 if (invokeLater) {
                     SwingUtilities.invokeLater(addToParent);
                 } else {
@@ -150,48 +150,47 @@ public class Parser implements GraphParser {
                 }
             }
 
-            return group;
+            return new SerialData<>(group, getParentObject().contexts());
         }
 
         @Override
-        protected void end(String text) throws SAXException {
+        protected void end(String text) {
         }
     };
     // <method>
-    private ElementHandler<InputMethod, Group> methodHandler = new XMLParser.ElementHandler<InputMethod, Group>(METHOD_ELEMENT) {
+    private final ElementHandler<InputMethod, SerialData<Group>> methodHandler = new XMLParser.ElementHandler<>(METHOD_ELEMENT) {
 
         @Override
         protected InputMethod start() throws SAXException {
-
-            InputMethod method = parseMethod(this, getParentObject());
-            getParentObject().setMethod(method);
+            Group group = getParentObject().data();
+            InputMethod method = parseMethod(this, group);
+            group.setMethod(method);
             return method;
         }
     };
 
     private InputMethod parseMethod(XMLParser.ElementHandler<?,?> handler, Group group) throws SAXException {
         String s = handler.readRequiredAttribute(METHOD_BCI_PROPERTY);
-        int bci = 0;
+        int bci;
         try {
             bci = Integer.parseInt(s);
         } catch (NumberFormatException e) {
             throw new SAXException(e);
         }
-        InputMethod method = new InputMethod(group, handler.readRequiredAttribute(METHOD_NAME_PROPERTY), handler.readRequiredAttribute(METHOD_SHORT_NAME_PROPERTY), bci);
-        return method;
+        return new InputMethod(group, handler.readRequiredAttribute(METHOD_NAME_PROPERTY), handler.readRequiredAttribute(METHOD_SHORT_NAME_PROPERTY), bci);
     }
     // <bytecodes>
-    private HandoverElementHandler<InputMethod> bytecodesHandler = new XMLParser.HandoverElementHandler<InputMethod>(BYTECODES_ELEMENT, true) {
+    private final HandoverElementHandler<InputMethod> bytecodesHandler = new XMLParser.HandoverElementHandler<>(BYTECODES_ELEMENT, true) {
 
         @Override
-        protected void end(String text) throws SAXException {
+        protected void end(String text) {
             getParentObject().setBytecodes(text);
         }
     };
     // <inlined>
-    private HandoverElementHandler<InputMethod> inlinedHandler = new XMLParser.HandoverElementHandler<>(INLINE_ELEMENT);
+    private final HandoverElementHandler<InputMethod> inlinedHandler = new XMLParser.HandoverElementHandler<>(INLINE_ELEMENT);
     // <inlined><method>
-    private ElementHandler<InputMethod, InputMethod> inlinedMethodHandler = new XMLParser.ElementHandler<InputMethod, InputMethod>(METHOD_ELEMENT) {
+    private final ElementHandler<InputMethod, InputMethod> inlinedMethodHandler = new XMLParser.ElementHandler<>(METHOD_ELEMENT) {
 
         @Override
         protected InputMethod start() throws SAXException {
@@ -201,15 +200,16 @@ public class Parser implements GraphParser {
         }
     };
     // <graph>
-    private ElementHandler<InputGraph, Group> graphHandler = new XMLParser.ElementHandler<InputGraph, Group>(GRAPH_ELEMENT) {
+    private final ElementHandler<SerialData<InputGraph>, SerialData<Group>> graphHandler = new XMLParser.ElementHandler<>(GRAPH_ELEMENT) {
 
         @Override
-        protected InputGraph start() throws SAXException {
+        protected SerialData<InputGraph> start() {
+            Group group = getParentObject().data();
             String name = readAttribute(GRAPH_NAME_PROPERTY);
             InputGraph curGraph = new InputGraph(name);
-            if (differenceEncoding.get(getParentObject())) {
-                InputGraph previous = lastParsedGraph.get(getParentObject());
-                lastParsedGraph.put(getParentObject(), curGraph);
+            if (differenceEncoding.get(group)) {
+                InputGraph previous = lastParsedGraph.get(group);
+                lastParsedGraph.put(group, curGraph);
                 if (previous != null) {
                     for (InputNode n : previous.getNodes()) {
                         curGraph.addNode(n);
@@ -223,24 +223,25 @@ public class Parser implements GraphParser {
             if (monitor != null) {
                 monitor.updateProgress();
             }
-            return curGraph;
+            return new SerialData<>(curGraph, new HashSet<>());
         }
 
         @Override
-        protected void end(String text) throws SAXException {
-            // NOTE: Some graphs intentionally don't provide blocks. Instead
+        protected void end(String text) {
+            // NOTE: Some graphs intentionally don't provide blocks. Instead,
             //       they later generate the blocks from other information such
             //       as node properties (example: ServerCompilerScheduler).
             //       Thus, we shouldn't assign nodes that don't belong to any
             //       block to some artificial block below unless blocks are
             //       defined and nodes are assigned to them.
 
-            final InputGraph graph = getObject();
-            final Group parent = getParentObject();
-            if (graph.getBlocks().size() > 0) {
+            final InputGraph graph = getObject().data();
+
+            final Group parent = getParentObject().data();
+            if (!graph.getBlocks().isEmpty()) {
                 boolean blocksContainNodes = false;
                 for (InputBlock b : graph.getBlocks()) {
-                    if (b.getNodes().size() > 0) {
+                    if (!b.getNodes().isEmpty()) {
                         blocksContainNodes = true;
                         break;
                     }
@@ -278,23 +279,76 @@ public class Parser implements GraphParser {
             blockConnections.clear();
 
             Runnable addToParent = () -> parent.addElement(graph);
+            Runnable addContext = () -> getParentObject().contexts().addAll(getObject().contexts());
             if (invokeLater) {
                 SwingUtilities.invokeLater(addToParent);
+                SwingUtilities.invokeLater(addContext);
+
             } else {
                 addToParent.run();
+                addContext.run();
             }
         }
     };
     // <nodes>
-    private HandoverElementHandler<InputGraph> nodesHandler = new HandoverElementHandler<>(NODES_ELEMENT);
+    private final HandoverElementHandler<SerialData<InputGraph>> nodesHandler = new HandoverElementHandler<>(NODES_ELEMENT);
     // <controlFlow>
-    private HandoverElementHandler<InputGraph> controlFlowHandler = new HandoverElementHandler<>(CONTROL_FLOW_ELEMENT);
+    private final HandoverElementHandler<SerialData<InputGraph>> controlFlowHandler = new HandoverElementHandler<>(CONTROL_FLOW_ELEMENT);
+    private final HandoverElementHandler<SerialData<InputGraph>> graphStatesHandler = new HandoverElementHandler<>(GRAPH_STATES_ELEMENT);
+    private final ElementHandler<GraphContext, SerialData<InputGraph>> stateHandler = new ElementHandler<>(STATE_ELEMENT) {
+
+        @Override
+        protected GraphContext start() {
+            SerialData<InputGraph> data = getParentObject();
+            InputGraph inputGraph = data.data();
+            GraphContext graphContext = new GraphContext(inputGraph,  new AtomicInteger(0), new HashSet<>());
+            data.contexts().add(graphContext);
+            return graphContext;
+        }
+    };
+
+
+    private final HandoverElementHandler<GraphContext> hiddenNodesHandler = new HandoverElementHandler<>(HIDDEN_NODES_ELEMENT);
+
+    private final ElementHandler<GraphContext, GraphContext> hiddenNodeHandler = new ElementHandler<>(NODE_ELEMENT) {
+
+        @Override
+        protected GraphContext start() throws SAXException {
+            String s = readRequiredAttribute(NODE_ID_PROPERTY);
+            int nodeID;
+            try {
+                nodeID = Integer.parseInt(s);
+            } catch (NumberFormatException e) {
+                throw new SAXException(e);
+            }
+            getParentObject().hiddenNodes().add(nodeID);
+            return getParentObject();
+        }
+    };
+
+    private final ElementHandler<GraphContext, GraphContext> differenceHandler = new ElementHandler<>(STATE_POSITION_DIFFERENCE) {
+
+        @Override
+        protected GraphContext start() throws SAXException {
+            String s = readRequiredAttribute(POSITION_DIFFERENCE_PROPERTY);
+            int posDiff;
+            try {
+                posDiff = Integer.parseInt(s);
+            } catch (NumberFormatException e) {
+                throw new SAXException(e);
+            }
+            getParentObject().posDiff().set(posDiff);
+            return getParentObject();
+        }
+    };
+
+
     // <block>
-    private ElementHandler<InputBlock, InputGraph> blockHandler = new ElementHandler<InputBlock, InputGraph>(BLOCK_ELEMENT) {
+    private final ElementHandler<InputBlock, SerialData<InputGraph>> blockHandler = new ElementHandler<>(BLOCK_ELEMENT) {
 
         @Override
         protected InputBlock start() throws SAXException {
-            InputGraph graph = getParentObject();
+            InputGraph graph = getParentObject().data();
             String name = readRequiredAttribute(BLOCK_NAME_PROPERTY);
             InputBlock b = graph.addBlock(name);
             for (InputNode n : b.getNodes()) {
@@ -303,16 +357,17 @@ public class Parser implements GraphParser {
             return b;
         }
     };
+
     // <nodes>
-    private HandoverElementHandler<InputBlock> blockNodesHandler = new HandoverElementHandler<>(NODES_ELEMENT);
+    private final HandoverElementHandler<InputBlock> blockNodesHandler = new HandoverElementHandler<>(NODES_ELEMENT);
     // <node>
-    private ElementHandler<InputBlock, InputBlock> blockNodeHandler = new ElementHandler<InputBlock, InputBlock>(NODE_ELEMENT) {
+    private final ElementHandler<InputBlock, InputBlock> blockNodeHandler = new ElementHandler<>(NODE_ELEMENT) {
 
         @Override
         protected InputBlock start() throws SAXException {
             String s = readRequiredAttribute(NODE_ID_PROPERTY);
 
-            int id = 0;
+            int id;
             try {
                 id = lookupID(s);
             } catch (NumberFormatException e) {
@@ -323,9 +378,9 @@ public class Parser implements GraphParser {
         }
     };
     // <successors>
-    private HandoverElementHandler<InputBlock> successorsHandler = new HandoverElementHandler<>(SUCCESSORS_ELEMENT);
+    private final HandoverElementHandler<InputBlock> successorsHandler = new HandoverElementHandler<>(SUCCESSORS_ELEMENT);
     // <successor>
-    private ElementHandler<InputBlock, InputBlock> successorHandler = new ElementHandler<InputBlock, InputBlock>(SUCCESSOR_ELEMENT) {
+    private final ElementHandler<InputBlock, InputBlock> successorHandler = new ElementHandler<>(SUCCESSOR_ELEMENT) {
 
         @Override
         protected InputBlock start() throws SAXException {
@@ -335,42 +390,42 @@ public class Parser implements GraphParser {
         }
     };
     // <node>
-    private ElementHandler<InputNode, InputGraph> nodeHandler = new ElementHandler<InputNode, InputGraph>(NODE_ELEMENT) {
+    private final ElementHandler<InputNode, SerialData<InputGraph>> nodeHandler = new ElementHandler<>(NODE_ELEMENT) {
 
         @Override
         protected InputNode start() throws SAXException {
             String s = readRequiredAttribute(NODE_ID_PROPERTY);
-            int id = 0;
+            int id;
             try {
                 id = lookupID(s);
             } catch (NumberFormatException e) {
                 throw new SAXException(e);
             }
             InputNode node = new InputNode(id);
-            getParentObject().addNode(node);
+            getParentObject().data().addNode(node);
             return node;
         }
     };
     // <removeNode>
-    private ElementHandler<InputNode, InputGraph> removeNodeHandler = new ElementHandler<InputNode, InputGraph>(REMOVE_NODE_ELEMENT) {
+    private final ElementHandler<InputNode, SerialData<InputGraph>> removeNodeHandler = new ElementHandler<>(REMOVE_NODE_ELEMENT) {
 
         @Override
         protected InputNode start() throws SAXException {
             String s = readRequiredAttribute(NODE_ID_PROPERTY);
-            int id = 0;
+            int id;
             try {
                 id = lookupID(s);
             } catch (NumberFormatException e) {
                 throw new SAXException(e);
             }
-            return getParentObject().removeNode(id);
+            return getParentObject().data().removeNode(id);
         }
     };
     // <graph>
-    private HandoverElementHandler<InputGraph> edgesHandler = new HandoverElementHandler<>(EDGES_ELEMENT);
+    private final HandoverElementHandler<SerialData<InputGraph>> edgesHandler = new HandoverElementHandler<>(EDGES_ELEMENT);
 
     // Local class for edge elements
-    private class EdgeElementHandler extends ElementHandler<InputEdge, InputGraph> {
+    private class EdgeElementHandler extends ElementHandler<InputEdge, SerialData<InputGraph>> {
 
         public EdgeElementHandler(String name) {
             super(name);
@@ -380,10 +435,10 @@ public class Parser implements GraphParser {
         protected InputEdge start() throws SAXException {
             int fromIndex = 0;
             int toIndex = 0;
-            int from = -1;
-            int to = -1;
-            String label = null;
-            String type = null;
+            int from;
+            int to;
+            String label;
+            String type;
 
             try {
                 String fromIndexString = readAttribute(FROM_INDEX_PROPERTY);
@@ -412,37 +467,37 @@ public class Parser implements GraphParser {
             return start(conn);
         }
 
-        protected InputEdge start(InputEdge conn) throws SAXException {
+        protected InputEdge start(InputEdge conn) {
             return conn;
         }
     }
     // <edge>
-    private EdgeElementHandler edgeHandler = new EdgeElementHandler(EDGE_ELEMENT) {
+    private final EdgeElementHandler edgeHandler = new EdgeElementHandler(EDGE_ELEMENT) {
 
         @Override
-        protected InputEdge start(InputEdge conn) throws SAXException {
-            getParentObject().addEdge(conn);
+        protected InputEdge start(InputEdge conn) {
+            getParentObject().data().addEdge(conn);
             return conn;
         }
     };
     // <removeEdge>
-    private EdgeElementHandler removeEdgeHandler = new EdgeElementHandler(REMOVE_EDGE_ELEMENT) {
+    private final EdgeElementHandler removeEdgeHandler = new EdgeElementHandler(REMOVE_EDGE_ELEMENT) {
 
         @Override
-        protected InputEdge start(InputEdge conn) throws SAXException {
-            getParentObject().removeEdge(conn);
+        protected InputEdge start(InputEdge conn) {
+            getParentObject().data().removeEdge(conn);
             return conn;
         }
     };
     // <properties>
-    private HandoverElementHandler<Properties.Provider> propertiesHandler = new HandoverElementHandler<>(PROPERTIES_ELEMENT);
+    private final HandoverElementHandler<Properties.Provider> propertiesHandler = new HandoverElementHandler<>(PROPERTIES_ELEMENT);
     // <properties>
-    private HandoverElementHandler<Group> groupPropertiesHandler = new HandoverElementHandler<Group>(PROPERTIES_ELEMENT) {
+    private final HandoverElementHandler<SerialData<Group>> groupPropertiesHandler = new HandoverElementHandler<>(PROPERTIES_ELEMENT) {
 
         @Override
-        public void end(String text) throws SAXException {
-            if (groupCallback != null && getParentObject().getParent() instanceof GraphDocument) {
-                final Group group = getParentObject();
+        public void end(String text) {
+            final Group group = getParentObject().data();
+            if (groupCallback != null && group.getParent() instanceof GraphDocument) {
                 Runnable addStarted = () -> groupCallback.started(group);
                 if (invokeLater) {
                     SwingUtilities.invokeLater(addStarted);
@@ -453,12 +508,12 @@ public class Parser implements GraphParser {
         }
     };
     // <property>
-    private ElementHandler<String, Properties.Provider> propertyHandler = new XMLParser.ElementHandler<String, Properties.Provider>(PROPERTY_ELEMENT, true) {
+    private final ElementHandler<String, Properties.Provider> propertyHandler = new XMLParser.ElementHandler<>(PROPERTY_ELEMENT, true) {
 
         @Override
         public String start() throws SAXException {
             return readRequiredAttribute(PROPERTY_NAME_PROPERTY);
-         }
+        }
 
         @Override
         public void end(String text) {
@@ -477,7 +532,7 @@ public class Parser implements GraphParser {
         this.channel = channel;
 
         // Initialize dependencies
-        xmlDocument.addChild(topHandler);
+        xmlData.addChild(topHandler);
         topHandler.addChild(groupHandler);
 
         groupHandler.addChild(methodHandler);
@@ -494,8 +549,14 @@ public class Parser implements GraphParser {
         graphHandler.addChild(nodesHandler);
         graphHandler.addChild(edgesHandler);
         graphHandler.addChild(controlFlowHandler);
+        graphHandler.addChild(graphStatesHandler);
 
         controlFlowHandler.addChild(blockHandler);
+
+        graphStatesHandler.addChild(stateHandler);
+        stateHandler.addChild(differenceHandler);
+        stateHandler.addChild(hiddenNodesHandler);
+        hiddenNodesHandler.addChild(hiddenNodeHandler);
 
         blockHandler.addChild(successorsHandler);
         successorsHandler.addChild(successorHandler);
@@ -519,7 +580,7 @@ public class Parser implements GraphParser {
 
     // Returns a new GraphDocument object deserialized from an XML input source.
     @Override
-    public GraphDocument parse() throws IOException {
+    public SerialData<GraphDocument> parse() throws IOException {
         if (monitor != null) {
             monitor.setState("Starting parsing");
         }
@@ -527,7 +588,7 @@ public class Parser implements GraphParser {
             XMLReader reader = createReader();
             // To enforce using English for non-English users, we must use Locale.ROOT rather than Locale.ENGLISH
             reader.setProperty("http://apache.org/xml/properties/locale", Locale.ROOT);
-            reader.setContentHandler(new XMLParser(xmlDocument, monitor));
+            reader.setContentHandler(new XMLParser(xmlData, monitor));
             reader.parse(new InputSource(Channels.newInputStream(channel)));
         } catch (SAXException ex) {
             if (!(ex instanceof SAXParseException) || !"XML document structures must start and end within the same entity.".equals(ex.getMessage())) {
@@ -537,7 +598,8 @@ public class Parser implements GraphParser {
         if (monitor != null) {
             monitor.setState("Finished parsing");
         }
-        return graphDocument;
+
+        return serialData;
     }
 
     // Whether the parser is allowed to defer connecting the parsed elements.
@@ -548,10 +610,10 @@ public class Parser implements GraphParser {
 
     private XMLReader createReader() throws SAXException {
         try {
-            SAXParserFactory pfactory = SAXParserFactory.newInstance();
-            pfactory.setValidating(false);
-            pfactory.setNamespaceAware(true);
-            return pfactory.newSAXParser().getXMLReader();
+            SAXParserFactory pFactory = SAXParserFactory.newInstance();
+            pFactory.setValidating(false);
+            pFactory.setNamespaceAware(true);
+            return pFactory.newSAXParser().getXMLReader();
         } catch (ParserConfigurationException ex) {
             throw new SAXException(ex);
         }
