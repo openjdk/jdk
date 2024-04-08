@@ -74,11 +74,11 @@ class BytecodeCPEntry {
       u2 class_index;
       u2 name_and_type_index;
     } methodref;
-    uintptr_t value;
+    uintptr_t hash;
   } _u;
 
-  BytecodeCPEntry() : _tag(ERROR_TAG) { _u.value = 0; }
-  BytecodeCPEntry(u1 tag) : _tag(tag) { _u.value = 0; }
+  BytecodeCPEntry() : _tag(ERROR_TAG) { _u.hash = 0; }
+  BytecodeCPEntry(u1 tag) : _tag(tag) { _u.hash = 0; }
 
   static BytecodeCPEntry utf8(Symbol* symbol) {
     BytecodeCPEntry bcpe(UTF8);
@@ -113,11 +113,13 @@ class BytecodeCPEntry {
   }
 
   static bool equals(BytecodeCPEntry const& e0, BytecodeCPEntry const& e1) {
-    return e0._tag == e1._tag && e0._u.value == e1._u.value;
+    // The hash is the "union trick" value of the information saved for the tag,
+    // so can be compared for equality.
+    return e0._tag == e1._tag && e0._u.hash == e1._u.hash;
   }
 
   static unsigned hash(BytecodeCPEntry const& e0) {
-    return (unsigned)(e0._tag ^ e0._u.value);
+    return (unsigned)(e0._tag ^ e0._u.hash);
   }
 };
 
