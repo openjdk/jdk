@@ -40,7 +40,7 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.lang.lazy.LazyListElement;
+import jdk.internal.lang.lazy.LazyElement;
 import jdk.internal.lang.lazy.LazyUtil;
 import jdk.internal.misc.CDS;
 import jdk.internal.vm.annotation.Stable;
@@ -151,6 +151,33 @@ class ImmutableCollections {
                         // Captures
                         Supplier<V> supplier = new Supplier<>() {
                             @Override public V get() {return mapper.apply(index);}
+                        };
+                        return lazy.computeIfUnset(supplier);
+                    }
+                }
+
+                @Override
+                public <K, V> Map<K, Lazy<V>> lazyMap(K[] keys) {
+                    return ImmutableCollections.LazyMap.create(keys);
+                }
+
+                @Override
+                public <K, V> V computeIfUnset(Map<K, Lazy<V>> map,
+                                               K key,
+                                               Function<? super K, ? extends V> mapper) {
+                    if (map instanceof LazyMap<K, V> lm) {
+                        return lm.computeIfUnset(key, mapper);
+                    } else {
+                        Lazy<V> lazy = map.get(key);
+                        if (lazy == null) {
+                            throw LazyUtil.noKey(key);
+                        }
+                        if (lazy.isSet()) {
+                            return lazy.orThrow();
+                        }
+                        // Captures
+                        Supplier<V> supplier = new Supplier<>() {
+                            @Override public V get() {return mapper.apply(key);}
                         };
                         return lazy.computeIfUnset(supplier);
                     }
@@ -1886,6 +1913,7 @@ class ImmutableCollections {
 
     // Lazy collections
 
+    @jdk.internal.ValueBased
     static final class LazyList<V>
             extends AbstractImmutableList<Lazy<V>>
             implements List<Lazy<V>> {
@@ -1909,7 +1937,7 @@ class ImmutableCollections {
         @Override
         public Lazy<V> get(int index) {
             Objects.checkIndex(index, size);
-            return new LazyListElement<>(elements, sets, mutexes, index);
+            return new LazyElement<>(elements, sets, mutexes, index);
         }
 
         @Override
@@ -1942,7 +1970,7 @@ class ImmutableCollections {
         }
 
         V computeIfUnset(int index, IntFunction<? extends V> mapper) {
-            LazyListElement<V> element = new LazyListElement<>(elements, sets, mutexes, index);
+            LazyElement<V> element = new LazyElement<>(elements, sets, mutexes, index);
             return element.computeIfUnset(mapper);
         }
 
@@ -1952,7 +1980,181 @@ class ImmutableCollections {
 
     }
 
+    public static final class LazyMap<K, V>
+            extends AbstractImmutableMap<K, Lazy<V>>
+            implements Map<K, Lazy<V>> {
+
+        @Stable
+        private final int size;
+        @Stable
+        private final K[] keys;
+        @Stable
+        private final V[] values;
+        @Stable
+        private final byte[] sets;
+        private final Object[] mutexes;
+
+        // keys array not trusted
+        @SuppressWarnings("unchecked")
+        LazyMap(Object[] inKeys) {
+            this.size = inKeys.length;
+
+            // Todo: Consider having a larger array
+            int len = EXPAND_FACTOR * inKeys.length;
+            len = (len + 1) & ~1; // ensure table is even length
+
+            System.out.println(inKeys.length + " -> " + len);
+
+            K[] keys = (K[])new Object[len];
+
+            for (Object key : inKeys) {
+                @SuppressWarnings("unchecked")
+                K k = Objects.requireNonNull((K) key);
+                int idx = probe(keys, k);
+                if (idx >= 0) {
+                    throw new IllegalArgumentException("duplicate key: " + k);
+                } else {
+                    int dest = -(idx + 1);
+                    keys[dest] = k;
+                }
+            }
+            LazyUtil.freeze(); // ensure keys are visible if table is visible
+            this.keys = keys;
+            this.values = (V[]) new Object[len];
+            this.sets = new byte[len];
+            this.mutexes = new Object[len];
+        }
+
+        // returns index at which the probe key is present; or if absent,
+        // (-i - 1) where i is location where element should be inserted.
+        // Callers are relying on this method to perform an implicit nullcheck
+        // of pk.
+        private int probe(Object pk) {
+            return probe(keys, pk);
+        }
+
+        private int probe(K[] keys, Object pk) {
+            int idx = Math.floorMod(pk.hashCode(), keys.length);
+            // Linear probing
+            while (true) {
+                K ek = keys[idx];
+                if (ek == null) {
+                    return -idx - 1;
+                } else if (pk.equals(ek)) {
+                    return idx;
+                } else if ((idx += 1) == keys.length) {
+                    idx = 0;
+                }
+            }
+        }
+
+        private Lazy<V> value(int keyIndex) {
+            return new LazyElement<>(values, sets, mutexes, keyIndex);
+        }
+
+        @Override
+        public boolean containsKey(Object o) {
+            Objects.requireNonNull(o);
+            return size > 0 && probe(o) >= 0;
+        }
+
+        @Override
+        public int size() {
+            return size;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return size == 0;
+        }
+
+        @Override
+        public Lazy<V> get(Object key) {
+            if (size == 0) {
+                return null;
+            }
+            int i = probe(key);
+            if (i >= 0) {
+                return value(i);
+            } else {
+                return null;
+            }
+        }
+
+        final class LazyMapIterator implements Iterator<Map.Entry<K, Lazy<V>>> {
+
+            private int remaining;
+            private int idx;
+
+            LazyMapIterator() {
+                remaining = size;
+                // pick an even starting index in the [0, keys.length)
+                // range randomly based on SALT32L
+                idx = (int) ((SALT32L * (keys.length)) >>> 32);
+            }
+
+            @Override
+            public boolean hasNext() {
+                return remaining > 0;
+            }
+
+            private int nextIndex() {
+                int idx = this.idx;
+                if (REVERSE) {
+                    if ((++idx) >= keys.length) {
+                        idx = 0;
+                    }
+                } else {
+                    if ((--idx) < 0) {
+                        idx = keys.length - 1;
+                    }
+                }
+                return this.idx = idx;
+            }
+
+            @Override
+            public Map.Entry<K,Lazy<V>> next() {
+                if (remaining > 0) {
+                    int idx;
+                    while (keys[idx = nextIndex()] == null) {}
+                    Map.Entry<K,Lazy<V>> e = new KeyValueHolder<>(keys[idx], value(idx));
+                    remaining--;
+                    return e;
+                } else {
+                    throw new NoSuchElementException();
+                }
+            }
+        }
+
+        @Override
+        public Set<Map.Entry<K, Lazy<V>>> entrySet() {
+            return new AbstractSet<>() {
+                @Override
+                public int size() {
+                    return LazyMap.this.size;
+                }
+
+                @Override
+                public Iterator<Map.Entry<K, Lazy<V>>> iterator() {
+                    return new LazyMap<K, V>.LazyMapIterator();
+                }
+            };
+        }
+
+        V computeIfUnset(K key, Function<? super K, ? extends V> mapper) {
+           LazyElement<V> element = (LazyElement<V>) get(key);
+           if (element == null) {
+               throw LazyUtil.noKey(key);
+           }
+            return element.computeIfUnset(key, mapper);
+        }
+
+        static <K, V> Map<K, Lazy<V>> create(K[] keys) {
+            return new ImmutableCollections.LazyMap<>(keys);
+        }
+
     }
+}
 
 // ---------- Serialization Proxy ----------
 

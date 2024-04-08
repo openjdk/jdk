@@ -1,7 +1,6 @@
 package jdk.internal.lang.lazy;
 
 import jdk.internal.ValueBased;
-import jdk.internal.vm.annotation.Stable;
 
 import java.util.NoSuchElementException;
 import java.util.function.Function;
@@ -29,10 +28,8 @@ LazyListBenchmark.instanceWrapped    avgt   10  1.339 ? 0.043  ns/op <-- Delegat
 LazyListBenchmark.staticArrayList    avgt   10  0.830 ? 0.027  ns/op
 LazyListBenchmark.staticLazyList     avgt   10  0.563 ? 0.005  ns/op
  */
-
-
 @ValueBased
-public record LazyListElement<V>(
+public record LazyElement<V>(
         V[] elements,
         byte[] sets,
         Object[] mutexes,
@@ -113,8 +110,12 @@ public record LazyListElement<V>(
         return computeIfUnset0(mapper, m -> m.apply(index));
     }
 
+    public <K> V computeIfUnset(K key, Function<? super K, ? extends V> mapper) {
+        return computeIfUnset0(mapper, m -> m.apply(key));
+    }
+
     private <S> V computeIfUnset0(S source,
-                                 Function<S, V> extractor) {
+                                  Function<S, V> extractor) {
         // Optimistically try plain semantics first
         V e = elements[index];
         if (e != null) {
@@ -200,6 +201,6 @@ public record LazyListElement<V>(
                                        byte[] sets,
                                        Object[] mutexes,
                                        int index) {
-        return new LazyListElement<>(elements, sets, mutexes, index);
+        return new LazyElement<>(elements, sets, mutexes, index);
     }
 }

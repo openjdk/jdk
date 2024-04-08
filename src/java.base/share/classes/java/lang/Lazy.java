@@ -26,10 +26,8 @@
 package java.lang;
 
 import jdk.internal.javac.PreviewFeature;
-import jdk.internal.javac.Restricted;
 import jdk.internal.lang.lazy.LazyImpl;
-import jdk.internal.lang.lazy.LazyList;
-import jdk.internal.lang.lazy.LazyListElement;
+import jdk.internal.lang.lazy.LazyElement;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -41,9 +39,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntFunction;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static jdk.internal.javac.PreviewFeature.*;
 
@@ -79,7 +75,7 @@ import static jdk.internal.javac.PreviewFeature.*;
 @PreviewFeature(feature = Feature.LAZY_VALUES_AND_COLLECTIONS)
 public sealed interface Lazy<V>
         permits LazyImpl,
-        LazyListElement {
+        LazyElement {
 
     /**
      * {@return the set value (nullable) if set, otherwise throws

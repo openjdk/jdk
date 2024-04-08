@@ -27,6 +27,8 @@ package jdk.internal.lang.lazy;
 
 import jdk.internal.misc.Unsafe;
 
+import java.util.NoSuchElementException;
+
 import static jdk.internal.misc.Unsafe.*;
 
 public final class LazyUtil {
@@ -38,6 +40,10 @@ public final class LazyUtil {
 
     static UnsupportedOperationException uoe() {
         return new UnsupportedOperationException();
+    }
+
+    public static NoSuchElementException noKey(Object key) {
+        return new NoSuchElementException("No such key:" + key);
     }
 
     static String toString(Lazy<?> lazy) {

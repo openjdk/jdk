@@ -237,34 +237,23 @@ public final class LazyImpl<V> implements Lazy<V> {
         return ACCESS.computeIfUnset(list, index, mapper);
     }
 
-
-    // Todo: Improve
     // Todo: Check if enum map
     public static <K, V> Map<K, Lazy<V>> ofMap(Set<? extends K> keys) {
-        return Map.copyOf(keys.stream()
-                .distinct()
+        if (keys.isEmpty()) {
+            // Todo: Serializable...
+            return Map.of();
+        }
+        @SuppressWarnings("unchecked")
+        K[] arr = (K[]) keys.stream()
                 .map(Objects::requireNonNull)
-                .collect(Collectors.toMap(Function.identity(), _ -> Lazy.of())));
+                .toArray();
+        return ACCESS.lazyMap(arr);
     }
 
-    // Todo:: Improve
     public static <K, V> V computeIfUnset(Map<K, Lazy<V>> map,
                                           K key,
                                           Function<? super K, ? extends V> mapper) {
-        Lazy<V> lazy = map.get(key);
-        if (lazy == null) {
-            throw new NoSuchElementException("Unknown key: "+key);
-        }
-        if (lazy.isSet()) {
-            return lazy.orThrow();
-        }
-        Supplier<V> supplier = new Supplier<V>() {
-            @Override
-            public V get() {
-                return mapper.apply(key);
-            }
-        };
-        return lazy.computeIfUnset(supplier);
+        return ACCESS.computeIfUnset(map, key, mapper);
     }
 
 }
