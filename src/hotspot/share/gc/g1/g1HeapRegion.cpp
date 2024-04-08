@@ -336,7 +336,7 @@ public:
     _hr(hr), _failures(false) {}
 
   void do_code_blob(CodeBlob* cb) {
-    nmethod* nm = (cb == nullptr) ? nullptr : cb->as_compiled_method()->as_nmethod_or_null();
+    nmethod* nm = (cb == nullptr) ? nullptr : cb->as_nmethod_or_null();
     if (nm != nullptr) {
       // Verify that the nemthod is live
       VerifyCodeRootOopClosure oop_cl(_hr);
@@ -600,7 +600,6 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
   template <class T>
   void do_oop_work(T* p) {
     assert(_containing_obj != nullptr, "must be");
-    assert(!G1CollectedHeap::heap()->is_obj_dead_cond(_containing_obj, _vo), "Precondition");
 
     if (num_failures() >= G1MaxVerifyFailures) {
       return;
@@ -632,6 +631,7 @@ public:
     _num_failures(0) { }
 
   void set_containing_obj(oop const obj) {
+    assert(!G1CollectedHeap::heap()->is_obj_dead_cond(obj, _vo), "Precondition");
     _containing_obj = obj;
   }
 

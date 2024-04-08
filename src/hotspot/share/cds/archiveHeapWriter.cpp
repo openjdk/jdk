@@ -41,7 +41,6 @@
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/bitMap.inline.hpp"
-
 #if INCLUDE_G1GC
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
@@ -188,7 +187,7 @@ void ArchiveHeapWriter::ensure_buffer_space(size_t min_bytes) {
 }
 
 void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots) {
-  Klass* k = Universe::objectArrayKlassObj(); // already relocated to point to archived klass
+  Klass* k = Universe::objectArrayKlass(); // already relocated to point to archived klass
   int length = roots->length();
   _heap_roots_word_size = objArrayOopDesc::object_size(length);
   size_t byte_size = _heap_roots_word_size * HeapWordSize;
@@ -315,7 +314,7 @@ int ArchiveHeapWriter::filler_array_length(size_t fill_bytes) {
 
 HeapWord* ArchiveHeapWriter::init_filler_array_at_buffer_top(int array_length, size_t fill_bytes) {
   assert(UseCompressedClassPointers, "Archived heap only supported for compressed klasses");
-  Klass* oak = Universe::objectArrayKlassObj(); // already relocated to point to archived klass
+  Klass* oak = Universe::objectArrayKlass(); // already relocated to point to archived klass
   HeapWord* mem = offset_to_buffered_address<HeapWord*>(_buffer_used);
   memset(mem, 0, fill_bytes);
   oopDesc::set_mark(mem, markWord::prototype());
@@ -594,7 +593,7 @@ void ArchiveHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassSh
   // Relocate HeapShared::roots(), which is created in copy_roots_to_buffer() and
   // doesn't have a corresponding src_obj, so we can't use EmbeddedOopRelocator on it.
   oop requested_roots = requested_obj_from_buffer_offset(_heap_roots_offset);
-  update_header_for_requested_obj(requested_roots, nullptr, Universe::objectArrayKlassObj());
+  update_header_for_requested_obj(requested_roots, nullptr, Universe::objectArrayKlass());
   int length = roots != nullptr ? roots->length() : 0;
   for (int i = 0; i < length; i++) {
     if (UseCompressedOops) {
