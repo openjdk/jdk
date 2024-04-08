@@ -93,8 +93,8 @@ public class VectorGatherMaskFoldingTest {
     // Filling vectors/offsets/masks
     static {
         for (int i = 0; i < L_SPECIES.length(); i++) {
-            longArray[i] = i;
-            longArray2[i] = L_SPECIES.length() - i;
+            longArray[i] = i + 1;
+            longArray2[i] = L_SPECIES.length() - i + 1;
             longMask[i] = i % 2 == 0;
             longMask2[i] = i >= L_SPECIES.length() / 2;
             longOffsets[i] = (i + L_SPECIES.length() / 2) % L_SPECIES.length();
@@ -105,8 +105,8 @@ public class VectorGatherMaskFoldingTest {
         longVectorMask = VectorMask.fromArray(L_SPECIES, longMask, 0);
         longVectorMask2 = VectorMask.fromArray(L_SPECIES, longMask2, 0);
         for (int i = 0; i < I_SPECIES.length(); i++) {
-            intArray[i] = i;
-            intArray2[i] = I_SPECIES.length() - i;
+            intArray[i] = i + 1;
+            intArray2[i] = I_SPECIES.length() - i + 1;
             intMask[i] = i % 2 == 0;
             intMask2[i] = i >= I_SPECIES.length() / 2;
             intOffsets[i] = (i + I_SPECIES.length() / 2) % I_SPECIES.length();
@@ -118,8 +118,8 @@ public class VectorGatherMaskFoldingTest {
         intVectorMask = VectorMask.fromArray(I_SPECIES, intMask, 0);
         intVectorMask2 = VectorMask.fromArray(I_SPECIES, intMask2, 0);
         for (int i = 0; i < D_SPECIES.length(); i++) {
-            doubleArray[i] = (double) i;
-            doubleArray2[i] = (double) (D_SPECIES.length() - i);
+            doubleArray[i] = (double) i + 1.0;
+            doubleArray2[i] = (double) (D_SPECIES.length() - i) + 1.0;
             doubleMask[i] = i % 2 == 0;
             doubleMask2[i] = i >= D_SPECIES.length() / 2;
             doubleOffsets[i] = (i + D_SPECIES.length() / 2) % D_SPECIES.length();
@@ -130,8 +130,8 @@ public class VectorGatherMaskFoldingTest {
         doubleVectorMask = VectorMask.fromArray(D_SPECIES, doubleMask, 0);
         doubleVectorMask2 = VectorMask.fromArray(D_SPECIES, doubleMask2, 0);
         for (int i = 0; i < F_SPECIES.length(); i++) {
-            floatArray[i] = i;
-            floatArray2[i] = F_SPECIES.length() - i;
+            floatArray[i] = i + 1.0f;
+            floatArray2[i] = F_SPECIES.length() - i + 1.0f;
             floatMask[i] = i % 2 == 0;
             floatMask2[i] = i >= F_SPECIES.length() / 2;
             floatOffsets[i] = (i + F_SPECIES.length() / 2) % F_SPECIES.length();
