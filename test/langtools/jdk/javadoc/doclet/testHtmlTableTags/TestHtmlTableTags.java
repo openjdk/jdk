@@ -603,7 +603,7 @@ public class TestHtmlTableTags extends JavadocTester {
                 """
                     <div class="col-first odd-row-color"><code><a href="../pkg2/C2.html" title="class in pkg2">C2</a></code></div>
                     <div class="col-second odd-row-color"><code><a href="#field" class="member-name-link">field</a></code></div>
-                    <div class="col-last odd-row-color">
+                    <div class="col-last odd-row-color" role="tablist" tabindex="0">
                     <div class="block">Test field for class.</div>
                     </div>""",
                 """

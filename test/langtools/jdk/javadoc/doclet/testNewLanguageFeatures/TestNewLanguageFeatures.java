@@ -163,7 +163,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     """,
                 """
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4"><code>&lt;T extends java.lang.Object &amp; java.l\
+                    ab2 method-summary-table-tab4" role="tablist" tabindex="0"><code>&lt;T extends java.lang.Object &amp; java.l\
                     ang.Comparable&lt;? super T&gt;&gt;<br>T</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#methodtThatReturnsTypeParameters\
@@ -445,12 +445,12 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Method</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color"><code>void</code></div>
+                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>void</code></div>
                     <div class="col-second even-row-color"><span class="type-name-label">ClassUseTes\
                     t3.</span><code><a href="../ClassUseTest3.html#method(java.util.Set)" class="mem\
                     ber-name-link">method</a><wbr>(java.util.Set&lt;<a href="../Foo4.html" title="cl\
                     ass in pkg2">Foo4</a>&gt;&nbsp;p)</code></div>
-                    <div class="col-last even-row-color">&nbsp;</div>""",
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>""",
                 """
                     <div class="caption"><span>Constructor parameters in <a href="../package-summary.html">pkg2<\
                     /a> with type arguments of type <a href="../Foo4.html" title="class in pkg2">Foo\

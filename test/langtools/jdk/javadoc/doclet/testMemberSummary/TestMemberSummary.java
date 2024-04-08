@@ -66,11 +66,11 @@ public class TestMemberSummary extends JavadocTester {
                 """
                     <div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E()" c\
                     lass="member-name-link">PublicChild</a>()</code></div>
-                    <div class="col-last even-row-color">&nbsp;</div>""");
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>""");
 
         checkOutput("pkg/PrivateParent.html", true,
                 """
-                    <div class="col-first even-row-color"><code>private </code></div>
+                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>private </code></div>
                     <div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(int)\
                     " class="member-name-link">PrivateParent</a><wbr>(int&nbsp;i)</code></div>""");
 

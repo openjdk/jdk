@@ -523,7 +523,7 @@ public class TestRecordTypes extends JavadocTester {
                     <div class="table-header col-first">Record Class</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-summary-item-name even-row-color"><a href="p/R.html" title="class in p">p.R</a></div>
-                    <div class="col-last even-row-color">
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">
                     <div class="block">Do not use.</div>
                     </div>""");
     }
@@ -555,7 +555,7 @@ public class TestRecordTypes extends JavadocTester {
                     <div class="table-header col-first">Method</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-summary-item-name even-row-color"><a href="p/R.html#r1()">p.R.r1()</a></div>
-                    <div class="col-last even-row-color"></div>
+                    <div class="col-last even-row-color" role="tablist" tabindex="0"></div>
                     </div>""");
     }
 

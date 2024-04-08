@@ -100,7 +100,7 @@ public class TestAnnotationTypes extends JavadocTester {
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color" role="tablist" tabindex="0"><code>int</code></div>
                     <div class="col-second even-row-color"><code><a href="#value()" class="member-name-link">value</a></code></div>
-                    <div class="col-last even-row-color">&nbsp;</div>
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
                     </div>
                     </section>
                     </li>
@@ -115,7 +115,7 @@ public class TestAnnotationTypes extends JavadocTester {
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color" role="tablist" tabindex="0"><code>java.lang.String</code></div>
                     <div class="col-second even-row-color"><code><a href="#optional()" class="member-name-link">optional</a></code></div>
-                    <div class="col-last even-row-color">&nbsp;</div>
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
                     </div>
                     </section>
                     </li>

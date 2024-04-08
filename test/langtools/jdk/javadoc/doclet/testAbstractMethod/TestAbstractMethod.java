@@ -51,7 +51,7 @@ public class TestAbstractMethod extends JavadocTester {
         checkOutput("pkg/A.html", true,
                 """
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab5"><code>default void</code></div>""",
+                    ab2 method-summary-table-tab5" role="tablist" tabindex="0"><code>default void</code></div>""",
                 """
                     <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
                     <button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-cont\

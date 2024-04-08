@@ -320,57 +320,57 @@ public class TestOverrideMethods  extends JavadocTester {
                     <div class="table-header col-second">Method</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4"><code>java.lang.String</code></div>
+                    ab2 method-summary-table-tab4" role="tablist" tabindex="0"><code>java.lang.String</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#m2()" class="member-name-link">\
                     m2</a>()</code></div>
                     <div class="col-last even-row-color method-summary-table method-summary-table-ta\
-                    b2 method-summary-table-tab4">
+                    b2 method-summary-table-tab4" role="tablist" tabindex="0">
                     <div class="block">This is Base::m2.</div>
                     </div>
                     <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
-                    b2 method-summary-table-tab4"><code>void</code></div>
+                    b2 method-summary-table-tab4" role="tablist" tabindex="0"><code>void</code></div>
                     <div class="col-second odd-row-color method-summary-table method-summary-table-t\
                     ab2 method-summary-table-tab4"><code><a href="#m4()" class="member-name-link">m4\
                     </a>()</code></div>
                     <div class="col-last odd-row-color method-summary-table method-summary-table-tab\
-                    2 method-summary-table-tab4">
+                    2 method-summary-table-tab4" role="tablist" tabindex="0">
                     <div class="block">This is Base::m4.</div>
                     </div>
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4"><code>java.lang.Object</code></div>
+                    ab2 method-summary-table-tab4" role="tablist" tabindex="0"><code>java.lang.Object</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#m5()" class="member-name-link">m\
                     5</a>()</code></div>
                     <div class="col-last even-row-color method-summary-table method-summary-table-ta\
-                    b2 method-summary-table-tab4">
+                    b2 method-summary-table-tab4" role="tablist" tabindex="0">
                     <div class="block">This is Base::m5.</div>
                     </div>
                     <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
-                    b2 method-summary-table-tab4"><code>final java.lang.Object</code></div>
+                    b2 method-summary-table-tab4" role="tablist" tabindex="0"><code>final java.lang.Object</code></div>
                     <div class="col-second odd-row-color method-summary-table method-summary-table-t\
                     ab2 method-summary-table-tab4"><code><a href="#m6()" class="member-name-link">m6\
                     </a>()</code></div>
                     <div class="col-last odd-row-color method-summary-table method-summary-table-tab\
-                    2 method-summary-table-tab4">
+                    2 method-summary-table-tab4" role="tablist" tabindex="0">
                     <div class="block">This is Base::m6.</div>
                     </div>
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4"><code>java.lang.Object</code></div>
+                    ab2 method-summary-table-tab4" role="tablist" tabindex="0"><code>java.lang.Object</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#m7()" class="member-name-link">m\
                     7</a>()</code></div>
                     <div class="col-last even-row-color method-summary-table method-summary-table-ta\
-                    b2 method-summary-table-tab4">
+                    b2 method-summary-table-tab4" role="tablist" tabindex="0">
                     <div class="block">This is Base::m7.</div>
                     </div>
                     <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
-                    b2 method-summary-table-tab3"><code>abstract java.lang.Object</code></div>
+                    b2 method-summary-table-tab3" role="tablist" tabindex="0"><code>abstract java.lang.Object</code></div>
                     <div class="col-second odd-row-color method-summary-table method-summary-table-t\
                     ab2 method-summary-table-tab3"><code><a href="#m8()" class="member-name-link">m8\
                     </a>()</code></div>
                     <div class="col-last odd-row-color method-summary-table method-summary-table-tab\
-                    2 method-summary-table-tab3">
+                    2 method-summary-table-tab3" role="tablist" tabindex="0">
                     <div class="block">This is Base::m8.</div>
                     </div>
                     """,

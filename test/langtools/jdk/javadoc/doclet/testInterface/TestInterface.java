@@ -258,7 +258,7 @@ public class TestInterface extends JavadocTester {
                 """
                 <div class="col-first even-row-color all-classes-table all-classes-table-tab2"><\
                 a href="pkg2/Abstract.html" title="class in pkg2">Abstract</a></div>
-                <div class="col-last even-row-color all-classes-table all-classes-table-tab2">&n\
+                <div class="col-last even-row-color all-classes-table all-classes-table-tab2" role="tablist" tabindex="0">&n\
                 bsp;</div>
                 <div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a\
                  href="pkg2/Spliterator.html" title="interface in pkg2">Spliterator&lt;T&gt;</a>\

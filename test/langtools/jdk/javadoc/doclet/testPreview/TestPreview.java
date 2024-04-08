@@ -101,8 +101,8 @@ public class TestPreview extends JavadocTester {
                     <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Preview Feature</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-summary-item-name even-row-color record-class record-class-tab1"><a href="java.base/preview/CoreRecord.html" title="class in preview">preview.CoreRecord</a><sup><a href="java.base/preview/CoreRecord.html#preview-preview.CoreRecord">PREVIEW</a></sup></div>
-                    <div class="col-second even-row-color record-class record-class-tab1">Test Feature</div>
-                    <div class="col-last even-row-color record-class record-class-tab1"></div>
+                    <div class="col-second even-row-color record-class record-class-tab1" role="tablist" tabindex="0">Test Feature</div>
+                    <div class="col-last even-row-color record-class record-class-tab1" role="tablist" tabindex="0"></div>
                     </div>
                     """,
                     """
@@ -116,8 +116,8 @@ public class TestPreview extends JavadocTester {
                     <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Preview Feature</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-summary-item-name even-row-color method method-tab1"><a href="java.base/preview/CoreRecordComponent.html#i()">preview.CoreRecordComponent.i()</a><sup><a href="java.base/preview/CoreRecordComponent.html#preview-i()">PREVIEW</a></sup></div>
-                    <div class="col-second even-row-color method method-tab1">Test Feature</div>
-                    <div class="col-last even-row-color method method-tab1">
+                    <div class="col-second even-row-color method method-tab1" role="tablist" tabindex="0">Test Feature</div>
+                    <div class="col-last even-row-color method method-tab1" role="tablist" tabindex="0">
                     <div class="block">Returns the value of the <code>i</code> record component.</div>
                     </div>
                     """);

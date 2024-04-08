@@ -148,8 +148,8 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color module module-tab5"><a href="mdl/mod\
                 ule-summary.html">mdl</a></div>
-                <div class="col-second even-row-color module module-tab5">3.2</div>
-                <div class="col-last even-row-color module module-tab5">
+                <div class="col-second even-row-color module module-tab5" role="tablist" tabindex="0">3.2</div>
+                <div class="col-last even-row-color module module-tab5" role="tablist" tabindex="0">
                 <div class="block">Module mdl.</div>
                 </div>""",
             """
@@ -164,8 +164,8 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color package package-tab2"><a href="mdl/p\
                 kg/package-summary.html">pkg</a></div>
-                <div class="col-second even-row-color package package-tab2">v1.0</div>
-                <div class="col-last even-row-color package package-tab2">
+                <div class="col-second even-row-color package package-tab2" role="tablist" tabindex="0">v1.0</div>
+                <div class="col-last even-row-color package package-tab2" role="tablist" tabindex="0">
                 <div class="block">Package pkg.</div>
                 </div>""",
             """
@@ -180,8 +180,8 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color interface interface-tab1"><a href="m\
                 dl/pkg/TestInterface.html" title="interface in pkg">pkg.TestInterface</a></div>
-                <div class="col-second even-row-color interface interface-tab1">0.9</div>
-                <div class="col-last even-row-color interface interface-tab1">
+                <div class="col-second even-row-color interface interface-tab1" role="tablist" tabindex="0">0.9</div>
+                <div class="col-last even-row-color interface interface-tab1" role="tablist" tabindex="0">
                 <div class="block">Test interface.</div>
                 </div>""",
             """
@@ -196,8 +196,8 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color class class-tab3"><a href="mdl/pkg/\
                 TestClass.html" title="class in pkg">pkg.TestClass</a></div>
-                <div class="col-second even-row-color class class-tab3">1.2</div>
-                <div class="col-last even-row-color class class-tab3">
+                <div class="col-second even-row-color class class-tab3" role="tablist" tabindex="0">1.2</div>
+                <div class="col-last even-row-color class class-tab3" role="tablist" tabindex="0">
                 <div class="block">TestClass declaration.</div>
                 </div>""",
             """
@@ -212,8 +212,8 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color enum-class enum-class-tab1"><a href\
                 ="mdl/pkg/TestEnum.html" title="enum class in pkg">pkg.TestEnum</a></div>
-                <div class="col-second even-row-color enum-class enum-class-tab1">0.9</div>
-                <div class="col-last even-row-color enum-class enum-class-tab1">
+                <div class="col-second even-row-color enum-class enum-class-tab1" role="tablist" tabindex="0">0.9</div>
+                <div class="col-last even-row-color enum-class enum-class-tab1" role="tablist" tabindex="0">
                 <div class="block">Test enum class.</div>
                 </div>""",
             """
@@ -228,14 +228,14 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color exception-class exception-class-tab\
                 4"><a href="mdl/pkg/TestError.html" title="class in pkg">pkg.TestError</a></div>
-                <div class="col-second even-row-color exception-class exception-class-tab4">2.0b</div>
-                <div class="col-last even-row-color exception-class exception-class-tab4">
+                <div class="col-second even-row-color exception-class exception-class-tab4" role="tablist" tabindex="0">2.0b</div>
+                <div class="col-last even-row-color exception-class exception-class-tab4" role="tablist" tabindex="0">
                 <div class="block">Test error class.</div>
                 </div>
                 <div class="col-summary-item-name odd-row-color exception-class exception-class-tab1\
                 "><a href="mdl/pkg/TestException.html" title="class in pkg">pkg.TestException</a></div>
-                <div class="col-second odd-row-color exception-class exception-class-tab1">0.9</div>
-                <div class="col-last odd-row-color exception-class exception-class-tab1">
+                <div class="col-second odd-row-color exception-class exception-class-tab1" role="tablist" tabindex="0">0.9</div>
+                <div class="col-last odd-row-color exception-class exception-class-tab1" role="tablist" tabindex="0">
                 <div class="block">Test exception class.</div>
                 </div>""",
             """
@@ -250,8 +250,8 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color record-class record-class-tab5"><a\
                  href="mdl/pkg/TestRecord.html" title="class in pkg">pkg.TestRecord</a></div>
-                <div class="col-second even-row-color record-class record-class-tab5">3.2</div>
-                <div class="col-last even-row-color record-class record-class-tab5">
+                <div class="col-second even-row-color record-class record-class-tab5" role="tablist" tabindex="0">3.2</div>
+                <div class="col-last even-row-color record-class record-class-tab5" role="tablist" tabindex="0">
                 <div class="block">Test record.</div>
                 </div>""",
             """
@@ -265,8 +265,8 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color annotation-interface annotation-interface-tab4"><a href="mdl/pkg/TestAnnotation.html" title="annotation interface in pkg">pkg.TestAnnotation</a></div>
-                <div class="col-second even-row-color annotation-interface annotation-interface-tab4">2.0b</div>
-                <div class="col-last even-row-color annotation-interface annotation-interface-tab4">
+                <div class="col-second even-row-color annotation-interface annotation-interface-tab4" role="tablist" tabindex="0">2.0b</div>
+                <div class="col-last even-row-color annotation-interface annotation-interface-tab4" role="tablist" tabindex="0">
                 <div class="block">An annotation interface.</div>
                 </div>""",
             """
@@ -281,26 +281,26 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color field field-tab3"><a href="mdl/pkg/\
                 TestClass.html#field">pkg.TestClass.field</a></div>
-                <div class="col-second even-row-color field field-tab3">1.2</div>
-                <div class="col-last even-row-color field field-tab3">
+                <div class="col-second even-row-color field field-tab3" role="tablist" tabindex="0">1.2</div>
+                <div class="col-last even-row-color field field-tab3" role="tablist" tabindex="0">
                 <div class="block">TestClass field.</div>
                 </div>
                 <div class="col-summary-item-name odd-row-color field field-tab2"><a href="mdl/pkg/T\
                 estError.html#field">pkg.TestError.field</a></div>
-                <div class="col-second odd-row-color field field-tab2">v1.0</div>
-                <div class="col-last odd-row-color field field-tab2">
+                <div class="col-second odd-row-color field field-tab2" role="tablist" tabindex="0">v1.0</div>
+                <div class="col-last odd-row-color field field-tab2" role="tablist" tabindex="0">
                 <div class="block">Test error field.</div>
                 </div>
                 <div class="col-summary-item-name even-row-color field field-tab5"><a href="mdl/pkg/\
                 TestException.html#field">pkg.TestException.field</a></div>
-                <div class="col-second even-row-color field field-tab5">3.2</div>
-                <div class="col-last even-row-color field field-tab5">
+                <div class="col-second even-row-color field field-tab5" role="tablist" tabindex="0">3.2</div>
+                <div class="col-last even-row-color field field-tab5" role="tablist" tabindex="0">
                 <div class="block">Exception field.</div>
                 </div>
                 <div class="col-summary-item-name odd-row-color field field-tab4"><a href="mdl/pkg/T\
                 estInterface.html#field">pkg.TestInterface.field</a></div>
-                <div class="col-second odd-row-color field field-tab4">2.0b</div>
-                <div class="col-last odd-row-color field field-tab4">
+                <div class="col-second odd-row-color field field-tab4" role="tablist" tabindex="0">2.0b</div>
+                <div class="col-last odd-row-color field field-tab4" role="tablist" tabindex="0">
                 <div class="block">Test interface field.</div>
                 </div>""",
             """
@@ -315,58 +315,58 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color method method-tab5"><a href="mdl/pk\
                 g/TestAnnotation.html#optional()">pkg.TestAnnotation.optional()</a></div>
-                <div class="col-second even-row-color method method-tab5">3.2</div>
-                <div class="col-last even-row-color method method-tab5">
+                <div class="col-second even-row-color method method-tab5" role="tablist" tabindex="0">3.2</div>
+                <div class="col-last even-row-color method method-tab5" role="tablist" tabindex="0">
                 <div class="block">Optional annotation interface element.</div>
                 </div>
                 <div class="col-summary-item-name odd-row-color method method-tab4"><a href="mdl/pkg\
                 /TestAnnotation.html#required()">pkg.TestAnnotation.required()</a></div>
-                <div class="col-second odd-row-color method method-tab4">2.0b</div>
-                <div class="col-last odd-row-color method method-tab4">
+                <div class="col-second odd-row-color method method-tab4" role="tablist" tabindex="0">2.0b</div>
+                <div class="col-last odd-row-color method method-tab4" role="tablist" tabindex="0">
                 <div class="block">Required annotation interface element.</div>
                 </div>
                 <div class="col-summary-item-name even-row-color method method-tab4"><a href="mdl/pk\
                 g/TestClass.html#method()">pkg.TestClass.method()</a></div>
-                <div class="col-second even-row-color method method-tab4">2.0b</div>
-                <div class="col-last even-row-color method method-tab4">
+                <div class="col-second even-row-color method method-tab4" role="tablist" tabindex="0">2.0b</div>
+                <div class="col-last even-row-color method method-tab4" role="tablist" tabindex="0">
                 <div class="block">TestClass method.</div>
                 </div>
                 <div class="col-summary-item-name odd-row-color method method-tab6"><a href="mdl/pkg\
                 /TestClass.html#overloadedMethod(java.lang.String)">pkg.TestClass.overloadedMethod<w\
                 br>(String)</a></div>
-                <div class="col-second odd-row-color method method-tab6">5</div>
-                <div class="col-last odd-row-color method method-tab6">
+                <div class="col-second odd-row-color method method-tab6" role="tablist" tabindex="0">5</div>
+                <div class="col-last odd-row-color method method-tab6" role="tablist" tabindex="0">
                 <div class="block">TestClass overloaded method.</div>
                 </div>
                 <div class="col-summary-item-name even-row-color method method-tab5"><a href="mdl/pk\
                 g/TestError.html#method()">pkg.TestError.method()</a></div>
-                <div class="col-second even-row-color method method-tab5">3.2</div>
-                <div class="col-last even-row-color method method-tab5">
+                <div class="col-second even-row-color method method-tab5" role="tablist" tabindex="0">3.2</div>
+                <div class="col-last even-row-color method method-tab5" role="tablist" tabindex="0">
                 <div class="block">Test error method.</div>
                 </div>
                 <div class="col-summary-item-name odd-row-color method method-tab3"><a href="mdl/pkg\
                 /TestException.html#method()">pkg.TestException.method()</a></div>
-                <div class="col-second odd-row-color method method-tab3">1.2</div>
-                <div class="col-last odd-row-color method method-tab3">
+                <div class="col-second odd-row-color method method-tab3" role="tablist" tabindex="0">1.2</div>
+                <div class="col-last odd-row-color method method-tab3" role="tablist" tabindex="0">
                 <div class="block">Exception method.</div>
                 </div>
                 <div class="col-summary-item-name even-row-color method method-tab2"><a href="mdl/pk\
                 g/TestInterface.html#method1()">pkg.TestInterface.method1()</a></div>
-                <div class="col-second even-row-color method method-tab2">v1.0</div>
-                <div class="col-last even-row-color method method-tab2">
+                <div class="col-second even-row-color method method-tab2" role="tablist" tabindex="0">v1.0</div>
+                <div class="col-last even-row-color method method-tab2" role="tablist" tabindex="0">
                 <div class="block">Interface method.</div>
                 </div>
                 <div class="col-summary-item-name odd-row-color method method-tab5"><a href="mdl/pkg\
                 /TestInterface.html#method2(java.lang.Class)">pkg.TestInterface.method2<wbr>(Class&l\
                 t;?&gt;)</a></div>
-                <div class="col-second odd-row-color method method-tab5">3.2</div>
-                <div class="col-last odd-row-color method method-tab5">
+                <div class="col-second odd-row-color method method-tab5" role="tablist" tabindex="0">3.2</div>
+                <div class="col-last odd-row-color method method-tab5" role="tablist" tabindex="0">
                 <div class="block">Interface method.</div>
                 </div>
                 <div class="col-summary-item-name even-row-color method method-tab6"><a href="mdl/pk\
                 g/TestRecord.html#x()">pkg.TestRecord.x()</a></div>
-                <div class="col-second even-row-color method method-tab6">5</div>
-                <div class="col-last even-row-color method method-tab6">
+                <div class="col-second even-row-color method method-tab6" role="tablist" tabindex="0">5</div>
+                <div class="col-last even-row-color method method-tab6" role="tablist" tabindex="0">
                 <div class="block">Test record getter.</div>
                 </div>""",
             """
@@ -381,27 +381,27 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color constructor constructor-tab4"><a hr\
                 ef="mdl/pkg/TestClass.html#%3Cinit%3E()">pkg.TestClass()</a></div>
-                <div class="col-second even-row-color constructor constructor-tab4">2.0b</div>
-                <div class="col-last even-row-color constructor constructor-tab4">
+                <div class="col-second even-row-color constructor constructor-tab4" role="tablist" tabindex="0">2.0b</div>
+                <div class="col-last even-row-color constructor constructor-tab4" role="tablist" tabindex="0">
                 <div class="block">TestClass constructor.</div>
                 </div>
                 <div class="col-summary-item-name odd-row-color constructor constructor-tab5"><a hre\
                 f="mdl/pkg/TestClass.html#%3Cinit%3E(java.lang.String)">pkg.TestClass<wbr>(String)</\
                 a></div>
-                <div class="col-second odd-row-color constructor constructor-tab5">3.2</div>
-                <div class="col-last odd-row-color constructor constructor-tab5">
+                <div class="col-second odd-row-color constructor constructor-tab5" role="tablist" tabindex="0">3.2</div>
+                <div class="col-last odd-row-color constructor constructor-tab5" role="tablist" tabindex="0">
                 <div class="block">TestClass constructor.</div>
                 </div>
                 <div class="col-summary-item-name even-row-color constructor constructor-tab6"><a hr\
                 ef="mdl/pkg/TestError.html#%3Cinit%3E()">pkg.TestError()</a></div>
-                <div class="col-second even-row-color constructor constructor-tab6">5</div>
-                <div class="col-last even-row-color constructor constructor-tab6">
+                <div class="col-second even-row-color constructor constructor-tab6" role="tablist" tabindex="0">5</div>
+                <div class="col-last even-row-color constructor constructor-tab6" role="tablist" tabindex="0">
                 <div class="block">Test error constructor.</div>
                 </div>
                 <div class="col-summary-item-name odd-row-color constructor constructor-tab6"><a hre\
                 f="mdl/pkg/TestException.html#%3Cinit%3E()">pkg.TestException()</a></div>
-                <div class="col-second odd-row-color constructor constructor-tab6">5</div>
-                <div class="col-last odd-row-color constructor constructor-tab6">
+                <div class="col-second odd-row-color constructor constructor-tab6" role="tablist" tabindex="0">5</div>
+                <div class="col-last odd-row-color constructor constructor-tab6" role="tablist" tabindex="0">
                 <div class="block">Exception constructor.</div>
                 </div>""",
             """
@@ -416,26 +416,26 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color enum-constant enum-constant-tab5"><\
                 a href="mdl/pkg/TestEnum.html#DEPRECATED">pkg.TestEnum.DEPRECATED</a></div>
-                <div class="col-second even-row-color enum-constant enum-constant-tab5">3.2</div>
-                <div class="col-last even-row-color enum-constant enum-constant-tab5">
+                <div class="col-second even-row-color enum-constant enum-constant-tab5" role="tablist" tabindex="0">3.2</div>
+                <div class="col-last even-row-color enum-constant enum-constant-tab5" role="tablist" tabindex="0">
                 <div class="block">Deprecated.</div>
                 </div>
                 <div class="col-summary-item-name odd-row-color enum-constant enum-constant-tab1"><a\
                  href="mdl/pkg/TestEnum.html#ONE">pkg.TestEnum.ONE</a></div>
-                <div class="col-second odd-row-color enum-constant enum-constant-tab1">0.9</div>
-                <div class="col-last odd-row-color enum-constant enum-constant-tab1">
+                <div class="col-second odd-row-color enum-constant enum-constant-tab1" role="tablist" tabindex="0">0.9</div>
+                <div class="col-last odd-row-color enum-constant enum-constant-tab1" role="tablist" tabindex="0">
                 <div class="block">One.</div>
                 </div>
                 <div class="col-summary-item-name even-row-color enum-constant enum-constant-tab3"><\
                 a href="mdl/pkg/TestEnum.html#THREE">pkg.TestEnum.THREE</a></div>
-                <div class="col-second even-row-color enum-constant enum-constant-tab3">1.2</div>
-                <div class="col-last even-row-color enum-constant enum-constant-tab3">
+                <div class="col-second even-row-color enum-constant enum-constant-tab3" role="tablist" tabindex="0">1.2</div>
+                <div class="col-last even-row-color enum-constant enum-constant-tab3" role="tablist" tabindex="0">
                 <div class="block">Three.</div>
                 </div>
                 <div class="col-summary-item-name odd-row-color enum-constant enum-constant-tab2"><a\
                  href="mdl/pkg/TestEnum.html#TWO">pkg.TestEnum.TWO</a></div>
-                <div class="col-second odd-row-color enum-constant enum-constant-tab2">v1.0</div>
-                <div class="col-last odd-row-color enum-constant enum-constant-tab2">
+                <div class="col-second odd-row-color enum-constant enum-constant-tab2" role="tablist" tabindex="0">v1.0</div>
+                <div class="col-last odd-row-color enum-constant enum-constant-tab2" role="tablist" tabindex="0">
                 <div class="block">Two.</div>
                 </div>""",
             """
@@ -451,15 +451,15 @@ public class TestNewApiList extends JavadocTester {
                 <div class="col-summary-item-name even-row-color annotation-interface-member annotat\
                 ion-interface-member-tab5"><a href="mdl/pkg/TestAnnotation.html#optional()">pkg.Test\
                 Annotation.optional()</a></div>
-                <div class="col-second even-row-color annotation-interface-member annotation-interface-member-tab5">3.2</div>
-                <div class="col-last even-row-color annotation-interface-member annotation-interface-member-tab5">
+                <div class="col-second even-row-color annotation-interface-member annotation-interface-member-tab5" role="tablist" tabindex="0">3.2</div>
+                <div class="col-last even-row-color annotation-interface-member annotation-interface-member-tab5" role="tablist" tabindex="0">
                 <div class="block">Optional annotation interface element.</div>
                 </div>
                 <div class="col-summary-item-name odd-row-color annotation-interface-member annotati\
                 on-interface-member-tab4"><a href="mdl/pkg/TestAnnotation.html#required()">pkg.TestA\
                 nnotation.required()</a></div>
-                <div class="col-second odd-row-color annotation-interface-member annotation-interface-member-tab4">2.0b</div>
-                <div class="col-last odd-row-color annotation-interface-member annotation-interface-member-tab4">
+                <div class="col-second odd-row-color annotation-interface-member annotation-interface-member-tab4" role="tablist" tabindex="0">2.0b</div>
+                <div class="col-last odd-row-color annotation-interface-member annotation-interface-member-tab4" role="tablist" tabindex="0">
                 <div class="block">Required annotation interface element.</div>
                 </div>""");
     }
@@ -478,8 +478,8 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color for-removal for-removal-tab1"><a hr\
                 ef="mdl/pkg/TestAnnotation.html#required()">pkg.TestAnnotation.required()</a></div>
-                <div class="col-second even-row-color for-removal for-removal-tab1">3.2</div>
-                <div class="col-last even-row-color for-removal for-removal-tab1"></div>
+                <div class="col-second even-row-color for-removal for-removal-tab1" role="tablist" tabindex="0">3.2</div>
+                <div class="col-last even-row-color for-removal for-removal-tab1" role="tablist" tabindex="0"></div>
                 </div>""",
             """
                 <div id="method">
@@ -493,8 +493,8 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color method method-tab1"><a href="mdl/pk\
                 g/TestAnnotation.html#required()">pkg.TestAnnotation.required()</a></div>
-                <div class="col-second even-row-color method method-tab1">3.2</div>
-                <div class="col-last even-row-color method method-tab1"></div>
+                <div class="col-second even-row-color method method-tab1" role="tablist" tabindex="0">3.2</div>
+                <div class="col-last even-row-color method method-tab1" role="tablist" tabindex="0"></div>
                 </div>""",
             """
                 <div id="constructor">
@@ -508,8 +508,8 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color constructor"><a href="mdl/pkg/TestC\
                 lass.html#%3Cinit%3E()">pkg.TestClass()</a></div>
-                <div class="col-second even-row-color constructor">6</div>
-                <div class="col-last even-row-color constructor"></div>
+                <div class="col-second even-row-color constructor" role="tablist" tabindex="0">6</div>
+                <div class="col-last even-row-color constructor" role="tablist" tabindex="0"></div>
                 </div>""",
             """
                 <div id="enum-constant">
@@ -523,8 +523,8 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color enum-constant enum-constant-tab2"><\
                 a href="mdl/pkg/TestEnum.html#DEPRECATED">pkg.TestEnum.DEPRECATED</a></div>
-                <div class="col-second even-row-color enum-constant enum-constant-tab2">5</div>
-                <div class="col-last even-row-color enum-constant enum-constant-tab2"></div>
+                <div class="col-second even-row-color enum-constant enum-constant-tab2" role="tablist" tabindex="0">5</div>
+                <div class="col-last even-row-color enum-constant enum-constant-tab2" role="tablist" tabindex="0"></div>
                 </div>""",
             """
                 <div id="annotation-interface-member">
@@ -538,8 +538,8 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color annotation-interface-member annotat\
                 ion-interface-member-tab1"><a href="mdl/pkg/TestAnnotation.html#required()">pkg.TestAnnotation.required()</a></div>
-                <div class="col-second even-row-color annotation-interface-member annotation-interface-member-tab1">3.2</div>
-                <div class="col-last even-row-color annotation-interface-member annotation-interface-member-tab1"></div>
+                <div class="col-second even-row-color annotation-interface-member annotation-interface-member-tab1" role="tablist" tabindex="0">3.2</div>
+                <div class="col-last even-row-color annotation-interface-member annotation-interface-member-tab1" role="tablist" tabindex="0"></div>
                 </div>""");
     }
 
@@ -566,14 +566,14 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color"><a href="mdl/pkg/TestClass.html#ov\
                 erloadedMethod(java.lang.String)">pkg.TestClass.overloadedMethod<wbr>(String)</a></div>
-                <div class="col-second even-row-color">5</div>
-                <div class="col-last even-row-color">
+                <div class="col-second even-row-color" role="tablist" tabindex="0">5</div>
+                <div class="col-last even-row-color" role="tablist" tabindex="0">
                 <div class="block">TestClass overloaded method.</div>
                 </div>
                 <div class="col-summary-item-name odd-row-color"><a href="mdl/pkg/TestRecord.html#x(\
                 )">pkg.TestRecord.x()</a></div>
-                <div class="col-second odd-row-color">5</div>
-                <div class="col-last odd-row-color">
+                <div class="col-second odd-row-color" role="tablist" tabindex="0">5</div>
+                <div class="col-last odd-row-color" role="tablist" tabindex="0">
                 <div class="block">Test record getter.</div>
                 </div>""",
             """
@@ -585,14 +585,14 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color"><a href="mdl/pkg/TestError.html#%3\
                 Cinit%3E()">pkg.TestError()</a></div>
-                <div class="col-second even-row-color">5</div>
-                <div class="col-last even-row-color">
+                <div class="col-second even-row-color" role="tablist" tabindex="0">5</div>
+                <div class="col-last even-row-color" role="tablist" tabindex="0">
                 <div class="block">Test error constructor.</div>
                 </div>
                 <div class="col-summary-item-name odd-row-color"><a href="mdl/pkg/TestException.html\
                 #%3Cinit%3E()">pkg.TestException()</a></div>
-                <div class="col-second odd-row-color">5</div>
-                <div class="col-last odd-row-color">
+                <div class="col-second odd-row-color" role="tablist" tabindex="0">5</div>
+                <div class="col-last odd-row-color" role="tablist" tabindex="0">
                 <div class="block">Exception constructor.</div>
                 </div>""");
     }
@@ -627,8 +627,8 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color for-removal"><a href="mdl/pkg/TestA\
                 nnotation.html#required()">pkg.TestAnnotation.required()</a></div>
-                <div class="col-second even-row-color for-removal">3.2</div>
-                <div class="col-last even-row-color for-removal"></div>
+                <div class="col-second even-row-color for-removal" role="tablist" tabindex="0">3.2</div>
+                <div class="col-last even-row-color for-removal" role="tablist" tabindex="0"></div>
                 </div>""",
             """
                 <div id="method">
@@ -642,8 +642,8 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color method"><a href="mdl/pkg/TestAnnota\
                 tion.html#required()">pkg.TestAnnotation.required()</a></div>
-                <div class="col-second even-row-color method">3.2</div>
-                <div class="col-last even-row-color method"></div>
+                <div class="col-second even-row-color method" role="tablist" tabindex="0">3.2</div>
+                <div class="col-last even-row-color method" role="tablist" tabindex="0"></div>
                 </div>""",
             """
                 <div id="constructor">
@@ -657,8 +657,8 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color constructor"><a href="mdl/pkg/TestC\
                 lass.html#%3Cinit%3E()">pkg.TestClass()</a></div>
-                <div class="col-second even-row-color constructor">6</div>
-                <div class="col-last even-row-color constructor"></div>
+                <div class="col-second even-row-color constructor" role="tablist" tabindex="0">6</div>
+                <div class="col-last even-row-color constructor" role="tablist" tabindex="0"></div>
                 </div>""");
     }
 
@@ -701,8 +701,8 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color class class-tab1"><a href="pkg/TestClass.html" \
                 title="class in pkg">pkg.TestClass</a></div>
-                <div class="col-second even-row-color class class-tab1">1.2</div>
-                <div class="col-last even-row-color class class-tab1">
+                <div class="col-second even-row-color class class-tab1" role="tablist" tabindex="0">1.2</div>
+                <div class="col-last even-row-color class class-tab1" role="tablist" tabindex="0">
                 <div class="block">TestClass declaration.</div>
                 </div>""",
             """
@@ -717,8 +717,8 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color field field-tab1"><a href="pkg/Test\
                 Class.html#field">pkg.TestClass.field</a></div>
-                <div class="col-second even-row-color field field-tab1">1.2</div>
-                <div class="col-last even-row-color field field-tab1">
+                <div class="col-second even-row-color field field-tab1" role="tablist" tabindex="0">1.2</div>
+                <div class="col-last even-row-color field field-tab1" role="tablist" tabindex="0">
                 <div class="block">TestClass field.</div>
                 </div>""",
             """
@@ -733,21 +733,21 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color method method-tab2"><a href="pkg/Te\
                 stClass.html#method()">pkg.TestClass.method()</a></div>
-                <div class="col-second even-row-color method method-tab2">2.0b</div>
-                <div class="col-last even-row-color method method-tab2">
+                <div class="col-second even-row-color method method-tab2" role="tablist" tabindex="0">2.0b</div>
+                <div class="col-last even-row-color method method-tab2" role="tablist" tabindex="0">
                 <div class="block">TestClass method.</div>
                 </div>
                 <div class="col-summary-item-name odd-row-color method method-tab5"><a href="pkg/Tes\
                 tClass.html#overloadedMethod(int)">pkg.TestClass.overloadedMethod<wbr>(int)</a></div>
-                <div class="col-second odd-row-color method method-tab5">6</div>
-                <div class="col-last odd-row-color method method-tab5">
+                <div class="col-second odd-row-color method method-tab5" role="tablist" tabindex="0">6</div>
+                <div class="col-last odd-row-color method method-tab5" role="tablist" tabindex="0">
                 <div class="block">TestClass overloaded method.</div>
                 </div>
                 <div class="col-summary-item-name even-row-color method method-tab4"><a href="pkg/Tes\
                 tClass.html#overloadedMethod(java.lang.String)">pkg.TestClass.overloadedMethod<wbr>(S\
                 tring)</a></div>
-                <div class="col-second even-row-color method method-tab4">5</div>
-                <div class="col-last even-row-color method method-tab4">
+                <div class="col-second even-row-color method method-tab4" role="tablist" tabindex="0">5</div>
+                <div class="col-last even-row-color method method-tab4" role="tablist" tabindex="0">
                 <div class="block">TestClass overloaded method.</div>
                 </div>""",
             """
@@ -762,14 +762,14 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color constructor constructor-tab2"><a hr\
                 ef="pkg/TestClass.html#%3Cinit%3E()">pkg.TestClass()</a></div>
-                <div class="col-second even-row-color constructor constructor-tab2">2.0b</div>
-                <div class="col-last even-row-color constructor constructor-tab2">
+                <div class="col-second even-row-color constructor constructor-tab2" role="tablist" tabindex="0">2.0b</div>
+                <div class="col-last even-row-color constructor constructor-tab2" role="tablist" tabindex="0">
                 <div class="block">TestClass constructor.</div>
                 </div>
                 <div class="col-summary-item-name odd-row-color constructor constructor-tab3"><a hre\
                 f="pkg/TestClass.html#%3Cinit%3E(java.lang.String)">pkg.TestClass<wbr>(String)</a></div>
-                <div class="col-second odd-row-color constructor constructor-tab3">3.2</div>
-                <div class="col-last odd-row-color constructor constructor-tab3">
+                <div class="col-second odd-row-color constructor constructor-tab3" role="tablist" tabindex="0">3.2</div>
+                <div class="col-last odd-row-color constructor constructor-tab3" role="tablist" tabindex="0">
                 <div class="block">TestClass constructor.</div>
                 </div>""");
     }
@@ -794,8 +794,8 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color"><a href="pkg/TestClass.html#%3Cini\
                 t%3E()">pkg.TestClass()</a></div>
-                <div class="col-second even-row-color">5</div>
-                <div class="col-last even-row-color"></div>
+                <div class="col-second even-row-color" role="tablist" tabindex="0">5</div>
+                <div class="col-last even-row-color" role="tablist" tabindex="0"></div>
                 </div>""");
     }
 }

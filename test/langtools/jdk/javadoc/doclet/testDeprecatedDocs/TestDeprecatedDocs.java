@@ -373,7 +373,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                     <div class="table-header col-first">Constructor</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-summary-item-name even-row-color"><a href="pkg/DeprecatedClassByAnnotation.html#%3Cinit%3E()">pkg.DeprecatedClassByAnnotation()</a></div>
-                    <div class="col-last even-row-color"></div>
+                    <div class="col-last even-row-color" role="tablist" tabindex="0"></div>
                     <div class="col-summary-item-name odd-row-color"><a href="pkg/TestClass.html#%3Cinit%3E()">pkg.TestClass()</a></div>
                     <div class="col-last odd-row-color" role="tablist" tabindex="0">
                     <div class="block">class_test3 passes. This is the second sentence of deprecated description for a constructor.</div>
