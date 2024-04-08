@@ -1663,7 +1663,7 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
 
     Label L_no_warn;
     __ ld(R0, in_bytes(JavaThread::jni_monitor_count_offset()), R16_thread);
-    __ cmpwi(CCR0, R0, 0);
+    __ cmpdi(CCR0, R0, 0);
     __ beq(CCR0, L_no_warn);
     // If the held monitor count is > 0 and this vthread is terminating then
     // it failed to release a JNI monitor. So we issue the same log message
