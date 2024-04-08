@@ -38,6 +38,7 @@
 EventLog* Events::_logs = nullptr;
 StringEventLog* Events::_messages = nullptr;
 StringEventLog* Events::_frequent_messages = nullptr;
+StringEventLog* Events::_nmethod_flush_messages = nullptr;
 StringEventLog* Events::_vm_operations = nullptr;
 StringEventLog* Events::_zgc_phase_switch = nullptr;
 ExceptionsEventLog* Events::_exceptions = nullptr;
@@ -98,6 +99,7 @@ void Events::print() {
 void Events::init() {
   if (LogEvents) {
     _messages = new StringEventLog("Events", "events");
+    _nmethod_flush_messages = new StringEventLog("Nmethod flushs", "nmethodflushs");
     _frequent_messages = new StringEventLog("Frequent Events", "freqevents");
     _vm_operations = new StringEventLog("VM Operations", "vmops");
     if (UseZGC) {

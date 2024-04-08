@@ -223,6 +223,9 @@ class Events : AllStatic {
   // A log for generic messages that aren't well categorized and appear rather often/frequent
   static StringEventLog* _frequent_messages;
 
+  // A log for nmethod flush operations
+  static StringEventLog* _nmethod_flush_messages;
+
   // A log for VM Operations
   static StringEventLog* _vm_operations;
 
@@ -264,6 +267,8 @@ class Events : AllStatic {
 
   static void log_frequent(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
+  static void log_nmethod_flush(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+
   static void log_vm_operation(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
   static void log_zgc_phase_switch(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
@@ -300,6 +305,15 @@ inline void Events::log_frequent(Thread* thread, const char* format, ...) {
     va_list ap;
     va_start(ap, format);
     _frequent_messages->logv(thread, format, ap);
+    va_end(ap);
+  }
+}
+
+inline void Events::log_nmethod_flush(Thread* thread, const char* format, ...) {
+  if (LogEvents && _nmethod_flush_messages != nullptr) {
+    va_list ap;
+    va_start(ap, format);
+    _nmethod_flush_messages->logv(thread, format, ap);
     va_end(ap);
   }
 }
