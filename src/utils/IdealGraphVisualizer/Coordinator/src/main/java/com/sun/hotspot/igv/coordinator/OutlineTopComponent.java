@@ -143,6 +143,10 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         return getDefault();
     }
 
+    /**
+     * Exports the provided graph document to an XML file.
+     * Displays a file chooser dialog to specify the location and name of the XML file.
+     */
     public static void exportToXML(GraphDocument doc) {
         JFileChooser fc = new JFileChooser();
         fc.setFileFilter(xmlFileFilter);
@@ -157,6 +161,9 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         }
     }
 
+    /**
+     * Stores the provided graph document to the designated file path, optionally with associated contexts.
+     */
     private static void saveGraphDocument(GraphDocument doc, String path, boolean saveContext) throws IOException {
         if (path == null) {
             return;
@@ -367,6 +374,10 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
 
     }
 
+    /**
+     * Clears the workspace by resetting the document path, clearing the document, and resetting the folder structure.
+     * After clearing the workspace, it will be ready for new documents.
+     */
     public void clearWorkspace() {
         setDocumentPath(null);
         document.clear();
@@ -375,6 +386,10 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         manager.setRootContext(root);
     }
 
+    /**
+     * Opens a file dialog to select and load a graph document.
+     * Clears the workspace and adds the loaded document to the workspace.
+     **/
     public void openFile() {
         JFileChooser fc = new JFileChooser(Settings.get().get(Settings.DIRECTORY, Settings.DIRECTORY_DEFAULT));
         fc.setFileFilter(xmlFileFilter);
@@ -403,6 +418,10 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         return false;
     }
 
+    /**
+     * Saves the current graph document.
+     * If the document has no location, let the user specify the file location.
+     */
     public void save() {
         if (documentPath == null) {
             saveAs();
@@ -444,6 +463,11 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         }
     }
 
+    /**
+     * Imports graph documents from one or more XML files.
+     * Displays a file chooser dialog to select one or multiple XML files for import.
+     * Each selected file is added to the workspace.
+     **/
     public void importFromXML() {
         JFileChooser fc = new JFileChooser();
         fc.setFileFilter(xmlFileFilter);
@@ -462,6 +486,9 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         }
     }
 
+    /**
+     * Loads and opens the given set of graph contexts (opened graphs and hidden nodes).
+     */
     private void loadContexts(Set<GraphContext> contexts) {
         RP.post(() -> {
             final GraphViewer viewer = Lookup.getDefault().lookup(GraphViewer.class);
@@ -493,6 +520,10 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         });
     }
 
+    /**
+     * Loads a graph document from the given file path, updating progress via a ProgressHandle.
+     * Parse the XML file, add the parsed document to the workspace, and load associated contexts if specified.
+     */
     private void loadGraphDocument(String path, boolean loadContext) throws IOException {
         RP.post(() -> {
             if (path == null || Files.notExists(Path.of(path))) {
