@@ -26,7 +26,6 @@
 package java.util;
 
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 /**
  * This class provides a skeletal implementation of the {@link List}
