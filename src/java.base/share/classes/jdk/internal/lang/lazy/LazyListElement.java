@@ -4,6 +4,8 @@ import jdk.internal.ValueBased;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.NoSuchElementException;
+import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 import static jdk.internal.lang.lazy.LazyUtil.*;
@@ -98,7 +100,21 @@ public record LazyListElement<V>(
     }
 
     @Override
+    public String toString() {
+        return LazyUtil.toString(this);
+    }
+
+    @Override
     public V computeIfUnset(Supplier<? extends V> supplier) {
+        return computeIfUnset0(supplier, Supplier::get);
+    }
+
+    public V computeIfUnset(IntFunction<? extends V> mapper) {
+        return computeIfUnset0(mapper, m -> m.apply(index));
+    }
+
+    private <S> V computeIfUnset0(S source,
+                                 Function<S, V> extractor) {
         // Optimistically try plain semantics first
         V e = elements[index];
         if (e != null) {
@@ -123,7 +139,7 @@ public record LazyListElement<V>(
             mutex = casMutex();
         }
         synchronized (mutex) {
-            V newValue = supplier.get();
+            V newValue = extractor.apply(source);
             setValue(newValue);
         }
         clearMutex();

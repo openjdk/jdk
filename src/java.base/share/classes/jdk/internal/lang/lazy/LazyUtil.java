@@ -40,6 +40,13 @@ public final class LazyUtil {
         return new UnsupportedOperationException();
     }
 
+    static String toString(Lazy<?> lazy) {
+        return "Lazy" +
+                (lazy.isSet()
+                        ? "[" + lazy.orThrow() + "]"
+                        : ".unset");
+    }
+
     /**
      * Performs a "freeze" operation, required to ensure safe publication under plain
      * memory read semantics.

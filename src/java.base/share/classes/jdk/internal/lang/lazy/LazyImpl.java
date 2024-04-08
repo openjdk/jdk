@@ -31,10 +31,14 @@ import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static jdk.internal.lang.lazy.LazyUtil.*;
 
@@ -159,10 +163,7 @@ public final class LazyImpl<V> implements Lazy<V> {
 
     @Override
     public String toString() {
-        return "Lazy" +
-                (isSet()
-                        ? "[" + orThrow() + "]"
-                        : ".unset");
+        return LazyUtil.toString(this);
     }
 
     @SuppressWarnings("unchecked")
@@ -223,13 +224,47 @@ public final class LazyImpl<V> implements Lazy<V> {
     private static final JavaUtilCollectionAccess ACCESS =
             SharedSecrets.getJavaUtilCollectionAccess();
 
-    public static <E> List<E> ofList(int size, IntFunction<? extends E> mapper) {
+    public static <V> List<Lazy<V>> ofList(int size) {
         if (size < 0) {
             throw new IllegalArgumentException();
         }
-        Objects.requireNonNull(mapper);
-        return ACCESS.lazyList(size, mapper);
+        return ACCESS.lazyList(size);
     }
 
+    public static <V> V computeIfUnset(List<Lazy<V>> list,
+                                       int index,
+                                       IntFunction<? extends V> mapper) {
+        return ACCESS.computeIfUnset(list, index, mapper);
+    }
+
+
+    // Todo: Improve
+    // Todo: Check if enum map
+    public static <K, V> Map<K, Lazy<V>> ofMap(Set<? extends K> keys) {
+        return Map.copyOf(keys.stream()
+                .distinct()
+                .map(Objects::requireNonNull)
+                .collect(Collectors.toMap(Function.identity(), _ -> Lazy.of())));
+    }
+
+    // Todo:: Improve
+    public static <K, V> V computeIfUnset(Map<K, Lazy<V>> map,
+                                          K key,
+                                          Function<? super K, ? extends V> mapper) {
+        Lazy<V> lazy = map.get(key);
+        if (lazy == null) {
+            throw new NoSuchElementException("Unknown key: "+key);
+        }
+        if (lazy.isSet()) {
+            return lazy.orThrow();
+        }
+        Supplier<V> supplier = new Supplier<V>() {
+            @Override
+            public V get() {
+                return mapper.apply(key);
+            }
+        };
+        return lazy.computeIfUnset(supplier);
+    }
 
 }

@@ -31,5 +31,6 @@ import java.util.function.IntFunction;
 public interface JavaUtilCollectionAccess {
     <E> List<E> listFromTrustedArray(Object[] array);
     <E> List<E> listFromTrustedArrayNullsAllowed(Object[] array);
-    <E> List<E> lazyList(int size, IntFunction<? extends E> mapper);
+    <V> List<Lazy<V>> lazyList(int size);
+    <V> V computeIfUnset(List<Lazy<V>> list, int index, IntFunction<? extends V> mapper);
 }

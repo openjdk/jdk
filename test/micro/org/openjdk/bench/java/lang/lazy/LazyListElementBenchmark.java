@@ -62,7 +62,7 @@ LazyListBenchmark.staticStored       avgt   10  0.556 ? 0.001  ns/op
 
 
  */
-public class LazyListBenchmark {
+public class LazyListElementBenchmark {
 
     private static final IntFunction<Integer> FUNCTION = i -> i;
     private static final int SIZE = 100;
@@ -70,31 +70,28 @@ public class LazyListBenchmark {
     private static final List<Lazy<Integer>> STORED = Stream.generate(Lazy::<Integer>of)
             .limit(SIZE)
             .toList();
-    private static final List<Lazy<Integer>> DELEGATED_LIST = Lazy.ofWrappedList(SIZE);
+    private static final List<Lazy<Integer>> LIST = Lazy.ofList(SIZE);
 
     static {
         initLazy(STORED);
-        initLazy(DELEGATED_LIST);
+        initLazy(LIST);
     }
 
-    //private static final List<Monotonic<Integer>> MONOTONIC_LIST = initMono(Monotonic.ofList(SIZE));
     private static final List<Integer> ARRAY_LIST = initList(new ArrayList<>(SIZE));
-    private static final List<Integer> LAZY_LIST = Lazy.ofList(SIZE, FUNCTION);
 
     //private final List<Monotonic<Integer>> referenceList = initMono(Monotonic.ofList(SIZE));
     private final List<Integer> arrayList = initList(new ArrayList<>(SIZE));
-    private final List<Integer> lazyList = Lazy.ofList(SIZE, FUNCTION);
     private final List<Lazy<Integer>> storedList;
-    private final List<Lazy<Integer>> delegatedList;
+    private final List<Lazy<Integer>> list;
 
 
-    public LazyListBenchmark() {
+    public LazyListElementBenchmark() {
         this.storedList = Stream.generate(Lazy::<Integer>of)
                 .limit(SIZE)
                 .toList();
         initLazy(storedList);
-        delegatedList = Lazy.ofWrappedList(SIZE);
-        initLazy(delegatedList);
+        list = Lazy.ofList(SIZE);
+        initLazy(list);
     }
 
     @Setup
@@ -107,8 +104,8 @@ public class LazyListBenchmark {
     }
 
     @Benchmark
-    public int instanceLazyList() {
-        return lazyList.get(8);
+    public int instanceList() {
+        return list.get(8).orThrow();
     }
 
     @Benchmark
@@ -117,28 +114,18 @@ public class LazyListBenchmark {
     }
 
     @Benchmark
-    public int instanceDelegated() {
-        return delegatedList.get(8).orThrow();
-    }
-
-    @Benchmark
     public int staticArrayList() {
         return ARRAY_LIST.get(8);
     }
 
     @Benchmark
-    public int staticLazyList() {
-        return LAZY_LIST.get(8);
+    public int staticList() {
+        return LIST.get(8).orThrow();
     }
 
     @Benchmark
     public int staticStored() {
         return STORED.get(8).orThrow();
-    }
-
-    @Benchmark
-    public int staticDelegated() {
-        return DELEGATED_LIST.get(8).orThrow();
     }
 
     private static void initLazy(List<Lazy<Integer>> list) {

@@ -36,9 +36,11 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.lang.lazy.LazyListElement;
 import jdk.internal.lang.lazy.LazyUtil;
 import jdk.internal.misc.CDS;
 import jdk.internal.vm.annotation.Stable;
@@ -131,8 +133,27 @@ class ImmutableCollections {
                     return ImmutableCollections.listFromTrustedArrayNullsAllowed(array);
                 }
                 @Override
-                public <E> List<E> lazyList(int size, IntFunction<? extends E> mapper) {
-                    return ImmutableCollections.lazyList(size, mapper);
+                public <V> List<Lazy<V>> lazyList(int size) {
+                    return ImmutableCollections.LazyList.create(size);
+                }
+
+                @Override
+                public <V> V computeIfUnset(List<Lazy<V>> list,
+                                            int index,
+                                            IntFunction<? extends V> mapper) {
+                    if (list instanceof LazyList<V> ll) {
+                        return ll.computeIfUnset(index, mapper);
+                    } else {
+                        Lazy<V> lazy = list.get(index);
+                        if (lazy.isSet()) {
+                            return lazy.orThrow();
+                        }
+                        // Captures
+                        Supplier<V> supplier = new Supplier<>() {
+                            @Override public V get() {return mapper.apply(index);}
+                        };
+                        return lazy.computeIfUnset(supplier);
+                    }
                 }
             });
         }
@@ -1863,7 +1884,75 @@ class ImmutableCollections {
     }
 
 
-}
+    // Lazy collections
+
+    static final class LazyList<V>
+            extends AbstractImmutableList<Lazy<V>>
+            implements List<Lazy<V>> {
+
+        @Stable
+        private int size;
+        @Stable
+        private final V[] elements;
+        @Stable
+        private final byte[] sets;
+        private final Object[] mutexes;
+
+        @SuppressWarnings("unchecked")
+        private LazyList(int size) {
+            this.elements = (V[]) new Object[size];
+            this.size = size;
+            this.sets = new byte[size];
+            this.mutexes = new Object[size];
+        }
+
+        @Override
+        public Lazy<V> get(int index) {
+            Objects.checkIndex(index, size);
+            return new LazyListElement<>(elements, sets, mutexes, index);
+        }
+
+        @Override
+        public int size() {
+            return size;
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            Objects.requireNonNull(o);
+            return false;
+        }
+
+        @Override
+        public boolean containsAll(Collection<?> c) {
+            Objects.requireNonNull(c);
+            return c.isEmpty();
+        }
+
+        @Override
+        public int indexOf(Object o) {
+            Objects.requireNonNull(o);
+            return -1;
+        }
+
+        @Override
+        public int lastIndexOf(Object o) {
+            Objects.requireNonNull(o);
+            return -1;
+        }
+
+        V computeIfUnset(int index, IntFunction<? extends V> mapper) {
+            LazyListElement<V> element = new LazyListElement<>(elements, sets, mutexes, index);
+            return element.computeIfUnset(mapper);
+        }
+
+        static <V> List<Lazy<V>> create(int size) {
+            return new ImmutableCollections.LazyList<>(size);
+        }
+
+    }
+
+    }
 
 // ---------- Serialization Proxy ----------
 

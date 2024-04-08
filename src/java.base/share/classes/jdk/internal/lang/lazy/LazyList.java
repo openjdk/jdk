@@ -38,7 +38,7 @@ import java.util.function.Predicate;
 import static jdk.internal.lang.lazy.LazyUtil.*;
 
 public final class LazyList<V>
-        extends AbstractList<Lazy<V>>
+        extends AbstractList<Lazy<V>> // AbstractImmutableList ... -> @ValueBased
         implements List<Lazy<V>> {
 
     @Stable

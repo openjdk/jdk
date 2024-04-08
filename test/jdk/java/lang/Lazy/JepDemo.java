@@ -114,16 +114,18 @@ final class JepDemo {
     static
     class Fibonacci {
 
-        private final List<Integer> numCache;
+        private final List<Lazy<Integer>> numCache;
+        private final IntFunction<Integer> numFunction;
 
         public Fibonacci(int upperBound) {
-            numCache = Lazy.ofList(upperBound, this::number);
+            numCache = Lazy.ofList(upperBound);
+            numFunction = i -> Lazy.computeIfUnset(numCache, i, this::number);
         }
 
         public int number(int n) {
             return (n < 2)
                     ? n
-                    : numCache.get(n - 1) + numCache.get(n - 2);
+                    : numFunction.apply(n - 1) + numFunction.apply(n - 2);
         }
 
     }
@@ -134,13 +136,13 @@ final class JepDemo {
 
         // 1. Declare a lazy map of loggers with two allowable keys:
         //    "com.foo.Bar" and "com.foo.Baz"
-        static final Map<String, Logger> LOGGERS =
-                Lazy.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"), Logger::getLogger);
+        static final Map<String, Lazy<Logger>> LOGGERS =
+                Lazy.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
 
         // 2. Access the memoized map with as-declared-final performance
         //    (evaluation made before the first access)
         static Logger logger(String name) {
-            return LOGGERS.get(name);
+            return Lazy.computeIfUnset(LOGGERS, name, Logger::getLogger);
         }
     }
 
@@ -148,19 +150,20 @@ final class JepDemo {
     static
     class SetDemo {
 
-        static final Set<String> INFO_LOGGABLE =
-                Lazy.ofSet(Set.of("com.foo.Bar", "com.foo.Baz"),
-                        name -> MapDemo.logger(name).isLoggable(Level.INFO));
+        static final Map<String, Lazy<Boolean>> INFO_LOGGABLE =
+                Lazy.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
 
         static boolean isInfoLoggable(String name) {
-            return INFO_LOGGABLE.contains(name);
+            return Lazy.computeIfUnset(INFO_LOGGABLE, name, n -> MapDemo.logger(n).isLoggable(Level.INFO));
         }
 
         private static final String NAME = "com.foo.Bar";
 
         public static void main(String[] args) {
-            if (INFO_LOGGABLE.contains(NAME)) {
-                MapDemo.LOGGERS.get(NAME).log(Level.INFO, "This is fast...");
+            if (isInfoLoggable(NAME)) {
+                MapDemo.LOGGERS.get(NAME)
+                        .orThrow()
+                        .log(Level.INFO, "This is fast...");
             }
         }
 
@@ -172,9 +175,13 @@ final class JepDemo {
         static
         class Memoized {
 
+            // 1. Declare a lazily computed map
+            private static final Map<String, Lazy<Logger>> MAP =
+                    Lazy.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
+
             // 1. Declare a memoized (cached) function backed by a lazily computed map
             private static final Function<String, Logger> LOGGERS =
-                    Lazy.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"), Logger::getLogger)::get;
+                    n -> Lazy.computeIfUnset(MAP, n, Logger::getLogger);
 
             static Logger logger(String name) {
                 // 2. Access the memoized value with as-declared-final performance
@@ -223,8 +230,7 @@ final class JepDemo {
             private static final int SIZE = 8;
 
             // 1. Declare a lazy list of default error pages to serve up
-            private static final List<String> MESSAGES =
-                    Lazy.ofList(SIZE, ErrorMessages::readFromFile);
+            private static final List<Lazy<String>> MESSAGES = Lazy.ofList(SIZE);
 
             // 2. Define a function that is to be called the first
             //    time a particular message number is referenced
@@ -239,7 +245,7 @@ final class JepDemo {
             static String errorPage(int messageNumber) {
                 // 3. Access the memoized list element with as-declared-final performance
                 //    (evaluation made before the first access)
-                return MESSAGES.get(messageNumber);
+                return Lazy.computeIfUnset(MESSAGES, messageNumber, ErrorMessages::readFromFile);
             }
 
             public static void main(String[] args) {
@@ -263,8 +269,12 @@ final class JepDemo {
 
 
         // 1. Declare a lazy list of default error pages to serve up
-        private static final IntFunction<String> ERROR_PAGES =
-                Lazy.ofList(SIZE, ListDemo2::readFromFile)::get;
+        private static final List<Lazy<String>> ERROR_PAGES =
+                Lazy.ofList(SIZE);
+
+        // 1. Declare a lazy list of default error pages to serve up
+        private static final IntFunction<String> ERROR_FUNCTION =
+                i -> Lazy.computeIfUnset(ERROR_PAGES, i, ListDemo2::readFromFile);
 
         // 2. Define a function that is to be called for the first
         //    time a particular index is referenced
@@ -280,7 +290,7 @@ final class JepDemo {
         static String errorPage(int errorCode) {
             // 3. Access the memoized list element with as-declared-final performance
             //    (evaluation made before the first access)
-            return ERROR_PAGES.apply(errorCode);
+            return ERROR_FUNCTION.apply(errorCode);
         }
 
     }

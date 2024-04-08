@@ -26,11 +26,14 @@
 package java.lang;
 
 import jdk.internal.javac.PreviewFeature;
+import jdk.internal.javac.Restricted;
 import jdk.internal.lang.lazy.LazyImpl;
 import jdk.internal.lang.lazy.LazyList;
 import jdk.internal.lang.lazy.LazyListElement;
 
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -40,6 +43,7 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static jdk.internal.javac.PreviewFeature.*;
 
@@ -51,17 +55,6 @@ import static jdk.internal.javac.PreviewFeature.*;
  * A Lazy value is said to be monotonic because the state of a lazy value can only go from
  * <em>unset</em> to <em>set</em> and consequently, a value can only be set
  * at most once.
- * <p>
- * Lazy collections, that are operating directly on element/values, are available via
- * the factories:
- * <ul>
- *     <li>{@linkplain #ofList(int, IntFunction)}</li>
- *     <li>{@linkplain #ofSet(Set, Predicate)}</li>
- *     <li>{@linkplain #ofSet(Class, Predicate)}</li>
- *     <li>{@linkplain #ofMap(Set, Function)}</li>
- *     <li>{@linkplain #ofMap(Class, Function)}</li>
- * </ul>
- * The returned collections above are all eligible for constant folding optimizations.
  * <p>
  * To create collections of <em>wrapped Lazy elements</em>, that, in turn, are also
  * eligible for constant folding optimizations, the following patterns can be used:
@@ -84,7 +77,9 @@ import static jdk.internal.javac.PreviewFeature.*;
  * @since 23
  */
 @PreviewFeature(feature = Feature.LAZY_VALUES_AND_COLLECTIONS)
-public sealed interface Lazy<V> permits LazyImpl, LazyListElement {
+public sealed interface Lazy<V>
+        permits LazyImpl,
+        LazyListElement {
 
     /**
      * {@return the set value (nullable) if set, otherwise throws
@@ -160,7 +155,7 @@ public sealed interface Lazy<V> permits LazyImpl, LazyListElement {
     /**
      * {@return a fresh lazy with an unset value}
      *
-     * @param <V> the value type to bind
+     * @param <V> the value type to set
      */
     static <V> Lazy<V> of() {
         return LazyImpl.of();
@@ -185,166 +180,154 @@ public sealed interface Lazy<V> permits LazyImpl, LazyListElement {
 
     /**
      * {@return an unmodifiable, shallowly immutable, thread-safe, lazy,
-     * {@linkplain List} containing {@code size} elements which are
-     * lazily computed upon being first accessed (e.g. via
-     * {@linkplain List#get(int) List::get}) by invoking the provided {@code mapper}
-     * at most once per element}
+     * {@linkplain List} containing {@code size} {@linkplain Lazy} elements}
      * <p>
-     * The provided {@code mapper} must not return {@code null} values.
+     * Neither the returned list nor its elements are {@linkplain Serializable}.
      * <p>
-     * The returned List is not {@linkplain Serializable}.
+     * The returned list and its elements are eligible for constant folding and other
+     * optimizations by the JVM and is equivalent to:
+     * {@snippet lang = java:
+     * List<Lazy<V>> list = Stream.generate(Lazy::<V>of)
+     *         .limit(size)
+     *         .toList();
+     * }
+     * Except it require less storage, does not return Lazy instances with the same
+     * identity, and is likely to exhibit better performance.
      * <p>
-     * The returned lazy map is eligible for constant folding and other
-     * optimizations by the JVM.
+     * This static factory methods return list instances (and with all their elements)
+     * that are <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>,
+     * immutable and thread-safe. Programmers should not use list and element instances for
+     * synchronization, or unpredictable behavior may occur. For example, in a
+     * future release, synchronization may fail. Consequently,
+     * query methods {@linkplain List#contains(Object)},
+     * {@linkplain List#containsAll(Collection)} (if non-empty),
+     * {@linkplain List#indexOf(Object)}, {@linkplain List#lastIndexOf(Object)}, and
+     * methods that relies on these method or similar methods will always indicate no match.
      *
-     * @param <E>    the {@code List}'s element type
-     * @param size   the number of elements in the list
-     * @param mapper to invoke upon lazily computing element values
+     * @param <V>  the generic type of the Lazy elements in the returned {@code List}
+     * @param size the number of elements in the list
      * @throws IllegalArgumentException if the provided {@code size} is negative
-     * @throws NullPointerException if the provided {@code mapper} is {@code null}
      *
      * @since 23
      */
-    static <E> List<E> ofList(int size, IntFunction<? extends E> mapper) {
+    static <V> List<Lazy<V>> ofList(int size) {
         if (size < 0) {
             throw new IllegalArgumentException();
         }
-        Objects.requireNonNull(mapper);
-        return LazyImpl.ofList(size, mapper);
-    }
-
-    /**
-     * {@return an unmodifiable, shallowly immutable, thread-safe, lazy,
-     * {@linkplain Set } where the computation of each distinct
-     * {@linkplain java.util.Set#contains(Object) contains(candidate)} operation is
-     * deferred to when first being called and can only be made for the distinct provided
-     * set of {@code candidates} and where the elements' existence is lazily computed upon
-     * being first queried by invoking the provided {@code predicate}
-     * at most once per candidate}
-     * <p>
-     * The returned set is not {@linkplain Serializable}.
-     * <p>
-     * The returned set is eligible for constant folding and other
-     * optimizations by the JVM.
-     *
-     * @param candidates the potential elements in the set
-     * @param predicate  to apply when lazily computing containment
-     * @param <E>        the type of elements maintained by this set
-     * @throws NullPointerException if the provided {@code keys} or the provided
-     *         {@code mapper} is null
-     */
-    static <E> Set<E> ofSet(Set<? extends E> candidates,
-                            Predicate<? super E> predicate) {
-        Objects.requireNonNull(candidates);
-        Objects.requireNonNull(predicate);
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@return an unmodifiable, shallowly immutable, thread-safe, lazy,
-     * {@linkplain Set } where the computation of each distinct
-     * {@linkplain java.util.Set#contains(Object) contains(candidate)} operation is
-     * deferred to when first being called and can only be made for the enum elements
-     * of the provided {@code enumType} and where the elements' existence is lazily
-     * computed upon being first queried by invoking the provided {@code predicate}
-     * at most once per candidate}
-     * <p>
-     * The returned set is not {@linkplain Serializable}.
-     * <p>
-     * The returned set is eligible for constant folding and other
-     * optimizations by the JVM.
-     *
-     * @param enumType  the enum type signifying the potential enum elements
-     * @param predicate to apply when lazily computing containment
-     * @param <E>       the type of elements maintained by this set
-     * @throws NullPointerException if the provided {@code enumType} or the provided
-     *         {@code mapper} is null
-     */
-    static <E extends Enum<E>> Set<E> ofSet(Class<E> enumType,
-                                            Predicate<? super E> predicate) {
-        Objects.requireNonNull(enumType);
-        Objects.requireNonNull(predicate);
-        throw new UnsupportedOperationException();
+        return LazyImpl.ofList(size);
     }
 
     /**
      * {@return an unmodifiable, shallowly immutable, thread-safe, value-lazy,
      * {@linkplain Map } where the {@linkplain java.util.Map#keySet() keys}
      * contains precisely the distinct provided set of {@code keys} and where the
-     * values are lazily computed upon being first accessed
-     * (e.g. via {@linkplain Map#get(Object) get(key)}) by invoking the provided
-     * {@code mapper} at most once per key}
+     * Lazy values are, in turn, lazily computed upon being accessed
+     * (e.g. via {@linkplain Map#get(Object) get(key)})}
      * <p>
-     * The provided {@code mapper} must not return {@code null} values.
+     * Neither the returned map nor its values are {@linkplain Serializable}.
      * <p>
-     * The returned map is not {@linkplain Serializable}.
+     * The returned map and its values are eligible for constant folding and other
+     * optimizations by the JVM and is equivalent to:
+     * {@snippet lang = java:
+     * Map<K, Lazy<V>> map = Map.copyOf(keys.stream()
+     *         .distinct()
+     *         .map(Objects::requireNonNull)
+     *         .collect(Collectors.toMap(Function.identity(), _ -> Lazy.of())));
+     * }
+     * Except it require less storage, does not return Lazy instances with the same
+     * identity, and is likely to exhibit better performance.
      * <p>
-     * The returned map is eligible for constant folding and other
-     * optimizations by the JVM.
+     * This static factory methods return map instances (and with all their values)
+     * that are <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>,
+     * immutable and thread-safe. Programmers should not use map and value instances for
+     * synchronization, or unpredictable behavior may occur. For example, in a
+     * future release, synchronization may fail. Consequently,
+     * the query methods {@linkplain Map#containsValue(Object)} and methods that relies
+     * on this and similar method will always indicate no match.
+     * <p>
+     * As an emerging property, providing an {@linkplain EnumSet} as {@code keys} will
+     * make the returned Map eligible for certain additional optimizations.
      *
-     * @param keys   the keys in the map
-     * @param mapper to apply when lazily computing values
-     * @param <K>    the type of keys maintained by the returned map
-     * @param <V>    the type of mapped values
-     * @throws NullPointerException if the provided {@code keys} or the provided
-     *         {@code mapper} is null
+     * @param keys the keys in the map
+     * @param <K>  the type of keys maintained by the returned map
+     * @param <V>  the type of mapped values
+     * @throws NullPointerException if the provided {@code keys} parameter is {@code null}
      */
-    static <K, V> Map<K, V> ofMap(Set<? extends K> keys,
-                                  Function<? super K, ? extends V> mapper) {
+    static <K, V> Map<K, Lazy<V>> ofMap(Set<? extends K> keys) {
         Objects.requireNonNull(keys);
-        Objects.requireNonNull(mapper);
-        throw new UnsupportedOperationException();
+        return LazyImpl.ofMap(keys);
     }
 
     /**
-     * {@return an unmodifiable, shallowly immutable, thread-safe, value-lazy,
-     * {@linkplain Map } where the {@linkplain java.util.Map#keySet() keys}
-     * contains the enum elements of the provided {@code enumType} and where the
-     * values are lazily computed upon being first accessed
-     * (e.g. via {@linkplain Map#get(Object) get(key)}) by invoking the provided
-     * {@code mapper} at most once per key}
+     * If no value {@linkplain #isSet() is set} for the Lazy at the provided
+     * {@code index}, attempts to compute and set it as per
+     * {@linkplain Lazy#computeIfUnset(Supplier)} by applying the given {@code mapper}.
      * <p>
-     * The provided {@code mapper} must not return {@code null} values.
-     * <p>
-     * The returned map is not {@linkplain Serializable}.
-     * <p>
-     * The returned map is eligible for constant folding and other
-     * optimizations by the JVM.
+     * This is equivalent to:
+     * {@snippet lang=java:
+     * Lazy<V> lazy = list.get(index);
+     * if (lazy.isSet()) {
+     *     return lazy.orThrow();
+     * }
+     * Supplier<V> supplier = () -> mapper.apply(index);
+     * return lazy.computeIfUnset(supplier);
+     * }
+     * Except it might be more efficient and performant.
      *
-     * @param enumType the enum type signifying the enum key elements
-     * @param mapper   to apply when lazily computing values
-     * @param <K>      the type of enum keys maintained by the returned map
-     * @param <V>      the type of mapped values
-     * @throws NullPointerException if the provided {@code enumType} or the provided
-     *         {@code mapper} is null
+     * @param list   from which to get a Lazy
+     * @param index  for the Lazy
+     * @param mapper to apply if the Lazy at the provided {@code index} is
+     *               {@linkplain Lazy#isSet() not set}
+     * @return the current (pre-existing or computed) value at the provided {@code index}
+     * @param <V> the Lazy value type to set
+     * @throws IndexOutOfBoundsException if the provided {@code index} is less than
+     *         zero or {@code index >= list.size()}
      */
-    static <K extends Enum<K>, V> Map<K, V> ofMap(Class<K> enumType,
-                                                  Function<? super K, ? extends V> mapper) {
-        Objects.requireNonNull(enumType);
+    static <V> V computeIfUnset(List<Lazy<V>> list,
+                                int index,
+                                IntFunction<? extends V> mapper) {
+        Objects.requireNonNull(list);
+        Objects.checkIndex(index, list.size());
         Objects.requireNonNull(mapper);
-        throw new UnsupportedOperationException();
+        return LazyImpl.computeIfUnset(list, index, mapper);
     }
 
     /**
-     * {@return an unmodifiable, shallowly immutable, thread-safe, lazy,
-     * {@linkplain List} containing {@code size} {@linkplain Lazy} elements}
+     * If no value {@linkplain #isSet() is set} for the Lazy for the provided
+     * {@code key}, attempts to compute and set it as per
+     * {@linkplain Lazy#computeIfUnset(Supplier)} by applying the given {@code mapper}.
      * <p>
-     * The returned List is not {@linkplain Serializable}.
-     * <p>
-     * The returned lazy map is eligible for constant folding and other
-     * optimizations by the JVM.
+     * This is equivalent to:
+     * {@snippet lang=java:
+     * Lazy<V> lazy = map.get(key);
+     * if (lazy == null) {
+     *      throw new NoSuchElementException("Unknown key: "+key);
+     * }
+     * if (lazy.isSet()) {
+     *     return lazy.orThrow();
+     * }
+     * Supplier<V> supplier = () -> mapper.apply(key);
+     * return lazy.computeIfUnset(supplier);
+     * }
+     * Except it might be more efficient and performant.
      *
-     * @param <E>    the {@code List}'s element type
-     * @param size   the number of elements in the list
-     * @throws IllegalArgumentException if the provided {@code size} is negative
-     *
-     * @since 23
+     * @param map    from which to get a Lazy
+     * @param key    for the Lazy
+     * @param mapper to apply if the Lazy at the provided {@code key} is
+     *               {@linkplain Lazy#isSet() not set}
+     * @return the current (pre-existing or computed) value for the provided {@code key}
+     * @param <K> the type of keys maintained by this map
+     * @param <V> the Lazy value type to set
+     * @throws NoSuchElementException if the provided {@code map} does not
+     *         {@linkplain Map#containsKey(Object) contain} the provided {@code key}
      */
-    static <E> List<Lazy<E>> ofWrappedList(int size) {
-        if (size < 0) {
-            throw new IllegalArgumentException();
-        }
-        return LazyList.of(size);
+    static <K, V> V computeIfUnset(Map<K, Lazy<V>> map,
+                                   K key,
+                                   Function<? super K, ? extends V> mapper) {
+        Objects.requireNonNull(map);
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(mapper);
+        return LazyImpl.computeIfUnset(map, key, mapper);
     }
 
 }
