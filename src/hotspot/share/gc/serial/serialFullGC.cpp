@@ -45,6 +45,7 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/modRefBarrierSet.hpp"
+#include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/space.inline.hpp"
