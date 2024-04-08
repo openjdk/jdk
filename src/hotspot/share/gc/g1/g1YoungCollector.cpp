@@ -285,6 +285,7 @@ void G1YoungCollector::calculate_collection_set(G1EvacInfo* evacuation_info, dou
                                               collection_set()->optional_region_length());
 
   concurrent_mark()->verify_no_collection_set_oops();
+  concurrent_mark()->verify_top_at_mark_starts();
 
   if (hr_printer()->is_active()) {
     G1PrintCollectionSetClosure cl(hr_printer());

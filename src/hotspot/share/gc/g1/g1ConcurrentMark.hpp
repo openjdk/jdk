@@ -570,6 +570,10 @@ public:
 
   inline HeapWord* top_at_mark_start(const HeapRegion* r) const;
   inline HeapWord* top_at_mark_start(uint region) const;
+
+  // Does the region's TAMS need to be set to the region's top.
+  bool needs_top_at_mark_start_set(HeapRegion* r) const;
+  
   // Returns whether the given object been allocated since marking start (i.e. >= TAMS in that region).
   inline bool obj_allocated_since_mark_start(oop obj) const;
 
@@ -694,6 +698,8 @@ public:
   // global mark stack) and fingers (global / per-task).
   // If marking is not in progress, it's a no-op.
   void verify_no_collection_set_oops() PRODUCT_RETURN;
+
+  void verify_top_at_mark_starts() PRODUCT_RETURN;
 
   inline bool do_yield_check();
 
