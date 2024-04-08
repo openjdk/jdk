@@ -103,7 +103,7 @@ public class TestMemberInheritance extends JavadocTester {
                 // ensure the method makes it
                 """
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
-                    ab1 method-summary-table-tab4"><code>static java.time.Period</code></div>
+                    ab1 method-summary-table-tab4" role="tablist" tabindex="0"><code>static java.time.Period</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab1 method-summary-table-tab4"><code><a href="#between(java.time.LocalDate,java\
                     .time.LocalDate)" class="member-name-link">between</a><wbr>(java.time.LocalDate&\
@@ -131,12 +131,12 @@ public class TestMemberInheritance extends JavadocTester {
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
                 """
                     <div class="col-first even-row-color method-summary-table method-summary-table-tab2 m\
-                    ethod-summary-table-tab3"><code>protected abstract java.lang.String</code></div>
+                    ethod-summary-table-tab3" role="tablist" tabindex="0"><code>protected abstract java.lang.String</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-tab2 \
                     method-summary-table-tab3"><code><a href="#parentMethod(T)" class="member-name-link">\
                     parentMethod</a><wbr>(java.lang.String&nbsp;t)</code></div>
                     <div class="col-last even-row-color method-summary-table method-summary-table-tab2 me\
-                    thod-summary-table-tab3">
+                    thod-summary-table-tab3" role="tablist" tabindex="0">
                     <div class="block">Returns some value with an inherited search tag.</div>
                     """);
 
@@ -164,10 +164,10 @@ public class TestMemberInheritance extends JavadocTester {
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
                 """
-                    <div class="col-first even-row-color"><code>java.lang.String</code></div>
+                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>java.lang.String</code></div>
                     <div class="col-second even-row-color"><code><a href="#parentField" class="membe\
                     r-name-link">parentField</a></code></div>
-                    <div class="col-last even-row-color">
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">
                     <div class="block">A field.</div>""",
                 """
                     <section class="detail" id="parentField">
@@ -183,7 +183,7 @@ public class TestMemberInheritance extends JavadocTester {
         checkOutput("pkg3/PrivateGenericParent.PublicChild.html", true,
                 """
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4"><code>java.lang.String</code></div>
+                    ab2 method-summary-table-tab4" role="tablist" tabindex="0"><code>java.lang.String</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#method(T)" class="member-name-li\
                     nk">method</a><wbr>(java.lang.String&nbsp;t)</code></div>""",

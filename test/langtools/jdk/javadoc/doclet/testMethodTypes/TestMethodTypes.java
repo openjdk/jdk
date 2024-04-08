@@ -73,7 +73,7 @@ public class TestMethodTypes extends JavadocTester {
                     </div>""",
                 """
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4">""");
+                    ab2 method-summary-table-tab4" role="tablist" tabindex="0">""");
 
         checkOutput("pkg1/B.html", true,
                 """
@@ -126,7 +126,7 @@ public class TestMethodTypes extends JavadocTester {
                     </div>""",
                 """
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4 method-summary-table-tab6">""");
+                    ab2 method-summary-table-tab4 method-summary-table-tab6" role="tablist" tabindex="0">""");
 
         checkOutput("pkg1/A.html", false,
                 "<div class=\"caption\"><span>Methods</span></div>");

@@ -566,16 +566,16 @@ public class TestModulePackages extends JavadocTester {
             String classes, String exportedTo, String openedTo, String desc) {
         StringBuilder sb = new StringBuilder();
         String color = (index % 2 == 1 ? "odd-row-color" : "even-row-color");
-        sb.append("<div class=\"col-first " + color + " " + classes + "\"><a href=\""
+        sb.append("<div class=\"col-first " + color + " " + classes + "\" role=\"tablist\" tabindex=\"0\"><a href=\""
                 + packageName.replace('.', '/') + "/package-summary.html\">"
                 + packageName + "</a></div>\n");
         if (exportedTo != null) {
-            sb.append("<div class=\"col-second " + color + " " + classes + "\">" + exportedTo + "</div>\n");
+            sb.append("<div class=\"col-second " + color + " " + classes + "\" role=\"tablist\" tabindex=\"0\">" + exportedTo + "</div>\n");
         }
         if (openedTo != null) {
-            sb.append("<div class=\"col-second " + color + " " + classes + "\">" + openedTo + "</div>\n");
+            sb.append("<div class=\"col-second " + color + " " + classes + "\" role=\"tablist\" tabindex=\"0\">" + openedTo + "</div>\n");
         }
-        sb.append("<div class=\"col-last " + color + " " + classes + "\">" + desc + "</div>");
+        sb.append("<div class=\"col-last " + color + " " + classes + "\" role=\"tablist\" tabindex=\"0\">" + desc + "</div>");
 
         checkOutput(moduleName + "/module-summary.html", true, sb.toString());
     }

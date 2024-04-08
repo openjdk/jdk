@@ -87,7 +87,7 @@ public class TestJavaFX extends JavadocTester {
                     ="class in pkg1">C.DoubleProperty</a></code></div>
                     <div class="col-second odd-row-color"><code><a href="#rateProperty" class="membe\
                     r-name-link">rate</a></code></div>
-                    <div class="col-last odd-row-color">
+                    <div class="col-last odd-row-color" role="tablist" tabindex="0">
                     <div class="block">Defines the direction/speed at which the <code>Timeline</code> is expected to
                      be played.</div>""",
                 "<dt>Default value:</dt>",
@@ -102,7 +102,7 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <div class="col-second even-row-color"><code><a href="#pausedProperty" class="me\
                     mber-name-link">paused</a></code></div>
-                    <div class="col-last even-row-color">
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">
                     <div class="block">Defines if paused.</div>""",
                 """
                     <section class="detail" id="pausedProperty">
@@ -367,36 +367,36 @@ public class TestJavaFX extends JavadocTester {
                     <div class="table-header col-second">Method</div>
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4"><code>&lt;T&gt;&nbsp;java.lang.Object</code></div>
+                    ab2 method-summary-table-tab4" role="tablist" tabindex="0"><code>&lt;T&gt;&nbsp;java.lang.Object</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#alphaProperty(java.util.List)" c\
                     lass="member-name-link">alphaProperty</a><wbr>(java.util.List&lt;T&gt;&nbsp;foo)\
                     </code></div>
                     <div class="col-last even-row-color method-summary-table method-summary-table-ta\
-                    b2 method-summary-table-tab4">&nbsp;</div>
+                    b2 method-summary-table-tab4" role="tablist" tabindex="0">&nbsp;</div>
                     <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
-                    b2 method-summary-table-tab4"><code>java.lang.Object</code></div>
+                    b2 method-summary-table-tab4" role="tablist" tabindex="0"><code>java.lang.Object</code></div>
                     <div class="col-second odd-row-color method-summary-table method-summary-table-t\
                     ab2 method-summary-table-tab4"><code><a href="#betaProperty()" class="member-nam\
                     e-link">betaProperty</a>()</code></div>
                     <div class="col-last odd-row-color method-summary-table method-summary-table-tab\
-                    2 method-summary-table-tab4">&nbsp;</div>
+                    2 method-summary-table-tab4" role="tablist" tabindex="0">&nbsp;</div>
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4"><code>final java.util.List<wbr>&lt;java.util.Set&\
+                    ab2 method-summary-table-tab4" role="tablist" tabindex="0"><code>final java.util.List<wbr>&lt;java.util.Set&\
                     lt;? super java.lang.Object&gt;&gt;</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#deltaProperty()" class="member-n\
                     ame-link">deltaProperty</a>()</code></div>
                     <div class="col-last even-row-color method-summary-table method-summary-table-ta\
-                    b2 method-summary-table-tab4">&nbsp;</div>
+                    b2 method-summary-table-tab4" role="tablist" tabindex="0">&nbsp;</div>
                     <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
-                    b2 method-summary-table-tab4"><code>final java.util.List<wbr>&lt;java.lang.Strin\
+                    b2 method-summary-table-tab4" role="tablist" tabindex="0"><code>final java.util.List<wbr>&lt;java.lang.Strin\
                     g&gt;</code></div>
                     <div class="col-second odd-row-color method-summary-table method-summary-table-t\
                     ab2 method-summary-table-tab4"><code><a href="#gammaProperty()" class="member-na\
                     me-link">gammaProperty</a>()</code></div>
                     <div class="col-last odd-row-color method-summary-table method-summary-table-tab\
-                    2 method-summary-table-tab4">&nbsp;</div>"""
+                    2 method-summary-table-tab4" role="tablist" tabindex="0">&nbsp;</div>"""
         );
     }
 

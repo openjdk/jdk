@@ -135,12 +135,12 @@ public class TestInterface extends JavadocTester {
 
                 """
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
-                    ab1 method-summary-table-tab4"><code>static void</code></div>
+                    ab1 method-summary-table-tab4" role="tablist" tabindex="0"><code>static void</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab1 method-summary-table-tab4"><code><a href="#m()" class="member-name-link">m<\
                     /a>()</code></div>
                     <div class="col-last even-row-color method-summary-table method-summary-table-ta\
-                    b1 method-summary-table-tab4">
+                    b1 method-summary-table-tab4" role="tablist" tabindex="0">
                     <div class="block">A hider method</div>
                     </div>
                     """,
@@ -228,18 +228,18 @@ public class TestInterface extends JavadocTester {
                 <div class="table-header col-first">Modifier and Type</div>
                 <div class="table-header col-second">Interface</div>
                 <div class="table-header col-last">Description</div>
-                <div class="col-first even-row-color"><code>static interface&nbsp;</code></div>
+                <div class="col-first even-row-color" role="tablist" tabindex="0"><code>static interface&nbsp;</code></div>
                 <div class="col-second even-row-color"><code><a href="Spliterator.OfDouble.html"\
                  class="type-name-link" title="interface in pkg2">Spliterator.OfDouble</a></code\
                 ></div>
-                <div class="col-last even-row-color">&nbsp;</div>
-                <div class="col-first odd-row-color"><code>static interface&nbsp;</code></div>
+                <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                <div class="col-first odd-row-color" role="tablist" tabindex="0"><code>static interface&nbsp;</code></div>
                 <div class="col-second odd-row-color"><code><a href="Spliterator.OfInt.html" cla\
                 ss="type-name-link" title="interface in pkg2">Spliterator.OfInt</a>&lt;<a href="\
                 Spliterator.OfInt.html" title="type parameter in Spliterator.OfInt">Integer</a>&\
                 gt;</code></div>
-                <div class="col-last odd-row-color">&nbsp;</div>
-                <div class="col-first even-row-color"><code>static interface&nbsp;</code></div>
+                <div class="col-last odd-row-color" role="tablist" tabindex="0">&nbsp;</div>
+                <div class="col-first even-row-color" role="tablist" tabindex="0"><code>static interface&nbsp;</code></div>
                 <div class="col-second even-row-color"><code><a href="Spliterator.OfPrimitive.ht\
                 ml" class="type-name-link" title="interface in pkg2">Spliterator.OfPrimitive</a>\
                 &lt;<a href="Spliterator.OfPrimitive.html" title="type parameter in Spliterator.\
@@ -252,7 +252,7 @@ public class TestInterface extends JavadocTester {
                 "type parameter in Spliterator.OfPrimitive">T_CONS</a>,<wbr><a href="Spliterator\
                 .OfPrimitive.html" title="type parameter in Spliterator.OfPrimitive">T_SPLITR</a\
                 >&gt;&gt;</code></div>
-                <div class="col-last even-row-color">&nbsp;</div>
+                <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
                 </div>""");
         checkOutput("allclasses-index.html", true,
                 """
@@ -263,22 +263,22 @@ public class TestInterface extends JavadocTester {
                 <div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a\
                  href="pkg2/Spliterator.html" title="interface in pkg2">Spliterator&lt;T&gt;</a>\
                 </div>
-                <div class="col-last odd-row-color all-classes-table all-classes-table-tab1">&nb\
+                <div class="col-last odd-row-color all-classes-table all-classes-table-tab1" role="tablist" tabindex="0">&nb\
                 sp;</div>
                 <div class="col-first even-row-color all-classes-table all-classes-table-tab1"><\
                 a href="pkg2/Spliterator.OfDouble.html" title="interface in pkg2">Spliterator.Of\
                 Double</a></div>
-                <div class="col-last even-row-color all-classes-table all-classes-table-tab1">&n\
+                <div class="col-last even-row-color all-classes-table all-classes-table-tab1" role="tablist" tabindex="0">&n\
                 bsp;</div>
                 <div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a\
                  href="pkg2/Spliterator.OfInt.html" title="interface in pkg2">Spliterator.OfInt&\
                 lt;Integer&gt;</a></div>
-                <div class="col-last odd-row-color all-classes-table all-classes-table-tab1">&nb\
+                <div class="col-last odd-row-color all-classes-table all-classes-table-tab1" role="tablist" tabindex="0">&nb\
                 sp;</div>
                 <div class="col-first even-row-color all-classes-table all-classes-table-tab1"><\
                 a href="pkg2/Spliterator.OfPrimitive.html" title="interface in pkg2">Spliterator\
                 .OfPrimitive&lt;T,<wbr>T_CONS,<wbr>T_SPLITR&gt;</a></div>
-                <div class="col-last even-row-color all-classes-table all-classes-table-tab1">&n\
+                <div class="col-last even-row-color all-classes-table all-classes-table-tab1" role="tablist" tabindex="0">&n\
                 bsp;</div>""");
         checkOutput("index-all.html", true,
                 """

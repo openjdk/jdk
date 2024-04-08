@@ -1353,7 +1353,7 @@ public class TestModules extends JavadocTester {
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color package-summary-table package-summary-table-tab1">\
                     <a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
-                    <div class="col-last even-row-color package-summary-table package-summary-table-tab1">&nbsp;</div>
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab1" role="tablist" tabindex="0">&nbsp;</div>
                     </div>
                     </div>
                     """);

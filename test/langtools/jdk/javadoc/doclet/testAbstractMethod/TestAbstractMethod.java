@@ -94,7 +94,7 @@ public class TestAbstractMethod extends JavadocTester {
                     </div>""",
                 """
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab3"><code>abstract void</code></div>""");
+                    ab2 method-summary-table-tab3" role="tablist" tabindex="0"><code>abstract void</code></div>""");
 
         checkOutput("pkg/C.html", true,
                 """
@@ -116,14 +116,14 @@ public class TestAbstractMethod extends JavadocTester {
         checkOutput("pkg/A.html", false,
                 """
                     <div class="col-first even-row-color method-summary-table-tab2 method-summary-ta\
-                    ble method-summary-table-tab3"><code>abstract void</code></div>""");
+                    ble method-summary-table-tab3" role="tablist" tabindex="0"><code>abstract void</code></div>""");
 
         checkOutput("pkg/B.html", false,
                 """
                     Default Methods""",
                 """
                     <div class="col-first even-row-color method-summary-table-tab2 method-summary-ta\
-                    ble-tab5 method-summary-table"><code>default void</code></div>""");
+                    ble-tab5 method-summary-table" role="tablist" tabindex="0"><code>default void</code></div>""");
 
         checkOutput("pkg/C.html", false,
                 """
