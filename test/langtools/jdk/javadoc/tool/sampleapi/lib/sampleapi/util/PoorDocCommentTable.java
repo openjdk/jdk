@@ -25,6 +25,8 @@ package sampleapi.util;
 
 import java.util.HashMap;
 
+import javax.lang.model.util.Elements.CommentKind;
+
 import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.tree.DCTree.DCDocComment;
 import com.sun.tools.javac.tree.DocCommentTable;
@@ -50,6 +52,15 @@ public class PoorDocCommentTable implements DocCommentTable {
 
     public Comment getComment(JCTree tree) {
         return table.get(tree);
+    }
+
+    public CommentKind getCommentKind(JCTree tree) {
+        Comment c = getComment(tree);
+        return c == null ? null : switch (c.getStyle()) {
+            case JAVADOC_BLOCK -> CommentKind.TRADITIONAL;
+            case JAVADOC_LINE -> CommentKind.END_OF_LINE;
+            default -> throw new IllegalStateException(c.getStyle().toString());
+        };
     }
 
     public String getCommentText(JCTree tree) {

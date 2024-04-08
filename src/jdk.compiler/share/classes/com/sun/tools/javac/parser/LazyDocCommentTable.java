@@ -28,6 +28,8 @@ package com.sun.tools.javac.parser;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.lang.model.util.Elements.CommentKind;
+
 import com.sun.source.doctree.DocCommentTree;
 
 import com.sun.tools.javac.parser.Tokens.Comment;
@@ -71,6 +73,16 @@ public class LazyDocCommentTable implements DocCommentTable {
     public Comment getComment(JCTree tree) {
         Entry e = table.get(tree);
         return (e == null) ? null : e.comment;
+    }
+
+    @Override
+    public CommentKind getCommentKind(JCTree tree) {
+        Comment c = getComment(tree);
+        return (c == null) ? null : switch (c.getStyle()) {
+            case JAVADOC_BLOCK -> CommentKind.TRADITIONAL;
+            case JAVADOC_LINE -> CommentKind.END_OF_LINE;
+            default -> throw new IllegalStateException(c.getStyle().toString());
+        };
     }
 
     @Override

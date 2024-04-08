@@ -26,21 +26,24 @@
  * @bug 8307184
  * @summary Test basic operation of Elements.getDocComments
  * @library /tools/lib /tools/javac/lib
- * @build   toolbox.ToolBox JavacTestingAbstractProcessor TestGetDocComments
- * @compile -processor TestGetDocComments -proc:only TestGetDocComments.java
+ * @build   toolbox.ToolBox JavacTestingAbstractProcessor TestGetDocCommentsLine
+ * @compile -processor TestGetDocCommentsLine -proc:only TestGetDocCommentsLine.java
  */
 
-import java.util.*;
-import javax.annotation.processing.*;
-import javax.lang.model.element.*;
+import java.util.Set;
+
+import javax.annotation.processing.RoundEnvironment;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements.CommentKind;
-import javax.lang.model.util.*;
+
 import toolbox.ToolBox;
 
 /**
- * Test basic workings of Elements.getDocComments for block comments
+ * Test basic workings of Elements.getDocComments for line comments
  */
-public class TestGetDocComments extends JavacTestingAbstractProcessor {
+public class TestGetDocCommentsLine extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
         if (!roundEnv.processingOver()) {
@@ -56,11 +59,13 @@ public class TestGetDocComments extends JavacTestingAbstractProcessor {
 
                         if (!expectedCommentStr.equals(actualComment)) {
                             messager.printError("Unexpected doc comment found", element);
+                            System.err.println("expect>>" + expectedCommentStr + "<<");
+                            System.err.println("actual>>" + actualComment + "<<");
                             (new ToolBox()).checkEqual(expectedCommentStr.lines().toList(),
                                                        actualComment.lines().toList());
                         }
 
-                        CommentKind expectedCommentKind = CommentKind.TRADITIONAL;
+                        CommentKind expectedCommentKind = CommentKind.END_OF_LINE;
                         CommentKind actualCommentKind = elements.getDocCommentKind(element);
                         if (expectedCommentKind != actualCommentKind) {
                             messager.printError("Unexpected doc comment kind found: " + actualCommentKind, element);
@@ -81,16 +86,14 @@ public class TestGetDocComments extends JavacTestingAbstractProcessor {
     }
 
     // Basic processing of interior lines
-    /**
-     *Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-     *eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-     *enim ad minim veniam, quis nostrud exercitation ullamco laboris
-     *nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
-     *in reprehenderit in voluptate velit esse cillum dolore eu
-     *fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
-     *proident, sunt in culpa qui officia deserunt mollit anim id est
-     *laborum.
-     */
+    ///Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+    ///eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+    ///enim ad minim veniam, quis nostrud exercitation ullamco laboris
+    ///nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+    ///in reprehenderit in voluptate velit esse cillum dolore eu
+    ///fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
+    ///proident, sunt in culpa qui officia deserunt mollit anim id est
+    ///laborum.
     @ExpectedComment("""
      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
      eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
@@ -99,36 +102,33 @@ public class TestGetDocComments extends JavacTestingAbstractProcessor {
      in reprehenderit in voluptate velit esse cillum dolore eu
      fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
      proident, sunt in culpa qui officia deserunt mollit anim id est
-     laborum.
-      """)
+     laborum.""")
     // End-of-line-style comment
     @SuppressWarnings("") // A second preceding annotation
     /* Traditional comment */
     private void foo() {return ;}
 
 
-    // Check removal of various *'s and space characters;
+    // Check removal of space characters;
+    // excess / characters are not removed
     // use Unicode escape to test tab removal
-    /**
-*Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-**eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-***enim ad minim veniam, quis nostrud exercitation ullamco laboris
-*****nisi ut aliquip ex ea commodo consequat.
- \u0009*Duis aute irure dolor in reprehenderit in voluptate velit esse
- **cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-  ***cupidatat non proident, sunt in culpa qui officia deserunt mollit
-                                            *anim id est laborum.
-     */
+///Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+////eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+/////enim ad minim veniam, quis nostrud exercitation ullamco laboris
+//////nisi ut aliquip ex ea commodo consequat.
+ \u0009///Duis aute irure dolor in reprehenderit in voluptate velit esse
+ ////cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
+  /////cupidatat non proident, sunt in culpa qui officia deserunt mollit
+                                            ///anim id est laborum.
     @ExpectedComment("""
        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-       eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-       enim ad minim veniam, quis nostrud exercitation ullamco laboris
-       nisi ut aliquip ex ea commodo consequat.
+       /eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+       //enim ad minim veniam, quis nostrud exercitation ullamco laboris
+       ///nisi ut aliquip ex ea commodo consequat.
        Duis aute irure dolor in reprehenderit in voluptate velit esse
-       cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-       cupidatat non proident, sunt in culpa qui officia deserunt mollit
-       anim id est laborum.
-       """)
+       /cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
+       //cupidatat non proident, sunt in culpa qui officia deserunt mollit
+       anim id est laborum.""")
     @SuppressWarnings("") // A second preceding annotation
     // End-of-line-style comment
     /*
@@ -136,61 +136,45 @@ public class TestGetDocComments extends JavacTestingAbstractProcessor {
      */
     private void bar() {return ;}
 
-    // Spaces _after_ the space-asterisk prefix are _not_ deleted.
-    /**
-     * Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-     * eiusmod tempor incididunt ut labore et dolore magna aliqua.
-     */
-    @ExpectedComment( // Cannot used a text block here since leading spaces are removed
-     " Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do\n" +
-     " eiusmod tempor incididunt ut labore et dolore magna aliqua.\n")
+    // Incidental whitespace _after_ the /// prefix is deleted;
+    // additional indentation is _not_ deleted
+    ///  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+    ///  eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+    ///   enim ad minim veniam, quis nostrud exercitation ullamco laboris
+    ///    nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+    ///     in reprehenderit in voluptate velit esse cillum dolore eu
+    ///  fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
+    ///  proident, sunt in culpa qui officia deserunt mollit anim id est
+    ///  laborum.
+    @ExpectedComment("""
+     Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+     eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+      enim ad minim veniam, quis nostrud exercitation ullamco laboris
+       nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+        in reprehenderit in voluptate velit esse cillum dolore eu
+     fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
+     proident, sunt in culpa qui officia deserunt mollit anim id est
+     laborum.""")
     private void baz() {return ;}
 
-    // Space after ** is removed, but not space before "*/"
-    /**   Totality */
-    @ExpectedComment("Totality ") // No newline
+    // Incidental space after /// is removed, but not space at the end of the line
+    ///   Totality\u0020
+    @ExpectedComment("Totality ")
     private void quux() {return ;}
 
-    // Space after "**" is removed, but not trailing space later on the line
-    /** Totality\u0020
-     */
-    @ExpectedComment("Totality \n")
-    private void corge() {return ;}
-
-    /**
-     * Totality */
-    @ExpectedComment(" Totality ") // No newline
-    private void grault() {return ;}
-
-    // Trailing space characters on first line
-    /** \u0009\u0020
-     * Totality
-     */
-    @ExpectedComment(" Totality\n")
-    private void wombat() {return ;}
-
-    /**
-     */
-    @ExpectedComment("") // No newline
+    ///
+    @ExpectedComment("")
     private void empty() {return ;}
 
-    /**
-     * tail */
-    @ExpectedComment(" tail ") // No newline
+    /// tail\u0020
+    @ExpectedComment("tail ")
     private void tail() {return ;}
-
-    /**
-   ****/
-    @ExpectedComment("") // No newline
-    private void tail2() {return ;}
 
     // Testing of line terminators, javac implementation normalizes them:
     // * newline: \u000A
     // * carriage return: \u000D
     // * * carriage return + newline: \u000D\u000A
-    /**
-     * Lorem\u000A\u000D\u000D\u000Aipsum
-     */
-    @ExpectedComment(" Lorem\n\n\nipsum\n")
+    /// Lorem\u000A/// \u000D/// \u000D\u000A/// ipsum
+    @ExpectedComment("Lorem\n\n\nipsum")
     private void wombat2() {return ;}
 }

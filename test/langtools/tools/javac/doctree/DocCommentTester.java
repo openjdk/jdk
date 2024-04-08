@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.lang.model.element.Name;
+import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
@@ -990,8 +991,8 @@ public class DocCommentTester {
             }
             boolean normalizeTags = !annos.contains("@NormalizeTags(false)");
 
-            DocTrees.CommentKind ck = trees.getDocCommentKind(path);
-            boolean isLineComment = ck == DocTrees.CommentKind.LINE;
+            Elements.CommentKind ck = trees.getDocCommentKind(path);
+            boolean isLineComment = ck == Elements.CommentKind.END_OF_LINE;
             String raw = trees.getDocComment(path).stripTrailing();
             String normRaw = normalize(raw, isLineComment, normalizeTags);
 

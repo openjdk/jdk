@@ -49,6 +49,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements.CommentKind;
 import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.ForwardingFileObject;
@@ -730,8 +731,8 @@ public class JavacTrees extends DocTrees {
                 && cu.docComments != null) {
             Comment c = cu.docComments.getComment(l);
             return (c == null) ? null : switch (c.getStyle()) {
-                case JAVADOC_BLOCK -> DocTrees.CommentKind.BLOCK;
-                case JAVADOC_LINE -> DocTrees.CommentKind.LINE;
+                case JAVADOC_BLOCK -> CommentKind.TRADITIONAL;
+                case JAVADOC_LINE -> CommentKind.END_OF_LINE;
                 default -> null;
             };
         }
@@ -1366,6 +1367,11 @@ public class JavacTrees extends DocTrees {
 
             @Override
             public Comment getComment(JCTree tree) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public CommentKind getCommentKind(JCTree tree) {
                 throw new UnsupportedOperationException();
             }
 

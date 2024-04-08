@@ -33,16 +33,14 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements.CommentKind;
 import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.JavaCompiler.CompilationTask;
 
-import com.sun.source.doctree.BlockTagTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.EntityTree;
-import com.sun.source.doctree.InlineTagTree;
-import com.sun.source.doctree.LinkTree;
 import com.sun.source.tree.CompilationUnitTree;
 
 /**
@@ -87,18 +85,6 @@ public abstract class DocTrees extends Trees {
      * @since 9
      */
     public abstract BreakIterator getBreakIterator();
-
-    /**
-     * The style of a documentation comment.
-     *
-     * @since 23
-     */
-    public enum CommentKind {
-        /** The style of comments whose lines are prefixed by {@code ///}. */
-        LINE,
-        /** The style of comments that begin with {@code /**}. */
-        BLOCK
-    }
 
     /**
      * {@return the style of the documentation comment associated with a tree node}

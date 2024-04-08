@@ -25,6 +25,8 @@
 
 package com.sun.tools.javac.tree;
 
+import javax.lang.model.util.Elements.CommentKind;
+
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.ErroneousTree;
 
@@ -48,6 +50,11 @@ public interface DocCommentTable {
      * Get the Comment token containing the doc comment, if any, for a tree node.
      */
     Comment getComment(JCTree tree);
+
+    /**
+     * Get the plain text of the doc comment, if any, for a tree node.
+     */
+    CommentKind getCommentKind(JCTree tree);
 
     /**
      * Get the plain text of the doc comment, if any, for a tree node.
