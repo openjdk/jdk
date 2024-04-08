@@ -40,7 +40,7 @@ import com.sun.net.httpserver.*;
 
 public class B6431193 {
 
-    static boolean handlerIsDaemon = false;
+    static boolean handlerIsDaemon = true;
 
     public static void main(String[] args) throws IOException {
         class MyHandler implements HttpHandler {
@@ -52,7 +52,7 @@ public class B6431193 {
                     String response = "This is the response";
                     t.sendResponseHeaders(200, response.length());
                     os.write(response.getBytes());
-                    os.close();
+                } finally {
                     handlerIsDaemon = Thread.currentThread().isDaemon();
                 }
             }
@@ -60,11 +60,11 @@ public class B6431193 {
 
         InetAddress loopback = InetAddress.getLoopbackAddress();
         HttpServer server = HttpServer.create(new InetSocketAddress(loopback, 0), 10);
+        server.createContext("/apps", new MyHandler());
+        server.setExecutor(null);
+        server.start();
+
         try {
-            server.createContext("/apps", new MyHandler());
-            server.setExecutor(null);
-            // creates a default executor
-            server.start();
             int port = server.getAddress().getPort();
             URL url = URIBuilder.newBuilder()
                     .scheme("http")
@@ -72,9 +72,9 @@ public class B6431193 {
                     .port(port)
                     .path("/apps/foo")
                     .toURL();
-            InputStream is = url.openConnection(Proxy.NO_PROXY).getInputStream();
-            is.readAllBytes();
-            is.close();
+            try (InputStream is = url.openConnection(Proxy.NO_PROXY).getInputStream()) {
+                is.readAllBytes();
+            }
             if (handlerIsDaemon) {
                 throw new RuntimeException("request was handled by a daemon thread");
             }
