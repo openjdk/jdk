@@ -1657,14 +1657,14 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
   if (CheckJNICalls) {
     // Check if this is a virtual thread continuation
     Label L_skip_vthread_code;
-    __ ldw(R0, in_bytes(ContinuationEntry::flags_offset()), R1_SP);
+    __ lwz(R0, in_bytes(ContinuationEntry::flags_offset()), R1_SP);
     __ cmpwi(CCR0, R0, 0);
-    __ be(CCR0, L_skip_vthread_code);
+    __ beq(CCR0, L_skip_vthread_code);
 
     Label L_no_warn;
-    __ ldw(R0, in_bytes(JavaThread::jni_monitor_count_offset()), R16_thread);
+    __ lwz(R0, in_bytes(JavaThread::jni_monitor_count_offset()), R16_thread);
     __ cmpwi(CCR0, R0, 0);
-    __ be(CCR0, L_no_warn);
+    __ beq(CCR0, L_no_warn);
     // If the held monitor count is > 0 and this vthread is terminating then
     // it failed to release a JNI monitor. So we issue the same log message
     // that JavaThread::exit does.
@@ -1680,7 +1680,7 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
     // on termination. The held count is implicitly zeroed below when we restore from
     // the parent held count (which has to be zero).
     __ li(tmp1, 0);
-    __ std(tmp1, JavaThread::jni_monitor_count_offset(), R16_thread);
+    __ std(tmp1, in_bytes(JavaThread::jni_monitor_count_offset()), R16_thread);
 
     __ bind(L_skip_vthread_code);
   }
@@ -1690,12 +1690,12 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
     Label L_skip_vthread_code;
     __ ldw(R0, in_bytes(ContinuationEntry::flags_offset()), R1_SP);
     __ cmpwi(CCR0, R0, 0);
-    __ be(CCR0, L_skip_vthread_code);
+    __ beq(CCR0, L_skip_vthread_code);
 
     // See comment just above. If not checking JNI calls the JNI count is only
     // needed for assertion checking.
     __ li(tmp1, 0);
-    __ std(tmp1, JavaThread::jni_monitor_count_offset(), R16_thread);
+    __ std(tmp1, in_bytes(JavaThread::jni_monitor_count_offset()), R16_thread);
 
     __ bind(L_skip_vthread_code);
   }
