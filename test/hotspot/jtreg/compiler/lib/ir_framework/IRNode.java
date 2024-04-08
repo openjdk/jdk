@@ -755,6 +755,11 @@ public class IRNode {
         beforeMatchingNameRegex(LOAD_VECTOR_GATHER, "LoadVectorGather");
     }
 
+    public static final String LOAD_VECTOR_MASKED = PREFIX + "LOAD_VECTOR_MASKED" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(LOAD_VECTOR_MASKED, "LoadVectorMasked");
+    }
+
     public static final String LOAD_VECTOR_GATHER_MASKED = PREFIX + "LOAD_VECTOR_GATHER_MASKED" + POSTFIX;
     static {
         beforeMatchingNameRegex(LOAD_VECTOR_GATHER_MASKED, "LoadVectorGatherMasked");
