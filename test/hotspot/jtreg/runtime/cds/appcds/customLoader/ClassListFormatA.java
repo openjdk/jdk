@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+import java.io.File;
+import java.io.FileWriter;
+import jdk.test.lib.cds.CDSOptions;
+import jdk.test.lib.cds.CDSTestUtils;
 
 /*
  * @test
@@ -104,29 +109,25 @@ public class ClassListFormatA extends ClassListFormatBase {
                 "CustomLoadee2 id: 5 super: 1 interfaces: 3 4 source: " + customJarPath      // preceding spaces
             ));
 
-        int _max_allowed_line = 4096; // Must match ClassListParser::_max_allowed_line in C code.
-        int _line_buf_extra = 10;     // Must match ClassListParser::_line_buf_extra in C code.
-        StringBuffer sbuf = new StringBuffer();
-        for (int i=0; i<_max_allowed_line+1; i++) {
-          sbuf.append("x");
+        // The C++ class LineReader should be able to:
+        // [1] read a very long line (65000 chars)
+        // [2] read the last line from a file that doesn't end with a newline character.
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 6500; i++) {
+          sb.append("X123456789");
+        }
+        String longName = sb.toString(); // 65000 chars long
+        System.out.println("TESTCASE A7: Long line; Last line in file is not newline.");
+        String classList = "NoEndingNewLine.classlist";
+        try (FileWriter fw = new FileWriter(classList)) {
+            fw.write(longName + "\n");
+            fw.write("No/Such/ClassABCD");
         }
 
-        dumpShouldFail(
-            "TESTCASE A7: bad input - line too long",
-            appJar, classlist(
-                sbuf.toString()
-            ),
-            "input line too long (must be no longer than " + _max_allowed_line + " chars");
-
-        for (int i=0; i<_line_buf_extra + 1000; i++) {
-          sbuf.append("X");
-        }
-
-        dumpShouldFail(
-            "TESTCASE A8: bad input - line too long: try to overflow C buffer",
-            appJar, classlist(
-                sbuf.toString()
-            ),
-            "input line too long (must be no longer than " + _max_allowed_line + " chars");
+        CDSOptions opts = (new CDSOptions())
+            .addPrefix("-XX:ExtraSharedClassListFile=" + classList, "-Xlog:cds");
+        CDSTestUtils.createArchiveAndCheck(opts)
+            .shouldContain("Preload Warning: Cannot find " + longName)
+            .shouldContain("Preload Warning: Cannot find No/Such/ClassABCD");
     }
 }

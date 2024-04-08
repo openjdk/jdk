@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,8 @@
 volatile Thread* ClassListParser::_parsing_thread = nullptr;
 ClassListParser* ClassListParser::_instance = nullptr;
 
-ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) : _id2klass_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE) {
+ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) :
+    _id2klass_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE), _line_reader() {
   log_info(cds)("Parsing %s%s", file,
                 (parse_mode == _parse_lambda_forms_invokers_only) ? " (lambda form invokers only)" : "");
   _classlist_file = file;
@@ -72,8 +73,9 @@ ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) : _id2k
     os::lasterror(errmsg, JVM_MAXPATHLEN);
     vm_exit_during_initialization("Loading classlist failed", errmsg);
   }
+  _line_reader.init(_file);
   _line_no = 0;
-  _token = _line;
+  _token = _line = nullptr;
   _interfaces = new (mtClass) GrowableArray<int>(10, mtClass);
   _indy_items = new (mtClass) GrowableArray<const char*>(9, mtClass);
   _parse_mode = parse_mode;
@@ -166,14 +168,16 @@ int ClassListParser::parse(TRAPS) {
 
 bool ClassListParser::parse_one_line() {
   for (;;) {
-    if (fgets(_line, sizeof(_line), _file) == nullptr) {
+    _line = _line_reader.read_line();
+    if (_line == nullptr) {
+      if (_line_reader.is_oom()) {
+        // Don't try to print the input line that we already know is too long.
+        _line_len = 0;
+        error("Input line too long"); // will exit JVM
+      }
       return false;
     }
     ++ _line_no;
-    _line_len = (int)strlen(_line);
-    if (_line_len > _max_allowed_line_len) {
-      error("input line too long (must be no longer than %d chars)", _max_allowed_line_len);
-    }
     if (*_line == '#') { // comment
       continue;
     }
