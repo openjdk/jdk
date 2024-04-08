@@ -71,6 +71,7 @@ class DefNewGeneration: public Generation {
   void   init_assuming_no_promotion_failure();
   // True iff a promotion has failed in the current collection.
   bool   _promotion_failed;
+  bool promotion_failed() { return _promotion_failed; }
   PromotionFailedInfo _promotion_failed_info;
 
   // Handling promotion failure.  A young generation collection
@@ -160,8 +161,6 @@ class DefNewGeneration: public Generation {
                    size_t min_byte_size,
                    size_t max_byte_size,
                    const char* policy="Serial young collection pauses");
-
-  bool promotion_failed() { return _promotion_failed; }
 
   // allocate and initialize ("weak") refs processing support
   void ref_processor_init();
