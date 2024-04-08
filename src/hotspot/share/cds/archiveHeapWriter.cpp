@@ -79,7 +79,7 @@ void ArchiveHeapWriter::init() {
   if (HeapShared::can_write()) {
     Universe::heap()->collect(GCCause::_java_lang_system_gc);
 
-    _buffer_offset_to_source_obj_table = new BufferOffsetToSourceObjectTable(36137, 1 * M);
+    _buffer_offset_to_source_obj_table = new BufferOffsetToSourceObjectTable(/*size*/36137, /*max size*/1 * M);
     _fillers = new FillersTable();
     _requested_bottom = nullptr;
     _requested_top = nullptr;
@@ -230,7 +230,7 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
 
 static int oop_sorting_rank(oop o) {
   bool has_oop_ptr, has_native_ptr;
-    HeapShared::get_pointer_info(o, has_oop_ptr, has_native_ptr);
+  HeapShared::get_pointer_info(o, has_oop_ptr, has_native_ptr);
 
   if (!has_oop_ptr) {
     if (!has_native_ptr) {
@@ -290,7 +290,7 @@ void ArchiveHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtCla
     size_t buffer_offset = copy_one_source_obj_to_buffer(src_obj);
     info->set_buffer_offset(buffer_offset);
 
-    _buffer_offset_to_source_obj_table->put(buffer_offset, src_obj);
+    _buffer_offset_to_source_obj_table->put_when_absent(buffer_offset, src_obj);
     _buffer_offset_to_source_obj_table->maybe_grow();
   }
 

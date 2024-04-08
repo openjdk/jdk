@@ -150,7 +150,7 @@ private:
   // ...
   struct HeapObjOrder {
     int _index;    // The location of this object in _source_objs
-    int _rank;     // A lower rank means the object will be writte at a lower location.
+    int _rank;     // A lower rank means the object will be written at a lower location.
   };
   static GrowableArrayCHeap<HeapObjOrder, mtClassShared>* _source_objs_order;
 

@@ -285,7 +285,7 @@ bool HeapShared::archive_object(oop obj) {
     // making the archive reproducible.
     obj->identity_hash();
     CachedOopInfo info = make_cached_oop_info(obj);
-    archived_object_cache()->put(obj, info);
+    archived_object_cache()->put_when_absent(obj, info);
     archived_object_cache()->maybe_grow();
     mark_native_pointers(obj);
 
@@ -1409,7 +1409,7 @@ bool HeapShared::has_been_seen_during_subgraph_recording(oop obj) {
 
 void HeapShared::set_has_been_seen_during_subgraph_recording(oop obj) {
   assert(!has_been_seen_during_subgraph_recording(obj), "sanity");
-  _seen_objects_table->put(obj, true);
+  _seen_objects_table->put_when_absent(obj, true);
   _seen_objects_table->maybe_grow();
   ++ _num_new_walked_objs;
 }
