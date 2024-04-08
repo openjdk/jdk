@@ -124,7 +124,7 @@ public class VectorGatherMaskFoldingTest {
         floatVectorMask2 = VectorMask.fromArray(F_SPECIES, floatMask2, 0);
     }
 
-    
+
     // LongVector tests
 
     @Test
