@@ -354,10 +354,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         return true;
     }
 
-    private String getDocumentPath() {
-        return documentPath.toAbsolutePath().toString();
-    }
-
     private void setDocumentPath(String path) {
         if (path != null) {
             documentPath = Paths.get(path);
@@ -408,15 +404,17 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     }
 
     public void save() {
-        String filePath = getDocumentPath();
-        boolean exists = Files.exists(Paths.get(filePath));
-        if (exists) {
-            if (overwriteDialog(documentPath.getFileName().toString())) {
-                try {
-                    saveGraphDocument(getDocument(), filePath, true);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+        if (documentPath == null) {
+            saveAs();
+            return;
+        }
+
+        String filePath = documentPath.toAbsolutePath().toString();
+        if (Files.exists(Paths.get(filePath)) && overwriteDialog(documentPath.getFileName().toString())) {
+            try {
+                saveGraphDocument(getDocument(), filePath, true);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         } else {
             saveAs();
