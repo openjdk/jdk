@@ -33,7 +33,7 @@ class ClassLoaderHelper {
 
     private ClassLoaderHelper() {}
 
-    /**
+   /**
     * Shared objects may be loaded from .a archive object on AIX and .so may not exist.
     * This method returns false so that loading of shared library continues if
     * libname.so is not present.
@@ -41,7 +41,8 @@ class ClassLoaderHelper {
     static boolean loadLibraryOnlyIfPresent() {
         return false;
     }
-    /**
+
+   /**
     * AIX implementation of JVM_LoadLibrary handles the alternate path name mapping.
     * If loading of the given library name with ".so" suffix fails, it will attempt
     * to load the library of the same name with ".a" suffix as the alternate name.
@@ -52,7 +53,7 @@ class ClassLoaderHelper {
         return null;
     }
 
-    /**
+   /**
     * Parse a PATH env variable.
     *
     * Empty elements will be replaced by dot.

@@ -25,18 +25,17 @@
  * @test
  * @bug 8319516
  * @requires os.family == "aix"
- * @run  main/othervm -Djava.library.path=/usr/lib LoadAIXLibraryFromArchiveObject
+ * @run  main/othervm -Djava.library.path=/test/lib LoadAIXLibraryFromArchiveObject
  */
 
 import java.io.*;
 public class LoadAIXLibraryFromArchiveObject {
     public static void main(String[] args) throws Exception {
-        String libraryName = "perfstat";
-        File perfstatArchivePath = new File("/usr/lib/libperfstat.a");
-        File perfstatSharedObjectPath = new File("/usr/lib/libperfstat.so");
-        // If .a file is not present and .so file is present.
-        if (!perfstatArchivePath.exists() || perfstatSharedObjectPath.exists())
-           throw new RuntimeException("LoadAIXLibraryFromArchiveObject : .so should be non existent.");
+        String libraryName = "awt";
+        File awtSharedObjectPath = new File("/test/lib/libawt.so");
+        
+        File awtArchivePath = new File("/test/lib/libawt.a");
+        awtSharedObjectPath.renameTo(awtArchivePath);
         System.loadLibrary(libraryName);
     }
 }
