@@ -27,7 +27,7 @@
  * @summary ...
  * @library /test/lib /
  * @requires vm.compiler2.enabled
- * @run driver compiler.intrinsics.math.TestFpMinMaxOpt
+ * @run driver compiler.intrinsics.math.TestMinMaxOpt
  */
 
 package compiler.intrinsics.math;
@@ -39,9 +39,37 @@ import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
 
-public class TestFpMinMaxOpt {
+public class TestMinMaxOpt {
     public static void main(String[] args) {
         TestFramework.run();
+    }
+
+    @Test
+    @Arguments(values = {Argument.NUMBER_42})
+    @IR(counts = {IRNode.MIN_I, "0"})
+    private static int testIntMin(int v) {
+        return Math.min(v, v);
+    }
+
+    @Test
+    @Arguments(values = {Argument.NUMBER_42})
+    @IR(counts = {IRNode.MAX_I, "0"})
+    private static int testIntMax(int v) {
+        return Math.max(v, v);
+    }
+
+    @Test
+    @Arguments(values = {Argument.NUMBER_42})
+    @IR(counts = {IRNode.MIN_L, "0"})
+    private static long testLongMin(long v) {
+        return Math.min(v, v);
+    }
+
+    @Test
+    @Arguments(values = {Argument.NUMBER_42})
+    @IR(counts = {IRNode.MAX_L, "0"})
+    private static long testLongMax(long v) {
+        return Math.max(v, v);
     }
 
     @Test
