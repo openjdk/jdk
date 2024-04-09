@@ -161,6 +161,8 @@ public interface X509Extension {
      * <th scope="col">Extension Name</th></tr>
      * </thead>
      * <tbody style="text-align:left">
+     * <tr><th scope="row">1.3.6.1.5.5.7.1.1</th>
+     * <td>AuthorityInformationAccess</td></tr>
      * <tr><th scope="row">2.5.29.14</th>
      * <td>SubjectKeyIdentifier</td></tr>
      * <tr><th scope="row">2.5.29.15</th>
