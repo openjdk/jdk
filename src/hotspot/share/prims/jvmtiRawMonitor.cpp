@@ -251,7 +251,7 @@ int JvmtiRawMonitor::simple_wait(Thread* self, jlong millis) {
     {
       // This transition must be after we exited the monitor.
       ThreadInVMfromNative tivmfn(jt);
-      if (jt->is_interrupted(true)) {
+      if (jt->get_and_clear_interrupted()) {
         ret = M_INTERRUPTED;
       } else {
         ThreadBlockInVM tbivm(jt);
@@ -262,7 +262,7 @@ int JvmtiRawMonitor::simple_wait(Thread* self, jlong millis) {
         }
         // Return to VM before post-check of interrupt state
       }
-      if (jt->is_interrupted(true)) {
+      if (jt->get_and_clear_interrupted()) {
         ret = M_INTERRUPTED;
       }
     }
@@ -401,7 +401,7 @@ int JvmtiRawMonitor::raw_wait(jlong millis, Thread* self) {
         break;
       }
     }
-    if (jt->is_interrupted(true)) {
+    if (jt->get_and_clear_interrupted()) {
       ret = M_INTERRUPTED;
     }
   } else { // Non-JavaThread re-enter

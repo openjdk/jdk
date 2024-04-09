@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ ifeq ($(call check-jvm-feature, compiler2), true)
       ADLC_CFLAGS := -qnortti -qeh -q64 -DAIX
     endif
   else ifeq ($(call isBuildOs, windows), true)
-    ADLC_LDFLAGS += -nologo
     ADLC_CFLAGS := -nologo -EHsc
     ADLC_CFLAGS_WARNINGS := -W3 -D_CRT_SECURE_NO_WARNINGS
   endif
@@ -69,15 +68,22 @@ ifeq ($(call check-jvm-feature, compiler2), true)
     ADLC_LDFLAGS += $(UBSAN_LDFLAGS)
   endif
 
-  $(eval $(call SetupNativeCompilation, BUILD_ADLC, \
+  ##############################################################################
+  ## Build adlc
+  ##############################################################################
+
+  $(eval $(call SetupJdkExecutable, BUILD_ADLC, \
       NAME := adlc, \
-      TYPE := EXECUTABLE, \
-      TOOLCHAIN := TOOLCHAIN_BUILD_LINK_CXX, \
+      TARGET_TYPE := BUILD, \
+      LINK_TYPE := C++, \
       SRC := $(TOPDIR)/src/hotspot/share/adlc, \
       EXTRA_FILES := $(TOPDIR)/src/hotspot/share/opto/opcodes.cpp, \
+      DEFAULT_CFLAGS := false, \
       CFLAGS := $(ADLC_CFLAGS) $(ADLC_CFLAGS_WARNINGS), \
+      DEFAULT_LDFLAGS := false, \
       LDFLAGS := $(ADLC_LDFLAGS), \
       LIBS := $(ADLC_LIBS), \
+      DEFAULT_VERSIONINFO_RESOURCE := false, \
       OBJECT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/adlc/objs, \
       OUTPUT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/adlc, \
       DEBUG_SYMBOLS := false, \

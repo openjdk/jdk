@@ -31,8 +31,7 @@
 #include "compiler/oopMap.hpp"
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/defNewGeneration.inline.hpp"
-#include "gc/serial/genMarkSweep.hpp"
-#include "gc/serial/markSweep.hpp"
+#include "gc/serial/serialFullGC.hpp"
 #include "gc/serial/serialHeap.hpp"
 #include "gc/serial/serialMemoryPools.hpp"
 #include "gc/serial/serialVMOperations.hpp"
@@ -50,6 +49,7 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/genArguments.hpp"
+#include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
@@ -74,7 +74,6 @@
 #include "runtime/vmThread.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memoryService.hpp"
-#include "utilities/autoRestore.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
@@ -191,7 +190,7 @@ jint SerialHeap::initialize() {
   ReservedSpace young_rs = heap_rs.first_part(MaxNewSize);
   ReservedSpace old_rs = heap_rs.last_part(MaxNewSize);
 
-  _rem_set = create_rem_set(heap_rs.region());
+  _rem_set = new CardTableRS(heap_rs.region());
   _rem_set->initialize(young_rs.base(), old_rs.base());
 
   CardTableBarrierSet *bs = new CardTableBarrierSet(_rem_set);
@@ -204,11 +203,6 @@ jint SerialHeap::initialize() {
   GCInitLogger::print();
 
   return JNI_OK;
-}
-
-
-CardTableRS* SerialHeap::create_rem_set(const MemRegion& reserved_region) {
-  return new CardTableRS(reserved_region);
 }
 
 ReservedHeapSpace SerialHeap::allocate(size_t alignment) {
@@ -255,7 +249,7 @@ void SerialHeap::post_initialize() {
 
   def_new_gen->ref_processor_init();
 
-  MarkSweep::initialize();
+  SerialFullGC::initialize();
 
   ScavengableNMethods::initialize(&_is_scavengable);
 }
@@ -502,7 +496,7 @@ void SerialHeap::do_collection(bool full,
 
   ClearedAllSoftRefs casr(do_clear_all_soft_refs, soft_ref_policy());
 
-  AutoModifyRestore<bool> temporarily(_is_gc_active, true);
+  IsGCActiveMark active_gc_mark;
 
   bool complete = full && (max_generation == OldGen);
   bool old_collects_young = complete && !ScavengeBeforeFullGC;
@@ -566,7 +560,7 @@ void SerialHeap::do_collection(bool full,
 
   if (do_full_collection) {
     GCIdMark gc_id_mark;
-    GCTraceCPUTime tcpu(GenMarkSweep::gc_tracer());
+    GCTraceCPUTime tcpu(SerialFullGC::gc_tracer());
     GCTraceTime(Info, gc) t("Pause Full", nullptr, gc_cause(), true);
 
     print_heap_before_gc();
@@ -731,17 +725,6 @@ HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
   return nullptr;
 }
 
-#ifdef ASSERT
-class AssertNonScavengableClosure: public OopClosure {
-public:
-  virtual void do_oop(oop* p) {
-    assert(!SerialHeap::heap()->is_in_partial_collection(*p),
-      "Referent should not be scavengable.");  }
-  virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
-};
-static AssertNonScavengableClosure assert_is_non_scavengable_closure;
-#endif
-
 void SerialHeap::process_roots(ScanningOption so,
                                OopClosure* strong_roots,
                                CLDClosure* strong_cld_closure,
@@ -772,10 +755,6 @@ void SerialHeap::process_roots(ScanningOption so,
     // We scan the entire code cache, since CodeCache::do_unloading is not called.
     CodeCache::blobs_do(code_roots);
   }
-  // Verify that the code cache contents are not subject to
-  // movement by a scavenging collection.
-  DEBUG_ONLY(CodeBlobToOopClosure assert_code_is_non_scavengable(&assert_is_non_scavengable_closure, !CodeBlobToOopClosure::FixRelocations));
-  DEBUG_ONLY(ScavengableNMethods::asserted_non_scavengable_nmethods_do(&assert_code_is_non_scavengable));
 }
 
 bool SerialHeap::no_allocs_since_save_marks() {
@@ -874,16 +853,6 @@ bool SerialHeap::requires_barriers(stackChunkOop obj) const {
 bool SerialHeap::is_in(const void* p) const {
   return _young_gen->is_in(p) || _old_gen->is_in(p);
 }
-
-#ifdef ASSERT
-// Don't implement this by using is_in_young().  This method is used
-// in some cases to check that is_in_young() is correct.
-bool SerialHeap::is_in_partial_collection(const void* p) {
-  assert(is_in_reserved(p) || p == nullptr,
-    "Does not work if address is non-null and outside of the heap");
-  return p < _young_gen->reserved().end() && p != nullptr;
-}
-#endif
 
 void SerialHeap::object_iterate(ObjectClosure* cl) {
   _young_gen->object_iterate(cl);
