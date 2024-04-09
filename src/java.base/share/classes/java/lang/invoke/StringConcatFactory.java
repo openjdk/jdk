@@ -29,23 +29,26 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.misc.VM;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.util.ClassFileDumper;
 import jdk.internal.util.FormatConcatItem;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
+import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.reflect.AccessFlag;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
 import static java.lang.invoke.MethodType.methodType;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 /**
  * <p>Methods to facilitate the creation of String concatenation methods, that
@@ -1373,87 +1376,40 @@ public final class StringConcatFactory {
      * to what javac would. No exact sizing of parameters or estimates.
      */
     private static final class SimpleStringBuilderStrategy {
-        static final int CLASSFILE_VERSION = ClassFile.latestMajorVersion();
         static final String METHOD_NAME = "concat";
+        static final ClassDesc STRING_BUILDER = ClassDesc.of("java.lang.StringBuilder");
         static final ClassFileDumper DUMPER;
+        static final MethodTypeDesc APPEND_BOOLEAN_TYPE = MethodTypeDesc.ofDescriptor("(Z)Ljava/lang/StringBuilder;");
+        static final MethodTypeDesc APPEND_CHAR_TYPE = MethodTypeDesc.ofDescriptor("(C)Ljava/lang/StringBuilder;");
+        static final MethodTypeDesc APPEND_DOUBLE_TYPE = MethodTypeDesc.ofDescriptor("(D)Ljava/lang/StringBuilder;");
+        static final MethodTypeDesc APPEND_FLOAT_TYPE = MethodTypeDesc.ofDescriptor("(F)Ljava/lang/StringBuilder;");
+        static final MethodTypeDesc APPEND_INT_TYPE = MethodTypeDesc.ofDescriptor("(I)Ljava/lang/StringBuilder;");
+        static final MethodTypeDesc APPEND_LONG_TYPE = MethodTypeDesc.ofDescriptor("(J)Ljava/lang/StringBuilder;");
+        static final MethodTypeDesc APPEND_OBJECT_TYPE = MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;)Ljava/lang/StringBuilder;");
+        static final MethodTypeDesc APPEND_STRING_TYPE = MethodTypeDesc.ofDescriptor("(Ljava/lang/String;)Ljava/lang/StringBuilder;");
+
         static {
             DUMPER = ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
         }
+
         private SimpleStringBuilderStrategy() {
             // no instantiation
         }
 
         private static MethodHandle generate(Lookup lookup, MethodType args, String[] constants) throws Exception {
             String className = getClassName(lookup.lookupClass());
-            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
 
-            cw.visit(CLASSFILE_VERSION,
-                    ACC_SUPER + ACC_PUBLIC + ACC_FINAL + ACC_SYNTHETIC,
-                    className,
-                    null,
-                    "java/lang/Object",
-                    null
-            );
+            byte[] classBytes = ClassFile.of().build(ClassDesc.of(className),
+                    new Consumer<ClassBuilder>() {
+                        @Override
+                        public void accept(ClassBuilder clb) {
+                            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
+                                .withMethodBody(METHOD_NAME,
+                                        MethodTypeDesc.ofDescriptor(args.toMethodDescriptorString()),
+                                        ClassFile.ACC_FINAL | ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC,
+                                        generateMethod(constants, args));
+                    }});
 
-            MethodVisitor mv = cw.visitMethod(
-                    ACC_PUBLIC + ACC_STATIC + ACC_FINAL,
-                    METHOD_NAME,
-                    args.toMethodDescriptorString(),
-                    null,
-                    null);
-
-            //mv.visitAnnotation("Ljdk/internal/vm/annotation/ForceInline;", true);
-            mv.visitCode();
-
-
-            // Prepare StringBuilder instance
-            mv.visitTypeInsn(NEW, "java/lang/StringBuilder");
-            mv.visitInsn(DUP);
-
-            mv.visitMethodInsn(
-                    INVOKESPECIAL,
-                    "java/lang/StringBuilder",
-                    "<init>",
-                    "()V",
-                    false
-            );
-
-
-            // At this point, we have a blank StringBuilder on stack, fill it in with .append calls.
-            {
-                int off = 0;
-                for (int c = 0; c < args.parameterCount(); c++) {
-                    if (constants[c] != null) {
-                        mv.visitLdcInsn(constants[c]);
-                        sbAppend(mv, "(Ljava/lang/String;)Ljava/lang/StringBuilder;");
-                    }
-                    Class<?> cl = args.parameterType(c);
-                    mv.visitVarInsn(getLoadOpcode(cl), off);
-                    off += getParameterSize(cl);
-                    String desc = getSBAppendDesc(cl);
-                    sbAppend(mv, desc);
-                }
-                if (constants[constants.length - 1] != null) {
-                    mv.visitLdcInsn(constants[constants.length - 1]);
-                    sbAppend(mv, "(Ljava/lang/String;)Ljava/lang/StringBuilder;");
-                }
-            }
-
-            mv.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    "java/lang/StringBuilder",
-                    "toString",
-                    "()Ljava/lang/String;",
-                    false
-            );
-
-            mv.visitInsn(ARETURN);
-
-            mv.visitMaxs(-1, -1);
-            mv.visitEnd();
-            cw.visitEnd();
-
-            byte[] classBytes = cw.toByteArray();
             try {
                 Class<?> innerClass = lookup.defineHiddenClass(classBytes, true, STRONG).lookupClass();
                 DUMPER.dumpClass(className, innerClass, classBytes);
@@ -1465,15 +1421,60 @@ public final class StringConcatFactory {
             }
         }
 
+        private static Consumer<CodeBuilder> generateMethod(String[] constants, MethodType args) {
+            return new Consumer<CodeBuilder>() {
+                @Override
+                public void accept(CodeBuilder cb) {
+                    cb.new_(STRING_BUILDER);
+                    cb.dup();
+                    cb.invokespecial(STRING_BUILDER, "<init>", MethodTypeDesc.ofDescriptor("()V"));
 
-        private static void sbAppend(MethodVisitor mv, String desc) {
-            mv.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    "java/lang/StringBuilder",
-                    "append",
-                    desc,
-                    false
-            );
+                    // At this point, we have a blank StringBuilder on stack, fill it in with .append calls.
+                    {
+                        int off = 0;
+                        for (int c = 0; c < args.parameterCount(); c++) {
+                            if (constants[c] != null) {
+                                cb.ldc(constants[c]);
+                                cb.invokevirtual(STRING_BUILDER, "append", APPEND_STRING_TYPE);
+                            }
+                            Class<?> cl = args.parameterType(c);
+                            off += load(cb, cl, off);
+                            MethodTypeDesc desc = getSBAppendDesc(cl);
+                            cb.invokevirtual(STRING_BUILDER, "append", desc);
+                        }
+                        if (constants[constants.length - 1] != null) {
+                            cb.ldc(constants[constants.length - 1]);
+                            cb.invokevirtual(STRING_BUILDER, "append", APPEND_STRING_TYPE);
+                        }
+                    }
+
+                    cb.invokevirtual(STRING_BUILDER, "toString", MethodTypeDesc.ofDescriptor("()Ljava/lang/String;"));
+                    cb.areturn();
+                }
+            };
+        }
+
+        // Load the argument of type cl at slot onto stack, return the number of argument stack slots consumed.
+        private static int load(CodeBuilder cb, Class<?> cl, int slot) {
+            if (cl == Void.TYPE) {
+                throw new InternalError("Unexpected void type of load opcode");
+            }
+            if (cl.isPrimitive()) {
+                if (cl == Float.TYPE) {
+                    cb.fload(slot);
+                } else if (cl == Double.TYPE) {
+                    cb.dload(slot);
+                    return 2;
+                } else if (cl == Long.TYPE) {
+                    cb.lload(slot);
+                    return 2;
+                } else {
+                    cb.iload(slot);
+                }
+            } else {
+                cb.aload(slot);
+            }
+            return 1;
         }
 
         /**
@@ -1484,104 +1485,31 @@ public final class StringConcatFactory {
         private static String getClassName(Class<?> hostClass) {
             String name = hostClass.isHidden() ? hostClass.getName().replace('/', '_')
                     : hostClass.getName();
-            return name.replace('.', '/') + "$$StringConcat";
+            return name + "$$StringConcat";
         }
 
-        private static String getSBAppendDesc(Class<?> cl) {
+        private static MethodTypeDesc getSBAppendDesc(Class<?> cl) {
             if (cl.isPrimitive()) {
                 if (cl == Integer.TYPE || cl == Byte.TYPE || cl == Short.TYPE) {
-                    return "(I)Ljava/lang/StringBuilder;";
+                    return APPEND_INT_TYPE;
                 } else if (cl == Boolean.TYPE) {
-                    return "(Z)Ljava/lang/StringBuilder;";
+                    return APPEND_BOOLEAN_TYPE;
                 } else if (cl == Character.TYPE) {
-                    return "(C)Ljava/lang/StringBuilder;";
+                    return APPEND_CHAR_TYPE;
                 } else if (cl == Double.TYPE) {
-                    return "(D)Ljava/lang/StringBuilder;";
+                    return APPEND_DOUBLE_TYPE;
                 } else if (cl == Float.TYPE) {
-                    return "(F)Ljava/lang/StringBuilder;";
+                    return APPEND_FLOAT_TYPE;
                 } else if (cl == Long.TYPE) {
-                    return "(J)Ljava/lang/StringBuilder;";
+                    return APPEND_LONG_TYPE;
                 } else {
                     throw new IllegalStateException("Unhandled primitive StringBuilder.append: " + cl);
                 }
             } else if (cl == String.class) {
-                return "(Ljava/lang/String;)Ljava/lang/StringBuilder;";
+                return APPEND_STRING_TYPE;
             } else {
-                return "(Ljava/lang/Object;)Ljava/lang/StringBuilder;";
+                return APPEND_OBJECT_TYPE;
             }
-        }
-
-        private static String getStringValueOfDesc(Class<?> cl) {
-            if (cl.isPrimitive()) {
-                if (cl == Integer.TYPE || cl == Byte.TYPE || cl == Short.TYPE) {
-                    return "(I)Ljava/lang/String;";
-                } else if (cl == Boolean.TYPE) {
-                    return "(Z)Ljava/lang/String;";
-                } else if (cl == Character.TYPE) {
-                    return "(C)Ljava/lang/String;";
-                } else if (cl == Double.TYPE) {
-                    return "(D)Ljava/lang/String;";
-                } else if (cl == Float.TYPE) {
-                    return "(F)Ljava/lang/String;";
-                } else if (cl == Long.TYPE) {
-                    return "(J)Ljava/lang/String;";
-                } else {
-                    throw new IllegalStateException("Unhandled String.valueOf: " + cl);
-                }
-            } else if (cl == String.class) {
-                return "(Ljava/lang/String;)Ljava/lang/String;";
-            } else {
-                return "(Ljava/lang/Object;)Ljava/lang/String;";
-            }
-        }
-
-        /**
-         * The following method is copied from
-         * org.objectweb.asm.commons.InstructionAdapter. Part of ASM: a very small
-         * and fast Java bytecode manipulation framework.
-         * Copyright (c) 2000-2005 INRIA, France Telecom All rights reserved.
-         */
-        private static void iconst(MethodVisitor mv, final int cst) {
-            if (cst >= -1 && cst <= 5) {
-                mv.visitInsn(ICONST_0 + cst);
-            } else if (cst >= Byte.MIN_VALUE && cst <= Byte.MAX_VALUE) {
-                mv.visitIntInsn(BIPUSH, cst);
-            } else if (cst >= Short.MIN_VALUE && cst <= Short.MAX_VALUE) {
-                mv.visitIntInsn(SIPUSH, cst);
-            } else {
-                mv.visitLdcInsn(cst);
-            }
-        }
-
-        private static int getLoadOpcode(Class<?> c) {
-            if (c == Void.TYPE) {
-                throw new InternalError("Unexpected void type of load opcode");
-            }
-            return ILOAD + getOpcodeOffset(c);
-        }
-
-        private static int getOpcodeOffset(Class<?> c) {
-            if (c.isPrimitive()) {
-                if (c == Long.TYPE) {
-                    return 1;
-                } else if (c == Float.TYPE) {
-                    return 2;
-                } else if (c == Double.TYPE) {
-                    return 3;
-                }
-                return 0;
-            } else {
-                return 4;
-            }
-        }
-
-        private static int getParameterSize(Class<?> c) {
-            if (c == Void.TYPE) {
-                return 0;
-            } else if (c == Long.TYPE || c == Double.TYPE) {
-                return 2;
-            }
-            return 1;
         }
     }
 
