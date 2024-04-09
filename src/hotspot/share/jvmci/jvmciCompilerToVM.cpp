@@ -1750,8 +1750,7 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
     if (!fst.current()->is_compiled_frame()) {
       JVMCI_THROW_MSG(IllegalStateException, "compiled stack frame expected");
     }
-    assert(fst.current()->cb()->is_nmethod(), "nmethod expected");
-    ((nmethod*) fst.current()->cb())->make_not_entrant();
+    fst.current()->cb()->as_nmethod()->make_not_entrant();
   }
   Deoptimization::deoptimize(thread, *fst.current(), Deoptimization::Reason_none);
   // look for the frame again as it has been updated by deopt (pc, deopt state...)

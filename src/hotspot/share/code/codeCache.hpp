@@ -337,13 +337,13 @@ class CodeCache : AllStatic {
 // The relaxed iterators only hold the CodeCache_lock across next calls
 template <class T, class Filter, bool is_relaxed> class CodeBlobIterator : public StackObj {
  public:
-  enum LivenessFilter { all_blobs, only_not_unloading };
+  enum LivenessFilter { all, not_unloading };
 
  private:
   CodeBlob* _code_blob;   // Current CodeBlob
   GrowableArrayIterator<CodeHeap*> _heap;
   GrowableArrayIterator<CodeHeap*> _end;
-  bool _only_not_unloading;
+  bool _not_unloading;    // Those nmethods that are not unloading
 
   void initialize_iteration(T* nm) {
   }
@@ -360,7 +360,7 @@ template <class T, class Filter, bool is_relaxed> class CodeBlobIterator : publi
       }
 
       // Filter is_unloading as required
-      if (_only_not_unloading) {
+      if (_not_unloading) {
         nmethod* nm = _code_blob->as_nmethod_or_null();
         if (nm != nullptr && nm->is_unloading()) {
           continue;
@@ -373,7 +373,7 @@ template <class T, class Filter, bool is_relaxed> class CodeBlobIterator : publi
 
  public:
   CodeBlobIterator(LivenessFilter filter, T* nm = nullptr)
-    : _only_not_unloading(filter == only_not_unloading)
+    : _not_unloading(filter == not_unloading)
   {
     if (Filter::heaps() == nullptr) {
       // The iterator is supposed to shortcut since we have

@@ -216,7 +216,7 @@ void ScavengableNMethods::unlist_nmethod(nmethod* nm, nmethod* prev) {
 #ifndef PRODUCT
 // Temporarily mark nmethods that are claimed to be on the scavenge list.
 void ScavengableNMethods::mark_on_list_nmethods() {
-  NMethodIterator iter(NMethodIterator::all_blobs);
+  NMethodIterator iter(NMethodIterator::all);
   while(iter.next()) {
     nmethod* nm = iter.method();
     ScavengableNMethodsData data = gc_data(nm);
@@ -229,7 +229,7 @@ void ScavengableNMethods::mark_on_list_nmethods() {
 
 // Make sure that the effects of mark_on_list_nmethods is gone.
 void ScavengableNMethods::verify_nmethods() {
-  NMethodIterator iter(NMethodIterator::all_blobs);
+  NMethodIterator iter(NMethodIterator::all);
   while(iter.next()) {
     nmethod* nm = iter.method();
 
