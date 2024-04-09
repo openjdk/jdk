@@ -75,6 +75,7 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     int cpu_period();
     int cpu_shares();
     jlong memory_and_swap_limit_in_bytes();
+    jlong memory_and_swap_usage_in_bytes();
     jlong memory_soft_limit_in_bytes();
     jlong memory_usage_in_bytes();
     jlong memory_max_usage_in_bytes();

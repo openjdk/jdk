@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3743,7 +3743,7 @@ public final class Files {
     // -- Stream APIs --
 
     /**
-     * Return a lazily populated {@code Stream}, the elements of
+     * Returns a lazily populated {@code Stream}, the elements of
      * which are the entries in the directory.  The listing is not recursive.
      *
      * <p> The elements of the stream are {@link Path} objects that are
@@ -3834,11 +3834,12 @@ public final class Files {
     }
 
     /**
-     * Return a {@code Stream} that is lazily populated with {@code
+     * Returns a {@code Stream} that is lazily populated with {@code
      * Path} by walking the file tree rooted at a given starting file.  The
-     * file tree is traversed <em>depth-first</em>, the elements in the stream
-     * are {@link Path} objects that are obtained as if by {@link
-     * Path#resolve(Path) resolving} the relative path against {@code start}.
+     * file tree is traversed <em>depth-first</em> with a directory visited
+     * before the entries in that directory. The elements in the stream are
+     * {@link Path} objects that are obtained as if by {@link Path#resolve(Path)
+     * resolving} the relative path against {@code start}.
      *
      * <p> The {@code stream} walks the file tree as elements are consumed.
      * The {@code Stream} returned is guaranteed to have at least one
@@ -3933,11 +3934,12 @@ public final class Files {
     }
 
     /**
-     * Return a {@code Stream} that is lazily populated with {@code
+     * Returns a {@code Stream} that is lazily populated with {@code
      * Path} by walking the file tree rooted at a given starting file.  The
-     * file tree is traversed <em>depth-first</em>, the elements in the stream
-     * are {@link Path} objects that are obtained as if by {@link
-     * Path#resolve(Path) resolving} the relative path against {@code start}.
+     * file tree is traversed <em>depth-first</em> with a directory visited
+     * before the entries in that directory. The elements in the stream are
+     * {@link Path} objects that are obtained as if by {@link Path#resolve(Path)
+     * resolving} the relative path against {@code start}.
      *
      * <p> This method works as if invoking it were equivalent to evaluating the
      * expression:
@@ -3978,7 +3980,7 @@ public final class Files {
     }
 
     /**
-     * Return a {@code Stream} that is lazily populated with {@code
+     * Returns a {@code Stream} that is lazily populated with {@code
      * Path} by searching for files in a file tree rooted at a given starting
      * file.
      *

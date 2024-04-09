@@ -1285,7 +1285,7 @@ class EAMaterializeLocalAtObjectReturnTarget extends EATestCaseBaseTarget {
 /////////////////////////////////////////////////////////////////////////////
 
 // Test if an eliminated object can be reallocated *just* before a call returns an object.
-// (See CompiledMethod::is_at_poll_return())
+// (See nmethod::is_at_poll_return())
 // Details: the callee method has just one safepoint poll at the return. The other safepoint
 // is at the end of an iteration of the endless loop. We can detect if we suspended the target
 // there because the local xy is out of scope there.
