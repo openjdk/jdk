@@ -69,6 +69,7 @@
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
@@ -92,6 +93,7 @@
 #include "runtime/vmOperations.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/events.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
@@ -390,6 +392,7 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
   HandleMark hm(thread);
 #ifndef PRODUCT
   bool first = true;
+  GrowableArray<oop> lock_order{0};
 #endif // !PRODUCT
   // Start locking from outermost/oldest frame
   for (int i = (chunk->length() - 1); i >= 0; i--) {
@@ -401,6 +404,11 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
                                                      exec_mode, realloc_failures);
       deoptimized_objects = deoptimized_objects || relocked;
 #ifndef PRODUCT
+      if (LockingMode == LM_LIGHTWEIGHT && !realloc_failures) {
+        for (MonitorInfo* mi : *monitors) {
+          lock_order.push(mi->owner());
+        }
+      }
       if (PrintDeoptimizationDetails) {
         ResourceMark rm;
         stringStream st;
@@ -431,6 +439,11 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
 #endif // !PRODUCT
     }
   }
+#ifndef PRODUCT
+  if (LockingMode == LM_LIGHTWEIGHT && !realloc_failures) {
+    deoptee_thread->lock_stack().verify_consistent_lock_order(lock_order, exec_mode != Deoptimization::Unpack_none);
+  }
+#endif // !PRODUCT
 }
 
 // Deoptimize objects, that is reallocate and relock them, just before they escape through JVMTI.
@@ -1642,7 +1655,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
             }
           }
         }
-        if (LockingMode == LM_LIGHTWEIGHT && exec_mode == Unpack_none) {
+        if (LockingMode == LM_LIGHTWEIGHT) {
           // We have lost information about the correct state of the lock stack.
           // Inflate the locks instead. Enter then inflate to avoid races with
           // deflation.
