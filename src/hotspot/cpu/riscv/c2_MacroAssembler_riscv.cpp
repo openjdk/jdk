@@ -2365,6 +2365,8 @@ void C2_MacroAssembler::java_round_float_v(VectorRegister dst, VectorRegister sr
   // dst = (src + 0.5) rounded down towards negative infinity
   vfadd_vf(dst, src, ftmp, Assembler::v0_t);
   vfcvt_x_f_v(dst, dst, Assembler::v0_t); // in RoundingMode::rdn
+
+  csrwi(CSR_FRM, C2_MacroAssembler::rne);
 }
 
 // java.lang.Math.round(double a)
@@ -2387,6 +2389,8 @@ void C2_MacroAssembler::java_round_double_v(VectorRegister dst, VectorRegister s
   // dst = (src + 0.5) rounded down towards negative infinity
   vfadd_vf(dst, src, ftmp, Assembler::v0_t);
   vfcvt_x_f_v(dst, dst, Assembler::v0_t); // in RoundingMode::rdn
+
+  csrwi(CSR_FRM, C2_MacroAssembler::rne);
 }
 
 void C2_MacroAssembler::element_compare(Register a1, Register a2, Register result, Register cnt, Register tmp1, Register tmp2,
