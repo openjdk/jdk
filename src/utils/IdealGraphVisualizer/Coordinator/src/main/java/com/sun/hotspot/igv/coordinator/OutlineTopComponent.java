@@ -500,19 +500,15 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
                 final InputGraph firstGraph = context.inputGraph();
 
                 SwingUtilities.invokeLater(() -> {
-                    InputGraph openedGraph;
-                    if (difference > 0) {
-                        Group group = firstGraph.getGroup();
-                        int firstGraphIdx = group.getGraphs().indexOf(firstGraph);
-                        final InputGraph secondGraph = group.getGraphs().get(firstGraphIdx + difference);
-                        openedGraph = viewer.viewDifference(firstGraph, secondGraph);
-                    } else {
-                        openedGraph = viewer.view(firstGraph, true);
-                    }
+                    InputGraph openedGraph = viewer.view(firstGraph, true);
                     if (openedGraph != null) {
-                        EditorTopComponent etc = EditorTopComponent.findEditorForGraph(openedGraph);
+                        EditorTopComponent etc = EditorTopComponent.findEditorForGraph(firstGraph);
                         if (etc != null) {
                             etc.getModel().setHiddenNodes(hiddenNodes);
+                            if (difference > 0) {
+                                int firstGraphIdx = firstGraph.getIndex();
+                                etc.getModel().setPositions(firstGraphIdx, firstGraphIdx + difference);
+                            }
                         }
                     }
                 });
@@ -564,11 +560,11 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
                     final Parser parser = new Parser(channel, monitor, null);
                     final SerialData<GraphDocument> parsedData = parser.parse();
                     final GraphDocument parsedDoc = parsedData.data();
+                    getDocument().addGraphDocument(parsedDoc);
                     if (loadContext) {
                         final Set<GraphContext> parsedContexts = parsedData.contexts();
                         loadContexts(parsedContexts);
                     }
-                    getDocument().addGraphDocument(parsedDoc);
                     SwingUtilities.invokeLater(this::requestActive);
                 }
             } catch (IOException ex) {
