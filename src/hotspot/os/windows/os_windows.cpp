@@ -4065,13 +4065,21 @@ void os::win32::initialize_windows_version() {
 }
 
 bool os::win32::is_windows_11_or_greater() {
+  if (IsWindowsServer()) {
+    return false;
+  }
+
   // Windows 11 starts at build 22000 (Version 21H2)
-  return (windows_major_version() >= 10 && windows_build_number() >= 22000 && !IsWindowsServer());
+  return (windows_major_version() == 10 && windows_build_number() >= 22000) || (windows_major_version() > 10);
 }
 
 bool os::win32::is_windows_server_2022_or_greater() {
+  if (!IsWindowsServer()) {
+    return false;
+  }
+
   // Windows Server 2022 starts at build 20348.169
-  return (windows_major_version() >= 10 && windows_build_number() >= 20348 && IsWindowsServer());
+  return (windows_major_version() == 10 && windows_build_number() >= 20348) || (windows_major_version() > 10);
 }
 
 DWORD os::win32::active_processors_in_job_object(DWORD* active_processor_groups) {
