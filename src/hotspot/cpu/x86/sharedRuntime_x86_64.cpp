@@ -1363,17 +1363,16 @@ void static continuation_enter_cleanup(MacroAssembler* masm) {
     __ cmpl(Address(rsp, ContinuationEntry::flags_offset()), 0);
     __ jcc(Assembler::equal, L_skip_vthread_code);
 
-    Label L_no_warn;
-    __ cmpptr(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
-    __ jcc(Assembler::equal, L_no_warn);
     // If the held monitor count is > 0 and this vthread is terminating then
     // it failed to release a JNI monitor. So we issue the same log message
     // that JavaThread::exit does.
+    __ cmpptr(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
+    __ jcc(Assembler::equal, L_skip_vthread_code);
+
     // rax may hold an exception oop, save it before the call
     __ push(rax);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::log_jni_monitor_still_held));
     __ pop(rax);
-    __ bind(L_no_warn);
 
     // For vthreads we have to explicitly zero the JNI monitor count of the carrier
     // on termination. The held count is implicitly zeroed below when we restore from
