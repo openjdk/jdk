@@ -85,8 +85,8 @@ class oopDesc {
   inline Klass* klass() const;
   inline Klass* klass_or_null() const;
   inline Klass* klass_or_null_acquire() const;
-  // Get the raw value without any checks.
-  inline Klass* klass_raw() const;
+  // Get the klass without running any asserts.
+  inline Klass* klass_without_asserts() const;
 
   void set_narrow_klass(narrowKlass nk) NOT_CDS_JAVA_HEAP_RETURN;
   inline void set_klass(Klass* k);
@@ -316,7 +316,6 @@ class oopDesc {
   }
 
   // for error reporting
-  static void* load_klass_raw(oop obj);
   static void* load_oop_raw(oop obj, int offset);
 
   DEBUG_ONLY(bool size_might_change();)

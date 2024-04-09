@@ -537,6 +537,7 @@ static SpecialFlag const special_jvm_flags[] = {
 
   { "ParallelOldDeadWoodLimiterMean",   JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
   { "ParallelOldDeadWoodLimiterStdDev", JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "UseNeon",                      JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,9 +111,9 @@ Klass* oopDesc::klass_or_null_acquire() const {
   }
 }
 
-Klass* oopDesc::klass_raw() const {
+Klass* oopDesc::klass_without_asserts() const {
   if (UseCompressedClassPointers) {
-    return CompressedKlassPointers::decode_raw(_metadata._compressed_klass);
+    return CompressedKlassPointers::decode_without_asserts(_metadata._compressed_klass);
   } else {
     return _metadata._klass;
   }
@@ -256,7 +256,6 @@ bool oopDesc::is_unlocked() const {
   return mark().is_unlocked();
 }
 
-// Used only for markSweep, scavenging
 bool oopDesc::is_gc_marked() const {
   return mark().is_marked();
 }

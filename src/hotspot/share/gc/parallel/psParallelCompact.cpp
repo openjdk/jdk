@@ -913,12 +913,6 @@ void PSParallelCompact::pre_compact()
     Universe::verify("Before GC");
   }
 
-  // Verify object start arrays
-  if (VerifyObjectStartArray &&
-      VerifyBeforeGC) {
-    heap->old_gen()->verify_object_start_array();
-  }
-
   DEBUG_ONLY(mark_bitmap()->verify_clear();)
   DEBUG_ONLY(summary_data().verify_clear();)
 
@@ -1414,7 +1408,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
     ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
                               false /* unregister_nmethods_during_purge */,
-                              false /* lock_codeblob_free_separately */);
+                              false /* lock_nmethod_free_separately */);
 
     marking_phase(&_gc_tracer);
 
@@ -1427,7 +1421,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     DerivedPointerTable::set_active(false);
 #endif
 
-    // adjust_roots() updates Universe::_intArrayKlassObj which is
+    // adjust_roots() updates Universe::_intArrayKlass which is
     // needed by the compaction for filling holes in the dense prefix.
     adjust_roots();
 
@@ -1535,12 +1529,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     Universe::verify("After GC");
   }
 
-  // Re-verify object start arrays
-  if (VerifyObjectStartArray &&
-      VerifyAfterGC) {
-    old_gen->verify_object_start_array();
-  }
-
   if (ZapUnusedHeapArea) {
     old_gen->object_space()->check_mangled_unused_area_complete();
   }
@@ -1572,7 +1560,7 @@ public:
     ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(_worker_id);
 
     PCMarkAndPushClosure mark_and_push_closure(cm);
-    MarkingCodeBlobClosure mark_and_push_in_blobs(&mark_and_push_closure, !CodeBlobToOopClosure::FixRelocations, true /* keepalive nmethods */);
+    MarkingNMethodClosure mark_and_push_in_blobs(&mark_and_push_closure, !NMethodToOopClosure::FixRelocations, true /* keepalive nmethods */);
 
     thread->oops_do(&mark_and_push_closure, &mark_and_push_in_blobs);
 
@@ -1743,7 +1731,7 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
     }
     {
       GCTraceTime(Debug, gc, phases) t("Free Code Blobs", gc_timer());
-      ctx->free_code_blobs();
+      ctx->free_nmethods();
     }
 
     // Prune dead klasses from subklass/sibling/implementor lists.
@@ -1809,8 +1797,8 @@ public:
       _weak_proc_task.work(worker_id, &always_alive, &adjust);
     }
     if (_sub_tasks.try_claim_task(PSAdjustSubTask_code_cache)) {
-      CodeBlobToOopClosure adjust_code(&adjust, CodeBlobToOopClosure::FixRelocations);
-      CodeCache::blobs_do(&adjust_code);
+      NMethodToOopClosure adjust_code(&adjust, NMethodToOopClosure::FixRelocations);
+      CodeCache::nmethods_do(&adjust_code);
     }
     _sub_tasks.all_tasks_claimed();
   }

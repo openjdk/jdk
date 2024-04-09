@@ -100,7 +100,6 @@
   nonstatic_field(ContiguousSpace,             _bottom,                                       HeapWord*)                             \
   nonstatic_field(ContiguousSpace,             _end,                                          HeapWord*)                             \
   nonstatic_field(ContiguousSpace,             _top,                                          HeapWord*)                             \
-  nonstatic_field(ContiguousSpace,             _saved_mark_word,                              HeapWord*)                             \
                                                                                                                                      \
   nonstatic_field(MemRegion,                   _start,                                        HeapWord*)                             \
   nonstatic_field(MemRegion,                   _word_size,                                    size_t)
