@@ -367,6 +367,19 @@ static void next_line(FILE *f) {
   } while (c != '\n' && c != EOF);
 }
 
+void os::Linux::parse_kernel_version(long* major, long* minor, char* release) {
+  char* walker = release;
+  long* set_v = major;
+  while (*minor == -1 && walker[0] != '\0') {
+    if (isdigit(walker[0])) {
+      *set_v = strtol(walker, &walker, 10);
+      set_v = minor;
+    } else {
+      ++walker;
+    }
+  }
+}
+
 void os::Linux::kernel_version(long* major, long* minor) {
   *major = -1;
   *minor = -1;
@@ -377,17 +390,7 @@ void os::Linux::kernel_version(long* major, long* minor) {
     log_warning(os)("uname(2) failed to get kernel version: %s", os::errno_name(ret));
     return;
   }
-
-  char* walker = buffer.release;
-  long* set_v = major;
-  while (*minor == -1 && walker != nullptr) {
-    if (isdigit(walker[0])) {
-      *set_v = strtol(walker, &walker, 10);
-      set_v = minor;
-    } else {
-      ++walker;
-    }
-  }
+  parse_kernel_version(major, minor, buffer.release);
 }
 
 bool os::Linux::get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu) {
