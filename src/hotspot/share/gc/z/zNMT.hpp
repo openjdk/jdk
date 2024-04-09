@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,11 @@ private:
 
 public:
   static void initialize();
+
   static void reserve(zaddress_unsafe start, size_t size);
   static void commit(zoffset offset, size_t size);
   static void uncommit(zoffset offset, size_t size);
+
   static void map(zaddress_unsafe addr, size_t size, zoffset offset);
   static void unmap(zaddress_unsafe addr, size_t size);
 };
