@@ -585,7 +585,7 @@ void SerialHeap::do_collection(bool full,
 
     ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
                               false /* unregister_nmethods_during_purge */,
-                              false /* lock_codeblob_free_separately */);
+                              false /* lock_nmethod_free_separately */);
 
     collect_generation(_old_gen,
                        full,
@@ -729,14 +729,14 @@ void SerialHeap::process_roots(ScanningOption so,
                                OopClosure* strong_roots,
                                CLDClosure* strong_cld_closure,
                                CLDClosure* weak_cld_closure,
-                               CodeBlobToOopClosure* code_roots) {
+                               NMethodToOopClosure* code_roots) {
   // General roots.
   assert(code_roots != nullptr, "code root closure should always be set");
 
   ClassLoaderDataGraph::roots_cld_do(strong_cld_closure, weak_cld_closure);
 
   // Only process code roots from thread stacks if we aren't visiting the entire CodeCache anyway
-  CodeBlobToOopClosure* roots_from_code_p = (so & SO_AllCodeCache) ? nullptr : code_roots;
+  NMethodToOopClosure* roots_from_code_p = (so & SO_AllCodeCache) ? nullptr : code_roots;
 
   Threads::oops_do(strong_roots, roots_from_code_p);
 
@@ -753,7 +753,7 @@ void SerialHeap::process_roots(ScanningOption so,
 
     // CMSCollector uses this to do intermediate-strength collections.
     // We scan the entire code cache, since CodeCache::do_unloading is not called.
-    CodeCache::blobs_do(code_roots);
+    CodeCache::nmethods_do(code_roots);
   }
 }
 

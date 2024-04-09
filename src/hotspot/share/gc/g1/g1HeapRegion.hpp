@@ -540,9 +540,9 @@ public:
   void add_code_root(nmethod* nm);
   void remove_code_root(nmethod* nm);
 
-  // Applies blk->do_code_blob() to each of the entries in
+  // Applies blk->do_nmethod() to each of the entries in
   // the code roots list for this region
-  void code_roots_do(CodeBlobClosure* blk) const;
+  void code_roots_do(NMethodClosure* blk) const;
 
   uint node_index() const { return _node_index; }
   void set_node_index(uint node_index) { _node_index = node_index; }

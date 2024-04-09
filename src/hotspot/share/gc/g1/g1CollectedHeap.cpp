@@ -2518,7 +2518,7 @@ void G1CollectedHeap::unload_classes_and_code(const char* description, BoolObjec
 
   ClassUnloadingContext ctx(workers()->active_workers(),
                             false /* unregister_nmethods_during_purge */,
-                            false /* lock_codeblob_free_separately */);
+                            false /* lock_nmethod_free_separately */);
   {
     CodeCache::UnlinkingScope scope(is_alive);
     bool unloading_occurred = SystemDictionary::do_unloading(timer);
@@ -2535,7 +2535,7 @@ void G1CollectedHeap::unload_classes_and_code(const char* description, BoolObjec
   }
   {
     GCTraceTime(Debug, gc, phases) t("Free Code Blobs", timer);
-    ctx.free_code_blobs();
+    ctx.free_nmethods();
   }
   {
     GCTraceTime(Debug, gc, phases) t("Purge Class Loader Data", timer);
@@ -3016,24 +3016,22 @@ void G1CollectedHeap::update_used_after_gc(bool evacuation_failed) {
   }
 }
 
-class RebuildCodeRootClosure: public CodeBlobClosure {
+class RebuildCodeRootClosure: public NMethodClosure {
   G1CollectedHeap* _g1h;
 
 public:
   RebuildCodeRootClosure(G1CollectedHeap* g1h) :
     _g1h(g1h) {}
 
-  void do_code_blob(CodeBlob* cb) {
-    nmethod* nm = cb->as_nmethod_or_null();
-    if (nm != nullptr) {
-      _g1h->register_nmethod(nm);
-    }
+  void do_nmethod(nmethod* nm) {
+    assert(nm != nullptr, "Sanity");
+    _g1h->register_nmethod(nm);
   }
 };
 
 void G1CollectedHeap::rebuild_code_roots() {
-  RebuildCodeRootClosure blob_cl(this);
-  CodeCache::blobs_do(&blob_cl);
+  RebuildCodeRootClosure nmethod_cl(this);
+  CodeCache::nmethods_do(&nmethod_cl);
 }
 
 void G1CollectedHeap::initialize_serviceability() {

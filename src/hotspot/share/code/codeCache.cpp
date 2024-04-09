@@ -685,6 +685,14 @@ void CodeCache::nmethods_do(void f(nmethod* nm)) {
   }
 }
 
+void CodeCache::nmethods_do(NMethodClosure* cl) {
+  assert_locked_or_safepoint(CodeCache_lock);
+  NMethodIterator iter(NMethodIterator::all_blobs);
+  while(iter.next()) {
+    cl->do_nmethod(iter.method());
+  }
+}
+
 void CodeCache::metadata_do(MetadataClosure* f) {
   assert_locked_or_safepoint(CodeCache_lock);
   NMethodIterator iter(NMethodIterator::all_blobs);
@@ -880,20 +888,6 @@ void CodeCache::do_unloading(bool unloading_occurred) {
   NMethodIterator iter(NMethodIterator::all_blobs);
   while(iter.next()) {
     iter.method()->do_unloading(unloading_occurred);
-  }
-}
-
-void CodeCache::blobs_do(CodeBlobClosure* f) {
-  assert_locked_or_safepoint(CodeCache_lock);
-  FOR_ALL_ALLOCABLE_HEAPS(heap) {
-    FOR_ALL_BLOBS(cb, *heap) {
-      f->do_code_blob(cb);
-#ifdef ASSERT
-      if (cb->is_nmethod()) {
-        Universe::heap()->verify_nmethod((nmethod*)cb);
-      }
-#endif //ASSERT
-    }
   }
 }
 

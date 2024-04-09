@@ -475,7 +475,7 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
     StrongRootsScope srs(0);
 
     CLDClosure* weak_cld_closure = ClassUnloading ? nullptr : &follow_cld_closure;
-    MarkingCodeBlobClosure mark_code_closure(&follow_root_closure, !CodeBlobToOopClosure::FixRelocations, true);
+    MarkingNMethodClosure mark_code_closure(&follow_root_closure, !NMethodToOopClosure::FixRelocations, true);
     gch->process_roots(SerialHeap::SO_None,
                        &follow_root_closure,
                        &follow_cld_closure,
@@ -529,7 +529,7 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
     }
     {
       GCTraceTime(Debug, gc, phases) t("Free Code Blobs", gc_timer());
-      ctx->free_code_blobs();
+      ctx->free_nmethods();
     }
 
     // Prune dead klasses from subklass/sibling/implementor lists.
@@ -697,7 +697,7 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
 
     ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
 
-    CodeBlobToOopClosure code_closure(&adjust_pointer_closure, CodeBlobToOopClosure::FixRelocations);
+    NMethodToOopClosure code_closure(&adjust_pointer_closure, NMethodToOopClosure::FixRelocations);
     gch->process_roots(SerialHeap::SO_AllCodeCache,
                        &adjust_pointer_closure,
                        &adjust_cld_closure,
