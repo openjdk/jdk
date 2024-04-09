@@ -9959,6 +9959,7 @@ instruct convF2D_reg_reg(regD dst, regF src)
 
 instruct convF2D_reg_mem(regD dst, memory src)
 %{
+  predicate(UseAVX == 0);
   match(Set dst (ConvF2D (LoadF src)));
 
   format %{ "cvtss2sd $dst, $src" %}
@@ -9981,6 +9982,7 @@ instruct convD2F_reg_reg(regF dst, regD src)
 
 instruct convD2F_reg_mem(regF dst, memory src)
 %{
+  predicate(UseAVX == 0);
   match(Set dst (ConvD2F (LoadD src)));
 
   format %{ "cvtsd2ss $dst, $src" %}
@@ -10057,13 +10059,16 @@ instruct round_float_reg(rRegI dst, regF src, rRegL rtmp, rcx_RegL rcx, rFlagsRe
   ins_pipe(pipe_slow);
 %}
 
-instruct convI2F_reg_reg(regF dst, rRegI src)
+instruct convI2F_reg_reg(vlRegF dst, rRegI src)
 %{
   predicate(!UseXmmI2F);
   match(Set dst (ConvI2F src));
 
   format %{ "cvtsi2ssl $dst, $src\t# i2f" %}
   ins_encode %{
+    if (UseAVX > 0) {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ cvtsi2ssl ($dst$$XMMRegister, $src$$Register);
   %}
   ins_pipe(pipe_slow); // XXX
@@ -10071,6 +10076,7 @@ instruct convI2F_reg_reg(regF dst, rRegI src)
 
 instruct convI2F_reg_mem(regF dst, memory src)
 %{
+  predicate(UseAVX == 0);
   match(Set dst (ConvI2F (LoadI src)));
 
   format %{ "cvtsi2ssl $dst, $src\t# i2f" %}
@@ -10080,13 +10086,16 @@ instruct convI2F_reg_mem(regF dst, memory src)
   ins_pipe(pipe_slow); // XXX
 %}
 
-instruct convI2D_reg_reg(regD dst, rRegI src)
+instruct convI2D_reg_reg(vlRegD dst, rRegI src)
 %{
   predicate(!UseXmmI2D);
   match(Set dst (ConvI2D src));
 
   format %{ "cvtsi2sdl $dst, $src\t# i2d" %}
   ins_encode %{
+    if (UseAVX > 0) {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ cvtsi2sdl ($dst$$XMMRegister, $src$$Register);
   %}
   ins_pipe(pipe_slow); // XXX
@@ -10094,6 +10103,7 @@ instruct convI2D_reg_reg(regD dst, rRegI src)
 
 instruct convI2D_reg_mem(regD dst, memory src)
 %{
+  predicate(UseAVX == 0);
   match(Set dst (ConvI2D (LoadI src)));
 
   format %{ "cvtsi2sdl $dst, $src\t# i2d" %}
@@ -10131,12 +10141,15 @@ instruct convXI2D_reg(regD dst, rRegI src)
   ins_pipe(pipe_slow); // XXX
 %}
 
-instruct convL2F_reg_reg(regF dst, rRegL src)
+instruct convL2F_reg_reg(vlRegF dst, rRegL src)
 %{
   match(Set dst (ConvL2F src));
 
   format %{ "cvtsi2ssq $dst, $src\t# l2f" %}
   ins_encode %{
+    if (UseAVX > 0) {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ cvtsi2ssq ($dst$$XMMRegister, $src$$Register);
   %}
   ins_pipe(pipe_slow); // XXX
@@ -10144,6 +10157,7 @@ instruct convL2F_reg_reg(regF dst, rRegL src)
 
 instruct convL2F_reg_mem(regF dst, memory src)
 %{
+  predicate(UseAVX == 0);
   match(Set dst (ConvL2F (LoadL src)));
 
   format %{ "cvtsi2ssq $dst, $src\t# l2f" %}
@@ -10153,12 +10167,15 @@ instruct convL2F_reg_mem(regF dst, memory src)
   ins_pipe(pipe_slow); // XXX
 %}
 
-instruct convL2D_reg_reg(regD dst, rRegL src)
+instruct convL2D_reg_reg(vlRegD dst, rRegL src)
 %{
   match(Set dst (ConvL2D src));
 
   format %{ "cvtsi2sdq $dst, $src\t# l2d" %}
   ins_encode %{
+    if (UseAVX > 0) {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ cvtsi2sdq ($dst$$XMMRegister, $src$$Register);
   %}
   ins_pipe(pipe_slow); // XXX
@@ -10166,6 +10183,7 @@ instruct convL2D_reg_reg(regD dst, rRegL src)
 
 instruct convL2D_reg_mem(regD dst, memory src)
 %{
+  predicate(UseAVX == 0);
   match(Set dst (ConvL2D (LoadL src)));
 
   format %{ "cvtsi2sdq $dst, $src\t# l2d" %}
