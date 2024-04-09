@@ -69,8 +69,8 @@ public:
   };
 
   struct IntervalState {
-    Metadata data;
     StateType type;
+    Metadata data;
 
     void merge(const IntervalState& b) {
       if (this->type == StateType::Released) {
