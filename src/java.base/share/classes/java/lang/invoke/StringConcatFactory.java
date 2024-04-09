@@ -113,7 +113,7 @@ public final class StringConcatFactory {
 
     static {
         String highArity = VM.getSavedProperty("java.lang.invoke.StringConcat.highArityThreshold");
-        HIGH_ARITY_THRESHOLD = Integer.parseInt(highArity != null ? highArity : "10");
+        HIGH_ARITY_THRESHOLD = Integer.parseInt(highArity != null ? highArity : "20");
     }
 
     /**
@@ -378,7 +378,7 @@ public final class StringConcatFactory {
         }
 
         try {
-            if (concatType.parameterCount() < HIGH_ARITY_THRESHOLD) {
+            if (concatType.parameterCount() <= HIGH_ARITY_THRESHOLD) {
                 return new ConstantCallSite(
                         generateMHInlineCopy(concatType, constantStrings)
                                 .viewAsType(concatType, true));
