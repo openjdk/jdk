@@ -1417,7 +1417,9 @@ Node* MinLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 Node* MaxNode::Identity(PhaseGVN* phase) {
-  if ( in(1) == in(2) ) return in(1);
+  if (in(1) == in(2)) {
+      return in(1);
+  }
 
   return AddNode::Identity(phase);
 }
