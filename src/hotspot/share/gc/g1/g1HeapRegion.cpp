@@ -646,10 +646,7 @@ public:
   G1VerifyLiveAndRemSetClosure(oop containing_obj, VerifyOption vo, G1VerifyFailureCounter* failures)
     : _vo(vo),
       _containing_obj(containing_obj),
-      _failures(failures) {
-    assert(containing_obj != nullptr, "must be");
-    assert(!G1CollectedHeap::heap()->is_obj_dead_cond(containing_obj, _vo), "Precondition");
-  }
+      _failures(failures) {}
 
   virtual inline void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual inline void do_oop(oop* p) { do_oop_work(p); }
