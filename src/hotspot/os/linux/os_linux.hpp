@@ -43,9 +43,6 @@ class os::Linux {
   static const char *_libc_version;
   static const char *_libpthread_version;
 
-  static long _release_major;
-  static long _release_minor;
-
   static bool _supports_fast_thread_cpu_time;
 
   static GrowableArray<int>* _cpu_to_node;
@@ -69,7 +66,6 @@ class os::Linux {
   static int commit_memory_impl(char* addr, size_t bytes,
                                 size_t alignment_hint, bool exec);
 
-  static void version_init();
   static void set_libc_version(const char *s)       { _libc_version = s; }
   static void set_libpthread_version(const char *s) { _libpthread_version = s; }
 
@@ -97,10 +93,7 @@ class os::Linux {
     bool     has_steal_ticks;
   };
 
-  static void kernel_version(long* major, long* minor) {
-    *major = _release_major;
-    *minor = _release_minor;
-  }
+  static void kernel_version(long* major, long* minor);
 
   // which_logical_cpu=-1 returns accumulated ticks for all cpus.
   static bool get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu);

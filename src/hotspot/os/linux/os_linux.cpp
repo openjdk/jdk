@@ -176,8 +176,7 @@ pthread_t os::Linux::_main_thread;
 bool os::Linux::_supports_fast_thread_cpu_time = false;
 const char * os::Linux::_libc_version = nullptr;
 const char * os::Linux::_libpthread_version = nullptr;
-long os::Linux::_release_major = -1;
-long os::Linux::_release_minor = -1;
+
 bool os::Linux::_thp_requested{false};
 
 #ifdef __GLIBC__
@@ -368,7 +367,7 @@ static void next_line(FILE *f) {
   } while (c != '\n' && c != EOF);
 }
 
-void os::Linux::version_init() {
+void os::Linux::kernel_version(long* major, long* minor) {
   struct utsname buffer;
   int ret = uname(&buffer);
   if (ret != 0) {
@@ -377,11 +376,11 @@ void os::Linux::version_init() {
   }
 
   char* walker = buffer.release;
-  long* set_v = &_release_major;
-  while (_release_minor == -1 && walker != nullptr) {
+  long* set_v = major;
+  while (*minor == -1 && walker != nullptr) {
     if (isdigit(walker[0])) {
       *set_v = strtol(walker, &walker, 10);
-      set_v = &_release_minor;
+      set_v = minor;
     } else {
       ++walker;
     }
@@ -4546,8 +4545,6 @@ void os::init(void) {
 
   check_pax();
 
-  Linux::version_init();
-
   os::Posix::init();
 }
 
@@ -4829,10 +4826,19 @@ jint os::init_2(void) {
     // Some downstream kernels recognize MADV_POPULATE_WRITE_value as another
     // advice, so the check of versions is required here.
     // See https://github.com/oracle/linux-uek/issues/23
+    struct utsname buffer;
+    int ret = uname(&buffer);
+    if (ret != 0) {
+      log_warning(os)("uname(2) failed to get kernel version: %s",
+                      os::errno_name(ret));
+    }
+
+    long major = -1, minor = -1;
     bool supportMadvPopulateWrite =
-      (Linux::_release_major > 5 ||
-       (Linux::_release_major == 5 && Linux::_release_minor >= 14)) &&
-      (::madvise(0, 0, MADV_POPULATE_WRITE) == 0);
+      (ret == 0 &&
+       (sscanf(buffer.release, "%ld.%ld", &major, &minor) == 2) &&
+       (major > 5 || (major == 5 && minor >= 14)) &&
+       (::madvise(0, 0, MADV_POPULATE_WRITE) == 0));
     if (!supportMadvPopulateWrite) {
       if (!FLAG_IS_DEFAULT(UseMadvPopulateWrite)) {
         warning("Platform does not support MADV_POPULATE_WRITE, "
