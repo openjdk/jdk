@@ -1193,6 +1193,18 @@ bool maybe_far_call(const MachCallNode *n) {
 // tertiary opcode.  Only the opcode sections which a particular instruction
 // needs for encoding need to be specified.
 encode %{
+  // Set instruction mark in MacroAssembler. This is used only in
+  // instructions that emit bytes directly to the CodeBuffer wraped
+  // in the MacroAssembler. Should go away once all "instruct" are
+  // patched to emit bytes only using methods in MacroAssembler.
+  enc_class SetInstMark %{
+    __ set_inst_mark();
+  %}
+
+  enc_class ClearInstMark %{
+    __ clear_inst_mark();
+  %}
+
   enc_class call_epilog %{
     // nothing
   %}
@@ -8853,7 +8865,7 @@ instruct CallStaticJavaDirect( method meth ) %{
 
   ins_cost(CALL_COST);
   format %{ "CALL,static ==> " %}
-  ins_encode( Java_Static_Call( meth ), call_epilog );
+  ins_encode( SetInstMark, Java_Static_Call( meth ), call_epilog, ClearInstMark );
   ins_pipe(simple_call);
 %}
 
@@ -8867,7 +8879,7 @@ instruct CallStaticJavaHandle( method meth ) %{
 
   ins_cost(CALL_COST);
   format %{ "CALL,static/MethodHandle ==> " %}
-  ins_encode( preserve_SP, Java_Static_Call( meth ), restore_SP, call_epilog );
+  ins_encode( SetInstMark, preserve_SP, Java_Static_Call( meth ), restore_SP, call_epilog, ClearInstMark );
   ins_pipe(simple_call);
 %}
 
@@ -8879,7 +8891,7 @@ instruct CallDynamicJavaDirect( method meth ) %{
   ins_cost(CALL_COST);
   format %{ "MOV_OOP    (empty),R_R8\n\t"
             "CALL,dynamic  ; NOP ==> " %}
-  ins_encode( Java_Dynamic_Call( meth ), call_epilog );
+  ins_encode( SetInstMark, Java_Dynamic_Call( meth ), call_epilog, ClearInstMark );
   ins_pipe(call);
 %}
 
@@ -8889,8 +8901,8 @@ instruct CallRuntimeDirect(method meth) %{
   effect(USE meth);
   ins_cost(CALL_COST);
   format %{ "CALL,runtime" %}
-  ins_encode( Java_To_Runtime( meth ),
-              call_epilog );
+  ins_encode( SetInstMark, Java_To_Runtime( meth ),
+              call_epilog, ClearInstMark );
   ins_pipe(simple_call);
 %}
 
@@ -8901,8 +8913,8 @@ instruct CallLeafDirect(method meth) %{
   ins_cost(CALL_COST);
   format %{ "CALL,runtime leaf" %}
   // TODO: need save_last_PC here?
-  ins_encode( Java_To_Runtime( meth ),
-              call_epilog );
+  ins_encode( SetInstMark, Java_To_Runtime( meth ),
+              call_epilog, ClearInstMark );
   ins_pipe(simple_call);
 %}
 
@@ -8913,8 +8925,8 @@ instruct CallLeafNoFPDirect(method meth) %{
   ins_cost(CALL_COST);
   format %{ "CALL,runtime leaf nofp" %}
   // TODO: need save_last_PC here?
-  ins_encode( Java_To_Runtime( meth ),
-              call_epilog );
+  ins_encode( SetInstMark, Java_To_Runtime( meth ),
+              call_epilog, ClearInstMark );
   ins_pipe(simple_call);
 %}
 
