@@ -60,7 +60,7 @@ public class TestRoundVectorFloatRandom {
     TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:CompileThresholdScaling=0.3", "-XX:MaxVectorSize=32");
   }
 
-  int golden_round(float a) {
+  static int golden_round(float a) {
     // below code is copied from java.base/share/classes/java/lang/Math.java
     //  public static int round(float a) { ... }
 
@@ -98,7 +98,7 @@ public class TestRoundVectorFloatRandom {
       applyIfCPUFeature = {"avx", "true"})
   @IR(counts = {IRNode.ROUND_VF, "> 0"},
       applyIfPlatform = {"aarch64", "true"})
-  void test_round(int[] a0, float[] a1) {
+  static void test_round(int[] a0, float[] a1) {
     for (int i = 0; i < a0.length; i+=1) {
       a0[i] = Math.round(a1[i]);
     }
@@ -106,7 +106,7 @@ public class TestRoundVectorFloatRandom {
 
   @Run(test = "test_round")
   @Warmup(ITERS)
-  void test_rounds(RunInfo runInfo) {
+  static void test_rounds(RunInfo runInfo) {
     // Initialize
     for (int i = 0; i < ARRLEN; i++) {
       float val = ADD_INIT+(float)i;

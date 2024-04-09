@@ -60,7 +60,7 @@ public class TestRoundVectorDoubleRandom {
     TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:CompileThresholdScaling=0.3", "-XX:MaxVectorSize=32");
   }
 
-  long golden_round(double a) {
+  static long golden_round(double a) {
     // below code is copied from java.base/share/classes/java/lang/Math.java
     //  public static int round(double a) { ... }
 
@@ -100,7 +100,7 @@ public class TestRoundVectorDoubleRandom {
   @IR(counts = {IRNode.ROUND_VD, "> 0"},
       applyIfPlatform = {"aarch64", "true"},
       applyIf = {"MaxVectorSize", ">= 16"})
-  void test_round(long[] a0, double[] a1) {
+  static void test_round(long[] a0, double[] a1) {
     for (int i = 0; i < a0.length; i+=1) {
       a0[i] = Math.round(a1[i]);
     }
@@ -108,7 +108,7 @@ public class TestRoundVectorDoubleRandom {
 
   @Run(test = "test_round")
   @Warmup(ITERS)
-  void test_rounds(RunInfo runInfo) {
+  static void test_rounds(RunInfo runInfo) {
     // Initialize
     for (int i = 0; i < ARRLEN; i++) {
       double val = ADD_INIT+(double)i;
