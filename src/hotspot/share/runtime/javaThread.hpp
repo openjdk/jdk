@@ -120,7 +120,7 @@ class JavaThread: public Thread {
   // Deopt support
   DeoptResourceMark*  _deopt_mark;               // Holds special ResourceMark for deoptimization
 
-  CompiledMethod*       _deopt_nmethod;         // CompiledMethod that is currently being deoptimized
+  nmethod*      _deopt_nmethod;                  // nmethod that is currently being deoptimized
   vframeArray*  _vframe_array_head;              // Holds the heap of the active vframeArrays
   vframeArray*  _vframe_array_last;              // Holds last vFrameArray we popped
   // Holds updates by JVMTI agents for compiled frames that cannot be performed immediately. They
@@ -686,8 +686,8 @@ private:
   void set_deopt_mark(DeoptResourceMark* value)  { _deopt_mark = value; }
   DeoptResourceMark* deopt_mark(void)            { return _deopt_mark; }
 
-  void set_deopt_compiled_method(CompiledMethod* nm)  { _deopt_nmethod = nm; }
-  CompiledMethod* deopt_compiled_method()        { return _deopt_nmethod; }
+  void set_deopt_compiled_method(nmethod* nm)    { _deopt_nmethod = nm; }
+  nmethod* deopt_compiled_method()               { return _deopt_nmethod; }
 
   Method*    callee_target() const               { return _callee_target; }
   void set_callee_target  (Method* x)            { _callee_target   = x; }

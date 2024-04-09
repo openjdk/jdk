@@ -83,6 +83,9 @@ public @interface PreviewFeature {
         STREAM_GATHERERS,
         @JEP(number=8312611, title="Lazy Values & Collections", status="Preview")
         LAZY_VALUES_AND_COLLECTIONS,
+
+        LANGUAGE_MODEL,
+
         /**
          * A key for testing.
          */
