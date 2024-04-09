@@ -42,7 +42,5 @@ public class LoadAIXLibraryFromArchiveObject {
         }
         System.loadLibrary(libraryName);
         awtSharedObjectPath.renameTo(awtSharedObjectPathCopy);
-
-
     }
 }
