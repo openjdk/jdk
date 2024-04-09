@@ -35,7 +35,7 @@ public:
   }
 };
 
-TEST_F(OSLinuxTestFixture, ParseKernelVersion) {
+TEST_VM_F(OSLinuxTestFixture, ParseKernelVersion) {
   // We need some memory that will SIGSEGV if read to.
   // os::reserve_memory fits the bill, as it does PROT_NONE.
   const size_t res_memory_size = os::vm_page_size();
