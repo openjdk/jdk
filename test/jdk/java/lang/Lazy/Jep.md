@@ -52,7 +52,7 @@ is first referenced:
 // ordinary static initialization
 private static final Logger LOGGER = Logger.getLogger("com.foo.Bar");
 ...
-LOGGER.log(...);
+LOGGER.log(Level.DEBUG, ...);
 ```
 we can defer initialization until we actually need it:
 ```
@@ -64,10 +64,10 @@ Logger logger() {
     return Holder.LOGGER;
 }
 ...
-logger().log(...);
+LOGGER.log(Level.DEBUG, ...);
 ```
 The code above ensures that the `Logger` object is created only when actually
-required.  The (possibly expensive) initializer for the logger lives in the
+required. The (possibly expensive) initializer for the logger lives in the
 nested `Holder` class, which will only be initialized when the `logger` method
 accesses the `LOGGER` field.  While this idiom works well, its reliance on the
 class loading process comes with significant drawbacks.  First, each constant
@@ -75,6 +75,12 @@ whose computation needs to be deferred generally requires its own holder
 class, thus introducing a significant static footprint cost.  Second, this idiom
 is only really applicable if the field initialization is suitably isolated, not
 relying on any other parts of the object state.
+
+It should be noted that even though actually outputting messages is slow comparing to
+obtaining the `Logger` instance itself, the `LOGGER::log`method starts with checking if
+the selected `Level` is enabled or not. This latter check is a relatively fast operation
+and so, in the case of disabled loggers, the `Logger` instance retrieval performance is
+important.
 
 Alternatively, the [_double-checked locking idiom_](https://en.wikipedia.org/wiki/Double-checked_locking), can also be used
 for deferring evaluation of field initializers. The idea is to optimistically
