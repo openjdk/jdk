@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,10 @@
  *
  */
 
-#ifndef SHARE_GC_SERIAL_MARKSWEEP_INLINE_HPP
-#define SHARE_GC_SERIAL_MARKSWEEP_INLINE_HPP
+#ifndef SHARE_GC_SERIAL_SERIALFULLGC_INLINE_HPP
+#define SHARE_GC_SERIAL_SERIALFULLGC_INLINE_HPP
 
-#include "gc/serial/markSweep.hpp"
+#include "gc/serial/serialFullGC.hpp"
 
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -39,7 +39,7 @@
 #include "utilities/align.hpp"
 #include "utilities/stack.inline.hpp"
 
-template <class T> inline void MarkSweep::adjust_pointer(T* p) {
+template <class T> inline void SerialFullGC::adjust_pointer(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(heap_oop)) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
@@ -54,12 +54,12 @@ template <class T> inline void MarkSweep::adjust_pointer(T* p) {
 }
 
 template <typename T>
-void AdjustPointerClosure::do_oop_work(T* p)           { MarkSweep::adjust_pointer(p); }
+void AdjustPointerClosure::do_oop_work(T* p)           { SerialFullGC::adjust_pointer(p); }
 inline void AdjustPointerClosure::do_oop(oop* p)       { do_oop_work(p); }
 inline void AdjustPointerClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
-inline size_t MarkSweep::adjust_pointers(oop obj) {
-  return obj->oop_iterate_size(&MarkSweep::adjust_pointer_closure);
+inline size_t SerialFullGC::adjust_pointers(oop obj) {
+  return obj->oop_iterate_size(&SerialFullGC::adjust_pointer_closure);
 }
 
-#endif // SHARE_GC_SERIAL_MARKSWEEP_INLINE_HPP
+#endif // SHARE_GC_SERIAL_SERIALFULLGC_INLINE_HPP

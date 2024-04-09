@@ -99,21 +99,21 @@ ifeq ($(call isTargetOs, macosx), true)
   ## Build libosxsecurity
   ##############################################################################
 
-    $(eval $(call SetupJdkLibrary, BUILD_LIBOSXSECURITY, \
-        NAME := osxsecurity, \
-        OPTIMIZATION := LOW, \
-        DISABLED_WARNINGS_clang_KeystoreImpl.m := deprecated-declarations, \
-        LDFLAGS := -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base,\
-        JDK_LIBS := $(JDKLIB_LIBS), \
-        LIBS_macosx := -lobjc \
-            -framework CoreServices \
-            -framework Foundation \
-            -framework Security, \
-    ))
+  $(eval $(call SetupJdkLibrary, BUILD_LIBOSXSECURITY, \
+      NAME := osxsecurity, \
+      OPTIMIZATION := LOW, \
+      DISABLED_WARNINGS_clang_KeystoreImpl.m := deprecated-declarations, \
+      LDFLAGS := -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base,\
+      JDK_LIBS := $(JDKLIB_LIBS), \
+      LIBS_macosx := -lobjc \
+          -framework CoreServices \
+          -framework Foundation \
+          -framework Security, \
+  ))
 
-    $(BUILD_LIBOSXSECURITY): $(BUILD_LIBJAVA)
+  $(BUILD_LIBOSXSECURITY): $(BUILD_LIBJAVA)
 
-    TARGETS += $(BUILD_LIBOSXSECURITY)
+  TARGETS += $(BUILD_LIBOSXSECURITY)
 endif
 
 ifeq ($(call isTargetOsType, unix)+$(STATIC_BUILD), true+false)

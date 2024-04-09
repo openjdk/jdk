@@ -950,8 +950,6 @@ private:
                                                  Node* input_proj);
   static void count_opaque_loop_nodes(Node* n, uint& init, uint& stride);
   static bool subgraph_has_opaque(Node* n);
-  Node* create_bool_from_template_assertion_predicate(Node* template_assertion_predicate, Node* new_init, Node* new_stride,
-                                                      Node* control);
   static bool assertion_predicate_has_loop_opaque_node(IfNode* iff);
   static void get_assertion_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_assertion_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);

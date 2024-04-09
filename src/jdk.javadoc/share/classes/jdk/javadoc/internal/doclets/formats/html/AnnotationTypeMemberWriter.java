@@ -100,7 +100,7 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
                 buildAnnotationTypeMemberChildren(div);
                 annotationContent.add(div);
                 memberList.add(writer.getMemberListItem(annotationContent));
-                writer.tableOfContents.addLink(htmlIds.forMember(typeElement, (ExecutableElement) member),
+                writer.tableOfContents.addLink(htmlIds.forMember((ExecutableElement) member).getFirst(),
                         Text.of(name(member)));
             }
             Content annotationDetails = getAnnotationDetails(annotationDetailsHeader, memberList);
@@ -210,7 +210,7 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
                 Text.of(name(member)));
         content.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, content)
-                .setId(htmlIds.forMember(typeElement, (ExecutableElement) member));
+                .setId(htmlIds.forMember((ExecutableElement) member).getFirst());
     }
 
     protected Content getSignature(Element member) {
