@@ -23,16 +23,15 @@
 
 /*
  * @test
- * @bug 8256266 8281238
- * @summary Verify annotations work correctly on binding variables
+ * @bug 8324651
+ * @summary Verify the Trees model for derived record creation expression
  * @library /tools/javac/lib
  * @enablePreview
  * @modules java.compiler
  *          jdk.compiler
- *          java.base/jdk.internal.classfile.impl
  * @build JavacTestingAbstractProcessor
- * @compile Model.java
- * @compile/ref=Model.out -J--enable-preview -processor Model -XDshould-stop.at=FLOW -XDrawDiagnostics Model.java
+ * @compile WithExpressions.java
+ * @compile/ref=WithExpressions.out -J--enable-preview -processor WithExpressions -XDshould-stop.at=FLOW -XDrawDiagnostics WithExpressions.java
  */
 
 import com.sun.source.tree.AssignmentTree;
@@ -52,7 +51,7 @@ import com.sun.source.util.Trees;
 import java.io.IOException;
 import javax.lang.model.element.ElementKind;
 
-public class Model extends JavacTestingAbstractProcessor {
+public class WithExpressions extends JavacTestingAbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
