@@ -2334,7 +2334,8 @@ void C2_MacroAssembler::expand_bits_l_v(Register dst, Register src, Register mas
 //    NaN,
 //    float >= Integer.MAX_VALUE,
 //    float <= Integer.MIN_VALUE.
-void C2_MacroAssembler::java_round_float_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp) {
+void C2_MacroAssembler::java_round_float_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp,
+                                           BasicType bt, uint vector_length) {
   // In riscv, there is no straight corresponding rounding mode to satisfy the behaviour defined,
   // in java api spec, i.e. any rounding mode can not handle some corner cases, e.g.
   //  RNE is the closest one, but it ties to "even", which means 1.5/2.5 both will be converted
@@ -2350,6 +2351,9 @@ void C2_MacroAssembler::java_round_float_v(VectorRegister dst, VectorRegister sr
   // But, we still need to handle NaN explicilty with vector mask instructions.
   //
   // Check MacroAssembler::java_round_float and C2_MacroAssembler::vector_round_sve in aarch64 for more details.
+
+  csrwi(CSR_FRM, C2_MacroAssembler::rdn);
+  vsetvli_helper(bt, vector_length);
 
   // don't rearrage the instructions sequence order without performance testing.
   // check MacroAssembler::java_round_float in riscv64 for more details.
@@ -2368,8 +2372,12 @@ void C2_MacroAssembler::java_round_float_v(VectorRegister dst, VectorRegister sr
 
 // java.lang.Math.round(double a)
 // Returns the closest long to the argument, with ties rounding to positive infinity.
-void C2_MacroAssembler::java_round_double_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp) {
+void C2_MacroAssembler::java_round_double_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp,
+                                            BasicType bt, uint vector_length) {
   // check C2_MacroAssembler::java_round_float_v above for more details.
+
+  csrwi(CSR_FRM, C2_MacroAssembler::rdn);
+  vsetvli_helper(bt, vector_length);
 
   mv(t0, julong_cast(0.5));
   fmv_d_x(ftmp, t0);
