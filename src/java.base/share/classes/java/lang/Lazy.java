@@ -178,7 +178,7 @@ public sealed interface Lazy<V>
      * {@return an unmodifiable, shallowly immutable, thread-safe, lazy,
      * {@linkplain List} containing {@code size} {@linkplain Lazy} elements}
      * <p>
-     * Neither the returned list nor its elements are {@linkplain Serializable}.
+     * If non-empty, neither the returned list nor its elements are {@linkplain Serializable}.
      * <p>
      * The returned list and its elements are eligible for constant folding and other
      * optimizations by the JVM and is equivalent to:
@@ -187,7 +187,7 @@ public sealed interface Lazy<V>
      *         .limit(size)
      *         .toList();
      * }
-     * Except it require less storage, does not return Lazy instances with the same
+     * Except it requires less storage, does not return Lazy instances with the same
      * identity, and is likely to exhibit better performance.
      * <p>
      * This static factory methods return list instances (and with all their elements)
@@ -220,7 +220,7 @@ public sealed interface Lazy<V>
      * Lazy values are, in turn, lazily computed upon being accessed
      * (e.g. via {@linkplain Map#get(Object) get(key)})}
      * <p>
-     * Neither the returned map nor its values are {@linkplain Serializable}.
+     * If non-empty, neither the returned map nor its values are {@linkplain Serializable}.
      * <p>
      * The returned map and its values are eligible for constant folding and other
      * optimizations by the JVM and is equivalent to:
@@ -230,7 +230,7 @@ public sealed interface Lazy<V>
      *         .map(Objects::requireNonNull)
      *         .collect(Collectors.toMap(Function.identity(), _ -> Lazy.of())));
      * }
-     * Except it require less storage, does not return Lazy instances with the same
+     * Except it requires less storage, does not return Lazy instances with the same
      * identity, and is likely to exhibit better performance.
      * <p>
      * This static factory methods return map instances (and with all their values)
@@ -268,7 +268,7 @@ public sealed interface Lazy<V>
      * Supplier<V> supplier = () -> mapper.apply(index);
      * return lazy.computeIfUnset(supplier);
      * }
-     * Except it might be more efficient and performant.
+     * Except it might be more resource efficient and performant.
      *
      * @param list   from which to get a Lazy
      * @param index  for the Lazy
@@ -305,7 +305,7 @@ public sealed interface Lazy<V>
      * Supplier<V> supplier = () -> mapper.apply(key);
      * return lazy.computeIfUnset(supplier);
      * }
-     * Except it might be more efficient and performant.
+     * Except it might be more resource efficient and performant.
      *
      * @param map    from which to get a Lazy
      * @param key    for the Lazy

@@ -22,9 +22,9 @@
  */
 
 /* @test
- * @summary Basic tests for Lazy Map implementations
- * @compile --enable-preview -source ${jdk.version} BasicLazyMapTest.java
- * @run junit/othervm --enable-preview BasicLazyMapTest
+ * @summary Basic tests for Lazy Enum Map implementations
+ * @compile --enable-preview -source ${jdk.version} BasicLazyEnumMapTest.java
+ * @run junit/othervm --enable-preview BasicLazyEnumMapTest
  */
 
 import org.junit.jupiter.api.Test;
@@ -34,6 +34,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -46,39 +47,39 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class BasicLazyMapTest {
+final class BasicLazyEnumMapTest {
 
-    private static final String[] KEYS = "A,B,C,D,E,F,G".split(",");
-    private static final String KEY = "C";
+    enum TestEnum {
+        A, B, C, D, E, F, G;
+    }
+
+    private static final TestEnum KEY = TestEnum.C;
 
     @Test
     void basic() {
         for (var set : sets()) {
-            Map<String, Lazy<Integer>> map = Lazy.ofMap(set);
+            Map<TestEnum, Lazy<Integer>> map = Lazy.ofMap(set);
             assertEquals(set.isEmpty(), map.isEmpty());
 
-            for (String key : set) {
-                assertFalse(map.get(key).isSet());
+            for (TestEnum key : set) {
+                assertFalse(
+                        map.get(key)
+                        .isSet());
             }
 
-            for (String key : set) {
+            for (TestEnum key : set) {
                 assertNotNull(map.get(key));
                 assertTrue(map.containsKey(key));
             }
 
             assertEquals(expectedToString(map), map.toString());
-
-            if (!map.isEmpty()) {
-                assertFalse(map instanceof Serializable);
-            }
-
         }
     }
 
     @Test
     void entrySet() {
         for (var set : sets()) {
-            Map<String, Lazy<Integer>> map = Lazy.ofMap(set);
+            Map<TestEnum, Lazy<Integer>> map = Lazy.ofMap(set);
             var es = map.entrySet();
             assertEquals(set.size(), es.size());
         }
@@ -87,10 +88,10 @@ final class BasicLazyMapTest {
     @Test
     void entrySetIterator() {
         for (var set : sets()) {
-            Map<String, Lazy<Integer>> map = Lazy.ofMap(set);
+            Map<TestEnum, Lazy<Integer>> map = Lazy.ofMap(set);
             var i = map.entrySet().iterator();
 
-            Set<String> seen = new HashSet<>();
+            Set<TestEnum> seen = new HashSet<>();
             while (i.hasNext()) {
                 seen.add(i.next().getKey());
             }
@@ -100,7 +101,7 @@ final class BasicLazyMapTest {
 
     @ParameterizedTest
     @MethodSource("unsupportedOperations")
-    void uoe(String name, Consumer<Map<String, Lazy<Integer>>> op) {
+    void uoe(String name, Consumer<Map<TestEnum, Lazy<Integer>>> op) {
         for (var map:maps()) {
             assertThrows(UnsupportedOperationException.class, () -> op.accept(map), name);
         }
@@ -108,22 +109,26 @@ final class BasicLazyMapTest {
 
     @ParameterizedTest
     @MethodSource("nullOperations")
-    void npe(String name, Consumer<Map<String, Lazy<Integer>>> op) {
+    void npe(String name, Consumer<Map<TestEnum, Lazy<Integer>>> op) {
         for (var map:maps()) {
             assertThrows(NullPointerException.class, () -> op.accept(map), name);
         }
     }
 
-    private static List<Set<String>> sets() {
-        return IntStream.range(0, KEY.length())
-                .mapToObj(i -> Arrays.copyOfRange(KEYS, 0, i))
-                .map(Set::of)
+    private static List<Set<TestEnum>> sets() {
+        return IntStream.range(0, TestEnum.values().length)
+                .mapToObj(i -> Arrays.copyOfRange(TestEnum.values(), 0, i))
+                .map(a -> {
+                    Set<TestEnum> s = EnumSet.noneOf(TestEnum.class);
+                    s.addAll(List.of(a));
+                    return s;
+                })
                 .toList();
     }
 
-    private static List<Map<String, Lazy<Integer>>> maps() {
+    private static List<Map<TestEnum, Lazy<Integer>>> maps() {
         return sets().stream()
-                .map(Lazy::<String, Integer>ofMap)
+                .map(Lazy::<TestEnum, Integer>ofMap)
                 .toList();
     }
 
@@ -152,11 +157,11 @@ final class BasicLazyMapTest {
         );
     }
 
-    private static Consumer<Map<String, Lazy<Integer>>> asConsumer(Consumer<Map<String, Lazy<Integer>>> consumer) {
+    private static Consumer<Map<TestEnum, Lazy<Integer>>> asConsumer(Consumer<Map<TestEnum, Lazy<Integer>>> consumer) {
         return consumer;
     }
 
-    static String expectedToString(Map<String, Lazy<Integer>> map) {
+    static String expectedToString(Map<TestEnum, Lazy<Integer>> map) {
         return "{" + map.entrySet()
                 .stream().map(e -> e.getKey() + "=" + e.getValue())
                 .collect(Collectors.joining(", ")) + "}";

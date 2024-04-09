@@ -35,6 +35,7 @@ import java.lang.reflect.Array;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.IntFunction;
+import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -43,6 +44,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.lang.lazy.LazyElement;
 import jdk.internal.lang.lazy.LazyUtil;
 import jdk.internal.misc.CDS;
+import jdk.internal.util.ImmutableBitSetPredicate;
 import jdk.internal.vm.annotation.Stable;
 
 import static jdk.internal.lang.lazy.LazyUtil.*;
@@ -156,17 +158,26 @@ class ImmutableCollections {
                     }
                 }
 
+                @SuppressWarnings("unchecked")
                 @Override
-                public <K, V> Map<K, Lazy<V>> lazyMap(K[] keys) {
-                    return ImmutableCollections.LazyMap.create(keys);
+                public <K, V> Map<K, Lazy<V>> lazyMap(Set<? extends K> keys) {
+                    K[] arr = (K[]) keys.stream()
+                            .map(Objects::requireNonNull)
+                            .toArray();
+                    return keys instanceof EnumSet
+                            ? ImmutableCollections.LazyEnumMap.create(arr)
+                            : ImmutableCollections.LazyMap.create(arr);
                 }
+
 
                 @Override
                 public <K, V> V computeIfUnset(Map<K, Lazy<V>> map,
                                                K key,
                                                Function<? super K, ? extends V> mapper) {
-                    if (map instanceof LazyMap<K, V> lm) {
-                        return lm.computeIfUnset(key, mapper);
+                    if (map instanceof UnsetComputable) {
+                        @SuppressWarnings("unchecked")
+                        UnsetComputable<K, V> uc = ((UnsetComputable<K, V>) map);
+                        return uc.computeIfUnset(key, mapper);
                     } else {
                         Lazy<V> lazy = map.get(key);
                         if (lazy == null) {
@@ -1980,9 +1991,15 @@ class ImmutableCollections {
 
     }
 
+    // Internal interface used to indicate the presence of
+    // the computeIfUnset method that is unique to LazyMap and LazyEnumMap
+    interface UnsetComputable<K, V> {
+        V computeIfUnset(K key, Function<? super K, ? extends V> mapper);
+    }
+
     public static final class LazyMap<K, V>
             extends AbstractImmutableMap<K, Lazy<V>>
-            implements Map<K, Lazy<V>> {
+            implements Map<K, Lazy<V>>, UnsetComputable<K, V> {
 
         @Stable
         private final int size;
@@ -1997,13 +2014,12 @@ class ImmutableCollections {
         // keys array not trusted
         @SuppressWarnings("unchecked")
         LazyMap(Object[] inKeys) {
+            assert inKeys.length > 0;
             this.size = inKeys.length;
 
             // Todo: Consider having a larger array
             int len = EXPAND_FACTOR * inKeys.length;
             len = (len + 1) & ~1; // ensure table is even length
-
-            System.out.println(inKeys.length + " -> " + len);
 
             K[] keys = (K[])new Object[len];
 
@@ -2055,7 +2071,7 @@ class ImmutableCollections {
         @Override
         public boolean containsKey(Object o) {
             Objects.requireNonNull(o);
-            return size > 0 && probe(o) >= 0;
+            return probe(o) >= 0;
         }
 
         @Override
@@ -2065,14 +2081,11 @@ class ImmutableCollections {
 
         @Override
         public boolean isEmpty() {
-            return size == 0;
+            return false;
         }
 
         @Override
         public Lazy<V> get(Object key) {
-            if (size == 0) {
-                return null;
-            }
             int i = probe(key);
             if (i >= 0) {
                 return value(i);
@@ -2141,7 +2154,8 @@ class ImmutableCollections {
             };
         }
 
-        V computeIfUnset(K key, Function<? super K, ? extends V> mapper) {
+        @Override
+        public V computeIfUnset(K key, Function<? super K, ? extends V> mapper) {
            LazyElement<V> element = (LazyElement<V>) get(key);
            if (element == null) {
                throw LazyUtil.noKey(key);
@@ -2154,6 +2168,178 @@ class ImmutableCollections {
         }
 
     }
+
+    public static final class LazyEnumMap<K extends Enum<K>, V>
+            extends AbstractImmutableMap<K, Lazy<V>>
+            implements Map<K, Lazy<V>>, UnsetComputable<K, V> {
+
+        @Stable
+        private int size;
+        @Stable
+        private final V[] elements;
+        @Stable
+        private final byte[] sets;
+        private final Object[] mutexes;
+        @Stable
+        private final Class<K> enumType;
+        @Stable
+        private final int min;
+        @Stable
+        private final IntPredicate isPresent;
+
+        @SuppressWarnings("unchecked")
+        private LazyEnumMap(Object[] keys) {
+            assert keys.length > 0;
+
+            // Establish the min and max value.
+            // All indexing will then be translated by
+            // subtracting the min ordinal from a key's ordinal
+            int min = Integer.MAX_VALUE;
+            int max = Integer.MIN_VALUE;
+            for (Object o:keys) {
+                K key = (K)o;
+                int ordinal = key.ordinal();
+                min = Math.min(min, ordinal);
+                max = Math.max(max, ordinal);
+            }
+            this.min = min;
+            int elementCount = max - min + 1;
+
+            // Construct a translated bitset
+            BitSet bs = new BitSet(elementCount);
+            for (Object o:keys) {
+                K key = (K)o;
+                bs.set(arrayIndex(key));
+            }
+            this.isPresent = ImmutableBitSetPredicate.of(bs);
+
+            this.elements = (V[]) new Object[elementCount];
+            this.size = keys.length;
+            this.sets = new byte[elementCount];
+            this.mutexes = new Object[elementCount];
+            this.enumType = (Class<K>) keys[0].getClass();
+        }
+
+        @Override
+        public boolean containsKey(Object o) {
+            Objects.requireNonNull(o);
+            int arrayIndex;
+            return enumType.isInstance(o) &&
+                    (arrayIndex = arrayIndex(o)) >= 0 && arrayIndex < size &&
+                    isPresent.test(arrayIndex);
+        }
+
+        @Override
+        public int size() {
+            return size;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return false;
+        }
+
+        @Override
+        public Lazy<V> get(Object key) {
+            return containsKey(key)
+                    ? value(arrayIndex(key))
+                    : null;
+        }
+
+        private Lazy<V> value(int index) {
+            return new LazyElement<>(elements, sets, mutexes, index);
+        }
+
+        private K key(int arrayIndex) {
+            return enumType.getEnumConstants()[enumIndex(arrayIndex)];
+        }
+
+        @SuppressWarnings("unchecked")
+        private int arrayIndex(Object key) {
+            return ((K) key).ordinal() - min;
+        }
+
+        private int enumIndex(int arrayIndex) {
+            return arrayIndex + min;
+        }
+
+        final class LazyEnumMapIterator implements Iterator<Map.Entry<K, Lazy<V>>> {
+
+            private int remaining;
+            private int idx;
+
+            LazyEnumMapIterator() {
+                remaining = size;
+                // pick an even starting index in the [0, keys.length)
+                // range randomly based on SALT32L
+                idx = (int) ((SALT32L * (elements.length)) >>> 32);
+            }
+
+            @Override
+            public boolean hasNext() {
+                return remaining > 0;
+            }
+
+            private int nextIndex() {
+                int idx = this.idx;
+                if (REVERSE) {
+                    if ((++idx) >= elements.length) {
+                        idx = 0;
+                    }
+                } else {
+                    if ((--idx) < 0) {
+                        idx = elements.length - 1;
+                    }
+                }
+                return this.idx = idx;
+            }
+
+            @Override
+            public Map.Entry<K,Lazy<V>> next() {
+                if (remaining > 0) {
+                    int idx;
+                    while (!isPresent.test(idx = nextIndex())) {}
+                    Map.Entry<K,Lazy<V>> e = new KeyValueHolder<>(key(idx), value(idx));
+                    remaining--;
+                    return e;
+                } else {
+                    throw new NoSuchElementException();
+                }
+            }
+        }
+
+        @Override
+        public Set<Map.Entry<K, Lazy<V>>> entrySet() {
+            return new AbstractSet<>() {
+                @Override
+                public int size() {
+                    return LazyEnumMap.this.size;
+                }
+
+                @Override
+                public Iterator<Map.Entry<K, Lazy<V>>> iterator() {
+                    return new LazyEnumMap<K, V>.LazyEnumMapIterator();
+                }
+            };
+        }
+
+        @Override
+        public V computeIfUnset(K key, Function<? super K, ? extends V> mapper) {
+            LazyElement<V> element = (LazyElement<V>) get(key);
+            if (element == null) {
+                throw LazyUtil.noKey(key);
+            }
+            return element.computeIfUnset(key, mapper);
+        }
+
+        @SuppressWarnings("unchecked")
+        static <K, KI extends Enum<KI>, V> Map<K, Lazy<V>> create(Object[] keys) {
+            Map<KI, Lazy<V>> map = new ImmutableCollections.LazyEnumMap<>(keys);
+            return (Map<K, Lazy<V>>) map;
+        }
+
+    }
+
 }
 
 // ---------- Serialization Proxy ----------

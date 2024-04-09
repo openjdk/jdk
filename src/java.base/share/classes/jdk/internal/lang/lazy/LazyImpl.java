@@ -214,7 +214,7 @@ public final class LazyImpl<V> implements Lazy<V> {
                 .start(() -> {
                     try {
                         lazy.computeIfUnset(supplier);
-                    } catch (Exception _) {}
+                    } catch (Throwable _) {}
                 });
         return lazy;
     }
@@ -237,17 +237,12 @@ public final class LazyImpl<V> implements Lazy<V> {
         return ACCESS.computeIfUnset(list, index, mapper);
     }
 
-    // Todo: Check if enum map
     public static <K, V> Map<K, Lazy<V>> ofMap(Set<? extends K> keys) {
         if (keys.isEmpty()) {
             // Todo: Serializable...
             return Map.of();
         }
-        @SuppressWarnings("unchecked")
-        K[] arr = (K[]) keys.stream()
-                .map(Objects::requireNonNull)
-                .toArray();
-        return ACCESS.lazyMap(arr);
+        return ACCESS.lazyMap(keys);
     }
 
     public static <K, V> V computeIfUnset(Map<K, Lazy<V>> map,

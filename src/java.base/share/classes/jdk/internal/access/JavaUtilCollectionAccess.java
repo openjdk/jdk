@@ -27,6 +27,7 @@ package jdk.internal.access;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 
@@ -35,6 +36,6 @@ public interface JavaUtilCollectionAccess {
     <E> List<E> listFromTrustedArrayNullsAllowed(Object[] array);
     <V> List<Lazy<V>> lazyList(int size);
     <V> V computeIfUnset(List<Lazy<V>> list, int index, IntFunction<? extends V> mapper);
-    <K, V> Map<K, Lazy<V>> lazyMap(K[] keys);
+    <K, V> Map<K, Lazy<V>> lazyMap(Set<? extends K> keys);
     <K, V> V computeIfUnset(Map<K, Lazy<V>> map, K key, Function<? super K, ? extends V> mapper);
 }
