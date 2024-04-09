@@ -532,7 +532,7 @@ HeapWord* G1CollectedHeap::alloc_archive_region(size_t word_size, HeapWord* pref
   return start_addr;
 }
 
-void G1CollectedHeap::populate_archive_regions_bot_part(MemRegion range) {
+void G1CollectedHeap::populate_archive_regions_bot(MemRegion range) {
   assert(!is_init_completed(), "Expect to be called at JVM init time");
 
   iterate_regions_in_range(range,

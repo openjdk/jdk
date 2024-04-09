@@ -188,7 +188,7 @@ void HeapRegion::set_starts_humongous(HeapWord* obj_top, size_t fill_size) {
   _type.set_starts_humongous();
   _humongous_start_region = this;
 
-  _bot_part.set_for_starts_humongous(obj_top, fill_size);
+  _bot->set_for_starts_humongous(this, obj_top, fill_size);
 }
 
 void HeapRegion::set_continues_humongous(HeapRegion* first_hr) {
@@ -219,7 +219,7 @@ HeapRegion::HeapRegion(uint hrm_index,
   _bottom(mr.start()),
   _end(mr.end()),
   _top(nullptr),
-  _bot_part(bot, this),
+  _bot(bot),
   _pre_dummy_top(nullptr),
   _rem_set(nullptr),
   _hrm_index(hrm_index),
@@ -694,7 +694,7 @@ bool HeapRegion::verify(VerifyOption vo) const {
 
   // Only regions in old generation contain valid BOT.
   if (!is_empty() && !is_young()) {
-    _bot_part.verify();
+    _bot->verify(this);
   }
 
   if (is_humongous()) {
@@ -723,7 +723,7 @@ void HeapRegion::mangle_unused_area() {
 #endif
 
 void HeapRegion::update_bot_for_block(HeapWord* start, HeapWord* end) {
-  _bot_part.update_for_block(start, end);
+  _bot->update_for_block(start, end);
 }
 
 void HeapRegion::object_iterate(ObjectClosure* blk) {
