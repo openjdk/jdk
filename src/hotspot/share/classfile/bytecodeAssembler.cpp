@@ -35,7 +35,6 @@
 
 void BytecodeConstantPool::init() {
   for (int i = 1; i < _orig->length(); i++) {
-    bool new_entry = false;
     BytecodeCPEntry entry;
     switch(_orig->tag_at(i).value()) {
     case JVM_CONSTANT_Class:
