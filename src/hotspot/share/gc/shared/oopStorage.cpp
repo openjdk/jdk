@@ -906,7 +906,6 @@ bool OopStorage::has_cleanup_work_and_reset() {
     cleanup_permit_time =
       os::javaTimeNanos() + cleanup_defer_period;
     // Set the request flag false and return its old value.
-    // Needs to be atomic to avoid dropping a concurrent request.
     Atomic::release_store(&needs_cleanup_requested, false);
     return true;
   } else {
@@ -983,9 +982,8 @@ bool OopStorage::delete_empty_blocks() {
       ThreadBlockInVM tbiv(JavaThread::current());
     }
   }
-  // Exceeded work limit or can't delete last block.  This will
-  // cause the ServiceThread to loop, giving other subtasks an
-  // opportunity to run too.
+  // Exceeded work limit or can't delete last block so still needs cleanup
+  // for the next time.
   record_needs_cleanup();
   return true;
 }
