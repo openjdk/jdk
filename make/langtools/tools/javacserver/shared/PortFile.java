@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,16 +172,19 @@ public class PortFile {
         // Access to file must be closed before deleting.
         rwfile.close();
 
-        file.delete();
-
-        // Wait until file has been deleted (deletes are asynchronous on Windows!) otherwise we
+        if (!file.exists()) { // file deleted already
+            return;
+        }
+        // Keep trying until file has been deleted, otherwise we
         // might shutdown the server and prevent another one from starting.
-        for (int i = 0; i < 10 && file.exists(); i++) {
+        for (int i = 0; i < 10 && file.exists() && !file.delete(); i++) {
             Thread.sleep(1000);
         }
         if (file.exists()) {
             throw new IOException("Failed to delete file.");
         }
+        // allow some time for late clients to connect
+        Thread.sleep(1000);
     }
 
     /**
