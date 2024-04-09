@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,13 +114,6 @@ public class Universe {
   public void print() { printOn(System.out); }
   public void printOn(PrintStream tty) {
     heap().printOn(tty);
-  }
-
-  // Check whether an element of a typeArrayOop with the given type must be
-  // aligned 0 mod 8.  The typeArrayOop itself must be aligned at least this
-  // strongly.
-  public static boolean elementTypeShouldBeAligned(BasicType type) {
-    return type == BasicType.T_DOUBLE || type == BasicType.T_LONG;
   }
 
   // Check whether an object field (static/non-static) of the given type must be

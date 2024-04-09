@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,6 @@ BUILD_JDK_JTREG_EXECUTABLES_CFLAGS_exeJliLaunchTest := \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjli \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjli
 
-TEST_LIB_NATIVE_SRC := $(TOPDIR)/test/lib/native
-
 # Platform specific setup
 ifeq ($(call isTargetOs, windows), true)
   BUILD_JDK_JTREG_EXCLUDE += libDirectIO.c libInheritedChannel.c \
@@ -69,14 +67,6 @@ ifeq ($(call isTargetOs, windows), true)
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerTest := $(LIBCXX) jvm.lib
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exerevokeall := advapi32.lib
   BUILD_JDK_JTREG_EXECUTABLES_CFLAGS_exeNullCallerTest := /EHsc
-
-  # java.lang.foreign tests
-  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libAsyncStackWalk := -I$(TEST_LIB_NATIVE_SRC)
-  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libLinkerInvokerUnnamed := -I$(TEST_LIB_NATIVE_SRC)
-  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libLinkerInvokerModule := -I$(TEST_LIB_NATIVE_SRC)
-  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libLoaderLookupInvoker := -I$(TEST_LIB_NATIVE_SRC)
-  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libAsyncInvokers := -I$(TEST_LIB_NATIVE_SRC)
-
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libTracePinnedThreads := jvm.lib
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libNewDirectByteBuffer := $(WIN_LIB_JAVA)
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libGetXSpace := $(WIN_LIB_JAVA)
@@ -88,15 +78,10 @@ else
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libNativeThread := -pthread
 
   # java.lang.foreign tests
-  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libAsyncStackWalk := -I$(TEST_LIB_NATIVE_SRC)
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libAsyncStackWalk := -pthread
-  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libAsyncInvokers := -I$(TEST_LIB_NATIVE_SRC)
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libAsyncInvokers := -pthread
-  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libLinkerInvokerUnnamed := -I$(TEST_LIB_NATIVE_SRC)
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLinkerInvokerUnnamed := -pthread
-  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libLinkerInvokerModule := -I$(TEST_LIB_NATIVE_SRC)
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLinkerInvokerModule := -pthread
-  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libLoaderLookupInvoker := -I$(TEST_LIB_NATIVE_SRC)
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLoaderLookupInvoker := -pthread
 
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libExplicitAttach := -ljvm
@@ -109,6 +94,9 @@ else
     BUILD_JDK_JTREG_EXECUTABLES_LIBS_exelauncher := -ldl
   endif
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeJliLaunchTest := -ljli
+  ifeq ($(call isTargetOs, aix), true)
+    BUILD_JDK_JTREG_EXECUTABLES_LDFLAGS_exeJliLaunchTest := -L$(SUPPORT_OUTPUTDIR)/native/java.base
+  endif
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeCallerAccessTest := -ljvm
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerTest := $(LIBCXX) -ljvm
 endif
