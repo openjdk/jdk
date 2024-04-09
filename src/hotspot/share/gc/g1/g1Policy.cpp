@@ -1567,11 +1567,25 @@ double G1Policy::select_candidates_from_marking(G1CollectionCandidateList* marki
   return time_remaining_ms;
 }
 
+void G1Policy::age_out_retained(G1CollectionCandidateList* retained_list,
+                                G1CollectionCandidateRegionList* aged_out_regions) {
+  for (G1CollectionSetCandidateInfo* ci : *retained_list) {
+    HeapRegion* r = ci->_r;
+    if (r->has_pinned_objects()) {
+      if (ci->update_num_unreclaimed()) {
+        log_trace(gc, ergo, cset)("Retained candidate %u can not be reclaimed currently. Skipping.", r->hrm_index());
+      } else {
+        log_trace(gc, ergo, cset)("Retained candidate %u can not be reclaimed currently. Dropping.", r->hrm_index());
+        aged_out_regions->append(r);
+      }
+    }
+  }
+}
+
 void G1Policy::select_candidates_from_retained(G1CollectionCandidateList* retained_list,
                                                double time_remaining_ms,
                                                G1CollectionCandidateRegionList* initial_old_regions,
-                                               G1CollectionCandidateRegionList* optional_old_regions,
-                                               G1CollectionCandidateRegionList* pinned_old_regions) {
+                                               G1CollectionCandidateRegionList* optional_old_regions) {
 
   uint const min_regions = min_retained_old_cset_length();
 
@@ -1602,13 +1616,8 @@ void G1Policy::select_candidates_from_retained(G1CollectionCandidateList* retain
     bool fits_in_remaining_time = predicted_time_ms <= time_remaining_ms;
     // If we can't reclaim that region ignore it for now.
     if (r->has_pinned_objects()) {
+      assert(ci->_num_unreclaimed < G1NumCollectionsKeepPinned, "Retained candidate %u should have been removed.", r->hrm_index());
       num_pinned_regions++;
-      if (ci->update_num_unreclaimed()) {
-        log_trace(gc, ergo, cset)("Retained candidate %u can not be reclaimed currently. Skipping.", r->hrm_index());
-      } else {
-        log_trace(gc, ergo, cset)("Retained candidate %u can not be reclaimed currently. Dropping.", r->hrm_index());
-        pinned_old_regions->append(r);
-      }
       continue;
     }
 

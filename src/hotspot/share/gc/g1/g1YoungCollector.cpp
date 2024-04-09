@@ -486,17 +486,20 @@ void G1YoungCollector::set_young_collection_default_active_worker_threads(){
 
 void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) {
 
-  // Must be before collection set calculation, requires collection set to not
-  // be calculated yet.
-  if (collector_state()->in_concurrent_start_gc()) {
-    concurrent_mark()->pre_concurrent_start(_gc_cause);
-  }
-
+  // Flushes various thread local cached variables.
   {
     Ticks start = Ticks::now();
     G1PreEvacuateCollectionSetBatchTask cl;
     G1CollectedHeap::heap()->run_batch_task(&cl);
     phase_times()->record_pre_evacuate_prepare_time_ms((Ticks::now() - start).seconds() * 1000.0);
+  }
+
+  collection_set()->age_out_collection_set_candidates();
+
+  // Must be before collection set calculation, requires collection set to not
+  // be calculated yet.
+  if (collector_state()->in_concurrent_start_gc()) {
+    concurrent_mark()->pre_concurrent_start(_gc_cause);
   }
 
   // Needs log buffers flushed.

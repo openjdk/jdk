@@ -181,8 +181,6 @@ class G1CollectionSet {
   // This makes sure that marking candidates will not remain there to unnecessarily
   // prolong the mixed phase.
   void move_pinned_marking_to_retained(G1CollectionCandidateRegionList* regions);
-  // Removes the given list of regions from the retained candidates.
-  void drop_pinned_retained_regions(G1CollectionCandidateRegionList* regions);
 
   // Finalize the young part of the initial collection set. Relabel survivor regions
   // as Eden and calculate a prediction on how long the evacuation of all young regions
@@ -261,6 +259,7 @@ public:
 
   void iterate_optional(HeapRegionClosure* cl) const;
 
+  void age_out_collection_set_candidates();
   // Finalize the initial collection set consisting of all young regions potentially a
   // few old gen regions.
   void finalize_initial_collection_set(double target_pause_time_ms, G1SurvivorRegions* survivor);
