@@ -187,6 +187,17 @@ size_t os::lasterror(char *buf, size_t len) {
   return n;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// breakpoint support
+
+void os::breakpoint() {
+  BREAKPOINT;
+}
+
+extern "C" void breakpoint() {
+  // use debugger to set breakpoint here
+}
+
 // Return true if user is running as root.
 bool os::have_special_privileges() {
   static bool privileges = (getuid() != geteuid()) || (getgid() != getegid());
@@ -711,7 +722,16 @@ void* os::get_default_process_handle() {
 }
 
 void* os::dll_lookup(void* handle, const char* name) {
-  return dlsym(handle, name);
+  ::dlerror(); // Clear any previous error
+  void* ret = ::dlsym(handle, name);
+  if (ret == nullptr) {
+    const char* tmp = ::dlerror();
+    // It is possible that we found a NULL symbol, hence no error.
+    if (tmp != nullptr) {
+      log_debug(os)("Symbol %s not found in dll: %s", name, tmp);
+    }
+  }
+  return ret;
 }
 
 void os::dll_unload(void *lib) {
