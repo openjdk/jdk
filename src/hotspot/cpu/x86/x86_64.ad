@@ -10410,7 +10410,7 @@ instruct MoveL2D_reg_reg(regD dst, rRegL src) %{
 %}
 
 // Fast clearing of an array
-// Small ClearArray non-AVX512.
+// Small non-constant lenght ClearArray for non-AVX512 targets.
 instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
                   Universe dummy, rFlagsReg cr)
 %{
@@ -10470,7 +10470,7 @@ instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
   ins_pipe(pipe_slow);
 %}
 
-// Small ClearArray AVX512 non-constant length.
+// Small non-constant length ClearArray for AVX512 targets.
 instruct rep_stos_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, rax_RegI zero,
                        Universe dummy, rFlagsReg cr)
 %{
@@ -10531,7 +10531,7 @@ instruct rep_stos_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, rax_
   ins_pipe(pipe_slow);
 %}
 
-// Large ClearArray non-AVX512.
+// Large non-constant length ClearArray for non-AVX512 targets.
 instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
                         Universe dummy, rFlagsReg cr)
 %{
@@ -10582,7 +10582,7 @@ instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
   ins_pipe(pipe_slow);
 %}
 
-// Large ClearArray AVX512.
+// Large non-constant length ClearArray for AVX512 targets.
 instruct rep_stos_large_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, rax_RegI zero,
                              Universe dummy, rFlagsReg cr)
 %{
@@ -10633,11 +10633,10 @@ instruct rep_stos_large_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp
   ins_pipe(pipe_slow);
 %}
 
-// Small ClearArray AVX512 constant length.
+// Small constant length ClearArray for AVX512 targets.
 instruct rep_stos_im(immL cnt, rRegP base, regD tmp, rRegI zero, kReg ktmp, Universe dummy, rFlagsReg cr)
 %{
-  predicate(!((ClearArrayNode*)n)->is_large() &&
-              ((UseAVX > 2) && VM_Version::supports_avx512vlbw()));
+  predicate(!((ClearArrayNode*)n)->is_large() && (MaxVectorSize >= 32) && VM_Version::supports_avx512vl());
   match(Set dummy (ClearArray cnt base));
   ins_cost(100);
   effect(TEMP tmp, TEMP zero, TEMP ktmp, KILL cr);
