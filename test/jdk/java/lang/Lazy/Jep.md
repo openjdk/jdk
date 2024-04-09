@@ -38,7 +38,7 @@ field is fixed in time; it cannot be arbitrarily moved forward. In other words, 
 cannot cause specific constants to be initialized after the class or object is initialized.
 This means that developers are forced to choose between finality and all its
 benefits, and flexibility over the timing of initialization. Developers have
-devised a number of strategies to ameliorate this imbalance, but none are
+devised several strategies to ameliorate this imbalance, but none are
 ideal.
 
 For instance, monolithic class initializers can be broken up by leveraging the
@@ -76,14 +76,14 @@ class, thus introducing a significant static footprint cost.  Second, this idiom
 is only really applicable if the field initialization is suitably isolated, not
 relying on any other parts of the object state.
 
-It should be noted that even though actually outputting messages is slow comparing to
+It should be noted that even though eventually outputting a message is slow compared to
 obtaining the `Logger` instance itself, the `LOGGER::log`method starts with checking if
 the selected `Level` is enabled or not. This latter check is a relatively fast operation
 and so, in the case of disabled loggers, the `Logger` instance retrieval performance is
 important.
 
 Alternatively, the [_double-checked locking idiom_](https://en.wikipedia.org/wiki/Double-checked_locking), can also be used
-for deferring evaluation of field initializers. The idea is to optimistically
+for deferring the evaluation of field initializers. The idea is to optimistically
 check if the field's value is non-null and if so, use that value directly; but
 if the value observed is null, then the field must be initialized, which, to be
 safe under multi-threaded access, requires acquiring a lock to ensure
@@ -172,11 +172,11 @@ String errorPage = ErrorMessages.errorPage(2);
 // </html>
 ```
 
-Unfortunately, this approach provides a number of challenges. First, retrieving the values
+Unfortunately, this approach provides a plethora of challenges. First, retrieving the values
 from a static array is slow, as said values cannot be [constant-folded](https://en.wikipedia.org/wiki/Constant_folding). Even worse, access to
 the array is guarded by synchronization that is not only slow but will block access to the array for
 all elements whenever one of the elements is under computation. Furthermore, the class holder idiom (see above)
-is clearly insufficient in this case, as the number of required holder classes is *statically unbounded* - it 
+is undoubtedly insufficient in this case, as the number of required holder classes is *statically unbounded* - it 
 depends on the value of the parameter `SIZE` which may change in future variants of the code.
 
 What we are missing -- in all cases -- is a way to *promise* that a constant will be initialized
@@ -193,7 +193,7 @@ crucial to achieving optimal performance, but it is also easy to misuse: further
 after its initial update will result in undefined behavior, as the JIT compiler might have *already*
 constant-folded the (now overwritten) field value. In other words, what we are after is a *safe* and *efficient*
 wrapper around the `@Stable` mechanism - in the form of a new Java SE API that might be enjoyed by
-_all_ client and 3rd party Java code (and not the JDK alone).
+_all_ client and 3rd-party Java code (and not the JDK alone).
 
 ## Description
 
@@ -210,12 +210,13 @@ To use the Lazy Value and Collections APIs, the JVM flag `--enable-preview` must
 
 ### Outline
 
-The Lazy Values & Collections API define functions and an interface so that client code in libraries and applications can
+The Lazy Values & Collections API defines functions and an interface so that client code in libraries and applications can
 
-- Define and use lazy (scalar) values: [`LazyValue<V>`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/LazyValue.html)
+- Define and use lazy (scalar) values: 
+  - [`LazyValue`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/LazyValue.html)
 - Define collections: 
-  - [`List<LazyValue<V>> lazyList = LazyValue.ofList(int size)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/LazyValue.html#ofList(int)), 
-  - [`Map<K, LazyValue<V>> lazyMap = LazyValue.ofMap(Set<K> keys)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/LazyValue.html#ofMap(java.util.Set))
+  - [`LazyValue.ofList(int size)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/LazyValue.html#ofList(int)), 
+  - [`LazyValue.ofMap(Set<K> keys)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/LazyValue.html#ofMap(java.util.Set))
 
 The Lazy Values & Collections API resides in the [java.lang](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/package-summary.html) package of the [java.base](https://cr.openjdk.org/~pminborg/lazy/api/java.base/module-summary.html) module.
 
@@ -251,14 +252,14 @@ thread, or concurrently, by multiple threads.
 A lazy value may be set to `null` which then will be considered its set value.
 Null-averse applications can also use `Lazy<Optional<V>>`.
 
-In many ways, this is similar to the holder-class idiom in the sense if offers the same
+In many ways, this is similar to the holder-class idiom in the sense it offers the same
 performance and constant-folding characteristics. It also incurs a lower static footprint
 since no additional class is required. 
 
 However, there is _an important distinction_; several threads may invoke the `Logger::getLogger`
-method if they call the `logger()` method at about the same time. Even though `LazyValue` will guarantee, only
+method if they call the `logger()` method at about the same time. Even though `LazyValue` will guarantee, that only
 one of these results will ever be exposed to the many competing threads, there might be applications where
-it is a requirement, a supplying method is only called once. 
+it is a requirement, that a supplying method is only called once. 
 
 In such cases, it is possible to compute and set an unset value on-demand as shown in this example in which case
 `LazyValue` will uphold the invoke-at-most-once invariant for the provided `Supplier`:
@@ -276,10 +277,10 @@ class Bar {
 }
 ```
 
-LazyValue instances holding reference values are faster to retrieve than reference values managed via
-double-checked-idiom constructs as lazy values rely on explicit memory barriers
-rather than performing volatile access on each retrieval operation. In addition,
-lazy values are eligible for constant folding optimizations.
+`LazyValue` instances holding reference values are faster to retrieve than reference values
+managed via double-checked-idiom constructs as lazy values rely on explicit memory barriers
+rather than performing volatile access on each retrieval operation. In addition, lazy values
+are eligible for constant folding optimizations.
 
 ### Lazy collections
 
@@ -377,6 +378,9 @@ This concept allows declaring a large number of lazy values which can be easily 
 pre-specified, keys in a resource-efficient and performant way. For example, high-performance, non-evicting caches
 may now be easily and reliably realized.
 
+Providing an `EnumSet<K>` to the `LazyValue::ofMap` factory will unlock additional storage and performance
+optimizations for the returned lazy map.
+
 It is worth remembering, that the lazy collections all promise the function provided at computation
 (used to lazily compute elements or values) is invoked at most once per index or key; even
 though used from several threads.
@@ -422,8 +426,8 @@ computed values which upholds the invoke-at-most-once-per-key invariant.
 It should be noted that the enumerated collection of keys given at creation time
 constitutes the only valid input keys for the memoized function.
 
-Similarly to how a `Funcion` can be memoized using a backing lazily computed map, the same pattern can be used
-for an `IntFunction` that will record its cached value in a backing _lazy list_:
+Similarly to how a `Function` can be memoized using a backing lazily computed map, the same pattern
+can be used for an `IntFunction` that will record its cached value in a backing _lazy list_:
 
 ```
 // 1. Declare a lazy list of default error pages to serve up
@@ -457,7 +461,7 @@ String msg =  ERROR_FUNCTION.apply(2);
 
 The same paradigm can be used for creating a memoized `Supplier` (backed by a single `LazyValue` instance) or 
 a memoized `Predicate`(backed by a lazily computed `Map<K, LazyValue<Boolean>>`). An astute reader will be able to
-write such constructs on a few lines. 
+write such constructs in a few lines. 
 
 ## Alternatives
 
