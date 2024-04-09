@@ -700,7 +700,6 @@ public:
   // made obsolete or deleted -- in these cases, the jmethodID
   // refers to null (as is the case for any weak reference).
   static jmethodID make_jmethod_id(ClassLoaderData* cld, Method* mh);
-  static void destroy_jmethod_id(ClassLoaderData* cld, jmethodID mid);
 
   // Ensure there is enough capacity in the internal tracking data
   // structures to hold the number of jmethodIDs you plan to generate.
@@ -814,6 +813,14 @@ public:
       build_method_counters(current, this);
     }
     return _method_counters;
+  }
+
+  // Clear the flags related to compiler directives that were set by the compilerBroker,
+  // because the directives can be updated.
+  void clear_directive_flags() {
+    set_has_matching_directives(false);
+    clear_is_not_c1_compilable();
+    clear_is_not_c2_compilable();
   }
 
   void clear_is_not_c1_compilable()           { set_is_not_c1_compilable(false); }

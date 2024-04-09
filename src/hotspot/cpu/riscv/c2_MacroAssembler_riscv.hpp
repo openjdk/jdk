@@ -79,16 +79,15 @@
                                  int needle_con_cnt, Register result, int ae);
 
   void arrays_equals(Register r1, Register r2,
-                     Register tmp3, Register tmp4,
-                     Register tmp5, Register tmp6,
-                     Register result, Register cnt1,
-                     int elem_size);
+                     Register tmp1, Register tmp2, Register tmp3,
+                     Register result, int elem_size);
 
   void arrays_hashcode(Register ary, Register cnt, Register result,
                        Register tmp1, Register tmp2,
                        Register tmp3, Register tmp4,
                        Register tmp5, Register tmp6,
                        BasicType eltype);
+
   // helper function for arrays_hashcode
   int arrays_hashcode_elsize(BasicType eltype);
   void arrays_hashcode_elload(Register dst, Address src, BasicType eltype);
@@ -279,7 +278,7 @@
   }
 
   void integer_extend_v(VectorRegister dst, BasicType dst_bt, uint vector_length,
-                        VectorRegister src, BasicType src_bt);
+                        VectorRegister src, BasicType src_bt, bool is_signed);
 
   void integer_narrow_v(VectorRegister dst, BasicType dst_bt, uint vector_length,
                         VectorRegister src, BasicType src_bt);
