@@ -33,6 +33,13 @@ LineReader::LineReader() {
   _buffer_len = 0;
 }
 
+LineReader::LineReader(FILE* file) {
+  _is_oom = false;
+  _buffer = nullptr;
+  _buffer_len = 0;
+  init(file);
+}
+
 LineReader::~LineReader() {
   if (_buffer != nullptr) {
     os::free(_buffer);
@@ -40,8 +47,9 @@ LineReader::~LineReader() {
 }
 
 void LineReader::init(FILE* file) {
+  assert(file != nullptr, "sanity");
   _file = file;
-  _buffer_len = 16; // start at small size to test expansion logic
+  _buffer_len = DEBUG_ONLY(16) NOT_DEBUG(4096); // debug build: start small to test expansion logic
   _buffer = (char*)os::malloc(_buffer_len, mtClass);
   if (_buffer == nullptr) {
     _is_oom = true;
@@ -49,6 +57,8 @@ void LineReader::init(FILE* file) {
 }
 
 char* LineReader::read_line() {
+  STATIC_ASSERT(0 < MAX_LEN && MAX_LEN <= INT_MAX);
+  assert(_file != nullptr, "must be initialized");
   if (_is_oom) {
     return nullptr;
   }
@@ -56,10 +66,10 @@ char* LineReader::read_line() {
   int line_len = 0; // the number of characters we have read so far (excluding the trailing \0)
   while (true) {
     assert(line_len < _buffer_len, "sanity");
-    int free_space = _buffer_len - line_len;
+    int available_space = _buffer_len - line_len;
     char* p = _buffer + line_len;
     int new_len = 0;
-    if (fgets(p, free_space, _file) == nullptr) {
+    if (fgets(p, available_space, _file) == nullptr) {
       // _file is at EOF
       if (line_len == 0) {
         return nullptr; // EOF
@@ -70,13 +80,13 @@ char* LineReader::read_line() {
       }
     }
 
-    // fgets() reads at most free_space characters, including the trailing \0, so
+    // fgets() reads at most available_space chars, including the trailing \0, so
     // strlen(p) must be smaller than INT_MAX, and can be safely cast to int.
     assert(strlen(p) < INT_MAX, "sanity");
     new_len = (int)strlen(p);
 
-    // _buffer_len will stop at INT_MAX, so we will never be able to read more than
-    // INT_MAX chars for a single input line.
+    // _buffer_len will stop at MAX_LEN, so we will never be able to read more than
+    // MAX_LEN chars for a single input line.
     assert(line_len >= 0 && new_len >= 0 && (line_len + new_len) >= 0, "no int overflow");
 
     line_len += new_len; // We have read line_len chars so far.
@@ -91,13 +101,15 @@ char* LineReader::read_line() {
 
     if (line_len == _buffer_len - 1) {
       // The buffer is not big enough to hold the entire input line. Expand it.
-      if (_buffer_len == INT_MAX) {
-        _is_oom = true; // cannot expand anymore.
-        return nullptr;
+      if (_buffer_len == MAX_LEN) {
+        // Cannot expand anymore. Return the first MAX_LEN-1 bytes of input.
+        // The behavior is exactly the same as if we had called fgets() with a
+        // buffer whose size is MAX_LEN.
+        return _buffer;
       }
       int new_len = _buffer_len * 2;
       if (new_len < _buffer_len) { // overflows int
-        new_len = INT_MAX;
+        new_len = MAX_LEN;
       }
       assert(new_len > _buffer_len, "must be");
 

@@ -28,14 +28,20 @@
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-// This class is a wrapper around fgets() for reading arbitrarily long
-// text lines (upto INT_MAX chars) from a FILE*.
+// This class is a wrapper around fgets() for reading *reasonably long*
+// text lines (up to LineReader::MAX_LEN-1 chars) from a FILE*.
+//
+// MAX_LEN is currently 4M. This should be enough for any practical use
+// of text-based input files for HotSpot. Don't use LineReader if it's
+// possible for valid lines to be longer than this limit.
 class LineReader : public StackObj {
   char* _buffer;       // The buffer that holds the value returned by read_line().
   int   _buffer_len;   // Max characters that can be stored in _line, including the trailing \0;
   FILE* _file;
   bool  _is_oom;
 public:
+  static const int MAX_LEN = 4 * 1024 * 1024;
+  LineReader(FILE* file);
   LineReader();
   void init(FILE* file);
   ~LineReader();
@@ -45,19 +51,20 @@ public:
     return _is_oom;
   }
 
-  // Return one line from _file, as a NUL-terminated string. The length and contents of this
-  // string are the same as those returned by a call to fgets(s, size, _file) with size==INT_MAX.
+  // Return one line from _file, as a 0-terminated string. The length and contents of this
+  // string are the same as those returned by a call to fgets() with a buffer that's
+  // MAX_LEN bytes long. (Note: if the file contains a line longer than MAX_LEN-1 chars,
+  // we'd break it up in multiple chunks, just as fgets() would).
   //
   // When successful, a non-null value is returned. The caller is free to read or modify this
-  // string (up to the terminating NUL character) until the next call to read_line(), or until the
+  // string (up to the terminating \0 character) until the next call to read_line(), or until the
   // LineReader is destructed.
   //
   // nullptr is returned if:
-  //   1. The input line in _file is longer than INT_MAX characters.
-  //   2. os::malloc/os::realloc failed to allocate enough space to accommodate the input line.
-  //   3. Upon the entry of this function, _file is already at the EOF position.
-  // If this function returns nullptr because of cases 1 or 2, all subsequent calls to
-  // is_oom() will return true.
+  //   1. os::malloc/os::realloc failed to allocate enough space to accommodate the input line.
+  //      When this happens, all subsequent calls to is_oom() will return true, and all
+  //      subsequent calls to read_line() will return nullptr;
+  //   2. Upon the entry of this function, _file is already at the EOF position.
   char* read_line();
 };
 

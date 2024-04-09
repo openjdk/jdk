@@ -109,25 +109,49 @@ public class ClassListFormatA extends ClassListFormatBase {
                 "CustomLoadee2 id: 5 super: 1 interfaces: 3 4 source: " + customJarPath      // preceding spaces
             ));
 
-        // The C++ class LineReader should be able to:
-        // [1] read a very long line (65000 chars)
-        // [2] read the last line from a file that doesn't end with a newline character.
+        // Tests for corner cases in the C++ class LineReader.
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 6500; i++) {
-          sb.append("X123456789");
-        }
-        String longName = sb.toString(); // 65000 chars long
-        System.out.println("TESTCASE A7: Long line; Last line in file is not newline.");
-        String classList = "NoEndingNewLine.classlist";
-        try (FileWriter fw = new FileWriter(classList)) {
-            fw.write(longName + "\n");
-            fw.write("No/Such/ClassABCD");
+            sb.append("X123456789");
         }
 
-        CDSOptions opts = (new CDSOptions())
-            .addPrefix("-XX:ExtraSharedClassListFile=" + classList, "-Xlog:cds");
-        CDSTestUtils.createArchiveAndCheck(opts)
-            .shouldContain("Preload Warning: Cannot find " + longName)
-            .shouldContain("Preload Warning: Cannot find No/Such/ClassABCD");
+        {
+            System.out.println("TESTCASE A7.1: Long line (65000 chars)");
+            String longName = sb.toString(); // 65000 chars long
+            String classList = "LongLine.classlist";
+            try (FileWriter fw = new FileWriter(classList)) {
+                fw.write(longName + "\n");
+            }
+            CDSOptions opts = (new CDSOptions())
+                .addPrefix("-XX:ExtraSharedClassListFile=" + classList, "-Xlog:cds");
+            CDSTestUtils.createArchiveAndCheck(opts)
+                .shouldContain("Preload Warning: Cannot find " + longName);
+        }
+
+        {
+            System.out.println("TESTCASE A7.2: Name Length > Symbol::max_length()");
+            String tooLongName = sb.toString() + sb.toString();
+            String classList = "TooLongLine.classlist";
+            try (FileWriter fw = new FileWriter(classList)) {
+                fw.write(tooLongName + "\n");
+            }
+            CDSOptions opts = (new CDSOptions())
+                .addPrefix("-XX:ExtraSharedClassListFile=" + classList, "-Xlog:cds");
+            CDSTestUtils.createArchive(opts)
+                .shouldContain("class name too long")
+                .shouldHaveExitValue(1);
+        }
+
+        {
+            System.out.println("TESTCASE A7.3: File doesn't end with newline");
+            String classList = "NoTrailingNewLine.classlist";
+            try (FileWriter fw = new FileWriter(classList)) {
+                fw.write("No/Such/ClassABCD");
+            }
+            CDSOptions opts = (new CDSOptions())
+                .addPrefix("-XX:ExtraSharedClassListFile=" + classList, "-Xlog:cds");
+            CDSTestUtils.createArchiveAndCheck(opts)
+                .shouldContain("Preload Warning: Cannot find No/Such/ClassABCD");
+        }
     }
 }

@@ -114,6 +114,7 @@ int ClassListParser::parse(TRAPS) {
       continue;
     }
 
+    check_class_name_length(_class_name);
     TempNewSymbol class_name_symbol = SymbolTable::new_symbol(_class_name);
     if (_indy_items->length() > 0) {
       // The current line is "@lambda-proxy class_name". Load the proxy class.
@@ -172,6 +173,7 @@ bool ClassListParser::parse_one_line() {
     if (_line == nullptr) {
       if (_line_reader.is_oom()) {
         // Don't try to print the input line that we already know is too long.
+        _token = nullptr;
         _line_len = 0;
         error("Input line too long"); // will exit JVM
       }
@@ -452,6 +454,15 @@ void ClassListParser::error(const char* msg, ...) {
 
   vm_exit_during_initialization("class list format error.", nullptr);
   va_end(ap);
+}
+
+void ClassListParser::check_class_name_length(const char* class_name) {
+  if (strlen(class_name) > (size_t)Symbol::max_length()) {
+    jio_fprintf(defaultStream::error_stream(),
+              "An error has occurred while processing class list file %s:%d class name too long\n",
+              _classlist_file, _line_no);
+    vm_exit_during_initialization("class list format error.", nullptr);
+  }
 }
 
 // This function is used for loading classes for customized class loaders
