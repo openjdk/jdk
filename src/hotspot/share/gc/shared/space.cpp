@@ -69,7 +69,6 @@ void ContiguousSpace::initialize(MemRegion mr,
 
 void ContiguousSpace::clear(bool mangle_space) {
   set_top(bottom());
-  set_saved_mark();
   if (ZapUnusedHeapArea && mangle_space) {
     mangle_unused_area();
   }
@@ -213,9 +212,5 @@ TenuredSpace::TenuredSpace(SerialBlockOffsetTable* offsets,
   _offsets(offsets)
 {
   initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);
-}
-
-size_t TenuredSpace::allowed_dead_ratio() const {
-  return MarkSweepDeadRatio;
 }
 #endif // INCLUDE_SERIALGC
