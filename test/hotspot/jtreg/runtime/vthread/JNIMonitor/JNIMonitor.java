@@ -112,10 +112,7 @@ public class JNIMonitor {
         String test = args[0];
         String[] cmdArgs = new String[] {
             "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
-            // The following is a hack to trick the pool worker threads into terminating
-            // after one second (default keep-alive / parallelism).
-            "-Djdk.virtualThreadScheduler.parallelism=30",
-            // Grant access to the currentCarrierThread method
+            // Grant access to ThreadBuilders$VirtualThreadBuilder
             "--add-opens=java.base/java.lang=ALL-UNNAMED",
             // Enable the JNI warning
             "-Xcheck:jni",
@@ -199,8 +196,8 @@ public class JNIMonitor {
         }
 
         // This gives us a way to control the scheduler used for our virtual threads. The test
-        // only works as intended then the virtual threads run on the same carrier thread (as
-        // that carrier maintains ownership of the monitor if the virtual thread fails to unlock it.
+        // only works as intended when the virtual threads run on the same carrier thread (as
+        // that carrier maintains ownership of the monitor if the virtual thread fails to unlock it).
         // The original issue was also only discovered due to the carrier thread terminating
         // unexpectedly, so we can force that condition too by shutting down our custom scheduler.
         private static Thread.Builder.OfVirtual virtualThreadBuilder(Executor scheduler) {
