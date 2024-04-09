@@ -99,7 +99,7 @@ void Events::print() {
 void Events::init() {
   if (LogEvents) {
     _messages = new StringEventLog("Events", "events");
-    _nmethod_flush_messages = new StringEventLog("Nmethod flushs", "nmethodflushs");
+    _nmethod_flush_messages = new StringEventLog("Nmethod flushes", "nmethodflushs");
     _frequent_messages = new StringEventLog("Frequent Events", "freqevents");
     _vm_operations = new StringEventLog("VM Operations", "vmops");
     if (UseZGC) {
