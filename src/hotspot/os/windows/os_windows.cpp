@@ -4157,49 +4157,6 @@ DWORD os::win32::active_processors_in_job_object(DWORD* active_processor_groups)
   return processors;
 }
 
-DWORD os::win32::system_logical_processor_count() {
-  DWORD logical_processors = 0;
-  LOGICAL_PROCESSOR_RELATIONSHIP relationship_type = RelationGroup;
-  PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX system_logical_processor_info = nullptr;
-  DWORD returned_length = 0;
-
-  if (GetLogicalProcessorInformationEx(relationship_type, nullptr, &returned_length) == 0) {
-    DWORD last_error = GetLastError();
-
-    if (last_error == ERROR_INSUFFICIENT_BUFFER) {
-      system_logical_processor_info = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)os::malloc(returned_length, mtInternal);
-
-      if (nullptr == system_logical_processor_info) {
-        warning("os::malloc() failed to allocate %ld bytes for GetLogicalProcessorInformationEx buffer", returned_length);
-      } else if (GetLogicalProcessorInformationEx(relationship_type, system_logical_processor_info, &returned_length) == 0) {
-        char buf[512];
-        size_t buf_len = os::lasterror(buf, sizeof(buf));
-        warning("Attempt to determine logical processor count from GetLogicalProcessorInformationEx() failed: %s", buf_len != 0 ? buf : "<unknown error>");
-      } else {
-        DWORD processor_groups = system_logical_processor_info->Group.ActiveGroupCount;
-
-        PROCESSOR_GROUP_INFO* group_info = (PROCESSOR_GROUP_INFO*)system_logical_processor_info->Group.GroupInfo;
-        for (DWORD i = 0; i < processor_groups; i++, group_info++) {
-          logical_processors += group_info->ActiveProcessorCount;
-        }
-
-        if (logical_processors == 0) {
-          warning("Could not determine logical processor count from GetLogicalProcessorInformationEx()");
-          assert(false, "Must find at least 1 logical processor");
-        }
-      }
-
-      os::free(system_logical_processor_info);
-    } else {
-      char buf[512];
-      size_t buf_len = os::lasterror(buf, sizeof(buf));
-      warning("Attempt to determine logical processor count from GetLogicalProcessorInformationEx() failed: %s", buf_len != 0 ? buf : "<unknown error>");
-    }
-  }
-
-  return logical_processors;
-}
-
 void os::win32::initialize_system_info() {
   SYSTEM_INFO si;
   GetSystemInfo(&si);
@@ -4211,7 +4168,13 @@ void os::win32::initialize_system_info() {
   DWORD processors = 0;
   bool schedules_all_processor_groups = win32::is_windows_11_or_greater() || win32::is_windows_server_2022_or_greater();
   if (schedules_all_processor_groups) {
-    processors = system_logical_processor_count();
+    processors = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
+    if (processors == 0) {
+      char buf[512];
+      size_t buf_len = os::lasterror(buf, sizeof(buf));
+      warning("Attempt to determine the processor count from GetActiveProcessorCount() failed: %s", buf_len != 0 ? buf : "<unknown error>");
+      assert(false, "Must find at least 1 logical processor");
+    }
   }
 
   set_processor_count(processors > 0 ? processors : si.dwNumberOfProcessors);
@@ -4575,7 +4538,7 @@ jint os::init_2(void) {
 
   bool schedules_all_processor_groups = win32::is_windows_11_or_greater() || win32::is_windows_server_2022_or_greater();
   log_debug(os)(schedules_all_processor_groups ? auto_schedules_message : no_auto_schedules_message);
-  log_debug(os)("%d logical processors found.", win32::system_logical_processor_count());
+  log_debug(os)("%d logical processors found.", processor_count());
 
   // This could be set any time but all platforms
   // have to set it the same so we have to mirror Solaris.
