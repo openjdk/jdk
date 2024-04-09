@@ -214,9 +214,9 @@ The Lazy Values & Collections API define functions and an interface so that clie
 
 - Define and use lazy (scalar) values: [`Lazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html)
 - Define and use lazy collections: 
-  [`Lazy.ofList`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofList(int,java.util.function.IntFunction)), 
-  [`Lazy.ofSet(Set, Predicate)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofSet(java.util.Set,java.util.function.Predicate)), [`Lazy.ofSet(Enum.class, Predicate`)](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofSet(java.lang.Class,java.util.function.Predicate)),  
-  [`Lazy.ofMap(Set, Function)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofMap(java.util.Set,java.util.function.Function)), and [`Lazy.ofMap(Enum.class, Function)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofMap(java.lang.Class,java.util.function.Function))
+  [`Lazy.ofList`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofList(int)), 
+  [`Lazy.ofSet(Set, Predicate)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofSet(java.util.Set), [`Lazy.ofSet(Enum.class, Predicate`)](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofSet(java.lang.Class)),  
+  [`Lazy.ofMap(Set, Function)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofMap(java.util.Set)), and [`Lazy.ofMap(Enum.class, Function)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofMap(java.lang.Class))
 
 The Lazy Values & Collections API resides in the [java.lang](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/package-summary.html) package of the [java.base](https://cr.openjdk.org/~pminborg/lazy/api/java.base/module-summary.html) module.
 
@@ -291,14 +291,14 @@ and/or instance initializer will keep growing with the number of `Lazy` fields, 
 
 To handle these cases, the Lazy Values & Collections API provides constructs that allow the creation and handling of a
 *`List` of lazily computed elements*. Such a `List` is a list whose elements are created lazily on-demand
-before a particular element is first accessed. Lists of lazily computed values are objects of type `List<E>`.
+before a particular element is first accessed. Lists of lazily computed values are objects of type `List<Lazy<E>>`.
 Consequently, each element in the list enjoys the same properties as a `Lazy` but may require fewer resources.
 
 Like a `Lazy` object, a lazily computed `List` object is created via a factory method by providing the size
-of the desired `List` and an `IntFunction` to be used to lazily compute its elements:
+of the desired `List`:
 
 ```
-static <E> List<E> Lazy.ofList(int size, IntFunction<? extends E> mapper) { ... }
+static <E> List<Lazy<E>> Lazy.ofList(int size) { ... }
 ```
 
 This allows for improving the handling of lists with lazily computed values and enables a much better
@@ -311,8 +311,7 @@ class ErrorMessages {
     private static final int SIZE = 8;
 
     // 1. Declare a lazy list of default error pages to serve up
-    private static final List<String> MESSAGES = 
-            Lazy.ofList(SIZE, ErrorMessages::readFromFile);
+    private static final List<Lazy<String>> MESSAGES = Lazy.ofList(SIZE);
 
     // 2. Define a function that is to be called the first
     //    time a particular message number is referenced
@@ -327,7 +326,7 @@ class ErrorMessages {
     static String errorPage(int messageNumber) {
         // 3. Access the memoized list element with as-declared-final performance
         //    (evaluation made before the first access)
-        return MESSAGES.get(messageNumber);
+        return Lazy.computeIfUnset(MESSAGES, messageNumber, ErrorMessages::readFromFile);
     }
     
 }
@@ -345,14 +344,14 @@ String errorPage = ErrorMessages.errorPage(2);
 // </html>
 ```
 
-Note how there's only one field of type `List<String>` to initialize even though every computation is
+Note how there's only one field of type `List<Lazy<String>>` to initialize even though every computation is
 performed independently of the other element of the list when accessed (i.e. no blocking will occur across threads 
-computing distinct elements simultaneously). Also, the `IntSupplier` provided at construction is only invoked 
+computing distinct elements simultaneously). Also, the `IntSupplier` provided at computation is only invoked 
 at most once for each distinct index. The Lazy Values & Collections API allows modeling this cleanly, while
 still preserving good constant-folding guarantees and integrity of updates in the case of multi-threaded access.
 
 It should be noted that even though a lazily computed list might mutate its internal state upon external access, it 
-is _still immutable_ because _no change can ever be observed by an external entity_. This is similar to other
+is _still shallowly immutable_ because _no change can ever be observed by an external entity_. This is similar to other
 immutable classes, such as `String` (which internally caches its `hash` value), where they might rely on mutable
 internal states that are carefully kept internally and that never shine through to the outside world.
 
@@ -364,55 +363,29 @@ class MapDemo {
 
     // 1. Declare a lazy map of loggers with two allowable keys:
     //    "com.foo.Bar" and "com.foo.Baz"
-    static final Map<String, Logger> LOGGERS =
-            Lazy.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"), Logger::getLogger);
+    static final Map<String, Lazy<Logger>> LOGGERS =
+            Lazy.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
 
     // 2. Access the memoized map with as-declared-final performance
     //    (evaluation made before the first access)
     static Logger logger(String name) {
-        return LOGGERS.get(name);
+        return Lazy.computeIfUnset(LOGGERS, name, Logger::getLogger);
     }
 }
 ```
 
 This concept allows declaring a large number of lazy values which can be easily retrieved using arbitrarily, but
-pre-specified, keys in a resource-efficient and performant way.  
+pre-specified, keys in a resource-efficient and performant way. For example, performant, non-evicting caches may
+now be easily and reliably realized.
 
-Finally, a `Set` of lazily computed elements can be defined and used. In the example below, the well-known problem of
-efficiently determining and acting on if a logger will actually output something for a certain level is solved using
-a lazily computed `Set`. This allows constant folding and might even enable the JVM to totally eliminate
-unused code paths depending on dynamic logger properties determined when first accessed:
-
-```
- class SetDemo {
- 
-    static final Set<String> INFO_LOGGABLE =
-            Lazy.ofSet(Set.of("com.foo.Bar", "com.foo.Baz"),
-                    name -> MapDemo.logger(name).isLoggable(Level.INFO));
-                    
-    static boolean isInfoLoggable(String name) {
-        return INFO_LOGGABLE.contains(name);
-    }
-    
-    private static final String NAME = "com.foo.Bar";
-    
-    public void servlet() {
-        if (INFO_LOGGABLE.contains(NAME)) {
-            MapDemo.LOGGERS.get(NAME).log(Level.INFO, "Lazy is great!");
-        }
-    }
-}
-```
-This last example also demonstrates how lazy constructs can be composed into more high-level, high-performance
-concepts that can leverage constant folding and other JVM optimizations transitively. 
-
-It is worth remembering, that the lazy collections all promise the function provided at construction (used to 
-lazily compute elements or values) are invoked at most once per index, key, or element; even though used from several threads.
+It is worth remembering, that the lazy collections all promise the function provided at computation
+(used to lazily compute elements or values) is invoked at most once per index, key, or element; even
+though used from several threads.
 
 ### Memoized functions
 
 So far, we have talked about the fundamental features of Lazy Values & Collections as securely
-wrapped `@Stable` value holders. However, as briefly shown above, it has become apparent, lazy primitives are amenable
+wrapped `@Stable` value holders. However, it has become apparent, lazy primitives are amenable
 to composition with other constructs in order to create more high-level and powerful features.
 
 [Memoized functions](https://en.wikipedia.org/wiki/Memoization) are functions where the output for a particular 
@@ -424,15 +397,21 @@ in a multi-threaded environment:
 ```
 class Memoized {
 
-    // 1. Declare a memoized (cached) function backed by a lazily computed map
-    private static final Function<String, Logger> LOGGERS =
-            Lazy.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"), Logger::getLogger)::get;
+    // 1. Declare a lazily computed map
+    private static final Map<String, Lazy<Logger>> MAP =
+            Lazy.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
 
-    static Logger logger(String name) {
-        // 2. Access the memoized value with as-declared-final performance
-        //    (evaluation made before the first access)
-        return LOGGERS.apply(name);
-    }
+    // 2. Declare a memoized (cached) function backed by the lazily computed map
+    private static final Function<String, Logger> LOGGERS =
+            n -> Lazy.computeIfUnset(MAP, n, Logger::getLogger);
+
+    ...
+
+    private static final String NAME = "com.foo.Baz";
+
+    // 3. Access the memoized value via the function with as-declared-final
+    //    performance (evaluation made before the first access)
+    Logger logger = LOGGERS.apply(NAME);
 }
 ```
 
@@ -448,15 +427,27 @@ Similarly to how a `Funcion` can be memoized using a backing lazily computed map
 for an `IntFunction` that will record its cached value in a backing _lazy list_:
 
 ```
-// 1. Declare a memoized (cached) IntFunction backed by a lazily computed list
-static final IntFunction<String> ERROR_PAGES = 
-        Lazy.ofList(MAX_ERROR_CODE, ListDemo::readFromFile)::get;
-        
-...
+// 1. Declare a lazy list of default error pages to serve up
+private static final List<Lazy<String>> ERROR_PAGES =
+        Lazy.ofList(SIZE);
 
-// 2. Access the memoized value with as-declared-final performance
+// 2. Declare a memoized IntFunction backed by the lazy list
+private static final IntFunction<String> ERROR_FUNCTION =
+        i -> Lazy.computeIfUnset(ERROR_PAGES, i, ListDemo2::readFromFile);
+
+// 3. Define a function that is to be called the first
+//    time a particular message number is referenced
+private static String readFromFile(int messageNumber) {
+    try {
+        return Files.readString(Path.of("message-" + messageNumber + ".html"));
+    } catch (IOException e) {
+        throw new UncheckedIOException(e);
+    }
+}
+
+// 4. Access the memoized list element with as-declared-final performance
 //    (evaluation made before the first access)
-String errorPage = ERROR_PAGES.apply(2);
+String msg =  ERROR_FUNCTION.apply(2);
        
 // <!DOCTYPE html>
 // <html lang="en">
@@ -466,8 +457,8 @@ String errorPage = ERROR_PAGES.apply(2);
 ```
 
 The same paradigm can be used for creating a memoized `Supplier` (backed by a single `Lazy` instance) or 
-a memoized `Predicate`(backed by a lazily computed `Set`). An astute reader will be able to write such constructs
-on a single line. 
+a memoized `Predicate`(backed by a lazily computed `Map<K, Lazy<Boolean>>`). An astute reader will be able to
+write such constructs on a few lines. 
 
 ## Alternatives
 
@@ -488,28 +479,3 @@ will likely suffice to reach the goals of this JEP.
 
 The work described here will likely enable subsequent work to provide pre-evaluated computed
 constant fields at compile, condensation, and/or runtime.
-
-# Log
-
-Dropping Lazy would not allow for imperative use.
-Dropping Lazy would require a lambda/class being created for each collection.
-Lazy lists can currently not hold null (but this can be added).
-A singleton lazy lists occupies more space than a Lazy.
-Lazy and a singleton lazy lists are equally fast:
-
-Benchmark                   Mode  Cnt  Score   Error  Units
-LazyBenchmark.instanceDCL   avgt   10  1.431 ? 0.017  ns/op
-LazyBenchmark.instanceLazy  avgt   10  0.890 ? 0.020  ns/op
-LazyBenchmark.instanceList  avgt   10  0.892 ? 0.020  ns/op
-
-Benchmark                   Mode  Cnt  Score   Error  Units
-LazyBenchmark.staticCHI     avgt   10  0.589 ? 0.087  ns/op
-LazyBenchmark.staticDCL     avgt   10  1.253 ? 0.041  ns/op
-LazyBenchmark.staticLazy    avgt   10  0.562 ? 0.002  ns/op
-LazyBenchmark.staticList    avgt   10  0.563 ? 0.006  ns/op
-
-Usage in sample parts of the JDK:
-
-Occurrences: 11112111111111111111111111111111112211911121
-
-

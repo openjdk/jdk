@@ -179,15 +179,18 @@ final class JepDemo {
             private static final Map<String, Lazy<Logger>> MAP =
                     Lazy.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
 
-            // 1. Declare a memoized (cached) function backed by a lazily computed map
+            // 2. Declare a memoized (cached) function backed by the lazily computed map
             private static final Function<String, Logger> LOGGERS =
                     n -> Lazy.computeIfUnset(MAP, n, Logger::getLogger);
 
-            static Logger logger(String name) {
-                // 2. Access the memoized value with as-declared-final performance
-                //    (evaluation made before the first access)
-                return LOGGERS.apply(name);
+            private static final String NAME = "com.foo.Baz";
+
+            public static void main(String[] args) {
+                // 3. Access the memoized value via the function with as-declared-final
+                //    performance (evaluation made before the first access)
+                Logger logger = LOGGERS.apply(NAME);
             }
+
         }
     }
 
@@ -264,33 +267,31 @@ final class JepDemo {
     static
     class ListDemo2 {
 
-        private static final int MIN = 500;
-        private static final int SIZE = 511 - MIN;
-
+        private static final int SIZE = 8;
 
         // 1. Declare a lazy list of default error pages to serve up
         private static final List<Lazy<String>> ERROR_PAGES =
                 Lazy.ofList(SIZE);
 
-        // 1. Declare a lazy list of default error pages to serve up
+        // 2. Declare a memoized IntFunction backed by the lazy list
         private static final IntFunction<String> ERROR_FUNCTION =
                 i -> Lazy.computeIfUnset(ERROR_PAGES, i, ListDemo2::readFromFile);
 
-        // 2. Define a function that is to be called for the first
-        //    time a particular index is referenced
-        private static String readFromFile(int errorCode) {
+        // 3. Define a function that is to be called the first
+        //    time a particular message number is referenced
+        private static String readFromFile(int messageNumber) {
             try {
-                return Files.lines(Path.of("error-page-" + errorCode + ".html"))
-                        .collect(Collectors.joining());
+                return Files.readString(Path.of("message-" + messageNumber + ".html"));
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
         }
 
-        static String errorPage(int errorCode) {
-            // 3. Access the memoized list element with as-declared-final performance
+
+        public static void main(String[] args) {
+            // 4. Access the memoized list element with as-declared-final performance
             //    (evaluation made before the first access)
-            return ERROR_FUNCTION.apply(errorCode);
+            String msg =  ERROR_FUNCTION.apply(2);
         }
 
     }
