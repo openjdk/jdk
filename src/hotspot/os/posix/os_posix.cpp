@@ -1219,6 +1219,16 @@ static int (*_pthread_condattr_setclock)(pthread_condattr_t *, clockid_t) = null
 
 static bool _use_clock_monotonic_condattr = false;
 
+static bool get_random_seed(unsigned* seed) {
+  int fd = ::open("/dev/urandom", O_RDONLY);
+  if (fd >= 0) {
+    if (::read(fd, seed, sizeof(unsigned)) == (ssize_t)sizeof(unsigned)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // Determine what POSIX API's are present and do appropriate
 // configuration.
 void os::Posix::init(void) {
@@ -1260,6 +1270,13 @@ void os::Posix::init(void) {
   }
 
   initial_time_count = javaTimeNanos();
+
+  // initialize os::random seed
+  unsigned seed = 0;
+  if (!get_random_seed(&seed)) {
+    seed = (unsigned)initial_time_count;
+  }
+  os::init_random(seed);
 }
 
 void os::Posix::init_2(void) {

@@ -826,6 +826,9 @@ int os::random() {
     unsigned int seed = _rand_seed;
     unsigned int rand = next_random(seed);
     if (Atomic::cmpxchg(&_rand_seed, seed, rand, memory_order_relaxed) == seed) {
+#ifdef ASSERT
+      log_debug(os, rand)("os::random %u", rand);
+#endif
       return static_cast<int>(rand);
     }
   }

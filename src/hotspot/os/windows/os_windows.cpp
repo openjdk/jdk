@@ -42,6 +42,7 @@
 #include "os_windows.inline.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
+#include "randhelper.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
@@ -4329,6 +4330,13 @@ void os::init(void) {
 
   // initialize fast thread access - only used for 32-bit
   win32::initialize_thread_ptr_offset();
+
+  // initialize rand seed.
+  unsigned seed = 0;
+  if (!get_random_seed(&seed)) {
+    seed = (unsigned)os::javaTimeNanos();
+  }
+  os::init_random(seed);
 }
 
 // To install functions for atexit processing
