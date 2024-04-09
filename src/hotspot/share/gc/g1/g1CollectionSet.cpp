@@ -337,7 +337,7 @@ static int compare_region_idx(const uint a, const uint b) {
 void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
   double non_young_start_time_sec = os::elapsedTime();
 
-  if (true || !candidates()->is_empty()) { // FIXME: adjustment for test
+  if (!candidates()->is_empty()) {
     candidates()->verify();
 
     G1CollectionCandidateRegionList initial_old_regions;
@@ -425,6 +425,7 @@ void G1CollectionSet::age_out_collection_set_candidates() {
   if (to_remove.length() == 0) {
     return;
   }
+  log_trace(gc, ergo, cset)("removing %u elements from candidates", to_remove.length());
 
   candidates()->remove(&to_remove);
   // We can now drop these region's remembered sets too.
