@@ -26,7 +26,9 @@
  * @bug 8328481
  * @summary Check behavior of module imports.
  * @library /tools/lib
- * @modules jdk.compiler/com.sun.tools.javac.api
+ * @modules java.logging
+ *          java.sql
+ *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JavacTask
@@ -275,6 +277,72 @@ public class ImportModule extends TestRunner {
             .run()
             .writeAll();
 
+        tb.writeJavaFiles(src,
+                          """
+                          package test;
+                          import module java.logging;
+                          import java.lang.System.*;
+                          public class Test {
+                          }
+                          """);
+
+        new JavacTask(tb)
+            .options("--enable-preview", "--release", SOURCE_VERSION)
+            .outdir(classes)
+            .files(tb.findJavaFiles(src))
+            .run()
+            .writeAll();
+
+        tb.writeJavaFiles(src,
+                          """
+                          package test;
+                          import module java.base;
+                          import module java.sql;
+                          public class Test {
+                              Date d;
+                          }
+                          """);
+
+        actualErrors =
+                new JavacTask(tb)
+                    .options("--enable-preview", "--release", SOURCE_VERSION,
+                             "-XDrawDiagnostics")
+                    .outdir(classes)
+                    .files(tb.findJavaFiles(src))
+                    .run(Task.Expect.FAIL)
+                    .writeAll()
+                    .getOutputLines(Task.OutputKind.DIRECT);
+
+        expectedErrors = List.of(
+                "Test.java:5:5: compiler.err.ref.ambiguous: Date, kindname.class, java.sql.Date, java.sql, kindname.class, java.util.Date, java.util",
+                "- compiler.note.preview.filename: Test.java, DEFAULT",
+                "- compiler.note.preview.recompile",
+                "1 error"
+        );
+
+        if (!Objects.equals(expectedErrors, actualErrors)) {
+            throw new AssertionError("Incorrect Output, expected: " + expectedErrors +
+                                      ", actual: " + out);
+
+        }
+
+        tb.writeJavaFiles(src,
+                          """
+                          package test;
+                          import module java.base;
+                          import module java.sql;
+                          import java.util.Date;
+                          public class Test {
+                              Date d;
+                          }
+                          """);
+
+        new JavacTask(tb)
+            .options("--enable-preview", "--release", SOURCE_VERSION)
+            .outdir(classes)
+            .files(tb.findJavaFiles(src))
+            .run()
+            .writeAll();
     }
 
     @Test
