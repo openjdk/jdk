@@ -341,13 +341,11 @@ public:
                                         G1CollectionCandidateRegionList* optional_old_regions,
                                         G1CollectionCandidateRegionList* pinned_old_regions);
 
-  void age_out_retained(G1CollectionCandidateList* retained_list,
-                        G1CollectionCandidateRegionList* aged_out_regions);
-
   void select_candidates_from_retained(G1CollectionCandidateList* retained_list,
                                        double time_remaining_ms,
                                        G1CollectionCandidateRegionList* initial_old_regions,
-                                       G1CollectionCandidateRegionList* optional_old_regions);
+                                       G1CollectionCandidateRegionList* optional_old_regions,
+                                       G1CollectionCandidateRegionList* pinned_old_regions);
 
   // Calculate the number of optional regions from the given collection set candidates,
   // the remaining time and the maximum number of these regions and return the number

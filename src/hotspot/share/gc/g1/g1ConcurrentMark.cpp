@@ -822,10 +822,6 @@ void G1ConcurrentMark::clear_bitmap(WorkerThreads* workers) {
   clear_bitmap(workers, false);
 }
 
-bool G1ConcurrentMark::needs_top_at_mark_start_set(HeapRegion* r) const {
-  return r->is_old_or_humongous() && !r->is_collection_set_candidate();
-}
-
 class G1PreConcurrentStartTask : public G1BatchedTask {
   // Reset marking state.
   class ResetMarkingStateTask;
@@ -873,7 +869,7 @@ public:
   NoteStartOfMarkHRClosure() : HeapRegionClosure(), _cm(G1CollectedHeap::heap()->concurrent_mark()) { }
 
   bool do_heap_region(HeapRegion* r) override {
-    if (_cm->needs_top_at_mark_start_set(r)) {
+    if (r->is_old_or_humongous() && !r->is_collection_set_candidate() && !r->in_collection_set()) {
       _cm->update_top_at_mark_start(r);
     }
     return false;
@@ -2016,30 +2012,6 @@ void G1ConcurrentMark::verify_no_collection_set_oops() {
                 p2i(task_finger), HR_FORMAT_PARAMS(r));
     }
   }
-}
-
-void G1ConcurrentMark::verify_top_at_mark_starts() {
-  if (!_g1h->collector_state()->in_concurrent_start_gc()) {
-    return;
-  }
-
-  class VerifyTopAtMarkStartSet : public HeapRegionClosure {
-  public:
-    bool do_heap_region(HeapRegion* r) override {
-      G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
-      assert(!cm->needs_top_at_mark_start_set(r) || r->in_collection_set() || r->top() == cm->top_at_mark_start(r),
-             "TAMS for region %u not set correctly (top " PTR_FORMAT " tams: " PTR_FORMAT " type %s in collection set %s collection set candidate %s",
-             r->hrm_index(),
-             p2i(r->top()),
-             p2i(cm->top_at_mark_start(r)),
-             r->get_short_type_str(),
-             BOOL_TO_STR(r->in_collection_set()),
-             BOOL_TO_STR(r->is_collection_set_candidate()));
-      return false;
-    }
-  } cl;
-
-  _g1h->heap_region_iterate(&cl);
 }
 #endif // PRODUCT
 

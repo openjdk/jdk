@@ -285,7 +285,6 @@ void G1YoungCollector::calculate_collection_set(G1EvacInfo* evacuation_info, dou
                                               collection_set()->optional_region_length());
 
   concurrent_mark()->verify_no_collection_set_oops();
-  concurrent_mark()->verify_top_at_mark_starts();
 
   if (hr_printer()->is_active()) {
     G1PrintCollectionSetClosure cl(hr_printer());
@@ -485,8 +484,8 @@ void G1YoungCollector::set_young_collection_default_active_worker_threads(){
 }
 
 void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) {
-
-  // Flushes various thread local cached variables.
+  // Flush various data in thread-local buffers to be able to determine the collection
+  // set
   {
     Ticks start = Ticks::now();
     G1PreEvacuateCollectionSetBatchTask cl;
@@ -494,16 +493,12 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
     phase_times()->record_pre_evacuate_prepare_time_ms((Ticks::now() - start).seconds() * 1000.0);
   }
 
-  collection_set()->age_out_collection_set_candidates();
+  // Needs log buffers flushed.
+  calculate_collection_set(evacuation_info, policy()->max_pause_time_ms());
 
-  // Must be before collection set calculation, requires collection set to not
-  // be calculated yet.
   if (collector_state()->in_concurrent_start_gc()) {
     concurrent_mark()->pre_concurrent_start(_gc_cause);
   }
-
-  // Needs log buffers flushed.
-  calculate_collection_set(evacuation_info, policy()->max_pause_time_ms());
 
   // Please see comment in g1CollectedHeap.hpp and
   // G1CollectedHeap::ref_processing_init() to see how
