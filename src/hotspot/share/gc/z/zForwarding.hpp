@@ -84,8 +84,10 @@ private:
   ZForwardingEntry next(ZForwardingCursor* cursor) const;
 
   uintptr_t index(zoffset from_offset);
+
   ZForwardingEntry find(uintptr_t from_index, ZForwardingCursor* cursor) const;
   zaddress find(zoffset from_offset, ZForwardingCursor* cursor);
+
   zoffset insert(uintptr_t from_index, zoffset to_offset, ZForwardingCursor* cursor);
   zaddress insert(zoffset from_offset, zaddress to_addr, ZForwardingCursor* cursor);
 
@@ -149,6 +151,7 @@ public:
   zaddress find(zaddress from_addr, ZForwardingCursor* cursor);
   zaddress find(zaddress_unsafe from_addr, ZForwardingCursor* cursor);
   zaddress find(zaddress_unsafe from_addr);
+
   zaddress insert(zaddress from_addr, zaddress to_addr, ZForwardingCursor* cursor);
 
   // Relocated remembered set fields support
