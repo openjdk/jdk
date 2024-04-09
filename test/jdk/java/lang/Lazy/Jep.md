@@ -215,7 +215,7 @@ The Lazy Values & Collections API define functions and an interface so that clie
 - Define and use lazy (scalar) values: [`Lazy`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html)
 - Define and use lazy collections: 
   [`Lazy.ofList`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofList(int)), 
-  [`Lazy.ofSet(Set, Predicate)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofSet(java.util.Set), [`Lazy.ofSet(Enum.class, Predicate`)](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofSet(java.lang.Class)),  
+  [`Lazy.ofSet(Set, Predicate)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofSet(java.util.Set)), [`Lazy.ofSet(Enum.class, Predicate`)](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofSet(java.lang.Class)),  
   [`Lazy.ofMap(Set, Function)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofMap(java.util.Set)), and [`Lazy.ofMap(Enum.class, Function)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/Lazy.html#ofMap(java.lang.Class))
 
 The Lazy Values & Collections API resides in the [java.lang](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/package-summary.html) package of the [java.base](https://cr.openjdk.org/~pminborg/lazy/api/java.base/module-summary.html) module.
