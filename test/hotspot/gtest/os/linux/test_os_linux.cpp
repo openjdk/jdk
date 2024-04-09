@@ -36,14 +36,20 @@ public:
 };
 
 TEST_F(OSLinuxTestFixture, ParseKernelVersion) {
-  char* bad_name = nullptr;
+  // We need some memory that will SIGSEGV if read to.
+  // os::reserve_memory fits the bill, as it does PROT_NONE.
+  char* res_memory = os::reserve_memory(os::vm_page_size(), false, mtTest);
   long minor = -1;
   long major = -1;
   auto test = [&](const char* str, long majorexp, long minorexp) {
-    os::free(bad_name);
-    bad_name = os::strdup(str);
+    // Remove old string.
+    os::uncommit_memory(res_memory, strlen(res_memory) + 1);
+    // Write new string.
+    size_t strsz = strlen(str) + 1;
+    os::commit_memory(res_memory, strsz , false);
+    ::memcpy(res_memory, str, strsz);
     minor = -1; major = -1;
-    call_parse_kernel_version(&major, &minor, bad_name);
+    call_parse_kernel_version(&major, &minor, res_memory);
     EXPECT_EQ(majorexp, major);
     EXPECT_EQ(minorexp, minor);
   };
