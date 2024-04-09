@@ -26,23 +26,33 @@
 * @bug 8325469
 * @summary Test freeze/thaw with OSR frames
 * @requires vm.continuations
+* @requires vm.compMode != "Xint" & vm.compMode != "Xcomp"
 * @modules java.base/jdk.internal.vm
+* @library /test/lib /test/hotspot/jtreg
+* @build jdk.test.whitebox.WhiteBox
+* @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
 *
-* @run main/othervm OSRTest true true true
-* @run main/othervm -XX:CompileCommand=inline,*::yield0 OSRTest true true false
-* @run main/othervm -XX:CompileCommand=dontinline,*::yield* OSRTest true true false
-* @run main/othervm -XX:CompileCommand=exclude,*::bar() OSRTest true false false
-* @run main/othervm OSRTest false true true
-* @run main/othervm OSRTest false true false
-* @run main/othervm -XX:CompileCommand=exclude,*::bar() OSRTest false false false
+* @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI OSRTest true true true
+* @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=inline,*::yield0 OSRTest true true false
+* @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=dontinline,*::yield* OSRTest true true false
+* @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=exclude,*::bar() OSRTest true false false
+* @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI OSRTest false true true
+* @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI OSRTest false true false
+* @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=exclude,*::bar() OSRTest false false false
 *
 */
 
 import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationScope;
 
+import java.lang.reflect.Method;
+import jdk.test.whitebox.WhiteBox;
+
 public class OSRTest {
+    static final WhiteBox wb = WhiteBox.getWhiteBox();
     static final ContinuationScope FOO = new ContinuationScope() {};
+    static final Method foo = getMethod("foo");
+    static final Method fooBigFrame = getMethod("fooBigFrame");
     boolean osrAtBottom;
     boolean freezeFast;
     boolean thawFast;
@@ -125,8 +135,9 @@ public class OSRTest {
             Continuation.yield(FOO);
         }
 
-        // provoke OSR compilation
-        for (int i = 0; i < 500_000 * fooCallCount; i++) {
+        // Provoke OSR compilation. After we verified the method was compiled keep looping
+        // until we trigger the _backedge_counter overflow to actually trigger OSR.
+        for (int i = 0; fooCallCount > 0 && (!wb.isMethodCompiled(foo, true) || i++ < 2_000);) {
         }
         fooCallCount++;
 
@@ -160,8 +171,9 @@ public class OSRTest {
         // freeze all frames so that we only run with fooBigFrame on the stack
         Continuation.yield(FOO);
 
-        // provoke OSR compilation
-        for (int i = 0; i < 5_000_000 * fooCallCount; i++) {
+        // Provoke OSR compilation. After we verified the method was compiled keep looping
+        // until we trigger the _backedge_counter overflow to actually trigger OSR.
+        for (int i = 0; fooCallCount > 0 && (!wb.isMethodCompiled(fooBigFrame, true) || i++ < 2_000);) {
         }
         fooCallCount++;
 
@@ -212,6 +224,15 @@ public class OSRTest {
             } else {
                 Continuation.yield(FOO);
             }
+        }
+    }
+
+    static Method getMethod(String method) {
+        try {
+            return OSRTest.class.getMethod(method, Object.class, Object.class, Object.class, Object.class, Object.class, Object.class, Object.class, Object.class,
+                                           Object.class, Object.class, Float.TYPE, Float.TYPE, Float.TYPE, Float.TYPE, Float.TYPE, Float.TYPE, Float.TYPE);
+        } catch (Exception e) {
+            throw new RuntimeException("Exception: couldn't found method " + method + ". " + e.getMessage());
         }
     }
 }
