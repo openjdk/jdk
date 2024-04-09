@@ -45,6 +45,7 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/modRefBarrierSet.hpp"
+#include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/space.inline.hpp"
@@ -97,7 +98,8 @@ class DeadSpacer : StackObj {
 
 public:
   DeadSpacer(ContiguousSpace* space) : _allowed_deadspace_words(0), _space(space) {
-    size_t ratio = _space->allowed_dead_ratio();
+    size_t ratio = (_space == SerialHeap::heap()->old_gen()->space())
+                   ? MarkSweepDeadRatio : 0;
     _active = ratio > 0;
 
     if (_active) {
@@ -473,7 +475,7 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
     StrongRootsScope srs(0);
 
     CLDClosure* weak_cld_closure = ClassUnloading ? nullptr : &follow_cld_closure;
-    MarkingCodeBlobClosure mark_code_closure(&follow_root_closure, !CodeBlobToOopClosure::FixRelocations, true);
+    MarkingNMethodClosure mark_code_closure(&follow_root_closure, !NMethodToOopClosure::FixRelocations, true);
     gch->process_roots(SerialHeap::SO_None,
                        &follow_root_closure,
                        &follow_cld_closure,
@@ -527,7 +529,7 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
     }
     {
       GCTraceTime(Debug, gc, phases) t("Free Code Blobs", gc_timer());
-      ctx->free_code_blobs();
+      ctx->free_nmethods();
     }
 
     // Prune dead klasses from subklass/sibling/implementor lists.
@@ -695,7 +697,7 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
 
     ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
 
-    CodeBlobToOopClosure code_closure(&adjust_pointer_closure, CodeBlobToOopClosure::FixRelocations);
+    NMethodToOopClosure code_closure(&adjust_pointer_closure, NMethodToOopClosure::FixRelocations);
     gch->process_roots(SerialHeap::SO_AllCodeCache,
                        &adjust_pointer_closure,
                        &adjust_cld_closure,

@@ -37,6 +37,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
+#include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 
 bool TenuredGeneration::grow_by(size_t bytes) {

@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1CODEBLOBCLOSURE_HPP
-#define SHARE_GC_G1_G1CODEBLOBCLOSURE_HPP
+#ifndef SHARE_GC_G1_G1NMETHODCLOSURE_HPP
+#define SHARE_GC_G1_G1NMETHODCLOSURE_HPP
 
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "memory/iterator.hpp"
@@ -31,7 +31,7 @@
 class G1ConcurrentMark;
 class nmethod;
 
-class G1CodeBlobClosure : public CodeBlobClosure {
+class G1NMethodClosure : public NMethodClosure {
   // Gather nmethod remembered set entries.
   class HeapRegionGatheringOopClosure : public OopClosure {
     G1CollectedHeap* _g1h;
@@ -72,13 +72,13 @@ class G1CodeBlobClosure : public CodeBlobClosure {
 
   bool _strong;
 public:
-  G1CodeBlobClosure(uint worker_id, OopClosure* oc, bool strong) :
+  G1NMethodClosure(uint worker_id, OopClosure* oc, bool strong) :
     _oc(oc), _marking_oc(worker_id), _strong(strong) { }
 
   void do_evacuation_and_fixup(nmethod* nm);
   void do_marking(nmethod* nm);
 
-  void do_code_blob(CodeBlob* cb);
+  void do_nmethod(nmethod* nm);
 };
 
-#endif // SHARE_GC_G1_G1CODEBLOBCLOSURE_HPP
+#endif // SHARE_GC_G1_G1NMETHODCLOSURE_HPP

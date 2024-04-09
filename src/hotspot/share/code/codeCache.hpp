@@ -153,8 +153,8 @@ class CodeCache : AllStatic {
   static bool contains(void *p);                           // returns whether p is included
   static bool contains(nmethod* nm);                       // returns whether nm is included
   static void blobs_do(void f(CodeBlob* cb));              // iterates over all CodeBlobs
-  static void blobs_do(CodeBlobClosure* f);                // iterates over all CodeBlobs
   static void nmethods_do(void f(nmethod* nm));            // iterates over all nmethods
+  static void nmethods_do(NMethodClosure* cl);             // iterates over all nmethods
   static void metadata_do(MetadataClosure* f);             // iterates over metadata in alive nmethods
 
   // Lookup
