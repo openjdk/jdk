@@ -133,6 +133,10 @@ inline bool operator<(zoffset first, zoffset_end second) {
   return untype(first) < untype(second);
 }
 
+inline bool operator<=(zoffset_end first, zoffset second) {
+  return untype(first) <= untype(second);
+}
+
 inline bool operator>(zoffset first, zoffset_end second) {
   return untype(first) > untype(second);
 }
