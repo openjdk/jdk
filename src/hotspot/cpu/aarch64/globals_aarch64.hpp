@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -80,14 +80,11 @@ define_pd_global(intx, InlineSmallCode,          1000);
 
 #define ARCH_FLAGS(develop,                                             \
                    product,                                             \
-                   notproduct,                                          \
                    range,                                               \
                    constraint)                                          \
                                                                         \
   product(bool, NearCpool, true,                                        \
          "constant pool is close to instructions")                      \
-  product(bool, UseNeon, false,                                         \
-          "Use Neon for CRC32 computation")                             \
   product(bool, UseCRC32, false,                                        \
           "Use CRC32 instructions for CRC32 computation")               \
   product(bool, UseCryptoPmullForCRC32, false,                          \
@@ -117,7 +114,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Use prfm hint with specified distance in compiled code."     \
           "Value -1 means off.")                                        \
           range(-1, 4096)                                               \
-  product(ccstr, OnSpinWaitInst, "none", DIAGNOSTIC,                    \
+  product(ccstr, OnSpinWaitInst, "yield", DIAGNOSTIC,                   \
           "The instruction to use to implement "                        \
           "java.lang.Thread.onSpinWait()."                              \
           "Options: none, nop, isb, yield.")                            \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -651,7 +651,7 @@ void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
 
 void MetaspaceShared::prepare_for_dumping() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
-  CDSConfig::check_unsupported_dumping_properties();
+  CDSConfig::check_unsupported_dumping_module_options();
   ClassLoader::initialize_shared_path(JavaThread::current());
 }
 
@@ -784,7 +784,7 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
   if (CDSConfig::is_dumping_heap()) {
     if (!HeapShared::is_archived_boot_layer_available(THREAD)) {
       log_info(cds)("archivedBootLayer not available, disabling full module graph");
-      CDSConfig::disable_dumping_full_module_graph();
+      CDSConfig::stop_dumping_full_module_graph();
     }
     HeapShared::init_for_dumping(CHECK);
     ArchiveHeapWriter::init();
@@ -1176,8 +1176,8 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
           static_mapinfo->map_or_load_heap_region();
         }
 #endif // _LP64
-    log_info(cds)("initial optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
-    log_info(cds)("initial full module graph: %s", CDSConfig::is_loading_full_module_graph() ? "enabled" : "disabled");
+    log_info(cds)("initial optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
+    log_info(cds)("initial full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
   } else {
     unmap_archive(static_mapinfo);
     unmap_archive(dynamic_mapinfo);
@@ -1327,6 +1327,9 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       release_reserved_spaces(total_space_rs, archive_space_rs, class_space_rs);
       return nullptr;
     }
+    // NMT: fix up the space tags
+    MemTracker::record_virtual_memory_type(archive_space_rs.base(), mtClassShared);
+    MemTracker::record_virtual_memory_type(class_space_rs.base(), mtClass);
   } else {
     if (use_archive_base_addr && base_address != nullptr) {
       total_space_rs = ReservedSpace(total_range_size, archive_space_alignment,
@@ -1356,16 +1359,13 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
                                                  (size_t)archive_space_alignment);
     class_space_rs = total_space_rs.last_part(ccs_begin_offset);
     MemTracker::record_virtual_memory_split_reserved(total_space_rs.base(), total_space_rs.size(),
-                                                     ccs_begin_offset);
+                                                     ccs_begin_offset, mtClassShared, mtClass);
   }
   assert(is_aligned(archive_space_rs.base(), archive_space_alignment), "Sanity");
   assert(is_aligned(archive_space_rs.size(), archive_space_alignment), "Sanity");
   assert(is_aligned(class_space_rs.base(), class_space_alignment), "Sanity");
   assert(is_aligned(class_space_rs.size(), class_space_alignment), "Sanity");
 
-  // NMT: fix up the space tags
-  MemTracker::record_virtual_memory_type(archive_space_rs.base(), mtClassShared);
-  MemTracker::record_virtual_memory_type(class_space_rs.base(), mtClass);
 
   return archive_space_rs.base();
 
@@ -1466,8 +1466,7 @@ void MetaspaceShared::initialize_shared_spaces() {
   // done after ReadClosure.
   static_mapinfo->patch_heap_embedded_pointers();
   ArchiveHeapLoader::finish_initialization();
-
-  CDS_JAVA_HEAP_ONLY(Universe::update_archived_basic_type_mirrors());
+  Universe::load_archived_object_instances();
 
   // Close the mapinfo file
   static_mapinfo->close();

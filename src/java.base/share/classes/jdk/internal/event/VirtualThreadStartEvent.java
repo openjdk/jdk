@@ -28,7 +28,7 @@ package jdk.internal.event;
  * Event recording that a virtual thread has been started.
  */
 public class VirtualThreadStartEvent extends Event {
-    private final static VirtualThreadStartEvent EVENT = new VirtualThreadStartEvent();
+    private static final VirtualThreadStartEvent EVENT = new VirtualThreadStartEvent();
 
     /**
      * Returns {@code true} if event is enabled, {@code false} otherwise.

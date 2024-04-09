@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023 Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,5 +29,5 @@
  * @modules java.base/jdk.internal.misc
  *          java.xml
  * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=os.trim* -Xlog:trimnative -XX:+UnlockExperimentalVMOptions -XX:TrimNativeHeapInterval=100
+ * @run main/native GTestWrapper --gtest_filter=os.trim* -Xlog:trimnative -XX:TrimNativeHeapInterval=100
  */

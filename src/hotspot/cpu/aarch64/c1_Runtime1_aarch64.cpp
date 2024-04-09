@@ -38,7 +38,6 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_aarch64.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "register_aarch64.hpp"

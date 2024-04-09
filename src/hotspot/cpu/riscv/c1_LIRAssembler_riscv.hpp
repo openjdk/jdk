@@ -68,7 +68,7 @@ private:
 
   enum {
     // See emit_static_call_stub for detail
-    // CompiledStaticCall::to_interp_stub_size() (14) + CompiledStaticCall::to_trampoline_stub_size() (1 + 3 + address)
+    // CompiledDirectCall::to_interp_stub_size() (14) + CompiledDirectCall::to_trampoline_stub_size() (1 + 3 + address)
     _call_stub_size = 14 * NativeInstruction::instruction_size +
                       (NativeInstruction::instruction_size + NativeCallTrampolineStub::instruction_size),
     // See emit_exception_handler for detail

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,6 @@ ciEnv::ciEnv(CompileTask* task)
   _oop_recorder = nullptr;
   _debug_info = nullptr;
   _dependencies = nullptr;
-  _failure_reason = nullptr;
   _inc_decompile_count_on_failure = true;
   _compilable = MethodCompilable;
   _break_at_compile = false;
@@ -250,7 +249,6 @@ ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler) {
   _oop_recorder = nullptr;
   _debug_info = nullptr;
   _dependencies = nullptr;
-  _failure_reason = nullptr;
   _inc_decompile_count_on_failure = true;
   _compilable = MethodCompilable_never;
   _break_at_compile = false;
@@ -1143,17 +1141,15 @@ void ciEnv::register_method(ciMethod* target,
 #endif
 
       if (entry_bci == InvocationEntryBci) {
-        if (TieredCompilation) {
-          // If there is an old version we're done with it
-          CompiledMethod* old = method->code();
-          if (TraceMethodReplacement && old != nullptr) {
-            ResourceMark rm;
-            char *method_name = method->name_and_sig_as_C_string();
-            tty->print_cr("Replacing method %s", method_name);
-          }
-          if (old != nullptr) {
-            old->make_not_used();
-          }
+        // If there is an old version we're done with it
+        nmethod* old = method->code();
+        if (TraceMethodReplacement && old != nullptr) {
+          ResourceMark rm;
+          char *method_name = method->name_and_sig_as_C_string();
+          tty->print_cr("Replacing method %s", method_name);
+        }
+        if (old != nullptr) {
+          old->make_not_used();
         }
 
         LogTarget(Info, nmethod, install) lt;
@@ -1164,7 +1160,7 @@ void ciEnv::register_method(ciMethod* target,
                     task()->comp_level(), method_name);
         }
         // Allow the code to be executed
-        MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+        MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
         if (nm->make_in_use()) {
           method->set_code(method, nm);
         }
@@ -1176,7 +1172,7 @@ void ciEnv::register_method(ciMethod* target,
           lt.print("Installing osr method (%d) %s @ %d",
                     task()->comp_level(), method_name, entry_bci);
         }
-        MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+        MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
         if (nm->make_in_use()) {
           method->method_holder()->add_osr_nmethod(nm);
         }
@@ -1233,9 +1229,9 @@ int ciEnv::num_inlined_bytecodes() const {
 // ------------------------------------------------------------------
 // ciEnv::record_failure()
 void ciEnv::record_failure(const char* reason) {
-  if (_failure_reason == nullptr) {
+  if (_failure_reason.get() == nullptr) {
     // Record the first failure reason.
-    _failure_reason = reason;
+    _failure_reason.set(reason);
   }
 }
 
@@ -1265,7 +1261,7 @@ void ciEnv::record_method_not_compilable(const char* reason, bool all_tiers) {
     _compilable = new_compilable;
 
     // Reset failure reason; this one is more important.
-    _failure_reason = nullptr;
+    _failure_reason.clear();
     record_failure(reason);
   }
 }

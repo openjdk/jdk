@@ -131,8 +131,7 @@ public class KeyFactory {
 
     private KeyFactory(String algorithm) throws NoSuchAlgorithmException {
         this.algorithm = algorithm;
-        List<Service> list = GetInstance.getServices("KeyFactory", algorithm);
-        serviceIterator = list.iterator();
+        serviceIterator = GetInstance.getServices("KeyFactory", algorithm);
         // fetch and instantiate initial spi
         if (nextSpi(null) == null) {
             throw new NoSuchAlgorithmException

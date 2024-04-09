@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1218,7 +1218,7 @@ void MethodData::post_initialize(BytecodeStream* stream) {
 MethodData::MethodData(const methodHandle& method)
   : _method(method()),
     // Holds Compile_lock
-    _extra_data_lock(Mutex::safepoint-2, "MDOExtraData_lock"),
+    _extra_data_lock(Mutex::nosafepoint, "MDOExtraData_lock"),
     _compiler_counters(),
     _parameters_type_data_di(parameters_uninitialized) {
   initialize();
@@ -1379,6 +1379,8 @@ address MethodData::bci_to_dp(int bci) {
 
 // Translate a bci to its corresponding data, or null.
 ProfileData* MethodData::bci_to_data(int bci) {
+  check_extra_data_locked();
+
   DataLayout* data = data_layout_before(bci);
   for ( ; is_valid(data); data = next_data_layout(data)) {
     if (data->bci() == bci) {
@@ -1429,7 +1431,9 @@ DataLayout* MethodData::next_extra(DataLayout* dp) {
   return (DataLayout*)((address)dp + DataLayout::compute_size_in_bytes(nb_cells));
 }
 
-ProfileData* MethodData::bci_to_extra_data_helper(int bci, Method* m, DataLayout*& dp, bool concurrent) {
+ProfileData* MethodData::bci_to_extra_data_find(int bci, Method* m, DataLayout*& dp) {
+  check_extra_data_locked();
+
   DataLayout* end = args_data_limit();
 
   for (;; dp = next_extra(dp)) {
@@ -1450,14 +1454,9 @@ ProfileData* MethodData::bci_to_extra_data_helper(int bci, Method* m, DataLayout
     case DataLayout::speculative_trap_data_tag:
       if (m != nullptr) {
         SpeculativeTrapData* data = new SpeculativeTrapData(dp);
-        // data->method() may be null in case of a concurrent
-        // allocation. Maybe it's for the same method. Try to use that
-        // entry in that case.
         if (dp->bci() == bci) {
-          if (data->method() == nullptr) {
-            assert(concurrent, "impossible because no concurrent allocation");
-            return nullptr;
-          } else if (data->method() == m) {
+          assert(data->method() != nullptr, "method must be set");
+          if (data->method() == m) {
             return data;
           }
         }
@@ -1473,6 +1472,8 @@ ProfileData* MethodData::bci_to_extra_data_helper(int bci, Method* m, DataLayout
 
 // Translate a bci to its corresponding extra data, or null.
 ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_missing) {
+  check_extra_data_locked();
+
   // This code assumes an entry for a SpeculativeTrapData is 2 cells
   assert(2*DataLayout::compute_size_in_bytes(BitData::static_cell_count()) ==
          DataLayout::compute_size_in_bytes(SpeculativeTrapData::static_cell_count()),
@@ -1486,23 +1487,14 @@ ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_mi
   DataLayout* dp  = extra_data_base();
   DataLayout* end = args_data_limit();
 
-  // Allocation in the extra data space has to be atomic because not
-  // all entries have the same size and non atomic concurrent
-  // allocation would result in a corrupted extra data space.
-  ProfileData* result = bci_to_extra_data_helper(bci, m, dp, true);
-  if (result != nullptr) {
+  // Find if already exists
+  ProfileData* result = bci_to_extra_data_find(bci, m, dp);
+  if (result != nullptr || dp >= end) {
     return result;
   }
 
-  if (create_if_missing && dp < end) {
-    MutexLocker ml(&_extra_data_lock);
-    // Check again now that we have the lock. Another thread may
-    // have added extra data entries.
-    ProfileData* result = bci_to_extra_data_helper(bci, m, dp, false);
-    if (result != nullptr || dp >= end) {
-      return result;
-    }
-
+  if (create_if_missing) {
+    // Not found -> Allocate
     assert(dp->tag() == DataLayout::no_tag || (dp->tag() == DataLayout::speculative_trap_data_tag && m != nullptr), "should be free");
     assert(next_extra(dp)->tag() == DataLayout::no_tag || next_extra(dp)->tag() == DataLayout::arg_info_data_tag, "should be free or arg info");
     u1 tag = m == nullptr ? DataLayout::bit_data_tag : DataLayout::speculative_trap_data_tag;
@@ -1729,6 +1721,8 @@ void MethodData::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 void MethodData::clean_extra_data_helper(DataLayout* dp, int shift, bool reset) {
+  check_extra_data_locked();
+
   if (shift == 0) {
     return;
   }
@@ -1770,6 +1764,8 @@ public:
 // Remove SpeculativeTrapData entries that reference an unloaded or
 // redefined method
 void MethodData::clean_extra_data(CleanExtraDataClosure* cl) {
+  check_extra_data_locked();
+
   DataLayout* dp  = extra_data_base();
   DataLayout* end = args_data_limit();
 
@@ -1814,6 +1810,8 @@ void MethodData::clean_extra_data(CleanExtraDataClosure* cl) {
 // Verify there's no unloaded or redefined method referenced by a
 // SpeculativeTrapData entry
 void MethodData::verify_extra_data_clean(CleanExtraDataClosure* cl) {
+  check_extra_data_locked();
+
 #ifdef ASSERT
   DataLayout* dp  = extra_data_base();
   DataLayout* end = args_data_limit();
@@ -1851,6 +1849,10 @@ void MethodData::clean_method_data(bool always_clean) {
   }
 
   CleanExtraDataKlassClosure cl(always_clean);
+
+  // Lock to modify extra data, and prevent Safepoint from breaking the lock
+  MutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
   clean_extra_data(&cl);
   verify_extra_data_clean(&cl);
 }
@@ -1860,6 +1862,10 @@ void MethodData::clean_method_data(bool always_clean) {
 void MethodData::clean_weak_method_links() {
   ResourceMark rm;
   CleanExtraDataMethodClosure cl;
+
+  // Lock to modify extra data, and prevent Safepoint from breaking the lock
+  MutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
   clean_extra_data(&cl);
   verify_extra_data_clean(&cl);
 }
@@ -1873,3 +1879,16 @@ void MethodData::release_C_heap_structures() {
   FailedSpeculation::free_failed_speculations(get_failed_speculations_address());
 #endif
 }
+
+#ifdef ASSERT
+void MethodData::check_extra_data_locked() const {
+    // Cast const away, just to be able to verify the lock
+    // Usually we only want non-const accesses on the lock,
+    // so this here is an exception.
+    MethodData* self = (MethodData*)this;
+    assert(self->extra_data_lock()->owned_by_self(), "must have lock");
+    assert(!Thread::current()->is_Java_thread() ||
+           JavaThread::current()->is_in_no_safepoint_scope(),
+           "JavaThread must have NoSafepointVerifier inside lock scope");
+}
+#endif

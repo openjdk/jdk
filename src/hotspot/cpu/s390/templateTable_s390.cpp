@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3914,20 +3914,15 @@ void TemplateTable::_new() {
   __ z_cli(0, tmp, JVM_CONSTANT_Class);
   __ z_brne(slow_case);
 
-  __ z_sllg(offset, offset, LogBytesPerWord); // Convert to to offset.
+  __ z_sllg(offset, offset, LogBytesPerWord); // Convert to offset.
   // Get InstanceKlass.
   Register iklass = cpool;
   __ load_resolved_klass_at_offset(cpool, offset, iklass);
 
-  // Make sure klass is initialized & doesn't have finalizer.
-  // Make sure klass is fully initialized.
-  const int state_offset = in_bytes(InstanceKlass::init_state_offset());
-  if (Immediate::is_uimm12(state_offset)) {
-    __ z_cli(state_offset, iklass, InstanceKlass::fully_initialized);
-  } else {
-    __ z_cliy(state_offset, iklass, InstanceKlass::fully_initialized);
-  }
-  __ z_brne(slow_case);
+  // make sure klass is initialized
+  assert(VM_Version::supports_fast_class_init_checks(),
+         "Optimization requires support for fast class initialization checks");
+  __ clinit_barrier(iklass, Z_thread, nullptr /*L_fast_path*/, &slow_case);
 
   // Get instance_size in InstanceKlass (scaled to a count of bytes).
   Register Rsize = offset;

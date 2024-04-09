@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -720,6 +720,7 @@ public:
 
   // Alignment
   void align(int modulus);
+  void align(int modulus, int target);
 
   // nop
   void post_call_nop();
@@ -1247,6 +1248,8 @@ public:
 
   // Emit the CompiledIC call idiom
   address ic_call(address entry, jint method_index = 0);
+  static int ic_check_size();
+  int ic_check(int end_alignment);
 
 public:
 
@@ -1399,8 +1402,7 @@ public:
   address arrays_equals(Register a1, Register a2, Register result, Register cnt1,
                         Register tmp1, Register tmp2, Register tmp3, int elem_size);
 
-  void string_equals(Register a1, Register a2, Register result, Register cnt1,
-                     int elem_size);
+  void string_equals(Register a1, Register a2, Register result, Register cnt1);
 
   void fill_words(Register base, Register cnt, Register value);
   address zero_words(Register base, uint64_t cnt);
@@ -1425,11 +1427,6 @@ public:
                         FloatRegister vtmp2, FloatRegister vtmp3,
                         FloatRegister vtmp4, FloatRegister vtmp5);
 
-  void fast_log(FloatRegister vtmp0, FloatRegister vtmp1, FloatRegister vtmp2,
-                FloatRegister vtmp3, FloatRegister vtmp4, FloatRegister vtmp5,
-                FloatRegister tmpC1, FloatRegister tmpC2, FloatRegister tmpC3,
-                FloatRegister tmpC4, Register tmp1, Register tmp2,
-                Register tmp3, Register tmp4, Register tmp5);
   void generate_dsin_dcos(bool isCos, address npio2_hw, address two_over_pi,
       address pio2, address dsin_coef, address dcos_coef);
  private:
@@ -1605,8 +1602,8 @@ public:
   // Code for java.lang.Thread::onSpinWait() intrinsic.
   void spin_wait();
 
-  void lightweight_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
-  void lightweight_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
+  void lightweight_lock(Register obj, Register t1, Register t2, Register t3, Label& slow);
+  void lightweight_unlock(Register obj, Register t1, Register t2, Register t3, Label& slow);
 
 private:
   // Check the current thread doesn't need a cross modify fence.

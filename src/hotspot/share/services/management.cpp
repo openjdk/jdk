@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1433,7 +1433,7 @@ JVM_ENTRY(jobjectArray, jmm_GetVMGlobalNames(JNIEnv *env))
   int num_entries = 0;
   for (int i = 0; i < nFlags; i++) {
     JVMFlag* flag = &JVMFlag::flags[i];
-    // Exclude notproduct and develop flags in product builds.
+    // Exclude develop flags in product builds.
     if (flag->is_constant_in_binary()) {
       continue;
     }
@@ -1460,7 +1460,7 @@ JVM_END
 // Utility function used by jmm_GetVMGlobals.  Returns false if flag type
 // can't be determined, true otherwise.  If false is returned, then *global
 // will be incomplete and invalid.
-bool add_global_entry(Handle name, jmmVMGlobal *global, JVMFlag *flag, TRAPS) {
+static bool add_global_entry(Handle name, jmmVMGlobal *global, JVMFlag *flag, TRAPS) {
   Handle flag_name;
   if (name() == nullptr) {
     flag_name = java_lang_String::create_from_str(flag->name(), CHECK_false);
@@ -1590,7 +1590,7 @@ JVM_ENTRY(jint, jmm_GetVMGlobals(JNIEnv *env,
     int num_entries = 0;
     for (int i = 0; i < nFlags && num_entries < count;  i++) {
       JVMFlag* flag = &JVMFlag::flags[i];
-      // Exclude notproduct and develop flags in product builds.
+      // Exclude develop flags in product builds.
       if (flag->is_constant_in_binary()) {
         continue;
       }

@@ -1189,8 +1189,8 @@ public class TestModules extends JavadocTester {
                     ck="show('all-modules-table', 'all-modules-table-tab3', 2)" class="table-tab">Ot\
                     her Modules</button>\
                     </div>
-                    <div id="all-modules-table.tabpanel" role="tabpanel">
-                    <div class="summary-table two-column-summary" aria-labelledby="all-modules-table-tab0">""");
+                    <div id="all-modules-table.tabpanel" role="tabpanel" aria-labelledby="all-modules-table-tab0">
+                    <div class="summary-table two-column-summary">""");
         checkOutput("index.html", false,
                 """
                     <div class="overview-summary">
@@ -1270,8 +1270,8 @@ public class TestModules extends JavadocTester {
                     ck="show('all-packages-table', 'all-packages-table-tab2', 2)" class="table-tab">P\
                     ackage Group 1</button>\
                     </div>
-                    <div id="all-packages-table.tabpanel" role="tabpanel">
-                    <div class="summary-table two-column-summary" aria-labelledby="all-packages-table-tab0">""");
+                    <div id="all-packages-table.tabpanel" role="tabpanel" aria-labelledby="all-packages-table-tab0">
+                    <div class="summary-table two-column-summary">""");
     }
 
     void checkGroupOptionPackageOrdering() {
@@ -1421,7 +1421,7 @@ public class TestModules extends JavadocTester {
                     """);
         checkOutput("allclasses-index.html", found,
                 """
-                    <div class="summary-table two-column-summary" aria-labelledby="all-classes-table-tab0">
+                    <div class="summary-table two-column-summary">
                     """);
         checkOutput("allpackages-index.html", found,
                 """

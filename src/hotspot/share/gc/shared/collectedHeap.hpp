@@ -27,6 +27,7 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcWhen.hpp"
+#include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
@@ -45,9 +46,6 @@
 // class defines the functions that a heap must implement, and contains
 // infrastructure common to all heaps.
 
-class WorkerTask;
-class AdaptiveSizePolicy;
-class BarrierSet;
 class GCHeapLog;
 class GCHeapSummary;
 class GCTimer;
@@ -56,7 +54,6 @@ class GCMemoryManager;
 class MemoryPool;
 class MetaspaceSummary;
 class ReservedHeapSpace;
-class SoftRefPolicy;
 class Thread;
 class ThreadClosure;
 class VirtualSpaceSummary;
@@ -105,6 +102,8 @@ class CollectedHeap : public CHeapObj<mtGC> {
   size_t _capacity_at_last_gc;
   size_t _used_at_last_gc;
 
+  SoftRefPolicy _soft_ref_policy;
+
   // First, set it to java_lang_Object.
   // Then, set it to FillerObject after the FillerObject_klass loading is complete.
   static Klass* _filler_object_klass;
@@ -150,7 +149,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // returned in actual_size.
   virtual HeapWord* allocate_new_tlab(size_t min_size,
                                       size_t requested_size,
-                                      size_t* actual_size);
+                                      size_t* actual_size) = 0;
 
   // Reinitialize tlabs before resuming mutators.
   virtual void resize_all_tlabs();
@@ -346,15 +345,7 @@ protected:
   // An estimate of the maximum allocation that could be performed
   // for thread-local allocation buffers without triggering any
   // collection or expansion activity.
-  virtual size_t unsafe_max_tlab_alloc(Thread *thr) const {
-    guarantee(false, "thread-local allocation buffers not supported");
-    return 0;
-  }
-
-  // If a GC uses a stack watermark barrier, the stack processing is lazy, concurrent,
-  // incremental and cooperative. In order for that to work well, mechanisms that stop
-  // another thread might want to ensure its roots are in a sane state.
-  virtual bool uses_stack_watermark_barrier() const { return false; }
+  virtual size_t unsafe_max_tlab_alloc(Thread *thr) const = 0;
 
   // Perform a collection of the heap; intended for use in implementing
   // "System.gc".  This probably implies as full a collection as the
@@ -403,7 +394,7 @@ protected:
   void increment_total_full_collections() { _total_full_collections++; }
 
   // Return the SoftRefPolicy for the heap;
-  virtual SoftRefPolicy* soft_ref_policy() = 0;
+  SoftRefPolicy* soft_ref_policy() { return &_soft_ref_policy; }
 
   virtual MemoryUsage memory_usage();
   virtual GrowableArray<GCMemoryManager*> memory_managers() = 0;

@@ -592,6 +592,10 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
 void BytecodePrinter::bytecode_epilog(int bci, outputStream* st) {
   MethodData* mdo = method()->method_data();
   if (mdo != nullptr) {
+
+    // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+    MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
     ProfileData* data = mdo->bci_to_data(bci);
     if (data != nullptr) {
       st->print("  %d ", mdo->dp_to_di(data->dp()));

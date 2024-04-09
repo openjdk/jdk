@@ -411,4 +411,3 @@ public class SimpleVerifier extends BasicVerifier {
         }
     }
 }
-
