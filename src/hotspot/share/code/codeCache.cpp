@@ -687,7 +687,7 @@ void CodeCache::nmethods_do(void f(nmethod* nm)) {
 
 void CodeCache::nmethods_do(NMethodClosure* cl) {
   assert_locked_or_safepoint(CodeCache_lock);
-  NMethodIterator iter(NMethodIterator::all_blobs);
+  NMethodIterator iter(NMethodIterator::all);
   while(iter.next()) {
     cl->do_nmethod(iter.method());
   }
