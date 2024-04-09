@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -495,6 +495,8 @@ GetJREPath(char *path, jint pathsize, jboolean speculative)
     char libjava[MAXPATHLEN];
     struct stat s;
 
+    JLI_TraceLauncher("GetJREPath - attempt to get JRE location from launcher executable path\n");
+
     if (GetApplicationHome(path, pathsize)) {
         /* Is JRE co-located with the application? */
         JLI_Snprintf(libjava, sizeof(libjava), "%s/lib/" JAVA_DLL, path);
@@ -516,6 +518,8 @@ GetJREPath(char *path, jint pathsize, jboolean speculative)
         }
     }
 
+    JLI_TraceLauncher("GetJREPath - attempt to get JRE location from shared lib of the image\n");
+
     if (GetApplicationHomeFromDll(path, pathsize)) {
         JLI_Snprintf(libjava, sizeof(libjava), "%s/lib/" JAVA_DLL, path);
         if (stat(libjava, &s) == 0) {
@@ -523,6 +527,8 @@ GetJREPath(char *path, jint pathsize, jboolean speculative)
             return JNI_TRUE;
         }
     }
+
+    JLI_TraceLauncher("GetJREPath - attempts to get JRE location did not succeed\n");
 
     if (!speculative)
       JLI_ReportErrorMessage(JRE_ERROR8 JAVA_DLL);

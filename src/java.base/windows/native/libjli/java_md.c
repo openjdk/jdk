@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -300,6 +300,8 @@ GetJREPath(char *path, jint pathsize)
     char javadll[MAXPATHLEN];
     struct stat s;
 
+    JLI_TraceLauncher("GetJREPath - attempt to get JRE location from launcher executable path\n");
+
     if (GetApplicationHome(path, pathsize)) {
         /* Is JRE co-located with the application? */
         JLI_Snprintf(javadll, sizeof(javadll), "%s\\bin\\" JAVA_DLL, path);
@@ -321,6 +323,8 @@ GetJREPath(char *path, jint pathsize)
         }
     }
 
+    JLI_TraceLauncher("GetJREPath - attempt to get JRE location from shared lib of the image\n");
+
     /* Try getting path to JRE from path to JLI.DLL */
     if (GetApplicationHomeFromDll(path, pathsize)) {
         JLI_Snprintf(javadll, sizeof(javadll), "%s\\bin\\" JAVA_DLL, path);
@@ -337,6 +341,8 @@ GetJREPath(char *path, jint pathsize)
         return JNI_TRUE;
     }
 #endif
+
+    JLI_TraceLauncher("GetJREPath - attempts to get JRE location did not succeed\n");
 
     JLI_ReportErrorMessage(JRE_ERROR8 JAVA_DLL);
     return JNI_FALSE;
@@ -430,6 +436,7 @@ jboolean
 GetApplicationHome(char *buf, jint bufsize)
 {
     GetModuleFileName(NULL, buf, bufsize);
+    JLI_TraceLauncher("GetApplicationHome - launcher executable path is %s\n", buf);
     return TruncatePath(buf);
 }
 
