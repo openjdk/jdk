@@ -111,9 +111,9 @@ static LatestMethodCache _throw_no_such_method_error_cache; // Unsafe.throwNoSuc
 static LatestMethodCache _do_stack_walk_cache;              // AbstractStackWalker.doStackWalk()
 
 // Known objects
-Klass* Universe::_typeArrayKlasses[T_LONG+1]        = { nullptr /*, nullptr...*/ };
-Klass* Universe::_objectArrayKlass                  = nullptr;
-Klass* Universe::_fillerArrayKlass                  = nullptr;
+TypeArrayKlass* Universe::_typeArrayKlasses[T_LONG+1] = { nullptr /*, nullptr...*/ };
+ObjArrayKlass* Universe::_objectArrayKlass            = nullptr;
+Klass* Universe::_fillerArrayKlass                    = nullptr;
 OopHandle Universe::_basic_type_mirrors[T_VOID+1];
 #if INCLUDE_CDS_JAVA_HEAP
 int Universe::_archived_basic_type_mirror_indices[T_VOID+1];
@@ -472,8 +472,10 @@ void Universe::genesis(TRAPS) {
   // ordinary object arrays, _objectArrayKlass will be loaded when
   // SystemDictionary::initialize(CHECK); is run. See the extra check
   // for Object_klass_loaded in objArrayKlassKlass::allocate_objArray_klass_impl.
-  _objectArrayKlass = InstanceKlass::
-    cast(vmClasses::Object_klass())->array_klass(1, CHECK);
+  {
+    Klass* oak = vmClasses::Object_klass()->array_klass(CHECK);
+    _objectArrayKlass = ObjArrayKlass::cast(oak);
+  }
   // OLD
   // Add the class to the class hierarchy manually to make sure that
   // its vtable is initialized after core bootstrapping is completed.
