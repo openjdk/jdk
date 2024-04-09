@@ -62,13 +62,13 @@ public class LazyBenchmark {
 
     private static final int VALUE = 42;
 
-    private static final Lazy<Integer> LAZY = init(Lazy.of());
+    private static final LazyValue<Integer> LAZY = init(LazyValue.of());
     private static final Supplier<Integer> DCL = new Dcl<>(() -> VALUE);
-    private static final List<Lazy<Integer>> LIST = Lazy.ofList(1);
+    private static final List<LazyValue<Integer>> LIST = LazyValue.ofList(1);
 
-    private final Lazy<Integer> lazy = init(Lazy.of());
+    private final LazyValue<Integer> lazy = init(LazyValue.of());
     private final Supplier<Integer> dcl = new Dcl<>(() -> VALUE);
-    private final List<Lazy<Integer>> list = Lazy.ofList(1);
+    private final List<LazyValue<Integer>> list = LazyValue.ofList(1);
 
     @Setup
     public void setup() {
@@ -113,7 +113,7 @@ public class LazyBenchmark {
         return dcl.get();
     }
 
-    private static Lazy<Integer> init(Lazy<Integer> m) {
+    private static LazyValue<Integer> init(LazyValue<Integer> m) {
         m.setOrThrow(VALUE);
         return m;
     }

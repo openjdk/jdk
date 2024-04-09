@@ -46,8 +46,8 @@ public final class LazyUtil {
         return new NoSuchElementException("No such key:" + key);
     }
 
-    static String toString(Lazy<?> lazy) {
-        return "Lazy" +
+    static String toString(LazyValue<?> lazy) {
+        return "LazyValue" +
                 (lazy.isSet()
                         ? "[" + lazy.orThrow() + "]"
                         : ".unset");

@@ -49,7 +49,7 @@ final class BasicLazyListTest {
     private static final int[] SIZES = new int[]{0, 1, 2, 7, MAX_SIZE};
     private static final IntFunction<Integer> FUNCTION = i -> i;
 
-    private List<Lazy<Integer>> list;
+    private List<LazyValue<Integer>> list;
 
     @BeforeEach
     void setup() {
@@ -94,7 +94,7 @@ final class BasicLazyListTest {
         String actual = list.toString();
         String expected = IntStream.range(0, size)
                 .mapToObj(i -> {
-                    Lazy<Integer> lazy = Lazy.of();
+                    LazyValue<Integer> lazy = LazyValue.of();
                     lazy.setOrThrow(i);
                     return lazy;
                 })
@@ -105,7 +105,7 @@ final class BasicLazyListTest {
 
     @ParameterizedTest
     @MethodSource("unsupportedOperations")
-    void uoe(String name, Consumer<List<Lazy<Integer>>> op) {
+    void uoe(String name, Consumer<List<LazyValue<Integer>>> op) {
         for (int size : SIZES) {
             newList(size);
             assertThrows(UnsupportedOperationException.class, () -> op.accept(list), name);
@@ -114,7 +114,7 @@ final class BasicLazyListTest {
 
     @ParameterizedTest
     @MethodSource("nullOperations")
-    void npe(String name, Consumer<List<Lazy<Integer>>> op) {
+    void npe(String name, Consumer<List<LazyValue<Integer>>> op) {
         for (int size : SIZES) {
             newList(size);
             assertThrows(NullPointerException.class, () -> op.accept(list), name);
@@ -122,9 +122,9 @@ final class BasicLazyListTest {
     }
 
     private void newList(int size) {
-        list = Lazy.ofList(size);
+        list = LazyValue.ofList(size);
         for (int i = 0; i<size; i++) {
-            Lazy<Integer> lazy = list.get(i);
+            LazyValue<Integer> lazy = list.get(i);
             lazy.setOrThrow(FUNCTION.apply(i));
         }
     }
@@ -136,21 +136,21 @@ final class BasicLazyListTest {
 
     private static Stream<Arguments> unsupportedOperations() {
         return Stream.of(
-                Arguments.of("add",          asConsumer(l -> l.add(Lazy.of()))),
+                Arguments.of("add",          asConsumer(l -> l.add(LazyValue.of()))),
                 Arguments.of("remove",       asConsumer(l -> l.remove(1))),
                 Arguments.of("addAll(C)",    asConsumer(l -> l.addAll(List.of()))),
                 Arguments.of("addAll(i, C)", asConsumer(l -> l.addAll(1, List.of()))),
-                Arguments.of("removeAll",    asConsumer(l -> l.removeAll(List.<Lazy<Integer>>of()))),
-                Arguments.of("retainAll",    asConsumer(l -> l.retainAll(List.<Lazy<Integer>>of()))),
-                Arguments.of("replaceAll",   asConsumer(l -> l.replaceAll(_ -> Lazy.of()))),
+                Arguments.of("removeAll",    asConsumer(l -> l.removeAll(List.<LazyValue<Integer>>of()))),
+                Arguments.of("retainAll",    asConsumer(l -> l.retainAll(List.<LazyValue<Integer>>of()))),
+                Arguments.of("replaceAll",   asConsumer(l -> l.replaceAll(_ -> LazyValue.of()))),
                 Arguments.of("sort",         asConsumer(l -> l.sort(null))),
                 Arguments.of("clear",        asConsumer(List::clear)),
-                Arguments.of("set(i, E)",    asConsumer(l -> l.set(1, Lazy.of()))),
-                Arguments.of("add(i, E)",    asConsumer(l -> l.add(1, Lazy.of()))),
+                Arguments.of("set(i, E)",    asConsumer(l -> l.set(1, LazyValue.of()))),
+                Arguments.of("add(i, E)",    asConsumer(l -> l.add(1, LazyValue.of()))),
                 Arguments.of("remove(i)",    asConsumer(l -> l.remove(1))),
                 Arguments.of("removeIf",     asConsumer(l -> l.removeIf(Objects::isNull))),
-                Arguments.of("addFirst",     asConsumer(l -> l.addFirst(Lazy.of()))),
-                Arguments.of("addLast",      asConsumer(l -> l.addLast(Lazy.of()))),
+                Arguments.of("addFirst",     asConsumer(l -> l.addFirst(LazyValue.of()))),
+                Arguments.of("addLast",      asConsumer(l -> l.addLast(LazyValue.of()))),
                 Arguments.of("removeFirst",  asConsumer(List::removeFirst)),
                 Arguments.of("removeLast",   asConsumer(List::removeLast))
         );
@@ -159,7 +159,7 @@ final class BasicLazyListTest {
     private static Stream<Arguments> nullOperations() {
         return Stream.of(
                 Arguments.of("toArray",     asConsumer(l -> l.toArray((Object[]) null))),
-                Arguments.of("toArray",     asConsumer(l -> l.toArray((IntFunction<Lazy<Integer>[]>) null))),
+                Arguments.of("toArray",     asConsumer(l -> l.toArray((IntFunction<LazyValue<Integer>[]>) null))),
                 Arguments.of("containsAll", asConsumer(l -> l.containsAll(null))),
                 Arguments.of("forEach",     asConsumer(l -> l.forEach(null))),
                 Arguments.of("indexOf",     asConsumer(l -> l.indexOf(null))),
@@ -167,7 +167,7 @@ final class BasicLazyListTest {
         );
     }
 
-    private static Consumer<List<Lazy<Integer>>> asConsumer(Consumer<List<Lazy<Integer>>> consumer) {
+    private static Consumer<List<LazyValue<Integer>>> asConsumer(Consumer<List<LazyValue<Integer>>> consumer) {
         return consumer;
     }
 

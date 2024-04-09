@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @summary Basic tests for Lazy implementations
+ * @summary Basic tests for LazyValue implementations
  * @compile --enable-preview -source ${jdk.version} BasicLazyTest.java
  * @run junit/othervm --enable-preview BasicLazyTest
  */
@@ -45,11 +45,11 @@ final class BasicLazyTest {
     private static final int FIRST = 42;
     private static final int SECOND = 13;
 
-    private Lazy<Integer> lazy;
+    private LazyValue<Integer> lazy;
 
     @BeforeEach
     void setup() {
-        lazy = Lazy.of();
+        lazy = LazyValue.of();
     }
 
     @Test
@@ -102,7 +102,7 @@ final class BasicLazyTest {
         };
         assertDoesNotThrow(() -> lazy.computeIfUnset(throwingSupplier));
 
-        var m2 = Lazy.of();
+        var m2 = LazyValue.of();
         m2.computeIfUnset(() -> FIRST);
         assertEquals(FIRST, m2.orThrow());
     }
@@ -120,7 +120,7 @@ final class BasicLazyTest {
     @Test
     void memoized() {
         CountingSupplier<Integer> cSup = new CountingSupplier<>(() -> FIRST);
-        Lazy<Integer> m3 = Lazy.of();
+        LazyValue<Integer> m3 = LazyValue.of();
         Supplier<Integer> memoized = () -> m3.computeIfUnset(cSup);
         assertEquals(FIRST, memoized.get());
         // Make sure the original supplier is not invoked more than once
@@ -130,18 +130,18 @@ final class BasicLazyTest {
 
     @Test
     void testToString() {
-        assertEquals("Lazy.unset", lazy.toString());
+        assertEquals("LazyValue.unset", lazy.toString());
         lazy.setOrThrow(1);
-        assertEquals("Lazy[1]", lazy.toString());
+        assertEquals("LazyValue[1]", lazy.toString());
     }
 
     @Test
     void reflection() throws NoSuchFieldException {
         final class Holder {
-            private final Lazy<Integer> lazy = Lazy.of();
+            private final LazyValue<Integer> lazy = LazyValue.of();
         }
         final class HolderNonFinal {
-            private Lazy<Integer> lazy = Lazy.of();
+            private LazyValue<Integer> lazy = LazyValue.of();
         }
 
         Field field = Holder.class.getDeclaredField("lazy");
@@ -160,7 +160,7 @@ final class BasicLazyTest {
         sun.misc.Unsafe unsafe = (sun.misc.Unsafe)unsafeField.get(null);
 
         final class Holder {
-            private final Lazy<Integer> lazy = Lazy.of();
+            private final LazyValue<Integer> lazy = LazyValue.of();
         }
         Field field = Holder.class.getDeclaredField("lazy");
         assertThrows(UnsupportedOperationException.class, () ->
@@ -173,25 +173,24 @@ final class BasicLazyTest {
     void varHandle() throws NoSuchFieldException, IllegalAccessException {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
 
-        Lazy<Integer> original = Lazy.of();
+        LazyValue<Integer> original = LazyValue.of();
 
         final class Holder {
-            private final Lazy<Integer> monotonic = original;
+            private final LazyValue<Integer> monotonic = original;
         }
 
-        VarHandle varHandle = lookup.findVarHandle(Holder.class, "monotonic", Lazy.class);
+        VarHandle varHandle = lookup.findVarHandle(Holder.class, "monotonic", LazyValue.class);
         Holder holder = new Holder();
 
         assertThrows(UnsupportedOperationException.class, () ->
-                varHandle.set(holder, Lazy.of())
+                varHandle.set(holder, LazyValue.of())
         );
 
         assertThrows(UnsupportedOperationException.class, () ->
-                varHandle.compareAndSet(holder, original, Lazy.of())
+                varHandle.compareAndSet(holder, original, LazyValue.of())
         );
 
     }
-
 
     static final class CountingSupplier<T> implements Supplier<T> {
 

@@ -26,8 +26,8 @@
 package java.lang;
 
 import jdk.internal.javac.PreviewFeature;
-import jdk.internal.lang.lazy.LazyImpl;
-import jdk.internal.lang.lazy.LazyElement;
+import jdk.internal.lang.lazy.LazyValueImpl;
+import jdk.internal.lang.lazy.LazyValueElement;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -51,31 +51,24 @@ import static jdk.internal.javac.PreviewFeature.*;
  * A Lazy value is said to be monotonic because the state of a lazy value can only go from
  * <em>unset</em> to <em>set</em> and consequently, a value can only be set
  * at most once.
+ <p>
+ * To create a new fresh (unset) LazyValue, use the {@linkplain LazyValue#of()}
+ * factory.
  * <p>
  * To create collections of <em>wrapped Lazy elements</em>, that, in turn, are also
- * eligible for constant folding optimizations, the following patterns can be used:
+ * eligible for constant folding optimizations, the following factories can be used:
  * <ul>
- *     <li>{@snippet lang=java :
- *     List<Lazy<V>> list = Stream.generate(Lazy::<V>of)
- *             .limit(size)
- *             .toList();
- *     }</li>
- *
- * <li>{@snippet lang=java :
- *     Map<K, Lazy<V>> map = Map.copyOf(keys.stream()
- *             .distinct()
- *             .map(Objects::requireNonNull)
- *             .collect(Collectors.toMap(Function.identity(), _ -> Lazy.of())));
- *     }</li>
+ *     <li>{@linkplain LazyValue#ofList(int)}</li>
+ *     <li>{@linkplain LazyValue#ofMap(Set)}</li>
  *</ul>
  *
  * @param <V> value type
  * @since 23
  */
 @PreviewFeature(feature = Feature.LAZY_VALUES_AND_COLLECTIONS)
-public sealed interface Lazy<V>
-        permits LazyImpl,
-        LazyElement {
+public sealed interface LazyValue<V>
+        permits LazyValueImpl,
+        LazyValueElement {
 
     /**
      * {@return the set value (nullable) if set, otherwise throws
@@ -149,17 +142,17 @@ public sealed interface Lazy<V>
     // Factories
 
     /**
-     * {@return a fresh lazy with an unset value}
+     * {@return a fresh lazy value with an unset value}
      *
      * @param <V> the value type to set
      */
-    static <V> Lazy<V> of() {
-        return LazyImpl.of();
+    static <V> LazyValue<V> of() {
+        return LazyValueImpl.of();
     }
 
     /**
-     * {@return a fresh lazy with an unset value where the returned lazy's
-     * value is computed in a separate fresh background thread using the provided
+     * {@return a fresh lazy value with an unset value where the returned lazy value
+     * is computed in a separate fresh background thread using the provided
      * {@code supplier}}
      * <p>
      * If the supplier throws an (unchecked) exception, the exception is ignored, and no
@@ -167,27 +160,27 @@ public sealed interface Lazy<V>
      *
      * @param <V>      the value type to set
      * @param supplier to be used for computing a value
-     * @see Lazy#of
+     * @see LazyValue#of
      */
-    static <V> Lazy<V> ofBackground(Supplier<? extends V> supplier) {
+    static <V> LazyValue<V> ofBackground(Supplier<? extends V> supplier) {
         Objects.requireNonNull(supplier);
-        return LazyImpl.ofBackground(supplier);
+        return LazyValueImpl.ofBackground(supplier);
     }
 
     /**
      * {@return an unmodifiable, shallowly immutable, thread-safe, lazy,
-     * {@linkplain List} containing {@code size} {@linkplain Lazy} elements}
+     * {@linkplain List} containing {@code size} {@linkplain LazyValue } elements}
      * <p>
      * If non-empty, neither the returned list nor its elements are {@linkplain Serializable}.
      * <p>
      * The returned list and its elements are eligible for constant folding and other
      * optimizations by the JVM and is equivalent to:
      * {@snippet lang = java:
-     * List<Lazy<V>> list = Stream.generate(Lazy::<V>of)
+     * List<LazyValue<V>> list = Stream.generate(LazyValue::<V>of)
      *         .limit(size)
      *         .toList();
-     * }
-     * Except it requires less storage, does not return Lazy instances with the same
+     *}
+     * Except it requires less storage, does not return Lazy value instances with the same
      * identity, and is likely to exhibit better performance.
      * <p>
      * This static factory methods return list instances (and with all their elements)
@@ -200,17 +193,17 @@ public sealed interface Lazy<V>
      * {@linkplain List#indexOf(Object)}, {@linkplain List#lastIndexOf(Object)}, and
      * methods that relies on these method or similar methods will always indicate no match.
      *
-     * @param <V>  the generic type of the Lazy elements in the returned {@code List}
+     * @param <V>  the generic type of the Lazy value elements in the returned {@code List}
      * @param size the number of elements in the list
      * @throws IllegalArgumentException if the provided {@code size} is negative
      *
      * @since 23
      */
-    static <V> List<Lazy<V>> ofList(int size) {
+    static <V> List<LazyValue<V>> ofList(int size) {
         if (size < 0) {
             throw new IllegalArgumentException();
         }
-        return LazyImpl.ofList(size);
+        return LazyValueImpl.ofList(size);
     }
 
     /**
@@ -225,12 +218,12 @@ public sealed interface Lazy<V>
      * The returned map and its values are eligible for constant folding and other
      * optimizations by the JVM and is equivalent to:
      * {@snippet lang = java:
-     * Map<K, Lazy<V>> map = Map.copyOf(keys.stream()
+     * Map<K, LazyValue<V>> map = Map.copyOf(keys.stream()
      *         .distinct()
      *         .map(Objects::requireNonNull)
-     *         .collect(Collectors.toMap(Function.identity(), _ -> Lazy.of())));
+     *         .collect(Collectors.toMap(Function.identity(), _ -> LazyValue.of())));
      * }
-     * Except it requires less storage, does not return Lazy instances with the same
+     * Except it requires less storage, does not return Lazy value instances with the same
      * identity, and is likely to exhibit better performance.
      * <p>
      * This static factory methods return map instances (and with all their values)
@@ -249,53 +242,53 @@ public sealed interface Lazy<V>
      * @param <V>  the type of mapped values
      * @throws NullPointerException if the provided {@code keys} parameter is {@code null}
      */
-    static <K, V> Map<K, Lazy<V>> ofMap(Set<? extends K> keys) {
+    static <K, V> Map<K, LazyValue<V>> ofMap(Set<? extends K> keys) {
         Objects.requireNonNull(keys);
-        return LazyImpl.ofMap(keys);
+        return LazyValueImpl.ofMap(keys);
     }
 
     /**
-     * If no value {@linkplain #isSet() is set} for the Lazy at the provided
+     * If no value {@linkplain #isSet() is set} for the LazyValue at the provided
      * {@code index}, attempts to compute and set it as per
-     * {@linkplain Lazy#computeIfUnset(Supplier)} by applying the given {@code mapper}.
+     * {@linkplain LazyValue#computeIfUnset(Supplier)} by applying the given {@code mapper}.
      * <p>
      * This is equivalent to:
-     * {@snippet lang=java:
-     * Lazy<V> lazy = list.get(index);
+     * {@snippet lang = java:
+     * LazyValue<V> lazy = list.get(index);
      * if (lazy.isSet()) {
      *     return lazy.orThrow();
      * }
      * Supplier<V> supplier = () -> mapper.apply(index);
      * return lazy.computeIfUnset(supplier);
-     * }
+     *}
      * Except it might be more resource efficient and performant.
      *
-     * @param list   from which to get a Lazy
-     * @param index  for the Lazy
-     * @param mapper to apply if the Lazy at the provided {@code index} is
-     *               {@linkplain Lazy#isSet() not set}
+     * @param list   from which to get a LazyValue
+     * @param index  for the LazyValue
+     * @param mapper to apply if the LazyValue at the provided {@code index} is
+     *               {@linkplain LazyValue#isSet() not set}
      * @return the current (pre-existing or computed) value at the provided {@code index}
-     * @param <V> the Lazy value type to set
+     * @param <V> the LazyValue type to set
      * @throws IndexOutOfBoundsException if the provided {@code index} is less than
      *         zero or {@code index >= list.size()}
      */
-    static <V> V computeIfUnset(List<Lazy<V>> list,
+    static <V> V computeIfUnset(List<LazyValue<V>> list,
                                 int index,
                                 IntFunction<? extends V> mapper) {
         Objects.requireNonNull(list);
         Objects.checkIndex(index, list.size());
         Objects.requireNonNull(mapper);
-        return LazyImpl.computeIfUnset(list, index, mapper);
+        return LazyValueImpl.computeIfUnset(list, index, mapper);
     }
 
     /**
-     * If no value {@linkplain #isSet() is set} for the Lazy for the provided
+     * If no value {@linkplain #isSet() is set} for the LazyValue for the provided
      * {@code key}, attempts to compute and set it as per
-     * {@linkplain Lazy#computeIfUnset(Supplier)} by applying the given {@code mapper}.
+     * {@linkplain LazyValue#computeIfUnset(Supplier)} by applying the given {@code mapper}.
      * <p>
      * This is equivalent to:
-     * {@snippet lang=java:
-     * Lazy<V> lazy = map.get(key);
+     * {@snippet lang = java:
+     * LazyValue<V> lazy = map.get(key);
      * if (lazy == null) {
      *      throw new NoSuchElementException("Unknown key: "+key);
      * }
@@ -304,26 +297,26 @@ public sealed interface Lazy<V>
      * }
      * Supplier<V> supplier = () -> mapper.apply(key);
      * return lazy.computeIfUnset(supplier);
-     * }
+     *}
      * Except it might be more resource efficient and performant.
      *
-     * @param map    from which to get a Lazy
-     * @param key    for the Lazy
-     * @param mapper to apply if the Lazy at the provided {@code key} is
-     *               {@linkplain Lazy#isSet() not set}
+     * @param map    from which to get a LazyValue
+     * @param key    for the LazyValue
+     * @param mapper to apply if the LazyValue at the provided {@code key} is
+     *               {@linkplain LazyValue#isSet() not set}
      * @return the current (pre-existing or computed) value for the provided {@code key}
      * @param <K> the type of keys maintained by this map
-     * @param <V> the Lazy value type to set
+     * @param <V> the LazyValue value type to set
      * @throws NoSuchElementException if the provided {@code map} does not
      *         {@linkplain Map#containsKey(Object) contain} the provided {@code key}
      */
-    static <K, V> V computeIfUnset(Map<K, Lazy<V>> map,
+    static <K, V> V computeIfUnset(Map<K, LazyValue<V>> map,
                                    K key,
                                    Function<? super K, ? extends V> mapper) {
         Objects.requireNonNull(map);
         Objects.requireNonNull(key);
         Objects.requireNonNull(mapper);
-        return LazyImpl.computeIfUnset(map, key, mapper);
+        return LazyValueImpl.computeIfUnset(map, key, mapper);
     }
 
 }

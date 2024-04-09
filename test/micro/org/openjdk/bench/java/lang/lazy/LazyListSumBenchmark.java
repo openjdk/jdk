@@ -28,9 +28,7 @@ import org.openjdk.jmh.annotations.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import java.util.function.IntFunction;
 import java.util.stream.Stream;
 
 /**
@@ -62,20 +60,20 @@ public class LazyListSumBenchmark {
 
     private static final int SIZE = 1_000;
 
-    private static final List<Lazy<Integer>> STORED = randomLazy(Stream.generate(Lazy::<Integer>of)
+    private static final List<LazyValue<Integer>> STORED = randomLazy(Stream.generate(LazyValue::<Integer>of)
             .limit(SIZE)
             .toList());
 
     private static final List<Integer> ARRAY_LIST = random(new ArrayList<>(SIZE));
-    private static final List<Lazy<Integer>> LIST = randomLazy(Lazy.ofList(SIZE));
+    private static final List<LazyValue<Integer>> LIST = randomLazy(LazyValue.ofList(SIZE));
 
 
     //private final List<Monotonic<Integer>> monotonicLazy = randomMono(Monotonic.ofList(SIZE));
-    private final List<Lazy<Integer>> stored = randomLazy(Stream.generate(Lazy::<Integer>of)
+    private final List<LazyValue<Integer>> stored = randomLazy(Stream.generate(LazyValue::<Integer>of)
             .limit(SIZE)
             .toList());
     private final List<Integer> arrayList = random(new ArrayList<>(SIZE));
-    private final List<Lazy<Integer>> list = randomLazy(Lazy.ofList(SIZE));
+    private final List<LazyValue<Integer>> list = randomLazy(LazyValue.ofList(SIZE));
 
     @Setup
     public void setup() {
@@ -135,7 +133,7 @@ public class LazyListSumBenchmark {
         return sum;
     }
 
-    private static List<Lazy<Integer>> randomLazy(List<Lazy<Integer>> list) {
+    private static List<LazyValue<Integer>> randomLazy(List<LazyValue<Integer>> list) {
         Random rnd = new Random();
         for (int i = 0; i < SIZE; i++) {
             list.get(i).setOrThrow(rnd.nextInt(0, SIZE));

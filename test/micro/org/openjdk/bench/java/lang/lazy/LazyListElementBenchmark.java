@@ -67,10 +67,10 @@ public class LazyListElementBenchmark {
     private static final IntFunction<Integer> FUNCTION = i -> i;
     private static final int SIZE = 100;
 
-    private static final List<Lazy<Integer>> STORED = Stream.generate(Lazy::<Integer>of)
+    private static final List<LazyValue<Integer>> STORED = Stream.generate(LazyValue::<Integer>of)
             .limit(SIZE)
             .toList();
-    private static final List<Lazy<Integer>> LIST = Lazy.ofList(SIZE);
+    private static final List<LazyValue<Integer>> LIST = LazyValue.ofList(SIZE);
 
     static {
         initLazy(STORED);
@@ -81,16 +81,16 @@ public class LazyListElementBenchmark {
 
     //private final List<Monotonic<Integer>> referenceList = initMono(Monotonic.ofList(SIZE));
     private final List<Integer> arrayList = initList(new ArrayList<>(SIZE));
-    private final List<Lazy<Integer>> storedList;
-    private final List<Lazy<Integer>> list;
+    private final List<LazyValue<Integer>> storedList;
+    private final List<LazyValue<Integer>> list;
 
 
     public LazyListElementBenchmark() {
-        this.storedList = Stream.generate(Lazy::<Integer>of)
+        this.storedList = Stream.generate(LazyValue::<Integer>of)
                 .limit(SIZE)
                 .toList();
         initLazy(storedList);
-        list = Lazy.ofList(SIZE);
+        list = LazyValue.ofList(SIZE);
         initLazy(list);
     }
 
@@ -128,7 +128,7 @@ public class LazyListElementBenchmark {
         return STORED.get(8).orThrow();
     }
 
-    private static void initLazy(List<Lazy<Integer>> list) {
+    private static void initLazy(List<LazyValue<Integer>> list) {
         int index = 8;
         list.get(index).setOrThrow(FUNCTION.apply(index));
     }

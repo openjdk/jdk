@@ -41,7 +41,7 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.lang.lazy.LazyElement;
+import jdk.internal.lang.lazy.LazyValueElement;
 import jdk.internal.lang.lazy.LazyUtil;
 import jdk.internal.misc.CDS;
 import jdk.internal.util.ImmutableBitSetPredicate;
@@ -135,18 +135,18 @@ class ImmutableCollections {
                     return ImmutableCollections.listFromTrustedArrayNullsAllowed(array);
                 }
                 @Override
-                public <V> List<Lazy<V>> lazyList(int size) {
+                public <V> List<LazyValue<V>> lazyList(int size) {
                     return ImmutableCollections.LazyList.create(size);
                 }
 
                 @Override
-                public <V> V computeIfUnset(List<Lazy<V>> list,
+                public <V> V computeIfUnset(List<LazyValue<V>> list,
                                             int index,
                                             IntFunction<? extends V> mapper) {
                     if (list instanceof LazyList<V> ll) {
                         return ll.computeIfUnset(index, mapper);
                     } else {
-                        Lazy<V> lazy = list.get(index);
+                        LazyValue<V> lazy = list.get(index);
                         if (lazy.isSet()) {
                             return lazy.orThrow();
                         }
@@ -160,7 +160,7 @@ class ImmutableCollections {
 
                 @SuppressWarnings("unchecked")
                 @Override
-                public <K, V> Map<K, Lazy<V>> lazyMap(Set<? extends K> keys) {
+                public <K, V> Map<K, LazyValue<V>> lazyMap(Set<? extends K> keys) {
                     K[] arr = (K[]) keys.stream()
                             .map(Objects::requireNonNull)
                             .toArray();
@@ -171,7 +171,7 @@ class ImmutableCollections {
 
 
                 @Override
-                public <K, V> V computeIfUnset(Map<K, Lazy<V>> map,
+                public <K, V> V computeIfUnset(Map<K, LazyValue<V>> map,
                                                K key,
                                                Function<? super K, ? extends V> mapper) {
                     if (map instanceof UnsetComputable) {
@@ -179,7 +179,7 @@ class ImmutableCollections {
                         UnsetComputable<K, V> uc = ((UnsetComputable<K, V>) map);
                         return uc.computeIfUnset(key, mapper);
                     } else {
-                        Lazy<V> lazy = map.get(key);
+                        LazyValue<V> lazy = map.get(key);
                         if (lazy == null) {
                             throw LazyUtil.noKey(key);
                         }
@@ -1926,8 +1926,8 @@ class ImmutableCollections {
 
     @jdk.internal.ValueBased
     static final class LazyList<V>
-            extends AbstractImmutableList<Lazy<V>>
-            implements List<Lazy<V>> {
+            extends AbstractImmutableList<LazyValue<V>>
+            implements List<LazyValue<V>> {
 
         @Stable
         private int size;
@@ -1946,9 +1946,9 @@ class ImmutableCollections {
         }
 
         @Override
-        public Lazy<V> get(int index) {
+        public LazyValue<V> get(int index) {
             Objects.checkIndex(index, size);
-            return new LazyElement<>(elements, sets, mutexes, index);
+            return new LazyValueElement<>(elements, sets, mutexes, index);
         }
 
         @Override
@@ -1981,11 +1981,11 @@ class ImmutableCollections {
         }
 
         V computeIfUnset(int index, IntFunction<? extends V> mapper) {
-            LazyElement<V> element = new LazyElement<>(elements, sets, mutexes, index);
+            LazyValueElement<V> element = new LazyValueElement<>(elements, sets, mutexes, index);
             return element.computeIfUnset(mapper);
         }
 
-        static <V> List<Lazy<V>> create(int size) {
+        static <V> List<LazyValue<V>> create(int size) {
             return new ImmutableCollections.LazyList<>(size);
         }
 
@@ -1998,8 +1998,8 @@ class ImmutableCollections {
     }
 
     public static final class LazyMap<K, V>
-            extends AbstractImmutableMap<K, Lazy<V>>
-            implements Map<K, Lazy<V>>, UnsetComputable<K, V> {
+            extends AbstractImmutableMap<K, LazyValue<V>>
+            implements Map<K, LazyValue<V>>, UnsetComputable<K, V> {
 
         @Stable
         private final int size;
@@ -2064,8 +2064,8 @@ class ImmutableCollections {
             }
         }
 
-        private Lazy<V> value(int keyIndex) {
-            return new LazyElement<>(values, sets, mutexes, keyIndex);
+        private LazyValue<V> value(int keyIndex) {
+            return new LazyValueElement<>(values, sets, mutexes, keyIndex);
         }
 
         @Override
@@ -2085,7 +2085,7 @@ class ImmutableCollections {
         }
 
         @Override
-        public Lazy<V> get(Object key) {
+        public LazyValue<V> get(Object key) {
             int i = probe(key);
             if (i >= 0) {
                 return value(i);
@@ -2094,7 +2094,7 @@ class ImmutableCollections {
             }
         }
 
-        final class LazyMapIterator implements Iterator<Map.Entry<K, Lazy<V>>> {
+        final class LazyMapIterator implements Iterator<Map.Entry<K, LazyValue<V>>> {
 
             private int remaining;
             private int idx;
@@ -2126,11 +2126,11 @@ class ImmutableCollections {
             }
 
             @Override
-            public Map.Entry<K,Lazy<V>> next() {
+            public Map.Entry<K, LazyValue<V>> next() {
                 if (remaining > 0) {
                     int idx;
                     while (keys[idx = nextIndex()] == null) {}
-                    Map.Entry<K,Lazy<V>> e = new KeyValueHolder<>(keys[idx], value(idx));
+                    Map.Entry<K, LazyValue<V>> e = new KeyValueHolder<>(keys[idx], value(idx));
                     remaining--;
                     return e;
                 } else {
@@ -2140,7 +2140,7 @@ class ImmutableCollections {
         }
 
         @Override
-        public Set<Map.Entry<K, Lazy<V>>> entrySet() {
+        public Set<Map.Entry<K, LazyValue<V>>> entrySet() {
             return new AbstractSet<>() {
                 @Override
                 public int size() {
@@ -2148,7 +2148,7 @@ class ImmutableCollections {
                 }
 
                 @Override
-                public Iterator<Map.Entry<K, Lazy<V>>> iterator() {
+                public Iterator<Map.Entry<K, LazyValue<V>>> iterator() {
                     return new LazyMap<K, V>.LazyMapIterator();
                 }
             };
@@ -2156,22 +2156,22 @@ class ImmutableCollections {
 
         @Override
         public V computeIfUnset(K key, Function<? super K, ? extends V> mapper) {
-           LazyElement<V> element = (LazyElement<V>) get(key);
+           LazyValueElement<V> element = (LazyValueElement<V>) get(key);
            if (element == null) {
                throw LazyUtil.noKey(key);
            }
             return element.computeIfUnset(key, mapper);
         }
 
-        static <K, V> Map<K, Lazy<V>> create(K[] keys) {
+        static <K, V> Map<K, LazyValue<V>> create(K[] keys) {
             return new ImmutableCollections.LazyMap<>(keys);
         }
 
     }
 
     public static final class LazyEnumMap<K extends Enum<K>, V>
-            extends AbstractImmutableMap<K, Lazy<V>>
-            implements Map<K, Lazy<V>>, UnsetComputable<K, V> {
+            extends AbstractImmutableMap<K, LazyValue<V>>
+            implements Map<K, LazyValue<V>>, UnsetComputable<K, V> {
 
         @Stable
         private int size;
@@ -2240,14 +2240,14 @@ class ImmutableCollections {
         }
 
         @Override
-        public Lazy<V> get(Object key) {
+        public LazyValue<V> get(Object key) {
             return containsKey(key)
                     ? value(arrayIndex(key))
                     : null;
         }
 
-        private Lazy<V> value(int index) {
-            return new LazyElement<>(elements, sets, mutexes, index);
+        private LazyValue<V> value(int index) {
+            return new LazyValueElement<>(elements, sets, mutexes, index);
         }
 
         private K key(int arrayIndex) {
@@ -2263,7 +2263,7 @@ class ImmutableCollections {
             return arrayIndex + min;
         }
 
-        final class LazyEnumMapIterator implements Iterator<Map.Entry<K, Lazy<V>>> {
+        final class LazyEnumMapIterator implements Iterator<Map.Entry<K, LazyValue<V>>> {
 
             private int remaining;
             private int idx;
@@ -2295,11 +2295,11 @@ class ImmutableCollections {
             }
 
             @Override
-            public Map.Entry<K,Lazy<V>> next() {
+            public Map.Entry<K, LazyValue<V>> next() {
                 if (remaining > 0) {
                     int idx;
                     while (!isPresent.test(idx = nextIndex())) {}
-                    Map.Entry<K,Lazy<V>> e = new KeyValueHolder<>(key(idx), value(idx));
+                    Map.Entry<K, LazyValue<V>> e = new KeyValueHolder<>(key(idx), value(idx));
                     remaining--;
                     return e;
                 } else {
@@ -2309,7 +2309,7 @@ class ImmutableCollections {
         }
 
         @Override
-        public Set<Map.Entry<K, Lazy<V>>> entrySet() {
+        public Set<Map.Entry<K, LazyValue<V>>> entrySet() {
             return new AbstractSet<>() {
                 @Override
                 public int size() {
@@ -2317,7 +2317,7 @@ class ImmutableCollections {
                 }
 
                 @Override
-                public Iterator<Map.Entry<K, Lazy<V>>> iterator() {
+                public Iterator<Map.Entry<K, LazyValue<V>>> iterator() {
                     return new LazyEnumMap<K, V>.LazyEnumMapIterator();
                 }
             };
@@ -2325,7 +2325,7 @@ class ImmutableCollections {
 
         @Override
         public V computeIfUnset(K key, Function<? super K, ? extends V> mapper) {
-            LazyElement<V> element = (LazyElement<V>) get(key);
+            LazyValueElement<V> element = (LazyValueElement<V>) get(key);
             if (element == null) {
                 throw LazyUtil.noKey(key);
             }
@@ -2333,9 +2333,9 @@ class ImmutableCollections {
         }
 
         @SuppressWarnings("unchecked")
-        static <K, KI extends Enum<KI>, V> Map<K, Lazy<V>> create(Object[] keys) {
-            Map<KI, Lazy<V>> map = new ImmutableCollections.LazyEnumMap<>(keys);
-            return (Map<K, Lazy<V>>) map;
+        static <K, KI extends Enum<KI>, V> Map<K, LazyValue<V>> create(Object[] keys) {
+            Map<KI, LazyValue<V>> map = new ImmutableCollections.LazyEnumMap<>(keys);
+            return (Map<K, LazyValue<V>>) map;
         }
 
     }

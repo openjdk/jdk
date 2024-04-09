@@ -656,8 +656,8 @@ public final class Unsafe {
             throw new UnsupportedOperationException("can't get field offset on a record class: " + f);
         }
         // Todo: When Lazy is a final feature: if (java.lang.Lazy.class.isAssignableFrom(f.getType()))
-        if (f.getType().getName().equals("java.lang.Lazy")) {
-            throw new UnsupportedOperationException("can't get field offset for a field of type java.lang.Lazy: " + f);
+        if (f.getType().getName().equals("java.lang.LazyValue")) {
+            throw new UnsupportedOperationException("can't get field offset for a field of type java.lang.LazyValue: " + f);
         }
         return theInternalUnsafe.objectFieldOffset(f);
     }

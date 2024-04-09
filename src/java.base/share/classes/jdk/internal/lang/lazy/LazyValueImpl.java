@@ -33,22 +33,20 @@ import jdk.internal.vm.annotation.Stable;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static jdk.internal.lang.lazy.LazyUtil.*;
 
-public final class LazyImpl<V> implements Lazy<V> {
+public final class LazyValueImpl<V> implements LazyValue<V> {
 
     private static final long VALUE_OFFSET =
-            UNSAFE.objectFieldOffset(LazyImpl.class, "value");
+            UNSAFE.objectFieldOffset(LazyValueImpl.class, "value");
 
     private static final long SET_OFFSET =
-            UNSAFE.objectFieldOffset(LazyImpl.class, "set");
+            UNSAFE.objectFieldOffset(LazyValueImpl.class, "set");
 
     private static final byte NOT_SET = 0;
     private static final byte SET = 1;
@@ -67,7 +65,7 @@ public final class LazyImpl<V> implements Lazy<V> {
     @Stable
     private byte set;
 
-    LazyImpl() {}
+    LazyValueImpl() {}
 
     @ForceInline
     @Override
@@ -204,12 +202,12 @@ public final class LazyImpl<V> implements Lazy<V> {
 
     // Factories
 
-    public static <V> Lazy<V> of() {
-        return new LazyImpl<>();
+    public static <V> LazyValue<V> of() {
+        return new LazyValueImpl<>();
     }
 
-    public static <V> Lazy<V> ofBackground(Supplier<? extends V> supplier) {
-        Lazy<V> lazy = Lazy.of();
+    public static <V> LazyValue<V> ofBackground(Supplier<? extends V> supplier) {
+        LazyValue<V> lazy = LazyValue.of();
         Thread.ofVirtual()
                 .start(() -> {
                     try {
@@ -224,20 +222,20 @@ public final class LazyImpl<V> implements Lazy<V> {
     private static final JavaUtilCollectionAccess ACCESS =
             SharedSecrets.getJavaUtilCollectionAccess();
 
-    public static <V> List<Lazy<V>> ofList(int size) {
+    public static <V> List<LazyValue<V>> ofList(int size) {
         if (size < 0) {
             throw new IllegalArgumentException();
         }
         return ACCESS.lazyList(size);
     }
 
-    public static <V> V computeIfUnset(List<Lazy<V>> list,
+    public static <V> V computeIfUnset(List<LazyValue<V>> list,
                                        int index,
                                        IntFunction<? extends V> mapper) {
         return ACCESS.computeIfUnset(list, index, mapper);
     }
 
-    public static <K, V> Map<K, Lazy<V>> ofMap(Set<? extends K> keys) {
+    public static <K, V> Map<K, LazyValue<V>> ofMap(Set<? extends K> keys) {
         if (keys.isEmpty()) {
             // Todo: Serializable...
             return Map.of();
@@ -245,7 +243,7 @@ public final class LazyImpl<V> implements Lazy<V> {
         return ACCESS.lazyMap(keys);
     }
 
-    public static <K, V> V computeIfUnset(Map<K, Lazy<V>> map,
+    public static <K, V> V computeIfUnset(Map<K, LazyValue<V>> map,
                                           K key,
                                           Function<? super K, ? extends V> mapper) {
         return ACCESS.computeIfUnset(map, key, mapper);

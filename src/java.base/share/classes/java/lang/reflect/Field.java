@@ -175,10 +175,10 @@ class Field extends AccessibleObject implements Member {
     public void setAccessible(boolean flag) {
         AccessibleObject.checkPermission();
         if (flag) {
-            if (Lazy.class.isAssignableFrom(type) && Modifier.isFinal(modifiers)) {
+            if (LazyValue.class.isAssignableFrom(type) && Modifier.isFinal(modifiers)) {
                 throw newInaccessibleObjectException(
                         "Unable to make field " + this + " accessable: " +
-                                "java.lang.Lazy fields are trusted");
+                                "java.lang.LazyValue fields are trusted");
             }
             checkCanSetAccessible(Reflection.getCallerClass());
         }

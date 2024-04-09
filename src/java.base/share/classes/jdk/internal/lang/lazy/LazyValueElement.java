@@ -29,12 +29,12 @@ LazyListBenchmark.staticArrayList    avgt   10  0.830 ? 0.027  ns/op
 LazyListBenchmark.staticLazyList     avgt   10  0.563 ? 0.005  ns/op
  */
 @ValueBased
-public record LazyElement<V>(
+public record LazyValueElement<V>(
         V[] elements,
         byte[] sets,
         Object[] mutexes,
         int index
-) implements Lazy<V> {
+) implements LazyValue<V> {
 
     @Override
     public V orThrow() {
@@ -197,10 +197,10 @@ public record LazyElement<V>(
         UNSAFE.putReferenceVolatile(mutexes, objectOffset(index), null);
     }
 
-    static <V> Lazy<V> lazyListElement(V[] elements,
-                                       byte[] sets,
-                                       Object[] mutexes,
-                                       int index) {
-        return new LazyElement<>(elements, sets, mutexes, index);
+    static <V> LazyValue<V> lazyListElement(V[] elements,
+                                            byte[] sets,
+                                            Object[] mutexes,
+                                            int index) {
+        return new LazyValueElement<>(elements, sets, mutexes, index);
     }
 }

@@ -30,19 +30,16 @@ import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -73,7 +70,7 @@ public class LazyPropertiesBenchmark {
 
     private static final Set<String> PROPERTY_KEYS = Set.of("int", "long", "String");
 
-    private static final Map<String, Lazy<String>> LAZY_MAP = Lazy.ofMap(PROPERTY_KEYS);
+    private static final Map<String, LazyValue<String>> LAZY_MAP = LazyValue.ofMap(PROPERTY_KEYS);
     private static final Properties PROPERTIES;
     private static final Map<String, String> CHM;
     private static final Map<String, String> MAP;
@@ -104,7 +101,7 @@ public class LazyPropertiesBenchmark {
 
     @Benchmark
     public int lazy() {
-        return Integer.valueOf(Lazy.computeIfUnset(LAZY_MAP, KEY, FUNCTION));
+        return Integer.valueOf(LazyValue.computeIfUnset(LAZY_MAP, KEY, FUNCTION));
     }
 
     @Benchmark
@@ -119,7 +116,7 @@ public class LazyPropertiesBenchmark {
 
     @Benchmark
     public void lazyRaw(Blackhole bh) {
-        bh.consume(Lazy.computeIfUnset(LAZY_MAP, KEY, FUNCTION));
+        bh.consume(LazyValue.computeIfUnset(LAZY_MAP, KEY, FUNCTION));
     }
 
 }
