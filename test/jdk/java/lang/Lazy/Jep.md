@@ -297,7 +297,7 @@ Like a `Lazy` object, a lazily computed `List` object is created via a factory m
 of the desired `List`:
 
 ```
-static <E> List<Lazy<E>> Lazy.ofList(int size) { ... }
+static <V> List<Lazy<V>> Lazy.ofList(int size) { ... }
 ```
 
 This allows for improving the handling of lists with lazily computed values and enables a much better
@@ -350,9 +350,9 @@ at most once for each distinct index. The Lazy Values & Collections API allows m
 still preserving good constant-folding guarantees and integrity of updates in the case of multi-threaded access.
 
 It should be noted that even though a lazily computed list might mutate its internal state upon external access, it 
-is _still shallowly immutable_ because _no change can ever be observed by an external entity_. This is similar to other
-immutable classes, such as `String` (which internally caches its `hash` value), where they might rely on mutable
-internal states that are carefully kept internally and that never shine through to the outside world.
+is _still shallowly immutable_ because _no first-level change can ever be observed by an external entity_. This is
+similar to other immutable classes, such as `String` (which internally caches its `hash` value), where they might rely
+on mutable internal states that are carefully kept internally and that never shine through to the outside world.
 
 Just as a `List` can be lazily computed, a `Map` of lazily computed values can also be defined and used similarly.
 In the example below, we lazily compute a map's values for an enumerated collection of pre-defined keys:
@@ -374,11 +374,11 @@ class MapDemo {
 ```
 
 This concept allows declaring a large number of lazy values which can be easily retrieved using arbitrarily, but
-pre-specified, keys in a resource-efficient and performant way. For example, performant, non-evicting caches may
-now be easily and reliably realized.
+pre-specified, keys in a resource-efficient and performant way. For example, high-performance, non-evicting caches
+may now be easily and reliably realized.
 
 It is worth remembering, that the lazy collections all promise the function provided at computation
-(used to lazily compute elements or values) is invoked at most once per index, key, or element; even
+(used to lazily compute elements or values) is invoked at most once per index or key; even
 though used from several threads.
 
 ### Memoized functions
@@ -427,8 +427,7 @@ for an `IntFunction` that will record its cached value in a backing _lazy list_:
 
 ```
 // 1. Declare a lazy list of default error pages to serve up
-private static final List<Lazy<String>> ERROR_PAGES =
-        Lazy.ofList(SIZE);
+private static final List<Lazy<String>> ERROR_PAGES = Lazy.ofList(SIZE);
 
 // 2. Declare a memoized IntFunction backed by the lazy list
 private static final IntFunction<String> ERROR_FUNCTION =
