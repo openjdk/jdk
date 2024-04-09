@@ -45,9 +45,8 @@ import java.util.TimeZone;
  * @test
  * @summary Tests that the Properties.store() APIs generate output that is reproducible
  * @bug 8231640 8282023 8316540
- * @comment We don't run this test in Xcomp mode since the processes that we launch
- *          in this test, inherit the -Xcomp which then slows down the launched processes to an
- *          extent that the test sometimes times out.
+ * @comment The test launches several processes and in the presence of -Xcomp it's too slow
+ *          and thus causes timeouts
  * @requires vm.compMode != "Xcomp"
  * @library /test/lib
  * @run driver StoreReproducibilityTest
