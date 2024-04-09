@@ -70,8 +70,13 @@ public class LazyBenchmark {
     private final Supplier<Integer> dcl = new Dcl<>(() -> VALUE);
     private final List<LazyValue<Integer>> list = LazyValue.ofList(1);
 
+    static {
+        LIST.getFirst().setOrThrow(VALUE);
+    }
+
     @Setup
     public void setup() {
+        list.getFirst().setOrThrow(VALUE);
     }
 
     @Benchmark
