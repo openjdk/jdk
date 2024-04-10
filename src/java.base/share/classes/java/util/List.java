@@ -683,12 +683,12 @@ public interface List<E> extends SequencedCollection<E> {
      * {@code listIterator()}).  Then, it iterates over the list until a
      * matching element is found or the beginning of the list is reached.
      *
-     * @param filter a predicate to search for
+     * @param filter a predicate to search matching element for
      * @return the index of the first occurrence of the specified element in
      *         this list, or -1 if this list does not contain the element
      * @throws NullPointerException if passed filter is null
      */
-    default int indexOf(Predicate<? super E> filter) {
+    default int findIndex(Predicate<? super E> filter) {
         Objects.requireNonNull(filter);
         ListIterator<E> it = listIterator();
         while (it.hasNext()) {
@@ -713,12 +713,12 @@ public interface List<E> extends SequencedCollection<E> {
      * backwards over the list until the matching element is found, or the
      * beginning of the list is reached.
      *
-     * @param filter a predicate to search for
+     * @param filter a predicate to search matching element for
      * @return the index of the last occurrence of the specified element in
      *         this list, or -1 if this list does not contain the element
      * @throws NullPointerException if passed filter is null
      */
-    default int lastIndexOf(Predicate<? super E> filter) {
+    default int findLastIndex(Predicate<? super E> filter) {
         Objects.requireNonNull(filter);
         ListIterator<E> it = listIterator(size());
         while (it.hasPrevious()) {

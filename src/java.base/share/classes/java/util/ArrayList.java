@@ -311,6 +311,10 @@ public class ArrayList<E> extends AbstractList<E>
      * More formally, returns the lowest index {@code i} such that
      * {@code filter.test(get(i))},
      * or -1 if there is no such index.
+     *
+     * @param filter a predicate to search matching element for
+     * @return the index of the last occurrence of the specified element in
+     *         this list, or -1 if this list does not contain the element
      */
     public int findIndex(Predicate<? super E> filter) {
         return indexOfRange(filter, 0, size);
@@ -361,6 +365,10 @@ public class ArrayList<E> extends AbstractList<E>
      * More formally, returns the highest index {@code i} such that
      * {@code filter.test(get(i))},
      * or -1 if there is no such index.
+     *
+     * @param filter a predicate to search matching element for
+     * @return the index of the last occurrence of the specified element in
+     *         this list, or -1 if this list does not contain the element
      */
     public int findLastIndex(Predicate<? super E> filter) {
         return lastIndexOfRange(filter, 0, size);
