@@ -80,7 +80,8 @@ It should be noted that even though eventually outputting a message is slow comp
 obtaining the `Logger` instance itself, the `LOGGER::log`method starts with checking if
 the selected `Level` is enabled or not. This latter check is a relatively fast operation
 and so, in the case of disabled loggers, the `Logger` instance retrieval performance is
-important.
+important. For example, logger output for `Level.DEBUG` is almost always disabled in production
+environments.
 
 Alternatively, the [_double-checked locking idiom_](https://en.wikipedia.org/wiki/Double-checked_locking), can also be used
 for deferring the evaluation of field initializers. The idea is to optimistically
