@@ -4829,18 +4829,10 @@ jint os::init_2(void) {
     // Some downstream kernels recognize MADV_POPULATE_WRITE_value as another
     // advice, so the check of versions is required here.
     // See https://github.com/oracle/linux-uek/issues/23
-    struct utsname buffer;
-    int ret = uname(&buffer);
-    if (ret != 0) {
-      log_warning(os)("uname(2) failed to get kernel version: %s",
-                      os::errno_name(ret));
-    }
-
-    long major = -1, minor = -1;
+    long major, minor;
+    Linux::kernel_version(&major, &minor);
     bool supportMadvPopulateWrite =
-      (ret == 0 &&
-       (sscanf(buffer.release, "%ld.%ld", &major, &minor) == 2) &&
-       (major > 5 || (major == 5 && minor >= 14)) &&
+      ((major > 5 || (major == 5 && minor >= 14)) &&
        (::madvise(0, 0, MADV_POPULATE_WRITE) == 0));
     if (!supportMadvPopulateWrite) {
       if (!FLAG_IS_DEFAULT(UseMadvPopulateWrite)) {
