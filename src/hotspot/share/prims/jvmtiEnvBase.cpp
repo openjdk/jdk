@@ -2194,7 +2194,7 @@ JvmtiEnvBase::force_early_return(jthread thread, jvalue value, TosState tos) {
 }
 
 void
-SetForceEarlyReturn::doit(Thread *target, bool self) {
+SetForceEarlyReturn::doit(Thread *target) {
   JavaThread* java_thread = JavaThread::cast(target);
   Thread* current_thread = Thread::current();
   HandleMark   hm(current_thread);
@@ -2329,7 +2329,7 @@ JvmtiModuleClosure::get_all_modules(JvmtiEnv* env, jint* module_count_ptr, jobje
 }
 
 void
-UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
+UpdateForPopTopFrameClosure::doit(Thread *target) {
   Thread* current_thread  = Thread::current();
   HandleMark hm(current_thread);
   JavaThread* java_thread = JavaThread::cast(target);

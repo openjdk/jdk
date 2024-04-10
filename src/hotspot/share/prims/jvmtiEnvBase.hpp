@@ -500,13 +500,14 @@ public:
      _state(state),
      _value(value),
      _tos(tos) {}
-  void doit(Thread *target, bool self);
+  void doit(Thread *target);
   void do_thread(Thread *target) {
-    doit(target, _self);
+    doit(target);
   }
   void do_vthread(Handle target_h) {
     assert(_target_jt != nullptr, "sanity check");
-    doit(_target_jt, _self); // mounted virtual thread
+    assert(_target_jt->vthread() == target_h(), "sanity check");
+    doit(_target_jt); // mounted virtual thread
   }
 };
 
@@ -519,13 +520,14 @@ public:
   UpdateForPopTopFrameClosure(JvmtiThreadState* state)
     : JvmtiUnitedHandshakeClosure("UpdateForPopTopFrame"),
      _state(state) {}
-  void doit(Thread *target, bool self);
+  void doit(Thread *target);
   void do_thread(Thread *target) {
-    doit(target, _self);
+    doit(target);
   }
   void do_vthread(Handle target_h) {
     assert(_target_jt != nullptr, "sanity check");
-    doit(_target_jt, _self); // mounted virtual thread
+    assert(_target_jt->vthread() == target_h(), "sanity check");
+    doit(_target_jt); // mounted virtual thread
   }
 };
 
