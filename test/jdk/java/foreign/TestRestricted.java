@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,8 +85,10 @@ public class TestRestricted {
             RestrictedMethod.of(Linker.class, "downcallHandle", MethodHandle.class, MemorySegment.class, FunctionDescriptor.class, Linker.Option[].class),
             RestrictedMethod.of(Linker.class, "upcallStub", MemorySegment.class, MethodHandle.class, FunctionDescriptor.class, Arena.class, Linker.Option[].class),
             RestrictedMethod.of(MemorySegment.class, "reinterpret", MemorySegment.class, long.class),
+            RestrictedMethod.of(MemorySegment.class, "reinterpret", MemorySegment.class, MemoryLayout.class),
             RestrictedMethod.of(MemorySegment.class, "reinterpret", MemorySegment.class, Arena.class, Consumer.class),
             RestrictedMethod.of(MemorySegment.class, "reinterpret", MemorySegment.class, long.class, Arena.class, Consumer.class),
+            RestrictedMethod.of(MemorySegment.class, "reinterpret", MemorySegment.class, MemoryLayout.class, Arena.class, Consumer.class),
             RestrictedMethod.of(AddressLayout.class, "withTargetLayout", AddressLayout.class, MemoryLayout.class),
             RestrictedMethod.of(ModuleLayer.Controller.class, "enableNativeAccess", ModuleLayer.Controller.class, Module.class)
     );

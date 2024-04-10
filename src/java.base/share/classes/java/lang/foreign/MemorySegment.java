@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -689,6 +689,24 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     MemorySegment reinterpret(long newSize);
 
     /**
+     * {@return a new segment with an address that is
+     * {@linkplain MemoryLayout#byteAlignment() aligned} according to the provided
+     * layout with respect to the address of this segment and with the provided
+     * layout's {@linkplain MemoryLayout#byteSize() size} and with the same scope as
+     * this segment}
+     *
+     * @param layout  the layout to describe the returned segment
+     * @throws UnsupportedOperationException if this segment is not a
+     *         {@linkplain #isNative() native} segment
+     * @throws IllegalCallerException if the caller is in a module that does not have
+     *         native access enabled
+     * @since 23
+     */
+    @CallerSensitive
+    @Restricted
+    MemorySegment reinterpret(MemoryLayout layout);
+
+    /**
      * Returns a new memory segment with the same address and size as this segment, but
      * with the provided scope. As such, the returned segment cannot be accessed after
      * the provided arena has been closed. Moreover, the returned segment can be
@@ -780,6 +798,59 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     @CallerSensitive
     @Restricted
     MemorySegment reinterpret(long newSize,
+                              Arena arena,
+                              Consumer<MemorySegment> cleanup);
+
+    /**
+     * {@return a new segment with an address that is
+     * {@linkplain MemoryLayout#byteAlignment() aligned} according to the provided
+     * layout with respect to the address of this segment, and with the provided
+     * layout's {@linkplain MemoryLayout#byteSize() size} associated with the
+     * provided arena}
+     * <p>
+     * As such, the returned segment cannot be accessed after the
+     * provided arena has been closed. Moreover, if the returned segment can be accessed
+     * compatibly with the confinement restrictions associated with the provided arena:
+     * that is, if the provided arena is a {@linkplain Arena#ofConfined() confined arena},
+     * the returned segment can only be accessed by the arena's owner thread, regardless
+     * of the confinement restrictions associated with this segment. In other words,
+     * this method returns a segment that behaves as if it had been allocated using the
+     * provided arena.
+     * <p>
+     * Clients can specify an optional cleanup action that should be executed when the
+     * provided scope becomes invalid. This cleanup action receives a fresh memory
+     * segment that is obtained from this segment as follows:
+     * {@snippet lang=java :
+     * MemorySegment cleanupSegment = MemorySegment.ofAddress(this.address())
+     *                                             .reinterpret(newSize);
+     * }
+     * That is, the cleanup action receives a segment that is associated with the global
+     * scope, and is accessible from any thread. The size of the segment accepted by the
+     * cleanup action is {@code newSize}.
+     *
+     * @apiNote The cleanup action (if present) should take care not to leak the received
+     *          segment to external clients that might access the segment after its
+     *          backing region of memory is no longer available. Furthermore, if the
+     *          provided scope is the scope of an {@linkplain Arena#ofAuto() automatic arena},
+     *          the cleanup action must not prevent the scope from becoming
+     *          <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>.
+     *          A failure to do so will permanently prevent the regions of memory
+     *          allocated by the automatic arena from being deallocated.
+     *
+     * @param layout  the layout to describe the returned segment
+     * @param arena   the arena to be associated with the returned segment
+     * @param cleanup the cleanup action that should be executed when the provided arena
+     *                is closed (can be {@code null}).
+     * @throws UnsupportedOperationException if this segment is not a
+     *         {@linkplain #isNative() native} segment
+     * @throws IllegalStateException if {@code arena.scope().isAlive() == false}
+     * @throws IllegalCallerException if the caller is in a module that does not have
+     *         native access enabled
+     * @since 23
+     */
+    @CallerSensitive
+    @Restricted
+    MemorySegment reinterpret(MemoryLayout layout,
                               Arena arena,
                               Consumer<MemorySegment> cleanup);
 

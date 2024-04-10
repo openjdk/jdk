@@ -43,7 +43,6 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static org.testng.Assert.*;
 
 public class TestSegments {
@@ -380,12 +379,27 @@ public class TestSegments {
         try (Arena arena = Arena.ofConfined()){
             // check size
             assertEquals(MemorySegment.ofAddress(42).reinterpret(100).byteSize(), 100);
+            assertEquals(MemorySegment.ofAddress(42).reinterpret(JAVA_INT).byteSize(), JAVA_INT.byteSize());
             assertEquals(MemorySegment.ofAddress(42).reinterpret(100, Arena.ofAuto(), null).byteSize(), 100);
             // check scope and cleanup
             assertEquals(MemorySegment.ofAddress(42).reinterpret(100, arena, s -> counter.incrementAndGet()).scope(), arena.scope());
             assertEquals(MemorySegment.ofAddress(42).reinterpret(arena, s -> counter.incrementAndGet()).scope(), arena.scope());
+            assertEquals(MemorySegment.ofAddress(42).reinterpret(JAVA_INT, arena, _ -> counter.incrementAndGet()).scope(), arena.scope());
         }
-        assertEquals(counter.get(), 2);
+        assertEquals(counter.get(), 3);
+    }
+
+    @Test
+    void testReinterpretAlignment() {
+        AtomicInteger counter = new AtomicInteger();
+        try (Arena arena = Arena.ofConfined()){
+            var segment = MemorySegment.ofAddress(41).reinterpret(JAVA_INT);
+            assertEquals(segment.address(), 44);
+            assertEquals(segment.byteSize(), JAVA_INT.byteSize());
+            var arenaSegment = MemorySegment.ofAddress(41).reinterpret(JAVA_INT, arena, null);
+            assertEquals(arenaSegment.address(), 44);
+            assertEquals(arenaSegment.byteSize(), JAVA_INT.byteSize());
+        }
     }
 
     @Test

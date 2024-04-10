@@ -133,32 +133,48 @@ public abstract sealed class AbstractMemorySegmentImpl
     @CallerSensitive
     public final MemorySegment reinterpret(long newSize, Arena arena, Consumer<MemorySegment> cleanup) {
         Objects.requireNonNull(arena);
-        return reinterpretInternal(Reflection.getCallerClass(), newSize,
+        return reinterpretInternal(Reflection.getCallerClass(), newSize, 1L,
+                MemorySessionImpl.toMemorySession(arena), cleanup);
+    }
+
+    @Override
+    @CallerSensitive
+    public final MemorySegment reinterpret(MemoryLayout layout, Arena arena, Consumer<MemorySegment> cleanup) {
+        Objects.requireNonNull(layout);
+        Objects.requireNonNull(arena);
+        return reinterpretInternal(Reflection.getCallerClass(), layout.byteSize(), layout.byteAlignment(),
                 MemorySessionImpl.toMemorySession(arena), cleanup);
     }
 
     @Override
     @CallerSensitive
     public final MemorySegment reinterpret(long newSize) {
-        return reinterpretInternal(Reflection.getCallerClass(), newSize, scope, null);
+        return reinterpretInternal(Reflection.getCallerClass(), newSize, 1L, scope, null);
+    }
+
+    @Override
+    @CallerSensitive
+    public final MemorySegment reinterpret(MemoryLayout layout) {
+        Objects.requireNonNull(layout);
+        return reinterpretInternal(Reflection.getCallerClass(), layout.byteSize(), layout.byteAlignment(), scope, null);
     }
 
     @Override
     @CallerSensitive
     public final MemorySegment reinterpret(Arena arena, Consumer<MemorySegment> cleanup) {
         Objects.requireNonNull(arena);
-        return reinterpretInternal(Reflection.getCallerClass(), byteSize(),
+        return reinterpretInternal(Reflection.getCallerClass(), byteSize(), 1L,
                 MemorySessionImpl.toMemorySession(arena), cleanup);
     }
 
-    public MemorySegment reinterpretInternal(Class<?> callerClass, long newSize, Scope scope, Consumer<MemorySegment> cleanup) {
+    public MemorySegment reinterpretInternal(Class<?> callerClass, long newSize, long byteAlignment, Scope scope, Consumer<MemorySegment> cleanup) {
         Reflection.ensureNativeAccess(callerClass, MemorySegment.class, "reinterpret");
         Utils.checkNonNegativeArgument(newSize, "newSize");
         if (!isNative()) throw new UnsupportedOperationException("Not a native segment");
         Runnable action = cleanup != null ?
                 () -> cleanup.accept(SegmentFactories.makeNativeSegmentUnchecked(address(), newSize)) :
                 null;
-        return SegmentFactories.makeNativeSegmentUnchecked(address(), newSize,
+        return SegmentFactories.makeNativeSegmentUnchecked(address(), newSize, byteAlignment,
                 (MemorySessionImpl)scope, action);
     }
 
