@@ -83,6 +83,13 @@ void Klass::set_is_cloneable() {
 uint8_t Klass::compute_hash_slot(Symbol* n) {
   uint hash_code;
   // Special cases for the two superclasses of all Array instances.
+  // Code elsewhere assumes, for all instances of ArrayKlass, that
+  // these two interfaces will be in this order.
+
+  // We ensure there are some empty slots in the hash table between
+  // these two very common interfaces because if they were adjacent
+  // (e.g. Slots 0 and 1), then any other class which hashed to 0 or 1
+  // would result in a probe length of 3.
   if (n == vmSymbols::java_lang_Cloneable()) {
     hash_code = 0;
   } else if (n == vmSymbols::java_io_Serializable()) {
@@ -97,8 +104,10 @@ uint8_t Klass::compute_hash_slot(Symbol* n) {
     // code as a constant.
 
     // This constant is magic: see Knuth, "Fibonacci Hashing".
-    const uint hash_shift = sizeof(hash_code) * 8 - 6;
-    hash_code = (hash_code * 2654435769) >> hash_shift;
+    constexpr uint multiplier = (uint)(((u8)1 << 32) / ((1 + sqrt(5)) / 2 ));
+    constexpr uint hash_shift = sizeof(hash_code) * 8 - 6;
+    // The leading bits of the least significant half of the product.
+    hash_code = (hash_code * multiplier) >> hash_shift;
 
     if (StressSecondarySupers) {
       // Generate many hash collisions in order to stress-test the
