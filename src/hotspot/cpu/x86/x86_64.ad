@@ -12467,6 +12467,8 @@ instruct Ret()
 // Also known as an 'interprocedural jump'.
 // Target of jump will eventually return to caller.
 // TailJump below removes the return address.
+// Don't use rbp for the jump_target because the
+// MachEpilogNode that is inserted above will kill it.
 instruct TailCalljmpInd(no_rbp_RegP jump_target, rbx_RegP method_ptr)
 %{
   match(TailCall jump_target method_ptr);
