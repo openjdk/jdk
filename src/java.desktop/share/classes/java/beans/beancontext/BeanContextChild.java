@@ -66,7 +66,7 @@ import java.beans.beancontext.BeanContext;
  */
 
 @SuppressWarnings("removal")
-@Deprecated(forRemoval=true, since="23")
+@Deprecated(since="23", forRemoval=true)
 public interface BeanContextChild {
 
     /**
