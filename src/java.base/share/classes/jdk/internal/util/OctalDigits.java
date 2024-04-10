@@ -25,8 +25,6 @@
 
 package jdk.internal.util;
 
-import java.lang.invoke.MethodHandle;
-
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.Stable;
@@ -69,7 +67,6 @@ public final class OctalDigits {
      * @param value      value to convert
      * @param index      insert point + 1
      * @param buffer     byte buffer to copy into
-     * @param putCharMH  method to put character
      *
      * @return the last index used
      */
@@ -93,13 +90,12 @@ public final class OctalDigits {
 
 
     /**
-     * This is a variant of {@link OctalDigits#getCharsLatin1(int, int, byte[])}, but for
+     * This is a variant of {@link OctalDigits#getCharsLatin1(long, int, byte[])}, but for
      * UTF-16 coder.
      *
      * @param value      value to convert
      * @param index      insert point + 1
      * @param buffer     byte buffer to copy into
-     * @param putCharMH  method to put character
      *
      * @return the last index used
      */

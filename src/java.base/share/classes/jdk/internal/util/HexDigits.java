@@ -140,7 +140,6 @@ public final class HexDigits {
      * @param value      value to convert
      * @param index      insert point + 1
      * @param buffer     byte buffer to copy into
-     * @param putCharMH  method to put character
      *
      * @return the last index used
      */
@@ -168,7 +167,6 @@ public final class HexDigits {
      * @param value      value to convert
      * @param index      insert point + 1
      * @param buffer     byte buffer to copy into
-     * @param putCharMH  method to put character
      *
      * @return the last index used
      */
