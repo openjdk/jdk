@@ -136,7 +136,6 @@ reg_def R27     ( SOC, SOE, Op_RegI, 27, r27->as_VMReg()        ); // heapbase
 reg_def R27_H   ( SOC, SOE, Op_RegI, 27, r27->as_VMReg()->next());
 reg_def R28     (  NS, SOE, Op_RegI, 28, r28->as_VMReg()        ); // thread
 reg_def R28_H   (  NS, SOE, Op_RegI, 28, r28->as_VMReg()->next());
-// TODO R29 is callee-save (SOE) as well
 reg_def R29     (  NS,  NS, Op_RegI, 29, r29->as_VMReg()        ); // fp
 reg_def R29_H   (  NS,  NS, Op_RegI, 29, r29->as_VMReg()->next());
 reg_def R30     (  NS,  NS, Op_RegI, 30, r30->as_VMReg()        ); // lr
