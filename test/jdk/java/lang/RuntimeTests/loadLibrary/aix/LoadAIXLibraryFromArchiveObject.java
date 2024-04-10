@@ -25,7 +25,7 @@
  * @test
  * @bug 8319516
  * @requires os.family == "aix"
- * @run  main/othervm -Djava.library.path=/test/lib LoadAIXLibraryFromArchiveObject
+ * @run  main/othervm  LoadAIXLibraryFromArchiveObject
  */
 
 import java.io.*;
@@ -36,8 +36,8 @@ public class LoadAIXLibraryFromArchiveObject {
         String javaHome = System.getProperty("java.home");
         File awtSharedObjectPath = new File(javaHome+"/lib/libawt.so");
         File awtArchivePath = new File(javaHome+"/lib/libdummyarchive.a");
-        FileInputStream sourceFile = new FileInputStream(awtSharedObjectPath); 
-        FileOutputStream destinationFile = new FileOutputStream(awtArchivePath); 
+        FileInputStream sourceFile = new FileInputStream(awtSharedObjectPath);
+        FileOutputStream destinationFile = new FileOutputStream(awtArchivePath);
         try {
             int currentByteToRead;
             while ((currentByteToRead = sourceFile.read()) != -1) {
@@ -51,10 +51,10 @@ public class LoadAIXLibraryFromArchiveObject {
             if (destinationFile != null) {
                 destinationFile.close();
             }
+            
         }
         System.loadLibrary(libraryName);
         if (!awtArchivePath.delete())
             throw new RuntimeException("LoadLibraryFromArchiveObject: Failed to delete dummy archive file.");
-
     }
 }
