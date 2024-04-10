@@ -66,11 +66,6 @@ public final class LinuxPPC64Linker extends AbstractLinker {
     }
 
     @Override
-    protected ByteOrder linkerByteOrder() {
-        return ByteOrder.BIG_ENDIAN;
-    }
-
-    @Override
     public Map<String, MemoryLayout> canonicalLayouts() {
         return CANONICAL_LAYOUTS;
     }

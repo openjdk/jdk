@@ -68,11 +68,6 @@ public final class SysVx64Linker extends AbstractLinker {
     }
 
     @Override
-    protected ByteOrder linkerByteOrder() {
-        return ByteOrder.LITTLE_ENDIAN;
-    }
-
-    @Override
     public Map<String, MemoryLayout> canonicalLayouts() {
         return CANONICAL_LAYOUTS;
     }

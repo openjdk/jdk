@@ -65,11 +65,6 @@ public final class LinuxS390Linker extends AbstractLinker {
     }
 
     @Override
-    protected ByteOrder linkerByteOrder() {
-        return ByteOrder.BIG_ENDIAN;
-    }
-
-    @Override
     public Map<String, MemoryLayout> canonicalLayouts() {
         return CANONICAL_LAYOUTS;
     }
