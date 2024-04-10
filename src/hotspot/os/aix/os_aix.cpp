@@ -300,10 +300,10 @@ static bool my_disclaim64(char* addr, size_t size) {
   }
 
   // Maximum size 32bit disclaim() accepts. (Theoretically 4GB, but I just do not trust that.)
-  const unsigned int maxDisclaimSize = 0x40000000;
+  const size_t maxDisclaimSize = 0x40000000;
 
-  const unsigned int numFullDisclaimsNeeded = (size / maxDisclaimSize);
-  const unsigned int lastDisclaimSize = (size % maxDisclaimSize);
+  const size_t numFullDisclaimsNeeded = (size / maxDisclaimSize);
+  const size_t lastDisclaimSize = (size % maxDisclaimSize);
 
   char* p = addr;
 
@@ -311,7 +311,7 @@ static bool my_disclaim64(char* addr, size_t size) {
     if (::disclaim(p, maxDisclaimSize, DISCLAIM_ZEROMEM) != 0) {
       ErrnoPreserver ep;
       log_trace(os, map)("disclaim failed: " RANGEFMT " errno=(%s)",
-                         RANGEFMTARGS(p, (long)maxDisclaimSize),
+                         RANGEFMTARGS(p, maxDisclaimSize),
                          os::strerror(ep.saved_errno()));
       return false;
     }
@@ -322,7 +322,7 @@ static bool my_disclaim64(char* addr, size_t size) {
     if (::disclaim(p, lastDisclaimSize, DISCLAIM_ZEROMEM) != 0) {
       ErrnoPreserver ep;
       log_trace(os, map)("disclaim failed: " RANGEFMT " errno=(%s)",
-                         RANGEFMTARGS(p, (long)lastDisclaimSize),
+                         RANGEFMTARGS(p, lastDisclaimSize),
                          os::strerror(ep.saved_errno()));
       return false;
     }
