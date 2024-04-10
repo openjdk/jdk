@@ -29,18 +29,32 @@
  */
 
 import java.io.*;
+import java.lang.Object.*;
 public class LoadAIXLibraryFromArchiveObject {
     public static void main(String[] args) throws Exception {
-        String libraryName = "awt";
-        File awtSharedObjectPathCopy = new File("/test/lib/libawt.so");
-        File awtSharedObjectPath = new File("/test/lib/libawt.so");
-        File awtArchivePath = new File("/test/lib/libawt.a");
-        awtSharedObjectPath.renameTo(awtArchivePath);
-        if (awtSharedObjectPath.exists()) {
-            awtSharedObjectPath.renameTo(awtSharedObjectPathCopy);
-            throw new RuntimeException("LoadAIXLibraryFromArchiveObject: .so should not exist.");
+        String libraryName = "dummyarchive";
+        String javaHome = System.getProperty("java.home");
+        File awtSharedObjectPath = new File(javaHome+"/lib/libawt.so");
+        File awtArchivePath = new File(javaHome+"/lib/libdummyarchive.a");
+        FileInputStream sourceFile = new FileInputStream(awtSharedObjectPath); 
+        FileOutputStream destinationFile = new FileOutputStream(awtArchivePath); 
+        try {
+            int currentByteToRead;
+            while ((currentByteToRead = sourceFile.read()) != -1) {
+                destinationFile.write(currentByteToRead);
+            }
+        }
+        finally {
+            if (sourceFile != null) {
+                sourceFile.close();
+            }
+            if (destinationFile != null) {
+                destinationFile.close();
+            }
         }
         System.loadLibrary(libraryName);
-        awtSharedObjectPath.renameTo(awtSharedObjectPathCopy);
+        if (!awtArchivePath.delete())
+            throw new RuntimeException("LoadLibraryFromArchiveObject: Failed to delete dummy archive file.");
+
     }
 }
