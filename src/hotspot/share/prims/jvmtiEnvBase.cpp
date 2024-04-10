@@ -2067,11 +2067,13 @@ GetSingleStackTraceClosure::doit() {
 
 void
 GetSingleStackTraceClosure::do_thread(Thread *target) {
+  assert(_target_jt == JavaThread::cast(target), "sanity check");
   doit();
 }
 
 void
 GetSingleStackTraceClosure::do_vthread(Handle target_h) {
+  assert(_target_jt == nullptr || _target_jt->vthread() == target_h(), "sanity check");
   doit();
 }
 
