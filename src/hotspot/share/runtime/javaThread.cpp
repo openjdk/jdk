@@ -1290,8 +1290,8 @@ void JavaThread::deoptimize() {
         // Deoptimize only at particular bcis.  DeoptimizeOnlyAt
         // consists of comma or carriage return separated numbers so
         // search for the current bci in that string.
-        address pc = fst.current()->pc();
-        nmethod* nm =  (nmethod*) fst.current()->cb();
+        address    pc = fst.current()->pc();
+        nmethod*   nm = fst.current()->cb()->as_nmethod();
         ScopeDesc* sd = nm->scope_desc_at(pc);
         char buffer[8];
         jio_snprintf(buffer, sizeof(buffer), "%d", sd->bci());
@@ -1333,6 +1333,7 @@ void JavaThread::make_zombies() {
     if (fst.current()->can_be_deoptimized()) {
       // it is a Java nmethod
       nmethod* nm = CodeCache::find_nmethod(fst.current()->pc());
+      assert(nm != nullptr, "did not find nmethod");
       nm->make_not_entrant();
     }
   }
