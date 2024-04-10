@@ -34,7 +34,8 @@
 
 // Methods of protected closure types
 
-void DefNewGeneration::oop_since_save_marks_iterate(YoungGenScanClosure* cl) {
+template <typename OopClosureType>
+void DefNewGeneration::oop_since_save_marks_iterate(OopClosureType* cl) {
   Generation::oop_since_save_marks_iterate_impl(cl, to(), _saved_mark_word);
   set_saved_mark_word();
 }

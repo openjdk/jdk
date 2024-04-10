@@ -765,8 +765,7 @@ bool SerialHeap::no_allocs_since_save_marks() {
 void SerialHeap::scan_evacuated_objs(YoungGenScanClosure* young_cl,
                                      OldGenScanClosure* old_cl) {
   do {
-    young_gen()->oop_since_save_marks_iterate(young_cl);
-    old_gen()->oop_since_save_marks_iterate(old_cl);
+    oop_since_save_marks_iterate(young_cl, old_cl);
   } while (!no_allocs_since_save_marks());
   guarantee(young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
 }

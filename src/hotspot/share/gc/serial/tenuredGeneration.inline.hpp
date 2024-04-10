@@ -57,7 +57,8 @@ HeapWord* TenuredGeneration::par_allocate(size_t word_size,
   return _the_space->par_allocate(word_size);
 }
 
-void TenuredGeneration::oop_since_save_marks_iterate(OldGenScanClosure* blk) {
+template <typename OopClosureType>
+void TenuredGeneration::oop_since_save_marks_iterate(OopClosureType* blk) {
   Generation::oop_since_save_marks_iterate_impl(blk, _the_space, _saved_mark_word);
   set_saved_mark_word();
 }
