@@ -109,8 +109,10 @@ public final class StringConcatFactory {
     private static final char TAG_CONST = '\u0002';
 
     /**
-     * Maximum number of argument slots in String Concat call. While the maximum number of argument slots that
-     * indy calls can handle is 253, we do not use all those slots, to let the strategies with MethodHandle
+     * Maximum number of argument slots in String Concat call.
+     *
+     * While the maximum number of argument slots that indy call can handle is 253,
+     * we do not use all those slots, to let the strategies with MethodHandle
      * combinators to use some arguments.
      */
     private static final int MAX_INDY_CONCAT_ARG_SLOTS = 200;
