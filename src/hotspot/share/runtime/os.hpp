@@ -448,18 +448,18 @@ class os: AllStatic {
   inline static size_t cds_core_region_alignment();
 
   // Reserves virtual memory.
-  static char*  reserve_memory(size_t bytes, bool executable = false, MEMFLAGS flags = mtNone);
+  static char*  reserve_memory(size_t bytes, bool executable, MEMFLAGS flags);
 
   // Reserves virtual memory that starts at an address that is aligned to 'alignment'.
-  static char*  reserve_memory_aligned(size_t size, size_t alignment, bool executable = false);
+  static char*  reserve_memory_aligned(size_t size, size_t alignment, bool executable, MEMFLAGS flag);
 
   // Attempts to reserve the virtual memory at [addr, addr + bytes).
   // Does not overwrite existing mappings.
-  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false, MEMFLAGS flag = mtNone);
+  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable, MEMFLAGS flag);
 
   // Given an address range [min, max), attempts to reserve memory within this area, with the given alignment.
   // If randomize is true, the location will be randomized.
-  static char* attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize);
+  static char* attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize, MEMFLAGS flag);
 
   static bool   commit_memory(char* addr, size_t bytes, bool executable, MEMFLAGS flag);
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,

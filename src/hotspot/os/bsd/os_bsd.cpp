@@ -1668,7 +1668,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 }
 
-void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
+void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint, MEMFLAGS flag) {
   ::madvise(addr, bytes, MADV_DONTNEED);
 }
 
@@ -1766,13 +1766,13 @@ bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
 }
 
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
-  return os::commit_memory(addr, size, !ExecMem);
+  return os::commit_memory(addr, size, !ExecMem, mtThreadStack);
 }
 
 // If this is a growable mapping, remove the guard pages entirely by
 // munmap()ping them.  If not, just call uncommit_memory().
 bool os::remove_stack_guard_pages(char* addr, size_t size) {
-  return os::uncommit_memory(addr, size);
+  return os::uncommit_memory(addr, size, mtThreadStack);
 }
 
 // 'requested_addr' is only treated as a hint, the return value may or

@@ -1872,7 +1872,7 @@ static void hemi_split(T* arr, unsigned num) {
 
 // Given an address range [min, max), attempts to reserve memory within this area, with the given alignment.
 // If randomize is true, the location will be randomized.
-char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize) {
+char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize, MEMFLAGS flag) {
 
   // Please keep the following constants in sync with the companion gtests:
 
@@ -2027,7 +2027,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     assert(is_aligned(result, alignment), "alignment invalid (" ERRFMT ")", ERRFMTARGS);
     log_trace(os, map)(ERRFMT, ERRFMTARGS);
     log_debug(os, map)("successfully attached at " PTR_FORMAT, p2i(result));
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC, flag);
   } else {
     log_debug(os, map)("failed to attach anywhere in [" PTR_FORMAT "-" PTR_FORMAT ")", p2i(min), p2i(max));
   }

@@ -697,14 +697,14 @@ WB_END
 WB_ENTRY(jlong, WB_NMTReserveMemory(JNIEnv* env, jobject o, jlong size))
   jlong addr = 0;
 
-  addr = (jlong)(uintptr_t)os::reserve_memory(size);
+  addr = (jlong)(uintptr_t)os::reserve_memory(size, false, mtTest);
   MemTracker::record_virtual_memory_type((address)addr, mtTest);
 
   return addr;
 WB_END
 
 WB_ENTRY(jlong, WB_NMTAttemptReserveMemoryAt(JNIEnv* env, jobject o, jlong addr, jlong size))
-  addr = (jlong)(uintptr_t)os::attempt_reserve_memory_at((char*)(uintptr_t)addr, (size_t)size);
+  addr = (jlong)(uintptr_t)os::attempt_reserve_memory_at((char*)(uintptr_t)addr, (size_t)size, false, mtTest);
   MemTracker::record_virtual_memory_type((address)addr, mtTest);
 
   return addr;
@@ -1484,7 +1484,7 @@ WB_ENTRY(void, WB_ReadReservedMemory(JNIEnv* env, jobject o))
   static char c;
   static volatile char* p;
 
-  p = os::reserve_memory(os::vm_allocation_granularity());
+  p = os::reserve_memory(os::vm_allocation_granularity(), false, mtTest);
   if (p == nullptr) {
     THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), "Failed to reserve memory");
   }

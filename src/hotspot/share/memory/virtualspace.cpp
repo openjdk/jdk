@@ -81,19 +81,19 @@ ReservedSpace::ReservedSpace(char* base, size_t size, size_t alignment, size_t p
 }
 
 // Helper method
-static char* attempt_map_or_reserve_memory_at(char* base, size_t size, int fd, bool executable) {
+static char* attempt_map_or_reserve_memory_at(char* base, size_t size, int fd, bool executable, MEMFLAGS flag) {
   if (fd != -1) {
     return os::attempt_map_memory_to_file_at(base, size, fd);
   }
-  return os::attempt_reserve_memory_at(base, size, executable);
+  return os::attempt_reserve_memory_at(base, size, executable, flag);
 }
 
 // Helper method
-static char* map_or_reserve_memory(size_t size, int fd, bool executable) {
+static char* map_or_reserve_memory(size_t size, int fd, bool executable, MEMFLAGS flag) {
   if (fd != -1) {
     return os::map_memory_to_file(size, fd);
   }
-  return os::reserve_memory(size, executable);
+  return os::reserve_memory(size, executable, flag);
 }
 
 // Helper method
@@ -101,7 +101,7 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fd
   if (fd != -1) {
     return os::map_memory_to_file_aligned(size, alignment, fd, flag);
   }
-  return os::reserve_memory_aligned(size, alignment, executable);
+  return os::reserve_memory_aligned(size, alignment, executable, flag);
 }
 
 // Helper method
@@ -163,12 +163,12 @@ static char* reserve_memory(char* requested_address, const size_t size,
     assert(is_aligned(requested_address, alignment),
            "Requested address " PTR_FORMAT " must be aligned to " SIZE_FORMAT,
            p2i(requested_address), alignment);
-    base = attempt_map_or_reserve_memory_at(requested_address, size, fd, exec);
+    base = attempt_map_or_reserve_memory_at(requested_address, size, fd, exec, flag);
   } else {
     // Optimistically assume that the OS returns an aligned base pointer.
     // When reserving a large address range, most OSes seem to align to at
     // least 64K.
-    base = map_or_reserve_memory(size, fd, exec);
+    base = map_or_reserve_memory(size, fd, exec, flag);
     // Check alignment constraints. This is only needed when there is
     // no requested address.
     if (!is_aligned(base, alignment)) {

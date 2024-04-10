@@ -589,7 +589,7 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
   if (result == nullptr) {
     // Fallback: reserve anywhere
     log_debug(metaspace, map)("Trying anywhere...");
-    result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), false);
+    result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), false, mtMetaspace);
   }
 
   // Wrap resulting range in ReservedSpace
@@ -768,7 +768,7 @@ void Metaspace::global_initialize() {
     }
 
     // Mark class space as such
-    MemTracker::record_virtual_memory_type((address)rs.base(), mtClass);
+    MemTracker::record_virtual_memory_type((address)rs.base(), rs.nmt_flag());
 
     // Initialize space
     Metaspace::initialize_class_space(rs);

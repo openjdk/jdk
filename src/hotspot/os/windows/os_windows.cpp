@@ -2747,7 +2747,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
           addr = (address)((uintptr_t)addr &
                             (~((uintptr_t)os::vm_page_size() - (uintptr_t)1)));
           os::commit_memory((char *)addr, thread->stack_base() - addr,
-                            !ExecMem);
+                            !ExecMem, mtThreadStack);
           return EXCEPTION_CONTINUE_EXECUTION;
         }
 #endif
@@ -3134,7 +3134,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
                                 PAGE_READWRITE);
   // If reservation failed, return null
   if (p_buf == nullptr) return nullptr;
-  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC);
+  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC, mtNone);
   os::release_memory(p_buf, bytes + chunk_size);
 
   // we still need to round up to a page boundary (in case we are using large pages)
@@ -3195,7 +3195,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
         // need to create a dummy 'reserve' record to match
         // the release.
         MemTracker::record_virtual_memory_reserve((address)p_buf,
-                                                  bytes_to_release, CALLER_PC);
+                                                  bytes_to_release, CALLER_PC, mtNone);
         os::release_memory(p_buf, bytes_to_release);
       }
 #ifdef ASSERT
@@ -3215,7 +3215,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
   if ((flags & MEM_COMMIT) != 0) {
     MemTracker::record_virtual_memory_reserve_and_commit((address)p_buf, bytes, CALLER_PC);
   } else {
-    MemTracker::record_virtual_memory_reserve((address)p_buf, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve((address)p_buf, bytes, CALLER_PC, mtNone);
   }
 
   // made it this far, success
@@ -3382,7 +3382,7 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
   return aligned_base;
 }
 
-char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
+char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec, MEMFLAGS flag) {
   // exec can be ignored
   return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */);
 }
@@ -3713,11 +3713,11 @@ bool os::pd_release_memory(char* addr, size_t bytes) {
 }
 
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
-  return os::commit_memory(addr, size, !ExecMem);
+  return os::commit_memory(addr, size, !ExecMem, mtThreadStack);
 }
 
 bool os::remove_stack_guard_pages(char* addr, size_t size) {
-  return os::uncommit_memory(addr, size);
+  return os::uncommit_memory(addr, size, mtThreadStack);
 }
 
 static bool protect_pages_individually(char* addr, size_t bytes, unsigned int p, DWORD *old_status) {
@@ -3768,7 +3768,7 @@ bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
   // memory, not a big deal anyway, as bytes less or equal than 64K
   if (!is_committed) {
     commit_memory_or_exit(addr, bytes, prot == MEM_PROT_RWX,
-                          "cannot commit protection page");
+                          "cannot commit protection page", mtNone);
   }
   // One cannot use os::guard_memory() here, as on Win32 guard page
   // have different (one-shot) semantics, from MSDN on PAGE_GUARD:
@@ -3808,7 +3808,7 @@ bool os::unguard_memory(char* addr, size_t bytes) {
 }
 
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) { }
-void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) { }
+void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint, MEMFLAGS flag) { }
 
 size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
   return page_size;

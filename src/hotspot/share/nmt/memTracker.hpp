@@ -120,7 +120,7 @@ class MemTracker : AllStatic {
   //  (we do not do any reservations before that).
 
   static inline void record_virtual_memory_reserve(void* addr, size_t size, const NativeCallStack& stack,
-    MEMFLAGS flag = mtNone) {
+    MEMFLAGS flag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {

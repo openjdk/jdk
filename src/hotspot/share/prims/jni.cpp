@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012 Red Hat, Inc.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -2396,7 +2396,7 @@ static char* get_bad_address() {
   static char* bad_address = nullptr;
   if (bad_address == nullptr) {
     size_t size = os::vm_allocation_granularity();
-    bad_address = os::reserve_memory(size);
+    bad_address = os::reserve_memory(size, false, mtInternal);
     if (bad_address != nullptr) {
       os::protect_memory(bad_address, size, os::MEM_PROT_READ,
                          /*is_committed*/false);
