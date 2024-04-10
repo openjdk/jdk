@@ -94,9 +94,6 @@ class os::Linux {
     bool     has_steal_ticks;
   };
 
-private:
-  static void parse_kernel_version(long* major, long* minor, char* release);
-
 public:
   static void kernel_version(long* major, long* minor);
 
