@@ -4788,9 +4788,7 @@ operand iRegPNoSp()
 operand iRegPNoSpNoRfp()
 %{
   constraint(ALLOC_IN_RC(no_special_or_rfp_ptr_reg));
-  //match(RegP);
-  // TODO these list "who matches me as well"
-  // match(iRegP);
+  match(RegP);
   match(iRegPNoSp);
   op_cost(0);
   format %{ %}
@@ -16207,7 +16205,7 @@ instruct TailCalljmpInd(iRegPNoSpNoRfp jump_target, inline_cache_RegP method_ptr
   ins_pipe(pipe_class_call);
 %}
 
-instruct TailjmpInd(iRegPNoSp jump_target, iRegP_R0 ex_oop)
+instruct TailjmpInd(iRegPNoSpNoRfp jump_target, iRegP_R0 ex_oop)
 %{
   match(TailJump jump_target ex_oop);
 
