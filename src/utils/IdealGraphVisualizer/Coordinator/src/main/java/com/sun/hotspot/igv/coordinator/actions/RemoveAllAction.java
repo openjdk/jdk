@@ -43,7 +43,7 @@ public final class RemoveAllAction extends CallableSystemAction {
     }
 
     public RemoveAllAction() {
-        putValue(Action.SHORT_DESCRIPTION, "clear workspace");
+        putValue(Action.SHORT_DESCRIPTION, "Clear workspace");
         putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
     }
 
