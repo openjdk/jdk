@@ -496,16 +496,6 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     /**
      * Implements Map.putAll and Map constructor.
      *
-     * @implNote {@code HashMap}'s resize policy is intentionally conservative to
-     *           avoid an unnecessarily large capacity if {@code m} contains many
-     *           duplicate keys. This can lead to a potentially expensive, extra
-     *           resize operation. To avoid such an additional resize operation,
-     *           callers of {@link putAll} can use the
-     *           {@link #HashMap(int) HashMap(int initialCapacity)} constructor or
-     *           {@link #newHashMap(int) newHashMap} to create a map with a large
-     *           enough capacity before calling {@link putAll} to ensure that the
-     *           map is only resized and copied once.
-     *
      * @param m the map
      * @param evict false when initially constructing this map, else
      * true (relayed to method afterNodeInsertion).
@@ -794,6 +784,16 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * Copies all of the mappings from the specified map to this map.
      * These mappings will replace any mappings that this map had for
      * any of the keys currently in the specified map.
+     *
+     * @implNote {@code HashMap}'s resize policy is intentionally conservative to
+     *           avoid an unnecessarily large capacity if {@code m} contains many
+     *           duplicate keys. This can lead to a potentially expensive, extra
+     *           resize operation. To avoid such an additional resize operation,
+     *           callers of {@link putAll} can use the
+     *           {@link #HashMap(int) HashMap(int initialCapacity)} constructor or
+     *           {@link #newHashMap(int) newHashMap} to create a map with a large
+     *           enough capacity before calling {@link putAll} to ensure that the
+     *           map is only resized and copied once.
      *
      * @param m mappings to be stored in this map
      * @throws NullPointerException if the specified map is null
