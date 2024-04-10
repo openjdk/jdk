@@ -168,8 +168,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         }
 
         try (Writer writer = new OutputStreamWriter(new FileOutputStream(path))) {
-            Printer printer = new Printer();
-            printer.exportGraphDocument(writer, new SerialData<>(doc, saveContexts));
+            Printer.exportGraphDocument(writer, new SerialData<>(doc, saveContexts));
         }
     }
 

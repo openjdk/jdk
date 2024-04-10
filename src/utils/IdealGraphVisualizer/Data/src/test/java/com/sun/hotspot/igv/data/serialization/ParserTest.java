@@ -63,9 +63,8 @@ public class ParserTest {
     }
 
     private void test(GraphDocument document) {
-        final Printer printer = new Printer();
         final CharArrayWriter writer = new CharArrayWriter();
-        printer.exportGraphDocument(writer, new Printer.SerialData<>(document, new HashSet<>()));
+        Printer.exportGraphDocument(writer, new Printer.SerialData<>(document, new HashSet<>()));
         test(document, writer.toString());
     }
 

@@ -38,10 +38,7 @@ import java.util.stream.Collectors;
 public class Printer {
 
 
-    public Printer() {
-    }
-
-    public void exportGraphDocument(Writer writer, SerialData<Folder> serialData) {
+    public static void exportGraphDocument(Writer writer, SerialData<Folder> serialData) {
         Folder folder = serialData.data();
         Set<GraphContext> contexts = serialData.contexts();
         XMLWriter xmlWriter = new XMLWriter(writer);
@@ -57,11 +54,10 @@ public class Printer {
             }
             xmlWriter.endTag();
             xmlWriter.flush();
-        } catch (IOException ignored) {
-        }
+        } catch (IOException ignored) {}
     }
 
-    private void exportGroup(XMLWriter writer, Group g, Set<GraphContext> contexts) throws IOException {
+    private static void exportGroup(XMLWriter writer, Group g, Set<GraphContext> contexts) throws IOException {
         Properties attributes = new Properties();
         attributes.setProperty("difference", Boolean.toString(true));
         writer.startTag(Parser.GROUP_ELEMENT, attributes);
@@ -84,7 +80,7 @@ public class Printer {
         writer.endTag();
     }
 
-    private void exportInputGraph(XMLWriter writer, InputGraph graph, InputGraph previous, boolean difference, Set<GraphContext> contexts) throws IOException {
+    private static void exportInputGraph(XMLWriter writer, InputGraph graph, InputGraph previous, boolean difference, Set<GraphContext> contexts) throws IOException {
         writer.startTag(Parser.GRAPH_ELEMENT);
         writer.writeProperties(graph.getProperties());
         writer.startTag(Parser.NODES_ELEMENT);
@@ -180,7 +176,7 @@ public class Printer {
         writer.endTag(); // Parser.GRAPH_ELEMENT
     }
 
-    private void exportStates(XMLWriter writer, InputGraph exportingGraph, Set<GraphContext> contexts) throws IOException {
+    private static void exportStates(XMLWriter writer, InputGraph exportingGraph, Set<GraphContext> contexts) throws IOException {
         Set<GraphContext> contextsContainingGraph = contexts.stream()
                 .filter(context -> context.inputGraph().equals(exportingGraph))
                 .collect(Collectors.toSet());
@@ -211,7 +207,7 @@ public class Printer {
         writer.endTag(); // Parser.GRAPH_STATE_ELEMENT
     }
 
-    private void exportInputMethod(XMLWriter w, InputMethod method) throws IOException {
+    private static void exportInputMethod(XMLWriter w, InputMethod method) throws IOException {
         w.startTag(Parser.METHOD_ELEMENT, new Properties(Parser.METHOD_BCI_PROPERTY, method.getBci() + "", Parser.METHOD_NAME_PROPERTY, method.getName(), Parser.METHOD_SHORT_NAME_PROPERTY, method.getShortName()));
 
         w.writeProperties(method.getProperties());
@@ -241,7 +237,7 @@ public class Printer {
         w.endTag();
     }
 
-    private Properties createProperties(InputEdge edge) {
+    private static Properties createProperties(InputEdge edge) {
         Properties p = new Properties();
         if (edge.getToIndex() != 0) {
             p.setProperty(Parser.TO_INDEX_PROPERTY, Integer.toString(edge.getToIndex()));
@@ -255,8 +251,7 @@ public class Printer {
         return p;
     }
 
-    public record GraphContext(InputGraph inputGraph, AtomicInteger posDiff, Set<Integer> hiddenNodes) {
-    }
+    public record GraphContext(InputGraph inputGraph, AtomicInteger posDiff, Set<Integer> hiddenNodes) { }
 
     public record SerialData<T extends Properties.Provider>(T data,
                                                             Set<GraphContext> contexts) implements Properties.Provider {
