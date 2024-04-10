@@ -25,7 +25,7 @@
  * @test
  * @bug 8327741
  * @summary JVM crash in hotspot/share/opto/compile.cpp - failed: missing inlining msg
- * @run main/othervm -XX:-BackgroundCompilation -XX:+PrintCompilation -XX:+PrintInlining TestPrintInliningLateVirtualCall
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-BackgroundCompilation -XX:+PrintCompilation -XX:+PrintInlining TestPrintInliningLateVirtualCall
  */
 
 public class TestPrintInliningLateVirtualCall {
