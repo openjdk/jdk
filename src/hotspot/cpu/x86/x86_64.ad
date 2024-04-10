@@ -5662,7 +5662,7 @@ instruct bytes_reversebit_int(rRegI dst, rRegI src, rRegI rtmp, rFlagsReg cr) %{
   ins_pipe( ialu_reg );
 %}
 
-instruct bytes_reversebit_int_gfni(rRegI dst, rRegI src, regF xtmp1, regF xtmp2, rRegL rtmp, rFlagsReg cr) %{
+instruct bytes_reversebit_int_gfni(rRegI dst, rRegI src, vlRegF xtmp1, vlRegF xtmp2, rRegL rtmp, rFlagsReg cr) %{
   predicate(VM_Version::supports_gfni());
   match(Set dst (ReverseI src));
   effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP rtmp, KILL cr);
@@ -5684,7 +5684,7 @@ instruct bytes_reversebit_long(rRegL dst, rRegL src, rRegL rtmp1, rRegL rtmp2, r
   ins_pipe( ialu_reg );
 %}
 
-instruct bytes_reversebit_long_gfni(rRegL dst, rRegL src, regD xtmp1, regD xtmp2, rRegL rtmp, rFlagsReg cr) %{
+instruct bytes_reversebit_long_gfni(rRegL dst, rRegL src, vlRegD xtmp1, vlRegD xtmp2, rRegL rtmp, rFlagsReg cr) %{
   predicate(VM_Version::supports_gfni());
   match(Set dst (ReverseL src));
   effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP rtmp, KILL cr);
