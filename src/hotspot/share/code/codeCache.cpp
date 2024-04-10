@@ -272,10 +272,10 @@ void CodeCache::initialize_heaps() {
 
   // Validation
   // Check minimal required sizes
-  check_min_size("non-nmethod code heap", non_nmethod.size, non_nmethod_min_size);
   if (profiled.enabled) {
     check_min_size("profiled code heap", profiled.size, min_size);
   }
+  check_min_size("non-nmethod code heap", non_nmethod.size, non_nmethod_min_size);
   if (non_profiled.enabled) { // non_profiled.enabled is always ON for segmented code heap, leave it checked for clarity
     check_min_size("non-profiled code heap", non_profiled.size, min_size);
   }
