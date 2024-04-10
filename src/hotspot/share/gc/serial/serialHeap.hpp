@@ -360,11 +360,11 @@ public:
   // The "cur" closure is applied to references in the younger generation
   // at "level", and the "older" closure to older generations.
   template <typename OopClosureType1, typename OopClosureType2>
-  void oop_since_save_marks_iterate(OopClosureType1* cur,
-                                    OopClosureType2* older);
+  inline void oop_since_save_marks_iterate(OopClosureType1* cur,
+                                           OopClosureType2* older);
 
-  void scan_evacuated_objs(YoungGenScanClosure* young_cl,
-                           OldGenScanClosure* old_cl);
+  inline void scan_evacuated_objs(YoungGenScanClosure* young_cl,
+                                  OldGenScanClosure* old_cl);
 
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;

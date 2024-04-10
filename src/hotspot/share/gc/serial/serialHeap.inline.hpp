@@ -31,10 +31,18 @@
 #include "gc/serial/tenuredGeneration.inline.hpp"
 
 template <typename OopClosureType1, typename OopClosureType2>
-void SerialHeap::oop_since_save_marks_iterate(OopClosureType1* cur,
-                                              OopClosureType2* older) {
+inline void SerialHeap::oop_since_save_marks_iterate(OopClosureType1* cur,
+                                                     OopClosureType2* older) {
   young_gen()->oop_since_save_marks_iterate(cur);
   old_gen()->oop_since_save_marks_iterate(older);
+}
+
+inline void SerialHeap::scan_evacuated_objs(YoungGenScanClosure* young_cl,
+                                            OldGenScanClosure* old_cl) {
+  do {
+    oop_since_save_marks_iterate(young_cl, old_cl);
+  } while (!no_allocs_since_save_marks());
+  guarantee(young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
 }
 
 class ScavengeHelper {
