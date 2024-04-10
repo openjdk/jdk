@@ -22,9 +22,6 @@
  *
  */
 
-#if INCLUDE_SERVICES
-#ifndef AIX
-
 #include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -33,6 +30,7 @@
 #include "os_posix.hpp"
 #include "services/attachListener.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/macros.hpp"
 
 #include <unistd.h>
 #include <signal.h>
@@ -40,6 +38,9 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/stat.h>
+
+#if INCLUDE_SERVICES
+#ifndef AIX
 
 #ifndef UNIX_PATH_MAX
 #define UNIX_PATH_MAX   sizeof(((struct sockaddr_un *)0)->sun_path)
