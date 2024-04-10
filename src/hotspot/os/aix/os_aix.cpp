@@ -23,10 +23,6 @@
  *
  */
 
-// According to the AIX OS doc #pragma alloca must be used
-// with C++ compiler before referencing the function alloca()
-#pragma alloca
-
 // no precompiled headers
 #include "classfile/vmSymbols.hpp"
 #include "code/vtableStubs.hpp"

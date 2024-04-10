@@ -31,9 +31,6 @@
 // globally used constants & types, class (forward)
 // declarations and a few frequently used utility functions.
 
-#if defined(_AIX)
-#include <alloca.h>
-#endif
 #include <ctype.h>
 #include <inttypes.h>
 #include <string.h>
