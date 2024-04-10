@@ -195,8 +195,8 @@ public class Printer {
             writer.simpleTag(Parser.STATE_POSITION_DIFFERENCE,
                     new Properties(Parser.POSITION_DIFFERENCE_PROPERTY, Integer.toString(context.posDiff().get())));
 
-            writer.startTag(Parser.HIDDEN_NODES_ELEMENT);
-            for (Integer hiddenNodeID : context.hiddenNodes()) {
+            writer.startTag(Parser.VISIBLE_NODES_ELEMENT);
+            for (Integer hiddenNodeID : context.visibleNodes()) {
                 writer.simpleTag(Parser.NODE_ELEMENT, new Properties(Parser.NODE_ID_PROPERTY, hiddenNodeID.toString()));
             }
             writer.endTag(); // Parser.HIDDEN_NODES_ELEMENT
@@ -251,7 +251,7 @@ public class Printer {
         return p;
     }
 
-    public record GraphContext(InputGraph inputGraph, AtomicInteger posDiff, Set<Integer> hiddenNodes) { }
+    public record GraphContext(InputGraph inputGraph, AtomicInteger posDiff, Set<Integer> visibleNodes) { }
 
     public record SerialData<T extends Properties.Provider>(T data,
                                                             Set<GraphContext> contexts) implements Properties.Provider {

@@ -36,7 +36,6 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.swing.SwingUtilities;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.InputSource;
@@ -64,7 +63,7 @@ public class Parser implements GraphParser {
     public static final String EDGE_ELEMENT = "edge";
     public static final String NODE_ELEMENT = "node";
     public static final String NODES_ELEMENT = "nodes";
-    public static final String HIDDEN_NODES_ELEMENT = "hiddenNodes";
+    public static final String VISIBLE_NODES_ELEMENT = "visibleNodes";
 
     public static final String REMOVE_EDGE_ELEMENT = "removeEdge";
     public static final String REMOVE_NODE_ELEMENT = "removeNode";
@@ -145,8 +144,8 @@ public class Parser implements GraphParser {
             return graphContext;
         }
     };
-    private final HandoverElementHandler<GraphContext> hiddenNodesHandler = new HandoverElementHandler<>(HIDDEN_NODES_ELEMENT);
-    private final ElementHandler<GraphContext, GraphContext> hiddenNodeHandler = new ElementHandler<>(NODE_ELEMENT) {
+    private final HandoverElementHandler<GraphContext> visibleNodesHandler = new HandoverElementHandler<>(VISIBLE_NODES_ELEMENT);
+    private final ElementHandler<GraphContext, GraphContext> visibleNodeHandler = new ElementHandler<>(NODE_ELEMENT) {
 
         @Override
         protected GraphContext start() throws SAXException {
@@ -157,7 +156,7 @@ public class Parser implements GraphParser {
             } catch (NumberFormatException e) {
                 throw new SAXException(e);
             }
-            getParentObject().hiddenNodes().add(nodeID);
+            getParentObject().visibleNodes().add(nodeID);
             return getParentObject();
         }
     };
@@ -453,8 +452,8 @@ public class Parser implements GraphParser {
 
         graphStatesHandler.addChild(stateHandler);
         stateHandler.addChild(differenceHandler);
-        stateHandler.addChild(hiddenNodesHandler);
-        hiddenNodesHandler.addChild(hiddenNodeHandler);
+        stateHandler.addChild(visibleNodesHandler);
+        visibleNodesHandler.addChild(visibleNodeHandler);
 
         blockHandler.addChild(successorsHandler);
         successorsHandler.addChild(successorHandler);

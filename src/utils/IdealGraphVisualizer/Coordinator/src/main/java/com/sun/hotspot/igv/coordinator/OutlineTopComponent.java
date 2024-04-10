@@ -175,8 +175,8 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     private static GraphContext getGraphContext(EditorTopComponent etc) {
         InputGraph openedGraph = etc.getModel().getFirstGraph();
         int posDiff = etc.getModel().getSecondPosition() - etc.getModel().getFirstPosition();
-        Set<Integer> hiddenNodes = new HashSet<>(etc.getModel().getHiddenNodes());
-        return new GraphContext(openedGraph, new AtomicInteger(posDiff), hiddenNodes);
+        Set<Integer> visibleNodes = new HashSet<>(etc.getModel().getVisibleNodes());
+        return new GraphContext(openedGraph, new AtomicInteger(posDiff), visibleNodes);
     }
 
     private void initListView() {
@@ -466,7 +466,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     }
 
     /**
-     * Loads and opens the given set of graph contexts (opened graphs and hidden nodes).
+     * Loads and opens the given set of graph contexts (opened graphs and visible nodes).
      */
     private void loadContexts(Set<GraphContext> contexts) {
         RP.post(() -> {
@@ -475,7 +475,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             for (GraphContext context : contexts) {
 
                 final int difference = context.posDiff().get();
-                final Set<Integer> hiddenNodes = context.hiddenNodes();
+                final Set<Integer> visibleNodes = context.visibleNodes();
                 final InputGraph firstGraph = context.inputGraph();
 
                 SwingUtilities.invokeLater(() -> {
@@ -483,7 +483,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
                     if (openedGraph != null) {
                         EditorTopComponent etc = EditorTopComponent.findEditorForGraph(firstGraph);
                         if (etc != null) {
-                            etc.getModel().setHiddenNodes(hiddenNodes);
+                            etc.getModel().showOnly(visibleNodes);
                             if (difference > 0) {
                                 int firstGraphIdx = firstGraph.getIndex();
                                 etc.getModel().setPositions(firstGraphIdx, firstGraphIdx + difference);
