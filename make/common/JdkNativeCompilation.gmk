@@ -274,7 +274,6 @@ JDK_RCFLAGS=$(RCFLAGS) \
 #     or OS type only
 #   EXTRA_RCFLAGS -- additional RCFLAGS to append.
 #   RC_FILEDESC -- override the default FILEDESC for Windows version.rc
-#     such as "java.base:headers".
 #   DEFAULT_LIBCXX -- if false, do not add LIBCXX to LIBS for C++ compilations
 #   DEFAULT_CFLAGS -- if false, do not add default CFLAGS and CXXFLAGS
 #   DEFAULT_LDFLAGS -- if false, do not add default LDFLAGS
