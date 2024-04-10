@@ -78,7 +78,7 @@ void ArchiveHeapWriter::init() {
   if (HeapShared::can_write()) {
     Universe::heap()->collect(GCCause::_java_lang_system_gc);
 
-    _buffer_offset_to_source_obj_table = new BufferOffsetToSourceObjectTable(/*size*/36137, /*max size*/1 * M);
+    _buffer_offset_to_source_obj_table = new BufferOffsetToSourceObjectTable(/*size (prime)*/36137, /*max size*/1 * M);
     _fillers = new FillersTable();
     _requested_bottom = nullptr;
     _requested_top = nullptr;
