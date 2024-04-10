@@ -203,7 +203,7 @@ public class VectorGatherMaskFoldingTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 1" }, applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
+    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 1" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
     public static void testTwoLongVectorLoadGatherMaskedEquals() {
         LongVector res = LongVector.fromArray(L_SPECIES, longArray, 0, longOffsets, 0, longVectorMask);
         LongVector res2 = LongVector.fromArray(L_SPECIES, longArray, 0, longOffsets, 0, longVectorMask);
@@ -212,7 +212,7 @@ public class VectorGatherMaskFoldingTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 2" }, applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
+    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 2" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
     public static void testTwoLongVectorLoadGatherMaskedNotEqualMask() {
         LongVector res = LongVector.fromArray(L_SPECIES, longArray, 0, longOffsets, 0, longVectorMask);
         LongVector res2 = LongVector.fromArray(L_SPECIES, longArray, 0, longOffsets, 0, longVectorMask2);
@@ -221,7 +221,7 @@ public class VectorGatherMaskFoldingTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 2" }, applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
+    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 2" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
     public static void testTwoLongVectorLoadGatherMaskedNotEqualOffsets() {
         LongVector res = LongVector.fromArray(L_SPECIES, longArray, 0, longOffsets, 0, longVectorMask);
         LongVector res2 = LongVector.fromArray(L_SPECIES, longArray, 0, longOffsets2, 0, longVectorMask);
@@ -287,7 +287,7 @@ public class VectorGatherMaskFoldingTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 1" }, applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
+    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 1" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
     public static void testTwoIntVectorLoadGatherMaskedEquals() {
         IntVector res = IntVector.fromArray(I_SPECIES, intArray, 0, intOffsets, 0, intVectorMask);
         IntVector res2 = IntVector.fromArray(I_SPECIES, intArray, 0, intOffsets, 0, intVectorMask);
@@ -296,7 +296,7 @@ public class VectorGatherMaskFoldingTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 2" }, applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
+    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 2" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
     public static void testTwoIntVectorLoadGatherMaskedNotEqualMask() {
         IntVector res = IntVector.fromArray(I_SPECIES, intArray, 0, intOffsets, 0, intVectorMask);
         IntVector res2 = IntVector.fromArray(I_SPECIES, intArray, 0, intOffsets, 0, intVectorMask2);
@@ -305,7 +305,7 @@ public class VectorGatherMaskFoldingTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 2" }, applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
+    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 2" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
     public static void testTwoIntVectorLoadGatherMaskedNotEqualOffsets() {
         IntVector res = IntVector.fromArray(I_SPECIES, intArray, 0, intOffsets, 0, intVectorMask);
         IntVector res2 = IntVector.fromArray(I_SPECIES, intArray, 0, intOffsets2, 0, intVectorMask);
@@ -371,7 +371,7 @@ public class VectorGatherMaskFoldingTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 1" }, applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
+    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 1" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
     public static void testTwoDoubleVectorLoadGatherMaskedEquals() {
         DoubleVector res = DoubleVector.fromArray(D_SPECIES, doubleArray, 0, doubleOffsets, 0, doubleVectorMask);
         DoubleVector res2 = DoubleVector.fromArray(D_SPECIES, doubleArray, 0, doubleOffsets, 0, doubleVectorMask);
@@ -380,7 +380,7 @@ public class VectorGatherMaskFoldingTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 2" }, applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
+    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 2" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
     public static void testTwoDoubleVectorLoadGatherMaskedNotEqualMask() {
         DoubleVector res = DoubleVector.fromArray(D_SPECIES, doubleArray, 0, doubleOffsets, 0, doubleVectorMask);
         DoubleVector res2 = DoubleVector.fromArray(D_SPECIES, doubleArray, 0, doubleOffsets, 0, doubleVectorMask2);
@@ -389,7 +389,7 @@ public class VectorGatherMaskFoldingTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 2" }, applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
+    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 2" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
     public static void testTwoDoubleVectorLoadGatherMaskedNotEqualOffsets() {
         DoubleVector res = DoubleVector.fromArray(D_SPECIES, doubleArray, 0, doubleOffsets, 0, doubleVectorMask);
         DoubleVector res2 = DoubleVector.fromArray(D_SPECIES, doubleArray, 0, doubleOffsets2, 0, doubleVectorMask);
@@ -455,7 +455,7 @@ public class VectorGatherMaskFoldingTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 1" }, applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
+    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 1" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
     public static void testTwoFloatVectorLoadGatherMaskedEquals() {
         FloatVector res = FloatVector.fromArray(F_SPECIES, floatArray, 0, floatOffsets, 0, floatVectorMask);
         FloatVector res2 = FloatVector.fromArray(F_SPECIES, floatArray, 0, floatOffsets, 0, floatVectorMask);
@@ -464,7 +464,7 @@ public class VectorGatherMaskFoldingTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 2" }, applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
+    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 2" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
     public static void testTwoFloatVectorLoadGatherMaskedNotEqualMask() {
         FloatVector res = FloatVector.fromArray(F_SPECIES, floatArray, 0, floatOffsets, 0, floatVectorMask);
         FloatVector res2 = FloatVector.fromArray(F_SPECIES, floatArray, 0, floatOffsets, 0, floatVectorMask2);
@@ -473,7 +473,7 @@ public class VectorGatherMaskFoldingTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 2" }, applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
+    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 2" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
     public static void testTwoFloatVectorLoadGatherMaskedNotEqualOffsets() {
         FloatVector res = FloatVector.fromArray(F_SPECIES, floatArray, 0, floatOffsets, 0, floatVectorMask);
         FloatVector res2 = FloatVector.fromArray(F_SPECIES, floatArray, 0, floatOffsets2, 0, floatVectorMask);
