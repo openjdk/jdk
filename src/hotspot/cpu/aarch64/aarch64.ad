@@ -1234,7 +1234,6 @@ source %{
 
     _PTR_REG_mask = _ALL_REG_mask;
 
-    // Exclude non allocatable: r18 (tls), r28 (thread), r30 (lr), r31 (sp)
     _NO_SPECIAL_REG32_mask = _ALL_REG32_mask;
     _NO_SPECIAL_REG32_mask.SUBTRACT(_NON_ALLOCATABLE_REG32_mask);
 
@@ -4756,7 +4755,6 @@ operand iRegP()
   constraint(ALLOC_IN_RC(ptr_reg));
   match(RegP);
   match(iRegPNoSp);
-  match(iRegPNoSpNoRfp);
   match(iRegP_R0);
   //match(iRegP_R2);
   //match(iRegP_R4);
@@ -4783,8 +4781,8 @@ operand iRegPNoSp()
   interface(REG_INTER);
 %}
 
-// This operand is not allowed to use RFP even if
-// RFP is not used to hold the frame pointer.
+// This operand is not allowed to use rfp even if
+// rfp is not used to hold the frame pointer.
 operand iRegPNoSpNoRfp()
 %{
   constraint(ALLOC_IN_RC(no_special_or_rfp_ptr_reg));
