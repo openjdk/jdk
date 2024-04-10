@@ -30,28 +30,15 @@
 
 import java.io.*;
 import java.lang.Object.*;
+import java.nio.file.Files;
+
 public class LoadAIXLibraryFromArchiveObject {
     public static void main(String[] args) throws Exception {
         String libraryName = "dummyarchive";
         String javaHome = System.getProperty("java.home");
         File awtSharedObjectPath = new File(javaHome+"/lib/libawt.so");
         File awtArchivePath = new File(javaHome+"/lib/libdummyarchive.a");
-        FileInputStream sourceFile = new FileInputStream(awtSharedObjectPath);
-        FileOutputStream destinationFile = new FileOutputStream(awtArchivePath);
-        try {
-            int currentByteToRead;
-            while ((currentByteToRead = sourceFile.read()) != -1) {
-                destinationFile.write(currentByteToRead);
-            }
-        }
-        finally {
-            if (sourceFile != null) {
-                sourceFile.close();
-            }
-            if (destinationFile != null) {
-                destinationFile.close();
-            }
-        }
+        Files.copy(awtSharedObjectPath.toPath(), awtArchivePath.toPath());
         System.loadLibrary(libraryName);
         if (!awtArchivePath.delete())
             throw new RuntimeException("LoadLibraryFromArchiveObject: Failed to delete dummy archive file.");
