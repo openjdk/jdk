@@ -702,9 +702,9 @@ void DefNewGeneration::collect(bool   full,
     RootScanClosure root_cl{this};
     CLDScanClosure cld_cl{this};
 
-    MarkingCodeBlobClosure code_cl(&root_cl,
-                                   CodeBlobToOopClosure::FixRelocations,
-                                   false /* keepalive_nmethods */);
+    MarkingNMethodClosure code_cl(&root_cl,
+                                  NMethodToOopClosure::FixRelocations,
+                                  false /* keepalive_nmethods */);
 
     heap->process_roots(SerialHeap::SO_ScavengeCodeCache,
                         &root_cl,
@@ -901,16 +901,12 @@ void DefNewGeneration::drain_promo_failure_scan_stack() {
 }
 
 void DefNewGeneration::save_marks() {
-  eden()->set_saved_mark();
-  to()->set_saved_mark();
-  from()->set_saved_mark();
+  set_saved_mark_word();
 }
 
 
 bool DefNewGeneration::no_allocs_since_save_marks() {
-  assert(eden()->saved_mark_at_top(), "Violated spec - alloc in eden");
-  assert(from()->saved_mark_at_top(), "Violated spec - alloc in from");
-  return to()->saved_mark_at_top();
+  return saved_mark_at_top();
 }
 
 void DefNewGeneration::contribute_scratch(void*& scratch, size_t& num_words) {

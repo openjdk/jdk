@@ -368,7 +368,7 @@ Klass* SystemDictionary::resolve_array_class_or_null(Symbol* class_name,
     }
   } else {
     k = Universe::typeArrayKlass(t);
-    k = TypeArrayKlass::cast(k)->array_klass(ndims, CHECK_NULL);
+    k = k->array_klass(ndims, CHECK_NULL);
   }
   return k;
 }
