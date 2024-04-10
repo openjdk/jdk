@@ -50,10 +50,9 @@ public class B6431193 {
                     is.readAllBytes();
                     // .. read the request body
                     String response = "This is the response";
+                    handlerIsDaemon = Thread.currentThread().isDaemon();
                     t.sendResponseHeaders(200, response.length());
                     os.write(response.getBytes());
-                } finally {
-                    handlerIsDaemon = Thread.currentThread().isDaemon();
                 }
             }
         }
