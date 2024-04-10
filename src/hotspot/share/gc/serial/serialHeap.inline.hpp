@@ -30,13 +30,6 @@
 #include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
 
-template <typename OopClosureType1, typename OopClosureType2>
-void SerialHeap::oop_since_save_marks_iterate(OopClosureType1* cur,
-                                              OopClosureType2* older) {
-  young_gen()->oop_since_save_marks_iterate(cur);
-  old_gen()->oop_since_save_marks_iterate(older);
-}
-
 class ScavengeHelper {
   DefNewGeneration* _young_gen;
   HeapWord*         _young_gen_end;

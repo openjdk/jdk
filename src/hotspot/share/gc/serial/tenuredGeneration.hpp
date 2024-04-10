@@ -138,8 +138,7 @@ public:
   virtual inline HeapWord* allocate(size_t word_size, bool is_tlab);
   virtual inline HeapWord* par_allocate(size_t word_size, bool is_tlab);
 
-  template <typename OopClosureType>
-  void oop_since_save_marks_iterate(OopClosureType* cl);
+  void oop_since_save_marks_iterate(OldGenScanClosure* cl);
 
   void save_marks();
 

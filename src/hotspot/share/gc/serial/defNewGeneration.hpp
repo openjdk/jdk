@@ -251,8 +251,7 @@ class DefNewGeneration: public Generation {
   // Need to declare the full complement of closures, whether we'll
   // override them or not, or get message from the compiler:
   //   oop_since_save_marks_iterate_nv hides virtual function...
-  template <typename OopClosureType>
-  void oop_since_save_marks_iterate(OopClosureType* cl);
+  void oop_since_save_marks_iterate(YoungGenScanClosure* cl);
 
   // For Old collection (part of running Full GC), the DefNewGeneration can
   // contribute the free part of "to-space" as the scratch space.
