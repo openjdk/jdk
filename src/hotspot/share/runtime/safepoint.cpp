@@ -567,12 +567,6 @@ void SafepointSynchronize::do_cleanup_tasks() {
     // Serial cleanup using VMThread.
     cleanup.work(0);
   }
-
-  if (log_is_enabled(Debug, monitorinflation)) {
-    // The VMThread calls do_final_audit_and_print_stats() which calls
-    // audit_and_print_stats() at the Info level at VM exit time.
-    ObjectSynchronizer::audit_and_print_stats(false /* on_exit */);
-  }
 }
 
 // Methods for determining if a JavaThread is safepoint safe.
@@ -850,8 +844,8 @@ void ThreadSafepointState::handle_polling_page_exception() {
   address real_return_addr = self->saved_exception_pc();
 
   CodeBlob *cb = CodeCache::find_blob(real_return_addr);
-  assert(cb != nullptr && cb->is_compiled(), "return address should be in nmethod");
-  CompiledMethod* nm = (CompiledMethod*)cb;
+  assert(cb != nullptr && cb->is_nmethod(), "return address should be in nmethod");
+  nmethod* nm = cb->as_nmethod();
 
   // Find frame of caller
   frame stub_fr = self->last_frame();

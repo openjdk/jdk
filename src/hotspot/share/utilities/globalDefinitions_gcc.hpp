@@ -35,9 +35,11 @@
 #include <alloca.h>
 #endif
 #include <ctype.h>
+#include <inttypes.h>
 #include <string.h>
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 // In stdlib.h on AIX malloc is defined as a macro causing
@@ -60,7 +62,6 @@
 #include <errno.h>
 
 #if defined(LINUX) || defined(_ALLBSD_SOURCE) || defined(_AIX)
-#include <inttypes.h>
 #include <signal.h>
 #ifndef __OpenBSD__
 #include <ucontext.h>
@@ -89,28 +90,6 @@
 #else
   #define NULL_WORD  NULL
 #endif
-
-#if !defined(LINUX) && !defined(_ALLBSD_SOURCE) && !defined(_AIX)
-// Compiler-specific primitive types
-typedef unsigned short     uint16_t;
-#ifndef _UINT32_T
-#define _UINT32_T
-typedef unsigned int       uint32_t;
-#endif // _UINT32_T
-
-#if !defined(_SYS_INT_TYPES_H)
-#ifndef _UINT64_T
-#define _UINT64_T
-typedef unsigned long long uint64_t;
-#endif // _UINT64_T
-// %%%% how to access definition of intptr_t portably in 5.5 onward?
-typedef int                     intptr_t;
-typedef unsigned int            uintptr_t;
-// If this gets an error, figure out a symbol XXX that implies the
-// prior definition of intptr_t, and add "&& !defined(XXX)" above.
-#endif // _SYS_INT_TYPES_H
-
-#endif // !LINUX && !_ALLBSD_SOURCE
 
 // checking for nanness
 #if defined(__APPLE__)

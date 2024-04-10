@@ -180,7 +180,7 @@ public sealed interface ClassFile
 
     /**
      * Option describing whether to filter unresolved labels.
-     * Default is {@code FAIL_ON_DEAD_LABELS} to throw IllegalStateException
+     * Default is {@code FAIL_ON_DEAD_LABELS} to throw IllegalArgumentException
      * when any {@link ExceptionCatch}, {@link LocalVariableInfo},
      * {@link LocalVariableTypeInfo}, or {@link CharacterRangeInfo}
      * reference to unresolved {@link Label} during bytecode serialization.

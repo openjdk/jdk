@@ -66,7 +66,7 @@ class SerialHeap : public CollectedHeap {
   friend class Generation;
   friend class DefNewGeneration;
   friend class TenuredGeneration;
-  friend class GenMarkSweep;
+  friend class SerialFullGC;
   friend class VM_GenCollectForAllocation;
   friend class VM_GenCollectFull;
   friend class VM_GC_HeapInspection;
@@ -178,10 +178,6 @@ public:
 
   bool requires_barriers(stackChunkOop obj) const override;
 
-#ifdef ASSERT
-  bool is_in_partial_collection(const void* p);
-#endif
-
   // Optimized nmethod scanning support routines
   void register_nmethod(nmethod* nm) override;
   void unregister_nmethod(nmethod* nm) override;
@@ -276,7 +272,7 @@ public:
                      OopClosure* strong_roots,
                      CLDClosure* strong_cld_closure,
                      CLDClosure* weak_cld_closure,
-                     CodeBlobToOopClosure* code_roots);
+                     NMethodToOopClosure* code_roots);
 
   // Set the saved marks of generations, if that makes sense.
   // In particular, if any generation might iterate over the oops

@@ -306,6 +306,7 @@ oop ZNMethod::load_oop(oop* p, DecoratorSet decorators) {
   assert((decorators & ON_WEAK_OOP_REF) == 0,
          "nmethod oops have phantom strength, not weak");
   nmethod* const nm = CodeCache::find_nmethod((void*)p);
+  assert(nm != nullptr, "did not find nmethod");
   if (!is_armed(nm)) {
     // If the nmethod entry barrier isn't armed, then it has been applied
     // already. The implication is that the contents of the memory location
