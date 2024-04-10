@@ -53,14 +53,14 @@ BUILD_JDK_JTREG_EXECUTABLES_CFLAGS_exeJliLaunchTest := \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjli \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjli
 
-BUILD_JDK_JTREG_EXECUTABLES_JDK_LIBS_exeJliLaunchTest := jli
-BUILD_JDK_JTREG_EXECUTABLES_JDK_LIBS_exeCallerAccessTest := jvm
-BUILD_JDK_JTREG_EXECUTABLES_JDK_LIBS_exeNullCallerTest := jvm
+BUILD_JDK_JTREG_EXECUTABLES_JDK_LIBS_exeJliLaunchTest := java.base:libjli
+BUILD_JDK_JTREG_EXECUTABLES_JDK_LIBS_exeCallerAccessTest := java.base:libjvm
+BUILD_JDK_JTREG_EXECUTABLES_JDK_LIBS_exeNullCallerTest := java.base:libjvm
 
-BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libstringPlatformChars := java
-BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libTracePinnedThreads := jvm
-BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libNewDirectByteBuffer := java
-BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libGetXSpace := java
+BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libstringPlatformChars := java.base:libjava
+BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libTracePinnedThreads := java.base:libjvm
+BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libNewDirectByteBuffer := java.base:libjava
+BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libGetXSpace := java.base:libjava
 
 # Platform specific setup
 ifeq ($(call isTargetOs, windows), true)
@@ -72,7 +72,7 @@ ifeq ($(call isTargetOs, windows), true)
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exerevokeall := advapi32.lib
   BUILD_JDK_JTREG_EXECUTABLES_CFLAGS_exeNullCallerTest := /EHsc
 else
-  BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libDirectIO := java
+  BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libDirectIO := java.base:libjava
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libNativeThread := -pthread
 
   # java.lang.foreign tests
@@ -82,12 +82,12 @@ else
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLinkerInvokerModule := -pthread
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLoaderLookupInvoker := -pthread
 
-  BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libExplicitAttach := jvm
+  BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libExplicitAttach := java.base:libjvm
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libExplicitAttach := -pthread
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libImplicitAttach := -pthread
   BUILD_JDK_JTREG_EXCLUDE += exerevokeall.c
   ifeq ($(call isTargetOs, linux), true)
-    BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libInheritedChannel := java
+    BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libInheritedChannel := java.base:libjava
     BUILD_JDK_JTREG_EXECUTABLES_LIBS_exelauncher := -ldl
   endif
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerTest := $(LIBCXX)
@@ -97,7 +97,7 @@ ifeq ($(call isTargetOs, macosx), true)
   BUILD_JDK_JTREG_EXCLUDE += exelauncher.c
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libTestMainKeyWindow := \
       -framework Cocoa
-  BUILD_JDK_JTREG_EXECUTABLES_JDK_LIBS_exeJniInvocationTest := jli
+  BUILD_JDK_JTREG_EXECUTABLES_JDK_LIBS_exeJniInvocationTest := java.base:libjli
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libTestDynamicStore := \
       -framework Cocoa -framework SystemConfiguration
 else

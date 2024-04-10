@@ -33,7 +33,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBRMI, \
     NAME := rmi, \
     EXTRA_HEADER_DIRS := java.base:libjava, \
     OPTIMIZATION := LOW, \
-    JDK_LIBS := jvm, \
+    JDK_LIBS := java.base:libjvm, \
 ))
 
 TARGETS += $(BUILD_LIBRMI)

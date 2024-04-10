@@ -151,8 +151,8 @@ define SetupBuildLauncherBody
       LDFLAGS := $$($1_LDFLAGS), \
       LDFLAGS_linux := $$(call SET_EXECUTABLE_ORIGIN,/../lib), \
       LDFLAGS_macosx := $$(call SET_EXECUTABLE_ORIGIN,/../lib), \
-      JDK_LIBS := jli, \
-      JDK_LIBS_windows := java, \
+      JDK_LIBS := java.base:libjli, \
+      JDK_LIBS_windows := java.base:libjava, \
       LIBS := $$($1_LIBS), \
       LIBS_unix := $(LIBZ_LIBS), \
       LIBS_linux := $(LIBDL) -lpthread, \

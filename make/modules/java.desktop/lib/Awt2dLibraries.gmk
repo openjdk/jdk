@@ -137,7 +137,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
         -delayload:gdi32.dll -delayload:imm32.dll -delayload:ole32.dll \
         -delayload:shell32.dll -delayload:shlwapi.dll -delayload:user32.dll \
         -delayload:winmm.dll -delayload:winspool.drv, \
-    JDK_LIBS := java jvm, \
+    JDK_LIBS := java.base:libjava java.base:libjvm, \
     LIBS_unix := $(LIBM), \
     LIBS_linux := $(LIBDL), \
     LIBS_aix := $(LIBDL),\
@@ -238,7 +238,7 @@ ifeq ($(call isTargetOs, windows macosx)+$(ENABLE_HEADLESS_ONLY), false+false)
       DISABLED_WARNINGS_clang_aix_sun_awt_X11_GtkFileDialogPeer.c := \
           parentheses, \
       DISABLED_WARNINGS_clang_aix_awt_InputMethod.c := sign-compare, \
-      JDK_LIBS := @:awt java, \
+      JDK_LIBS := libawt java.base:libjava, \
       LIBS_unix := $(LIBDL) $(LIBM) $(X_LIBS) -lX11 -lXext -lXi -lXrender \
           -lXtst, \
       LIBS_linux := -lpthread, \
@@ -284,7 +284,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
     DISABLED_WARNINGS_gcc := format-nonliteral type-limits \
         stringop-truncation, \
     DISABLED_WARNINGS_clang := format-nonliteral, \
-    JDK_LIBS := @:awt java, \
+    JDK_LIBS := libawt java.base:libjava, \
     LIBS_unix := $(LCMS_LIBS) $(LIBM), \
 ))
 
@@ -318,7 +318,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVAJPEG, \
     DISABLED_WARNINGS_gcc_imageioJPEG.c := clobbered array-bounds, \
     DISABLED_WARNINGS_gcc_jcmaster.c := implicit-fallthrough, \
     DISABLED_WARNINGS_gcc_jdphuff.c := shift-negative-value, \
-    JDK_LIBS := java, \
+    JDK_LIBS := java.base:libjava, \
     LIBS := $(LIBJPEG_LIBS), \
 ))
 
@@ -363,7 +363,7 @@ ifeq ($(call isTargetOs, windows macosx), false)
       EXTRA_HEADER_DIRS := $(LIBAWT_HEADLESS_EXTRA_HEADER_DIRS), \
       DISABLED_WARNINGS_gcc_X11Renderer.c := unused-function, \
       DISABLED_WARNINGS_gcc_X11SurfaceData.c := unused-function, \
-      JDK_LIBS := @:awt java, \
+      JDK_LIBS := libawt java.base:libjava, \
       LIBS_linux := $(LIBDL) $(LIBM), \
       STATIC_LIB_EXCLUDE_OBJS := $(LIBAWT_HEADLESS_STATIC_EXCLUDE_OBJS), \
   ))
@@ -454,7 +454,7 @@ ifeq ($(FREETYPE_TO_USE), system)
   LIBFONTMANAGER_LIBS += $(FREETYPE_LIBS)
 else
   LIBFONTMANAGER_EXTRA_HEADER_DIRS += libfreetype/include
-  LIBFONTMANAGER_JDK_LIBS += @:freetype
+  LIBFONTMANAGER_JDK_LIBS += libfreetype
 endif
 
 LIBFONTMANAGER_OPTIMIZATION := HIGHEST
@@ -501,8 +501,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
     LDFLAGS := $(LDFLAGS_CXX_JDK), \
     LDFLAGS_FILTER_OUT :=-Wl$(COMMA)-z$(COMMA)defs, \
     LDFLAGS_aix := -Wl$(COMMA)-berok, \
-    JDK_LIBS := @:awt java $(LIBFONTMANAGER_JDK_LIBS), \
-    JDK_LIBS_macosx := @:awt_lwawt, \
+    JDK_LIBS := libawt java.base:libjava $(LIBFONTMANAGER_JDK_LIBS), \
+    JDK_LIBS_macosx := libawt_lwawt, \
     LIBS := $(LIBFONTMANAGER_LIBS), \
     LIBS_unix := $(LIBM), \
     LIBS_macosx := \
@@ -553,11 +553,11 @@ ifeq ($(call isTargetOs, windows)+$(call isTargetCpu, x86), true+true)
 endif
 
 ifeq ($(call isTargetOsType, unix)+$(call isTargetOs, macosx), true+false)
-  LIBJAWT_JDK_LIBS_unix := @:awt
+  LIBJAWT_JDK_LIBS_unix := libawt
   ifeq ($(ENABLE_HEADLESS_ONLY), false)
-    LIBJAWT_JDK_LIBS_unix += @:awt_xawt
+    LIBJAWT_JDK_LIBS_unix += libawt_xawt
   else
-    LIBJAWT_JDK_LIBS_unix += @:awt_headless
+    LIBJAWT_JDK_LIBS_unix += libawt_headless
   endif
 endif
 
@@ -573,8 +573,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAWT, \
     LDFLAGS_windows := $(LDFLAGS_CXX_JDK), \
     LDFLAGS_macosx := -Wl$(COMMA)-rpath$(COMMA)@loader_path, \
     JDK_LIBS_unix := $(LIBJAWT_JDK_LIBS_unix), \
-    JDK_LIBS_windows := @:awt, \
-    JDK_LIBS_macosx := @:awt_lwawt, \
+    JDK_LIBS_windows := libawt, \
+    JDK_LIBS_macosx := libawt_lwawt, \
     LIBS_macosx := -framework Cocoa, \
     LIBS_windows := advapi32.lib $(LIBJAWT_LIBS_windows), \
 ))
@@ -702,8 +702,8 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_microsoft_splashscreen_png.c := 4267, \
       DISABLED_WARNINGS_microsoft_splashscreen_sys.c := 4267 4244, \
       LDFLAGS_windows := -delayload:user32.dll, \
-      JDK_LIBS_windows := java, \
-      JDK_LIBS_macosx := @:osxapp, \
+      JDK_LIBS_windows := java.base:libjava, \
+      JDK_LIBS_macosx := libosxapp, \
       LIBS := $(GIFLIB_LIBS) $(LIBJPEG_LIBS) $(LIBZ_LIBS) $(PNG_LIBS), \
       LIBS_unix := $(LIBM) -lpthread, \
       LIBS_linux := $(LIBDL) $(X_LIBS) -lX11 -lXext, \
@@ -770,7 +770,7 @@ ifeq ($(call isTargetOs, macosx), true)
       DISABLED_WARNINGS_clang_OGLBufImgOps.c := format-nonliteral, \
       DISABLED_WARNINGS_clang_OGLPaints.c := format-nonliteral, \
       DISABLED_WARNINGS_clang_PrinterView.m := enum-conversion, \
-      JDK_LIBS := @:awt java @:osxapp, \
+      JDK_LIBS := libawt java.base:libjava libosxapp, \
       LIBS_macosx := $(LIBM) \
           -framework Accelerate \
           -framework ApplicationServices \
@@ -826,7 +826,7 @@ ifeq ($(call isTargetOs, macosx), true)
           sign-compare, \
       DISABLED_WARNINGS_clang_ScreenMenu.m := deprecated-declarations, \
       APPEND_LDFLAGS := -Wl$(COMMA)-rpath$(COMMA)@loader_path, \
-      JDK_LIBS := java @:osxapp, \
+      JDK_LIBS := java.base:libjava libosxapp, \
       LIBS_macosx := \
           -framework ApplicationServices \
           -framework Carbon \

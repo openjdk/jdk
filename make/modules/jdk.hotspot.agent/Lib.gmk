@@ -67,7 +67,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBSAPROC, \
     CFLAGS := $(LIBSAPROC_CFLAGS), \
     CXXFLAGS := $(LIBSAPROC_CFLAGS) $(LIBSAPROC_CXXFLAGS), \
     EXTRA_SRC := $(LIBSAPROC_EXTRA_SRC), \
-    JDK_LIBS := java, \
+    JDK_LIBS := java.base:libjava, \
     LIBS_linux := $(LIBDL), \
     LIBS_macosx := \
         -framework CoreFoundation \

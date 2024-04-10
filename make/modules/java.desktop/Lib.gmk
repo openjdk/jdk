@@ -91,7 +91,7 @@ ifeq ($(call isTargetOs, macosx), true)
           format-nonliteral, \
       DISABLED_WARNINGS_clang_QueuingApplicationDelegate.m := \
           objc-method-access, \
-      JDK_LIBS := java, \
+      JDK_LIBS := java.base:libjava, \
       LIBS_macosx := \
           -framework Accelerate \
           -framework ApplicationServices \
@@ -117,7 +117,7 @@ ifeq ($(call isTargetOs, macosx), true)
       OPTIMIZATION := LOW, \
       EXTRA_HEADER_DIRS := java.base:libjava, \
       DISABLED_WARNINGS_clang_CFileManager.m := deprecated-declarations, \
-      JDK_LIBS := @:osxapp, \
+      JDK_LIBS := libosxapp, \
       LIBS_macosx := \
           -framework ApplicationServices \
           -framework Cocoa \

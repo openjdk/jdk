@@ -36,7 +36,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBVERIFY, \
     NAME := verify, \
     OPTIMIZATION := $(LIBVERIFY_OPTIMIZATION), \
     EXTRA_HEADER_DIRS := libjava, \
-    JDK_LIBS := jvm, \
+    JDK_LIBS := libjvm, \
 ))
 
 TARGETS += $(BUILD_LIBVERIFY)
@@ -58,7 +58,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
     java_props_md.c_CFLAGS := \
         -DARCHPROPNAME='"$(OPENJDK_TARGET_CPU_OSARCH)"', \
     DISABLED_WARNINGS_gcc_ProcessImpl_md.c := unused-result, \
-    JDK_LIBS := jvm, \
+    JDK_LIBS := libjvm, \
     LIBS_linux := $(LIBDL), \
     LIBS_aix := $(LIBDL) $(LIBM),\
     LIBS_macosx := \
@@ -92,7 +92,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBZIP, \
     DISABLED_WARNINGS_gcc_zip_util.c := unused-function, \
     DISABLED_WARNINGS_clang := deprecated-non-prototype, \
     DISABLED_WARNINGS_clang_gzwrite.c := format-nonliteral, \
-    JDK_LIBS := java jvm, \
+    JDK_LIBS := libjava libjvm, \
     LIBS_unix := $(LIBZ_LIBS), \
 ))
 
@@ -109,7 +109,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJIMAGE, \
     EXTRA_HEADER_DIRS := libjava, \
     CFLAGS_unix := -UDEBUG, \
     LDFLAGS := $(LDFLAGS_CXX_JDK), \
-    JDK_LIBS := jvm, \
+    JDK_LIBS := libjvm, \
     LIBS_unix := $(LIBDL), \
 ))
 
