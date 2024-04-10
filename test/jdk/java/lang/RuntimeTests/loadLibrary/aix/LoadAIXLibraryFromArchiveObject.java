@@ -51,7 +51,6 @@ public class LoadAIXLibraryFromArchiveObject {
             if (destinationFile != null) {
                 destinationFile.close();
             }
-            
         }
         System.loadLibrary(libraryName);
         if (!awtArchivePath.delete())
