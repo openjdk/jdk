@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.time.Duration;
 import java.util.List;
 
 /**
@@ -56,7 +55,6 @@ public class TestSelectorSelectEvent {
     public static void main(String[] args) throws Throwable {
         var tests = new TestSelectorSelectEvent();
         tests.test1();
-        tests.test2();
     }
 
     public void test1() throws Throwable {
@@ -94,45 +92,6 @@ public class TestSelectorSelectEvent {
                 Asserts.assertEquals(events.size(), 1);
                 Asserts.assertTrue(events.get(0).getInt(COUNT_FIELD) == 1);
                 Asserts.assertTrue(events.get(0).getLong(TIMEOUT_FIELD) == 0);
-            }
-        }
-    }
-    public void test2() throws Throwable {
-        try (Recording recording = new Recording()) {
-            try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
-                recording.enable(EventNames.SelectorSelect).withThreshold(Duration.ofMillis(100));
-                recording.start();
-
-                InetAddress lb = InetAddress.getLoopbackAddress();
-                ssc.bind(new InetSocketAddress(lb, 0));
-
-                try (SocketChannel sc1 = SocketChannel.open(ssc.getLocalAddress());
-                     SocketChannel sc2 = ssc.accept();
-                     Selector sel = Selector.open()) {
-
-                    // Register for read events, channel should not be selected
-                    // and should time out.  An event should be generated.
-                    sc1.configureBlocking(false);
-                    SelectionKey key = sc1.register(sel, SelectionKey.OP_READ);
-                    int n = sel.select(2);
-                    Asserts.assertTrue(n == 0);
-
-                    // write bytes to other end of connection
-                    ByteBuffer msg = ByteBuffer.wrap("hello".getBytes("UTF-8"));
-                    int nwrote = sc2.write(msg);
-                    Asserts.assertTrue(nwrote >= 0);
-
-                    // channel should be selected, but no events should be generated
-                    // due to high threshold
-                    n = sel.select();
-                    Asserts.assertTrue(n == 1);
-                }
-                recording.stop();
-
-                List<RecordedEvent> events = Events.fromRecording(recording);
-                Asserts.assertEquals(events.size(), 1);
-                Asserts.assertTrue(events.get(0).getInt(COUNT_FIELD) == 0);
-                Asserts.assertTrue(events.get(0).getLong(TIMEOUT_FIELD) == 2);
             }
         }
     }

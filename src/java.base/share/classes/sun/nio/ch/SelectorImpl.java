@@ -25,8 +25,6 @@
 
 package sun.nio.ch;
 
-import jdk.internal.event.SelectorSelectEvent;
-
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedSelectorException;
@@ -46,6 +44,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
+import jdk.internal.event.SelectorSelectEvent;
 
 /**
  * Base Selector implementation class.
@@ -147,7 +146,7 @@ public abstract class SelectorImpl
         long start = SelectorSelectEvent.timestamp();
         int n = implLockAndDoSelect(action, timeout);
         long duration = SelectorSelectEvent.timestamp() - start;
-        if ((n == 0) || (SelectorSelectEvent.shouldCommit(duration))) {
+        if (SelectorSelectEvent.shouldCommit(duration)) {
             timeout = (timeout < 0) ? 0 : timeout;
             SelectorSelectEvent.commit(start, duration, n, timeout);
         }
