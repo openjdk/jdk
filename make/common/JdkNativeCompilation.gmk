@@ -104,7 +104,7 @@ ProcessSrcDir = \
     ) \
   )
 
-# Create a proper LIBPATH for the given library.
+# Create a proper LIBPATH for the given library. Sets result in $1_$2_LIBPATH.
 # $1: The name of the rule (namespace)
 # $2: The safe namespace of the library
 define ResolveLibPath
