@@ -684,13 +684,22 @@ public interface List<E> extends SequencedCollection<E> {
      * @throws NullPointerException if passed filter is null
      *         (<a href="Collection.html#optional-restrictions">optional</a>)
      */
-    int indexOf(Predicate<? super E> filter);
+    default int findIndex(Predicate<? super E> filter) {
+        ListIterator<E> it = listIterator();
+        while (it.hasNext()) {
+            E e = it.next();
+            if (filter.test(e)) {
+                return it.previousIndex();
+            }
+        }
+        return -1;
+    }
 
     /**
      * Returns the index of the last occurrence of matching element
      * in this list, or -1 if this list does not contain the element.
      * More formally, returns the highest index {@code i} such that
-     * {@code Objects.equals(o, get(i))},
+     * {@code filter.test(get(i))},
      * or -1 if there is no such index.
      *
      * @param filter a predicate to search for
@@ -699,7 +708,16 @@ public interface List<E> extends SequencedCollection<E> {
      * @throws NullPointerException if passed filter is null
      *         (<a href="Collection.html#optional-restrictions">optional</a>)
      */
-    int lastIndexOf(Predicate<? super E> filter);
+    default int findLastIndex(Predicate<? super E> filter) {
+        ListIterator<E> it = listIterator(size());
+        while (it.hasPrevious()) {
+            E e = it.previous();
+            if (filter.test(e)) {
+                return it.nextIndex();
+            }
+        }
+        return -1;
+    }
 
 
     // List Iterators

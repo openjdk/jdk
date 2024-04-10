@@ -505,7 +505,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
         return -1;
     }
 
-    public int indexOf(Predicate<? super A> filter) {
+    public int findIndex(Predicate<? super A> filter) {
         int i = 0;
         for (List<A> l = this; l.tail != null; l = l.tail, i++) {
             if (filter.test(l.head))
@@ -524,7 +524,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
         return last;
     }
 
-    public int lastIndexOf(Predicate<? super A> filter) {
+    public int findLastIndex(Predicate<? super A> filter) {
         int last = -1;
         int i = 0;
         for (List<A> l = this; l.tail != null; l = l.tail, i++) {

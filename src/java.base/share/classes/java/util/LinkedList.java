@@ -632,7 +632,7 @@ public class LinkedList<E>
      * @return the index of the last occurrence of a matching element in
      * this list, or -1 if this list does not contain the element
      */
-    public int indexOf(Predicate<? super E> filter) {
+    public int findIndex(Predicate<? super E> filter) {
         int index = 0;
         for (Node<E> x = first; x != null; x = x.next) {
             if (filter.test(x.item))
@@ -653,7 +653,7 @@ public class LinkedList<E>
      * @return the index of the last occurrence of a matching element in
      * this list, or -1 if this list does not contain the element
      */
-    public int lastIndexOf(Predicate<? super E> filter) {
+    public int findLastIndex(Predicate<? super E> filter) {
         int index = size;
         for (Node<E> x = last; x != null; x = x.prev) {
             index--;
@@ -1507,7 +1507,7 @@ public class LinkedList<E>
             return rlist.lastIndexOf(o);
         }
 
-        public int lastIndexOf(Predicate<? super E> filter) {
+        public int findLastIndex(Predicate<? super E> filter) {
             return rlist.lastIndexOf(filter);
         }
 
@@ -1515,7 +1515,7 @@ public class LinkedList<E>
             return rlist.indexOf(o);
         }
 
-        public int indexOf(Predicate<? super E> filter) {
+        public int findIndex(Predicate<? super E> filter) {
             return rlist.indexOf(filter);
         }
 

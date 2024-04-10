@@ -4240,8 +4240,7 @@ public final class Arrays {
             return -1;
         }
 
-        @Override
-        public int indexOf(Predicate<? super E> filter) {
+        public int findIndex(Predicate<? super E> filter) {
             E[] a = this.a;
             for (int i = 0; i < a.length; i++)
                 if (filter.test(a[i]))

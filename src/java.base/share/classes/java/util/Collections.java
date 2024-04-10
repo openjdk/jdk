@@ -1510,11 +1510,11 @@ public class Collections {
             throw new UnsupportedOperationException();
         }
         public int indexOf(Object o)            {return list.indexOf(o);}
-        public int indexOf(Predicate<? super E> filter) {
+        public int findIndex(Predicate<? super E> filter) {
             return list.indexOf(filter);
         }
         public int lastIndexOf(Object o)        {return list.lastIndexOf(o);}
-        public int lastIndexOf(Predicate<? super E> filter) {
+        public int findLastIndex(Predicate<? super E> filter) {
             return list.lastIndexOf(filter);
         }
         public boolean addAll(int index, Collection<? extends E> c) {
@@ -2736,13 +2736,13 @@ public class Collections {
         public int indexOf(Object o) {
             synchronized (mutex) {return list.indexOf(o);}
         }
-        public int indexOf(Predicate<? super E> filter) {
+        public int findIndex(Predicate<? super E> filter) {
             synchronized (mutex) {return list.indexOf(filter);}
         }
         public int lastIndexOf(Object o) {
             synchronized (mutex) {return list.lastIndexOf(o);}
         }
-        public int lastIndexOf(Predicate<? super E> filter) {
+        public int findLastIndex(Predicate<? super E> filter) {
             synchronized (mutex) {return list.lastIndexOf(filter);}
         }
 
@@ -3776,8 +3776,8 @@ public class Collections {
         public E remove(int index)       { return list.remove(index); }
         public int indexOf(Object o)     { return list.indexOf(o); }
         public int lastIndexOf(Object o) { return list.lastIndexOf(o); }
-        public int indexOf(Predicate<? super E> filter) { return list.indexOf(filter); }
-        public int lastIndexOf(Predicate<? super E> filter) { return list.lastIndexOf(filter); }
+        public int findIndex(Predicate<? super E> filter) { return list.indexOf(filter); }
+        public int findLastIndex(Predicate<? super E> filter) { return list.lastIndexOf(filter); }
 
         public E set(int index, E element) {
             return list.set(index, typeCheck(element));
@@ -5407,7 +5407,7 @@ public class Collections {
             return contains(o) ? 0 : -1;
         }
 
-        public int indexOf(Predicate<? super E> filter) {
+        public int findIndex(Predicate<? super E> filter) {
             return filter.test(element) ? 0 : -1;
         }
 
@@ -5415,7 +5415,7 @@ public class Collections {
             return contains(o) ? n - 1 : -1;
         }
 
-        public int lastIndexOf(Predicate<? super E> filter) {
+        public int findLastIndex(Predicate<? super E> filter) {
             return filter.test(element) ? n - 1 : -1;
         }
 

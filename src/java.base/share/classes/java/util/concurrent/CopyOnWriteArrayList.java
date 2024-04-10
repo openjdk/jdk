@@ -281,7 +281,7 @@ public class CopyOnWriteArrayList<E>
      * -1 if the element is not found.
      */
     @SuppressWarnings("unchecked")
-    public int indexOf(Predicate<? super E> filter) {
+    public int findIndex(Predicate<? super E> filter) {
         E[] es = (E[]) getArray();
         return indexOfRange(filter, es, 0, es.length);
     }
@@ -300,7 +300,7 @@ public class CopyOnWriteArrayList<E>
      * -1 if the element is not found.
      */
     @SuppressWarnings("unchecked")
-    public int lastIndexOf(Predicate<? super E> filter) {
+    public int findLastIndex(Predicate<? super E> filter) {
         E[] es = (E[]) getArray();
         return lastIndexOfRange(filter, es, 0, es.length);
     }
@@ -1435,9 +1435,8 @@ public class CopyOnWriteArrayList<E>
             return (i == -1) ? -1 : i - offset;
         }
 
-        @Override
         @SuppressWarnings("unchecked")
-        public int indexOf(Predicate<? super E> filter) {
+        public int findIndex(Predicate<? super E> filter) {
             final E[] es;
             final int offset;
             final int size;
@@ -1450,9 +1449,8 @@ public class CopyOnWriteArrayList<E>
             return (i == -1) ? -1 : i - offset;
         }
 
-        @Override
         @SuppressWarnings("unchecked")
-        public int lastIndexOf(Predicate<? super E> filter) {
+        public int findLastIndex(Predicate<? super E> filter) {
             final E[] es;
             final int offset;
             final int size;
@@ -2122,7 +2120,7 @@ public class CopyOnWriteArrayList<E>
             }
         }
 
-        public int indexOf(Predicate<? super  E> filter) {
+        public int findIndex(Predicate<? super  E> filter) {
             synchronized (lock) {
                 int i = base.indexOf(filter);
                 return i == -1 ? -1 : base.size() - i - 1;
@@ -2136,7 +2134,7 @@ public class CopyOnWriteArrayList<E>
             }
         }
 
-        public int lastIndexOf(Predicate<? super  E> filter) {
+        public int findLastIndex(Predicate<? super  E> filter) {
             synchronized (lock) {
                 int i = base.lastIndexOf(filter);
                 return i == -1 ? -1 : base.size() - i - 1;

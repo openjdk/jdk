@@ -386,8 +386,8 @@ public class Vector<E>
      * @return the index of the first occurrence of a matching element in
      * this vector or -1 if no matching element is found
      */
-    public int indexOf(Predicate<? super E> filter) {
-        return indexOf(filter, 0);
+    public int findIndex(Predicate<? super E> filter) {
+        return findIndex(filter, 0);
     }
 
 
@@ -436,7 +436,7 @@ public class Vector<E>
      * @throws IndexOutOfBoundsException if the specified index is negative
      * @see Object#equals(Object)
      */
-    public synchronized int indexOf(Predicate<? super E> filter, int index) {
+    public synchronized int findIndex(Predicate<? super E> filter, int index) {
         for (int i = index; i < elementCount; i++) {
             if (filter.test(elementData(i))) {
                 return i;
@@ -472,8 +472,8 @@ public class Vector<E>
      * @return the index of the last occurrence of a matching element in
      * this vector or -1 if no matching element is found
      */
-    public synchronized int lastIndexOf(Predicate<? super E> filter) {
-        return lastIndexOf(filter, elementCount - 1);
+    public synchronized int findLastIndex(Predicate<? super E> filter) {
+        return findLastIndex(filter, elementCount - 1);
     }
 
     /**
@@ -524,7 +524,7 @@ public class Vector<E>
      * @throws IndexOutOfBoundsException if the specified index is greater
      *                                   than or equal to the current size of this vector
      */
-    public synchronized int lastIndexOf(Predicate<? super E> filter, int index) {
+    public synchronized int findLastIndex(Predicate<? super E> filter, int index) {
         if (index >= elementCount)
             throw new IndexOutOfBoundsException(index + " >= " + elementCount);
 

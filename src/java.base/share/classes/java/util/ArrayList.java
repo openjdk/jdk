@@ -312,7 +312,7 @@ public class ArrayList<E> extends AbstractList<E>
      * {@code filter.test(get(i))},
      * or -1 if there is no such index.
      */
-    public int indexOf(Predicate<? super E> filter) {
+    public int findIndex(Predicate<? super E> filter) {
         return indexOfRange(filter, 0, size);
     }
 
@@ -362,7 +362,7 @@ public class ArrayList<E> extends AbstractList<E>
      * {@code filter.test(get(i))},
      * or -1 if there is no such index.
      */
-    public int lastIndexOf(Predicate<? super E> filter) {
+    public int findLastIndex(Predicate<? super E> filter) {
         return lastIndexOfRange(filter, 0, size);
     }
 
@@ -1391,7 +1391,7 @@ public class ArrayList<E> extends AbstractList<E>
             return index >= 0 ? index - offset : -1;
         }
 
-        public int indexOf(Predicate<? super E> filter) {
+        public int findIndex(Predicate<? super E> filter) {
             int index = root.indexOfRange(filter, offset, offset + size);
             checkForComodification();
             return index >= 0 ? index - offset : -1;
@@ -1403,7 +1403,7 @@ public class ArrayList<E> extends AbstractList<E>
             return index >= 0 ? index - offset : -1;
         }
 
-        public int lastIndexOf(Predicate<? super E> filter) {
+        public int findLastIndex(Predicate<? super E> filter) {
             int index = root.lastIndexOfRange(filter, offset, offset + size);
             checkForComodification();
             return index >= 0 ? index - offset : -1;
