@@ -847,7 +847,7 @@ SystemProcessInterface::SystemProcesses::ProcessIterator::ProcessIterator() {
 bool SystemProcessInterface::SystemProcesses::ProcessIterator::initialize() {
   _dir = os::opendir("/proc");
   _entry = nullptr;
-  _valid = true;
+  _valid = _dir != nullptr;
   next_process();
 
   return true;
