@@ -117,11 +117,11 @@ public final class ThemeReader {
 
     // this should be called only with writeLock held
     private static Long getThemeImpl(String widget, int dpi) {
-        if (openThemeImpl(widget, dpi) == 0) {
+        if (openThemeImpl(widget, dpi) == null || openThemeImpl(widget, dpi) == 0) {
             return dpiAwareWidgetToTheme.computeIfAbsent(defaultDPI, key -> new HashMap<>())
                     .computeIfAbsent(widget, w -> openThemeImpl(widget, defaultDPI));
         }
-       return dpiAwareWidgetToTheme.computeIfAbsent(dpi, key -> new HashMap<>())
+        return dpiAwareWidgetToTheme.computeIfAbsent(dpi, key -> new HashMap<>())
                 .computeIfAbsent(widget, w -> openThemeImpl(widget, dpi));
     }
 
