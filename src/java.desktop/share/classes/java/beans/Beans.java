@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,7 @@ public class Beans {
      *              object could not be found.
      * @throws IOException if an I/O error occurs.
      * @since 1.2
+     * @deprecated this method will be removed when java.beans.beancontext is removed
      */
     @Deprecated(since = "23", forRemoval = true)
     @SuppressWarnings({"deprecation", "removal"})

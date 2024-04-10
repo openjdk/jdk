@@ -61,7 +61,7 @@ import java.util.Map;
  */
 
 @SuppressWarnings("removal")
-@Deprecated(forRemoval=true, since="23")
+@Deprecated(since = "23", forRemoval = true)
 public class      BeanContextSupport extends BeanContextChildSupport
        implements BeanContext,
                   Serializable,
