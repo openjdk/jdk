@@ -110,7 +110,7 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
     LD_SET_ORIGIN := false, \
     DEFAULT_LDFLAGS := false, \
     LDFLAGS := $(JVM_LDFLAGS), \
-    JDK_LIBS := gtest:gtest, \
+    JDK_LIBS := gtest:libgtest, \
     LIBS := $(JVM_LIBS), \
     OPTIMIZATION := $(JVM_OPTIMIZATION), \
     COPY_DEBUG_SYMBOLS := $(GTEST_COPY_DEBUG_SYMBOLS), \
@@ -150,7 +150,7 @@ $(eval $(call SetupJdkExecutable, BUILD_GTEST_LAUNCHER, \
         -I$(GTEST_FRAMEWORK_SRC)/googlemock/include, \
     LD_SET_ORIGIN := false, \
     LDFLAGS_unix := $(call SET_SHARED_LIBRARY_ORIGIN), \
-    JDK_LIBS := gtest:jvm, \
+    JDK_LIBS := gtest:libjvm, \
     COPY_DEBUG_SYMBOLS := $(GTEST_COPY_DEBUG_SYMBOLS), \
     ZIP_EXTERNAL_DEBUG_SYMBOLS := false, \
 ))
