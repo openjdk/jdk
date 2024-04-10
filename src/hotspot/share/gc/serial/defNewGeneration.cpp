@@ -588,8 +588,12 @@ void DefNewGeneration::object_iterate(ObjectClosure* blk) {
   from()->object_iterate(blk);
 }
 
+// If "p" is in the space, returns the address of the start of the
+// "block" that contains "p".  We say "block" instead of "object" since
+// some heaps may not pack objects densely; a chunk may either be an
+// object or a non-object.  If "p" is not in the space, return null.
 // Very general, slow implementation.
-HeapWord* DefNewGeneration::block_start_const(const ContiguousSpace* cs, const void* p) {
+static HeapWord* block_start_const(const ContiguousSpace* cs, const void* p) {
   assert(MemRegion(cs->bottom(), cs->end()).contains(p),
          "p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
          p2i(p), p2i(cs->bottom()), p2i(cs->end()));
