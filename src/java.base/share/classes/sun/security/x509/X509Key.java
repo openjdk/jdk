@@ -82,6 +82,7 @@ public class X509Key implements PublicKey, DerEncoder {
      * data is stored and transmitted losslessly, but no knowledge
      * about this particular algorithm is available.
      */
+    @SuppressWarnings("this-escape")
     public X509Key(AlgorithmId algid, BitArray key) {
         this.algid = algid;
         setKey(key);
@@ -153,7 +154,7 @@ public class X509Key implements PublicKey, DerEncoder {
      * @exception InvalidKeyException on invalid key encodings.
      */
     protected void parseKeyBits() throws InvalidKeyException {
-        encode();
+        getEncodedInternal();
     }
 
     /*
@@ -242,7 +243,7 @@ public class X509Key implements PublicKey, DerEncoder {
     /**
      * Returns the algorithm ID to be used with this key.
      */
-    public AlgorithmId  getAlgorithmId() { return algid; }
+    public AlgorithmId getAlgorithmId() { return algid; }
 
     /**
      * Encode SubjectPublicKeyInfo sequence on the DER output stream.
@@ -259,7 +260,7 @@ public class X509Key implements PublicKey, DerEncoder {
         return getEncodedInternal().clone();
     }
 
-    public byte[] getEncodedInternal() {
+    private byte[] getEncodedInternal() {
         byte[] encoded = encodedKey;
         if (encoded == null) {
             DerOutputStream out = new DerOutputStream();
