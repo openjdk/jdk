@@ -25,8 +25,6 @@
 
 package jdk.internal.util;
 
-import java.lang.invoke.MethodHandle;
-
 import jdk.internal.vm.annotation.Stable;
 
 /**

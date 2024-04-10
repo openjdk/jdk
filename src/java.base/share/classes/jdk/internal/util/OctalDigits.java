@@ -36,12 +36,6 @@ import jdk.internal.vm.annotation.Stable;
  *
  * @since 21
  */
-/**
- * Digits provides a fast methodology for converting integers and longs to
- * octal digits ASCII strings.
- *
- * @since 21
- */
 public final class OctalDigits {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
