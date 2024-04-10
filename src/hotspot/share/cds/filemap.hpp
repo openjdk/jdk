@@ -131,8 +131,9 @@ public:
 
 
 class FileMapRegion: private CDSFileMapRegion {
-  BitMapView bitmap_view(bool is_oopmap);
 public:
+  BitMapView bitmap_view(bool is_oopmap, const char* name, bool is_static);
+
   void assert_is_heap_region() const {
     assert(_is_heap_region, "must be heap region");
   }
@@ -523,6 +524,9 @@ public:
   FileMapRegion* region_at(int i) const {
     return header()->region_at(i);
   }
+
+  BitMapView oopmap_view(int region_index);
+  BitMapView ptrmap_view(int region_index);
 
   void print(outputStream* st) const;
 

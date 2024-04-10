@@ -294,8 +294,6 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- allow_archiving_with_java_agent:%d", _allow_archiving_with_java_agent);
   st->print_cr("- use_optimized_module_handling:  %d", _use_optimized_module_handling);
   st->print_cr("- has_full_module_graph           %d", _has_full_module_graph);
-  st->print_cr("- rw_ptrmap_size_in_bits:         " SIZE_FORMAT, region_at(MetaspaceShared::rw)->ptrmap_size_in_bits());
-  st->print_cr("- ro_ptrmap_size_in_bits:         " SIZE_FORMAT, region_at(MetaspaceShared::ro)->ptrmap_size_in_bits());
 }
 
 void SharedClassPathEntry::init_as_non_existent(const char* path, TRAPS) {
@@ -1454,20 +1452,14 @@ void FileMapRegion::init_ptrmap(size_t offset, size_t size_in_bits) {
   _ptrmap_size_in_bits = size_in_bits;
 }
 
-BitMapView FileMapRegion::bitmap_view(bool is_oopmap) {
-  char* bitmap_base = FileMapInfo::current_info()->map_bitmap_region();
+BitMapView FileMapRegion::bitmap_view(bool is_oopmap, const char* name, bool is_static) {
+  char* bitmap_base = is_static ? FileMapInfo::current_info()->map_bitmap_region() : FileMapInfo::dynamic_info()->map_bitmap_region();
   bitmap_base += is_oopmap ? _oopmap_offset : _ptrmap_offset;
   size_t size_in_bits = is_oopmap ? _oopmap_size_in_bits : _ptrmap_size_in_bits;
+  log_debug(cds, reloc)("mapped %s relocation %smap @ " INTPTR_FORMAT " (" SIZE_FORMAT " bits)",
+                        name, is_oopmap ? "oop" : "ptr",
+                        p2i(bitmap_base), size_in_bits);
   return BitMapView((BitMap::bm_word_t*)(bitmap_base), size_in_bits);
-}
-
-BitMapView FileMapRegion::oopmap_view() {
-  return bitmap_view(true);
-}
-
-BitMapView FileMapRegion::ptrmap_view() {
-  assert(has_ptrmap(), "must be");
-  return bitmap_view(false);
 }
 
 bool FileMapRegion::check_region_crc(char* base) const {
@@ -1498,6 +1490,14 @@ static const char* region_name(int region_index) {
   return names[region_index];
 }
 
+BitMapView FileMapInfo::oopmap_view(int region_index) {
+    return region_at(region_index)->bitmap_view(/*is_oopmap*/true, region_name(region_index), is_static());
+  }
+
+BitMapView FileMapInfo::ptrmap_view(int region_index) {
+  return region_at(region_index)->bitmap_view(/*is_oopmap*/false, region_name(region_index), is_static());
+}
+
 void FileMapRegion::print(outputStream* st, int region_index) {
   st->print_cr("============ region ============= %d \"%s\"", region_index, region_name(region_index));
   st->print_cr("- crc:                            0x%08x", _crc);
@@ -1511,6 +1511,8 @@ void FileMapRegion::print(outputStream* st, int region_index) {
   st->print_cr("- used:                           " SIZE_FORMAT, _used);
   st->print_cr("- oopmap_offset:                  " SIZE_FORMAT_X, _oopmap_offset);
   st->print_cr("- oopmap_size_in_bits:            " SIZE_FORMAT, _oopmap_size_in_bits);
+  st->print_cr("- ptrmap_offset:                  " SIZE_FORMAT_X, _ptrmap_offset);
+  st->print_cr("- ptrmap_size_in_bits:            " SIZE_FORMAT, _ptrmap_size_in_bits);
   st->print_cr("- mapped_base:                    " INTPTR_FORMAT, p2i(_mapped_base));
 }
 
@@ -1910,14 +1912,8 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
   if (bitmap_base == nullptr) {
     return false; // OOM, or CRC check failure
   } else {
-    BitMapView rw_ptrmap = region_at(MetaspaceShared::rw)->ptrmap_view();
-    char* ro_bitmap_base = bitmap_base + rw_ptrmap.size_in_bytes();
-    BitMapView ro_ptrmap = region_at(MetaspaceShared::ro)->ptrmap_view();
-
-    log_debug(cds, reloc)("mapped relocation rw bitmap @ " INTPTR_FORMAT " (" SIZE_FORMAT " bits)",
-                          p2i(bitmap_base), rw_ptrmap.size());
-    log_debug(cds, reloc)("mapped relocation ro bitmap @ " INTPTR_FORMAT " (" SIZE_FORMAT " bits)",
-                          p2i(ro_bitmap_base), ro_ptrmap.size());
+    BitMapView rw_ptrmap = ptrmap_view(MetaspaceShared::rw);
+    BitMapView ro_ptrmap = ptrmap_view(MetaspaceShared::ro);
 
     FileMapRegion* rw_region = first_core_region();
     FileMapRegion* ro_region = last_core_region();
