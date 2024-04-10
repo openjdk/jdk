@@ -483,7 +483,12 @@ public class TypeEnter implements Completer {
 
             if (module != null) {
                 if (!env.toplevel.modle.readModules.contains(module)) {
-                    log.error(tree.pos, Errors.ImportModuleDoesNotRead(module));
+                    if (env.toplevel.modle.isUnnamed()) {
+                        log.error(tree.pos, Errors.ImportModuleDoesNotReadUnnamed(module));
+                    } else {
+                        log.error(tree.pos, Errors.ImportModuleDoesNotRead(module,
+                                                                           env.toplevel.modle));
+                    }
                     //error recovery, make sure the module is completed:
                     module.getDirectives();
                 }

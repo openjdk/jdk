@@ -436,7 +436,39 @@ public class ImportModule extends TestRunner {
                     .getOutputLines(Task.OutputKind.DIRECT);
 
         expectedErrors = List.of(
-                "Test.java:2:1: compiler.err.import.module.does.not.read: lib",
+                "Test.java:2:1: compiler.err.import.module.does.not.read.unnamed: lib",
+                "Test.java:6:9: compiler.err.cant.resolve.location: kindname.class, Impl, , , (compiler.misc.location: kindname.class, test.Test, null)",
+                "- compiler.note.preview.filename: Test.java, DEFAULT",
+                "- compiler.note.preview.recompile",
+                "2 errors"
+        );
+
+        if (!Objects.equals(expectedErrors, actualErrors)) {
+            throw new AssertionError("Incorrect Output, expected: " + expectedErrors +
+                                      ", actual: " + out);
+
+        }
+
+        tb.writeJavaFiles(src,
+                          """
+                          module test.module {
+                          }
+                          """);
+
+        actualErrors =
+                new JavacTask(tb)
+                    .options("--enable-preview", "--release", SOURCE_VERSION,
+                             "-p", libClasses.toString(),
+                             "-XDdev",
+                             "-XDrawDiagnostics")
+                    .outdir(classes)
+                    .files(tb.findJavaFiles(src))
+                    .run(Task.Expect.FAIL)
+                    .writeAll()
+                    .getOutputLines(Task.OutputKind.DIRECT);
+
+        expectedErrors = List.of(
+                "Test.java:2:1: compiler.err.import.module.does.not.read: lib, test.module",
                 "Test.java:6:9: compiler.err.cant.resolve.location: kindname.class, Impl, , , (compiler.misc.location: kindname.class, test.Test, null)",
                 "- compiler.note.preview.filename: Test.java, DEFAULT",
                 "- compiler.note.preview.recompile",
