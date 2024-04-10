@@ -27,7 +27,6 @@
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1Arguments.hpp"
@@ -47,6 +46,9 @@
 #include "gc/g1/g1GCParPhaseTimesTracker.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1GCPauseType.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
+#include "gc/g1/g1HeapRegionSet.inline.hpp"
 #include "gc/g1/g1HeapSizingPolicy.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
@@ -72,9 +74,6 @@
 #include "gc/g1/g1VMOperations.hpp"
 #include "gc/g1/g1YoungCollector.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
-#include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcBehaviours.hpp"
@@ -533,7 +532,7 @@ HeapWord* G1CollectedHeap::alloc_archive_region(size_t word_size, HeapWord* pref
   return start_addr;
 }
 
-void G1CollectedHeap::populate_archive_regions_bot_part(MemRegion range) {
+void G1CollectedHeap::populate_archive_regions_bot(MemRegion range) {
   assert(!is_init_completed(), "Expect to be called at JVM init time");
 
   iterate_regions_in_range(range,
@@ -1175,7 +1174,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _is_alive_closure_stw(this),
   _is_subject_to_discovery_stw(this),
   _ref_processor_cm(nullptr),
-  _is_alive_closure_cm(this),
+  _is_alive_closure_cm(),
   _is_subject_to_discovery_cm(this),
   _region_attr() {
 
@@ -1506,6 +1505,7 @@ void G1CollectedHeap::ref_processing_init() {
   //     * Discovery is atomic - i.e. not concurrent.
   //     * Reference discovery will not need a barrier.
 
+  _is_alive_closure_cm.initialize(concurrent_mark());
   // Concurrent Mark ref processor
   _ref_processor_cm =
     new ReferenceProcessor(&_is_subject_to_discovery_cm,
@@ -2198,8 +2198,6 @@ void G1CollectedHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
 }
 
 void G1CollectedHeap::gc_prologue(bool full) {
-  assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
-
   // Update common counters.
   increment_total_collections(full /* full gc */);
   if (full || collector_state()->in_concurrent_start_gc()) {
@@ -2520,7 +2518,7 @@ void G1CollectedHeap::unload_classes_and_code(const char* description, BoolObjec
 
   ClassUnloadingContext ctx(workers()->active_workers(),
                             false /* unregister_nmethods_during_purge */,
-                            false /* lock_codeblob_free_separately */);
+                            false /* lock_nmethod_free_separately */);
   {
     CodeCache::UnlinkingScope scope(is_alive);
     bool unloading_occurred = SystemDictionary::do_unloading(timer);
@@ -2537,7 +2535,7 @@ void G1CollectedHeap::unload_classes_and_code(const char* description, BoolObjec
   }
   {
     GCTraceTime(Debug, gc, phases) t("Free Code Blobs", timer);
-    ctx.free_code_blobs();
+    ctx.free_nmethods();
   }
   {
     GCTraceTime(Debug, gc, phases) t("Purge Class Loader Data", timer);
@@ -3018,24 +3016,22 @@ void G1CollectedHeap::update_used_after_gc(bool evacuation_failed) {
   }
 }
 
-class RebuildCodeRootClosure: public CodeBlobClosure {
+class RebuildCodeRootClosure: public NMethodClosure {
   G1CollectedHeap* _g1h;
 
 public:
   RebuildCodeRootClosure(G1CollectedHeap* g1h) :
     _g1h(g1h) {}
 
-  void do_code_blob(CodeBlob* cb) {
-    nmethod* nm = cb->as_nmethod_or_null();
-    if (nm != nullptr) {
-      _g1h->register_nmethod(nm);
-    }
+  void do_nmethod(nmethod* nm) {
+    assert(nm != nullptr, "Sanity");
+    _g1h->register_nmethod(nm);
   }
 };
 
 void G1CollectedHeap::rebuild_code_roots() {
-  RebuildCodeRootClosure blob_cl(this);
-  CodeCache::blobs_do(&blob_cl);
+  RebuildCodeRootClosure nmethod_cl(this);
+  CodeCache::nmethods_do(&nmethod_cl);
 }
 
 void G1CollectedHeap::initialize_serviceability() {

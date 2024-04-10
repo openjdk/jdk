@@ -36,6 +36,8 @@
 #include "gc/g1/g1EvacStats.hpp"
 #include "gc/g1/g1GCPauseType.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
+#include "gc/g1/g1HeapRegionManager.hpp"
+#include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
@@ -45,8 +47,6 @@
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
-#include "gc/g1/heapRegionManager.hpp"
-#include "gc/g1/heapRegionSet.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
@@ -717,9 +717,9 @@ public:
   // in the CDS archive.
   HeapWord* alloc_archive_region(size_t word_size, HeapWord* preferred_addr);
 
-  // Populate the G1BlockOffsetTablePart for archived regions with the given
+  // Populate the G1BlockOffsetTable for archived regions with the given
   // memory range.
-  void populate_archive_regions_bot_part(MemRegion range);
+  void populate_archive_regions_bot(MemRegion range);
 
   // For the specified range, uncommit the containing G1 regions
   // which had been allocated by alloc_archive_regions. This should be called

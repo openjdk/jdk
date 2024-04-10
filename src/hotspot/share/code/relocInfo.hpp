@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,10 @@
 
 #include <new>
 
-class nmethod;
 class CodeBlob;
-class CompiledMethod;
 class Metadata;
 class NativeMovConstReg;
+class nmethod;
 
 // Types in this file:
 //    relocInfo
@@ -571,7 +570,7 @@ class RelocIterator : public StackObj {
   address         _limit;   // stop producing relocations after this _addr
   relocInfo*      _current; // the current relocation information
   relocInfo*      _end;     // end marker; we're done iterating when _current == _end
-  CompiledMethod* _code;    // compiled method containing _addr
+  nmethod*        _code;    // compiled method containing _addr
   address         _addr;    // instruction to which the relocation applies
   short           _databuf; // spare buffer for compressed data
   short*          _data;    // pointer to the relocation's data
@@ -601,13 +600,13 @@ class RelocIterator : public StackObj {
 
   void initialize_misc();
 
-  void initialize(CompiledMethod* nm, address begin, address limit);
+  void initialize(nmethod* nm, address begin, address limit);
 
   RelocIterator() { initialize_misc(); }
 
  public:
   // constructor
-  RelocIterator(CompiledMethod* nm, address begin = nullptr, address limit = nullptr);
+  RelocIterator(nmethod* nm, address begin = nullptr, address limit = nullptr);
   RelocIterator(CodeSection* cb, address begin = nullptr, address limit = nullptr);
 
   // get next reloc info, return !eos
@@ -640,7 +639,7 @@ class RelocIterator : public StackObj {
   relocType    type()         const { return current()->type(); }
   int          format()       const { return (relocInfo::have_format) ? current()->format() : 0; }
   address      addr()         const { return _addr; }
-  CompiledMethod*     code()  const { return _code; }
+  nmethod*     code()         const { return _code; }
   short*       data()         const { return _data; }
   int          datalen()      const { return _datalen; }
   bool     has_current()      const { return _datalen >= 0; }
@@ -827,7 +826,7 @@ class Relocation {
  public:
   // accessors which only make sense for a bound Relocation
   address         addr()            const { return binding()->addr(); }
-  CompiledMethod* code()            const { return binding()->code(); }
+  nmethod*        code()            const { return binding()->code(); }
   bool            addr_in_const()   const { return binding()->addr_in_const(); }
  protected:
   short*   data()         const { return binding()->data(); }
@@ -862,7 +861,7 @@ class Relocation {
   // all relocations are able to reassert their values
   virtual void set_value(address x);
 
-  virtual bool clear_inline_cache()              { return true; }
+  virtual void clear_inline_cache() {}
 
   // This method assumes that all virtual/static (inline) caches are cleared (since for static_call_type and
   // ic_call_type is not always position dependent (depending on the state of the cache)). However, this is
@@ -1141,7 +1140,7 @@ class virtual_call_Relocation : public CallRelocation {
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
-  bool clear_inline_cache() override;
+  void clear_inline_cache() override;
 };
 
 
@@ -1170,7 +1169,7 @@ class opt_virtual_call_Relocation : public CallRelocation {
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
-  bool clear_inline_cache() override;
+  void clear_inline_cache() override;
 
   // find the matching static_stub
   address static_stub();
@@ -1202,7 +1201,7 @@ class static_call_Relocation : public CallRelocation {
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
-  bool clear_inline_cache() override;
+  void clear_inline_cache() override;
 
   // find the matching static_stub
   address static_stub();
@@ -1227,7 +1226,7 @@ class static_stub_Relocation : public Relocation {
   static_stub_Relocation() : Relocation(relocInfo::static_stub_type) { }
 
  public:
-  bool clear_inline_cache() override;
+  void clear_inline_cache() override;
 
   address static_call() { return _static_call; }
 
@@ -1463,7 +1462,7 @@ APPLY_TO_RELOCATIONS(EACH_CASE);
 #undef EACH_CASE_AUX
 #undef EACH_CASE
 
-inline RelocIterator::RelocIterator(CompiledMethod* nm, address begin, address limit) {
+inline RelocIterator::RelocIterator(nmethod* nm, address begin, address limit) {
   initialize(nm, begin, limit);
 }
 

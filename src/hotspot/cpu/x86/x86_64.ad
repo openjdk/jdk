@@ -519,7 +519,7 @@ int CallDynamicJavaDirectNode::compute_padding(int current_offset) const
 }
 
 // This could be in MacroAssembler but it's fairly C2 specific
-void emit_cmpfp_fixup(MacroAssembler& _masm) {
+static void emit_cmpfp_fixup(MacroAssembler& _masm) {
   Label exit;
   __ jccb(Assembler::noParity, exit);
   __ pushf();
@@ -539,7 +539,7 @@ void emit_cmpfp_fixup(MacroAssembler& _masm) {
   __ bind(exit);
 }
 
-void emit_cmpfp3(MacroAssembler& _masm, Register dst) {
+static void emit_cmpfp3(MacroAssembler& _masm, Register dst) {
   Label done;
   __ movl(dst, -1);
   __ jcc(Assembler::parity, done);
@@ -558,10 +558,10 @@ void emit_cmpfp3(MacroAssembler& _masm, Register dst) {
 // je            #
 // |-jz -> a | b # a & b
 // |    -> a     #
-void emit_fp_min_max(MacroAssembler& _masm, XMMRegister dst,
-                     XMMRegister a, XMMRegister b,
-                     XMMRegister xmmt, Register rt,
-                     bool min, bool single) {
+static void emit_fp_min_max(MacroAssembler& _masm, XMMRegister dst,
+                            XMMRegister a, XMMRegister b,
+                            XMMRegister xmmt, Register rt,
+                            bool min, bool single) {
 
   Label nan, zero, below, above, done;
 
@@ -1472,40 +1472,19 @@ void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 {
   if (UseCompressedClassPointers) {
     st->print_cr("movl    rscratch1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
-    st->print_cr("\tdecode_klass_not_null rscratch1, rscratch1");
-    st->print_cr("\tcmpq    rax, rscratch1\t # Inline cache check");
+    st->print_cr("\tcmpl    rscratch1, [rax + CompiledICData::speculated_klass_offset()]\t # Inline cache check");
   } else {
-    st->print_cr("\tcmpq    rax, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t"
-                 "# Inline cache check");
+    st->print_cr("movq    rscratch1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tcmpq    rscratch1, [rax + CompiledICData::speculated_klass_offset()]\t # Inline cache check");
   }
   st->print_cr("\tjne     SharedRuntime::_ic_miss_stub");
-  st->print_cr("\tnop\t# nops to align entry point");
 }
 #endif
 
 void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 {
   MacroAssembler masm(&cbuf);
-  uint insts_size = cbuf.insts_size();
-  if (UseCompressedClassPointers) {
-    masm.load_klass(rscratch1, j_rarg0, rscratch2);
-    masm.cmpptr(rax, rscratch1);
-  } else {
-    masm.cmpptr(rax, Address(j_rarg0, oopDesc::klass_offset_in_bytes()));
-  }
-
-  masm.jump_cc(Assembler::notEqual, RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
-
-  /* WARNING these NOPs are critical so that verified entry point is properly
-     4 bytes aligned for patching by NativeJump::patch_verified_entry() */
-  int nops_cnt = 4 - ((cbuf.insts_size() - insts_size) & 0x3);
-  if (OptoBreakpoint) {
-    // Leave space for int3
-    nops_cnt -= 1;
-  }
-  nops_cnt &= 0x3; // Do not add nops if code is aligned.
-  if (nops_cnt > 0)
-    masm.nop(nops_cnt);
+  masm.ic_check(InteriorEntryAlignment);
 }
 
 uint MachUEPNode::size(PhaseRegAlloc* ra_) const
@@ -1840,7 +1819,7 @@ encode %{
         cbuf.shared_stub_to_interp_for(_method, call_offset);
       } else {
         // Emit stubs for static call.
-        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, mark);
+        address stub = CompiledDirectCall::emit_to_interp_stub(cbuf, mark);
         if (stub == nullptr) {
           ciEnv::current()->record_failure("CodeCache is full");
           return;
@@ -2147,28 +2126,6 @@ operand immU31()
   interface(CONST_INTER);
 %}
 
-// Constant for long shifts
-operand immI_32()
-%{
-  predicate( n->get_int() == 32 );
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Constant for long shifts
-operand immI_64()
-%{
-  predicate( n->get_int() == 64 );
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // Pointer Immediate
 operand immP()
 %{
@@ -2323,28 +2280,6 @@ operand immL_M1()
   interface(CONST_INTER);
 %}
 
-// Long Immediate: the value 10
-operand immL10()
-%{
-  predicate(n->get_long() == 10);
-  match(ConL);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Long immediate from 0 to 127.
-// Used for a shorter form of long mul by 10.
-operand immL_127()
-%{
-  predicate(0 <= n->get_long() && n->get_long() < 0x80);
-  match(ConL);
-
-  op_cost(10);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // Long Immediate: low 32-bit mask
 operand immL_32bits()
 %{
@@ -2474,64 +2409,6 @@ operand immL_65535()
 operand kReg()
 %{
   constraint(ALLOC_IN_RC(vectmask_reg));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K1()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K1));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K2()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K2));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-// Special Registers
-operand kReg_K3()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K3));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K4()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K4));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K5()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K5));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K6()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K6));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-// Special Registers
-operand kReg_K7()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K7));
   match(RegVectMask);
   format %{%}
   interface(REG_INTER);
@@ -2684,18 +2561,6 @@ operand rRegN() %{
 // the RBP is used as a proper frame pointer and is not included in ptr_reg. As a
 // result, RBP is not included in the output of the instruction either.
 
-operand no_rax_RegP()
-%{
-  constraint(ALLOC_IN_RC(ptr_no_rax_reg));
-  match(RegP);
-  match(rbx_RegP);
-  match(rsi_RegP);
-  match(rdi_RegP);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 // This operand is not allowed to use RBP even if
 // RBP is not used to hold the frame pointer.
 operand no_rbp_RegP()
@@ -2703,17 +2568,6 @@ operand no_rbp_RegP()
   constraint(ALLOC_IN_RC(ptr_reg_no_rbp));
   match(RegP);
   match(rbx_RegP);
-  match(rsi_RegP);
-  match(rdi_RegP);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand no_rax_rbx_RegP()
-%{
-  constraint(ALLOC_IN_RC(ptr_no_rax_rbx_reg));
-  match(RegP);
   match(rsi_RegP);
   match(rdi_RegP);
 
@@ -4480,7 +4334,7 @@ instruct loadD(regD dst, memory mem)
 
 // max = java.lang.Math.max(float a, float b)
 instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp) %{
-  predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MaxF a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
   format %{ "maxF $dst, $a, $b \t! using tmp, atmp and btmp as TEMP" %}
@@ -4491,7 +4345,7 @@ instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
 %}
 
 instruct maxF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRegI tmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MaxF a b));
   effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
 
@@ -4505,7 +4359,7 @@ instruct maxF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRe
 
 // max = java.lang.Math.max(double a, double b)
 instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp) %{
-  predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MaxD a b));
   effect(USE a, USE b, TEMP atmp, TEMP btmp, TEMP tmp);
   format %{ "maxD $dst, $a, $b \t! using tmp, atmp and btmp as TEMP" %}
@@ -4516,7 +4370,7 @@ instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
 %}
 
 instruct maxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xmmt, rRegL tmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MaxD a b));
   effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
 
@@ -4530,7 +4384,7 @@ instruct maxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xmmt, rRe
 
 // min = java.lang.Math.min(float a, float b)
 instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp) %{
-  predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MinF a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
   format %{ "minF $dst, $a, $b \t! using tmp, atmp and btmp as TEMP" %}
@@ -4541,7 +4395,7 @@ instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
 %}
 
 instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRegI tmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MinF a b));
   effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
 
@@ -4555,7 +4409,7 @@ instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRe
 
 // min = java.lang.Math.min(double a, double b)
 instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp) %{
-  predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MinD a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
     format %{ "minD $dst, $a, $b \t! using tmp, atmp and btmp as TEMP" %}
@@ -4566,7 +4420,7 @@ instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
 %}
 
 instruct minD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xmmt, rRegL tmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && SuperWord::is_reduction(n));
+  predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MinD a b));
   effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
 
@@ -10105,6 +9959,7 @@ instruct convF2D_reg_reg(regD dst, regF src)
 
 instruct convF2D_reg_mem(regD dst, memory src)
 %{
+  predicate(UseAVX == 0);
   match(Set dst (ConvF2D (LoadF src)));
 
   format %{ "cvtss2sd $dst, $src" %}
@@ -10127,6 +9982,7 @@ instruct convD2F_reg_reg(regF dst, regD src)
 
 instruct convD2F_reg_mem(regF dst, memory src)
 %{
+  predicate(UseAVX == 0);
   match(Set dst (ConvD2F (LoadD src)));
 
   format %{ "cvtsd2ss $dst, $src" %}
@@ -10203,13 +10059,16 @@ instruct round_float_reg(rRegI dst, regF src, rRegL rtmp, rcx_RegL rcx, rFlagsRe
   ins_pipe(pipe_slow);
 %}
 
-instruct convI2F_reg_reg(regF dst, rRegI src)
+instruct convI2F_reg_reg(vlRegF dst, rRegI src)
 %{
   predicate(!UseXmmI2F);
   match(Set dst (ConvI2F src));
 
   format %{ "cvtsi2ssl $dst, $src\t# i2f" %}
   ins_encode %{
+    if (UseAVX > 0) {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ cvtsi2ssl ($dst$$XMMRegister, $src$$Register);
   %}
   ins_pipe(pipe_slow); // XXX
@@ -10217,6 +10076,7 @@ instruct convI2F_reg_reg(regF dst, rRegI src)
 
 instruct convI2F_reg_mem(regF dst, memory src)
 %{
+  predicate(UseAVX == 0);
   match(Set dst (ConvI2F (LoadI src)));
 
   format %{ "cvtsi2ssl $dst, $src\t# i2f" %}
@@ -10226,13 +10086,16 @@ instruct convI2F_reg_mem(regF dst, memory src)
   ins_pipe(pipe_slow); // XXX
 %}
 
-instruct convI2D_reg_reg(regD dst, rRegI src)
+instruct convI2D_reg_reg(vlRegD dst, rRegI src)
 %{
   predicate(!UseXmmI2D);
   match(Set dst (ConvI2D src));
 
   format %{ "cvtsi2sdl $dst, $src\t# i2d" %}
   ins_encode %{
+    if (UseAVX > 0) {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ cvtsi2sdl ($dst$$XMMRegister, $src$$Register);
   %}
   ins_pipe(pipe_slow); // XXX
@@ -10240,6 +10103,7 @@ instruct convI2D_reg_reg(regD dst, rRegI src)
 
 instruct convI2D_reg_mem(regD dst, memory src)
 %{
+  predicate(UseAVX == 0);
   match(Set dst (ConvI2D (LoadI src)));
 
   format %{ "cvtsi2sdl $dst, $src\t# i2d" %}
@@ -10277,12 +10141,15 @@ instruct convXI2D_reg(regD dst, rRegI src)
   ins_pipe(pipe_slow); // XXX
 %}
 
-instruct convL2F_reg_reg(regF dst, rRegL src)
+instruct convL2F_reg_reg(vlRegF dst, rRegL src)
 %{
   match(Set dst (ConvL2F src));
 
   format %{ "cvtsi2ssq $dst, $src\t# l2f" %}
   ins_encode %{
+    if (UseAVX > 0) {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ cvtsi2ssq ($dst$$XMMRegister, $src$$Register);
   %}
   ins_pipe(pipe_slow); // XXX
@@ -10290,6 +10157,7 @@ instruct convL2F_reg_reg(regF dst, rRegL src)
 
 instruct convL2F_reg_mem(regF dst, memory src)
 %{
+  predicate(UseAVX == 0);
   match(Set dst (ConvL2F (LoadL src)));
 
   format %{ "cvtsi2ssq $dst, $src\t# l2f" %}
@@ -10299,12 +10167,15 @@ instruct convL2F_reg_mem(regF dst, memory src)
   ins_pipe(pipe_slow); // XXX
 %}
 
-instruct convL2D_reg_reg(regD dst, rRegL src)
+instruct convL2D_reg_reg(vlRegD dst, rRegL src)
 %{
   match(Set dst (ConvL2D src));
 
   format %{ "cvtsi2sdq $dst, $src\t# l2d" %}
   ins_encode %{
+    if (UseAVX > 0) {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ cvtsi2sdq ($dst$$XMMRegister, $src$$Register);
   %}
   ins_pipe(pipe_slow); // XXX
@@ -10312,6 +10183,7 @@ instruct convL2D_reg_reg(regD dst, rRegL src)
 
 instruct convL2D_reg_mem(regD dst, memory src)
 %{
+  predicate(UseAVX == 0);
   match(Set dst (ConvL2D (LoadL src)));
 
   format %{ "cvtsi2sdq $dst, $src\t# l2d" %}
@@ -10538,7 +10410,7 @@ instruct MoveL2D_reg_reg(regD dst, rRegL src) %{
 %}
 
 // Fast clearing of an array
-// Small ClearArray non-AVX512.
+// Small non-constant lenght ClearArray for non-AVX512 targets.
 instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
                   Universe dummy, rFlagsReg cr)
 %{
@@ -10598,7 +10470,7 @@ instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
   ins_pipe(pipe_slow);
 %}
 
-// Small ClearArray AVX512 non-constant length.
+// Small non-constant length ClearArray for AVX512 targets.
 instruct rep_stos_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, rax_RegI zero,
                        Universe dummy, rFlagsReg cr)
 %{
@@ -10659,7 +10531,7 @@ instruct rep_stos_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, rax_
   ins_pipe(pipe_slow);
 %}
 
-// Large ClearArray non-AVX512.
+// Large non-constant length ClearArray for non-AVX512 targets.
 instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
                         Universe dummy, rFlagsReg cr)
 %{
@@ -10710,7 +10582,7 @@ instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
   ins_pipe(pipe_slow);
 %}
 
-// Large ClearArray AVX512.
+// Large non-constant length ClearArray for AVX512 targets.
 instruct rep_stos_large_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, rax_RegI zero,
                              Universe dummy, rFlagsReg cr)
 %{
@@ -10761,11 +10633,10 @@ instruct rep_stos_large_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp
   ins_pipe(pipe_slow);
 %}
 
-// Small ClearArray AVX512 constant length.
+// Small constant length ClearArray for AVX512 targets.
 instruct rep_stos_im(immL cnt, rRegP base, regD tmp, rRegI zero, kReg ktmp, Universe dummy, rFlagsReg cr)
 %{
-  predicate(!((ClearArrayNode*)n)->is_large() &&
-              ((UseAVX > 2) && VM_Version::supports_avx512vlbw()));
+  predicate(!((ClearArrayNode*)n)->is_large() && (MaxVectorSize >= 32) && VM_Version::supports_avx512vl());
   match(Set dummy (ClearArray cnt base));
   ins_cost(100);
   effect(TEMP tmp, TEMP zero, TEMP ktmp, KILL cr);
@@ -12404,7 +12275,7 @@ instruct cmpFastLockRTM(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, 
 %}
 
 instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRegP scr) %{
-  predicate(!Compile::current()->use_rtm());
+  predicate(LockingMode != LM_LIGHTWEIGHT && !Compile::current()->use_rtm());
   match(Set cr (FastLock object box));
   effect(TEMP tmp, TEMP scr, USE_KILL box);
   ins_cost(300);
@@ -12417,12 +12288,37 @@ instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRe
 %}
 
 instruct cmpFastUnlock(rFlagsReg cr, rRegP object, rax_RegP box, rRegP tmp) %{
+  predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set cr (FastUnlock object box));
   effect(TEMP tmp, USE_KILL box);
   ins_cost(300);
   format %{ "fastunlock $object,$box\t! kills $box,$tmp" %}
   ins_encode %{
     __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register, ra_->C->use_rtm());
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmpFastLockLightweight(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI rax_reg, rRegP tmp) %{
+  predicate(LockingMode == LM_LIGHTWEIGHT);
+  match(Set cr (FastLock object box));
+  effect(TEMP rax_reg, TEMP tmp, USE_KILL box);
+  ins_cost(300);
+  format %{ "fastlock $object,$box\t! kills $box,$rax_reg,$tmp" %}
+  ins_encode %{
+    __ fast_lock_lightweight($object$$Register, $box$$Register, $rax_reg$$Register, $tmp$$Register, r15_thread);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmpFastUnlockLightweight(rFlagsReg cr, rRegP object, rax_RegP rax_reg, rRegP tmp) %{
+  predicate(LockingMode == LM_LIGHTWEIGHT);
+  match(Set cr (FastUnlock object rax_reg));
+  effect(TEMP tmp, USE_KILL rax_reg);
+  ins_cost(300);
+  format %{ "fastunlock $object,$rax_reg\t! kills $rax_reg,$tmp" %}
+  ins_encode %{
+    __ fast_unlock_lightweight($object$$Register, $rax_reg$$Register, $tmp$$Register, r15_thread);
   %}
   ins_pipe(pipe_slow);
 %}

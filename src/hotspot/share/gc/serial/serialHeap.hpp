@@ -66,7 +66,7 @@ class SerialHeap : public CollectedHeap {
   friend class Generation;
   friend class DefNewGeneration;
   friend class TenuredGeneration;
-  friend class GenMarkSweep;
+  friend class SerialFullGC;
   friend class VM_GenCollectForAllocation;
   friend class VM_GenCollectFull;
   friend class VM_GC_HeapInspection;
@@ -141,7 +141,6 @@ private:
 public:
   // Returns JNI_OK on success
   jint initialize() override;
-  virtual CardTableRS* create_rem_set(const MemRegion& reserved_region);
 
   // Does operations required after initialization has been done.
   void post_initialize() override;
@@ -178,10 +177,6 @@ public:
   bool is_in_young(const void* p) const;
 
   bool requires_barriers(stackChunkOop obj) const override;
-
-#ifdef ASSERT
-  bool is_in_partial_collection(const void* p);
-#endif
 
   // Optimized nmethod scanning support routines
   void register_nmethod(nmethod* nm) override;
@@ -249,10 +244,6 @@ public:
     virtual void do_generation(Generation* gen) = 0;
   };
 
-  // Apply "cl.do_generation" to all generations in the heap
-  // If "old_to_young" determines the order.
-  void generation_iterate(GenClosure* cl, bool old_to_young);
-
   // Return "true" if all generations have reached the
   // maximal committed limit that they can reach, without a garbage
   // collection.
@@ -281,7 +272,7 @@ public:
                      OopClosure* strong_roots,
                      CLDClosure* strong_cld_closure,
                      CLDClosure* weak_cld_closure,
-                     CodeBlobToOopClosure* code_roots);
+                     NMethodToOopClosure* code_roots);
 
   // Set the saved marks of generations, if that makes sense.
   // In particular, if any generation might iterate over the oops

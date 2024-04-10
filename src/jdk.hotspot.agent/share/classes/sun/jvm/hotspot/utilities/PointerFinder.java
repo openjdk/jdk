@@ -106,12 +106,10 @@ public class PointerFinder {
       // If we are using the SerialHeap, find out which generation the address is in
       if (heap instanceof SerialHeap) {
         SerialHeap sh = (SerialHeap)heap;
-        for (int i = 0; i < sh.nGens(); i++) {
-          Generation g = sh.getGen(i);
-          if (g.isIn(a)) {
-            loc.gen = g;
-            break;
-          }
+        if (sh.youngGen().isIn(a)) {
+          loc.gen = sh.youngGen();
+        } else if (sh.oldGen().isIn(a)) {
+          loc.gen = sh.oldGen();
         }
 
         if (Assert.ASSERTS_ENABLED) {

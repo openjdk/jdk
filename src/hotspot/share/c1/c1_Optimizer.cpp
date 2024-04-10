@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -335,7 +335,7 @@ void Optimizer::eliminate_conditional_expressions() {
 }
 
 // This removes others' relation to block, but doesn't empty block's lists
-void disconnect_from_graph(BlockBegin* block) {
+static void disconnect_from_graph(BlockBegin* block) {
   for (int p = 0; p < block->number_of_preds(); p++) {
     BlockBegin* pred = block->pred_at(p);
     int idx;

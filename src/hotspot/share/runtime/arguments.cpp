@@ -501,23 +501,28 @@ static SpecialFlag const special_jvm_flags[] = {
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RegisterFinalizersAtInit",     JDK_Version::jdk(22), JDK_Version::jdk(23), JDK_Version::jdk(24) },
-
+#if defined(X86)
+  { "UseRTMLocking",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
+  { "UseRTMDeopt",                  JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
+  { "RTMRetryCount",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
+#endif // X86
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
-  { "G1ConcRefinementGreenZone",    JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
-  { "G1ConcRefinementYellowZone",   JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
-  { "G1ConcRefinementRedZone",      JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
-  { "G1ConcRefinementThresholdStep", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
-  { "G1UseAdaptiveConcRefinement",  JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
-  { "G1ConcRefinementServiceIntervalMillis", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
-
-  { "G1ConcRSLogCacheSize",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
-  { "G1ConcRSHotCardLimit",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
-  { "RefDiscoveryPolicy",           JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
+
+  { "G1ConcRefinementGreenZone",    JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(24) },
+  { "G1ConcRefinementYellowZone",   JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(24) },
+  { "G1ConcRefinementRedZone",      JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(24) },
+  { "G1ConcRefinementThresholdStep", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(24) },
+  { "G1UseAdaptiveConcRefinement",  JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(24) },
+  { "G1ConcRefinementServiceIntervalMillis", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(24) },
+
+  { "G1ConcRSLogCacheSize",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::jdk(24) },
+  { "G1ConcRSHotCardLimit",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::jdk(24) },
+  { "RefDiscoveryPolicy",           JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::jdk(24) },
 
   { "AdaptiveSizePolicyCollectionCostMargin",   JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
   { "MaxGCMinorPauseMillis",        JDK_Version::jdk(8), JDK_Version::jdk(23), JDK_Version::jdk(24) },
@@ -526,6 +531,13 @@ static SpecialFlag const special_jvm_flags[] = {
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
   { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "GCLockerEdenExpansionPercent", JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "NUMAPageScanRate",             JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "ProcessDistributionStride",    JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
+
+  { "ParallelOldDeadWoodLimiterMean",   JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "ParallelOldDeadWoodLimiterStdDev", JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "UseNeon",                      JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
@@ -1121,8 +1133,7 @@ bool Arguments::process_argument(const char* arg,
     JVMFlag::MsgType msg_type = found_flag->get_locked_message(locked_message_buf, BUFLEN);
     if (strlen(locked_message_buf) != 0) {
 #ifdef PRODUCT
-      bool mismatched = ((msg_type == JVMFlag::NOTPRODUCT_FLAG_BUT_PRODUCT_BUILD) ||
-                         (msg_type == JVMFlag::DEVELOPER_FLAG_BUT_PRODUCT_BUILD));
+      bool mismatched = msg_type == JVMFlag::DEVELOPER_FLAG_BUT_PRODUCT_BUILD;
       if (ignore_unrecognized && mismatched) {
         return true;
       }
@@ -1250,7 +1261,9 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
     value = &prop[key_len + 1];
   }
 
-  CDSConfig::check_system_property(key, value);
+  if (internal == ExternalProperty) {
+    CDSConfig::check_incompatible_property(key, value);
+  }
 
   if (strcmp(key, "java.compiler") == 0) {
     // we no longer support java.compiler system property, log a warning and let it get
@@ -1364,7 +1377,7 @@ void Arguments::no_shared_spaces(const char* message) {
   }
 }
 
-void set_object_alignment() {
+static void set_object_alignment() {
   // Object alignment.
   assert(is_power_of_2(ObjectAlignmentInBytes), "ObjectAlignmentInBytes must be power of 2");
   MinObjAlignmentInBytes     = ObjectAlignmentInBytes;
@@ -1889,6 +1902,7 @@ bool Arguments::parse_uint(const char* value,
 
 bool Arguments::create_module_property(const char* prop_name, const char* prop_value, PropertyInternal internal) {
   assert(is_internal_module_property(prop_name), "unknown module property: '%s'", prop_name);
+  CDSConfig::check_internal_module_property(prop_name, prop_value);
   size_t prop_len = strlen(prop_name) + strlen(prop_value) + 2;
   char* property = AllocateHeap(prop_len, mtArguments);
   int ret = jio_snprintf(property, prop_len, "%s=%s", prop_name, prop_value);
@@ -1908,6 +1922,7 @@ bool Arguments::create_module_property(const char* prop_name, const char* prop_v
 
 bool Arguments::create_numbered_module_property(const char* prop_base_name, const char* prop_value, unsigned int count) {
   assert(is_internal_module_property(prop_base_name), "unknown module property: '%s'", prop_base_name);
+  CDSConfig::check_internal_module_property(prop_base_name, prop_value);
   const unsigned int props_count_limit = 1000;
   const int max_digits = 3;
   const int extra_symbols_count = 3; // includes '.', '=', '\0'
@@ -2009,11 +2024,12 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
   return JNI_OK;
 }
 
+#if !INCLUDE_JVMTI
 // Checks if name in command-line argument -agent{lib,path}:name[=options]
 // represents a valid JDWP agent.  is_path==true denotes that we
 // are dealing with -agentpath (case where name is a path), otherwise with
 // -agentlib
-bool valid_jdwp_agent(char *name, bool is_path) {
+static bool valid_jdwp_agent(char *name, bool is_path) {
   char *_name;
   const char *_jdwp = "jdwp";
   size_t _len_jdwp, _len_prefix;
@@ -2053,6 +2069,7 @@ bool valid_jdwp_agent(char *name, bool is_path) {
 
   return false;
 }
+#endif
 
 int Arguments::process_patch_mod_option(const char* patch_mod_tail, bool* patch_mod_javabase) {
   // --patch-module=<module>=<file>(<pathsep><file>)*
@@ -3399,20 +3416,16 @@ bool Arguments::handle_deprecated_print_gc_flags() {
 }
 
 static void apply_debugger_ergo() {
-#ifndef PRODUCT
-  // UseDebuggerErgo is notproduct
+#ifdef ASSERT
   if (ReplayCompiles) {
     FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo, true);
   }
-#endif
 
-#ifndef PRODUCT
   if (UseDebuggerErgo) {
     // Turn on sub-flags
     FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo1, true);
     FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo2, true);
   }
-#endif
 
   if (UseDebuggerErgo2) {
     // Debugging with limited number of CPUs
@@ -3421,6 +3434,7 @@ static void apply_debugger_ergo() {
     FLAG_SET_ERGO_IF_DEFAULT(ParallelGCThreads, 1);
     FLAG_SET_ERGO_IF_DEFAULT(CICompilerCount, 2);
   }
+#endif // ASSERT
 }
 
 // Parse entry point called from JNI_CreateJavaVM

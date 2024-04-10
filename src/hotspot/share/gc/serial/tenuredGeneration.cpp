@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,11 @@
 
 #include "precompiled.hpp"
 #include "gc/serial/cardTableRS.hpp"
-#include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/serialBlockOffsetTable.inline.hpp"
+#include "gc/serial/serialFullGC.hpp"
 #include "gc/serial/serialHeap.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
-#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
@@ -38,6 +37,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
+#include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 
 bool TenuredGeneration::grow_by(size_t bytes) {
@@ -269,7 +269,7 @@ HeapWord* TenuredGeneration::block_start(const void* p) const {
 }
 
 void TenuredGeneration::scan_old_to_young_refs() {
-  _rs->scan_old_to_young_refs(space());
+  _rs->scan_old_to_young_refs(space(), saved_mark_word());
 }
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
@@ -288,8 +288,8 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   assert((uintptr_t(start) & 3) == 0, "bad alignment");
   assert((reserved_byte_size & 3) == 0, "bad alignment");
   MemRegion reserved_mr(start, heap_word_size(reserved_byte_size));
-  _bts = new SerialBlockOffsetSharedArray(reserved_mr,
-                                          heap_word_size(initial_byte_size));
+  _bts = new SerialBlockOffsetTable(reserved_mr,
+                                    heap_word_size(initial_byte_size));
   MemRegion committed_mr(start, heap_word_size(initial_byte_size));
   _rs->resize_covered_region(committed_mr);
 
@@ -309,7 +309,7 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   _shrink_factor = ShrinkHeapInSteps ? 0 : 100;
   _capacity_at_prologue = 0;
 
-  _gc_stats = new GCStats();
+  _avg_promoted = new AdaptivePaddedNoZeroDevAverage(AdaptiveSizePolicyWeight, PromotedPadding);
 
   // initialize performance counters
 
@@ -391,7 +391,7 @@ void TenuredGeneration::update_gc_stats(Generation* current_generation,
     // also possible that no promotion was needed.
     if (used_before_gc >= _used_at_prologue) {
       size_t promoted_in_bytes = used_before_gc - _used_at_prologue;
-      gc_stats()->avg_promoted()->sample(promoted_in_bytes);
+      _avg_promoted->sample(promoted_in_bytes);
     }
   }
 }
@@ -405,7 +405,7 @@ void TenuredGeneration::update_counters() {
 
 bool TenuredGeneration::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const {
   size_t available = max_contiguous_available();
-  size_t av_promo  = (size_t)gc_stats()->avg_promoted()->padded_average();
+  size_t av_promo  = (size_t)_avg_promoted->padded_average();
   bool   res = (available >= av_promo) || (available >= max_promotion_in_bytes);
 
   log_trace(gc)("Tenured: promo attempt is%s safe: available(" SIZE_FORMAT ") %s av_promo(" SIZE_FORMAT "), max_promo(" SIZE_FORMAT ")",
@@ -436,10 +436,6 @@ oop TenuredGeneration::promote(oop obj, size_t obj_size) {
   // Copy to new location.
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), result, obj_size);
   oop new_obj = cast_to_oop<HeapWord*>(result);
-
-  // Transform object if it is a stack chunk.
-  ContinuationGCSupport::transform_stack_chunk(new_obj);
-
   return new_obj;
 }
 
@@ -449,15 +445,15 @@ void TenuredGeneration::collect(bool   full,
                                 bool   is_tlab) {
   SerialHeap* gch = SerialHeap::heap();
 
-  STWGCTimer* gc_timer = GenMarkSweep::gc_timer();
+  STWGCTimer* gc_timer = SerialFullGC::gc_timer();
   gc_timer->register_gc_start();
 
-  SerialOldTracer* gc_tracer = GenMarkSweep::gc_tracer();
+  SerialOldTracer* gc_tracer = SerialFullGC::gc_tracer();
   gc_tracer->report_gc_start(gch->gc_cause(), gc_timer->gc_start());
 
   gch->pre_full_gc_dump(gc_timer);
 
-  GenMarkSweep::invoke_at_safepoint(clear_all_soft_refs);
+  SerialFullGC::invoke_at_safepoint(clear_all_soft_refs);
 
   gch->post_full_gc_dump(gc_timer);
 
@@ -497,11 +493,11 @@ void TenuredGeneration::complete_loaded_archive_space(MemRegion archive_space) {
 }
 
 void TenuredGeneration::save_marks() {
-  _the_space->set_saved_mark();
+  set_saved_mark_word();
 }
 
 bool TenuredGeneration::no_allocs_since_save_marks() {
-  return _the_space->saved_mark_at_top();
+  return saved_mark_at_top();
 }
 
 void TenuredGeneration::gc_epilogue() {

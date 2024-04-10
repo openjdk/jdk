@@ -139,6 +139,9 @@ class DefNewGeneration: public Generation {
   ContiguousSpace* _from_space;
   ContiguousSpace* _to_space;
 
+  // Saved mark word, for to-space
+  HeapWord* _saved_mark_word;
+
   STWGCTimer* _gc_timer;
 
   DefNewTracer* _gc_tracer;
@@ -167,6 +170,10 @@ class DefNewGeneration: public Generation {
   ContiguousSpace* eden() const           { return _eden_space; }
   ContiguousSpace* from() const           { return _from_space; }
   ContiguousSpace* to()   const           { return _to_space;   }
+
+  HeapWord* saved_mark_word()   const    { return _saved_mark_word; }
+  void set_saved_mark_word()             { _saved_mark_word = to()->top(); }
+  bool saved_mark_at_top()               { return _saved_mark_word == _to_space->top(); }
 
   // Space enquiries
   size_t capacity() const;
@@ -201,9 +208,6 @@ class DefNewGeneration: public Generation {
   // Return true if the expansion was successful.
   bool expand(size_t bytes);
 
-  // DefNewGeneration cannot currently expand except at
-  // a GC.
-  virtual bool is_maximal_no_gc() const { return true; }
 
   // Iteration
   void object_iterate(ObjectClosure* blk);
@@ -237,7 +241,7 @@ class DefNewGeneration: public Generation {
   void gc_epilogue(bool full);
 
   // Save the tops for eden, from, and to
-  virtual void record_spaces_top();
+  void record_spaces_top();
 
   // Accessing marks
   void save_marks();

@@ -470,7 +470,7 @@ void Exceptions::count_out_of_memory_exceptions(Handle exception) {
   }
 }
 
-void print_oom_count(outputStream* st, const char *err, int count) {
+static void print_oom_count(outputStream* st, const char *err, int count) {
   if (count > 0) {
     st->print_cr("OutOfMemoryError %s=%d", err, count);
   }

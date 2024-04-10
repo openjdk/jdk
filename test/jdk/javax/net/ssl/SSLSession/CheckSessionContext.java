@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,15 +36,11 @@
  */
 
 import javax.net.ssl.SSLSession;
+import java.util.HexFormat;
 
 public class CheckSessionContext {
 
-    static void toHex(byte[] id) {
-        for (byte b : id) {
-            System.out.printf("%02X ", b);
-        }
-        System.out.println();
-    }
+    static HexFormat hex = HexFormat.of();
 
     public static void main(String[] args) throws Exception {
         TLSBase.Server server = new TLSBase.Server();
@@ -52,20 +48,18 @@ public class CheckSessionContext {
         // Initial client session
         TLSBase.Client client1 = new TLSBase.Client();
         if (server.getSession(client1).getSessionContext() == null) {
-            throw new Exception("Context was null");
+            throw new Exception("Context was null.  Handshake failure.");
         } else {
             System.out.println("Context was found");
         }
         SSLSession ss = server.getSession(client1);
         System.out.println(ss);
         byte[] id = ss.getId();
-        System.out.print("id = ");
-        toHex(id);
+        System.out.println("id = " + hex.formatHex(id));
         System.out.println("ss.getSessionContext().getSession(id) = " + ss.getSessionContext().getSession(id));
         if (ss.getSessionContext().getSession(id) != null) {
             id = ss.getSessionContext().getSession(id).getId();
-            System.out.print("id = ");
-            toHex(id);
+            System.out.println("id = " + hex.formatHex(id));
         }
         server.close(client1);
         client1.close();

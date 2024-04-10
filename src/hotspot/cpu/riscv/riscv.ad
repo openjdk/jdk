@@ -1808,14 +1808,13 @@ void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
   assert_cond(st != nullptr);
   st->print_cr("# MachUEPNode");
   if (UseCompressedClassPointers) {
-    st->print_cr("\tlwu t0, [j_rarg0, oopDesc::klass_offset_in_bytes()]\t# compressed klass");
-    if (CompressedKlassPointers::shift() != 0) {
-      st->print_cr("\tdecode_klass_not_null t0, t0");
-    }
+    st->print_cr("\tlwu t0, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tlwu t2, [t1      + CompiledICData::speculated_klass_offset()]\t# compressed klass");
   } else {
-    st->print_cr("\tld t0, [j_rarg0, oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tld t0, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tld t2, [t1      + CompiledICData::speculated_klass_offset()]\t# compressed klass");
   }
-  st->print_cr("\tbeq t0, t1, ic_hit");
+  st->print_cr("\tbeq t0, t2, ic_hit");
   st->print_cr("\tj, SharedRuntime::_ic_miss_stub\t # Inline cache check");
   st->print_cr("\tic_hit:");
 }
@@ -1825,15 +1824,11 @@ void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 {
   // This is the unverified entry point.
   C2_MacroAssembler _masm(&cbuf);
+  __ ic_check(CodeEntryAlignment);
 
-  Label skip;
-  __ cmp_klass(j_rarg0, t1, t0, t2 /* call-clobbered t2 as a tmp */, skip);
-  __ far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
-  __ bind(skip);
-
-  // These NOPs are critical so that verified entry point is properly
-  // 4 bytes aligned for patching by NativeJump::patch_verified_entry()
-  __ align(NativeInstruction::instruction_size);
+  // Verified entry point must be properly 4 bytes aligned for patching by NativeJump::patch_verified_entry().
+  // ic_check() aligns to CodeEntryAlignment >= InteriorEntryAlignment(min 16) > NativeInstruction::instruction_size(4).
+  assert(((__ offset()) % CodeEntryAlignment) == 0, "Misaligned verified entry point");
 }
 
 uint MachUEPNode::size(PhaseRegAlloc* ra_) const
@@ -2402,7 +2397,7 @@ encode %{
         cbuf.shared_stub_to_interp_for(_method, call - cbuf.insts_begin());
       } else {
         // Emit stub for static call
-        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, call);
+        address stub = CompiledDirectCall::emit_to_interp_stub(cbuf, call);
         if (stub == nullptr) {
           ciEnv::current()->record_failure("CodeCache is full");
           return;
@@ -2971,19 +2966,6 @@ operand immL_M1()
 %}
 
 
-// 32 bit offset of pc in thread anchor
-
-operand immL_pc_off()
-%{
-  predicate(n->get_long() == in_bytes(JavaThread::frame_anchor_offset()) +
-                             in_bytes(JavaFrameAnchor::last_Java_pc_offset()));
-  match(ConL);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // 64 bit integer valid for add immediate
 operand immLAdd()
 %{
@@ -3191,17 +3173,6 @@ operand iRegLNoSp()
   interface(REG_INTER);
 %}
 
-// Long 64 bit Register R28 only
-operand iRegL_R28()
-%{
-  constraint(ALLOC_IN_RC(r28_reg));
-  match(RegL);
-  match(iRegLNoSp);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 // Long 64 bit Register R29 only
 operand iRegL_R29()
 %{
@@ -3307,17 +3278,6 @@ operand iRegP_R14()
 operand iRegP_R15()
 %{
   constraint(ALLOC_IN_RC(r15_reg));
-  match(RegP);
-  // match(iRegP);
-  match(iRegPNoSp);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand iRegP_R16()
-%{
-  constraint(ALLOC_IN_RC(r16_reg));
   match(RegP);
   // match(iRegP);
   match(iRegPNoSp);
@@ -3698,22 +3658,6 @@ operand indOffLN(iRegN reg, immLOffset off)
     disp($off);
   %}
 %}
-
-// RISCV opto stubs need to write to the pc slot in the thread anchor
-operand thread_anchor_pc(javaThread_RegP reg, immL_pc_off off)
-%{
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP reg off);
-  op_cost(0);
-  format %{ "[$reg, $off]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index(0xffffffff);
-    scale(0x0);
-    disp($off);
-  %}
-%}
-
 
 //----------Special Memory Operands--------------------------------------------
 // Stack Slot Operand - This operand is used for loading and storing temporary
@@ -10381,35 +10325,33 @@ instruct string_equalsL(iRegP_R11 str1, iRegP_R13 str2, iRegI_R14 cnt,
 %}
 
 instruct array_equalsB(iRegP_R11 ary1, iRegP_R12 ary2, iRegI_R10 result,
-                       iRegP_R13 tmp1, iRegP_R14 tmp2, iRegP_R15 tmp3,
-                       iRegP_R16 tmp4, iRegP_R28 tmp5, rFlagsReg cr)
+                       iRegP_R13 tmp1, iRegP_R14 tmp2, iRegP_R15 tmp3)
 %{
   predicate(!UseRVV && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (AryEq ary1 ary2));
-  effect(USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL tmp5, KILL cr);
+  effect(USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
-  format %{ "Array Equals $ary1, ary2 -> $result\t#@array_equalsB // KILL $tmp5" %}
+  format %{ "Array Equals $ary1, $ary2 -> $result\t#@array_equalsB // KILL all" %}
   ins_encode %{
     __ arrays_equals($ary1$$Register, $ary2$$Register,
-                     $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register,
-                     $result$$Register, $tmp5$$Register, 1);
+                     $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
+                     $result$$Register, 1);
   %}
   ins_pipe(pipe_class_memory);
 %}
 
 instruct array_equalsC(iRegP_R11 ary1, iRegP_R12 ary2, iRegI_R10 result,
-                       iRegP_R13 tmp1, iRegP_R14 tmp2, iRegP_R15 tmp3,
-                       iRegP_R16 tmp4, iRegP_R28 tmp5, rFlagsReg cr)
+                       iRegP_R13 tmp1, iRegP_R14 tmp2, iRegP_R15 tmp3)
 %{
   predicate(!UseRVV && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (AryEq ary1 ary2));
-  effect(USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL tmp5, KILL cr);
+  effect(USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
-  format %{ "Array Equals $ary1, ary2 -> $result\t#@array_equalsC // KILL $tmp5" %}
+  format %{ "Array Equals $ary1, $ary2 -> $result\t#@array_equalsC // KILL all" %}
   ins_encode %{
     __ arrays_equals($ary1$$Register, $ary2$$Register,
-                     $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register,
-                     $result$$Register, $tmp5$$Register, 2);
+                     $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
+                     $result$$Register, 2);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -10474,10 +10416,11 @@ instruct tlsLoadP(javaThread_RegP dst)
 // using t1 as the 'flag' register to bridge the BoolNode producers and consumers
 instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
 %{
+  predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set cr (FastLock object box));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
-  ins_cost(LOAD_COST * 2 + STORE_COST * 3 + ALU_COST * 6 + BRANCH_COST * 3);
+  ins_cost(10 * DEFAULT_COST);
   format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3, #@cmpFastLock" %}
 
   ins_encode %{
@@ -10490,14 +10433,47 @@ instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iReg
 // using t1 as the 'flag' register to bridge the BoolNode producers and consumers
 instruct cmpFastUnlock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2)
 %{
+  predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set cr (FastUnlock object box));
   effect(TEMP tmp1, TEMP tmp2);
 
-  ins_cost(LOAD_COST * 2 + STORE_COST + ALU_COST * 2 + BRANCH_COST * 4);
+  ins_cost(10 * DEFAULT_COST);
   format %{ "fastunlock $object,$box\t! kills $tmp1, $tmp2, #@cmpFastUnlock" %}
 
   ins_encode %{
     __ fast_unlock($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
+  %}
+
+  ins_pipe(pipe_serial);
+%}
+
+instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP_R10 box, iRegPNoSp tmp1, iRegPNoSp tmp2)
+%{
+  predicate(LockingMode == LM_LIGHTWEIGHT);
+  match(Set cr (FastLock object box));
+  effect(TEMP tmp1, TEMP tmp2, USE_KILL box);
+
+  ins_cost(10 * DEFAULT_COST);
+  format %{ "fastlock $object,$box\t! kills $box,$tmp1,$tmp2 #@cmpFastLockLightweight" %}
+
+  ins_encode %{
+    __ fast_lock_lightweight($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
+  %}
+
+  ins_pipe(pipe_serial);
+%}
+
+instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP_R10 box, iRegPNoSp tmp1, iRegPNoSp tmp2)
+%{
+  predicate(LockingMode == LM_LIGHTWEIGHT);
+  match(Set cr (FastUnlock object box));
+  effect(TEMP tmp1, TEMP tmp2, USE_KILL box);
+
+  ins_cost(10 * DEFAULT_COST);
+  format %{ "fastunlock $object,$box\t! kills $box,$tmp1,$tmp2, #@cmpFastUnlockLightweight" %}
+
+  ins_encode %{
+    __ fast_unlock_lightweight($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
   %}
 
   ins_pipe(pipe_serial);
