@@ -110,6 +110,11 @@ public class LazyPropertiesBenchmark {
     }
 
     @Benchmark
+    public void mapRaw(Blackhole bh) {
+        bh.consume(MAP.get(KEY));
+    }
+
+    @Benchmark
     public void propRaw(Blackhole bh) {
         bh.consume(PROPERTIES.getProperty(KEY));
     }
