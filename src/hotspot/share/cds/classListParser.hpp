@@ -97,7 +97,6 @@ private:
   char*               _line;                  // The buffer that holds the current line. Some characters in
                                               // the buffer may be overwritten by '\0' during parsing.
   int                 _line_len;              // Original length of the input line.
-  int                 _line_no;               // Line number for current line being parsed
   const char*         _class_name;
   GrowableArray<const char*>* _indy_items;    // items related to invoke dynamic for archiving lambda proxy classes
   int                 _id;

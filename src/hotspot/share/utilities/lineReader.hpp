@@ -33,14 +33,16 @@
 //
 // MAX_LEN is currently 4M. This should be enough for any practical use
 // of text-based input files for HotSpot. Don't use LineReader if it's
-// possible for valid lines to be longer than this limit.
+// possible for valid lines to be longer than this limit, as such lines
+// would be broken up into chunks.
 class LineReader : public StackObj {
   char* _buffer;       // The buffer that holds the value returned by read_line().
   int   _buffer_len;   // Max characters that can be stored in _line, including the trailing \0;
-  FILE* _file;
+  int   _line_num;
   bool  _is_oom;
+  FILE* _file;
 public:
-  static const int MAX_LEN = 4 * 1024 * 1024;
+  static const int MAX_LEN = 4 * M;
   LineReader(FILE* file);
   LineReader();
   void init(FILE* file);
@@ -51,6 +53,12 @@ public:
     return _is_oom;
   }
 
+  // The "line number" of the previous (non-null) line returned by read_line().
+  // Per Unix convention, the first line is numbered as 1.
+  int line_num() {
+    return _line_num;
+  }
+
   // Return one line from _file, as a 0-terminated string. The length and contents of this
   // string are the same as those returned by a call to fgets() with a buffer that's
   // MAX_LEN bytes long. (Note: if the file contains a line longer than MAX_LEN-1 chars,
@@ -58,7 +66,7 @@ public:
   //
   // When successful, a non-null value is returned. The caller is free to read or modify this
   // string (up to the terminating \0 character) until the next call to read_line(), or until the
-  // LineReader is destructed.
+  // LineReader is destroyed.
   //
   // nullptr is returned if:
   //   1. os::malloc/os::realloc failed to allocate enough space to accommodate the input line.

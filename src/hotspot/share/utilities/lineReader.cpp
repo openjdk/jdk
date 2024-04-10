@@ -26,17 +26,12 @@
 #include "runtime/os.hpp"
 #include "utilities/lineReader.hpp"
 
-LineReader::LineReader() {
-  _file = nullptr;
-  _is_oom = false;
-  _buffer = nullptr;
-  _buffer_len = 0;
-}
+LineReader::LineReader()
+  : _buffer(nullptr), _buffer_len(0), _line_num(0), _is_oom(false), _file(nullptr) {}
 
-LineReader::LineReader(FILE* file) {
-  _is_oom = false;
-  _buffer = nullptr;
-  _buffer_len = 0;
+LineReader::LineReader(FILE* file)
+  : _buffer(nullptr), _buffer_len(0), _line_num(0), _is_oom(false)
+{
   init(file);
 }
 
@@ -76,6 +71,7 @@ char* LineReader::read_line() {
       } else {
         // We have read something in previous loop iteration(s). Return that.
         // The next call to read_line() will return nullptr to indicate EOF.
+        ++ _line_num;
         return _buffer;
       }
     }
@@ -87,7 +83,7 @@ char* LineReader::read_line() {
 
     // _buffer_len will stop at MAX_LEN, so we will never be able to read more than
     // MAX_LEN chars for a single input line.
-    assert(line_len >= 0 && new_len >= 0 && (line_len + new_len) >= 0, "no int overflow");
+    assert(line_len >= 0 && new_len >= 0 && line_len <= INT_MAX - new_len, "no int overflow");
 
     line_len += new_len; // We have read line_len chars so far.
 
@@ -96,6 +92,7 @@ char* LineReader::read_line() {
 
     if (_buffer[line_len - 1] == '\n' || feof(_file)) {
       // We have read an entire line, or reached EOF
+      ++ _line_num;
       return _buffer;
     }
 
@@ -105,10 +102,11 @@ char* LineReader::read_line() {
         // Cannot expand anymore. Return the first MAX_LEN-1 bytes of input.
         // The behavior is exactly the same as if we had called fgets() with a
         // buffer whose size is MAX_LEN.
+        ++ _line_num;
         return _buffer;
       }
       int new_len = _buffer_len * 2;
-      if (new_len < _buffer_len) { // overflows int
+      if (new_len > MAX_LEN) {
         new_len = MAX_LEN;
       }
       assert(new_len > _buffer_len, "must be");

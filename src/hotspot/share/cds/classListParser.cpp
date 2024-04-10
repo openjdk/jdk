@@ -75,7 +75,6 @@ ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) :
     vm_exit_during_initialization("Loading classlist failed", errmsg);
   }
   _line_reader.init(_file);
-  _line_no = 0;
   _token = _line = nullptr;
   _interfaces = new (mtClass) GrowableArray<int>(10, mtClass);
   _indy_items = new (mtClass) GrowableArray<const char*>(9, mtClass);
@@ -173,14 +172,12 @@ bool ClassListParser::parse_one_line() {
     _line = _line_reader.read_line();
     if (_line == nullptr) {
       if (_line_reader.is_oom()) {
-        // Don't try to print the input line that we already know is too long.
         _token = nullptr;
         _line_len = 0;
-        error("Input line too long"); // will exit JVM
+        error("Out of memory"); // will exit JVM
       }
       return false;
     }
-    ++ _line_no;
     if (*_line == '#') { // comment
       continue;
     }
@@ -293,7 +290,7 @@ int ClassListParser::split_at_tag_from_line() {
   _token = _line;
   char* ptr;
   if ((ptr = strchr(_line, ' ')) == nullptr) {
-    error("Too few items following the @ tag \"%s\" line #%d", _line, _line_no);
+    error("Too few items following the @ tag \"%s\" line #%d", _line, _line_reader.line_num());
     return 0;
   }
   *ptr++ = '\0';
@@ -311,7 +308,7 @@ bool ClassListParser::parse_at_tags() {
   if (strcmp(_token, LAMBDA_PROXY_TAG) == 0) {
     split_tokens_by_whitespace(offset);
     if (_indy_items->length() < 2) {
-      error("Line with @ tag has too few items \"%s\" line #%d", _token, _line_no);
+      error("Line with @ tag has too few items \"%s\" line #%d", _token, _line_reader.line_num());
       return false;
     }
     // set the class name
@@ -322,7 +319,7 @@ bool ClassListParser::parse_at_tags() {
     _lambda_form_line = true;
     return true;
   } else {
-    error("Invalid @ tag at the beginning of line \"%s\" line #%d", _token, _line_no);
+    error("Invalid @ tag at the beginning of line \"%s\" line #%d", _token, _line_reader.line_num());
     return false;
   }
 }
@@ -431,7 +428,7 @@ void ClassListParser::error(const char* msg, ...) {
 
   jio_fprintf(defaultStream::error_stream(),
               "An error has occurred while processing class list file %s %d:%d.\n",
-              _classlist_file, _line_no, (error_index + 1));
+              _classlist_file, _line_reader.line_num(), (error_index + 1));
   jio_vfprintf(defaultStream::error_stream(), msg, ap);
 
   if (_line_len <= 0) {
@@ -459,18 +456,19 @@ void ClassListParser::error(const char* msg, ...) {
 
 void ClassListParser::check_class_name(const char* class_name) {
   const char* err = nullptr;
-  if (strlen(class_name) > (size_t)Symbol::max_length()) {
+  size_t len = strlen(class_name);
+  if (len > (size_t)Symbol::max_length()) {
     err = "class name too long";
   } else {
-    int len = (int)strlen(class_name);
-    if (!UTF8::is_legal_utf8((const unsigned char*)class_name, len, /*version_leq_47*/false)) {
+    assert(Symbol::max_length() < INT_MAX && len < INT_MAX, "must be");
+    if (!UTF8::is_legal_utf8((const unsigned char*)class_name, (int)len, /*version_leq_47*/false)) {
       err = "class name is not valid UTF8";
     }
   }
   if (err != nullptr) {
     jio_fprintf(defaultStream::error_stream(),
               "An error has occurred while processing class list file %s:%d %s\n",
-              _classlist_file, _line_no, err);
+              _classlist_file, _line_reader.line_num(), err);
     vm_exit_during_initialization("class list format error.", nullptr);
   }
 }

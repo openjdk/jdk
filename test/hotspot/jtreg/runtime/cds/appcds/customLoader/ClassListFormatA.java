@@ -136,12 +136,13 @@ public class ClassListFormatA extends ClassListFormatBase {
             String tooLongName = sb.toString() + sb.toString();
             String classList = "TooLongLine.classlist";
             try (FileWriter fw = new FileWriter(classList)) {
+                fw.write("java/lang/Object\n");
                 fw.write(tooLongName + "\n");
             }
             CDSOptions opts = (new CDSOptions())
                 .addPrefix("-XX:ExtraSharedClassListFile=" + classList, "-Xlog:cds");
             CDSTestUtils.createArchive(opts)
-                .shouldContain("class name too long")
+                .shouldContain(classList + ":2 class name too long") // test line number as well.
                 .shouldHaveExitValue(1);
         }
 
@@ -166,7 +167,7 @@ public class ClassListFormatA extends ClassListFormatBase {
             CDSOptions opts = (new CDSOptions())
                 .addPrefix("-XX:ExtraSharedClassListFile=" + classList, "-Xlog:cds");
             CDSTestUtils.createArchive(opts)
-                .shouldContain("class name is not valid UTF8")
+                .shouldContain(classList + ":1 class name is not valid UTF8") // test line number as well.
                 .shouldHaveExitValue(1);
         }
     }

@@ -78,6 +78,11 @@ TEST_VM(LineReader, increasingly_longer_lines) {
     // Each line should have a trailing \n
     char last_char = line[line_len - 1];
     EXPECT_TRUE(last_char == '\n') << " unexpected character " << last_char;
+
+    // line_num() should be numbered from 1
+    EXPECT_TRUE(lr.line_num() == i + 1)
+      << " line_num() should be " << (i + 1)
+      << " but is " << lr.line_num();
   }
   fclose(fp);
 }
