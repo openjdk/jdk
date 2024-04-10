@@ -55,45 +55,65 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
 
 /**
  * {@code DecimalFormat} is a concrete subclass of
- * {@code NumberFormat} that formats decimal numbers. It has a variety of
- * features designed to make it possible to parse and format numbers in any
- * locale, including support for Western, Arabic, and Indic digits.  It also
- * supports different kinds of numbers, including integers (123), fixed-point
+ * {@code NumberFormat} that formats decimal numbers in a {@link Locale localized} manner.
+ * It has a variety of features designed to make it possible to parse and format
+ * numbers in any locale, including support for Western, Arabic, and Indic digits.
+ * It also supports different kinds of numbers, including integers (123), fixed-point
  * numbers (123.4), scientific notation (1.23E4), percentages (12%), and
- * currency amounts ($123).  All of these can be localized.
+ * currency amounts ($123).
  *
- * <p>To obtain a {@code NumberFormat} for a specific locale, including the
- * default locale, call one of {@code NumberFormat}'s factory methods, such
- * as {@code getInstance()}.  In general, do not call the
- * {@code DecimalFormat} constructors directly, since the
- * {@code NumberFormat} factory methods may return subclasses other than
- * {@code DecimalFormat}. If you need to customize the format object, do
- * something like this:
+ * <h2>Getting a DecimalFormat</h2>
  *
- * <blockquote>{@snippet lang=java :
- * NumberFormat numFormat = NumberFormat.getInstance(loc);
- * if (numFormat instanceof DecimalFormat decFormat) {
- *     decFormat.setDecimalSeparatorAlwaysShown(true);
+ * To get a {@code DecimalFormat} for the default Locale, use one of the {@code
+ * NumberFormat} static factory methods listed below.
+ * The following formats all provide an example of formatting the {@code Number}
+ * "2000.50" with the {@link java.util.Locale#US US} locale as the default locale.
+ *
+ * <ul>
+ * <li> Use {@link #getInstance()} or {@link #getNumberInstance()} to get
+ * a decimal format. For example, {@code "2,000.5"}.
+ * <li> Use {@link #getIntegerInstance()} to get an integer number format.
+ * For example, {@code "2,000"}.
+ * <li> Use {@link #getCurrencyInstance} to get a currency number format.
+ * For example, {@code "$2,000.50"}.
+ * <li> Use {@link #getPercentInstance} to get a format for displaying percentages.
+ * For example, {@code "200,050%"}.
+ * <li> Use one of the {@code DecimalFormat} constructors to obtain a {@code
+ * DecimalFormat} with further customization.
+ * </ul>
+ *
+ * <small>Note: It is recommended to use one of the NumberFormat factory methods
+ * which is tailored to the conventions of the given locale to retrieve a
+ * DecimalFormat.</small>
+ *<p>
+ * Alternatively, if a {@code DecimalFormat} for a different locale is required, use
+ * one of the factory method variants that take {@code locale} as a parameter,
+ * for example, {@link #getIntegerInstance(Locale)}. {@link
+ * NumberFormat#getAvailableLocales()} can be used to determine if the desired
+ * locale is supported.
+ *
+ * <h2>Using DecimalFormat</h2>
+ * The following is an example of formatting and parsing in a customized localized fashion,
+ *
+ * {@snippet lang=java :
+ * DecimalFormat currencyFormat = (DecimalFormat) NumberFormat.getCurrencyInstance(Locale.US);
+ * // The positive prefix is implicitly "$" for a US currency instance
+ * currencyFormat.setPositiveSuffix(" dollars");
+ * currencyFormat.format(100000); // returns "$100,000.00 dollars"
+ * currencyFormat.parse("$100,000.00 dollars"); // returns 100000
  * }
- * }</blockquote>
  *
- * <p>A {@code DecimalFormat} comprises a <em>pattern</em> and a set of
- * <em>symbols</em>.  The pattern may be set directly using
- * {@code applyPattern()}, or indirectly using the API methods.  The
- * symbols are stored in a {@code DecimalFormatSymbols} object.  When using
- * the {@code NumberFormat} factory methods, the pattern and symbols are
- * read from localized {@code ResourceBundle}s.
+ * <h2 id="patterns">DecimalFormat Pattern</h2>
  *
- * <h2 id="patterns">Patterns</h2>
- *
- * Note: For any given {@code DecimalFormat} pattern, if the pattern is not
- * in scientific notation, the maximum number of integer digits will not be
- * derived from the pattern, and instead set to {@link Integer#MAX_VALUE}.
- * Otherwise, if the pattern is in scientific notation, the maximum number of
- * integer digits will be derived from the pattern. This derivation is detailed
- * in the {@link ##scientific_notation Scientific Notation} section. This behavior
- * is the typical end-user desire; {@link #setMaximumIntegerDigits(int)} can be
- * used to manually adjust the maximum integer digits.
+ * A {@code DecimalFormat} comprises a <em>pattern</em> and a set of
+ * <em>symbols</em>. The pattern may be set directly using {@code applyPattern()},
+ * or indirectly using the various API methods. The symbols are stored in a {@code
+ * DecimalFormatSymbols} object. When using the {@code NumberFormat} factory
+ * methods, the pattern and symbols are read from localized {@code ResourceBundle}s,
+ * adhering to the given locale's conventions.
+ * <p><b>For those planning to only use the factory methods, the pattern syntax may
+ * not be relevant. If this is the case, continue reading at the {@link ##formatting Formatting and Parsing}
+ * section.</b>
  *
  * <p> {@code DecimalFormat} patterns have the following syntax:
  * <blockquote><pre>
@@ -134,11 +154,113 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *         0 <i>MinimumExponent<sub>opt</sub></i>
  * </pre></blockquote>
  *
- * <p>A {@code DecimalFormat} pattern contains a positive and negative
+ * <h3><a id="special_pattern_character">Special Pattern Characters</a></h3>
+ *
+ * <p>The special characters in the table below are interpreted syntatically when
+ * used in the DecimalFormat pattern.
+ * They must be quoted, unless noted otherwise, if they are to appear in the
+ * prefix or suffix as literals.
+ *
+ * <p>When calling {@link #applyPattern(String)}, use the default symbols in the
+ * table. When calling {@link #applyLocalizedPattern(String)} use the corresponding
+ * localized symbol.
+ * When {@link #applyLocalizedPattern(String)} is called, the default symbols lose their
+ * syntactical meaning, and vice versa with {@link #applyPattern(String)} with exception
+ * to the non localized symbols.
+ *
+ * <blockquote>
+ * <table class="striped">
+ * <caption style="display:none">Chart showing symbol, location, localized, and meaning.</caption>
+ * <thead>
+ *     <tr>
+ *          <th scope="col" style="text-align:left">Symbol
+ *          <th scope="col" style="text-align:left">Localized Symbol
+ *          <th scope="col" style="text-align:left">Location
+ *          <th scope="col" style="text-align:left;width:50%">Meaning
+ * </thead>
+ * <tbody>
+ *     <tr>
+ *          <th scope="row">{@code 0}
+ *          <td>{@link DecimalFormatSymbols#getZeroDigit()}
+ *          <td>Number
+ *          <td>Digit
+ *     <tr>
+ *          <th scope="row">{@code #}
+ *          <td>{@link DecimalFormatSymbols#getDigit()}
+ *          <td>Number
+ *          <td>Digit, zero shows as absent
+ *     <tr>
+ *          <th scope="row">{@code .}
+ *          <td>{@link DecimalFormatSymbols#getDecimalSeparator()}
+ *          <td>Number
+ *          <td>Decimal separator or monetary decimal separator
+ *     <tr>
+ *          <th scope="row">{@code -}
+ *          <td>{@link DecimalFormatSymbols#getMinusSign()}
+ *          <td>Number
+ *          <td>Minus sign
+ *     <tr>
+ *          <th scope="row">{@code ,}
+ *          <td>{@link DecimalFormatSymbols#getGroupingSeparator()}
+ *          <td>Number
+ *          <td>Grouping separator or monetary grouping separator
+ *     <tr>
+ *          <th scope="row">{@code E}
+ *          <td>{@link DecimalFormatSymbols#getExponentSeparator()}
+ *          <td>Number
+ *          <td>Separates mantissa and exponent in scientific notation. This value
+ *              is case sensistive. <em>Need not be quoted in prefix or suffix.</em>
+ *     <tr>
+ *          <th scope="row">{@code ;}
+ *          <td>{@link DecimalFormatSymbols#getPatternSeparator()}
+ *          <td>Subpattern boundary
+ *          <td>Separates positive and negative subpatterns
+ *     <tr>
+ *          <th scope="row">{@code %}
+ *          <td>{@link DecimalFormatSymbols#getPercent()}
+ *          <td>Prefix or suffix
+ *          <td>Multiply by 100 and show as percentage
+ *     <tr>
+ *          <th scope="row">&permil; ({@code U+2030})
+ *          <td>{@link DecimalFormatSymbols#getPerMill()}
+ *          <td>Prefix or suffix
+ *          <td>Multiply by 1000 and show as per mille value
+ *     <tr>
+ *          <th scope="row">&#164; ({@code U+00A4})
+ *          <td> n/a (not localized)
+ *          <td>Prefix or suffix
+ *          <td>Currency sign, replaced by currency symbol.  If
+ *              doubled, replaced by international currency symbol.
+ *              If present in a pattern, the monetary decimal/grouping separators
+ *              are used instead of the decimal/grouping separators.
+ *     <tr>
+ *          <th scope="row">{@code '}
+ *          <td> n/a (not localized)
+ *          <td>Prefix or suffix
+ *          <td>Used to quote special characters in a prefix or suffix,
+ *              for example, {@code "'#'#"} formats 123 to
+ *              {@code "#123"}.  To create a single quote
+ *              itself, use two in a row: {@code "# o''clock"}.
+ * </tbody>
+ * </table>
+ * </blockquote>
+ *
+ * <h3>Maximum Digits Derivation</h3>
+ * For any given {@code DecimalFormat} pattern, if the pattern is not
+ * in scientific notation, the maximum number of integer digits will not be
+ * derived from the pattern, and instead set to {@link Integer#MAX_VALUE}.
+ * Otherwise, if the pattern is in scientific notation, the maximum number of
+ * integer digits will be derived from the pattern. This derivation is detailed
+ * in the {@link ##scientific_notation Scientific Notation} section. This behavior
+ * is the typical end-user desire; {@link #setMaximumIntegerDigits(int)} can be
+ * used to manually adjust the maximum integer digits.
+ *
+ * <h3>Negative Subpatterns</h3>
+ * A {@code DecimalFormat} pattern contains a positive and negative
  * subpattern, for example, {@code "#,##0.00;(#,##0.00)"}.  Each
  * subpattern has a prefix, numeric part, and suffix. The negative subpattern
  * is optional; if absent, then the positive subpattern prefixed with the
- * minus sign ({@code '-' U+002D HYPHEN-MINUS}) is used as the
+ * minus sign ({@code '-'}) is used as the
  * negative subpattern. That is, {@code "0.00"} alone is equivalent to
  * {@code "0.00;-0.00"}.  If there is an explicit negative subpattern, it
  * serves only to specify the negative prefix and suffix; the number of digits,
@@ -157,104 +279,14 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * specified.)  Another example is that the decimal separator and grouping
  * separator should be distinct characters, or parsing will be impossible.
  *
+ * <h3>Grouping Separator</h3>
  * <p>The grouping separator is commonly used for thousands, but in some
- * countries it separates ten-thousands. The grouping size is a constant number
+ * locales it separates ten-thousands. The grouping size is a constant number
  * of digits between the grouping characters, such as 3 for 100,000,000 or 4 for
- * 1,0000,0000.  If you supply a pattern with multiple grouping characters, the
+ * 1,0000,0000. If you supply a pattern with multiple grouping characters, the
  * interval between the last one and the end of the integer is the one that is
- * used. So {@code "#,##,###,####"} == {@code "######,####"} ==
+ * used. For example, {@code "#,##,###,####"} == {@code "######,####"} ==
  * {@code "##,####,####"}.
- *
- * <h3><a id="special_pattern_character">Special Pattern Characters</a></h3>
- *
- * <p>Many characters in a pattern are taken literally; they are matched during
- * parsing and output unchanged during formatting.  Special characters, on the
- * other hand, stand for other characters, strings, or classes of characters.
- * They must be quoted, unless noted otherwise, if they are to appear in the
- * prefix or suffix as literals.
- *
- * <p>The characters listed here are used in non-localized patterns.  Localized
- * patterns use the corresponding characters taken from this formatter's
- * {@code DecimalFormatSymbols} object instead, and these characters lose
- * their special status.  Two exceptions are the currency sign and quote, which
- * are not localized.
- *
- * <blockquote>
- * <table class="striped">
- * <caption style="display:none">Chart showing symbol, location, localized, and meaning.</caption>
- * <thead>
- *     <tr>
- *          <th scope="col" style="text-align:left">Symbol
- *          <th scope="col" style="text-align:left">Location
- *          <th scope="col" style="text-align:left">Localized?
- *          <th scope="col" style="text-align:left">Meaning
- * </thead>
- * <tbody>
- *     <tr style="vertical-align:top">
- *          <th scope="row">{@code 0}
- *          <td>Number
- *          <td>Yes
- *          <td>Digit
- *     <tr style="vertical-align: top">
- *          <th scope="row">{@code #}
- *          <td>Number
- *          <td>Yes
- *          <td>Digit, zero shows as absent
- *     <tr style="vertical-align:top">
- *          <th scope="row">{@code .}
- *          <td>Number
- *          <td>Yes
- *          <td>Decimal separator or monetary decimal separator
- *     <tr style="vertical-align: top">
- *          <th scope="row">{@code -}
- *          <td>Number
- *          <td>Yes
- *          <td>Minus sign
- *     <tr style="vertical-align:top">
- *          <th scope="row">{@code ,}
- *          <td>Number
- *          <td>Yes
- *          <td>Grouping separator or monetary grouping separator
- *     <tr style="vertical-align: top">
- *          <th scope="row">{@code E}
- *          <td>Number
- *          <td>Yes
- *          <td>Separates mantissa and exponent in scientific notation.
- *              <em>Need not be quoted in prefix or suffix.</em>
- *     <tr style="vertical-align:top">
- *          <th scope="row">{@code ;}
- *          <td>Subpattern boundary
- *          <td>Yes
- *          <td>Separates positive and negative subpatterns
- *     <tr style="vertical-align: top">
- *          <th scope="row">{@code %}
- *          <td>Prefix or suffix
- *          <td>Yes
- *          <td>Multiply by 100 and show as percentage
- *     <tr style="vertical-align:top">
- *          <th scope="row">{@code U+2030}
- *          <td>Prefix or suffix
- *          <td>Yes
- *          <td>Multiply by 1000 and show as per mille value
- *     <tr style="vertical-align: top">
- *          <th scope="row">&#164; ({@code U+00A4})
- *          <td>Prefix or suffix
- *          <td>No
- *          <td>Currency sign, replaced by currency symbol.  If
- *              doubled, replaced by international currency symbol.
- *              If present in a pattern, the monetary decimal/grouping separators
- *              are used instead of the decimal/grouping separators.
- *     <tr style="vertical-align:top">
- *          <th scope="row">{@code '}
- *          <td>Prefix or suffix
- *          <td>No
- *          <td>Used to quote special characters in a prefix or suffix,
- *              for example, {@code "'#'#"} formats 123 to
- *              {@code "#123"}.  To create a single quote
- *              itself, use two in a row: {@code "# o''clock"}.
- * </tbody>
- * </table>
- * </blockquote>
  *
  * <h3 id="scientific_notation">Scientific Notation</h3>
  *
@@ -338,22 +370,22 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <li>Exponential patterns may not contain grouping separators.
  * </ul>
  *
- * <h3>Rounding</h3>
+ * <h2 id="formatting">Formatting and Parsing</h2>
+ * <h3 id="rounding">Rounding</h3>
  *
- * {@code DecimalFormat} provides rounding modes defined in
- * {@link java.math.RoundingMode} for formatting.  By default, it uses
+ * When formatting, {@code DecimalFormat} can adjust its rounding using {@link
+ * #setRoundingMode(RoundingMode)}. By default, it uses
  * {@link java.math.RoundingMode#HALF_EVEN RoundingMode.HALF_EVEN}.
  *
  * <h3>Digits</h3>
  *
- * For formatting, {@code DecimalFormat} uses the ten consecutive
+ * When formatting, {@code DecimalFormat} uses the ten consecutive
  * characters starting with the localized zero digit defined in the
- * {@code DecimalFormatSymbols} object as digits. For parsing, these
- * digits as well as all Unicode decimal digits, as defined by
- * {@link Character#digit Character.digit}, are recognized.
+ * {@code DecimalFormatSymbols} object as digits.
+ * <p>When parsing, these digits as well as all Unicode decimal digits, as
+ * defined by {@link Character#digit Character.digit}, are recognized.
  *
  * <h3 id="digit_limits"> Integer and Fraction Digit Limits </h3>
- *
  * @implSpec
  * When formatting a {@code Number} other than {@code BigInteger} and
  * {@code BigDecimal}, {@code 309} is used as the upper limit for integer digits,
@@ -361,29 +393,29 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * one of the {@code DecimalFormat} getter methods, for example, {@link #getMinimumFractionDigits()}
  * returns a numerically greater value.
  *
- * <h4>Special Values</h4>
+ * <h3>Special Values</h3>
+ * <ul>
+ * <li><p><b>Not a Number</b> ({@code NaN}) is successfully formatted as a string,
+ * which is typically given as "NaN". This string is determined by {@link
+ * DecimalFormatSymbols#getNaN()}. This is the only value for which the prefixes
+ * and suffixes are not attached.
  *
- * <p>Not a Number({@code NaN}) is formatted as a string, which typically has a
- * single character {@code U+FFFD}.  This string is determined by the
- * {@code DecimalFormatSymbols} object.  This is the only value for which
- * the prefixes and suffixes are not used.
+ * <li><p><b>Infinity</b> is formatted as a string, which is typically given as
+ * "&#8734;" ({@code U+221E}), with the positive or negative prefixes and suffixes
+ * attached. This string is determined by {@link DecimalFormatSymbols#getInfinity()}.
  *
- * <p>Infinity is formatted as a string, which typically has a single character
- * {@code U+221E}, with the positive or negative prefixes and suffixes
- * applied.  The infinity string is determined by the
- * {@code DecimalFormatSymbols} object.
- *
- * <p>Negative zero ({@code "-0"}) parses to
+ * <li><p><b>Negative zero</b> ({@code "-0"}) parses to
  * <ul>
  * <li>{@code BigDecimal(0)} if {@code isParseBigDecimal()} is
- * true,
+ * true
  * <li>{@code Long(0)} if {@code isParseBigDecimal()} is false
- *     and {@code isParseIntegerOnly()} is true,
+ *     and {@code isParseIntegerOnly()} is true
  * <li>{@code Double(-0.0)} if both {@code isParseBigDecimal()}
- * and {@code isParseIntegerOnly()} are false.
+ * and {@code isParseIntegerOnly()} are false
+ * </ul>
  * </ul>
  *
- * <h3><a id="synchronization">Synchronization</a></h3>
+ * <h2><a id="synchronization">Synchronization</a></h2>
  *
  * <p>
  * Decimal formats are generally not synchronized.
@@ -391,42 +423,13 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * If multiple threads access a format concurrently, it must be synchronized
  * externally.
  *
- * <h3>Example</h3>
- *
- * <blockquote>{@snippet lang=java :
- * // Print out a number using the localized number, integer, currency,
- * // and percent format for each locale
- * Locale[] locales = NumberFormat.getAvailableLocales();
- * double myNumber = -1234.56;
- * NumberFormat form;
- * for (int j = 0; j < 4; ++j) {
- *     System.out.println("FORMAT");
- *     for (Locale locale : locales) {
- *         if (locale.getCountry().length() == 0) {
- *             continue; // Skip language-only locales
- *         }
- *         System.out.print(locale.getDisplayName());
- *         form = switch (j) {
- *             case 0 -> NumberFormat.getInstance(locale);
- *             case 1 -> NumberFormat.getIntegerInstance(locale);
- *             case 2 -> NumberFormat.getCurrencyInstance(locale);
- *             default -> NumberFormat.getPercentInstance(locale);
- *         };
- *         if (form instanceof DecimalFormat decForm) {
- *             System.out.print(": " + decForm.toPattern());
- *         }
- *         System.out.print(" -> " + form.format(myNumber));
- *         try {
- *             System.out.println(" -> " + form.parse(form.format(myNumber)));
- *         } catch (ParseException e) {}
- *     }
- * }
- * }</blockquote>
- *
+ * @spec         https://www.unicode.org/reports/tr35
+ *               Unicode Locale Data Markup Language (LDML)
  * @see          <a href="http://docs.oracle.com/javase/tutorial/i18n/format/decimalFormat.html">Java Tutorial</a>
  * @see          NumberFormat
  * @see          DecimalFormatSymbols
  * @see          ParsePosition
+ * @see          Locale
  * @author       Mark Davis
  * @author       Alan Liu
  * @since 1.1
