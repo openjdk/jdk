@@ -1898,17 +1898,18 @@ bool ObjectMonitor::TrySpin(JavaThread* current) {
     return short_fixed_spin(current, knob_fixed_spin, false);
   }
 
-  int knob_pre_spin = Knob_PreSpin; // 10 (default), 100, 1000 or 2000
-  if (short_fixed_spin(current, knob_pre_spin, true)) {
-    return true;
-  }
-
   // Admission control - verify preconditions for spinning
   //
   // We always spin a little bit, just to prevent _SpinDuration == 0 from
   // becoming an absorbing state.  Put another way, we spin briefly to
   // sample, just in case the system load, parallelism, contention, or lock
   // modality changed.
+
+  int knob_pre_spin = Knob_PreSpin; // 10 (default), 100, 1000 or 2000
+  if (short_fixed_spin(current, knob_pre_spin, true)) {
+    return true;
+  }
+
   //
   // Consider the following alternative:
   // Periodically set _SpinDuration = _SpinLimit and try a long/full
