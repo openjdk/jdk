@@ -123,10 +123,6 @@ public:
       update_for_block_work(blk_start, blk_end);
     }
   }
-
-  void update_for_block(HeapWord* blk_start, size_t size) {
-    update_for_block(blk_start, blk_start + size);
-  }
 };
 
 #endif // SHARE_GC_G1_G1BLOCKOFFSETTABLE_HPP
