@@ -27,7 +27,6 @@ import com.sun.hotspot.igv.connection.Server;
 import com.sun.hotspot.igv.coordinator.actions.*;
 import com.sun.hotspot.igv.data.ChangedListener;
 import com.sun.hotspot.igv.data.GraphDocument;
-import com.sun.hotspot.igv.data.Group;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.serialization.ParseMonitor;
 import com.sun.hotspot.igv.data.serialization.Parser;
@@ -144,41 +143,26 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     }
 
     /**
-     * Exports the provided graph document to an XML file.
-     * Displays a file chooser dialog to specify the location and name of the XML file.
+     * Stores the provided graph document to the designated file path with associated contexts.
      */
-    public static void exportToXML(GraphDocument doc) {
-        JFileChooser fc = new JFileChooser();
-        fc.setFileFilter(xmlFileFilter);
-        fc.setCurrentDirectory(new File(Settings.get().get(Settings.DIRECTORY, Settings.DIRECTORY_DEFAULT)));
-        if (fc.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
-            String path = fc.getSelectedFile().getAbsolutePath();
-            try {
-                saveGraphDocument(doc, path, false);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    /**
-     * Stores the provided graph document to the designated file path, optionally with associated contexts.
-     */
-    private static void saveGraphDocument(GraphDocument doc, String path, boolean saveContext) throws IOException {
+    private static void saveGraphDocument(GraphDocument doc, String path) throws IOException {
         if (path == null) {
             return;
         }
 
         Set<GraphContext> saveContexts = new HashSet<>();
-        if (saveContext) {
-            WindowManager manager = WindowManager.getDefault();
-            for (Mode mode : manager.getModes()) {
-                List<TopComponent> compList = new ArrayList<>(Arrays.asList(manager.getOpenedTopComponents(mode)));
-                for (TopComponent comp : compList) {
-                    if (comp instanceof EditorTopComponent etc) {
-                        GraphContext graphContext = getGraphContext(etc);
-                        saveContexts.add(graphContext);
+        WindowManager manager = WindowManager.getDefault();
+        for (Mode mode : manager.getModes()) {
+            List<TopComponent> compList = new ArrayList<>(Arrays.asList(manager.getOpenedTopComponents(mode)));
+            for (TopComponent comp : compList) {
+                if (comp instanceof EditorTopComponent etc) {
+                    InputGraph graph = etc.getModel().getGraph();
+                    if (graph.isDiffGraph() && graph.getFirstGraph().getGroup() != graph.getSecondGraph().getGroup()) {
+                        // don't save diff graphs comparing graphs from different groups
+                        continue;
                     }
+                    GraphContext graphContext = getGraphContext(etc);
+                    saveContexts.add(graphContext);
                 }
             }
         }
@@ -215,6 +199,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         this.add(toolbar, BorderLayout.NORTH);
 
         toolbar.add(OpenAction.get(OpenAction.class));
+        toolbar.add(ImportAction.get(ImportAction.class));
         toolbar.addSeparator();
 
         saveAction = SaveAction.get(SaveAction.class);
@@ -225,11 +210,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         toolbar.add(saveAsAction);
 
         toolbar.addSeparator();
-        toolbar.add(ImportAction.get(ImportAction.class));
-        toolbar.add(ExportAction.get(ExportAction.class).createContextAwareInstance(this.getLookup()));
-
-        toolbar.addSeparator();
-
         toolbar.add(RemoveAction.get(RemoveAction.class).createContextAwareInstance(this.getLookup()));
         removeAllAction = RemoveAllAction.get(RemoveAllAction.class);
         removeAllAction.setEnabled(false);
@@ -431,7 +411,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         String filePath = documentPath.toAbsolutePath().toString();
         if (Files.exists(Paths.get(filePath)) && overwriteDialog(documentPath.getFileName().toString())) {
             try {
-                saveGraphDocument(getDocument(), filePath, true);
+                saveGraphDocument(getDocument(), filePath);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -456,7 +436,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             Settings.get().put(Settings.DIRECTORY, path);
             setDocumentPath(path);
             try {
-                saveGraphDocument(getDocument(), path, true);
+                saveGraphDocument(getDocument(), path);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
