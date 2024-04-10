@@ -175,7 +175,7 @@ public:
       error("%s id %d is not yet loaded", which, id);
     }
   }
-  void check_class_name_length(const char* class_name);
+  void check_class_name(const char* class_name);
 
   const char* current_class_name() {
     return _class_name;

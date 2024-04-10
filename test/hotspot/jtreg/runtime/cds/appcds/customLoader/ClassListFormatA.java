@@ -23,6 +23,7 @@
  */
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
@@ -109,7 +110,9 @@ public class ClassListFormatA extends ClassListFormatBase {
                 "CustomLoadee2 id: 5 super: 1 interfaces: 3 4 source: " + customJarPath      // preceding spaces
             ));
 
-        // Tests for corner cases in the C++ class LineReader.
+        // Tests for corner cases in the C++ class LineReader, or invalid UTF8. These can't
+        // be tested with dumpShouldPass/dumpShouldFail as we need to prepare a special class
+        // list file.
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 6500; i++) {
             sb.append("X123456789");
@@ -152,6 +155,19 @@ public class ClassListFormatA extends ClassListFormatBase {
                 .addPrefix("-XX:ExtraSharedClassListFile=" + classList, "-Xlog:cds");
             CDSTestUtils.createArchiveAndCheck(opts)
                 .shouldContain("Preload Warning: Cannot find No/Such/ClassABCD");
+        }
+        {
+            System.out.println("TESTCASE A7.4: invalid UTF8 character");
+            String classList = "BadUTF8.classlist";
+            try (FileOutputStream fos = new FileOutputStream(classList)) {
+                byte chars[] = new byte[] { (byte)0xa0, (byte)0xa1, '\n'};
+                fos.write(chars);
+            }
+            CDSOptions opts = (new CDSOptions())
+                .addPrefix("-XX:ExtraSharedClassListFile=" + classList, "-Xlog:cds");
+            CDSTestUtils.createArchive(opts)
+                .shouldContain("class name is not valid UTF8")
+                .shouldHaveExitValue(1);
         }
     }
 }

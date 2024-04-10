@@ -50,6 +50,7 @@
 #include "runtime/javaCalls.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/utf8.hpp"
 
 volatile Thread* ClassListParser::_parsing_thread = nullptr;
 ClassListParser* ClassListParser::_instance = nullptr;
@@ -114,7 +115,7 @@ int ClassListParser::parse(TRAPS) {
       continue;
     }
 
-    check_class_name_length(_class_name);
+    check_class_name(_class_name);
     TempNewSymbol class_name_symbol = SymbolTable::new_symbol(_class_name);
     if (_indy_items->length() > 0) {
       // The current line is "@lambda-proxy class_name". Load the proxy class.
@@ -456,11 +457,20 @@ void ClassListParser::error(const char* msg, ...) {
   va_end(ap);
 }
 
-void ClassListParser::check_class_name_length(const char* class_name) {
+void ClassListParser::check_class_name(const char* class_name) {
+  const char* err = nullptr;
   if (strlen(class_name) > (size_t)Symbol::max_length()) {
+    err = "class name too long";
+  } else {
+    int len = (int)strlen(class_name);
+    if (!UTF8::is_legal_utf8((const unsigned char*)class_name, len, /*version_leq_47*/false)) {
+      err = "class name is not valid UTF8";
+    }
+  }
+  if (err != nullptr) {
     jio_fprintf(defaultStream::error_stream(),
-              "An error has occurred while processing class list file %s:%d class name too long\n",
-              _classlist_file, _line_no);
+              "An error has occurred while processing class list file %s:%d %s\n",
+              _classlist_file, _line_no, err);
     vm_exit_during_initialization("class list format error.", nullptr);
   }
 }
