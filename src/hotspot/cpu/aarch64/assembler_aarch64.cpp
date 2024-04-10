@@ -523,14 +523,3 @@ static float unpack(unsigned value) {
 address Assembler::locate_next_instruction(address inst) {
   return inst + Assembler::instruction_size;
 }
-
-void Assembler::dmb(barrier imm) {
-  if (imm >= ISHLD && imm <= ISH) {
-    // try to merge with previous dmb
-    CodeBuffer::MergeableInst newdmb(imm);
-    _code_section->outer()->fsm()->transition(&newdmb, this);
-  } else {
-    // HotSpot only use other barrier kind for test
-    _dmb(imm);
-  }
-}

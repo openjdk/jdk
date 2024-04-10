@@ -26,23 +26,6 @@
 #ifndef CPU_AARCH64_CODEBUFFER_AARCH64_HPP
 #define CPU_AARCH64_CODEBUFFER_AARCH64_HPP
 
-// for merging dmb/ld/st
-class MergeableInst : public StackObj {
-private:
-  bool _is_dmb;
-  bool _is_ld;
-  bool _is_st;
-  int  _barrier_kind;
-
-public:
-  MergeableInst(int kind): _is_dmb(true), _is_ld(false), _is_st(false), _barrier_kind(kind) {}
-
-  bool is_dmb ()      const { return _is_dmb; };
-  bool is_ld ()       const { return _is_ld; };
-  bool is_st ()       const { return _is_st; };
-  int barrier_kind()  const { assert(_is_dmb, "must be"); return _barrier_kind; }
-};
-
 /* Finite State Machine for merging instruction */
 class InstructionFSM_AArch64 : public ResourceObj {
 public:
@@ -55,8 +38,6 @@ public:
     // It comes from DmbLdSt+DmbISH and will emit dmb.ish + nop,
     // because we need keep same size with PendingDmbLdSt
     PendingDmbISH2,
-    PendingLd,
-    PendingSt
   };
 
 private:
@@ -81,7 +62,7 @@ public:
   void flush_and_reset(Assembler* assem);
 
   // transition state with current instruction, may emit instructions
-  void transition(MergeableInst* inst, Assembler* assem);
+  void transition(unsigned int imm, Assembler* assem);
 
   PendingState state() const { return _state; }
 
@@ -94,14 +75,14 @@ public:
 };
 
 private:
-  InstructionFSM_AArch64* _fsm;
-  void pd_initialize() { _fsm = new InstructionFSM_AArch64(); };
+  InstructionFSM_AArch64 _fsm;
+  void pd_initialize() { }
   bool pd_finalize_stubs();
 
 public:
-  // use finite state machine for merging instructions
-  void flush_pending(Assembler* assem) { _fsm->flush_and_reset(assem); }
-  InstructionFSM_AArch64* fsm() const  { return _fsm; }
+  // use finite state machine for merging dmb instructions
+  void flush_pending(Assembler* assem) { _fsm.flush_and_reset(assem); }
+  void push_dmb(unsigned int imm, Assembler* assem) { _fsm.transition(imm, assem); }
 
   void flush_bundle(bool start_new_bundle) {}
   static constexpr bool supports_shared_stubs() { return true; }

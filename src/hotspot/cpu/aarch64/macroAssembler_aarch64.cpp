@@ -2111,44 +2111,18 @@ int MacroAssembler::corrected_idivq(Register result, Register ra, Register rb,
   return idivq_offset;
 }
 
-void MacroAssembler::membar(Membar_mask_bits order_constraint) {
-  dmb(Assembler::barrier(order_constraint));
-  return;
-  /*
-  address prev = pc() - NativeMembar::instruction_size;
-  address last = code()->last_insn();
-  if (last != nullptr && nativeInstruction_at(last)->is_Membar() && prev == last) {
-    NativeMembar *bar = NativeMembar_at(prev);
-    // Don't promote DMB ST|DMB LD to DMB (a full barrier) because
-    // doing so would introduce a StoreLoad which the caller did not
-    // intend
-    if (AlwaysMergeDMB || bar->get_kind() == order_constraint
-        || bar->get_kind() == AnyAny
-        || order_constraint == AnyAny) {
-      // We are merging two memory barrier instructions.  On AArch64 we
-      // can do this simply by ORing them together.
-      bar->set_kind(bar->get_kind() | order_constraint);
-      BLOCK_COMMENT("merged membar");
-      return;
-    } else if (!AlwaysMergeDMB){
-      // A special case like "DMB ST;DMB LD;DMB ST", the last DMB can be skipped
-      // We need check the last 2 instructions
-      address prev2 = prev - NativeMembar::instruction_size;
-      if (last != code()->last_label() && nativeInstruction_at(prev2)->is_Membar()) {
-        NativeMembar *bar2 = NativeMembar_at(prev2);
-        assert(bar2->get_kind() == order_constraint, "it should be merged before");
-        BLOCK_COMMENT("merged membar");
-        return;
-      }
-    }
+void MacroAssembler::membar(Membar_mask_bits imm) {
+  if (imm >= LoadStore && imm <= AnyAny) {
+    // try to merge with previous dmb
+    _code_section->outer()->push_dmb(imm, this);
+  } else {
+    // HotSpot only use other barrier kind for test
+    Assembler::dmb((barrier)imm);
   }
-  code()->set_last_insn(pc());
-  _dmb(Assembler::barrier(order_constraint));
-  */
 }
 
 bool MacroAssembler::try_merge_ldst(Register rt, const Address &adr, size_t size_in_bytes, bool is_store) {
-  Assembler::flush_pending();  // TODO: rewrite ld/st merge with fsm
+  Assembler::flush_pending();
   if (ldst_can_merge(rt, adr, size_in_bytes, is_store)) {
     merge_ldst(rt, adr, size_in_bytes, is_store);
     code()->clear_last_insn();

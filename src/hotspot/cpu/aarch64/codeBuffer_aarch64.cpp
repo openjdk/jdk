@@ -85,7 +85,7 @@ bool CodeBuffer::pd_finalize_stubs() {
 }
 
 int CodeBuffer::pending_insts_size() const {
-  return _fsm->pending_size();
+  return _fsm.pending_size();
 }
 
 void CodeBuffer::InstructionFSM_AArch64::flush_and_reset(Assembler* assem) {
@@ -97,91 +97,77 @@ void CodeBuffer::InstructionFSM_AArch64::flush_and_reset(Assembler* assem) {
   assert( _offset == assem->code_section()->end() - assem->code_section()->start(), "mismatched offset");
   switch (old_state) {
     case PendingDmbLd:
-      assem->_dmb(Assembler::ISHLD);
+      assem->dmb(Assembler::ISHLD);
       break;
     case PendingDmbSt:
-      assem->_dmb(Assembler::ISHST);
+      assem->dmb(Assembler::ISHST);
       break;
     case PendingDmbLdSt:
-      assem->_dmb(Assembler::ISHLD);
-      assem->_dmb(Assembler::ISHST);
+      assem->dmb(Assembler::ISHLD);
+      assem->dmb(Assembler::ISHST);
       break;
     case PendingDmbISH:
-      assem->_dmb(Assembler::ISH);
+      assem->dmb(Assembler::ISH);
       break;
     case PendingDmbISH2:
-      assem->_dmb(Assembler::ISH);
+      assem->dmb(Assembler::ISH);
       assem->nop();
-      break;
-    case PendingLd:
-    case PendingSt:
-      assert(false, "not implemented");
       break;
     default:
       assert(false, "should not reach here");
       break;
   }
 #ifndef PRODUCT
-  // TODO: add "merged" comment
+  if (_merged) {
+    assem->block_comment("merged membar");
+  }
   _merged = 0;
   _cs = nullptr;
   _offset = -1;
 #endif
 }
 
-void CodeBuffer::InstructionFSM_AArch64::transition(CodeBuffer::MergeableInst* inst, Assembler* assem) {
-  assert(inst != nullptr, "unexpected");
-  if (inst->is_dmb()) {
-    Assembler::barrier kind = (Assembler::barrier) inst->barrier_kind();
-    assert(kind == Assembler::ISHLD || kind == Assembler::ISHST || kind == Assembler::ISH,
-           "barrier kind(%d) is unexpected", kind);
-    PendingState new_state = (PendingState) kind;
-    switch (_state) {
-      case NoPending:
+void CodeBuffer::InstructionFSM_AArch64::transition(unsigned int imm, Assembler* assem) {
+  Assembler::barrier kind = (Assembler::barrier)imm;
+  assert(kind == Assembler::ISHLD || kind == Assembler::ISHST || kind == Assembler::ISH,
+         "barrier kind(%d) is unexpected", kind);
+  PendingState new_state = (PendingState) kind;
+  switch (_state) {
+    case NoPending:
 #ifndef PRODUCT
-        _cs = assem->code_section();
-        _offset = assem->code_section()->end() - assem->code_section()->start();
-        _merged = 0;
+      _cs = assem->code_section();
+      _offset = assem->code_section()->end() - assem->code_section()->start();
+      _merged = 0;
 #endif
+      _state = new_state;
+      break;
+    case PendingDmbLd:
+    case PendingDmbSt:
+      if (_state == new_state || new_state == PendingDmbISH) {
         _state = new_state;
-        break;
-      case PendingDmbLd:
-      case PendingDmbSt:
-        if (_state == new_state || new_state == PendingDmbISH) {
-          _state = new_state;
-          DEBUG_ONLY(_merged++);
-        } else if (AlwaysMergeDMB) {
-          _state = PendingDmbISH;
-          DEBUG_ONLY(_merged++);
-        } else {
-          _state = PendingDmbLdSt;
-        }
-        break;
-      case PendingDmbISH:
-      case PendingDmbISH2:
         DEBUG_ONLY(_merged++);
-        break;
-      case PendingDmbLdSt:
-        assert(!AlwaysMergeDMB, "must be");
-        if (new_state == PendingDmbISH) {
-          _state = PendingDmbISH2;
-          DEBUG_ONLY(_merged += 2);
-        } else {
-          DEBUG_ONLY(_merged++);
-        }
-        break;
-      case PendingLd:
-      case PendingSt:
-        assert(false, "not implemented");
-        // flush_and_reset(assem);
-        // _state = new_state;
-        break;
-      default:
-        assert(false, "should not reach here");
-        break;
-    }
-  } else {
-    assert(false, "should not reach here");
-    return;
+      } else if (AlwaysMergeDMB) {
+        _state = PendingDmbISH;
+        DEBUG_ONLY(_merged++);
+      } else {
+        _state = PendingDmbLdSt;
+      }
+      break;
+    case PendingDmbISH:
+    case PendingDmbISH2:
+      DEBUG_ONLY(_merged++);
+      break;
+    case PendingDmbLdSt:
+      assert(!AlwaysMergeDMB, "must be");
+      if (new_state == PendingDmbISH) {
+        _state = PendingDmbISH2;
+        DEBUG_ONLY(_merged += 2);
+      } else {
+        DEBUG_ONLY(_merged++);
+      }
+      break;
+    default:
+      assert(false, "should not reach here");
+      break;
   }
 }
