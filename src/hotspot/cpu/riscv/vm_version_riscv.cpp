@@ -45,6 +45,18 @@ VM_Version::RVFeatureValue* VM_Version::_feature_list[] = {
 RV_FEATURE_FLAGS(ADD_RV_FEATURE_IN_LIST)
   nullptr};
 
+void VM_Version::useRVA20U64Profile() {
+  RV_USE_RVA20U64;
+}
+
+void VM_Version::useRVA22U64Profile() {
+  RV_USE_RVA22U64;
+}
+
+void VM_Version::useRVA23U64Profile() {
+  RV_USE_RVA23U64;
+}
+
 void VM_Version::initialize() {
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
@@ -61,44 +73,14 @@ void VM_Version::initialize() {
          (int)satp_mode.value()));
   }
 
-  // https://github.com/riscv/riscv-profiles/blob/main/profiles.adoc#rva20-profiles
   if (UseRVA20U64) {
-    if (FLAG_IS_DEFAULT(UseRVC)) {
-      FLAG_SET_DEFAULT(UseRVC, true);
-    }
+    useRVA20U64Profile();
   }
-  // https://github.com/riscv/riscv-profiles/blob/main/profiles.adoc#rva22-profiles
   if (UseRVA22U64) {
-    if (FLAG_IS_DEFAULT(UseRVC)) {
-      FLAG_SET_DEFAULT(UseRVC, true);
-    }
-    if (FLAG_IS_DEFAULT(UseZba)) {
-      FLAG_SET_DEFAULT(UseZba, true);
-    }
-    if (FLAG_IS_DEFAULT(UseZbb)) {
-      FLAG_SET_DEFAULT(UseZbb, true);
-    }
-    if (FLAG_IS_DEFAULT(UseZbs)) {
-      FLAG_SET_DEFAULT(UseZbs, true);
-    }
-    if (FLAG_IS_DEFAULT(UseZfh)) {
-      FLAG_SET_DEFAULT(UseZfh, true);
-    }
-    if (FLAG_IS_DEFAULT(UseZic64b)) {
-      FLAG_SET_DEFAULT(UseZic64b, true);
-    }
-    if (FLAG_IS_DEFAULT(UseZicbom)) {
-      FLAG_SET_DEFAULT(UseZicbom, true);
-    }
-    if (FLAG_IS_DEFAULT(UseZicbop)) {
-      FLAG_SET_DEFAULT(UseZicbop, true);
-    }
-    if (FLAG_IS_DEFAULT(UseZicboz)) {
-      FLAG_SET_DEFAULT(UseZicboz, true);
-    }
-    if (FLAG_IS_DEFAULT(UseZihintpause)) {
-      FLAG_SET_DEFAULT(UseZihintpause, true);
-    }
+    useRVA22U64Profile();
+  }
+  if (UseRVA23U64) {
+    useRVA23U64Profile();
   }
 
   // Enable vendor specific features

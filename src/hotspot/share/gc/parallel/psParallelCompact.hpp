@@ -922,15 +922,6 @@ class PSParallelCompact : AllStatic {
   static SpanSubjectToDiscoveryClosure  _span_based_discoverer;
   static ReferenceProcessor*  _ref_processor;
 
-  // Values computed at initialization and used by dead_wood_limiter().
-  static double _dwl_mean;
-  static double _dwl_std_dev;
-  static double _dwl_first_term;
-  static double _dwl_adjustment;
-#ifdef  ASSERT
-  static bool   _dwl_initialized;
-#endif  // #ifdef ASSERT
-
  public:
   static ParallelOldTracer* gc_tracer() { return &_gc_tracer; }
 
@@ -949,40 +940,10 @@ class PSParallelCompact : AllStatic {
 
   // Methods used to compute the dense prefix.
 
-  // Compute the value of the normal distribution at x = density.  The mean and
-  // standard deviation are values saved by initialize_dead_wood_limiter().
-  static inline double normal_distribution(double density);
-
-  // Initialize the static vars used by dead_wood_limiter().
-  static void initialize_dead_wood_limiter();
-
-  // Return the percentage of space that can be treated as "dead wood" (i.e.,
-  // not reclaimed).
-  static double dead_wood_limiter(double density, size_t min_percent);
-
-  // Find the first (left-most) region in the range [beg, end) that has at least
-  // dead_words of dead space to the left.  The argument beg must be the first
-  // region in the space that is not completely live.
-  static RegionData* dead_wood_limit_region(const RegionData* beg,
-                                            const RegionData* end,
-                                            size_t dead_words);
-
   // Return a pointer to the first region in the range [beg, end) that is not
   // completely full.
   static RegionData* first_dead_space_region(const RegionData* beg,
                                              const RegionData* end);
-
-  // Return a value indicating the benefit or 'yield' if the compacted region
-  // were to start (or equivalently if the dense prefix were to end) at the
-  // candidate region.  Higher values are better.
-  //
-  // The value is based on the amount of space reclaimed vs. the costs of (a)
-  // updating references in the dense prefix plus (b) copying objects and
-  // updating references in the compacted region.
-  static inline double reclaimed_ratio(const RegionData* const candidate,
-                                       HeapWord* const bottom,
-                                       HeapWord* const top,
-                                       HeapWord* const new_top);
 
   // Compute the dense prefix for the designated space.
   static HeapWord* compute_dense_prefix(const SpaceId id,

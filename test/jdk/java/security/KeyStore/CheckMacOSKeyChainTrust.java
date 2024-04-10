@@ -32,22 +32,32 @@ import jdk.test.lib.process.ProcessTools;
 
 /*
  * @test
- * @bug 8303465
+ * @bug 8303465 8320362
  * @library /test/lib
  * @requires os.family == "mac"
  * @summary Check whether loading of certificates from MacOS Keychain correctly
  *          honors trust settings
+ * @run main CheckMacOSKeyChainTrust KEYCHAINSTORE
+ * @run main CheckMacOSKeyChainTrust KEYCHAINSTORE-ROOT
  */
 public class CheckMacOSKeyChainTrust {
     private static Set<String> trusted = new HashSet<>();
     private static Set<String> distrusted = new HashSet<>();
 
     public static void main(String[] args) throws Throwable {
-        loadUser();
-        loadAdmin();
+        String keystore = args[0];
+        if (keystore.equals("KEYCHAINSTORE")) {
+            loadUser(true);
+            loadAdmin(true);
+        } else {
+            // check user and admin trustsettings to find distrusted certs
+            loadUser(false);
+            loadAdmin(false);
+            loadSystem(true);
+        }
         System.out.println("Trusted Certs: " + trusted);
         System.out.println("Distrusted Certs: " + distrusted);
-        KeyStore ks = KeyStore.getInstance("KEYCHAINSTORE");
+        KeyStore ks = KeyStore.getInstance(keystore);
         ks.load(null, null);
         for (String alias : trusted) {
             if (!ks.containsAlias(alias)) {
@@ -61,15 +71,19 @@ public class CheckMacOSKeyChainTrust {
         }
     }
 
-    private static void loadUser() throws Throwable {
-        populate(ProcessTools.executeProcess("security", "dump-trust-settings"));
+    private static void loadUser(boolean addTrusted) throws Throwable {
+        populate(ProcessTools.executeProcess("security", "dump-trust-settings"), addTrusted);
     }
 
-    private static void loadAdmin() throws Throwable {
-        populate(ProcessTools.executeProcess("security", "dump-trust-settings", "-d"));
+    private static void loadAdmin(boolean addTrusted) throws Throwable {
+        populate(ProcessTools.executeProcess("security", "dump-trust-settings", "-d"), addTrusted);
     }
 
-    private static void populate(OutputAnalyzer output) throws Throwable {
+    private static void loadSystem(boolean addTrusted) throws Throwable {
+        populate(ProcessTools.executeProcess("security", "dump-trust-settings", "-s"), addTrusted);
+    }
+
+    private static void populate(OutputAnalyzer output, boolean addTrusted) throws Throwable {
         if (output.getExitValue() != 0) {
             return; // No Trust Settings were found
         }
@@ -84,7 +98,9 @@ public class CheckMacOSKeyChainTrust {
                     if (!denyFound &&
                         !(unspecifiedFound && !(trustRootFound || trustAsRootFound)) &&
                         !distrusted.contains(certName)) {
-                        trusted.add(certName);
+                        if (addTrusted) {
+                            trusted.add(certName);
+                        }
                     } else {
                         distrusted.add(certName);
                         trusted.remove(certName);
@@ -109,7 +125,9 @@ public class CheckMacOSKeyChainTrust {
             if (!denyFound &&
                 !(unspecifiedFound && !(trustRootFound || trustAsRootFound)) &&
                 !distrusted.contains(certName)) {
-                trusted.add(certName);
+                if (addTrusted) {
+                    trusted.add(certName);
+                }
             } else {
                 distrusted.add(certName);
                 trusted.remove(certName);

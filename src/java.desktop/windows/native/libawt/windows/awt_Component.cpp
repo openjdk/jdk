@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,6 @@ LPCTSTR szAwtComponentClassName = TEXT("SunAwtComponent");
 const UINT AwtComponent::WmAwtIsComponent =
     ::RegisterWindowMessage(szAwtComponentClassName);
 
-static HWND g_hwndDown = NULL;
 static DCList activeDCList;
 static DCList passiveDCList;
 
@@ -197,10 +196,6 @@ UINT   AwtComponent::m_CodePage
                        = AwtComponent::LangToCodePage(m_idLang);
 
 jint *AwtComponent::masks;
-
-static BOOL bLeftShiftIsDown = false;
-static BOOL bRightShiftIsDown = false;
-static UINT lastShiftKeyPressed = 0; // init to safe value
 
 // Added by waleed to initialize the RTL Flags
 BOOL AwtComponent::sm_rtl = PRIMARYLANGID(GetInputLanguage()) == LANG_ARABIC ||
@@ -1292,23 +1287,16 @@ void SpyWinMessage(HWND hwnd, UINT message, LPCTSTR szComment) {
         WIN_MSG(WM_AWT_WINDOW_SETACTIVE)
         WIN_MSG(WM_AWT_LIST_SETMULTISELECT)
         WIN_MSG(WM_AWT_HANDLE_EVENT)
-        WIN_MSG(WM_AWT_PRINT_COMPONENT)
         WIN_MSG(WM_AWT_RESHAPE_COMPONENT)
         WIN_MSG(WM_AWT_SETALWAYSONTOP)
         WIN_MSG(WM_AWT_BEGIN_VALIDATE)
         WIN_MSG(WM_AWT_END_VALIDATE)
         WIN_MSG(WM_AWT_FORWARD_CHAR)
-        WIN_MSG(WM_AWT_FORWARD_BYTE)
-        WIN_MSG(WM_AWT_SET_SCROLL_INFO)
         WIN_MSG(WM_AWT_CREATECONTEXT)
         WIN_MSG(WM_AWT_DESTROYCONTEXT)
         WIN_MSG(WM_AWT_ASSOCIATECONTEXT)
         WIN_MSG(WM_AWT_GET_DEFAULT_IME_HANDLER)
         WIN_MSG(WM_AWT_HANDLE_NATIVE_IME_EVENT)
-        WIN_MSG(WM_AWT_PRE_KEYDOWN)
-        WIN_MSG(WM_AWT_PRE_KEYUP)
-        WIN_MSG(WM_AWT_PRE_SYSKEYDOWN)
-        WIN_MSG(WM_AWT_PRE_SYSKEYUP)
         WIN_MSG(WM_AWT_ENDCOMPOSITION,)
         WIN_MSG(WM_AWT_DISPOSE,)
         WIN_MSG(WM_AWT_DELETEOBJECT,)
@@ -1320,17 +1308,12 @@ void SpyWinMessage(HWND hwnd, UINT message, LPCTSTR szComment) {
         WIN_MSG(WM_AWT_OPENCANDIDATEWINDOW)
         WIN_MSG(WM_AWT_DLG_SHOWMODAL,)
         WIN_MSG(WM_AWT_DLG_ENDMODAL,)
-        WIN_MSG(WM_AWT_SETCURSOR,)
         WIN_MSG(WM_AWT_WAIT_FOR_SINGLE_OBJECT,)
         WIN_MSG(WM_AWT_INVOKE_METHOD,)
         WIN_MSG(WM_AWT_INVOKE_VOID_METHOD,)
-        WIN_MSG(WM_AWT_EXECUTE_SYNC,)
-        WIN_MSG(WM_AWT_CURSOR_SYNC)
         WIN_MSG(WM_AWT_GETDC)
         WIN_MSG(WM_AWT_RELEASEDC)
         WIN_MSG(WM_AWT_RELEASE_ALL_DCS)
-        WIN_MSG(WM_AWT_SHOWCURSOR)
-        WIN_MSG(WM_AWT_HIDECURSOR)
         WIN_MSG(WM_AWT_CREATE_PRINTED_PIXELS)
         WIN_MSG(WM_AWT_OBJECTLISTCLEANUP)
         default:
@@ -1417,12 +1400,6 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
             mr = mrConsume;
             break;
       }
-      case WM_AWT_SHOWCURSOR:
-          ::ShowCursor(TRUE);
-          break;
-      case WM_AWT_HIDECURSOR:
-          ::ShowCursor(FALSE);
-          break;
       case WM_CREATE: mr = WmCreate(); break;
       case WM_CLOSE:      mr = WmClose(); break;
       case WM_DESTROY:    mr = WmDestroy(); break;
@@ -1840,10 +1817,6 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
           mr = WmForwardChar(LOWORD(wParam), lParam, HIWORD(wParam));
           break;
 
-      case WM_AWT_FORWARD_BYTE:
-          mr = HandleEvent( (MSG *) lParam, (BOOL) wParam);
-          break;
-
       case WM_PASTE:
           mr = WmPaste();
           break;
@@ -1976,13 +1949,6 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
           mr = mrConsume;
           break;
 
-      case WM_AWT_SET_SCROLL_INFO: {
-          SCROLLINFO *si = (SCROLLINFO *) lParam;
-          ::SetScrollInfo(GetHWnd(), (int) wParam, si, TRUE);
-          delete si;
-          mr = mrConsume;
-          break;
-      }
       case WM_AWT_CREATE_PRINTED_PIXELS: {
           CreatePrintedPixelsStruct* cpps = (CreatePrintedPixelsStruct*)wParam;
           SIZE loc = { cpps->srcx, cpps->srcy };
@@ -5233,89 +5199,6 @@ AwtComponent::SendMouseWheelEvent(jint id, jlong when, jint x, jint y,
     env->DeleteLocalRef(target);
 }
 
-void AwtComponent::SendFocusEvent(jint id, HWND opposite)
-{
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-
-    CriticalSection::Lock l(GetLock());
-    if (GetPeer(env) == NULL) {
-        /* event received during termination. */
-        return;
-    }
-
-    static jclass focusEventCls;
-    if (focusEventCls == NULL) {
-        jclass focusEventClsLocal
-            = env->FindClass("java/awt/event/FocusEvent");
-        DASSERT(focusEventClsLocal);
-        CHECK_NULL(focusEventClsLocal);
-        focusEventCls = (jclass)env->NewGlobalRef(focusEventClsLocal);
-        env->DeleteLocalRef(focusEventClsLocal);
-    }
-
-    static jmethodID focusEventConst;
-    if (focusEventConst == NULL) {
-        focusEventConst =
-            env->GetMethodID(focusEventCls, "<init>",
-                             "(Ljava/awt/Component;IZLjava/awt/Component;)V");
-        DASSERT(focusEventConst);
-        CHECK_NULL(focusEventConst);
-    }
-
-    static jclass sequencedEventCls;
-    if (sequencedEventCls == NULL) {
-        jclass sequencedEventClsLocal =
-            env->FindClass("java/awt/SequencedEvent");
-        DASSERT(sequencedEventClsLocal);
-        CHECK_NULL(sequencedEventClsLocal);
-        sequencedEventCls =
-            (jclass)env->NewGlobalRef(sequencedEventClsLocal);
-        env->DeleteLocalRef(sequencedEventClsLocal);
-    }
-
-    static jmethodID sequencedEventConst;
-    if (sequencedEventConst == NULL) {
-        sequencedEventConst =
-            env->GetMethodID(sequencedEventCls, "<init>",
-                             "(Ljava/awt/AWTEvent;)V");
-        DASSERT(sequencedEventConst);
-        CHECK_NULL(sequencedEventConst);
-    }
-
-    if (env->EnsureLocalCapacity(3) < 0) {
-        return;
-    }
-
-    jobject target = GetTarget(env);
-    jobject jOpposite = NULL;
-    if (opposite != NULL) {
-        AwtComponent *awtOpposite = AwtComponent::GetComponent(opposite);
-        if (awtOpposite != NULL) {
-            jOpposite = awtOpposite->GetTarget(env);
-        }
-    }
-    jobject focusEvent = env->NewObject(focusEventCls, focusEventConst,
-                                        target, id, JNI_FALSE, jOpposite);
-    DASSERT(!safe_ExceptionOccurred(env));
-    DASSERT(focusEvent != NULL);
-    if (jOpposite != NULL) {
-        env->DeleteLocalRef(jOpposite); jOpposite = NULL;
-    }
-    env->DeleteLocalRef(target); target = NULL;
-    CHECK_NULL(focusEvent);
-
-    jobject sequencedEvent = env->NewObject(sequencedEventCls,
-                                            sequencedEventConst,
-                                            focusEvent);
-    DASSERT(!safe_ExceptionOccurred(env));
-    DASSERT(sequencedEvent != NULL);
-    env->DeleteLocalRef(focusEvent); focusEvent = NULL;
-    CHECK_NULL(sequencedEvent);
-    SendEvent(sequencedEvent);
-
-    env->DeleteLocalRef(sequencedEvent);
-}
-
 /*
  * Forward a filtered event directly to the subclassed window.
  * This method is needed so that DefWindowProc is invoked on the
@@ -6360,18 +6243,46 @@ void AwtComponent::_SetParent(void * param)
 {
     if (AwtToolkit::IsMainThread()) {
         JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-        SetParentStruct *data = (SetParentStruct*) param;
+        SetParentStruct *data = static_cast<SetParentStruct*>(param);
         jobject self = data->component;
         jobject parent = data->parentComp;
 
         AwtComponent *awtComponent = NULL;
         AwtComponent *awtParent = NULL;
 
-        PDATA pData;
-        JNI_CHECK_PEER_GOTO(self, ret);
-        awtComponent = (AwtComponent *)pData;
-        JNI_CHECK_PEER_GOTO(parent, ret);
-        awtParent = (AwtComponent *)pData;
+        if (self == NULL) {
+            env->ExceptionClear();
+            JNU_ThrowNullPointerException(env, "self");
+            env->DeleteGlobalRef(parent);
+            delete data;
+            return;
+        } else {
+            awtComponent = (AwtComponent *)JNI_GET_PDATA(self);;
+            if (awtComponent == NULL) {
+                THROW_NULL_PDATA_IF_NOT_DESTROYED(self);
+                env->DeleteGlobalRef(self);
+                env->DeleteGlobalRef(parent);
+                delete data;
+                return;
+            }
+        }
+
+        if (parent == NULL) {
+            env->ExceptionClear();
+            JNU_ThrowNullPointerException(env, "parent");
+            env->DeleteGlobalRef(self);
+            delete data;
+            return;
+        } else {
+            awtParent = (AwtComponent *)JNI_GET_PDATA(parent);
+            if (awtParent == NULL) {
+                THROW_NULL_PDATA_IF_NOT_DESTROYED(parent);
+                env->DeleteGlobalRef(self);
+                env->DeleteGlobalRef(parent);
+                delete data;
+                return;
+            }
+        }
 
         HWND selfWnd = awtComponent->GetHWnd();
         HWND parentWnd = awtParent->GetHWnd();
@@ -6380,7 +6291,7 @@ void AwtComponent::_SetParent(void * param)
             // (only the proxy may be the native focus owner).
             ::SetParent(selfWnd, parentWnd);
         }
-ret:
+
         env->DeleteGlobalRef(self);
         env->DeleteGlobalRef(parent);
         delete data;
@@ -6539,19 +6450,31 @@ static void _GetInsets(void* param)
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    GetInsetsStruct *gis = (GetInsetsStruct *)param;
+    GetInsetsStruct *gis = static_cast<GetInsetsStruct *>(param);
     jobject self = gis->window;
 
     gis->insets->left = gis->insets->top =
         gis->insets->right = gis->insets->bottom = 0;
 
-    PDATA pData;
-    JNI_CHECK_PEER_GOTO(self, ret);
-    AwtComponent *component = (AwtComponent *)pData;
+    AwtComponent *component = NULL;
+
+    if (self == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "self");
+        delete gis;
+        return;
+    } else {
+        component = (AwtComponent *)JNI_GET_PDATA(self);
+        if (component == NULL) {
+            THROW_NULL_PDATA_IF_NOT_DESTROYED(self);
+            env->DeleteGlobalRef(self);
+            delete gis;
+            return;
+        }
+    }
 
     component->GetInsets(gis->insets);
 
-  ret:
     env->DeleteGlobalRef(self);
     delete gis;
 }
