@@ -21650,6 +21650,7 @@
                <uiProperty name="extendTabsToBase" type="BOOLEAN" value="true"/>
                <uiProperty name="useBasicArrows" type="BOOLEAN" value="true"/>
                <uiProperty name="contentOpaque" type="BOOLEAN" value="true"/>
+               <uiProperty name="tabsOpaque" type="BOOLEAN" value="true"/>
                <uiProperty name="contentAreaColor" type="COLOR">
                   <matte red="238" green="238" blue="238" alpha="255" uiDefaultParentName="tabbedPaneContentArea" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
                </uiProperty>

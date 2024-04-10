@@ -54,16 +54,39 @@ public class TestJTabbedPaneOpaqueColor {
     private static final String INSTRUCTIONS = """
             The background color of panel (which contains the tabbed pane is green).
             The background color of the tabbed pane is red.
+            The TabbedPane is not opaque initially.
+            For 'Content Opaque' and 'Tabs Opaque' to have effect, tab pane opacity should
+            be set to false i.e. Opaque checkbox should be unchecked.
 
             Check the default behaviour of the tabbed pane:
               - the area behind tabs is transparent (it must be green).
               - the tabs area is opaque (it must be red, except the selected tab which must be gray).
               - the content area is opaque (it must be gray).
 
+            Test Case 1 (Test TabPane Opaque behaviour):
+
             Click to the check box 'opaque'. And be sure that
               - the area behind tabs is opaque (it must be red).
               - the tabs area is opaque (it must be red, except the selected tab which must be gray).
               - the content area is opaque (it must be gray).
+
+            Check this behaviour for other LAFs and tab layout.
+            NOTE: For Nimbus LAF, tabs color are specific to nimbus style.
+
+            Test Case 2 (Test Content Opaque UI property):
+            To enable Content Opaque checkbox, make Sure "Opaque checkbox" is not selected.
+
+            Click to the check box 'content opaque' and be sure that
+              - the content area is transparent (it must be green).
+              - Select the 'content opaque' and check that content area is opaque
+                (it must be gray).
+            Check this behaviour for other LAFs and tab layout.
+
+            Test Case 3 (Test Tabs Opaque UI property):
+            Click to the check box 'tabs opaque' and be sure that
+              - the tabs are transparent (it must be green).
+              - Check the 'tabs opaque' and check that tabs are opaque,
+                (it must be red, except the selected tab which must be gray).
 
             Check this behaviour for other LAFs and tab layout.
             NOTE: For Nimbus LAF, tabs color are specific to nimbus style.""";
@@ -73,7 +96,7 @@ public class TestJTabbedPaneOpaqueColor {
             .title("JTabbedPane Tab and Content Area Color Test Instructions")
             .instructions(INSTRUCTIONS)
             .testTimeOut(10)
-            .rows(18)
+            .rows(25)
             .columns(60)
             .testUI(TestJTabbedPaneOpaqueColor::createAndShowUI)
             .build()
@@ -128,18 +151,56 @@ public class TestJTabbedPaneOpaqueColor {
         layoutButtonPanel.add(scrollButton);
         layoutButtonPanel.add(wrapButton);
 
-        JCheckBox checkBox = new JCheckBox(new AbstractAction() {
+        JCheckBox contentOpaqueChkBox = new JCheckBox(new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
-                tabPane.setOpaque(((AbstractButton)e.getSource()).isSelected());
+                if (((AbstractButton)e.getSource()).isSelected()) {
+                    UIManager.put("TabbedPane.contentOpaque", Boolean.TRUE);
+                } else {
+                    UIManager.put("TabbedPane.contentOpaque", Boolean.FALSE);
+                }
                 tabPane.repaint();
+                SwingUtilities.updateComponentTreeUI(frame);
             }
         });
-        checkBox.setText("Opaque");
+        contentOpaqueChkBox.setText("Content Opaque");
+        contentOpaqueChkBox.setSelected(true);
+        contentOpaqueChkBox.setEnabled(true);
+
+        JCheckBox tabOpaqueChkBox = new JCheckBox(new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                if (((AbstractButton)e.getSource()).isSelected()) {
+                    UIManager.put("TabbedPane.tabsOpaque", Boolean.TRUE);
+                } else {
+                    UIManager.put("TabbedPane.tabsOpaque", Boolean.FALSE);
+                }
+                tabPane.repaint();
+                SwingUtilities.updateComponentTreeUI(frame);
+            }
+        });
+        tabOpaqueChkBox.setText("Tabs Opaque");
+        tabOpaqueChkBox.setSelected(true);
+        tabOpaqueChkBox.setEnabled(true);
+
+        JCheckBox tabPaneOpaqueChkBox = new JCheckBox(new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                tabPane.setOpaque(((AbstractButton)e.getSource()).isSelected());
+                contentOpaqueChkBox.setEnabled(!((AbstractButton)e.getSource()).isSelected());
+                tabOpaqueChkBox.setEnabled(!((AbstractButton)e.getSource()).isSelected());
+                tabPane.repaint();
+                SwingUtilities.updateComponentTreeUI(frame);
+            }
+        });
+        tabPaneOpaqueChkBox.setText("Opaque");
+
+        JPanel checkBoxPanel = new JPanel();
+        checkBoxPanel.add(tabPaneOpaqueChkBox);
+        checkBoxPanel.add(contentOpaqueChkBox);
+        checkBoxPanel.add(tabOpaqueChkBox);
 
         JPanel nestedPanels = new JPanel(new GridLayout(2, 1));
         nestedPanels.add(lafButtonPanel);
         nestedPanels.add(layoutButtonPanel);
-        panel.add(checkBox, BorderLayout.NORTH);
+        panel.add(checkBoxPanel, BorderLayout.NORTH);
         panel.add(nestedPanels, BorderLayout.SOUTH);
         frame.add(panel);
         frame.setSize(500, 500);

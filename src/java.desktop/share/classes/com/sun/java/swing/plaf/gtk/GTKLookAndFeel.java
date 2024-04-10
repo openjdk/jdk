@@ -1023,6 +1023,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
             "TabbedPane.selectedTabPadInsets", new InsetsUIResource(2, 2, 0, 1),
             "TabbedPane.selected", tabbedPaneBg,
             "TabbedPane.contentOpaque", Boolean.TRUE,
+            "TabbedPane.tabsOpaque", Boolean.TRUE,
             "TabbedPane.contentAreaColor", tabbedPaneBg,
 
             "Table.scrollPaneBorder", zeroBorder,
