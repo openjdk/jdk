@@ -159,7 +159,7 @@ class DefNewGeneration: public Generation {
   // "block" that contains "p".  We say "block" instead of "object" since
   // some heaps may not pack objects densely; a chunk may either be an
   // object or a non-object.  If "p" is not in the space, return null.
-  HeapWord* block_start_const(const ContiguousSpace* cs, const void* p) const;
+  static HeapWord* block_start_const(const ContiguousSpace* cs, const void* p);
 
  public:
   DefNewGeneration(ReservedSpace rs,

@@ -589,7 +589,7 @@ void DefNewGeneration::object_iterate(ObjectClosure* blk) {
 }
 
 // Very general, slow implementation.
-HeapWord* DefNewGeneration::block_start_const(const ContiguousSpace* cs, const void* p) const {
+HeapWord* DefNewGeneration::block_start_const(const ContiguousSpace* cs, const void* p) {
   assert(MemRegion(cs->bottom(), cs->end()).contains(p),
          "p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
          p2i(p), p2i(cs->bottom()), p2i(cs->end()));
