@@ -70,7 +70,6 @@ class SafepointSynchronize : AllStatic {
 
   // The enums are listed in the order of the tasks when done serially.
   enum SafepointCleanupTasks {
-    SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING,
     SAFEPOINT_CLEANUP_REQUEST_OOPSTORAGE_CLEANUP,
     // Leave this one last.
     SAFEPOINT_CLEANUP_NUM_TASKS

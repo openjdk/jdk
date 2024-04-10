@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,25 +19,9 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SERIAL_GENMARKSWEEP_HPP
-#define SHARE_GC_SERIAL_GENMARKSWEEP_HPP
+#include "jni.h"
 
-#include "gc/serial/markSweep.hpp"
-
-class GenMarkSweep : public MarkSweep {
- public:
-  static void invoke_at_safepoint(bool clear_all_softrefs);
-
- private:
-  // Mark live objects
-  static void phase1_mark(bool clear_all_softrefs);
-
-  // Temporary data structures for traversal and storing/restoring marks
-  static void allocate_stacks();
-  static void deallocate_stacks();
-};
-
-#endif // SHARE_GC_SERIAL_GENMARKSWEEP_HPP
+JNIEXPORT
+void JNICALL Java_compiler_calls_NativeCalls_emptyStaticNative(JNIEnv* env, jclass jclazz) {}

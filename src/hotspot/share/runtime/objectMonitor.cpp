@@ -269,7 +269,6 @@ ObjectMonitor::ObjectMonitor(oop object) :
   _cxq(nullptr),
   _succ(nullptr),
   _Responsible(nullptr),
-  _Spinner(0),
   _SpinDuration(ObjectMonitor::Knob_SpinLimit),
   _contentions(0),
   _WaitSet(nullptr),
@@ -401,8 +400,6 @@ bool ObjectMonitor::enter(JavaThread* current) {
   }
 
   // We've encountered genuine contention.
-  assert(current->_Stalled == 0, "invariant");
-  current->_Stalled = intptr_t(this);
 
   // Try one round of spinning *before* enqueueing current
   // and before going through the awkward and expensive state
@@ -416,7 +413,6 @@ bool ObjectMonitor::enter(JavaThread* current) {
            "object mark must match encoded this: mark=" INTPTR_FORMAT
            ", encoded this=" INTPTR_FORMAT, object()->mark().value(),
            markWord::encode(this).value());
-    current->_Stalled = 0;
     return true;
   }
 
@@ -437,7 +433,6 @@ bool ObjectMonitor::enter(JavaThread* current) {
       // we only retry once if the deflater thread happens to be slow.
       install_displaced_markword_in_object(l_object);
     }
-    current->_Stalled = 0;
     add_to_contentions(-1);
     return false;
   }
@@ -500,7 +495,6 @@ bool ObjectMonitor::enter(JavaThread* current) {
 
   add_to_contentions(-1);
   assert(contentions() >= 0, "must not be negative: contentions=%d", contentions());
-  current->_Stalled = 0;
 
   // Must either set _recursions = 0 or ASSERT _recursions == 0.
   assert(_recursions == 0, "invariant");
@@ -1511,8 +1505,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     return;
   }
 
-  assert(current->_Stalled == 0, "invariant");
-  current->_Stalled = intptr_t(this);
   current->set_current_waiting_monitor(this);
 
   // create a node to be put into the queue
@@ -1645,9 +1637,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     }
 
     OrderAccess::fence();
-
-    assert(current->_Stalled != 0, "invariant");
-    current->_Stalled = 0;
 
     assert(owner_raw() != current, "invariant");
     ObjectWaiter::TStates v = node.TState;
@@ -2190,7 +2179,6 @@ void ObjectMonitor::print() const { print_on(tty); }
 //   _cxq = 0x0000000000000000
 //   _succ = 0x0000000000000000
 //   _Responsible = 0x0000000000000000
-//   _Spinner = 0
 //   _SpinDuration = 5000
 //   _contentions = 0
 //   _WaitSet = 0x0000700009756248
@@ -2220,7 +2208,6 @@ void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("  _cxq = " INTPTR_FORMAT, p2i(_cxq));
   st->print_cr("  _succ = " INTPTR_FORMAT, p2i(_succ));
   st->print_cr("  _Responsible = " INTPTR_FORMAT, p2i(_Responsible));
-  st->print_cr("  _Spinner = %d", _Spinner);
   st->print_cr("  _SpinDuration = %d", _SpinDuration);
   st->print_cr("  _contentions = %d", contentions());
   st->print_cr("  _WaitSet = " INTPTR_FORMAT, p2i(_WaitSet));
