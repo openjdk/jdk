@@ -678,13 +678,18 @@ public interface List<E> extends SequencedCollection<E> {
      * {@code filter.test(get(i))},
      * or -1 if there is no such index.
      *
+     * @implSpec
+     * This implementation first gets a list iterator (with
+     * {@code listIterator()}).  Then, it iterates over the list until a
+     * matching element is found or the beginning of the list is reached.
+     *
      * @param filter a predicate to search for
      * @return the index of the first occurrence of the specified element in
      *         this list, or -1 if this list does not contain the element
      * @throws NullPointerException if passed filter is null
-     *         (<a href="Collection.html#optional-restrictions">optional</a>)
      */
-    default int findIndex(Predicate<? super E> filter) {
+    default int indexOf(Predicate<? super E> filter) {
+        Objects.requireNonNull(filter);
         ListIterator<E> it = listIterator();
         while (it.hasNext()) {
             E e = it.next();
@@ -699,16 +704,22 @@ public interface List<E> extends SequencedCollection<E> {
      * Returns the index of the last occurrence of matching element
      * in this list, or -1 if this list does not contain the element.
      * More formally, returns the highest index {@code i} such that
-     * {@code filter.test(get(i))},
+     * {@code Objects.equals(o, get(i))},
      * or -1 if there is no such index.
+     *
+     * @implSpec
+     * This implementation first gets a list iterator that points to the end
+     * of the list (with {@code listIterator(size())}).  Then, it iterates
+     * backwards over the list until the matching element is found, or the
+     * beginning of the list is reached.
      *
      * @param filter a predicate to search for
      * @return the index of the last occurrence of the specified element in
      *         this list, or -1 if this list does not contain the element
      * @throws NullPointerException if passed filter is null
-     *         (<a href="Collection.html#optional-restrictions">optional</a>)
      */
-    default int findLastIndex(Predicate<? super E> filter) {
+    default int lastIndexOf(Predicate<? super E> filter) {
+        Objects.requireNonNull(filter);
         ListIterator<E> it = listIterator(size());
         while (it.hasPrevious()) {
             E e = it.previous();

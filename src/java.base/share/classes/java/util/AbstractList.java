@@ -197,7 +197,6 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
         return -1;
     }
 
-
     /**
      * {@inheritDoc}
      *
@@ -223,6 +222,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
         }
         return -1;
     }
+
 
     // Bulk Operations
 
