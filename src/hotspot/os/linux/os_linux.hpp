@@ -33,7 +33,6 @@ class os::Linux {
   friend class CgroupSubsystem;
   friend class os;
   friend class OSContainer;
-  friend class OSLinuxTestFixture;
 
   static int (*_pthread_getcpuclockid)(pthread_t, clockid_t *);
   static int (*_pthread_setname_np)(pthread_t, const char*);
@@ -94,7 +93,6 @@ class os::Linux {
     bool     has_steal_ticks;
   };
 
-public:
   static void kernel_version(long* major, long* minor);
 
   // which_logical_cpu=-1 returns accumulated ticks for all cpus.
