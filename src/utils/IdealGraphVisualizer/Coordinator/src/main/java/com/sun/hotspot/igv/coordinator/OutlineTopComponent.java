@@ -540,9 +540,15 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
                     final SerialData<GraphDocument> parsedData = parser.parse();
                     final GraphDocument parsedDoc = parsedData.data();
                     getDocument().addGraphDocument(parsedDoc);
+
+                    for (Node child : manager.getRootContext().getChildren().getNodes(true)) {
+                        // Nodes a lazily created. By expanding and collapsing they are all initialized
+                        ((BeanTreeView) this.treeView).expandNode(child);
+                        ((BeanTreeView) this.treeView).collapseNode(child);
+                    }
+
                     if (loadContext) {
-                        final Set<GraphContext> parsedContexts = parsedData.contexts();
-                        loadContexts(parsedContexts);
+                        loadContexts(parsedData.contexts());
                     }
                     SwingUtilities.invokeLater(this::requestActive);
                 }
