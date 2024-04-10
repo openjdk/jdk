@@ -588,15 +588,34 @@ void DefNewGeneration::object_iterate(ObjectClosure* blk) {
   from()->object_iterate(blk);
 }
 
+// Very general, slow implementation.
+HeapWord* DefNewGeneration::block_start_const(const ContiguousSpace* cs, const void* p) const {
+  assert(MemRegion(cs->bottom(), cs->end()).contains(p),
+         "p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
+         p2i(p), p2i(cs->bottom()), p2i(cs->end()));
+  if (p >= cs->top()) {
+    return cs->top();
+  } else {
+    HeapWord* last = cs->bottom();
+    HeapWord* cur = last;
+    while (cur <= p) {
+      last = cur;
+      cur += cast_to_oop(cur)->size();
+    }
+    assert(oopDesc::is_oop(cast_to_oop(last)), PTR_FORMAT " should be an object start", p2i(last));
+    return last;
+  }
+}
+
 HeapWord* DefNewGeneration::block_start(const void* p) const {
   if (eden()->is_in_reserved(p)) {
-    return eden()->block_start_const(p);
+    return block_start_const(eden(), p);
   }
   if (from()->is_in_reserved(p)) {
-    return from()->block_start_const(p);
+    return block_start_const(from(), p);
   }
   assert(to()->is_in_reserved(p), "inv");
-  return to()->block_start_const(p);
+  return block_start_const(to(), p);
 }
 
 // The last collection bailed out, we are running out of heap space,

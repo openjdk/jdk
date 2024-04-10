@@ -155,6 +155,12 @@ class DefNewGeneration: public Generation {
     return n > alignment ? align_down(n, alignment) : alignment;
   }
 
+  // If "p" is in the space, returns the address of the start of the
+  // "block" that contains "p".  We say "block" instead of "object" since
+  // some heaps may not pack objects densely; a chunk may either be an
+  // object or a non-object.  If "p" is not in the space, return null.
+  HeapWord* block_start_const(const ContiguousSpace* cs, const void* p) const;
+
  public:
   DefNewGeneration(ReservedSpace rs,
                    size_t initial_byte_size,

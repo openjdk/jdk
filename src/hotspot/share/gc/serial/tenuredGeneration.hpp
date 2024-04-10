@@ -85,6 +85,8 @@ class TenuredGeneration: public Generation {
 
   void compute_new_size_inner();
 
+  HeapWord* block_start_const(const void* addr) const;
+
 public:
   void compute_new_size();
 

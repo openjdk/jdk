@@ -169,12 +169,6 @@ public:
   // Iteration
   void object_iterate(ObjectClosure* blk);
 
-  // If "p" is in the space, returns the address of the start of the
-  // "block" that contains "p".  We say "block" instead of "object" since
-  // some heaps may not pack objects densely; a chunk may either be an
-  // object or a non-object.  If "p" is not in the space, return null.
-  virtual HeapWord* block_start_const(const void* p) const;
-
   // Addresses for inlined allocation
   HeapWord** top_addr() { return &_top; }
 
@@ -196,8 +190,6 @@ class TenuredSpace: public ContiguousSpace {
   // Constructor
   TenuredSpace(SerialBlockOffsetTable* offsets,
                MemRegion mr);
-
-  HeapWord* block_start_const(const void* addr) const override;
 
   // Add offset table update.
   inline HeapWord* allocate(size_t word_size) override;
