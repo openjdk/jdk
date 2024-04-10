@@ -116,7 +116,7 @@ public:
     return obj_end > cur_card_boundary;
   }
 
-  void verify(const HeapRegion* hr) const;
+  void verify_for_block(HeapWord* blk_start, HeapWord* blk_end) const;
 
   // Returns the address of the start of the block reaching into the card containing
   // "addr".
