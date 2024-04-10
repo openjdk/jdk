@@ -1466,8 +1466,7 @@ void MetaspaceShared::initialize_shared_spaces() {
   // done after ReadClosure.
   static_mapinfo->patch_heap_embedded_pointers();
   ArchiveHeapLoader::finish_initialization();
-
-  CDS_JAVA_HEAP_ONLY(Universe::update_archived_basic_type_mirrors());
+  Universe::load_archived_object_instances();
 
   // Close the mapinfo file
   static_mapinfo->close();
