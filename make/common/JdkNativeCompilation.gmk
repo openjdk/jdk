@@ -172,7 +172,7 @@ define ResolveLibPath
 endef
 
 # Process a JDK library designation such as "java.desktop:jawt" into the needed
-# additions to EXTRA_LINK_DEPS, LDFLAGS, LIBS, and EXTRA_HEADER_DIRS.
+# additions to EXTRA_LINK_DEPS, LDFLAGS, LIBS and EXTRA_HEADER_DIRS.
 # $1: The name of the rule (namespace)
 # $2: The safe namespace of the library
 # $3: The actual string given to represent the library
@@ -267,7 +267,9 @@ JDK_RCFLAGS=$(RCFLAGS) \
 #     These take the form <module>:<basename>. If the module is java.base,
 #     the entire java.base: prefix can be omitted. If the module is @, this will
 #     be replaced with the current module. The gtest module is a virtual module
-#     that will be replaced with correct values for gtest.
+#     that will be replaced with correct values for gtest. When specyfing
+#     JDK_LIBS, suitable values for EXTRA_LINK_DEPS, LDFLAGS, LIBS and
+#     EXTRA_HEADER_DIRS will be added.
 #   JDK_LIBS_<os> or JDK_LIBS_<osType> -- additional JDK_LIBS for the given OS
 #     or OS type only
 #   EXTRA_RCFLAGS -- additional RCFLAGS to append.
