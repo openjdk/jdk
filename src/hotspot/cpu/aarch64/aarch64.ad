@@ -136,6 +136,7 @@ reg_def R27     ( SOC, SOE, Op_RegI, 27, r27->as_VMReg()        ); // heapbase
 reg_def R27_H   ( SOC, SOE, Op_RegI, 27, r27->as_VMReg()->next());
 reg_def R28     (  NS, SOE, Op_RegI, 28, r28->as_VMReg()        ); // thread
 reg_def R28_H   (  NS, SOE, Op_RegI, 28, r28->as_VMReg()->next());
+// TODO R29 is callee-save (SOE) as well
 reg_def R29     (  NS,  NS, Op_RegI, 29, r29->as_VMReg()        ); // fp
 reg_def R29_H   (  NS,  NS, Op_RegI, 29, r29->as_VMReg()->next());
 reg_def R30     (  NS,  NS, Op_RegI, 30, r30->as_VMReg()        ); // lr
@@ -694,6 +695,11 @@ reg_class no_special_ptr_reg %{
   return _NO_SPECIAL_PTR_REG_mask;
 %}
 
+// Class for all non_special pointer registers (excluding rfp)
+reg_class no_special_or_rfp_ptr_reg %{
+  return _NO_SPECIAL_OR_RFP_PTR_REG_mask;
+%}
+
 // Class for all float registers
 reg_class float_reg(
     V0,
@@ -1125,6 +1131,7 @@ extern RegMask _PTR_REG_mask;
 extern RegMask _NO_SPECIAL_REG32_mask;
 extern RegMask _NO_SPECIAL_REG_mask;
 extern RegMask _NO_SPECIAL_PTR_REG_mask;
+extern RegMask _NO_SPECIAL_OR_RFP_PTR_REG_mask;
 
 class CallStubImpl {
 
@@ -1213,6 +1220,7 @@ source %{
   RegMask _NO_SPECIAL_REG32_mask;
   RegMask _NO_SPECIAL_REG_mask;
   RegMask _NO_SPECIAL_PTR_REG_mask;
+  RegMask _NO_SPECIAL_OR_RFP_PTR_REG_mask;
 
   void reg_mask_init() {
     // We derive below RegMask(s) from the ones which are auto-generated from
@@ -1226,6 +1234,7 @@ source %{
 
     _PTR_REG_mask = _ALL_REG_mask;
 
+    // Exclude non allocatable: r18 (tls), r28 (thread), r30 (lr), r31 (sp)
     _NO_SPECIAL_REG32_mask = _ALL_REG32_mask;
     _NO_SPECIAL_REG32_mask.SUBTRACT(_NON_ALLOCATABLE_REG32_mask);
 
@@ -1249,6 +1258,9 @@ source %{
       _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(r29->as_VMReg()));
       _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(r29->as_VMReg()));
     }
+
+    _NO_SPECIAL_OR_RFP_PTR_REG_mask = _NO_SPECIAL_PTR_REG_mask;
+    _NO_SPECIAL_OR_RFP_PTR_REG_mask.Remove(OptoReg::as_OptoReg(r29->as_VMReg()));
   }
 
   // Optimizaton of volatile gets and puts
@@ -4744,6 +4756,7 @@ operand iRegP()
   constraint(ALLOC_IN_RC(ptr_reg));
   match(RegP);
   match(iRegPNoSp);
+  match(iRegPNoSpNoRfp);
   match(iRegP_R0);
   //match(iRegP_R2);
   //match(iRegP_R4);
@@ -4765,6 +4778,20 @@ operand iRegPNoSp()
   // match(iRegP_R4);
   // match(iRegP_R5);
   // match(thread_RegP);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+// This operand is not allowed to use RFP even if
+// RFP is not used to hold the frame pointer.
+operand iRegPNoSpNoRfp()
+%{
+  constraint(ALLOC_IN_RC(no_special_or_rfp_ptr_reg));
+  //match(RegP);
+  // TODO these list "who matches me as well"
+  // match(iRegP);
+  match(iRegPNoSp);
   op_cost(0);
   format %{ %}
   interface(REG_INTER);
@@ -16167,7 +16194,7 @@ instruct CallLeafNoFPDirect(method meth)
 // Also known as an 'interprocedural jump'.
 // Target of jump will eventually return to caller.
 // TailJump below removes the return address.
-instruct TailCalljmpInd(iRegPNoSp jump_target, inline_cache_RegP method_ptr)
+instruct TailCalljmpInd(iRegPNoSpNoRfp jump_target, inline_cache_RegP method_ptr)
 %{
   match(TailCall jump_target method_ptr);
 
