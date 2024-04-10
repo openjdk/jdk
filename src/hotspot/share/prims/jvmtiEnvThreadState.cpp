@@ -276,7 +276,7 @@ class GetCurrentLocationClosure : public JvmtiUnitedHandshakeClosure {
       _bci(0),
       _completed(false) {}
 
-  void doit(Thread *target) {
+  void do_thread(Thread *target) {
     JavaThread *jt = JavaThread::cast(target);
     ResourceMark rmark; // jt != Thread::current()
     RegisterMap rm(jt,
@@ -296,7 +296,12 @@ class GetCurrentLocationClosure : public JvmtiUnitedHandshakeClosure {
     }
     _completed = true;
   }
-  void doit(Handle target_h) {
+  void do_vthread(Handle target_h) {
+    if (_target_jt != nullptr) {
+      assert(_target_jt->vthread() == target_h(), "sanity check");
+      do_thread(_target_jt);
+      return;
+    }
     if (!JvmtiEnvBase::is_vthread_alive(target_h())) {
       return; // _completed remains false.
     }
@@ -309,16 +314,6 @@ class GetCurrentLocationClosure : public JvmtiUnitedHandshakeClosure {
       _bci = jvf->bci();
     }
     _completed = true;
-  }
-  void do_thread(Thread *target) {
-    doit(target);
-  }
-  void do_vthread(Handle target_h) {
-    if (_target_jt != nullptr) {
-      doit(_target_jt);
-    } else {
-      doit(target_h);
-    }
   }
   void get_current_location(jmethodID *method_id, int *bci) {
     *method_id = _method_id;
