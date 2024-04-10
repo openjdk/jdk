@@ -264,11 +264,7 @@ void TenuredGeneration::compute_new_size_inner() {
   }
 }
 
-HeapWord* TenuredGeneration::block_start(const void* p) const {
-  return block_start_const(p);
-}
-
-HeapWord* TenuredGeneration::block_start_const(const void* addr) const {
+HeapWord* TenuredGeneration::block_start(const void* addr) const {
   HeapWord* cur_block = _bts->block_start_reaching_into_card(addr);
 
   while (true) {
