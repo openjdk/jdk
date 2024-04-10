@@ -105,7 +105,7 @@ uint8_t Klass::compute_hash_slot(Symbol* n) {
 
     // This constant is magic: see Knuth, "Fibonacci Hashing".
     constexpr uint multiplier
-      = 2654435769 // (uint)(((u8)1 << 32) / ((1 + sqrt(5)) / 2 ));
+      = 2654435769; // (uint)(((u8)1 << 32) / ((1 + sqrt(5)) / 2 ))
     constexpr uint hash_shift = sizeof(hash_code) * 8 - 6;
     // The leading bits of the least significant half of the product.
     hash_code = (hash_code * multiplier) >> hash_shift;
