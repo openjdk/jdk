@@ -1874,36 +1874,6 @@ operand immP0() %{
   interface(CONST_INTER);
 %}
 
-// Pointer Immediate
-operand immN()
-%{
-  match(ConN);
-
-  op_cost(10);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-operand immNKlass()
-%{
-  match(ConNKlass);
-
-  op_cost(10);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// nullptr Pointer Immediate
-operand immN0()
-%{
-  predicate(n->get_narrowcon() == 0);
-  match(ConN);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 operand immL() %{
   match(ConL);
   op_cost(40);
