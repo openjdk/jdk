@@ -587,7 +587,7 @@ public enum ChronoField implements TemporalField {
      * This field is strictly defined to have the same meaning in all calendar systems.
      * This is necessary to ensure interoperation between calendars.
      * <p>
-     * Range of {@code InstantSeconds} is between {@link Instant#MIN} and {@link Instant#MAX}
+     * Range of InstantSeconds is between {@link Instant#MIN} and {@link Instant#MAX}
      * {@linkplain Instant#getEpochSecond() epoch second}, both inclusive.
      */
     INSTANT_SECONDS("InstantSeconds", SECONDS, FOREVER, ValueRange.of(Instant.MIN.getEpochSecond(), Instant.MAX.getEpochSecond())),
