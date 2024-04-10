@@ -163,8 +163,14 @@ ifneq ($(USE_EXTERNAL_LIBZ), true)
       $(subst .c,$(OBJ_SUFFIX),$(LIBJLI_EXTRA_FILE_LIST))
 endif
 
+ifeq ($(call isTargetOs, aix), true)
+  # AIX requires a static libjli because the compiler doesn't support '-rpath'
+  BUILD_LIBJLI_TYPE := STATIC_LIBRARY
+endif
+
 $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
     NAME := jli, \
+    TYPE := $(BUILD_LIBJLI_TYPE), \
     EXCLUDE_FILES := $(LIBJLI_EXCLUDE_FILES), \
     EXTRA_FILES := $(LIBJLI_EXTRA_FILES), \
     OPTIMIZATION := HIGH, \
@@ -173,7 +179,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
     DISABLED_WARNINGS_clang := format-nonliteral deprecated-non-prototype, \
     LIBS_unix := $(LIBZ_LIBS), \
     LIBS_linux := $(LIBDL) -lpthread, \
-    LIBS_aix := $(LIBDL),\
     LIBS_macosx := \
         -framework ApplicationServices \
         -framework Cocoa \
@@ -183,26 +188,3 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
 ))
 
 TARGETS += $(BUILD_LIBJLI)
-
-LIBJLI_SRC_DIRS := $(call FindSrcDirsForComponent, java.base, libjli)
-
-ifeq ($(call isTargetOs, aix), true)
-  # AIX also requires a static libjli because the compiler doesn't support
-  # '-rpath'
-  $(eval $(call SetupNativeCompilation, BUILD_LIBJLI_STATIC, \
-      NAME := jli_static, \
-      TYPE := STATIC_LIBRARY, \
-      OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE), \
-      SRC := $(LIBJLI_SRC_DIRS), \
-      EXCLUDE_FILES := $(LIBJLI_EXCLUDE_FILES), \
-      EXTRA_FILES := $(LIBJLI_EXTRA_FILES), \
-      OPTIMIZATION := HIGH, \
-      CFLAGS := $(STATIC_LIBRARY_FLAGS) $(CFLAGS_JDKLIB) $(LIBJLI_CFLAGS) \
-          $(LIBZ_CFLAGS) $(addprefix -I, $(LIBJLI_SRC_DIRS)), \
-      DISABLED_WARNINGS_clang_aix := format-nonliteral \
-          deprecated-non-prototype, \
-      ARFLAGS := $(ARFLAGS), \
-      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static))
-
-  TARGETS += $(BUILD_LIBJLI_STATIC)
-endif

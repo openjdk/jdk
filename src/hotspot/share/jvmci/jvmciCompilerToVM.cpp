@@ -636,7 +636,7 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGU
           resolved_klass = resolved_klass->array_klass(ndim, CHECK_NULL);
         }
       } else {
-        resolved_klass = TypeArrayKlass::cast(Universe::typeArrayKlassObj(ss.type()))->array_klass(ndim, CHECK_NULL);
+        resolved_klass = Universe::typeArrayKlass(ss.type())->array_klass(ndim, CHECK_NULL);
       }
     } else {
       resolved_klass = SystemDictionary::find_instance_klass(THREAD, class_name,
@@ -656,7 +656,7 @@ C2V_VMENTRY_NULL(jobject, getArrayType, (JNIEnv* env, jobject, jchar type_char, 
     if (type == T_VOID) {
       return nullptr;
     }
-    array_klass = Universe::typeArrayKlassObj(type);
+    array_klass = Universe::typeArrayKlass(type);
     if (array_klass == nullptr) {
       JVMCI_THROW_MSG_NULL(InternalError, err_msg("No array klass for primitive type %s", type2name(type)));
     }
@@ -1305,7 +1305,7 @@ C2V_VMENTRY(void, reprofile, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
   }
   NOT_PRODUCT(method->set_compiled_invocation_count(0));
 
-  CompiledMethod* code = method->code();
+  nmethod* code = method->code();
   if (code != nullptr) {
     code->make_not_entrant();
   }
@@ -1750,8 +1750,7 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
     if (!fst.current()->is_compiled_frame()) {
       JVMCI_THROW_MSG(IllegalStateException, "compiled stack frame expected");
     }
-    assert(fst.current()->cb()->is_nmethod(), "nmethod expected");
-    ((nmethod*) fst.current()->cb())->make_not_entrant();
+    fst.current()->cb()->as_nmethod()->make_not_entrant();
   }
   Deoptimization::deoptimize(thread, *fst.current(), Deoptimization::Reason_none);
   // look for the frame again as it has been updated by deopt (pc, deopt state...)

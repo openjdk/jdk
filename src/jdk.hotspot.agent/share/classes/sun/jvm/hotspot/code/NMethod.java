@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.jvm.hotspot.code;
 import java.io.*;
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
@@ -34,8 +35,9 @@ import sun.jvm.hotspot.utilities.*;
 import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
-public class NMethod extends CompiledMethod {
+public class NMethod extends CodeBlob {
   private static long          pcDescSize;
+  private static AddressField  methodField;
   /** != InvocationEntryBci if this nmethod is an on-stack replacement method */
   private static CIntegerField entryBCIField;
   /** To support simple linked-list chaining of nmethods */
@@ -43,10 +45,13 @@ public class NMethod extends CompiledMethod {
 
   /** Offsets for different nmethod parts */
   private static CIntegerField exceptionOffsetField;
+  private static CIntegerField deoptHandlerOffsetField;
+  private static CIntegerField deoptMhHandlerOffsetField;
   private static CIntegerField origPCOffsetField;
   private static CIntegerField stubOffsetField;
   private static CIntegerField oopsOffsetField;
   private static CIntegerField metadataOffsetField;
+  private static CIntegerField scopesDataOffsetField;
   private static CIntegerField scopesPCsOffsetField;
   private static CIntegerField dependenciesOffsetField;
   private static CIntegerField handlerTableOffsetField;
@@ -76,14 +81,18 @@ public class NMethod extends CompiledMethod {
   private static void initialize(TypeDataBase db) {
     Type type = db.lookupType("nmethod");
 
+    methodField                 = type.getAddressField("_method");
     entryBCIField               = type.getCIntegerField("_entry_bci");
     osrLinkField                = type.getAddressField("_osr_link");
 
     exceptionOffsetField        = type.getCIntegerField("_exception_offset");
+    deoptHandlerOffsetField     = type.getCIntegerField("_deopt_handler_offset");
+    deoptMhHandlerOffsetField   = type.getCIntegerField("_deopt_mh_handler_offset");
     origPCOffsetField           = type.getCIntegerField("_orig_pc_offset");
     stubOffsetField             = type.getCIntegerField("_stub_offset");
     oopsOffsetField             = type.getCIntegerField("_oops_offset");
     metadataOffsetField         = type.getCIntegerField("_metadata_offset");
+    scopesDataOffsetField       = type.getCIntegerField("_scopes_data_offset");
     scopesPCsOffsetField        = type.getCIntegerField("_scopes_pcs_offset");
     dependenciesOffsetField     = type.getCIntegerField("_dependencies_offset");
     handlerTableOffsetField     = type.getCIntegerField("_handler_table_offset");
@@ -105,6 +114,10 @@ public class NMethod extends CompiledMethod {
     return addr;
   }
 
+  public Method getMethod() {
+    return (Method)Metadata.instantiateWrapperFor(methodField.getValue(addr));
+  }
+
   // Type info
   public boolean isNMethod()      { return true;                    }
   public boolean isJavaMethod()   { return !getMethod().isNative(); }
@@ -117,12 +130,15 @@ public class NMethod extends CompiledMethod {
   public Address instsBegin()           { return codeBegin();                                        }
   public Address instsEnd()             { return headerBegin().addOffsetTo(getStubOffset());         }
   public Address exceptionBegin()       { return headerBegin().addOffsetTo(getExceptionOffset());    }
+  public Address deoptHandlerBegin()    { return headerBegin().addOffsetTo(getDeoptHandlerOffset());   }
+  public Address deoptMhHandlerBegin()  { return headerBegin().addOffsetTo(getDeoptMhHandlerOffset()); }
   public Address stubBegin()            { return headerBegin().addOffsetTo(getStubOffset());         }
   public Address stubEnd()              { return headerBegin().addOffsetTo(getOopsOffset());         }
   public Address oopsBegin()            { return headerBegin().addOffsetTo(getOopsOffset());         }
   public Address oopsEnd()              { return headerBegin().addOffsetTo(getMetadataOffset());     }
   public Address metadataBegin()        { return headerBegin().addOffsetTo(getMetadataOffset());     }
-  public Address metadataEnd()          { return scopesDataBegin();                                  }
+  public Address metadataEnd()          { return headerBegin().addOffsetTo(getScopesDataOffset());   }
+  public Address scopesDataBegin()      { return headerBegin().addOffsetTo(getScopesDataOffset());   }
   public Address scopesDataEnd()        { return headerBegin().addOffsetTo(getScopesPCsOffset());    }
   public Address scopesPCsBegin()       { return headerBegin().addOffsetTo(getScopesPCsOffset());    }
   public Address scopesPCsEnd()         { return headerBegin().addOffsetTo(getDependenciesOffset()); }
@@ -420,6 +436,7 @@ public class NMethod extends CompiledMethod {
   public static int getVerifiedEntryPointOffset()    { return (int) verifiedEntryPointField.getOffset();    }
   public static int getOSREntryPointOffset()         { return (int) osrEntryPointField.getOffset();         }
   public static int getEntryBCIOffset()              { return (int) entryBCIField.getOffset();              }
+  public static int getMethodOffset()                { return (int) methodField.getOffset();                }
 
   public void print() {
     printOn(System.out);
@@ -497,9 +514,12 @@ public class NMethod extends CompiledMethod {
 
   private int getEntryBCI()           { return (int) entryBCIField          .getValue(addr); }
   private int getExceptionOffset()    { return (int) exceptionOffsetField   .getValue(addr); }
+  private int getDeoptHandlerOffset()   { return (int) deoptHandlerOffsetField  .getValue(addr); }
+  private int getDeoptMhHandlerOffset() { return (int) deoptMhHandlerOffsetField.getValue(addr); }
   private int getStubOffset()         { return (int) stubOffsetField        .getValue(addr); }
   private int getOopsOffset()         { return (int) oopsOffsetField        .getValue(addr); }
   private int getMetadataOffset()     { return (int) metadataOffsetField    .getValue(addr); }
+  private int getScopesDataOffset()   { return (int) scopesDataOffsetField  .getValue(addr); }
   private int getScopesPCsOffset()    { return (int) scopesPCsOffsetField   .getValue(addr); }
   private int getDependenciesOffset() { return (int) dependenciesOffsetField.getValue(addr); }
   private int getHandlerTableOffset() { return (int) handlerTableOffsetField.getValue(addr); }
