@@ -104,7 +104,7 @@ size_t ZMarkStackSpace::shrink_space() {
                            old_size / M, new_size / M);
 
     const uintptr_t shrink_start = _end - shrink_size;
-    os::uncommit_memory((char*)shrink_start, shrink_size, false /* executable */);
+    os::uncommit_memory((char*)shrink_start, shrink_size, mtGC, false /* executable */);
   }
 
   return shrink_size;

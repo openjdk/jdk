@@ -716,7 +716,7 @@ WB_ENTRY(void, WB_NMTCommitMemory(JNIEnv* env, jobject o, jlong addr, jlong size
 WB_END
 
 WB_ENTRY(void, WB_NMTUncommitMemory(JNIEnv* env, jobject o, jlong addr, jlong size))
-  os::uncommit_memory((char *)(uintptr_t)addr, size);
+  os::uncommit_memory((char *)(uintptr_t)addr, size, mtTest);
 WB_END
 
 WB_ENTRY(void, WB_NMTReleaseMemory(JNIEnv* env, jobject o, jlong addr, jlong size))

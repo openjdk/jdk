@@ -111,7 +111,7 @@ public:
     ZGeneration::_old = _old_old;
     ZGeneration::_young = _old_young;
     if (_reserved != nullptr) {
-      os::uncommit_memory((char*)_reserved, ZGranuleSize, false /* executable */);
+      os::uncommit_memory((char*)_reserved, ZGranuleSize, mtGC, false /* executable */);
       os::release_memory((char*)_reserved, ZGranuleSize);
     }
   }

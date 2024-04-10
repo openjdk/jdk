@@ -2082,14 +2082,14 @@ void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
   MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC, flag);
 }
 
-bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
+bool os::uncommit_memory(char* addr, size_t bytes, MEMFLAGS flag, bool executable) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
     ThreadCritical tc;
     res = pd_uncommit_memory(addr, bytes, executable);
     if (res) {
-      MemTracker::record_virtual_memory_uncommit((address)addr, bytes);
+      MemTracker::record_virtual_memory_uncommit((address)addr, bytes, flag);
     }
   } else {
     res = pd_uncommit_memory(addr, bytes, executable);

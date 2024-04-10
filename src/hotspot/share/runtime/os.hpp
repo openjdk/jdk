@@ -471,7 +471,7 @@ class os: AllStatic {
   static void   commit_memory_or_exit(char* addr, size_t size,
                                       size_t alignment_hint,
                                       bool executable, const char* mesg, MEMFLAGS flag);
-  static bool   uncommit_memory(char* addr, size_t bytes, bool executable = false);
+  static bool   uncommit_memory(char* addr, size_t bytes, MEMFLAGS flag, bool executable = false);
   static bool   release_memory(char* addr, size_t bytes);
 
   // Does the platform support trimming the native heap?

@@ -167,7 +167,7 @@ void CardTable::resize_covered_region(MemRegion new_region) {
                               _page_size,
                               !ExecMem,
                               "card table expansion",
-                              mtGC);
+                              mtGCCardSet);
 
     memset(delta.start(), clean_card, delta.byte_size());
   } else {
@@ -175,7 +175,7 @@ void CardTable::resize_covered_region(MemRegion new_region) {
     MemRegion delta = MemRegion(new_committed.end(),
                                 old_committed.word_size() - new_committed.word_size());
     bool res = os::uncommit_memory((char*)delta.start(),
-                                   delta.byte_size());
+                                   delta.byte_size(), mtGCCardSet);
     assert(res, "uncommit should succeed");
   }
 
