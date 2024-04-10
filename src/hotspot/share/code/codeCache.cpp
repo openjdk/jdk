@@ -251,16 +251,24 @@ void CodeCache::initialize_heaps() {
 
   size_t total = non_nmethod.size + profiled.size + non_profiled.size;
   if (total != cache_size && !cache_size_set) {
-    log_info(codecache)("ReservedCodeCache size " SIZE_FORMAT "K changed to total segments size NonNMethod "
-                        SIZE_FORMAT "K NonProfiled " SIZE_FORMAT "K Profiled " SIZE_FORMAT "K = " SIZE_FORMAT "K",
-                        cache_size/K, non_nmethod.size/K, non_profiled.size/K, profiled.size/K, total/K);
+    log_info(codecache)("ReservedCodeCache size " SIZE_FORMAT "K changed to total segments size"
+                        " Profiled " SIZE_FORMAT "K NonNMethod " SIZE_FORMAT "K"
+                        " NonProfiled " SIZE_FORMAT "K"
+                        " = " SIZE_FORMAT "K",
+                        cache_size/K,
+                        profiled.size/K, non_nmethod.size/K,
+                        non_profiled.size/K,
+                        total/K);
     // Adjust ReservedCodeCacheSize as necessary because it was not set explicitly
     cache_size = total;
   }
 
-  log_debug(codecache)("Initializing code heaps ReservedCodeCache " SIZE_FORMAT "K NonNMethod " SIZE_FORMAT "K"
-                       " NonProfiled " SIZE_FORMAT "K Profiled " SIZE_FORMAT "K",
-                       cache_size/K, non_nmethod.size/K, non_profiled.size/K, profiled.size/K);
+  log_debug(codecache)("Initializing code heaps ReservedCodeCache " SIZE_FORMAT "K"
+                       " Profiled " SIZE_FORMAT "K NonNMethod " SIZE_FORMAT "K"
+                       " NonProfiled " SIZE_FORMAT "K",
+                       cache_size/K,
+                       profiled.size/K, non_nmethod.size/K,
+                       non_profiled.size/K);
 
   // Validation
   // Check minimal required sizes
@@ -303,14 +311,15 @@ void CodeCache::initialize_heaps() {
 
   // Note: if large page support is enabled, min_size is at least the large
   // page size. This ensures that the code cache is covered by large pages.
-  non_profiled.size += non_nmethod.size & alignment_mask(min_size);
   non_profiled.size += profiled.size & alignment_mask(min_size);
-  non_nmethod.size = align_down(non_nmethod.size, min_size);
+  non_profiled.size += non_nmethod.size & alignment_mask(min_size);
+
   profiled.size = align_down(profiled.size, min_size);
+  non_nmethod.size = align_down(non_nmethod.size, min_size);
   non_profiled.size = align_down(non_profiled.size, min_size);
 
-  FLAG_SET_ERGO(NonNMethodCodeHeapSize, non_nmethod.size);
   FLAG_SET_ERGO(ProfiledCodeHeapSize, profiled.size);
+  FLAG_SET_ERGO(NonNMethodCodeHeapSize, non_nmethod.size);
   FLAG_SET_ERGO(NonProfiledCodeHeapSize, non_profiled.size);
   FLAG_SET_ERGO(ReservedCodeCacheSize, cache_size);
 
@@ -505,7 +514,7 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
 
   // Get CodeHeap for the given CodeBlobType
   CodeHeap* heap = get_code_heap(code_blob_type);
-  assert(heap != nullptr, "heap is null");
+  assert(heap != nullptr, "No heap for given code_blob_type %d, heap is null", (int) code_blob_type);
 
   while (true) {
     cb = (CodeBlob*)heap->allocate(size);
@@ -1565,7 +1574,14 @@ void CodeCache::print_trace(const char* event, CodeBlob* cb, uint size) {
       assert(s >= 0, "CodeBlob size is negative: %d", s);
       size = (uint) s;
     }
-    tty->print_cr("CodeCache %s:  addr: " INTPTR_FORMAT ", size: 0x%x", event, p2i(cb), size);
+    tty->print("CodeCache %s:  addr: " INTPTR_FORMAT ", size: 0x%x", event, p2i(cb), size);
+    FOR_ALL_HEAPS(heap) {
+      CodeHeap* curr_heap = *heap;
+      if (curr_heap->contains(cb)) {
+        tty->print(" heap: %s", curr_heap->name());
+      }
+    }
+    tty->cr();
   }
 }
 
