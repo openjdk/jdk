@@ -124,6 +124,12 @@ define ResolveLibPath
       endif
     else
       # Special treatment for hotspot
+      ifeq ($(CREATING_BUILDJDK), true)
+        # When building a buildjdk, it's always only the server variant
+        $1_$2_JVM_VARIANT_PATH := server
+      else
+        $1_$2_JVM_VARIANT_PATH := $(JVM_VARIANT_MAIN)
+      endif
       ifeq ($$(call isTargetOs, windows), true)
         ifeq ($(STATIC_LIBS), true)
           $1_$2_LIBPATH := $$(HOTSPOT_OUTPUTDIR)/variant-$$($1_$2_JVM_VARIANT_PATH)/libjvm/objs/static
@@ -131,12 +137,6 @@ define ResolveLibPath
           $1_$2_LIBPATH := $$(SUPPORT_OUTPUTDIR)/modules_libs/$$($1_$2_MODULE)
         endif
       else
-        ifeq ($(CREATING_BUILDJDK), true)
-          # When building a buildjdk, it's always only the server variant
-          $1_$2_JVM_VARIANT_PATH := server
-        else
-          $1_$2_JVM_VARIANT_PATH := $(JVM_VARIANT_MAIN)
-        endif
         ifeq ($(STATIC_LIBS), true)
           $1_$2_LIBPATH := $$(HOTSPOT_OUTPUTDIR)/variant-$$($1_$2_JVM_VARIANT_PATH)/libjvm/objs/static
         else
