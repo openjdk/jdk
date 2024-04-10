@@ -2227,11 +2227,11 @@ void FileMapInfo::fixup_mapped_heap_region() {
   if (ArchiveHeapLoader::is_mapped()) {
     assert(!_mapped_heap_memregion.is_empty(), "sanity");
 
-    // Populate the archive regions' G1BlockOffsetTableParts. That ensures
-    // fast G1BlockOffsetTablePart::block_start operations for any given address
+    // Populate the archive regions' G1BlockOffsetTables. That ensures
+    // fast G1BlockOffsetTable::block_start operations for any given address
     // within the archive regions when trying to find start of an object
     // (e.g. during card table scanning).
-    G1CollectedHeap::heap()->populate_archive_regions_bot_part(_mapped_heap_memregion);
+    G1CollectedHeap::heap()->populate_archive_regions_bot(_mapped_heap_memregion);
   }
 }
 

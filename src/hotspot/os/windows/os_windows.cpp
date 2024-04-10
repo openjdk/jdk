@@ -1280,7 +1280,15 @@ void  os::dll_unload(void *lib) {
 }
 
 void* os::dll_lookup(void *lib, const char *name) {
-  return (void*)::GetProcAddress((HMODULE)lib, name);
+  ::SetLastError(0); // Clear old pending errors
+  void* ret = ::GetProcAddress((HMODULE)lib, name);
+  if (ret == nullptr) {
+    char buf[512];
+    if (os::lasterror(buf, sizeof(buf)) > 0) {
+      log_debug(os)("Symbol %s not found in dll: %s", name, buf);
+    }
+  }
+  return ret;
 }
 
 // Directory routines copied from src/win32/native/java/io/dirent_md.c

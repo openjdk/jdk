@@ -377,16 +377,9 @@ void os::Linux::kernel_version(long* major, long* minor) {
     log_warning(os)("uname(2) failed to get kernel version: %s", os::errno_name(ret));
     return;
   }
-
-  char* walker = buffer.release;
-  long* set_v = major;
-  while (*minor == -1 && walker != nullptr) {
-    if (isdigit(walker[0])) {
-      *set_v = strtol(walker, &walker, 10);
-      set_v = minor;
-    } else {
-      ++walker;
-    }
+  int nr_matched = sscanf(buffer.release, "%ld.%ld", major, minor);
+  if (nr_matched != 2) {
+    log_warning(os)("Parsing kernel version failed, expected 2 version numbers, only matched %d", nr_matched);
   }
 }
 
