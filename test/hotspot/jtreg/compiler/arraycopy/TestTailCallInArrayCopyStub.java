@@ -31,7 +31,7 @@
  *                   -XX:+StressGCM -XX:+StressLCM
  *                   -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,*::test
  *                   compiler.arraycopy.TestTailCallInArrayCopyStub
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xbatch -XX:-TieredCompilation 
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xbatch -XX:-TieredCompilation
  *                   -XX:+StressGCM -XX:+StressLCM -XX:StressSeed=75451718
  *                   -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,*::test
  *                   compiler.arraycopy.TestTailCallInArrayCopyStub
