@@ -50,17 +50,16 @@ public class PortFile {
     // Followed by a 4 byte int, with the port nr.
     // Followed by a 8 byte long, with cookie nr.
 
-    private String filename;
-    private File file;
-    private File stopFile;
+    private final String filename;
+    private final File file;
+    private final File stopFile;
     private RandomAccessFile rwfile;
-    private FileChannel channel;
 
     // FileLock used to solve inter JVM synchronization, lockSem used to avoid
     // JVM internal OverlappingFileLockExceptions.
     // Class invariant: lock.isValid() <-> lockSem.availablePermits() == 0
     private FileLock lock;
-    private Semaphore lockSem = new Semaphore(1);
+    private final Semaphore lockSem = new Semaphore(1);
 
     private boolean containsPortInfo;
     private int serverPort;
@@ -89,17 +88,18 @@ public class PortFile {
         }
         // The rwfile should only be readable by the owner of the process
         // and no other! How do we do that on a RandomAccessFile?
-        channel = rwfile.getChannel();
     }
 
     /**
      * Lock the port file.
      */
     public void lock() throws IOException, InterruptedException {
-        if (channel == null) {
-            initializeChannel();
-        }
         lockSem.acquire();
+        if (rwfile != null) {
+            throw new IllegalStateException("rwfile not null");
+        }
+        initializeChannel();
+        FileChannel channel = rwfile.getChannel();
         lock = channel.lock();
     }
 
@@ -110,8 +110,7 @@ public class PortFile {
     public void getValues()  {
         containsPortInfo = false;
         if (lock == null) {
-            // Not locked, remain ignorant about port file contents.
-            return;
+            throw new IllegalStateException("Must lock before calling getValues");
         }
         try {
             if (rwfile.length()>0) {
@@ -156,6 +155,9 @@ public class PortFile {
      * Store the values into the locked port file.
      */
     public void setValues(int port, long cookie) throws IOException {
+        if (lock == null) {
+            throw new IllegalStateException("Must lock before calling setValues");
+        }
         rwfile.seek(0);
         // Write the magic nr that identifies a port file.
         rwfile.writeInt(magicNr);
@@ -169,9 +171,6 @@ public class PortFile {
      * Delete the port file.
      */
     public void delete() throws IOException, InterruptedException {
-        // Access to file must be closed before deleting.
-        rwfile.close();
-
         if (!file.exists()) { // file deleted already
             return;
         }
@@ -213,10 +212,12 @@ public class PortFile {
      */
     public void unlock() throws IOException {
         if (lock == null) {
-            return;
+            throw new IllegalStateException("Not locked");
         }
         lock.release();
         lock = null;
+        rwfile.close();
+        rwfile = null;
         lockSem.release();
     }
 
