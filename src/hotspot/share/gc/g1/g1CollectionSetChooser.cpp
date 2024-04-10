@@ -241,7 +241,7 @@ public:
     _hrclaimer(num_workers),
     _num_regions_added(0),
     _result(max_num_regions, chunk_size, num_workers) { }
-
+pruned
   void work(uint worker_id) {
     G1BuildCandidateRegionsClosure cl(&_result);
     _g1h->heap_region_par_iterate_from_worker_offset(&cl, &_hrclaimer, worker_id);
