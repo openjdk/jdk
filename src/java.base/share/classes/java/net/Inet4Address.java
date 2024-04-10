@@ -101,8 +101,8 @@ import java.util.Objects;
  * octal and hexadecimal address segments. Please refer to
  * <a href="https://www.ietf.org/rfc/rfc6943.html#section-3.1.1"> <i>RFC&nbsp;
  * 6943: Issues in Identifier Comparison for Security Purposes</i></a>.
- * <p> The following (non-decimal) forms are supported
- * in this mode:
+ * <p> <a id="format-posix"></a> The following (non-decimal) forms are
+ * supported by {@link Inet4Address#ofPosixLiteral(String)} method:
  * {@snippet :
  *  // Dotted-quad 'x.x.x.x' form with four part address literal
  *  Inet4Address.ofPosixLiteral("0177.0000.0000.0001"); // ==> /127.0.0.1
@@ -213,23 +213,23 @@ class Inet4Address extends InetAddress {
 
     /**
      * Creates an {@code Inet4Address} based on the provided {@linkplain
-     * Inet4Address##format textual representation} of an IPv4 address in POSIX form.
-     * This form allows extended syntax, accepting hexadecimal and octal address
-     * segments as specified in {@code inet_addr} POSIX API (loose syntax). Please
-     * refer to <a href="https://www.ietf.org/rfc/rfc6943.html#section-3.1.1">
-     * <i>RFC&nbsp;6943: Issues in Identifier Comparison for Security Purposes</i></a>.
+     * Inet4Address##format textual representation} of an IPv4 address in
+     * {@linkplain Inet4Address##format-posix POSIX form.}
      * <p> If the provided IPv4 address literal cannot represent a {@linkplain
      * Inet4Address##format valid IPv4 address} an {@code IllegalArgumentException} is thrown.
      * <p> This method doesn't block, i.e. no hostname lookup is performed.
      *
      * @apiNote
      * This method produces different results compared to {@linkplain Inet4Address#ofLiteral}
-     * when {@code posixIPAddressLiteral} parameter contains octal address segments below
-     * {@code 0256} (decimal {@code 174}). Unlike {@linkplain Inet4Address#ofLiteral}
-     * that ignores leading zeros, parses all numbers as decimal and produces
-     * {@code 255} for {@code "0255"}, {@linkplain Inet4Address#ofPosixLiteral this}
-     * method interprets the numbers based on their prefix (hexadecimal {@code "0x"},
-     * octal {@code "0"}) and returns {@code 173} for {@code "0255"}.
+     * when {@code posixIPAddressLiteral} parameter contains address segments with
+     * leading zeroes. An address segment with a leading zero is always parsed as an octal
+     * number by this method, therefore {@code 0255} (octal) will be parsed as
+     * {@code 173} (decimal). On the other hand, {@link Inet4Address#ofLiteral
+     * Inet4Address.ofLiteral} ignores leading zeros, parses all numbers as decimal and produces
+     * {@code 255}. Where this method would parse {@code 0256.0256.0256.0256} (octal) and
+     * produce {@code 174.174.174.174} (decimal) in four dotted quad notation,
+     * {@link Inet4Address#ofLiteral Inet4Address.ofLiteral} will throw
+     * {@code IllegalArgumentException}.
      *
      * @param posixIPAddressLiteral the textual representation of an IPv4 address.
      * @return an {@link Inet4Address} object with no hostname set, and constructed
@@ -277,11 +277,8 @@ class Inet4Address extends InetAddress {
     }
 
     /**
-     * Parses the given string as an IPv4 address literal in POSIX form.
-     * This form allows extended syntax, accepting hexadecimal and octal address
-     * segments as specified in {@code inet_addr} POSIX API (loose syntax). Please
-     * refer to <a href="https://www.ietf.org/rfc/rfc6943.html#section-3.1.1">
-     * <i>RFC&nbsp;6943: Issues in Identifier Comparison for Security Purposes</i></a>.
+     * Parses the given string as an IPv4 address literal in
+     * {@linkplain Inet4Address##format-posix POSIX form.}
      *
      * <p> If the given {@code addressLiteral} string cannot be parsed as an IPv4 address literal
      * in POSIX form and {@code throwIAE} is {@code false}, {@code null} is returned.
@@ -291,12 +288,15 @@ class Inet4Address extends InetAddress {
      *
      * @apiNote
      * This method produces different results compared to {@linkplain Inet4Address#parseAddressString}
-     * when {@code addressLiteral} string contains octal address segments below
-     * {@code 0256} (decimal {@code 174}). Unlike {@linkplain Inet4Address#parseAddressString}
-     * that ignores leading zeros, parses all numbers as decimal and produces
-     * {@code 255} for {@code "0255"}, {@linkplain Inet4Address#parseAddressStringPosix this}
-     * method interprets the numbers based on their prefix (hexadecimal {@code "0x"},
-     * octal {@code "0"}) and returns {@code 173} for {@code "0255"}.
+     * when {@code addressLiteral} parameter contains address segments with leading
+     * zeroes. An address segment with a leading zero is always parsed as an octal
+     * number by this method, therefore {@code 0255} (octal) will be parsed as
+     * {@code 173} (decimal). On the other hand, {@link Inet4Address#parseAddressString}
+     * ignores leading zeros, parses all numbers as decimal and produces {@code 255}.
+     * Where this method would parse {@code 0256.0256.0256.0256} (octal) and produce
+     * {@code 174.174.174.174} (decimal) in four dotted quad notation, {@linkplain
+     * Inet4Address#parseAddressString} will either throw {@code IllegalArgumentException}
+     * or return {@code null}, depending on the value of {@code throwIAE}.
      *
      * @param addressLiteral IPv4 address literal to parse
      * @param throwIAE whether to throw {@code IllegalArgumentException} if the
