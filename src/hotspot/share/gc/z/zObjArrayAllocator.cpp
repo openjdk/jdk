@@ -136,7 +136,7 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
     return true;
   };
 
-  mem_zap_alignment_padding(mem);
+  mem_zap_start_padding(mem);
 
   if (!initialize_memory()) {
     // Re-color with 11 remset bits if we got intercepted by a GC safepoint

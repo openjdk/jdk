@@ -406,7 +406,7 @@ oop ObjArrayAllocator::initialize(HeapWord* mem) const {
   assert(_length >= 0, "length should be non-negative");
   if (_do_zero) {
     mem_clear(mem);
-    mem_zap_alignment_padding(mem);
+    mem_zap_start_padding(mem);
     mem_zap_end_padding(mem);
   }
   arrayOopDesc::set_length(mem, _length);
@@ -414,7 +414,7 @@ oop ObjArrayAllocator::initialize(HeapWord* mem) const {
 }
 
 #ifndef PRODUCT
-void ObjArrayAllocator::mem_zap_alignment_padding(HeapWord* mem) const {
+void ObjArrayAllocator::mem_zap_start_padding(HeapWord* mem) const {
   const BasicType element_type = ArrayKlass::cast(_klass)->element_type();
   const size_t base_offset_in_bytes = arrayOopDesc::base_offset_in_bytes(element_type);
   const size_t header_size_in_bytes = arrayOopDesc::header_size_in_bytes();
