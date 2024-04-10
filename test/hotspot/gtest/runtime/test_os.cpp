@@ -426,7 +426,7 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
         carefully_release_multiple(p, stripe, stripe_len);
         p = nullptr;
       } else {
-        EXPECT_TRUE(os::commit_memory((char*)q, stripe_len, executable));
+        EXPECT_TRUE(os::commit_memory((char*)q, stripe_len, executable, mtTest));
       }
     }
   }
@@ -444,7 +444,7 @@ static address reserve_one_commit_multiple(int num_stripes, size_t stripe_len) {
   for (int stripe = 0; stripe < num_stripes; stripe++) {
     address q = p + (stripe * stripe_len);
     if (stripe % 2 == 0) {
-      EXPECT_TRUE(os::commit_memory((char*)q, stripe_len, false));
+      EXPECT_TRUE(os::commit_memory((char*)q, stripe_len, false, mtTest));
     }
   }
   return p;
@@ -607,7 +607,7 @@ TEST_VM(os, show_mappings_full_range) {
   // on implementations displaying range snippets
   char* p = os::reserve_memory(1 * M, false, mtInternal);
   if (p != nullptr) {
-    if (os::commit_memory(p, 1 * M, false)) {
+    if (os::commit_memory(p, 1 * M, false, mtTest)) {
       strcpy(p, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
     }
   }

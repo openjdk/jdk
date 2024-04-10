@@ -711,7 +711,7 @@ WB_ENTRY(jlong, WB_NMTAttemptReserveMemoryAt(JNIEnv* env, jobject o, jlong addr,
 WB_END
 
 WB_ENTRY(void, WB_NMTCommitMemory(JNIEnv* env, jobject o, jlong addr, jlong size))
-  os::commit_memory((char *)(uintptr_t)addr, size, !ExecMem);
+  os::commit_memory((char *)(uintptr_t)addr, size, !ExecMem, mtTest);
   MemTracker::record_virtual_memory_type((address)(uintptr_t)addr, mtTest);
 WB_END
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ class MemTracker : AllStatic {
   }
 
   static inline void record_virtual_memory_commit(void* addr, size_t size,
-    const NativeCallStack& stack) {
+    const NativeCallStack& stack, MEMFLAGS flag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {

@@ -1782,7 +1782,7 @@ bool FileMapInfo::read_region(int i, char* base, size_t size, bool do_commit) {
     log_info(cds)("Commit %s region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT " (%s)%s",
                   is_static() ? "static " : "dynamic", i, p2i(base), p2i(base + size),
                   shared_region_name[i], r->allow_exec() ? " exec" : "");
-    if (!os::commit_memory(base, size, r->allow_exec())) {
+    if (!os::commit_memory(base, size, r->allow_exec(), mtClassShared)) {
       log_error(cds)("Failed to commit %s region #%d (%s)", is_static() ? "static " : "dynamic",
                      i, shared_region_name[i]);
       return false;

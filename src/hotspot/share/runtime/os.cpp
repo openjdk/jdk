@@ -2043,11 +2043,11 @@ static void assert_nonempty_range(const char* addr, size_t bytes) {
          p2i(addr), p2i(addr) + bytes);
 }
 
-bool os::commit_memory(char* addr, size_t bytes, bool executable) {
+bool os::commit_memory(char* addr, size_t bytes, bool executable, MEMFLAGS flag) {
   assert_nonempty_range(addr, bytes);
   bool res = pd_commit_memory(addr, bytes, executable);
   if (res) {
-    MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC, flag);
     log_debug(os, map)("Committed " RANGEFMT, RANGEFMTARGS(addr, bytes));
   } else {
     log_info(os, map)("Failed to commit " RANGEFMT, RANGEFMTARGS(addr, bytes));
@@ -2056,11 +2056,11 @@ bool os::commit_memory(char* addr, size_t bytes, bool executable) {
 }
 
 bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
-                              bool executable) {
+                              bool executable, MEMFLAGS flag) {
   assert_nonempty_range(addr, size);
   bool res = os::pd_commit_memory(addr, size, alignment_hint, executable);
   if (res) {
-    MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
+    MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC, flag);
     log_debug(os, map)("Committed " RANGEFMT, RANGEFMTARGS(addr, size));
   } else {
     log_info(os, map)("Failed to commit " RANGEFMT, RANGEFMTARGS(addr, size));
@@ -2069,17 +2069,17 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
 }
 
 void os::commit_memory_or_exit(char* addr, size_t bytes, bool executable,
-                               const char* mesg) {
+                               const char* mesg, MEMFLAGS flag) {
   assert_nonempty_range(addr, bytes);
   pd_commit_memory_or_exit(addr, bytes, executable, mesg);
-  MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
+  MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC, flag);
 }
 
 void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
-                               bool executable, const char* mesg) {
+                               bool executable, const char* mesg, MEMFLAGS flag) {
   assert_nonempty_range(addr, size);
   os::pd_commit_memory_or_exit(addr, size, alignment_hint, executable, mesg);
-  MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
+  MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC, flag);
 }
 
 bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
@@ -2204,8 +2204,8 @@ bool os::unmap_memory(char *addr, size_t bytes) {
   return result;
 }
 
-void os::free_memory(char *addr, size_t bytes, size_t alignment_hint) {
-  pd_free_memory(addr, bytes, alignment_hint);
+void os::free_memory(char *addr, size_t bytes, size_t alignment_hint, MEMFLAGS flag) {
+  pd_free_memory(addr, bytes, alignment_hint, flag);
 }
 
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {

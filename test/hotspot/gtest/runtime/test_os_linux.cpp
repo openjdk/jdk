@@ -357,7 +357,7 @@ TEST_VM(os_linux, pretouch_thp_and_use_concurrent) {
   UseTransparentHugePages = true;
   char* const heap = os::reserve_memory(size, false, mtInternal);
   EXPECT_NE(heap, nullptr);
-  EXPECT_TRUE(os::commit_memory(heap, size, false));
+  EXPECT_TRUE(os::commit_memory(heap, size, false, mtInternal));
 
   {
     auto pretouch = [heap, size](Thread*, int) {

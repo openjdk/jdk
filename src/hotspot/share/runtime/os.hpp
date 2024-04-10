@@ -231,7 +231,7 @@ class os: AllStatic {
                            char *addr, size_t bytes, bool read_only = false,
                            bool allow_exec = false);
   static bool   pd_unmap_memory(char *addr, size_t bytes);
-  static void   pd_free_memory(char *addr, size_t bytes, size_t alignment_hint);
+  static void   pd_free_memory(char *addr, size_t bytes, size_t alignment_hint, MEMFLAGS flag);
   static void   pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
   // Returns 0 if pretouch is done via platform dependent method, or otherwise
@@ -461,16 +461,16 @@ class os: AllStatic {
   // If randomize is true, the location will be randomized.
   static char* attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize);
 
-  static bool   commit_memory(char* addr, size_t bytes, bool executable);
+  static bool   commit_memory(char* addr, size_t bytes, bool executable, MEMFLAGS flag);
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,
-                              bool executable);
+                              bool executable, MEMFLAGS flag);
   // Same as commit_memory() that either succeeds or calls
   // vm_exit_out_of_memory() with the specified mesg.
   static void   commit_memory_or_exit(char* addr, size_t bytes,
-                                      bool executable, const char* mesg);
+                                      bool executable, const char* mesg, MEMFLAGS flag);
   static void   commit_memory_or_exit(char* addr, size_t size,
                                       size_t alignment_hint,
-                                      bool executable, const char* mesg);
+                                      bool executable, const char* mesg, MEMFLAGS flag);
   static bool   uncommit_memory(char* addr, size_t bytes, bool executable = false);
   static bool   release_memory(char* addr, size_t bytes);
 
@@ -508,7 +508,7 @@ class os: AllStatic {
   // Map memory to the file referred by fd. This function is slightly different from map_memory()
   // and is added to be used for implementation of -XX:AllocateHeapAt
   static char* map_memory_to_file(size_t size, int fd, MEMFLAGS flag = mtNone);
-  static char* map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MEMFLAGS flag = mtNone);
+  static char* map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MEMFLAGS flag);
   static char* map_memory_to_file(char* base, size_t size, int fd);
   static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd, MEMFLAGS flag = mtNone);
   // Replace existing reserved memory with file mapping
@@ -518,7 +518,7 @@ class os: AllStatic {
                            char *addr, size_t bytes, bool read_only = false,
                            bool allow_exec = false, MEMFLAGS flags = mtNone);
   static bool   unmap_memory(char *addr, size_t bytes);
-  static void   free_memory(char *addr, size_t bytes, size_t alignment_hint);
+  static void   free_memory(char *addr, size_t bytes, size_t alignment_hint, MEMFLAGS flag);
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
   // NUMA-specific interface

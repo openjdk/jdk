@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ public:
 
     _reserved = reserved;
 
-    os::commit_memory((char*)_reserved, ZGranuleSize, false /* executable */);
+    os::commit_memory((char*)_reserved, ZGranuleSize, false /* executable */, mtGC);
 
     _page_offset = uintptr_t(_reserved) - ZAddressHeapBase;
   }

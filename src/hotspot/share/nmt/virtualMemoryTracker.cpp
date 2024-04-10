@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -424,8 +424,8 @@ void VirtualMemoryTracker::set_reserved_region_type(address addr, MEMFLAGS flag)
   if (reserved_rgn != nullptr) {
     assert(reserved_rgn->contain_address(addr), "Containment");
     if (reserved_rgn->flag() != flag) {
-      assert(reserved_rgn->flag() == mtNone, "Overwrite memory type (should be mtNone, is: \"%s\")",
-             NMTUtil::flag_to_name(reserved_rgn->flag()));
+      assert(reserved_rgn->flag() == mtNone, "Overwrite memory type (should be mtNone, is: \"%s\") wants to change to \"%s\"",
+             NMTUtil::flag_to_name(reserved_rgn->flag()), NMTUtil::flag_to_name(flag));
       reserved_rgn->set_flag(flag);
     }
   }
