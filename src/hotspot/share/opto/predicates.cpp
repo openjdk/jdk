@@ -323,7 +323,7 @@ Opaque4Node* TemplateAssertionPredicateExpression::clone(const TransformStrategy
   auto is_opaque_loop_node = [](const Node* node) {
     return node->is_Opaque1();
   };
-  DataNodesOnPathsToTargets data_nodes_on_path_to_targets(TemplateAssertionPredicateExpression::maybe_contains,
+  DataNodesOnPathsToTargets data_nodes_on_path_to_targets(TemplateAssertionPredicateExpressionNode::valid_opcode,
                                                           is_opaque_loop_node);
   const Unique_Node_List& collected_nodes = data_nodes_on_path_to_targets.collect(_opaque4_node);
   DataNodeGraph data_node_graph(collected_nodes, phase);
@@ -331,4 +331,42 @@ Opaque4Node* TemplateAssertionPredicateExpression::clone(const TransformStrategy
   assert(orig_to_new.contains(_opaque4_node), "must exist");
   Node* opaque4_clone = *orig_to_new.get(_opaque4_node);
   return opaque4_clone->as_Opaque4();
+}
+
+// Check if this node belongs a Template Assertion Predicate Expression (including OpaqueLoop* nodes).
+bool TemplateAssertionPredicateExpressionNode::find_opaque_loop_nodes(Node* node) {
+  if (valid_opcode(node)) {
+    ResourceMark rm;
+    Unique_Node_List list;
+    list.push(node);
+    for (uint i = 0; i < list.size(); i++) {
+      Node* next = list.at(i);
+      if (next->is_OpaqueLoopInit() || next->is_OpaqueLoopStride()) {
+        return true;
+      } else if (valid_opcode(next)) {
+        push_non_null_inputs(list, next);
+      }
+    }
+  }
+  return false;
+}
+
+void TemplateAssertionPredicateExpressionNode::push_non_null_inputs(Unique_Node_List& list, const Node* node) {
+  for (uint i = 1; i < node->req(); i++) {
+    Node* input = node->in(i);
+    if (input != nullptr) {
+      list.push(input);
+    }
+  }
+}
+
+bool TemplateAssertionPredicateExpressionNode::is_template_assertion_predicate(Node* node) {
+  return node->is_If() && node->in(1)->is_Opaque4();
+}
+
+void TemplateAssertionPredicateExpressionNode::push_outputs(Unique_Node_List& list, const Node* node) {
+  for (DUIterator_Fast imax, i = node->fast_outs(imax); i < imax; i++) {
+    Node* out = node->fast_out(i);
+    list.push(out);
+  }
 }
