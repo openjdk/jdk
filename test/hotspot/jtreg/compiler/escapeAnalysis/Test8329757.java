@@ -70,5 +70,3 @@ public class Test8329757 {
         for (int i = 0; i < 1000; i++) r.n();
     }
 }
-
-
