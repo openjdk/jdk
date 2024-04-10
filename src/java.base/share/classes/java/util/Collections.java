@@ -1511,11 +1511,11 @@ public class Collections {
         }
         public int indexOf(Object o)            {return list.indexOf(o);}
         public int findIndex(Predicate<? super E> filter) {
-            return list.indexOf(filter);
+            return list.findIndex(filter);
         }
         public int lastIndexOf(Object o)        {return list.lastIndexOf(o);}
         public int findLastIndex(Predicate<? super E> filter) {
-            return list.lastIndexOf(filter);
+            return list.findLastIndex(filter);
         }
         public boolean addAll(int index, Collection<? extends E> c) {
             throw new UnsupportedOperationException();

@@ -317,10 +317,10 @@ public class ArrayList<E> extends AbstractList<E>
      *         this list, or -1 if this list does not contain the element
      */
     public int findIndex(Predicate<? super E> filter) {
-        return indexOfRange(filter, 0, size);
+        return findIndexInRange(filter, 0, size);
     }
 
-    int indexOfRange(Predicate<? super E> filter, int start, int end) {
+    int findIndexInRange(Predicate<? super E> filter, int start, int end) {
         Object[] es = elementData;
         for (int i = start; i < end; i++) {
             if (filter.test(elementAt(es, i))) {
@@ -371,10 +371,10 @@ public class ArrayList<E> extends AbstractList<E>
      *         this list, or -1 if this list does not contain the element
      */
     public int findLastIndex(Predicate<? super E> filter) {
-        return lastIndexOfRange(filter, 0, size);
+        return findLastIndexInRange(filter, 0, size);
     }
 
-    int lastIndexOfRange(Predicate<? super E> filter, int start, int end) {
+    int findLastIndexInRange(Predicate<? super E> filter, int start, int end) {
         Object[] es = elementData;
         for (int i = end - 1; i >= start; i--) {
             if (filter.test(elementAt(es, i))) {

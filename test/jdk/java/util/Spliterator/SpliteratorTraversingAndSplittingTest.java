@@ -431,7 +431,7 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
 
                 @Override
                 public int findIndex(Predicate<? super Integer> filter) {
-                    return l.indexOf(filter);
+                    return l.findIndex(filter);
                 }
 
                 @Override
@@ -441,7 +441,7 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
 
                 @Override
                 public int findLastIndex(Predicate<? super Integer> filter) {
-                    return l.lastIndexOf(filter);
+                    return l.findLastIndex(filter);
                 }
 
                 @Override

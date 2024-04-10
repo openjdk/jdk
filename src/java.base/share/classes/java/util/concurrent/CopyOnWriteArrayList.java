@@ -202,7 +202,7 @@ public class CopyOnWriteArrayList<E>
      * @param to     one past last element of range, first element to search
      * @return index of element, or -1 if absent
      */
-    private static <E> int indexOfRange(Predicate<E> filter, E[] es, int from, int to) {
+    private static <E> int findIndexInRange(Predicate<E> filter, E[] es, int from, int to) {
         for (int i = from; i < to; i++)
             if (filter.test(es[i]))
                 return i;
@@ -240,7 +240,7 @@ public class CopyOnWriteArrayList<E>
      * @param to     one past last element of range, first element to search
      * @return index of element, or -1 if absent
      */
-    private static <E> int lastIndexOfRange(Predicate<? super E> filter, E[] es, int from, int to) {
+    private static <E> int findLastIndexInRange(Predicate<? super E> filter, E[] es, int from, int to) {
         for (int i = to - 1; i >= from; i--)
             if (filter.test(es[i]))
                 return i;
@@ -283,7 +283,7 @@ public class CopyOnWriteArrayList<E>
     @SuppressWarnings("unchecked")
     public int findIndex(Predicate<? super E> filter) {
         E[] es = (E[]) getArray();
-        return indexOfRange(filter, es, 0, es.length);
+        return findIndexInRange(filter, es, 0, es.length);
     }
 
     /**
@@ -302,7 +302,7 @@ public class CopyOnWriteArrayList<E>
     @SuppressWarnings("unchecked")
     public int findLastIndex(Predicate<? super E> filter) {
         E[] es = (E[]) getArray();
-        return lastIndexOfRange(filter, es, 0, es.length);
+        return findLastIndexInRange(filter, es, 0, es.length);
     }
 
     /**
