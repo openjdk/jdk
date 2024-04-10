@@ -1508,7 +1508,7 @@ public class LinkedList<E>
         }
 
         public int findLastIndex(Predicate<? super E> filter) {
-            return rlist.lastIndexOf(filter);
+            return rlist.findLastIndex(filter);
         }
 
         public int indexOf(Object o) {
@@ -1516,7 +1516,7 @@ public class LinkedList<E>
         }
 
         public int findIndex(Predicate<? super E> filter) {
-            return rlist.indexOf(filter);
+            return rlist.findIndex(filter);
         }
 
         public E remove(int index) {
