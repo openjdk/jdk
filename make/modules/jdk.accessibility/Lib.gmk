@@ -48,7 +48,7 @@ ifeq ($(call isTargetOs, windows), true)
         EXTRA_HEADER_DIRS := \
             include/bridge \
             java.desktop:include, \
-        JDK_LIBS := java.desktop:jawt, \
+        JDK_LIBS := java.desktop:libjawt, \
         LIBS_windows := advapi32.lib comdlg32.lib gdi32.lib kernel32.lib \
             odbc32.lib odbccp32.lib ole32.lib oleaut32.lib shell32.lib \
             user32.lib uuid.lib winspool.lib, \
