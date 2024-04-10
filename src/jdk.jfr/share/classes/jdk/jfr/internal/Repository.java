@@ -28,7 +28,6 @@ package jdk.jfr.internal;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -81,7 +80,7 @@ public final class Repository {
     }
 
     synchronized RepositoryChunk newChunk() {
-        ZonedDateTime timestamp = ZonedDateTime.now();
+        LocalDateTime timestamp = LocalDateTime.now();
         try {
             if (!SecuritySupport.existDirectory(repository)) {
                 this.repository = createRepository(baseLocation);
@@ -93,7 +92,7 @@ public final class Repository {
             if (chunkFilename == null) {
                 chunkFilename = ChunkFilename.newPriviliged(repository.toPath());
             }
-            String filename = chunkFilename.next(timestamp.toLocalDateTime());
+            String filename = chunkFilename.next(timestamp);
             return new RepositoryChunk(new SafePath(filename));
         } catch (Exception e) {
             String errorMsg = String.format("Could not create chunk in repository %s, %s: %s", repository, e.getClass(), e.getMessage());
