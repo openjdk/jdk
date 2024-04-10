@@ -363,6 +363,9 @@ public:
   void oop_since_save_marks_iterate(OopClosureType1* cur,
                                     OopClosureType2* older);
 
+  void scan_evacuated_objs(YoungGenScanClosure* young_cl,
+                           OldGenScanClosure* old_cl);
+
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;
 

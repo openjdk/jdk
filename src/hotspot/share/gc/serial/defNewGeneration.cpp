@@ -231,10 +231,7 @@ public:
   {}
 
   void do_void() {
-    do {
-      _heap->oop_since_save_marks_iterate(_young_cl, _old_cl);
-    } while (!_heap->no_allocs_since_save_marks());
-    guarantee(_heap->young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
+    _heap->scan_evacuated_objs(_young_cl, _old_cl);
   }
 };
 
