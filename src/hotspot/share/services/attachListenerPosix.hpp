@@ -48,6 +48,9 @@
 // The BSD, AIX and Linux implementations of the platform-dependent AttachListener API
 // are almost identical. We implement a common solution in this header file and
 // let their implementations simply include this header.
+// We MUST ONLY include this EXACTLY ONCE per platform and ONLY inside of a .cpp file.
+// Not following this rule WILL LEAD TO ODR VIOLATIONS.
+// So let's not actually do this, but something very similar.
 
 // The attach mechanism on POSIX uses a UNIX domain socket. An attach listener
 // thread is created at startup or is created on-demand via a signal from
@@ -73,6 +76,11 @@ class PosixAttachListener: AllStatic {
   // the path to which we bind the UNIX domain socket
   static char _path[UNIX_PATH_MAX];
   static bool _has_path;
+
+#ifdef AIX
+  // Shutdown marker to prevent accept blocking during clean-up.
+  static volatile bool _shutdown;
+#endif
 
   // the file descriptor for the listening socket
   static volatile int _listener;
@@ -109,6 +117,10 @@ class PosixAttachListener: AllStatic {
   static char* path()                   { return _path; }
   static bool has_path()                { return _has_path; }
   static int listener()                 { return _listener; }
+#ifdef AIX
+  // Shutdown marker to prevent accept blocking during clean-up
+  static void set_shutdown(bool shutdown) { _shutdown = shutdown; }
+#endif
 
   // write the given buffer to a socket
   static int write_fully(int s, char* buf, size_t len);
@@ -166,16 +178,35 @@ class ArgumentIterator : public StackObj {
   }
 };
 
+// AIX SPECIFIC:
+// On AIX if sockets block until all data has been transmitted
+// successfully in some communication domains a socket "close" may
+// never complete. We have to take care that after the socket shutdown
+// the listener never enters accept state.
+// Some modifications to the listener logic to prevent deadlocks on exit.
+// 1. We Shutdown the socket here instead. AixAttachOperation::complete() is not the right place
+//    since more than one agent in a sequence in JPLIS live tests wouldn't work (Listener thread
+//    would be dead after the first operation completion).
+// 2. close(s) may never return if the listener thread is in socket accept(). Unlinking the file
+//    should be sufficient for cleanup.
+
 
 // atexit hook to stop listener and unlink the file that it is
 // bound too.
 extern "C" {
   static void listener_cleanup() {
+#ifdef AIX
+    PosixAttachListener::set_shutdown(true);
+#endif
     int s = PosixAttachListener::listener();
     if (s != -1) {
+#ifdef AIX
+      ::shutdown(s, 2);
+#else
       PosixAttachListener::set_listener(-1);
       ::shutdown(s, SHUT_RDWR);
       ::close(s);
+#endif
     }
     if (PosixAttachListener::has_path()) {
       ::unlink(PosixAttachListener::path());
@@ -221,7 +252,12 @@ int PosixAttachListener::init() {
   addr.sun_family = AF_UNIX;
   strcpy(addr.sun_path, initial_path);
   ::unlink(initial_path);
-  int res = ::bind(listener, (struct sockaddr*)&addr, sizeof(addr));
+#ifdef AIX
+  // We must call bind with the actual socketaddr length. This is obligatory for AS400.
+  int res = ::bind(listener, (struct sockaddr*)&addr, SUN_LEN(&addr));
+#else
+    int res = ::bind(listener, (struct sockaddr*)&addr, sizeof(addr));
+#endif
   if (res == -1) {
     ::close(listener);
     return -1;
@@ -248,7 +284,9 @@ int PosixAttachListener::init() {
   }
   set_path(path);
   set_listener(listener);
-
+#ifdef AIX
+  set_shutdown(false);
+#endif
   return 0;
 }
 
@@ -362,7 +400,19 @@ PosixAttachOperation* PosixAttachListener::dequeue() {
     // wait for client to connect
     struct sockaddr addr;
     socklen_t len = sizeof(addr);
+#ifdef AIX
+    memset(&addr, 0, len);
+    // We must prevent accept blocking on the socket if it has been shut down.
+    // Therefore we allow interrupts and check whether we have been shut down already.
+    if (AixAttachListener::is_shutdown()) {
+      ::close(listener());
+      set_listener(-1);
+      return nullptr;
+    }
+    s = ::accept(listener(), &addr, &len);
+#else
     RESTARTABLE(::accept(listener(), &addr, &len), s);
+#endif
     if (s == -1) {
       return nullptr;      // log a warning?
     }
@@ -397,6 +447,20 @@ PosixAttachOperation* PosixAttachListener::dequeue() {
       continue;
     }
 #elif AIX
+    struct peercred_struct cred_info;
+    socklen_t optlen = sizeof(cred_info);
+    if (::getsockopt(s, SOL_SOCKET, SO_PEERID, (void*)&cred_info, &optlen) == -1) {
+      log_debug(attach)("Failed to get socket option SO_PEERID");
+      ::close(s);
+      continue;
+    }
+
+    if (!os::Posix::matches_effective_uid_and_gid_or_root(cred_info.euid, cred_info.egid)) {
+      log_debug(attach)("euid/egid check failed (%d/%d vs %d/%d)",
+              cred_info.euid, cred_info.egid, geteuid(), getegid());
+      ::close(s);
+      continue;
+    }
 #endif
 
     // peer credential look okay so we read the request
@@ -445,7 +509,12 @@ void PosixAttachOperation::complete(jint result, bufferedStream* st) {
   // write any result data
   if (rc == 0) {
     PosixAttachListener::write_fully(this->socket(), (char*) st->base(), st->size());
+#ifdef AIX
+    // Shutdown the socket in the cleanup function to enable more than
+    // one agent attach in a sequence (see comments to listener_cleanup()).
+#else
     ::shutdown(this->socket(), 2);
+#endif
   }
 
   // done
@@ -541,26 +610,25 @@ bool AttachListener::is_init_trigger() {
   char fn[PATH_MAX + 1];
   int ret;
   struct stat st;
-#ifdef LINUX
-  os::snprintf_checked(fn, sizeof(fn), ".attach_pid%d", os::current_process_id());
-#elif BSD
+#ifdef BSD
   os::snprintf(fn, PATH_MAX + 1, "%s/.attach_pid%d", os::get_temp_directory(),
-           os::current_process_id());
-#elif AIX
+               os::current_process_id());
+
+#else
+  os::snprintf_checked(fn, sizeof(fn), ".attach_pid%d", os::current_process_id());
 #endif
   RESTARTABLE(::stat(fn, &st), ret);
   if (ret == -1) {
-#ifdef LINUX
+#ifdef BSD
+    log_debug(attach)("Failed to find attach file: %s", fn);
+#else
     log_trace(attach)("Failed to find attach file: %s, trying alternate", fn);
-    snprintf(fn, sizeof(fn), "%s/.attach_pid%d",
-             os::get_temp_directory(), os::current_process_id());
+    snprintf(fn, sizeof(fn), "%s/.attach_pid%d", os::get_temp_directory(),
+             os::current_process_id());
     RESTARTABLE(::stat(fn, &st), ret);
     if (ret == -1) {
       log_debug(attach)("Failed to find attach file: %s", fn);
     }
-#elif BSD
-    log_debug(attach)("Failed to find attach file: %s", fn);
-#elif AIX
 #endif
   }
   if (ret == 0) {
@@ -587,7 +655,12 @@ void AttachListener::pd_data_dump() {
 }
 
 void AttachListener::pd_detachall() {
+#ifdef AIX
+  // Cleanup server socket to detach clients.
+  listener_cleanup();
+#else
   // do nothing for now
+#endif
 }
 
 #endif
