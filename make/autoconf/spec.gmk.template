@@ -677,6 +677,10 @@ BUILD_JAR = @FIXPATH@ $(BUILD_JDK)/bin/jar
 
 DOCS_REFERENCE_JAVADOC := @DOCS_REFERENCE_JAVADOC@
 
+# A file containing a way to uniquely identify the source code revision that
+# the build was created from
+SOURCE_REVISION_TRACKER := $(SUPPORT_OUTPUTDIR)/src-rev/source-revision-tracker
+
 # Interim langtools modules and arguments
 INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.javadoc
 INTERIM_LANGTOOLS_MODULES := $(addsuffix .interim, $(INTERIM_LANGTOOLS_BASE_MODULES))
