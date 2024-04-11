@@ -2053,15 +2053,28 @@ VM_GetThreadListStackTraces::doit() {
 }
 
 void
-GetSingleStackTraceClosure::do_thread(Thread *target) {
-  JavaThread *jt = JavaThread::cast(target);
+GetSingleStackTraceClosure::doit() {
+  JavaThread *jt = _target_jt;
   oop thread_oop = JNIHandles::resolve_external_guard(_jthread);
 
-  if (!jt->is_exiting() && thread_oop != nullptr) {
+  if ((jt == nullptr || !jt->is_exiting()) && thread_oop != nullptr) {
     ResourceMark rm;
     _collector.fill_frames(_jthread, jt, thread_oop);
     _collector.allocate_and_fill_stacks(1);
+    set_result(_collector.result());
   }
+}
+
+void
+GetSingleStackTraceClosure::do_thread(Thread *target) {
+  assert(_target_jt == JavaThread::cast(target), "sanity check");
+  doit();
+}
+
+void
+GetSingleStackTraceClosure::do_vthread(Handle target_h) {
+  assert(_target_jt == nullptr || _target_jt->vthread() == target_h(), "sanity check");
+  doit();
 }
 
 void
