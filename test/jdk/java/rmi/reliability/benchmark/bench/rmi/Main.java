@@ -277,10 +277,7 @@ public class Main {
                         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(clientProcessStr);
                         OutputAnalyzer outputAnalyzer = ProcessTools.executeProcess(pb);
                         System.out.println(outputAnalyzer.getOutput());
-                        int exitValue = outputAnalyzer.getExitValue();
-                        if(0 != exitValue) {
-                            die("Error: error happened in client process, exitValue = " + exitValue);
-                        }
+                        outputAnalyzer.shouldHaveExitValue(0);
                     } catch (IOException ex) {
                         die("Error: Unable start client process, ex=" + ex.getMessage());
                     } catch (Exception ex) {

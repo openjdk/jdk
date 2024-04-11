@@ -62,7 +62,7 @@ import jdk.test.lib.process.ProcessTools;
  *          executing scenarios.
  * @library /test/lib
  * @build jdk.test.lib.process.ProcessTools
- * @run main/othervm InitialContextTest
+ * @run main InitialContextTest
  */
 public class InitialContextTest {
 
@@ -264,11 +264,9 @@ public class InitialContextTest {
         String [] commands = {jar, "cf", jarName.toString(),"-C", jarRoot.toString(), "."};
         try {
             OutputAnalyzer outputAnalyzer = ProcessTools.executeCommand(commands);
-            if(outputAnalyzer.getExitValue() != 0) {
-                throw new RuntimeException(outputAnalyzer.getOutput());
-            }
+            outputAnalyzer.shouldHaveExitValue(0);
         } catch (Exception ex) {
-            throw new RuntimeException(ex.getMessage());
+            throw new RuntimeException(ex);
         }
     }
 
@@ -282,11 +280,9 @@ public class InitialContextTest {
                 .collect(Collectors.toList()));
         try {
             OutputAnalyzer outputAnalyzer = ProcessTools.executeCommand(commands.toArray(new String[commands.size()]));
-            if(outputAnalyzer.getExitValue() != 0) {
-                throw new RuntimeException(outputAnalyzer.getOutput());
-            }
+            outputAnalyzer.shouldHaveExitValue(0);
         } catch (Exception ex) {
-            throw new RuntimeException(ex.getMessage());
+            throw new RuntimeException(ex);
         }
     }
 
@@ -302,7 +298,7 @@ public class InitialContextTest {
         String cp = classpath.stream()
                 .map(Path::toString)
                 .collect(Collectors.joining(File.pathSeparator));
-        System.setProperty("test.noclasspath", "true");
+//        System.setProperty("test.noclasspath", "true");
         commands.add("-cp");
         commands.add(cp);
         commands.add(classname);
@@ -312,7 +308,7 @@ public class InitialContextTest {
             OutputAnalyzer outputAnalyzer = ProcessTools.executeProcess(pb);
             return new Result(outputAnalyzer.getExitValue(), outputAnalyzer.getOutput());
         } catch (Exception ex) {
-            throw new RuntimeException(ex.getMessage());
+            throw new RuntimeException(ex);
         }
     }
 

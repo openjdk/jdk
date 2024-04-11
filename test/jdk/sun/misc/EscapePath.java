@@ -27,7 +27,7 @@
  * @summary  Test loading of classes with # in the path
  * @library /test/lib
  * @build jdk.test.lib.process.ProcessTools
- * @run main/othervm EscapePath
+ * @run main EscapePath
  */
 
 import java.io.File;
@@ -89,7 +89,6 @@ public class EscapePath {
     private static void invokeJava() {
         List<String> commands = new ArrayList<>();
 
-        System.setProperty("test.noclasspath", "true");
         commands.add("-classpath");
         commands.add("a#b");
         commands.add("Hello");
@@ -97,11 +96,9 @@ public class EscapePath {
 
         try {
             OutputAnalyzer outputAnalyzer = ProcessTools.executeProcess(pb);
-            if(outputAnalyzer.getExitValue() != 0) {
-                throw new RuntimeException("Path encoding failure.");
-            }
+            outputAnalyzer.shouldHaveExitValue(0);
         } catch (Exception ex) {
-            throw new RuntimeException(ex.getMessage());
+            throw new RuntimeException(ex);
         }
     }
 }
