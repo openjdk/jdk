@@ -2718,11 +2718,7 @@ PcDesc* PcDescContainer::find_pc_desc_internal(address pc, bool approximate, con
 
   if (match_desc(upper, pc_offset, approximate)) {
     assert(upper == linear_search(search, pc_offset, approximate), "search ok");
-    if (!Thread::current_in_asgct()) {
-      // we don't want to modify the cache if we're in ASGCT
-      // which is typically called in a signal handler
-      _pc_desc_cache.add_pc_desc(upper);
-    }
+    _pc_desc_cache.add_pc_desc(upper);
     return upper;
   } else {
     assert(nullptr == linear_search(search, pc_offset, approximate), "search ok");

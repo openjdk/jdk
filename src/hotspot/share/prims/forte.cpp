@@ -607,9 +607,6 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     return;
   }
 
-  // signify to other code in the VM that we're in ASGCT
-  ThreadInAsgct tia(thread);
-
   switch (thread->thread_state()) {
   case _thread_new:
   case _thread_uninitialized:
