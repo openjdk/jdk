@@ -133,7 +133,7 @@ jhsdb -J-Dsun.jvm.hotspot.debugger.windbg.symbolPath="%PATH%;srv*https://msdl.mi
 
 <p>
  For locating the macOS libraries, SA uses <b>SA_ALTROOT</b> similar to the linux support,
- except it does not use it to map all the subdirs. It just appends <b>SA_ALTROOT</b> to the
+ except it does not use it to map all the subdirs. It just prepends <b>SA_ALTROOT</b> to the
  full path of each macOS library. So if you specify <b>SA_ALTROOT=/altroot</b>, SA will
  prepend <b>/altroot</b> to the full path of each macOS library. Note however, due to
  <a href="https://bugs.openjdk.org/browse/JDK-8249779">JDK-8249779</a> , SA will not
