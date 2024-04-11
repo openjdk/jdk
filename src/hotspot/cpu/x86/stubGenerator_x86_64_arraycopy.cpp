@@ -152,10 +152,8 @@ void StubGenerator::generate_arraycopy_stubs() {
   StubRoutines::_arrayof_jshort_fill = generate_fill(T_SHORT, true, "arrayof_jshort_fill");
   StubRoutines::_arrayof_jint_fill = generate_fill(T_INT, true, "arrayof_jint_fill");
 
-// #ifdef _LP64
   StubRoutines::_unsafe_setmemory =
       generate_unsafe_setmemory("unsafe_setmemory", StubRoutines::_jbyte_fill);
-// #endif
 
   // We don't generate specialized code for HeapWord-aligned source
   // arrays, so just use the code we've already generated
@@ -2507,194 +2505,189 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
     Label L_exit, L_fillQuadwords, L_fillDwords, L_fillBytes;
 
     setup_arg_regs(3);
-#undef dest
-#define dest rdi
-#undef size
-#define size rsi
-#undef wide_value
-#define wide_value rax
-#undef rScratch1
-#define rScratch1 rcx
-#undef byteVal
-#define byteVal rdx
-#undef rScratch3
-#define rScratch3 r8
-#undef rScratch4
-#define rScratch4 r11
+
+    const Register dest = rdi;
+    const Register size = rsi;
+    const Register wide_value = rax;
+    const Register rScratch1 = rcx;
+    const Register rScratch3 = r8;
+    const Register rScratch4 = r11;
 
     //     fill_to_memory_atomic(unsigned char*, unsigned long, unsigned char)
 
     __ testq(size, size);
     __ jcc(Assembler::zero, L_exit);
 
-    // Propagate byte to full register
-    __ movq(rScratch1, dest);
-    __ orq(rScratch1, size);
-    __ movzbl(rScratch3, byteVal);
-    __ mov64(wide_value, 0x0101010101010101);
-    __ imulq(wide_value, rScratch3);
-
-#undef byteVal
-#define rScratch2 rdx
-    __ testb(rScratch1, 7);
-    __ jcc(Assembler::equal, L_fillQuadwords);
-
-    __ testb(rScratch1, 3);
-    __ jcc(Assembler::equal, L_fillDwords);
-
-    __ testb(rScratch1, 1);
-    __ jcc(Assembler::notEqual, L_fillBytes);
-
-    // Fill words
     {
-      Label L_wordsTail, L_wordsLoop, L_wordsTailLoop;
-      UnsafeSetMemoryMark usmm(this, true, true);
-      //////  Set words
-      __ leaq(rScratch2, Address(size, 1));
-      __ movq(rScratch1, rScratch2);
-      __ shrq(rScratch1, 4);
-      __ cmpq(rScratch2, 16);
-      __ jccb(Assembler::below, L_wordsTail);
-      __ leaq(rScratch3, Address(dest, 14));
-      __ movq(rScratch4, rScratch1);
+      const Register byteVal = rdx;
 
-      __ BIND(L_wordsLoop);
-
-      // Unroll 8 word stores
-      for (int i = 7; i >= 0; i--) {
-        __ movw(Address(rScratch3, -(2 * i)), wide_value);
-      }
-
-      __ addq(rScratch3, 16);
-      __ decrementq(rScratch4);
-      __ jccb(Assembler::notEqual, L_wordsLoop);
-
-      __ BIND(L_wordsTail);
-
-      // Handle leftovers
-      __ shlq(rScratch1, 3);
-      __ shrq(rScratch2, 1);
-      __ cmpq(rScratch1, rScratch2);
-      __ jcc(Assembler::aboveEqual, L_exit);
-      __ decrementq(size);
-      __ shrq(size, 1);
-      __ incrementq(size);
-
-      __ BIND(L_wordsTailLoop);
-
-      __ movw(Address(dest, rScratch1, Address::times_2), wide_value);
-      __ incrementq(rScratch1);
-      __ cmpq(size, rScratch1);
-      __ jccb(Assembler::notEqual, L_wordsTailLoop);
+      // Propagate byte to full Register
+      __ movq(rScratch1, dest);
+      __ orq(rScratch1, size);
+      __ movzbl(rScratch3, byteVal);
+      __ mov64(wide_value, 0x0101010101010101);
+      __ imulq(wide_value, rScratch3);
     }
-    __ jmp(L_exit);
 
-    __ BIND(L_fillQuadwords);
-
-    // Fill QUADWORDs
     {
-      Label L_qwordLoop, L_qwordsTail, L_qwordsTailLoop;
-      UnsafeSetMemoryMark usmm(this, true, true);
+      const Register rScratch2 = rdx;
 
-      __ leaq(rScratch2, Address(size, 7));
-      __ movq(rScratch1, rScratch2);
-      __ shrq(rScratch1, 6);
-      __ cmpq(rScratch2, 64);
-      __ jccb(Assembler::below, L_qwordsTail);
-      __ leaq(rScratch3, Address(dest, 56));
-      __ movq(rScratch4, rScratch1);
+      __ testb(rScratch1, 7);
+      __ jcc(Assembler::equal, L_fillQuadwords);
 
-      __ BIND(L_qwordLoop);
+      __ testb(rScratch1, 3);
+      __ jcc(Assembler::equal, L_fillDwords);
 
-      // Unroll 8 qword stores
-      for (int i = 7; i >= 0; i--) {
-        __ movq(Address(rScratch3, -(8 * i)), wide_value);
+      __ testb(rScratch1, 1);
+      __ jcc(Assembler::notEqual, L_fillBytes);
+
+      // Fill words
+      {
+        Label L_wordsTail, L_wordsLoop, L_wordsTailLoop;
+        UnsafeSetMemoryMark usmm(this, true, true);
+        //////  Set words
+        __ leaq(rScratch2, Address(size, 1));
+        __ movq(rScratch1, rScratch2);
+        __ shrq(rScratch1, 4);
+        __ cmpq(rScratch2, 16);
+        __ jccb(Assembler::below, L_wordsTail);
+        __ leaq(rScratch3, Address(dest, 14));
+        __ movq(rScratch4, rScratch1);
+
+        __ BIND(L_wordsLoop);
+
+        // Unroll 8 word stores
+        for (int i = 7; i >= 0; i--) {
+          __ movw(Address(rScratch3, -(2 * i)), wide_value);
+        }
+
+        __ addq(rScratch3, 16);
+        __ decrementq(rScratch4);
+        __ jccb(Assembler::notEqual, L_wordsLoop);
+
+        __ BIND(L_wordsTail);
+
+        // Handle leftovers
+        __ shlq(rScratch1, 3);
+        __ shrq(rScratch2, 1);
+        __ cmpq(rScratch1, rScratch2);
+        __ jccb(Assembler::aboveEqual, L_exit);
+        __ decrementq(size);
+        __ shrq(size, 1);
+        __ incrementq(size);
+
+        __ BIND(L_wordsTailLoop);
+
+        __ movw(Address(dest, rScratch1, Address::times_2), wide_value);
+        __ incrementq(rScratch1);
+        __ cmpq(size, rScratch1);
+        __ jccb(Assembler::notEqual, L_wordsTailLoop);
       }
-      __ addq(rScratch3, 64);
-      __ decrementq(rScratch4);
-      __ jccb(Assembler::notZero, L_qwordLoop);
+      __ jmp(L_exit);
 
-      __ BIND(L_qwordsTail);
+      __ BIND(L_fillQuadwords);
 
-      // Handle leftovers
-      __ shlq(rScratch1, 3);
-      __ shrq(rScratch2, 3);
-      __ cmpq(rScratch1, rScratch2);
-      __ jcc(Assembler::aboveEqual, L_exit);
-      __ decrementq(size);
-      __ shrq(size, 3);
-      __ incrementq(size);
+      // Fill QUADWORDs
+      {
+        Label L_qwordLoop, L_qwordsTail, L_qwordsTailLoop;
+        UnsafeSetMemoryMark usmm(this, true, true);
 
-      __ BIND(L_qwordsTailLoop);
+        __ leaq(rScratch2, Address(size, 7));
+        __ movq(rScratch1, rScratch2);
+        __ shrq(rScratch1, 6);
+        __ cmpq(rScratch2, 64);
+        __ jccb(Assembler::below, L_qwordsTail);
+        __ leaq(rScratch3, Address(dest, 56));
+        __ movq(rScratch4, rScratch1);
 
-      __ movq(Address(dest, rScratch1, Address::times_8), wide_value);
-      __ incrementq(rScratch1);
-      __ cmpq(size, rScratch1);
-      __ jccb(Assembler::notEqual, L_qwordsTailLoop);
-    }
-    __ BIND(L_exit);
+        __ BIND(L_qwordLoop);
 
-    restore_arg_regs();
-    __ ret(0);
+        // Unroll 8 qword stores
+        for (int i = 7; i >= 0; i--) {
+          __ movq(Address(rScratch3, -(8 * i)), wide_value);
+        }
+        __ addq(rScratch3, 64);
+        __ decrementq(rScratch4);
+        __ jccb(Assembler::notZero, L_qwordLoop);
 
-    __ BIND(L_fillDwords);
+        __ BIND(L_qwordsTail);
 
-    // Fill DWORDs
-    {
-      Label L_dwordLoop, L_dwordsTail, L_dwordsTailLoop;
-      UnsafeSetMemoryMark usmm(this, true, true);
+        // Handle leftovers
+        __ shlq(rScratch1, 3);
+        __ shrq(rScratch2, 3);
+        __ cmpq(rScratch1, rScratch2);
+        __ jccb(Assembler::aboveEqual, L_exit);
+        __ decrementq(size);
+        __ shrq(size, 3);
+        __ incrementq(size);
 
-      __ leaq(rScratch2, Address(size, 3));
-      __ movq(rScratch1, rScratch2);
-      __ shrq(rScratch1, 5);
-      __ cmpq(rScratch2, 32);
-      __ jccb(Assembler::below, L_dwordsTail);
-      __ leaq(rScratch3, Address(dest, 28));
-      __ movq(rScratch4, rScratch1);
+        __ BIND(L_qwordsTailLoop);
 
-      __ BIND(L_dwordLoop);
-
-      // Unroll 8 dword stores
-      for (int i = 7; i >= 0; i--) {
-        __ movl(Address(rScratch3, -(i * 4)), wide_value);
+        __ movq(Address(dest, rScratch1, Address::times_8), wide_value);
+        __ incrementq(rScratch1);
+        __ cmpq(size, rScratch1);
+        __ jccb(Assembler::notEqual, L_qwordsTailLoop);
       }
-      __ addq(rScratch3, 32);
-      __ decrementq(rScratch4);
-      __ jccb(Assembler::notZero, L_dwordLoop);
+      __ BIND(L_exit);
 
-      __ BIND(L_dwordsTail);
+      restore_arg_regs();
+      __ ret(0);
 
-#undef rScratch3
-#undef rScratch4
+      __ BIND(L_fillDwords);
 
-      // Handle leftovers
-      __ shlq(rScratch1, 3);
-      __ shrq(rScratch2, 2);
-      __ cmpq(rScratch1, rScratch2);
-      __ jccb(Assembler::aboveEqual, L_exit);
-      __ decrementq(size);
-      __ shrq(size, 2);
-      __ incrementq(size);
+      // Fill DWORDs
+      {
+        Label L_dwordLoop, L_dwordsTail, L_dwordsTailLoop;
+        UnsafeSetMemoryMark usmm(this, true, true);
 
-      __ BIND(L_dwordsTailLoop);
+        __ leaq(rScratch2, Address(size, 3));
+        __ movq(rScratch1, rScratch2);
+        __ shrq(rScratch1, 5);
+        __ cmpq(rScratch2, 32);
+        __ jccb(Assembler::below, L_dwordsTail);
+        __ leaq(rScratch3, Address(dest, 28));
+        __ movq(rScratch4, rScratch1);
 
-      __ movl(Address(dest, rScratch1, Address::times_4), wide_value);
-      __ incrementq(rScratch1);
-      __ cmpq(size, rScratch1);
-      __ jccb(Assembler::notEqual, L_dwordsTailLoop);
+        __ BIND(L_dwordLoop);
+
+        // Unroll 8 dword stores
+        for (int i = 7; i >= 0; i--) {
+          __ movl(Address(rScratch3, -(i * 4)), wide_value);
+        }
+        __ addq(rScratch3, 32);
+        __ decrementq(rScratch4);
+        __ jccb(Assembler::notZero, L_dwordLoop);
+
+        __ BIND(L_dwordsTail);
+
+        // Handle leftovers
+        __ shlq(rScratch1, 3);
+        __ shrq(rScratch2, 2);
+        __ cmpq(rScratch1, rScratch2);
+        __ jccb(Assembler::aboveEqual, L_exit);
+        __ decrementq(size);
+        __ shrq(size, 2);
+        __ incrementq(size);
+
+        __ BIND(L_dwordsTailLoop);
+
+        __ movl(Address(dest, rScratch1, Address::times_4), wide_value);
+        __ incrementq(rScratch1);
+        __ cmpq(size, rScratch1);
+        __ jccb(Assembler::notEqual, L_dwordsTailLoop);
+      }
+      __ jmp(L_exit);
+
+      __ BIND(L_fillBytes);
     }
-    __ jmpb(L_exit);
-
-    __ BIND(L_fillBytes);
 #ifdef MUSL_LIBC
     {
       Label L_byteLoop, L_longByteLoop, L_byteTail, L_byteTailLoop;
-      UnsafeSetMemoryMark usmm(this, true, true);
 
-#undef wide_value
-#define savedSize rax
-#undef rScratch2
-#define byteVal rdx
+      const Register savedSize = rax;
+      const Register byteVal = rdx;
+
+      UnsafeSetMemoryMark usmm(this, true, true);
 
       __ movq(savedSize, size);
       __ andq(savedSize, 7);
@@ -2733,13 +2726,14 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
       __ cmpq(savedSize, rScratch1);
       __ jccb(Assembler::notEqual, L_byteTailLoop);
     }
+    __ jmp(L_exit);
 #else  // MUSL_LIBC
-#define byteVal rdx
     {
+      const Register byteVal = rdx;
 #ifdef _WIN32
       __ movq(rcx, rdi); // Restore c_rarg*
-      __ movq(rdx, rsi);
       __ movq(r8, rdx);
+      __ movq(rdx, rsi);
       restore_arg_regs();
 #endif
       // rax has expanded byte value
@@ -2762,12 +2756,6 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
       __ ret(0);
     }
 #endif  // MUSL_LIBC
-
-#undef dest
-#undef size
-#undef savedSize
-#undef rScratch1
-#undef byteVal
   }
 
   return start;

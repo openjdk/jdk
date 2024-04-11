@@ -8337,8 +8337,8 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // Initialize table for fill memory check.
-    if (UnsafeCopyMemory::_table == nullptr) {
-      UnsafeCopyMemory::create_table(8);
+    if (UnsafeSetMemory::_table == nullptr) {
+      UnsafeSetMemory::create_table(8);
     }
 
     if (UseCRC32Intrinsics) {
