@@ -435,12 +435,12 @@ public class JavacElements implements Elements {
 
     @DefinedBy(Api.LANGUAGE_MODEL)
     public String getDocComment(Element e) {
-        return  getDocCommentItem(e, ((docCommentTable, tree) -> docCommentTable.getCommentText(tree)));
+        return getDocCommentItem(e, ((docCommentTable, tree) -> docCommentTable.getCommentText(tree)));
     }
 
     @DefinedBy(Api.LANGUAGE_MODEL)
     public CommentKind getDocCommentKind(Element e) {
-        return  getDocCommentItem(e, ((docCommentTable, tree) -> docCommentTable.getCommentKind(tree)));
+        return getDocCommentItem(e, ((docCommentTable, tree) -> docCommentTable.getCommentKind(tree)));
     }
 
     private <R> R getDocCommentItem(Element e, BiFunction<DocCommentTable, JCTree, R> f) {
