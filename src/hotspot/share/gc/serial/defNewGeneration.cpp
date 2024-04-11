@@ -76,20 +76,6 @@ public:
   void do_oop(narrowOop* p) { do_oop_work(p); }
 };
 
-class YoungGenScanClosure : public InHeapScanClosure {
-  template <typename T>
-  void do_oop_work(T* p) {
-    assert(SerialHeap::heap()->young_gen()->to()->is_in_reserved(p), "precondition");
-
-    try_scavenge(p, [] (auto) {});
-  }
-public:
-  YoungGenScanClosure(DefNewGeneration* g) : InHeapScanClosure(g) {}
-
-  void do_oop(oop* p)       { do_oop_work(p); }
-  void do_oop(narrowOop* p) { do_oop_work(p); }
-};
-
 class RootScanClosure : public OffHeapScanClosure {
   template <typename T>
   void do_oop_work(T* p) {
