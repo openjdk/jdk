@@ -5116,7 +5116,7 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister vbytes = v1;
     VectorRegister vtable = v3;
     VectorRegister vtemp1 = v4;
-    VectorRegister vtemp2 = v5;
+    VectorRegister vtemp2 = vtemp1->successor();
     VectorRegister vtemp3 = v30;
     VectorRegister vzero = v12;
 
