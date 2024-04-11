@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,13 @@
 
 import java.util.stream.Stream;
 
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.Arguments;
-
 import static java.lang.System.err;
 import static java.lang.System.out;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
@@ -85,7 +83,7 @@ class UncaughtExceptionsTest {
     @MethodSource("testCases")
     void test(String className, int exitValue, String stdOutMatch, String stdErrMatch) throws Throwable {
         String cmd = "UncaughtExitSimulator$" + className;
-        ProcessBuilder processBuilder = ProcessTools.createLimitedTestJavaProcessBuilder(cmd);
+        ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(cmd);
         OutputAnalyzer outputAnalyzer = ProcessTools.executeCommand(processBuilder);
         outputAnalyzer.shouldHaveExitValue(exitValue);
         outputAnalyzer.stderrShouldMatch(stdErrMatch);

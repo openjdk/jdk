@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +23,9 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1YOUNGGCPREEVACUATETASKS_HPP
-#define SHARE_GC_G1_G1YOUNGGCPREEVACUATETASKS_HPP
+#ifndef CPU_ZERO_C2_MACROASSEMBLER_ZERO_HPP
+#define CPU_ZERO_C2_MACROASSEMBLER_ZERO_HPP
 
-#include "gc/g1/g1BatchedTask.hpp"
+// C2_MacroAssembler contains high-level macros for C2
 
-// Set of pre evacuate collection set tasks containing ("s" means serial):
-// - Retire TLAB and Flush Logs (Java threads)
-// - Flush pin count cache (Java threads)
-// - Flush Logs (s) (Non-Java threads)
-class G1PreEvacuateCollectionSetBatchTask : public G1BatchedTask {
-  class JavaThreadRetireTLABAndFlushLogs;
-  class NonJavaThreadFlushLogs;
-
-  size_t _old_pending_cards;
-
-  // References to the tasks to retain access to statistics.
-  JavaThreadRetireTLABAndFlushLogs* _java_retire_task;
-  NonJavaThreadFlushLogs* _non_java_retire_task;
-
-public:
-  G1PreEvacuateCollectionSetBatchTask();
-  ~G1PreEvacuateCollectionSetBatchTask();
-};
-
-#endif // SHARE_GC_G1_G1YOUNGGCPREEVACUATETASKS_HPP
+#endif // CPU_ZERO_C2_MACROASSEMBLER_ZERO_HPP

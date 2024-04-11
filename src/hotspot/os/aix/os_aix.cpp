@@ -291,46 +291,6 @@ julong os::physical_memory() {
   return Aix::physical_memory();
 }
 
-// Helper function, emulates disclaim64 using multiple 32bit disclaims
-// because we cannot use disclaim64() on old AIX releases.
-static bool my_disclaim64(char* addr, size_t size) {
-
-  if (size == 0) {
-    return true;
-  }
-
-  // Maximum size 32bit disclaim() accepts. (Theoretically 4GB, but I just do not trust that.)
-  const unsigned int maxDisclaimSize = 0x40000000;
-
-  const unsigned int numFullDisclaimsNeeded = (size / maxDisclaimSize);
-  const unsigned int lastDisclaimSize = (size % maxDisclaimSize);
-
-  char* p = addr;
-
-  for (unsigned int i = 0; i < numFullDisclaimsNeeded; i ++) {
-    if (::disclaim(p, maxDisclaimSize, DISCLAIM_ZEROMEM) != 0) {
-      ErrnoPreserver ep;
-      log_trace(os, map)("disclaim failed: " RANGEFMT " errno=(%s)",
-                         RANGEFMTARGS(p, maxDisclaimSize),
-                         os::strerror(ep.saved_errno()));
-      return false;
-    }
-    p += maxDisclaimSize;
-  }
-
-  if (lastDisclaimSize > 0) {
-    if (::disclaim(p, lastDisclaimSize, DISCLAIM_ZEROMEM) != 0) {
-      ErrnoPreserver ep;
-      log_trace(os, map)("disclaim failed: " RANGEFMT " errno=(%s)",
-                         RANGEFMTARGS(p, lastDisclaimSize),
-                         os::strerror(ep.saved_errno()));
-      return false;
-    }
-  }
-
-  return true;
-}
-
 // Cpu architecture string
 #if defined(PPC32)
 static char cpu_arch[] = "ppc";
@@ -1597,10 +1557,11 @@ static bool uncommit_shmated_memory(char* addr, size_t size) {
   trcVerbose("uncommit_shmated_memory [" PTR_FORMAT " - " PTR_FORMAT "].",
     p2i(addr), p2i(addr + size - 1));
 
-  const bool rc = my_disclaim64(addr, size);
+  const int rc = disclaim64(addr, size, DISCLAIM_ZEROMEM);
 
-  if (!rc) {
-    log_warning(os)("my_disclaim64(" PTR_FORMAT ", " UINTX_FORMAT ") failed.\n", p2i(addr), size);
+  if (rc != 0) {
+    ErrnoPreserver ep;
+    log_warning(os)("disclaim64(" PTR_FORMAT ", " UINTX_FORMAT ") failed, %s\n", p2i(addr), size, os::strerror(ep.saved_errno()));
     return false;
   }
   return true;
