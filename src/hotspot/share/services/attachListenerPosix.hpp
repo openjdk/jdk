@@ -191,8 +191,9 @@ int PosixAttachListener::init() {
   char initial_path[UNIX_PATH_MAX];  // socket file during setup
   int listener;                      // listener socket (file descriptor)
 
+#ifdef LINUX
   static_assert(sizeof(off_t) == 8, "Expected Large File Support in this file");
-
+#endif
   // register function to cleanup
   if (!_atexit_registered) {
     _atexit_registered = true;
@@ -231,8 +232,9 @@ int PosixAttachListener::init() {
   if (res == 0) {
     RESTARTABLE(::chmod(initial_path, S_IREAD|S_IWRITE), res);
     if (res == 0) {
-      // make sure the file is owned by the effective user and effective group
-      // e.g. the group could be inherited from the directory in case the s bit is set
+      // Make sure the file is owned by the effective user and effective group.
+      // Default behavior on mac is that new files inherit the group of the directory that they are created in.
+      // On Linux, the group could be inherited from the directory in case the s bit is set.
       RESTARTABLE(::chown(initial_path, geteuid(), getegid()), res);
       if (res == 0) {
         res = ::rename(initial_path, path);
@@ -258,7 +260,7 @@ int PosixAttachListener::init() {
 //
 PosixAttachOperation* PosixAttachListener::read_request(int s) {
   char ver_str[8];
-  os::snprintf_checked(ver_str, sizeof(ver_str), "%d", ATTACH_PROTOCOL_VER);
+  size_t ver_str_len = os::snprintf_checked(ver_str, sizeof(ver_str), "%d", ATTACH_PROTOCOL_VER);
 
   // The request is a sequence of strings so we first figure out the
   // expected count and the maximum possible length of the request.
@@ -298,11 +300,11 @@ PosixAttachOperation* PosixAttachListener::read_request(int s) {
         // The first string is <ver> so check it now to
         // check for protocol mismatch
         if (str_count == 1) {
-          if ((strlen(buf) != strlen(ver_str)) ||
+          if ((strlen(buf) != ver_str_len) ||
               (atoi(buf) != ATTACH_PROTOCOL_VER)) {
             char msg[32];
-            os::snprintf_checked(msg, sizeof(msg), "%d\n", ATTACH_ERROR_BADVERSION);
-            write_fully(s, msg, strlen(msg));
+            int msg_len = os::snprintf_checked(msg, sizeof(msg), "%d\n", ATTACH_ERROR_BADVERSION);
+            write_fully(s, msg, msg_len);
             return nullptr;
           }
         }
@@ -350,7 +352,7 @@ PosixAttachOperation* PosixAttachListener::read_request(int s) {
 
 // Dequeue an operation
 //
-// In the Linux implementation there is only a single operation and clients
+// In the Posix implementation there is only a single operation and clients
 // cannot queue commands (except at the socket level).
 //
 PosixAttachOperation* PosixAttachListener::dequeue() {
@@ -366,6 +368,7 @@ PosixAttachOperation* PosixAttachListener::dequeue() {
     }
 
     // get the credentials of the peer and check the effective uid/guid
+#ifdef LINUX
     struct ucred cred_info;
     socklen_t optlen = sizeof(cred_info);
     if (::getsockopt(s, SOL_SOCKET, SO_PEERCRED, (void*)&cred_info, &optlen) == -1) {
@@ -373,13 +376,28 @@ PosixAttachOperation* PosixAttachListener::dequeue() {
       ::close(s);
       continue;
     }
-
     if (!os::Posix::matches_effective_uid_and_gid_or_root(cred_info.uid, cred_info.gid)) {
-      log_debug(attach)("euid/egid check failed (%d/%d vs %d/%d)",
-              cred_info.uid, cred_info.gid, geteuid(), getegid());
+      log_debug(attach)("euid/egid check failed (%d/%d vs %d/%d)", cred_info.uid, cred_info.gid,
+                        geteuid(), getegid());
       ::close(s);
       continue;
     }
+#elif BSD
+    uid_t puid;
+    gid_t pgid;
+    if (::getpeereid(s, &puid, &pgid) != 0) {
+      log_debug(attach)("Failed to get peer id");
+      ::close(s);
+      continue;
+    }
+    if (!os::Posix::matches_effective_uid_and_gid_or_root(puid, pgid)) {
+      log_debug(attach)("euid/egid check failed (%d/%d vs %d/%d)", puid, pgid, geteuid(),
+                        getegid());
+      ::close(s);
+      continue;
+    }
+#elif AIX
+#endif
 
     // peer credential look okay so we read the request
     PosixAttachOperation* op = read_request(s);
@@ -421,8 +439,8 @@ void PosixAttachOperation::complete(jint result, bufferedStream* st) {
 
   // write operation result
   char msg[32];
-  os::snprintf_checked(msg, sizeof(msg), "%d\n", result);
-  int rc = PosixAttachListener::write_fully(this->socket(), msg, strlen(msg));
+  int msg_len = os::snprintf_checked(msg, sizeof(msg), "%d\n", result);
+  int rc = PosixAttachListener::write_fully(this->socket(), msg, msg_len);
 
   // write any result data
   if (rc == 0) {
@@ -449,7 +467,7 @@ AttachOperation* AttachListener::pd_dequeue() {
 }
 
 // Performs initialization at vm startup
-// For Linux we remove any stale .java_pid file which could cause
+// For Posix we remove any stale .java_pid file which could cause
 // an attaching process to think we are ready to receive on the
 // domain socket before we are properly initialized
 
@@ -523,9 +541,16 @@ bool AttachListener::is_init_trigger() {
   char fn[PATH_MAX + 1];
   int ret;
   struct stat st;
+#ifdef LINUX
   os::snprintf_checked(fn, sizeof(fn), ".attach_pid%d", os::current_process_id());
+#elif BSD
+  os::snprintf(fn, PATH_MAX + 1, "%s/.attach_pid%d", os::get_temp_directory(),
+           os::current_process_id());
+#elif AIX
+#endif
   RESTARTABLE(::stat(fn, &st), ret);
   if (ret == -1) {
+#ifdef LINUX
     log_trace(attach)("Failed to find attach file: %s, trying alternate", fn);
     snprintf(fn, sizeof(fn), "%s/.attach_pid%d",
              os::get_temp_directory(), os::current_process_id());
@@ -533,6 +558,10 @@ bool AttachListener::is_init_trigger() {
     if (ret == -1) {
       log_debug(attach)("Failed to find attach file: %s", fn);
     }
+#elif BSD
+    log_debug(attach)("Failed to find attach file: %s", fn);
+#elif AIX
+#endif
   }
   if (ret == 0) {
     // simple check to avoid starting the attach mechanism when
