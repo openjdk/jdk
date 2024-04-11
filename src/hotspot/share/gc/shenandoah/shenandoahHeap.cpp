@@ -2261,7 +2261,7 @@ bool ShenandoahHeap::commit_bitmap_slice(ShenandoahHeapRegion* r) {
   size_t len = _bitmap_bytes_per_slice;
   char* start = (char*) _bitmap_region.start() + off;
 
-  if (!os::commit_memory(start, len, false)) {
+  if (!os::commit_memory(start, len, false, mtJavaHeap)) {
     return false;
   }
 
