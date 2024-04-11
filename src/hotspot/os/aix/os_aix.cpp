@@ -296,10 +296,10 @@ static bool my_disclaim64(char* addr, size_t size) {
   }
 
   // Maximum size 32bit disclaim() accepts. (Theoretically 4GB, but I just do not trust that.)
-  const size_t maxDisclaimSize = 0x40000000;
+  const unsigned int maxDisclaimSize = 0x40000000;
 
-  const size_t numFullDisclaimsNeeded = (size / maxDisclaimSize);
-  const size_t lastDisclaimSize = (size % maxDisclaimSize);
+  const unsigned int numFullDisclaimsNeeded = (size / maxDisclaimSize);
+  const unsigned int lastDisclaimSize = (size % maxDisclaimSize);
 
   char* p = addr;
 
