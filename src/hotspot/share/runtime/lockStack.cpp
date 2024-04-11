@@ -117,6 +117,7 @@ void LockStack::verify_consistent_lock_order(GrowableArray<oop>& lock_order, boo
           if (_base[index] == obj) {
             // Found top index
             top_index = index + 1;
+            break;
           }
         }
 
