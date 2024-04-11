@@ -358,7 +358,7 @@ source %{
 #define   RELOC_IMM64    Assembler::imm_operand
 #define   RELOC_DISP32   Assembler::disp32_operand
 
-#define __ _masm.
+#define __ masm->
 
 RegMask _ANY_REG_mask;
 RegMask _PTR_REG_mask;
@@ -519,7 +519,7 @@ int CallDynamicJavaDirectNode::compute_padding(int current_offset) const
 }
 
 // This could be in MacroAssembler but it's fairly C2 specific
-static void emit_cmpfp_fixup(MacroAssembler& _masm) {
+static void emit_cmpfp_fixup(MacroAssembler* masm) {
   Label exit;
   __ jccb(Assembler::noParity, exit);
   __ pushf();
@@ -539,7 +539,7 @@ static void emit_cmpfp_fixup(MacroAssembler& _masm) {
   __ bind(exit);
 }
 
-static void emit_cmpfp3(MacroAssembler& _masm, Register dst) {
+static void emit_cmpfp3(MacroAssembler* masm, Register dst) {
   Label done;
   __ movl(dst, -1);
   __ jcc(Assembler::parity, done);
@@ -558,7 +558,7 @@ static void emit_cmpfp3(MacroAssembler& _masm, Register dst) {
 // je            #
 // |-jz -> a | b # a & b
 // |    -> a     #
-static void emit_fp_min_max(MacroAssembler& _masm, XMMRegister dst,
+static void emit_fp_min_max(MacroAssembler* masm, XMMRegister dst,
                             XMMRegister a, XMMRegister b,
                             XMMRegister xmmt, Register rt,
                             bool min, bool single) {
@@ -643,7 +643,7 @@ void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, Phase
   ShouldNotReachHere();
 }
 
-void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
+void MachConstantBaseNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const {
   // Empty encoding
 }
 
@@ -719,9 +719,8 @@ void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 }
 #endif
 
-void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
-  C2_MacroAssembler _masm(&cbuf);
 
   int framesize = C->output()->frame_size_in_bytes();
   int bangsize = C->output()->bang_size_in_bytes();
@@ -743,7 +742,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   __ verified_entry(framesize, C->output()->need_stack_bang(bangsize)?bangsize:0, false, C->stub_function() != nullptr);
 
-  C->output()->set_frame_complete(cbuf.insts_size());
+  C->output()->set_frame_complete(__ offset());
 
   if (C->has_mach_constant_base_node()) {
     // NOTE: We set the table base offset here because users might be
@@ -795,10 +794,9 @@ void MachEpilogNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 }
 #endif
 
-void MachEpilogNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
+void MachEpilogNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
 {
   Compile* C = ra_->C;
-  MacroAssembler _masm(&cbuf);
 
   if (generate_vzeroupper(C)) {
     // Clear upper bits of YMM registers when current compiled code uses
@@ -825,7 +823,6 @@ void MachEpilogNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
   }
 
   if (do_polling() && C->is_method_compilation()) {
-    MacroAssembler _masm(&cbuf);
     Label dummy_label;
     Label* code_stub = &dummy_label;
     if (!C->output()->in_scratch_emit_size()) {
@@ -881,16 +878,15 @@ static enum RC rc_class(OptoReg::Name reg)
 }
 
 // Next two methods are shared by 32- and 64-bit VM. They are defined in x86.ad.
-static void vec_mov_helper(CodeBuffer *cbuf, int src_lo, int dst_lo,
+static void vec_mov_helper(C2_MacroAssembler *masm, int src_lo, int dst_lo,
                           int src_hi, int dst_hi, uint ireg, outputStream* st);
 
-void vec_spill_helper(CodeBuffer *cbuf, bool is_load,
+void vec_spill_helper(C2_MacroAssembler *masm, bool is_load,
                      int stack_offset, int reg, uint ireg, outputStream* st);
 
-static void vec_stack_to_stack_helper(CodeBuffer *cbuf, int src_offset,
+static void vec_stack_to_stack_helper(C2_MacroAssembler *masm, int src_offset,
                                       int dst_offset, uint ireg, outputStream* st) {
-  if (cbuf) {
-    MacroAssembler _masm(cbuf);
+  if (masm) {
     switch (ireg) {
     case Op_VecS:
       __ movq(Address(rsp, -8), rax);
@@ -966,11 +962,11 @@ static void vec_stack_to_stack_helper(CodeBuffer *cbuf, int src_offset,
   }
 }
 
-uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
+uint MachSpillCopyNode::implementation(C2_MacroAssembler* masm,
                                        PhaseRegAlloc* ra_,
                                        bool do_size,
                                        outputStream* st) const {
-  assert(cbuf != nullptr || st  != nullptr, "sanity");
+  assert(masm != nullptr || st  != nullptr, "sanity");
   // Get registers to move
   OptoReg::Name src_second = ra_->get_reg_second(in(1));
   OptoReg::Name src_first = ra_->get_reg_first(in(1));
@@ -997,15 +993,15 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       // mem -> mem
       int src_offset = ra_->reg2offset(src_first);
       int dst_offset = ra_->reg2offset(dst_first);
-      vec_stack_to_stack_helper(cbuf, src_offset, dst_offset, ireg, st);
+      vec_stack_to_stack_helper(masm, src_offset, dst_offset, ireg, st);
     } else if (src_first_rc == rc_float && dst_first_rc == rc_float ) {
-      vec_mov_helper(cbuf, src_first, dst_first, src_second, dst_second, ireg, st);
+      vec_mov_helper(masm, src_first, dst_first, src_second, dst_second, ireg, st);
     } else if (src_first_rc == rc_float && dst_first_rc == rc_stack ) {
       int stack_offset = ra_->reg2offset(dst_first);
-      vec_spill_helper(cbuf, false, stack_offset, src_first, ireg, st);
+      vec_spill_helper(masm, false, stack_offset, src_first, ireg, st);
     } else if (src_first_rc == rc_stack && dst_first_rc == rc_float ) {
       int stack_offset = ra_->reg2offset(src_first);
-      vec_spill_helper(cbuf, true,  stack_offset, dst_first, ireg, st);
+      vec_spill_helper(masm, true,  stack_offset, dst_first, ireg, st);
     } else {
       ShouldNotReachHere();
     }
@@ -1021,8 +1017,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         // 64-bit
         int src_offset = ra_->reg2offset(src_first);
         int dst_offset = ra_->reg2offset(dst_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ pushq(Address(rsp, src_offset));
           __ popq (Address(rsp, dst_offset));
 #ifndef PRODUCT
@@ -1039,8 +1034,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         // No pushl/popl, so:
         int src_offset = ra_->reg2offset(src_first);
         int dst_offset = ra_->reg2offset(dst_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movq(Address(rsp, -8), rax);
           __ movl(rax, Address(rsp, src_offset));
           __ movl(Address(rsp, dst_offset), rax);
@@ -1062,8 +1056,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
         int offset = ra_->reg2offset(src_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movq(as_Register(Matcher::_regEncode[dst_first]), Address(rsp, offset));
 #ifndef PRODUCT
         } else {
@@ -1077,8 +1070,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
         int offset = ra_->reg2offset(src_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movl(as_Register(Matcher::_regEncode[dst_first]), Address(rsp, offset));
 #ifndef PRODUCT
         } else {
@@ -1095,8 +1087,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
         int offset = ra_->reg2offset(src_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movdbl( as_XMMRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
 #ifndef PRODUCT
         } else {
@@ -1111,8 +1102,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
         int offset = ra_->reg2offset(src_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movflt( as_XMMRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
 #ifndef PRODUCT
         } else {
@@ -1129,8 +1119,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
         int offset = ra_->reg2offset(src_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ kmov(as_KRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
 #ifndef PRODUCT
         } else {
@@ -1150,8 +1139,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
         int offset = ra_->reg2offset(dst_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movq(Address(rsp, offset), as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1165,8 +1153,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
         int offset = ra_->reg2offset(dst_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movl(Address(rsp, offset), as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1182,8 +1169,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movq(as_Register(Matcher::_regEncode[dst_first]),
                   as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
@@ -1198,8 +1184,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movl(as_Register(Matcher::_regEncode[dst_first]),
                   as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
@@ -1216,8 +1201,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movdq( as_XMMRegister(Matcher::_regEncode[dst_first]), as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1230,8 +1214,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movdl( as_XMMRegister(Matcher::_regEncode[dst_first]), as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1246,8 +1229,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ kmov(as_KRegister(Matcher::_regEncode[dst_first]), as_Register(Matcher::_regEncode[src_first]));
   #ifndef PRODUCT
         } else {
@@ -1268,8 +1250,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
         int offset = ra_->reg2offset(dst_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movdbl( Address(rsp, offset), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1283,8 +1264,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
         int offset = ra_->reg2offset(dst_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movflt(Address(rsp, offset), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1300,8 +1280,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movdq( as_Register(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1314,8 +1293,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movdl( as_Register(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1331,8 +1309,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movdbl( as_XMMRegister(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1346,8 +1323,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ movflt( as_XMMRegister(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1370,8 +1346,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
         int offset = ra_->reg2offset(dst_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ kmov(Address(rsp, offset), as_KRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1386,8 +1361,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ kmov(as_Register(Matcher::_regEncode[dst_first]), as_KRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1403,8 +1377,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
+        if (masm) {
           __ kmov(as_KRegister(Matcher::_regEncode[dst_first]), as_KRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1432,8 +1405,8 @@ void MachSpillCopyNode::format(PhaseRegAlloc *ra_, outputStream* st) const {
 }
 #endif
 
-void MachSpillCopyNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  implementation(&cbuf, ra_, false, nullptr);
+void MachSpillCopyNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
+  implementation(masm, ra_, false, nullptr);
 }
 
 uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const {
@@ -1451,13 +1424,12 @@ void BoxLockNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 }
 #endif
 
-void BoxLockNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
+void BoxLockNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
 {
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
   int reg = ra_->get_encode(this);
 
-  MacroAssembler masm(&cbuf);
-  masm.lea(as_Register(reg), Address(rsp, offset));
+  __ lea(as_Register(reg), Address(rsp, offset));
 }
 
 uint BoxLockNode::size(PhaseRegAlloc *ra_) const
@@ -1481,10 +1453,9 @@ void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 }
 #endif
 
-void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
+void MachUEPNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
 {
-  MacroAssembler masm(&cbuf);
-  masm.ic_check(InteriorEntryAlignment);
+  __ ic_check(InteriorEntryAlignment);
 }
 
 uint MachUEPNode::size(PhaseRegAlloc* ra_) const
@@ -1663,7 +1634,6 @@ encode %{
     //  [REX_B]
     //    f:   f7 f9                   idiv   $div
     // 0000000000000011 <done>:
-    MacroAssembler _masm(&cbuf);
     Label normal;
     Label done;
 
@@ -1719,7 +1689,6 @@ encode %{
     //   17:   48 99                   cqto
     //   19:   48 f7 f9                idiv   $div
     // 000000000000001c <done>:
-    MacroAssembler _masm(&cbuf);
     Label normal;
     Label done;
 
@@ -1761,7 +1730,6 @@ encode %{
     Label miss;
     const bool set_cond_codes = true;
 
-    MacroAssembler _masm(&cbuf);
     __ check_klass_subtype_slow_path(Rrsi, Rrax, Rrcx, Rrdi,
                                      nullptr, &miss,
                                      /*set_cond_codes:*/ true);
@@ -1772,21 +1740,19 @@ encode %{
   %}
 
   enc_class clear_avx %{
-    debug_only(int off0 = cbuf.insts_size());
+    debug_only(int off0 = __ offset());
     if (generate_vzeroupper(Compile::current())) {
       // Clear upper bits of YMM registers to avoid AVX <-> SSE transition penalty
       // Clear upper bits of YMM registers when current compiled code uses
       // wide vectors to avoid AVX <-> SSE transition penalty during call.
-      MacroAssembler _masm(&cbuf);
       __ vzeroupper();
     }
-    debug_only(int off1 = cbuf.insts_size());
+    debug_only(int off1 = __ offset());
     assert(off1 - off0 == clear_avx_size(), "correct size prediction");
   %}
 
   enc_class Java_To_Runtime(method meth) %{
     // No relocation needed
-    MacroAssembler _masm(&cbuf);
     __ mov64(r10, (int64_t) $meth$$method);
     __ call(r10);
     __ post_call_nop();
@@ -1797,8 +1763,6 @@ encode %{
     // JAVA STATIC CALL
     // CALL to fixup routine.  Fixup routine uses ScopeDesc info to
     // determine who we intended to call.
-    MacroAssembler _masm(&cbuf);
-
     if (!_method) {
       __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, $meth$$method)));
     } else if (_method->intrinsic_id() == vmIntrinsicID::_ensureMaterializedForStackWalk) {
@@ -1807,7 +1771,7 @@ encode %{
       __ addr_nop_5();
       __ block_comment("call JVM_EnsureMaterializedForStackWalk (elided)");
     } else {
-      int method_index = resolved_method_index(cbuf);
+      int method_index = resolved_method_index(masm);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
       address mark = __ pc();
@@ -1816,10 +1780,11 @@ encode %{
       if (CodeBuffer::supports_shared_stubs() && _method->can_be_statically_bound()) {
         // Calls of the same statically bound method can share
         // a stub to the interpreter.
-        cbuf.shared_stub_to_interp_for(_method, call_offset);
+        __ code()->shared_stub_to_interp_for(_method, call_offset);
       } else {
         // Emit stubs for static call.
-        address stub = CompiledDirectCall::emit_to_interp_stub(cbuf, mark);
+        address stub = CompiledDirectCall::emit_to_interp_stub(masm, mark);
+        __ clear_inst_mark();
         if (stub == nullptr) {
           ciEnv::current()->record_failure("CodeCache is full");
           return;
@@ -1830,8 +1795,7 @@ encode %{
   %}
 
   enc_class Java_Dynamic_Call(method meth) %{
-    MacroAssembler _masm(&cbuf);
-    __ ic_call((address)$meth$$method, resolved_method_index(cbuf));
+    __ ic_call((address)$meth$$method, resolved_method_index(masm));
     __ post_call_nop();
   %}
 
@@ -4351,7 +4315,7 @@ instruct maxF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRe
 
   format %{ "$dst = max($a, $b)\t# intrinsic (float)" %}
   ins_encode %{
-    emit_fp_min_max(_masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
                     false /*min*/, true /*single*/);
   %}
   ins_pipe( pipe_slow );
@@ -4376,7 +4340,7 @@ instruct maxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xmmt, rRe
 
   format %{ "$dst = max($a, $b)\t# intrinsic (double)" %}
   ins_encode %{
-    emit_fp_min_max(_masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
                     false /*min*/, false /*single*/);
   %}
   ins_pipe( pipe_slow );
@@ -4401,7 +4365,7 @@ instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRe
 
   format %{ "$dst = min($a, $b)\t# intrinsic (float)" %}
   ins_encode %{
-    emit_fp_min_max(_masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
                     true /*min*/, true /*single*/);
   %}
   ins_pipe( pipe_slow );
@@ -4426,7 +4390,7 @@ instruct minD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xmmt, rRe
 
   format %{ "$dst = min($a, $b)\t# intrinsic (double)" %}
   ins_encode %{
-    emit_fp_min_max(_masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
                     true /*min*/, false /*single*/);
   %}
   ins_pipe( pipe_slow );
@@ -9732,7 +9696,7 @@ instruct cmpF_cc_reg(rFlagsRegU cr, regF src1, regF src2)
     "exit:" %}
   ins_encode %{
     __ ucomiss($src1$$XMMRegister, $src2$$XMMRegister);
-    emit_cmpfp_fixup(_masm);
+    emit_cmpfp_fixup(masm);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -9783,7 +9747,7 @@ instruct cmpD_cc_reg(rFlagsRegU cr, regD src1, regD src2)
     "exit:" %}
   ins_encode %{
     __ ucomisd($src1$$XMMRegister, $src2$$XMMRegister);
-    emit_cmpfp_fixup(_masm);
+    emit_cmpfp_fixup(masm);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -9836,7 +9800,7 @@ instruct cmpF_reg(rRegI dst, regF src1, regF src2, rFlagsReg cr)
     "done:" %}
   ins_encode %{
     __ ucomiss($src1$$XMMRegister, $src2$$XMMRegister);
-    emit_cmpfp3(_masm, $dst$$Register);
+    emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -9857,7 +9821,7 @@ instruct cmpF_mem(rRegI dst, regF src1, memory src2, rFlagsReg cr)
     "done:" %}
   ins_encode %{
     __ ucomiss($src1$$XMMRegister, $src2$$Address);
-    emit_cmpfp3(_masm, $dst$$Register);
+    emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -9877,7 +9841,7 @@ instruct cmpF_imm(rRegI dst, regF src, immF con, rFlagsReg cr) %{
     "done:" %}
   ins_encode %{
     __ ucomiss($src$$XMMRegister, $constantaddress($con));
-    emit_cmpfp3(_masm, $dst$$Register);
+    emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -9898,7 +9862,7 @@ instruct cmpD_reg(rRegI dst, regD src1, regD src2, rFlagsReg cr)
     "done:" %}
   ins_encode %{
     __ ucomisd($src1$$XMMRegister, $src2$$XMMRegister);
-    emit_cmpfp3(_masm, $dst$$Register);
+    emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -9919,7 +9883,7 @@ instruct cmpD_mem(rRegI dst, regD src1, memory src2, rFlagsReg cr)
     "done:" %}
   ins_encode %{
     __ ucomisd($src1$$XMMRegister, $src2$$Address);
-    emit_cmpfp3(_masm, $dst$$Register);
+    emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -9939,7 +9903,7 @@ instruct cmpD_imm(rRegI dst, regD src, immD con, rFlagsReg cr) %{
     "done:" %}
   ins_encode %{
     __ ucomisd($src$$XMMRegister, $constantaddress($con));
-    emit_cmpfp3(_masm, $dst$$Register);
+    emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
