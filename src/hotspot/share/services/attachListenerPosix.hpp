@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef SHARE_SERVICES_ATTACHLISTENERPOSIX_HPP
+#define SHARE_SERVICES_ATTACHLISTENERPOSIX_HPP
+
 #include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -41,6 +44,10 @@
 #ifndef UNIX_PATH_MAX
 #define UNIX_PATH_MAX   sizeof(((struct sockaddr_un *)0)->sun_path)
 #endif
+
+// The BSD, AIX and Linux implementations of the platform-dependent AttachListener API
+// are almost identical. We implement a common solution in this header file and
+// let their implementations simply include this header.
 
 // The attach mechanism on POSIX uses a UNIX domain socket. An attach listener
 // thread is created at startup or is created on-demand via a signal from
@@ -553,3 +560,5 @@ void AttachListener::pd_data_dump() {
 void AttachListener::pd_detachall() {
   // do nothing for now
 }
+
+#endif
