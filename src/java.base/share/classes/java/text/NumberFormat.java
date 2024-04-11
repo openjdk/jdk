@@ -38,9 +38,6 @@
 
 package java.text;
 
-import sun.util.locale.provider.LocaleProviderAdapter;
-import sun.util.locale.provider.LocaleServiceProviderPool;
-
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
@@ -55,6 +52,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
+import sun.util.locale.provider.LocaleProviderAdapter;
+import sun.util.locale.provider.LocaleServiceProviderPool;
 
 /**
  * {@code NumberFormat} is the abstract base class for all number
@@ -490,7 +490,8 @@ public abstract class NumberFormat extends Format  {
      * @since 23
      */
     public boolean isStrict() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Subclasses should override this " +
+                "method when implementing strict parsing");
     }
 
     /**
@@ -509,7 +510,8 @@ public abstract class NumberFormat extends Format  {
      * @since 23
      */
     public void setStrict(boolean strict) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Subclasses should override this " +
+                "method when implementing strict parsing");
     }
 
     //============== Locale Stuff =====================

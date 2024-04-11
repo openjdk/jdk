@@ -38,9 +38,6 @@
 
 package java.text;
 
-import sun.util.locale.provider.LocaleProviderAdapter;
-import sun.util.locale.provider.ResourceBundleBasedAdapter;
-
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
@@ -53,6 +50,9 @@ import java.util.Currency;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
+import sun.util.locale.provider.LocaleProviderAdapter;
+import sun.util.locale.provider.ResourceBundleBasedAdapter;
 
 /**
  * {@code DecimalFormat} is a concrete subclass of
@@ -2652,6 +2652,7 @@ public class DecimalFormat extends NumberFormat {
 
     // Checks to make sure grouping size is not violated. Used when strict.
     private boolean isGroupingViolation(int pos, int prevGroupingPos) {
+        assert !parseStrict : "Grouping violations should only occur when strict";
         return isGroupingUsed() && // Only violates if using grouping
                 // Checks if a previous grouping symbol was seen.
                 prevGroupingPos != -groupingSize &&
@@ -2660,12 +2661,17 @@ public class DecimalFormat extends NumberFormat {
     }
 
     // Calculates the index that violated the grouping size
-    // Calculation is determined whether it was an under or over violation
+    // Violation can be over or under the grouping size
+    // under - Current group has a grouping size of less than the expected
+    // over - Current group has a grouping size of more than the expected
     private int groupingViolationIndex(int pos, int prevGroupingPos) {
-        return Math.min(
-                pos, // ex: "1,23,4" OR "1,,2". When under, violating char is grouping
-                // ex: "1,2345,6. When over, violating char is digit
-                prevGroupingPos + groupingSize + 1);
+        // Both examples assume grouping size of 3 and 0 indexed
+        // under ex: "1,23,4". (4) OR "1,,2". (2) When under, violating char is grouping symbol
+        // over ex: "1,2345,6. (5) When over, violating char is the excess digit
+        // This method is only evaluated when a grouping symbol is found, thus
+        // we can take the minimum of either the current pos, or where we expect
+        // the current group to have ended
+        return Math.min(pos, prevGroupingPos + groupingSize + 1);
     }
 
     /**
