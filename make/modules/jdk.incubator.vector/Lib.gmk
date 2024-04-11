@@ -43,7 +43,7 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, aarch64)+$(INCLUDE_COMPILER2
       NAME := vectormath, \
       DISABLED_WARNINGS_gcc := unused-function, \
       DISABLED_WARNINGS_clang := unused-function, \
-      CFLAGS := $(CFLAGS_JDKLIB), \
+      CFLAGS := $(CFLAGS_JDKLIB) -O3, \
       vector_math_sve.c_CFLAGS := $(SVE_CFLAGS), \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \

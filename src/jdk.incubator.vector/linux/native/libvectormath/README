@@ -29,3 +29,4 @@ jdk dir:
 Currently, the only necessary change is:
 * make `Sleef_rempitabdp` and `Sleef_rempitabsp` in sleefinline_advsimd.h and sleefinline_sve.h `static` to avoid multiple definitions.
 * * a further step is to make some changes in sleef itself, so to avoid make these changes when importing the source into jdk
+* change from `#define SLEEF_ALWAYS_INLINE inline` to `#define SLEEF_ALWAYS_INLINE inline __attribute__((__always_inline__))` in sleefinline_advsimd.h and sleefinline_sve.h, this is from performance consideration.
