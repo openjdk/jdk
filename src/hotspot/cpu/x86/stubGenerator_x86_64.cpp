@@ -4197,8 +4197,10 @@ void StubGenerator::generate_final_stubs() {
 
   if (UseSecondarySupersTable) {
     StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
-    for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
-      StubRoutines::_lookup_secondary_supers_table_stubs[slot] = generate_lookup_secondary_supers_table_stub(slot);
+    if (! InlineSecondarySupersTest) {
+      for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
+        StubRoutines::_lookup_secondary_supers_table_stubs[slot] = generate_lookup_secondary_supers_table_stub(slot);
+      }
     }
   }
 
