@@ -26,10 +26,13 @@ import java.security.*;
 /**
  * @test
  * @bug 8328864
- * @summary Test for ProviderList.getService throwing null when using custom security properties
+ * @summary Test that ProviderList.getService checks configs when
+ * ProviderList.getProvider fails for preferred providers.
+ * @run main/othervm
+ *  -Djava.security.properties=${test.src}/app-security.properties NullPreferredList
  */
 
-public class NullProviderList {
+public class NullPreferredList {
 
     public static void main(final String[] args) throws Exception {
         final KeyStore ks = KeyStore.getInstance("PKCS12");
