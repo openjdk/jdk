@@ -221,7 +221,7 @@ public class TestJFREvents {
                                       commonDockerOpts()
                                       .addDockerOpts("--memory=" + memValueToSet)
                                       .addDockerOpts("--memory-swap=" + swapValueToSet)
-                                      //The default memory-swappiness vaule is inherited from the host machine, which maybe 0
+                                      // The default memory-swappiness vaule is inherited from the host machine, which maybe 0
                                       .addDockerOpts("--memory-swappiness=60")
                                       .addClassOptions("jdk.SwapSpace"));
          out.shouldHaveExitValue(0)
