@@ -45,6 +45,11 @@ int UnsafeCopyMemory::_table_length                             = 0;
 int UnsafeCopyMemory::_table_max_length                         = 0;
 address UnsafeCopyMemory::_common_exit_stub_pc                  = nullptr;
 
+UnsafeSetMemory* UnsafeSetMemory::_table                       = nullptr;
+int UnsafeSetMemory::_table_length                             = 0;
+int UnsafeSetMemory::_table_max_length                         = 0;
+address UnsafeSetMemory::_common_exit_stub_pc                  = nullptr;
+
 // Implementation of StubRoutines - for a description
 // of how to extend it, see the header file.
 
@@ -219,6 +224,31 @@ bool UnsafeCopyMemory::contains_pc(address pc) {
 address UnsafeCopyMemory::page_error_continue_pc(address pc) {
   for (int i = 0; i < UnsafeCopyMemory::_table_length; i++) {
     UnsafeCopyMemory* entry = &UnsafeCopyMemory::_table[i];
+    if (pc >= entry->start_pc() && pc < entry->end_pc()) {
+      return entry->error_exit_pc();
+    }
+  }
+  return nullptr;
+}
+
+void UnsafeSetMemory::create_table(int max_size) {
+  UnsafeSetMemory::_table = new UnsafeSetMemory[max_size];
+  UnsafeSetMemory::_table_max_length = max_size;
+}
+
+bool UnsafeSetMemory::contains_pc(address pc) {
+  for (int i = 0; i < UnsafeSetMemory::_table_length; i++) {
+    UnsafeSetMemory* entry = &UnsafeSetMemory::_table[i];
+    if (pc >= entry->start_pc() && pc < entry->end_pc()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+address UnsafeSetMemory::page_error_continue_pc(address pc) {
+  for (int i = 0; i < UnsafeSetMemory::_table_length; i++) {
+    UnsafeSetMemory* entry = &UnsafeSetMemory::_table[i];
     if (pc >= entry->start_pc() && pc < entry->end_pc()) {
       return entry->error_exit_pc();
     }
@@ -532,6 +562,28 @@ UnsafeCopyMemoryMark::UnsafeCopyMemoryMark(StubCodeGenerator* cgen, bool add_ent
 }
 
 UnsafeCopyMemoryMark::~UnsafeCopyMemoryMark() {
+  if (_ucm_entry != nullptr) {
+    _ucm_entry->set_end_pc(_cgen->assembler()->pc());
+    if (_ucm_entry->error_exit_pc() == nullptr) {
+      _ucm_entry->set_error_exit_pc(_cgen->assembler()->pc());
+    }
+  }
+}
+
+UnsafeSetMemoryMark::UnsafeSetMemoryMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc) {
+  _cgen = cgen;
+  _ucm_entry = nullptr;
+  if (add_entry) {
+    address err_exit_pc = nullptr;
+    if (!continue_at_scope_end) {
+      err_exit_pc = error_exit_pc != nullptr ? error_exit_pc : UnsafeSetMemory::common_exit_stub_pc();
+    }
+    assert(err_exit_pc != nullptr || continue_at_scope_end, "error exit not set");
+    _ucm_entry = UnsafeSetMemory::add_to_table(_cgen->assembler()->pc(), nullptr, err_exit_pc);
+  }
+}
+
+UnsafeSetMemoryMark::~UnsafeSetMemoryMark() {
   if (_ucm_entry != nullptr) {
     _ucm_entry->set_end_pc(_cgen->assembler()->pc());
     if (_ucm_entry->error_exit_pc() == nullptr) {

@@ -5965,7 +5965,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
     orl(value, rtmp);
   }
 
-  cmpl(count, 2<<shift); // Short arrays (< 8 bytes) fill by element
+  cmpptr(count, 2<<shift); // Short arrays (< 8 bytes) fill by element
   jcc(Assembler::below, L_fill_4_bytes); // use unsigned cmp
   if (!UseUnalignedLoadStores && !aligned && (t == T_BYTE || t == T_SHORT)) {
     Label L_skip_align2;
@@ -6042,7 +6042,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
           Label L_fill_64_bytes_loop_avx3, L_check_fill_64_bytes_avx2;
 
           // If number of bytes to fill < VM_Version::avx3_threshold(), perform fill using AVX2
-          cmpl(count, VM_Version::avx3_threshold());
+          cmpptr(count, VM_Version::avx3_threshold());
           jccb(Assembler::below, L_check_fill_64_bytes_avx2);
 
           vpbroadcastd(xtmp, xtmp, Assembler::AVX_512bit);

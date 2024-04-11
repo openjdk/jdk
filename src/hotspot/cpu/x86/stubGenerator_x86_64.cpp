@@ -4013,6 +4013,11 @@ void StubGenerator::generate_initial_stubs() {
     UnsafeCopyMemory::create_table(16);
   }
 
+  // Initialize table for unsafe set memeory check.
+  if (UnsafeSetMemory::_table == nullptr) {
+    UnsafeSetMemory::create_table(16);
+  }
+
   // entry points that exist in all platforms Note: This is code
   // that could be shared among different platforms - however the
   // benefit seems to be smaller than the disadvantage of having a

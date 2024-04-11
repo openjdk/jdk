@@ -122,6 +122,52 @@ class UnsafeCopyMemoryMark : public StackObj {
   ~UnsafeCopyMemoryMark();
 };
 
+class UnsafeSetMemory : public CHeapObj<mtCode> {
+ private:
+  address _start_pc;
+  address _end_pc;
+  address _error_exit_pc;
+ public:
+  static address           _common_exit_stub_pc;
+  static UnsafeSetMemory* _table;
+  static int               _table_length;
+  static int               _table_max_length;
+  UnsafeSetMemory() : _start_pc(nullptr), _end_pc(nullptr), _error_exit_pc(nullptr) {}
+  void    set_start_pc(address pc)      { _start_pc = pc; }
+  void    set_end_pc(address pc)        { _end_pc = pc; }
+  void    set_error_exit_pc(address pc) { _error_exit_pc = pc; }
+  address start_pc()      const { return _start_pc; }
+  address end_pc()        const { return _end_pc; }
+  address error_exit_pc() const { return _error_exit_pc; }
+
+  static void    set_common_exit_stub_pc(address pc) { _common_exit_stub_pc = pc; }
+  static address common_exit_stub_pc()               { return _common_exit_stub_pc; }
+
+  static UnsafeSetMemory* add_to_table(address start_pc, address end_pc, address error_exit_pc) {
+    guarantee(_table_length < _table_max_length, "Incorrect UnsafeSetMemory::_table_max_length");
+    UnsafeSetMemory* entry = &_table[_table_length];
+    entry->set_start_pc(start_pc);
+    entry->set_end_pc(end_pc);
+    entry->set_error_exit_pc(error_exit_pc);
+
+    _table_length++;
+    return entry;
+  }
+
+  static bool    contains_pc(address pc);
+  static address page_error_continue_pc(address pc);
+  static void    create_table(int max_size);
+};
+
+class UnsafeSetMemoryMark : public StackObj {
+ private:
+  UnsafeSetMemory*  _ucm_entry;
+  StubCodeGenerator* _cgen;
+ public:
+  UnsafeSetMemoryMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc = nullptr);
+  ~UnsafeSetMemoryMark();
+};
+
 class StubRoutines: AllStatic {
 
  public:

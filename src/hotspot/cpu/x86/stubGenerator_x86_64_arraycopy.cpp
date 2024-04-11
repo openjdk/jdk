@@ -732,6 +732,7 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(address* entry, const 
   __ ret(0);
 
   if (MaxVectorSize == 64) {
+    UnsafeCopyMemoryMark ucmm(this, !is_oop && !aligned, false, ucme_exit_pc);
     __ BIND(L_copy_large);
     arraycopy_avx3_large(to, from, temp1, temp2, temp3, temp4, count, xmm1, xmm2, xmm3, xmm4, shift);
     __ jmp(L_finish);
@@ -2547,6 +2548,7 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
     // Fill words
     {
       Label L_wordsTail, L_wordsLoop, L_wordsTailLoop;
+      UnsafeSetMemoryMark usmm(this, true, true);
       //////  Set words
       __ leaq(rScratch2, Address(size, 1));
       __ movq(rScratch1, rScratch2);
@@ -2584,14 +2586,15 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
       __ incrementq(rScratch1);
       __ cmpq(size, rScratch1);
       __ jccb(Assembler::notEqual, L_wordsTailLoop);
-      __ jmp(L_exit);
     }
+    __ jmp(L_exit);
 
     __ BIND(L_fillQuadwords);
 
     // Fill QUADWORDs
     {
       Label L_qwordLoop, L_qwordsTail, L_qwordsTailLoop;
+      UnsafeSetMemoryMark usmm(this, true, true);
 
       __ leaq(rScratch2, Address(size, 7));
       __ movq(rScratch1, rScratch2);
@@ -2628,14 +2631,18 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
       __ incrementq(rScratch1);
       __ cmpq(size, rScratch1);
       __ jccb(Assembler::notEqual, L_qwordsTailLoop);
-      __ jmp(L_exit);
     }
+    __ BIND(L_exit);
+
+    restore_arg_regs();
+    __ ret(0);
 
     __ BIND(L_fillDwords);
 
     // Fill DWORDs
     {
       Label L_dwordLoop, L_dwordsTail, L_dwordsTailLoop;
+      UnsafeSetMemoryMark usmm(this, true, true);
 
       __ leaq(rScratch2, Address(size, 3));
       __ movq(rScratch1, rScratch2);
@@ -2675,13 +2682,14 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
       __ incrementq(rScratch1);
       __ cmpq(size, rScratch1);
       __ jccb(Assembler::notEqual, L_dwordsTailLoop);
-      __ jmpb(L_exit);
     }
+    __ jmpb(L_exit);
 
     __ BIND(L_fillBytes);
 #ifdef MUSL_LIBC
     {
       Label L_byteLoop, L_longByteLoop, L_byteTail, L_byteTailLoop;
+      UnsafeSetMemoryMark usmm(this, true, true);
 
 #undef wide_value
 #define savedSize rax
@@ -2738,13 +2746,22 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
       __ movq(c_rarg2, rax);
 
       __ xchgq(c_rarg1, c_rarg2);
-      __ jump(RuntimeAddress(byte_fill_entry));
+      // generate_unsafe_fill(T_BYTE, false, "unsafe_set_memory");
+      __ mov(r11, c_rarg2);
+
+      __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+      {
+        UnsafeSetMemoryMark usmm(this, true, true);
+
+        __ generate_fill(T_BYTE, false, c_rarg0, c_rarg1, r11, rax, xmm0);
+      }
+
+      __ vzeroupper();
+      __ leave(); // required for proper stackwalking of RuntimeStub frame
+      __ ret(0);
     }
 #endif  // MUSL_LIBC
-    __ BIND(L_exit);
-
-    restore_arg_regs();
-    __ ret(0);
 
 #undef dest
 #undef size
