@@ -313,8 +313,8 @@ void CodeSection::relocate(address at, RelocationHolder const& spec, int format)
   // relocation for fixup.  Sometimes we want to put relocation
   // information for the next instruction, since it will be patched
   // with a call.
-  // TODO: assert(start() <= at && at <= end()+1,
-  //       "cannot relocate data outside code boundaries");
+  assert(start() <= at && at <= end() + outer()->pending_insts_size() + 1,
+         "cannot relocate data outside code boundaries");
 
   if (!has_locs()) {
     // no space for relocation information provided => code cannot be
@@ -930,7 +930,7 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
   // Move all the code and relocations to the new blob:
   relocate_code_to(&cb);
 
-  // some internal addresses, _last_insn _last_label, are used during code emission,
+  // internal addresses like _last_insn is used during code emission,
   // adjust them in expansion
   adjust_internal_address(insts_begin(), cb.insts_begin());
 
@@ -958,9 +958,6 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
 void CodeBuffer::adjust_internal_address(address from, address to) {
   if (_last_insn != nullptr) {
     _last_insn += to - from;
-  }
-  if (_last_label != nullptr) {
-    _last_label += to - from;
   }
 }
 
