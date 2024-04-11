@@ -614,7 +614,7 @@ void MarkAndPushClosure::do_oop_work(T* p)            { SerialFullGC::mark_and_p
 void MarkAndPushClosure::do_oop(      oop* p)         { do_oop_work(p); }
 void MarkAndPushClosure::do_oop(narrowOop* p)         { do_oop_work(p); }
 
-template <class T> inline void SerialFullGC::adjust_pointer(T* p) {
+template <class T> void SerialFullGC::adjust_pointer(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(heap_oop)) {
     oop obj = CompressedOops::decode_not_null(heap_oop);

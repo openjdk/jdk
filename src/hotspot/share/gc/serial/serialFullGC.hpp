@@ -135,7 +135,7 @@ class SerialFullGC : AllStatic {
 
   static void follow_stack();   // Empty marking stack.
 
-  template <class T> static inline void adjust_pointer(T* p);
+  template <class T> static void adjust_pointer(T* p);
 
   // Check mark and maybe push on marking stack
   template <class T> static void mark_and_push(T* p);
