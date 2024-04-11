@@ -32,9 +32,7 @@ import com.sun.hotspot.igv.data.serialization.ParseMonitor;
 import com.sun.hotspot.igv.data.serialization.Parser;
 import com.sun.hotspot.igv.data.serialization.Printer;
 import com.sun.hotspot.igv.data.serialization.Printer.GraphContext;
-import com.sun.hotspot.igv.data.serialization.Printer.SerialData;
 import com.sun.hotspot.igv.data.services.GraphViewer;
-import com.sun.hotspot.igv.data.services.GroupCallback;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
@@ -48,6 +46,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -168,15 +167,19 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         }
 
         try (Writer writer = new OutputStreamWriter(new FileOutputStream(path))) {
-            Printer.exportGraphDocument(writer, new SerialData<>(doc, saveContexts));
+            Printer.exportGraphDocument(writer, doc, saveContexts);
         }
     }
 
     private static GraphContext getGraphContext(EditorTopComponent etc) {
         InputGraph openedGraph = etc.getModel().getFirstGraph();
         int posDiff = etc.getModel().getSecondPosition() - etc.getModel().getFirstPosition();
-        Set<Integer> visibleNodes = new HashSet<>(etc.getModel().getVisibleNodes());
-        return new GraphContext(openedGraph, new AtomicInteger(posDiff), visibleNodes);
+        if (etc.getModel().getHiddenNodes().isEmpty()) {
+            return new GraphContext(openedGraph, new AtomicInteger(posDiff), new HashSet<>(), new AtomicBoolean(true));
+        } else {
+            Set<Integer> visibleNodes = new HashSet<>(etc.getModel().getVisibleNodes());
+            return new GraphContext(openedGraph, new AtomicInteger(posDiff), visibleNodes, new AtomicBoolean(false));
+        }
     }
 
     private void initListView() {
@@ -229,15 +232,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     }
 
     private void initReceivers() {
-
-        final GroupCallback callback = g -> {
-            synchronized(OutlineTopComponent.this) {
-                g.setParent(getDocument());
-                getDocument().addElement(g);
-            }
-        };
-
-        new Server(callback);
+        new Server(document, this::loadContext);
     }
 
     @Override
@@ -466,32 +461,35 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     }
 
     /**
-     * Loads and opens the given set of graph contexts (opened graphs and visible nodes).
+     * Loads and opens the given a graph contexts (opened graphs and visible nodes).
      */
-    private void loadContexts(Set<GraphContext> contexts) {
+    private void loadContext(GraphContext context) {
         RP.post(() -> {
             final GraphViewer viewer = Lookup.getDefault().lookup(GraphViewer.class);
             assert viewer != null;
-            for (GraphContext context : contexts) {
 
-                final int difference = context.posDiff().get();
-                final Set<Integer> visibleNodes = context.visibleNodes();
-                final InputGraph firstGraph = context.inputGraph();
+            final int difference = context.posDiff().get();
+            final InputGraph firstGraph = context.inputGraph();
+            final Set<Integer> visibleNodes = context.visibleNodes();
+            final boolean showAll = context.showAll().get();
 
-                SwingUtilities.invokeLater(() -> {
-                    InputGraph openedGraph = viewer.view(firstGraph, true);
-                    if (openedGraph != null) {
-                        EditorTopComponent etc = EditorTopComponent.findEditorForGraph(firstGraph);
-                        if (etc != null) {
+            SwingUtilities.invokeLater(() -> {
+                InputGraph openedGraph = viewer.view(firstGraph, true);
+                if (openedGraph != null) {
+                    EditorTopComponent etc = EditorTopComponent.findEditorForGraph(firstGraph);
+                    if (etc != null) {
+                        if (showAll) {
+                            etc.getModel().setHiddenNodes(new HashSet<>());
+                        } else {
                             etc.getModel().showOnly(visibleNodes);
-                            if (difference > 0) {
-                                int firstGraphIdx = firstGraph.getIndex();
-                                etc.getModel().setPositions(firstGraphIdx, firstGraphIdx + difference);
-                            }
+                        }
+                        if (difference > 0) {
+                            int firstGraphIdx = firstGraph.getIndex();
+                            etc.getModel().setPositions(firstGraphIdx, firstGraphIdx + difference);
                         }
                     }
-                });
-            }
+                }
+            });
         });
     }
 
@@ -536,10 +534,8 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             };
             try {
                 if (file.getName().endsWith(".xml")) {
-                    final Parser parser = new Parser(channel, monitor, null);
-                    final SerialData<GraphDocument> parsedData = parser.parse();
-                    final GraphDocument parsedDoc = parsedData.data();
-                    getDocument().addGraphDocument(parsedDoc);
+                    final Parser parser = new Parser(channel, monitor, document, loadContext ? this::loadContext : null);
+                    parser.parse();
 
                     for (Node child : manager.getRootContext().getChildren().getNodes(true)) {
                         // Nodes a lazily created. By expanding and collapsing they are all initialized
@@ -547,9 +543,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
                         ((BeanTreeView) this.treeView).collapseNode(child);
                     }
 
-                    if (loadContext) {
-                        loadContexts(parsedData.contexts());
-                    }
                     SwingUtilities.invokeLater(this::requestActive);
                 }
             } catch (IOException ex) {

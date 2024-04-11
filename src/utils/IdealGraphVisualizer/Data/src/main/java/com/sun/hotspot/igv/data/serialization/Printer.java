@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -37,10 +38,7 @@ import java.util.stream.Collectors;
  */
 public class Printer {
 
-
-    public static void exportGraphDocument(Writer writer, SerialData<Folder> serialData) {
-        Folder folder = serialData.data();
-        Set<GraphContext> contexts = serialData.contexts();
+    public static void exportGraphDocument(Writer writer, Folder folder, Set<GraphContext> contexts) {
         XMLWriter xmlWriter = new XMLWriter(writer);
         try {
             xmlWriter.startTag(Parser.ROOT_ELEMENT);
@@ -195,11 +193,11 @@ public class Printer {
             writer.simpleTag(Parser.STATE_POSITION_DIFFERENCE,
                     new Properties(Parser.POSITION_DIFFERENCE_PROPERTY, Integer.toString(context.posDiff().get())));
 
-            writer.startTag(Parser.VISIBLE_NODES_ELEMENT);
+            writer.startTag(Parser.VISIBLE_NODES_ELEMENT, new Properties(Parser.ALL_PROPERTY, Boolean.toString(context.showAll().get())));
             for (Integer hiddenNodeID : context.visibleNodes()) {
                 writer.simpleTag(Parser.NODE_ELEMENT, new Properties(Parser.NODE_ID_PROPERTY, hiddenNodeID.toString()));
             }
-            writer.endTag(); // Parser.HIDDEN_NODES_ELEMENT
+            writer.endTag(); // Parser.VISIBLE_NODES_ELEMENT
 
             writer.endTag(); // Parser.STATES_ELEMENT
         }
@@ -251,13 +249,9 @@ public class Printer {
         return p;
     }
 
-    public record GraphContext(InputGraph inputGraph, AtomicInteger posDiff, Set<Integer> visibleNodes) { }
+    public record GraphContext(InputGraph inputGraph, AtomicInteger posDiff, Set<Integer> visibleNodes, AtomicBoolean showAll) { }
 
-    public record SerialData<T extends Properties.Provider>(T data,
-                                                            Set<GraphContext> contexts) implements Properties.Provider {
-        @Override
-        public Properties getProperties() {
-            return data.getProperties();
-        }
+    public interface GraphContextAction {
+        void performAction(GraphContext context);
     }
 }

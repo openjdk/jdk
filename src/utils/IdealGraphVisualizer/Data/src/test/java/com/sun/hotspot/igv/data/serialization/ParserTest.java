@@ -64,17 +64,16 @@ public class ParserTest {
 
     private void test(GraphDocument document) {
         final CharArrayWriter writer = new CharArrayWriter();
-        Printer.exportGraphDocument(writer, new Printer.SerialData<>(document, new HashSet<>()));
+        Printer.exportGraphDocument(writer, document, new HashSet<>());
         test(document, writer.toString());
     }
 
     private void test(GraphDocument document, String xmlString) {
         InputStream in = new ByteArrayInputStream(xmlString.getBytes(UTF_8));
         try {
-            Parser parser = new Parser(Channels.newChannel(in));
-            final Printer.SerialData<GraphDocument> exportData = parser.parse();
-            final GraphDocument parsedDocument = exportData.data();
-            Util.assertGraphDocumentEquals(document, parsedDocument);
+            Parser parser = new Parser(Channels.newChannel(in), null, null, null);
+            final GraphDocument exportData = parser.parse();
+            Util.assertGraphDocumentEquals(document, exportData);
         } catch (IOException ex) {
             fail(ex.toString());
         }

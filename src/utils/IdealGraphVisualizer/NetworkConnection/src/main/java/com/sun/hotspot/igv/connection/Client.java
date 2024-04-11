@@ -24,18 +24,23 @@
  */
 package com.sun.hotspot.igv.connection;
 
+import com.sun.hotspot.igv.data.GraphDocument;
 import com.sun.hotspot.igv.data.serialization.Parser;
-import com.sun.hotspot.igv.data.services.GroupCallback;
+import com.sun.hotspot.igv.data.serialization.Printer.GraphContextAction;
+
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import org.openide.util.Exceptions;
 
 public class Client implements Runnable {
     private final SocketChannel socket;
-    private final GroupCallback callback;
+    private final GraphDocument callbackDocument;
+    private final GraphContextAction contextAction;
 
-    public Client(SocketChannel socket, GroupCallback callback) {
-        this.callback = callback;
+
+    public Client(SocketChannel socket, GraphDocument callbackDocument, GraphContextAction contextAction) {
+        this.callbackDocument = callbackDocument;
+        this.contextAction = contextAction;
         this.socket = socket;
     }
 
@@ -46,7 +51,7 @@ public class Client implements Runnable {
             final SocketChannel channel = socket;
             channel.configureBlocking(true);
             channel.socket().getOutputStream().write('y');
-            new Parser(channel, null, callback).parse();
+            new Parser(channel, null, callbackDocument, contextAction).parse();
         } catch (IOException ex) {
             Exceptions.printStackTrace(ex);
         } finally {

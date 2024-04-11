@@ -24,7 +24,8 @@
  */
 package com.sun.hotspot.igv.connection;
 
-import com.sun.hotspot.igv.data.services.GroupCallback;
+import com.sun.hotspot.igv.data.GraphDocument;
+import com.sun.hotspot.igv.data.serialization.Printer.GraphContextAction;
 import com.sun.hotspot.igv.settings.Settings;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -42,12 +43,14 @@ import org.openide.util.RequestProcessor;
  */
 public class Server implements PreferenceChangeListener {
     private ServerSocketChannel serverSocket;
-    private final GroupCallback callback;
+    private final GraphDocument graphDocument;
+    private final GraphContextAction contextAction;
     private int port;
     private Runnable serverRunnable;
 
-    public Server(GroupCallback callback) {
-        this.callback = callback;
+    public Server(GraphDocument graphDocument, GraphContextAction contextAction) {
+        this.graphDocument = graphDocument;
+        this.contextAction = contextAction;
         initializeNetwork();
         Settings.get().addPreferenceChangeListener(this);
     }
@@ -84,7 +87,7 @@ public class Server implements PreferenceChangeListener {
                             return;
                         }
                         RequestProcessor requestProcessor = new RequestProcessor();
-                        requestProcessor.post(new Client(clientSocket, callback), 0, Thread.MAX_PRIORITY);
+                        requestProcessor.post(new Client(clientSocket, graphDocument, contextAction), 0, Thread.MAX_PRIORITY);
                     } catch (IOException ex) {
                         serverSocket = null;
                         NotifyDescriptor message = new NotifyDescriptor.Message("Error during listening for incoming connections. Listening for incoming data is disabled.", NotifyDescriptor.ERROR_MESSAGE);
