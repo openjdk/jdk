@@ -25,11 +25,11 @@
  * @test
  * @bug 8325494
  * @summary C2: Broken graph after not skipping CastII node anymore for Assertion Predicates after JDK-8309902
- * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:CompileOnly=TestAssertPredicateDoesntConstantFold::test TestAssertPredicateDoesntConstantFold
+ * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:CompileOnly=TestAssertionPredicateDoesntConstantFold::test TestAssertionPredicateDoesntConstantFold
  *
  */
 
-public class TestAssertPredicateDoesntConstantFold {
+public class TestAssertionPredicateDoesntConstantFold {
     static boolean bFld;
     static int iArrFld[];
     static long lArrFld[];
