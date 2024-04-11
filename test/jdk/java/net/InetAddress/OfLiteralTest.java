@@ -124,10 +124,10 @@ public class OfLiteralTest {
         byte[] ipv4_0_0_0_34 = new byte[]{0, 0, 0, 34};
 
         // 127.0.1.1 address bytes
-        byte[] ipv4_127_0_1_1 = new byte[]{127, 0, 1, 1};
+        byte[] ipv4_127_0_1_2 = new byte[]{127, 0, 1, 2};
 
         // 127.1.1.1 address bytes
-        byte[] ipv4_127_1_1_1 = new byte[]{127, 1, 1, 1};
+        byte[] ipv4_127_1_2_3 = new byte[]{127, 1, 2, 3};
 
         // 255.255.255.255 address bytes
         byte[] ipv4_255_255_255_255 = new byte[]{(byte)255, (byte)255, (byte)255, (byte)255};
@@ -223,13 +223,25 @@ public class OfLiteralTest {
                 Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
                         "0377.0377.0377.0377", ipv4_255_255_255_255),
                 //      form:'x.x.x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0s treated as octal segment prefixes
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "0177.0.0402", ipv4_127_0_1_2),
+                //      form:'x.x.x' method:InetAddress.ofPosixLiteral -
                 //      with leading 0x treated as hexadecimal segment prefixes
                 Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
-                        "0x7F.0.0x101", ipv4_127_0_1_1),
+                        "0x7F.0.0x102", ipv4_127_0_1_2),
                 //      form:'x.x' method:InetAddress.ofPosixLiteral -
                 //      with leading 0s treated as octal segment prefixes
                 Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
-                        "0177.0200401", ipv4_127_1_1_1),
+                        "0177.0201003", ipv4_127_1_2_3),
+                //      form:'x.x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0x treated as hexadecimal prefixes
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "0x7F.0x10203", ipv4_127_1_2_3),
+                //      form:'x.x' method:InetAddress.ofPosixLiteral -
+                //      without prefixes treated as decimal
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "127.66051", ipv4_127_1_2_3),
                 //      form:'x' method:InetAddress.ofPosixLiteral -
                 //      with leading 0 treated as octal segment prefix
                 Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
@@ -245,6 +257,10 @@ public class OfLiteralTest {
                 //      form:'x' method:InetAddress.ofPosixLiteral -
                 //      with leading 0x treated as hex prefix
                 Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "0x1020304", oneToFourAddressExpBytes),
+                //      form:'x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0x treated as hex prefix
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
                         "0xFFFFFFFF", ipv4_255_255_255_255),
                 //      form:'x' method:InetAddress.ofPosixLiteral -
                 //      without leading 0 treated as decimal
@@ -254,6 +270,14 @@ public class OfLiteralTest {
                 //      without leading 0 treated as decimal
                 Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
                         "42", ipv4_0_0_0_42),
+                //      form:'x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0 treated as octal segment prefix
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "0100401404", oneToFourAddressExpBytes),
+                //      form:'x' method:InetAddress.ofPosixLiteral -
+                //      without prefixes treated as decimal
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "16909060", oneToFourAddressExpBytes),
                 //      form:'x' method:InetAddress.ofPosixLiteral -
                 //      with leading 0 treated as octal segment prefix
                 Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,

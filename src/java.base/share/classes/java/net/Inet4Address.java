@@ -94,34 +94,12 @@ import java.util.Objects;
  * }
  *
  * <p> The above forms adhere "strict" decimal-only syntax.
- * Additionally, the
- * {@link Inet4Address#ofPosixLiteral(String)} method implements a
- * <a href="https://pubs.opengroup.org/onlinepubs/9699919799/functions/inet_addr.html">
- * POSIX {@code inet_addr}</a> compatible "loose" parsing algorithm, allowing
- * octal and hexadecimal address segments. Please refer to
- * <a href="https://www.ietf.org/rfc/rfc6943.html#section-3.1.1"> <i>RFC&nbsp;
- * 6943: Issues in Identifier Comparison for Security Purposes</i></a>.
- * <p> <a id="format-posix"></a> The following (non-decimal) forms are
- * supported by {@link Inet4Address#ofPosixLiteral(String)} method:
- * {@snippet :
- *  // Dotted-quad 'x.x.x.x' form with four part address literal
- *  Inet4Address.ofPosixLiteral("0177.0000.0000.0001"); // ==> /127.0.0.1
- *  Inet4Address.ofPosixLiteral("0127.0.0.1"); // ==> /87.0.0.1
- *
- *  // Dotted-triple 'x.x.x' form with three part address literal,
- *  // the last part is placed in the rightmost two bytes
- *  // of the constructed address
- *  Inet4Address.ofPosixLiteral("0x7F.0.0x101"); // ==> /127.0.1.1
- *
- *  // Dotted-double 'x.x' form with two part address literal,
- *  // the last part is placed in the rightmost three bytes
- *  // of the constructed address
- *  Inet4Address.ofPosixLiteral("0177.0200401"); // ==> /127.1.1.1
- *
- *  // Dotless 'x' form with one value that is stored directly in
- *  // the constructed address bytes without any rearrangement
- *  Inet4Address.ofPosixLiteral("017700000001"); // ==> /127.0.0.1
- * }
+ * Additionally, the {@link Inet4Address#ofPosixLiteral(String)}
+ * method implements a POSIX {@code inet_addr} compatible "loose"
+ * parsing algorithm, allowing octal and hexadecimal address segments.
+ * Please refer to <a href="https://www.ietf.org/rfc/rfc6943.html#section-3.1.1">
+ * <i>RFC&nbsp;6943: Issues in Identifier Comparison for Security
+ * Purposes</i></a>.
  * <p> For methods that return a textual representation as output
  * value, the first form, i.e. a dotted-quad string, is used.
  *
@@ -214,9 +192,42 @@ class Inet4Address extends InetAddress {
     /**
      * Creates an {@code Inet4Address} based on the provided {@linkplain
      * Inet4Address##format textual representation} of an IPv4 address in
-     * {@linkplain Inet4Address##format-posix POSIX form.}
-     * <p> If the provided IPv4 address literal cannot represent a {@linkplain
-     * Inet4Address##format valid IPv4 address} an {@code IllegalArgumentException} is thrown.
+     * POSIX {@code inet_addr} compatible form.
+     * <p> <a id="format-posix"></a> The method {@code ofPosixLiteral}
+     * implements <a href="https://pubs.opengroup.org/onlinepubs/9699919799/functions/inet_addr.html">
+     * POSIX {@code inet_addr}</a> compatible parsing algorithm, allowing
+     * octal and hexadecimal address segments. {@code "0"} is the prefix
+     * for octal numbers, {@code "0x"} and {@code "0X"} are the prefixes
+     * for hexadecimal numbers. Non-zero address segments that start from
+     * non-zero digits are parsed as decimal numbers. The following
+     * (non-decimal) forms are supported by this method:
+     * {@snippet :
+     *  // Dotted-quad 'x.x.x.x' form with four part address literal
+     *  Inet4Address.ofPosixLiteral("0177.0.0.1"); // ==> /127.0.0.1
+     *  Inet4Address.ofPosixLiteral("0x7F.0.0.1"); // ==> /127.0.0.1
+     *
+     *  // Dotted-triple 'x.x.x' form with three part address literal,
+     *  // the last part is placed in the rightmost two bytes
+     *  // of the constructed address
+     *  Inet4Address.ofPosixLiteral("0177.0.0402"); // ==> /127.0.1.2
+     *  Inet4Address.ofPosixLiteral("0x7F.0.0x102"); // ==> /127.0.1.2
+     *
+     *  // Dotted-double 'x.x' form with two part address literal,
+     *  // the last part is placed in the rightmost three bytes
+     *  // of the constructed address
+     *  Inet4Address.ofPosixLiteral("0177.0201003"); // ==> /127.1.2.3
+     *  Inet4Address.ofPosixLiteral("0x7F.0x10203"); // ==> /127.1.2.3
+     *  Inet4Address.ofPosixLiteral("127.66051"); // ==> /127.1.2.3
+     *
+     *  // Dotless 'x' form with one value that is stored directly in
+     *  // the constructed address bytes without any rearrangement
+     *  Inet4Address.ofPosixLiteral("0100401404"); // ==> /1.2.3.4
+     *  Inet4Address.ofPosixLiteral("0x1020304"); // ==> /1.2.3.4
+     *  Inet4Address.ofPosixLiteral("16909060"); // ==> /1.2.3.4
+     * }
+     * <p> If the provided IPv4 address literal cannot represent a
+     * valid IPv4 address in {@linkplain Inet4Address##format-posix
+     * POSIX form} an {@code IllegalArgumentException} is thrown.
      * <p> This method doesn't block, i.e. no hostname lookup is performed.
      *
      * @apiNote
