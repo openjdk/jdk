@@ -70,7 +70,6 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/systemMemoryBarrier.hpp"
-
 #if INCLUDE_JFR
 #include "jfr/support/jfrTimeToSafepoint.inline.hpp"
 #endif

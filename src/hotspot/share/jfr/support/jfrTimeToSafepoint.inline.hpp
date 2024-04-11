@@ -24,10 +24,10 @@
 #ifndef SHARE_JFR_SUPPORT_JFRTIMETOSAFEPOINT_INLINE_HPP
 #define SHARE_JFR_SUPPORT_JFRTIMETOSAFEPOINT_INLINE_HPP
 
-#include "jfr/jfrEvents.hpp"
-#include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/support/jfrTimeToSafepoint.hpp"
 
+#include "jfr/jfrEvents.hpp"
+#include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/vmThread.hpp"
 
