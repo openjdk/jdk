@@ -16190,7 +16190,7 @@ instruct CallLeafNoFPDirect(method meth)
 // Target of jump will eventually return to caller.
 // TailJump below removes the return address.
 // Don't use rfp for 'jump_target' because a MachEpilogNode has already been
-// emitted just above the TailCall and it will reset rfp to the caller state.
+// emitted just above the TailCall which has reset rfp to the caller state.
 instruct TailCalljmpInd(iRegPNoSpNoRfp jump_target, inline_cache_RegP method_ptr)
 %{
   match(TailCall jump_target method_ptr);
