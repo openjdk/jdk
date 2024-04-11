@@ -283,7 +283,7 @@ class Copy : AllStatic {
   // The largest atomic transfer unit is 8 bytes, or the largest power
   // of two which divides both to and size, whichever is smaller.
   static void fill_to_memory_atomic(void* to, size_t size, jubyte value = 0);
-  
+
   // Zero-fill methods
 
   // Zero word-aligned words, not atomic on each word
