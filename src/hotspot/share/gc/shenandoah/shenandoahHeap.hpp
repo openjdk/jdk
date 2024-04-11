@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -538,11 +538,6 @@ public:
 
   void sync_pinned_region_status();
   void assert_pinned_region_status() NOT_DEBUG_RETURN;
-
-// ---------- Concurrent Stack Processing support
-//
-public:
-  bool uses_stack_watermark_barrier() const override { return true; }
 
 // ---------- Allocation support
 //

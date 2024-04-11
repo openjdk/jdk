@@ -60,6 +60,7 @@
 #include "oops/symbol.hpp"
 #include "prims/jvm_misc.hpp"
 #include "prims/jvmtiAgentList.hpp"
+#include "prims/jvmtiEnvBase.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
@@ -1017,7 +1018,7 @@ void Threads::add(JavaThread* p, bool force_daemon) {
   ObjectSynchronizer::inc_in_use_list_ceiling();
 
   // Possible GC point.
-  Events::log(p, "Thread added: " INTPTR_FORMAT, p2i(p));
+  Events::log(Thread::current(), "Thread added: " INTPTR_FORMAT, p2i(p));
 
   // Make new thread known to active EscapeBarrier
   EscapeBarrier::thread_added(p);
@@ -1080,7 +1081,7 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
   ObjectSynchronizer::dec_in_use_list_ceiling();
 
   // Since Events::log uses a lock, we grab it outside the Threads_lock
-  Events::log(p, "Thread exited: " INTPTR_FORMAT, p2i(p));
+  Events::log(Thread::current(), "Thread exited: " INTPTR_FORMAT, p2i(p));
 }
 
 // Operations on the Threads list for GC.  These are not explicitly locked,
@@ -1090,7 +1091,7 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
 // uses the Threads_lock to guarantee this property. It also makes sure that
 // all threads gets blocked when exiting or starting).
 
-void Threads::oops_do(OopClosure* f, CodeBlobClosure* cf) {
+void Threads::oops_do(OopClosure* f, NMethodClosure* cf) {
   ALL_JAVA_THREADS(p) {
     p->oops_do(f, cf);
   }
@@ -1147,15 +1148,15 @@ void Threads::assert_all_threads_claimed() {
 class ParallelOopsDoThreadClosure : public ThreadClosure {
 private:
   OopClosure* _f;
-  CodeBlobClosure* _cf;
+  NMethodClosure* _cf;
 public:
-  ParallelOopsDoThreadClosure(OopClosure* f, CodeBlobClosure* cf) : _f(f), _cf(cf) {}
+  ParallelOopsDoThreadClosure(OopClosure* f, NMethodClosure* cf) : _f(f), _cf(cf) {}
   void do_thread(Thread* t) {
     t->oops_do(_f, _cf);
   }
 };
 
-void Threads::possibly_parallel_oops_do(bool is_par, OopClosure* f, CodeBlobClosure* cf) {
+void Threads::possibly_parallel_oops_do(bool is_par, OopClosure* f, NMethodClosure* cf) {
   ParallelOopsDoThreadClosure tc(f, cf);
   possibly_parallel_threads_do(is_par, &tc);
 }
@@ -1181,10 +1182,12 @@ void Threads::metadata_handles_do(void f(Metadata*)) {
   threads_do(&handles_closure);
 }
 
-// Get count Java threads that are waiting to enter the specified monitor.
+#if INCLUDE_JVMTI
+// Get count of Java threads that are waiting to enter or re-enter the specified monitor.
 GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
                                                          int count,
                                                          address monitor) {
+  assert(Thread::current()->is_VM_thread(), "Must be the VM thread");
   GrowableArray<JavaThread*>* result = new GrowableArray<JavaThread*>(count);
 
   int i = 0;
@@ -1194,7 +1197,14 @@ GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
     // The first stage of async deflation does not affect any field
     // used by this comparison so the ObjectMonitor* is usable here.
     address pending = (address)p->current_pending_monitor();
-    if (pending == monitor) {             // found a match
+    address waiting = (address)p->current_waiting_monitor();
+    oop thread_oop = JvmtiEnvBase::get_vthread_or_thread_oop(p);
+    bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
+    jint state = is_virtual ? JvmtiEnvBase::get_vthread_state(thread_oop, p)
+                            : JvmtiEnvBase::get_thread_state(thread_oop, p);
+    if (pending == monitor || (waiting == monitor &&
+        (state & JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER))
+    ) { // found a match
       if (i < count) result->append(p);   // save the first count matches
       i++;
     }
@@ -1202,7 +1212,7 @@ GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
 
   return result;
 }
-
+#endif // INCLUDE_JVMTI
 
 JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
                                                       address owner) {
@@ -1326,10 +1336,7 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   }
 
   PrintOnClosure cl(st);
-  cl.do_thread(VMThread::vm_thread());
-  Universe::heap()->gc_threads_do(&cl);
-  cl.do_thread(WatcherThread::watcher_thread());
-  cl.do_thread(AsyncLogWriter::instance());
+  non_java_threads_do(&cl);
 
   st->flush();
 }

@@ -60,7 +60,7 @@ public class TestTranslatedException {
         encodeDecode(throwable);
 
         try {
-            VMSupport.decodeAndThrowThrowable(0, 0L, true);
+            VMSupport.decodeAndThrowThrowable(0, 0L, true, false);
             throw new AssertionError("expected decodeAndThrowThrowable to throw an exception");
         } catch (NullPointerException decoded) {
             // Expected
@@ -69,7 +69,7 @@ public class TestTranslatedException {
         }
 
         try {
-            VMSupport.decodeAndThrowThrowable(1, 0L, true);
+            VMSupport.decodeAndThrowThrowable(1, 0L, true, false);
             throw new AssertionError("expected decodeAndThrowThrowable to throw an exception");
         } catch (InternalError decoded) {
             if (!decoded.getMessage().startsWith("native buffer could not be allocated")) {
@@ -80,7 +80,7 @@ public class TestTranslatedException {
         }
 
         try {
-            VMSupport.decodeAndThrowThrowable(2, 0L, true);
+            VMSupport.decodeAndThrowThrowable(2, 0L, true, false);
             throw new AssertionError("expected decodeAndThrowThrowable to throw an exception");
         } catch (OutOfMemoryError decoded) {
             // Expected
@@ -89,7 +89,7 @@ public class TestTranslatedException {
         }
 
         try {
-            VMSupport.decodeAndThrowThrowable(3, 0L, true);
+            VMSupport.decodeAndThrowThrowable(3, 0L, true, false);
             throw new AssertionError("expected decodeAndThrowThrowable to throw an exception");
         } catch (InternalError decoded) {
             // Expected
@@ -98,7 +98,7 @@ public class TestTranslatedException {
         }
 
         try {
-            VMSupport.decodeAndThrowThrowable(4, 0L, true);
+            VMSupport.decodeAndThrowThrowable(4, 0L, true, false);
             throw new AssertionError("expected decodeAndThrowThrowable to throw an exception");
         } catch (InternalError decoded) {
             // Expected
@@ -112,7 +112,7 @@ public class TestTranslatedException {
         try {
             unsafe.putInt(buffer, problem.length);
             unsafe.copyMemory(problem, Unsafe.ARRAY_BYTE_BASE_OFFSET, null, buffer + 4, problem.length);
-            VMSupport.decodeAndThrowThrowable(3, buffer, true);
+            VMSupport.decodeAndThrowThrowable(3, buffer, true, false);
             throw new AssertionError("expected decodeAndThrowThrowable to throw an exception");
         } catch (InternalError decoded) {
             String msg = decoded.getMessage();
@@ -139,7 +139,7 @@ public class TestTranslatedException {
                     bufferSize = -res;
                 } else {
                     try {
-                        VMSupport.decodeAndThrowThrowable(format, buffer, true);
+                        VMSupport.decodeAndThrowThrowable(format, buffer, true, false);
                         throw new AssertionError("expected decodeAndThrowThrowable to throw an exception");
                     } catch (Throwable decoded) {
                         assertThrowableEquals(throwable, decoded);

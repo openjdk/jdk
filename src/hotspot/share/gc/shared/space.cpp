@@ -69,7 +69,6 @@ void ContiguousSpace::initialize(MemRegion mr,
 
 void ContiguousSpace::clear(bool mangle_space) {
   set_top(bottom());
-  set_saved_mark();
   if (ZapUnusedHeapArea && mangle_space) {
     mangle_unused_area();
   }
@@ -99,20 +98,12 @@ void ContiguousSpace::mangle_unused_area_complete() {
 }
 #endif  // NOT_PRODUCT
 
-
-void ContiguousSpace::print_short() const { print_short_on(tty); }
-
-void ContiguousSpace::print_short_on(outputStream* st) const {
-  st->print(" space " SIZE_FORMAT "K, %3d%% used", capacity() / K,
-              (int) ((double) used() * 100 / capacity()));
-}
-
 void ContiguousSpace::print() const { print_on(tty); }
 
 void ContiguousSpace::print_on(outputStream* st) const {
-  print_short_on(st);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-                p2i(bottom()), p2i(top()), p2i(end()));
+  st->print_cr(" space %zuK, %3d%% used [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+               capacity() / K, (int) ((double) used() * 100 / capacity()),
+               p2i(bottom()), p2i(top()), p2i(end()));
 }
 
 void ContiguousSpace::verify() const {
@@ -201,7 +192,7 @@ HeapWord* ContiguousSpace::par_allocate(size_t size) {
 
 #if INCLUDE_SERIALGC
 HeapWord* TenuredSpace::block_start_const(const void* addr) const {
-  HeapWord* cur_block = _offsets.block_start_reaching_into_card(addr);
+  HeapWord* cur_block = _offsets->block_start_reaching_into_card(addr);
 
   while (true) {
     HeapWord* next_block = cur_block + cast_to_oop(cur_block)->size();
@@ -216,14 +207,10 @@ HeapWord* TenuredSpace::block_start_const(const void* addr) const {
   }
 }
 
-TenuredSpace::TenuredSpace(SerialBlockOffsetSharedArray* sharedOffsetArray,
+TenuredSpace::TenuredSpace(SerialBlockOffsetTable* offsets,
                            MemRegion mr) :
-  _offsets(sharedOffsetArray)
+  _offsets(offsets)
 {
   initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);
-}
-
-size_t TenuredSpace::allowed_dead_ratio() const {
-  return MarkSweepDeadRatio;
 }
 #endif // INCLUDE_SERIALGC

@@ -24,8 +24,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <atomic>
-#include "jni_tools.h"
-#include "jvmti_tools.h"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
 #include "Injector.hpp"
 #include "agent_common.hpp"
 

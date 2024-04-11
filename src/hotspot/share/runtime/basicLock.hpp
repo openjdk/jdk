@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ class BasicLock {
   friend class VMStructs;
   friend class JVMCIVMStructs;
  private:
+  // This is either the actual displaced header from a locked object, or
+  // a sentinel zero value indicating a recursive stack-lock.
   volatile markWord _displaced_header;
  public:
   markWord displaced_header() const {
@@ -46,7 +48,7 @@ class BasicLock {
 
   void print_on(outputStream* st, oop owner) const;
 
-  // move a basic lock (used during deoptimization
+  // move a basic lock (used during deoptimization)
   void move_to(oop obj, BasicLock* dest);
 
   static int displaced_header_offset_in_bytes() { return (int)offset_of(BasicLock, _displaced_header); }

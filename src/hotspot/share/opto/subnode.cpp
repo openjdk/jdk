@@ -643,6 +643,14 @@ CmpNode *CmpNode::make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp) {
         return new CmpULNode(in1, in2);
       }
       return new CmpLNode(in1, in2);
+    case T_OBJECT:
+    case T_ARRAY:
+    case T_ADDRESS:
+    case T_METADATA:
+      return new CmpPNode(in1, in2);
+    case T_NARROWOOP:
+    case T_NARROWKLASS:
+      return new CmpNNode(in1, in2);
     default:
       fatal("Not implemented for %s", type2name(bt));
   }

@@ -180,14 +180,14 @@ void ciObjectFactory::init_shared_objects() {
   init_ident_of(ciEnv::_unloaded_ciobjarrayklass);
   assert(ciEnv::_unloaded_ciobjarrayklass->is_obj_array_klass(), "just checking");
 
-  get_metadata(Universe::boolArrayKlassObj());
-  get_metadata(Universe::charArrayKlassObj());
-  get_metadata(Universe::floatArrayKlassObj());
-  get_metadata(Universe::doubleArrayKlassObj());
-  get_metadata(Universe::byteArrayKlassObj());
-  get_metadata(Universe::shortArrayKlassObj());
-  get_metadata(Universe::intArrayKlassObj());
-  get_metadata(Universe::longArrayKlassObj());
+  get_metadata(Universe::boolArrayKlass());
+  get_metadata(Universe::charArrayKlass());
+  get_metadata(Universe::floatArrayKlass());
+  get_metadata(Universe::doubleArrayKlass());
+  get_metadata(Universe::byteArrayKlass());
+  get_metadata(Universe::shortArrayKlass());
+  get_metadata(Universe::intArrayKlass());
+  get_metadata(Universe::longArrayKlass());
 
   assert(_non_perm_count == 0, "no shared non-perm objects");
 

@@ -525,8 +525,8 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   static ByteSize earlyret_oop_offset()   { return byte_offset_of(JvmtiThreadState, _earlyret_oop); }
   static ByteSize earlyret_value_offset() { return byte_offset_of(JvmtiThreadState, _earlyret_value); }
 
-  void oops_do(OopClosure* f, CodeBlobClosure* cf) NOT_JVMTI_RETURN; // GC support
-  void nmethods_do(CodeBlobClosure* cf) NOT_JVMTI_RETURN;
+  void oops_do(OopClosure* f, NMethodClosure* cf) NOT_JVMTI_RETURN; // GC support
+  void nmethods_do(NMethodClosure* cf) NOT_JVMTI_RETURN;
 
 public:
   void set_should_post_on_exceptions(bool val);

@@ -66,7 +66,7 @@ import static java.util.zip.ZipUtils.*;
  *      }
  *    }
  * @apiNote
- * The LOC header contains metadata about the Zip file entry. {@code ZipInputStream}
+ * The LOC header contains metadata about the ZIP file entry. {@code ZipInputStream}
  * does not read the Central directory (CEN) header for the entry and therefore
  * will not have access to its metadata such as the external file attributes.
  * {@linkplain ZipFile} may be used when the information stored within
@@ -579,7 +579,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * data descriptor, and that data descriptor may optionally contain a
      * leading signature (EXTSIG).
      *
-     * From the zip spec http://www.pkware.com/documents/casestudies/APPNOTE.TXT
+     * From the ZIP spec http://www.pkware.com/documents/casestudies/APPNOTE.TXT
      *
      * """Although not originally assigned a signature, the value 0x08074b50
      * has commonly been adopted as a signature value for the data descriptor

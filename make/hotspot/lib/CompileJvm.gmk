@@ -75,7 +75,6 @@ CFLAGS_VM_VERSION := \
     $(VERSION_CFLAGS) \
     -DHOTSPOT_VERSION_STRING='"$(VERSION_STRING)"' \
     -DDEBUG_LEVEL='"$(DEBUG_LEVEL)"' \
-    -DHOTSPOT_BUILD_USER='"$(USERNAME)"' \
     -DHOTSPOT_VM_DISTRO='"$(HOTSPOT_VM_DISTRO)"' \
     -DCPU='"$(OPENJDK_TARGET_CPU_VM_VERSION)"' \
     -DHOTSPOT_BUILD_TIME='"$(HOTSPOT_BUILD_TIME)"' \
@@ -98,8 +97,6 @@ ifneq ($(DEBUG_LEVEL), release)
   # Some reasonable asserts produce warnings on GCC <= 7
   DISABLED_WARNINGS_gcc += strict-overflow
 endif
-
-DISABLED_WARNINGS_xlc := tautological-compare shift-negative-value
 
 DISABLED_WARNINGS_microsoft := 4624 4244 4291 4146 4127 4722
 
@@ -133,7 +130,7 @@ endif
 JVM_OPTIMIZATION ?= HIGHEST_JVM
 
 # Need to set JVM_STRIPFLAGS to the default value from SPEC since the STRIPFLAGS
-# parameter to SetupNativeCompilation allows an empty value to override the
+# parameter to SetupJdkLibrary allows an empty value to override the
 # default.
 JVM_STRIPFLAGS ?= $(STRIPFLAGS)
 
@@ -148,7 +145,11 @@ $(call FillFindCache, $(JVM_SRC_DIRS))
 LIBJVM_STATIC_EXCLUDE_OBJS := operator_new.o
 
 ifeq ($(call isTargetOs, windows), true)
-  WIN_EXPORT_FILE := $(JVM_OUTPUTDIR)/win-exports.def
+  ifeq ($(STATIC_LIBS), true)
+    WIN_EXPORT_FILE := $(JVM_OUTPUTDIR)/static-win-exports.def
+  else
+    WIN_EXPORT_FILE := $(JVM_OUTPUTDIR)/win-exports.def
+  endif
 
   JVM_LDFLAGS += -def:$(WIN_EXPORT_FILE)
 endif
@@ -156,11 +157,12 @@ endif
 ifeq ($(call isTargetOs, linux), true)
   HOTSPOT_VERSION_SCRIPT := $(TOPDIR)/make/data/hotspot-symbols/version-script.txt
 
-  JVM_LDFLAGS += -Wl,--exclude-libs,ALL -Wl,-version-script=$(HOTSPOT_VERSION_SCRIPT)
+  JVM_LDFLAGS += -Wl,-version-script=$(HOTSPOT_VERSION_SCRIPT)
 endif
 
 ################################################################################
-# Now set up the actual compilation of the main hotspot native library
+## Build libjvm
+################################################################################
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     NAME := jvm, \
@@ -170,6 +172,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     EXCLUDES := $(JVM_EXCLUDES), \
     EXCLUDE_FILES := $(JVM_EXCLUDE_FILES), \
     EXCLUDE_PATTERNS := $(JVM_EXCLUDE_PATTERNS), \
+    DEFAULT_CFLAGS := false, \
     CFLAGS := $(JVM_CFLAGS), \
     abstract_vm_version.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     arguments.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
@@ -201,9 +204,10 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_clang_aix_debug.cpp := format-nonliteral, \
     DISABLED_WARNINGS_clang_aix_jvm.cpp := format-nonliteral, \
     DISABLED_WARNINGS_clang_aix_osThread_aix.cpp := tautological-undefined-compare, \
-    DISABLED_WARNINGS_xlc := $(DISABLED_WARNINGS_xlc), \
     DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft), \
     ASFLAGS := $(JVM_ASFLAGS), \
+    LD_SET_ORIGIN := false, \
+    DEFAULT_LDFLAGS := false, \
     LDFLAGS := $(JVM_LDFLAGS), \
     LIBS := $(JVM_LIBS), \
     OPTIMIZATION := $(JVM_OPTIMIZATION), \
@@ -234,7 +238,7 @@ ifeq ($(call isTargetOs, windows), true)
   # std::function<void()> f = [](){}
   FILTER_SYMBOLS_AWK_SCRIPT := \
       '{ \
-        if ($$7 ~ /\?\?_7.*@@6B@/ && $$7 !~ /type_info/ && $$7 !~ /lambda/) print $$7; \
+        if ($$7 ~ /\?\?_7.*@@6B@/ && $$7 !~ /type_info/ && $$7 !~ /lambda/) print "  " $$7; \
       }'
 
   # A more correct solution would be to send BUILD_LIBJVM_ALL_OBJS instead of
@@ -243,10 +247,9 @@ ifeq ($(call isTargetOs, windows), true)
   $(WIN_EXPORT_FILE): $(BUILD_LIBJVM_ALL_OBJS)
 	$(call LogInfo, Generating list of symbols to export from object files)
 	$(call MakeDir, $(@D))
-	$(CD) $(JVM_OUTPUTDIR)/objs && \
-	    $(DUMPBIN) -symbols *$(OBJ_SUFFIX) | $(AWK) $(FILTER_SYMBOLS_AWK_SCRIPT) | $(SORT) -u > $@.syms
 	$(ECHO) "EXPORTS" > $@.tmp
-	$(AWK) '{ if ($$0 ~ ".") { print "  " $$0 } }'  < $@.syms >> $@.tmp
+	$(CD) $(BUILD_LIBJVM_OBJECT_DIR) && \
+	    $(DUMPBIN) -symbols *$(OBJ_SUFFIX) | $(AWK) $(FILTER_SYMBOLS_AWK_SCRIPT) | $(SORT) -u >> $@.tmp
 	$(RM) $@
 	$(MV) $@.tmp $@
 
