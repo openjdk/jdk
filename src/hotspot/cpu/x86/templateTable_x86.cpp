@@ -3495,7 +3495,7 @@ void TemplateTable::fast_storefield(TosState state) {
   __ push(rax);
   __ load_field_entry(rcx, rax);
   load_resolved_field_entry(noreg, cache, rax, rbx, rdx);
-  // RBX: field offset, RCX: RAX: TOS, RDX: flags
+  // RBX: field offset, RAX: TOS, RDX: flags
   __ andl(rdx, (1 << ResolvedFieldEntry::is_volatile_shift));
   __ pop(rax);
 
