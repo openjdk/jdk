@@ -4670,10 +4670,11 @@ public class JavacParser implements Parser {
         int identPos = token.pos;
         Name name = ident();
         int createPos = token.pos;
-        List<JCExpression> args = (token.kind == LPAREN)
-            ? arguments() : List.nil();
 
         saveDanglingDocComments(dc);
+
+        List<JCExpression> args = (token.kind == LPAREN)
+            ? arguments() : List.nil();
 
         JCClassDecl body = null;
         if (token.kind == LBRACE) {
