@@ -35,10 +35,6 @@ include MakeBase.gmk
 #
 ################################################################################
 
-# A file containing a way to uniquely identify the source code revision that
-# the build was created from
-SOURCE_REVISION_TRACKER := $(SUPPORT_OUTPUTDIR)/src-rev/source-revision-tracker
-
 BASE_RELEASE_FILE := $(JDK_OUTPUTDIR)/release
 
 # Common way to emit a line into the release or info file

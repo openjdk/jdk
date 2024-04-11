@@ -41,10 +41,6 @@ $(eval $(call IncludeCustomExtension, SourceRevision-pre.gmk))
 
 STORED_SOURCE_REVISION := $(TOPDIR)/.src-rev
 
-# A file containing a way to uniquely identify the source code revision that
-# the build was created from
-SOURCE_REVISION_TRACKER := $(SUPPORT_OUTPUTDIR)/src-rev/source-revision-tracker
-
 # Locate all sourcecode repositories included in the forest, as absolute paths
 FindAllReposAbs = \
     $(strip $(sort $(dir $(filter-out $(TOPDIR)/build/%, $(wildcard \
