@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1637,7 +1637,7 @@ static void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj,
 //   None.
 //
 // Kills:
-//   R8_ARG6, R9_ARG7, R10_ARG8
+//   R8_ARG6, R9_ARG7, R10_ARG8, R15_esp
 //
 static void continuation_enter_cleanup(MacroAssembler* masm) {
   Register tmp1 = R8_ARG6;
@@ -1672,7 +1672,7 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
     Register ex_oop = R15_esp;   // nonvolatile register
     __ mr(ex_oop, R3_RET);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::log_jni_monitor_still_held));
-    // Restore potentional return value
+    // Restore potental return value
     __ mr(R3_RET, ex_oop);
 
     // For vthreads we have to explicitly zero the JNI monitor count of the carrier

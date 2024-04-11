@@ -1053,7 +1053,7 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
     __ ldr(rscratch1, Address(rthread, JavaThread::jni_monitor_count_offset()));
     __ cbz(rscratch1, L_skip_vthread_code);
 
-    // Save return value potentially containing the exception oop in callee-saved R19    .
+    // Save return value potentially containing the exception oop in callee-saved R19.
     __ mov(r19, r0);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::log_jni_monitor_still_held));
     // Restore potential return value.

@@ -921,7 +921,7 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
     // Save return value potentially containing the exception oop in callee-saved x9
     __ mv(x9, x10);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::log_jni_monitor_still_held));
-    // Restore potentional return value
+    // Restore potential return value
     __ mv(x10, x9);
 
     // For vthreads we have to explicitly zero the JNI monitor count of the carrier
