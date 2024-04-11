@@ -1411,7 +1411,7 @@ void ShenandoahHeap::object_iterate(ObjectClosure* cl) {
 bool ShenandoahHeap::prepare_aux_bitmap_for_iteration() {
   assert(SafepointSynchronize::is_at_safepoint(), "safe iteration is only available during safepoints");
 
-  if (!_aux_bitmap_region_special && !os::commit_memory((char*)_aux_bitmap_region.start(), _aux_bitmap_region.byte_size(), false)) {
+  if (!_aux_bitmap_region_special && !os::commit_memory((char*)_aux_bitmap_region.start(), _aux_bitmap_region.byte_size(), false, mtJavaHeap)) {
     log_warning(gc)("Could not commit native memory for auxiliary marking bitmap for heap iteration");
     return false;
   }
