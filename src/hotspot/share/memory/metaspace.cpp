@@ -767,9 +767,6 @@ void Metaspace::global_initialize() {
                    CompressedClassSpaceSize));
     }
 
-    // Mark class space as such
-    MemTracker::record_virtual_memory_type((address)rs.base(), rs.nmt_flag());
-
     // Initialize space
     Metaspace::initialize_class_space(rs);
 

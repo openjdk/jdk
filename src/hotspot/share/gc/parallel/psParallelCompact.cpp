@@ -444,8 +444,6 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
   os::trace_page_sizes("Parallel Compact Data", raw_bytes, raw_bytes, rs.base(),
                        rs.size(), page_sz);
 
-  MemTracker::record_virtual_memory_type((address)rs.base(), mtGC);
-
   PSVirtualSpace* vspace = new PSVirtualSpace(rs, page_sz);
   if (vspace != 0) {
     if (vspace->expand_by(_reserved_byte_size)) {

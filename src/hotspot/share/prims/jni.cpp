@@ -2400,7 +2400,6 @@ static char* get_bad_address() {
     if (bad_address != nullptr) {
       os::protect_memory(bad_address, size, os::MEM_PROT_READ,
                          /*is_committed*/false);
-      MemTracker::record_virtual_memory_type((void*)bad_address, mtInternal);
     }
   }
   return bad_address;
