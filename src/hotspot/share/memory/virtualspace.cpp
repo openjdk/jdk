@@ -839,6 +839,9 @@ static void pretouch_expanded_memory(void* start, void* end) {
 static bool commit_expanded(char* start, size_t size, size_t alignment, bool pre_touch, bool executable) {
   if (os::commit_memory(start, size, alignment, executable)) {
     if (pre_touch || AlwaysPreTouch) {
+      if (executable){
+        os::current_thread_enable_wx(WXWrite);
+      }
       pretouch_expanded_memory(start, start + size);
     }
     return true;
