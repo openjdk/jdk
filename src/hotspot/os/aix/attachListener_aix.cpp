@@ -462,7 +462,7 @@ void AixAttachOperation::complete(jint result, bufferedStream* st) {
 
 // AttachListener functions
 
-AttachOperation* AttachListener::dequeue() {
+AttachOperation* AttachListener::pd_dequeue() {
   JavaThread* thread = JavaThread::current();
   ThreadBlockInVM tbivm(thread);
 

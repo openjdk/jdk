@@ -357,7 +357,7 @@ void Win32AttachOperation::complete(jint result, bufferedStream* result_stream) 
 
 // AttachOperation functions
 
-AttachOperation* AttachListener::dequeue() {
+AttachOperation* AttachListener::pd_dequeue() {
   JavaThread* thread = JavaThread::current();
   ThreadBlockInVM tbivm(thread);
 
