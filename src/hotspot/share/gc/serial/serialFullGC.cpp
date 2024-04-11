@@ -332,7 +332,7 @@ public:
       while (cur_addr < top) {
         prefetch_write_scan(cur_addr);
         if (cur_addr < first_dead || cast_to_oop(cur_addr)->is_gc_marked()) {
-          size_t size = SerialFullGC::adjust_pointers(cast_to_oop(cur_addr));
+          size_t size = cast_to_oop(cur_addr)->oop_iterate_size(&SerialFullGC::adjust_pointer_closure);
           cur_addr += size;
         } else {
           assert(*(HeapWord**)cur_addr > cur_addr, "forward progress");
@@ -607,10 +607,6 @@ template <class T> void SerialFullGC::mark_and_push(T* p) {
       _marking_stack.push(obj);
     }
   }
-}
-
-inline size_t SerialFullGC::adjust_pointers(oop obj) {
-  return obj->oop_iterate_size(&SerialFullGC::adjust_pointer_closure);
 }
 
 template <class T> inline void SerialFullGC::adjust_pointer(T* p) {
