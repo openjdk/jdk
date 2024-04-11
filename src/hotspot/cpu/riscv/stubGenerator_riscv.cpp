@@ -5076,7 +5076,7 @@ class StubGenerator: public StubCodeGenerator {
     // vs2acc = (b1 * 16) + (b2 * 15) + (b3 * 14) + ... + (b16 * 1)
     __ vwmulu_vv(vtemp1, vtable, vbytes); // vtemp2 now contains the second part of multiplication
     __ vsetivli(temp0, 8, Assembler::e16, Assembler::m1);
-    __ vadd_vv(vtemp3, vtemp1, vtemp2); // 0x14 * 0xFF * 2 = 0x27D8 -- max value per element,
+    __ vadd_vv(vtemp3, vtemp1, vtemp2); // 0x10 * 0xFF * 2 = 0x1FE0 -- max value per element,
                                         // so no need to do vector-widening operation
     __ vwredsumu_vs(vs2acc, vtemp3, vzero);
   }
