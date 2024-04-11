@@ -252,12 +252,7 @@ int PosixAttachListener::init() {
   addr.sun_family = AF_UNIX;
   strcpy(addr.sun_path, initial_path);
   ::unlink(initial_path);
-#ifdef AIX
-  // We must call bind with the actual socketaddr length. This is obligatory for AS400.
-  int res = ::bind(listener, (struct sockaddr*)&addr, SUN_LEN(&addr));
-#else
-    int res = ::bind(listener, (struct sockaddr*)&addr, sizeof(addr));
-#endif
+  int res = ::bind(listener, (struct sockaddr*)&addr, sizeof(addr));
   if (res == -1) {
     ::close(listener);
     return -1;
