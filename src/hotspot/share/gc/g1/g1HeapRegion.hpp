@@ -74,7 +74,7 @@ class HeapRegion : public CHeapObj<mtGC> {
 
   HeapWord* volatile _top;
 
-  G1BlockOffsetTablePart _bot_part;
+  G1BlockOffsetTable* _bot;
 
   // When we need to retire an allocation region, while other threads
   // are also concurrently trying to allocate into it, we typically
@@ -431,8 +431,6 @@ public:
 
   inline bool in_collection_set() const;
 
-  inline const char* collection_set_candidate_short_type_str() const;
-
   void prepare_remset_for_scan();
 
   // Methods used by the HeapRegionSetBase class and subclasses.
@@ -540,9 +538,9 @@ public:
   void add_code_root(nmethod* nm);
   void remove_code_root(nmethod* nm);
 
-  // Applies blk->do_code_blob() to each of the entries in
+  // Applies blk->do_nmethod() to each of the entries in
   // the code roots list for this region
-  void code_roots_do(CodeBlobClosure* blk) const;
+  void code_roots_do(NMethodClosure* blk) const;
 
   uint node_index() const { return _node_index; }
   void set_node_index(uint node_index) { _node_index = node_index; }
