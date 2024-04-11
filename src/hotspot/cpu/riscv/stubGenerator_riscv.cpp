@@ -5483,6 +5483,10 @@ static const int64_t right_3_bits = right_n_bits(3);
       UnsafeCopyMemory::create_table(8);
     }
 
+    if (UnsafeSetMemory::_table == nullptr) {
+      UnsafeSetMemory::create_table(8);
+    }
+
     StubRoutines::_call_stub_entry =
       generate_call_stub(StubRoutines::_call_stub_return_address);
 

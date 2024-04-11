@@ -8336,6 +8336,11 @@ class StubGenerator: public StubCodeGenerator {
       UnsafeCopyMemory::create_table(8);
     }
 
+    // Initialize table for fill memory check.
+    if (UnsafeCopyMemory::_table == nullptr) {
+      UnsafeCopyMemory::create_table(8);
+    }
+
     if (UseCRC32Intrinsics) {
       // set table address before stub generation which use it
       StubRoutines::_crc_table_adr = (address)StubRoutines::aarch64::_crc_table;

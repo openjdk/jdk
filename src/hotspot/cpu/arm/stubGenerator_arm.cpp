@@ -3138,6 +3138,10 @@ class StubGenerator: public StubCodeGenerator {
       UnsafeCopyMemory::create_table(32);
     }
 
+    if (UnsafeSetMemory::_table == nullptr) {
+      UnsafeSetMemory::create_table(32);
+    }
+
     // integer division used both by interpreter and compiler
     StubRoutines::Arm::_idiv_irem_entry = generate_idiv_irem();
 

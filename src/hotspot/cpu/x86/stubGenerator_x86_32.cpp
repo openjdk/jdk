@@ -4125,6 +4125,11 @@ class StubGenerator: public StubCodeGenerator {
       UnsafeCopyMemory::create_table(16);
     }
 
+    // Initialize table for fill memory check.
+    if (UnsafeSetMemory::_table == nullptr) {
+      UnsafeSetMemory::create_table(8);
+    }
+
     StubRoutines::x86::_verify_mxcsr_entry         = generate_verify_mxcsr();
     StubRoutines::x86::_verify_fpu_cntrl_wrd_entry = generate_verify_fpu_cntrl_wrd();
     StubRoutines::x86::_d2i_wrapper                = generate_d2i_wrapper(T_INT,  CAST_FROM_FN_PTR(address, SharedRuntime::d2i));

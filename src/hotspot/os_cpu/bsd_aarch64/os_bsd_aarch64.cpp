@@ -258,10 +258,14 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         CodeBlob* cb = CodeCache::find_blob(pc);
         CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
         bool is_unsafe_arraycopy = (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc));
-        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
+        bool is_unsafe_setmemory = (thread->doing_unsafe_access() && UnsafeSetMemory::contains_pc(pc));
+        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_arraycopy || is_unsafe_setmemory) {
           address next_pc = pc + NativeCall::instruction_size;
           if (is_unsafe_arraycopy) {
             next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+          }
+          if (is_unsafe_setmemory) {
+            next_pc = UnsafeSetMemory::page_error_continue_pc(pc);
           }
           stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
         }
@@ -301,6 +305,9 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       address next_pc = pc + NativeCall::instruction_size;
       if (UnsafeCopyMemory::contains_pc(pc)) {
         next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+      }
+      if (UnsafeSetMemory::contains_pc(pc)) {
+        next_pc = UnsafeSetMemory::page_error_continue_pc(pc);
       }
       stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
     }

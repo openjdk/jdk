@@ -4749,6 +4749,10 @@ class StubGenerator: public StubCodeGenerator {
       UnsafeCopyMemory::create_table(8);
     }
 
+    if (UnsafeSetMemory::_table == nullptr) {
+      UnsafeSetMemory::create_table(8);
+    }
+
     // Build this early so it's available for the interpreter.
     StubRoutines::_throw_StackOverflowError_entry   =
       generate_throw_exception("StackOverflowError throw_exception",

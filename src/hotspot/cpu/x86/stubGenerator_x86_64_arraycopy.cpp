@@ -152,10 +152,10 @@ void StubGenerator::generate_arraycopy_stubs() {
   StubRoutines::_arrayof_jshort_fill = generate_fill(T_SHORT, true, "arrayof_jshort_fill");
   StubRoutines::_arrayof_jint_fill = generate_fill(T_INT, true, "arrayof_jint_fill");
 
-#ifdef _LP64
+// #ifdef _LP64
   StubRoutines::_unsafe_setmemory =
       generate_unsafe_setmemory("unsafe_setmemory", StubRoutines::_jbyte_fill);
-#endif
+// #endif
 
   // We don't generate specialized code for HeapWord-aligned source
   // arrays, so just use the code we've already generated
