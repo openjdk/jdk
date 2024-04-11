@@ -127,8 +127,9 @@ class StubGenerator: public StubCodeGenerator {
   //     [ return_from_Java     ] <--- sp
   //     [ argument word n      ]
   //      ...
-  // -34 [ argument word 1      ]
-  // -33 [ saved f27            ] <--- sp_after_call
+  // -35 [ argument word 1      ]
+  // -34 [ saved Floating-point Control and Status Register ] <--- sp_after_call
+  // -33 [ saved f27            ]
   // -32 [ saved f26            ]
   // -31 [ saved f25            ]
   // -30 [ saved f24            ]
@@ -165,8 +166,9 @@ class StubGenerator: public StubCodeGenerator {
 
   // Call stub stack layout word offsets from fp
   enum call_stub_layout {
-    sp_after_call_off  = -33,
+    sp_after_call_off  = -34,
 
+    fcsr_off           = sp_after_call_off,
     f27_off            = -33,
     f26_off            = -32,
     f25_off            = -31,
@@ -214,6 +216,7 @@ class StubGenerator: public StubCodeGenerator {
 
     const Address sp_after_call (fp, sp_after_call_off  * wordSize);
 
+    const Address fcsr_save     (fp, fcsr_off           * wordSize);
     const Address call_wrapper  (fp, call_wrapper_off   * wordSize);
     const Address result        (fp, result_off         * wordSize);
     const Address result_type   (fp, result_type_off    * wordSize);
@@ -295,6 +298,12 @@ class StubGenerator: public StubCodeGenerator {
     __ fsd(f25, f25_save);
     __ fsd(f26, f26_save);
     __ fsd(f27, f27_save);
+
+    __ csrr(t1, CSR_FCSR);
+    __ sd(t1, fcsr_save);
+    // Set fcsr to the state we need. We do want Round to Nearest. We
+    // don't want non-IEEE rounding modes.
+    __ csrwi(CSR_FRM, __ RoundingMode::rne);
 
     // install Java thread in global register now we have saved
     // whatever value it held
@@ -414,6 +423,10 @@ class StubGenerator: public StubCodeGenerator {
     __ ld(x18, x18_save);
 
     __ ld(x9, x9_save);
+
+    // restore fcsr
+    __ ld(t1, fcsr_save);
+    __ csrw(CSR_FCSR, t1);
 
     __ ld(c_rarg0, call_wrapper);
     __ ld(c_rarg1, result);
