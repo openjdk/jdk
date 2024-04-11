@@ -191,8 +191,8 @@ class Inet4Address extends InetAddress {
 
     /**
      * Creates an {@code Inet4Address} based on the provided {@linkplain
-     * Inet4Address##format textual representation} of an IPv4 address in
-     * POSIX {@code inet_addr} compatible form.
+     * Inet4Address##format-posix textual representation of an IPv4 address in
+     * POSIX {@code inet_addr} compatible form}.
      * <p> <a id="format-posix"></a> The method {@code ofPosixLiteral}
      * implements <a href="https://pubs.opengroup.org/onlinepubs/9699919799/functions/inet_addr.html">
      * POSIX {@code inet_addr}</a> compatible parsing algorithm, allowing
