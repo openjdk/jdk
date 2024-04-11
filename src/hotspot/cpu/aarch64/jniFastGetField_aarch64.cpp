@@ -33,7 +33,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/threadWXSetters.inline.hpp"
 
 #define __ masm->
 
@@ -54,47 +53,10 @@ static const Register roffset       = r5;
 static const Register rcounter_addr = r6;
 static const Register result        = r7;
 
-// On macos/aarch64 we need to ensure WXExec mode when running generated
-// FastGetXXXField, as these functions can be called from WXWrite context
-// (8262896).  So each FastGetXXXField is wrapped into a C++ statically
-// compiled template function that optionally switches to WXExec if necessary.
-
-#ifdef __APPLE__
-
-static address generated_fast_get_field[T_LONG + 1 - T_BOOLEAN];
-
-template<int BType> struct BasicTypeToJni {};
-template<> struct BasicTypeToJni<T_BOOLEAN> { static const jboolean jni_type; };
-template<> struct BasicTypeToJni<T_BYTE>    { static const jbyte    jni_type; };
-template<> struct BasicTypeToJni<T_CHAR>    { static const jchar    jni_type; };
-template<> struct BasicTypeToJni<T_SHORT>   { static const jshort   jni_type; };
-template<> struct BasicTypeToJni<T_INT>     { static const jint     jni_type; };
-template<> struct BasicTypeToJni<T_LONG>    { static const jlong    jni_type; };
-template<> struct BasicTypeToJni<T_FLOAT>   { static const jfloat   jni_type; };
-template<> struct BasicTypeToJni<T_DOUBLE>  { static const jdouble  jni_type; };
-
-template<int BType, typename JniType = decltype(BasicTypeToJni<BType>::jni_type)>
-JniType static_fast_get_field_wrapper(JNIEnv *env, jobject obj, jfieldID fieldID) {
-  JavaThread* thread = JavaThread::thread_from_jni_environment(env);
-  ThreadWXEnable wx(WXExec, thread);
-  address get_field_addr = generated_fast_get_field[BType - T_BOOLEAN];
-  return ((JniType(*)(JNIEnv *env, jobject obj, jfieldID fieldID))get_field_addr)(env, obj, fieldID);
-}
-
-template<int BType>
-address JNI_FastGetField::generate_fast_get_int_field1() {
-  generated_fast_get_field[BType - T_BOOLEAN] = generate_fast_get_int_field0((BasicType)BType);
-  return (address)static_fast_get_field_wrapper<BType>;
-}
-
-#else // __APPLE__
-
 template<int BType>
 address JNI_FastGetField::generate_fast_get_int_field1() {
   return generate_fast_get_int_field0((BasicType)BType);
 }
-
-#endif // __APPLE__
 
 address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   const char *name;

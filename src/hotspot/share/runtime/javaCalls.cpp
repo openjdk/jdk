@@ -95,14 +95,11 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
   debug_only(_thread->inc_java_call_counter());
   _thread->set_active_handles(new_handles);     // install new handle block and reset Java frame linkage
 
-  MACOS_AARCH64_ONLY(_thread->enable_wx(WXExec));
 }
 
 
 JavaCallWrapper::~JavaCallWrapper() {
   assert(_thread == JavaThread::current(), "must still be the same thread");
-
-  MACOS_AARCH64_ONLY(_thread->enable_wx(WXWrite));
 
   // restore previous handle block & Java frame linkage
   JNIHandleBlock *_old_handles = _thread->active_handles();

@@ -137,8 +137,6 @@ Thread::Thread() {
     // If the main thread creates other threads before the barrier set that is an error.
     assert(Thread::current_or_null() == nullptr, "creating thread before barrier set");
   }
-
-  MACOS_AARCH64_ONLY(DEBUG_ONLY(_wx_init = false));
 }
 
 void Thread::initialize_tlab() {
@@ -200,8 +198,6 @@ void Thread::call_run() {
   assert(Thread::current_or_null() == this, "current thread is wrong");
 
   // Perform common initialization actions
-
-  MACOS_AARCH64_ONLY(this->init_wx());
 
   register_thread_stack_with_NMT();
 

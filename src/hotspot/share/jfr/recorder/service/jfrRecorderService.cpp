@@ -700,7 +700,6 @@ void JfrRecorderService::emit_leakprofiler_events(int64_t cutoff_ticks, bool emi
   JfrRotationLock lock;
   // Take the rotation lock before the transition.
   JavaThread* current_thread = JavaThread::current();
-  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current_thread));
   ThreadInVMfromNative transition(current_thread);
   LeakProfiler::emit_events(cutoff_ticks, emit_all, skip_bfs);
 }

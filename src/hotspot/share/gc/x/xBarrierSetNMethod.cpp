@@ -29,7 +29,6 @@
 #include "gc/x/xNMethod.hpp"
 #include "gc/x/xThreadLocalData.hpp"
 #include "logging/log.hpp"
-#include "runtime/threadWXSetters.inline.hpp"
 
 bool XBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   XLocker<XReentrantLock> locker(XNMethod::lock_for_nmethod(nm));
@@ -40,8 +39,6 @@ bool XBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     // and disarmed the nmethod.
     return true;
   }
-
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
 
   if (nm->is_unloading()) {
     // We don't need to take the lock when unlinking nmethods from

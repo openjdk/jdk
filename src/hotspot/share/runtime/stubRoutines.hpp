@@ -31,7 +31,6 @@
 #include "runtime/frame.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/stubCodeGenerator.hpp"
-#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/macros.hpp"
 
 // StubRoutines provides entry points to assembly routines used by
@@ -454,13 +453,11 @@ class StubRoutines: AllStatic {
 
   static jshort f2hf(jfloat x) {
     assert(_f2hf != nullptr, "stub is not implemented on this platform");
-    MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current());) // About to call into code cache
     typedef jshort (*f2hf_stub_t)(jfloat x);
     return ((f2hf_stub_t)_f2hf)(x);
   }
   static jfloat hf2f(jshort x) {
     assert(_hf2f != nullptr, "stub is not implemented on this platform");
-    MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current());) // About to call into code cache
     typedef jfloat (*hf2f_stub_t)(jshort x);
     return ((hf2f_stub_t)_hf2f)(x);
   }

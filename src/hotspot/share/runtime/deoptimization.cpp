@@ -85,7 +85,6 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/threadSMR.hpp"
-#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -2599,9 +2598,6 @@ Deoptimization::update_method_data_from_interpreter(MethodData* trap_mdo, int tr
 }
 
 Deoptimization::UnrollBlock* Deoptimization::uncommon_trap(JavaThread* current, jint trap_request, jint exec_mode) {
-  // Enable WXWrite: current function is called from methods compiled by C2 directly
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, current));
-
   // Still in Java no safepoints
   {
     // This enters VM and may safepoint

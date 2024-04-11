@@ -194,10 +194,6 @@ NOINLINE frame os::current_frame() {
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
-  // Enable WXWrite: this function is called by the signal handler at arbitrary
-  // point of execution.
-  ThreadWXEnable wx(WXWrite, thread);
-
   // decide if this trap can be handled by a stub
   address stub = nullptr;
 

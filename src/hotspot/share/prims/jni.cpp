@@ -3624,7 +3624,6 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
 
     // Since this is not a JVM_ENTRY we have to set the thread state manually before leaving.
     ThreadStateTransition::transition_from_vm(thread, _thread_in_native);
-    MACOS_AARCH64_ONLY(thread->enable_wx(WXExec));
   } else {
     // If create_vm exits because of a pending exception, exit with that
     // exception.  In the future when we figure out how to reclaim memory,
@@ -3726,9 +3725,6 @@ static jint JNICALL jni_DestroyJavaVM_inner(JavaVM *vm) {
 
   // Since this is not a JVM_ENTRY we have to set the thread state manually before entering.
 
-  // We are going to VM, change W^X state to the expected one.
-  MACOS_AARCH64_ONLY(WXMode oldmode = thread->enable_wx(WXWrite));
-
   ThreadStateTransition::transition_from_native(thread, _thread_in_vm);
   Threads::destroy_vm();
   // Don't bother restoring thread state, VM is gone.
@@ -3784,7 +3780,6 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
   thread->record_stack_base_and_size();
   thread->register_thread_stack_with_NMT();
   thread->initialize_thread_current();
-  MACOS_AARCH64_ONLY(thread->init_wx());
 
   if (!os::create_attached_thread(thread)) {
     thread->smr_delete();
@@ -3855,7 +3850,6 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
   // Now leaving the VM, so change thread_state. This is normally automatically taken care
   // of in the JVM_ENTRY. But in this situation we have to do it manually.
   ThreadStateTransition::transition_from_vm(thread, _thread_in_native);
-  MACOS_AARCH64_ONLY(thread->enable_wx(WXExec));
 
   // Perform any platform dependent FPU setup
   os::setup_fpu();
@@ -3909,9 +3903,6 @@ jint JNICALL jni_DetachCurrentThread(JavaVM *vm)  {
     return JNI_ERR;
   }
 
-  // We are going to VM, change W^X state to the expected one.
-  MACOS_AARCH64_ONLY(thread->enable_wx(WXWrite));
-
   // Safepoint support. Have to do call-back to safepoint code, if in the
   // middle of a safepoint operation
   ThreadStateTransition::transition_from_native(thread, _thread_in_vm);
@@ -3927,10 +3918,6 @@ jint JNICALL jni_DetachCurrentThread(JavaVM *vm)  {
   // maintenance work?)
   thread->exit(false, JavaThread::jni_detach);
   thread->smr_delete();
-
-  // Go to the execute mode, the initial state of the thread on creation.
-  // Use os interface as the thread is not a JavaThread anymore.
-  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXExec));
 
   HOTSPOT_JNI_DETACHCURRENTTHREAD_RETURN(JNI_OK);
   return JNI_OK;

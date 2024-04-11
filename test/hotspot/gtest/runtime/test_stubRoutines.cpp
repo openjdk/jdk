@@ -62,7 +62,6 @@ static void test_arraycopy_func(address func, int alignment) {
 }
 
 TEST_VM(StubRoutines, array_copy_routine) {
-  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXExec));
 
 #define TEST_ARRAYCOPY(type)                                                                  \
   test_arraycopy_func(          StubRoutines::type##_arraycopy(),          sizeof(type));     \
@@ -78,11 +77,9 @@ TEST_VM(StubRoutines, array_copy_routine) {
 
 #undef TEST_ARRAYCOPY
 
-  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXWrite));
 }
 
 TEST_VM(StubRoutines, copy_routine) {
-  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXExec));
 
 #define TEST_COPYRTN(type) \
   test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::conjoint_##type##s_atomic),  sizeof(type)); \
@@ -103,11 +100,9 @@ TEST_VM(StubRoutines, copy_routine) {
   test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::aligned_conjoint_words), sizeof(jlong));
   test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::aligned_disjoint_words), sizeof(jlong));
 
-  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXWrite));
 }
 
 TEST_VM(StubRoutines, array_fill_routine) {
-  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXExec));
 
 #define TEST_FILL(type)                                                                      \
   if (StubRoutines::_##type##_fill != nullptr) {                                             \
@@ -149,5 +144,4 @@ TEST_VM(StubRoutines, array_fill_routine) {
 
 #undef TEST_FILL
 
-  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXWrite));
 }

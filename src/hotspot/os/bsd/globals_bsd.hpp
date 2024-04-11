@@ -33,11 +33,7 @@
                          product,                                       \
                          product_pd,                                    \
                          range,                                         \
-                         constraint)                                    \
-                                                                        \
-  AARCH64_ONLY(develop(bool, AssertWXAtThreadSync, false,                \
-          "Conservatively check W^X thread state at possible safepoint" \
-          "or handshake"))
+                         constraint)
 
 // end of RUNTIME_OS_FLAGS
 

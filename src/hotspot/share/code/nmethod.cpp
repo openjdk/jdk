@@ -72,7 +72,6 @@
 #include "runtime/serviceThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
@@ -403,7 +402,6 @@ PcDesc* PcDescCache::find_pc_desc(int pc_offset, bool approximate) {
 }
 
 void PcDescCache::add_pc_desc(PcDesc* pc_desc) {
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current());)
   NOT_PRODUCT(++pc_nmethod_stats.pc_desc_adds);
   // Update the LRU cache by shifting pc_desc forward.
   for (int i = 0; i < cache_size; i++)  {

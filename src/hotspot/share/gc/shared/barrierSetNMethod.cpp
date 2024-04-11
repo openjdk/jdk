@@ -36,7 +36,6 @@
 #include "oops/method.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/threads.hpp"
 #include "utilities/debug.hpp"
 #if INCLUDE_JVMCI
@@ -166,12 +165,7 @@ void BarrierSetNMethod::arm_all_nmethods() {
 }
 
 int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {
-  // Enable WXWrite: the function is called directly from nmethod_entry_barrier
-  // stub.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
-
   address return_address = *return_address_ptr;
-  AARCH64_PORT_ONLY(return_address = pauth_strip_pointer(return_address));
   CodeBlob* cb = CodeCache::find_blob(return_address);
   assert(cb != nullptr, "invariant");
 
