@@ -126,6 +126,9 @@ class PosixAttachListener: AllStatic {
   static int write_fully(int s, char* buf, size_t len);
 
   static PosixAttachOperation* dequeue();
+
+  static int pd_accept(struct sockaddr* addr, socklen_t* len);
+  static bool pd_credential_check(int s);
 };
 
 class PosixAttachOperation: public AttachOperation {
@@ -222,9 +225,6 @@ int PosixAttachListener::init() {
   char initial_path[UNIX_PATH_MAX];  // socket file during setup
   int listener;                      // listener socket (file descriptor)
 
-#ifdef LINUX
-  static_assert(sizeof(off_t) == 8, "Expected Large File Support in this file");
-#endif
   // register function to cleanup
   if (!_atexit_registered) {
     _atexit_registered = true;
@@ -400,68 +400,16 @@ PosixAttachOperation* PosixAttachListener::dequeue() {
     // wait for client to connect
     struct sockaddr addr;
     socklen_t len = sizeof(addr);
-#ifdef AIX
-    memset(&addr, 0, len);
-    // We must prevent accept blocking on the socket if it has been shut down.
-    // Therefore we allow interrupts and check whether we have been shut down already.
-    if (AixAttachListener::is_shutdown()) {
-      ::close(listener());
-      set_listener(-1);
-      return nullptr;
-    }
-    s = ::accept(listener(), &addr, &len);
-#else
-    RESTARTABLE(::accept(listener(), &addr, &len), s);
-#endif
+    s = pd_accept(&addr, &len);
     if (s == -1) {
       return nullptr;      // log a warning?
     }
 
     // get the credentials of the peer and check the effective uid/guid
-#ifdef LINUX
-    struct ucred cred_info;
-    socklen_t optlen = sizeof(cred_info);
-    if (::getsockopt(s, SOL_SOCKET, SO_PEERCRED, (void*)&cred_info, &optlen) == -1) {
-      log_debug(attach)("Failed to get socket option SO_PEERCRED");
+    if (!pd_credential_check(s)) {
       ::close(s);
       continue;
     }
-    if (!os::Posix::matches_effective_uid_and_gid_or_root(cred_info.uid, cred_info.gid)) {
-      log_debug(attach)("euid/egid check failed (%d/%d vs %d/%d)", cred_info.uid, cred_info.gid,
-                        geteuid(), getegid());
-      ::close(s);
-      continue;
-    }
-#elif BSD
-    uid_t puid;
-    gid_t pgid;
-    if (::getpeereid(s, &puid, &pgid) != 0) {
-      log_debug(attach)("Failed to get peer id");
-      ::close(s);
-      continue;
-    }
-    if (!os::Posix::matches_effective_uid_and_gid_or_root(puid, pgid)) {
-      log_debug(attach)("euid/egid check failed (%d/%d vs %d/%d)", puid, pgid, geteuid(),
-                        getegid());
-      ::close(s);
-      continue;
-    }
-#elif AIX
-    struct peercred_struct cred_info;
-    socklen_t optlen = sizeof(cred_info);
-    if (::getsockopt(s, SOL_SOCKET, SO_PEERID, (void*)&cred_info, &optlen) == -1) {
-      log_debug(attach)("Failed to get socket option SO_PEERID");
-      ::close(s);
-      continue;
-    }
-
-    if (!os::Posix::matches_effective_uid_and_gid_or_root(cred_info.euid, cred_info.egid)) {
-      log_debug(attach)("euid/egid check failed (%d/%d vs %d/%d)",
-              cred_info.euid, cred_info.egid, geteuid(), getegid());
-      ::close(s);
-      continue;
-    }
-#endif
 
     // peer credential look okay so we read the request
     PosixAttachOperation* op = read_request(s);
