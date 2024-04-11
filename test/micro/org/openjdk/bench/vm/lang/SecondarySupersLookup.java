@@ -23,11 +23,18 @@
 package org.openjdk.bench.vm.lang;
 
 import org.openjdk.jmh.annotations.*;
+import java.util.concurrent.TimeUnit;
 import java.util.Random;
 
+
+@BenchmarkMode(Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-public class IntfSubtype {
-    interface J {}
+@Warmup(iterations = 1, time = 1)
+@Measurement(iterations = 3, time = 1)
+@Fork(value = 5)
+public class SecondarySupersLookup {
+    interface J  {}
     interface I01 {}
     interface I02 extends I01 {}
     interface I03 extends I02 {}
@@ -93,46 +100,33 @@ public class IntfSubtype {
     interface I63 extends I62 {}
     interface I64 extends I63 {}
 
-    static class A0 {}
-    static class A1 implements I01 {}
-    static class A2 implements I02 {}
-    static class A3 implements I03 {}
-    static class A4 implements I04 {}
-    static class A5 implements I05 {}
-    static class A6 implements I06 {}
-    static class A7 implements I07 {}
-    static class A8 implements I08 {}
-    static class A9 implements I09 {}
-
-    static class A10 implements I10 {}
-    static class A16 implements I16 {}
-    static class A20 implements I20 {}
-    static class A30 implements I30 {}
-    static class A32 implements I32 {}
-    static class A40 implements I40 {}
-    static class A50 implements I50 {}
-    static class A60 implements I60 {}
-    static class A64 implements I64 {}
-
-    final Object obj00 = new A0();
-    final Object obj01 = new A1();
-    final Object obj02 = new A2();
-    final Object obj03 = new A3();
-    final Object obj04 = new A4();
-    final Object obj05 = new A5();
-    final Object obj06 = new A6();
-    final Object obj07 = new A7();
-    final Object obj08 = new A8();
-    final Object obj09 = new A9();
-    final Object obj10 = new A10();
-    final Object obj16 = new A16();
-    final Object obj20 = new A20();
-    final Object obj30 = new A30();
-    final Object obj32 = new A32();
-    final Object obj40 = new A40();
-    final Object obj50 = new A50();
-    final Object obj60 = new A60();
-    final Object obj64 = new A64();
+    final Object obj00 = new Object();
+    final Object obj01 = new I01() {};
+    final Object obj02 = new I02() {};
+    final Object obj03 = new I03() {};
+    final Object obj04 = new I04() {};
+    final Object obj05 = new I05() {};
+    final Object obj06 = new I06() {};
+    final Object obj07 = new I07() {};
+    final Object obj08 = new I08() {};
+    final Object obj09 = new I09() {};
+    final Object obj10 = new I10() {};
+    final Object obj16 = new I16() {};
+    final Object obj20 = new I20() {};
+    final Object obj30 = new I30() {};
+    final Object obj32 = new I32() {};
+    final Object obj40 = new I40() {};
+    final Object obj50 = new I50() {};
+    final Object obj55 = new I55() {};
+    final Object obj56 = new I56() {};
+    final Object obj57 = new I57() {};
+    final Object obj58 = new I58() {};
+    final Object obj59 = new I59() {};
+    final Object obj60 = new I60() {};
+    final Object obj61 = new I61() {};
+    final Object obj62 = new I62() {};
+    final Object obj63 = new I63() {};
+    final Object obj64 = new I64() {};
 
     static Class<?> getSuper(int idx) {
         int i = Math.abs(idx) % 10;
@@ -215,14 +209,17 @@ public class IntfSubtype {
     @Benchmark public void testPositive32() {
         test(obj32, I32.class, true);
     }
-    @Benchmark public void testPositive50() {
-        test(obj50, I50.class, true);
-    }
     @Benchmark public void testPositive40() {
         test(obj40, I40.class, true);
     }
+    @Benchmark public void testPositive50() {
+        test(obj50, I50.class, true);
+    }
     @Benchmark public void testPositive60() {
         test(obj60, I60.class, true);
+    }
+    @Benchmark public void testPositive63() {
+        test(obj63, I63.class, true);
     }
     @Benchmark public void testPositive64() {
         test(obj64, I64.class, true);
@@ -279,53 +276,35 @@ public class IntfSubtype {
     @Benchmark public void testNegative50() {
         test(obj50, J.class, false);
     }
+    @Benchmark public void testNegative55() {
+        test(obj55, J.class, false);
+    }
+    @Benchmark public void testNegative56() {
+        test(obj56, J.class, false);
+    }
+    @Benchmark public void testNegative57() {
+        test(obj57, J.class, false);
+    }
+    @Benchmark public void testNegative58() {
+        test(obj58, J.class, false);
+    }
+    @Benchmark public void testNegative59() {
+        test(obj59, J.class, false);
+    }
     @Benchmark public void testNegative60() {
         test(obj60, J.class, false);
+    }
+    @Benchmark public void testNegative61() {
+        test(obj61, J.class, false);
+    }
+    @Benchmark public void testNegative62() {
+        test(obj62, J.class, false);
+    }
+    @Benchmark public void testNegative63() {
+        test(obj63, J.class, false);
     }
 
     @Benchmark public void testNegative64() {
         test(obj64, J.class, false);
     }
-
-    private static final Random RANDOM = new Random();
-    Class<?> perThreadSuper = null;
-    @Setup
-    public void initSuper() {
-        perThreadSuper = getSuper(RANDOM.nextInt());
-    }
-
-    @Benchmark public void testParallel() {
-        test(obj40, perThreadSuper, true);
-    }
-
-    public static void main(String[] args) {
-        new Startup().testAll();
-    }
-
-    public static class Startup {
-        @Benchmark public Object testA00() {
-            return new A0();
-        }
-        @Benchmark public Object testA04() {
-            return new A4();
-        }
-        @Benchmark public Object testA08() {
-            return new A8();
-        }
-        @Benchmark public Object testA16() {
-            return new A16();
-        }
-        @Benchmark public Object testA32() {
-            return new A32();
-        }
-
-        @Benchmark public Object testA64() {
-            return new A64();
-        }
-
-        @Benchmark public Object testAll() {
-            return new IntfSubtype();
-        }
-    }
-
 }
