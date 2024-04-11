@@ -127,7 +127,7 @@ class AttachListener: AllStatic {
   // platform specific data dump
   static void pd_data_dump();
 
-  // platofmr specific dequeueing of the next operation
+  // platform specific dequeueing of the next operation
   static AttachOperation* pd_dequeue();
 
   // dequeue the next operation
