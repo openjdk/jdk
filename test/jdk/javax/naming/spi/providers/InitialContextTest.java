@@ -298,7 +298,6 @@ public class InitialContextTest {
         String cp = classpath.stream()
                 .map(Path::toString)
                 .collect(Collectors.joining(File.pathSeparator));
-//        System.setProperty("test.noclasspath", "true");
         commands.add("-cp");
         commands.add(cp);
         commands.add(classname);
