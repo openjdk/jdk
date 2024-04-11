@@ -242,7 +242,7 @@ class Inet4Address extends InetAddress {
      * {@link Inet4Address#ofLiteral Inet4Address.ofLiteral} will throw
      * {@code IllegalArgumentException}.
      *
-     * @param posixIPAddressLiteral the textual representation of an IPv4 address.
+     * @param posixIPAddressLiteral a textual representation of an IPv4 address.
      * @return an {@link Inet4Address} object with no hostname set, and constructed
      *         from the provided IPv4 address literal.
      * @throws IllegalArgumentException if the {@code posixIPAddressLiteral} cannot be
