@@ -668,8 +668,8 @@ MemRegion ReservedHeapSpace::region() const {
 ReservedCodeSpace::ReservedCodeSpace(size_t r_size,
                                      size_t rs_align,
                                      size_t rs_page_size) : ReservedSpace() {
-  initialize(r_size, rs_align, rs_page_size, /*requested address*/ nullptr, /*executable*/ true);
   set_nmt_flag(mtCode);
+  initialize(r_size, rs_align, rs_page_size, /*requested address*/ nullptr, /*executable*/ true);
   MemTracker::record_virtual_memory_type((address)base(), mtCode);
 }
 
