@@ -53,8 +53,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNET, \
     DISABLED_WARNINGS_microsoft_ResolverConfigurationImpl.c := 4996, \
     LDFLAGS_windows := -delayload:iphlpapi.dll -delayload:secur32.dll \
         -delayload:winhttp.dll, \
-    JDK_LIBS_unix := -ljava -ljvm, \
-    JDK_LIBS_windows := $(WIN_JAVA_LIB) jvm.lib, \
+    JDK_LIBS := libjava libjvm, \
     LIBS_linux := $(LIBDL), \
     LIBS_aix := $(LIBDL),\
     LIBS_windows := advapi32.lib delayimp.lib iphlpapi.lib secur32.lib \
@@ -63,8 +62,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNET, \
         -framework CoreFoundation \
         -framework CoreServices, \
 ))
-
-$(BUILD_LIBNET): $(BUILD_LIBJAVA)
 
 TARGETS += $(BUILD_LIBNET)
 
@@ -78,10 +75,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNIO, \
     EXTRA_HEADER_DIRS := \
         libnio/ch \
         libnio/fs \
-        libnet, \
-    JDK_LIBS_unix := -ljava -lnet, \
-    JDK_LIBS_windows := $(WIN_JAVA_LIB) jvm.lib \
-        $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libnet/net.lib, \
+        libjvm, \
+    JDK_LIBS := libjava libnet, \
     LIBS_linux := $(LIBDL) -lpthread, \
     LIBS_aix := $(LIBDL), \
     LIBS_macosx := \
@@ -92,8 +87,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNIO, \
 
 TARGETS += $(BUILD_LIBNIO)
 
-$(BUILD_LIBNIO): $(BUILD_LIBNET)
-
 ifeq ($(call isTargetOs, macosx), true)
   ##############################################################################
   ## Build libosxsecurity
@@ -103,15 +96,12 @@ ifeq ($(call isTargetOs, macosx), true)
       NAME := osxsecurity, \
       OPTIMIZATION := LOW, \
       DISABLED_WARNINGS_clang_KeystoreImpl.m := deprecated-declarations, \
-      LDFLAGS := -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base,\
-      JDK_LIBS := $(JDKLIB_LIBS), \
+      JDK_LIBS := libjava, \
       LIBS_macosx := -lobjc \
           -framework CoreServices \
           -framework Foundation \
           -framework Security, \
   ))
-
-  $(BUILD_LIBOSXSECURITY): $(BUILD_LIBJAVA)
 
   TARGETS += $(BUILD_LIBOSXSECURITY)
 endif
@@ -204,6 +194,7 @@ ifeq ($(ENABLE_FALLBACK_LINKER), true)
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBFALLBACKLINKER, \
       NAME := fallbackLinker, \
+      EXTRA_HEADER_DIRS := java.base:libjava, \
       CFLAGS := $(LIBFFI_CFLAGS), \
       LIBS := $(LIBFFI_LIBS), \
       LIBS_windows := ws2_32.lib, \

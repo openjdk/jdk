@@ -842,9 +842,11 @@ ifeq ($(call isTargetOs, linux), true)
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libstepBreakPopReturn := -lpthread
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libIndyRedefineClass := -lpthread
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libredefineClasses := -lpthread
-  BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeinvoke := -ljvm -lpthread
-  BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exestack-gap := -ljvm -lpthread
-  BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exestack-tls := -ljvm
+  BUILD_HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exeinvoke := java.base:libjvm
+  BUILD_HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exestack-gap := java.base:libjvm
+  BUILD_HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exestack-tls := java.base:libjvm
+  BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeinvoke := -lpthread
+  BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exestack-gap := -lpthread
   BUILD_TEST_exeinvoke_exeinvoke.c_OPTIMIZATION := NONE
   BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeFPRegs := -ldl
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetCallTraceTest := -ldl
@@ -859,16 +861,15 @@ ifeq ($(call And, $(call isTargetOs, linux) $(call isTargetCpu, aarch64)), false
 endif
 
 
-BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exesigtest := -ljvm
+BUILD_HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exesigtest := java.base:libjvm
+BUILD_HOTSPOT_JTREG_LIBRARIES_JDK_LIBS_libatExit := java.base:libjvm
+BUILD_HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exedaemonDestroy := java.base:libjvm
 
 ifeq ($(call isTargetOs, windows), true)
   BUILD_HOTSPOT_JTREG_EXECUTABLES_CFLAGS_exeFPRegs := -MT
   BUILD_HOTSPOT_JTREG_EXCLUDE += exesigtest.c libterminatedThread.c libTestJNI.c libCompleteExit.c libMonitorWithDeadObjectTest.c libTestPsig.c exeGetCreatedJavaVMs.c
-  BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libatExit := jvm.lib
-  BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libnativeStack := jvm.lib
-  BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exedaemonDestroy := jvm.lib
+  BUILD_HOTSPOT_JTREG_LIBRARIES_JDK_LIBS_libnativeStack := java.base:libjvm
 else
-  BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exedaemonDestroy := -ljvm
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libbootclssearch_agent += -lpthread
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libsystemclssearch_agent += -lpthread
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libgetsysprop001 += -lpthread
@@ -1503,11 +1504,11 @@ else
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libgetphase001 += -lpthread
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libgetphase002 += -lpthread
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libterminatedThread += -lpthread
-  BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libatExit += -ljvm
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libCompleteExit += -lpthread
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libMonitorWithDeadObjectTest += -lpthread
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libnativeStack += -lpthread
-  BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeGetCreatedJavaVMs := -ljvm -lpthread
+  BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeGetCreatedJavaVMs := -lpthread
+  BUILD_HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exeGetCreatedJavaVMs := java.base:libjvm
 
   BUILD_HOTSPOT_JTREG_EXCLUDE += libNativeException.c
 endif

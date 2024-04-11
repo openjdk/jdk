@@ -122,8 +122,6 @@ define SetupBuildLauncherBody
     endif
   endif
 
-  $1_WINDOWS_JLI_LIB := $(call FindStaticLib, java.base, jli, /libjli)
-
   $1_EXTRA_FILES := $(LAUNCHER_SRC)/main.c
 
   ifeq ($(ASAN_ENABLED), true)
@@ -148,17 +146,13 @@ define SetupBuildLauncherBody
           -DPROGNAME='"$1"' \
           $$($1_CFLAGS), \
       CFLAGS_windows := $$($1_CFLAGS_windows), \
+      EXTRA_HEADER_DIRS := java.base:libjvm, \
       DISABLED_WARNINGS_gcc := unused-function, \
       LDFLAGS := $$($1_LDFLAGS), \
-      LDFLAGS_linux := $$(call SET_EXECUTABLE_ORIGIN,/../lib) \
-          -L$(call FindLibDirForModule, java.base), \
-      LDFLAGS_macosx := $$(call SET_EXECUTABLE_ORIGIN,/../lib) \
-          -L$(call FindLibDirForModule, java.base), \
-      LDFLAGS_aix := -L$(SUPPORT_OUTPUTDIR)/native/java.base, \
-      JDK_LIBS_unix := -ljli, \
-      JDK_LIBS_windows := \
-          $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib \
-          $$($1_WINDOWS_JLI_LIB), \
+      LDFLAGS_linux := $$(call SET_EXECUTABLE_ORIGIN,/../lib), \
+      LDFLAGS_macosx := $$(call SET_EXECUTABLE_ORIGIN,/../lib), \
+      JDK_LIBS := java.base:libjli, \
+      JDK_LIBS_windows := java.base:libjava, \
       LIBS := $$($1_LIBS), \
       LIBS_unix := $(LIBZ_LIBS), \
       LIBS_linux := $(LIBDL) -lpthread, \
@@ -177,15 +171,6 @@ define SetupBuildLauncherBody
   TARGETS += $$($1)
 
   $$(BUILD_LAUNCHER_$1): $$(BUILD_PLIST_$1)
-
-  ifeq ($(call isTargetOs, aix), true)
-    $$(BUILD_LAUNCHER_$1): $(call FindStaticLib, java.base, jli)
-  endif
-
-  ifeq ($(call isTargetOs, windows), true)
-    $$(BUILD_LAUNCHER_$1): $(call FindStaticLib, java.base, java, /libjava) \
-        $$($1_WINDOWS_JLI_LIB)
-  endif
 
   ifeq ($(call isTargetOs, macosx), true)
     $$(BUILD_LAUNCHER_$1): $$($1_PLIST_FILE)
