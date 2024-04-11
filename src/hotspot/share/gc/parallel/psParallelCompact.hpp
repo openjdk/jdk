@@ -279,9 +279,6 @@ public:
     // Number of times the block table was filled.
     DEBUG_ONLY(inline size_t blocks_filled_count() const;)
 
-    // The location of the java heap data that corresponds to this region.
-    inline HeapWord* data_location() const;
-
     // Whether this region is available to be claimed, has been claimed, or has
     // been completed.
     //
@@ -304,7 +301,7 @@ public:
 
     inline void set_destination_count(uint count);
     inline void set_live_obj_size(size_t words);
-    inline void set_data_location(HeapWord* addr);
+
     inline void set_completed();
     inline bool claim_unsafe();
 
@@ -363,11 +360,6 @@ public:
 
 #ifdef ASSERT
     size_t               _blocks_filled_count;   // Number of block table fills.
-
-    // These enable optimizations that are only partially implemented.  Use
-    // debug builds to prevent the code fragments from breaking.
-    HeapWord*            _data_location;
-    HeapWord*            _highest_ref;
 #endif  // #ifdef ASSERT
 
 #ifdef ASSERT
@@ -420,7 +412,6 @@ public:
                  HeapWord* target_beg, HeapWord* target_end,
                  HeapWord** target_next);
 
-  void clear();
   void clear_range(size_t beg_region, size_t end_region);
   void clear_range(HeapWord* beg, HeapWord* end) {
     clear_range(addr_to_region_idx(beg), addr_to_region_idx(end));
@@ -536,17 +527,6 @@ inline void ParallelCompactData::RegionData::decrement_destination_count()
   assert(_dc_and_los < dc_claimed, "already claimed");
   assert(_dc_and_los >= dc_one, "count would go negative");
   Atomic::add(&_dc_and_los, dc_mask);
-}
-
-inline HeapWord* ParallelCompactData::RegionData::data_location() const
-{
-  DEBUG_ONLY(return _data_location;)
-  NOT_DEBUG(return nullptr;)
-}
-
-inline void ParallelCompactData::RegionData::set_data_location(HeapWord* addr)
-{
-  DEBUG_ONLY(_data_location = addr;)
 }
 
 inline void ParallelCompactData::RegionData::set_completed()
@@ -942,15 +922,6 @@ class PSParallelCompact : AllStatic {
   static SpanSubjectToDiscoveryClosure  _span_based_discoverer;
   static ReferenceProcessor*  _ref_processor;
 
-  // Values computed at initialization and used by dead_wood_limiter().
-  static double _dwl_mean;
-  static double _dwl_std_dev;
-  static double _dwl_first_term;
-  static double _dwl_adjustment;
-#ifdef  ASSERT
-  static bool   _dwl_initialized;
-#endif  // #ifdef ASSERT
-
  public:
   static ParallelOldTracer* gc_tracer() { return &_gc_tracer; }
 
@@ -969,40 +940,10 @@ class PSParallelCompact : AllStatic {
 
   // Methods used to compute the dense prefix.
 
-  // Compute the value of the normal distribution at x = density.  The mean and
-  // standard deviation are values saved by initialize_dead_wood_limiter().
-  static inline double normal_distribution(double density);
-
-  // Initialize the static vars used by dead_wood_limiter().
-  static void initialize_dead_wood_limiter();
-
-  // Return the percentage of space that can be treated as "dead wood" (i.e.,
-  // not reclaimed).
-  static double dead_wood_limiter(double density, size_t min_percent);
-
-  // Find the first (left-most) region in the range [beg, end) that has at least
-  // dead_words of dead space to the left.  The argument beg must be the first
-  // region in the space that is not completely live.
-  static RegionData* dead_wood_limit_region(const RegionData* beg,
-                                            const RegionData* end,
-                                            size_t dead_words);
-
   // Return a pointer to the first region in the range [beg, end) that is not
   // completely full.
   static RegionData* first_dead_space_region(const RegionData* beg,
                                              const RegionData* end);
-
-  // Return a value indicating the benefit or 'yield' if the compacted region
-  // were to start (or equivalently if the dense prefix were to end) at the
-  // candidate region.  Higher values are better.
-  //
-  // The value is based on the amount of space reclaimed vs. the costs of (a)
-  // updating references in the dense prefix plus (b) copying objects and
-  // updating references in the compacted region.
-  static inline double reclaimed_ratio(const RegionData* const candidate,
-                                       HeapWord* const bottom,
-                                       HeapWord* const top,
-                                       HeapWord* const new_top);
 
   // Compute the dense prefix for the designated space.
   static HeapWord* compute_dense_prefix(const SpaceId id,

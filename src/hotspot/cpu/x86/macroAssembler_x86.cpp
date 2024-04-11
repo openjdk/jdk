@@ -4339,7 +4339,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   movl(scan_temp, Address(recv_klass, Klass::vtable_length_offset()));
 
-  // %%% Could store the aligned, prescaled offset in the klassoop.
+  // Could store the aligned, prescaled offset in the klass.
   lea(scan_temp, Address(recv_klass, scan_temp, times_vte_scale, vtable_base));
 
   if (return_method) {
@@ -5779,7 +5779,7 @@ void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register rtmp, X
 
 // Clearing constant sized memory using YMM/ZMM registers.
 void MacroAssembler::clear_mem(Register base, int cnt, Register rtmp, XMMRegister xtmp, KRegister mask) {
-  assert(UseAVX > 2 && VM_Version::supports_avx512vlbw(), "");
+  assert(UseAVX > 2 && VM_Version::supports_avx512vl(), "");
   bool use64byteVector = (MaxVectorSize > 32) && (VM_Version::avx3_threshold() == 0);
 
   int vector64_count = (cnt & (~0x7)) >> 3;
@@ -9398,6 +9398,17 @@ void MacroAssembler::vpshufb(XMMRegister dst, XMMRegister nds, AddressLiteral sr
   } else {
     lea(rscratch, src);
     vpshufb(dst, nds, Address(rscratch, 0), vector_len);
+  }
+}
+
+void MacroAssembler::vpor(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    Assembler::vpor(dst, nds, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::vpor(dst, nds, Address(rscratch, 0), vector_len);
   }
 }
 
