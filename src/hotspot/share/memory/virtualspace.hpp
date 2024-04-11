@@ -35,13 +35,13 @@ class outputStream;
 class ReservedSpace {
   friend class VMStructs;
  protected:
-  char*  _base;
-  size_t _size;
-  size_t _noaccess_prefix;
-  size_t _alignment;
-  size_t _page_size;
-  bool   _special;
-  int    _fd_for_heap;
+  char*    _base;
+  size_t   _size;
+  size_t   _noaccess_prefix;
+  size_t   _alignment;
+  size_t   _page_size;
+  bool     _special;
+  int      _fd_for_heap;
   MEMFLAGS _nmt_flag;
  private:
   bool   _executable;
@@ -59,7 +59,7 @@ class ReservedSpace {
   //                       0 during initialization.
   void clear_members();
   void initialize_members(char* base, size_t size, size_t alignment,
-                          size_t page_size, bool special, bool executable);
+                          size_t page_size, bool special, bool executable, MEMFLAGS flag);
 
   void initialize(size_t size, size_t alignment, size_t page_size,
                   char* requested_address, bool executable);
@@ -68,8 +68,8 @@ class ReservedSpace {
                char* requested_address, bool executable);
  public:
 
-  inline MEMFLAGS nmt_flag() { return _nmt_flag; }
-  inline void set_nmt_flag(MEMFLAGS flag) { _nmt_flag = flag; }
+  MEMFLAGS nmt_flag() { return _nmt_flag; }
+  void set_nmt_flag(MEMFLAGS flag) { _nmt_flag = flag; }
 
   // Constructor
   ReservedSpace();

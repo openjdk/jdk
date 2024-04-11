@@ -457,7 +457,7 @@ bool VirtualMemoryTracker::remove_uncommitted_region(address addr, size_t size, 
   assert(size > 0, "Invalid size");
   assert(_reserved_regions != nullptr, "Sanity check");
 
-  ReservedMemoryRegion  rgn(addr, size, NativeCallStack::empty_stack(), flag);
+  ReservedMemoryRegion  rgn(addr, size, flag);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
   assert(reserved_rgn != nullptr, "No reserved region (" INTPTR_FORMAT ", " SIZE_FORMAT ")", p2i(addr), size);
   assert(reserved_rgn->contain_region(addr, size), "Not completely contained");

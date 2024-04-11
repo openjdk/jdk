@@ -3660,7 +3660,7 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
     return ::munmap(addr, size) == 0;
   }
 
-  return os::uncommit_memory(addr, size, mtThreadStack);
+  return os::uncommit_memory(addr, size, !ExecMem, mtThreadStack);
 }
 
 // 'requested_addr' is only treated as a hint, the return value may or
@@ -4681,7 +4681,7 @@ static void workaround_expand_exec_shield_cs_limit() {
    */
   char* hint = (char*)(os::Linux::initial_thread_stack_bottom() -
                        (StackOverflow::stack_guard_zone_size() + page_size));
-  char* codebuf = os::attempt_reserve_memory_at(hint, page_size, false, mtInternal);
+  char* codebuf = os::attempt_reserve_memory_at(hint, page_size, !ExecMem, mtInternal);
 
   if (codebuf == nullptr) {
     // JDK-8197429: There may be a stack gap of one megabyte between
@@ -4689,10 +4689,10 @@ static void workaround_expand_exec_shield_cs_limit() {
     // Linux kernel workaround for CVE-2017-1000364.  If we failed to
     // map our codebuf, try again at an address one megabyte lower.
     hint -= 1 * M;
-    codebuf = os::attempt_reserve_memory_at(hint, page_size, false, mtInternal);
+    codebuf = os::attempt_reserve_memory_at(hint, page_size, !ExecMem, mtInternal);
   }
 
-  if ((codebuf == nullptr) || (!os::commit_memory(codebuf, page_size, true, mtInternal))) {
+  if ((codebuf == nullptr) || (!os::commit_memory(codebuf, page_size, ExecMem, mtInternal))) {
     return; // No matter, we tried, best effort.
   }
 

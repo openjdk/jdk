@@ -3134,7 +3134,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
                                 PAGE_READWRITE);
   // If reservation failed, return null
   if (p_buf == nullptr) return nullptr;
-  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC, mtNone);
+  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC, mtInternal);
   os::release_memory(p_buf, bytes + chunk_size);
 
   // we still need to round up to a page boundary (in case we are using large pages)
@@ -3357,7 +3357,7 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
 
   for (int attempt = 0; attempt < max_attempts && aligned_base == nullptr; attempt ++) {
     char* extra_base = file_desc != -1 ? os::map_memory_to_file(extra_size, file_desc, flag) :
-                                         os::reserve_memory(extra_size, false, flag);
+                                         os::reserve_memory(extra_size, !ExecMem, flag);
     if (extra_base == nullptr) {
       return nullptr;
     }
@@ -3374,7 +3374,7 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
     // Attempt to map, into the just vacated space, the slightly smaller aligned area.
     // Which may fail, hence the loop.
     aligned_base = file_desc != -1 ? os::attempt_map_memory_to_file_at(aligned_base, size, file_desc, flag) :
-                                     os::attempt_reserve_memory_at(aligned_base, size, false, flag);
+                                     os::attempt_reserve_memory_at(aligned_base, size, !ExecMem, flag);
   }
 
   assert(aligned_base != nullptr, "Did not manage to re-map after %d attempts?", max_attempts);
@@ -3717,7 +3717,7 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
 }
 
 bool os::remove_stack_guard_pages(char* addr, size_t size) {
-  return os::uncommit_memory(addr, size, mtThreadStack);
+  return os::uncommit_memory(addr, size, !ExecMem, mtThreadStack);
 }
 
 static bool protect_pages_individually(char* addr, size_t bytes, unsigned int p, DWORD *old_status) {

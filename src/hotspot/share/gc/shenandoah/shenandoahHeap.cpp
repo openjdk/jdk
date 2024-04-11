@@ -213,7 +213,7 @@ jint ShenandoahHeap::initialize() {
 
   ReservedSpace sh_rs = heap_rs.first_part(max_byte_size);
   if (!_heap_region_special) {
-    os::commit_memory_or_exit(sh_rs.base(), _initial_size, heap_alignment, false,
+    os::commit_memory_or_exit(sh_rs.base(), _initial_size, heap_alignment, !ExecMem,
                               "Cannot commit heap memory", mtGC);
   }
 
@@ -259,7 +259,7 @@ jint ShenandoahHeap::initialize() {
                               align_up(num_committed_regions, _bitmap_regions_per_slice) / _bitmap_regions_per_slice;
   bitmap_init_commit = MIN2(_bitmap_size, bitmap_init_commit);
   if (!_bitmap_region_special) {
-    os::commit_memory_or_exit((char *) _bitmap_region.start(), bitmap_init_commit, bitmap_page_size, false,
+    os::commit_memory_or_exit((char *) _bitmap_region.start(), bitmap_init_commit, bitmap_page_size, !ExecMem,
                               "Cannot commit bitmap memory", mtGC);
   }
 
@@ -272,7 +272,7 @@ jint ShenandoahHeap::initialize() {
                                             verify_bitmap.base(),
                                             verify_bitmap.size(), verify_bitmap.page_size());
     if (!verify_bitmap.special()) {
-      os::commit_memory_or_exit(verify_bitmap.base(), verify_bitmap.size(), bitmap_page_size, false,
+      os::commit_memory_or_exit(verify_bitmap.base(), verify_bitmap.size(), bitmap_page_size, !ExecMem,
                                 "Cannot commit verification bitmap memory", mtGC);
     }
     MemTracker::record_virtual_memory_type(verify_bitmap.base(), mtGC);
@@ -314,7 +314,7 @@ jint ShenandoahHeap::initialize() {
                                           region_storage.base(),
                                           region_storage.size(), region_storage.page_size());
   if (!region_storage.special()) {
-    os::commit_memory_or_exit(region_storage.base(), region_storage_size, region_page_size, false,
+    os::commit_memory_or_exit(region_storage.base(), region_storage_size, region_page_size, !ExecMem,
                               "Cannot commit region memory", mtGC);
   }
 
@@ -1411,7 +1411,7 @@ void ShenandoahHeap::object_iterate(ObjectClosure* cl) {
 bool ShenandoahHeap::prepare_aux_bitmap_for_iteration() {
   assert(SafepointSynchronize::is_at_safepoint(), "safe iteration is only available during safepoints");
 
-  if (!_aux_bitmap_region_special && !os::commit_memory((char*)_aux_bitmap_region.start(), _aux_bitmap_region.byte_size(), false, mtJavaHeap)) {
+  if (!_aux_bitmap_region_special && !os::commit_memory((char*)_aux_bitmap_region.start(), _aux_bitmap_region.byte_size(), !ExecMem, mtGC)) {
     log_warning(gc)("Could not commit native memory for auxiliary marking bitmap for heap iteration");
     return false;
   }
@@ -1431,7 +1431,7 @@ void ShenandoahHeap::scan_roots_for_iteration(ShenandoahScanObjectStack* oop_sta
 }
 
 void ShenandoahHeap::reclaim_aux_bitmap_for_iteration() {
-  if (!_aux_bitmap_region_special && !os::uncommit_memory((char*)_aux_bitmap_region.start(), _aux_bitmap_region.byte_size(), mtGC)) {
+  if (!_aux_bitmap_region_special && !os::uncommit_memory((char*)_aux_bitmap_region.start(), _aux_bitmap_region.byte_size(), !ExecMem, mtGC)) {
     log_warning(gc)("Could not uncommit native memory for auxiliary marking bitmap for heap iteration");
   }
 }
@@ -2261,7 +2261,7 @@ bool ShenandoahHeap::commit_bitmap_slice(ShenandoahHeapRegion* r) {
   size_t len = _bitmap_bytes_per_slice;
   char* start = (char*) _bitmap_region.start() + off;
 
-  if (!os::commit_memory(start, len, false, mtJavaHeap)) {
+  if (!os::commit_memory(start, len, !ExecMem, mtGC)) {
     return false;
   }
 
@@ -2290,7 +2290,7 @@ bool ShenandoahHeap::uncommit_bitmap_slice(ShenandoahHeapRegion *r) {
   size_t slice = r->index() / _bitmap_regions_per_slice;
   size_t off = _bitmap_bytes_per_slice * slice;
   size_t len = _bitmap_bytes_per_slice;
-  if (!os::uncommit_memory((char*)_bitmap_region.start() + off, len, mtGC)) {
+  if (!os::uncommit_memory((char*)_bitmap_region.start() + off, len, !ExecMem, mtGC)) {
     return false;
   }
   return true;

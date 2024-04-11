@@ -471,7 +471,7 @@ class os: AllStatic {
   static void   commit_memory_or_exit(char* addr, size_t size,
                                       size_t alignment_hint,
                                       bool executable, const char* mesg, MEMFLAGS flag);
-  static bool   uncommit_memory(char* addr, size_t bytes, MEMFLAGS flag, bool executable = false);
+  static bool   uncommit_memory(char* addr, size_t bytes, bool executable, MEMFLAGS flag);
   static bool   release_memory(char* addr, size_t bytes);
 
   // Does the platform support trimming the native heap?
@@ -540,7 +540,7 @@ class os: AllStatic {
   static char*  non_memory_address_word();
   // reserve, commit and pin the entire memory region
   static char*  reserve_memory_special(size_t size, size_t alignment, size_t page_size,
-                                       char* addr, bool executable);
+                                       char* addr, bool executable, MEMFLAGS flag);
   static bool   release_memory_special(char* addr, size_t bytes);
   static void   large_page_init();
   static size_t large_page_size();
