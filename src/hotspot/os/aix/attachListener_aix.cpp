@@ -24,9 +24,9 @@
  */
 
 
-#include "services/attachListenerPosix.hpp"
+#include "services/attachListenerNix.hpp"
 
-int PosixAttachListener::pd_accept(struct sockaddr *addr, socklen_t *len) {
+int NixAttachListener::pd_accept(struct sockaddr *addr, socklen_t *len) {
   int s;
   ::memset(addr, 0, *len);
   // We must prevent accept blocking on the socket if it has been shut down.
@@ -39,7 +39,7 @@ int PosixAttachListener::pd_accept(struct sockaddr *addr, socklen_t *len) {
   s = ::accept(listener(), addr, len);
   return s;
 }
-bool PosixAttachListener::pd_credential_check(int s) {
+bool NixAttachListener::pd_credential_check(int s) {
   struct peercred_struct cred_info;
   socklen_t optlen = sizeof(cred_info);
   if (::getsockopt(s, SOL_SOCKET, SO_PEERID, (void *)&cred_info, &optlen) == -1) {

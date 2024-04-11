@@ -22,15 +22,15 @@
  *
  */
 
-#include "services/attachListenerPosix.hpp"
+#include "services/attachListenerNix.hpp"
 
-int PosixAttachListener::pd_accept(struct sockaddr *addr, socklen_t *len) {
+int NixAttachListener::pd_accept(struct sockaddr *addr, socklen_t *len) {
   int s;
   RESTARTABLE(::accept(listener(), addr, len), s);
   return s;
 }
 
-bool PosixAttachListener::pd_credential_check(int s) {
+bool NixAttachListener::pd_credential_check(int s) {
   uid_t puid;
   gid_t pgid;
   if (::getpeereid(s, &puid, &pgid) != 0) {

@@ -22,16 +22,16 @@
  *
  */
 
-#include "services/attachListenerPosix.hpp"
+#include "services/attachListenerNix.hpp"
 static_assert(sizeof(off_t) == 8, "Expected Large File Support in this file");
 
-int PosixAttachListener::pd_accept(struct sockaddr *addr, socklen_t *len) {
+int NixAttachListener::pd_accept(struct sockaddr *addr, socklen_t *len) {
   int s;
   RESTARTABLE(::accept(listener(), addr, len), s);
   return s;
 }
 
-bool PosixAttachListener::pd_credential_check(int s) {
+bool NixAttachListener::pd_credential_check(int s) {
   struct ucred cred_info;
   socklen_t optlen = sizeof(cred_info);
   if (::getsockopt(s, SOL_SOCKET, SO_PEERCRED, (void *)&cred_info, &optlen) == -1) {

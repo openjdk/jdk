@@ -69,9 +69,9 @@
 //    of the client matches this process.
 
 // forward reference
-class PosixAttachOperation;
+class NixAttachOperation;
 
-class PosixAttachListener: AllStatic {
+class NixAttachListener: AllStatic {
  private:
   // the path to which we bind the UNIX domain socket
   static char _path[UNIX_PATH_MAX];
@@ -88,7 +88,7 @@ class PosixAttachListener: AllStatic {
   static bool _atexit_registered;
 
   // reads a request from the given connected socket
-  static PosixAttachOperation* read_request(int s);
+  static NixAttachOperation* read_request(int s);
 
  public:
   enum {
@@ -125,13 +125,13 @@ class PosixAttachListener: AllStatic {
   // write the given buffer to a socket
   static int write_fully(int s, char* buf, size_t len);
 
-  static PosixAttachOperation* dequeue();
+  static NixAttachOperation* dequeue();
 
   static int pd_accept(struct sockaddr* addr, socklen_t* len);
   static bool pd_credential_check(int s);
 };
 
-class PosixAttachOperation: public AttachOperation {
+class NixAttachOperation: public AttachOperation {
  private:
   // the connection to the client
   int _socket;
@@ -142,16 +142,16 @@ class PosixAttachOperation: public AttachOperation {
   void set_socket(int s)                                { _socket = s; }
   int socket() const                                    { return _socket; }
 
-  PosixAttachOperation(char* name) : AttachOperation(name) {
+  NixAttachOperation(char* name) : AttachOperation(name) {
     set_socket(-1);
   }
 };
 
 // statics
-char PosixAttachListener::_path[UNIX_PATH_MAX];
-bool PosixAttachListener::_has_path;
-volatile int PosixAttachListener::_listener = -1;
-bool PosixAttachListener::_atexit_registered = false;
+char NixAttachListener::_path[UNIX_PATH_MAX];
+bool NixAttachListener::_has_path;
+volatile int NixAttachListener::_listener = -1;
+bool NixAttachListener::_atexit_registered = false;
 
 // Supporting class to help split a buffer into individual components
 class ArgumentIterator : public StackObj {
@@ -199,28 +199,28 @@ class ArgumentIterator : public StackObj {
 extern "C" {
   static void listener_cleanup() {
 #ifdef AIX
-    PosixAttachListener::set_shutdown(true);
+    NixAttachListener::set_shutdown(true);
 #endif
-    int s = PosixAttachListener::listener();
+    int s = NixAttachListener::listener();
     if (s != -1) {
 #ifdef AIX
       ::shutdown(s, 2);
 #else
-      PosixAttachListener::set_listener(-1);
+      NixAttachListener::set_listener(-1);
       ::shutdown(s, SHUT_RDWR);
       ::close(s);
 #endif
     }
-    if (PosixAttachListener::has_path()) {
-      ::unlink(PosixAttachListener::path());
-      PosixAttachListener::set_path(nullptr);
+    if (NixAttachListener::has_path()) {
+      ::unlink(NixAttachListener::path());
+      NixAttachListener::set_path(nullptr);
     }
   }
 }
 
 // Initialization - create a listener socket and bind it to a file
 
-int PosixAttachListener::init() {
+int NixAttachListener::init() {
   char path[UNIX_PATH_MAX];          // socket file
   char initial_path[UNIX_PATH_MAX];  // socket file during setup
   int listener;                      // listener socket (file descriptor)
@@ -291,7 +291,7 @@ int PosixAttachListener::init() {
 // after the peer credentials have been checked and in the worst case it just
 // means that the attach listener thread is blocked.
 //
-PosixAttachOperation* PosixAttachListener::read_request(int s) {
+NixAttachOperation* NixAttachListener::read_request(int s) {
   char ver_str[8];
   size_t ver_str_len = os::snprintf_checked(ver_str, sizeof(ver_str), "%d", ATTACH_PROTOCOL_VER);
 
@@ -363,7 +363,7 @@ PosixAttachOperation* PosixAttachListener::read_request(int s) {
     return nullptr;
   }
 
-  PosixAttachOperation* op = new PosixAttachOperation(name);
+  NixAttachOperation* op = new NixAttachOperation(name);
 
   for (int i=0; i<AttachOperation::arg_count_max; i++) {
     char* arg = args.next();
@@ -388,7 +388,7 @@ PosixAttachOperation* PosixAttachListener::read_request(int s) {
 // In the Posix implementation there is only a single operation and clients
 // cannot queue commands (except at the socket level).
 //
-PosixAttachOperation* PosixAttachListener::dequeue() {
+NixAttachOperation* NixAttachListener::dequeue() {
   for (;;) {
     int s;
 
@@ -407,7 +407,7 @@ PosixAttachOperation* PosixAttachListener::dequeue() {
     }
 
     // peer credential look okay so we read the request
-    PosixAttachOperation* op = read_request(s);
+    NixAttachOperation* op = read_request(s);
     if (op == nullptr) {
       ::close(s);
       continue;
@@ -418,7 +418,7 @@ PosixAttachOperation* PosixAttachListener::dequeue() {
 }
 
 // write the given buffer to the socket
-int PosixAttachListener::write_fully(int s, char* buf, size_t len) {
+int NixAttachListener::write_fully(int s, char* buf, size_t len) {
   do {
     ssize_t n = ::write(s, buf, len);
     if (n == -1) {
@@ -440,18 +440,18 @@ int PosixAttachListener::write_fully(int s, char* buf, size_t len) {
 // if there are operations that involves a very big reply then it the
 // socket could be made non-blocking and a timeout could be used.
 
-void PosixAttachOperation::complete(jint result, bufferedStream* st) {
+void NixAttachOperation::complete(jint result, bufferedStream* st) {
   JavaThread* thread = JavaThread::current();
   ThreadBlockInVM tbivm(thread);
 
   // write operation result
   char msg[32];
   int msg_len = os::snprintf_checked(msg, sizeof(msg), "%d\n", result);
-  int rc = PosixAttachListener::write_fully(this->socket(), msg, msg_len);
+  int rc = NixAttachListener::write_fully(this->socket(), msg, msg_len);
 
   // write any result data
   if (rc == 0) {
-    PosixAttachListener::write_fully(this->socket(), (char*) st->base(), st->size());
+    NixAttachListener::write_fully(this->socket(), (char*) st->base(), st->size());
 #ifdef AIX
     // Shutdown the socket in the cleanup function to enable more than
     // one agent attach in a sequence (see comments to listener_cleanup()).
@@ -473,7 +473,7 @@ AttachOperation* AttachListener::pd_dequeue() {
   JavaThread* thread = JavaThread::current();
   ThreadBlockInVM tbivm(thread);
 
-  AttachOperation* op = PosixAttachListener::dequeue();
+  AttachOperation* op = NixAttachListener::dequeue();
 
   return op;
 }
@@ -505,7 +505,7 @@ int AttachListener::pd_init() {
   JavaThread* thread = JavaThread::current();
   ThreadBlockInVM tbivm(thread);
 
-  int ret_code = PosixAttachListener::init();
+  int ret_code = NixAttachListener::init();
 
   return ret_code;
 }
@@ -513,10 +513,10 @@ int AttachListener::pd_init() {
 bool AttachListener::check_socket_file() {
   int ret;
   struct stat st;
-  ret = stat(PosixAttachListener::path(), &st);
+  ret = stat(NixAttachListener::path(), &st);
   if (ret == -1) { // need to restart attach listener.
     log_debug(attach)("Socket file %s does not exist - Restart Attach Listener",
-                      PosixAttachListener::path());
+                      NixAttachListener::path());
 
     listener_cleanup();
 
