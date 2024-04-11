@@ -101,7 +101,9 @@ void LockStack::verify(const char* msg) const {
     }
   }
 }
+#endif
 
+#ifdef ASSERT
 void LockStack::verify_consistent_lock_order(GrowableArray<oop>& lock_order, bool leaf_frame) const {
   int top_index = to_index(_top);
   int lock_index = lock_order.length();
