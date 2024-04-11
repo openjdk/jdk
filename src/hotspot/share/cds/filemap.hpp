@@ -132,8 +132,6 @@ public:
 
 class FileMapRegion: private CDSFileMapRegion {
 public:
-  BitMapView bitmap_view(bool is_oopmap, const char* name, bool is_static);
-
   void assert_is_heap_region() const {
     assert(_is_heap_region, "must be heap region");
   }
@@ -159,6 +157,7 @@ public:
   bool   mapped_from_file()         const { return _mapped_from_file != 0; }
   size_t oopmap_offset()            const { assert_is_heap_region();     return _oopmap_offset; }
   size_t oopmap_size_in_bits()      const { assert_is_heap_region();     return _oopmap_size_in_bits; }
+  size_t ptrmap_offset()            const { return _ptrmap_offset; }
   size_t ptrmap_size_in_bits()      const { return _ptrmap_size_in_bits; }
 
   void set_file_offset(size_t s)     { _file_offset = s; }
@@ -169,8 +168,6 @@ public:
             bool allow_exec, int crc);
   void init_oopmap(size_t offset, size_t size_in_bits);
   void init_ptrmap(size_t offset, size_t size_in_bits);
-  BitMapView oopmap_view();
-  BitMapView ptrmap_view();
   bool has_ptrmap()                  { return _ptrmap_size_in_bits != 0; }
 
   bool check_region_crc(char* base) const;
@@ -525,6 +522,7 @@ public:
     return header()->region_at(i);
   }
 
+  BitMapView bitmap_view(int region_index, bool is_oopmap);
   BitMapView oopmap_view(int region_index);
   BitMapView ptrmap_view(int region_index);
 

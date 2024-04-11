@@ -1452,16 +1452,6 @@ void FileMapRegion::init_ptrmap(size_t offset, size_t size_in_bits) {
   _ptrmap_size_in_bits = size_in_bits;
 }
 
-BitMapView FileMapRegion::bitmap_view(bool is_oopmap, const char* name, bool is_static) {
-  char* bitmap_base = is_static ? FileMapInfo::current_info()->map_bitmap_region() : FileMapInfo::dynamic_info()->map_bitmap_region();
-  bitmap_base += is_oopmap ? _oopmap_offset : _ptrmap_offset;
-  size_t size_in_bits = is_oopmap ? _oopmap_size_in_bits : _ptrmap_size_in_bits;
-  log_debug(cds, reloc)("mapped %s relocation %smap @ " INTPTR_FORMAT " (" SIZE_FORMAT " bits)",
-                        name, is_oopmap ? "oop" : "ptr",
-                        p2i(bitmap_base), size_in_bits);
-  return BitMapView((BitMap::bm_word_t*)(bitmap_base), size_in_bits);
-}
-
 bool FileMapRegion::check_region_crc(char* base) const {
   // This function should be called after the region has been properly
   // loaded into memory via FileMapInfo::map_region() or FileMapInfo::read_region().
@@ -1490,12 +1480,25 @@ static const char* region_name(int region_index) {
   return names[region_index];
 }
 
+BitMapView FileMapInfo::bitmap_view(int region_index, bool is_oopmap) {
+  FileMapRegion* r = region_at(region_index);
+  char* bitmap_base = is_static() ? FileMapInfo::current_info()->map_bitmap_region() : FileMapInfo::dynamic_info()->map_bitmap_region();
+  bitmap_base += is_oopmap ? r->oopmap_offset() : r->ptrmap_offset();
+  size_t size_in_bits = is_oopmap ? r->oopmap_size_in_bits() : r->ptrmap_size_in_bits();
+
+  log_debug(cds, reloc)("mapped %s relocation %smap @ " INTPTR_FORMAT " (" SIZE_FORMAT " bits)",
+                        region_name(region_index), is_oopmap ? "oop" : "ptr",
+                        p2i(bitmap_base), size_in_bits);
+
+  return BitMapView((BitMap::bm_word_t*)(bitmap_base), size_in_bits);
+}
+
 BitMapView FileMapInfo::oopmap_view(int region_index) {
-    return region_at(region_index)->bitmap_view(/*is_oopmap*/true, region_name(region_index), is_static());
+    return bitmap_view(region_index, /*is_oopmap*/true);
   }
 
 BitMapView FileMapInfo::ptrmap_view(int region_index) {
-  return region_at(region_index)->bitmap_view(/*is_oopmap*/false, region_name(region_index), is_static());
+  return bitmap_view(region_index, /*is_oopmap*/false);
 }
 
 void FileMapRegion::print(outputStream* st, int region_index) {
@@ -1606,8 +1609,8 @@ char* FileMapInfo::write_bitmap_region(const CHeapBitMap* rw_ptrmap, const CHeap
   }
 
   // The bitmap region contains up to 4 parts:
-  // rw_ptrmap:              metaspace pointers inside the read-write region
-  // ro_ptrmap:              metaspace pointers inside the read-only region
+  // rw_ptrmap:           metaspace pointers inside the read-write region
+  // ro_ptrmap:           metaspace pointers inside the read-only region
   // heap_info->oopmap(): Java oop pointers in the heap region
   // heap_info->ptrmap(): metaspace pointers in the heap region
   char* buffer = NEW_C_HEAP_ARRAY(char, size_in_bytes, mtClassShared);
@@ -1918,11 +1921,13 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
     FileMapRegion* rw_region = first_core_region();
     FileMapRegion* ro_region = last_core_region();
 
-    // Patch all pointers in the mapped region that are marked by ptrmap.
-    address rw_patch_base = (address)mapped_base();
+    // Patch all pointers inside the RW region
+    address rw_patch_base = (address)rw_region->mapped_base();
     address rw_patch_end  = (address)rw_region->mapped_end();
+
+    // Patch all pointers inside the RO region
     address ro_patch_base = (address)ro_region->mapped_base();
-    address ro_patch_end  = (address)mapped_end();
+    address ro_patch_end  = (address)ro_region->mapped_end();
 
     // the current value of the pointers to be patched must be within this
     // range (i.e., must be between the requested base address and the address of the current archive).

@@ -83,7 +83,8 @@ void ArchivePtrMarker::initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap
   // ro_start is the first bit in _ptrmap that covers the pointer that would sit at ro_bottom.
   // E.g., if rw_bottom = (address*)100
   //          ro_bottom = (address*)116
-  //       then ro_bottom - rw_bottom = (116 - 100) / sizeof(address) = 4;
+  //       then for 64-bit platform:
+  //          ro_start = ro_bottom - rw_bottom = (116 - 100) / sizeof(address) = 2;
   size_t ro_start = ro_bottom - rw_bottom;
 
   // Note: ptrmap is big enough only to cover the last pointer in ro_region.
