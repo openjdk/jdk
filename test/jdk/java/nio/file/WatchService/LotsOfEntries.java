@@ -27,7 +27,8 @@
  *     than the default event limit
  * @library ..
  * @run main/othervm LotsOfEntries 600 fail
- * @run main/othervm -Dsun.nio.fs.maxWatchEvents=700 LotsOfEntries 600 pass
+ * @run main/othervm -Djdk.nio.file.maxWatchEvents=invalid LotsOfEntries 600 fail
+ * @run main/othervm -Djdk.nio.file.maxWatchEvents=700 LotsOfEntries 600 pass
  */
 
 import java.nio.file.*;

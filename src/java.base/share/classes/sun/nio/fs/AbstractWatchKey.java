@@ -26,8 +26,9 @@
 package sun.nio.fs;
 
 import java.nio.file.*;
-import java.security.*;
 import java.util.*;
+
+import sun.security.action.GetPropertyAction;
 
 /**
  * Base implementation class for watch keys.
@@ -39,9 +40,18 @@ abstract class AbstractWatchKey implements WatchKey {
      * Maximum size of event list
      */
     @SuppressWarnings("removal")
-    static final int MAX_EVENT_LIST_SIZE =
-        AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
-                Integer.getInteger("sun.nio.fs.maxWatchEvents", 512));
+    static final int MAX_EVENT_LIST_SIZE;
+    static {
+        String rawValue = GetPropertyAction.privilegedGetProperty(
+            "jdk.nio.file.maxWatchEvents", "512");
+        int intValue;
+        try {
+            intValue = Integer.decode(rawValue);
+        } catch (NumberFormatException e) {
+            intValue = 512;
+        }
+        MAX_EVENT_LIST_SIZE = intValue;
+    }
 
     /**
      * Special event to signal overflow
