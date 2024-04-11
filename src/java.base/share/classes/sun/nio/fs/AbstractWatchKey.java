@@ -36,6 +36,8 @@ import sun.security.action.GetPropertyAction;
 
 abstract class AbstractWatchKey implements WatchKey {
 
+    private static final int DEFAULT_MAX_EVENT_LIST_SIZE = 512;
+
     /**
      * Maximum size of event list
      */
@@ -43,12 +45,14 @@ abstract class AbstractWatchKey implements WatchKey {
     static final int MAX_EVENT_LIST_SIZE;
     static {
         String rawValue = GetPropertyAction.privilegedGetProperty(
-            "jdk.nio.file.maxWatchEvents", "512");
+            "jdk.nio.file.maxWatchEvents",
+            String.valueOf(DEFAULT_MAX_EVENT_LIST_SIZE));
         int intValue;
         try {
-            intValue = Integer.decode(rawValue);
+            intValue = Math.clamp(
+                Long.decode(rawValue), DEFAULT_MAX_EVENT_LIST_SIZE, Integer.MAX_VALUE);
         } catch (NumberFormatException e) {
-            intValue = 512;
+            intValue = DEFAULT_MAX_EVENT_LIST_SIZE;
         }
         MAX_EVENT_LIST_SIZE = intValue;
     }

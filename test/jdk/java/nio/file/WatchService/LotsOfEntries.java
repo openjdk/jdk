@@ -28,7 +28,9 @@
  * @library ..
  * @run main/othervm LotsOfEntries 600 fail
  * @run main/othervm -Djdk.nio.file.maxWatchEvents=invalid LotsOfEntries 600 fail
+ * @run main/othervm -Djdk.nio.file.maxWatchEvents=-5 LotsOfEntries 400 pass
  * @run main/othervm -Djdk.nio.file.maxWatchEvents=700 LotsOfEntries 600 pass
+ * @run main/othervm -Djdk.nio.file.maxWatchEvents=3000000000 LotsOfEntries 600 pass
  */
 
 import java.nio.file.*;
