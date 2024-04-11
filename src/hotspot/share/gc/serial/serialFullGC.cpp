@@ -609,6 +609,11 @@ template <class T> void SerialFullGC::mark_and_push(T* p) {
   }
 }
 
+template <typename T>
+void MarkAndPushClosure::do_oop_work(T* p)            { SerialFullGC::mark_and_push(p); }
+void MarkAndPushClosure::do_oop(      oop* p)         { do_oop_work(p); }
+void MarkAndPushClosure::do_oop(narrowOop* p)         { do_oop_work(p); }
+
 template <class T> inline void SerialFullGC::adjust_pointer(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(heap_oop)) {
@@ -622,11 +627,6 @@ template <class T> inline void SerialFullGC::adjust_pointer(T* p) {
     }
   }
 }
-
-template <typename T>
-void MarkAndPushClosure::do_oop_work(T* p)            { SerialFullGC::mark_and_push(p); }
-void MarkAndPushClosure::do_oop(      oop* p)         { do_oop_work(p); }
-void MarkAndPushClosure::do_oop(narrowOop* p)         { do_oop_work(p); }
 
 template <typename T>
 void AdjustPointerClosure::do_oop_work(T* p)           { SerialFullGC::adjust_pointer(p); }
