@@ -94,10 +94,10 @@ import java.util.Objects;
  * }
  *
  * <p> The above forms adhere "strict" decimal-only syntax.
- * Additionally, the following (loose) syntax is available with
- * {@link Inet4Address#ofPosixLiteral(String)} method that implements
+ * Additionally, the
+ * {@link Inet4Address#ofPosixLiteral(String)} method implements a
  * <a href="https://pubs.opengroup.org/onlinepubs/9699919799/functions/inet_addr.html">
- * POSIX {@code inet_addr}</a> compatible parsing algorithm, allowing
+ * POSIX {@code inet_addr}</a> compatible "loose" parsing algorithm, allowing
  * octal and hexadecimal address segments. Please refer to
  * <a href="https://www.ietf.org/rfc/rfc6943.html#section-3.1.1"> <i>RFC&nbsp;
  * 6943: Issues in Identifier Comparison for Security Purposes</i></a>.
