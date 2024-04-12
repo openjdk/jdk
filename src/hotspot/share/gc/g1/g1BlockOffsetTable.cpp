@@ -211,11 +211,12 @@ void G1BlockOffsetTable::update_for_block_work(HeapWord* blk_start, HeapWord* bl
          "boundary: " PTR_FORMAT,
          (uint)offset_array(offset_card),
          p2i(blk_start), p2i(boundary));
-#endif
 
-  debug_only(G1BlockOffsetTable::verify_for_block(blk_start, blk_end);)
+  G1BlockOffsetTable::verify_for_block(blk_start, blk_end);
+#endif // ASSERT
 }
 
+#ifdef ASSERT
 void G1BlockOffsetTable::verify_for_block(HeapWord* blk_start, HeapWord* blk_end) const {
   assert(is_crossing_card_boundary(blk_start, blk_end), "precondition");
 
@@ -242,3 +243,4 @@ void G1BlockOffsetTable::verify_for_block(HeapWord* blk_start, HeapWord* blk_end
     }
   }
 }
+#endif // ASSERT

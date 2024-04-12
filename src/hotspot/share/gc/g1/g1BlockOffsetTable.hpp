@@ -112,7 +112,7 @@ public:
     return obj_end > cur_card_boundary;
   }
 
-  void verify_for_block(HeapWord* blk_start, HeapWord* blk_end) const;
+  void verify_for_block(HeapWord* blk_start, HeapWord* blk_end) const NOT_DEBUG_RETURN;
 
   // Returns the address of the start of the block reaching into the card containing
   // "addr".
