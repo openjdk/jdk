@@ -28,6 +28,7 @@ package sun.nio.fs;
 import java.nio.file.*;
 import java.util.*;
 
+import jdk.internal.util.ArraysSupport;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -49,12 +50,12 @@ abstract class AbstractWatchKey implements WatchKey {
             String.valueOf(DEFAULT_MAX_EVENT_LIST_SIZE));
         int intValue;
         try {
-            // Clamp to Integer.MAX_VALUE - 1 to signal OVERFLOW and drop events
+            // Clamp to max array length to signal OVERFLOW and drop events
             // before OOMing.
             intValue = Math.clamp(
                 Long.decode(rawValue),
                 DEFAULT_MAX_EVENT_LIST_SIZE,
-                Integer.MAX_VALUE - 1);
+                ArraysSupport.SOFT_MAX_ARRAY_LENGTH);
         } catch (NumberFormatException e) {
             intValue = DEFAULT_MAX_EVENT_LIST_SIZE;
         }
