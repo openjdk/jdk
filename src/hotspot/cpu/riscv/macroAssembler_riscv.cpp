@@ -922,6 +922,8 @@ void MacroAssembler::li(Register Rd, int64_t imm) {
   }                                                                                   \
   void MacroAssembler::NAME(Register Rd, Label &L, Register temp) {                   \
     assert_different_registers(Rd, temp);                                             \
+    /* We can't patch C, i.e. if Label wasn't bound we need to patch this jump.*/     \
+    IncompressibleRegion ir(this);                                                    \
     wrap_label(Rd, L, temp, &MacroAssembler::NAME);                                   \
   }
 
