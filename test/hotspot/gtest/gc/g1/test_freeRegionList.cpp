@@ -34,7 +34,7 @@
 #include "unittest.hpp"
 
 // @requires UseG1GC
-TEST_VM(FreeRegionList, length) {
+TEST_OTHER_VM(FreeRegionList, length) {
   if (!UseG1GC) {
     return;
   }
@@ -56,7 +56,7 @@ TEST_VM(FreeRegionList, length) {
                                          bot_rs.size(),
                                          os::vm_page_size(),
                                          HeapRegion::GrainBytes,
-                                         BOTConstants::card_size(),
+                                         CardTable::card_size(),
                                          mtGC);
   G1BlockOffsetTable bot(heap, bot_storage);
   bot_storage->commit_regions(0, num_regions_in_test);

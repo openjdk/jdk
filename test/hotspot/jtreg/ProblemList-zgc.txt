@@ -34,7 +34,7 @@ serviceability/sa/ClhsdbJstackWithConcurrentLock.java         8276539   generic-
 serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java      8276539   generic-all
 
 serviceability/sa/ClhsdbFindPC.java#xcomp-core                8284045   generic-all
-serviceability/sa/TestJmapCore.java                           8268283,8270202   linux-aarch64,linux-x64,macosx-aarch64
+serviceability/sa/TestJmapCore.java                           8268283,8270202   generic-all
 serviceability/sa/TestJmapCoreMetaspace.java                  8268636   generic-all
 
 serviceability/sa/TestJhsdbJstackMixed.java                   8248912   generic-all

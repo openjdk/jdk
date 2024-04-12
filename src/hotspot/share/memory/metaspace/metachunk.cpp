@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,6 +34,7 @@
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 
 namespace metaspace {
@@ -285,7 +286,9 @@ void Metachunk::verify() const {
   const size_t required_alignment = word_size() * sizeof(MetaWord);
   assert_is_aligned(base(), required_alignment);
 
-  // Test accessing the committed area.
+  // Test accessing the committed area. But not for ASAN. We don't know which portions
+  // of the chunk are still poisoned.
+#if !INCLUDE_ASAN
   SOMETIMES(
     if (_committed_words > 0) {
       for (const MetaWord* p = _base; p < _base + _committed_words; p += os::vm_page_size()) {
@@ -294,6 +297,7 @@ void Metachunk::verify() const {
       dummy = *(_base + _committed_words - 1);
     }
   )
+#endif // !INCLUDE_ASAN
 }
 #endif // ASSERT
 

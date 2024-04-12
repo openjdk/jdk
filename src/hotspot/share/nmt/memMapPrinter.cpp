@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,8 +89,11 @@ class CachedNMTInformation : public VirtualMemoryWalker {
   Range* _ranges;
   MEMFLAGS* _flags;
   size_t _count, _capacity;
+  mutable size_t _last;
+
 public:
-  CachedNMTInformation() : _ranges(nullptr), _flags(nullptr), _count(0), _capacity(0) {}
+  CachedNMTInformation() : _ranges(nullptr), _flags(nullptr),
+                           _count(0), _capacity(0), _last(0) {}
 
   ~CachedNMTInformation() {
     ALLOW_C_FUNCTION(free, ::free(_ranges);)
@@ -131,17 +134,16 @@ public:
     // We optimize for sequential lookups. Since this class is used when a list
     // of OS mappings is scanned (VirtualQuery, /proc/pid/maps), and these lists
     // are usually sorted in order of addresses, ascending.
-    static uintx last = 0;
-    if (to <= _ranges[last].from) {
+    if (to <= _ranges[_last].from) {
       // the range is to the right of the given section, we need to re-start the search
-      last = 0;
+      _last = 0;
     }
     MemFlagBitmap bm;
-    for(uintx i = last; i < _count; i++) {
+    for(uintx i = _last; i < _count; i++) {
       if (range_intersects(from, to, _ranges[i].from, _ranges[i].to)) {
         bm.set_flag(_flags[i]);
       } else if (to <= _ranges[i].from) {
-        last = i;
+        _last = i;
         break;
       }
     }
@@ -156,6 +158,13 @@ public:
   // Iterate all NMT virtual memory regions and fill this cache.
   bool fill_from_nmt() {
     return VirtualMemoryTracker::walk_virtual_memory(this);
+  }
+
+  void print_on(outputStream* st) const {
+    for (size_t i = 0; i < _count; i ++) {
+      st->print_cr(PTR_FORMAT "-" PTR_FORMAT " %s", p2i(_ranges[i].from), p2i(_ranges[i].to),
+          NMTUtil::flag_to_enum_name(_flags[i]));
+    }
   }
 };
 
@@ -297,7 +306,7 @@ void MemMapPrinter::print_all_mappings(outputStream* st, bool human_readable) {
   // First collect all NMT information
   CachedNMTInformation nmt_info;
   nmt_info.fill_from_nmt();
-
+  DEBUG_ONLY(nmt_info.print_on(st);)
   st->print_cr("Memory mappings:");
   if (!MemTracker::enabled()) {
     st->cr();

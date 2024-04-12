@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,17 +114,16 @@ uint AgeTable::compute_tenuring_threshold(size_t desired_survivor_size) {
   return result;
 }
 
-void AgeTable::print_age_table(uint tenuring_threshold) {
+void AgeTable::print_age_table() {
   LogTarget(Trace, gc, age) lt;
   if (lt.is_enabled() || _use_perf_data || AgeTableTracer::is_tenuring_distribution_event_enabled()) {
     LogStream st(lt);
-    print_on(&st, tenuring_threshold);
+    print_on(&st);
   }
 }
 
-void AgeTable::print_on(outputStream* st, uint tenuring_threshold) {
-  st->print_cr("Age table with threshold %u (max threshold %u)",
-               tenuring_threshold, MaxTenuringThreshold);
+void AgeTable::print_on(outputStream* st) {
+  st->print_cr("Age table:");
 
   size_t total = 0;
   uint age = 1;
