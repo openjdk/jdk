@@ -396,13 +396,13 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     } while (JNI_FALSE)
 
 
-#define CHECK_EXCEPTION_NULL_FAIL(mainObject) \
+#define CHECK_EXCEPTION_NULL_PASS(mainObject) \
     do { \
         if ((*env)->ExceptionOccurred(env)) { \
-            (*env)->ExceptionClear(env); \
-            return 0; \
+            /*leave the exception pending, so that it is reported eventually*/ \
+            return 1; \
         } else if (mainObject == NULL) { \
-            return 0; \
+            return 1; \
         } \
     } while (JNI_FALSE)
 
@@ -427,11 +427,11 @@ int
 invokeInstanceMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
     jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
     CHECK_EXCEPTION_FAIL();
-    jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
-    CHECK_EXCEPTION_NULL_FAIL(mainObject);
     jmethodID mainID = (*env)->GetMethodID(env, mainClass, "main",
                                  "([Ljava/lang/String;)V");
     CHECK_EXCEPTION_FAIL();
+    jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
+    CHECK_EXCEPTION_NULL_PASS(mainObject);
     (*env)->CallVoidMethod(env, mainObject, mainID, mainArgs);
     return 1;
  }
@@ -457,11 +457,11 @@ int
 invokeInstanceMainWithoutArgs(JNIEnv *env, jclass mainClass) {
     jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
     CHECK_EXCEPTION_FAIL();
-    jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
-    CHECK_EXCEPTION_NULL_FAIL(mainObject);
     jmethodID mainID = (*env)->GetMethodID(env, mainClass, "main",
                                  "()V");
     CHECK_EXCEPTION_FAIL();
+    jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
+    CHECK_EXCEPTION_NULL_PASS(mainObject);
     (*env)->CallVoidMethod(env, mainObject, mainID);
     return 1;
 }
