@@ -2652,7 +2652,7 @@ public class DecimalFormat extends NumberFormat {
 
     // Checks to make sure grouping size is not violated. Used when strict.
     private boolean isGroupingViolation(int pos, int prevGroupingPos) {
-        assert !parseStrict : "Grouping violations should only occur when strict";
+        assert parseStrict : "Grouping violations should only occur when strict";
         return isGroupingUsed() && // Only violates if using grouping
                 // Checks if a previous grouping symbol was seen.
                 prevGroupingPos != -groupingSize &&
