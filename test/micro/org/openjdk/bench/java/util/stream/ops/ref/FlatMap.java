@@ -71,8 +71,11 @@ public class FlatMap {
     private Function<Long, Stream<Long>> funArrayStream;
     private Function<Long, Stream<Long>> funIterateStream;
     private LongFunction<LongStream> funLongStream;
+    private LongFunction<LongStream> funIterateLongStream;
     private IntFunction<IntStream> funIntStream;
+    private IntFunction<IntStream> funIterateIntStream;
     private DoubleFunction<DoubleStream> funDoubleStream;
+    private DoubleFunction<DoubleStream> funIterateDoubleStream;
 
     private Long[] cachedRefArray;
     private int[] cachedIntArray;
@@ -100,21 +103,27 @@ public class FlatMap {
             return Stream.iterate(0L, i -> i + 1).limit(cachedSize); } };
         funLongStream = new LongFunction<LongStream>() { @Override public LongStream apply(long l) {
             return Arrays.stream(cachedLongArray); } };
+        funIterateLongStream = new LongFunction<LongStream>() { @Override public LongStream apply(long l) {
+            return LongStream.iterate(0L, i -> i + 1).limit(cachedSize); } };
         funIntStream = new IntFunction<IntStream>() { @Override public IntStream apply(int i) {
             return Arrays.stream(cachedIntArray); } };
+        funIterateIntStream = new IntFunction<IntStream>() { @Override public IntStream apply(int i) {
+            return IntStream.iterate(0, ii -> ii + 1).limit(cachedSize); } };
         funDoubleStream = new DoubleFunction<DoubleStream>() { @Override public DoubleStream apply(double d) {
             return Arrays.stream(cachedDoubleArray); } };
+        funIterateDoubleStream = new DoubleFunction<DoubleStream>() { @Override public DoubleStream apply(double d) {
+            return DoubleStream.iterate(0d, i -> i + 1d).limit(cachedSize); } };
     }
 
     @Benchmark
-    public long seq_array() {
+    public long seq_array_ref() {
         return funArrayStream.apply(0L)
                 .flatMap(funArrayStream)
                 .collect(LongAccumulator::new, LongAccumulator::add, LongAccumulator::merge).get();
     }
 
     @Benchmark
-    public long par_array() {
+    public long par_array_ref() {
         return funArrayStream.apply(0L)
                 .parallel()
                 .flatMap(funArrayStream)
@@ -122,14 +131,14 @@ public class FlatMap {
     }
 
     @Benchmark
-    public long seq_longstream() {
+    public long seq_array_long() {
         return funLongStream.apply(0L)
                 .flatMap(funLongStream)
                 .collect(LongAccumulator::new, LongAccumulator::add, LongAccumulator::merge).get();
     }
 
     @Benchmark
-    public long par_longstream() {
+    public long par_array_long() {
         return funLongStream.apply(0L)
                 .parallel()
                 .flatMap(funLongStream)
@@ -137,14 +146,14 @@ public class FlatMap {
     }
 
     @Benchmark
-    public long seq_intstream() {
+    public long seq_array_int() {
         return funIntStream.apply(0)
                 .flatMap(funIntStream)
                 .collect(LongAccumulator::new, LongAccumulator::add, LongAccumulator::merge).get();
     }
 
     @Benchmark
-    public long par_intstream() {
+    public long par_array_int() {
         return funIntStream.apply(0)
                 .parallel()
                 .flatMap(funIntStream)
@@ -152,14 +161,14 @@ public class FlatMap {
     }
 
     @Benchmark
-    public double seq_doublestream() {
+    public double seq_array_double() {
         return funDoubleStream.apply(0d)
                 .flatMap(funDoubleStream)
                 .collect(DoubleAccumulator::new, DoubleAccumulator::add, DoubleAccumulator::merge).get();
     }
 
     @Benchmark
-    public double par_doublestream() {
+    public double par_array_double() {
         return funDoubleStream.apply(0d)
                 .parallel()
                 .flatMap(funDoubleStream)
@@ -167,18 +176,64 @@ public class FlatMap {
     }
 
     @Benchmark
-    public long seq_iterate() {
+    public long seq_iterate_ref() {
         return funIterateStream.apply(0L)
                 .flatMap(funIterateStream)
                 .collect(LongAccumulator::new, LongAccumulator::add, LongAccumulator::merge).get();
     }
 
     @Benchmark
-    public long par_iterate() {
+    public long par_iterate_ref() {
         return funIterateStream.apply(0L)
                 .parallel()
                 .flatMap(funIterateStream)
                 .collect(LongAccumulator::new, LongAccumulator::add, LongAccumulator::merge).get();
+    }
+
+
+    @Benchmark
+    public long seq_iterate_long() {
+        return funIterateLongStream.apply(0L)
+                .flatMap(funIterateLongStream)
+                .collect(LongAccumulator::new, LongAccumulator::add, LongAccumulator::merge).get();
+    }
+
+    @Benchmark
+    public long par_iterate_long() {
+        return funIterateLongStream.apply(0L)
+                .parallel()
+                .flatMap(funIterateLongStream)
+                .collect(LongAccumulator::new, LongAccumulator::add, LongAccumulator::merge).get();
+    }
+
+    @Benchmark
+    public long seq_iterate_int() {
+        return funIterateIntStream.apply(0)
+                .flatMap(funIterateIntStream)
+                .collect(LongAccumulator::new, LongAccumulator::add, LongAccumulator::merge).get();
+    }
+
+    @Benchmark
+    public long par_iterate_int() {
+        return funIterateIntStream.apply(0)
+                .parallel()
+                .flatMap(funIterateIntStream)
+                .collect(LongAccumulator::new, LongAccumulator::add, LongAccumulator::merge).get();
+    }
+
+    @Benchmark
+    public double seq_iterate_double() {
+        return funIterateDoubleStream.apply(0d)
+                .flatMap(funIterateDoubleStream)
+                .collect(DoubleAccumulator::new, DoubleAccumulator::add, DoubleAccumulator::merge).get();
+    }
+
+    @Benchmark
+    public double par_iterate_double() {
+        return funIterateDoubleStream.apply(0d)
+                .parallel()
+                .flatMap(funIterateDoubleStream)
+                .collect(DoubleAccumulator::new, DoubleAccumulator::add, DoubleAccumulator::merge).get();
     }
 
 }
