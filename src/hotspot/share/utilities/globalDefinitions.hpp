@@ -1107,7 +1107,8 @@ template<class T> constexpr T MAX4(T a, T b, T c, T d) { return MAX2(MAX3(a, b, 
 template<class T> constexpr T MIN4(T a, T b, T c, T d) { return MIN2(MIN3(a, b, c), d); }
 
 template<class T> inline T ABS(T x)                 {
-  assert(x != std::numeric_limits<T>::min(), "ABS: argument should not allow overflow");
+  assert(!std::is_integral<T>::value || x != std::numeric_limits<T>::min(),
+         "ABS: argument should not allow overflow");
   T res = (x > 0) ? x : -x;
   assert(res >= 0, "ABS: result should be non-negative");
   return res;
