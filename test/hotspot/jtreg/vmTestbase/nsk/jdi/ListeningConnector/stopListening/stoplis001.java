@@ -95,7 +95,7 @@ public class stoplis001 {
         else
             log.display("TEST: start listening the address " + addr);
 
-        // argHandler.getTransportPort() returns a free port (different from the listening port in cArgs2)
+        // argHandler.getTransportPort() returns a free port (different from the port allocated by startListen(cArgs2))
         Map<String,? extends com.sun.jdi.connect.Connector.Argument> cArgs1 = initConnector(argHandler.getTransportPort());
 
         log.display("cArgs1: " + cArgs1);
