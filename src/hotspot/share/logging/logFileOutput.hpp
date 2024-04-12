@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,12 @@ class LogFileOutput : public LogFileStreamOutput {
   static const char* const PidFilenamePlaceholder;
   static const char* const TimestampFilenamePlaceholder;
   static const char* const TimestampFormat;
+  static const char* const HostnameFilenamePlaceholder;
   static const size_t DefaultFileCount = 5;
   static const size_t DefaultFileSize = 20 * M;
   static const size_t StartTimeBufferSize = 20;
   static const size_t PidBufferSize = 21;
+  static const size_t HostnameBufferSize = 512;
   static const uint   MaxRotationFileCount = 1000;
   static char         _pid_str[PidBufferSize];
   static char         _vm_start_time_str[StartTimeBufferSize];

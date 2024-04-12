@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
-ScopeDesc::ScopeDesc(const CompiledMethod* code, PcDesc* pd, bool ignore_objects) {
+ScopeDesc::ScopeDesc(const nmethod* code, PcDesc* pd, bool ignore_objects) {
   int obj_decode_offset = ignore_objects ? DebugInformationRecorder::serialized_null : pd->obj_decode_offset();
   _code          = code;
   _decode_offset = pd->scope_decode_offset();

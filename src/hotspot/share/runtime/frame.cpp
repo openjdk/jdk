@@ -205,11 +205,12 @@ void RegisterMap::print() const {
 
 address frame::raw_pc() const {
   if (is_deoptimized_frame()) {
-    CompiledMethod* cm = cb()->as_compiled_method_or_null();
-    if (cm->is_method_handle_return(pc()))
-      return cm->deopt_mh_handler_begin() - pc_return_offset;
+    nmethod* nm = cb()->as_nmethod_or_null();
+    assert(nm != nullptr, "only nmethod is expected here");
+    if (nm->is_method_handle_return(pc()))
+      return nm->deopt_mh_handler_begin() - pc_return_offset;
     else
-      return cm->deopt_handler_begin() - pc_return_offset;
+      return nm->deopt_handler_begin() - pc_return_offset;
   } else {
     return (pc() - pc_return_offset);
   }
@@ -313,8 +314,8 @@ Method* frame::safe_interpreter_frame_method() const {
 bool frame::should_be_deoptimized() const {
   if (_deopt_state == is_deoptimized ||
       !is_compiled_frame() ) return false;
-  assert(_cb != nullptr && _cb->is_compiled(), "must be an nmethod");
-  CompiledMethod* nm = (CompiledMethod *)_cb;
+  assert(_cb != nullptr && _cb->is_nmethod(), "must be an nmethod");
+  nmethod* nm = _cb->as_nmethod();
   LogTarget(Debug, dependencies) lt;
   if (lt.is_enabled()) {
     LogStream ls(&lt);
@@ -333,7 +334,7 @@ bool frame::should_be_deoptimized() const {
 
 bool frame::can_be_deoptimized() const {
   if (!is_compiled_frame()) return false;
-  CompiledMethod* nm = (CompiledMethod*)_cb;
+  nmethod* nm = _cb->as_nmethod();
 
   if(!nm->can_be_deoptimized())
     return false;
@@ -346,18 +347,18 @@ void frame::deoptimize(JavaThread* thread) {
          || (thread->frame_anchor()->has_last_Java_frame() &&
              thread->frame_anchor()->walkable()), "must be");
   // Schedule deoptimization of an nmethod activation with this frame.
-  assert(_cb != nullptr && _cb->is_compiled(), "must be");
+  assert(_cb != nullptr && _cb->is_nmethod(), "must be");
 
   // If the call site is a MethodHandle call site use the MH deopt handler.
-  CompiledMethod* cm = (CompiledMethod*) _cb;
-  address deopt = cm->is_method_handle_return(pc()) ?
-                        cm->deopt_mh_handler_begin() :
-                        cm->deopt_handler_begin();
+  nmethod* nm = _cb->as_nmethod();
+  address deopt = nm->is_method_handle_return(pc()) ?
+                        nm->deopt_mh_handler_begin() :
+                        nm->deopt_handler_begin();
 
   NativePostCallNop* inst = nativePostCallNop_at(pc());
 
   // Save the original pc before we patch in the new one
-  cm->set_original_pc(this, pc());
+  nm->set_original_pc(this, pc());
   patch_pc(thread, deopt);
   assert(is_deoptimized_frame(), "must be");
 
@@ -674,15 +675,12 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
       }
     } else if (_cb->is_buffer_blob()) {
       st->print("v  ~BufferBlob::%s " PTR_FORMAT, ((BufferBlob *)_cb)->name(), p2i(pc()));
-    } else if (_cb->is_compiled()) {
-      CompiledMethod* cm = (CompiledMethod*)_cb;
-      Method* m = cm->method();
+    } else if (_cb->is_nmethod()) {
+      nmethod* nm = _cb->as_nmethod();
+      Method* m = nm->method();
       if (m != nullptr) {
-        if (cm->is_nmethod()) {
-          nmethod* nm = cm->as_nmethod();
-          st->print("J %d%s", nm->compile_id(), (nm->is_osr_method() ? "%" : ""));
-          st->print(" %s", nm->compiler_name());
-        }
+        st->print("J %d%s", nm->compile_id(), (nm->is_osr_method() ? "%" : ""));
+        st->print(" %s", nm->compiler_name());
         m->name_and_sig_as_C_string(buf, buflen);
         st->print(" %s", buf);
         ModuleEntry* module = m->method_holder()->module();
@@ -697,12 +695,9 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
         st->print(" (%d bytes) @ " PTR_FORMAT " [" PTR_FORMAT "+" INTPTR_FORMAT "]",
                   m->code_size(), p2i(_pc), p2i(_cb->code_begin()), _pc - _cb->code_begin());
 #if INCLUDE_JVMCI
-        if (cm->is_nmethod()) {
-          nmethod* nm = cm->as_nmethod();
-          const char* jvmciName = nm->jvmci_name();
-          if (jvmciName != nullptr) {
-            st->print(" (%s)", jvmciName);
-          }
+        const char* jvmciName = nm->jvmci_name();
+        if (jvmciName != nullptr) {
+          st->print(" (%s)", jvmciName);
         }
 #endif
       } else {
@@ -1403,22 +1398,22 @@ void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_m
   } else if (is_entry_frame()) {
     // For now just label the frame
     values.describe(-1, info_address, err_msg("#%d entry frame", frame_no), 2);
-  } else if (cb()->is_compiled()) {
+  } else if (cb()->is_nmethod()) {
     // For now just label the frame
-    CompiledMethod* cm = cb()->as_compiled_method();
+    nmethod* nm = cb()->as_nmethod();
     values.describe(-1, info_address,
                     FormatBuffer<1024>("#%d nmethod " INTPTR_FORMAT " for method J %s%s", frame_no,
-                                       p2i(cm),
-                                       cm->method()->name_and_sig_as_C_string(),
+                                       p2i(nm),
+                                       nm->method()->name_and_sig_as_C_string(),
                                        (_deopt_state == is_deoptimized) ?
                                        " (deoptimized)" :
                                        ((_deopt_state == unknown) ? " (state unknown)" : "")),
                     3);
 
     { // mark arguments (see nmethod::print_nmethod_labels)
-      Method* m = cm->method();
+      Method* m = nm->method();
 
-      int stack_slot_offset = cm->frame_size() * wordSize; // offset, in bytes, to caller sp
+      int stack_slot_offset = nm->frame_size() * wordSize; // offset, in bytes, to caller sp
       int sizeargs = m->size_of_parameters();
 
       BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, sizeargs);
@@ -1469,7 +1464,7 @@ void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_m
 
     if (reg_map != nullptr && is_java_frame()) {
       int scope_no = 0;
-      for (ScopeDesc* scope = cm->scope_desc_at(pc()); scope != nullptr; scope = scope->sender(), scope_no++) {
+      for (ScopeDesc* scope = nm->scope_desc_at(pc()); scope != nullptr; scope = scope->sender(), scope_no++) {
         Method* m = scope->method();
         int  bci = scope->bci();
         values.describe(-1, info_address, err_msg("- #%d scope %s @ %d", scope_no, m->name_and_sig_as_C_string(), bci), 2);
@@ -1507,7 +1502,7 @@ void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_m
       }
     }
 
-    if (cm->method()->is_continuation_enter_intrinsic()) {
+    if (nm->method()->is_continuation_enter_intrinsic()) {
       ContinuationEntry* ce = Continuation::get_continuation_entry_for_entry_frame(reg_map->thread(), *this); // (ContinuationEntry*)unextended_sp();
       ce->describe(values, frame_no);
     }
