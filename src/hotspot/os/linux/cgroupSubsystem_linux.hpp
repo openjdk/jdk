@@ -69,8 +69,6 @@
 #define MEMORY_IDX     3
 #define PIDS_IDX       4
 
-typedef char * cptr;
-
 class CgroupController: public CHeapObj<mtInternal> {
   public:
     virtual char *subsystem_path() = 0;
@@ -78,23 +76,51 @@ class CgroupController: public CHeapObj<mtInternal> {
 
 PRAGMA_DIAG_PUSH
 PRAGMA_FORMAT_NONLITERAL_IGNORED
-// Parses a subsystem's file, looking for a matching line.
-// If key is null, then the first line will be matched with scan_fmt.
-// If key isn't null, then each line will be matched, looking for something that matches "$key $scan_fmt".
-// The matching value will be assigned to returnval.
-// scan_fmt uses scanf() syntax.
-// Return value: 0 on match, OSCONTAINER_ERROR on error.
-template <typename T> int subsystem_file_line_contents(CgroupController* c,
-                                              const char *filename,
-                                              const char *key,
-                                              const char *scan_fmt,
-                                              T returnval) {
+template <typename T> int __cg_file_contents_impl(const char *absolute_path,
+                                                  const char *scan_fmt,
+                                                  T returnval) {
+  FILE* fp = os::fopen(absolute_path, "r");
+  if (fp == nullptr) {
+    log_debug(os, container)("Open of file %s failed, %s", absolute_path, os::strerror(errno));
+    return OSCONTAINER_ERROR;
+  }
+
+  const int buf_len = MAXPATHLEN+1;
+  char buf[buf_len];
+  char* line = fgets(buf, buf_len, fp);
+  if (line == nullptr) {
+    log_debug(os, container)("Empty file %s", absolute_path);
+    fclose(fp);
+    return OSCONTAINER_ERROR;
+  }
+  fclose(fp);
+
+  int matched = sscanf(line, scan_fmt, returnval);
+  if (matched == 1) {
+    return 0;
+  } else {
+    log_debug(os, container)("Type %s not found in file %s", scan_fmt, absolute_path);
+  }
+  return OSCONTAINER_ERROR;
+}
+PRAGMA_DIAG_POP
+
+PRAGMA_DIAG_PUSH
+PRAGMA_FORMAT_NONLITERAL_IGNORED
+template <typename T> int cg_file_contents_ctrl(CgroupController* c,
+                                                const char *filename,
+                                                const char *scan_fmt,
+                                                T returnval) {
   if (c == nullptr) {
-    log_debug(os, container)("subsystem_file_line_contents: CgroupController* is null");
+    log_debug(os, container)("cg_file_contents_ctrl: CgroupController* is null");
     return OSCONTAINER_ERROR;
   }
   if (c->subsystem_path() == nullptr) {
-    log_debug(os, container)("subsystem_file_line_contents: subsystem path is null");
+    log_debug(os, container)("cg_file_contents_ctrl: subsystem path is null");
+    return OSCONTAINER_ERROR;
+  }
+  if (scan_fmt == nullptr || returnval == nullptr) {
+    log_debug(os, container)("cg_file_contents_ctrl: scan_fmt or return pointer is null");
     return OSCONTAINER_ERROR;
   }
 
@@ -102,13 +128,22 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
   file_path.print_raw(c->subsystem_path());
   file_path.print_raw(filename);
 
-  if (file_path.size() > (MAXPATHLEN-1)) {
+  if (file_path.size() > MAXPATHLEN) {
     log_debug(os, container)("File path too long %s, %s", file_path.base(), filename);
     return OSCONTAINER_ERROR;
   }
   const char* absolute_path = file_path.freeze();
   log_trace(os, container)("Path to %s is %s", filename, absolute_path);
+  return __cg_file_contents_impl<T>(absolute_path, scan_fmt, returnval);
+}
+PRAGMA_DIAG_POP
 
+PRAGMA_DIAG_PUSH
+PRAGMA_FORMAT_NONLITERAL_IGNORED
+template <typename T> int __cg_file_multi_line_impl(const char *absolute_path,
+                                                    const char *key,
+                                                    const char *scan_fmt,
+                                                    T returnval) {
   FILE* fp = os::fopen(absolute_path, "r");
   if (fp == nullptr) {
     log_debug(os, container)("Open of file %s failed, %s", absolute_path, os::strerror(errno));
@@ -125,27 +160,21 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
   }
 
   bool found_match = false;
-  if (key == nullptr) {
-    // File consists of a single line according to caller, with only a value
-    int matched = sscanf(line, scan_fmt, returnval);
-    found_match = matched == 1;
-  } else {
-    // File consists of multiple lines in a "key value"
-    // fashion, we have to find the key.
-    const int key_len = (int)strlen(key);
-    for (; line != nullptr; line = fgets(buf, buf_len, fp)) {
-      char* key_substr = strstr(line, key);
-      char after_key = line[key_len];
-      if (key_substr == line
+  // File consists of multiple lines in a "key value"
+  // fashion, we have to find the key.
+  const int key_len = (int)strlen(key);
+  for (; line != nullptr; line = fgets(buf, buf_len, fp)) {
+    char* key_substr = strstr(line, key);
+    char after_key = line[key_len];
+    if (key_substr == line
           && isspace(after_key) != 0
           && after_key != '\n') {
-        // Skip key, skip space
-        const char* value_substr = line + key_len + 1;
-        int matched = sscanf(value_substr, scan_fmt, returnval);
-        found_match = matched == 1;
-        if (found_match) {
-          break;
-        }
+      // Skip key, skip space
+      const char* value_substr = line + key_len + 1;
+      int matched = sscanf(value_substr, scan_fmt, returnval);
+      found_match = matched == 1;
+      if (found_match) {
+        break;
       }
     }
   }
@@ -154,63 +183,44 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
     return 0;
   }
   log_debug(os, container)("Type %s (key == %s) not found in file %s", scan_fmt,
-                           (key == nullptr ? "null" : key), absolute_path);
+                           key, absolute_path);
   return OSCONTAINER_ERROR;
 }
 PRAGMA_DIAG_POP
 
-// log_fmt can be different than scan_fmt. For example
-// cpu_period() for cgv2 uses log_fmt='%d' and scan_fmt='%*s %d'
-#define GET_CONTAINER_INFO(return_type, subsystem, filename,              \
-                           logstring, log_fmt, scan_fmt, variable)        \
-  return_type variable;                                                   \
-{                                                                         \
-  int err;                                                                \
-  err = subsystem_file_line_contents(subsystem,                           \
-                                     filename,                            \
-                                     nullptr,                             \
-                                     scan_fmt,                            \
-                                     &variable);                          \
-  if (err != 0) {                                                         \
-    log_trace(os, container)(logstring "%d", OSCONTAINER_ERROR);          \
-    return (return_type) OSCONTAINER_ERROR;                               \
-  }                                                                       \
-                                                                          \
-  log_trace(os, container)(logstring log_fmt, variable);                  \
-}
+PRAGMA_DIAG_PUSH
+PRAGMA_FORMAT_NONLITERAL_IGNORED
+template <typename T> int cg_file_multi_line_ctrl(CgroupController* c,
+                                                  const char *filename,
+                                                  const char *key,
+                                                  const char *scan_fmt,
+                                                  T returnval) {
+  if (c == nullptr) {
+    log_debug(os, container)("cg_file_multi_line_ctrl: CgroupController* is null");
+    return OSCONTAINER_ERROR;
+  }
+  if (c->subsystem_path() == nullptr) {
+    log_debug(os, container)("cg_file_multi_line_ctrl: subsystem path is null");
+    return OSCONTAINER_ERROR;
+  }
+  if (key == nullptr || scan_fmt == nullptr || returnval == nullptr) {
+    log_debug(os, container)("cg_file_multi_line_ctrl: key, scan_fmt or return pointer is null");
+    return OSCONTAINER_ERROR;
+  }
 
-#define GET_CONTAINER_INFO_CPTR(return_type, subsystem, filename,         \
-                               logstring, scan_fmt, variable, bufsize)    \
-  char variable[bufsize];                                                 \
-{                                                                         \
-  int err;                                                                \
-  err = subsystem_file_line_contents(subsystem,                           \
-                                     filename,                            \
-                                     nullptr,                             \
-                                     scan_fmt,                            \
-                                     variable);                           \
-  if (err != 0)                                                           \
-    return (return_type) nullptr;                                         \
-                                                                          \
-  log_trace(os, container)(logstring, variable);                          \
-}
+  stringStream file_path;
+  file_path.print_raw(c->subsystem_path());
+  file_path.print_raw(filename);
 
-#define GET_CONTAINER_INFO_LINE(return_type, controller, filename,        \
-                           matchline, logstring, scan_fmt, variable)      \
-  return_type variable;                                                   \
-{                                                                         \
-  int err;                                                                \
-  err = subsystem_file_line_contents(controller,                          \
-                                filename,                                 \
-                                matchline,                                \
-                                scan_fmt,                                 \
-                                &variable);                               \
-  if (err != 0)                                                           \
-    return (return_type) OSCONTAINER_ERROR;                               \
-                                                                          \
-  log_trace(os, container)(logstring, variable);                          \
+  if (file_path.size() > MAXPATHLEN) {
+    log_debug(os, container)("File path too long %s, %s", file_path.base(), filename);
+    return OSCONTAINER_ERROR;
+  }
+  const char* absolute_path = file_path.freeze();
+  log_trace(os, container)("Path to %s is %s", filename, absolute_path);
+  return __cg_file_multi_line_impl<T>(absolute_path, key, scan_fmt, returnval);
 }
-
+PRAGMA_DIAG_POP
 
 class CachedMetric : public CHeapObj<mtInternal>{
   private:

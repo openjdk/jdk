@@ -35,8 +35,13 @@
  *    OSCONTAINER_ERROR for not supported
  */
 int CgroupV2Subsystem::cpu_shares() {
-  GET_CONTAINER_INFO(int, _unified, "/cpu.weight",
-                     "Raw value for CPU Shares is: ", "%d", "%d", shares);
+  int shares;
+  int err = cg_file_contents_ctrl(_unified, "/cpu.weight", "%d", &shares);
+  if (err != 0) {
+    log_trace(os, container)("Raw value for CPU Shares is: %d", OSCONTAINER_ERROR);
+    return OSCONTAINER_ERROR;
+  }
+  log_trace(os, container)("Raw value for CPU Shares is: %d", shares);
   // Convert default value of 100 to no shares setup
   if (shares == 100) {
     log_debug(os, container)("CPU Shares is: %d", -1);
@@ -90,26 +95,43 @@ int CgroupV2Subsystem::cpu_quota() {
 }
 
 char * CgroupV2Subsystem::cpu_cpuset_cpus() {
-  GET_CONTAINER_INFO_CPTR(cptr, _unified, "/cpuset.cpus",
-                     "cpuset.cpus is: %s", "%1023s", cpus, 1024);
+  char cpus[1024];
+  int err = cg_file_contents_ctrl(_unified, "/cpuset.cpus", "%1023s", cpus);
+  if (err != 0) {
+    return nullptr;
+  }
+  log_trace(os, container)("cpuset.cpus is: %s", cpus);
   return os::strdup(cpus);
 }
 
 char* CgroupV2Subsystem::cpu_quota_val() {
-  GET_CONTAINER_INFO_CPTR(cptr, _unified, "/cpu.max",
-                     "Raw value for CPU quota is: %s", "%1023s %*d", quota, 1024);
+  char quota[1024];
+  int err = cg_file_contents_ctrl(_unified, "/cpu.max", "%1023s %*d", quota);
+  if (err != 0) {
+    return nullptr;
+  }
+  log_trace(os, container)("Raw value for CPU quota is: %s", quota);
   return os::strdup(quota);
 }
 
 char * CgroupV2Subsystem::cpu_cpuset_memory_nodes() {
-  GET_CONTAINER_INFO_CPTR(cptr, _unified, "/cpuset.mems",
-                     "cpuset.mems is: %s", "%1023s", mems, 1024);
+  char mems[1024];
+  int err = cg_file_contents_ctrl(_unified, "/cpuset.mems", "%1023s", mems);
+  if (err != 0) {
+    return nullptr;
+  }
+  log_trace(os, container)("cpuset.mems is: %s", mems);
   return os::strdup(mems);
 }
 
 int CgroupV2Subsystem::cpu_period() {
-  GET_CONTAINER_INFO(int, _unified, "/cpu.max",
-                     "CPU Period is: ", "%d", "%*s %d", period);
+  int period;
+  int err = cg_file_contents_ctrl(_unified, "/cpu.max", "%*s %d", &period);
+  if (err != 0) {
+    log_trace(os, container)("CPU Period is: %d", OSCONTAINER_ERROR);
+    return OSCONTAINER_ERROR;
+  }
+  log_trace(os, container)("CPU Period is: %d", period);
   return period;
 }
 
@@ -123,8 +145,13 @@ int CgroupV2Subsystem::cpu_period() {
  *    OSCONTAINER_ERROR for not supported
  */
 jlong CgroupV2Subsystem::memory_usage_in_bytes() {
-  GET_CONTAINER_INFO(jlong, _unified, "/memory.current",
-                     "Memory Usage is: ", JLONG_FORMAT, JLONG_FORMAT, memusage);
+  jlong memusage;
+  int err = cg_file_contents_ctrl(_unified, "/memory.current", JLONG_FORMAT, &memusage);
+  if (err != 0) {
+    log_trace(os, container)("Memory Usage is: %d", OSCONTAINER_ERROR);
+    return OSCONTAINER_ERROR;
+  }
+  log_trace(os, container)("Memory Usage is: " JLONG_FORMAT, memusage);
   return memusage;
 }
 
@@ -140,20 +167,34 @@ jlong CgroupV2Subsystem::memory_max_usage_in_bytes() {
 }
 
 jlong CgroupV2Subsystem::rss_usage_in_bytes() {
-  GET_CONTAINER_INFO_LINE(julong, _memory->controller(), "/memory.stat",
-                          "anon", JULONG_FORMAT, JULONG_FORMAT, rss);
-  return rss;
+  julong rss;
+  int err = cg_file_multi_line_ctrl(_memory->controller(), "/memory.stat",
+                                    "anon", JULONG_FORMAT, &rss);
+  if (err != 0) {
+    return OSCONTAINER_ERROR;
+  }
+  log_trace(os, container)("RSS usage is: " JULONG_FORMAT, rss);
+  return (jlong)rss;
 }
 
 jlong CgroupV2Subsystem::cache_usage_in_bytes() {
-  GET_CONTAINER_INFO_LINE(julong, _memory->controller(), "/memory.stat",
-                          "file", JULONG_FORMAT, JULONG_FORMAT, cache);
-  return cache;
+  julong cache;
+  int err = cg_file_multi_line_ctrl(_memory->controller(), "/memory.stat",
+                                    "file", JULONG_FORMAT, &cache);
+  if (err != 0) {
+    return OSCONTAINER_ERROR;
+  }
+  log_trace(os, container)("Cache usage is: " JULONG_FORMAT, cache);
+  return (jlong)cache;
 }
 
 char* CgroupV2Subsystem::mem_soft_limit_val() {
-  GET_CONTAINER_INFO_CPTR(cptr, _unified, "/memory.low",
-                         "Memory Soft Limit is: %s", "%1023s", mem_soft_limit_str, 1024);
+  char mem_soft_limit_str[1024];
+  int err = cg_file_contents_ctrl(_unified, "/memory.low", "%1023s", mem_soft_limit_str);
+  if (err != 0) {
+    return nullptr;
+  }
+  log_trace(os, container)("Memory Soft Limit is: %s", mem_soft_limit_str);
   return os::strdup(mem_soft_limit_str);
 }
 
@@ -191,15 +232,25 @@ jlong CgroupV2Subsystem::memory_and_swap_usage_in_bytes() {
 }
 
 char* CgroupV2Subsystem::mem_swp_limit_val() {
-  GET_CONTAINER_INFO_CPTR(cptr, _unified, "/memory.swap.max",
-                         "Memory and Swap Limit is: %s", "%1023s", mem_swp_limit_str, 1024);
+  char mem_swp_limit_str[1024];
+  int err = cg_file_contents_ctrl(_unified, "/memory.swap.max", "%1023s", mem_swp_limit_str);
+  if (err != 0) {
+    return nullptr;
+  }
+  // FIXME: This log-line is misleading, since it reads the swap limit only, not memory *and*
+  // swap limit.
+  log_trace(os, container)("Memory and Swap Limit is: %s", mem_swp_limit_str);
   return os::strdup(mem_swp_limit_str);
 }
 
 // memory.swap.current : total amount of swap currently used by the cgroup and its descendants
 char* CgroupV2Subsystem::mem_swp_current_val() {
-  GET_CONTAINER_INFO_CPTR(cptr, _unified, "/memory.swap.current",
-                         "Swap currently used is: %s", "%1023s", mem_swp_current_str, 1024);
+  char mem_swp_current_str[1024];
+  int err = cg_file_contents_ctrl(_unified, "/memory.swap.current", "%1023s", mem_swp_current_str);
+  if (err != 0) {
+    return nullptr;
+  }
+  log_trace(os, container)("Swap currently used is: %s", mem_swp_current_str);
   return os::strdup(mem_swp_current_str);
 }
 
@@ -225,8 +276,12 @@ jlong CgroupV2Subsystem::read_memory_limit_in_bytes() {
 }
 
 char* CgroupV2Subsystem::mem_limit_val() {
-  GET_CONTAINER_INFO_CPTR(cptr, _unified, "/memory.max",
-                         "Raw value for memory limit is: %s", "%1023s", mem_limit_str, 1024);
+  char mem_limit_str[1024];
+  int err = cg_file_contents_ctrl(_unified, "/memory.max", "%1023s", mem_limit_str);
+  if (err != 0) {
+    return nullptr;
+  }
+  log_trace(os, container)("Raw value for memory limit is: %s", mem_limit_str);
   return os::strdup(mem_limit_str);
 }
 
@@ -251,8 +306,12 @@ char* CgroupV2Controller::construct_path(char* mount_path, char *cgroup_path) {
 }
 
 char* CgroupV2Subsystem::pids_max_val() {
-  GET_CONTAINER_INFO_CPTR(cptr, _unified, "/pids.max",
-                     "Maximum number of tasks is: %s", "%1023s", pidsmax, 1024);
+  char pidsmax[1024];
+  int err = cg_file_contents_ctrl(_unified, "/pids.max", "%1023s", pidsmax);
+  if (err != 0) {
+    return nullptr;
+  }
+  log_trace(os, container)("Maximum number of tasks is: %s", pidsmax);
   return os::strdup(pidsmax);
 }
 
@@ -279,7 +338,12 @@ jlong CgroupV2Subsystem::pids_max() {
  *    OSCONTAINER_ERROR for not supported
  */
 jlong CgroupV2Subsystem::pids_current() {
-  GET_CONTAINER_INFO(jlong, _unified, "/pids.current",
-                     "Current number of tasks is: ", JLONG_FORMAT, JLONG_FORMAT, pids_current);
+  jlong pids_current;
+  int err = cg_file_contents_ctrl(_unified, "/pids.current", JLONG_FORMAT, &pids_current);
+  if (err != 0) {
+    log_trace(os, container)("Current number of tasks is: %d", OSCONTAINER_ERROR);
+    return OSCONTAINER_ERROR;
+  }
+  log_trace(os, container)("Current number of tasks is: " JLONG_FORMAT, pids_current);
   return pids_current;
 }
