@@ -24,8 +24,6 @@
  */
 package java.util.stream;
 
-import jdk.internal.vm.annotation.Stable;
-
 import java.util.DoubleSummaryStatistics;
 import java.util.Objects;
 import java.util.OptionalDouble;
@@ -41,8 +39,8 @@ import java.util.function.DoublePredicate;
 import java.util.function.DoubleToIntFunction;
 import java.util.function.DoubleToLongFunction;
 import java.util.function.DoubleUnaryOperator;
+import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
-import java.util.function.LongPredicate;
 import java.util.function.ObjDoubleConsumer;
 import java.util.function.Supplier;
 
@@ -266,32 +264,43 @@ abstract class DoublePipeline<E_IN>
                 StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<Double> opWrapSink(int flags, Sink<Double> sink) {
-                class FlatMap extends Sink.ChainedDouble<Double> implements DoublePredicate {
-                    @Stable boolean cancel;
+                final DoubleConsumer fastPath =
+                        isShortCircuitingPipeline()
+                                ? null
+                                : (sink instanceof DoubleConsumer dc)
+                                ? dc
+                                : sink::accept;
+                final class FlatMap implements Sink.OfDouble, DoublePredicate {
+                    boolean cancel;
 
-                    FlatMap() { super(sink); }
-
-                    @Override public void begin(long size) { downstream.begin(-1); }
+                    @Override public void begin(long size) { sink.begin(-1); }
+                    @Override public void end() { sink.end(); }
 
                     @Override
-                    public void accept(double input) {
-                        try (DoubleStream result = mapper.apply(input)) {
-                            if (result != null)
-                                result.sequential().allMatch(this);
+                    public void accept(double e) {
+                        try (final var result = mapper.apply(e)) {
+                            if (result != null) {
+                                if (fastPath == null)
+                                    result.sequential().allMatch(this);
+                                else
+                                    result.sequential().forEach(fastPath);
+                            }
                         }
                     }
 
                     @Override
                     public boolean cancellationRequested() {
-                        return cancel || (cancel |= downstream.cancellationRequested());
+                        return cancel || (cancel |= sink.cancellationRequested());
                     }
 
                     @Override
                     public boolean test(double output) {
-                        if (cancel)
+                        if (!cancel) {
+                            sink.accept(output);
+                            return !(cancel |= sink.cancellationRequested());
+                        } else {
                             return false;
-                        downstream.accept(output);
-                        return !cancellationRequested();
+                        }
                     }
                 }
                 return new FlatMap();

@@ -22,6 +22,7 @@
  */
 package org.openjdk.bench.java.util.stream.ops.ref;
 
+import org.openjdk.bench.java.util.stream.ops.DoubleAccumulator;
 import org.openjdk.bench.java.util.stream.ops.LongAccumulator;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -37,7 +38,13 @@ import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.LongFunction;
+import java.util.function.DoubleFunction;
 import java.util.stream.Stream;
+import java.util.stream.DoubleStream;
+import java.util.stream.LongStream;
+import java.util.stream.IntStream;
 import java.util.Arrays;
 
 /**
@@ -63,22 +70,40 @@ public class FlatMap {
 
     private Function<Long, Stream<Long>> funArrayStream;
     private Function<Long, Stream<Long>> funIterateStream;
+    private LongFunction<LongStream> funLongStream;
+    private IntFunction<IntStream> funIntStream;
+    private DoubleFunction<DoubleStream> funDoubleStream;
 
-    private Long[] cachedInputArray;
+    private Long[] cachedRefArray;
+    private int[] cachedIntArray;
+    private long[] cachedLongArray;
+    private double[] cachedDoubleArray;
 
     @Setup
     public void setup() {
         final int cachedSize = size;
-        cachedInputArray = new Long[cachedSize];
-        for(int i = 0;i < cachedInputArray.length;++i)
-            cachedInputArray[i] = Long.valueOf(i);
+        cachedRefArray = new Long[cachedSize];
+        cachedIntArray = new int[cachedSize];
+        cachedLongArray = new long[cachedSize];
+        cachedDoubleArray = new double[cachedSize];
+        for(int i = 0;i < cachedRefArray.length;++i) {
+            cachedRefArray[i]    = Long.valueOf(i);
+            cachedIntArray[i]    = i;
+            cachedLongArray[i]   = i;
+            cachedDoubleArray[i] = i;
+        }
 
         funArrayStream = new Function<Long, Stream<Long>>() { @Override public Stream<Long> apply(Long l) {
-            return Arrays.stream(cachedInputArray);
+            return Arrays.stream(cachedRefArray);
         } };
         funIterateStream = new Function<Long, Stream<Long>>() { @Override public Stream<Long> apply(Long l) {
-            return Stream.iterate(0L, i -> i + 1).limit(cachedSize);
-        } };
+            return Stream.iterate(0L, i -> i + 1).limit(cachedSize); } };
+        funLongStream = new LongFunction<LongStream>() { @Override public LongStream apply(long l) {
+            return Arrays.stream(cachedLongArray); } };
+        funIntStream = new IntFunction<IntStream>() { @Override public IntStream apply(int i) {
+            return Arrays.stream(cachedIntArray); } };
+        funDoubleStream = new DoubleFunction<DoubleStream>() { @Override public DoubleStream apply(double d) {
+            return Arrays.stream(cachedDoubleArray); } };
     }
 
     @Benchmark
@@ -94,6 +119,51 @@ public class FlatMap {
                 .parallel()
                 .flatMap(funArrayStream)
                 .collect(LongAccumulator::new, LongAccumulator::add, LongAccumulator::merge).get();
+    }
+
+    @Benchmark
+    public long seq_longstream() {
+        return funLongStream.apply(0L)
+                .flatMap(funLongStream)
+                .collect(LongAccumulator::new, LongAccumulator::add, LongAccumulator::merge).get();
+    }
+
+    @Benchmark
+    public long par_longstream() {
+        return funLongStream.apply(0L)
+                .parallel()
+                .flatMap(funLongStream)
+                .collect(LongAccumulator::new, LongAccumulator::add, LongAccumulator::merge).get();
+    }
+
+    @Benchmark
+    public long seq_intstream() {
+        return funIntStream.apply(0)
+                .flatMap(funIntStream)
+                .collect(LongAccumulator::new, LongAccumulator::add, LongAccumulator::merge).get();
+    }
+
+    @Benchmark
+    public long par_intstream() {
+        return funIntStream.apply(0)
+                .parallel()
+                .flatMap(funIntStream)
+                .collect(LongAccumulator::new, LongAccumulator::add, LongAccumulator::merge).get();
+    }
+
+    @Benchmark
+    public double seq_doublestream() {
+        return funDoubleStream.apply(0d)
+                .flatMap(funDoubleStream)
+                .collect(DoubleAccumulator::new, DoubleAccumulator::add, DoubleAccumulator::merge).get();
+    }
+
+    @Benchmark
+    public double par_doublestream() {
+        return funDoubleStream.apply(0d)
+                .parallel()
+                .flatMap(funDoubleStream)
+                .collect(DoubleAccumulator::new, DoubleAccumulator::add, DoubleAccumulator::merge).get();
     }
 
     @Benchmark

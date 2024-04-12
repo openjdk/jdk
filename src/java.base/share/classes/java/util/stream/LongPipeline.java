@@ -24,8 +24,6 @@
  */
 package java.util.stream;
 
-import jdk.internal.vm.annotation.Stable;
-
 import java.util.LongSummaryStatistics;
 import java.util.Objects;
 import java.util.OptionalDouble;
@@ -35,8 +33,8 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
+import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
-import java.util.function.IntPredicate;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongConsumer;
 import java.util.function.LongFunction;
@@ -282,32 +280,43 @@ abstract class LongPipeline<E_IN>
                 StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
-                class FlatMap extends Sink.ChainedLong<Long> implements LongPredicate {
-                    @Stable boolean cancel;
+                final LongConsumer fastPath =
+                        isShortCircuitingPipeline()
+                                ? null
+                                : (sink instanceof LongConsumer lc)
+                                ? lc
+                                : sink::accept;
+                final class FlatMap implements Sink.OfLong, LongPredicate {
+                    boolean cancel;
 
-                    FlatMap() { super(sink); }
-
-                    @Override public void begin(long size) { downstream.begin(-1); }
+                    @Override public void begin(long size) { sink.begin(-1); }
+                    @Override public void end() { sink.end(); }
 
                     @Override
-                    public void accept(long input) {
-                        try (LongStream result = mapper.apply(input)) {
-                            if (result != null)
-                                result.sequential().allMatch(this);
+                    public void accept(long e) {
+                        try (final var result = mapper.apply(e)) {
+                            if (result != null) {
+                                if (fastPath == null)
+                                    result.sequential().allMatch(this);
+                                else
+                                    result.sequential().forEach(fastPath);
+                            }
                         }
                     }
 
                     @Override
                     public boolean cancellationRequested() {
-                        return cancel || (cancel |= downstream.cancellationRequested());
+                        return cancel || (cancel |= sink.cancellationRequested());
                     }
 
                     @Override
                     public boolean test(long output) {
-                        if (cancel)
+                        if (!cancel) {
+                            sink.accept(output);
+                            return !(cancel |= sink.cancellationRequested());
+                        } else {
                             return false;
-                        downstream.accept(output);
-                        return !cancellationRequested();
+                        }
                     }
                 }
                 return new FlatMap();

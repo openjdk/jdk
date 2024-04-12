@@ -49,7 +49,6 @@ import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.vm.annotation.Stable;
 
 /**
  * Abstract base class for an intermediate pipeline stage or pipeline source
@@ -278,17 +277,22 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                 StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<R> sink) {
-                class FlatMap implements Sink<P_OUT>, Predicate<R> {
-                    @Stable boolean cancel;
+                final boolean shorts = isShortCircuitingPipeline();
+                final class FlatMap implements Sink<P_OUT>, Predicate<R> {
+                    boolean cancel;
 
                     @Override public void begin(long size) { sink.begin(-1); }
                     @Override public void end() { sink.end(); }
 
                     @Override
-                    public void accept(P_OUT u) {
-                        try (Stream<? extends R> result = mapper.apply(u)) {
-                            if (result != null)
-                                result.sequential().allMatch(this);
+                    public void accept(P_OUT e) {
+                        try (final var result = mapper.apply(e)) {
+                            if (result != null) {
+                                if (shorts)
+                                    result.sequential().allMatch(this);
+                                else
+                                    result.sequential().forEach(sink);
+                            }
                         }
                     }
 
@@ -319,17 +323,27 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                 StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<Integer> sink) {
-                class FlatMap implements Sink<P_OUT>, IntPredicate {
-                    @Stable boolean cancel;
+                final IntConsumer fastPath =
+                        isShortCircuitingPipeline()
+                                ? null
+                                : (sink instanceof IntConsumer ic)
+                                ? ic
+                                : sink::accept;
+                final class FlatMap implements Sink<P_OUT>, IntPredicate {
+                    boolean cancel;
 
                     @Override public void begin(long size) { sink.begin(-1); }
                     @Override public void end() { sink.end(); }
 
                     @Override
-                    public void accept(P_OUT u) {
-                        try (IntStream result = mapper.apply(u)) {
-                            if (result != null)
-                                result.sequential().allMatch(this);
+                    public void accept(P_OUT e) {
+                        try (final var result = mapper.apply(e)) {
+                            if (result != null) {
+                                if (fastPath == null)
+                                    result.sequential().allMatch(this);
+                                else
+                                    result.sequential().forEach(fastPath);
+                            }
                         }
                     }
 
@@ -360,17 +374,27 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                 StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<Double> sink) {
-                class FlatMap implements Sink<P_OUT>, DoublePredicate {
-                    @Stable boolean cancel;
+                final DoubleConsumer fastPath =
+                        isShortCircuitingPipeline()
+                                ? null
+                                : (sink instanceof DoubleConsumer dc)
+                                ? dc
+                                : sink::accept;
+                final class FlatMap implements Sink<P_OUT>, DoublePredicate {
+                    boolean cancel;
 
                     @Override public void begin(long size) { sink.begin(-1); }
                     @Override public void end() { sink.end(); }
 
                     @Override
-                    public void accept(P_OUT u) {
-                        try (DoubleStream result = mapper.apply(u)) {
-                            if (result != null)
-                                result.sequential().allMatch(this);
+                    public void accept(P_OUT e) {
+                        try (final var result = mapper.apply(e)) {
+                            if (result != null) {
+                                if (fastPath == null)
+                                    result.sequential().allMatch(this);
+                                else
+                                    result.sequential().forEach(fastPath);
+                            }
                         }
                     }
 
@@ -402,17 +426,27 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                 StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<Long> sink) {
-                class FlatMap implements Sink<P_OUT>, LongPredicate {
-                    @Stable boolean cancel;
+                final LongConsumer fastPath =
+                        isShortCircuitingPipeline()
+                                ? null
+                                : (sink instanceof LongConsumer lc)
+                                ? lc
+                                : sink::accept;
+                final class FlatMap implements Sink<P_OUT>, LongPredicate {
+                    boolean cancel;
 
                     @Override public void begin(long size) { sink.begin(-1); }
                     @Override public void end() { sink.end(); }
 
                     @Override
-                    public void accept(P_OUT u) {
-                        try (LongStream result = mapper.apply(u)) {
-                            if (result != null)
-                                result.sequential().allMatch(this);
+                    public void accept(P_OUT e) {
+                        try (final var result = mapper.apply(e)) {
+                            if (result != null) {
+                                if (fastPath == null)
+                                    result.sequential().allMatch(this);
+                                else
+                                    result.sequential().forEach(fastPath);
+                            }
                         }
                     }
 
