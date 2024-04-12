@@ -112,6 +112,7 @@
 
 class  Compile;
 class  Node;
+class  AbstractLockNode;
 class  CallNode;
 class  PhiNode;
 class  PhaseTransform;
@@ -478,7 +479,7 @@ private:
   void optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklist,
                             GrowableArray<MemBarStoreStoreNode*>& storestore_worklist);
   // Optimize objects compare.
-  const TypeInt* optimize_ptr_compare(Node* n);
+  const TypeInt* optimize_ptr_compare(Node* left, Node* right);
 
   // Returns unique corresponding java object or null.
   JavaObjectNode* unique_java_object(Node *n) const;
@@ -589,14 +590,27 @@ private:
 
   // -------------------------------------------
   // Methods related to Reduce Allocation Merges
+  bool has_non_reducible_merge(FieldNode* field, Unique_Node_List& reducible_merges);
+  PhiNode* create_selector(PhiNode* ophi) const;
+  void updates_after_load_split(Node* data_phi, Node* previous_load, GrowableArray<Node *>  &alloc_worklist);
+  Node* split_castpp_load_through_phi(Node* curr_addp, Node* curr_load, Node* region, GrowableArray<Node*>* bases_for_loads, GrowableArray<Node *>  &alloc_worklist);
+  void reset_scalar_replaceable_entries(PhiNode* ophi);
+  bool has_reducible_merge_base(AddPNode* n, Unique_Node_List &reducible_merges);
+  Node* specialize_cmp(Node* base, Node* curr_ctrl);
+  Node* specialize_castpp(Node* castpp, Node* base, Node* current_control);
 
+  bool can_reduce_cmp(Node* n, Node* cmp) const;
+  bool has_been_reduced(PhiNode* n, SafePointNode* sfpt) const;
   bool can_reduce_phi(PhiNode* ophi) const;
-  bool can_reduce_phi_check_users(PhiNode* ophi) const;
+  bool can_reduce_check_users(Node* n, uint nesting) const;
   bool can_reduce_phi_check_inputs(PhiNode* ophi) const;
 
-  void reduce_phi_on_field_access(PhiNode* ophi, GrowableArray<Node *>  &alloc_worklist);
-  void reduce_phi_on_safepoints(PhiNode* ophi, Unique_Node_List* safepoints);
-  void reduce_phi(PhiNode* ophi);
+  void reduce_phi_on_field_access(Node* previous_addp, GrowableArray<Node *>  &alloc_worklist);
+  void reduce_phi_on_castpp_field_load(Node* castpp, GrowableArray<Node *>  &alloc_worklist, GrowableArray<Node *>  &memnode_worklist);
+  void reduce_phi_on_cmp(Node* cmp);
+  bool reduce_phi_on_safepoints(PhiNode* ophi);
+  bool reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, Node* selector, Unique_Node_List& safepoints);
+  void reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_worklist, GrowableArray<Node *>  &memnode_worklist);
 
   void set_not_scalar_replaceable(PointsToNode* ptn NOT_PRODUCT(COMMA const char* reason)) const {
 #ifndef PRODUCT
@@ -629,6 +643,8 @@ public:
   static void do_analysis(Compile *C, PhaseIterGVN *igvn);
 
   bool not_global_escape(Node *n);
+
+  bool can_eliminate_lock(AbstractLockNode* alock);
 
   // To be used by, e.g., BarrierSetC2 impls
   Node* get_addp_base(Node* addp);

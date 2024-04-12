@@ -974,8 +974,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
     __ j(exit);
 
-    CodeBuffer* cbuf = masm->code_section()->outer();
-    address stub = CompiledDirectCall::emit_to_interp_stub(*cbuf, tr_call);
+    address stub = CompiledDirectCall::emit_to_interp_stub(masm, tr_call);
     if (stub == nullptr) {
       fatal("CodeCache is full at gen_continuation_enter");
     }
@@ -1040,8 +1039,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ jr(x11); // the exception handler
   }
 
-  CodeBuffer* cbuf = masm->code_section()->outer();
-  address stub = CompiledDirectCall::emit_to_interp_stub(*cbuf, tr_call);
+  address stub = CompiledDirectCall::emit_to_interp_stub(masm, tr_call);
   if (stub == nullptr) {
     fatal("CodeCache is full at gen_continuation_enter");
   }
@@ -1679,8 +1677,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ sd(swap_reg, Address(lock_reg, mark_word_offset));
       __ bnez(swap_reg, slow_path_lock);
     } else {
-      assert(LockingMode == LM_LIGHTWEIGHT, "");
-      __ ld(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      assert(LockingMode == LM_LIGHTWEIGHT, "must be");
       __ lightweight_lock(obj_reg, swap_reg, tmp, lock_tmp, slow_path_lock);
     }
 
@@ -1806,9 +1803,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ decrement(Address(xthread, JavaThread::held_monitor_count_offset()));
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "");
-      __ ld(old_hdr, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      __ test_bit(t0, old_hdr, exact_log2(markWord::monitor_value));
-      __ bnez(t0, slow_path_unlock);
       __ lightweight_unlock(obj_reg, old_hdr, swap_reg, lock_tmp, slow_path_unlock);
       __ decrement(Address(xthread, JavaThread::held_monitor_count_offset()));
     }

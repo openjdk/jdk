@@ -61,27 +61,32 @@ jobs:
             debian-arch: arm64
             debian-repository: https://httpredir.debian.org/debian/
             debian-version: bullseye
+            tolerate-sysroot-errors: false
           - target-cpu: arm
             gnu-arch: arm
             debian-arch: armhf
             debian-repository: https://httpredir.debian.org/debian/
             debian-version: bullseye
+            tolerate-sysroot-errors: false
             gnu-abi: eabihf
           - target-cpu: s390x
             gnu-arch: s390x
             debian-arch: s390x
             debian-repository: https://httpredir.debian.org/debian/
             debian-version: bullseye
+            tolerate-sysroot-errors: false
           - target-cpu: ppc64le
             gnu-arch: powerpc64le
             debian-arch: ppc64el
             debian-repository: https://httpredir.debian.org/debian/
             debian-version: bullseye
+            tolerate-sysroot-errors: false
           - target-cpu: riscv64
             gnu-arch: riscv64
             debian-arch: riscv64
             debian-repository: https://httpredir.debian.org/debian/
             debian-version: sid
+            tolerate-sysroot-errors: true
 
     steps:
       - name: 'Checkout the JDK source'
@@ -90,13 +95,6 @@ jobs:
       - name: 'Get the BootJDK'
         id: bootjdk
         uses: ./.github/actions/get-bootjdk
-        with:
-          platform: linux-x64
-
-        # Use linux-x64 JDK bundle as build JDK
-      - name: 'Get build JDK'
-        id: buildjdk
-        uses: ./.github/actions/get-bundles
         with:
           platform: linux-x64
 
@@ -130,6 +128,7 @@ jobs:
         if: steps.get-cached-sysroot.outputs.cache-hit != 'true'
 
       - name: 'Create sysroot'
+        id: create-sysroot
         run: >
           sudo debootstrap
           --arch=${{ matrix.debian-arch }}
@@ -140,6 +139,7 @@ jobs:
           ${{ matrix.debian-version }}
           sysroot
           ${{ matrix.debian-repository }}
+        continue-on-error: ${{ matrix.tolerate-sysroot-errors }}
         if: steps.get-cached-sysroot.outputs.cache-hit != 'true'
 
       - name: 'Prepare sysroot'
@@ -151,7 +151,12 @@ jobs:
           rm -rf sysroot/usr/{sbin,bin,share}
           rm -rf sysroot/usr/lib/{apt,gcc,udev,systemd}
           rm -rf sysroot/usr/libexec/gcc
-        if: steps.get-cached-sysroot.outputs.cache-hit != 'true'
+        if: steps.create-sysroot.outcome == 'success' && steps.get-cached-sysroot.outputs.cache-hit != 'true'
+
+      - name: 'Remove broken sysroot'
+        run: |
+          sudo rm -rf sysroot/
+        if: steps.create-sysroot.outcome != 'success' && steps.get-cached-sysroot.outputs.cache-hit != 'true'
 
       - name: 'Configure'
         run: >
@@ -165,7 +170,6 @@ jobs:
           --disable-precompiled-headers
           --openjdk-target=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}
           --with-sysroot=sysroot
-          --with-build-jdk=${{ steps.buildjdk.outputs.jdk-path }}
           --with-jmod-compress=zip-1
           CC=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}-gcc-${{ inputs.gcc-major-version }}
           CXX=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}-g++-${{ inputs.gcc-major-version }}
@@ -173,6 +177,7 @@ jobs:
           echo "Dumping config.log:" &&
           cat config.log &&
           exit 1)
+        if: steps.create-sysroot.outcome == 'success' || steps.get-cached-sysroot.outputs.cache-hit == 'true'
 
       - name: 'Build'
         id: build
@@ -180,3 +185,4 @@ jobs:
         with:
           make-target: 'hotspot ${{ inputs.make-arguments }}'
           platform: linux-${{ matrix.target-cpu }}
+        if: steps.create-sysroot.outcome == 'success' || steps.get-cached-sysroot.outputs.cache-hit == 'true'

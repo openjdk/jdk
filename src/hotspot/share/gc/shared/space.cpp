@@ -40,8 +40,9 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-ContiguousSpace::ContiguousSpace(): Space(),
-  _next_compaction_space(nullptr),
+ContiguousSpace::ContiguousSpace():
+  _bottom(nullptr),
+  _end(nullptr),
   _top(nullptr) {
   _mangler = new GenSpaceMangler(this);
 }
@@ -62,12 +63,10 @@ void ContiguousSpace::initialize(MemRegion mr,
   if (clear_space) {
     clear(mangle_space);
   }
-  _next_compaction_space = nullptr;
 }
 
 void ContiguousSpace::clear(bool mangle_space) {
   set_top(bottom());
-  set_saved_mark();
   if (ZapUnusedHeapArea && mangle_space) {
     mangle_unused_area();
   }
@@ -75,9 +74,6 @@ void ContiguousSpace::clear(bool mangle_space) {
 
 #ifndef PRODUCT
 
-void ContiguousSpace::set_top_for_allocations(HeapWord* v) {
-  mangler()->set_top_for_allocations(v);
-}
 void ContiguousSpace::set_top_for_allocations() {
   mangler()->set_top_for_allocations(top());
 }
@@ -100,35 +96,13 @@ void ContiguousSpace::mangle_unused_area_complete() {
 }
 #endif  // NOT_PRODUCT
 
-
-void Space::print_short() const { print_short_on(tty); }
-
-void Space::print_short_on(outputStream* st) const {
-  st->print(" space " SIZE_FORMAT "K, %3d%% used", capacity() / K,
-              (int) ((double) used() * 100 / capacity()));
-}
-
-void Space::print() const { print_on(tty); }
-
-void Space::print_on(outputStream* st) const {
-  print_short_on(st);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ")",
-                p2i(bottom()), p2i(end()));
-}
+void ContiguousSpace::print() const { print_on(tty); }
 
 void ContiguousSpace::print_on(outputStream* st) const {
-  print_short_on(st);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-                p2i(bottom()), p2i(top()), p2i(end()));
+  st->print_cr(" space %zuK, %3d%% used [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+               capacity() / K, (int) ((double) used() * 100 / capacity()),
+               p2i(bottom()), p2i(top()), p2i(end()));
 }
-
-#if INCLUDE_SERIALGC
-void TenuredSpace::print_on(outputStream* st) const {
-  print_short_on(st);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-              p2i(bottom()), p2i(top()), p2i(end()));
-}
-#endif
 
 void ContiguousSpace::verify() const {
   HeapWord* p = bottom();
@@ -146,45 +120,6 @@ void ContiguousSpace::object_iterate(ObjectClosure* blk) {
     oop obj = cast_to_oop(addr);
     blk->do_object(obj);
     addr += obj->size();
-  }
-}
-
-// Very general, slow implementation.
-HeapWord* ContiguousSpace::block_start_const(const void* p) const {
-  assert(MemRegion(bottom(), end()).contains(p),
-         "p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
-         p2i(p), p2i(bottom()), p2i(end()));
-  if (p >= top()) {
-    return top();
-  } else {
-    HeapWord* last = bottom();
-    HeapWord* cur = last;
-    while (cur <= p) {
-      last = cur;
-      cur += cast_to_oop(cur)->size();
-    }
-    assert(oopDesc::is_oop(cast_to_oop(last)), PTR_FORMAT " should be an object start", p2i(last));
-    return last;
-  }
-}
-
-size_t ContiguousSpace::block_size(const HeapWord* p) const {
-  assert(MemRegion(bottom(), end()).contains(p),
-         "p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
-         p2i(p), p2i(bottom()), p2i(end()));
-  HeapWord* current_top = top();
-  assert(p <= current_top,
-         "p > current top - p: " PTR_FORMAT ", current top: " PTR_FORMAT,
-         p2i(p), p2i(current_top));
-  assert(p == current_top || oopDesc::is_oop(cast_to_oop(p)),
-         "p (" PTR_FORMAT ") is not a block start - "
-         "current_top: " PTR_FORMAT ", is_oop: %s",
-         p2i(p), p2i(current_top), BOOL_TO_STR(oopDesc::is_oop(cast_to_oop(p))));
-  if (p < current_top) {
-    return cast_to_oop(p)->size();
-  } else {
-    assert(p == current_top, "just checking");
-    return pointer_delta(end(), (HeapWord*) p);
   }
 }
 
@@ -235,30 +170,10 @@ HeapWord* ContiguousSpace::par_allocate(size_t size) {
 }
 
 #if INCLUDE_SERIALGC
-HeapWord* TenuredSpace::block_start_const(const void* addr) const {
-  HeapWord* cur_block = _offsets.block_start_reaching_into_card(addr);
-
-  while (true) {
-    HeapWord* next_block = cur_block + cast_to_oop(cur_block)->size();
-    if (next_block > addr) {
-      assert(cur_block <= addr, "postcondition");
-      return cur_block;
-    }
-    cur_block = next_block;
-    // Because the BOT is precise, we should never step into the next card
-    // (i.e. crossing the card boundary).
-    assert(!SerialBlockOffsetTable::is_crossing_card_boundary(cur_block, (HeapWord*)addr), "must be");
-  }
-}
-
-TenuredSpace::TenuredSpace(SerialBlockOffsetSharedArray* sharedOffsetArray,
+TenuredSpace::TenuredSpace(SerialBlockOffsetTable* offsets,
                            MemRegion mr) :
-  _offsets(sharedOffsetArray)
+  _offsets(offsets)
 {
   initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);
-}
-
-size_t TenuredSpace::allowed_dead_ratio() const {
-  return MarkSweepDeadRatio;
 }
 #endif // INCLUDE_SERIALGC

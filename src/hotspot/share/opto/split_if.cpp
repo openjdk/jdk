@@ -30,6 +30,7 @@
 #include "opto/movenode.hpp"
 #include "opto/node.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/predicates.hpp"
 
 //------------------------------split_thru_region------------------------------
 // Split Node 'n' through merge point.
@@ -101,8 +102,9 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
       Node* m = wq.at(i);
       if (m->is_If()) {
         assert(assertion_predicate_has_loop_opaque_node(m->as_If()), "opaque node not reachable from if?");
-        Node* bol = create_bool_from_template_assertion_predicate(m, nullptr, nullptr, m->in(0));
-        _igvn.replace_input_of(m, 1, bol);
+        TemplateAssertionPredicateExpression template_assertion_predicate_expression(m->in(1)->as_Opaque4());
+        Opaque4Node* cloned_opaque4_node = template_assertion_predicate_expression.clone(m->in(0), this);
+        _igvn.replace_input_of(m, 1, cloned_opaque4_node);
       } else {
         assert(!m->is_CFG(), "not CFG expected");
         for (DUIterator_Fast jmax, j = m->fast_outs(jmax); j < jmax; j++) {
@@ -727,6 +729,14 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   } // End of while merge point has phis
 
   _igvn.remove_dead_node(region);
+  if (iff->Opcode() == Op_RangeCheck) {
+    // Pin array access nodes: control is updated here to a region. If, after some transformations, only one path
+    // into the region is left, an array load could become dependent on a condition that's not a range check for
+    // that access. If that condition is replaced by an identical dominating one, then an unpinned load would risk
+    // floating above its range check.
+    pin_array_access_nodes_dependent_on(new_true);
+    pin_array_access_nodes_dependent_on(new_false);
+  }
 
   if (new_false_region != nullptr) {
     *new_false_region = new_false;
@@ -736,4 +746,19 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   }
 
   DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
+}
+
+void PhaseIdealLoop::pin_array_access_nodes_dependent_on(Node* ctrl) {
+  for (DUIterator i = ctrl->outs(); ctrl->has_out(i); i++) {
+    Node* use = ctrl->out(i);
+    if (!use->depends_only_on_test()) {
+      continue;
+    }
+    Node* pinned_clone = use->pin_array_access_node();
+    if (pinned_clone != nullptr) {
+      register_new_node(pinned_clone, get_ctrl(use));
+      _igvn.replace_node(use, pinned_clone);
+      --i;
+    }
+  }
 }

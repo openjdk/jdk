@@ -426,6 +426,7 @@ $(function() {
     });
     search.val('');
     search.prop("disabled", false);
+    search.attr("autocapitalize", "off");
     reset.prop("disabled", false);
     reset.click(function() {
         search.val('').focus();

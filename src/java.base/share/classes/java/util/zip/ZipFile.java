@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ import static java.util.zip.ZipConstants64.*;
 import static java.util.zip.ZipUtils.*;
 
 /**
- * This class is used to read entries from a zip file.
+ * This class is used to read entries from a ZIP file.
  *
  * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
  * or method in this class will cause a {@link NullPointerException} to be
@@ -95,27 +95,27 @@ import static java.util.zip.ZipUtils.*;
  */
 public class ZipFile implements ZipConstants, Closeable {
 
-    private final String filePath;     // zip file path
+    private final String filePath;     // ZIP file path
     private final String fileName;     // name of the file
     private volatile boolean closeRequested;
 
-    // The "resource" used by this zip file that needs to be
+    // The "resource" used by this ZIP file that needs to be
     // cleaned after use.
     // a) the input streams that need to be closed
     // b) the list of cached Inflater objects
-    // c) the "native" source of this zip file.
+    // c) the "native" source of this ZIP file.
     private final @Stable CleanableResource res;
 
     private static final int STORED = ZipEntry.STORED;
     private static final int DEFLATED = ZipEntry.DEFLATED;
 
     /**
-     * Mode flag to open a zip file for reading.
+     * Mode flag to open a ZIP file for reading.
      */
     public static final int OPEN_READ = 0x1;
 
     /**
-     * Mode flag to open a zip file and mark it for deletion.  The file will be
+     * Mode flag to open a ZIP file and mark it for deletion.  The file will be
      * deleted some time between the moment that it is opened and the moment
      * that it is closed, but its contents will remain accessible via the
      * {@code ZipFile} object until either the close method is invoked or the
@@ -131,7 +131,7 @@ public class ZipFile implements ZipConstants, Closeable {
             getDisableZip64ExtraFieldValidation();
 
     /**
-     * Opens a zip file for reading.
+     * Opens a ZIP file for reading.
      *
      * <p>First, if there is a security manager, its {@code checkRead}
      * method is called with the {@code name} argument as its argument
@@ -140,7 +140,7 @@ public class ZipFile implements ZipConstants, Closeable {
      * <p>The UTF-8 {@link java.nio.charset.Charset charset} is used to
      * decode the entry names and comments.
      *
-     * @param name the name of the zip file
+     * @param name the name of the ZIP file
      * @throws ZipException if a ZIP format error has occurred
      * @throws IOException if an I/O error has occurred
      * @throws SecurityException if a security manager exists and its
@@ -258,13 +258,13 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     /**
-     * Opens a zip file for reading.
+     * Opens a ZIP file for reading.
      *
      * <p>First, if there is a security manager, its {@code checkRead}
      * method is called with the {@code name} argument as its argument
      * to ensure the read is allowed.
      *
-     * @param name the name of the zip file
+     * @param name the name of the ZIP file
      * @param charset
      *        the {@linkplain java.nio.charset.Charset charset} to
      *        be used to decode the ZIP entry name and comment that are not
@@ -308,11 +308,13 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     /**
-     * Returns the zip file comment, or null if none.
+     * Returns the ZIP file comment. If a comment does not exist or an error is
+     * encountered decoding the comment using the charset specified
+     * when opening the ZIP file, then {@code null} is returned.
      *
-     * @return the comment string for the zip file, or null if none
+     * @return the comment string for the ZIP file, or null if none
      *
-     * @throws IllegalStateException if the zip file has been closed
+     * @throws IllegalStateException if the ZIP file has been closed
      *
      * @since 1.7
      */
@@ -322,17 +324,23 @@ public class ZipFile implements ZipConstants, Closeable {
             if (res.zsrc.comment == null) {
                 return null;
             }
-            return res.zsrc.zc.toString(res.zsrc.comment);
+            // If there is a problem decoding the byte array which represents
+            // the ZIP file comment, return null;
+            try {
+                return res.zsrc.zc.toString(res.zsrc.comment);
+            } catch (IllegalArgumentException iae) {
+                return null;
+            }
         }
     }
 
     /**
-     * Returns the zip file entry for the specified name, or null
+     * Returns the ZIP file entry for the specified name, or null
      * if not found.
      *
      * @param name the name of the entry
-     * @return the zip file entry, or null if not found
-     * @throws IllegalStateException if the zip file has been closed
+     * @return the ZIP file entry, or null if not found
+     * @throws IllegalStateException if the ZIP file has been closed
      */
     public ZipEntry getEntry(String name) {
         Objects.requireNonNull(name, "name");
@@ -349,7 +357,7 @@ public class ZipFile implements ZipConstants, Closeable {
 
     /**
      * Returns an input stream for reading the contents of the specified
-     * zip file entry.
+     * ZIP file entry.
      * <p>
      * Closing this ZIP file will, in turn, close all input streams that
      * have been returned by invocations of this method.
@@ -360,13 +368,13 @@ public class ZipFile implements ZipConstants, Closeable {
      * read(byte[], int, int)} method can modify any element of the output
      * buffer.
      *
-     * @param entry the zip file entry
+     * @param entry the ZIP file entry
      * @return the input stream for reading the contents of the specified
-     * zip file entry or null if the zip file entry does not exist
-     * within the zip file.
+     * ZIP file entry or null if the ZIP file entry does not exist
+     * within the ZIP file.
      * @throws ZipException if a ZIP format error has occurred
      * @throws IOException if an I/O error has occurred
-     * @throws IllegalStateException if the zip file has been closed
+     * @throws IllegalStateException if the ZIP file has been closed
      */
     public InputStream getInputStream(ZipEntry entry) throws IOException {
         Objects.requireNonNull(entry, "entry");
@@ -545,7 +553,7 @@ public class ZipFile implements ZipConstants, Closeable {
     /**
      * Returns an enumeration of the ZIP file entries.
      * @return an enumeration of the ZIP file entries
-     * @throws IllegalStateException if the zip file has been closed
+     * @throws IllegalStateException if the ZIP file has been closed
      */
     public Enumeration<? extends ZipEntry> entries() {
         synchronized (this) {
@@ -597,7 +605,7 @@ public class ZipFile implements ZipConstants, Closeable {
      * the central directory of the ZIP file.
      *
      * @return an ordered {@code Stream} of entries in this ZIP file
-     * @throws IllegalStateException if the zip file has been closed
+     * @throws IllegalStateException if the ZIP file has been closed
      * @since 1.8
      */
     public Stream<? extends ZipEntry> stream() {
@@ -616,13 +624,13 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     /*
-     * Returns an ordered {@code Stream} over the zip file entry names.
+     * Returns an ordered {@code Stream} over the ZIP file entry names.
      *
      * Entry names appear in the {@code Stream} in the order they appear in
      * the central directory of the ZIP file.
      *
-     * @return an ordered {@code Stream} of entry names in this zip file
-     * @throws IllegalStateException if the zip file has been closed
+     * @return an ordered {@code Stream} of entry names in this ZIP file
+     * @throws IllegalStateException if the ZIP file has been closed
      * @since 10
      */
     private Stream<String> entryNameStream() {
@@ -634,13 +642,13 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     /*
-     * Returns an ordered {@code Stream} over the zip file entries.
+     * Returns an ordered {@code Stream} over the ZIP file entries.
      *
      * Entries appear in the {@code Stream} in the order they appear in
      * the central directory of the jar file.
      *
-     * @return an ordered {@code Stream} of entries in this zip file
-     * @throws IllegalStateException if the zip file has been closed
+     * @return an ordered {@code Stream} of entries in this ZIP file
+     * @throws IllegalStateException if the ZIP file has been closed
      * @since 10
      */
     private Stream<JarEntry> jarStream() {
@@ -709,7 +717,7 @@ public class ZipFile implements ZipConstants, Closeable {
      * Returns the number of entries in the ZIP file.
      *
      * @return the number of entries in the ZIP file
-     * @throws IllegalStateException if the zip file has been closed
+     * @throws IllegalStateException if the ZIP file has been closed
      */
     public int size() {
         synchronized (this) {
@@ -809,7 +817,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 }
             }
 
-            // Release zip src
+            // Release ZIP src
             if (zsrc != null) {
                 synchronized (zsrc) {
                     try {
@@ -844,7 +852,7 @@ public class ZipFile implements ZipConstants, Closeable {
 
         synchronized (this) {
             // Close streams, release their inflaters, release cached inflaters
-            // and release zip source
+            // and release ZIP source
             try {
                 res.clean();
             } catch (UncheckedIOException ioe) {
@@ -870,7 +878,7 @@ public class ZipFile implements ZipConstants, Closeable {
 
     /*
      * Inner class implementing the input stream used to read a
-     * (possibly compressed) zip file entry.
+     * (possibly compressed) ZIP file entry.
      */
     private class ZipFileInputStream extends InputStream {
         private volatile boolean closeRequested;
@@ -883,7 +891,7 @@ public class ZipFile implements ZipConstants, Closeable {
             rem = CENSIZ(cen, cenpos);
             size = CENLEN(cen, cenpos);
             pos = CENOFF(cen, cenpos);
-            // zip64
+            // ZIP64
             if (rem == ZIP64_MAGICVAL || size == ZIP64_MAGICVAL ||
                 pos == ZIP64_MAGICVAL) {
                 checkZIP64(cen, cenpos);
@@ -930,7 +938,7 @@ public class ZipFile implements ZipConstants, Closeable {
         }
 
         /*
-         * The Zip file spec explicitly allows the LOC extra data size to
+         * The ZIP file spec explicitly allows the LOC extra data size to
          * be different from the CEN extra data size. Since we cannot trust
          * the CEN extra data size, we need to read the LOC to determine
          * the entry data offset.
@@ -1178,20 +1186,20 @@ public class ZipFile implements ZipConstants, Closeable {
         private static final int[] EMPTY_META_VERSIONS = new int[0];
 
         private final Key key;               // the key in files
-        private final @Stable ZipCoder zc;   // zip coder used to decode/encode
+        private final @Stable ZipCoder zc;   // ZIP coder used to decode/encode
 
         private int refs = 1;
 
-        private RandomAccessFile zfile;      // zfile of the underlying zip file
+        private RandomAccessFile zfile;      // zfile of the underlying ZIP file
         private byte[] cen;                  // CEN & ENDHDR
         private long locpos;                 // position of first LOC header (usually 0)
-        private byte[] comment;              // zip file comment
+        private byte[] comment;              // ZIP file comment
                                              // list of meta entries in META-INF dir
         private int   manifestPos = -1;      // position of the META-INF/MANIFEST.MF, if exists
         private int   manifestNum = 0;       // number of META-INF/MANIFEST.MF, case insensitive
         private int[] signatureMetaNames;    // positions of signature related entries, if such exist
         private int[] metaVersions;          // list of unique versions found in META-INF/versions/
-        private final boolean startsWithLoc; // true, if zip file starts with LOCSIG (usually true)
+        private final boolean startsWithLoc; // true, if ZIP file starts with LOCSIG (usually true)
 
         // A Hashmap for all entries.
         //
@@ -1446,10 +1454,10 @@ public class ZipFile implements ZipConstants, Closeable {
         private int tablelen;                // number of hash heads
 
         /**
-         * A class representing a key to a zip file. A key is based
+         * A class representing a key to a ZIP file. A key is based
          * on the file key if available, or the path value if the
          * file key is not available. The key is also based on the
-         * file's last modified time to allow for cases where a zip
+         * file's last modified time to allow for cases where a ZIP
          * file is re-opened after it has been modified.
          */
         private static class Key {
@@ -1671,7 +1679,7 @@ public class ZipFile implements ZipConstants, Closeable {
                                 zerror("zip comment read failed");
                             }
                         }
-                        // must check for a zip64 end record; it is always permitted to be present
+                        // must check for a ZIP64 end record; it is always permitted to be present
                         try {
                             byte[] loc64 = new byte[ZIP64_LOCHDR];
                             if (end.endpos < ZIP64_LOCHDR ||
@@ -1700,7 +1708,7 @@ public class ZipFile implements ZipConstants, Closeable {
                             end.cenoff = cenoff64;
                             end.centot = (int)centot64; // assume total < 2g
                             end.endpos = end64pos;
-                        } catch (IOException x) {}    // no zip64 loc/end
+                        } catch (IOException x) {}    // no ZIP64 loc/end
                         return end;
                     }
                 }
@@ -1708,7 +1716,7 @@ public class ZipFile implements ZipConstants, Closeable {
             throw new ZipException("zip END header not found");
         }
 
-        // Reads zip file central directory.
+        // Reads ZIP file central directory.
         private void initCEN(int knownTotal) throws IOException {
             // Prefer locals for better performance during startup
             byte[] cen;
@@ -1725,7 +1733,7 @@ public class ZipFile implements ZipConstants, Closeable {
                     zerror("invalid END header (bad central directory size)");
                 long cenpos = end.endpos - end.cenlen;     // position of CEN table
                 // Get position of first local file (LOC) header, taking into
-                // account that there may be a stub prefixed to the zip file.
+                // account that there may be a stub prefixed to the ZIP file.
                 locpos = cenpos - end.cenoff;
                 if (locpos < 0) {
                     zerror("invalid END header (bad central directory offset)");
@@ -1768,7 +1776,7 @@ public class ZipFile implements ZipConstants, Closeable {
             manifestNum = 0;
             while (entryPos <= limit) {
                 if (idx >= entriesLength) {
-                    // This will only happen if the zip file has an incorrect
+                    // This will only happen if the ZIP file has an incorrect
                     // ENDTOT field, which usually means it contains more than
                     // 65535 entries.
                     initCEN(countCENHeaders(cen, limit));
@@ -1841,7 +1849,7 @@ public class ZipFile implements ZipConstants, Closeable {
         }
 
         /*
-         * Returns the {@code pos} of the zip cen entry corresponding to the
+         * Returns the {@code pos} of the ZIP cen entry corresponding to the
          * specified entry name, or -1 if not found.
          */
         private int getEntryPos(String name, boolean addSlash) {
@@ -2029,9 +2037,9 @@ public class ZipFile implements ZipConstants, Closeable {
 
         /**
          * Returns the number of CEN headers in a central directory.
-         * Will not throw, even if the zip file is corrupt.
+         * Will not throw, even if the ZIP file is corrupt.
          *
-         * @param cen copy of the bytes in a zip file's central directory
+         * @param cen copy of the bytes in a ZIP file's central directory
          * @param size number of bytes in central directory
          */
         private static int countCENHeaders(byte[] cen, int size) {

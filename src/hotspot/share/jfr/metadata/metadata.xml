@@ -690,17 +690,6 @@
     <Field type="int" name="iterations" label="Iterations" description="Number of state check iterations for the thread" />
   </Event>
 
-  <Event name="SafepointCleanup" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint Cleanup" description="Safepointing begin running cleanup tasks"
-    thread="true">
-    <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
-  </Event>
-
-  <Event name="SafepointCleanupTask" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint Cleanup Task" description="Safepointing begin running cleanup tasks"
-    thread="true">
-    <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
-    <Field type="string" name="name" label="Task Name" description="The task name" />
-  </Event>
-
   <Event name="SafepointEnd" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint End" description="Safepointing end" thread="true">
     <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
   </Event>

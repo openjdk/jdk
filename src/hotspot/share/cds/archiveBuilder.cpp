@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,6 +158,8 @@ ArchiveBuilder::ArchiveBuilder() :
   _rw_region("rw", MAX_SHARED_DELTA),
   _ro_region("ro", MAX_SHARED_DELTA),
   _ptrmap(mtClassShared),
+  _rw_ptrmap(mtClassShared),
+  _ro_ptrmap(mtClassShared),
   _rw_src_objs(),
   _ro_src_objs(),
   _src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
@@ -740,10 +742,6 @@ void ArchiveBuilder::make_klasses_shareable() {
       assert(k->is_instance_klass(), " must be");
       num_instance_klasses ++;
       InstanceKlass* ik = InstanceKlass::cast(k);
-      if (CDSConfig::is_dumping_dynamic_archive()) {
-        // For static dump, class loader type are already set.
-        ik->assign_class_loader_type();
-      }
       if (ik->is_shared_boot_class()) {
         type = "boot";
         num_boot_klasses ++;
@@ -1049,7 +1047,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 #if INCLUDE_CDS_JAVA_HEAP
   static void log_heap_region(ArchiveHeapInfo* heap_info) {
     MemRegion r = heap_info->buffer_region();
-    address start = address(r.start());
+    address start = address(r.start()); // start of the current oop inside the buffer
     address end = address(r.end());
     log_region("heap", start, end, ArchiveHeapWriter::buffered_addr_to_requested_addr(start));
 
@@ -1082,7 +1080,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
       log_as_hex(start, oop_end, requested_start, /*is_heap=*/true);
 
       if (source_oop != nullptr) {
-        log_oop_details(heap_info, source_oop);
+        log_oop_details(heap_info, source_oop, /*buffered_addr=*/start);
       } else if (start == ArchiveHeapWriter::buffered_heap_roots_addr()) {
         log_heap_roots();
       }
@@ -1097,9 +1095,10 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
     ArchiveHeapInfo* _heap_info;
     outputStream* _st;
     oop _source_obj;
+    address _buffered_addr;
   public:
-    ArchivedFieldPrinter(ArchiveHeapInfo* heap_info, outputStream* st, oop src_obj) :
-      _heap_info(heap_info), _st(st), _source_obj(src_obj) {}
+    ArchivedFieldPrinter(ArchiveHeapInfo* heap_info, outputStream* st, oop src_obj, address buffered_addr) :
+      _heap_info(heap_info), _st(st), _source_obj(src_obj), _buffered_addr(buffered_addr) {}
 
     void do_field(fieldDescriptor* fd) {
       _st->print(" - ");
@@ -1114,7 +1113,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
         if (ArchiveHeapWriter::is_marked_as_native_pointer(_heap_info, _source_obj, fd->offset())) {
           print_as_native_pointer(fd);
         } else {
-          fd->print_on_for(_st, _source_obj); // name, offset, value
+          fd->print_on_for(_st, cast_to_oop(_buffered_addr)); // name, offset, value
           _st->cr();
         }
       }
@@ -1146,7 +1145,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
   };
 
   // Print the fields of instanceOops, or the elements of arrayOops
-  static void log_oop_details(ArchiveHeapInfo* heap_info, oop source_oop) {
+  static void log_oop_details(ArchiveHeapInfo* heap_info, oop source_oop, address buffered_addr) {
     LogStreamHandle(Trace, cds, map, oops) st;
     if (st.is_enabled()) {
       Klass* source_klass = source_oop->klass();
@@ -1168,7 +1167,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
         }
       } else {
         st.print_cr(" - fields (" SIZE_FORMAT " words):", source_oop->size());
-        ArchivedFieldPrinter print_field(heap_info, &st, source_oop);
+        ArchivedFieldPrinter print_field(heap_info, &st, source_oop, buffered_addr);
         InstanceKlass::cast(source_klass)->print_nonstatic_fields(&print_field);
       }
     }
@@ -1278,8 +1277,11 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_i
   write_region(mapinfo, MetaspaceShared::rw, &_rw_region, /*read_only=*/false,/*allow_exec=*/false);
   write_region(mapinfo, MetaspaceShared::ro, &_ro_region, /*read_only=*/true, /*allow_exec=*/false);
 
+  // Split pointer map into read-write and read-only bitmaps
+  ArchivePtrMarker::initialize_rw_ro_maps(&_rw_ptrmap, &_ro_ptrmap);
+
   size_t bitmap_size_in_bytes;
-  char* bitmap = mapinfo->write_bitmap_region(ArchivePtrMarker::ptrmap(), heap_info,
+  char* bitmap = mapinfo->write_bitmap_region(ArchivePtrMarker::rw_ptrmap(), ArchivePtrMarker::ro_ptrmap(), heap_info,
                                               bitmap_size_in_bytes);
 
   if (heap_info->is_used()) {
