@@ -267,7 +267,8 @@ public:
     _spaces[1].init(heap->young_gen()->eden());
     _spaces[2].init(heap->young_gen()->from());
 
-    if (!heap->young_gen()->to()->is_empty()) {
+    bool is_promotion_failed = !heap->young_gen()->to()->is_empty();
+    if (is_promotion_failed) {
       _spaces[3].init(heap->young_gen()->to());
       _num_spaces = 4;
     } else {
