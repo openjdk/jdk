@@ -61,6 +61,13 @@ sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl permits M
         return Optional.empty();
     }
 
+    public final long maxByteAlignment() {
+        long alignment = Long.lowestOneBit(address());
+        return alignment == 0
+                ? 1L << 62
+                : alignment;
+    }
+
     @ForceInline
     @Override
     NativeMemorySegmentImpl dup(long offset, long size, boolean readOnly, MemorySessionImpl scope) {

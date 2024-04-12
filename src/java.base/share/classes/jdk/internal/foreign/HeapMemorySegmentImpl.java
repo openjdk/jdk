@@ -78,6 +78,15 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
     }
 
     @Override
+    public final long maxByteAlignment() {
+        long alignment = Long.lowestOneBit(address());
+        if (alignment == 0) {
+            alignment = maxAlignMask();
+        }
+        return Math.min(maxAlignMask(), alignment);
+    }
+
+    @Override
     abstract HeapMemorySegmentImpl dup(long offset, long size, boolean readOnly, MemorySessionImpl scope);
 
     @Override

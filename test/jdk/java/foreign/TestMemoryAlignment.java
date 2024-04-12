@@ -31,6 +31,7 @@ import java.lang.foreign.MemoryLayout.PathElement;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import org.testng.annotations.*;
 import static org.testng.Assert.*;
@@ -124,10 +125,54 @@ public class TestMemoryAlignment {
         }
     }
 
+    @Test(dataProvider = "alignments")
+    public void testActualByteAlignment(long align) {
+        if (align > (1L << 10)) {
+            return;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            var segment = arena.allocate(4, align);
+            assertTrue(segment.maxByteAlignment() >= align);
+            // Even power of two?
+            assertEquals(Long.bitCount(segment.maxByteAlignment()), 1);
+            assertEquals(segment.asSlice(1).maxByteAlignment(), 1);
+        }
+    }
+
+    @Test()
+    public void testActualByteAlignmentNull() {
+        long alignment = MemorySegment.NULL.maxByteAlignment();
+        assertEquals(1L << 62, alignment);
+    }
+
+    @Test(dataProvider = "arrays")
+    public void testActualByteAlignmentHeap(MemorySegment segment, int bytes) {
+        assertEquals(segment.maxByteAlignment(), bytes);
+        // A slice at offset 1 should always have an alignment of 1
+        var segmentSlice = segment.asSlice(1);
+        assertEquals(segmentSlice.maxByteAlignment(), 1);
+    }
+
     @DataProvider(name = "alignments")
     public Object[][] createAlignments() {
         return LongStream.range(1, 20)
                 .mapToObj(v -> new Object[] { 1L << v })
                 .toArray(Object[][]::new);
     }
+
+
+    @DataProvider(name = "arrays")
+    public Object[][] createArrays() {
+        return Stream.of(
+                        new Object[]{MemorySegment.ofArray(new byte[]{1}), Byte.BYTES},
+                        new Object[]{MemorySegment.ofArray(new short[]{1}), Short.BYTES},
+                        new Object[]{MemorySegment.ofArray(new char[]{1}), Character.BYTES},
+                        new Object[]{MemorySegment.ofArray(new int[]{1}), Integer.BYTES},
+                        new Object[]{MemorySegment.ofArray(new long[]{1}), Long.BYTES},
+                        new Object[]{MemorySegment.ofArray(new float[]{1}), Float.BYTES},
+                        new Object[]{MemorySegment.ofArray(new double[]{1}), Double.BYTES}
+        )
+                .toArray(Object[][]::new);
+    }
+
 }

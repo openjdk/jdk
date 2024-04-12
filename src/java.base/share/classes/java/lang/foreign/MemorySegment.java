@@ -44,7 +44,6 @@ import java.util.stream.Stream;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.SegmentFactories;
-import jdk.internal.foreign.Utils;
 import jdk.internal.javac.Restricted;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.vm.annotation.ForceInline;
@@ -394,6 +393,16 @@ import jdk.internal.vm.annotation.ForceInline;
  * byteSegment.get(ValueLayout.JAVA_INT_UNALIGNED, 0); // ok: ValueLayout.JAVA_INT_UNALIGNED.byteAlignment() == ValueLayout.JAVA_BYTE.byteAlignment()
  * }
  *
+ * In order to simplify determination of alignment, in the case of either native or heap
+ * segment, clients can use the {@linkplain MemorySegment#maxByteAlignment()} method:
+ * {@snippet lang=java:
+ * MemoryLayout layout = ...
+ * MemorySegment segment = ...
+ * if (segment.maxByteAlignment() < layout.byteAlignment) {
+ *     // Take action (e.g. throw an Exception)
+ * }
+ * }
+ *
  * <h2 id="wrapping-addresses">Zero-length memory segments</h2>
  *
  * When interacting with <a href="package-summary.html#ffa">foreign functions</a>, it is
@@ -588,6 +597,32 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * {@return the size (in bytes) of this memory segment}
      */
     long byteSize();
+
+    /**
+     * {@return the <em>maximum</em> byte alignment (which is equal to or higher than
+     * the requested byte alignment during native segment allocation)}
+     * <p>
+     * The returned alignment is always an even power of two and is derived from:
+     * <ul>
+     *     <li>Native:
+     *     the {@linkplain MemorySegment#address() address()} function.</li>
+     *     <li>Heap:
+     *     the array type and segment offset.</li>
+     * </ul>
+     * The {@linkplain MemorySegment#NULL NULL} segment returns a byte alignment
+     * of 2<sup>62</sup>
+     * <p>
+     * This method can be used to ensure, a {@code segment} is sufficiently aligned
+     * with a {@code layout}:
+     * {@snippet lang=java:
+     * MemoryLayout layout = ...
+     * MemorySegment segment = ...
+     * if (segment.maxByteAlignment() < layout.byteAlignment) {
+     *     // Take action (e.g. throw an Exception)
+     * }
+     * }
+     */
+    long maxByteAlignment();
 
     /**
      * Returns a slice of this memory segment, at the given offset. The returned
