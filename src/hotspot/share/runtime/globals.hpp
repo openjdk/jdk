@@ -1282,6 +1282,11 @@ const int ObjectAlignmentInBytes = 8;
           "(0 means none)")                                                 \
           range(0, max_jint)                                                \
                                                                             \
+  product(intx, ServiceThreadCleanupInterval, 1000, DIAGNOSTIC,             \
+          "Wake the ServiceThread to do periodic cleanup checks every so "  \
+          "many milliseconds (0 means none)")                               \
+          range(0, max_jint)                                                \
+                                                                            \
   product(double, SafepointTimeoutDelay, 10000,                             \
           "Delay in milliseconds for option SafepointTimeout; "             \
           "supports sub-millisecond resolution with fractional values.")    \

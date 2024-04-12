@@ -123,11 +123,6 @@ public final class FallbackLinker extends AbstractLinker {
         };
     }
 
-    @Override
-    protected ByteOrder linkerByteOrder() {
-        return ByteOrder.nativeOrder();
-    }
-
     private static MemorySegment makeCif(MethodType methodType, FunctionDescriptor function, LinkerOptions options, Arena scope) {
         FFIABI abi = FFIABI.DEFAULT;
 
