@@ -34,7 +34,8 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar
- * @build JfrReporter
+ * @build JfrReporter jdk.test.whitebox.WhiteBox PrintContainerInfo
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
  * @run driver TestJFREvents
  */
 import java.util.List;
@@ -60,6 +61,7 @@ public class TestJFREvents {
         }
 
         DockerTestUtils.buildJdkContainerImage(imageName);
+        Common.prepareWhiteBox();
 
         try {
 
@@ -216,14 +218,24 @@ public class TestJFREvents {
 
 
     private static void testSwapMemory(String memValueToSet, String swapValueToSet, String expectedTotalValue, String expectedFreeValue) throws Exception {
-        Common.logNewTestCase("Memory: --memory = " + memValueToSet + " --memory-swap = " + swapValueToSet);
-         OutputAnalyzer out = DockerTestUtils.dockerRunJava(
-                                      commonDockerOpts()
-                                      .addDockerOpts("--memory=" + memValueToSet)
-                                      .addDockerOpts("--memory-swap=" + swapValueToSet)
-                                      // The default memory-swappiness vaule is inherited from the host machine, which maybe 0
-                                      .addDockerOpts("--memory-swappiness=60")
-                                      .addClassOptions("jdk.SwapSpace"));
+        OutputAnalyzer out;
+        if (isCgroupV1(memValueToSet)) {
+            Common.logNewTestCase("Memory: --memory = " + memValueToSet + " --memory-swap = " + swapValueToSet + " --memory-swappiness = 60");
+            out = DockerTestUtils.dockerRunJava(
+                                          commonDockerOpts()
+                                          .addDockerOpts("--memory=" + memValueToSet)
+                                          .addDockerOpts("--memory-swap=" + swapValueToSet)
+                                          // With Cgroupv1, The default memory-swappiness vaule is inherited from the host machine, which maybe 0
+                                          .addDockerOpts("--memory-swappiness=60")
+                                          .addClassOptions("jdk.SwapSpace"));
+        } else {
+            Common.logNewTestCase("Memory: --memory = " + memValueToSet + " --memory-swap = " + swapValueToSet);
+            out = DockerTestUtils.dockerRunJava(
+                                          commonDockerOpts()
+                                          .addDockerOpts("--memory=" + memValueToSet)
+                                          .addDockerOpts("--memory-swap=" + swapValueToSet)
+                                          .addClassOptions("jdk.SwapSpace"));
+        }
          out.shouldHaveExitValue(0)
             .shouldContain("totalSize = " + expectedTotalValue)
             .shouldContain("freeSize = ");
@@ -288,5 +300,18 @@ public class TestJFREvents {
             .shouldContain("value = /jdk")
             .shouldNotContain(TEST_ENV_VARIABLE)
             .shouldNotContain(TEST_ENV_VALUE);
+    }
+
+    private static boolean isCgroupV1(String memValueToSet) throws Exception {
+        DockerRunOptions opts = Common.newOpts(imageName, "PrintContainerInfo")
+                      .addDockerOpts("--memory=" + memValueToSet)
+                      .addDockerOpts("--memory-swap=" + memValueToSet); // no swap
+        Common.addWhiteBoxOpts(opts);
+
+        OutputAnalyzer out = Common.run(opts);
+        if (out.contains("cgroupv1")) {
+            return true;
+        }
+        return false;
     }
 }
