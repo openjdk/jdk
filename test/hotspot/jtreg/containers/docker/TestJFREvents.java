@@ -30,12 +30,12 @@
  *          Also make sure that PIDs are based on value provided by container,
  *          not by the host system.
  * @requires (docker.support & os.maxMemory >= 2g)
+ * @modules java.base/jdk.internal.platform
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar
- * @build JfrReporter jdk.test.whitebox.WhiteBox PrintContainerInfo
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
+ * @build JfrReporter
  * @run driver TestJFREvents
  */
 import java.util.List;
@@ -45,6 +45,7 @@ import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
+import jdk.internal.platform.Metrics;
 
 
 public class TestJFREvents {
@@ -53,6 +54,7 @@ public class TestJFREvents {
     private static final String TEST_ENV_VALUE = "unique_value_abc592903xyz";
     private static final int availableCPUs = Runtime.getRuntime().availableProcessors();
     private static final int UNKNOWN = -100;
+    private static boolean isCgroupV1 = false;
 
     public static void main(String[] args) throws Exception {
         System.out.println("Test Environment: detected availableCPUs = " + availableCPUs);
@@ -60,8 +62,15 @@ public class TestJFREvents {
             return;
         }
 
+        // If cgroups is not configured, report success.
+        Metrics metrics = Metrics.systemMetrics();
+        if (metrics == null) {
+            System.out.println("TEST PASSED!!!");
+            return;
+        }
+        isCgroupV1 = "cgroupv1".equals(metrics.getProvider());
+
         DockerTestUtils.buildJdkContainerImage(imageName);
-        Common.prepareWhiteBox();
 
         try {
 
@@ -219,7 +228,7 @@ public class TestJFREvents {
 
     private static void testSwapMemory(String memValueToSet, String swapValueToSet, String expectedTotalValue, String expectedFreeValue) throws Exception {
         OutputAnalyzer out;
-        if (isCgroupV1(memValueToSet)) {
+        if (isCgroupV1) {
             Common.logNewTestCase("Memory: --memory = " + memValueToSet + " --memory-swap = " + swapValueToSet + " --memory-swappiness = 60");
             out = DockerTestUtils.dockerRunJava(
                                           commonDockerOpts()
@@ -300,18 +309,5 @@ public class TestJFREvents {
             .shouldContain("value = /jdk")
             .shouldNotContain(TEST_ENV_VARIABLE)
             .shouldNotContain(TEST_ENV_VALUE);
-    }
-
-    private static boolean isCgroupV1(String memValueToSet) throws Exception {
-        DockerRunOptions opts = Common.newOpts(imageName, "PrintContainerInfo")
-                      .addDockerOpts("--memory=" + memValueToSet)
-                      .addDockerOpts("--memory-swap=" + memValueToSet); // no swap
-        Common.addWhiteBoxOpts(opts);
-
-        OutputAnalyzer out = Common.run(opts);
-        if (out.contains("cgroupv1")) {
-            return true;
-        }
-        return false;
     }
 }
