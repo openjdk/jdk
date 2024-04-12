@@ -41,10 +41,9 @@
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
-#include "gc/shenandoah/shenandoahGenerationalControlThread.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -298,77 +297,10 @@ inline HeapWord* ShenandoahHeap::allocate_from_gclab(Thread* thread, size_t size
   return allocate_from_gclab_slow(thread, size);
 }
 
-inline HeapWord* ShenandoahHeap::allocate_from_plab(Thread* thread, size_t size, bool is_promotion) {
-  assert(UseTLAB, "TLABs should be enabled");
-
-  PLAB* plab = ShenandoahThreadLocalData::plab(thread);
-  HeapWord* obj;
-
-  if (plab == nullptr) {
-    assert(!thread->is_Java_thread() && !thread->is_Worker_thread(), "Performance: thread should have PLAB: %s", thread->name());
-    // No PLABs in this thread, fallback to shared allocation
-    return nullptr;
-  } else if (is_promotion && !ShenandoahThreadLocalData::allow_plab_promotions(thread)) {
-    return nullptr;
-  }
-  // if plab->word_size() <= 0, thread's plab not yet initialized for this pass, so allow_plab_promotions() is not trustworthy
-  obj = plab->allocate(size);
-  if ((obj == nullptr) && (plab->words_remaining() < ShenandoahGenerationalHeap::heap()->plab_min_size())) {
-    // allocate_from_plab_slow will establish allow_plab_promotions(thread) for future invocations
-    obj = allocate_from_plab_slow(thread, size, is_promotion);
-  }
-  // if plab->words_remaining() >= ShenGenHeap::heap()->plab_min_size(), just return nullptr so we can use a shared allocation
-  if (obj == nullptr) {
-    return nullptr;
-  }
-
-  if (is_promotion) {
-    ShenandoahThreadLocalData::add_to_plab_promoted(thread, size * HeapWordSize);
-  } else {
-    ShenandoahThreadLocalData::add_to_plab_evacuated(thread, size * HeapWordSize);
-  }
-  return obj;
-}
-
 inline ShenandoahAgeCensus* ShenandoahHeap::age_census() const {
   assert(mode()->is_generational(), "Only in generational mode");
   assert(_age_census != nullptr, "Error: not initialized");
   return _age_census;
-}
-
-inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
-  assert(thread == Thread::current(), "Expected thread parameter to be current thread.");
-  if (ShenandoahThreadLocalData::is_oom_during_evac(thread)) {
-    // This thread went through the OOM during evac protocol and it is safe to return
-    // the forward pointer. It must not attempt to evacuate any more.
-    return ShenandoahBarrierSet::resolve_forwarded(p);
-  }
-
-  assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
-
-  ShenandoahHeapRegion* r = heap_region_containing(p);
-  assert(!r->is_humongous(), "never evacuate humongous objects");
-
-  ShenandoahAffiliation target_gen = r->affiliation();
-  if (mode()->is_generational() && ShenandoahHeap::heap()->is_gc_generation_young() &&
-      target_gen == YOUNG_GENERATION) {
-    markWord mark = p->mark();
-    if (mark.is_marked()) {
-      // Already forwarded.
-      return ShenandoahBarrierSet::resolve_forwarded(p);
-    }
-    if (mark.has_displaced_mark_helper()) {
-      // We don't want to deal with MT here just to ensure we read the right mark word.
-      // Skip the potential promotion attempt for this one.
-    } else if (r->age() + mark.age() >= age_census()->tenuring_threshold()) {
-      oop result = try_evacuate_object(p, thread, r, OLD_GENERATION);
-      if (result != nullptr) {
-        return result;
-      }
-      // If we failed to promote this aged object, we'll fall through to code below and evacuate to young-gen.
-    }
-  }
-  return try_evacuate_object(p, thread, r, target_gen);
 }
 
 void ShenandoahHeap::increase_object_age(oop obj, uint additional_age) {
@@ -468,7 +400,7 @@ inline bool ShenandoahHeap::is_in_old(const void* p) const {
 }
 
 inline bool ShenandoahHeap::is_old(oop obj) const {
-  return is_gc_generation_young() && is_in_old(obj);
+  return active_generation()->is_young() && is_in_old(obj);
 }
 
 inline ShenandoahAffiliation ShenandoahHeap::region_affiliation(const ShenandoahHeapRegion *r) {
@@ -726,18 +658,6 @@ inline ShenandoahMarkingContext* ShenandoahHeap::complete_marking_context() cons
 
 inline ShenandoahMarkingContext* ShenandoahHeap::marking_context() const {
   return _marking_context;
-}
-
-inline void ShenandoahHeap::clear_cards_for(ShenandoahHeapRegion* region) {
-  if (mode()->is_generational()) {
-    _card_scan->mark_range_as_empty(region->bottom(), pointer_delta(region->end(), region->bottom()));
-  }
-}
-
-inline void ShenandoahHeap::mark_card_as_dirty(void* location) {
-  if (mode()->is_generational()) {
-    _card_scan->mark_card_as_dirty((HeapWord*)location);
-  }
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_INLINE_HPP

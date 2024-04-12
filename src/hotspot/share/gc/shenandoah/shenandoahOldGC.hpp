@@ -29,18 +29,18 @@
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 
-class ShenandoahGeneration;
+class ShenandoahOldGeneration;
 
 class ShenandoahOldGC : public ShenandoahConcurrentGC {
  public:
-  ShenandoahOldGC(ShenandoahGeneration* generation, ShenandoahSharedFlag& allow_preemption);
+  ShenandoahOldGC(ShenandoahOldGeneration* generation, ShenandoahSharedFlag& allow_preemption);
   bool collect(GCCause::Cause cause);
 
  protected:
   virtual void op_final_mark();
 
  private:
-
+  ShenandoahOldGeneration* _old_generation;
   ShenandoahSharedFlag& _allow_preemption;
 };
 

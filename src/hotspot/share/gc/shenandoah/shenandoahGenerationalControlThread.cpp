@@ -156,7 +156,7 @@ void ShenandoahGenerationalControlThread::run_service() {
       // We should only be here if the regulator requested a cycle or if
       // there is an old generation mark in progress.
       if (cause == GCCause::_shenandoah_concurrent_gc) {
-        if (_requested_generation == OLD && heap->doing_mixed_evacuations()) {
+        if (_requested_generation == OLD && heap->old_generation()->is_doing_mixed_evacuations()) {
           // If a request to start an old cycle arrived while an old cycle was running, but _before_
           // it chose any regions for evacuation we don't want to start a new old cycle. Rather, we want
           // the heuristic to run a young collection so that we can evacuate some old regions.
@@ -512,7 +512,7 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(Shenandoa
   }
 }
 
-bool ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(ShenandoahGeneration* generation, GCCause::Cause cause) {
+bool ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(ShenandoahOldGeneration* generation, GCCause::Cause cause) {
   assert(ShenandoahHeap::heap()->is_concurrent_old_mark_in_progress(), "Old mark should be in progress");
   log_debug(gc)("Resuming old generation with " UINT32_FORMAT " marking tasks queued", generation->task_queues()->tasks());
 

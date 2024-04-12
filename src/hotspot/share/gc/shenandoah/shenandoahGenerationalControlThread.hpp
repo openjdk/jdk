@@ -33,6 +33,8 @@
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
+class ShenandoahOldGeneration;
+
 class ShenandoahGenerationalControlThread: public ShenandoahController {
   friend class VMStructs;
 
@@ -82,7 +84,7 @@ private:
   bool check_cancellation_or_degen(ShenandoahGC::ShenandoahDegenPoint point);
 
   // Returns true if the old generation marking completed (i.e., final mark executed for old generation).
-  bool resume_concurrent_old_cycle(ShenandoahGeneration* generation, GCCause::Cause cause);
+  bool resume_concurrent_old_cycle(ShenandoahOldGeneration* generation, GCCause::Cause cause);
   void service_concurrent_cycle(ShenandoahGeneration* generation, GCCause::Cause cause, bool reset_old_bitmap_specially);
   void service_stw_full_cycle(GCCause::Cause cause);
   void service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point);

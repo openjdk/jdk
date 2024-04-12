@@ -118,8 +118,10 @@ public:
 
     // In theory, plabs are only need if heap->mode()->is_generational().  However, some threads
     // instantiated before we are able to answer that question.
-    data(thread)->_plab = new PLAB(align_up(PLAB::min_size(), CardTable::card_size_in_words()));
-    data(thread)->_plab_size = 0;
+    if (ShenandoahHeap::heap()->mode()->is_generational()) {
+      data(thread)->_plab = new PLAB(align_up(PLAB::min_size(), CardTable::card_size_in_words()));
+      data(thread)->_plab_size = 0;
+    }
   }
 
   static PLAB* gclab(Thread* thread) {

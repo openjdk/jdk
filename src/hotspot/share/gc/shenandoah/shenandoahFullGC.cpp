@@ -291,7 +291,7 @@ public:
 
   void heap_region_do(ShenandoahHeapRegion *r) {
     // TODO: Add API to heap to skip free regions
-    if (r->affiliation() != FREE) {
+    if (r->is_affiliated()) {
       _ctx->capture_top_at_mark_start(r);
       r->clear_live_data();
     }
@@ -1196,15 +1196,16 @@ void ShenandoahFullGC::phase5_epilog() {
 
     heap->free_set()->rebuild(young_cset_regions, old_cset_regions);
 
-    // We defer generation resizing actions until after cset regions have been recycled.  We do this even following an
-    // abbreviated cycle.
-    if (heap->mode()->is_generational()) {
-      ShenandoahGenerationalFullGC::balance_generations_after_rebuilding_free_set();
-      ShenandoahGenerationalFullGC::rebuild_remembered_set(heap);
-    }
     heap->clear_cancelled_gc(true /* clear oom handler */);
   }
 
   _preserved_marks->restore(heap->workers());
   _preserved_marks->reclaim();
+
+  // We defer generation resizing actions until after cset regions have been recycled.  We do this even following an
+  // abbreviated cycle.
+  if (heap->mode()->is_generational()) {
+    ShenandoahGenerationalFullGC::balance_generations_after_rebuilding_free_set();
+    ShenandoahGenerationalFullGC::rebuild_remembered_set(heap);
+  }
 }

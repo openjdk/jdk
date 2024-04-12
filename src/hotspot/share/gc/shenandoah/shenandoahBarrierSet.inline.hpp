@@ -34,6 +34,7 @@
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
@@ -258,7 +259,8 @@ inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_st
   shenandoah_assert_marked_if(nullptr, value,
                               !CompressedOops::is_null(value) &&
                               ShenandoahHeap::heap()->is_evacuation_in_progress() &&
-                              !(ShenandoahHeap::heap()->is_gc_generation_young() && ShenandoahHeap::heap()->heap_region_containing(value)->is_old()));
+                              !(ShenandoahHeap::heap()->active_generation()->is_young() &&
+                              ShenandoahHeap::heap()->heap_region_containing(value)->is_old()));
   shenandoah_assert_not_in_cset_if(addr, value, value != nullptr && !ShenandoahHeap::heap()->cancelled_gc());
   ShenandoahBarrierSet* const bs = ShenandoahBarrierSet::barrier_set();
   bs->iu_barrier(value);

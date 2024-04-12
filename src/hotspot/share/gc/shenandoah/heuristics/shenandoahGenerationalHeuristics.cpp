@@ -171,7 +171,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
   if (doing_promote_in_place || (preselected_candidates > 0) || (immediate_percent <= ShenandoahImmediateThreshold)) {
     // Only young collections need to prime the collection set.
     if (_generation->is_young()) {
-      heap->old_heuristics()->prime_collection_set(collection_set);
+      heap->old_generation()->heuristics()->prime_collection_set(collection_set);
     }
 
     // Call the subclasses to add young-gen regions into the collection set.

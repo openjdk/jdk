@@ -25,11 +25,8 @@
 
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
-#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 
@@ -66,6 +63,11 @@ void ShenandoahYoungGeneration::heap_region_iterate(ShenandoahHeapRegionClosure*
   ShenandoahHeap::heap()->heap_region_iterate(&young_regions_cl);
 }
 
+void ShenandoahYoungGeneration::parallel_region_iterate_free(ShenandoahHeapRegionClosure* cl) {
+  ShenandoahExcludeRegionClosure<OLD_GENERATION> exclude_cl(cl);
+  ShenandoahHeap::heap()->parallel_heap_region_iterate(&exclude_cl);
+}
+
 bool ShenandoahYoungGeneration::is_concurrent_mark_in_progress() {
   return ShenandoahHeap::heap()->is_concurrent_young_mark_in_progress();
 }
@@ -82,7 +84,8 @@ bool ShenandoahYoungGeneration::contains(oop obj) const {
 }
 
 ShenandoahHeuristics* ShenandoahYoungGeneration::initialize_heuristics(ShenandoahMode* gc_mode) {
-  _heuristics = new ShenandoahYoungHeuristics(this);
+  _young_heuristics = new ShenandoahYoungHeuristics(this);
+  _heuristics = _young_heuristics;
   _heuristics->set_guaranteed_gc_interval(ShenandoahGuaranteedYoungGCInterval);
   confirm_heuristics_mode();
   return _heuristics;
@@ -100,7 +103,3 @@ size_t ShenandoahYoungGeneration::soft_available() const {
   return MIN2(available, ShenandoahHeap::heap()->free_set()->available());
 }
 
-void ShenandoahYoungGeneration::parallel_region_iterate_free(ShenandoahHeapRegionClosure* cl) {
-  ShenandoahExcludeRegionClosure<OLD_GENERATION> exclude_cl(cl);
-  ShenandoahHeap::heap()->parallel_heap_region_iterate(&exclude_cl);
-}

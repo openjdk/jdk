@@ -40,6 +40,7 @@
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
@@ -301,7 +302,6 @@ bool ShenandoahOldGeneration::coalesce_and_fill() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   transition_to(FILLING);
 
-  ShenandoahOldHeuristics* old_heuristics = heap->old_heuristics();
   WorkerThreads* workers = heap->workers();
   uint nworkers = workers->active_workers();
 
@@ -310,13 +310,13 @@ bool ShenandoahOldGeneration::coalesce_and_fill() {
   // This code will see the same set of regions to fill on each resumption as it did
   // on the initial run. That's okay because each region keeps track of its own coalesce
   // and fill state. Regions that were filled on a prior attempt will not try to fill again.
-  uint coalesce_and_fill_regions_count = old_heuristics->get_coalesce_and_fill_candidates(_coalesce_and_fill_region_array);
+  uint coalesce_and_fill_regions_count = heuristics()->get_coalesce_and_fill_candidates(_coalesce_and_fill_region_array);
   assert(coalesce_and_fill_regions_count <= heap->num_regions(), "Sanity");
   ShenandoahConcurrentCoalesceAndFillTask task(nworkers, _coalesce_and_fill_region_array, coalesce_and_fill_regions_count);
 
   workers->run_task(&task);
   if (task.is_completed()) {
-    old_heuristics->abandon_collection_candidates();
+    abandon_collection_candidates();
     return true;
   } else {
     // Coalesce-and-fill has been preempted. We'll finish that effort in the future.  Do not invoke
@@ -431,7 +431,7 @@ void ShenandoahOldGeneration::transition_to(State new_state) {
 //               |   |          +-----------------+     |
 //               |   |            |                     |
 //               |   |            | Filling Complete    | <-> A global collection may
-//               |   |            v                     |     may move the old generation
+//               |   |            v                     |     move the old generation
 //               |   |          +-----------------+     |     directly from waiting for
 //               |   +--------> |     WAITING     |     |     bootstrap to filling or
 //               |   |    +---- |  FOR BOOTSTRAP  | ----+     evacuating.
@@ -465,14 +465,12 @@ void ShenandoahOldGeneration::validate_transition(State new_state) {
   switch (new_state) {
     case FILLING:
       assert(_state != BOOTSTRAPPING, "Cannot beging making old regions parsable after bootstrapping");
-      assert(heap->is_old_bitmap_stable(), "Cannot begin filling without first completing marking, state is '%s'", state_name(_state));
+      assert(is_mark_complete(), "Cannot begin filling without first completing marking, state is '%s'", state_name(_state));
       assert(_old_heuristics->has_coalesce_and_fill_candidates(), "Cannot begin filling without something to fill.");
       break;
     case WAITING_FOR_BOOTSTRAP:
       // GC cancellation can send us back here from any state.
-      assert(!heap->is_concurrent_old_mark_in_progress(), "Cannot become ready for bootstrap during old mark.");
-      assert(_old_heuristics->unprocessed_old_collection_candidates() == 0, "Cannot become ready for bootstrap with collection candidates");
-      assert(heap->young_generation()->old_gen_task_queues() == nullptr, "Cannot become ready for bootstrap when still setup for bootstrapping.");
+      validate_waiting_for_bootstrap();
       break;
     case BOOTSTRAPPING:
       assert(_state == WAITING_FOR_BOOTSTRAP, "Cannot reset bitmap without making old regions parsable, state is '%s'", state_name(_state));
@@ -491,6 +489,17 @@ void ShenandoahOldGeneration::validate_transition(State new_state) {
     default:
       fatal("Unknown new state");
   }
+}
+
+bool ShenandoahOldGeneration::validate_waiting_for_bootstrap() {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  assert(!heap->is_concurrent_old_mark_in_progress(), "Cannot become ready for bootstrap during old mark.");
+  assert(heap->young_generation()->old_gen_task_queues() == nullptr, "Cannot become ready for bootstrap when still setup for bootstrapping.");
+  assert(!is_concurrent_mark_in_progress(), "Cannot be marking in IDLE");
+  assert(!heap->young_generation()->is_bootstrap_cycle(), "Cannot have old mark queues if IDLE");
+  assert(!heuristics()->has_coalesce_and_fill_candidates(), "Cannot have coalesce and fill candidates in IDLE");
+  assert(heuristics()->unprocessed_old_collection_candidates() == 0, "Cannot have mixed collection candidates in IDLE");
+  return true;
 }
 #endif
 
@@ -567,6 +576,74 @@ void ShenandoahOldGeneration::handle_evacuation(HeapWord* obj, size_t words, boo
   if (promotion) {
     // This evacuation was a promotion, track this as allocation against old gen
     increase_allocated(words * HeapWordSize);
+  }
+}
+
+bool ShenandoahOldGeneration::has_unprocessed_collection_candidates() {
+  return _old_heuristics->unprocessed_old_collection_candidates() > 0;
+}
+
+size_t ShenandoahOldGeneration::unprocessed_collection_candidates_live_memory() {
+  return _old_heuristics->unprocessed_old_collection_candidates_live_memory();
+}
+
+void ShenandoahOldGeneration::abandon_collection_candidates() {
+  _old_heuristics->abandon_collection_candidates();
+}
+
+void ShenandoahOldGeneration::prepare_for_mixed_collections_after_global_gc() {
+  assert(is_mark_complete(), "Expected old generation mark to be complete after global cycle.");
+  _old_heuristics->prepare_for_old_collections();
+  log_info(gc)("After choosing global collection set, mixed candidates: " UINT32_FORMAT ", coalescing candidates: " SIZE_FORMAT,
+               _old_heuristics->unprocessed_old_collection_candidates(),
+               _old_heuristics->coalesce_and_fill_candidates_count());
+}
+
+void ShenandoahOldGeneration::maybe_trigger_collection(size_t first_old_region, size_t last_old_region, size_t old_region_count) {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  const size_t old_region_span = (first_old_region <= last_old_region)? (last_old_region + 1 - first_old_region): 0;
+  const size_t allowed_old_gen_span = heap->num_regions() - (ShenandoahGenerationalHumongousReserve * heap->num_regions() / 100);
+
+  // Tolerate lower density if total span is small.  Here's the implementation:
+  //   if old_gen spans more than 100% and density < 75%, trigger old-defrag
+  //   else if old_gen spans more than 87.5% and density < 62.5%, trigger old-defrag
+  //   else if old_gen spans more than 75% and density < 50%, trigger old-defrag
+  //   else if old_gen spans more than 62.5% and density < 37.5%, trigger old-defrag
+  //   else if old_gen spans more than 50% and density < 25%, trigger old-defrag
+  //
+  // A previous implementation was more aggressive in triggering, resulting in degraded throughput when
+  // humongous allocation was not required.
+
+  const size_t old_available = available();
+  const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
+  const size_t old_unaffiliated_available = free_unaffiliated_regions() * region_size_bytes;
+  assert(old_available >= old_unaffiliated_available, "sanity");
+  const size_t old_fragmented_available = old_available - old_unaffiliated_available;
+
+  const size_t old_bytes_consumed = old_region_count * region_size_bytes - old_fragmented_available;
+  const size_t old_bytes_spanned = old_region_span * region_size_bytes;
+  const double old_density = ((double) old_bytes_consumed) / old_bytes_spanned;
+
+  uint eighths = 8;
+  for (uint i = 0; i < 5; i++) {
+    size_t span_threshold = eighths * allowed_old_gen_span / 8;
+    double density_threshold = (eighths - 2) / 8.0;
+    if ((old_region_span >= span_threshold) && (old_density < density_threshold)) {
+      heuristics()->trigger_old_is_fragmented(old_density, first_old_region, last_old_region);
+      break;
+    }
+    eighths--;
+  }
+
+  const size_t old_used = used() + get_humongous_waste();
+  const size_t trigger_threshold = usage_trigger_threshold();
+  // Detects unsigned arithmetic underflow
+  assert(old_used <= heap->free_set()->capacity(),
+         "Old used (" SIZE_FORMAT ", " SIZE_FORMAT") must not be more than heap capacity (" SIZE_FORMAT ")",
+         used(), get_humongous_waste(), heap->free_set()->capacity());
+
+  if (old_used > trigger_threshold) {
+    heuristics()->trigger_old_has_grown();
   }
 }
 

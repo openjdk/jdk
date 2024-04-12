@@ -403,13 +403,6 @@ public:
   // Like oop_fill_and_coalesce(), but without honoring cancellation requests.
   bool oop_fill_and_coalesce_without_cancel();
 
-  // During global collections, this service iterates through an old-gen heap region that is not part of collection
-  // set to fill and register ranges of dead memory.  Note that live objects were previously registered.  Some dead objects
-  // that are subsumed into coalesced ranges of dead memory need to be "unregistered".
-  void global_oop_iterate_and_fill_dead(OopIterateClosure* cl);
-  void oop_iterate_humongous(OopIterateClosure* cl);
-  void oop_iterate_humongous(OopIterateClosure* cl, HeapWord* start, size_t words);
-
   // Invoke closure on every reference contained within the humongous object that spans this humongous
   // region if the reference is contained within a DIRTY card and the reference is no more than words following
   // start within the humongous object.
@@ -476,18 +469,10 @@ public:
 
   CENSUS_NOISE(void clear_youth() { _youth = 0; })
 
-  // Register all objects.  Set all remembered set cards to dirty.
-  void promote_humongous();
-  void promote_in_place();
-
 private:
   void decrement_humongous_waste() const;
   void do_commit();
   void do_uncommit();
-
-  // This is an old-region that was not part of the collection set during a GLOBAL collection.  We coalesce the dead
-  // objects, but do not need to register the live objects as they are already registered.
-  void global_oop_iterate_objects_and_fill_dead(OopIterateClosure* cl);
 
   inline void internal_increase_live_data(size_t s);
 

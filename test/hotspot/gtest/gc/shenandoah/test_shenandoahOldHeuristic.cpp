@@ -80,7 +80,7 @@ class ShenandoahOldHeuristicTest : public ::testing::Test {
       _collection_set(nullptr) {
     SKIP_IF_NOT_SHENANDOAH();
     _heap = ShenandoahHeap::heap();
-    _heuristics = _heap->old_heuristics();
+    _heuristics = _heap->old_generation()->heuristics();
     _collection_set = _heap->collection_set();
     ShenandoahHeapLocker locker(_heap->lock());
     ShenandoahResetRegions reset;

@@ -168,12 +168,6 @@ public:
   }
 
   ShenandoahHeuristics* heuristics();
-  ShenandoahOldHeuristics* old_heuristics();
-  ShenandoahYoungHeuristics* young_heuristics();
-
-  bool doing_mixed_evacuations();
-  bool is_old_bitmap_stable() const;
-  bool is_gc_generation_young() const;
 
 // ---------- Initialization, termination, identification, printing routines
 //
@@ -511,6 +505,8 @@ public:
   ShenandoahPhaseTimings*      phase_timings()   const { return _phase_timings;     }
   ShenandoahEvacuationTracker* evac_tracker()    const { return _evac_tracker;      }
 
+  ShenandoahEvacOOMHandler* oom_evac_handler() { return &_oom_evac_handler; }
+
   void on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* generation);
   void on_cycle_end(ShenandoahGeneration* generation);
 
@@ -635,19 +631,16 @@ public:
 
 // ---------- Allocation support
 //
-private:
-  HeapWord* allocate_memory_under_lock(ShenandoahAllocRequest& request, bool& in_new_region, bool is_promotion);
-
+protected:
   inline HeapWord* allocate_from_gclab(Thread* thread, size_t size);
+
+private:
+  HeapWord* allocate_memory_under_lock(ShenandoahAllocRequest& request, bool& in_new_region);
   HeapWord* allocate_from_gclab_slow(Thread* thread, size_t size);
   HeapWord* allocate_new_gclab(size_t min_size, size_t word_size, size_t* actual_size);
 
-  inline HeapWord* allocate_from_plab(Thread* thread, size_t size, bool is_promotion);
-  HeapWord* allocate_from_plab_slow(Thread* thread, size_t size, bool is_promotion);
-  HeapWord* allocate_new_plab(size_t min_size, size_t word_size, size_t* actual_size);
-
 public:
-  HeapWord* allocate_memory(ShenandoahAllocRequest& request, bool is_promotion);
+  HeapWord* allocate_memory(ShenandoahAllocRequest& request);
   HeapWord* mem_allocate(size_t size, bool* what) override;
   MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                size_t size,
@@ -736,7 +729,7 @@ public:
 
   // Evacuates or promotes object src. Returns the evacuated object, either evacuated
   // by this thread, or by some other thread.
-  inline oop evacuate_object(oop src, Thread* thread);
+  virtual oop evacuate_object(oop src, Thread* thread);
 
   // Call before/after evacuation.
   inline void enter_evacuation(Thread* t);
@@ -751,8 +744,6 @@ public:
   inline RememberedScanner* card_scan() { return _card_scan; }
   void clear_cards_for(ShenandoahHeapRegion* region);
   void mark_card_as_dirty(void* location);
-  void retire_plab(PLAB* plab);
-  void retire_plab(PLAB* plab, Thread* thread);
   void cancel_old_gc();
 
 // ---------- Helper functions

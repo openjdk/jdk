@@ -33,6 +33,7 @@
 #include "oops/oopsHierarchy.hpp"
 
 class ShenandoahObjToScanQueueSet;
+class ShenandoahHeapRegion;
 
 /**
  * Encapsulate a marking bitmap with the top-at-mark-start and top-bitmaps array.

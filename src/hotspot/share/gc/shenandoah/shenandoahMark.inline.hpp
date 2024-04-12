@@ -306,9 +306,9 @@ inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, 
       shenandoah_assert_marked(p, obj);
       // TODO: As implemented herein, GLOBAL collections reconstruct the card table during GLOBAL concurrent
       // marking. Note that the card table is cleaned at init_mark time so it needs to be reconstructed to support
-      // future young-gen collections.  It might be better to reconstruct card table in
-      // ShenandoahHeapRegion::global_oop_iterate_and_fill_dead.  We could either mark all live memory as dirty, or could
-      // use the GLOBAL update-refs scanning of pointers to determine precisely which cards to flag as dirty.
+      // future young-gen collections.  It might be better to reconstruct card table in a different phase.  We could
+      // either mark all live memory as dirty, or could use the GLOBAL update-refs scanning of pointers to determine
+      // precisely which cards to flag as dirty.
       if (GENERATION == YOUNG && heap->is_in_old(p)) {
         // Mark card as dirty because remembered set scanning still finds interesting pointer.
         heap->mark_card_as_dirty((HeapWord*)p);

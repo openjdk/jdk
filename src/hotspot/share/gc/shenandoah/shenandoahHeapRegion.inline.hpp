@@ -27,7 +27,6 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP
 
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
-
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPacer.inline.hpp"
 #include "runtime/atomic.hpp"

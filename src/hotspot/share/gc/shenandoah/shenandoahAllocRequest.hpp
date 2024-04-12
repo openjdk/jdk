@@ -80,14 +80,17 @@ private:
   // This is the generation which the request is targeting.
   ShenandoahAffiliation const _affiliation;
 
+  // True if this request is trying to copy any object from young to old (promote).
+  bool _is_promotion;
+
 #ifdef ASSERT
   // Check that this is set before being read.
   bool _actual_size_set;
 #endif
 
-  ShenandoahAllocRequest(size_t _min_size, size_t _requested_size, Type _alloc_type, ShenandoahAffiliation affiliation) :
+  ShenandoahAllocRequest(size_t _min_size, size_t _requested_size, Type _alloc_type, ShenandoahAffiliation affiliation, bool is_promotion = false) :
           _min_size(_min_size), _requested_size(_requested_size),
-          _actual_size(0), _waste(0), _alloc_type(_alloc_type), _affiliation(affiliation)
+          _actual_size(0), _waste(0), _alloc_type(_alloc_type), _affiliation(affiliation), _is_promotion(is_promotion)
 #ifdef ASSERT
           , _actual_size_set(false)
 #endif
@@ -106,7 +109,11 @@ public:
     return ShenandoahAllocRequest(min_size, requested_size, _alloc_plab, ShenandoahAffiliation::OLD_GENERATION);
   }
 
-  static inline ShenandoahAllocRequest for_shared_gc(size_t requested_size, ShenandoahAffiliation affiliation) {
+  static inline ShenandoahAllocRequest for_shared_gc(size_t requested_size, ShenandoahAffiliation affiliation, bool is_promotion = false) {
+    if (is_promotion) {
+      assert(affiliation == ShenandoahAffiliation::OLD_GENERATION, "Should only promote to old generation");
+      return ShenandoahAllocRequest(0, requested_size, _alloc_shared_gc, affiliation, true);
+    }
     return ShenandoahAllocRequest(0, requested_size, _alloc_shared_gc, affiliation);
   }
 
@@ -211,6 +218,10 @@ public:
 
   const char* affiliation_name() const {
     return shenandoah_affiliation_name(_affiliation);
+  }
+
+  bool is_promotion() const {
+    return _is_promotion;
   }
 };
 

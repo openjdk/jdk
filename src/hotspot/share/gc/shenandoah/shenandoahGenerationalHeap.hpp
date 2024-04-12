@@ -31,24 +31,37 @@ class ShenandoahRegulatorThread;
 class ShenandoahGenerationalControlThread;
 
 class ShenandoahGenerationalHeap : public ShenandoahHeap {
-private:
-  const size_t _min_plab_size;
-  const size_t _max_plab_size;
-
-  size_t calculate_min_plab() const;
-  size_t calculate_max_plab() const;
-
 public:
   explicit ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy);
 
-
   static ShenandoahGenerationalHeap* heap();
 
-  inline size_t plab_min_size() const { return _min_plab_size; }
-  inline size_t plab_max_size() const { return _max_plab_size; }
-
   void print_init_logger() const override;
+  size_t unsafe_max_tlab_alloc(Thread *thread) const override;
 
+  // ---------- Evacuations and Promotions
+  //
+  oop evacuate_object(oop p, Thread* thread) override;
+  oop try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region, ShenandoahAffiliation target_gen);
+
+  size_t plab_min_size() const { return _min_plab_size; }
+  size_t plab_max_size() const { return _max_plab_size; }
+
+  void retire_plab(PLAB* plab);
+  void retire_plab(PLAB* plab, Thread* thread);
+
+private:
+  HeapWord* allocate_from_plab(Thread* thread, size_t size, bool is_promotion);
+  HeapWord* allocate_from_plab_slow(Thread* thread, size_t size, bool is_promotion);
+  HeapWord* allocate_new_plab(size_t min_size, size_t word_size, size_t* actual_size);
+
+  const size_t _min_plab_size;
+  const size_t _max_plab_size;
+
+  static size_t calculate_min_plab();
+  static size_t calculate_max_plab();
+
+public:
   // ---------- Serviceability
   //
   void initialize_serviceability() override;
@@ -60,7 +73,7 @@ public:
 
   void stop() override;
 
-  // Used for logging the result of a region transfer outside of the heap lock
+  // Used for logging the result of a region transfer outside the heap lock
   struct TransferResult {
     bool success;
     size_t region_count;

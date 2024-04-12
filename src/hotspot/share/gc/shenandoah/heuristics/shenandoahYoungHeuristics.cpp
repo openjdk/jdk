@@ -125,7 +125,7 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
 
 bool ShenandoahYoungHeuristics::should_start_gc() {
   auto heap = ShenandoahGenerationalHeap::heap();
-  ShenandoahOldHeuristics* old_heuristics = heap->old_heuristics();
+  ShenandoahOldHeuristics* old_heuristics = heap->old_generation()->heuristics();
 
   // Checks that an old cycle has run for at least ShenandoahMinimumOldMarkTimeMs before allowing a young cycle.
   if (ShenandoahMinimumOldMarkTimeMs > 0 && heap->is_concurrent_old_mark_in_progress()) {

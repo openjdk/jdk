@@ -25,12 +25,12 @@
 #ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHOLDGENERATION_HPP
 #define SHARE_VM_GC_SHENANDOAH_SHENANDOAHOLDGENERATION_HPP
 
+#include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
 class ShenandoahHeapRegion;
 class ShenandoahHeapRegionClosure;
-class ShenandoahOldHeuristics;
 
 class ShenandoahOldGeneration : public ShenandoahGeneration {
 private:
@@ -85,6 +85,10 @@ public:
 
   const char* name() const override {
     return "OLD";
+  }
+
+  ShenandoahOldHeuristics* heuristics() const override {
+    return _old_heuristics;
   }
 
   // See description in field declaration
@@ -152,6 +156,7 @@ public:
   bool is_concurrent_mark_in_progress() override;
 
   bool entry_coalesce_and_fill();
+  void prepare_for_mixed_collections_after_global_gc();
   void prepare_gc() override;
   void prepare_regions_and_collection_set(bool concurrent) override;
   void record_success_concurrent(bool abbreviated) override;
@@ -177,10 +182,32 @@ public:
   // the performance impact would be too severe.
   void transfer_pointers_from_satb();
 
+  // True if there are old regions waiting to be selected for a mixed collection
+  bool has_unprocessed_collection_candidates();
+
+  bool is_doing_mixed_evacuations() const {
+    return state() == EVACUATING;
+  }
+
+  bool is_preparing_for_mark() const {
+    return state() == FILLING;
+  }
+
+  // Amount of live memory (bytes) in regions waiting for mixed collections
+  size_t unprocessed_collection_candidates_live_memory();
+
+  // Abandon any regions waiting for mixed collections
+  void abandon_collection_candidates();
+
+  void maybe_trigger_collection(size_t first_old_region, size_t last_old_region, size_t old_region_count);
 public:
   enum State {
     FILLING, WAITING_FOR_BOOTSTRAP, BOOTSTRAPPING, MARKING, EVACUATING
   };
+
+#ifdef ASSERT
+  bool validate_waiting_for_bootstrap();
+#endif
 
 private:
   State _state;

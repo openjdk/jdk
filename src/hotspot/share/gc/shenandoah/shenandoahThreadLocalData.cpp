@@ -26,6 +26,8 @@
 #include "precompiled.hpp"
 
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "gc/shenandoah/shenandoahEvacTracker.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 
@@ -54,7 +56,7 @@ ShenandoahThreadLocalData::~ShenandoahThreadLocalData() {
     delete _gclab;
   }
   if (_plab != nullptr) {
-    ShenandoahHeap::heap()->retire_plab(_plab);
+    ShenandoahGenerationalHeap::heap()->retire_plab(_plab);
     delete _plab;
   }
 

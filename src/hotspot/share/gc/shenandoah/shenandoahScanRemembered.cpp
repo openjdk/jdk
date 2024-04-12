@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
@@ -137,7 +138,8 @@ ShenandoahScanRememberedTask::ShenandoahScanRememberedTask(ShenandoahObjToScanQu
                                                            ShenandoahRegionChunkIterator* work_list, bool is_concurrent) :
   WorkerTask("Scan Remembered Set"),
   _queue_set(queue_set), _old_queue_set(old_queue_set), _rp(rp), _work_list(work_list), _is_concurrent(is_concurrent) {
-  log_info(gc, remset)("Scan remembered set using bitmap: %s", BOOL_TO_STR(ShenandoahHeap::heap()->is_old_bitmap_stable()));
+  bool old_bitmap_stable = ShenandoahHeap::heap()->old_generation()->is_mark_complete();
+  log_info(gc, remset)("Scan remembered set using bitmap: %s", BOOL_TO_STR(old_bitmap_stable));
 }
 
 void ShenandoahScanRememberedTask::work(uint worker_id) {
@@ -445,7 +447,6 @@ void ShenandoahReconstructRememberedSetTask::work(uint worker_id) {
         HeapWord* t = r->top();
         while (obj_addr < t) {
           oop obj = cast_to_oop(obj_addr);
-          size_t size = obj->size();
           scanner->register_object_without_lock(obj_addr);
           obj_addr += obj->oop_iterate_size(&dirty_cards_for_cross_generational_pointers);
         }

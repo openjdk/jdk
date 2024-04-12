@@ -33,8 +33,10 @@
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "logging/log.hpp"
 
 inline size_t
 ShenandoahDirectCardMarkRememberedSet::last_valid_index() const {
@@ -583,7 +585,7 @@ void ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_clus
   // the old generation marking. These include objects allocated since the
   // start of old generation marking (being those above TAMS).
   const ShenandoahHeap* heap = ShenandoahHeap::heap();
-  const ShenandoahMarkingContext* ctx = heap->is_old_bitmap_stable() ?
+  const ShenandoahMarkingContext* ctx = heap->old_generation()->is_mark_complete() ?
                                         heap->marking_context() : nullptr;
 
   // The region we will scan is the half-open interval [start_addr, end_addr),
@@ -894,7 +896,8 @@ ShenandoahScanRemembered<RememberedSet>::addr_for_cluster(size_t cluster_no) {
 template<typename RememberedSet>
 void ShenandoahScanRemembered<RememberedSet>::roots_do(OopIterateClosure* cl) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  log_info(gc, remset)("Scan remembered set using bitmap: %s", BOOL_TO_STR(heap->is_old_bitmap_stable()));
+  bool old_bitmap_stable = heap->old_generation()->is_mark_complete();
+  log_info(gc, remset)("Scan remembered set using bitmap: %s", BOOL_TO_STR(old_bitmap_stable));
   for (size_t i = 0, n = heap->num_regions(); i < n; ++i) {
     ShenandoahHeapRegion* region = heap->get_region(i);
     if (region->is_old() && region->is_active() && !region->is_cset()) {

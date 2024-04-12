@@ -32,6 +32,7 @@
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
@@ -243,11 +244,6 @@ void ShenandoahGeneration::parallel_region_iterate_free(ShenandoahHeapRegionClos
 
 void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap) {
 
-  size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-  size_t regions_available_to_loan = 0;
-  size_t minimum_evacuation_reserve = ShenandoahOldCompactionReserve * region_size_bytes;
-  size_t old_regions_loaned_for_young_evac = 0;
-
   ShenandoahOldGeneration* const old_generation = heap->old_generation();
   ShenandoahYoungGeneration* const young_generation = heap->young_generation();
 
@@ -260,9 +256,6 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
   // If we cannot evacuate old-gen, we will not be able to reclaim old-gen memory.  Promotions are less
   // critical.  If we cannot promote, there may be degradation of young-gen memory because old objects
   // accumulate there until they can be promoted.  This increases the young-gen marking and evacuation work.
-
-  // Do not fill up old-gen memory with promotions.  Reserve some amount of memory for compaction purposes.
-  size_t young_evac_reserve_max = 0;
 
   // First priority is to reclaim the easy garbage out of young-gen.
 
@@ -300,7 +293,6 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
   // through ALL of old-gen).  If there is some memory available in old-gen, we will use this for promotions as promotions
   // do not add to the update-refs burden of GC.
 
-  ShenandoahOldHeuristics* const old_heuristics = heap->old_heuristics();
   size_t old_evacuation_reserve, old_promo_reserve;
   if (is_global()) {
     // Global GC is typically triggered by user invocation of System.gc(), and typically indicates that there is lots
@@ -318,7 +310,7 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
     // expanded based on an existing mixed evacuation workload at the end of the previous GC cycle.  We'll expand
     // the budget for evacuation of old during GLOBAL cset selection.
     old_evacuation_reserve = maximum_old_evacuation_reserve;
-  } else if (old_heuristics->unprocessed_old_collection_candidates() > 0) {
+  } else if (old_generation->has_unprocessed_collection_candidates()) {
     // We reserved all old-gen memory at end of previous GC to hold anticipated evacuations to old-gen.  If this is
     // mixed evacuation, reserve all of this memory for compaction of old-gen and do not promote.  Prioritize compaction
     // over promotion in order to defragment OLD so that it will be better prepared to efficiently receive promoted memory.
@@ -334,7 +326,7 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
   // We see too many old-evacuation failures if we force ourselves to evacuate into regions that are not initially empty.
   // So we limit the old-evacuation reserve to unfragmented memory.  Even so, old-evacuation is free to fill in nooks and
   // crannies within existing partially used regions and it generally tries to do so.
-  const size_t old_free_unfragmented = old_generation->free_unaffiliated_regions() * region_size_bytes;
+  const size_t old_free_unfragmented = old_generation->free_unaffiliated_regions() * ShenandoahHeapRegion::region_size_bytes();
   if (old_evacuation_reserve > old_free_unfragmented) {
     const size_t delta = old_evacuation_reserve - old_free_unfragmented;
     old_evacuation_reserve -= delta;
@@ -346,7 +338,7 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
 
   // Preselect regions for promotion by evacuation (obtaining the live data to seed promoted_reserve),
   // and identify regions that will promote in place. These use the tenuring threshold.
-  size_t consumed_by_advance_promotion = select_aged_regions(old_promo_reserve);
+  const size_t consumed_by_advance_promotion = select_aged_regions(old_promo_reserve);
   assert(consumed_by_advance_promotion <= maximum_old_evacuation_reserve, "Cannot promote more than available old-gen memory");
 
   // Note that unused old_promo_reserve might not be entirely consumed_by_advance_promotion.  Do not transfer this
@@ -737,11 +729,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
         // coalesce those regions. Only the old regions which are not part of the collection set at this point are
         // eligible for coalescing. As implemented now, this has the side effect of possibly initiating mixed-evacuations
         // after a global cycle for old regions that were not included in this collection set.
-        assert(heap->old_generation()->is_mark_complete(), "Expected old generation mark to be complete after global cycle.");
-        heap->old_heuristics()->prepare_for_old_collections();
-        log_info(gc)("After choosing global collection set, mixed candidates: " UINT32_FORMAT ", coalescing candidates: " SIZE_FORMAT,
-                     heap->old_heuristics()->unprocessed_old_collection_candidates(),
-                     heap->old_heuristics()->coalesce_and_fill_candidates_count());
+        heap->old_generation()->prepare_for_mixed_collections_after_global_gc();
       }
     } else {
       _heuristics->choose_collection_set(collection_set);

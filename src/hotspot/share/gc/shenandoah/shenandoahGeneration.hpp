@@ -26,17 +26,19 @@
 #define SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
 
 #include "memory/allocation.hpp"
-#include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
 
+class ShenandoahCollectionSet;
+class ShenandoahHeap;
 class ShenandoahHeapRegion;
 class ShenandoahHeapRegionClosure;
-class ShenandoahReferenceProcessor;
-class ShenandoahHeap;
+class ShenandoahHeuristics;
 class ShenandoahMode;
+class ShenandoahReferenceProcessor;
+
 
 class ShenandoahGeneration : public CHeapObj<mtGC>, public ShenandoahSpaceInfo {
   friend class VMStructs;
@@ -117,7 +119,7 @@ private:
 
   inline ShenandoahGenerationType type() const { return _type; }
 
-  inline ShenandoahHeuristics* heuristics() const { return _heuristics; }
+  virtual ShenandoahHeuristics* heuristics() const { return _heuristics; }
 
   ShenandoahReferenceProcessor* ref_processor() { return _ref_processor; }
 
