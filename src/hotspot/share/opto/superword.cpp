@@ -2554,7 +2554,7 @@ bool SuperWord::output() {
         BasicType bt = velt_basic_type(cmp);
         const TypeVect* vt = TypeVect::make(bt, vlen);
         VectorNode* mask = new VectorMaskCmpNode(bol_test, cmp_in1, cmp_in2, bol_test_node, vt);
-        phase()->register_new_node(mask, phase()->get_ctrl(p->at(0)));
+        phase()->register_new_node_with_ctrl_of(mask, p->at(0));
         igvn()._worklist.push(mask);
 
         // VectorBlend
@@ -2628,7 +2628,7 @@ bool SuperWord::output() {
         assert(n->req() == 2, "only one input expected");
         Node* in = vector_opd(p, 1);
         Node* longval = VectorNode::make(opc, in, nullptr, vlen, T_LONG);
-        phase()->register_new_node(longval, phase()->get_ctrl(first));
+        phase()->register_new_node_with_ctrl_of(longval, first);
         vn = VectorCastNode::make(Op_VectorCastL2X, longval, T_INT, vlen);
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (VectorNode::is_convert_opcode(opc)) {
@@ -2668,7 +2668,7 @@ bool SuperWord::output() {
       }
 #endif
 
-      phase()->register_new_node(vn, phase()->get_ctrl(first));
+      phase()->register_new_node_with_ctrl_of(vn, first);
       for (uint j = 0; j < p->size(); j++) {
         Node* pm = p->at(j);
         igvn().replace_node(pm, vn);
@@ -2737,7 +2737,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     const TypeVect* vt = TypeVect::make(iv_bt, vlen);
     Node* vn = new PopulateIndexNode(iv(), igvn().intcon(1), vt);
     VectorNode::trace_new_vector(vn, "SuperWord");
-    phase()->register_new_node(vn, phase()->get_ctrl(opd));
+    phase()->register_new_node_with_ctrl_of(vn, opd);
     return vn;
   }
 
@@ -2764,7 +2764,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
         if (t == nullptr || t->_lo < 0 || t->_hi > (int)mask) {
           cnt = igvn().intcon(mask);
           cnt = new AndINode(opd, cnt);
-          phase()->register_new_node(cnt, phase()->get_ctrl(opd));
+          phase()->register_new_node_with_ctrl_of(cnt, opd);
         }
         if (!opd->bottom_type()->isa_int()) {
           assert(false, "int type only");
@@ -2773,7 +2773,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
       }
       // Move shift count into vector register.
       cnt = VectorNode::shift_count(p0->Opcode(), cnt, vlen, velt_basic_type(p0));
-      phase()->register_new_node(cnt, phase()->get_ctrl(opd));
+      phase()->register_new_node_with_ctrl_of(cnt, opd);
       return cnt;
     }
     if (opd->is_StoreVector()) {
@@ -2791,7 +2791,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
        if (p0->bottom_type()->isa_long()) {
          p0_t = TypeLong::LONG;
          conv = new ConvI2LNode(opd);
-         phase()->register_new_node(conv, phase()->get_ctrl(opd));
+         phase()->register_new_node_with_ctrl_of(conv, opd);
        }
        vn = VectorNode::scalar2vector(conv, vlen, p0_t);
     } else {
@@ -2799,7 +2799,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
        vn = VectorNode::scalar2vector(opd, vlen, p0_t);
     }
 
-    phase()->register_new_node(vn, phase()->get_ctrl(opd));
+    phase()->register_new_node_with_ctrl_of(vn, opd);
     VectorNode::trace_new_vector(vn, "SuperWord");
     return vn;
   }
@@ -2828,7 +2828,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
       pk->add_opd(in2);
     }
   }
-  phase()->register_new_node(pk, phase()->get_ctrl(opd));
+  phase()->register_new_node_with_ctrl_of(pk, opd);
   VectorNode::trace_new_vector(pk, "SuperWord");
   return pk;
 }

@@ -1673,6 +1673,9 @@ public:
   void set_created_loop_node() { _created_loop_node = true; }
   bool created_loop_node()     { return _created_loop_node; }
   void register_new_node(Node* n, Node* blk);
+  void register_new_node_with_ctrl_of(Node* new_node, Node* ctrl_of) {
+    register_new_node(new_node, get_ctrl(ctrl_of));
+  }
 
   Node* clone_and_register(Node* n, Node* ctrl) {
     n = n->clone();
