@@ -69,7 +69,6 @@ define SetupTestFilesCompilationBody
     $1_COMPILATION_TYPE := EXECUTABLE
     $1_LOG_TYPE := executable
     $1_LD_SET_ORIGIN := false
-    $1_LDFLAGS := $(LDFLAGS_TESTEXE)
   else
     $$(error Unknown type: $$($1_TYPE))
   endif
@@ -103,17 +102,21 @@ define SetupTestFilesCompilationBody
         NAME := $$(unprefixed_name), \
         TYPE := $$($1_COMPILATION_TYPE), \
         LINK_TYPE := $(if $$(filter %.cpp, $$(file)), C++, C), \
+        EXTRA_HEADER_DIRS := \
+            java.base:libjava \
+            java.base:libjvm, \
         EXTRA_FILES := $$(file) $$($1_EXTRA_FILES), \
         OBJECT_DIR := $$($1_OUTPUT_DIR)/support/$$(name), \
         OUTPUT_DIR := $$($1_OUTPUT_DIR)/$$($1_OUTPUT_SUBDIR), \
         CFLAGS := $$(TEST_CFLAGS) $$($1_CFLAGS) $$($1_CFLAGS_$$(name)), \
         CXXFLAGS := $$(TEST_CFLAGS) $$($1_CFLAGS) $$($1_CFLAGS_$$(name)), \
         LD_SET_ORIGIN := $$($1_LD_SET_ORIGIN), \
-        LDFLAGS := $$($1_LDFLAGS) $$($1_LDFLAGS_$$(name)), \
+        LDFLAGS := $$($1_LDFLAGS_$$(name)), \
         DISABLED_WARNINGS_gcc := format undef unused-function unused-value, \
         DISABLED_WARNINGS_clang := undef format-nonliteral \
             missing-field-initializers sometimes-uninitialized, \
         DEFAULT_LIBCXX := false, \
+        JDK_LIBS := $$($1_JDK_LIBS_$$(name)), \
         LIBS := $$($1_LIBS_$$(name)), \
         DEFAULT_VERSIONINFO_RESOURCE := false, \
         OPTIMIZATION := $$(if $$($1_OPTIMIZATION_$$(name)),$$($1_OPTIMIZATION_$$(name)),LOW), \

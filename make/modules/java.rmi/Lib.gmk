@@ -31,11 +31,9 @@ include LibCommon.gmk
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBRMI, \
     NAME := rmi, \
+    EXTRA_HEADER_DIRS := java.base:libjava, \
     OPTIMIZATION := LOW, \
-    JDK_LIBS_unix := -ljvm, \
-    JDK_LIBS_windows := jvm.lib, \
+    JDK_LIBS := java.base:libjvm, \
 ))
-
-$(BUILD_LIBRMI): $(call FindLib, java.base, java)
 
 TARGETS += $(BUILD_LIBRMI)

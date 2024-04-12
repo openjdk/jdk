@@ -121,6 +121,11 @@ class frame {
   // is deoptimization. It likely no one else should ever use it.
   address raw_pc() const;
 
+  // Return the original PC for the given PC if:
+  // (a) the given PC belongs to an nmethod and
+  // (b) it is a deopt PC
+  address get_deopt_original_pc() const;
+
   void set_pc(address newpc);
 
   intptr_t* sp() const           { assert_absolute(); return _sp; }
@@ -450,17 +455,17 @@ class frame {
   void oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, OopClosure* f) const;
 
   // Iteration of oops
-  void oops_do_internal(OopClosure* f, CodeBlobClosure* cf,
+  void oops_do_internal(OopClosure* f, NMethodClosure* cf,
                         DerivedOopClosure* df, DerivedPointerIterationMode derived_mode,
                         const RegisterMap* map, bool use_interpreter_oop_map_cache) const;
 
   void oops_entry_do(OopClosure* f, const RegisterMap* map) const;
-  void oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf,
-                         DerivedOopClosure* df, DerivedPointerIterationMode derived_mode,
-                         const RegisterMap* map) const;
+  void oops_nmethod_do(OopClosure* f, NMethodClosure* cf,
+                       DerivedOopClosure* df, DerivedPointerIterationMode derived_mode,
+                       const RegisterMap* map) const;
  public:
   // Memory management
-  void oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map) {
+  void oops_do(OopClosure* f, NMethodClosure* cf, const RegisterMap* map) {
 #if COMPILER2_OR_JVMCI
     DerivedPointerIterationMode dpim = DerivedPointerTable::is_active() ?
                                        DerivedPointerIterationMode::_with_table :
@@ -471,16 +476,16 @@ class frame {
     oops_do_internal(f, cf, nullptr, dpim, map, true);
   }
 
-  void oops_do(OopClosure* f, CodeBlobClosure* cf, DerivedOopClosure* df, const RegisterMap* map) {
+  void oops_do(OopClosure* f, NMethodClosure* cf, DerivedOopClosure* df, const RegisterMap* map) {
     oops_do_internal(f, cf, df, DerivedPointerIterationMode::_ignore, map, true);
   }
 
-  void oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map,
+  void oops_do(OopClosure* f, NMethodClosure* cf, const RegisterMap* map,
                DerivedPointerIterationMode derived_mode) const {
     oops_do_internal(f, cf, nullptr, derived_mode, map, true);
   }
 
-  void nmethods_do(CodeBlobClosure* cf) const;
+  void nmethod_do(NMethodClosure* cf) const;
 
   // RedefineClasses support for finding live interpreted methods on the stack
   void metadata_do(MetadataClosure* f) const;
