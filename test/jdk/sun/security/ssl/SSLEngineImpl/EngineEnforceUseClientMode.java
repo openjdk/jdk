@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,67 +30,34 @@
  * @test
  * @bug 4980882 8207250 8237474
  * @summary SSLEngine should enforce setUseClientMode
+ * @library /javax/net/ssl/templates
  * @run main/othervm EngineEnforceUseClientMode
  * @author Brad R. Wetmore
  */
 
 import javax.net.ssl.*;
-import javax.net.ssl.SSLEngineResult.*;
-import java.io.*;
-import java.security.*;
-import java.nio.*;
 
-public class EngineEnforceUseClientMode {
+public class EngineEnforceUseClientMode extends SSLEngineTemplate {
 
     private static boolean debug = false;
 
-    private SSLContext sslc;
-    private SSLEngine ssle1;    // client
-    private SSLEngine ssle2;    // server
-
-    private SSLEngine ssle3;    // server
-    private SSLEngine ssle4;    // server
-    private SSLEngine ssle5;    // server
-
-    private static String pathToStores = "../../../../javax/net/ssl/etc";
-    private static String keyStoreFile = "keystore";
-    private static String trustStoreFile = "truststore";
-    private static String passwd = "passphrase";
-
-    private static String keyFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + keyStoreFile;
-    private static String trustFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + trustStoreFile;
-
-    private ByteBuffer appOut1;         // write side of ssle1
-    private ByteBuffer appIn1;          // read side of ssle1
-    private ByteBuffer appOut2;         // write side of ssle2
-    private ByteBuffer appIn2;          // read side of ssle2
-
-    private ByteBuffer oneToTwo;        // "reliable" transport ssle1->ssle2
-    private ByteBuffer twoToOne;        // "reliable" transport ssle2->ssle1
+    private SSLEngine serverEngine2;    // server
+    private SSLEngine serverEngine3;    // server
+    private SSLEngine serverEngine4;    // server
 
     /*
      * Majority of the test case is here, setup is done below.
      */
-    private void createSSLEngines() throws Exception {
-        ssle1 = sslc.createSSLEngine("client", 1);
-        ssle1.setUseClientMode(true);
-
-        ssle2 = sslc.createSSLEngine();
-        ssle2.setUseClientMode(false);
-        ssle2.setNeedClientAuth(true);
-
+    private void createAdditionalSSLEngines() throws Exception {
+        SSLContext sslc = createServerSSLContext();
         /*
          * Note, these are not initialized to client/server
          */
-        ssle3 = sslc.createSSLEngine();
-        ssle4 = sslc.createSSLEngine();
-        ssle5 = sslc.createSSLEngine();
+        serverEngine2 = sslc.createSSLEngine();
+        serverEngine3 = sslc.createSSLEngine();
+        serverEngine4 = sslc.createSSLEngine();
         //Check default SSLEngine role.
-        if (ssle5.getUseClientMode()) {
+        if (serverEngine4.getUseClientMode()) {
             throw new RuntimeException("Expected default role to be server");
         }
 
@@ -98,8 +65,7 @@ public class EngineEnforceUseClientMode {
 
     private void runTest() throws Exception {
 
-        createSSLEngines();
-        createBuffers();
+        createAdditionalSSLEngines();
 
         /*
          * First try the engines with no client/server initialization
@@ -107,35 +73,35 @@ public class EngineEnforceUseClientMode {
          */
         try {
             System.out.println("Testing wrap()");
-            ssle3.wrap(appOut1, oneToTwo);
+            serverEngine2.wrap(clientOut, cTOs);
             throw new RuntimeException(
                 "wrap():  Didn't catch the exception properly");
         } catch (IllegalStateException e) {
             System.out.println("Caught the correct exception.");
-            oneToTwo.flip();
-            if (oneToTwo.hasRemaining()) {
+            cTOs.flip();
+            if (cTOs.hasRemaining()) {
                 throw new Exception("wrap generated data");
             }
-            oneToTwo.clear();
+            cTOs.clear();
         }
 
         try {
             System.out.println("Testing unwrap()");
-            ssle4.unwrap(oneToTwo, appIn1);
+            serverEngine3.unwrap(cTOs, clientIn);
             throw new RuntimeException(
                 "unwrap():  Didn't catch the exception properly");
         } catch (IllegalStateException e) {
             System.out.println("Caught the correct exception.");
-            appIn1.flip();
-            if (appIn1.hasRemaining()) {
+            clientIn.flip();
+            if (clientIn.hasRemaining()) {
                 throw new Exception("unwrap generated data");
             }
-            appIn1.clear();
+            clientIn.clear();
         }
 
         try {
             System.out.println("Testing beginHandshake()");
-            ssle5.beginHandshake();
+            serverEngine4.beginHandshake();
             throw new RuntimeException(
                 "unwrap():  Didn't catch the exception properly");
         } catch (IllegalStateException e) {
@@ -147,60 +113,60 @@ public class EngineEnforceUseClientMode {
         SSLEngineResult result1;        // ssle1's results from last operation
         SSLEngineResult result2;        // ssle2's results from last operation
 
-        while (!isEngineClosed(ssle1) || !isEngineClosed(ssle2)) {
+        while (!isEngineClosed(clientEngine) || !isEngineClosed(serverEngine)) {
 
             log("================");
 
-            result1 = ssle1.wrap(appOut1, oneToTwo);
-            result2 = ssle2.wrap(appOut2, twoToOne);
+            result1 = clientEngine.wrap(clientOut, cTOs);
+            result2 = serverEngine.wrap(serverOut, sTOc);
 
             log("wrap1:  " + result1);
-            log("oneToTwo  = " + oneToTwo);
+            log("oneToTwo  = " + cTOs);
             log("");
 
             log("wrap2:  " + result2);
-            log("twoToOne  = " + twoToOne);
+            log("twoToOne  = " + sTOc);
 
-            runDelegatedTasks(result1, ssle1);
-            runDelegatedTasks(result2, ssle2);
+            runDelegatedTasks(clientEngine);
+            runDelegatedTasks(serverEngine);
 
-            oneToTwo.flip();
-            twoToOne.flip();
+            cTOs.flip();
+            sTOc.flip();
 
             log("----");
 
-            result1 = ssle1.unwrap(twoToOne, appIn1);
-            result2 = ssle2.unwrap(oneToTwo, appIn2);
+            result1 = clientEngine.unwrap(sTOc, clientIn);
+            result2 = serverEngine.unwrap(cTOs, serverIn);
 
             log("unwrap1: " + result1);
-            log("twoToOne  = " + twoToOne);
+            log("twoToOne  = " + sTOc);
             log("");
 
             log("unwrap2: " + result2);
-            log("oneToTwo  = " + oneToTwo);
+            log("oneToTwo  = " + cTOs);
 
-            runDelegatedTasks(result1, ssle1);
-            runDelegatedTasks(result2, ssle2);
+            runDelegatedTasks(clientEngine);
+            runDelegatedTasks(serverEngine);
 
-            oneToTwo.compact();
-            twoToOne.compact();
+            cTOs.compact();
+            sTOc.compact();
 
             /*
              * If we've transfered all the data between app1 and app2,
              * we try to close and see what that gets us.
              */
-            if (!dataDone && (appOut1.limit() == appIn2.position()) &&
-                    (appOut2.limit() == appIn1.position())) {
+            if (!dataDone && (clientOut.limit() == serverIn.position()) &&
+                    (serverOut.limit() == clientIn.position())) {
 
-                checkTransfer(appOut1, appIn2);
-                checkTransfer(appOut2, appIn1);
+                checkTransfer(clientOut, serverIn);
+                checkTransfer(serverOut, clientIn);
 
                 // Should not be able to set mode now, no matter if
                 // it is the same of different.
                 System.out.println("Try changing modes...");
                 for (boolean b : new Boolean[] {true, false}) {
                     try {
-                        ssle2.setUseClientMode(b);
+                        serverEngine.setUseClientMode(b);
                         throw new RuntimeException(
                                 "setUseClientMode(" + b + "):  " +
                                         "Didn't catch the exception properly");
@@ -216,12 +182,8 @@ public class EngineEnforceUseClientMode {
 
     public static void main(String args[]) throws Exception {
 
-        EngineEnforceUseClientMode test;
-
-        test = new EngineEnforceUseClientMode();
-
-        test.createSSLEngines();
-
+        EngineEnforceUseClientMode test = new EngineEnforceUseClientMode();
+        test.createAdditionalSSLEngines();
         test.runTest();
 
         System.out.println("Test Passed.");
@@ -234,89 +196,13 @@ public class EngineEnforceUseClientMode {
      */
 
     public EngineEnforceUseClientMode() throws Exception {
-        sslc = getSSLContext(keyFilename, trustFilename);
-    }
-
-    /*
-     * Create an initialized SSLContext to use for this test.
-     */
-    private SSLContext getSSLContext(String keyFile, String trustFile)
-            throws Exception {
-
-        KeyStore ks = KeyStore.getInstance("JKS");
-        KeyStore ts = KeyStore.getInstance("JKS");
-
-        char[] passphrase = "passphrase".toCharArray();
-
-        ks.load(new FileInputStream(keyFile), passphrase);
-        ts.load(new FileInputStream(trustFile), passphrase);
-
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(ks, passphrase);
-
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-        tmf.init(ts);
-
-        SSLContext sslCtx = SSLContext.getInstance("TLS");
-
-        sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-
-        return sslCtx;
-    }
-
-    private void createBuffers() {
-        // Size the buffers as appropriate.
-
-        SSLSession session = ssle1.getSession();
-        int appBufferMax = session.getApplicationBufferSize();
-        int netBufferMax = session.getPacketBufferSize();
-
-        appIn1 = ByteBuffer.allocateDirect(appBufferMax + 50);
-        appIn2 = ByteBuffer.allocateDirect(appBufferMax + 50);
-
-        oneToTwo = ByteBuffer.allocateDirect(netBufferMax);
-        twoToOne = ByteBuffer.allocateDirect(netBufferMax);
-
-        appOut1 = ByteBuffer.wrap("Hi Engine2, I'm SSLEngine1".getBytes());
-        appOut2 = ByteBuffer.wrap("Hello Engine1, I'm SSLEngine2".getBytes());
-
-        log("AppOut1 = " + appOut1);
-        log("AppOut2 = " + appOut2);
-        log("");
-    }
-
-    private static void runDelegatedTasks(SSLEngineResult result,
-            SSLEngine engine) throws Exception {
-
-        if (result.getHandshakeStatus() == HandshakeStatus.NEED_TASK) {
-            Runnable runnable;
-            while ((runnable = engine.getDelegatedTask()) != null) {
-                log("running delegated task...");
-                runnable.run();
-            }
-        }
+        super();
     }
 
     private static boolean isEngineClosed(SSLEngine engine) {
         return (engine.isOutboundDone() && engine.isInboundDone());
     }
 
-    private static void checkTransfer(ByteBuffer a, ByteBuffer b)
-            throws Exception {
-        a.flip();
-        b.flip();
-
-        if (!a.equals(b)) {
-            throw new Exception("Data didn't transfer cleanly");
-        } else {
-            log("Data transferred cleanly");
-        }
-
-        a.position(a.limit());
-        b.position(b.limit());
-        a.limit(a.capacity());
-        b.limit(b.capacity());
-    }
 
     private static void log(String str) {
         if (debug) {

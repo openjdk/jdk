@@ -53,4 +53,3 @@ public:
 };
 
 #endif /* SHARE_GC_G1_G1ANALYTICSSEQUENCES_HPP */
-

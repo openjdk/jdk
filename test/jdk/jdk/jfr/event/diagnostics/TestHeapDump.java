@@ -60,7 +60,7 @@ public class TestHeapDump {
             if (events.size() != 1) {
                 throw new Exception("Expected one event, got " + events.size());
             }
-            RecordedEvent e = events.get(0);
+            RecordedEvent e = events.getFirst();
             Events.assertField(e, "destination").equal(path.toString());
             Events.assertField(e, "gcBeforeDump").equal(true);
             Events.assertField(e, "onOutOfMemoryError").equal(false);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,6 +145,15 @@ public class UnicodeReader {
         this.log = log;
 
         nextCodePoint();
+    }
+
+    /**
+     * Returns the character buffer.
+     *
+     * @return character buffer.
+     */
+    protected char[] buffer() {
+        return buffer;
     }
 
     /**
@@ -409,6 +418,9 @@ public class UnicodeReader {
     }
     protected boolean isOneOf(char ch1, char ch2, char ch3) {
         return is(ch1) || is(ch2) || is(ch3);
+    }
+    protected boolean isOneOf(char ch1, char ch2, char ch3, char ch4) {
+        return is(ch1) || is(ch2) || is(ch3) || is(ch4);
     }
     protected boolean isOneOf(char ch1, char ch2, char ch3, char ch4, char ch5, char ch6) {
         return is(ch1) || is(ch2) || is(ch3) || is(ch4) || is(ch5) || is(ch6);

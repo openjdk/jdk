@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,81 @@
  */
 
 /*
- * @test
+ * @test id=IntegerPolynomial25519
  * @bug 8181594 8208648
  * @summary Test proper operation of integer field arithmetic
  * @modules java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
  * @build BigIntegerModuloP
  * @run main TestIntegerModuloP sun.security.util.math.intpoly.IntegerPolynomial25519 32 0
+ */
+
+ /*
+ * @test id=IntegerPolynomial448
+ * @modules java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
+ * @build BigIntegerModuloP
  * @run main TestIntegerModuloP sun.security.util.math.intpoly.IntegerPolynomial448 56 1
+ */
+
+ /*
+ * @test id=IntegerPolynomial1305
+ * @modules java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
+ * @build BigIntegerModuloP
  * @run main TestIntegerModuloP sun.security.util.math.intpoly.IntegerPolynomial1305 16 2
+ */
+
+ /*
+ * @test id=IntegerPolynomialP256
+ * @modules java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
+ * @build BigIntegerModuloP
  * @run main TestIntegerModuloP sun.security.util.math.intpoly.IntegerPolynomialP256 32 5
+ */
+
+ /*
+ * @test id=IntegerPolynomialP384
+ * @modules java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
+ * @build BigIntegerModuloP
  * @run main TestIntegerModuloP sun.security.util.math.intpoly.IntegerPolynomialP384 48 6
+ */
+
+ /*
+ * @test id=IntegerPolynomialP521
+ * @modules java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
+ * @build BigIntegerModuloP
  * @run main TestIntegerModuloP sun.security.util.math.intpoly.IntegerPolynomialP521 66 7
+ */
+
+ /*
+ * @test id=P256OrderField
+ * @modules java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
+ * @build BigIntegerModuloP
  * @run main TestIntegerModuloP sun.security.util.math.intpoly.P256OrderField 32 8
+ */
+
+ /*
+ * @test id=P384OrderField
+ * @modules java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
+ * @build BigIntegerModuloP
  * @run main TestIntegerModuloP sun.security.util.math.intpoly.P384OrderField 48 9
+ */
+
+ /*
+ * @test id=P521OrderField
+ * @modules java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
+ * @build BigIntegerModuloP
  * @run main TestIntegerModuloP sun.security.util.math.intpoly.P521OrderField 66 10
+ */
+
+ /*
+ * @test id=Curve25519OrderField
+ * @modules java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
+ * @build BigIntegerModuloP
  * @run main TestIntegerModuloP sun.security.util.math.intpoly.Curve25519OrderField 32 11
+ */
+
+ /*
+ * @test id=Curve448OrderField
+ * @modules java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
+ * @build BigIntegerModuloP
  * @run main TestIntegerModuloP sun.security.util.math.intpoly.Curve448OrderField 56 12
  */
 

@@ -80,6 +80,7 @@ import jdk.dynalink.linker.MethodHandleTransformer;
  * the parameter filter as being a wrapping method for exposing internal runtime
  * objects wrapped into an adapter with some public interface, and the return
  * value filter as being its inverse unwrapping method.
+ * @since 9
  */
 public class DefaultInternalObjectFilter implements MethodHandleTransformer {
     private static final MethodHandle FILTER_VARARGS = new Lookup(MethodHandles.lookup()).findStatic(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,9 @@ public class SendUrgentData {
         boolean inline = false;
         if (args.length > 0 && args[0].equals("-server")) {
             System.out.println(serverThread.getAddress());
-            Thread.currentThread().suspend();
+            while (true) {
+                Thread.sleep(60_000);
+            }
         } else {
             if (args.length > 0 && args[0].equals("-client")) {
                 host = args[1];

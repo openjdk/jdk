@@ -146,10 +146,13 @@ public class ByteBuffer {
         }
     }
 
-    /** Append a name.
+    /** Append a name encoded in Modified UTF-8.
      */
     public void appendName(Name name) {
-        appendBytes(name.getByteArray(), name.getByteOffset(), name.getByteLength());
+        int utf8len = name.getUtf8Length();
+        elems = ArrayUtils.ensureCapacity(elems, length + utf8len);
+        name.getUtf8Bytes(elems, length);
+        length += utf8len;
     }
 
      /** Append the content of the given input stream.

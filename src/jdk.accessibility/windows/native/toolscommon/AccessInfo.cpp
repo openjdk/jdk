@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ char *getTimeAndDate() {
     if( newtime->tm_hour == 0 )        /*Set hour to 12 if midnight. */
         newtime->tm_hour = 12;
 
-    sprintf(datebuf, "%.19s %s\n", asctime( newtime ), am_pm );
+    snprintf(datebuf, sizeof(datebuf), "%.19s %s\n", asctime( newtime ), am_pm );
     return (char *)datebuf;
 }
 
@@ -67,7 +67,7 @@ void displayAndLog(HWND hDlg, int nIDDlgItem, FILE *logfile, char *msg, ...) {
     va_list argprt;
 
     va_start(argprt, msg);
-    vsprintf(tmpbuf, msg, argprt);
+    vsnprintf(tmpbuf, sizeof(tmpbuf), msg, argprt);
 
     SetDlgItemText(hDlg, nIDDlgItem, tmpbuf);
 
@@ -95,7 +95,7 @@ void logString(FILE *logfile, const char *msg, ...) {
     va_list argprt;
 
     va_start(argprt, msg);
-    vsprintf(tmpbuf, msg, argprt);
+    vsnprintf(tmpbuf, sizeof(tmpbuf), msg, argprt);
 
     fprintf(logfile, tmpbuf);
     fprintf(logfile, "\n");
@@ -119,7 +119,7 @@ BOOL appendToBuffer(char *buf, size_t buflen, const char *msg, ...) {
     va_list argprt;
 
     va_start(argprt, msg);
-    vsprintf(tmpbuf, msg, argprt);
+    vsnprintf(tmpbuf, sizeof(tmpbuf), msg, argprt);
 
     // verify there's enough space in the buffer
     size_t spaceRemaining = buflen - strlen(buf) - 1;
@@ -149,8 +149,8 @@ char *getAccessibleInfo(long vmID, AccessibleContext ac, int x, int y,
     wchar_t tmpBuf[LINE_BUFSIZE];
     wchar_t name[LINE_BUFSIZE];
     int i, j;
-    long start;
-    long end;
+    jint start;
+    jint end;
 
     if (buffer == NULL || bufsize <= 0) {
         return NULL;

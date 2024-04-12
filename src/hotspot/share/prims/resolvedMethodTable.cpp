@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ static const size_t GROW_HINT = 32;
 
 static const size_t ResolvedMethodTableSizeLog = 10;
 
-unsigned int method_hash(const Method* method) {
+static unsigned int method_hash(const Method* method) {
   unsigned int hash = method->method_holder()->class_loader_data()->identity_hash();
   hash = (hash * 31) ^ method->klass_name()->identity_hash();
   hash = (hash * 31) ^ method->name()->identity_hash();
@@ -85,7 +85,7 @@ class ResolvedMethodTableConfig : public AllStatic {
     ResolvedMethodTable::item_added();
     return AllocateHeap(size, mtClass);
   }
-  static void free_node(void* context, void* memory, Value const& value) {
+  static void free_node(void* context, void* memory, Value& value) {
     value.release(ResolvedMethodTable::_oop_storage);
     FreeHeap(memory);
     ResolvedMethodTable::item_removed();
@@ -126,11 +126,9 @@ class ResolvedMethodTableLookup : StackObj {
   uintx get_hash() const {
     return _hash;
   }
-  bool equals(WeakHandle* value, bool* is_dead) {
+  bool equals(WeakHandle* value) {
     oop val_oop = value->peek();
     if (val_oop == nullptr) {
-      // dead oop, mark this hash dead for cleaning
-      *is_dead = true;
       return false;
     }
     bool equals = _method == java_lang_invoke_ResolvedMethodName::vmtarget(val_oop);
@@ -140,6 +138,10 @@ class ResolvedMethodTableLookup : StackObj {
     // Need to resolve weak handle and Handleize through possible safepoint.
     _found = Handle(_thread, value->resolve());
     return true;
+  }
+  bool is_dead(WeakHandle* value) {
+    oop val_oop = value->peek();
+    return val_oop == nullptr;
   }
 };
 

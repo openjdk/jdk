@@ -53,7 +53,7 @@ import java.util.Set;
     private final String server;
     private final Socket socket;
     private InetSocketAddress external_address;
-    private HashMap<Integer, Object> optionsMap = new HashMap<>();
+    private final HashMap<Integer, Object> optionsMap = new HashMap<>();
 
     static  {
         try {

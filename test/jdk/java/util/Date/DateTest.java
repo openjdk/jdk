@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,24 @@
  * @test
  * @bug 4143459
  * @summary test Date
- * @library /java/text/testlib
+ * @run junit DateTest
  */
 
 import java.text.*;
 import java.util.*;
 
-@SuppressWarnings("deprecation")
-public class DateTest extends IntlTest
-{
-    public static void main(String[] args) throws Exception {
-        new DateTest().run(args);
-    }
+import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
+@SuppressWarnings("deprecation")
+public class DateTest
+{
     /**
      * @bug 4143459
      * Warning: Use TestDefaultZone() for complete testing of this bug.
      */
+    @Test
     public void TestDefaultZoneLite() {
         // Note: This test is redundant with TestDefaultZone().  It was added by
         // request to provide a short&sweet test for this bug.  It does not test
@@ -57,7 +58,7 @@ public class DateTest extends IntlTest
             d.setHours(6);
             TimeZone.setDefault(TimeZone.getTimeZone("PST"));
             if (d.getHours() != 22) {
-                errln("Fail: Date.setHours()/getHours() ignoring default zone");
+                fail("Fail: Date.setHours()/getHours() ignoring default zone");
             }
         }
         finally { TimeZone.setDefault(save); }
@@ -66,6 +67,7 @@ public class DateTest extends IntlTest
     /**
      * @bug 4143459
      */
+    @Test
     public void TestDefaultZone() {
         // Various problems can creep up, with the current implementation of Date,
         // when the default zone is changed.
@@ -87,7 +89,7 @@ public class DateTest extends IntlTest
             // sub-object (most Date objects), and a Date object with a Calendar
             // sub-object.  We make two passes to cover the two cases.
             for (int pass=0; pass<2; ++pass) {
-                logln(pass == 0 ? "Normal Date object" : "Date with Calendar sub-object");
+                System.out.println(pass == 0 ? "Normal Date object" : "Date with Calendar sub-object");
 
                 TimeZone.setDefault(GMT);
                 d = new Date(refstr);
@@ -96,7 +98,7 @@ public class DateTest extends IntlTest
                     d.setYear(d.getYear());
                 }
                 if (d.getTime() != ref.getTime()) {
-                    errln("FAIL: new Date(\"" + refstr + "\") x GMT -> " + d +
+                    fail("FAIL: new Date(\"" + refstr + "\") x GMT -> " + d +
                           " " + d.getTime() + " ms");
                 }
 
@@ -104,7 +106,7 @@ public class DateTest extends IntlTest
                                  d.getDay(), d.getHours(), d.getTimezoneOffset() };
                 for (int i=0; i<fields.length; ++i) {
                     if (fields[i] != GMT_EXP[i]) {
-                        errln("FAIL: GMT Expected " + names[i] + " of " + GMT_EXP[i] +
+                        fail("FAIL: GMT Expected " + names[i] + " of " + GMT_EXP[i] +
                               ", got " + fields[i]);
                     }
                 }
@@ -114,7 +116,7 @@ public class DateTest extends IntlTest
                                   d.getDay(), d.getHours(), d.getTimezoneOffset() };
                 for (int i=0; i<fields2.length; ++i) {
                     if (fields2[i] != PST_EXP[i]) {
-                        errln("FAIL: PST Expected " + names[i] + " of " + PST_EXP[i] +
+                        fail("FAIL: PST Expected " + names[i] + " of " + PST_EXP[i] +
                               ", got " + fields2[i]);
                     }
                 }
@@ -126,6 +128,7 @@ public class DateTest extends IntlTest
     }
 
     // Test the performance of Date
+    @Test
     public void TestPerformance592()
     {
         int REPS = 500;
@@ -140,9 +143,9 @@ public class DateTest extends IntlTest
         long ms = new Date().getTime() - start;
 
         double perLoop = ((double)ms) / REPS;
-        logln(REPS + " iterations at " + perLoop + " ms/loop");
+        System.out.println(REPS + " iterations at " + perLoop + " ms/loop");
         if (perLoop > PER_LOOP_LIMIT)
-            logln("WARNING: Date constructor/getYear slower than " +
+            System.out.println("WARNING: Date constructor/getYear slower than " +
                   PER_LOOP_LIMIT + " ms");
     }
     static double PER_LOOP_LIMIT = 3.0;
@@ -150,6 +153,7 @@ public class DateTest extends IntlTest
     /**
      * Verify that the Date(String) constructor works.
      */
+    @Test
     public void TestParseOfGMT()
     {
         Date OUT = null;
@@ -164,7 +168,7 @@ public class DateTest extends IntlTest
             // logln("PASS");
         }
         else {
-            errln( "Expected: " +
+            fail( "Expected: " +
                    new Date( expectedVal ) +
                    ": " +
                    expectedVal +
@@ -178,56 +182,58 @@ public class DateTest extends IntlTest
     // Check out Date's behavior with large negative year values; bug 664
     // As of the fix to bug 4056585, Date should work correctly with
     // large negative years.
+    @Test
     public void TestDateNegativeYears()
     {
         Date d1= new Date(80,-1,2);
-        logln(d1.toString());
+        System.out.println(d1.toString());
         d1= new Date(-80,-1,2);
-        logln(d1.toString());
+        System.out.println(d1.toString());
         boolean e = false;
         try {
             d1= new Date(-800000,-1,2);
-            logln(d1.toString());
+            System.out.println(d1.toString());
         }
         catch (IllegalArgumentException ex) {
             e = true;
         }
-        if (e) errln("FAIL: Saw exception for year -800000");
-        else logln("Pass: No exception for year -800000");
+        if (e) fail("FAIL: Saw exception for year -800000");
+        else System.out.println("Pass: No exception for year -800000");
     }
 
     // Verify the behavior of Date
+    @Test
     public void TestDate480()
     {
       TimeZone save = TimeZone.getDefault();
       try {
         TimeZone.setDefault(TimeZone.getTimeZone("PST"));
         Date d1=new java.util.Date(97,8,13,10,8,13);
-        logln("d       = "+d1);
+        System.out.println("d       = "+d1);
         Date d2=new java.util.Date(97,8,13,30,8,13); // 20 hours later
-        logln("d+20h   = "+d2);
+        System.out.println("d+20h   = "+d2);
 
         double delta = (d2.getTime() - d1.getTime()) / 3600000;
 
-        logln("delta   = " + delta + "h");
+        System.out.println("delta   = " + delta + "h");
 
-        if (delta != 20.0) errln("Expected delta of 20; got " + delta);
+        if (delta != 20.0) fail("Expected delta of 20; got " + delta);
 
         Calendar cal = Calendar.getInstance();
         cal.clear();
         cal.set(1997,8,13,10,8,13);
         Date t1 = cal.getTime();
-        logln("d       = "+t1);
+        System.out.println("d       = "+t1);
         cal.clear();
         cal.set(1997,8,13,30,8,13); // 20 hours later
         Date t2 = cal.getTime();
-        logln("d+20h   = "+t2);
+        System.out.println("d+20h   = "+t2);
 
         double delta2 = (t2.getTime() - t1.getTime()) / 3600000;
 
-        logln("delta   = " + delta2 + "h");
+        System.out.println("delta   = " + delta2 + "h");
 
-        if (delta != 20.0) errln("Expected delta of 20; got " + delta2);
+        if (delta != 20.0) fail("Expected delta of 20; got " + delta2);
       }
       finally {
         TimeZone.setDefault(save);

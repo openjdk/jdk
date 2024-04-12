@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,14 +39,7 @@ public abstract class AttachFailedTestBase {
      * Build path to shared object according to platform rules
      */
     public static String getSharedObjectPath(String name) {
-        String libname;
-        if (Platform.isWindows()) {
-            libname = name + ".dll";
-        } else if (Platform.isOSX()) {
-            libname = "lib" + name + ".dylib";
-        } else {
-            libname = "lib" + name + ".so";
-        }
+        String libname = Platform.buildSharedLibraryName(name);
 
         return Paths.get(Utils.TEST_NATIVE_PATH, libname)
                     .toAbsolutePath()

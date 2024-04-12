@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "gc/serial/defNewGeneration.hpp"
 
 #include "gc/serial/cardTableRS.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "utilities/devirtualizer.inline.hpp"
@@ -37,12 +36,8 @@
 
 template <typename OopClosureType>
 void DefNewGeneration::oop_since_save_marks_iterate(OopClosureType* cl) {
-  // No allocation in eden and from spaces, so no iteration required.
-  assert(eden()->saved_mark_at_top(), "inv");
-  assert(from()->saved_mark_at_top(), "inv");
-
-  to()->oop_since_save_marks_iterate(cl);
-  to()->set_saved_mark();
+  Generation::oop_since_save_marks_iterate_impl(cl, to(), _saved_mark_word);
+  set_saved_mark_word();
 }
 
 #endif // SHARE_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP

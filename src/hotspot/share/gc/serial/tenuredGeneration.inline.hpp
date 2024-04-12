@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,16 +41,8 @@ inline size_t TenuredGeneration::free() const {
   return space()->free();
 }
 
-inline MemRegion TenuredGeneration::used_region() const {
-  return space()->used_region();
-}
-
 inline bool TenuredGeneration::is_in(const void* p) const {
   return space()->is_in(p);
-}
-
-inline ContiguousSpace* TenuredGeneration::first_compaction_space() const {
-  return space();
 }
 
 HeapWord* TenuredGeneration::allocate(size_t word_size,
@@ -65,24 +57,10 @@ HeapWord* TenuredGeneration::par_allocate(size_t word_size,
   return _the_space->par_allocate(word_size);
 }
 
-size_t TenuredGeneration::block_size(const HeapWord* addr) const {
-  if (addr < _the_space->top()) {
-    return cast_to_oop(addr)->size();
-  } else {
-    assert(addr == _the_space->top(), "non-block head arg to block_size");
-    return _the_space->end() - _the_space->top();
-  }
-}
-
-bool TenuredGeneration::block_is_obj(const HeapWord* addr) const {
-  return addr < _the_space  ->top();
-}
-
 template <typename OopClosureType>
 void TenuredGeneration::oop_since_save_marks_iterate(OopClosureType* blk) {
-  _the_space->oop_since_save_marks_iterate(blk);
-
-  save_marks();
+  Generation::oop_since_save_marks_iterate_impl(blk, _the_space, _saved_mark_word);
+  set_saved_mark_word();
 }
 
 #endif // SHARE_GC_SERIAL_TENUREDGENERATION_INLINE_HPP

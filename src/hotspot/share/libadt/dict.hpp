@@ -61,6 +61,11 @@ class Dict : public AnyObj { // Dictionary structure
   Dict(const Dict &base, Arena* arena); // Deep-copy
   ~Dict();
 
+  NONCOPYABLE(Dict);
+  Dict& operator=(Dict&&) = delete;
+  // Allow move constructor for && (eg. capture return of function)
+  Dict(Dict&&) = default;
+
   // Return # of key-value pairs in dict
   uint32_t Size(void) const { return _cnt; }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,14 @@
 class DumpedInternedStrings;
 class FileMapInfo;
 class KlassSubGraphInfo;
-class KlassToOopHandleTable;
+class MetaspaceObjToOopHandleTable;
 class ResourceBitMap;
 
 struct ArchivableStaticFieldInfo;
 class ArchiveHeapInfo;
+
+#define ARCHIVED_BOOT_LAYER_CLASS "jdk/internal/module/ArchivedBootLayer"
+#define ARCHIVED_BOOT_LAYER_FIELD "archivedBootLayer"
 
 // A dump time sub-graph info for Klass _k. It includes the entry points
 // (static fields in _k's mirror) of the archived sub-graphs reachable
@@ -160,6 +163,7 @@ public:
   // Scratch objects for archiving Klass::java_mirror()
   static oop scratch_java_mirror(BasicType t) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   static oop scratch_java_mirror(Klass* k)    NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  static bool is_archived_boot_layer_available(JavaThread* current) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
 private:
 #if INCLUDE_CDS_JAVA_HEAP
@@ -182,26 +186,38 @@ public:
   }
 
   class CachedOopInfo {
-    // See "TEMP notes: What are these?" in archiveHeapWriter.hpp
+    // Used by CDSHeapVerifier.
     oop _orig_referrer;
 
     // The location of this object inside ArchiveHeapWriter::_buffer
     size_t _buffer_offset;
+
+    // One or more fields in this object are pointing to non-null oops.
+    bool _has_oop_pointers;
+
+    // One or more fields in this object are pointing to MetaspaceObj
+    bool _has_native_pointers;
   public:
-    CachedOopInfo(oop orig_referrer)
+    CachedOopInfo(oop orig_referrer, bool has_oop_pointers)
       : _orig_referrer(orig_referrer),
-        _buffer_offset(0) {}
+        _buffer_offset(0),
+        _has_oop_pointers(has_oop_pointers),
+        _has_native_pointers(false) {}
     oop orig_referrer()             const { return _orig_referrer;   }
     void set_buffer_offset(size_t offset) { _buffer_offset = offset; }
     size_t buffer_offset()          const { return _buffer_offset;   }
+    bool has_oop_pointers()         const { return _has_oop_pointers; }
+    bool has_native_pointers()      const { return _has_native_pointers; }
+    void set_has_native_pointers()        { _has_native_pointers = true; }
   };
 
 private:
   static void check_enum_obj(int level, KlassSubGraphInfo* subgraph_info,
                              oop orig_obj);
 
-  typedef ResourceHashtable<oop, CachedOopInfo,
-      36137, // prime number
+  static const int INITIAL_TABLE_SIZE = 15889; // prime number
+  static const int MAX_TABLE_SIZE     = 1000000;
+  typedef ResizeableResourceHashtable<oop, CachedOopInfo,
       AnyObj::C_HEAP,
       mtClassShared,
       HeapShared::oop_hash> ArchivedObjectCache;
@@ -233,7 +249,7 @@ private:
   static DumpTimeKlassSubGraphInfoTable* _dump_time_subgraph_info_table;
   static RunTimeKlassSubGraphInfoTable _run_time_subgraph_info_table;
 
-  static CachedOopInfo make_cached_oop_info();
+  static CachedOopInfo make_cached_oop_info(oop obj);
   static void archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
                                        bool is_full_module_graph);
 
@@ -262,8 +278,7 @@ private:
   // !UseCompressedOops only: used to relocate pointers to the archived objects
   static ptrdiff_t _runtime_delta;
 
-  typedef ResourceHashtable<oop, bool,
-      15889, // prime number
+  typedef ResizeableResourceHashtable<oop, bool,
       AnyObj::C_HEAP,
       mtClassShared,
       HeapShared::oop_hash> SeenObjectsTable;
@@ -280,11 +295,12 @@ private:
   static GrowableArrayCHeap<oop, mtClassShared>* _pending_roots;
   static OopHandle _roots;
   static OopHandle _scratch_basic_type_mirrors[T_VOID+1];
-  static KlassToOopHandleTable* _scratch_java_mirror_table;
+  static MetaspaceObjToOopHandleTable* _scratch_java_mirror_table;
+  static MetaspaceObjToOopHandleTable* _scratch_references_table;
 
   static void init_seen_objects_table() {
     assert(_seen_objects_table == nullptr, "must be");
-    _seen_objects_table = new (mtClass)SeenObjectsTable();
+    _seen_objects_table = new (mtClass)SeenObjectsTable(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE);
   }
   static void delete_seen_objects_table() {
     assert(_seen_objects_table != nullptr, "must be");
@@ -313,7 +329,6 @@ private:
   static bool archive_object(oop obj);
 
   static void copy_interned_strings();
-  static void copy_roots();
 
   static void resolve_classes_for_subgraphs(JavaThread* current, ArchivableStaticFieldInfo fields[]);
   static void resolve_classes_for_subgraph_of(JavaThread* current, Klass* k);
@@ -340,7 +355,7 @@ private:
   static void reset_archived_object_states(TRAPS);
   static void create_archived_object_cache() {
     _archived_object_cache =
-      new (mtClass)ArchivedObjectCache();
+      new (mtClass)ArchivedObjectCache(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE);
   }
   static void destroy_archived_object_cache() {
     delete _archived_object_cache;
@@ -350,6 +365,7 @@ private:
     return _archived_object_cache;
   }
 
+  static int archive_exception_instance(oop exception);
   static void archive_objects(ArchiveHeapInfo* heap_info);
   static void copy_objects();
   static void copy_special_objects();
@@ -364,6 +380,8 @@ private:
   // Scratch objects for archiving Klass::java_mirror()
   static void set_scratch_java_mirror(Klass* k, oop mirror);
   static void remove_scratch_objects(Klass* k);
+  static void get_pointer_info(oop src_obj, bool& has_oop_pointers, bool& has_native_pointers);
+  static void set_has_native_pointers(oop src_obj);
 
   // We use the HeapShared::roots() array to make sure that objects stored in the
   // archived heap region are not prematurely collected. These roots include:
@@ -382,6 +400,7 @@ private:
   // Dump-time only. Returns the index of the root, which can be used at run time to read
   // the root using get_root(index, ...).
   static int append_root(oop obj);
+  static GrowableArrayCHeap<oop, mtClassShared>* pending_roots() { return _pending_roots; }
 
   // Dump-time and runtime
   static objArrayOop roots();
@@ -394,6 +413,8 @@ private:
 #endif // INCLUDE_CDS_JAVA_HEAP
 
  public:
+  static objArrayOop scratch_resolved_references(ConstantPool* src);
+  static void add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_scratch_objects(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static bool is_heap_region(int idx) {
     CDS_JAVA_HEAP_ONLY(return (idx == MetaspaceShared::hp);)
@@ -405,27 +426,27 @@ private:
 
   static void init_for_dumping(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void write_subgraph_info_table() NOT_CDS_JAVA_HEAP_RETURN;
-  static void serialize_root(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
+  static void init_roots(oop roots_oop) NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_tables(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
   static bool initialize_enum_klass(InstanceKlass* k, TRAPS) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
-  // Returns the address of a heap object when it's mapped at the
-  // runtime requested address. See comments in archiveBuilder.hpp.
-  static address to_requested_address(address dumptime_addr) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
-  static oop to_requested_address(oop dumptime_oop) {
-    return cast_to_oop(to_requested_address(cast_from_oop<address>(dumptime_oop)));
-  }
   static bool is_a_test_class_in_unnamed_module(Klass* ik) NOT_CDS_JAVA_HEAP_RETURN_(false);
 };
 
 #if INCLUDE_CDS_JAVA_HEAP
 class DumpedInternedStrings :
-  public ResourceHashtable<oop, bool,
-                           15889, // prime number
+  public ResizeableResourceHashtable<oop, bool,
                            AnyObj::C_HEAP,
                            mtClassShared,
                            HeapShared::string_oop_hash>
-{};
+{
+public:
+  DumpedInternedStrings(unsigned size, unsigned max_size) :
+    ResizeableResourceHashtable<oop, bool,
+                                AnyObj::C_HEAP,
+                                mtClassShared,
+                                HeapShared::string_oop_hash>(size, max_size) {}
+};
 #endif
 
 #endif // SHARE_CDS_HEAPSHARED_HPP

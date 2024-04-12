@@ -153,6 +153,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public JCTree visitCase(CaseTree node, P p) {
         JCCase t = (JCCase) node;
         List<JCCaseLabel> labels = copy(t.labels, p);
+        JCExpression guard = copy(t.guard, p);
         List<JCStatement> stats = copy(t.stats, p);
         JCTree body;
         if (node.getCaseKind() == CaseTree.CaseKind.RULE) {
@@ -161,7 +162,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         } else {
             body = null;
         }
-        return M.at(t.pos).Case(t.caseKind, labels, stats, body);
+        return M.at(t.pos).Case(t.caseKind, labels, guard, stats, body);
     }
 
     @DefinedBy(Api.COMPILER_TREE)
@@ -223,10 +224,10 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitEnhancedForLoop(EnhancedForLoopTree node, P p) {
         JCEnhancedForLoop t = (JCEnhancedForLoop) node;
-        JCTree varOrRecordPattern = copy(t.varOrRecordPattern, p);
+        JCVariableDecl var = copy(t.var, p);
         JCExpression expr = copy(t.expr, p);
         JCStatement body = copy(t.body, p);
-        return M.at(t.pos).ForeachLoop(varOrRecordPattern, expr, body);
+        return M.at(t.pos).ForeachLoop(var, expr, body);
     }
 
     @DefinedBy(Api.COMPILER_TREE)
@@ -280,6 +281,14 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public JCTree visitLiteral(LiteralTree node, P p) {
         JCLiteral t = (JCLiteral) node;
         return M.at(t.pos).Literal(t.typetag, t.value);
+    }
+
+    @DefinedBy(Api.COMPILER_TREE)
+    public JCTree visitStringTemplate(StringTemplateTree node, P p) {
+        JCStringTemplate t = (JCStringTemplate) node;
+        JCExpression processor = copy(t.processor, p);
+        List<JCExpression> expressions = copy(t.expressions, p);
+        return M.at(t.pos).StringTemplate(processor, t.fragments, expressions);
     }
 
     @DefinedBy(Api.COMPILER_TREE)
@@ -491,17 +500,16 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     }
 
     @DefinedBy(Api.COMPILER_TREE)
+    public JCTree visitAnyPattern(AnyPatternTree node, P p) {
+        JCAnyPattern t = (JCAnyPattern) node;
+        return M.at(t.pos).AnyPattern();
+    }
+
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitBindingPattern(BindingPatternTree node, P p) {
         JCBindingPattern t = (JCBindingPattern) node;
         JCVariableDecl var = copy(t.var, p);
         return M.at(t.pos).BindingPattern(var);
-    }
-
-    @DefinedBy(Api.COMPILER_TREE)
-    public JCTree visitParenthesizedPattern(ParenthesizedPatternTree node, P p) {
-        JCParenthesizedPattern t = (JCParenthesizedPattern) node;
-        JCPattern pattern = copy(t.pattern, p);
-        return M.at(t.pos).ParenthesizedPattern(pattern);
     }
 
     @DefinedBy(Api.COMPILER_TREE)
@@ -521,8 +529,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public JCTree visitPatternCaseLabel(PatternCaseLabelTree node, P p) {
         JCPatternCaseLabel t = (JCPatternCaseLabel) node;
         JCPattern pat = copy(t.pat, p);
-        JCExpression guard = copy(t.guard, p);
-        return M.at(t.pos).PatternCaseLabel(pat, guard);
+        return M.at(t.pos).PatternCaseLabel(pat);
     }
 
     @DefinedBy(Api.COMPILER_TREE)

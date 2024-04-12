@@ -226,7 +226,7 @@ double LogSelection::similarity(const LogSelection& other) const {
       }
     }
   }
-  return 2.0 * intersecting / (_ntags + other._ntags);
+  return 2.0 * (double)intersecting / (double)(_ntags + other._ntags);
 }
 
 // Comparator used for sorting LogSelections based on their similarity to a specific LogSelection.

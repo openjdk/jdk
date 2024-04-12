@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,25 +170,34 @@ final class Stroker implements StartFlagPathConsumer2D, MarlinConst {
             miterScaledLimit = miterLimit * lineWidth2;
             this.miterLimitSq = miterScaledLimit * miterScaledLimit;
 
-            final double limitMin = ((this.rdrCtx.clipInvScale == 0.0d) ? JOIN_ERROR
-                    : (JOIN_ERROR * this.rdrCtx.clipInvScale))
-                    + lineWidth2;
+            if (rdrCtx.doRender) {
+                final double limitMin = ((this.rdrCtx.clipInvScale == 0.0d) ? JOIN_ERROR
+                        : (JOIN_ERROR * this.rdrCtx.clipInvScale))
+                        + lineWidth2;
 
-            this.joinLimitMinSq = limitMin * limitMin;
-
+                this.joinLimitMinSq = limitMin * limitMin;
+            } else {
+                // createStrokedShape(): disable limit checks:
+                this.joinLimitMinSq = 0.0;
+            }
         } else if (joinStyle == JOIN_ROUND) {
-            // chord:  s = 2 r * sin( phi / 2)
-            // height: h = 2 r * sin( phi / 4)^2
-            // small angles (phi < 90):
-            // h = s^2 / (8 r)
-            // so s^2 = (8 h * r)
+            if (rdrCtx.doRender) {
+                // chord:  s = 2 r * sin( phi / 2)
+                // height: h = 2 r * sin( phi / 4)^2
+                // small angles (phi < 90):
+                // h = s^2 / (8 r)
+                // so s^2 = (8 h * r)
 
-            // height max (note ROUND_JOIN_ERROR = 8 * JOIN_ERROR)
-            final double limitMin = ((this.rdrCtx.clipInvScale == 0.0d) ? ROUND_JOIN_ERROR
-                    : (ROUND_JOIN_ERROR * this.rdrCtx.clipInvScale));
+                // height max (note ROUND_JOIN_ERROR = 8 * JOIN_ERROR)
+                final double limitMin = ((this.rdrCtx.clipInvScale == 0.0d) ? ROUND_JOIN_ERROR
+                        : (ROUND_JOIN_ERROR * this.rdrCtx.clipInvScale));
 
-            // chord limit (s^2):
-            this.joinLimitMinSq = limitMin * this.lineWidth2;
+                // chord limit (s^2):
+                this.joinLimitMinSq = limitMin * this.lineWidth2;
+            } else {
+                // createStrokedShape(): disable limit checks:
+                this.joinLimitMinSq = 0.0;
+            }
         }
         this.prev = CLOSE;
 

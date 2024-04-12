@@ -703,7 +703,7 @@ public class LambdaToMethod extends TreeTranslator {
             JCBreak br = make.Break(null);
             breaks.add(br);
             List<JCStatement> stmts = entry.getValue().append(br).toList();
-            cases.add(make.Case(JCCase.STATEMENT, List.of(make.ConstantCaseLabel(make.Literal(entry.getKey()))), stmts, null));
+            cases.add(make.Case(JCCase.STATEMENT, List.of(make.ConstantCaseLabel(make.Literal(entry.getKey()))), null, stmts, null));
         }
         JCSwitch sw = make.Switch(deserGetter("getImplMethodName", syms.stringType), cases.toList());
         for (JCBreak br : breaks) {
@@ -1569,8 +1569,15 @@ public class LambdaToMethod extends TreeTranslator {
         public void visitVarDef(JCVariableDecl tree) {
             TranslationContext<?> context = context();
             if (context != null && context instanceof LambdaTranslationContext lambdaContext) {
-                if (frameStack.head.tree.hasTag(LAMBDA)) {
-                    lambdaContext.addSymbol(tree.sym, LOCAL_VAR);
+                for (Frame frame : frameStack) {
+                    if (frame.tree.hasTag(VARDEF)) {
+                        //skip variable frames inside a lambda:
+                        continue;
+                    } else if (frame.tree.hasTag(LAMBDA)) {
+                        lambdaContext.addSymbol(tree.sym, LOCAL_VAR);
+                    } else {
+                        break;
+                    }
                 }
                 // Check for type variables (including as type arguments).
                 // If they occur within class nested in a lambda, mark for erasure

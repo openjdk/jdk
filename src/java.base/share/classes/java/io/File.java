@@ -1588,9 +1588,9 @@ public class File
      * <p> An invocation of this method of the form {@code file.setWritable(arg)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     file.setWritable(arg, true)
-     * }</pre>
+     * }
      *
      * @param   writable
      *          If {@code true}, sets the access permission to allow write
@@ -1621,6 +1621,12 @@ public class File
      * file attributes including file permissions. This may be used when finer
      * manipulation of file permissions is required.
      *
+     * <p> If the platform supports setting a file's read permission, but
+     * the user does not have permission to change the access permissions of
+     * this abstract pathname, then the operation will fail. If the platform
+     * does not support setting a file's read permission, this method does
+     * nothing and returns the value of the {@code readable} parameter.
+     *
      * @param   readable
      *          If {@code true}, sets the access permission to allow read
      *          operations; if {@code false} to disallow read operations
@@ -1632,12 +1638,9 @@ public class File
      *          permission from that of others, then the permission will apply to
      *          everybody, regardless of this value.
      *
-     * @return  {@code true} if and only if the operation succeeded.  The
-     *          operation will fail if the user does not have permission to
-     *          change the access permissions of this abstract pathname.  If
-     *          {@code readable} is {@code false} and the underlying
-     *          file system does not implement a read permission, then the
-     *          operation will fail.
+     * @return  {@code true} if the operation succeeds, {@code false} if it
+     *          fails, or the value of the {@code readable} parameter if
+     *          setting the read permission is not supported.
      *
      * @throws  SecurityException
      *          If a security manager exists and its {@link
@@ -1667,20 +1670,23 @@ public class File
      * <p>An invocation of this method of the form {@code file.setReadable(arg)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     file.setReadable(arg, true)
-     * }</pre>
+     * }
+     *
+     * <p> If the platform supports setting a file's read permission, but
+     * the user does not have permission to change the access permissions of
+     * this abstract pathname, then the operation will fail. If the platform
+     * does not support setting a file's read permission, this method does
+     * nothing and returns the value of the {@code readable} parameter.
      *
      * @param  readable
      *          If {@code true}, sets the access permission to allow read
      *          operations; if {@code false} to disallow read operations
      *
-     * @return  {@code true} if and only if the operation succeeded.  The
-     *          operation will fail if the user does not have permission to
-     *          change the access permissions of this abstract pathname.  If
-     *          {@code readable} is {@code false} and the underlying
-     *          file system does not implement a read permission, then the
-     *          operation will fail.
+     * @return  {@code true} if the operation succeeds, {@code false} if it
+     *          fails, or the value of the {@code readable} parameter if
+     *          setting the read permission is not supported.
      *
      * @throws  SecurityException
      *          If a security manager exists and its {@link
@@ -1703,6 +1709,12 @@ public class File
      * file attributes including file permissions. This may be used when finer
      * manipulation of file permissions is required.
      *
+     * <p> If the platform supports setting a file's execute permission, but
+     * the user does not have permission to change the access permissions of
+     * this abstract pathname, then the operation will fail. If the platform
+     * does not support setting a file's execute permission, this method does
+     * nothing and returns the value of the {@code executable} parameter.
+     *
      * @param   executable
      *          If {@code true}, sets the access permission to allow execute
      *          operations; if {@code false} to disallow execute operations
@@ -1714,12 +1726,9 @@ public class File
      *          execute permission from that of others, then the permission will
      *          apply to everybody, regardless of this value.
      *
-     * @return  {@code true} if and only if the operation succeeded.  The
-     *          operation will fail if the user does not have permission to
-     *          change the access permissions of this abstract pathname.  If
-     *          {@code executable} is {@code false} and the underlying
-     *          file system does not implement an execute permission, then the
-     *          operation will fail.
+     * @return  {@code true} if the operation succeeds, {@code false} if it
+     *          fails, or the value of the {@code executable} parameter if
+     *          setting the execute permission is not supported.
      *
      * @throws  SecurityException
      *          If a security manager exists and its {@link
@@ -1749,20 +1758,23 @@ public class File
      * <p>An invocation of this method of the form {@code file.setExcutable(arg)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     file.setExecutable(arg, true)
-     * }</pre>
+     * }
+     *
+     * <p> If the platform supports setting a file's execute permission, but
+     * the user does not have permission to change the access permissions of
+     * this abstract pathname, then the operation will fail. If the platform
+     * does not support setting a file's execute permission, this method does
+     * nothing and returns the value of the {@code executable} parameter.
      *
      * @param   executable
      *          If {@code true}, sets the access permission to allow execute
      *          operations; if {@code false} to disallow execute operations
      *
-     * @return   {@code true} if and only if the operation succeeded.  The
-     *           operation will fail if the user does not have permission to
-     *           change the access permissions of this abstract pathname.  If
-     *           {@code executable} is {@code false} and the underlying
-     *           file system does not implement an execute permission, then the
-     *           operation will fail.
+     * @return  {@code true} if the operation succeeds, {@code false} if it
+     *          fails, or the value of the {@code executable} parameter if
+     *          setting the execute permission is not supported.
      *
      * @throws  SecurityException
      *          If a security manager exists and its {@link
@@ -1813,17 +1825,26 @@ public class File
      * <p> A particular Java platform may support zero or more
      * hierarchically-organized file systems.  Each file system has a
      * {@code root} directory from which all other files in that file system
-     * can be reached.  Windows platforms, for example, have a root directory
-     * for each active drive; UNIX platforms have a single root directory,
-     * namely {@code "/"}.  The set of available filesystem roots is affected
-     * by various system-level operations such as the insertion or ejection of
-     * removable media and the disconnecting or unmounting of physical or
-     * virtual disk drives.
+     * can be reached.
      *
      * <p> This method returns an array of {@code File} objects that denote the
      * root directories of the available filesystem roots.  It is guaranteed
      * that the canonical pathname of any file physically present on the local
      * machine will begin with one of the roots returned by this method.
+     * There is no guarantee that a root directory can be accessed.
+     *
+     * <p> Unlike most methods in this class, this method does not throw
+     * security exceptions.  If a security manager exists and its {@link
+     * SecurityManager#checkRead(String)} method denies read access to a
+     * particular root directory, then that directory will not appear in the
+     * result.
+     *
+     * @implNote
+     * Windows platforms, for example, have a root directory
+     * for each active drive; UNIX platforms have a single root directory,
+     * namely {@code "/"}.  The set of filesystem roots is affected
+     * by various system-level operations such as the disconnecting or
+     * unmounting of physical or virtual disk drives.
      *
      * <p> The canonical pathname of a file that resides on some other machine
      * and is accessed via a remote-filesystem protocol such as SMB or NFS may
@@ -1834,12 +1855,6 @@ public class File
      * denoting the root directories of the mapped network drives of a Windows
      * platform will be returned by this method, while {@code File} objects
      * containing UNC pathnames will not be returned by this method.
-     *
-     * <p> Unlike most methods in this class, this method does not throw
-     * security exceptions.  If a security manager exists and its {@link
-     * SecurityManager#checkRead(String)} method denies read access to a
-     * particular root directory, then that directory will not appear in the
-     * result.
      *
      * @return  An array of {@code File} objects denoting the available
      *          filesystem roots, or {@code null} if the set of roots could not
@@ -2370,10 +2385,10 @@ public class File
      *
      * <p> The first invocation of this method works as if invoking it were
      * equivalent to evaluating the expression:
-     * <blockquote><pre>
-     * {@link java.nio.file.FileSystems#getDefault FileSystems.getDefault}().{@link
-     * java.nio.file.FileSystem#getPath getPath}(this.{@link #getPath getPath}());
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *         // @link regex="getPath(?=\(t)" target="java.nio.file.FileSystem#getPath" :
+     *         FileSystems.getDefault().getPath(this.getPath());
+     * }
      * Subsequent invocations of this method return the same {@code Path}.
      *
      * <p> If this abstract pathname is the empty abstract pathname then this

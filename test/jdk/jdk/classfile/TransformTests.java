@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -25,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile transformations.
+ * @summary Testing ClassFile transformations.
  * @run junit TransformTests
  */
 import java.net.URI;
@@ -34,13 +32,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import helpers.ByteArrayClassLoader;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.instruction.ConstantInstruction;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.instruction.ConstantInstruction;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -95,34 +93,37 @@ class TransformTests {
     void testSingleTransform() throws Exception {
 
         byte[] bytes = Files.readAllBytes(testClassPath);
-        ClassModel cm = Classfile.parse(bytes);
+        var cc = ClassFile.of();
+        ClassModel cm = cc.parse(bytes);
 
         assertEquals(invoke(bytes), "foo");
-        assertEquals(invoke(cm.transform(transformCode(foo2foo))), "foo");
-        assertEquals(invoke(cm.transform(transformCode(foo2bar))), "bar");
+        assertEquals(invoke(cc.transform(cm, transformCode(foo2foo))), "foo");
+        assertEquals(invoke(cc.transform(cm, transformCode(foo2bar))), "bar");
     }
 
     @Test
     void testSeq2() throws Exception {
 
         byte[] bytes = Files.readAllBytes(testClassPath);
-        ClassModel cm = Classfile.parse(bytes);
+        var cc = ClassFile.of();
+        ClassModel cm = cc.parse(bytes);
 
         assertEquals(invoke(bytes), "foo");
         ClassTransform transform = transformCode(foo2bar.andThen(bar2baz));
-        assertEquals(invoke(cm.transform(transform)), "baz");
+        assertEquals(invoke(cc.transform(cm, transform)), "baz");
     }
 
     @Test
     void testSeqN() throws Exception {
 
         byte[] bytes = Files.readAllBytes(testClassPath);
-        ClassModel cm = Classfile.parse(bytes);
+        var cc = ClassFile.of();
+        ClassModel cm = cc.parse(bytes);
 
         assertEquals(invoke(bytes), "foo");
-        assertEquals(invoke(cm.transform(transformCode(foo2bar.andThen(bar2baz).andThen(baz2foo)))), "foo");
-        assertEquals(invoke(cm.transform(transformCode(foo2bar.andThen(bar2baz).andThen(baz2quux)))), "quux");
-        assertEquals(invoke(cm.transform(transformCode(foo2foo.andThen(foo2bar).andThen(bar2baz)))), "baz");
+        assertEquals(invoke(cc.transform(cm, transformCode(foo2bar.andThen(bar2baz).andThen(baz2foo)))), "foo");
+        assertEquals(invoke(cc.transform(cm, transformCode(foo2bar.andThen(bar2baz).andThen(baz2quux)))), "quux");
+        assertEquals(invoke(cc.transform(cm, transformCode(foo2foo.andThen(foo2bar).andThen(bar2baz)))), "baz");
     }
 
     public static class TestClass {

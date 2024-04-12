@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,9 @@
 #include "utilities/macros.hpp"
 
 SpaceCounters::SpaceCounters(const char* name, int ordinal, size_t max_size,
-                             MutableSpace* m, GenerationCounters* gc) :
-   _object_space(m) {
-
+                             MutableSpace* m, GenerationCounters* gc)
+  : _last_used_in_bytes(0), _object_space(m)
+{
   if (UsePerfData) {
     EXCEPTION_MARK;
     ResourceMark rm;
@@ -55,13 +55,14 @@ SpaceCounters::SpaceCounters(const char* name, int ordinal, size_t max_size,
 
     cname = PerfDataManager::counter_name(_name_space, "capacity");
     _capacity = PerfDataManager::create_variable(SUN_GC, cname,
-                                   PerfData::U_Bytes,
-                                   _object_space->capacity_in_bytes(), CHECK);
+                                                 PerfData::U_Bytes,
+                                                 _object_space->capacity_in_bytes(),
+                                                 CHECK);
 
     cname = PerfDataManager::counter_name(_name_space, "used");
     _used = PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_Bytes,
-                                    new MutableSpaceUsedHelper(_object_space),
-                                    CHECK);
+                                             new UsedHelper(this),
+                                             CHECK);
 
     cname = PerfDataManager::counter_name(_name_space, "initCapacity");
     PerfDataManager::create_constant(SUN_GC, cname, PerfData::U_Bytes,
@@ -73,23 +74,22 @@ SpaceCounters::~SpaceCounters() {
   FREE_C_HEAP_ARRAY(char, _name_space);
 }
 
-static volatile size_t last_used_in_bytes = 0;
-
 void SpaceCounters::update_used() {
   size_t new_used = _object_space->used_in_bytes();
-  Atomic::store(&last_used_in_bytes, new_used);
+  Atomic::store(&_last_used_in_bytes, new_used);
   _used->set_value(new_used);
 }
 
-jlong MutableSpaceUsedHelper::take_sample() {
+jlong SpaceCounters::UsedHelper::take_sample() {
   // Sampling may occur during GC, possibly while GC is updating the space.
   // The space can be in an inconsistent state during such an update.  We
   // don't want to block sampling for the duration of a GC.  Instead, skip
   // sampling in that case, using the last recorded value.
   assert(!Heap_lock->owned_by_self(), "precondition");
   if (Heap_lock->try_lock()) {
-    Atomic::store(&last_used_in_bytes, _m->used_in_bytes());
+    size_t new_used = _counters->_object_space->used_in_bytes();
+    Atomic::store(&_counters->_last_used_in_bytes, new_used);
     Heap_lock->unlock();
   }
-  return Atomic::load(&last_used_in_bytes);
+  return Atomic::load(&_counters->_last_used_in_bytes);
 }

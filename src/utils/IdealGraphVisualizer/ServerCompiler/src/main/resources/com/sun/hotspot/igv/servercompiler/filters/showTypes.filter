@@ -1,0 +1,72 @@
+// This filter appends simplified type information to the (possibly already
+// existing) extra-label line.
+// If the phase type is available, show it. If the bottom type is available and
+// differs from the bottom type, show it too (prefixed with 'B:').
+
+// Simplify a reference type of the form
+//   "[5:]my/package/Class (package1/Class1,package2/Class2,..)"
+// into
+//   "[5:]Class"
+function simplify_reference_type(type) {
+  // Clean up interface lists in reference types.
+  var m = /(.*)\(.*\)(.*)/.exec(type);
+  if (m != null && typeof m[1] != 'undefined' && typeof m[2] != 'undefined') {
+    type = m[1] + m[2];
+  }
+  // Remove package name in reference types.
+  var m2 = /(\d+:)?.*\/(.*)/.exec(type);
+  if (m2 != null && typeof m2[2] != 'undefined') {
+    type = (typeof m2[1] != 'undefined' ? m2[1] : "") + m2[2];
+  }
+  return type;
+}
+
+// Remove fixed input types for calls and simplify references.
+function simplifyType(type) {
+  var callTypeStart = "{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address";
+  if (type.startsWith(callTypeStart)) {
+    // Exclude types of the first five outputs of call-like nodes.
+    type = type.replace(callTypeStart, "").replace("}", "");
+    prefix = ", ";
+    if (type.startsWith(prefix)) {
+      type = type.slice(prefix.length);
+    }
+    components = type.split(", ");
+    for (i = 0; i < components.length; i++) {
+      components[i] = simplify_reference_type(components[i]);
+    }
+    type = "{" + components.join(", ") + "}";
+  } else {
+    type = simplify_reference_type(type);
+  }
+  type = type.replace(">=", "≥").replace("<=", "≤");
+  return type;
+}
+
+// Merge a possibly existing extra label, bottom type, and phase type into a
+// new, single extra label.
+function mergeAndAppendTypeInfo(extra_label, bottom_type, phase_type) {
+  if (phase_type == null && bottom_type == null) {
+    return extra_label;
+  }
+  type = "";
+  // Always show phase type, if available.
+  if (phase_type != null) {
+    type += simplifyType(phase_type);
+  }
+  // Show bottom type, if available and different from phase type.
+  if (bottom_type != null && bottom_type != phase_type) {
+    if (phase_type != null) {
+      type += " | ";
+    }
+    type += "B: ";
+    type += simplifyType(bottom_type);
+  }
+  new_extra_label = extra_label == null ? "" : (extra_label + " ");
+  return new_extra_label + type;
+}
+
+editProperty(not(or([matches("bottom_type", "bottom"),
+                     matches("bottom_type", "abIO")])),
+             ["extra_label", "bottom_type", "phase_type"], "extra_label",
+             function(propertyValues) {return mergeAndAppendTypeInfo(propertyValues[0], propertyValues[1], propertyValues[2]);});

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,13 +93,13 @@ import java.io.*;
 
 public class popframes001 extends JDIBase {
 
-    static boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
-
     public static void main (String argv[]) {
 
         int result = run(argv, System.out);
 
-        System.exit(result + PASS_BASE);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run (String argv[], PrintStream out) {
@@ -220,10 +220,6 @@ public class popframes001 extends JDIBase {
 
         try {
             testRun();
-
-            if (vthreadMode) {
-                return 0; // just exit. we already got the expected OpaqueFrameException
-            }
 
             log2("waiting for VMDeathEvent");
             getEventSet();
@@ -356,24 +352,10 @@ public class popframes001 extends JDIBase {
             log2("......thread2Ref.popFrames(stackFrame);");
             try {
                 thread2Ref.popFrames(stackFrame);
-                if (vthreadMode) {
-                    log3("ERROR: Expected OpaqueFrameException");
-                    testExitCode = FAILED;
-                }
-            } catch ( Exception e ) {
-                if (vthreadMode && (e instanceof OpaqueFrameException)) {
-                    // pass. resume thread and exit
-                    log2("......got expected OpaqueFrameException");
-                    log2("......thread2Ref.resume();");
-                    thread2Ref.resume();
-                    breakpointForCommunication();
-                    vm.resume();
-                    break;
-                } else {
-                    log3("ERROR: " + e.getClass().getSimpleName());
-                    testExitCode = FAILED;
-                    throw e;
-                }
+            } catch ( IncompatibleThreadStateException e ) {
+                log3("ERROR: IncompatibleThreadStateException");
+                testExitCode = FAILED;
+                break;
             }
 
             log2("......thread2Ref.resume();");

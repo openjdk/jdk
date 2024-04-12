@@ -27,6 +27,7 @@ package com.sun.tools.javac.code;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Inherited;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -433,6 +434,10 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
     public boolean isFinal() {
         return (flags_field & FINAL) != 0;
+    }
+
+    public boolean isImplicit() {
+        return (flags_field & IMPLICIT_CLASS) != 0;
     }
 
    /** Is this symbol declared (directly or indirectly) local
@@ -1299,9 +1304,11 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         // sealed classes related fields
         /** The classes, or interfaces, permitted to extend this class, or interface
          */
-        public List<Symbol> permitted;
+        private java.util.List<PermittedClassWithPos> permitted;
 
         public boolean isPermittedExplicit = false;
+
+        private record PermittedClassWithPos(Symbol permittedClass, int pos) {}
 
         public ClassSymbol(long flags, Name name, Type type, Symbol owner) {
             super(TYP, flags, name, type, owner);
@@ -1311,7 +1318,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             this.sourcefile = null;
             this.classfile = null;
             this.annotationTypeMetadata = AnnotationTypeMetadata.notAnAnnotationType();
-            this.permitted = List.nil();
+            this.permitted = new ArrayList<>();
         }
 
         public ClassSymbol(long flags, Name name, Symbol owner) {
@@ -1321,6 +1328,37 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
                 new ClassType(Type.noType, null, null),
                 owner);
             this.type.tsym = this;
+        }
+
+        public void addPermittedSubclass(ClassSymbol csym, int pos) {
+            Assert.check(!isPermittedExplicit);
+            // we need to insert at the right pos
+            PermittedClassWithPos element = new PermittedClassWithPos(csym, pos);
+            int index = Collections.binarySearch(permitted, element, java.util.Comparator.comparing(PermittedClassWithPos::pos));
+            if (index < 0) {
+                index = -index - 1;
+            }
+            permitted.add(index, element);
+        }
+
+        public boolean isPermittedSubclass(Symbol csym) {
+            for (PermittedClassWithPos permittedClassWithPos : permitted) {
+                if (permittedClassWithPos.permittedClass.equals(csym)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public void clearPermittedSubclasses() {
+            permitted.clear();
+        }
+
+        public void setPermittedSubclasses(List<Symbol> permittedSubs) {
+            permitted.clear();
+            for (Symbol csym : permittedSubs) {
+                permitted.add(new PermittedClassWithPos(csym, 0));
+            }
         }
 
         /** The Java source which this symbol represents.
@@ -1367,10 +1405,15 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
                 return fullname.toString();
         }
 
-        @DefinedBy(Api.LANGUAGE_MODEL)
-        public Name getQualifiedName() {
-            return fullname;
-        }
+         @Override @DefinedBy(Api.LANGUAGE_MODEL)
+         public Name getQualifiedName() {
+             return fullname;
+         }
+
+         @Override @DefinedBy(Api.LANGUAGE_MODEL)
+         public Name getSimpleName() {
+             return name;
+         }
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public List<Symbol> getEnclosedElements() {
@@ -1545,7 +1588,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         @DefinedBy(Api.LANGUAGE_MODEL)
         public NestingKind getNestingKind() {
             apiComplete();
-            if (owner.kind == PCK)
+            if (owner.kind == PCK) // Handles implicitly declared classes as well
                 return NestingKind.TOP_LEVEL;
             else if (name.isEmpty())
                 return NestingKind.ANONYMOUS;
@@ -1634,13 +1677,14 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
         @DefinedBy(Api.LANGUAGE_MODEL)
         public List<Type> getPermittedSubclasses() {
-            return permitted.map(s -> s.type);
+            return permitted.stream().map(s -> s.permittedClass().type).collect(List.collector());
         }
     }
 
 
     /** A class for variable symbols
      */
+    @SuppressWarnings("preview")
     public static class VarSymbol extends Symbol implements VariableElement {
 
         /** The variable's declaration position.
@@ -1782,6 +1826,10 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
         public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
             return v.visitVarSymbol(this, p);
+        }
+
+        public boolean isUnnamedVariable() {
+            return name.isEmpty();
         }
     }
 
@@ -1946,7 +1994,8 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public Set<Modifier> getModifiers() {
-            long flags = flags();
+            // just in case the method is restricted but that is not a modifier
+            long flags = flags() & ~RESTRICTED;
             return Flags.asModifierSet((flags & DEFAULT) != 0 ? flags & ~ABSTRACT : flags);
         }
 
@@ -2258,6 +2307,21 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         @DefinedBy(Api.LANGUAGE_MODEL)
         public Type getReceiverType() {
             return asType().getReceiverType();
+        }
+
+        public Type implicitReceiverType() {
+            ClassSymbol enclosingClass = enclClass();
+            if (enclosingClass == null) {
+                return null;
+            }
+            Type enclosingType = enclosingClass.type;
+            if (isConstructor()) {
+                return enclosingType.getEnclosingType();
+            }
+            if (!isStatic()) {
+                return enclosingType;
+            }
+            return null;
         }
 
         @DefinedBy(Api.LANGUAGE_MODEL)

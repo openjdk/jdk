@@ -200,6 +200,7 @@ class ciMethod : public ciMetadata {
   bool intrinsic_candidate()    const { return get_Method()->intrinsic_candidate();    }
   bool is_static_initializer()  const { return get_Method()->is_static_initializer();  }
   bool changes_current_thread() const { return get_Method()->changes_current_thread(); }
+  bool deprecated()             const { return is_loaded() && get_Method()->deprecated(); }
 
   bool check_intrinsic_candidate() const {
     if (intrinsic_id() == vmIntrinsics::_blackhole) {
@@ -311,7 +312,7 @@ class ciMethod : public ciMetadata {
   bool is_not_reached(int bci);
   bool was_executed_more_than(int times);
   bool has_unloaded_classes_in_signature();
-  bool is_klass_loaded(int refinfo_index, bool must_be_resolved) const;
+  bool is_klass_loaded(int refinfo_index, Bytecodes::Code bc, bool must_be_resolved) const;
   bool check_call(int refinfo_index, bool is_static) const;
   bool ensure_method_data();  // make sure it exists in the VM also
   MethodCounters* ensure_method_counters();

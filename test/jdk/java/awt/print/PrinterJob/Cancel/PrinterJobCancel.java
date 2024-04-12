@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,218 +21,98 @@
  * questions.
  */
 
-/**
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterAbortException;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
+
+/*
  * @test
  * @bug 4245280
+ * @key printer
  * @summary PrinterJob not cancelled when PrinterJob.cancel() is used
- * @author prr
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @run main/manual PrinterJobCancel
  */
-
-import java.awt.* ;
-import java.awt.print.* ;
-
 public class PrinterJobCancel extends Thread implements Printable {
+    private final PrinterJob pj;
+    private final boolean okayed;
+    private static final String INSTRUCTIONS =
+            "Test that print job cancellation works.\n\n" +
+            "This test starts after clicking OK / Print button.\n" +
+            "While the print job is in progress, the test automatically cancels it.\n" +
+            "The test will complete automatically.";
 
-  PrinterJob pj ;
-  boolean okayed;
+    public static void main(String[] args) throws Exception {
+        if (PrinterJob.lookupPrintServices().length == 0) {
+            throw new RuntimeException("Printer not configured or available.");
+        }
 
-  public static void main ( String args[] ) {
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
+                .instructions(INSTRUCTIONS)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
+                .columns(45)
+                .build();
 
-     String[] instructions =
-        {
-         "Test that print job cancellation works.",
-         "You must have a printer available to perform this test.",
-         "This test silently starts a print job and while the job is",
-         "still being printed, cancels the print job",
-         "You should see a message on System.out that the job",
-         "was properly cancelled.",
-         "You will need to kill the application manually since regression",
-         "tests apparently aren't supposed to call System.exit()"
-       };
-
-      Sysout.createDialog( );
-      Sysout.printInstructions( instructions );
-
-      PrinterJobCancel pjc = new PrinterJobCancel() ;
-
-      if (pjc.okayed) {
-          pjc.start();
-          try {
-               Thread.sleep(5000);
-               pjc.pj.cancel();
-          } catch ( InterruptedException e ) {
-          }
-      }
-  }
-
-  public PrinterJobCancel() {
-
-    pj = PrinterJob.getPrinterJob() ;
-    pj.setPrintable(this);
-    okayed = pj.printDialog();
-  }
-
-  public void run() {
-    boolean cancelWorked = false;
-    try {
-        pj.print() ;
+        PrinterJobCancel pjc = new PrinterJobCancel();
+        if (pjc.okayed) {
+            pjc.start();
+            Thread.sleep(5000);
+            pjc.pj.cancel();
+        } else {
+            PassFailJFrame.forceFail("User cancelled printing");
+        }
+        passFailJFrame.awaitAndCheck();
     }
-    catch ( PrinterAbortException paex ) {
-      cancelWorked = true;
-      System.out.println("Job was properly cancelled and we");
-      System.out.println("got the expected PrintAbortException");
+
+    public PrinterJobCancel() {
+        pj = PrinterJob.getPrinterJob();
+        pj.setPrintable(this);
+        okayed = pj.printDialog();
     }
-    catch ( PrinterException prex ) {
-      System.out.println("This is wrong .. we shouldn't be here");
-      System.out.println("Looks like a test failure");
-      prex.printStackTrace() ;
-      //throw prex;
+
+    public void run() {
+        boolean cancelWorked = false;
+        try {
+            pj.print();
+        } catch (PrinterAbortException paex) {
+            cancelWorked = true;
+            System.out.println("Job was properly cancelled and we");
+            System.out.println("got the expected PrintAbortException");
+            PassFailJFrame.forcePass();
+        } catch (PrinterException prex) {
+            prex.printStackTrace();
+            PassFailJFrame.forceFail("Unexpected PrinterException caught:" + prex.getMessage());
+        } finally {
+            System.out.println("DONE PRINTING");
+            if (!cancelWorked) {
+                PassFailJFrame.forceFail("Didn't get the expected PrintAbortException");
+            }
+        }
     }
-    finally {
-       System.out.println("DONE PRINTING");
-       if (!cancelWorked) {
-           System.out.println("Looks like the test failed - we didn't get");
-           System.out.println("the expected PrintAbortException ");
-       }
+
+    @Override
+    public int print(Graphics g, PageFormat pagef, int pidx) {
+        if (pidx > 5) {
+            return (Printable.NO_SUCH_PAGE);
+        }
+
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.translate(pagef.getImageableX(), pagef.getImageableY());
+        g2d.setColor(Color.black);
+        g2d.drawString(("This is page" + (pidx + 1)), 60, 80);
+        // Need to slow things down a bit .. important not to try this
+        // on the event dispatching thread of course.
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException ignored) {
+        }
+
+        return Printable.PAGE_EXISTS;
     }
-    //System.exit(0);
-  }
-
-  public int print(Graphics g, PageFormat pagef, int pidx) {
-
-     if (pidx > 5) {
-        return( Printable.NO_SUCH_PAGE ) ;
-     }
-
-     Graphics2D g2d = (Graphics2D)g;
-     g2d.translate(pagef.getImageableX(), pagef.getImageableY());
-     g2d.setColor(Color.black);
-
-     g2d.drawString(("This is page"+(pidx+1)), 60 , 80);
-     // Need to slow things down a bit .. important not to try this
-     // on the event dispathching thread of course.
-     try {
-          Thread.sleep(2000);
-     } catch (InterruptedException e) {
-     }
-
-     return ( Printable.PAGE_EXISTS );
-  }
-
 }
-
-
-class Sysout {
-   private static TestDialog dialog;
-
-   public static void createDialogWithInstructions( String[] instructions )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      dialog.printInstructions( instructions );
-      dialog.show();
-      println( "Any messages for the tester will display here." );
-    }
-
-   public static void createDialog( )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      String[] defInstr = { "Instructions will appear here. ", "" } ;
-      dialog.printInstructions( defInstr );
-      dialog.show();
-      println( "Any messages for the tester will display here." );
-    }
-
-
-   public static void printInstructions( String[] instructions )
-    {
-      dialog.printInstructions( instructions );
-    }
-
-
-   public static void println( String messageIn )
-    {
-      dialog.displayMessage( messageIn );
-    }
-
-}// Sysout  class
-
-/**
-  This is part of the standard test machinery.  It provides a place for the
-   test instructions to be displayed, and a place for interactive messages
-   to the user to be displayed.
-  To have the test instructions displayed, see Sysout.
-  To have a message to the user be displayed, see Sysout.
-  Do not call anything in this dialog directly.
-  */
-class TestDialog extends Dialog {
-
-   TextArea instructionsText;
-   TextArea messageText;
-   int maxStringLength = 80;
-
-   //DO NOT call this directly, go through Sysout
-   public TestDialog( Frame frame, String name )
-    {
-      super( frame, name );
-      int scrollBoth = TextArea.SCROLLBARS_BOTH;
-      instructionsText = new TextArea( "", 15, maxStringLength, scrollBoth );
-      add( "North", instructionsText );
-
-      messageText = new TextArea( "", 5, maxStringLength, scrollBoth );
-      add("Center", messageText);
-
-      pack();
-
-      show();
-    }// TestDialog()
-
-   //DO NOT call this directly, go through Sysout
-   public void printInstructions( String[] instructions )
-    {
-      //Clear out any current instructions
-      instructionsText.setText( "" );
-
-      //Go down array of instruction strings
-
-      String printStr, remainingStr;
-      for( int i=0; i < instructions.length; i++ )
-       {
-         //chop up each into pieces maxSringLength long
-         remainingStr = instructions[ i ];
-         while( remainingStr.length() > 0 )
-          {
-            //if longer than max then chop off first max chars to print
-            if( remainingStr.length() >= maxStringLength )
-             {
-               //Try to chop on a word boundary
-               int posOfSpace = remainingStr.
-                  lastIndexOf( ' ', maxStringLength - 1 );
-
-               if( posOfSpace <= 0 ) posOfSpace = maxStringLength - 1;
-
-               printStr = remainingStr.substring( 0, posOfSpace + 1 );
-               remainingStr = remainingStr.substring( posOfSpace + 1 );
-             }
-            //else just print
-            else
-             {
-               printStr = remainingStr;
-               remainingStr = "";
-             }
-
-            instructionsText.append( printStr + "\n" );
-
-          }// while
-
-       }// for
-
-    }//printInstructions()
-
-   //DO NOT call this directly, go through Sysout
-   public void displayMessage( String messageIn )
-    {
-      messageText.append( messageIn + "\n" );
-    }
-
- }// TestDialog  class

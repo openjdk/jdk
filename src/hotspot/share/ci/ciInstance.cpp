@@ -136,5 +136,6 @@ void ciInstance::print_impl(outputStream* st) {
 
 ciKlass* ciInstance::java_lang_Class_klass() {
   VM_ENTRY_MARK;
+  assert(java_lang_Class::as_Klass(get_oop()) != nullptr, "klass is null");
   return CURRENT_ENV->get_metadata(java_lang_Class::as_Klass(get_oop()))->as_klass();
 }

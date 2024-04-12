@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,13 +44,12 @@
                        develop_pd,                                          \
                        product,                                             \
                        product_pd,                                          \
-                       notproduct,                                          \
                        range,                                               \
                        constraint)                                          \
                                                                             \
   /* compiler interface */                                                  \
                                                                             \
-  develop(bool, CIPrintCompilerName, false,                                 \
+  product(bool, CIPrintCompilerName, false, DIAGNOSTIC,                     \
           "when CIPrint is active, print the name of the active compiler")  \
                                                                             \
   product(bool, CIPrintCompileQueue, false, DIAGNOSTIC,                     \
@@ -95,11 +94,11 @@
   product(bool, CICompilerCountPerCPU, false,                               \
           "1 compiler thread for log(N CPUs)")                              \
                                                                             \
-  notproduct(intx, CICrashAt, -1,                                           \
+  develop(intx, CICrashAt, -1,                                              \
           "id of compilation to trigger assert in compiler thread for "     \
           "the purpose of testing, e.g. generation of replay data")         \
                                                                             \
-  notproduct(bool, CIObjectFactoryVerify, false,                            \
+  develop(bool, CIObjectFactoryVerify, false,                               \
           "enable potentially expensive verification in ciObjectFactory")   \
                                                                             \
   develop(intx, CIStart, 0,                                                 \
@@ -378,6 +377,10 @@
   develop(intx, HugeMethodLimit,  8000,                                     \
           "Don't compile methods larger than this if "                      \
           "+DontCompileHugeMethods")                                        \
+                                                                            \
+  product(bool, CaptureBailoutInformation, trueInDebug, DIAGNOSTIC,         \
+          "If compilation is stopped with an error, capture diagnostic "    \
+          "information at the bailout point")                               \
                                                                             \
 
 // end of COMPILER_FLAGS

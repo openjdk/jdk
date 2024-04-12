@@ -258,6 +258,16 @@ public class BasicMap {
         return cases.iterator();
     }
 
+    @DataProvider(name="nullableEntries")
+    public Iterator<Object[]> nullableEntries() {
+        return Arrays.asList(
+            new Object[] { "firstEntry" },
+            new Object[] { "lastEntry" },
+            new Object[] { "pollFirstEntry" },
+            new Object[] { "pollLastEntry" }
+        ).iterator();
+    }
+
     // ========== Assertions ==========
 
     /**
@@ -387,6 +397,20 @@ public class BasicMap {
         checkView1(rmap.reversed().keySet(), refKeys);
         checkSeqView1(rmap.reversed().sequencedKeySet(), refKeys);
         checkSeqView1(rmap.reversed().sequencedKeySet().reversed(), rrefKeys);
+
+        assertEquals(map.keySet().hashCode(), rmap.keySet().hashCode());
+        assertEquals(map.keySet().hashCode(), map.sequencedKeySet().hashCode());
+        assertEquals(rmap.keySet().hashCode(), rmap.sequencedKeySet().hashCode());
+
+        // Don't use assertEquals(), as we really want to test the equals() methods.
+        assertTrue(map.keySet().equals(map.sequencedKeySet()));
+        assertTrue(map.sequencedKeySet().equals(map.keySet()));
+        assertTrue(rmap.keySet().equals(map.sequencedKeySet()));
+        assertTrue(rmap.sequencedKeySet().equals(map.keySet()));
+        assertTrue(map.keySet().equals(rmap.sequencedKeySet()));
+        assertTrue(map.sequencedKeySet().equals(rmap.keySet()));
+        assertTrue(rmap.keySet().equals(rmap.sequencedKeySet()));
+        assertTrue(rmap.sequencedKeySet().equals(rmap.keySet()));
     }
 
     /**
@@ -412,6 +436,21 @@ public class BasicMap {
         checkView1(rmap.reversed().values(), refValues);
         checkSeqView1(rmap.reversed().sequencedValues(), refValues);
         checkSeqView1(rmap.reversed().sequencedValues().reversed(), rrefValues);
+
+        // No assertions over hashCode(), as Collection inherits Object.hashCode
+        // which is usually but not guaranteed to give unequal results.
+
+        // It's permissible for an implementation to return the same instance for values()
+        // as for sequencedValues(). Either they're the same instance, or they must be
+        // unequal, because distinct collections should always be unequal.
+
+        var v = map.values();
+        var sv = map.sequencedValues();
+        assertTrue((v == sv) || ! (v.equals(sv) || sv.equals(v)));
+
+        var rv = rmap.values();
+        var rsv = rmap.sequencedValues();
+        assertTrue((rv == rsv) || ! (rv.equals(rsv) || rsv.equals(rv)));
     }
 
     /**
@@ -436,6 +475,19 @@ public class BasicMap {
         checkView1(rmap.reversed().entrySet(), refEntries);
         checkSeqView1(rmap.reversed().sequencedEntrySet(), refEntries);
         checkSeqView1(rmap.reversed().sequencedEntrySet().reversed(), rref);
+
+        assertEquals(map.entrySet().hashCode(), rmap.entrySet().hashCode());
+        assertEquals(map.entrySet().hashCode(), map.sequencedEntrySet().hashCode());
+        assertEquals(map.sequencedEntrySet().hashCode(), map.entrySet().hashCode());
+
+        assertTrue(map.entrySet().equals(map.sequencedEntrySet()));
+        assertTrue(map.sequencedEntrySet().equals(map.entrySet()));
+        assertTrue(rmap.entrySet().equals(map.sequencedEntrySet()));
+        assertTrue(rmap.sequencedEntrySet().equals(map.entrySet()));
+        assertTrue(map.entrySet().equals(rmap.sequencedEntrySet()));
+        assertTrue(map.sequencedEntrySet().equals(rmap.entrySet()));
+        assertTrue(rmap.entrySet().equals(rmap.sequencedEntrySet()));
+        assertTrue(rmap.sequencedEntrySet().equals(rmap.entrySet()));
     }
 
     /**
@@ -517,6 +569,11 @@ public class BasicMap {
         assertThrows(CCE, () -> { objMap.reversed().put("x", new Object()); });
         assertThrows(CCE, () -> { objMap.reversed().sequencedEntrySet().getFirst().setValue(new Object()); });
         assertThrows(CCE, () -> { objMap.reversed().sequencedEntrySet().reversed().getFirst().setValue(new Object()); });
+    }
+
+    public void checkEntry(Map.Entry<String, Integer> entry, String key, Integer value) {
+        assertEquals(entry.getKey(), key);
+        assertEquals(entry.getValue(), value);
     }
 
     // ========== Tests ==========
@@ -888,5 +945,22 @@ public class BasicMap {
         else
             assertThrows(UOE, () -> entrySet.addFirst(Map.entry("x", 99)));
         checkContents(map, baseref);
+    }
+
+    @Test(dataProvider="nullableEntries")
+    public void testNullableKeyValue(String mode) {
+        // TODO this relies on LHM to inherit SequencedMap default
+        // methods which are actually being tested here.
+        SequencedMap<String, Integer> map = new LinkedHashMap<>();
+        map.put(null, 1);
+        map.put("two", null);
+
+        switch (mode) {
+            case "firstEntry"     -> checkEntry(map.firstEntry(), null, 1);
+            case "lastEntry"      -> checkEntry(map.lastEntry(), "two", null);
+            case "pollFirstEntry" -> checkEntry(map.pollFirstEntry(), null, 1);
+            case "pollLastEntry"  -> checkEntry(map.pollLastEntry(), "two", null);
+            default               -> throw new AssertionError("illegal mode " + mode);
+        }
     }
 }

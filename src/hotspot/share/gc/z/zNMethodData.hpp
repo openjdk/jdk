@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,48 +24,36 @@
 #ifndef SHARE_GC_Z_ZNMETHODDATA_HPP
 #define SHARE_GC_Z_ZNMETHODDATA_HPP
 
-#include "gc/z/zAttachedArray.hpp"
+#include "gc/z/zArray.hpp"
 #include "gc/z/zLock.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class nmethod;
-template <typename T> class GrowableArray;
-
-class ZNMethodDataOops {
-private:
-  typedef ZAttachedArray<ZNMethodDataOops, oop*> AttachedArray;
-
-  const AttachedArray _immediates;
-  const bool          _has_non_immediates;
-
-  ZNMethodDataOops(const GrowableArray<oop*>& immediates, bool has_non_immediates);
-
-public:
-  static ZNMethodDataOops* create(const GrowableArray<oop*>& immediates, bool has_non_immediates);
-  static void destroy(ZNMethodDataOops* oops);
-
-  size_t immediates_count() const;
-  oop** immediates_begin() const;
-  oop** immediates_end() const;
-
-  bool has_non_immediates() const;
+struct ZNMethodDataBarrier {
+  address _reloc_addr;
+  int     _reloc_format;
 };
 
 class ZNMethodData : public CHeapObj<mtGC> {
 private:
-  ZReentrantLock             _lock;
-  ZNMethodDataOops* volatile _oops;
+  ZReentrantLock              _lock;
+  ZArray<ZNMethodDataBarrier> _barriers;
+  ZArray<oop*>                _immediate_oops;
+  bool                        _has_non_immediate_oops;
 
 public:
   ZNMethodData();
-  ~ZNMethodData();
 
   ZReentrantLock* lock();
 
-  ZNMethodDataOops* oops() const;
-  ZNMethodDataOops* swap_oops(ZNMethodDataOops* oops);
+  const ZArray<ZNMethodDataBarrier>* barriers() const;
+  const ZArray<oop*>* immediate_oops() const;
+  bool has_non_immediate_oops() const;
+
+  void swap(ZArray<ZNMethodDataBarrier>* barriers,
+            ZArray<oop*>* immediate_oops,
+            bool has_non_immediate_oops);
 };
 
 #endif // SHARE_GC_Z_ZNMETHODDATA_HPP

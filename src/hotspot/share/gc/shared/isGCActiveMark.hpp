@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,12 @@ class IsGCActiveMark : public StackObj {
  public:
   IsGCActiveMark();
   ~IsGCActiveMark();
+};
+
+class DisableIsGCActiveMark : public StackObj {
+ public:
+  DisableIsGCActiveMark();
+  ~DisableIsGCActiveMark();
 };
 
 #endif // SHARE_GC_SHARED_ISGCACTIVEMARK_HPP

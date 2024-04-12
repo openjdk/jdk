@@ -99,10 +99,7 @@ public class ConditionalExpressionResolvePending extends ComboInstance<Condition
                         case "FALSE" -> False;
                         case "SNIPPET" -> snippet;
                         default -> throw new UnsupportedOperationException(pname);
-                    })
-                .withOption("--enable-preview")
-                .withOption("-source")
-                .withOption(String.valueOf(Runtime.version().feature()));
+                    });
 
         task.generate(result -> {
             try {

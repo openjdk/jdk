@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,18 +107,17 @@ public abstract class AbstractElementVisitor6<R, P> implements ElementVisitor<R,
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec The default implementation of this method in
      * {@code AbstractElementVisitor6} will always throw
      * {@code new UnknownElementException(e, p)}.
      * This behavior is not required of a subclass.
      *
-     * @param e {@inheritDoc}
-     * @param p {@inheritDoc}
-     * @return  {@inheritDoc}
-     * @throws UnknownElementException
-     *          a visitor implementation may optionally throw this exception
+     * @param e {@inheritDoc ElementVisitor}
+     * @param p {@inheritDoc ElementVisitor}
+     * @return  {@inheritDoc ElementVisitor}
+     * @throws UnknownElementException {@inheritDoc ElementVisitor}
      */
     @Override
     public R visitUnknown(Element e, P p) {
@@ -126,14 +125,14 @@ public abstract class AbstractElementVisitor6<R, P> implements ElementVisitor<R,
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec Visits a {@code ModuleElement} by calling {@code
      * visitUnknown}.
      *
-     * @param e  {@inheritDoc}
-     * @param p  {@inheritDoc}
-     * @return   {@inheritDoc}
+     * @param e  {@inheritDoc ElementVisitor}
+     * @param p  {@inheritDoc ElementVisitor}
+     * @return   {@inheritDoc ElementVisitor}
      *
      * @since 9
      */
@@ -144,14 +143,14 @@ public abstract class AbstractElementVisitor6<R, P> implements ElementVisitor<R,
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec Visits a {@code RecordComponentElement} by calling {@code
      * visitUnknown}.
      *
-     * @param e  {@inheritDoc}
-     * @param p  {@inheritDoc}
-     * @return   {@inheritDoc}
+     * @param e  {@inheritDoc ElementVisitor}
+     * @param p  {@inheritDoc ElementVisitor}
+     * @return   {@inheritDoc ElementVisitor}
      *
      * @since 14
      */

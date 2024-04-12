@@ -239,6 +239,17 @@ public interface DocTreeFactory {
     InheritDocTree newInheritDocTree();
 
     /**
+     * Creates a new {@code InheritDocTree} object, to represent an {@code {@inheritDoc}} tag.
+     * @param supertype a superclass or superinterface reference
+     * @return an {@code InheritDocTree} object
+     * @implSpec This implementation throws {@code UnsupportedOperationException}.
+     * @since 22
+     */
+    default InheritDocTree newInheritDocTree(ReferenceTree supertype) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
      * Creates a new {@code LinkTree} object, to represent a {@code {@link }} tag.
      * @param ref the API element being referenced
      * @param label an optional label for the link

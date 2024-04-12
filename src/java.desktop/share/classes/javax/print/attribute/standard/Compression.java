@@ -66,7 +66,9 @@ public class Compression extends EnumSyntax implements DocAttribute {
 
     /**
      * GNU zip compression technology described in
-     * <a href="http://www.ietf.org/rfc/rfc1952.txt">RFC 1952</a>.
+     * <a href="https://www.rfc-editor.org/info/rfc1952">RFC 1952</a>.
+     * @spec https://www.rfc-editor.org/info/rfc1952
+     *      RFC 1952: GZIP file format specification version 4.3
      */
     public static final Compression GZIP = new Compression(2);
 

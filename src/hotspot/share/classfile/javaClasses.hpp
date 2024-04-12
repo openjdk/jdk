@@ -28,12 +28,15 @@
 #include "classfile/vmClasses.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "oops/symbol.hpp"
 #include "runtime/handles.hpp"
+#include "runtime/os.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmEnums.hpp"
 
 class JvmtiThreadState;
 class RecordComponent;
+class SerializeClosure;
 
 #define CHECK_INIT(offset)  assert(offset != 0, "should be initialized"); return offset;
 
@@ -104,7 +107,6 @@ class java_lang_String : AllStatic {
   static int value_offset() { CHECK_INIT(_value_offset); }
   static int coder_offset() { CHECK_INIT(_coder_offset); }
 
-  static inline void set_value_raw(oop string, typeArrayOop buffer);
   static inline void set_value(oop string, typeArrayOop buffer);
 
   // Set the deduplication_forbidden flag true.  This flag is sticky; once
@@ -353,6 +355,7 @@ class java_lang_Thread : AllStatic {
   static int _jvmti_VTMS_transition_disable_count_offset;
   static int _jvmti_is_in_VTMS_transition_offset;
   static int _interrupted_offset;
+  static int _interruptLock_offset;
   static int _tid_offset;
   static int _continuation_offset;
   static int _park_blocker_offset;
@@ -366,10 +369,14 @@ class java_lang_Thread : AllStatic {
 
   // Returns the JavaThread associated with the thread obj
   static JavaThread* thread(oop java_thread);
+  static JavaThread* thread_acquire(oop java_thread);
   // Set JavaThread for instance
   static void set_thread(oop java_thread, JavaThread* thread);
+  static void release_set_thread(oop java_thread, JavaThread* thread);
   // FieldHolder
   static oop holder(oop java_thread);
+  // interruptLock
+  static oop interrupt_lock(oop java_thread);
   // Interrupted status
   static bool interrupted(oop java_thread);
   static void set_interrupted(oop java_thread, bool val);
@@ -517,20 +524,22 @@ class java_lang_VirtualThread : AllStatic {
   JFR_ONLY(static int _jfr_epoch_offset;)
  public:
   enum {
-    NEW          = 0,
-    STARTED      = 1,
-    RUNNABLE     = 2,
-    RUNNING      = 3,
-    PARKING      = 4,
-    PARKED       = 5,
-    PINNED       = 6,
-    YIELDING     = 7,
-    TERMINATED   = 99,
+    NEW           = 0,
+    STARTED       = 1,
+    RUNNING       = 2,
+    PARKING       = 3,
+    PARKED        = 4,
+    PINNED        = 5,
+    TIMED_PARKING = 6,
+    TIMED_PARKED  = 7,
+    TIMED_PINNED  = 8,
+    UNPARKED      = 9,
+    YIELDING      = 10,
+    YIELDED       = 11,
+    TERMINATED    = 99,
 
-    // can be suspended from scheduling when unmounted
-    SUSPENDED    = 1 << 8,
-    RUNNABLE_SUSPENDED = (RUNNABLE | SUSPENDED),
-    PARKED_SUSPENDED   = (PARKED | SUSPENDED)
+    // additional state bits
+    SUSPENDED    = 1 << 8,   // suspended when unmounted
   };
 
   static void compute_offsets();
@@ -847,6 +856,9 @@ class java_lang_Module {
     static oop loader(oop module);
     static void set_loader(oop module, oop value);
 
+    // CDS
+    static int module_entry_offset() { return _module_entry_offset; }
+
     static oop name(oop module);
     static void set_name(oop module, oop value);
 
@@ -882,20 +894,6 @@ class reflect_ConstantPool {
   friend class JavaClasses;
 };
 
-// Interface to jdk.internal.reflect.UnsafeStaticFieldAccessorImpl objects
-class reflect_UnsafeStaticFieldAccessorImpl {
- private:
-  static int _base_offset;
-  static void compute_offsets();
-
- public:
-  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
-
-  static int base_offset() { CHECK_INIT(_base_offset); }
-
-  // Debugging
-  friend class JavaClasses;
-};
 
 // Interface to java.lang primitive type boxing objects:
 //  - java.lang.Boolean
@@ -1208,7 +1206,6 @@ class jdk_internal_foreign_abi_CallConv: AllStatic {
 // (These are a private interface for Java code to query the class hierarchy.)
 
 #define RESOLVEDMETHOD_INJECTED_FIELDS(macro)                                   \
-  macro(java_lang_invoke_ResolvedMethodName, vmholder, object_signature, false) \
   macro(java_lang_invoke_ResolvedMethodName, vmtarget, intptr_signature, false)
 
 class java_lang_invoke_ResolvedMethodName : AllStatic {
@@ -1297,6 +1294,7 @@ class java_lang_invoke_MemberName: AllStatic {
     MN_IS_TYPE               = 0x00080000, // nested type
     MN_CALLER_SENSITIVE      = 0x00100000, // @CallerSensitive annotation detected
     MN_TRUSTED_FINAL         = 0x00200000, // trusted final field
+    MN_HIDDEN_MEMBER         = 0x00400000, // @Hidden annotation detected
     MN_REFERENCE_KIND_SHIFT  = 24, // refKind
     MN_REFERENCE_KIND_MASK   = 0x0F000000 >> MN_REFERENCE_KIND_SHIFT,
     MN_NESTMATE_CLASS        = 0x00000001,
@@ -1474,7 +1472,9 @@ class java_lang_ClassLoader : AllStatic {
   static void compute_offsets();
 
  public:
+  // Support for CDS
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+  static int loader_data_offset() { return  _loader_data_offset; }
 
   static ClassLoaderData* loader_data_acquire(oop loader);
   static ClassLoaderData* loader_data(oop loader);
@@ -1492,7 +1492,8 @@ class java_lang_ClassLoader : AllStatic {
   static bool is_trusted_loader(oop loader);
 
   // Return true if this is one of the class loaders associated with
-  // the generated bytecodes for reflection.
+  // the generated bytecodes for serialization constructor returned
+  // by sun.reflect.ReflectionFactory::newConstructorForSerialization
   static bool is_reflection_class_loader(oop loader);
 
   // Fix for 4474172
@@ -1599,6 +1600,26 @@ class Backtrace: AllStatic {
   friend class JavaClasses;
 };
 
+class java_lang_ClassFrameInfo: AllStatic {
+private:
+  static int _classOrMemberName_offset;
+  static int _flags_offset;
+
+public:
+  static oop  classOrMemberName(oop info);
+  static int  flags(oop info);
+
+  // Setters
+  static void init_class(Handle stackFrame, const methodHandle& m);
+  static void init_method(Handle stackFrame, const methodHandle& m, TRAPS);
+
+  static void compute_offsets();
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+
+  // Debugging
+  friend class JavaClasses;
+};
+
 // Interface to java.lang.StackFrameInfo objects
 
 #define STACKFRAMEINFO_INJECTED_FIELDS(macro)                      \
@@ -1606,16 +1627,22 @@ class Backtrace: AllStatic {
 
 class java_lang_StackFrameInfo: AllStatic {
 private:
-  static int _memberName_offset;
+  static int _type_offset;
+  static int _name_offset;
   static int _bci_offset;
   static int _version_offset;
   static int _contScope_offset;
 
-  static Method* get_method(Handle stackFrame, InstanceKlass* holder, TRAPS);
-
 public:
+  // Getters
+  static oop name(oop info);
+  static oop type(oop info);
+  static Method* get_method(oop info);
+
   // Setters
   static void set_method_and_bci(Handle stackFrame, const methodHandle& method, int bci, oop cont, TRAPS);
+  static void set_name(oop info, oop value);
+  static void set_type(oop info, oop value);
   static void set_bci(oop info, int value);
 
   static void set_version(oop info, short value);

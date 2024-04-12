@@ -52,17 +52,17 @@ public class VectorFPtoIntCastOperations {
        -0.0
     };
 
-    static float [] float_arr;
+    private float [] float_arr;
 
-    static double [] double_arr;
+    private double [] double_arr;
 
-    static long [] long_res;
+    private long [] long_res;
 
-    static int [] int_res;
+    private int [] int_res;
 
-    static short [] short_res;
+    private short [] short_res;
 
-    static byte [] byte_res;
+    private byte [] byte_res;
 
     @Setup(Level.Trial)
     public void BmSetup() {

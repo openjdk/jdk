@@ -27,7 +27,6 @@ package com.sun.tools.javac.jvm;
 import com.sun.tools.javac.util.ByteBuffer;
 import com.sun.tools.javac.util.ByteBuffer.UnderflowException;
 import com.sun.tools.javac.util.Convert;
-import com.sun.tools.javac.util.Name.NameMapper;
 
 import java.io.IOException;
 import java.io.InputStream;

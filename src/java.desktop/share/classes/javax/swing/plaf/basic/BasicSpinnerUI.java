@@ -866,7 +866,7 @@ public class BasicSpinnerUI extends SpinnerUI
 
                     if (child != null && SwingUtilities.isDescendingFrom(
                                                         child, spinner)) {
-                        child.requestFocus();
+                        child.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
                     }
                 }
             }

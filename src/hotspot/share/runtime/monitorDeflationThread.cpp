@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/universe.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -48,9 +50,36 @@ void MonitorDeflationThread::initialize() {
 
 void MonitorDeflationThread::monitor_deflation_thread_entry(JavaThread* jt, TRAPS) {
 
-  // We wait for GuaranteedSafepointInterval so that is_async_deflation_needed() is checked
-  // at the same interval, unless GuaranteedAsyncDeflationInterval is lower.
-  const intx wait_time = MIN2(GuaranteedSafepointInterval, GuaranteedAsyncDeflationInterval);
+  // We wait for the lowest of these three intervals:
+  //  - GuaranteedSafepointInterval
+  //      While deflation is not related to safepoint anymore, this keeps compatibility with
+  //      the old behavior when deflation also happened at safepoints. Users who set this
+  //      option to get more/less frequent deflations would be served with this option.
+  //  - AsyncDeflationInterval
+  //      Normal threshold-based deflation heuristic checks the conditions at this interval.
+  //      See is_async_deflation_needed().
+  //  - GuaranteedAsyncDeflationInterval
+  //      Backup deflation heuristic checks the conditions at this interval.
+  //      See is_async_deflation_needed().
+  //
+  intx wait_time = max_intx;
+  if (GuaranteedSafepointInterval > 0) {
+    wait_time = MIN2(wait_time, GuaranteedSafepointInterval);
+  }
+  if (AsyncDeflationInterval > 0) {
+    wait_time = MIN2(wait_time, AsyncDeflationInterval);
+  }
+  if (GuaranteedAsyncDeflationInterval > 0) {
+    wait_time = MIN2(wait_time, GuaranteedAsyncDeflationInterval);
+  }
+
+  // If all options are disabled, then wait time is not defined, and the deflation
+  // is effectively disabled. In that case, exit the thread immediately after printing
+  // a warning message.
+  if (wait_time == max_intx) {
+    warning("Async deflation is disabled");
+    return;
+  }
 
   while (true) {
     {
@@ -67,6 +96,13 @@ void MonitorDeflationThread::monitor_deflation_thread_entry(JavaThread* jt, TRAP
       }
     }
 
-    (void)ObjectSynchronizer::deflate_idle_monitors(/* ObjectMonitorsHashtable is not needed here */ nullptr);
+    (void)ObjectSynchronizer::deflate_idle_monitors();
+
+    if (log_is_enabled(Debug, monitorinflation)) {
+      // The VMThread calls do_final_audit_and_print_stats() which calls
+      // audit_and_print_stats() at the Info level at VM exit time.
+      LogStreamHandle(Debug, monitorinflation) ls;
+      ObjectSynchronizer::audit_and_print_stats(&ls, false /* on_exit */);
+    }
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -454,7 +454,14 @@ abstract class HandshakeContext implements ConnectionContext {
         if (handshakeType == SSLHandshake.HELLO_REQUEST.id) {
             // For TLS 1.2 and prior versions, the HelloRequest message MAY
             // be sent by the server at any time.
-            consumer = SSLHandshake.HELLO_REQUEST;
+
+            // If we're in server mode, we want the consumer to be null so
+            // that we don't attempt to cast a Server object as a Client object
+            // further down in the stack. Having the consumer be null forces
+            // the check a few lines later to pass and throws the message for
+            // "Unexpected handshake message".
+            consumer = conContext.sslConfig.isClientMode ?
+                    SSLHandshake.HELLO_REQUEST : null;
         } else {
             consumer = handshakeConsumers.get(handshakeType);
         }

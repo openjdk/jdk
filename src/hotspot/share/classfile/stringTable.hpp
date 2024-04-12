@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_CLASSFILE_STRINGTABLE_HPP
 #define SHARE_CLASSFILE_STRINGTABLE_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/padded.hpp"
 #include "oops/oop.hpp"
 #include "oops/oopHandle.hpp"
@@ -37,15 +37,11 @@ class DumpedInternedStrings;
 class JavaThread;
 class SerializeClosure;
 
-class StringTable;
 class StringTableConfig;
-class StringTableCreateEntry;
 
-class StringTable : public CHeapObj<mtSymbol>{
+class StringTable : AllStatic {
   friend class VMStructs;
-  friend class Symbol;
   friend class StringTableConfig;
-  friend class StringTableCreateEntry;
 
   static volatile bool _has_work;
 
@@ -66,7 +62,7 @@ class StringTable : public CHeapObj<mtSymbol>{
   static void gc_notification(size_t num_dead);
   static void trigger_concurrent_work();
 
-  static size_t item_added();
+  static void item_added();
   static void item_removed();
 
   static oop intern(Handle string_or_null_h, const jchar* name, int len, TRAPS);
@@ -74,8 +70,6 @@ class StringTable : public CHeapObj<mtSymbol>{
   static oop do_lookup(const jchar* name, int len, uintx hash);
 
   static void print_table_statistics(outputStream* st);
-
-  static bool do_rehash();
 
  public:
   static size_t table_size();
@@ -96,13 +90,13 @@ class StringTable : public CHeapObj<mtSymbol>{
   static oop intern(const char *utf8_string, TRAPS);
 
   // Rehash the string table if it gets out of balance
+private:
+  static bool should_grow();
+  static bool maybe_rehash_table();
+public:
   static void rehash_table();
   static bool needs_rehashing() { return _needs_rehashing; }
-  static inline void update_needs_rehash(bool rehash) {
-    if (rehash) {
-      _needs_rehashing = true;
-    }
-  }
+  static inline void update_needs_rehash(bool rehash);
 
   // Sharing
 #if INCLUDE_CDS_JAVA_HEAP
@@ -142,7 +136,7 @@ private:
   static oop lookup_shared(const jchar* name, int len) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   static size_t shared_entry_count() NOT_CDS_JAVA_HEAP_RETURN_(0);
   static void allocate_shared_strings_array(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
-  static oop init_shared_table(const DumpedInternedStrings* dumped_interned_strings) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  static oop init_shared_table(const DumpedInternedStrings* dumped_interned_strings) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   static void set_shared_strings_array_index(int root_index) NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_shared_table_header(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
 

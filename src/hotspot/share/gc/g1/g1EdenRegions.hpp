@@ -26,13 +26,13 @@
 #define SHARE_GC_G1_G1EDENREGIONS_HPP
 
 #include "gc/g1/g1RegionsOnNodes.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
 
 class G1EdenRegions {
 private:
-  int    _length;
+  uint    _length;
   // Sum of used bytes from all retired eden regions.
   // I.e. updated when mutator regions are retired.
   volatile size_t _used_bytes;

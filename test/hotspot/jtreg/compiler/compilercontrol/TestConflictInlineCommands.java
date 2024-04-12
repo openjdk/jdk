@@ -39,7 +39,8 @@ import jdk.test.lib.process.ProcessTools;
 
 public class TestConflictInlineCommands {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                "-Xbatch",
                 "-XX:CompileCommand=inline,*TestConflictInlineCommands::caller",
                 "-XX:CompileCommand=dontinline,*TestConflictInlineCommands::caller",
                 "-XX:CompileCommand=quiet", "-XX:CompileCommand=compileonly,*Launcher::main",
@@ -51,7 +52,8 @@ public class TestConflictInlineCommands {
         analyzer.shouldContain("disallowed by CompileCommand");
         analyzer.shouldNotContain("force inline by CompileCommand");
 
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                "-Xbatch",
                 "-XX:CompileCommand=dontinline,*TestConflictInlineCommands::*caller",
                 "-XX:CompileCommand=inline,*TestConflictInlineCommands::caller",
                 "-XX:CompileCommand=quiet", "-XX:CompileCommand=compileonly,*Launcher::main",
@@ -77,6 +79,9 @@ public class TestConflictInlineCommands {
                     sum += caller(i, 0);
                 }
             }
+            System.out.println("sum is:" + sum);
+            System.out.flush();
+            System.err.flush();
         }
     }
 }

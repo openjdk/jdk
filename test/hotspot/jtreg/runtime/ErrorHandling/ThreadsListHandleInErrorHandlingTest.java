@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import jdk.test.lib.process.ProcessTools;
  * @summary ThreadsListHandle info should be in error handling output.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
+ * @requires vm.flagless
  * @run driver ThreadsListHandleInErrorHandlingTest
  */
 
@@ -52,7 +53,7 @@ public class ThreadsListHandleInErrorHandlingTest {
     // Need to disable ShowRegistersOnAssert: that flag causes registers to be shown, which calls os::print_location,
     // which - as part of its checks - will iterate the threads list under a ThreadListHandle, changing the max nesting
     // counters and confusing this test.
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
         "-XX:+UnlockDiagnosticVMOptions",
         "-XX:+EnableThreadSMRStatistics",
         "-Xmx100M",

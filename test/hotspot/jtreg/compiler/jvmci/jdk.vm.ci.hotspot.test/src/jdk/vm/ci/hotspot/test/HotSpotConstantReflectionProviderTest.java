@@ -31,7 +31,7 @@
  *          java.base/jdk.internal.misc
  * @library /test/lib /compiler/jvmci/jdk.vm.ci.hotspot.test/src
  * @build jdk.vm.ci.hotspot.test.DummyClass
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.vm.ci.hotspot.test.DummyClass
+ * @run main/othervm jdk.test.lib.helpers.ClassFileInstaller jdk.vm.ci.hotspot.test.DummyClass
  * @run testng/othervm/timeout=300 -Xbootclasspath/a:.
  *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *      -XX:-UseJVMCICompiler jdk.vm.ci.hotspot.test.HotSpotConstantReflectionProviderTest

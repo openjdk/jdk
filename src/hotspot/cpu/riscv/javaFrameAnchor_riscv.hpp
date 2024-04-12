@@ -71,7 +71,7 @@ public:
 
   intptr_t* last_Java_sp(void) const             { return _last_Java_sp; }
 
-  const address last_Java_pc(void)               { return _last_Java_pc; }
+  address last_Java_pc(void)                     { return _last_Java_pc; }
 
 private:
 

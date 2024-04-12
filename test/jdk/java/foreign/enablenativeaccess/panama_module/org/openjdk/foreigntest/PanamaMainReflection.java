@@ -25,6 +25,7 @@ package org.openjdk.foreigntest;
 
 import java.lang.foreign.*;
 import java.lang.foreign.Arena;
+import java.lang.foreign.Linker.Option;
 import java.lang.reflect.Method;
 
 public class PanamaMainReflection {
@@ -34,10 +35,11 @@ public class PanamaMainReflection {
    }
 
     public static void testReflectionnativeLinker() throws Throwable {
-        System.out.println("Trying to get Linker");
-        Method method = Linker.class.getDeclaredMethod("nativeLinker");
-        method.invoke(null);
-        System.out.println("Got Linker");
+        Linker linker = Linker.nativeLinker();
+        System.out.println("Trying to get downcall handle");
+        Method method = Linker.class.getDeclaredMethod("downcallHandle", FunctionDescriptor.class, Option[].class);
+        method.invoke(linker, FunctionDescriptor.ofVoid(), new Linker.Option[0]);
+        System.out.println("Got downcall handle");
     }
 
     public static void testReflectionMemorySegment() throws Throwable {

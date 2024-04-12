@@ -153,7 +153,7 @@ public class VerifyStackTrace {
 
     static final class TestCase4 extends TestCase3 {
         private final StackWalker walker = StackWalker.getInstance(
-                EnumSet.allOf(StackWalker.Option.class));
+                EnumSet.of(RETAIN_CLASS_REFERENCE, SHOW_HIDDEN_FRAMES, SHOW_REFLECT_FRAMES));
 
         private final String description = "StackWalker.getInstance(" +
             "StackWalker.Option.RETAIN_CLASS_REFERENCE, " +

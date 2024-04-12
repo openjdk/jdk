@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,8 @@
 #include "runtime/sharedRuntime.hpp"
 
 #ifndef PRODUCT
-extern int explicit_null_checks_inserted,
-           explicit_null_checks_elided;
+extern uint explicit_null_checks_inserted,
+            explicit_null_checks_elided;
 #endif
 
 //---------------------------------array_load----------------------------------
@@ -435,7 +435,7 @@ void Parse::do_tableswitch() {
 
   // generate decision tree, using trichotomy when possible
   int rnum = len+2;
-  bool makes_backward_branch = false;
+  bool makes_backward_branch = (default_dest <= bci());
   SwitchRange* ranges = NEW_RESOURCE_ARRAY(SwitchRange, rnum);
   int rp = -1;
   if (lo_index != min_jint) {
@@ -526,7 +526,7 @@ void Parse::do_lookupswitch() {
   }
 
   int rnum = len*2+1;
-  bool makes_backward_branch = false;
+  bool makes_backward_branch = (default_dest <= bci());
   SwitchRange* ranges = NEW_RESOURCE_ARRAY(SwitchRange, rnum);
   int rp = -1;
   for (int j = 0; j < len; j++) {
@@ -734,7 +734,7 @@ void Parse::linear_search_switch_ranges(Node* key_val, SwitchRange*& lo, SwitchR
     // It pays off: emit the test for the most common range
     assert(most_freq.cnt() > 0, "must be taken");
     Node* val = _gvn.transform(new SubINode(key_val, _gvn.intcon(most_freq.lo())));
-    Node* cmp = _gvn.transform(new CmpUNode(val, _gvn.intcon(most_freq.hi() - most_freq.lo())));
+    Node* cmp = _gvn.transform(new CmpUNode(val, _gvn.intcon(java_subtract(most_freq.hi(), most_freq.lo()))));
     Node* tst = _gvn.transform(new BoolNode(cmp, BoolTest::le));
     IfNode* iff = create_and_map_if(control(), tst, if_prob(most_freq.cnt(), total_cnt), if_cnt(most_freq.cnt()));
     jump_if_true_fork(iff, most_freq.dest(), false);
@@ -1354,21 +1354,6 @@ bool Parse::seems_never_taken(float prob) const {
   return prob < PROB_MIN;
 }
 
-// True if the comparison seems to be the kind that will not change its
-// statistics from true to false.  See comments in adjust_map_after_if.
-// This question is only asked along paths which are already
-// classified as untaken (by seems_never_taken), so really,
-// if a path is never taken, its controlling comparison is
-// already acting in a stable fashion.  If the comparison
-// seems stable, we will put an expensive uncommon trap
-// on the untaken path.
-bool Parse::seems_stable_comparison() const {
-  if (C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if)) {
-    return false;
-  }
-  return true;
-}
-
 //-------------------------------repush_if_args--------------------------------
 // Push arguments of an "if" bytecode back onto the stack by adjusting _sp.
 inline int Parse::repush_if_args() {
@@ -1572,7 +1557,8 @@ bool Parse::path_is_suitable_for_uncommon_trap(float prob) const {
   if (!UseInterpreter) {
     return false;
   }
-  return (seems_never_taken(prob) && seems_stable_comparison());
+  return seems_never_taken(prob) &&
+         !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
 }
 
 void Parse::maybe_add_predicate_after_if(Block* path) {
@@ -1580,7 +1566,7 @@ void Parse::maybe_add_predicate_after_if(Block* path) {
     // Add predicates at bci of if dominating the loop so traps can be
     // recorded on the if's profile data
     int bc_depth = repush_if_args();
-    add_empty_predicates();
+    add_parse_predicates();
     dec_sp(bc_depth);
     path->set_has_predicates();
   }
@@ -1730,10 +1716,10 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
       const Type* tboth = tcon->join_speculative(tval);
       if (tboth == tval)  break;        // Nothing to gain.
       if (tcon->isa_int()) {
-        ccast = new CastIINode(val, tboth);
+        ccast = new CastIINode(control(), val, tboth);
       } else if (tcon == TypePtr::NULL_PTR) {
         // Cast to null, but keep the pointer identity temporarily live.
-        ccast = new CastPPNode(val, tboth);
+        ccast = new CastPPNode(control(), val, tboth);
       } else {
         const TypeF* tf = tcon->isa_float_constant();
         const TypeD* td = tcon->isa_double_constant();
@@ -1764,7 +1750,6 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
     assert(tcc != tval && tcc->higher_equal(tval), "must improve");
     // Delay transform() call to allow recovery of pre-cast value
     // at the control merge.
-    ccast->set_req(0, control());
     _gvn.set_type_bottom(ccast);
     record_for_igvn(ccast);
     cast = ccast;
@@ -2779,13 +2764,15 @@ void Parse::do_one_bytecode() {
   }
 
 #ifndef PRODUCT
-  if (C->should_print_igv(1)) {
+  if (failing()) { return; }
+  constexpr int perBytecode = 6;
+  if (C->should_print_igv(perBytecode)) {
     IdealGraphPrinter* printer = C->igv_printer();
     char buffer[256];
     jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
     bool old = printer->traverse_outs();
     printer->set_traverse_outs(true);
-    printer->print_method(buffer, 4);
+    printer->print_method(buffer, perBytecode);
     printer->set_traverse_outs(old);
   }
 #endif

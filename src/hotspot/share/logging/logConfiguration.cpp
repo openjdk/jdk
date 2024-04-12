@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,9 @@
 
 LogOutput** LogConfiguration::_outputs = nullptr;
 size_t      LogConfiguration::_n_outputs = 0;
+
+LogStdoutOutput* LogConfiguration::StdoutLog = nullptr;
+LogStderrOutput* LogConfiguration::StderrLog = nullptr;
 
 LogConfiguration::UpdateListenerFunction* LogConfiguration::_listener_callbacks = nullptr;
 size_t      LogConfiguration::_n_listener_callbacks = 0;
@@ -478,7 +481,7 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
                                            const char* decoratorstr,
                                            const char* output_options,
                                            outputStream* errstream) {
-  assert(errstream != nullptr, "errstream can not be nullptr");
+  assert(errstream != nullptr, "errstream can not be null");
   if (outputstr == nullptr || strlen(outputstr) == 0) {
     outputstr = "stdout";
   }
@@ -502,6 +505,12 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
       errstream->print_cr("Invalid output index '%s'", outputstr);
       return false;
     }
+  } else if (strcmp(outputstr, StdoutLog->name()) == 0) { // stdout
+    idx = 0;
+    assert(find_output(outputstr) == idx, "sanity check");
+  } else if (strcmp(outputstr, StderrLog->name()) == 0) { // stderr
+    idx = 1;
+    assert(find_output(outputstr) == idx, "sanity check");
   } else { // Output specified using name
     // Normalize the name, stripping quotes and ensures it includes type prefix
     size_t len = strlen(outputstr) + strlen(implicit_output_prefix) + 1;
@@ -605,7 +614,7 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
   out->print_cr("Available log outputs:");
   out->print_cr(" stdout/stderr");
   out->print_cr(" file=<filename>");
-  out->print_cr("  If the filename contains %%p and/or %%t, they will expand to the JVM's PID and startup timestamp, respectively.");
+  out->print_cr("  If the filename contains %%p, %%t and/or %%hn, they will expand to the JVM's PID, startup timestamp and host name, respectively.");
   out->cr();
 
   out->print_cr("Available log output options:");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1433,7 +1433,7 @@ public final class URL implements java.io.Serializable {
     private static URLStreamHandler lookupViaProperty(String protocol) {
         String packagePrefixList =
                 GetPropertyAction.privilegedGetProperty(protocolPathProp);
-        if (packagePrefixList == null) {
+        if (packagePrefixList == null || packagePrefixList.isEmpty()) {
             // not set
             return null;
         }
@@ -1442,6 +1442,9 @@ public final class URL implements java.io.Serializable {
         URLStreamHandler handler = null;
         for (int i=0; handler == null && i<packagePrefixes.length; i++) {
             String packagePrefix = packagePrefixes[i].trim();
+            if (packagePrefix.isEmpty()) {
+                continue;
+            }
             try {
                 String clsName = packagePrefix + "." + protocol + ".Handler";
                 Class<?> cls = null;
@@ -1468,10 +1471,10 @@ public final class URL implements java.io.Serializable {
     private static Iterator<URLStreamHandlerProvider> providers() {
         return new Iterator<>() {
 
-            ClassLoader cl = ClassLoader.getSystemClassLoader();
-            ServiceLoader<URLStreamHandlerProvider> sl =
+            final ClassLoader cl = ClassLoader.getSystemClassLoader();
+            final ServiceLoader<URLStreamHandlerProvider> sl =
                     ServiceLoader.load(URLStreamHandlerProvider.class, cl);
-            Iterator<URLStreamHandlerProvider> i = sl.iterator();
+            final Iterator<URLStreamHandlerProvider> i = sl.iterator();
 
             URLStreamHandlerProvider next = null;
 
@@ -1586,7 +1589,7 @@ public final class URL implements java.io.Serializable {
     /**
      * A table of protocol handlers.
      */
-    static Hashtable<String,URLStreamHandler> handlers = new Hashtable<>();
+    private static final Hashtable<String, URLStreamHandler> handlers = new Hashtable<>();
     private static final Object streamHandlerLock = new Object();
 
     /**

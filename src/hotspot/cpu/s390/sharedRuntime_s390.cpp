@@ -26,8 +26,8 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/debugInfoRec.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
+#include "code/compiledIC.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/gcLocker.hpp"
@@ -35,7 +35,6 @@
 #include "interpreter/interp_masm.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_s390.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "registerSaver_s390.hpp"
@@ -632,7 +631,7 @@ void SharedRuntime::restore_native_result(MacroAssembler *masm,
 // as framesizes are fixed.
 // VMRegImpl::stack0 refers to the first slot 0(sp).
 // VMRegImpl::stack0+1 refers to the memory word 4-byes higher. Registers
-// up to RegisterImpl::number_of_registers are the 64-bit integer registers.
+// up to Register::number_of_registers are the 64-bit integer registers.
 
 // Note: the INPUTS in sig_bt are in units of Java argument words, which are
 // either 32-bit or 64-bit depending on the build. The OUTPUTS are in 32-bit
@@ -668,8 +667,8 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
   const int z_num_iarg_registers = sizeof(z_iarg_reg) / sizeof(z_iarg_reg[0]);
   const int z_num_farg_registers = sizeof(z_farg_reg) / sizeof(z_farg_reg[0]);
 
-  assert(RegisterImpl::number_of_arg_registers == z_num_iarg_registers, "iarg reg count mismatch");
-  assert(FloatRegisterImpl::number_of_arg_registers == z_num_farg_registers, "farg reg count mismatch");
+  assert(Register::number_of_arg_registers == z_num_iarg_registers, "iarg reg count mismatch");
+  assert(FloatRegister::number_of_arg_registers == z_num_farg_registers, "farg reg count mismatch");
 
   int i;
   int stk = 0;
@@ -755,14 +754,12 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
         ShouldNotReachHere();
     }
   }
-  return align_up(stk, 2);
+  return stk;
 }
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                         VMRegPair *regs,
-                                        VMRegPair *regs2,
                                         int total_args_passed) {
-  assert(regs2 == nullptr, "second VMRegPair array not used on this platform");
 
   // Calling conventions for C runtime calls and calls to JNI native methods.
   const VMReg z_iarg_reg[5] = {
@@ -782,8 +779,8 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
   const int z_num_farg_registers = sizeof(z_farg_reg) / sizeof(z_farg_reg[0]);
 
   // Check calling conventions consistency.
-  assert(RegisterImpl::number_of_arg_registers == z_num_iarg_registers, "iarg reg count mismatch");
-  assert(FloatRegisterImpl::number_of_arg_registers == z_num_farg_registers, "farg reg count mismatch");
+  assert(Register::number_of_arg_registers == z_num_iarg_registers, "iarg reg count mismatch");
+  assert(FloatRegister::number_of_arg_registers == z_num_farg_registers, "farg reg count mismatch");
 
   // Avoid passing C arguments in the wrong stack slots.
 
@@ -1457,11 +1454,11 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // *_slot_offset indicates offset from SP in #stack slots
   // *_offset      indicates offset from SP in #bytes
 
-  int stack_slots = c_calling_convention(out_sig_bt, out_regs, /*regs2=*/nullptr, total_c_args) + // 1+2
+  int stack_slots = c_calling_convention(out_sig_bt, out_regs, total_c_args) + // 1+2
                     SharedRuntime::out_preserve_stack_slots(); // see c_calling_convention
 
   // Now the space for the inbound oop handle area.
-  int total_save_slots = RegisterImpl::number_of_arg_registers * VMRegImpl::slots_per_word;
+  int total_save_slots = Register::number_of_arg_registers * VMRegImpl::slots_per_word;
 
   int oop_handle_slot_offset = stack_slots;
   stack_slots += total_save_slots;                                        // 3)
@@ -1502,17 +1499,15 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   unsigned int wrapper_FrameDone;
   unsigned int wrapper_CRegsSet;
   Label     handle_pending_exception;
-  Label     ic_miss;
 
   //---------------------------------------------------------------------
   // Unverified entry point (UEP)
   //---------------------------------------------------------------------
-  wrapper_UEPStart = __ offset();
 
   // check ic: object class <-> cached class
-  if (!method_is_static) __ nmethod_UEP(ic_miss);
-  // Fill with nops (alignment of verified entry point).
-  __ align(CodeEntryAlignment);
+  if (!method_is_static) {
+    wrapper_UEPStart = __ ic_check(CodeEntryAlignment /* end_alignment */);
+  }
 
   //---------------------------------------------------------------------
   // Verified entry point (VEP)
@@ -1592,12 +1587,12 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   //--------------------------------------------------------------------
 
 #ifdef ASSERT
-  bool reg_destroyed[RegisterImpl::number_of_registers];
-  bool freg_destroyed[FloatRegisterImpl::number_of_registers];
-  for (int r = 0; r < RegisterImpl::number_of_registers; r++) {
+  bool reg_destroyed[Register::number_of_registers];
+  bool freg_destroyed[FloatRegister::number_of_registers];
+  for (int r = 0; r < Register::number_of_registers; r++) {
     reg_destroyed[r] = false;
   }
-  for (int f = 0; f < FloatRegisterImpl::number_of_registers; f++) {
+  for (int f = 0; f < FloatRegister::number_of_registers; f++) {
     freg_destroyed[f] = false;
   }
 #endif // ASSERT
@@ -1716,7 +1711,9 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ add2reg(r_box, lock_offset, Z_SP);
 
     // Try fastpath for locking.
-    // Fast_lock kills r_temp_1, r_temp_2. (Don't use R1 as temp, won't work!)
+    // Fast_lock kills r_temp_1, r_temp_2.
+    // in case of DiagnoseSyncOnValueBasedClasses content for Z_R1_scratch
+    // will be destroyed, So avoid using Z_R1 as temp here.
     __ compiler_fast_lock_object(r_oop, r_box, r_tmp1, r_tmp2);
     __ z_bre(done);
 
@@ -1915,7 +1912,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ add2reg(r_box, lock_offset, Z_SP);
 
     // Try fastpath for unlocking.
-    __ compiler_fast_unlock_object(r_oop, r_box, r_tmp1, r_tmp2); // Don't use R1 as temp.
+    // Fast_unlock kills r_tmp1, r_tmp2.
+    __ compiler_fast_unlock_object(r_oop, r_box, r_tmp1, r_tmp2);
     __ z_bre(done);
 
     // Slow path for unlocking.
@@ -1986,7 +1984,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   // Reset handle block.
   __ z_lg(Z_R1_scratch, Address(Z_thread, JavaThread::active_handles_offset()));
-  __ clear_mem(Address(Z_R1_scratch, JNIHandleBlock::top_offset_in_bytes()), 4);
+  __ clear_mem(Address(Z_R1_scratch, JNIHandleBlock::top_offset()), 4);
 
   // Check for pending exceptions.
   __ load_and_test_long(Z_R0, Address(Z_thread, Thread::pending_exception_offset()));
@@ -2025,13 +2023,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ restore_return_pc();
   __ z_br(Z_R1_scratch);
 
-  //---------------------------------------------------------------------
-  // Handler for a cache miss (out-of-line)
-  //---------------------------------------------------------------------
-  __ call_ic_miss_handler(ic_miss, 0x77, 0, Z_R1_scratch);
   __ flush();
-
-
   //////////////////////////////////////////////////////////////////////
   // end of code generation
   //////////////////////////////////////////////////////////////////////
@@ -2317,9 +2309,6 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   Label skip_fixup;
   {
     Label ic_miss;
-    const int klass_offset           = oopDesc::klass_offset_in_bytes();
-    const int holder_klass_offset    = CompiledICHolder::holder_klass_offset();
-    const int holder_metadata_offset = CompiledICHolder::holder_metadata_offset();
 
     // Out-of-line call to ic_miss handler.
     __ call_ic_miss_handler(ic_miss, 0x11, 0, Z_R1_scratch);
@@ -2328,27 +2317,11 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     __ align(CodeEntryAlignment);
     c2i_unverified_entry = __ pc();
 
-    // Check the pointers.
-    if (!ImplicitNullChecks || MacroAssembler::needs_explicit_null_check(klass_offset)) {
-      __ z_ltgr(Z_ARG1, Z_ARG1);
-      __ z_bre(ic_miss);
-    }
-    __ verify_oop(Z_ARG1, FILE_AND_LINE);
-
-    // Check ic: object class <-> cached class
-    // Compress cached class for comparison. That's more efficient.
-    if (UseCompressedClassPointers) {
-      __ z_lg(Z_R11, holder_klass_offset, Z_method);             // Z_R11 is overwritten a few instructions down anyway.
-      __ compare_klass_ptr(Z_R11, klass_offset, Z_ARG1, false); // Cached class can't be zero.
-    } else {
-      __ z_clc(klass_offset, sizeof(void *)-1, Z_ARG1, holder_klass_offset, Z_method);
-    }
-    __ z_brne(ic_miss);  // Cache miss: call runtime to handle this.
-
+    __ ic_check(2);
+    __ z_lg(Z_method, Address(Z_inline_cache, CompiledICData::speculated_method_offset()));
     // This def MUST MATCH code in gen_c2i_adapter!
     const Register code = Z_R11;
 
-    __ z_lg(Z_method, holder_metadata_offset, Z_method);
     __ load_and_test_long(Z_R0, method_(code));
     __ z_brne(ic_miss);  // Cache miss: call runtime to handle this.
 
@@ -2451,11 +2424,11 @@ static void push_skeleton_frames(MacroAssembler* masm, bool deopt,
   BLOCK_COMMENT("push_skeleton_frames {");
   // _number_of_frames is of type int (deoptimization.hpp).
   __ z_lgf(number_of_frames_reg,
-           Address(unroll_block_reg, Deoptimization::UnrollBlock::number_of_frames_offset_in_bytes()));
+           Address(unroll_block_reg, Deoptimization::UnrollBlock::number_of_frames_offset()));
   __ z_lg(pcs_reg,
-          Address(unroll_block_reg, Deoptimization::UnrollBlock::frame_pcs_offset_in_bytes()));
+          Address(unroll_block_reg, Deoptimization::UnrollBlock::frame_pcs_offset()));
   __ z_lg(frame_sizes_reg,
-          Address(unroll_block_reg, Deoptimization::UnrollBlock::frame_sizes_offset_in_bytes()));
+          Address(unroll_block_reg, Deoptimization::UnrollBlock::frame_sizes_offset()));
 
   // stack: (caller_of_deoptee, ...).
 
@@ -2465,7 +2438,7 @@ static void push_skeleton_frames(MacroAssembler* masm, bool deopt,
   // Note: entry and interpreted frames are adjusted, too. But this doesn't harm.
 
   __ z_lgf(Z_R1_scratch,
-           Address(unroll_block_reg, Deoptimization::UnrollBlock::caller_adjustment_offset_in_bytes()));
+           Address(unroll_block_reg, Deoptimization::UnrollBlock::caller_adjustment_offset()));
   __ z_lgr(tmp1, Z_SP);  // Save the sender sp before extending the frame.
   __ resize_frame_sub(Z_R1_scratch, tmp2/*tmp*/);
   // The oldest skeletal frame requires a valid sender_sp to make it walkable
@@ -2645,7 +2618,7 @@ void SharedRuntime::generate_deopt_blob() {
   RegisterSaver::restore_result_registers(masm);
 
   // reload the exec mode from the UnrollBlock (it might have changed)
-  __ z_llgf(exec_mode_reg, Address(unroll_block_reg, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()));
+  __ z_llgf(exec_mode_reg, Address(unroll_block_reg, Deoptimization::UnrollBlock::unpack_kind_offset()));
 
   // In excp_deopt_mode, restore and clear exception oop which we
   // stored in the thread during exception entry above. The exception
@@ -2778,7 +2751,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 #ifdef ASSERT
   assert(Immediate::is_uimm8(Deoptimization::Unpack_LIMIT), "Code not fit for larger immediates");
   assert(Immediate::is_uimm8(Deoptimization::Unpack_uncommon_trap), "Code not fit for larger immediates");
-  const int unpack_kind_byte_offset = Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()
+  const int unpack_kind_byte_offset = in_bytes(Deoptimization::UnrollBlock::unpack_kind_offset())
 #ifndef VM_LITTLE_ENDIAN
   + 3
 #endif

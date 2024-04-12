@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ public class TestClassRedefinition {
         List<RecordedEvent> events = RecordingFile.readAllEvents(DUMP_PATH);
 
         Asserts.assertEquals(events.size(), 2, "Expected exactly two ClassRedefinition event");
-        RecordedEvent e1 = events.get(0);
+        RecordedEvent e1 = events.getFirst();
         System.out.println(e1);
         RecordedEvent e2 = events.get(1);
         System.out.println(e2);

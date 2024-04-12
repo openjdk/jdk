@@ -16,6 +16,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</characters>
 	<numbers>
 		<defaultNumberingSystem>arab</defaultNumberingSystem>
+		<defaultNumberingSystem alt="latn">latn</defaultNumberingSystem>
 		<symbols numberSystem="latn">
 			<percentSign draft="contributed">٪</percentSign>
 		</symbols>

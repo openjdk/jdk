@@ -274,6 +274,7 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
 
   // "lock" stores the address of the monitor stack slot, so this is not an oop
   LIR_Opr lock = new_register(T_INT);
+  LIR_Opr scratch = new_register(T_INT);
 
   CodeEmitInfo* info_for_exception = nullptr;
   if (x->needs_null_check()) {
@@ -282,7 +283,7 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
   // this CodeEmitInfo must not have the xhandlers because here the
   // object is already locked (xhandlers expect object to be unlocked)
   CodeEmitInfo* info = state_for(x, x->state(), true);
-  monitor_enter(obj.result(), lock, syncTempOpr(), LIR_OprFact::illegalOpr,
+  monitor_enter(obj.result(), lock, syncTempOpr(), scratch,
                 x->monitor_no(), info_for_exception, info);
 }
 
@@ -294,8 +295,9 @@ void LIRGenerator::do_MonitorExit(MonitorExit* x) {
 
   LIR_Opr lock = new_register(T_INT);
   LIR_Opr obj_temp = new_register(T_INT);
+  LIR_Opr scratch = new_register(T_INT);
   set_no_result(x);
-  monitor_exit(obj_temp, lock, syncTempOpr(), LIR_OprFact::illegalOpr, x->monitor_no());
+  monitor_exit(obj_temp, lock, syncTempOpr(), scratch, x->monitor_no());
 }
 
 // neg
@@ -801,7 +803,7 @@ void LIRGenerator::do_FmaIntrinsic(Intrinsic* x) {
 }
 
 void LIRGenerator::do_vectorizedMismatch(Intrinsic* x) {
-  fatal("vectorizedMismatch intrinsic is not implemented on this platform");
+  ShouldNotReachHere();
 }
 
 // _i2l, _i2f, _i2d, _l2i, _l2f, _l2d, _f2i, _f2l, _f2d, _d2i, _d2l, _d2f

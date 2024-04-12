@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 package jdk.jfr.api.consumer.filestream;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -35,6 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import jdk.jfr.Event;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.EventStream;
+import jdk.test.lib.Utils;
 
 /**
  * @test
@@ -65,6 +65,11 @@ public class TestOrdered {
             } catch (Exception e) {
                 e.printStackTrace();
                 throw new Error("Unexpected exception in barrier");
+            }
+            Instant timestamp = Instant.now();
+            // Wait for clock to increment
+            while (Instant.now().equals(timestamp)) {
+                ;
             }
             OrderedEvent e2 = new OrderedEvent();
             e2.commit();
@@ -108,6 +113,7 @@ public class TestOrdered {
                 es.setOrdered(false);
                 es.onEvent(e -> {
                     Instant endTime = e.getEndTime();
+                    System.out.println("testSetOrderedFalse: endTime: " + endTime);
                     if (endTime.isBefore(timestamp.get())) {
                         unoreded.set(true);
                         es.close();
@@ -142,7 +148,7 @@ public class TestOrdered {
                 e.join();
             }
             r.stop();
-            Path p = Files.createTempFile("recording", ".jfr");
+            Path p = Utils.createTempFile("recording", ".jfr");
             r.dump(p);
             return p;
         }

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "asm/assembler.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
@@ -126,7 +125,7 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
   // Avoid crash during crash if pc broken.
   if (epc) {
-    frame fr(sp, epc);
+    frame fr(sp, epc, frame::kind::unknown);
     return fr;
   }
   frame fr(sp);
@@ -137,21 +136,21 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
   intptr_t* sp = os::Aix::ucontext_get_sp(uc);
   address lr = ucontext_get_lr(uc);
-  return frame(sp, lr);
+  return frame(sp, lr, frame::kind::unknown);
 }
 
 frame os::get_sender_for_C_frame(frame* fr) {
   if (*fr->sp() == (intptr_t) nullptr) {
     // fr is the last C frame
-    return frame(nullptr, nullptr);
+    return frame();
   }
-  return frame(fr->sender_sp(), fr->sender_pc());
+  return frame(fr->sender_sp(), fr->sender_pc(), frame::kind::unknown);
 }
 
 
 frame os::current_frame() {
   intptr_t* csp = *(intptr_t**) __builtin_frame_address(0);
-  frame topframe(csp, CAST_FROM_FN_PTR(address, os::current_frame));
+  frame topframe(csp, CAST_FROM_FN_PTR(address, os::current_frame), frame::kind::unknown);
   return os::get_sender_for_C_frame(&topframe);
 }
 
@@ -233,11 +232,11 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         goto run_stub;
       }
 
-      else if ((sig == USE_POLL_BIT_ONLY ? SIGTRAP : SIGSEGV) &&
+      else if ((sig == (USE_POLL_BIT_ONLY ? SIGTRAP : SIGSEGV)) &&
                ((NativeInstruction*)pc)->is_safepoint_poll() &&
                CodeCache::contains((void*) pc) &&
                ((cb = CodeCache::find_blob(pc)) != nullptr) &&
-               cb->is_compiled()) {
+               cb->is_nmethod()) {
         if (TraceTraps) {
           tty->print_cr("trap: safepoint_poll at " INTPTR_FORMAT " (%s)", p2i(pc),
                         USE_POLL_BIT_ONLY ? "SIGTRAP" : "SIGSEGV");
@@ -250,7 +249,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                ((NativeInstruction*)pc)->is_safepoint_poll_return() &&
                CodeCache::contains((void*) pc) &&
                ((cb = CodeCache::find_blob(pc)) != nullptr) &&
-               cb->is_compiled()) {
+               cb->is_nmethod()) {
         if (TraceTraps) {
           tty->print_cr("trap: safepoint_poll at return at " INTPTR_FORMAT " (nmethod)", p2i(pc));
         }
@@ -331,9 +330,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
         // End life with a fatal error, message and detail message and the context.
         // Note: no need to do any post-processing here (e.g. signal chaining)
-        va_list va_dummy;
-        VMError::report_and_die(thread, uc, nullptr, 0, msg, detail_msg, va_dummy);
-        va_end(va_dummy);
+        VMError::report_and_die(thread, uc, nullptr, 0, msg, "%s", detail_msg);
 
         ShouldNotReachHere();
       }
@@ -342,7 +339,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // BugId 4454115: A read from a MappedByteBuffer can fault here if the
         // underlying file has been truncated. Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
-        CompiledMethod* nm = cb ? cb->as_compiled_method_or_null() : nullptr;
+        nmethod* nm = cb ? cb->as_nmethod_or_null() : nullptr;
         bool is_unsafe_arraycopy = (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc));
         if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
           address next_pc = pc + 4;
@@ -463,7 +460,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
   address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc, /*instrsize=*/4);
+  print_instructions(st, pc);
   st->cr();
 
   // Try to decode the instructions.
@@ -473,23 +470,30 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   st->cr();
 }
 
-void os::print_register_info(outputStream *st, const void *context) {
-  if (context == nullptr) return;
-
-  ucontext_t *uc = (ucontext_t*)context;
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.iar);
-  st->print("lr ="); print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.lr);
-  st->print("sp ="); print_location(st, (intptr_t)os::Aix::ucontext_get_sp(uc));
-  for (int i = 0; i < 32; i++) {
-    st->print("r%-2d=", i);
-    print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.gpr[i]);
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
+  const int register_count = 32 /* r0-r32 */ + 3 /* pc, lr, sp */;
+  int n = continuation;
+  assert(n >= 0 && n <= register_count, "Invalid continuation value");
+  if (context == nullptr || n == register_count) {
+    return;
   }
 
-  st->cr();
+  const ucontext_t *uc = (const ucontext_t*)context;
+  while (n < register_count) {
+    // Update continuation with next index before printing location
+    continuation = n + 1;
+    if (n == register_count - 1) {
+      st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.iar);
+    } else if (n == register_count - 2) {
+      st->print("lr ="); print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.lr);
+    } else if (n == register_count - 3) {
+      st->print("sp ="); print_location(st, (intptr_t)os::Aix::ucontext_get_sp(uc));
+    } else {
+      st->print("r%-2d=", n);
+      print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.gpr[n]);
+    }
+    ++n;
+  }
 }
 
 extern "C" {
@@ -509,7 +513,7 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
-bool os::Aix::platform_print_native_stack(outputStream* st, const void* context, char *buf, int buf_size) {
+bool os::Aix::platform_print_native_stack(outputStream* st, const void* context, char *buf, int buf_size, address& lastpc) {
   AixNativeCallstack::print_callstack_for_context(st, (const ucontext_t*)context, true, buf, (size_t) buf_size);
   return true;
 }

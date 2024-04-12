@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveUtils.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -43,6 +44,7 @@
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "interpreter/rewriter.hpp"
 #include "jvm.h"
@@ -82,7 +84,8 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
-#include "runtime/reflectionUtils.hpp"
+#include "runtime/os.inline.hpp"
+#include "runtime/reflection.hpp"
 #include "runtime/threads.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/finalizerService.hpp"
@@ -498,6 +501,10 @@ static Monitor* create_init_monitor(const char* name) {
   return new Monitor(Mutex::safepoint, name);
 }
 
+InstanceKlass::InstanceKlass() {
+  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+}
+
 InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, ReferenceType reference_type) :
   Klass(kind),
   _nest_members(nullptr),
@@ -700,7 +707,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   SystemDictionaryShared::handle_class_unloading(this);
 
 #if INCLUDE_CDS_JAVA_HEAP
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_heap()) {
     HeapShared::remove_scratch_objects(this);
   }
 #endif
@@ -768,20 +775,43 @@ void InstanceKlass::link_class(TRAPS) {
 void InstanceKlass::check_link_state_and_wait(JavaThread* current) {
   MonitorLocker ml(current, _init_monitor);
 
+  bool debug_logging_enabled = log_is_enabled(Debug, class, init);
+
   // Another thread is linking this class, wait.
   while (is_being_linked() && !is_init_thread(current)) {
+    if (debug_logging_enabled) {
+      ResourceMark rm(current);
+      log_debug(class, init)("Thread \"%s\" waiting for linking of %s by thread \"%s\"",
+                             current->name(), external_name(), init_thread_name());
+    }
     ml.wait();
   }
 
   // This thread is recursively linking this class, continue
   if (is_being_linked() && is_init_thread(current)) {
+    if (debug_logging_enabled) {
+      ResourceMark rm(current);
+      log_debug(class, init)("Thread \"%s\" recursively linking %s",
+                             current->name(), external_name());
+    }
     return;
   }
 
   // If this class wasn't linked already, set state to being_linked
   if (!is_linked()) {
+    if (debug_logging_enabled) {
+      ResourceMark rm(current);
+      log_debug(class, init)("Thread \"%s\" linking %s",
+                             current->name(), external_name());
+    }
     set_init_state(being_linked);
     set_init_thread(current);
+  } else {
+    if (debug_logging_enabled) {
+      ResourceMark rm(current);
+      log_debug(class, init)("Thread \"%s\" found %s already linked",
+                             current->name(), external_name());
+      }
   }
 }
 
@@ -796,8 +826,8 @@ bool InstanceKlass::link_class_or_fail(TRAPS) {
 }
 
 bool InstanceKlass::link_class_impl(TRAPS) {
-  if (DumpSharedSpaces && SystemDictionaryShared::has_class_failed_verification(this)) {
-    // This is for CDS dumping phase only -- we use the in_error_state to indicate that
+  if (CDSConfig::is_dumping_static_archive() && SystemDictionaryShared::has_class_failed_verification(this)) {
+    // This is for CDS static dump only -- we use the in_error_state to indicate that
     // the class has failed verification. Throwing the NoClassDefFoundError here is just
     // a convenient way to stop repeat attempts to verify the same (bad) class.
     //
@@ -977,33 +1007,48 @@ void InstanceKlass::initialize_super_interfaces(TRAPS) {
   }
 }
 
-ResourceHashtable<const InstanceKlass*, OopHandle, 107, AnyObj::C_HEAP, mtClass>
-      _initialization_error_table;
+using InitializationErrorTable = ResourceHashtable<const InstanceKlass*, OopHandle, 107, AnyObj::C_HEAP, mtClass>;
+static InitializationErrorTable* _initialization_error_table;
 
 void InstanceKlass::add_initialization_error(JavaThread* current, Handle exception) {
   // Create the same exception with a message indicating the thread name,
   // and the StackTraceElements.
-  // If the initialization error is OOM, this might not work, but if GC kicks in
-  // this would be still be helpful.
-  JavaThread* THREAD = current;
   Handle init_error = java_lang_Throwable::create_initialization_error(current, exception);
-  ResourceMark rm(THREAD);
+  ResourceMark rm(current);
   if (init_error.is_null()) {
-    log_trace(class, init)("Initialization error is null for class %s", external_name());
-    return;
+    log_trace(class, init)("Unable to create the desired initialization error for class %s", external_name());
+
+    // We failed to create the new exception, most likely due to either out-of-memory or
+    // a stackoverflow error. If the original exception was either of those then we save
+    // the shared, pre-allocated, stackless, instance of that exception.
+    if (exception->klass() == vmClasses::StackOverflowError_klass()) {
+      log_debug(class, init)("Using shared StackOverflowError as initialization error for class %s", external_name());
+      init_error = Handle(current, Universe::class_init_stack_overflow_error());
+    } else if (exception->klass() == vmClasses::OutOfMemoryError_klass()) {
+      log_debug(class, init)("Using shared OutOfMemoryError as initialization error for class %s", external_name());
+      init_error = Handle(current, Universe::class_init_out_of_memory_error());
+    } else {
+      return;
+    }
   }
 
-  MutexLocker ml(THREAD, ClassInitError_lock);
+  MutexLocker ml(current, ClassInitError_lock);
   OopHandle elem = OopHandle(Universe::vm_global(), init_error());
   bool created;
-  _initialization_error_table.put_if_absent(this, elem, &created);
+  if (_initialization_error_table == nullptr) {
+    _initialization_error_table = new (mtClass) InitializationErrorTable();
+  }
+  _initialization_error_table->put_if_absent(this, elem, &created);
   assert(created, "Initialization is single threaded");
   log_trace(class, init)("Initialization error added for class %s", external_name());
 }
 
 oop InstanceKlass::get_initialization_error(JavaThread* current) {
   MutexLocker ml(current, ClassInitError_lock);
-  OopHandle* h = _initialization_error_table.get(this);
+  if (_initialization_error_table == nullptr) {
+    return nullptr;
+  }
+  OopHandle* h = _initialization_error_table->get(this);
   return (h != nullptr) ? h->resolve() : nullptr;
 }
 
@@ -1022,7 +1067,9 @@ void InstanceKlass::clean_initialization_error_table() {
 
   assert_locked_or_safepoint(ClassInitError_lock);
   InitErrorTableCleaner cleaner;
-  _initialization_error_table.unlink(&cleaner);
+  if (_initialization_error_table != nullptr) {
+    _initialization_error_table->unlink(&cleaner);
+  }
 }
 
 void InstanceKlass::initialize_impl(TRAPS) {
@@ -1039,13 +1086,21 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
   JavaThread* jt = THREAD;
 
+  bool debug_logging_enabled = log_is_enabled(Debug, class, init);
+
   // refer to the JVM book page 47 for description of steps
   // Step 1
   {
-    MonitorLocker ml(THREAD, _init_monitor);
+    MonitorLocker ml(jt, _init_monitor);
 
     // Step 2
     while (is_being_initialized() && !is_init_thread(jt)) {
+      if (debug_logging_enabled) {
+        ResourceMark rm(jt);
+        log_debug(class, init)("Thread \"%s\" waiting for initialization of %s by thread \"%s\"",
+                               jt->name(), external_name(), init_thread_name());
+      }
+
       wait = true;
       jt->set_class_to_be_initialized(this);
       ml.wait();
@@ -1054,24 +1109,44 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
     // Step 3
     if (is_being_initialized() && is_init_thread(jt)) {
+      if (debug_logging_enabled) {
+        ResourceMark rm(jt);
+        log_debug(class, init)("Thread \"%s\" recursively initializing %s",
+                               jt->name(), external_name());
+      }
       DTRACE_CLASSINIT_PROBE_WAIT(recursive, -1, wait);
       return;
     }
 
     // Step 4
     if (is_initialized()) {
+      if (debug_logging_enabled) {
+        ResourceMark rm(jt);
+        log_debug(class, init)("Thread \"%s\" found %s already initialized",
+                               jt->name(), external_name());
+      }
       DTRACE_CLASSINIT_PROBE_WAIT(concurrent, -1, wait);
       return;
     }
 
     // Step 5
     if (is_in_error_state()) {
+      if (debug_logging_enabled) {
+        ResourceMark rm(jt);
+        log_debug(class, init)("Thread \"%s\" found %s is in error state",
+                               jt->name(), external_name());
+      }
       throw_error = true;
     } else {
 
       // Step 6
       set_init_state(being_initialized);
       set_init_thread(jt);
+      if (debug_logging_enabled) {
+        ResourceMark rm(jt);
+        log_debug(class, init)("Thread \"%s\" is initializing %s",
+                               jt->name(), external_name());
+      }
     }
   }
 
@@ -1403,7 +1478,7 @@ bool InstanceKlass::is_same_or_direct_interface(Klass *k) const {
 objArrayOop InstanceKlass::allocate_objArray(int n, int length, TRAPS) {
   check_array_allocation_length(length, arrayOopDesc::max_array_length(T_OBJECT), CHECK_NULL);
   size_t size = objArrayOopDesc::object_size(length);
-  Klass* ak = array_klass(n, CHECK_NULL);
+  ArrayKlass* ak = array_klass(n, CHECK_NULL);
   objArrayOop o = (objArrayOop)Universe::heap()->array_allocate(ak, size, length,
                                                                 /* do_zero */ true, CHECK_NULL);
   return o;
@@ -1467,29 +1542,28 @@ void InstanceKlass::check_valid_for_instantiation(bool throwError, TRAPS) {
   }
 }
 
-Klass* InstanceKlass::array_klass(int n, TRAPS) {
+ArrayKlass* InstanceKlass::array_klass(int n, TRAPS) {
   // Need load-acquire for lock-free read
   if (array_klasses_acquire() == nullptr) {
-    ResourceMark rm(THREAD);
-    JavaThread *jt = THREAD;
-    {
-      // Atomic creation of array_klasses
-      MutexLocker ma(THREAD, MultiArray_lock);
 
-      // Check if update has already taken place
-      if (array_klasses() == nullptr) {
-        ObjArrayKlass* k = ObjArrayKlass::allocate_objArray_klass(class_loader_data(), 1, this, CHECK_NULL);
-        // use 'release' to pair with lock-free load
-        release_set_array_klasses(k);
-      }
+    // Recursively lock array allocation
+    RecursiveLocker rl(MultiArray_lock, THREAD);
+
+    // Check if another thread created the array klass while we were waiting for the lock.
+    if (array_klasses() == nullptr) {
+      ObjArrayKlass* k = ObjArrayKlass::allocate_objArray_klass(class_loader_data(), 1, this, CHECK_NULL);
+      // use 'release' to pair with lock-free load
+      release_set_array_klasses(k);
     }
   }
+
   // array_klasses() will always be set at this point
-  ObjArrayKlass* oak = array_klasses();
-  return oak->array_klass(n, THREAD);
+  ObjArrayKlass* ak = array_klasses();
+  assert(ak != nullptr, "should be set");
+  return ak->array_klass(n, THREAD);
 }
 
-Klass* InstanceKlass::array_klass_or_null(int n) {
+ArrayKlass* InstanceKlass::array_klass_or_null(int n) {
   // Need load-acquire for lock-free read
   ObjArrayKlass* oak = array_klasses_acquire();
   if (oak == nullptr) {
@@ -1499,11 +1573,11 @@ Klass* InstanceKlass::array_klass_or_null(int n) {
   }
 }
 
-Klass* InstanceKlass::array_klass(TRAPS) {
+ArrayKlass* InstanceKlass::array_klass(TRAPS) {
   return array_klass(1, THREAD);
 }
 
-Klass* InstanceKlass::array_klass_or_null() {
+ArrayKlass* InstanceKlass::array_klass_or_null() {
   return array_klass_or_null(1);
 }
 
@@ -1545,7 +1619,9 @@ void InstanceKlass::call_class_initializer(TRAPS) {
     LogStream ls(lt);
     ls.print("%d Initializing ", call_class_initializer_counter++);
     name()->print_value_on(&ls);
-    ls.print_cr("%s (" PTR_FORMAT ")", h_method() == nullptr ? "(no method)" : "", p2i(this));
+    ls.print_cr("%s (" PTR_FORMAT ") by thread \"%s\"",
+                h_method() == nullptr ? "(no method)" : "", p2i(this),
+                THREAD->name());
   }
   if (h_method() != nullptr) {
     JavaCallArguments args; // No arguments
@@ -1759,7 +1835,6 @@ void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
   if (i > 0) {
     int length = i;
     assert(length == fields_sorted.length(), "duh");
-    // _sort_Fn is defined in growableArray.hpp.
     fields_sorted.sort(compare_fields_by_offset);
     for (int i = 0; i < length; i++) {
       fd.reinitialize(this, fields_sorted.at(i).second);
@@ -1803,7 +1878,7 @@ NOINLINE int linear_search(const Array<Method*>* methods, const Symbol* name) {
 
 inline int InstanceKlass::quick_search(const Array<Method*>* methods, const Symbol* name) {
   if (_disable_method_binary_search) {
-    assert(DynamicDumpSharedSpaces, "must be");
+    assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
     // At the final stage of dynamic dumping, the methods array may not be sorted
     // by ascending addresses of their names, so we can't use binary search anymore.
     // However, methods with the same name are still laid out consecutively inside the
@@ -2192,16 +2267,26 @@ void InstanceKlass::set_enclosing_method_indices(u2 class_index,
   }
 }
 
+jmethodID InstanceKlass::update_jmethod_id(jmethodID* jmeths, Method* method, int idnum) {
+  if (method->is_old() && !method->is_obsolete()) {
+    // If the method passed in is old (but not obsolete), use the current version.
+    method = method_with_idnum((int)idnum);
+    assert(method != nullptr, "old and but not obsolete, so should exist");
+  }
+  jmethodID new_id = Method::make_jmethod_id(class_loader_data(), method);
+  Atomic::release_store(&jmeths[idnum + 1], new_id);
+  return new_id;
+}
+
 // Lookup or create a jmethodID.
 // This code is called by the VMThread and JavaThreads so the
 // locking has to be done very carefully to avoid deadlocks
 // and/or other cache consistency problems.
 //
 jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
-  size_t idnum = (size_t)method_h->method_idnum();
+  Method* method = method_h();
+  int idnum = method->method_idnum();
   jmethodID* jmeths = methods_jmethod_ids_acquire();
-  size_t length = 0;
-  jmethodID id = nullptr;
 
   // We use a double-check locking idiom here because this cache is
   // performance sensitive. In the normal system, this cache only
@@ -2213,80 +2298,63 @@ jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
   // seen either. Cache reads of existing jmethodIDs proceed without a
   // lock, but cache writes of a new jmethodID requires uniqueness and
   // creation of the cache itself requires no leaks so a lock is
-  // generally acquired in those two cases.
+  // acquired in those two cases.
   //
-  // If the RedefineClasses() API has been used, then this cache can
-  // grow and we'll have transitions from non-null to bigger non-null.
-  // Cache creation requires no leaks and we require safety between all
-  // cache accesses and freeing of the old cache so a lock is generally
-  // acquired when the RedefineClasses() API has been used.
+  // If the RedefineClasses() API has been used, then this cache grows
+  // in the redefinition safepoint.
 
-  if (jmeths != nullptr) {
-    // the cache already exists
-    if (!idnum_can_increment()) {
-      // the cache can't grow so we can just get the current values
-      get_jmethod_id_length_value(jmeths, idnum, &length, &id);
-    } else {
-      MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
-      get_jmethod_id_length_value(jmeths, idnum, &length, &id);
+  if (jmeths == nullptr) {
+    MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
+    jmeths = methods_jmethod_ids_acquire();
+    // Still null?
+    if (jmeths == nullptr) {
+      size_t size = idnum_allocated_count();
+      assert(size > (size_t)idnum, "should already have space");
+      jmeths = NEW_C_HEAP_ARRAY(jmethodID, size + 1, mtClass);
+      memset(jmeths, 0, (size + 1) * sizeof(jmethodID));
+      // cache size is stored in element[0], other elements offset by one
+      jmeths[0] = (jmethodID)size;
+      jmethodID new_id = update_jmethod_id(jmeths, method, idnum);
+
+      // publish jmeths
+      release_set_methods_jmethod_ids(jmeths);
+      return new_id;
     }
   }
-  // implied else:
-  // we need to allocate a cache so default length and id values are good
 
-  if (jmeths == nullptr ||   // no cache yet
-      length <= idnum ||     // cache is too short
-      id == nullptr) {       // cache doesn't contain entry
-
-    // This function can be called by the VMThread or GC worker threads so we
-    // have to do all things that might block on a safepoint before grabbing the lock.
-    // Otherwise, we can deadlock with the VMThread or have a cache
-    // consistency issue. These vars keep track of what we might have
-    // to free after the lock is dropped.
-    jmethodID  to_dealloc_id     = nullptr;
-    jmethodID* to_dealloc_jmeths = nullptr;
-
-    // may not allocate new_jmeths or use it if we allocate it
-    jmethodID* new_jmeths = nullptr;
-    if (length <= idnum) {
-      // allocate a new cache that might be used
-      size_t size = MAX2(idnum+1, (size_t)idnum_allocated_count());
-      new_jmeths = NEW_C_HEAP_ARRAY(jmethodID, size+1, mtClass);
-      memset(new_jmeths, 0, (size+1)*sizeof(jmethodID));
-      // cache size is stored in element[0], other elements offset by one
-      new_jmeths[0] = (jmethodID)size;
-    }
-
-    // allocate a new jmethodID that might be used
-    {
-      MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
-      jmethodID new_id = nullptr;
-      if (method_h->is_old() && !method_h->is_obsolete()) {
-        // The method passed in is old (but not obsolete), we need to use the current version
-        Method* current_method = method_with_idnum((int)idnum);
-        assert(current_method != nullptr, "old and but not obsolete, so should exist");
-        new_id = Method::make_jmethod_id(class_loader_data(), current_method);
-      } else {
-        // It is the current version of the method or an obsolete method,
-        // use the version passed in
-        new_id = Method::make_jmethod_id(class_loader_data(), method_h());
-      }
-
-      id = get_jmethod_id_fetch_or_update(idnum, new_id, new_jmeths,
-                                          &to_dealloc_id, &to_dealloc_jmeths);
-    }
-
-    // The lock has been dropped so we can free resources.
-    // Free up either the old cache or the new cache if we allocated one.
-    if (to_dealloc_jmeths != nullptr) {
-      FreeHeap(to_dealloc_jmeths);
-    }
-    // free up the new ID since it wasn't needed
-    if (to_dealloc_id != nullptr) {
-      Method::destroy_jmethod_id(class_loader_data(), to_dealloc_id);
+  jmethodID id = Atomic::load_acquire(&jmeths[idnum + 1]);
+  if (id == nullptr) {
+    MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
+    id = jmeths[idnum + 1];
+    // Still null?
+    if (id == nullptr) {
+      return update_jmethod_id(jmeths, method, idnum);
     }
   }
   return id;
+}
+
+void InstanceKlass::update_methods_jmethod_cache() {
+  assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
+  jmethodID* cache = _methods_jmethod_ids;
+  if (cache != nullptr) {
+    size_t size = idnum_allocated_count();
+    size_t old_size = (size_t)cache[0];
+    if (old_size < size + 1) {
+      // Allocate a larger one and copy entries to the new one.
+      // They've already been updated to point to new methods where applicable (i.e., not obsolete).
+      jmethodID* new_cache = NEW_C_HEAP_ARRAY(jmethodID, size + 1, mtClass);
+      memset(new_cache, 0, (size + 1) * sizeof(jmethodID));
+      // The cache size is stored in element[0]; the other elements are offset by one.
+      new_cache[0] = (jmethodID)size;
+
+      for (int i = 1; i <= (int)old_size; i++) {
+        new_cache[i] = cache[i];
+      }
+      _methods_jmethod_ids = new_cache;
+      FREE_C_HEAP_ARRAY(jmethodID, cache);
+    }
+  }
 }
 
 // Figure out how many jmethodIDs haven't been allocated, and make
@@ -2309,88 +2377,11 @@ void InstanceKlass::ensure_space_for_methodids(int start_offset) {
   }
 }
 
-// Common code to fetch the jmethodID from the cache or update the
-// cache with the new jmethodID. This function should never do anything
-// that causes the caller to go to a safepoint or we can deadlock with
-// the VMThread or have cache consistency issues.
-//
-jmethodID InstanceKlass::get_jmethod_id_fetch_or_update(
-            size_t idnum, jmethodID new_id,
-            jmethodID* new_jmeths, jmethodID* to_dealloc_id_p,
-            jmethodID** to_dealloc_jmeths_p) {
-  assert(new_id != nullptr, "sanity check");
-  assert(to_dealloc_id_p != nullptr, "sanity check");
-  assert(to_dealloc_jmeths_p != nullptr, "sanity check");
-  assert(JmethodIdCreation_lock->owned_by_self(), "sanity check");
-
-  // reacquire the cache - we are locked, single threaded or at a safepoint
-  jmethodID* jmeths = methods_jmethod_ids_acquire();
-  jmethodID  id     = nullptr;
-  size_t     length = 0;
-
-  if (jmeths == nullptr ||                      // no cache yet
-      (length = (size_t)jmeths[0]) <= idnum) {  // cache is too short
-    if (jmeths != nullptr) {
-      // copy any existing entries from the old cache
-      for (size_t index = 0; index < length; index++) {
-        new_jmeths[index+1] = jmeths[index+1];
-      }
-      *to_dealloc_jmeths_p = jmeths;  // save old cache for later delete
-    }
-    release_set_methods_jmethod_ids(jmeths = new_jmeths);
-  } else {
-    // fetch jmethodID (if any) from the existing cache
-    id = jmeths[idnum+1];
-    *to_dealloc_jmeths_p = new_jmeths;  // save new cache for later delete
-  }
-  if (id == nullptr) {
-    // No matching jmethodID in the existing cache or we have a new
-    // cache or we just grew the cache. This cache write is done here
-    // by the first thread to win the foot race because a jmethodID
-    // needs to be unique once it is generally available.
-    id = new_id;
-
-    // The jmethodID cache can be read while unlocked so we have to
-    // make sure the new jmethodID is complete before installing it
-    // in the cache.
-    Atomic::release_store(&jmeths[idnum+1], id);
-  } else {
-    *to_dealloc_id_p = new_id; // save new id for later delete
-  }
-  return id;
-}
-
-
-// Common code to get the jmethodID cache length and the jmethodID
-// value at index idnum if there is one.
-//
-void InstanceKlass::get_jmethod_id_length_value(jmethodID* cache,
-       size_t idnum, size_t *length_p, jmethodID* id_p) {
-  assert(cache != nullptr, "sanity check");
-  assert(length_p != nullptr, "sanity check");
-  assert(id_p != nullptr, "sanity check");
-
-  // cache size is stored in element[0], other elements offset by one
-  *length_p = (size_t)cache[0];
-  if (*length_p <= idnum) {  // cache is too short
-    *id_p = nullptr;
-  } else {
-    *id_p = cache[idnum+1];  // fetch jmethodID (if any)
-  }
-}
-
-
 // Lookup a jmethodID, null if not found.  Do no blocking, no allocations, no handles
 jmethodID InstanceKlass::jmethod_id_or_null(Method* method) {
-  size_t idnum = (size_t)method->method_idnum();
+  int idnum = method->method_idnum();
   jmethodID* jmeths = methods_jmethod_ids_acquire();
-  size_t length;                                // length assigned as debugging crumb
-  jmethodID id = nullptr;
-  if (jmeths != nullptr &&                      // If there is a cache
-      (length = (size_t)jmeths[0]) > idnum) {   // and if it is long enough,
-    id = jmeths[idnum+1];                       // Look up the id (may be null)
-  }
-  return id;
+  return (jmeths != nullptr) ? jmeths[idnum + 1] : nullptr;
 }
 
 inline DependencyContext InstanceKlass::dependencies() {
@@ -2431,10 +2422,11 @@ void InstanceKlass::clean_implementors_list() {
     assert (ClassUnloading, "only called for ClassUnloading");
     for (;;) {
       // Use load_acquire due to competing with inserts
-      InstanceKlass* impl = Atomic::load_acquire(adr_implementor());
+      InstanceKlass* volatile* iklass = adr_implementor();
+      assert(iklass != nullptr, "Klass must not be null");
+      InstanceKlass* impl = Atomic::load_acquire(iklass);
       if (impl != nullptr && !impl->is_loader_alive()) {
         // null this field, might be an unloaded instance klass or null
-        InstanceKlass* volatile* iklass = adr_implementor();
         if (Atomic::cmpxchg(iklass, impl, (InstanceKlass*)nullptr) == impl) {
           // Successfully unlinking implementor.
           if (log_is_enabled(Trace, class, unload)) {
@@ -2454,7 +2446,6 @@ void InstanceKlass::clean_method_data() {
   for (int m = 0; m < methods()->length(); m++) {
     MethodData* mdo = methods()->at(m)->method_data();
     if (mdo != nullptr) {
-      MutexLocker ml(SafepointSynchronize::is_at_safepoint() ? nullptr : mdo->extra_data_lock());
       mdo->clean_method_data(/*always_clean*/false);
     }
   }
@@ -2511,7 +2502,9 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   if (itable_length() > 0) {
     itableOffsetEntry* ioe = (itableOffsetEntry*)start_of_itable();
     int method_table_offset_in_words = ioe->offset()/wordSize;
-    int nof_interfaces = (method_table_offset_in_words - itable_offset_in_words())
+    int itable_offset_in_words = (int)(start_of_itable() - (intptr_t*)this);
+
+    int nof_interfaces = (method_table_offset_in_words - itable_offset_in_words)
                          / itableOffsetEntry::size();
 
     for (int i = 0; i < nof_interfaces; i ++, ioe ++) {
@@ -2592,6 +2585,18 @@ void InstanceKlass::remove_unshareable_info() {
   init_shared_package_entry();
   _dep_context_last_cleaned = 0;
   _init_monitor = nullptr;
+
+  remove_unshareable_flags();
+}
+
+void InstanceKlass::remove_unshareable_flags() {
+  // clear all the flags/stats that shouldn't be in the archived version
+  assert(!is_scratch_class(), "must be");
+  assert(!has_been_redefined(), "must be");
+#if INCLUDE_JVMTI
+  set_is_being_redefined(false);
+#endif
+  set_has_resolved_methods(false);
 }
 
 void InstanceKlass::remove_java_mirror() {
@@ -2604,21 +2609,22 @@ void InstanceKlass::remove_java_mirror() {
 }
 
 void InstanceKlass::init_shared_package_entry() {
+  assert(CDSConfig::is_dumping_archive(), "must be");
 #if !INCLUDE_CDS_JAVA_HEAP
   _package_entry = nullptr;
 #else
-  if (!MetaspaceShared::use_full_module_graph()) {
-    _package_entry = nullptr;
-  } else if (DynamicDumpSharedSpaces) {
-    if (!MetaspaceShared::is_in_shared_metaspace(_package_entry)) {
-      _package_entry = nullptr;
-    }
-  } else {
+  if (CDSConfig::is_dumping_full_module_graph()) {
     if (is_shared_unregistered_class()) {
       _package_entry = nullptr;
     } else {
       _package_entry = PackageEntry::get_archived_entry(_package_entry);
     }
+  } else if (CDSConfig::is_dumping_dynamic_archive() &&
+             CDSConfig::is_using_full_module_graph() &&
+             MetaspaceShared::is_in_shared_metaspace(_package_entry)) {
+    // _package_entry is an archived package in the base archive. Leave it as is.
+  } else {
+    _package_entry = nullptr;
   }
   ArchivePtrMarker::mark_pointer((address**)&_package_entry);
 #endif
@@ -2671,10 +2677,11 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   if (array_klasses() != nullptr) {
     // To get a consistent list of classes we need MultiArray_lock to ensure
     // array classes aren't observed while they are being restored.
-     MutexLocker ml(MultiArray_lock);
+    RecursiveLocker rl(MultiArray_lock, THREAD);
+    assert(this == array_klasses()->bottom_klass(), "sanity");
     // Array classes have null protection domain.
     // --> see ArrayKlass::complete_create_array_klass()
-    array_klasses()->restore_unshareable_info(ClassLoaderData::the_null_class_loader_data(), Handle(), CHECK);
+    array_klasses()->restore_unshareable_info(class_loader_data(), Handle(), CHECK);
   }
 
   // Initialize @ValueBased class annotation
@@ -2793,7 +2800,7 @@ void InstanceKlass::release_C_heap_structures(bool release_sub_metadata) {
   set_jni_ids(nullptr);
 
   jmethodID* jmeths = methods_jmethod_ids_acquire();
-  if (jmeths != (jmethodID*)nullptr) {
+  if (jmeths != nullptr) {
     release_set_methods_jmethod_ids(nullptr);
     FreeHeap(jmeths);
   }
@@ -2822,6 +2829,31 @@ void InstanceKlass::release_C_heap_structures(bool release_sub_metadata) {
   }
 }
 
+// The constant pool is on stack if any of the methods are executing or
+// referenced by handles.
+bool InstanceKlass::on_stack() const {
+  return _constants->on_stack();
+}
+
+Symbol* InstanceKlass::source_file_name() const               { return _constants->source_file_name(); }
+u2 InstanceKlass::source_file_name_index() const              { return _constants->source_file_name_index(); }
+void InstanceKlass::set_source_file_name_index(u2 sourcefile_index) { _constants->set_source_file_name_index(sourcefile_index); }
+
+// minor and major version numbers of class file
+u2 InstanceKlass::minor_version() const                 { return _constants->minor_version(); }
+void InstanceKlass::set_minor_version(u2 minor_version) { _constants->set_minor_version(minor_version); }
+u2 InstanceKlass::major_version() const                 { return _constants->major_version(); }
+void InstanceKlass::set_major_version(u2 major_version) { _constants->set_major_version(major_version); }
+
+InstanceKlass* InstanceKlass::get_klass_version(int version) {
+  for (InstanceKlass* ik = this; ik != nullptr; ik = ik->previous_versions()) {
+    if (ik->constants()->version() == version) {
+      return ik;
+    }
+  }
+  return nullptr;
+}
+
 void InstanceKlass::set_source_debug_extension(const char* array, int length) {
   if (array == nullptr) {
     _source_debug_extension = nullptr;
@@ -2839,6 +2871,10 @@ void InstanceKlass::set_source_debug_extension(const char* array, int length) {
     _source_debug_extension = sde;
   }
 }
+
+Symbol* InstanceKlass::generic_signature() const                   { return _constants->generic_signature(); }
+u2 InstanceKlass::generic_signature_index() const                  { return _constants->generic_signature_index(); }
+void InstanceKlass::set_generic_signature_index(u2 sig_index)      { _constants->set_generic_signature_index(sig_index); }
 
 const char* InstanceKlass::signature_name() const {
 
@@ -2910,7 +2946,7 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_
   }
 
   if (is_shared() && _package_entry != nullptr) {
-    if (MetaspaceShared::use_full_module_graph() && _package_entry == pkg_entry) {
+    if (CDSConfig::is_using_full_module_graph() && _package_entry == pkg_entry) {
       // we can use the saved package
       assert(MetaspaceShared::is_in_shared_metaspace(_package_entry), "must be");
       return;
@@ -3319,7 +3355,7 @@ void InstanceKlass::adjust_default_methods(bool* trace_name_printed) {
 
 // On-stack replacement stuff
 void InstanceKlass::add_osr_nmethod(nmethod* n) {
-  assert_lock_strong(CompiledMethod_lock);
+  assert_lock_strong(NMethodState_lock);
 #ifndef PRODUCT
   nmethod* prev = lookup_osr_nmethod(n->method(), n->osr_entry_bci(), n->comp_level(), true);
   assert(prev == nullptr || !prev->is_in_use() COMPILER2_PRESENT(|| StressRecompilation),
@@ -3344,8 +3380,7 @@ void InstanceKlass::add_osr_nmethod(nmethod* n) {
 // Remove osr nmethod from the list. Return true if found and removed.
 bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
   // This is a short non-blocking critical region, so the no safepoint check is ok.
-  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock
-                 , Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   assert(n->is_osr_method(), "wrong kind of nmethod");
   nmethod* last = nullptr;
   nmethod* cur  = osr_nmethods_head();
@@ -3386,8 +3421,7 @@ bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
 }
 
 int InstanceKlass::mark_osr_nmethods(DeoptimizationScope* deopt_scope, const Method* m) {
-  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
-                 Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   nmethod* osr = osr_nmethods_head();
   int found = 0;
   while (osr != nullptr) {
@@ -3402,8 +3436,7 @@ int InstanceKlass::mark_osr_nmethods(DeoptimizationScope* deopt_scope, const Met
 }
 
 nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_level, bool match_level) const {
-  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
-                 Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   nmethod* osr = osr_nmethods_head();
   nmethod* best = nullptr;
   while (osr != nullptr) {
@@ -3477,6 +3510,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"instance size:     %d", size_helper());                        st->cr();
   st->print(BULLET"klass size:        %d", size());                               st->cr();
   st->print(BULLET"access:            "); access_flags().print_on(st);            st->cr();
+  st->print(BULLET"flags:             "); _misc_flags.print_on(st);               st->cr();
   st->print(BULLET"state:             "); st->print_cr("%s", init_state_name());
   st->print(BULLET"name:              "); name()->print_value_on(st);             st->cr();
   st->print(BULLET"super:             "); Metadata::print_value_on_maybe_null(st, super()); st->cr();
@@ -3724,9 +3758,18 @@ const char* InstanceKlass::internal_name() const {
 void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
                                              const ModuleEntry* module_entry,
                                              const ClassFileStream* cfs) const {
+
   if (ClassListWriter::is_enabled()) {
     ClassListWriter::write(this, cfs);
   }
+
+  print_class_load_helper(loader_data, module_entry, cfs);
+  print_class_load_cause_logging();
+}
+
+void InstanceKlass::print_class_load_helper(ClassLoaderData* loader_data,
+                                             const ModuleEntry* module_entry,
+                                             const ClassFileStream* cfs) const {
 
   if (!log_is_enabled(Info, class, load)) {
     return;
@@ -3811,6 +3854,66 @@ void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
     }
 
     msg.debug("%s", debug_stream.as_string());
+  }
+}
+
+void InstanceKlass::print_class_load_cause_logging() const {
+  bool log_cause_native = log_is_enabled(Info, class, load, cause, native);
+  if (log_cause_native || log_is_enabled(Info, class, load, cause)) {
+    JavaThread* current = JavaThread::current();
+    ResourceMark rm(current);
+    const char* name = external_name();
+
+    if (LogClassLoadingCauseFor == nullptr ||
+        (strcmp("*", LogClassLoadingCauseFor) != 0 &&
+         strstr(name, LogClassLoadingCauseFor) == nullptr)) {
+        return;
+    }
+
+    // Log Java stack first
+    {
+      LogMessage(class, load, cause) msg;
+      NonInterleavingLogStream info_stream{LogLevelType::Info, msg};
+
+      info_stream.print_cr("Java stack when loading %s:", name);
+      current->print_stack_on(&info_stream);
+    }
+
+    // Log native stack second
+    if (log_cause_native) {
+      // Log to string first so that lines can be indented
+      stringStream stack_stream;
+      char buf[O_BUFLEN];
+      address lastpc = nullptr;
+      if (os::platform_print_native_stack(&stack_stream, nullptr, buf, O_BUFLEN, lastpc)) {
+        // We have printed the native stack in platform-specific code,
+        // so nothing else to do in this case.
+      } else {
+        frame f = os::current_frame();
+        VMError::print_native_stack(&stack_stream, f, current, true /*print_source_info */,
+                                    -1 /* max stack_stream */, buf, O_BUFLEN);
+      }
+
+      LogMessage(class, load, cause, native) msg;
+      NonInterleavingLogStream info_stream{LogLevelType::Info, msg};
+      info_stream.print_cr("Native stack when loading %s:", name);
+
+      // Print each native stack line to the log
+      int size = (int) stack_stream.size();
+      char* stack = stack_stream.as_string();
+      char* stack_end = stack + size;
+      char* line_start = stack;
+      for (char* p = stack; p < stack_end; p++) {
+        if (*p == '\n') {
+          *p = '\0';
+          info_stream.print_cr("\t%s", line_start);
+          line_start = p + 1;
+        }
+      }
+      if (line_start < stack_end) {
+        info_stream.print_cr("\t%s", line_start);
+      }
+    }
   }
 }
 
@@ -3905,7 +4008,7 @@ void InstanceKlass::verify_on(outputStream* st) {
     Array<int>* method_ordering = this->method_ordering();
     int length = method_ordering->length();
     if (JvmtiExport::can_maintain_original_method_order() ||
-        ((UseSharedSpaces || Arguments::is_dumping_archive()) && length != 0)) {
+        ((UseSharedSpaces || CDSConfig::is_dumping_archive()) && length != 0)) {
       guarantee(length == methods()->length(), "invalid method ordering length");
       jlong sum = 0;
       for (int j = 0; j < length; j++) {
@@ -4021,19 +4124,36 @@ void InstanceKlass::set_init_state(ClassState state) {
 // Globally, there is at least one previous version of a class to walk
 // during class unloading, which is saved because old methods in the class
 // are still running.   Otherwise the previous version list is cleaned up.
-bool InstanceKlass::_has_previous_versions = false;
+bool InstanceKlass::_should_clean_previous_versions = false;
 
 // Returns true if there are previous versions of a class for class
 // unloading only. Also resets the flag to false. purge_previous_version
 // will set the flag to true if there are any left, i.e., if there's any
 // work to do for next time. This is to avoid the expensive code cache
 // walk in CLDG::clean_deallocate_lists().
-bool InstanceKlass::has_previous_versions_and_reset() {
-  bool ret = _has_previous_versions;
-  log_trace(redefine, class, iklass, purge)("Class unloading: has_previous_versions = %s",
+bool InstanceKlass::should_clean_previous_versions_and_reset() {
+  bool ret = _should_clean_previous_versions;
+  log_trace(redefine, class, iklass, purge)("Class unloading: should_clean_previous_versions = %s",
      ret ? "true" : "false");
-  _has_previous_versions = false;
+  _should_clean_previous_versions = false;
   return ret;
+}
+
+// This nulls out jmethodIDs for all methods in 'klass'
+// It needs to be called explicitly for all previous versions of a class because these may not be cleaned up
+// during class unloading.
+// We can not use the jmethodID cache associated with klass directly because the 'previous' versions
+// do not have the jmethodID cache filled in. Instead, we need to lookup jmethodID for each method and this
+// is expensive - O(n) for one jmethodID lookup. For all contained methods it is O(n^2).
+// The reason for expensive jmethodID lookup for each method is that there is no direct link between method and jmethodID.
+void InstanceKlass::clear_jmethod_ids(InstanceKlass* klass) {
+  Array<Method*>* method_refs = klass->methods();
+  for (int k = 0; k < method_refs->length(); k++) {
+    Method* method = method_refs->at(k);
+    if (method != nullptr && method->is_obsolete()) {
+      method->clear_jmethod_id();
+    }
+  }
 }
 
 // Purge previous versions before adding new previous versions of the class and
@@ -4079,6 +4199,7 @@ void InstanceKlass::purge_previous_version_list() {
       // Unlink from previous version list.
       assert(pv_node->class_loader_data() == loader_data, "wrong loader_data");
       InstanceKlass* next = pv_node->previous_versions();
+      clear_jmethod_ids(pv_node); // jmethodID maintenance for the unloaded class
       pv_node->link_previous_versions(nullptr);   // point next to null
       last->link_previous_versions(next);
       // Delete this node directly. Nothing is referring to it and we don't
@@ -4089,12 +4210,17 @@ void InstanceKlass::purge_previous_version_list() {
       version++;
       continue;
     } else {
-      log_trace(redefine, class, iklass, purge)("previous version " PTR_FORMAT " is alive", p2i(pv_node));
       assert(pvcp->pool_holder() != nullptr, "Constant pool with no holder");
       guarantee (!loader_data->is_unloading(), "unloaded classes can't be on the stack");
       live_count++;
-      // found a previous version for next time we do class unloading
-      _has_previous_versions = true;
+      if (pvcp->is_shared()) {
+        // Shared previous versions can never be removed so no cleaning is needed.
+        log_trace(redefine, class, iklass, purge)("previous version " PTR_FORMAT " is shared", p2i(pv_node));
+      } else {
+        // Previous version alive, set that clean is needed for next time.
+        _should_clean_previous_versions = true;
+        log_trace(redefine, class, iklass, purge)("previous version " PTR_FORMAT " is alive", p2i(pv_node));
+      }
     }
 
     // next previous version
@@ -4194,13 +4320,19 @@ void InstanceKlass::add_previous_version(InstanceKlass* scratch_class,
     return;
   }
 
-  // Add previous version if any methods are still running.
-  // Set has_previous_version flag for processing during class unloading.
-  _has_previous_versions = true;
-  log_trace(redefine, class, iklass, add) ("scratch class added; one of its methods is on_stack.");
+  // Add previous version if any methods are still running or if this is
+  // a shared class which should never be removed.
   assert(scratch_class->previous_versions() == nullptr, "shouldn't have a previous version");
   scratch_class->link_previous_versions(previous_versions());
   link_previous_versions(scratch_class);
+  if (cp_ref->is_shared()) {
+    log_trace(redefine, class, iklass, add) ("scratch class added; class is shared");
+  } else {
+    //  We only set clean_previous_versions flag for processing during class
+    // unloading for non-shared classes.
+    _should_clean_previous_versions = true;
+    log_trace(redefine, class, iklass, add) ("scratch class added; one of its methods is on_stack.");
+  }
 } // end add_previous_version()
 
 #endif // INCLUDE_JVMTI

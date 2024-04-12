@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -616,7 +616,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
     }
 
     /**
-     * Reloads the mnemonics. This should be invoked when a memonic changes,
+     * Reloads the mnemonics. This should be invoked when a mnemonic changes,
      * when the title of a mnemonic changes, or when tabs are added/removed.
      */
     private void updateMnemonics() {
@@ -4142,7 +4142,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
                 else if (tabPane.isRequestFocusEnabled()) {
                     // Clicking on selected tab, try and give the tabbedpane
                     // focus.  Repaint will occur in focusGained.
-                    tabPane.requestFocus();
+                    tabPane.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
                 }
             }
         }

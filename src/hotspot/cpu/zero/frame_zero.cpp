@@ -82,7 +82,6 @@ BasicObjectLock* frame::interpreter_frame_monitor_begin() const {
   return get_interpreterState()->monitor_base();
 }
 
-// Pointer beyond the "oldest/deepest" BasicObjectLock on stack.
 BasicObjectLock* frame::interpreter_frame_monitor_end() const {
   return (BasicObjectLock*) get_interpreterState()->stack_base();
 }
@@ -392,9 +391,9 @@ void ZeroFrame::identify_vp_word(int       frame_index,
       (BasicObjectLock *) monitor_base - 1 - index);
     intptr_t offset = (intptr_t) addr - monitor;
 
-    if (offset == BasicObjectLock::obj_offset_in_bytes())
+    if (offset == in_bytes(BasicObjectLock::obj_offset()))
       snprintf(fieldbuf, buflen, "monitor[%d]->_obj", index);
-    else if (offset ==  BasicObjectLock::lock_offset_in_bytes())
+    else if (offset == in_bytes(BasicObjectLock::lock_offset()))
       snprintf(fieldbuf, buflen, "monitor[%d]->_lock", index);
 
     return;

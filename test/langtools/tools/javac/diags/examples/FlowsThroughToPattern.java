@@ -22,11 +22,6 @@
  */
 
 // key: compiler.err.flows.through.to.pattern
-// key: compiler.misc.feature.pattern.switch
-// key: compiler.warn.preview.feature.use.plural
-// key: compiler.misc.feature.case.null
-// key: compiler.warn.preview.feature.use
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
 
 class FlowsThroughToPattern {
     private void doSwitch(Object o) {

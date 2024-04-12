@@ -167,8 +167,8 @@ void IdealKit::loop(GraphKit* gkit, int nargs, IdealVariable& iv, Node* init, Bo
   if (UseLoopPredicate) {
     // Sync IdealKit and graphKit.
     gkit->sync_kit(*this);
-    // Add loop predicate.
-    gkit->add_empty_predicates(nargs);
+    // Add Parse Predicates.
+    gkit->add_parse_predicates(nargs);
     // Update IdealKit memory.
     sync_kit(gkit);
   }

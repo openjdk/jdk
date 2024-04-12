@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
   InternalAddress safepoint_pc(__ pc() - __ offset() + safepoint_offset());
   __ relocate(safepoint_pc.rspec(), [&] {
     int32_t offset;
-    __ la_patchable(t0, safepoint_pc.target(), offset);
+    __ la(t0, safepoint_pc.target(), offset);
     __ addi(t0, t0, offset);
   });
   __ sd(t0, Address(xthread, JavaThread::saved_exception_pc_offset()));
@@ -92,12 +92,9 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
     __ mv(t1, _array->as_pointer_register());
     stub_id = Runtime1::throw_range_check_failed_id;
   }
-  RuntimeAddress target(Runtime1::entry_for(stub_id));
-  __ relocate(target.rspec(), [&] {
-    int32_t offset;
-    __ la_patchable(ra, target, offset);
-    __ jalr(ra, ra, offset);
-  });
+  // t0 and t1 are used as args in generate_exception_throw，
+  // so use ra as the tmp register for rt_call.
+  __ rt_call(Runtime1::entry_for(stub_id), ra);
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
   debug_only(__ should_not_reach_here());

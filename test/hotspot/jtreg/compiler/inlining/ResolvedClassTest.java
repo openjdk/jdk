@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.io.IOException;
 public class ResolvedClassTest {
     /* ======================================================================== */
     static void testStatic() throws IOException {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+IgnoreUnrecognizedVMOptions", "-showversion",
                 "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
                 "-Xbatch", "-XX:CompileCommand=quiet", "-XX:CompileCommand=compileonly," + TestStatic.class.getName() + "::test",
@@ -52,8 +52,8 @@ public class ResolvedClassTest {
 
         analyzer.shouldHaveExitValue(0);
 
-        analyzer.shouldNotContain("TestStatic$A::m (1 bytes)   not inlineable");
-        analyzer.shouldNotContain("TestStatic$A::m (1 bytes)   no static binding");
+        analyzer.shouldNotContain("TestStatic$A::m (1 bytes)   failed to inline: not inlineable");
+        analyzer.shouldNotContain("TestStatic$A::m (1 bytes)   failed to inline: no static binding");
 
         analyzer.shouldContain("TestStatic$A::m (1 bytes)   inline");
     }
@@ -78,7 +78,7 @@ public class ResolvedClassTest {
 
     /* ======================================================================== */
     static void testStaticInit() throws IOException {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+IgnoreUnrecognizedVMOptions", "-showversion",
                 "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
                 "-Xbatch", "-XX:CompileCommand=quiet", "-XX:CompileCommand=compileonly," + TestStaticInit.class.getName() + "::test",
@@ -88,7 +88,7 @@ public class ResolvedClassTest {
 
         analyzer.shouldHaveExitValue(0);
 
-        analyzer.shouldContain("TestStaticInit$A::m (1 bytes)   no static binding");
+        analyzer.shouldContain("TestStaticInit$A::m (1 bytes)   failed to inline: no static binding");
     }
 
     static class TestStaticInit {
@@ -115,7 +115,7 @@ public class ResolvedClassTest {
 
     /* ======================================================================== */
     static void testIndy() throws IOException {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+IgnoreUnrecognizedVMOptions", "-showversion",
                 "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
                 "-Xbatch", "-XX:CompileCommand=quiet", "-XX:CompileCommand=compileonly," + TestIndy.class.getName() + "::test",
@@ -125,10 +125,10 @@ public class ResolvedClassTest {
 
         analyzer.shouldHaveExitValue(0);
 
-        analyzer.shouldNotMatch("java\\.lang\\.invoke\\..+::linkToTargetMethod \\(9 bytes\\)   not inlineable");
+        analyzer.shouldNotMatch("java\\.lang\\.invoke\\..+::linkToTargetMethod \\(9 bytes\\)   failed to inline: not inlineable");
 
         analyzer.shouldMatch("java\\.lang\\.invoke\\..+::linkToTargetMethod \\(9 bytes\\)   force inline by annotation");
-        analyzer.shouldContain("java/lang/invoke/MethodHandle::invokeBasic (not loaded)   not inlineable");
+        analyzer.shouldContain("java/lang/invoke/MethodHandle::invokeBasic (not loaded)   failed to inline: not inlineable");
     }
 
     static class TestIndy {

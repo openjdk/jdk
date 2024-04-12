@@ -80,7 +80,7 @@ JvmtiRawMonitor::~JvmtiRawMonitor() {
 
 bool
 JvmtiRawMonitor::is_valid() {
-  int value = 0;
+  jlong value = 0;
 
   // This object might not be a JvmtiRawMonitor so we can't assume
   // the _magic field is properly aligned. Get the value in a safe
@@ -251,7 +251,7 @@ int JvmtiRawMonitor::simple_wait(Thread* self, jlong millis) {
     {
       // This transition must be after we exited the monitor.
       ThreadInVMfromNative tivmfn(jt);
-      if (jt->is_interrupted(true)) {
+      if (jt->get_and_clear_interrupted()) {
         ret = M_INTERRUPTED;
       } else {
         ThreadBlockInVM tbivm(jt);
@@ -262,7 +262,7 @@ int JvmtiRawMonitor::simple_wait(Thread* self, jlong millis) {
         }
         // Return to VM before post-check of interrupt state
       }
-      if (jt->is_interrupted(true)) {
+      if (jt->get_and_clear_interrupted()) {
         ret = M_INTERRUPTED;
       }
     }
@@ -382,7 +382,7 @@ int JvmtiRawMonitor::raw_wait(jlong millis, Thread* self) {
   self->_ParkEvent->reset();
   OrderAccess::fence();
 
-  intptr_t save = _recursions;
+  int save = _recursions;
   _recursions = 0;
   ret = simple_wait(self, millis);
 
@@ -401,7 +401,7 @@ int JvmtiRawMonitor::raw_wait(jlong millis, Thread* self) {
         break;
       }
     }
-    if (jt->is_interrupted(true)) {
+    if (jt->get_and_clear_interrupted()) {
       ret = M_INTERRUPTED;
     }
   } else { // Non-JavaThread re-enter

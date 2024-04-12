@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ IMGEXTERN jmethodID g_BImgSetRGBMID;
 /* Raster ids */
 IMGEXTERN jfieldID g_RasterWidthID;
 IMGEXTERN jfieldID g_RasterHeightID;
-IMGEXTERN jfieldID g_RasterBaseRasterID;
 IMGEXTERN jfieldID g_RasterMinXID;
 IMGEXTERN jfieldID g_RasterMinYID;
 IMGEXTERN jfieldID g_RasterBaseOriginXID;
@@ -74,7 +73,6 @@ IMGEXTERN jfieldID g_ICRdataOffsetsID;
 IMGEXTERN jfieldID g_ICRtypeID;
 
 /* Color Model ids */
-JNIEXPORT
 IMGEXTERN jfieldID g_CMnBitsID;
 IMGEXTERN jfieldID g_CMcspaceID;
 IMGEXTERN jfieldID g_CMnumComponentsID;

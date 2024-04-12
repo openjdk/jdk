@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "oops/symbolHandle.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
@@ -120,7 +121,6 @@ ciEnv::ciEnv(CompileTask* task)
   _oop_recorder = nullptr;
   _debug_info = nullptr;
   _dependencies = nullptr;
-  _failure_reason = nullptr;
   _inc_decompile_count_on_failure = true;
   _compilable = MethodCompilable;
   _break_at_compile = false;
@@ -249,7 +249,6 @@ ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler) {
   _oop_recorder = nullptr;
   _debug_info = nullptr;
   _dependencies = nullptr;
-  _failure_reason = nullptr;
   _inc_decompile_count_on_failure = true;
   _compilable = MethodCompilable_never;
   _break_at_compile = false;
@@ -794,15 +793,15 @@ ciConstant ciEnv::get_constant_by_index(const constantPoolHandle& cpool,
 // Implementation note: the results of field lookups are cached
 // in the accessor klass.
 ciField* ciEnv::get_field_by_index_impl(ciInstanceKlass* accessor,
-                                        int index) {
+                                        int index, Bytecodes::Code bc) {
   ciConstantPoolCache* cache = accessor->field_cache();
   if (cache == nullptr) {
-    ciField* field = new (arena()) ciField(accessor, index);
+    ciField* field = new (arena()) ciField(accessor, index, bc);
     return field;
   } else {
     ciField* field = (ciField*)cache->get(index);
     if (field == nullptr) {
-      field = new (arena()) ciField(accessor, index);
+      field = new (arena()) ciField(accessor, index, bc);
       cache->insert(index, field);
     }
     return field;
@@ -814,8 +813,8 @@ ciField* ciEnv::get_field_by_index_impl(ciInstanceKlass* accessor,
 //
 // Get a field by index from a klass's constant pool.
 ciField* ciEnv::get_field_by_index(ciInstanceKlass* accessor,
-                                   int index) {
-  GUARDED_VM_ENTRY(return get_field_by_index_impl(accessor, index);)
+                                   int index, Bytecodes::Code bc) {
+  GUARDED_VM_ENTRY(return get_field_by_index_impl(accessor, index, bc);)
 }
 
 // ------------------------------------------------------------------
@@ -882,16 +881,16 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     // Fake a method that is equivalent to a declared method.
     ciInstanceKlass* holder    = get_instance_klass(vmClasses::MethodHandle_klass());
     ciSymbol*        name      = ciSymbols::invokeBasic_name();
-    ciSymbol*        signature = get_symbol(cpool->signature_ref_at(index));
+    ciSymbol*        signature = get_symbol(cpool->signature_ref_at(index, bc));
     return get_unloaded_method(holder, name, signature, accessor);
   } else {
-    const int holder_index = cpool->klass_ref_index_at(index);
+    const int holder_index = cpool->klass_ref_index_at(index, bc);
     bool holder_is_accessible;
     ciKlass* holder = get_klass_by_index_impl(cpool, holder_index, holder_is_accessible, accessor);
 
     // Get the method's name and signature.
-    Symbol* name_sym = cpool->name_ref_at(index);
-    Symbol* sig_sym  = cpool->signature_ref_at(index);
+    Symbol* name_sym = cpool->name_ref_at(index, bc);
+    Symbol* sig_sym  = cpool->signature_ref_at(index, bc);
 
     if (cpool->has_preresolution()
         || ((holder == ciEnv::MethodHandle_klass() || holder == ciEnv::VarHandle_klass()) &&
@@ -917,7 +916,7 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     }
 
     if (holder_is_accessible) {  // Our declared holder is loaded.
-      constantTag tag = cpool->tag_ref_at(index);
+      constantTag tag = cpool->tag_ref_at(index, bc);
       assert(accessor->get_instanceKlass() == cpool->pool_holder(), "not the pool holder?");
       Method* m = lookup_method(accessor, holder, name_sym, sig_sym, bc, tag);
       if (m != nullptr &&
@@ -1142,17 +1141,15 @@ void ciEnv::register_method(ciMethod* target,
 #endif
 
       if (entry_bci == InvocationEntryBci) {
-        if (TieredCompilation) {
-          // If there is an old version we're done with it
-          CompiledMethod* old = method->code();
-          if (TraceMethodReplacement && old != nullptr) {
-            ResourceMark rm;
-            char *method_name = method->name_and_sig_as_C_string();
-            tty->print_cr("Replacing method %s", method_name);
-          }
-          if (old != nullptr) {
-            old->make_not_used();
-          }
+        // If there is an old version we're done with it
+        nmethod* old = method->code();
+        if (TraceMethodReplacement && old != nullptr) {
+          ResourceMark rm;
+          char *method_name = method->name_and_sig_as_C_string();
+          tty->print_cr("Replacing method %s", method_name);
+        }
+        if (old != nullptr) {
+          old->make_not_used();
         }
 
         LogTarget(Info, nmethod, install) lt;
@@ -1163,7 +1160,7 @@ void ciEnv::register_method(ciMethod* target,
                     task()->comp_level(), method_name);
         }
         // Allow the code to be executed
-        MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+        MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
         if (nm->make_in_use()) {
           method->set_code(method, nm);
         }
@@ -1175,7 +1172,7 @@ void ciEnv::register_method(ciMethod* target,
           lt.print("Installing osr method (%d) %s @ %d",
                     task()->comp_level(), method_name, entry_bci);
         }
-        MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+        MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
         if (nm->make_in_use()) {
           method->method_holder()->add_osr_nmethod(nm);
         }
@@ -1232,9 +1229,9 @@ int ciEnv::num_inlined_bytecodes() const {
 // ------------------------------------------------------------------
 // ciEnv::record_failure()
 void ciEnv::record_failure(const char* reason) {
-  if (_failure_reason == nullptr) {
+  if (_failure_reason.get() == nullptr) {
     // Record the first failure reason.
-    _failure_reason = reason;
+    _failure_reason.set(reason);
   }
 }
 
@@ -1264,7 +1261,7 @@ void ciEnv::record_method_not_compilable(const char* reason, bool all_tiers) {
     _compilable = new_compilable;
 
     // Reset failure reason; this one is more important.
-    _failure_reason = nullptr;
+    _failure_reason.clear();
     record_failure(reason);
   }
 }
@@ -1317,13 +1314,7 @@ void ciEnv::record_best_dyno_loc(const InstanceKlass* ik) {
     return;
   }
   const char *loc0;
-  if (dyno_loc(ik, loc0)) {
-    // TODO: found multiple references, see if we can improve
-    if (Verbose) {
-      tty->print_cr("existing call site @ %s for %s",
-                     loc0, ik->external_name());
-    }
-  } else {
+  if (!dyno_loc(ik, loc0)) {
     set_dyno_loc(ik);
   }
 }
@@ -1533,18 +1524,18 @@ void ciEnv::process_invokedynamic(const constantPoolHandle &cp, int indy_index, 
 
 // Process an invokehandle call site and record any dynamic locations.
 void ciEnv::process_invokehandle(const constantPoolHandle &cp, int index, JavaThread* thread) {
-  const int holder_index = cp->klass_ref_index_at(index);
+  const int holder_index = cp->klass_ref_index_at(index, Bytecodes::_invokehandle);
   if (!cp->tag_at(holder_index).is_klass()) {
     return;  // not resolved
   }
   Klass* holder = ConstantPool::klass_at_if_loaded(cp, holder_index);
-  Symbol* name = cp->name_ref_at(index);
+  Symbol* name = cp->name_ref_at(index, Bytecodes::_invokehandle);
   if (MethodHandles::is_signature_polymorphic_name(holder, name)) {
-    ConstantPoolCacheEntry* cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
-    if (cp_cache_entry->is_resolved(Bytecodes::_invokehandle)) {
+    ResolvedMethodEntry* method_entry = cp->resolved_method_entry_at(index);
+    if (method_entry->is_resolved(Bytecodes::_invokehandle)) {
       // process the adapter
-      Method* adapter = cp_cache_entry->f1_as_method();
-      oop appendix = cp_cache_entry->appendix_if_resolved(cp);
+      Method* adapter = method_entry->method();
+      oop appendix = cp->cache()->appendix_if_resolved(method_entry);
       record_call_site_method(thread, adapter);
       // process the appendix
       {
@@ -1596,7 +1587,7 @@ void ciEnv::find_dynamic_call_sites() {
               process_invokedynamic(pool, index, thread);
             } else {
               assert(opcode == Bytecodes::_invokehandle, "new switch label added?");
-              int cp_cache_index = bcs.get_index_u2_cpcache();
+              int cp_cache_index = bcs.get_index_u2();
               process_invokehandle(pool, cp_cache_index, thread);
             }
             break;
@@ -1663,7 +1654,7 @@ void ciEnv::dump_replay_data_helper(outputStream* out) {
   NoSafepointVerifier no_safepoint;
   ResourceMark rm;
 
-  out->print_cr("version %d", REPLAY_VERSION);
+  dump_replay_data_version(out);
 #if INCLUDE_JVMTI
   out->print_cr("JvmtiExport can_access_local_variables %d",     _jvmti_can_access_local_variables);
   out->print_cr("JvmtiExport can_hotswap_or_post_breakpoint %d", _jvmti_can_hotswap_or_post_breakpoint);
@@ -1715,6 +1706,7 @@ void ciEnv::dump_replay_data(int compile_id) {
         tty->print_cr("# Compiler replay data is saved as: %s", buffer);
       } else {
         tty->print_cr("# Can't open file to dump replay data.");
+        close(fd);
       }
     }
   }
@@ -1731,6 +1723,7 @@ void ciEnv::dump_inline_data(int compile_id) {
         fileStream replay_data_stream(inline_data_file, /*need_close=*/true);
         GUARDED_VM_ENTRY(
           MutexLocker ml(Compile_lock);
+          dump_replay_data_version(&replay_data_stream);
           dump_compile_data(&replay_data_stream);
         )
         replay_data_stream.flush();
@@ -1738,7 +1731,12 @@ void ciEnv::dump_inline_data(int compile_id) {
         tty->print_cr("%s", buffer);
       } else {
         tty->print_cr("# Can't open file to dump inline data.");
+        close(fd);
       }
     }
   }
+}
+
+void ciEnv::dump_replay_data_version(outputStream* out) {
+  out->print_cr("version %d", REPLAY_VERSION);
 }

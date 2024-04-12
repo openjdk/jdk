@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ protected:
   // Initialize the members of this class. The biased start address of this array
   // is the bias (in elements) multiplied by the element size.
   void initialize_base(address base, size_t length, size_t bias, size_t elem_size, uint shift_by) {
-    assert(base != NULL, "just checking");
+    assert(base != nullptr, "just checking");
     assert(length > 0, "just checking");
     assert(shift_by < sizeof(uintptr_t) * 8, "Shifting by %u, larger than word size?", shift_by);
     _base = base;

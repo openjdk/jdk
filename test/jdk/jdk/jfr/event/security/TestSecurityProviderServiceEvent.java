@@ -52,32 +52,38 @@ public class TestSecurityProviderServiceEvent {
 
     public static void main(String[] args) throws Exception {
         testAlg(cipherFunc, "AES", "SunJCE",
-                "SunEC", "Cipher", 1, Collections.emptyList());
+                "SunEC", "Cipher", 1, Collections.emptyList(),
+                javax.crypto.Cipher.class.getName(), "getInstance");
         testAlg(signatureFunc, "SHA256withRSA", "SunRsaSign",
-                "SunEC", "Signature", 2, List.of("MessageDigest"));
+                "SunEC", "Signature", 2, List.of("MessageDigest"),
+                "sun.security.jca.GetInstance", "getService");
         testAlg(messageDigestFunc, "SHA-512", "SUN",
-                "SunEC", "MessageDigest", 1, Collections.emptyList());
+                "SunEC", "MessageDigest", 1, Collections.emptyList(),
+                "sun.security.jca.GetInstance", "getService");
         testAlg(keystoreFunc, "PKCS12", "SUN",
-                "SunEC", "KeyStore", 1, Collections.emptyList());
+                "SunEC", "KeyStore", 1, Collections.emptyList(),
+                "sun.security.jca.GetInstance", "getService");
         testAlg(certPathBuilderFunc, "PKIX", "SUN",
-                "SunEC", "CertPathBuilder", 2, List.of("CertificateFactory"));
+                "SunEC", "CertPathBuilder", 2, List.of("CertificateFactory"),
+                "sun.security.jca.GetInstance", "getService");
     }
 
     private static void testAlg(BiFunction<String, String, Provider> bif, String alg,
                 String workingProv, String brokenProv, String algType,
-                                int expected, List<String> other) throws Exception {
+                                int expected, List<String> other,
+                                String clazz, String method) throws Exception {
         // bootstrap security Provider services
         Provider p =  bif.apply(alg, workingProv);
 
         try (Recording recording = new Recording()) {
-            recording.enable(EventNames.SecurityProviderService);
+            recording.enable(EventNames.SecurityProviderService).withStackTrace();
             recording.start();
             p = bif.apply(alg, workingProv);
             bif.apply(alg, brokenProv);
             recording.stop();
             List<RecordedEvent> events = Events.fromRecording(recording);
             Asserts.assertEquals(events.size(), expected, "Incorrect number of events");
-            assertEvent(events, algType, alg, p.getName(), other);
+            assertEvent(events, algType, alg, p.getName(), other, clazz, method);
         }
     }
 
@@ -137,7 +143,8 @@ public class TestSecurityProviderServiceEvent {
     };
 
     private static void assertEvent(List<RecordedEvent> events, String type,
-            String alg, String workingProv, List<String> other) {
+            String alg, String workingProv, List<String> other, String clazz,
+            String method) {
         boolean secondaryEventOK = other.isEmpty() ? true : false;
         for (RecordedEvent e : events) {
             if (other.contains(e.getValue("type"))) {
@@ -148,10 +155,10 @@ public class TestSecurityProviderServiceEvent {
             Events.assertField(e, "provider").equal(workingProv);
             Events.assertField(e, "type").equal(type);
             Events.assertField(e, "algorithm").equal(alg);
+            Events.assertTopFrame(e, clazz, method);
         }
         if (!secondaryEventOK) {
             throw new RuntimeException("Secondary events missing");
         }
-
     }
 }

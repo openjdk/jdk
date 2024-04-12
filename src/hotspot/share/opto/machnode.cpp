@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,7 @@ bool methodOper::cmp( const MachOper &oper ) const {
 //------------------------------MachNode---------------------------------------
 
 //------------------------------emit-------------------------------------------
-void MachNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+void MachNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   #ifdef ASSERT
   tty->print("missing MachNode emit function: ");
   dump();
@@ -181,6 +181,27 @@ bool MachNode::cmp( const Node &node ) const {
     if( !_opnds[i]->cmp( *n._opnds[i] ) )
       return false;             // mis-matched operands
   return true;                  // match
+}
+
+void MachNode::fill_new_machnode(MachNode* node) const {
+  // New node must use same node index
+  node->set_idx(_idx);
+  // Copy machine-independent inputs
+  for (uint j = 0; j < req(); j++) {
+    node->add_req(in(j));
+  }
+  // Copy my operands, except for cisc position
+  int nopnds = num_opnds();
+  assert(node->num_opnds() == (uint)nopnds, "Must have same number of operands");
+  MachOper** to = node->_opnds;
+  for (int i = 0; i < nopnds; i++) {
+    if (i != cisc_operand()) {
+      to[i] = _opnds[i]->clone();
+    }
+  }
+  // Do not increment node index counter, since node reuses my index
+  Compile* C = Compile::current();
+  C->set_unique(C->unique() - 1);
 }
 
 // Return an equivalent instruction using memory for cisc_operand position
@@ -335,6 +356,13 @@ const class TypePtr *MachNode::adr_type() const {
   if( adr_type != TYPE_PTR_SENTINAL ) {
     return adr_type;      // get_base_and_disp has the answer
   }
+
+#ifdef ASSERT
+  if (base != nullptr && base->is_Mach() && base->as_Mach()->ideal_Opcode() == Op_VerifyVectorAlignment) {
+    // For VerifyVectorAlignment we just pass the type through
+    return base->bottom_type()->is_ptr();
+  }
+#endif
 
   // Direct addressing modes have no base node, simply an indirect
   // offset, which is always to raw memory.
@@ -576,7 +604,7 @@ void MachNullCheckNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 }
 #endif
 
-void MachNullCheckNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+void MachNullCheckNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   // only emits entries in the null-pointer exception handler table
 }
 void MachNullCheckNode::label_set(Label* label, uint block_num) {

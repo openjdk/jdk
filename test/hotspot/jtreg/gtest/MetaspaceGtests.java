@@ -37,7 +37,7 @@
  *          java.xml
  * @requires vm.debug
  * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockDiagnosticVMOptions -XX:VerifyMetaspaceInterval=3
+ * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockDiagnosticVMOptions -XX:VerifyMetaspaceInterval=1
  */
 
 /* @test id=balanced-with-guards
@@ -47,7 +47,7 @@
  *          java.xml
  * @requires vm.debug
  * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:VerifyMetaspaceInterval=3 -XX:+MetaspaceGuardAllocations
+ * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:VerifyMetaspaceInterval=1 -XX:+MetaspaceGuardAllocations
  */
 
 /* @test id=balanced-no-ccs

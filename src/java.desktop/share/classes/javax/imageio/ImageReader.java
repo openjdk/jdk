@@ -2582,7 +2582,7 @@ public abstract class ImageReader {
      * width or height of 0, an {@code IllegalArgumentException}
      * is thrown.
      *
-     * <p> The {@link #getSourceRegion getSourceRegion>}
+     * <p> The {@link #getSourceRegion getSourceRegion}
      * method may be used if only source clipping is desired.
      *
      * @param param an {@code ImageReadParam}, or {@code null}.

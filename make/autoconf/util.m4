@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,7 @@ AC_DEFUN([UTIL_GET_NON_MATCHING_VALUES],
   if test -z "$legal_values"; then
     $1="$2"
   else
-    result=`$GREP -Fvx "$legal_values" <<< "$values_to_check" | $GREP -v '^$'`
+    result=`$GREP -Fvx -- "$legal_values" <<< "$values_to_check" | $GREP -v '^$'`
     $1=${result//$'\n'/ }
   fi
 ])
@@ -226,7 +226,7 @@ AC_DEFUN([UTIL_GET_MATCHING_VALUES],
   if test -z "$illegal_values"; then
     $1=""
   else
-    result=`$GREP -Fx "$illegal_values" <<< "$values_to_check" | $GREP -v '^$'`
+    result=`$GREP -Fx -- "$illegal_values" <<< "$values_to_check" | $GREP -v '^$'`
     $1=${result//$'\n'/ }
   fi
 ])
@@ -509,7 +509,7 @@ AC_DEFUN([UTIL_CHECK_TYPE_directory],
     FAILURE="Directory $1 does not exist or is not readable"
   fi
 
-  if test "[x]ARG_CHECK_FOR_FILES" != x; then
+  if test "[x]ARG_CHECK_FOR_FILES" != "x:"; then
     for file in ARG_CHECK_FOR_FILES; do
       found_files=$($ECHO $(ls $1/$file 2> /dev/null))
       if test "x$found_files" = x; then
@@ -781,25 +781,25 @@ UTIL_DEFUN_NAMED([UTIL_ARG_WITH],
     else
       AC_MSG_RESULT([$ARG_RESULT, $REASON])
     fi
-  fi
 
-  # Verify value
-  # First use our dispatcher to verify that type requirements are satisfied
-  UTIL_CHECK_TYPE(ARG_TYPE, $ARG_RESULT)
+    # Verify value
+    # First use our dispatcher to verify that type requirements are satisfied
+    UTIL_CHECK_TYPE(ARG_TYPE, $ARG_RESULT)
 
-  if test "x$FAILURE" = x; then
-    # Execute custom verification payload, if present
-    RESULT="$ARG_RESULT"
+    if test "x$FAILURE" = x; then
+      # Execute custom verification payload, if present
+      RESULT="$ARG_RESULT"
 
-    ARG_CHECK_VALUE
+      ARG_CHECK_VALUE
 
-    ARG_RESULT="$RESULT"
-  fi
+      ARG_RESULT="$RESULT"
+    fi
 
-  if test "x$FAILURE" != x; then
-    AC_MSG_NOTICE([Invalid value for [--with-]ARG_NAME: "$ARG_RESULT"])
-    AC_MSG_NOTICE([$FAILURE])
-    AC_MSG_ERROR([Cannot continue])
+    if test "x$FAILURE" != x; then
+      AC_MSG_NOTICE([Invalid value for [--with-]ARG_NAME: "$ARG_RESULT"])
+      AC_MSG_NOTICE([$FAILURE])
+      AC_MSG_ERROR([Cannot continue])
+    fi
   fi
 
   # Execute result payloads, if present

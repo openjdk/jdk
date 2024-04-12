@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,27 +25,35 @@
  * @test
  *
  * @bug 4492719
- * @library /java/text/testlib
  * @summary Confirm that Message.parse() interprets time zone which uses "GMT+/-" format correctly and doesn't throw ParseException.
+ * @run junit/othervm bug4492719
  */
 
 import java.util.*;
 import java.text.*;
 
-public class bug4492719 extends IntlTest {
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeAll;
 
-    public static void main(String[] args) throws Exception {
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class bug4492719 {
+
+    // MessageFormat.parse() should be able to interpret a time zone
+    // that uses "GMT+/-".
+    @Test
+    public void testParse() throws Exception {
         Locale savedLocale = Locale.getDefault();
         TimeZone savedTimeZone = TimeZone.getDefault();
         MessageFormat mf;
         boolean err =false;
 
         String[] formats = {
-            "short", "medium", "long", "full"
+                "short", "medium", "long", "full"
         };
         String[] timezones = {
-            "America/Los_Angeles", "GMT", "GMT+09:00", "GMT-8:00",
-            "GMT+123", "GMT-1234", "GMT+2", "GMT-13"
+                "America/Los_Angeles", "GMT", "GMT+09:00", "GMT-8:00",
+                "GMT+123", "GMT-1234", "GMT+2", "GMT-13"
         };
         String text;
 
@@ -58,14 +66,14 @@ public class bug4492719 extends IntlTest {
                 for (int j = 0; j < formats.length; j++) {
                     mf = new MessageFormat("{0,time," + formats[j] + "} - time");
                     text = MessageFormat.format("{0,time," + formats[j] + "} - time",
-                                      new Object [] { new Date(123456789012L)});
+                            new Object [] { new Date(123456789012L)});
                     Object[] objs = mf.parse(text);
                 }
             }
         } catch (ParseException e) {
             err = true;
             System.err.println("Invalid ParseException occurred : " +
-                               e.getMessage());
+                    e.getMessage());
             System.err.println("    TimeZone=" + TimeZone.getDefault());
         }
         finally {

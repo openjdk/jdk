@@ -113,7 +113,7 @@ void OopMapDo<OopFnT, DerivedOopFnT, ValueFilterT>::iterate_oops_do(const frame 
         if (reg_map->should_skip_missing())
           continue;
         VMReg reg = omv.reg();
-        tty->print_cr("missing saved register: reg: " INTPTR_FORMAT " %s loc: %p", reg->value(), reg->name(), loc);
+        tty->print_cr("missing saved register: reg: %d %s loc: %p", reg->value(), reg->name(), loc);
         fr->print_on(tty);
       }
 #endif

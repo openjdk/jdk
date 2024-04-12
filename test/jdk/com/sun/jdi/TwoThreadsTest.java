@@ -50,8 +50,8 @@ class TwoThreadsTarg implements Runnable {
 
     public static void main(String[] args) {
         System.out.println("Howdy!");
-        Thread t1 = TestScaffold.newThread(new TwoThreadsTarg(), name1);
-        Thread t2 = TestScaffold.newThread(new TwoThreadsTarg(), name2);
+        Thread t1 = DebuggeeWrapper.newThread(new TwoThreadsTarg(), name1);
+        Thread t2 = DebuggeeWrapper.newThread(new TwoThreadsTarg(), name2);
 
         t1.start();
         t2.start();

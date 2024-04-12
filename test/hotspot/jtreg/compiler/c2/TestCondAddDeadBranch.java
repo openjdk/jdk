@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,8 +28,8 @@
  * @summary C2: assert(false) failed: unscheduable graph
  *          Error mixing types with -XX:+UseCMoveUnconditionally -XX:+UseVectorCmov
  * @requires vm.compiler2.enabled
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestCondAddDeadBranch TestCondAddDeadBranch
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestCondAddDeadBranch
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestCondAddDeadBranch::* TestCondAddDeadBranch
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestCondAddDeadBranch::*
  *                   -XX:+UseCMoveUnconditionally -XX:+UseVectorCmov -XX:MaxVectorSize=32  TestCondAddDeadBranch
  *
  */

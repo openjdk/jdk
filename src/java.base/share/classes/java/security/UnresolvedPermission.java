@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.util.Hashtable;
 import java.lang.reflect.*;
 import java.security.cert.*;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The {@code UnresolvedPermission} class is used to hold Permissions that
@@ -349,23 +350,13 @@ implements java.io.Serializable
         }
 
         // check name
-        if (this.name == null) {
-            if (that.name != null) {
-                return false;
-            }
-        } else if (!this.name.equals(that.name)) {
+        if (!Objects.equals(this.name, that.name)) {
             return false;
         }
 
         // check actions
-        if (this.actions == null) {
-            if (that.actions != null) {
-                return false;
-            }
-        } else {
-            if (!this.actions.equals(that.actions)) {
-                return false;
-            }
+        if (!Objects.equals(this.actions, that.actions)) {
+            return false;
         }
 
         // check certs
@@ -404,18 +395,11 @@ implements java.io.Serializable
     }
 
     /**
-     * Returns the hash code value for this object.
-     *
-     * @return a hash code value for this object.
+     * {@return the hash code value for this object}
      */
     @Override
     public int hashCode() {
-        int hash = type.hashCode();
-        if (name != null)
-            hash ^= name.hashCode();
-        if (actions != null)
-            hash ^= actions.hashCode();
-        return hash;
+        return Objects.hash(type, name, actions);
     }
 
     /**

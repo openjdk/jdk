@@ -73,6 +73,10 @@ bool VectorSupport::is_vector_mask(Klass* klass) {
   return klass->is_subclass_of(vmClasses::vector_VectorMask_klass());
 }
 
+bool VectorSupport::is_vector_shuffle(Klass* klass) {
+  return klass->is_subclass_of(vmClasses::vector_VectorShuffle_klass());
+}
+
 BasicType VectorSupport::klass2bt(InstanceKlass* ik) {
   assert(ik->is_subclass_of(vmClasses::vector_VectorPayload_klass()), "%s not a VectorPayload", ik->name()->as_C_string());
   fieldDescriptor fd; // find_field initializes fd if found
@@ -83,7 +87,9 @@ BasicType VectorSupport::klass2bt(InstanceKlass* ik) {
   assert(fd.is_static(), "");
   assert(fd.offset() > 0, "");
 
-  if (is_vector_mask(ik)) {
+  if (is_vector_shuffle(ik)) {
+    return T_BYTE;
+  } else if (is_vector_mask(ik)) {
     return T_BOOLEAN;
   } else { // vector and mask
     oop value = ik->java_mirror()->obj_field(fd.offset());
@@ -132,7 +138,7 @@ Handle VectorSupport::allocate_vector_payload_helper(InstanceKlass* ik, frame* f
   int elem_size = type2aelembytes(elem_bt);
 
   // On-heap vector values are represented as primitive arrays.
-  TypeArrayKlass* tak = TypeArrayKlass::cast(Universe::typeArrayKlassObj(elem_bt));
+  TypeArrayKlass* tak = Universe::typeArrayKlass(elem_bt);
 
   typeArrayOop arr = tak->allocate(num_elem, CHECK_NH); // safepoint
 

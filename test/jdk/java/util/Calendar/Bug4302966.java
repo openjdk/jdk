@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,22 @@
  * @bug 4302966 8176841
  * @modules jdk.localedata
  * @summary In Czech Republic first day of week is Monday not Sunday
+ * @run junit Bug4302966
  */
 
 import java.util.Calendar;
 import java.util.Locale;
 
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class Bug4302966 {
 
-    public static void main(String[] args) {
+    // Specific day of week test for Czech locale
+    public void czechDayOfWeekTest() {
         Calendar czechCalendar = Calendar.getInstance(Locale.of("cs", "CZ"));
         int firstDayOfWeek = czechCalendar.getFirstDayOfWeek();
-        if (firstDayOfWeek != Calendar.MONDAY) {
-            throw new RuntimeException();
-        }
+        assertEquals(firstDayOfWeek, Calendar.MONDAY);
     }
 }

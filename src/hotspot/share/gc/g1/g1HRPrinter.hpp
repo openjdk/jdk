@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_G1HRPRINTER_HPP
 #define SHARE_GC_G1_G1HRPRINTER_HPP
 
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "logging/log.hpp"
 
 #define SKIP_RETIRED_FULL_REGIONS 1
@@ -46,7 +46,7 @@ public:
   // In some places we iterate over a list in order to generate output
   // for the list's elements. By exposing this we can avoid this
   // iteration if the printer is not active.
-  const bool is_active() { return log_is_enabled(Trace, gc, region); }
+  bool is_active() { return log_is_enabled(Trace, gc, region); }
 
   // The methods below are convenient wrappers for the print() method.
 

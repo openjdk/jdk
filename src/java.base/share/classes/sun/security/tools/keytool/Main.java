@@ -405,26 +405,38 @@ public final class Main {
         collator.setStrength(Collator.PRIMARY);
     }
 
-    private Main() { }
-
     public static void main(String[] args) throws Exception {
         Main kt = new Main();
-        kt.run(args, System.out);
+        int exitCode = kt.run(args, System.out);
+        if (exitCode != 0) {
+            System.exit(exitCode);
+        }
     }
 
-    private void run(String[] args, PrintStream out) throws Exception {
+    private static class ExitException extends RuntimeException {
+        @java.io.Serial
+        static final long serialVersionUID = 0L;
+        private final int errorCode;
+        public ExitException(int errorCode) {
+            this.errorCode = errorCode;
+        }
+    }
+
+    public int run(String[] args, PrintStream out) throws Exception {
         try {
-            args = parseArgs(args);
+            parseArgs(args);
             if (command != null) {
                 doCommands(out);
             }
+        } catch (ExitException ee) {
+            return ee.errorCode;
         } catch (Exception e) {
             System.out.println(rb.getString("keytool.error.") + e);
             if (verbose) {
                 e.printStackTrace(System.out);
             }
             if (!debug) {
-                System.exit(1);
+                return 1;
             } else {
                 throw e;
             }
@@ -441,6 +453,7 @@ public final class Main {
                 ksStream.close();
             }
         }
+        return 0;
     }
 
     /**
@@ -1597,9 +1610,12 @@ public final class Main {
                 new X509CRLImpl.TBSCertList(owner, firstDate, lastDate, badCerts),
                 privateKey, sigAlgName);
         if (rfc) {
-            out.println("-----BEGIN X509 CRL-----");
-            out.println(Base64.getMimeEncoder(64, CRLF).encodeToString(crl.getEncodedInternal()));
-            out.println("-----END X509 CRL-----");
+            out.print("-----BEGIN X509 CRL-----");
+            out.print("\r\n");
+            out.print(Base64.getMimeEncoder(64, CRLF).encodeToString(crl.getEncodedInternal()));
+            out.print("\r\n");
+            out.print("-----END X509 CRL-----");
+            out.print("\r\n");
         } else {
             out.write(crl.getEncodedInternal());
         }
@@ -2771,9 +2787,12 @@ public final class Main {
             throws Exception {
         X509CRL xcrl = (X509CRL)crl;
         if (rfc) {
-            out.println("-----BEGIN X509 CRL-----");
-            out.println(Base64.getMimeEncoder(64, CRLF).encodeToString(xcrl.getEncoded()));
-            out.println("-----END X509 CRL-----");
+            out.print("-----BEGIN X509 CRL-----");
+            out.print("\r\n");
+            out.print(Base64.getMimeEncoder(64, CRLF).encodeToString(xcrl.getEncoded()));
+            out.print("\r\n");
+            out.print("-----END X509 CRL-----");
+            out.print("\r\n");
         } else {
             String s;
             if (crl instanceof X509CRLImpl x509crl) {
@@ -3787,9 +3806,12 @@ public final class Main {
         throws IOException, CertificateException
     {
         if (rfc) {
-            out.println(X509Factory.BEGIN_CERT);
-            out.println(Base64.getMimeEncoder(64, CRLF).encodeToString(cert.getEncoded()));
-            out.println(X509Factory.END_CERT);
+            out.print(X509Factory.BEGIN_CERT);
+            out.print("\r\n");
+            out.print(Base64.getMimeEncoder(64, CRLF).encodeToString(cert.getEncoded()));
+            out.print("\r\n");
+            out.print(X509Factory.END_CERT);
+            out.print("\r\n");
         } else {
             out.write(cert.getEncoded()); // binary
         }
@@ -5247,7 +5269,7 @@ public final class Main {
         if (debug) {
             throw new RuntimeException("NO BIG ERROR, SORRY");
         } else {
-            System.exit(1);
+            throw new ExitException(1);
         }
     }
 
@@ -5315,13 +5337,15 @@ class Pair<A, B> {
         return "Pair[" + fst + "," + snd + "]";
     }
 
-    public boolean equals(Object other) {
+    @Override
+    public boolean equals(Object obj) {
         return
-            other instanceof Pair &&
-            Objects.equals(fst, ((Pair)other).fst) &&
-            Objects.equals(snd, ((Pair)other).snd);
+            obj instanceof Pair<?, ?> other &&
+            Objects.equals(fst, other.fst) &&
+            Objects.equals(snd, other.snd);
     }
 
+    @Override
     public int hashCode() {
         if (fst == null) return (snd == null) ? 0 : snd.hashCode() + 1;
         else if (snd == null) return fst.hashCode() + 2;

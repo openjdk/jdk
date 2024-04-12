@@ -35,8 +35,8 @@ G1HeapTransition::Data::Data(G1CollectedHeap* g1_heap) :
   _old_length(g1_heap->old_regions_count()),
   _humongous_length(g1_heap->humongous_regions_count()),
   _meta_sizes(MetaspaceUtils::get_combined_statistics()),
-  _eden_length_per_node(NULL),
-  _survivor_length_per_node(NULL) {
+  _eden_length_per_node(nullptr),
+  _survivor_length_per_node(nullptr) {
 
   uint node_count = G1NUMA::numa()->num_active_nodes();
 
@@ -62,7 +62,7 @@ G1HeapTransition::Data::~Data() {
 
 G1HeapTransition::G1HeapTransition(G1CollectedHeap* g1_heap) : _g1_heap(g1_heap), _before(g1_heap) { }
 
-struct DetailedUsage : public StackObj {
+struct G1HeapTransition::DetailedUsage : public StackObj {
   size_t _eden_used;
   size_t _survivor_used;
   size_t _old_used;
@@ -79,7 +79,7 @@ struct DetailedUsage : public StackObj {
     _humongous_region_count(0) {}
 };
 
-class DetailedUsageClosure: public HeapRegionClosure {
+class G1HeapTransition::DetailedUsageClosure: public HeapRegionClosure {
 public:
   DetailedUsage _usage;
   bool do_heap_region(HeapRegion* r) {
@@ -111,14 +111,14 @@ static void log_regions(const char* msg, size_t before_length, size_t after_leng
 
     ls.print("%s regions: " SIZE_FORMAT "->" SIZE_FORMAT "("  SIZE_FORMAT ")",
              msg, before_length, after_length, capacity);
-    // Not NULL only if gc+heap+numa at Debug level is enabled.
-    if (before_per_node_length != NULL && after_per_node_length != NULL) {
+    // Not null only if gc+heap+numa at Debug level is enabled.
+    if (before_per_node_length != nullptr && after_per_node_length != nullptr) {
       G1NUMA* numa = G1NUMA::numa();
       uint num_nodes = numa->num_active_nodes();
-      const int* node_ids = numa->node_ids();
+      const uint* node_ids = numa->node_ids();
       ls.print(" (");
       for (uint i = 0; i < num_nodes; i++) {
-        ls.print("%d: %u->%u", node_ids[i], before_per_node_length[i], after_per_node_length[i]);
+        ls.print("%u: %u->%u", node_ids[i], before_per_node_length[i], after_per_node_length[i]);
         // Skip adding below if it is the last one.
         if (i != num_nodes - 1) {
           ls.print(", ");
@@ -143,11 +143,11 @@ void G1HeapTransition::print() {
     usage = blk._usage;
     assert(usage._eden_region_count == 0, "Expected no eden regions, but got " SIZE_FORMAT, usage._eden_region_count);
     assert(usage._survivor_region_count == after._survivor_length, "Expected survivors to be " SIZE_FORMAT " but was " SIZE_FORMAT,
-        after._survivor_length, usage._survivor_region_count);
+           after._survivor_length, usage._survivor_region_count);
     assert(usage._old_region_count == after._old_length, "Expected old to be " SIZE_FORMAT " but was " SIZE_FORMAT,
-        after._old_length, usage._old_region_count);
+           after._old_length, usage._old_region_count);
     assert(usage._humongous_region_count == after._humongous_length, "Expected humongous to be " SIZE_FORMAT " but was " SIZE_FORMAT,
-        after._humongous_length, usage._humongous_region_count);
+           after._humongous_length, usage._humongous_region_count);
   }
 
   log_regions("Eden", _before._eden_length, after._eden_length, eden_capacity_length_after_gc,
@@ -157,17 +157,17 @@ void G1HeapTransition::print() {
   log_regions("Survivor", _before._survivor_length, after._survivor_length, survivor_capacity_length_before_gc,
               _before._survivor_length_per_node, after._survivor_length_per_node);
   log_trace(gc, heap)(" Used: " SIZE_FORMAT "K, Waste: " SIZE_FORMAT "K",
-      usage._survivor_used / K, ((after._survivor_length * HeapRegion::GrainBytes) - usage._survivor_used) / K);
+                      usage._survivor_used / K, ((after._survivor_length * HeapRegion::GrainBytes) - usage._survivor_used) / K);
 
   log_info(gc, heap)("Old regions: " SIZE_FORMAT "->" SIZE_FORMAT,
                      _before._old_length, after._old_length);
   log_trace(gc, heap)(" Used: " SIZE_FORMAT "K, Waste: " SIZE_FORMAT "K",
-      usage._old_used / K, ((after._old_length * HeapRegion::GrainBytes) - usage._old_used) / K);
+                      usage._old_used / K, ((after._old_length * HeapRegion::GrainBytes) - usage._old_used) / K);
 
   log_info(gc, heap)("Humongous regions: " SIZE_FORMAT "->" SIZE_FORMAT,
                      _before._humongous_length, after._humongous_length);
   log_trace(gc, heap)(" Used: " SIZE_FORMAT "K, Waste: " SIZE_FORMAT "K",
-      usage._humongous_used / K, ((after._humongous_length * HeapRegion::GrainBytes) - usage._humongous_used) / K);
+                      usage._humongous_used / K, ((after._humongous_length * HeapRegion::GrainBytes) - usage._humongous_used) / K);
 
   MetaspaceUtils::print_metaspace_change(_before._meta_sizes);
 }

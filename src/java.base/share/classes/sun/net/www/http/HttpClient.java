@@ -98,13 +98,13 @@ public class HttpClient extends NetworkClient {
     protected int port;
 
     /* where we cache currently open, persistent connections */
-    protected static KeepAliveCache kac = new KeepAliveCache();
+    protected static final KeepAliveCache kac = new KeepAliveCache();
 
-    private static boolean keepAliveProp = true;
+    private static final boolean keepAliveProp;
 
     // retryPostProp is true by default so as to preserve behavior
     // from previous releases.
-    private static boolean retryPostProp = true;
+    private static final boolean retryPostProp;
 
     /* Value of the system property jdk.ntlm.cache;
        if false, then NTLM connections will not be cached.

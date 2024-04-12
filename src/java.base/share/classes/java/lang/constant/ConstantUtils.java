@@ -36,6 +36,7 @@ import static java.util.Objects.requireNonNull;
 class ConstantUtils {
     /** an empty constant descriptor */
     public static final ConstantDesc[] EMPTY_CONSTANTDESC = new ConstantDesc[0];
+    static final ClassDesc[] EMPTY_CLASSDESC = new ClassDesc[0];
     static final Constable[] EMPTY_CONSTABLE = new Constable[0];
     static final int MAX_ARRAY_TYPE_DESC_DIMENSIONS = 255;
 
@@ -74,6 +75,66 @@ class ConstantUtils {
          }
          return name;
      }
+
+    /**
+     * Validates the correctness of a binary package name.
+     * In particular checks for the presence of invalid characters in the name.
+     * Empty package name is allowed.
+     *
+     * @param name the package name
+     * @return the package name passed if valid
+     * @throws IllegalArgumentException if the package name is invalid
+     * @throws NullPointerException if the package name is {@code null}
+     */
+    public static String validateBinaryPackageName(String name) {
+        for (int i=0; i<name.length(); i++) {
+            char ch = name.charAt(i);
+            if (ch == ';' || ch == '[' || ch == '/')
+                throw new IllegalArgumentException("Invalid package name: " + name);
+        }
+        return name;
+    }
+
+    /**
+     * Validates the correctness of an internal package name.
+     * In particular checks for the presence of invalid characters in the name.
+     * Empty package name is allowed.
+     *
+     * @param name the package name
+     * @return the package name passed if valid
+     * @throws IllegalArgumentException if the package name is invalid
+     * @throws NullPointerException if the package name is {@code null}
+     */
+    public static String validateInternalPackageName(String name) {
+        for (int i=0; i<name.length(); i++) {
+            char ch = name.charAt(i);
+            if (ch == ';' || ch == '[' || ch == '.')
+                throw new IllegalArgumentException("Invalid package name: " + name);
+        }
+        return name;
+    }
+
+    /**
+     * Validates the correctness of a module name.
+     * In particular checks for the presence of invalid characters in the name.
+     * Empty module name is allowed.
+     *
+     * {@jvms 4.2.3} Module and Package Names
+     *
+     * @param name the module name
+     * @return the module name passed if valid
+     * @throws IllegalArgumentException if the module name is invalid
+     * @throws NullPointerException if the module name is {@code null}
+     */
+    public static String validateModuleName(String name) {
+        for (int i=name.length() - 1; i >= 0; i--) {
+            char ch = name.charAt(i);
+            if ((ch >= '\u0000' && ch <= '\u001F')
+            || ((ch == '\\' || ch == ':' || ch =='@') && (i == 0 || name.charAt(--i) != '\\')))
+                throw new IllegalArgumentException("Invalid module name: " + name);
+        }
+        return name;
+    }
 
     /**
      * Validates a member name

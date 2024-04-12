@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.lang.foreign.*;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -72,11 +74,24 @@ public final class SystemLookup implements SymbolLookup {
     }
 
     private static SymbolLookup makeWindowsLookup() {
-        Path system32 = Path.of(System.getenv("SystemRoot"), "System32");
+        @SuppressWarnings("removal")
+        String systemRoot = AccessController.doPrivileged(new PrivilegedAction<>() {
+            @Override
+            public String run() {
+                return System.getenv("SystemRoot");
+            }
+        });
+        Path system32 = Path.of(systemRoot, "System32");
         Path ucrtbase = system32.resolve("ucrtbase.dll");
         Path msvcrt = system32.resolve("msvcrt.dll");
 
-        boolean useUCRT = Files.exists(ucrtbase);
+        @SuppressWarnings("removal")
+        boolean useUCRT = AccessController.doPrivileged(new PrivilegedAction<>() {
+            @Override
+            public Boolean run() {
+                return Files.exists(ucrtbase);
+            }
+        });
         Path stdLib = useUCRT ? ucrtbase : msvcrt;
         SymbolLookup lookup = libLookup(libs -> libs.load(stdLib));
 
@@ -86,6 +101,7 @@ public final class SystemLookup implements SymbolLookup {
             SymbolLookup fallbackLibLookup =
                     libLookup(libs -> libs.load(jdkLibraryPath("syslookup")));
 
+            @SuppressWarnings("restricted")
             MemorySegment funcs = fallbackLibLookup.find("funcs").orElseThrow()
                     .reinterpret(WindowsFallbackSymbols.LAYOUT.byteSize());
 
@@ -95,6 +111,7 @@ public final class SystemLookup implements SymbolLookup {
             final SymbolLookup finalLookup = lookup;
             lookup = name -> {
                 Objects.requireNonNull(name);
+                if (Utils.containsNullChars(name)) return Optional.empty();
                 return finalLookup.find(name).or(() -> fallbackLookup.apply(name));
             };
         }
@@ -106,6 +123,7 @@ public final class SystemLookup implements SymbolLookup {
         NativeLibrary lib = loader.apply(RawNativeLibraries.newInstance(MethodHandles.lookup()));
         return name -> {
             Objects.requireNonNull(name);
+            if (Utils.containsNullChars(name)) return Optional.empty();
             try {
                 long addr = lib.lookup(name);
                 return addr == 0 ?

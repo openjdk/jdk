@@ -272,7 +272,7 @@ class ThreadBuilders {
     /**
      * Base ThreadFactory implementation.
      */
-    private static abstract class BaseThreadFactory implements ThreadFactory {
+    private abstract static class BaseThreadFactory implements ThreadFactory {
         private static final VarHandle COUNT;
         static {
             try {
@@ -433,7 +433,8 @@ class ThreadBuilders {
             // run is specified to do nothing when Thread is a virtual thread
             if (Thread.currentThread() == this && !runInvoked) {
                 runInvoked = true;
-                task.run();
+                Object bindings = Thread.scopedValueBindings();
+                runWith(bindings, task);
             }
         }
 

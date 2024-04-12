@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@
  */
 
 package java.text;
+
+import java.util.Objects;
 
 /**
  * {@code FieldPosition} is a simple class used by {@code Format}
@@ -218,28 +220,22 @@ public class FieldPosition {
     /**
      * Overrides equals
      */
+    @Override
     public boolean equals(Object obj)
     {
-        if (obj == null) return false;
         if (!(obj instanceof FieldPosition other))
             return false;
-        if (attribute == null) {
-            if (other.attribute != null) {
-                return false;
-            }
-        }
-        else if (!attribute.equals(other.attribute)) {
+        if (!Objects.equals(attribute, other.attribute))
             return false;
-        }
         return (beginIndex == other.beginIndex
             && endIndex == other.endIndex
             && field == other.field);
     }
 
     /**
-     * Returns a hash code for this FieldPosition.
-     * @return a hash code value for this object
+     * {@return a hash code for this FieldPosition}
      */
+    @Override
     public int hashCode() {
         return (field << 24) | (beginIndex << 16) | endIndex;
     }
@@ -270,7 +266,7 @@ public class FieldPosition {
     /**
      * Return true if the receiver wants a {@code Format.Field} value and
      * {@code attribute} is equal to it, or true if the receiver
-     * represents an inteter constant and {@code field} equals it.
+     * represents an integer constant and {@code field} equals it.
      */
     private boolean matchesField(Format.Field attribute, int field) {
         if (this.attribute != null) {

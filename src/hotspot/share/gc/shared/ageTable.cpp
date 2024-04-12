@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,15 @@ void AgeTable::clear() {
   }
 }
 
+#ifndef PRODUCT
+bool AgeTable::is_clear() const {
+  for (const size_t* p = sizes; p < sizes + table_size; ++p) {
+    if (*p != 0) return false;
+  }
+  return true;
+}
+#endif // !PRODUCT
+
 void AgeTable::merge(const AgeTable* subTable) {
   for (int i = 0; i < table_size; i++) {
     sizes[i]+= subTable->sizes[i];
@@ -82,7 +91,7 @@ uint AgeTable::compute_tenuring_threshold(size_t desired_survivor_size) {
 
   if (AlwaysTenure || NeverTenure) {
     assert(MaxTenuringThreshold == 0 || MaxTenuringThreshold == markWord::max_age + 1,
-           "MaxTenuringThreshold should be 0 or markWord::max_age + 1, but is " UINTX_FORMAT, MaxTenuringThreshold);
+           "MaxTenuringThreshold should be 0 or markWord::max_age + 1, but is %u", MaxTenuringThreshold);
     result = MaxTenuringThreshold;
   } else {
     size_t total = 0;
@@ -99,23 +108,22 @@ uint AgeTable::compute_tenuring_threshold(size_t desired_survivor_size) {
   }
 
 
-  log_debug(gc, age)("Desired survivor size " SIZE_FORMAT " bytes, new threshold " UINTX_FORMAT " (max threshold " UINTX_FORMAT ")",
+  log_debug(gc, age)("Desired survivor size %zu bytes, new threshold " UINTX_FORMAT " (max threshold %u)",
                      desired_survivor_size * oopSize, (uintx) result, MaxTenuringThreshold);
 
   return result;
 }
 
-void AgeTable::print_age_table(uint tenuring_threshold) {
+void AgeTable::print_age_table() {
   LogTarget(Trace, gc, age) lt;
   if (lt.is_enabled() || _use_perf_data || AgeTableTracer::is_tenuring_distribution_event_enabled()) {
     LogStream st(lt);
-    print_on(&st, tenuring_threshold);
+    print_on(&st);
   }
 }
 
-void AgeTable::print_on(outputStream* st, uint tenuring_threshold) {
-  st->print_cr("Age table with threshold %u (max threshold " UINTX_FORMAT ")",
-               tenuring_threshold, MaxTenuringThreshold);
+void AgeTable::print_on(outputStream* st) {
+  st->print_cr("Age table:");
 
   size_t total = 0;
   uint age = 1;

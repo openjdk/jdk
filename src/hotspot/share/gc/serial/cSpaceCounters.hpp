@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ class CSpaceCounters: public CHeapObj<mtGC> {
   PerfVariable*      _capacity;
   PerfVariable*      _used;
   PerfVariable*      _max_capacity;
+  volatile size_t    _last_used_in_bytes;
 
   // Constant PerfData types don't need to retain a reference.
   // However, it's a good idea to document them here.
@@ -46,6 +47,8 @@ class CSpaceCounters: public CHeapObj<mtGC> {
 
   ContiguousSpace*     _space;
   char*                _name_space;
+
+  class UsedHelper;
 
  public:
 
@@ -61,14 +64,14 @@ class CSpaceCounters: public CHeapObj<mtGC> {
   const char* name_space() const        { return _name_space; }
 };
 
-class ContiguousSpaceUsedHelper : public PerfLongSampleHelper {
-  private:
-    ContiguousSpace* _space;
+class CSpaceCounters::UsedHelper : public PerfLongSampleHelper {
+ private:
+  CSpaceCounters* _counters;
 
-  public:
-    ContiguousSpaceUsedHelper(ContiguousSpace* space) : _space(space) { }
+ public:
+  UsedHelper(CSpaceCounters* counters) : _counters(counters) { }
 
-    jlong take_sample() override;
+  jlong take_sample() override;
 };
 
 #endif // SHARE_GC_SERIAL_CSPACECOUNTERS_HPP

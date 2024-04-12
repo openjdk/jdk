@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +37,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.lang.invoke.MethodHandle;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
@@ -48,18 +50,18 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.spi.NumberFormatProvider;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.chrono.IsoChronology;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQueries;
 import java.time.temporal.UnsupportedTemporalTypeException;
 
+import jdk.internal.javac.PreviewFeature;
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FormattedFPDecimal;
 import sun.util.locale.provider.LocaleProviderAdapter;
@@ -2048,6 +2050,11 @@ public final class Formatter implements Closeable, Flushable {
         return locale == null ? ',' : getDecimalFormatSymbols(locale).getGroupingSeparator();
     }
 
+    // Use minus sign from cached DecimalFormatSymbols.
+    private static char getMinusSign(Locale locale) {
+        return locale == null ? '-' : getDecimalFormatSymbols(locale).getMinusSign();
+    }
+
     private Appendable a;
     private final Locale l;
     private IOException lastException;
@@ -2292,6 +2299,8 @@ public final class Formatter implements Closeable, Flushable {
      *
      * @throws NullPointerException
      *         if {@code fileName} or {@code charset} is {@code null}.
+     *
+     * @since 10
      */
     public Formatter(String fileName, Charset charset, Locale l) throws IOException {
         this(Objects.requireNonNull(charset, "charset"), l, new File(fileName));
@@ -2436,6 +2445,8 @@ public final class Formatter implements Closeable, Flushable {
      *
      * @throws NullPointerException
      *         if {@code file} or {@code charset} is {@code null}.
+     *
+     * @since 10
      */
     public Formatter(File file, Charset charset, Locale l) throws IOException {
         this(Objects.requireNonNull(charset, "charset"), l, file);
@@ -2553,6 +2564,8 @@ public final class Formatter implements Closeable, Flushable {
      *
      * @throws NullPointerException
      *         if {@code os} or {@code charset} is {@code null}.
+     *
+     * @since 10
      */
     public Formatter(OutputStream os, Charset charset, Locale l) {
         this(l, new BufferedWriter(new OutputStreamWriter(os, charset)));
@@ -2770,8 +2783,7 @@ public final class Formatter implements Closeable, Flushable {
         int lasto = -1;
 
         List<FormatString> fsa = parse(format);
-        for (int i = 0; i < fsa.size(); i++) {
-            var fs = fsa.get(i);
+        for (FormatString fs : fsa) {
             int index = fs.index();
             try {
                 switch (index) {
@@ -2789,7 +2801,7 @@ public final class Formatter implements Closeable, Flushable {
                             throw new MissingFormatArgumentException(fs.toString());
                         fs.print(this, (args == null ? null : args[lasto]), l);
                     }
-                    default -> {  // explicit index
+                    default -> { // explicit index
                         last = index - 1;
                         if (args != null && last > args.length - 1)
                             throw new MissingFormatArgumentException(fs.toString());
@@ -2803,20 +2815,14 @@ public final class Formatter implements Closeable, Flushable {
         return this;
     }
 
-    // %[argument_index$][flags][width][.precision][t]conversion
-    private static final String formatSpecifier
-        = "%(\\d+\\$)?([-#+ 0,(\\<]*)?(\\d+)?(\\.\\d+)?([tT])?([a-zA-Z%])";
-
-    private static final Pattern fsPattern = Pattern.compile(formatSpecifier);
-
     /**
      * Finds format specifiers in the format string.
      */
-    private List<FormatString> parse(String s) {
+    static List<FormatString> parse(String s) {
+        FormatSpecifierParser parser = null;
         ArrayList<FormatString> al = new ArrayList<>();
         int i = 0;
         int max = s.length();
-        Matcher m = null; // create if needed
         while (i < max) {
             int n = s.indexOf('%', i);
             if (n < 0) {
@@ -2839,14 +2845,16 @@ public final class Formatter implements Closeable, Flushable {
                 al.add(new FormatSpecifier(c));
                 i++;
             } else {
-                if (m == null) {
-                    m = fsPattern.matcher(s);
-                }
                 // We have already parsed a '%' at n, so we either have a
                 // match or the specifier at n is invalid
-                if (m.find(n) && m.start() == n) {
-                    al.add(new FormatSpecifier(s, m));
-                    i = m.end();
+                if (parser == null) {
+                    parser = new FormatSpecifierParser(al, c, i, s, max);
+                } else {
+                    parser.reset(c, i);
+                }
+                int off = parser.parse();
+                if (off > 0) {
+                    i += off;
                 } else {
                     throw new UnknownFormatConversionException(String.valueOf(c));
                 }
@@ -2855,7 +2863,160 @@ public final class Formatter implements Closeable, Flushable {
         return al;
     }
 
-    private interface FormatString {
+    static final class FormatSpecifierParser {
+        final ArrayList<FormatString> al;
+        final String s;
+        final int max;
+        char first;
+        int start;
+        int off;
+        char c;
+        int argSize;
+        int flagSize;
+        int widthSize;
+
+        FormatSpecifierParser(ArrayList<FormatString> al, char first, int start, String s, int max) {
+            this.al = al;
+
+            this.first = first;
+            this.c = first;
+            this.start = start;
+            this.off = start;
+
+            this.s = s;
+            this.max = max;
+        }
+
+        void reset(char first, int start) {
+            this.first = first;
+            this.c = first;
+            this.start = start;
+            this.off = start;
+
+            argSize = 0;
+            flagSize = 0;
+            widthSize = 0;
+        }
+
+        /**
+         * If a valid format specifier is found, construct a FormatString and add it to {@link #al}.
+         * The format specifiers for general, character, and numeric types have
+         * the following syntax:
+         *
+         * <blockquote><pre>
+         *   %[argument_index$][flags][width][.precision]conversion
+         * </pre></blockquote>
+         *
+         * As described by the following regular expression:
+         *
+         * <blockquote><pre>
+         *    %(\d+\$)?([-#+ 0,(\<]*)?(\d+)?(\.\d+)?([tT])?([a-zA-Z%])
+         * </pre></blockquote>
+         *
+         * @return the length of the format specifier. If no valid format specifier is found, 0 is returned.
+         */
+        int parse() {
+            int precisionSize = 0;
+
+            // (\d+\$)?
+            parseArgument();
+
+            // ([-#+ 0,(\<]*)?
+            parseFlag();
+
+            // (\d+)?
+            parseWidth();
+
+            if (c == '.') {
+                // (\.\d+)?
+                precisionSize = parsePrecision();
+                if (precisionSize == -1) {
+                    return 0;
+                }
+            }
+
+            // ([tT])?([a-zA-Z%])
+            char t = '\0', conversion = '\0';
+            if ((c == 't' || c == 'T') && off + 1 < max) {
+                char c1 = s.charAt(off + 1);
+                if (isConversion(c1)) {
+                    t = c;
+                    conversion = c1;
+                    off += 2;
+                }
+            } else if (isConversion(c)) {
+                conversion = c;
+                ++off;
+            } else {
+                return 0;
+            }
+
+            if (argSize + flagSize + widthSize + precisionSize + t + conversion != 0) {
+                if (al != null) {
+                    FormatSpecifier formatSpecifier
+                            = new FormatSpecifier(s, start, argSize, flagSize, widthSize, precisionSize, t, conversion);
+                    al.add(formatSpecifier);
+                }
+                return off - start;
+            }
+            return 0;
+        }
+
+        private void parseArgument() {
+            // (\d+\$)?
+            int i = off;
+            for (; i < max && isDigit(c = s.charAt(i)); ++i);  // empty body
+            if (i == off || c != '$') {
+                c = first;
+                return;
+            }
+
+            i++; // skip '$'
+            if (i < max) {
+                c = s.charAt(i);
+            }
+
+            argSize = i - off;
+            off = i;
+        }
+
+        private void parseFlag() {
+            // ([-#+ 0,(\<]*)?
+            int i = off;
+            for (; i < max && Flags.isFlag(c = s.charAt(i)); ++i);  // empty body
+            flagSize = i - off;
+            off = i;
+        }
+
+        private void parseWidth() {
+            // (\d+)?
+            int i = off;
+            for (; i < max && isDigit(c = s.charAt(i)); ++i);  // empty body
+            widthSize = i - off;
+            off = i;
+        }
+
+        private int parsePrecision() {
+            int i = ++off;
+            for (; i < max && isDigit(c = s.charAt(i)); ++i);  // empty body
+            if (i != off) {
+                int size = i - off + 1;
+                off = i;
+                return size;
+            }
+            return -1;
+        }
+    }
+
+    static boolean isConversion(char c) {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '%';
+    }
+
+    private static boolean isDigit(char c) {
+        return c >= '0' && c <= '9';
+    }
+
+    interface FormatString {
         int index();
         void print(Formatter fmt, Object arg, Locale l) throws IOException;
         String toString();
@@ -2891,14 +3052,15 @@ public final class Formatter implements Closeable, Flushable {
         DECIMAL_FLOAT
     };
 
-    private static class FormatSpecifier implements FormatString {
+    static class FormatSpecifier implements FormatString {
+        private static final double SCALEUP = Math.scalb(1.0, 54);
 
-        private int index = 0;
-        private int flags = Flags.NONE;
-        private int width = -1;
-        private int precision = -1;
-        private boolean dt = false;
-        private char c;
+        int index = 0;
+        int flags = Flags.NONE;
+        int width = -1;
+        int precision = -1;
+        boolean dt = false;
+        char c;
 
         private void index(String s, int start, int end) {
             if (start >= 0) {
@@ -2976,21 +3138,44 @@ public final class Formatter implements Closeable, Flushable {
             }
         }
 
-        FormatSpecifier(String s, Matcher m) {
-            index(s, m.start(1), m.end(1));
-            flags(s, m.start(2), m.end(2));
-            width(s, m.start(3), m.end(3));
-            precision(s, m.start(4), m.end(4));
+        FormatSpecifier(
+                String s,
+                int i,
+                int argSize,
+                int flagSize,
+                int widthSize,
+                int precisionSize,
+                char t,
+                char conversion
+        ) {
+            int argEnd = i + argSize;
+            int flagEnd = argEnd + flagSize;
+            int widthEnd = flagEnd + widthSize;
+            int precisionEnd = widthEnd + precisionSize;
 
-            int tTStart = m.start(5);
-            if (tTStart >= 0) {
+            if (argSize > 0) {
+                index(s, i, argEnd);
+            }
+            if (flagSize > 0) {
+                flags(s, argEnd, flagEnd);
+            }
+            if (widthSize > 0) {
+                width(s, flagEnd, widthEnd);
+            }
+            if (precisionSize > 0) {
+                precision(s, widthEnd, precisionEnd);
+            }
+            if (t != '\0') {
                 dt = true;
-                if (s.charAt(tTStart) == 'T') {
+                if (t == 'T') {
                     flags = Flags.add(flags, Flags.UPPERCASE);
                 }
             }
-            conversion(s.charAt(m.start(6)));
+            conversion(conversion);
+            check();
+        }
 
+        private void check() {
             if (dt)
                 checkDateTime();
             else if (Conversion.isGeneral(c))
@@ -3548,8 +3733,8 @@ public final class Formatter implements Closeable, Flushable {
                 if (width != -1) {
                     newW = adjustWidth(width - exp.length - 1, flags, neg);
                 }
-                localizedMagnitude(fmt, sb, mant, 0, flags, newW, l);
 
+                localizedMagnitude(fmt, sb, mant, 0, flags, newW, l);
                 sb.append(Flags.contains(flags, Flags.UPPERCASE) ? 'E' : 'e');
 
                 char sign = exp[0];
@@ -3719,8 +3904,7 @@ public final class Formatter implements Closeable, Flushable {
                 // If this is subnormal input so normalize (could be faster to
                 // do as integer operation).
                 if (subnormal) {
-                    double scaleUp = Math.scalb(1.0, 54);
-                    d *= scaleUp;
+                    d *= SCALEUP;
                     // Calculate the exponent.  This is not just exponent + 54
                     // since the former is not the normalized exponent.
                     exponent = Math.getExponent(d);
@@ -4489,7 +4673,20 @@ public final class Formatter implements Closeable, Flushable {
                 }
                 case DateTime.ISO_STANDARD_DATE: { // 'F' (%Y-%m-%d)
                     char sep = '-';
-                    print(fmt, sb, t, DateTime.YEAR_4, l).append(sep);
+                    ChronoField yearField;
+                    if (t.query(TemporalQueries.chronology()) instanceof IsoChronology) {
+                        yearField = ChronoField.YEAR;
+                    } else {
+                        yearField = ChronoField.YEAR_OF_ERA;
+                    }
+                    int year = t.get(yearField);
+                    if (year < 0) {
+                        sb.append(getMinusSign(l));
+                        year = -year;
+                    } else if (year > 9999) {
+                        sb.append('+');
+                    }
+                    sb.append(localizedMagnitude(fmt, null, year, Flags.ZERO_PAD, 4, l)).append(sep);
                     print(fmt, sb, t, DateTime.MONTH, l).append(sep);
                     print(fmt, sb, t, DateTime.DAY_OF_MONTH_0, l);
                     break;
@@ -4623,7 +4820,7 @@ public final class Formatter implements Closeable, Flushable {
         }
     }
 
-    private static class Flags {
+    static class Flags {
 
         static final int NONE          = 0;      // ''
 
@@ -4685,6 +4882,13 @@ public final class Formatter implements Closeable, Flushable {
             };
         }
 
+        private static boolean isFlag(char c) {
+            return switch (c) {
+                case '-', '#', '+', ' ', '0', ',', '(', '<' -> true;
+                default -> false;
+            };
+        }
+
         // Returns a string representation of the current {@code Flags}.
         public static String toString(int f) {
             StringBuilder sb = new StringBuilder();
@@ -4701,7 +4905,7 @@ public final class Formatter implements Closeable, Flushable {
         }
     }
 
-    private static class Conversion {
+    static class Conversion {
         // Byte, Short, Integer, Long, BigInteger
         // (and associated primitives due to autoboxing)
         static final char DECIMAL_INTEGER     = 'd';
@@ -4826,7 +5030,7 @@ public final class Formatter implements Closeable, Flushable {
         }
     }
 
-    private static class DateTime {
+    static class DateTime {
         static final char HOUR_OF_DAY_0 = 'H'; // (00 - 23)
         static final char HOUR_0        = 'I'; // (01 - 12)
         static final char HOUR_OF_DAY   = 'k'; // (0 - 23) -- like H
@@ -4877,4 +5081,5 @@ public final class Formatter implements Closeable, Flushable {
             };
         }
     }
+
 }

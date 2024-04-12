@@ -310,7 +310,7 @@ class Bytecodes: AllStatic {
   static_assert(number_of_codes <= 256, "too many bytecodes");
 
   // Flag bits derived from format strings, can_trap, can_rewrite, etc.:
-  enum Flags {
+  enum Flags : jchar {
     // semantic flags:
     _bc_can_trap      = 1<<0,     // bytecode execution can trap or block
     _bc_can_rewrite   = 1<<1,     // bytecode execution has an alternate form
@@ -354,6 +354,7 @@ class Bytecodes: AllStatic {
   static bool        check_method(const Method* method, address bcp);
 #endif
   static bool check_must_rewrite(Bytecodes::Code bc);
+  static jchar compute_flags  (const char* format, jchar more_flags);  // compute the flags
 
  public:
   // Conversion
@@ -418,12 +419,12 @@ class Bytecodes: AllStatic {
                                                            || code == _fconst_0 || code == _dconst_0); }
   static bool        is_return      (Code code)    { return (_ireturn <= code && code <= _return); }
   static bool        is_invoke      (Code code)    { return (_invokevirtual <= code && code <= _invokedynamic); }
+  static bool        is_field_code  (Code code)    { return (_getstatic <= java_code(code) && java_code(code) <= _putfield); }
   static bool        has_receiver   (Code code)    { assert(is_invoke(code), "");  return code == _invokevirtual ||
                                                                                           code == _invokespecial ||
                                                                                           code == _invokeinterface; }
   static bool        has_optional_appendix(Code code) { return code == _invokedynamic || code == _invokehandle; }
 
-  static int         compute_flags  (const char* format, int more_flags = 0);  // compute the flags
   static int         flags          (int code, bool is_wide) {
     assert(code == (u_char)code, "must be a byte");
     return _flags[code + (is_wide ? (1<<BitsPerByte) : 0)];

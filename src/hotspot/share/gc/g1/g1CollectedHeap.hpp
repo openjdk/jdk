@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@
 #include "gc/g1/g1EvacStats.hpp"
 #include "gc/g1/g1GCPauseType.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
+#include "gc/g1/g1HeapRegionManager.hpp"
+#include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
@@ -44,9 +46,7 @@
 #include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
-#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
-#include "gc/g1/heapRegionManager.hpp"
-#include "gc/g1/heapRegionSet.hpp"
+#include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
@@ -178,8 +178,6 @@ private:
 
   Ticks _collection_pause_end;
 
-  SoftRefPolicy      _soft_ref_policy;
-
   static size_t _humongous_object_threshold_in_words;
 
   // These sets keep track of old and humongous regions respectively.
@@ -220,7 +218,7 @@ private:
   // Manages all allocations with regions except humongous object allocations.
   G1Allocator* _allocator;
 
-  G1YoungGCEvacFailureInjector _evac_failure_injector;
+  G1YoungGCAllocationFailureInjector _allocation_failure_injector;
 
   // Manages all heap verification.
   G1HeapVerifier* _verifier;
@@ -264,6 +262,7 @@ public:
   void set_collection_set_candidates_stats(G1MonotonicArenaMemoryStats& stats);
   void set_young_gen_card_set_stats(const G1MonotonicArenaMemoryStats& stats);
 
+  void update_parallel_gc_threads_cpu_time();
 private:
 
   G1HRPrinter _hr_printer;
@@ -352,10 +351,10 @@ private:
                                    "should not be at a safepoint"));          \
   } while (0)
 
-#define assert_at_safepoint_on_vm_thread()                                    \
-  do {                                                                        \
-    assert_at_safepoint();                                                    \
-    assert(Thread::current_or_null() != NULL, "no current thread");           \
+#define assert_at_safepoint_on_vm_thread()                                        \
+  do {                                                                            \
+    assert_at_safepoint();                                                        \
+    assert(Thread::current_or_null() != nullptr, "no current thread");            \
     assert(Thread::current()->is_VM_thread(), "current thread is not VM thread"); \
   } while (0)
 
@@ -404,7 +403,7 @@ private:
                                                       size_t word_size);
 
   // Attempt to allocate a humongous object of the given size. Return
-  // NULL if unsuccessful.
+  // null if unsuccessful.
   HeapWord* humongous_obj_allocate(size_t word_size);
 
   // The following two methods, allocate_new_tlab() and
@@ -427,7 +426,7 @@ private:
   //   retry the allocation.
   //
   // * If all allocation attempts fail, even after trying to schedule
-  //   an evacuation pause, allocate_new_tlab() will return NULL,
+  //   an evacuation pause, allocate_new_tlab() will return null,
   //   whereas mem_allocate() will attempt a heap expansion and/or
   //   schedule a Full GC.
   //
@@ -461,7 +460,7 @@ private:
 
   // Allocation attempt that should be called during safepoints (e.g.,
   // at the end of a successful GC). expect_null_mutator_alloc_region
-  // specifies whether the mutator alloc region is expected to be NULL
+  // specifies whether the mutator alloc region is expected to be null
   // or not.
   HeapWord* attempt_allocation_at_safepoint(size_t word_size,
                                             bool expect_null_mutator_alloc_region);
@@ -519,7 +518,7 @@ private:
   // Attempting to expand the heap sufficiently
   // to support an allocation of the given "word_size".  If
   // successful, perform the allocation and return the address of the
-  // allocated block, or else "NULL".
+  // allocated block, or else null.
   HeapWord* expand_and_allocate(size_t word_size);
 
   void verify_numa_regions(const char* desc);
@@ -549,7 +548,7 @@ public:
     return _allocator;
   }
 
-  G1YoungGCEvacFailureInjector* evac_failure_injector() { return &_evac_failure_injector; }
+  G1YoungGCAllocationFailureInjector* allocation_failure_injector() { return &_allocation_failure_injector; }
 
   G1HeapVerifier* verifier() {
     return _verifier;
@@ -559,6 +558,9 @@ public:
     assert(_monitoring_support != nullptr, "should have been initialized");
     return _monitoring_support;
   }
+
+  void pin_object(JavaThread* thread, oop obj) override;
+  void unpin_object(JavaThread* thread, oop obj) override;
 
   void resize_heap_if_necessary();
 
@@ -574,7 +576,7 @@ public:
   // Returns true if the heap was expanded by the requested amount;
   // false otherwise.
   // (Rounds up to a HeapRegion boundary.)
-  bool expand(size_t expand_bytes, WorkerThreads* pretouch_workers = NULL, double* expand_time_ms = NULL);
+  bool expand(size_t expand_bytes, WorkerThreads* pretouch_workers = nullptr, double* expand_time_ms = nullptr);
   bool expand_single_region(uint node_index);
 
   // Returns the PLAB statistics for a given destination.
@@ -613,7 +615,7 @@ public:
   // We register a region with the fast "in collection set" test. We
   // simply set to true the array slot corresponding to this region.
   void register_young_region_with_region_attr(HeapRegion* r) {
-    _region_attr.set_in_young(r->hrm_index());
+    _region_attr.set_in_young(r->hrm_index(), r->has_pinned_objects());
   }
   inline void register_new_survivor_region_with_region_attr(HeapRegion* r);
   inline void register_region_with_region_attr(HeapRegion* r);
@@ -678,12 +680,14 @@ public:
 
   // Frees a region by resetting its metadata and adding it to the free list
   // passed as a parameter (this is usually a local list which will be appended
-  // to the master free list later or NULL if free list management is handled
+  // to the master free list later or null if free list management is handled
   // in another way).
   // Callers must ensure they are the only one calling free on the given region
   // at the same time.
   void free_region(HeapRegion* hr, FreeRegionList* free_list);
 
+  // Add the given region to the retained regions collection set candidates.
+  void retain_region(HeapRegion* hr);
   // It dirties the cards that cover the block so that the post
   // write barrier never queues anything when updating objects on this
   // block. It is assumed (and in fact we assert) that the block
@@ -700,25 +704,22 @@ public:
   void free_humongous_region(HeapRegion* hr,
                              FreeRegionList* free_list);
 
-  // Facility for allocating a fixed range within the heap and marking
-  // the containing regions as 'old'. For use at JVM init time, when the
-  // caller may mmap archived heap data at the specified range.
-
-  // Verify that the range is within the reserved heap.
-  bool check_archive_addresses(MemRegion range);
-
   // Execute func(HeapRegion* r, bool is_last) on every region covered by the
   // given range.
   template <typename Func>
   void iterate_regions_in_range(MemRegion range, const Func& func);
 
-  // Commit the appropriate G1 region(s) containing the specified range
-  // and mark them as 'old' region(s).
-  bool alloc_archive_regions(MemRegion range);
+  // Commit the required number of G1 region(s) according to the size requested
+  // and mark them as 'old' region(s). Preferred address is treated as a hint for
+  // the location of the archive space in the heap. The returned address may or may
+  // not be same as the preferred address.
+  // This API is only used for allocating heap space for the archived heap objects
+  // in the CDS archive.
+  HeapWord* alloc_archive_region(size_t word_size, HeapWord* preferred_addr);
 
-  // Populate the G1BlockOffsetTablePart for archived regions with the given
+  // Populate the G1BlockOffsetTable for archived regions with the given
   // memory range.
-  void populate_archive_regions_bot_part(MemRegion range);
+  void populate_archive_regions_bot(MemRegion range);
 
   // For the specified range, uncommit the containing G1 regions
   // which had been allocated by alloc_archive_regions. This should be called
@@ -771,6 +772,10 @@ public:
   void prepare_for_mutator_after_young_collection();
 
   void retire_tlabs();
+
+  // Update all region's pin counts from the per-thread caches and resets them.
+  // Must be called before any decision based on pin counts.
+  void flush_region_pin_cache();
 
   void expand_heap_after_young_collection();
   // Update object copying statistics.
@@ -918,7 +923,7 @@ public:
   const G1CollectionSet* collection_set() const { return &_collection_set; }
   G1CollectionSet* collection_set() { return &_collection_set; }
 
-  SoftRefPolicy* soft_ref_policy() override;
+  inline bool is_collection_set_candidate(const HeapRegion* r) const;
 
   void initialize_serviceability() override;
   MemoryUsage memory_usage() override;
@@ -1029,7 +1034,7 @@ public:
 
   // Return "TRUE" iff the given object address is within the collection
   // set. Assumes that the reference points into the heap.
-  inline bool is_in_cset(const HeapRegion *hr) const;
+  inline bool is_in_cset(const HeapRegion* hr) const;
   inline bool is_in_cset(oop obj) const;
   inline bool is_in_cset(HeapWord* addr) const;
 
@@ -1118,7 +1123,7 @@ public:
   // The variant with the HeapRegionClaimer guarantees that the closure will be
   // applied to a particular region exactly once.
   void collection_set_iterate_increment_from(HeapRegionClosure *blk, uint worker_id) {
-    collection_set_iterate_increment_from(blk, NULL, worker_id);
+    collection_set_iterate_increment_from(blk, nullptr, worker_id);
   }
   void collection_set_iterate_increment_from(HeapRegionClosure *blk, HeapRegionClaimer* hr_claimer, uint worker_id);
   // Iterate over the array of region indexes, uint regions[length], applying
@@ -1130,11 +1135,11 @@ public:
                                  size_t length,
                                  uint worker_id) const;
 
-  // Returns the HeapRegion that contains addr. addr must not be nullptr.
+  // Returns the HeapRegion that contains addr. addr must not be null.
   inline HeapRegion* heap_region_containing(const void* addr) const;
 
-  // Returns the HeapRegion that contains addr, or nullptr if that is an uncommitted
-  // region. addr must not be nullptr.
+  // Returns the HeapRegion that contains addr, or null if that is an uncommitted
+  // region. addr must not be null.
   inline HeapRegion* heap_region_containing_or_null(const void* addr) const;
 
   // A CollectedHeap is divided into a dense sequence of "blocks"; that is,
@@ -1226,7 +1231,7 @@ public:
   // Determine if an object is dead, given only the object itself.
   // This will find the region to which the object belongs and
   // then call the region version of the same function.
-  // If obj is NULL it is not dead.
+  // If obj is null it is not dead.
   inline bool is_obj_dead(const oop obj) const;
 
   inline bool is_obj_dead_full(const oop obj, const HeapRegion* hr) const;
@@ -1263,6 +1268,10 @@ public:
   // Performs cleaning of data structures after class unloading.
   void complete_cleaning(bool class_unloading_occurred);
 
+  void unload_classes_and_code(const char* description, BoolObjectClosure* cl, GCTimer* timer);
+
+  void bulk_unregister_nmethods();
+
   // Verification
 
   // Perform any cleanup actions necessary before allowing a verification.
@@ -1290,9 +1299,6 @@ public:
 
   G1HeapSummary create_g1_heap_summary();
   G1EvacSummary create_g1_evac_summary(G1EvacStats* stats);
-
-  void pin_object(JavaThread* thread, oop obj) override;
-  void unpin_object(JavaThread* thread, oop obj) override;
 
   // Printing
 private:

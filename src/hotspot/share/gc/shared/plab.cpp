@@ -51,6 +51,13 @@ void PLAB::startup_initialization() {
       FLAG_SET_ERGO(OldPLABSize, MAX2(ThreadLocalAllocBuffer::min_size(), OldPLABSize));
     }
   }
+  uint obj_alignment = checked_cast<uint>(ObjectAlignmentInBytes / HeapWordSize);
+  if (!is_aligned(YoungPLABSize, obj_alignment)) {
+    FLAG_SET_ERGO(YoungPLABSize, align_up(YoungPLABSize, obj_alignment));
+  }
+  if (!is_aligned(OldPLABSize, obj_alignment)) {
+    FLAG_SET_ERGO(OldPLABSize, align_up(OldPLABSize, obj_alignment));
+  }
 }
 
 PLAB::PLAB(size_t desired_plab_sz_) :

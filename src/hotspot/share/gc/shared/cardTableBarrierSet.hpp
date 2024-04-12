@@ -45,10 +45,8 @@ class CardTableBarrierSet: public ModRefBarrierSet {
   // Some classes get to look at some private stuff.
   friend class VMStructs;
 
-public:
-
-  typedef CardTable::CardValue CardValue;
 protected:
+  typedef CardTable::CardValue CardValue;
   // Used in support of ReduceInitialCardMarks; only consulted if COMPILER2
   // or INCLUDE_JVMCI is being used
   bool       _defer_initial_card_mark;
@@ -66,7 +64,7 @@ public:
 
   CardTable* card_table() const { return _card_table; }
 
-  virtual void initialize();
+  void initialize();
 
   void write_region(JavaThread* thread, MemRegion mr) {
     invalidate(mr);

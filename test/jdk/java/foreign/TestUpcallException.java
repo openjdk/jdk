@@ -23,8 +23,6 @@
 
 /*
  * @test
- * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
  * @library /test/lib
  * @build TestUpcallException
  *
@@ -50,7 +48,8 @@ public class TestUpcallException extends UpcallTestHelper {
     @Test(dataProvider = "exceptionCases")
     public void testException(Class<?> target, boolean useSpec) throws InterruptedException, IOException {
         runInNewProcess(target, useSpec)
-                .assertStdErrContains("Testing upcall exceptions");
+                .shouldNotHaveExitValue(0)
+                .stderrShouldContain("Testing upcall exceptions");
     }
 
     @DataProvider

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @library /java/text/testlib
  * @summary test Collation, Monkey style
+ * @run junit MonkeyTest
  */
 /*
 (C) Copyright Taligent, Inc. 1996 - All Rights Reserved
@@ -47,31 +48,32 @@ import java.text.Collator;
 import java.text.RuleBasedCollator;
 import java.text.CollationKey;
 
-public class MonkeyTest extends CollatorTest
-{
-    public static void main(String[] args) throws Exception {
-        new MonkeyTest().run(args);
-    }
+import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class MonkeyTest
+{
     public void report(String s, String t, int result, int revResult)
     {
         if (result == -1)
         {
             if (revResult != 1)
-                errln(" --> Test Failed");
+                fail(" --> Test Failed");
         }
         else if (result == 1)
         {
             if (revResult != -1)
-                errln(" --> Test Failed");
+                fail(" --> Test Failed");
         }
         else if (result == 0)
         {
             if (revResult != 0)
-                errln(" --> Test Failed");
+                fail(" --> Test Failed");
         }
     }
 
+    @Test
     public void TestCollationKey()
     {
         String source = "-abcdefghijklmnopqrstuvwxyz#&^$@";
@@ -105,16 +107,17 @@ public class MonkeyTest extends CollatorTest
         CollationKey2 = myCollator.getCollationKey(addOne);
         result = CollationKey1.compareTo(CollationKey2);
         if (result != -1)
-            errln("CollationKey(" + subs + ")" + ".LT." + "CollationKey(" + addOne + ") Failed.");
+            fail("CollationKey(" + subs + ")" + ".LT." + "CollationKey(" + addOne + ") Failed.");
         result = CollationKey2.compareTo(CollationKey1);
         if (result != 1)
-            errln("CollationKey(" + addOne + ")" + ".GT." + "CollationKey(" + subs + ") Failed.");
+            fail("CollationKey(" + addOne + ")" + ".GT." + "CollationKey(" + subs + ") Failed.");
     }
     private static int checkValue(int value)
     {
         value *= (value > 0) ? 1 : -1;
         return value;
     }
+    @Test
     public void TestCompare()
     {
         String source = "-abcdefghijklmnopqrstuvwxyz#&^$@";
@@ -140,10 +143,10 @@ public class MonkeyTest extends CollatorTest
         String addOne = subs + "\uE000";
         result = myCollator.compare(subs, addOne);
         if (result != -1)
-            errln("Test : " + subs + " .LT. " + addOne + " Failed.");
+            fail("Test : " + subs + " .LT. " + addOne + " Failed.");
         result = myCollator.compare(addOne, subs);
         if (result != 1)
-            errln("Test : " + addOne + " .GE. " + subs + " Failed.");
+            fail("Test : " + addOne + " .GE. " + subs + " Failed.");
     }
     private static Collator myCollator = Collator.getInstance();
 }

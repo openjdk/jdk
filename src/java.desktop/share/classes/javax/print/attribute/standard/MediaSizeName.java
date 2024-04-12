@@ -41,7 +41,10 @@ import javax.print.attribute.EnumSyntax;
  * <b>IPP Compatibility:</b> {@code MediaSizeName} is a representation class for
  * values of the IPP "media" attribute which names media sizes. The names of the
  * media sizes correspond to those in the IPP 1.1 RFC
- * <a href="http://www.ietf.org/rfc/rfc2911.txt">RFC 2911</a>
+ * <a href="https://www.rfc-editor.org/info/rfc2911">RFC 2911</a>
+ *
+ * @spec https://www.rfc-editor.org/info/rfc2911
+ *      RFC 2911: Internet Printing Protocol/1.1: Model and Semantics
  */
 public class MediaSizeName extends Media {
 

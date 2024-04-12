@@ -56,5 +56,8 @@ public class PrintClasses {
     output = new OutputAnalyzer(pb.start());
     output.shouldContain("instance size");
     output.shouldContain(PrintClasses.class.getSimpleName());
+
+    // Test for previous bug in misc flags printing
+    output.shouldNotContain("##name");
   }
 }

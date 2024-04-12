@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,19 @@
 
 #include "precompiled.hpp"
 #include "gc/z/vmStructs_z.hpp"
+#include "gc/z/zAddress.hpp"
 
-ZGlobalsForVMStructs::ZGlobalsForVMStructs() :
-    _ZGlobalPhase(&ZGlobalPhase),
-    _ZGlobalSeqNum(&ZGlobalSeqNum),
-    _ZAddressOffsetMask(&ZAddressOffsetMask),
-    _ZAddressMetadataMask(&ZAddressMetadataMask),
-    _ZAddressMetadataFinalizable(&ZAddressMetadataFinalizable),
-    _ZAddressGoodMask(&ZAddressGoodMask),
-    _ZAddressBadMask(&ZAddressBadMask),
-    _ZAddressWeakBadMask(&ZAddressWeakBadMask),
+ZGlobalsForVMStructs::ZGlobalsForVMStructs()
+  : _ZAddressOffsetMask(&ZAddressOffsetMask),
+    _ZPointerLoadGoodMask(&ZPointerLoadGoodMask),
+    _ZPointerLoadBadMask(&ZPointerLoadBadMask),
+    _ZPointerLoadShift(const_cast<size_t*>(&ZPointerLoadShift)),
+    _ZPointerMarkGoodMask(&ZPointerMarkGoodMask),
+    _ZPointerMarkBadMask(&ZPointerMarkBadMask),
+    _ZPointerStoreGoodMask(&ZPointerStoreGoodMask),
+    _ZPointerStoreBadMask(&ZPointerStoreBadMask),
     _ZObjectAlignmentSmallShift(&ZObjectAlignmentSmallShift),
-    _ZObjectAlignmentSmall(&ZObjectAlignmentSmall) {
-}
+    _ZObjectAlignmentSmall(&ZObjectAlignmentSmall) {}
 
 ZGlobalsForVMStructs ZGlobalsForVMStructs::_instance;
 ZGlobalsForVMStructs* ZGlobalsForVMStructs::_instance_p = &ZGlobalsForVMStructs::_instance;

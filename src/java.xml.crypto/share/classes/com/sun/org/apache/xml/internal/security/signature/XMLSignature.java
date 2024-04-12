@@ -201,6 +201,14 @@ public final class XMLSignature extends SignatureElementProxy {
     public static final String ALGO_ID_SIGNATURE_ECDSA_RIPEMD160 =
         "http://www.w3.org/2007/05/xmldsig-more#ecdsa-ripemd160";
 
+    /**Signature - EDDSA ED25519 */
+    public static final String ALGO_ID_SIGNATURE_EDDSA_ED25519 =
+            "http://www.w3.org/2021/04/xmldsig-more#eddsa-ed25519";
+
+    /**Signature - EDDSA ED448 */
+    public static final String ALGO_ID_SIGNATURE_EDDSA_ED448 =
+            "http://www.w3.org/2021/04/xmldsig-more#eddsa-ed448";
+
     /** Signature - Optional RSASSA-PSS */
     public static final String ALGO_ID_SIGNATURE_RSA_PSS =
             Constants.XML_DSIG_NS_MORE_07_05 + "rsa-pss";
@@ -1023,6 +1031,7 @@ public final class XMLSignature extends SignatureElementProxy {
      *
      * @return Constants._TAG_SIGNATURE
      */
+    @Override
     public String getBaseLocalName() {
         return Constants._TAG_SIGNATURE;
     }

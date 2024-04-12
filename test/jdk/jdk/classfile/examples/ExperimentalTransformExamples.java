@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -25,16 +23,16 @@
 
 /*
  * @test
- * @summary Testing Classfile ExperimentalTransformExamples compilation.
+ * @summary Testing ClassFile ExperimentalTransformExamples compilation.
  * @compile ExperimentalTransformExamples.java
  */
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 
 /**
  * ExperimentalTransformExamples
@@ -54,7 +52,7 @@ public class ExperimentalTransformExamples {
     };
 
     public byte[] deleteAnnotations(ClassModel cm) {
-        return cm.transform((cb, ce) -> {
+        return ClassFile.of().transform(cm, (cb, ce) -> {
             switch (ce) {
                 case MethodModel m -> cb.transformMethod(m, dropMethodAnnos);
                 case FieldModel f -> cb.transformField(f, dropFieldAnnos);

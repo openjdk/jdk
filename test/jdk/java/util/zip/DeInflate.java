@@ -33,7 +33,6 @@ import java.nio.*;
 import java.util.*;
 import java.util.zip.*;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class DeInflate {
 
@@ -137,14 +136,14 @@ public class DeInflate {
     static void check(Deflater def, byte[] in, int len, boolean nowrap)
         throws Throwable
     {
-        byte[] tempBuffer = new byte[len];
+        byte[] tempBuffer = new byte[1024];
         byte[] out1, out2;
         int m = 0, n = 0;
         Inflater inf = new Inflater(nowrap);
         def.setInput(in, 0, len);
         def.finish();
 
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(len)) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             while (!def.finished()) {
                 int temp_counter = def.deflate(tempBuffer);
                 m += temp_counter;
@@ -314,6 +313,7 @@ public class DeInflate {
                     for (int i = 0; i < 5; i++) {
                         int len = (i == 0)? dataIn.length
                                           : new Random().nextInt(dataIn.length);
+                        System.out.println("iteration: " + (i + 1) + " input length: " + len);
                         // use a new deflater
                         Deflater def = newDeflater(level, strategy, dowrap, dataOut2);
                         check(def, dataIn, len, dowrap);

@@ -184,6 +184,10 @@ public:
     return *this;
   }
 
+  RegSetIterator<RegImpl>& operator=(const RegSetIterator<RegImpl>& mit) {
+    _regs= mit._regs;
+    return *this;
+  }
   bool operator==(const RegSetIterator& rhs) const {
     return _regs.bits() == rhs._regs.bits();
   }
@@ -193,6 +197,10 @@ public:
 
   RegImpl operator*() {
     return _regs.first();
+  }
+
+  AbstractRegSet<RegImpl> remaining() const {
+    return _regs;
   }
 };
 

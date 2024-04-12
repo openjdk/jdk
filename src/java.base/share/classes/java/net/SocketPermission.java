@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.security.PermissionCollection;
 import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Locale;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.StringTokenizer;
@@ -43,6 +44,7 @@ import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import sun.net.util.IPAddressUtil;
 import sun.net.PortConfig;
+import sun.security.action.GetBooleanAction;
 import sun.security.util.RegisteredDomain;
 import sun.security.util.SecurityConstants;
 import sun.security.util.Debug;
@@ -176,7 +178,7 @@ public final class SocketPermission extends Permission
     /**
      * No actions
      */
-    private static final int NONE               = 0x0;
+    private static final int NONE       = 0x0;
 
     /**
      * All actions
@@ -186,8 +188,6 @@ public final class SocketPermission extends Permission
     // various port constants
     private static final int PORT_MIN = 0;
     private static final int PORT_MAX = 65535;
-    private static final int PRIV_PORT_MAX = 1023;
-    private static final int DEF_EPH_LOW = 49152;
 
     // the actions mask
     private transient int mask;
@@ -233,22 +233,15 @@ public final class SocketPermission extends Permission
     private transient boolean trusted;
 
     // true if the sun.net.trustNameService system property is set
-    private static boolean trustNameService;
+    private static final boolean trustNameService = GetBooleanAction.privilegedGetProperty("sun.net.trustNameService");
 
     private static Debug debug = null;
     private static boolean debugInit = false;
 
     // lazy initializer
     private static class EphemeralRange {
-        static final int low = initEphemeralPorts("low", DEF_EPH_LOW);
-            static final int high = initEphemeralPorts("high", PORT_MAX);
-    };
-
-    static {
-        @SuppressWarnings("removal")
-        Boolean tmp = java.security.AccessController.doPrivileged(
-                new sun.security.action.GetBooleanAction("sun.net.trustNameService"));
-        trustNameService = tmp.booleanValue();
+        static final int low = initEphemeralPorts("low");
+        static final int high = initEphemeralPorts("high");
     }
 
     private static synchronized Debug getDebug() {
@@ -347,10 +340,7 @@ public final class SocketPermission extends Permission
         }
     }
 
-    private int[] parsePort(String port)
-        throws Exception
-    {
-
+    private int[] parsePort(String port) {
         if (port == null || port.isEmpty() || port.equals("*")) {
             return new int[] {PORT_MIN, PORT_MAX};
         }
@@ -460,7 +450,7 @@ public final class SocketPermission extends Permission
             if (host.equals("*")) {
                 cname = "";
             } else if (host.startsWith("*.")) {
-                cname = host.substring(1).toLowerCase();
+                cname = host.substring(1).toLowerCase(Locale.ROOT);
             } else {
               throw new
                IllegalArgumentException("invalid host wildcard specification");
@@ -471,7 +461,7 @@ public final class SocketPermission extends Permission
                 // see if we are being initialized with an IP address.
                 char ch = host.charAt(0);
                 if (ch == ':' || IPAddressUtil.digit(ch, 16) != -1) {
-                    byte ip[] = IPAddressUtil.textToNumericFormatV4(host);
+                    byte[] ip = IPAddressUtil.textToNumericFormatV4(host);
                     if (ip == null) {
                         ip = IPAddressUtil.textToNumericFormatV6(host);
                     }
@@ -526,8 +516,6 @@ public final class SocketPermission extends Permission
         char[] a = action.toCharArray();
 
         int i = a.length - 1;
-        if (i < 0)
-            return mask;
 
         while (i != -1) {
             char c;
@@ -624,13 +612,13 @@ public final class SocketPermission extends Permission
         if (invalid || untrusted) return true;
         try {
             if (!trustNameService && (defaultDeny ||
-                sun.net.www.URLConnection.isProxiedHost(hostname))) {
+                    sun.net.www.URLConnection.isProxiedHost(hostname))) {
                 if (this.cname == null) {
                     this.getCanonName();
                 }
                 if (!match(cname, hostname)) {
                     // Last chance
-                    if (!authorized(hostname, addresses[0].getAddress())) {
+                    if (!authorized(addresses[0].getAddress())) {
                         untrusted = true;
                         Debug debug = getDebug();
                         if (debug != null && Debug.isOn("failure")) {
@@ -670,10 +658,10 @@ public final class SocketPermission extends Permission
             // we have to do this check, otherwise we might not
             // get the fully qualified domain name
             if (init_with_ip) {
-                cname = addresses[0].getHostName(false).toLowerCase();
+                cname = addresses[0].getHostName(false).toLowerCase(Locale.ROOT);
             } else {
              cname = InetAddress.getByName(addresses[0].getHostAddress()).
-                                              getHostName(false).toLowerCase();
+                                              getHostName(false).toLowerCase(Locale.ROOT);
             }
         } catch (UnknownHostException uhe) {
             invalid = true;
@@ -696,8 +684,8 @@ public final class SocketPermission extends Permission
     }
 
     private boolean match(String cname, String hname) {
-        String a = checkForIDN(cname.toLowerCase());
-        String b = checkForIDN(hname.toLowerCase());
+        String a = checkForIDN(cname.toLowerCase(Locale.ROOT));
+        String b = checkForIDN(hname.toLowerCase(Locale.ROOT));
         if (a.startsWith(b)  &&
             ((a.length() == b.length()) || (a.charAt(b.length()) == '.'))) {
             return true;
@@ -716,16 +704,16 @@ public final class SocketPermission extends Permission
         return !cdomain.isEmpty() && !hdomain.isEmpty() && cdomain.equals(hdomain);
     }
 
-    private boolean authorized(String cname, byte[] addr) {
+    private boolean authorized(byte[] addr) {
         if (addr.length == 4)
-            return authorizedIPv4(cname, addr);
+            return authorizedIPv4(addr);
         else if (addr.length == 16)
-            return authorizedIPv6(cname, addr);
+            return authorizedIPv6(addr);
         else
             return false;
     }
 
-    private boolean authorizedIPv4(String cname, byte[] addr) {
+    private boolean authorizedIPv4(byte[] addr) {
         String authHost = "";
         InetAddress auth;
 
@@ -754,7 +742,7 @@ public final class SocketPermission extends Permission
         return false;
     }
 
-    private boolean authorizedIPv6(String cname, byte[] addr) {
+    private boolean authorizedIPv6(byte[] addr) {
         String authHost = "";
         InetAddress auth;
 
@@ -859,8 +847,6 @@ public final class SocketPermission extends Permission
      */
     @Override
     public boolean implies(Permission p) {
-        int i,j;
-
         if (!(p instanceof SocketPermission that))
             return false;
 
@@ -1226,7 +1212,7 @@ public final class SocketPermission extends Permission
      * for this system. The suffix is either "high" or "low"
      */
     @SuppressWarnings("removal")
-    private static int initEphemeralPorts(String suffix, int defval) {
+    private static int initEphemeralPorts(String suffix) {
         return AccessController.doPrivileged(
             new PrivilegedAction<>(){
                 public Integer run() {

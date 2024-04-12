@@ -151,8 +151,7 @@ class ReverseOrderListView<E> implements List<E> {
     }
 
     public Spliterator<E> spliterator() {
-        // TODO can probably improve this
-        return Spliterators.spliteratorUnknownSize(new DescendingIterator(), 0);
+        return Spliterators.spliterator(this, Spliterator.ORDERED);
     }
 
     // ========== Collection ==========

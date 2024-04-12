@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +34,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
+ * @requires vm.flagless
  * @run main/native GTestWrapper --gtest_filter=AsyncLogTest* -Xlog:async
  * @run main/native GTestWrapper --gtest_filter=Log*Test* -Xlog:async
  */

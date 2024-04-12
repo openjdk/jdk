@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -807,7 +807,9 @@ public interface Chronology extends Comparable<Chronology> {
      * It is "consistent with equals", as defined by {@link Comparable}.
      *
      * @param other  the other chronology to compare to, not null
-     * @return the comparator value, negative if less, positive if greater
+     * @return the comparator value, that is this ID string compared with the {@code other}'s ID string
+     *          unless the ID strings are equal and
+     *          the chronology distinguishes instances using additional information
      */
     @Override
     int compareTo(Chronology other);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4856968 7054918 8130181
+ * @bug 4856968 7054918 8130181 8175874
  * @library ../testlibrary
  * @summary make sure add/insert/removeProvider() work correctly
  * @author Andreas Sterbenz
@@ -79,6 +79,19 @@ public class ChangeProviders extends Provider {
         }
         if (Security.getProviders()[0] != p) {
             throw new Exception("Provider not at pos 1");
+        }
+
+        // Ensure that providers inserted at positions outside of [1..n] are placed
+        // at the n+1st position
+        Security.removeProvider(p.getName());
+        Security.insertProviderAt(p, 0);
+        if (plen() != n + 1 || Security.getProviders()[n] != p) {
+            throw new Exception("Provider inserted at zero not at pos n+1");
+        }
+        Security.removeProvider(p.getName());
+        Security.insertProviderAt(p, n + 5);
+        if (plen() != n + 1 || Security.getProviders()[n] != p) {
+            throw new Exception("Provider inserted at n+5 not at pos n+1");
         }
 
         System.out.println("All tests passed.");

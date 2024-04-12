@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,16 @@ public:
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
   // See full description in macroAssembler_x86.cpp.
   void fast_lock(Register obj, Register box, Register tmp,
-                 Register scr, Register cx1, Register cx2,
+                 Register scr, Register cx1, Register cx2, Register thread,
                  RTMLockingCounters* rtm_counters,
                  RTMLockingCounters* stack_rtm_counters,
                  Metadata* method_data,
                  bool use_rtm, bool profile_rtm);
   void fast_unlock(Register obj, Register box, Register tmp, bool use_rtm);
+
+  void fast_lock_lightweight(Register obj, Register box, Register rax_reg,
+                             Register t, Register thread);
+  void fast_unlock_lightweight(Register obj, Register reg_rax, Register t, Register thread);
 
 #if INCLUDE_RTM_OPT
   void rtm_counters_update(Register abort_status, Register rtm_counters);
@@ -304,6 +308,10 @@ public:
   void arrays_hashcode_elvload(XMMRegister dst, AddressLiteral src, BasicType eltype);
   void arrays_hashcode_elvcast(XMMRegister dst, BasicType eltype);
 
+#ifdef _LP64
+  void convertF2I(BasicType dst_bt, BasicType src_bt, Register dst, XMMRegister src);
+#endif
+
   void evmasked_op(int ideal_opc, BasicType eType, KRegister mask,
                    XMMRegister dst, XMMRegister src1, XMMRegister src2,
                    bool merge, int vlen_enc, bool is_varshift = false);
@@ -386,6 +394,10 @@ public:
 
   void vector_round_float_avx(XMMRegister dst, XMMRegister src, AddressLiteral float_sign_flip, AddressLiteral new_mxcsr, int vec_enc,
                               Register tmp, XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4);
+
+  void vector_compress_expand_avx2(int opcode, XMMRegister dst, XMMRegister src, XMMRegister mask,
+                                   Register rtmp, Register rscratch, XMMRegister permv, XMMRegister xtmp,
+                                   BasicType bt, int vec_enc);
 #endif // _LP64
 
   void udivI(Register rax, Register divisor, Register rdx);

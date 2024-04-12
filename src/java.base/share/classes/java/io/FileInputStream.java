@@ -133,6 +133,7 @@ public class FileInputStream extends InputStream
      * @see        java.io.File#getPath()
      * @see        java.lang.SecurityManager#checkRead(java.lang.String)
      */
+    @SuppressWarnings("this-escape")
     public FileInputStream(File file) throws FileNotFoundException {
         String name = (file != null ? file.getPath() : null);
         @SuppressWarnings("removal")
@@ -177,6 +178,7 @@ public class FileInputStream extends InputStream
      *             file descriptor.
      * @see        SecurityManager#checkRead(java.io.FileDescriptor)
      */
+    @SuppressWarnings("this-escape")
     public FileInputStream(FileDescriptor fdObj) {
         @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
@@ -493,9 +495,12 @@ public class FileInputStream extends InputStream
      * Subclasses requiring that resource cleanup take place after a stream becomes
      * unreachable should use the {@link java.lang.ref.Cleaner} mechanism.
      *
-     * @throws     IOException  {@inheritDoc}
+     * <p>
+     * If this stream has an associated channel then this method will close the
+     * channel, which in turn will close this stream. Subclasses that override
+     * this method should be prepared to handle possible reentrant invocation.
      *
-     * @revised 1.4
+     * @throws     IOException  {@inheritDoc}
      */
     @Override
     public void close() throws IOException {

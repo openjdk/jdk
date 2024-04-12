@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,44 @@
  */
 
 package nsk.share;
+import java.lang.ref.Cleaner;
 
 /**
  * Finalizable interface allows <tt>Finalizer</tt> to perform finalization of an object.
  * Each object that requires finalization at VM shutdown time should implement this
- * interface and activate a <tt>Finalizer</tt> hook.
+ * interface and call the <tt>registerCleanup</tt> to activate a <tt>Finalizer</tt> hook.
  *
  * @see Finalizer
  */
 public interface Finalizable {
 
     /**
-     * This method will be invoked by <tt>Finalizer</tt> when virtual mashine
+     * This method will be implemented by FinalizableObject and is called in <tt>finalizeAtExit</tt>.
+     *
+     * @see Finalizer
+     */
+    public void cleanup();
+
+    /**
+     * This method will be invoked by <tt>Finalizer</tt> when virtual machine
      * shuts down.
      *
      * @throws Throwable if any throwable exception thrown during finalization
      */
-    public void finalizeAtExit() throws Throwable;
+    default public void finalizeAtExit() throws Throwable {
+        cleanup();
+    }
 
+    /**
+     * This method will register a cleanup method and create an instance of Finalizer
+     * to register the object for finalization at VM exit.
+     *
+     * @see Finalizer
+     */
+    default public void registerCleanup() {
+       Finalizer finalizer = new Finalizer(this);
+       finalizer.activate();
+
+       Cleaner.create().register(this, () -> cleanup());
+    }
 }

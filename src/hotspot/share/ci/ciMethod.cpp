@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,8 +84,8 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   _code_size          = h_m->code_size();
   _handler_count      = h_m->exception_table_length();
   _size_of_parameters = h_m->size_of_parameters();
-  _uses_monitors      = h_m->access_flags().has_monitor_bytecodes();
-  _balanced_monitors  = !_uses_monitors || h_m->access_flags().is_monitor_matching();
+  _uses_monitors      = h_m->has_monitor_bytecodes();
+  _balanced_monitors  = !_uses_monitors || h_m->guaranteed_monitor_matching();
   _is_c1_compilable   = !h_m->is_not_c1_compilable();
   _is_c2_compilable   = !h_m->is_not_c2_compilable();
   _can_be_parsed      = true;
@@ -441,6 +441,9 @@ int ciMethod::check_overflow(int c, Bytecodes::Code code) {
     case Bytecodes::_aastore:    // fall-through
     case Bytecodes::_checkcast:  // fall-through
     case Bytecodes::_instanceof: {
+      if (VM_Version::profile_all_receivers_at_type_check()) {
+        return (c < 0 ? max_jint : c); // always non-negative
+      }
       return (c > 0 ? min_jint : c); // always non-positive
     }
     default: {
@@ -1126,7 +1129,7 @@ int ciMethod::code_size_for_inlining() {
 int ciMethod::inline_instructions_size() {
   if (_inline_instructions_size == -1) {
     GUARDED_VM_ENTRY(
-      CompiledMethod* code = get_Method()->code();
+      nmethod* code = get_Method()->code();
       if (code != nullptr && (code->comp_level() == CompLevel_full_optimization)) {
         int isize = code->insts_end() - code->verified_entry_point() - code->skipped_instructions_size();
         _inline_instructions_size = isize > 0 ? isize : 0;
@@ -1142,7 +1145,7 @@ int ciMethod::inline_instructions_size() {
 // ciMethod::log_nmethod_identity
 void ciMethod::log_nmethod_identity(xmlStream* log) {
   GUARDED_VM_ENTRY(
-    CompiledMethod* code = get_Method()->code();
+    nmethod* code = get_Method()->code();
     if (code != nullptr) {
       code->log_identity(log);
     }
@@ -1178,9 +1181,9 @@ bool ciMethod::has_unloaded_classes_in_signature() {
 
 // ------------------------------------------------------------------
 // ciMethod::is_klass_loaded
-bool ciMethod::is_klass_loaded(int refinfo_index, bool must_be_resolved) const {
+bool ciMethod::is_klass_loaded(int refinfo_index, Bytecodes::Code bc, bool must_be_resolved) const {
   VM_ENTRY_MARK;
-  return get_Method()->is_klass_loaded(refinfo_index, must_be_resolved);
+  return get_Method()->is_klass_loaded(refinfo_index, bc, must_be_resolved);
 }
 
 // ------------------------------------------------------------------

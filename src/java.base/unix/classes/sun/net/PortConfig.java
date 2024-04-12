@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,13 +35,14 @@ import jdk.internal.util.OperatingSystem;
 
 public final class PortConfig {
 
-    private static int defaultUpper, defaultLower;
     private static final int upper, lower;
 
     private PortConfig() {}
 
     static {
         jdk.internal.loader.BootLoader.loadLibrary("net");
+        int defaultUpper;
+        int defaultLower;
         switch (OperatingSystem.current()) {
             case LINUX:
                 defaultLower = 32768;

@@ -129,20 +129,16 @@ class XmlAttrStack {
                 }
             }
             if (!baseAttrs.isEmpty()) {
-                Iterator<Attr> it = col.iterator();
                 String base = null;
                 Attr baseAttr = null;
-                while (it.hasNext()) {
-                    Attr n = it.next();
+                for (Attr n : col) {
                     if ("base".equals(n.getLocalName())) {
                         base = n.getValue();
                         baseAttr = n;
                         break;
                     }
                 }
-                it = baseAttrs.iterator();
-                while (it.hasNext()) {
-                    Attr n = it.next();
+                for (Attr n : baseAttrs) {
                     if (base == null) {
                         base = n.getValue();
                         baseAttr = n;
@@ -162,9 +158,7 @@ class XmlAttrStack {
         } else {
             for (; size >= 0; size--) {
                 e = levels.get(size);
-                Iterator<Attr> it = e.nodes.iterator();
-                while (it.hasNext()) {
-                    Attr n = it.next();
+                for (Attr n : e.nodes) {
                     if (!loa.containsKey(n.getName())) {
                         loa.put(n.getName(), n);
                     }
@@ -352,7 +346,7 @@ class XmlAttrStack {
                 // that from the input buffer else if the input buffer consists
                 // only of ".." and if the output buffer does not contain only
                 // the root slash "/", then move the ".." to the output buffer
-                // else delte it.; otherwise,
+                // else delete it.; otherwise,
             } else if (".".equals(input)) {
                 input = "";
                 printStep("2D", output.toString(), input);

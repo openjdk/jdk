@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_ppc.inline.hpp"
+#include <stdint.h>
 
 #ifdef ASSERT
 #define __ gen()->lir(__FILE__, __LINE__)->
@@ -423,7 +424,7 @@ void LIRGenerator::do_ArithmeticOp_Long(ArithmeticOp* x) {
   LIRItem right(x->y(), this);
   // Missing test if instr is commutative and if we should swap.
   if (right.value()->type()->as_LongConstant() &&
-      (x->op() == Bytecodes::_lsub && right.value()->type()->as_LongConstant()->value() == ((-1)<<15)) ) {
+      (x->op() == Bytecodes::_lsub && right.value()->type()->as_LongConstant()->value() == INT16_MIN) ) {
     // Sub is implemented by addi and can't support min_simm16 as constant..
     right.load_item();
   } else {
@@ -477,7 +478,7 @@ void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
   LIRItem right(x->y(), this);
   // Missing test if instr is commutative and if we should swap.
   if (right.value()->type()->as_IntConstant() &&
-      (x->op() == Bytecodes::_isub && right.value()->type()->as_IntConstant()->value() == ((-1)<<15)) ) {
+      (x->op() == Bytecodes::_isub && right.value()->type()->as_IntConstant()->value() == INT16_MIN) ) {
     // Sub is implemented by addi and can't support min_simm16 as constant.
     right.load_item();
   } else {
@@ -638,13 +639,6 @@ LIR_Opr LIRGenerator::atomic_cmpxchg(BasicType type, LIR_Opr addr, LIRItem& cmp_
   cmp_value.load_item();
   new_value.load_item();
 
-  // Volatile load may be followed by Unsafe CAS.
-  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-    __ membar();
-  } else {
-    __ membar_release();
-  }
-
   if (is_reference_type(type)) {
     if (UseCompressedOops) {
       t1 = new_register(T_OBJECT);
@@ -669,21 +663,7 @@ LIR_Opr LIRGenerator::atomic_xchg(BasicType type, LIR_Opr addr, LIRItem& value) 
   LIR_Opr tmp = FrameMap::R0_opr;
 
   value.load_item();
-
-  // Volatile load may be followed by Unsafe CAS.
-  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-    __ membar();
-  } else {
-    __ membar_release();
-  }
-
   __ xchg(addr, value.result(), result, tmp);
-
-  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-    __ membar_acquire();
-  } else {
-    __ membar();
-  }
   return result;
 }
 
@@ -693,21 +673,7 @@ LIR_Opr LIRGenerator::atomic_add(BasicType type, LIR_Opr addr, LIRItem& value) {
   LIR_Opr tmp = FrameMap::R0_opr;
 
   value.load_item();
-
-  // Volatile load may be followed by Unsafe CAS.
-  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-    __ membar(); // To be safe. Unsafe semantics are unclear.
-  } else {
-    __ membar_release();
-  }
-
   __ xadd(addr, value.result(), result, tmp);
-
-  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-    __ membar_acquire();
-  } else {
-    __ membar();
-  }
   return result;
 }
 

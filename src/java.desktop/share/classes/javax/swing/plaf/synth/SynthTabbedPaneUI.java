@@ -652,10 +652,11 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
                     tabRect, iconRect, textRect, isSelected);
             clippedTitle = SwingUtilities2.clipStringIfNecessary(null, metrics,
                            title, textRect.width);
+            paintIcon(g, tabPlacement, tabIndex, icon, iconRect, isSelected);
             paintText(ss, g, tabPlacement, font, metrics,
                     tabIndex, clippedTitle, textRect, isSelected);
 
-            paintIcon(g, tabPlacement, tabIndex, icon, iconRect, isSelected);
+
         }
     }
 
@@ -673,7 +674,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
 
         ss.getStyle().getGraphicsUtils(ss).layoutText(ss, metrics, title,
                          icon, SwingUtilities.CENTER, SwingUtilities.CENTER,
-                         SwingUtilities.LEADING, SwingUtilities.CENTER,
+                         SwingUtilities.TRAILING, SwingUtilities.CENTER,
                          tabRect, iconRect, textRect, textIconGap);
 
         tabPane.putClientProperty("html", null);

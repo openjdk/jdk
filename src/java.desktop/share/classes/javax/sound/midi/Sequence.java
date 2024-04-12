@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ public class Sequence {
      * and timing resolution. The division type must be one of the recognized
      * MIDI timing types. For tempo-based timing, {@code divisionType} is PPQ
      * (pulses per quarter note) and the resolution is specified in ticks per
-     * beat. For SMTPE timing, {@code divisionType} specifies the number of
+     * beat. For SMPTE timing, {@code divisionType} specifies the number of
      * frames per second and the resolution is specified in ticks per frame. The
      * sequence will contain no initial tracks. Tracks may be added to or
      * removed from the sequence using {@link #createTrack} and
@@ -166,7 +166,7 @@ public class Sequence {
      * timing resolution, and number of tracks. The division type must be one of
      * the recognized MIDI timing types. For tempo-based timing,
      * {@code divisionType} is PPQ (pulses per quarter note) and the resolution
-     * is specified in ticks per beat. For SMTPE timing, {@code divisionType}
+     * is specified in ticks per beat. For SMPTE timing, {@code divisionType}
      * specifies the number of frames per second and the resolution is specified
      * in ticks per frame. The sequence will be initialized with the number of
      * tracks specified by {@code numTracks}. These tracks are initially empty
@@ -228,7 +228,7 @@ public class Sequence {
     /**
      * Obtains the timing resolution for this sequence. If the sequence's
      * division type is PPQ, the resolution is specified in ticks per beat. For
-     * SMTPE timing, the resolution is specified in ticks per frame.
+     * SMPTE timing, the resolution is specified in ticks per frame.
      *
      * @return the number of ticks per beat (PPQ) or per frame (SMPTE)
      * @see #getDivisionType

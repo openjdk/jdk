@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
  * @test
  * @bug 8160591
  * @summary C1-generated code for System.arraycopy() does not throw an ArrayStoreException if 'dst' is no a "proper" array (i.e., it is java.lang.Object)
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xcomp -XX:-UseCompressedClassPointers -XX:CompileOnly=TestArrayCopyToFromObject.test TestArrayCopyToFromObject
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xcomp -XX:+UseCompressedClassPointers -XX:CompileOnly=TestArrayCopyToFromObject.test TestArrayCopyToFromObject
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xcomp -XX:-UseCompressedClassPointers -XX:CompileOnly=TestArrayCopyToFromObject::test TestArrayCopyToFromObject
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xcomp -XX:+UseCompressedClassPointers -XX:CompileOnly=TestArrayCopyToFromObject::test TestArrayCopyToFromObject
  */
 public class TestArrayCopyToFromObject {
 

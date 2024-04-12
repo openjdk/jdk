@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,7 @@ public:
           _t_vector_pru,
       _t_renumberLive,
       _t_idealLoop,
+        _t_autoVectorize,
       _t_idealLoopVerify,
       _t_ccp,
       _t_iterGVN2,
@@ -140,11 +141,12 @@ protected:
   // Object; if you wish to check an Object you need to load the Object's
   // class prior to coming here.
   // Used in GraphKit and PhaseMacroExpand
-  static Node* gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, Node* mem, PhaseGVN& gvn);
+  static Node* gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, Node* mem, PhaseGVN& gvn, ciMethod* method, int bci);
 
 public:
   Compile * C;
   Phase( PhaseNumber pnum );
+  NONCOPYABLE(Phase);
 
   static void print_timers();
 };

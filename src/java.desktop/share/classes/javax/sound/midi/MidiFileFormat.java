@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,7 +208,7 @@ public class MidiFileFormat {
 
     /**
      * Obtains the timing resolution for the MIDI file. If the division type is
-     * PPQ, the resolution is specified in ticks per beat. For SMTPE timing, the
+     * PPQ, the resolution is specified in ticks per beat. For SMPTE timing, the
      * resolution is specified in ticks per frame.
      *
      * @return the number of ticks per beat (PPQ) or per frame (SMPTE)

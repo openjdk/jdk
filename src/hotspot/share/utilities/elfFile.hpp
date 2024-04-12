@@ -70,6 +70,7 @@ typedef Elf32_Sym       Elf_Sym;
 #include "jvm_md.h"
 #include "globalDefinitions.hpp"
 #include "memory/allocation.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/decoder.hpp"
 
 #ifdef ASSERT
@@ -255,7 +256,7 @@ class ElfFile: public CHeapObj<mtInternal> {
     }
 
     void update_null_terminator_index() {
-      _null_terminator_index = strlen(_path);
+      _null_terminator_index = checked_cast<uint16_t>(strlen(_path));
     }
 
     bool copy_to_path_index(uint16_t index_in_path, const char* src);
@@ -308,7 +309,7 @@ class ElfFile: public CHeapObj<mtInternal> {
   static uint gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, size_t len);
 
  protected:
-  FILE* const fd() const { return _file; }
+  FILE* fd() const { return _file; }
 
   // Read the section header of section 'name'.
   bool read_section_header(const char* name, Elf_Shdr& hdr) const;
@@ -483,7 +484,7 @@ class DwarfFile : public ElfFile {
 
     DwarfFile* _dwarf_file;
     MarkedDwarfFileReader _reader;
-    uint32_t _section_start_address;
+    uintptr_t _section_start_address;
 
     // a calculated end position
     long _entry_end;

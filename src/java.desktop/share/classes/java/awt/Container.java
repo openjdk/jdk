@@ -562,7 +562,7 @@ public class Container extends Component {
      * index without calling removeNotify.
      * Note: Should be called while holding treeLock
      * Returns whether removeNotify was invoked
-     * @since: 1.5
+     * @since 1.5
      */
     private boolean removeDelicately(Component comp, Container newParent, int newIndex) {
         checkTreeLock();
@@ -687,7 +687,7 @@ public class Container extends Component {
      * removeNotify on the component. Since removeNotify destroys native window this might (not)
      * be required. For example, if new container and old containers are the same we don't need to
      * destroy native window.
-     * @since: 1.5
+     * @since 1.5
      */
     private static boolean isRemoveNotifyNeeded(Component comp, Container oldContainer, Container newContainer) {
         if (oldContainer == null) { // Component didn't have parent - no removeNotify

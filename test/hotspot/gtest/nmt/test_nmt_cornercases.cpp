@@ -24,10 +24,11 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/mallocHeader.inline.hpp"
+#include "nmt/mallocTracker.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/os.hpp"
-#include "services/mallocHeader.inline.hpp"
-#include "services/mallocTracker.hpp"
-#include "services/memTracker.hpp"
+#include "sanitizers/address.hpp"
 #include "testutils.hpp"
 #include "unittest.hpp"
 
@@ -37,6 +38,9 @@ static void check_expected_malloc_header(const void* payload, MEMFLAGS type, siz
   EXPECT_EQ(hdr->size(), size);
   EXPECT_EQ(hdr->flags(), type);
 }
+
+// ASAN complains about allocating very large sizes
+#if !INCLUDE_ASAN
 
 // Check that a malloc with an overflowing size is rejected.
 TEST_VM(NMT, malloc_failure1) {
@@ -85,6 +89,7 @@ TEST_VM(NMT, realloc_failure_overflowing_size) {
 TEST_VM(NMT, realloc_failure_gigantic_size) {
   check_failing_realloc(SIZE_MAX - M);
 }
+#endif // !INCLUDE_ASAN
 
 static void* do_realloc(void* p, size_t old_size, size_t new_size, uint8_t old_content, bool check_nmt_header) {
 

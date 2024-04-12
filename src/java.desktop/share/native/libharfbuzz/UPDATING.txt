@@ -81,6 +81,7 @@ STEP 5: REPLACE TABS & REMOVE TRAILING SPACES
   To clean up the extra spaces and tabs run the following script at
   each folder level within libharfbuzz.
 
+  shopt -s nullglob
   for f in *.c *.h *.cc *.hh;
       do
           # replace tabs with spaces
@@ -105,7 +106,7 @@ STEP 6: TESTING
   Look for manual related layout jtreg tests (test/jdk/java/awt/font/TextLayout)
   and run on Windows,Linux and Mac.
   Use Font2DTest set to TextLayout and check the above languages. Probably
-  not going to see layout problems a code point at a time but it needs to
+  not going to see layout problems in code at this point of time but it needs to
   be checked.
 
   Different unicode combinations can be checked using Font2DTest.

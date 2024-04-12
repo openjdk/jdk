@@ -212,8 +212,8 @@ public class TestMetadata extends JavadocTester {
             "AllClassesIndexWriter",
             "AllPackagesIndexWriter",
             "ClassUseWriter",
-            "ClassWriterImpl",
-            "ConstantsSummaryWriterImpl",
+            "ClassWriter",
+            "ConstantsSummaryWriter",
             "DeprecatedListWriter",
             "DocFileWriter",
             "ExternalSpecsWriter",
@@ -221,13 +221,13 @@ public class TestMetadata extends JavadocTester {
             "IndexRedirectWriter",
             "IndexWriter",
             "ModuleIndexWriter",
-            "ModuleWriterImpl",
+            "ModuleWriter",
             "PackageIndexWriter",
             "PackageTreeWriter",
             "PackageUseWriter",
-            "PackageWriterImpl",
+            "PackageWriter",
             "SearchWriter",
-            "SerializedFormWriterImpl",
+            "SerializedFormWriter",
             "SourceToHTMLConverter",
             "SystemPropertiesWriter",
             "TreeWriter"
@@ -321,10 +321,10 @@ public class TestMetadata extends JavadocTester {
                 break;
 
 
-            case "AnnotationTypeWriterImpl":
-            case "ClassWriterImpl":
-            case "ModuleWriterImpl":
-            case "PackageWriterImpl":
+            case "AnnotationTypeWriter":
+            case "ClassWriter":
+            case "ModuleWriter":
+            case "PackageWriter":
                 check(generator, content, content.startsWith("declaration: "));
                 break;
 
@@ -333,7 +333,7 @@ public class TestMetadata extends JavadocTester {
                 check(generator, content, content.startsWith("use: "));
                 break;
 
-            case "ConstantsSummaryWriterImpl":
+            case "ConstantsSummaryWriter":
                 check(generator, content, content.contains("constants"));
                 break;
 
@@ -370,7 +370,7 @@ public class TestMetadata extends JavadocTester {
                 check(generator, content, content.contains("search"));
                 break;
 
-            case "SerializedFormWriterImpl":
+            case "SerializedFormWriter":
                 check(generator, content, content.contains("serialized"));
                 break;
 

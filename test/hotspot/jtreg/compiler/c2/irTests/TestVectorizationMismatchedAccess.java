@@ -50,13 +50,10 @@ public class TestVectorizationMismatchedAccess {
     private final static WhiteBox wb = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) {
-        Object alignVector = wb.getVMFlag("AlignVector");
-        if (alignVector != null && !((Boolean)alignVector)) {
-            if (ByteOrder.nativeOrder() != ByteOrder.LITTLE_ENDIAN) {
-                throw new RuntimeException("fix test that was written for a little endian platform");
-            }
-            TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
+        if (ByteOrder.nativeOrder() != ByteOrder.LITTLE_ENDIAN) {
+            throw new RuntimeException("fix test that was written for a little endian platform");
         }
+        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
     }
 
     static int size = 1024;
@@ -150,7 +147,7 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testByteLong1(byte[] dest, long[] src) {
         for (int i = 0; i < src.length; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i, src[i]);
@@ -163,7 +160,7 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testByteLong2(byte[] dest, long[] src) {
         for (int i = 1; i < src.length; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i - 1), src[i]);
@@ -176,7 +173,7 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testByteLong3(byte[] dest, long[] src) {
         for (int i = 0; i < src.length - 1; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i + 1), src[i]);
@@ -189,7 +186,9 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        applyIf = {"AlignVector", "false"})
+    // AlignVector cannot guarantee that invar is aligned.
     public static void testByteLong4(byte[] dest, long[] src, int start, int stop) {
         for (int i = start; i < stop; i++) {
             UNSAFE.putLongUnaligned(dest, 8 * i + baseOffset, src[i]);
@@ -203,7 +202,7 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testByteLong5(byte[] dest, long[] src, int start, int stop) {
         for (int i = start; i < stop; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i + baseOffset), src[i]);
@@ -217,7 +216,7 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testByteByte1(byte[] dest, byte[] src) {
         for (int i = 0; i < src.length / 8; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i, UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i));
@@ -229,9 +228,8 @@ public class TestVectorizationMismatchedAccess {
         runAndVerify2(() -> testByteByte1(byteArray, byteArray), 0);
     }
 
-    // It would be legal to vectorize this one but it's not currently
     @Test
-    //@IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testByteByte2(byte[] dest, byte[] src) {
         for (int i = 1; i < src.length / 8; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i - 1), UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i));
@@ -244,7 +242,7 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(failOn = { IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR })
+    @IR(failOn = { IRNode.LOAD_VECTOR_L, IRNode.STORE_VECTOR })
     public static void testByteByte3(byte[] dest, byte[] src) {
         for (int i = 0; i < src.length / 8 - 1; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i + 1), UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i));
@@ -257,7 +255,7 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(failOn = { IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR })
+    @IR(failOn = { IRNode.LOAD_VECTOR_L, IRNode.STORE_VECTOR })
     public static void testByteByte4(byte[] dest, byte[] src, int start, int stop) {
         for (int i = start; i < stop; i++) {
             UNSAFE.putLongUnaligned(dest, 8 * i + baseOffset, UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i));
@@ -271,7 +269,7 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(failOn = { IRNode.LOAD_VECTOR, IRNode.STORE_VECTOR })
+    @IR(failOn = { IRNode.LOAD_VECTOR_L, IRNode.STORE_VECTOR })
     public static void testByteByte5(byte[] dest, byte[] src, int start, int stop) {
         for (int i = start; i < stop; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i + baseOffset), UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i));
@@ -285,7 +283,7 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testOffHeapLong1(long dest, long[] src) {
         for (int i = 0; i < src.length; i++) {
             UNSAFE.putLongUnaligned(null, dest + 8 * i, src[i]);
@@ -298,7 +296,7 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testOffHeapLong2(long dest, long[] src) {
         for (int i = 1; i < src.length; i++) {
             UNSAFE.putLongUnaligned(null, dest + 8 * (i - 1), src[i]);
@@ -311,7 +309,7 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testOffHeapLong3(long dest, long[] src) {
         for (int i = 0; i < src.length - 1; i++) {
             UNSAFE.putLongUnaligned(null, dest + 8 * (i + 1), src[i]);
@@ -324,7 +322,9 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        applyIf = {"AlignVector", "false"})
+    // AlignVector cannot guarantee that invar is aligned.
     public static void testOffHeapLong4(long dest, long[] src, int start, int stop) {
         for (int i = start; i < stop; i++) {
             UNSAFE.putLongUnaligned(null, dest + 8 * i + baseOffset, src[i]);

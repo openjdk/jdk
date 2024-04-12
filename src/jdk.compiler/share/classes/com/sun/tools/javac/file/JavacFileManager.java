@@ -193,7 +193,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     }
 
     /**
-     * Set whether or not to use ct.sym as an alternate to rt.jar.
+     * Set whether or not to use ct.sym as an alternate to the current runtime.
      */
     public void setSymbolFileEnabled(boolean b) {
         symbolFileEnabled = b;

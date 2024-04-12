@@ -3,7 +3,8 @@
 // combination with "Simplify graph".
 
 // Pretty-print Bool nodes to be shown as output slots.
-function replaceComparisonWithSign(dump_spec) {
+function replaceComparisonWithSign(propertyValues) {
+  dump_spec = propertyValues[0]
   var comparison = dump_spec.replace('[','').replace(']','')
   switch (comparison) {
     case "eq":  return "=";
@@ -23,21 +24,22 @@ editSameProperty(and([matches("name", "ConP|ConN"), matches("dump_spec", "#.*NUL
                  function(t) {return "null";});
 
 // Pretty-print CatchProj nodes.
-function catchProjShortText(con) {
+function catchProjShortText(propertyValues) {
+  con = propertyValues[0]
   switch (con) {
     case "0": return "F"; // fall-through
     case "1": return "T"; // throw
     default:  return "?";
   }
 }
-editProperty(matches("name", "CatchProj"), "con", "short_name", catchProjShortText);
+editProperty(matches("name", "CatchProj"), ["con"], "short_name", catchProjShortText);
 
 // Add short text to inlined Mach data parameters.
 editProperty(and([matches("name", "MachProj"),
                   matches("category", "data"),
                   successorOf(matches("name", "Start"))]),
-             "dump_spec", "short_name",
-             function(dump_spec) {return dump_spec;});
+             ["dump_spec"], "short_name",
+             function(dump_spec) {return dump_spec[0];});
 
 // Condense inputs in all nodes.
 var anyNode = matches("name", ".*");

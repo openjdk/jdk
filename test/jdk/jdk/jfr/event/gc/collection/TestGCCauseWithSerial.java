@@ -39,7 +39,7 @@ public class TestGCCauseWithSerial {
         String testID = "Serial";
         String[] vmFlags = {"-XX:+UseSerialGC"};
         String[] gcNames = {GCHelper.gcDefNew, GCHelper.gcSerialOld};
-        String[] gcCauses = {"Allocation Failure", "System.gc()"};
+        String[] gcCauses = {"Allocation Failure", "System.gc()", "GCLocker Initiated GC"};
         GCGarbageCollectionUtil.test(testID, vmFlags, gcNames, gcCauses);
     }
 }

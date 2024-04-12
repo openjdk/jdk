@@ -36,8 +36,11 @@
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "oops/arrayOop.hpp"
+#include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
@@ -656,12 +659,9 @@ address TemplateInterpreterGenerator::generate_return_entry_for (TosState state,
     __ load_resolved_indy_entry(cache, index);
     __ z_llgh(size, in_bytes(ResolvedIndyEntry::num_parameters_offset()), cache);
   } else {
-    const int flags_offset = in_bytes(ConstantPoolCache::base_offset() +
-                                      ConstantPoolCacheEntry::flags_offset());
-    __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
-
-    // #args is in rightmost byte of the _flags field.
-    __ z_llgc(size, Address(cache, index, flags_offset + (sizeof(size_t) - 1)));
+    assert(index_size == sizeof(u2), "Can only be u2");
+    __ load_method_entry(cache, index);
+    __ load_sized_value(size, Address(cache, in_bytes(ResolvedMethodEntry::num_parameters_offset())), sizeof(u2), false /*is_signed*/);
   }
   __ z_sllg(size, size, Interpreter::logStackElementSize); // Each argument size in bytes.
   __ z_agr(Z_esp, size);                                   // Pop arguments.
@@ -920,7 +920,7 @@ void TemplateInterpreterGenerator::lock_method(void) {
   __ add_monitor_to_stack(true, Z_ARG3, Z_ARG4, Z_ARG5); // Allocate monitor elem.
   // Store object and lock it.
   __ get_monitors(Z_tmp_1);
-  __ reg2mem_opt(object, Address(Z_tmp_1, BasicObjectLock::obj_offset_in_bytes()));
+  __ reg2mem_opt(object, Address(Z_tmp_1, BasicObjectLock::obj_offset()));
   __ lock_object(Z_tmp_1, object);
 
   BLOCK_COMMENT("} lock_method");
@@ -1118,7 +1118,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
   // Load cp cache and save it at the end of this block.
   __ z_lg(Z_R1_scratch, Address(const_method, ConstMethod::constants_offset()));
-  __ z_lg(Z_R1_scratch, Address(Z_R1_scratch, ConstantPool::cache_offset_in_bytes()));
+  __ z_lg(Z_R1_scratch, Address(Z_R1_scratch, ConstantPool::cache_offset()));
 
   // z_ijava_state->method = method;
   __ z_stg(Z_method, _z_ijava_state_neg(method), fp);
@@ -1601,7 +1601,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // Reset handle block.
   __ z_lg(Z_R1/*active_handles*/, thread_(active_handles));
-  __ clear_mem(Address(Z_R1, JNIHandleBlock::top_offset_in_bytes()), 4);
+  __ clear_mem(Address(Z_R1, JNIHandleBlock::top_offset()), 4);
 
   // Handle exceptions (exception handling will handle unlocking!).
   {

@@ -30,13 +30,21 @@
  * @modules jdk.jdeps/com.sun.tools.javap
  */
 import java.io.PrintWriter;
+import java.io.StringWriter;
 
 public class T8260403 {
 
     public static void main(String args[]) throws Exception {
-        if (com.sun.tools.javap.Main.run(new String[]{"-c", System.getProperty("test.classes") + "/InvalidSignature.class"},
-                new PrintWriter(System.out)) != 0) {
-            throw new AssertionError();
-        }
+        var sw = new StringWriter();
+        int res = com.sun.tools.javap.Main.run(
+                new String[]{"-c", System.getProperty("test.classes") + "/InvalidSignature.class"},
+                new PrintWriter(sw));
+        System.out.println(sw);
+        if (res == 0)
+            throw new AssertionError("Failure exit code expected");
+        if (sw.toString().contains("Fatal error"))
+            throw new AssertionError("Unguarded fatal error");
+        if (sw.toString().contains("error while reading constant pool"))
+            throw new AssertionError("Unguarded constant pool error");
     }
 }

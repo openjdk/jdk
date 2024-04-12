@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "cds/metaspaceShared.hpp"
 #include "include/cds.h"
 #include "logging/logLevel.hpp"
+#include "memory/allocation.hpp"
 #include "oops/array.hpp"
 #include "oops/compressedOops.hpp"
 #include "utilities/align.hpp"
@@ -48,11 +49,10 @@ class ClassLoaderData;
 class ClassPathEntry;
 class outputStream;
 
-class SharedClassPathEntry {
+class SharedClassPathEntry : public MetaspaceObj {
   enum {
     modules_image_entry,
     jar_entry,
-    signed_jar_entry,
     dir_entry,
     non_existent_entry,
     unknown_entry
@@ -69,9 +69,17 @@ class SharedClassPathEntry {
   Array<u1>*   _manifest;
 
 public:
+  SharedClassPathEntry() : _type(0), _is_module_path(false),
+                           _from_class_path_attr(false), _timestamp(0),
+                           _filesize(0), _name(nullptr), _manifest(nullptr) {}
+  static int size() {
+    static_assert(is_aligned(sizeof(SharedClassPathEntry), wordSize), "must be");
+    return (int)(sizeof(SharedClassPathEntry) / wordSize);
+  }
   void init(bool is_modules_image, bool is_module_path, ClassPathEntry* cpe, TRAPS);
   void init_as_non_existent(const char* path, TRAPS);
   void metaspace_pointers_do(MetaspaceClosure* it);
+  MetaspaceObj::Type type() const { return SharedClassPathEntryType; }
   bool validate(bool is_class_path = true) const;
 
   // The _timestamp only gets set for jar files.
@@ -81,10 +89,7 @@ public:
   bool is_dir()           const { return _type == dir_entry; }
   bool is_modules_image() const { return _type == modules_image_entry; }
   bool is_jar()           const { return _type == jar_entry; }
-  bool is_signed()        const { return _type == signed_jar_entry; }
-  void set_is_signed() {
-    _type = signed_jar_entry;
-  }
+  bool is_non_existent()  const { return _type == non_existent_entry; }
   bool from_class_path_attr() { return _from_class_path_attr; }
   time_t timestamp() const { return _timestamp; }
   const char* name() const;
@@ -106,34 +111,26 @@ public:
 };
 
 class SharedPathTable {
-  Array<u8>* _table;
-  int _size;
+  Array<SharedClassPathEntry*>* _entries;
 public:
-  SharedPathTable() : _table(nullptr), _size(0) {}
-  SharedPathTable(Array<u8>* table, int size) : _table(table), _size(size) {}
+  SharedPathTable() : _entries(nullptr) {}
+  SharedPathTable(Array<SharedClassPathEntry*>* entries) : _entries(entries) {}
 
   void dumptime_init(ClassLoaderData* loader_data, TRAPS);
   void metaspace_pointers_do(MetaspaceClosure* it);
 
   int size() {
-    return _size;
+    return _entries == nullptr ? 0 : _entries->length();
   }
   SharedClassPathEntry* path_at(int index) {
-    if (index < 0) {
-      return nullptr;
-    }
-    assert(index < _size, "sanity");
-    char* p = (char*)_table->data();
-    p += sizeof(SharedClassPathEntry) * index;
-    return (SharedClassPathEntry*)p;
+    return _entries->at(index);
   }
-  Array<u8>* table() {return _table;}
-  void set_table(Array<u8>* table) {_table = table;}
+  Array<SharedClassPathEntry*>* table() {return _entries;}
+  void set_table(Array<SharedClassPathEntry*>* table) {_entries = table;}
 };
 
 
 class FileMapRegion: private CDSFileMapRegion {
-  BitMapView bitmap_view(bool is_oopmap);
 public:
   void assert_is_heap_region() const {
     assert(_is_heap_region, "must be heap region");
@@ -160,6 +157,8 @@ public:
   bool   mapped_from_file()         const { return _mapped_from_file != 0; }
   size_t oopmap_offset()            const { assert_is_heap_region();     return _oopmap_offset; }
   size_t oopmap_size_in_bits()      const { assert_is_heap_region();     return _oopmap_size_in_bits; }
+  size_t ptrmap_offset()            const { return _ptrmap_offset; }
+  size_t ptrmap_size_in_bits()      const { return _ptrmap_size_in_bits; }
 
   void set_file_offset(size_t s)     { _file_offset = s; }
   void set_read_only(bool v)         { _read_only = v; }
@@ -169,11 +168,9 @@ public:
             bool allow_exec, int crc);
   void init_oopmap(size_t offset, size_t size_in_bits);
   void init_ptrmap(size_t offset, size_t size_in_bits);
-  BitMapView oopmap_view();
-  BitMapView ptrmap_view();
   bool has_ptrmap()                  { return _ptrmap_size_in_bits != 0; }
 
-  bool check_region_crc() const;
+  bool check_region_crc(char* base) const;
   void print(outputStream* st, int region_index);
 };
 
@@ -192,13 +189,10 @@ private:
   bool   _compact_strings;                        // value of CompactStrings
   uintx  _max_heap_size;                          // java max heap size during dumping
   CompressedOops::Mode _narrow_oop_mode;          // compressed oop encoding mode
-  int     _narrow_klass_shift;                    // save narrow klass base and shift
   bool    _compressed_oops;                       // save the flag UseCompressedOops
   bool    _compressed_class_ptrs;                 // save the flag UseCompressedClassPointers
   size_t  _cloned_vtables_offset;                 // The address of the first cloned vtable
   size_t  _serialized_data_offset;                // Data accessed using {ReadClosure,WriteClosure}::serialize()
-  address _heap_begin;                            // heap begin at dump time.
-  address _heap_end;                              // heap end at dump time.
   bool _has_non_jar_in_classpath;                 // non-jar file entry exists in classpath
   unsigned int _common_app_classpath_prefix_size; // size of the common prefix of app class paths
                                                   //    0 if no common prefix exists
@@ -215,12 +209,11 @@ private:
   //      validate_shared_path_table()
   //      validate_non_existent_class_paths()
   size_t _shared_path_table_offset;
-  int    _shared_path_table_size;
 
   jshort _app_class_paths_start_index;  // Index of first app classpath entry
   jshort _app_module_paths_start_index; // Index of first module path entry
-  jshort _num_module_paths;             // number of module path entries
   jshort _max_used_path_index;          // max path index referenced during CDS dump
+  int    _num_module_paths;             // number of module path entries
   bool   _verify_local;                 // BytecodeVerificationLocal setting
   bool   _verify_remote;                // BytecodeVerificationRemote setting
   bool   _has_platform_or_app_classes;  // Archive contains app classes
@@ -230,8 +223,11 @@ private:
   bool   _allow_archiving_with_java_agent; // setting of the AllowArchivingWithJavaAgent option
   bool   _use_optimized_module_handling;// No module-relation VM options were specified, so we can skip
                                         // some expensive operations.
-  bool   _use_full_module_graph;        // Can we use the full archived module graph?
-  size_t _ptrmap_size_in_bits;          // Size of pointer relocation bitmap
+  bool   _has_full_module_graph;        // Does this CDS archive contain the full archived module graph?
+  size_t _heap_roots_offset;            // Offset of the HeapShared::roots() object, from the bottom
+                                        // of the archived heap objects, in bytes.
+  size_t _heap_oopmap_start_pos;        // The first bit in the oopmap corresponds to this position in the heap.
+  size_t _heap_ptrmap_start_pos;        // The first bit in the ptrmap corresponds to this position in the heap.
   char* from_mapped_offset(size_t offset) const {
     return mapped_base_address() + offset;
   }
@@ -254,6 +250,7 @@ public:
   void set_base_archive_name_size(unsigned int s)           { _generic_header._base_archive_name_size = s;   }
   void set_common_app_classpath_prefix_size(unsigned int s) { _common_app_classpath_prefix_size = s;         }
 
+  bool is_static()                         const { return magic() == CDS_ARCHIVE_MAGIC; }
   size_t core_region_alignment()           const { return _core_region_alignment; }
   int obj_alignment()                      const { return _obj_alignment; }
   address narrow_oop_base()                const { return _narrow_oop_base; }
@@ -261,36 +258,35 @@ public:
   bool compact_strings()                   const { return _compact_strings; }
   uintx max_heap_size()                    const { return _max_heap_size; }
   CompressedOops::Mode narrow_oop_mode()   const { return _narrow_oop_mode; }
-  int narrow_klass_shift()                 const { return _narrow_klass_shift; }
-  address narrow_klass_base()              const { return (address)mapped_base_address(); }
   char* cloned_vtables()                   const { return from_mapped_offset(_cloned_vtables_offset); }
   char* serialized_data()                  const { return from_mapped_offset(_serialized_data_offset); }
-  address heap_begin()                     const { return _heap_begin; }
-  address heap_end()                       const { return _heap_end; }
   const char* jvm_ident()                  const { return _jvm_ident; }
   char* requested_base_address()           const { return _requested_base_address; }
   char* mapped_base_address()              const { return _mapped_base_address; }
   bool has_platform_or_app_classes()       const { return _has_platform_or_app_classes; }
   bool has_non_jar_in_classpath()          const { return _has_non_jar_in_classpath; }
-  size_t ptrmap_size_in_bits()             const { return _ptrmap_size_in_bits; }
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
+  size_t heap_roots_offset()               const { return _heap_roots_offset; }
+  size_t heap_oopmap_start_pos()           const { return _heap_oopmap_start_pos;}
+  size_t heap_ptrmap_start_pos()           const { return _heap_ptrmap_start_pos;}
   // FIXME: These should really return int
   jshort max_used_path_index()             const { return _max_used_path_index; }
   jshort app_module_paths_start_index()    const { return _app_module_paths_start_index; }
   jshort app_class_paths_start_index()     const { return _app_class_paths_start_index; }
-  jshort num_module_paths()                const { return _num_module_paths; }
+  int    num_module_paths()                const { return _num_module_paths; }
 
   void set_has_platform_or_app_classes(bool v)   { _has_platform_or_app_classes = v; }
   void set_cloned_vtables(char* p)               { set_as_offset(p, &_cloned_vtables_offset); }
   void set_serialized_data(char* p)              { set_as_offset(p, &_serialized_data_offset); }
-  void set_ptrmap_size_in_bits(size_t s)         { _ptrmap_size_in_bits = s; }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
+  void set_heap_roots_offset(size_t n)           { _heap_roots_offset = n; }
+  void set_heap_oopmap_start_pos(size_t n)       { _heap_oopmap_start_pos = n; }
+  void set_heap_ptrmap_start_pos(size_t n)       { _heap_ptrmap_start_pos = n; }
   void copy_base_archive_name(const char* name);
 
   void set_shared_path_table(SharedPathTable table) {
     set_as_offset((char*)table.table(), &_shared_path_table_offset);
-    _shared_path_table_size = table.size();
   }
 
   void set_requested_base(char* b) {
@@ -299,8 +295,8 @@ public:
   }
 
   SharedPathTable shared_path_table() const {
-    return SharedPathTable((Array<u8>*)from_mapped_offset(_shared_path_table_offset),
-                           _shared_path_table_size);
+    return SharedPathTable((Array<SharedClassPathEntry*>*)
+                           from_mapped_offset(_shared_path_table_offset));
   }
 
   bool validate();
@@ -338,10 +334,7 @@ private:
   const char*    _base_archive_name;
   FileMapHeader* _header;
 
-  // TODO: Probably change the following to be non-static
   static SharedPathTable       _shared_path_table;
-  static SharedPathTable       _saved_shared_path_table;
-  static Array<u8>*            _saved_shared_path_table_array;  // remember the table array for cleanup
   static bool                  _validating_shared_path_table;
 
   // FileMapHeader describes the shared space data in the file to be
@@ -361,13 +354,11 @@ public:
   static SharedPathTable shared_path_table() {
     return _shared_path_table;
   }
-  static SharedPathTable saved_shared_path_table() {
-    assert(_saved_shared_path_table.size() >= 0, "Sanity check");
-    return _saved_shared_path_table;
-  }
 
   bool init_from_file(int fd);
-  static void metaspace_pointers_do(MetaspaceClosure* it, bool use_copy = true);
+  static void metaspace_pointers_do(MetaspaceClosure* it) {
+    _shared_path_table.metaspace_pointers_do(it);
+  }
 
   void log_paths(const char* msg, int start_idx, int end_idx);
 
@@ -387,9 +378,10 @@ public:
   address narrow_oop_base()    const { return header()->narrow_oop_base(); }
   int     narrow_oop_shift()   const { return header()->narrow_oop_shift(); }
   uintx   max_heap_size()      const { return header()->max_heap_size(); }
-  address narrow_klass_base()  const { return header()->narrow_klass_base(); }
-  int     narrow_klass_shift() const { return header()->narrow_klass_shift(); }
+  size_t  heap_roots_offset()  const { return header()->heap_roots_offset(); }
   size_t  core_region_alignment() const { return header()->core_region_alignment(); }
+  size_t  heap_oopmap_start_pos() const { return header()->heap_oopmap_start_pos(); }
+  size_t  heap_ptrmap_start_pos() const { return header()->heap_ptrmap_start_pos(); }
 
   CompressedOops::Mode narrow_oop_mode()      const { return header()->narrow_oop_mode(); }
   jshort app_module_paths_start_index()       const { return header()->app_module_paths_start_index(); }
@@ -446,7 +438,8 @@ public:
   void  write_header();
   void  write_region(int region, char* base, size_t size,
                      bool read_only, bool allow_exec);
-  char* write_bitmap_region(const CHeapBitMap* ptrmap, ArchiveHeapInfo* heap_info,
+  size_t remove_bitmap_leading_zeros(CHeapBitMap* map);
+  char* write_bitmap_region(const CHeapBitMap* rw_ptrmap, const CHeapBitMap* ro_ptrmap, ArchiveHeapInfo* heap_info,
                             size_t &size_in_bytes);
   size_t write_heap_region(ArchiveHeapInfo* heap_info);
   void  write_bytes(const void* buffer, size_t count);
@@ -477,8 +470,6 @@ public:
   }
 
   static void allocate_shared_path_table(TRAPS);
-  static void copy_shared_path_table(ClassLoaderData* loader_data, TRAPS);
-  static void clone_shared_path_table(TRAPS);
   static int add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS);
   static void check_nonempty_dir_in_shared_path_table();
   bool check_module_paths();
@@ -492,6 +483,7 @@ public:
   static void record_non_existent_class_path_entry(const char* path);
 
 #if INCLUDE_JVMTI
+  // Caller needs a ResourceMark because parts of the returned cfs are resource-allocated.
   static ClassFileStream* open_stream_for_jvmti(InstanceKlass* ik, Handle class_loader, TRAPS);
 #endif
 
@@ -530,9 +522,11 @@ public:
     return header()->region_at(i);
   }
 
-  void print(outputStream* st) {
-    header()->print(st);
-  }
+  BitMapView bitmap_view(int region_index, bool is_oopmap);
+  BitMapView oopmap_view(int region_index);
+  BitMapView ptrmap_view(int region_index);
+
+  void print(outputStream* st) const;
 
   const char* vm_version() {
     return header()->jvm_ident();
@@ -569,7 +563,6 @@ public:
 public:
   address heap_region_dumptime_address() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   address heap_region_requested_address() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
-  address heap_region_mapped_address() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   narrowOop encoded_heap_region_dumptime_address();
 
 private:

@@ -44,14 +44,15 @@ ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause) :
   _tracer(_heap->tracer()) {
   assert(!ShenandoahGCPhase::is_current_phase_valid(), "No current GC phase");
 
+  _heap->shenandoah_policy()->record_collection_cause(cause);
   _heap->set_gc_cause(cause);
   _timer->register_gc_start();
   _tracer->report_gc_start(cause, _timer->gc_start());
   _heap->trace_heap_before_gc(_tracer);
 
-  _heap->shenandoah_policy()->record_cycle_start();
   _heap->heuristics()->record_cycle_start();
   _trace_cycle.initialize(_heap->cycle_memory_manager(), cause,
+          "end of GC cycle",
           /* allMemoryPoolsAffected */    true,
           /* recordGCBeginTime = */       true,
           /* recordPreGCUsage = */        true,
@@ -73,9 +74,10 @@ ShenandoahGCSession::~ShenandoahGCSession() {
   _heap->set_gc_cause(GCCause::_no_gc);
 }
 
-ShenandoahGCPauseMark::ShenandoahGCPauseMark(uint gc_id, SvcGCMarker::reason_type type) :
+ShenandoahGCPauseMark::ShenandoahGCPauseMark(uint gc_id, const char* notification_message, SvcGCMarker::reason_type type) :
   _heap(ShenandoahHeap::heap()), _gc_id_mark(gc_id), _svc_gc_mark(type), _is_gc_active_mark() {
   _trace_pause.initialize(_heap->stw_memory_manager(), _heap->gc_cause(),
+          notification_message,
           /* allMemoryPoolsAffected */    true,
           /* recordGCBeginTime = */       true,
           /* recordPreGCUsage = */        false,

@@ -36,6 +36,7 @@ class VM_Version : public Abstract_VM_Version {
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 
   static void initialize_cpu_information(void);
+  static bool profile_all_receivers_at_type_check() { return false; }
 };
 
 #endif // CPU_ZERO_VM_VERSION_ZERO_HPP

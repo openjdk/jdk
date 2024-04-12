@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,15 +62,19 @@ package test.java.time.format;
 import static java.time.temporal.ChronoField.AMPM_OF_DAY;
 import static java.time.temporal.ChronoField.EPOCH_DAY;
 import static java.time.temporal.ChronoField.HOUR_OF_AMPM;
+import static java.time.temporal.ChronoField.HOUR_OF_DAY;
 import static java.time.temporal.ChronoField.INSTANT_SECONDS;
 import static java.time.temporal.ChronoField.MICRO_OF_SECOND;
 import static java.time.temporal.ChronoField.MILLI_OF_SECOND;
+import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
 import static java.time.temporal.ChronoField.NANO_OF_SECOND;
 import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 import static java.time.temporal.ChronoField.SECOND_OF_DAY;
 import static java.util.Locale.US;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 
+import java.text.ParsePosition;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -80,7 +84,9 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
+import java.time.format.SignStyle;
 import java.time.temporal.TemporalAccessor;
+import java.util.Locale;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -88,7 +94,7 @@ import org.testng.annotations.Test;
 /**
  * @test
  * @summary Test parsing of edge cases.
- * @bug 8223773 8272473
+ * @bug 8223773 8272473 8319640
  */
 public class TestDateTimeParsing {
 
@@ -236,5 +242,31 @@ public class TestDateTimeParsing {
                 throw e;
             }
         }
+    }
+
+    // Checks ::toFormat().parseObject(text, pos) do not throw DateTimeException
+    @Test
+    public void test_toFormat_2arg_null_return_on_DateTimeException() {
+        var f = new DateTimeFormatterBuilder()
+            .appendValue(HOUR_OF_DAY, 2, 2, SignStyle.NOT_NEGATIVE)
+            .optionalStart()
+            .appendLiteral(':')
+            .appendValue(MINUTE_OF_HOUR, 2, 2, SignStyle.NOT_NEGATIVE)
+            .optionalEnd()
+            .optionalStart()
+            .appendOffset("+HHmm", "Z")
+            .optionalEnd()
+            .toFormatter(Locale.ROOT)
+            .toFormat();
+        assertNull(f.parseObject("17-30", new ParsePosition(0)));
+    }
+
+    // Checks ::toFormat().parseObject(text, pos) do not throw IOOBE
+    @Test
+    public void test_toFormat_2arg_null_return_on_IOOBE() {
+        var date = "2023-11-13";
+        assertNull(DateTimeFormatter.ISO_LOCAL_DATE
+                .toFormat()
+                .parseObject(date, new ParsePosition(date.length() + 1)));
     }
 }

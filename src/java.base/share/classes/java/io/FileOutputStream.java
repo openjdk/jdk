@@ -208,6 +208,7 @@ public class FileOutputStream extends OutputStream
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
      * @since 1.4
      */
+    @SuppressWarnings("this-escape")
     public FileOutputStream(File file, boolean append)
         throws FileNotFoundException
     {
@@ -254,6 +255,7 @@ public class FileOutputStream extends OutputStream
      *               write access to the file descriptor
      * @see        java.lang.SecurityManager#checkWrite(java.io.FileDescriptor)
      */
+    @SuppressWarnings("this-escape")
     public FileOutputStream(FileDescriptor fdObj) {
         @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
@@ -386,9 +388,12 @@ public class FileOutputStream extends OutputStream
      * Subclasses requiring that resource cleanup take place after a stream becomes
      * unreachable should use the {@link java.lang.ref.Cleaner} mechanism.
      *
-     * @throws     IOException  if an I/O error occurs.
+     * <p>
+     * If this stream has an associated channel then this method will close the
+     * channel, which in turn will close this stream. Subclasses that override
+     * this method should be prepared to handle possible reentrant invocation.
      *
-     * @revised 1.4
+     * @throws     IOException  if an I/O error occurs.
      */
     @Override
     public void close() throws IOException {

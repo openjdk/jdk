@@ -24,15 +24,14 @@
 
 #include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
+#include "code/compiledIC.hpp"
 #include "code/debugInfoRec.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/jniHandles.hpp"
@@ -254,10 +253,7 @@ bool SharedRuntime::is_wide_vector(int size) {
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                         VMRegPair *regs,
-                                        VMRegPair *regs2,
                                         int total_args_passed) {
-  assert(regs2 == nullptr, "not needed on arm");
-
   int slot = 0;
   int ireg = 0;
 #ifdef __ABI_HARD__
@@ -444,7 +440,6 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
     }
   }
 
-  if (slot & 1) slot++;
   return slot;
 }
 
@@ -630,12 +625,9 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   Label skip_fixup;
   const Register receiver       = R0;
   const Register holder_klass   = Rtemp; // XXX should be OK for C2 but not 100% sure
-  const Register receiver_klass = R4;
 
-  __ load_klass(receiver_klass, receiver);
-  __ ldr(holder_klass, Address(Ricklass, CompiledICHolder::holder_klass_offset()));
-  __ ldr(Rmethod, Address(Ricklass, CompiledICHolder::holder_metadata_offset()));
-  __ cmp(receiver_klass, holder_klass);
+  __ ic_check(1 /* end_alignment */);
+  __ ldr(Rmethod, Address(Ricklass, CompiledICData::speculated_method_offset()));
 
   __ ldr(Rtemp, Address(Rmethod, Method::code_offset()), eq);
   __ cmp(Rtemp, 0, eq);
@@ -795,7 +787,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     out_sig_bt[argc++] = in_sig_bt[i];
   }
 
-  int out_arg_slots = c_calling_convention(out_sig_bt, out_regs, nullptr, total_c_args);
+  int out_arg_slots = c_calling_convention(out_sig_bt, out_regs, total_c_args);
   int stack_slots = SharedRuntime::out_preserve_stack_slots() + out_arg_slots;
   // Since object arguments need to be wrapped, we must preserve space
   // for those object arguments which come in registers (GPR_PARAMS maximum)
@@ -823,20 +815,13 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Unverified entry point
   address start = __ pc();
 
-  // Inline cache check, same as in C1_MacroAssembler::inline_cache_check()
   const Register receiver = R0; // see receiverOpr()
-  __ load_klass(Rtemp, receiver);
-  __ cmp(Rtemp, Ricklass);
-  Label verified;
-
-  __ b(verified, eq); // jump over alignment no-ops too
-  __ jump(SharedRuntime::get_ic_miss_stub(), relocInfo::runtime_call_type, Rtemp);
-  __ align(CodeEntryAlignment);
+  __ verify_oop(receiver);
+  // Inline cache check
+  __ ic_check(CodeEntryAlignment /* end_alignment */);
 
   // Verified entry point
-  __ bind(verified);
   int vep_offset = __ pc() - start;
-
 
   if ((InlineObjectHash && method->intrinsic_id() == vmIntrinsics::_hashCode) || (method->intrinsic_id() == vmIntrinsics::_identityHashCode)) {
     // Object.hashCode, System.identityHashCode can pull the hashCode from the header word
@@ -1153,35 +1138,41 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Remember the handle for the unlocking code
     __ mov(sync_handle, R1);
 
-    const Register mark = tmp;
-    // On MP platforms the next load could return a 'stale' value if the memory location has been modified by another thread.
-    // That would be acceptable as either CAS or slow case path is taken in that case
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      log_trace(fastlock)("SharedRuntime lock fast");
+      __ lightweight_lock(sync_obj /* object */, disp_hdr /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
+                          0x7 /* savemask */, slow_lock);
+      // Fall through to lock_done
+    } else if (LockingMode == LM_LEGACY) {
+      const Register mark = tmp;
+      // On MP platforms the next load could return a 'stale' value if the memory location has been modified by another thread.
+      // That would be acceptable as either CAS or slow case path is taken in that case
 
-    __ ldr(mark, Address(sync_obj, oopDesc::mark_offset_in_bytes()));
-    __ sub(disp_hdr, FP, lock_slot_fp_offset);
-    __ tst(mark, markWord::unlocked_value);
-    __ b(fast_lock, ne);
+      __ ldr(mark, Address(sync_obj, oopDesc::mark_offset_in_bytes()));
+      __ sub(disp_hdr, FP, lock_slot_fp_offset);
+      __ tst(mark, markWord::unlocked_value);
+      __ b(fast_lock, ne);
 
-    // Check for recursive lock
-    // See comments in InterpreterMacroAssembler::lock_object for
-    // explanations on the fast recursive locking check.
-    // Check independently the low bits and the distance to SP
-    // -1- test low 2 bits
-    __ movs(Rtemp, AsmOperand(mark, lsl, 30));
-    // -2- test (hdr - SP) if the low two bits are 0
-    __ sub(Rtemp, mark, SP, eq);
-    __ movs(Rtemp, AsmOperand(Rtemp, lsr, exact_log2(os::vm_page_size())), eq);
-    // If still 'eq' then recursive locking OK
-    // set to zero if recursive lock, set to non zero otherwise (see discussion in JDK-8267042)
-    __ str(Rtemp, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
-    __ b(lock_done, eq);
-    __ b(slow_lock);
+      // Check for recursive lock
+      // See comments in InterpreterMacroAssembler::lock_object for
+      // explanations on the fast recursive locking check.
+      // Check independently the low bits and the distance to SP
+      // -1- test low 2 bits
+      __ movs(Rtemp, AsmOperand(mark, lsl, 30));
+      // -2- test (hdr - SP) if the low two bits are 0
+      __ sub(Rtemp, mark, SP, eq);
+      __ movs(Rtemp, AsmOperand(Rtemp, lsr, exact_log2(os::vm_page_size())), eq);
+      // If still 'eq' then recursive locking OK
+      // set to zero if recursive lock, set to non zero otherwise (see discussion in JDK-8267042)
+      __ str(Rtemp, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
+      __ b(lock_done, eq);
+      __ b(slow_lock);
 
-    __ bind(fast_lock);
-    __ str(mark, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
+      __ bind(fast_lock);
+      __ str(mark, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
 
-    __ cas_for_lock_acquire(mark, disp_hdr, sync_obj, Rtemp, slow_lock);
-
+      __ cas_for_lock_acquire(mark, disp_hdr, sync_obj, Rtemp, slow_lock);
+    }
     __ bind(lock_done);
   }
 
@@ -1234,14 +1225,21 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   Label slow_unlock, unlock_done;
   if (method->is_synchronized()) {
-    __ ldr(sync_obj, Address(sync_handle));
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      log_trace(fastlock)("SharedRuntime unlock fast");
+      __ lightweight_unlock(sync_obj, R2 /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
+                            7 /* savemask */, slow_unlock);
+      // Fall through
+    } else if (LockingMode == LM_LEGACY) {
+      // See C1_MacroAssembler::unlock_object() for more comments
+      __ ldr(sync_obj, Address(sync_handle));
 
-    // See C1_MacroAssembler::unlock_object() for more comments
-    __ ldr(R2, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
-    __ cbz(R2, unlock_done);
+      // See C1_MacroAssembler::unlock_object() for more comments
+      __ ldr(R2, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
+      __ cbz(R2, unlock_done);
 
-    __ cas_for_lock_release(disp_hdr, R2, sync_obj, Rtemp, slow_unlock);
-
+      __ cas_for_lock_release(disp_hdr, R2, sync_obj, Rtemp, slow_unlock);
+    }
     __ bind(unlock_done);
   }
 
@@ -1249,7 +1247,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ ldr(LR, Address(Rthread, JavaThread::active_handles_offset()));
   __ reset_last_Java_frame(Rtemp); // sets Rtemp to 0 on 32-bit ARM
 
-  __ str_32(Rtemp, Address(LR, JNIHandleBlock::top_offset_in_bytes()));
+  __ str_32(Rtemp, Address(LR, JNIHandleBlock::top_offset()));
   if (CheckJNICalls) {
     __ str(__ zero_register(Rtemp), Address(Rthread, JavaThread::pending_jni_exception_check_fn_offset()));
   }
@@ -1437,7 +1435,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ mov(Rublock, R0);
 
   // Reload Rkind from the UnrollBlock (might have changed)
-  __ ldr_s32(Rkind, Address(Rublock, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()));
+  __ ldr_s32(Rkind, Address(Rublock, Deoptimization::UnrollBlock::unpack_kind_offset()));
   Label noException;
   __ cmp_32(Rkind, Deoptimization::Unpack_exception);   // Was exception pending?
   __ b(noException, ne);
@@ -1471,9 +1469,9 @@ void SharedRuntime::generate_deopt_blob() {
   __ add(SP, SP, RegisterSaver::reg_save_size * wordSize);
 
   // Set initial stack state before pushing interpreter frames
-  __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::size_of_deoptimized_frame_offset_in_bytes()));
-  __ ldr(R2, Address(Rublock, Deoptimization::UnrollBlock::frame_pcs_offset_in_bytes()));
-  __ ldr(R3, Address(Rublock, Deoptimization::UnrollBlock::frame_sizes_offset_in_bytes()));
+  __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::size_of_deoptimized_frame_offset()));
+  __ ldr(R2, Address(Rublock, Deoptimization::UnrollBlock::frame_pcs_offset()));
+  __ ldr(R3, Address(Rublock, Deoptimization::UnrollBlock::frame_sizes_offset()));
 
   __ add(SP, SP, Rtemp);
 
@@ -1489,11 +1487,11 @@ void SharedRuntime::generate_deopt_blob() {
   // propagated to the caller of the deoptimized method. Need to get the pc
   // from the caller in LR and restore FP.
   __ ldr(LR, Address(R2, 0));
-  __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
-  __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
+  __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset()));
+  __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::total_frame_sizes_offset()));
   __ arm_stack_overflow_check(R8, Rtemp);
 #endif
-  __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::number_of_frames_offset_in_bytes()));
+  __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::number_of_frames_offset()));
 
   // Pick up the initial fp we should save
   // XXX Note: was ldr(FP, Address(FP));
@@ -1505,9 +1503,9 @@ void SharedRuntime::generate_deopt_blob() {
   // Hence, ldr(FP, Address(FP)) is probably not correct. For x86,
   // Deoptimization::fetch_unroll_info computes the right FP value and
   // stores it in Rublock.initial_info. This has been activated for ARM.
-  __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
+  __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset()));
 
-  __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::caller_adjustment_offset_in_bytes()));
+  __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::caller_adjustment_offset()));
   __ mov(Rsender, SP);
   __ sub(SP, SP, Rtemp);
 
@@ -1548,7 +1546,7 @@ void SharedRuntime::generate_deopt_blob() {
 #ifdef ASSERT
   // Reload Rkind from the UnrollBlock and check that it was not overwritten (Rkind is not callee-saved)
   { Label L;
-    __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()));
+    __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::unpack_kind_offset()));
     __ cmp_32(Rkind, Rtemp);
     __ b(L, eq);
     __ stop("Rkind was overwritten");
@@ -1658,7 +1656,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
 #ifdef ASSERT
   { Label L;
-    __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()));
+    __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::unpack_kind_offset()));
     __ cmp_32(Rtemp, Deoptimization::Unpack_uncommon_trap);
     __ b(L, eq);
     __ stop("SharedRuntime::generate_uncommon_trap_blob: expected Unpack_uncommon_trap");
@@ -1668,9 +1666,9 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
 
   // Set initial stack state before pushing interpreter frames
-  __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::size_of_deoptimized_frame_offset_in_bytes()));
-  __ ldr(R2, Address(Rublock, Deoptimization::UnrollBlock::frame_pcs_offset_in_bytes()));
-  __ ldr(R3, Address(Rublock, Deoptimization::UnrollBlock::frame_sizes_offset_in_bytes()));
+  __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::size_of_deoptimized_frame_offset()));
+  __ ldr(R2, Address(Rublock, Deoptimization::UnrollBlock::frame_pcs_offset()));
+  __ ldr(R3, Address(Rublock, Deoptimization::UnrollBlock::frame_sizes_offset()));
 
   __ add(SP, SP, Rtemp);
 
@@ -1686,16 +1684,16 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // propagated to the caller of the deoptimized method. Need to get the pc
   // from the caller in LR and restore FP.
   __ ldr(LR, Address(R2, 0));
-  __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
-  __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
+  __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset()));
+  __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::total_frame_sizes_offset()));
   __ arm_stack_overflow_check(R8, Rtemp);
 #endif
-  __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::number_of_frames_offset_in_bytes()));
-  __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::caller_adjustment_offset_in_bytes()));
+  __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::number_of_frames_offset()));
+  __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::caller_adjustment_offset()));
   __ mov(Rsender, SP);
   __ sub(SP, SP, Rtemp);
   //  __ ldr(FP, Address(FP));
-  __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
+  __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset()));
 
   // Push interpreter frames in a loop
   Label loop;

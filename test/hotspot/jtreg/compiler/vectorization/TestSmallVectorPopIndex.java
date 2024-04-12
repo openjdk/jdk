@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 * @bug 8287517
 * @summary Test bug fix for JDK-8287517 related to fuzzer test failure in x86_64
 * @requires vm.compiler2.enabled
-* @run main/othervm -Xcomp -XX:CompileOnly=compiler/vectorization/TestSmallVectorPopIndex.test -XX:MaxVectorSize=8 compiler.vectorization.TestSmallVectorPopIndex
+* @run main/othervm -Xcomp -XX:CompileOnly=compiler.vectorization.TestSmallVectorPopIndex::test -XX:MaxVectorSize=8 compiler.vectorization.TestSmallVectorPopIndex
 */
 
 package compiler.vectorization;

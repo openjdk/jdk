@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 #define SHARE_GC_G1_VMSTRUCTS_G1_HPP
 
 #include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/heapRegion.hpp"
-#include "gc/g1/heapRegionManager.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
+#include "gc/g1/g1HeapRegionManager.hpp"
 #include "utilities/macros.hpp"
 
 #define VM_STRUCTS_G1GC(nonstatic_field,                                      \
@@ -35,12 +35,13 @@
                         static_field)                                         \
                                                                               \
   static_field(HeapRegion, GrainBytes,        size_t)                         \
-  static_field(HeapRegion, LogOfHRGrainBytes, int)                            \
+  static_field(HeapRegion, LogOfHRGrainBytes, uint)                           \
                                                                               \
   nonstatic_field(HeapRegion, _type,           HeapRegionType)                \
   nonstatic_field(HeapRegion, _bottom,         HeapWord* const)               \
   nonstatic_field(HeapRegion, _top,            HeapWord* volatile)            \
   nonstatic_field(HeapRegion, _end,            HeapWord* const)               \
+  volatile_nonstatic_field(HeapRegion, _pinned_object_count, size_t)          \
                                                                               \
   nonstatic_field(HeapRegionType, _tag,       HeapRegionType::Tag volatile)   \
                                                                               \
@@ -78,7 +79,6 @@
   declare_constant(HeapRegionType::EdenTag)                                   \
   declare_constant(HeapRegionType::SurvTag)                                   \
   declare_constant(HeapRegionType::HumongousMask)                             \
-  declare_constant(HeapRegionType::PinnedMask)                                \
   declare_constant(HeapRegionType::StartsHumongousTag)                        \
   declare_constant(HeapRegionType::ContinuesHumongousTag)                     \
   declare_constant(HeapRegionType::OldMask)                                   \

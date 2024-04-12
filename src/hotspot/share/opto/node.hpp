@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ class CastDDNode;
 class CastVVNode;
 class CastIINode;
 class CastLLNode;
+class CastPPNode;
 class CatchNode;
 class CatchProjNode;
 class CheckCastPPNode;
@@ -70,6 +71,7 @@ class CodeBuffer;
 class ConstraintCastNode;
 class ConNode;
 class ConINode;
+class ConvertNode;
 class CompareAndSwapNode;
 class CompareAndExchangeNode;
 class CountedLoopNode;
@@ -129,8 +131,13 @@ class MoveNode;
 class MulNode;
 class MultiNode;
 class MultiBranchNode;
+class NegNode;
+class NegVNode;
 class NeverBranchNode;
 class Opaque1Node;
+class OpaqueLoopInitNode;
+class OpaqueLoopStrideNode;
+class Opaque4Node;
 class OuterStripMinedLoopNode;
 class OuterStripMinedLoopEndNode;
 class Node;
@@ -139,6 +146,7 @@ class Node_List;
 class Node_Stack;
 class OopMap;
 class ParmNode;
+class ParsePredicateNode;
 class PCTableNode;
 class PhaseCCP;
 class PhaseGVN;
@@ -151,11 +159,13 @@ class Pipeline;
 class PopulateIndexNode;
 class ProjNode;
 class RangeCheckNode;
+class ReductionNode;
 class RegMask;
 class RegionNode;
 class RootNode;
 class SafePointNode;
 class SafePointScalarObjectNode;
+class SafePointScalarMergeNode;
 class StartNode;
 class State;
 class StoreNode;
@@ -164,6 +174,7 @@ class SubTypeCheckNode;
 class Type;
 class TypeNode;
 class UnlockNode;
+class UnorderedReductionNode;
 class VectorNode;
 class LoadVectorNode;
 class LoadVectorMaskedNode;
@@ -171,6 +182,7 @@ class StoreVectorMaskedNode;
 class LoadVectorGatherNode;
 class StoreVectorNode;
 class StoreVectorScatterNode;
+class VerifyVectorAlignmentNode;
 class VectorMaskCmpNode;
 class VectorUnboxNode;
 class VectorSet;
@@ -179,6 +191,7 @@ class ShiftVNode;
 class ExpandVNode;
 class CompressVNode;
 class CompressMNode;
+class C2_MacroAssembler;
 
 
 #ifndef OPTO_DU_ITERATOR_ASSERT
@@ -198,6 +211,8 @@ typedef uint   DUIterator;
 typedef Node** DUIterator_Fast;
 typedef Node** DUIterator_Last;
 #endif
+
+typedef ResizeableResourceHashtable<Node*, Node*, AnyObj::RESOURCE_AREA, mtCompiler> OrigToNewHashtable;
 
 // Node Sentinel
 #define NodeSentinel (Node*)-1
@@ -441,7 +456,7 @@ protected:
   }
   // Light version of set_req() to init inputs after node creation.
   void init_req( uint i, Node *n ) {
-    assert( i == 0 && this == n ||
+    assert( (i == 0 && this == n) ||
             is_not_dead(n), "can not use dead node");
     assert( i < _cnt, "oob");
     assert( !VerifyHashTableKeys || _hash_lock == 0,
@@ -666,6 +681,7 @@ public:
             DEFINE_CLASS_ID(LongCountedLoopEnd,   BaseCountedLoopEnd, 1)
           DEFINE_CLASS_ID(RangeCheck,             If, 1)
           DEFINE_CLASS_ID(OuterStripMinedLoopEnd, If, 2)
+          DEFINE_CLASS_ID(ParsePredicate,         If, 3)
         DEFINE_CLASS_ID(NeverBranch, MultiBranch, 2)
       DEFINE_CLASS_ID(Start,       Multi, 2)
       DEFINE_CLASS_ID(MemBar,      Multi, 3)
@@ -702,6 +718,7 @@ public:
         DEFINE_CLASS_ID(CastFF, ConstraintCast, 3)
         DEFINE_CLASS_ID(CastDD, ConstraintCast, 4)
         DEFINE_CLASS_ID(CastVV, ConstraintCast, 5)
+        DEFINE_CLASS_ID(CastPP, ConstraintCast, 6)
       DEFINE_CLASS_ID(CMove, Type, 3)
       DEFINE_CLASS_ID(SafePointScalarObject, Type, 4)
       DEFINE_CLASS_ID(DecodeNarrowPtr, Type, 5)
@@ -718,8 +735,13 @@ public:
         DEFINE_CLASS_ID(CompressV, Vector, 4)
         DEFINE_CLASS_ID(ExpandV, Vector, 5)
         DEFINE_CLASS_ID(CompressM, Vector, 6)
+        DEFINE_CLASS_ID(Reduction, Vector, 7)
+          DEFINE_CLASS_ID(UnorderedReduction, Reduction, 0)
+        DEFINE_CLASS_ID(NegV, Vector, 8)
       DEFINE_CLASS_ID(Con, Type, 8)
           DEFINE_CLASS_ID(ConI, Con, 0)
+      DEFINE_CLASS_ID(SafePointScalarMerge, Type, 9)
+      DEFINE_CLASS_ID(Convert, Type, 10)
 
 
     DEFINE_CLASS_ID(Proj,  Node, 3)
@@ -770,10 +792,14 @@ public:
     DEFINE_CLASS_ID(ClearArray, Node, 14)
     DEFINE_CLASS_ID(Halt,     Node, 15)
     DEFINE_CLASS_ID(Opaque1,  Node, 16)
-    DEFINE_CLASS_ID(Move,     Node, 17)
-    DEFINE_CLASS_ID(LShift,   Node, 18)
+      DEFINE_CLASS_ID(OpaqueLoopInit, Opaque1, 0)
+      DEFINE_CLASS_ID(OpaqueLoopStride, Opaque1, 1)
+    DEFINE_CLASS_ID(Opaque4,  Node, 17)
+    DEFINE_CLASS_ID(Move,     Node, 18)
+    DEFINE_CLASS_ID(LShift,   Node, 19)
+    DEFINE_CLASS_ID(Neg,      Node, 20)
 
-    _max_classes  = ClassMask_LShift
+    _max_classes  = ClassMask_Neg
   };
   #undef DEFINE_CLASS_ID
 
@@ -823,9 +849,9 @@ protected:
   }
 
 public:
-  const juint class_id() const { return _class_id; }
+  juint class_id() const { return _class_id; }
 
-  const juint flags() const { return _flags; }
+  juint flags() const { return _flags; }
 
   void add_flag(juint fl) { init_flags(fl); }
 
@@ -873,10 +899,12 @@ public:
   DEFINE_CLASS_QUERY(CastII)
   DEFINE_CLASS_QUERY(CastLL)
   DEFINE_CLASS_QUERY(ConI)
+  DEFINE_CLASS_QUERY(CastPP)
   DEFINE_CLASS_QUERY(ConstraintCast)
   DEFINE_CLASS_QUERY(ClearArray)
   DEFINE_CLASS_QUERY(CMove)
   DEFINE_CLASS_QUERY(Cmp)
+  DEFINE_CLASS_QUERY(Convert)
   DEFINE_CLASS_QUERY(CountedLoop)
   DEFINE_CLASS_QUERY(CountedLoopEnd)
   DEFINE_CLASS_QUERY(DecodeNarrowPtr)
@@ -933,23 +961,32 @@ public:
   DEFINE_CLASS_QUERY(Mul)
   DEFINE_CLASS_QUERY(Multi)
   DEFINE_CLASS_QUERY(MultiBranch)
+  DEFINE_CLASS_QUERY(Neg)
+  DEFINE_CLASS_QUERY(NegV)
   DEFINE_CLASS_QUERY(NeverBranch)
   DEFINE_CLASS_QUERY(Opaque1)
+  DEFINE_CLASS_QUERY(Opaque4)
+  DEFINE_CLASS_QUERY(OpaqueLoopInit)
+  DEFINE_CLASS_QUERY(OpaqueLoopStride)
   DEFINE_CLASS_QUERY(OuterStripMinedLoop)
   DEFINE_CLASS_QUERY(OuterStripMinedLoopEnd)
   DEFINE_CLASS_QUERY(Parm)
+  DEFINE_CLASS_QUERY(ParsePredicate)
   DEFINE_CLASS_QUERY(PCTable)
   DEFINE_CLASS_QUERY(Phi)
   DEFINE_CLASS_QUERY(Proj)
+  DEFINE_CLASS_QUERY(Reduction)
   DEFINE_CLASS_QUERY(Region)
   DEFINE_CLASS_QUERY(Root)
   DEFINE_CLASS_QUERY(SafePoint)
   DEFINE_CLASS_QUERY(SafePointScalarObject)
+  DEFINE_CLASS_QUERY(SafePointScalarMerge)
   DEFINE_CLASS_QUERY(Start)
   DEFINE_CLASS_QUERY(Store)
   DEFINE_CLASS_QUERY(Sub)
   DEFINE_CLASS_QUERY(SubTypeCheck)
   DEFINE_CLASS_QUERY(Type)
+  DEFINE_CLASS_QUERY(UnorderedReduction)
   DEFINE_CLASS_QUERY(Vector)
   DEFINE_CLASS_QUERY(VectorMaskCmp)
   DEFINE_CLASS_QUERY(VectorUnbox)
@@ -1018,6 +1055,11 @@ public:
   bool is_scheduled() const { return (_flags & Flag_is_scheduled) != 0; }
 
   bool for_post_loop_opts_igvn() const { return (_flags & Flag_for_post_loop_opts_igvn) != 0; }
+
+  // Is 'n' possibly a loop entry (i.e. a Parse Predicate projection)?
+  static bool may_be_loop_entry(Node* n) {
+    return n != nullptr && n->is_IfProj() && n->in(0)->is_ParsePredicate();
+  }
 
 //----------------- Optimization
 
@@ -1102,7 +1144,21 @@ public:
   // Set control or add control as precedence edge
   void ensure_control_or_add_prec(Node* c);
 
-//----------------- Code Generation
+  // Visit boundary uses of the node and apply a callback function for each.
+  // Recursively traverse uses, stopping and applying the callback when
+  // reaching a boundary node, defined by is_boundary. Note: the function
+  // definition appears after the complete type definition of Node_List.
+  template <typename Callback, typename Check>
+  void visit_uses(Callback callback, Check is_boundary) const;
+
+  // Returns a clone of the current node that's pinned (if the current node is not) for nodes found in array accesses
+  // (Load and range check CastII nodes).
+  // This is used when an array access is made dependent on 2 or more range checks (range check smearing or Loop Predication).
+  virtual Node* pin_array_access_node() const {
+    return nullptr;
+  }
+
+  //----------------- Code Generation
 
   // Ideal register class for Matching.  Zero means unmatched instruction
   // (these are cloned instead of converted to machine nodes).
@@ -1126,9 +1182,8 @@ public:
 
   // Print as assembly
   virtual void format( PhaseRegAlloc *, outputStream* st = tty ) const;
-  // Emit bytes starting at parameter 'ptr'
-  // Bump 'ptr' by the number of output bytes
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
+  // Emit bytes using C2_MacroAssembler
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   // Size of instruction in bytes
   virtual uint size(PhaseRegAlloc *ra_) const;
 
@@ -1196,12 +1251,16 @@ public:
   // Whether this is a memory-writing machine node.
   bool is_memory_writer() const { return is_Mach() && bottom_type()->has_memory(); }
 
+  // Whether this is a memory phi node
+  bool is_memory_phi() const { return is_Phi() && bottom_type() == Type::MEMORY; }
+
 //----------------- Printing, etc
 #ifndef PRODUCT
  public:
   Node* find(int idx, bool only_ctrl = false); // Search the graph for the given idx.
   Node* find_ctrl(int idx); // Search control ancestors for the given idx.
-  void dump_bfs(const int max_distance, Node* target, const char* options) const; // Print BFS traversal
+  void dump_bfs(const int max_distance, Node* target, const char* options, outputStream* st) const;
+  void dump_bfs(const int max_distance, Node* target, const char* options) const; // directly to tty
   void dump_bfs(const int max_distance) const; // dump_bfs(max_distance, nullptr, nullptr)
   class DumpConfig {
    public:
@@ -1244,9 +1303,9 @@ public:
   void   set_debug_orig(Node* orig);   // _debug_orig = orig
   void   dump_orig(outputStream *st, bool print_key = true) const;
 
-  int  _debug_idx;                     // Unique value assigned to every node.
-  int   debug_idx() const              { return _debug_idx; }
-  void  set_debug_idx( int debug_idx ) { _debug_idx = debug_idx; }
+  uint64_t _debug_idx;                 // Unique value assigned to every node.
+  uint64_t debug_idx() const           { return _debug_idx; }
+  void set_debug_idx(uint64_t debug_idx) { _debug_idx = debug_idx; }
 
   int        _hash_lock;               // Barrier to modifications of nodes in the hash table
   void  enter_hash_lock() { ++_hash_lock; assert(_hash_lock < 99, "in too many hash tables?"); }
@@ -1537,8 +1596,13 @@ public:
     _nodes = NEW_ARENA_ARRAY(a, Node*, max);
     clear();
   }
+  Node_Array() : Node_Array(Thread::current()->resource_area()) {}
 
-  Node_Array(Node_Array* na) : _a(na->_a), _max(na->_max), _nodes(na->_nodes) {}
+  NONCOPYABLE(Node_Array);
+  Node_Array& operator=(Node_Array&&) = delete;
+  // Allow move constructor for && (eg. capture return of function)
+  Node_Array(Node_Array&&) = default;
+
   Node *operator[] ( uint i ) const // Lookup, or null for not mapped
   { return (i<_max) ? _nodes[i] : (Node*)nullptr; }
   Node* at(uint i) const { assert(i<_max,"oob"); return _nodes[i]; }
@@ -1562,6 +1626,12 @@ class Node_List : public Node_Array {
 public:
   Node_List(uint max = OptoNodeListSize) : Node_Array(Thread::current()->resource_area(), max), _cnt(0) {}
   Node_List(Arena *a, uint max = OptoNodeListSize) : Node_Array(a, max), _cnt(0) {}
+
+  NONCOPYABLE(Node_List);
+  Node_List& operator=(Node_List&&) = delete;
+  // Allow move constructor for && (eg. capture return of function)
+  Node_List(Node_List&&) = default;
+
   bool contains(const Node* n) const {
     for (uint e = 0; e < size(); e++) {
       if (at(e) == n) return true;
@@ -1587,6 +1657,35 @@ public:
   void dump_simple() const;
 };
 
+// Definition must appear after complete type definition of Node_List
+template <typename Callback, typename Check>
+void Node::visit_uses(Callback callback, Check is_boundary) const {
+  ResourceMark rm;
+  VectorSet visited;
+  Node_List worklist;
+
+  // The initial worklist consists of the direct uses
+  for (DUIterator_Fast kmax, k = fast_outs(kmax); k < kmax; k++) {
+    Node* out = fast_out(k);
+    if (!visited.test_set(out->_idx)) { worklist.push(out); }
+  }
+
+  while (worklist.size() > 0) {
+    Node* use = worklist.pop();
+    // Apply callback on boundary nodes
+    if (is_boundary(use)) {
+      callback(use);
+    } else {
+      // Not a boundary node, continue search
+      for (DUIterator_Fast kmax, k = use->fast_outs(kmax); k < kmax; k++) {
+        Node* out = use->fast_out(k);
+        if (!visited.test_set(out->_idx)) { worklist.push(out); }
+      }
+    }
+  }
+}
+
+
 //------------------------------Unique_Node_List-------------------------------
 class Unique_Node_List : public Node_List {
   friend class VMStructs;
@@ -1595,6 +1694,11 @@ class Unique_Node_List : public Node_List {
 public:
   Unique_Node_List() : Node_List(), _clock_index(0) {}
   Unique_Node_List(Arena *a) : Node_List(a), _in_worklist(a), _clock_index(0) {}
+
+  NONCOPYABLE(Unique_Node_List);
+  Unique_Node_List& operator=(Unique_Node_List&&) = delete;
+  // Allow move constructor for && (eg. capture return of function)
+  Unique_Node_List(Unique_Node_List&&) = default;
 
   void remove( Node *n );
   bool member( Node *n ) { return _in_worklist.test(n->_idx) != 0; }
@@ -1627,9 +1731,34 @@ public:
     Node_List::clear();
     _clock_index = 0;
   }
+  void ensure_empty() {
+    assert(size() == 0, "must be empty");
+    clear(); // just in case
+  }
 
   // Used after parsing to remove useless nodes before Iterative GVN
   void remove_useless_nodes(VectorSet& useful);
+
+  // If the idx of the Nodes change, we must recompute the VectorSet
+  void recompute_idx_set() {
+    _in_worklist.clear();
+    for (uint i = 0; i < size(); i++) {
+      Node* n = at(i);
+      _in_worklist.set(n->_idx);
+    }
+  }
+
+#ifdef ASSERT
+  bool is_subset_of(Unique_Node_List& other) {
+    for (uint i = 0; i < size(); i++) {
+      Node* n = at(i);
+      if (!other.member(n)) {
+        return false;
+      }
+    }
+    return true;
+  }
+#endif
 
   bool contains(const Node* n) const {
     fatal("use faster member() instead");
@@ -1673,12 +1802,12 @@ private:
 
 // Inline definition of Compile::record_for_igvn must be deferred to this point.
 inline void Compile::record_for_igvn(Node* n) {
-  _for_igvn->push(n);
+  _igvn_worklist->push(n);
 }
 
 // Inline definition of Compile::remove_for_igvn must be deferred to this point.
 inline void Compile::remove_for_igvn(Node* n) {
-  _for_igvn->remove(n);
+  _igvn_worklist->remove(n);
 }
 
 //------------------------------Node_Stack-------------------------------------
@@ -1749,6 +1878,8 @@ public:
 
   // Node_Stack is used to map nodes.
   Node* find(uint idx) const;
+
+  NONCOPYABLE(Node_Stack);
 };
 
 

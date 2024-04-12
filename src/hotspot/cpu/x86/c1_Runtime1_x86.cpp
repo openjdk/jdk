@@ -38,7 +38,6 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_x86.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "register_x86.hpp"
@@ -797,6 +796,14 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   const Register exception_pc = rdx;
   const Register handler_addr = rbx;
   const Register thread = NOT_LP64(rdi) LP64_ONLY(r15_thread);
+
+  if (AbortVMOnException) {
+    __ enter();
+    save_live_registers(sasm, 2);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, check_abort_on_vm_exception), rax);
+    restore_live_registers(sasm);
+    __ leave();
+  }
 
   // verify that only rax, is valid at this time
   __ invalidate_registers(false, true, true, true, true, true);

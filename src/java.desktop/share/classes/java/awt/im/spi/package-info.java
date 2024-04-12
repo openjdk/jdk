@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@
  * comment character are ignored. The file must be encoded in UTF-8.
  * <p>
  * For example, if the fully-qualified name of the class that implements
- * {@code java.awt.im.spi.InputMethodDesciptor} for the <em>Foo</em> input
+ * {@code java.awt.im.spi.InputMethodDescriptor} for the <em>Foo</em> input
  * method is {@code com.sun.ime.FooInputMethodDescriptor}, the file
  * {@code META-INF/services/java.awt.im.spi.InputMethodDescriptor}
  * contains a line:

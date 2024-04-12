@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6527316 6732647
+ * @key printer
  * @summary Copies isn't supported for PS flavors.
  * @run main PSCopiesFlavorTest
  */

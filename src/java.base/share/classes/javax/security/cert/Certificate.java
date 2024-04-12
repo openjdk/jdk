@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.InvalidKeyException;
 import java.security.SignatureException;
+import java.util.Arrays;
 
 /**
  * <p>Abstract class for managing a variety of identity certificates.
@@ -72,51 +73,38 @@ public abstract class Certificate {
 
     /**
      * Compares this certificate for equality with the specified
-     * object. If the {@code other} object is an
+     * object. If the {@code obj} object is an
      * {@code instanceof} {@code Certificate}, then
      * its encoded form is retrieved and compared with the
      * encoded form of this certificate.
      *
-     * @param other the object to test for equality with this certificate.
+     * @param obj the object to test for equality with this certificate.
      * @return true if the encoded forms of the two certificates
      *         match, false otherwise.
      */
-    public boolean equals(Object other) {
-        if (this == other)
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
             return true;
-        if (!(other instanceof Certificate))
+        if (!(obj instanceof Certificate other))
             return false;
         try {
-            byte[] thisCert = this.getEncoded();
-            byte[] otherCert = ((Certificate)other).getEncoded();
-
-            if (thisCert.length != otherCert.length)
-                return false;
-            for (int i = 0; i < thisCert.length; i++)
-                 if (thisCert[i] != otherCert[i])
-                     return false;
-            return true;
+            return Arrays.equals(this.getEncoded(), other.getEncoded());
         } catch (CertificateException e) {
             return false;
         }
     }
 
     /**
-     * Returns a hashcode value for this certificate from its
-     * encoded form.
-     *
-     * @return the hashcode value.
+     * {@return a hashcode value for this certificate from
+     * its encoded form}
      */
+    @Override
     public int hashCode() {
-        int     retval = 0;
         try {
-            byte[] certData = this.getEncoded();
-            for (int i = 1; i < certData.length; i++) {
-                 retval += certData[i] * i;
-            }
-            return (retval);
+            return Arrays.hashCode(this.getEncoded());
         } catch (CertificateException e) {
-            return (retval);
+            return 0;
         }
     }
 

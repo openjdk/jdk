@@ -53,10 +53,10 @@ JVMFlag::Error ObjectAlignmentInBytesConstraintFunc(int value, bool verbose) {
 
 // Need to enforce the padding not to break the existing field alignments.
 // It is sufficient to check against the largest type size.
-JVMFlag::Error ContendedPaddingWidthConstraintFunc(intx value, bool verbose) {
+JVMFlag::Error ContendedPaddingWidthConstraintFunc(int value, bool verbose) {
   if ((value % BytesPerLong) != 0) {
     JVMFlag::printError(verbose,
-                        "ContendedPaddingWidth (" INTX_FORMAT ") must be "
+                        "ContendedPaddingWidth (%d) must be "
                         "a multiple of %d\n",
                         value, BytesPerLong);
     return JVMFlag::VIOLATES_CONSTRAINT;
@@ -65,10 +65,10 @@ JVMFlag::Error ContendedPaddingWidthConstraintFunc(intx value, bool verbose) {
   }
 }
 
-JVMFlag::Error PerfDataSamplingIntervalFunc(intx value, bool verbose) {
+JVMFlag::Error PerfDataSamplingIntervalFunc(int value, bool verbose) {
   if ((value % PeriodicTask::interval_gran != 0)) {
     JVMFlag::printError(verbose,
-                        "PerfDataSamplingInterval (" INTX_FORMAT ") must be "
+                        "PerfDataSamplingInterval (%d) must be "
                         "evenly divisible by PeriodicTask::interval_gran (%d)\n",
                         value, PeriodicTask::interval_gran);
     return JVMFlag::VIOLATES_CONSTRAINT;

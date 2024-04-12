@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@
  * @library /test/lib
  * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
- * @requires vm.gc != "Z"
+ * @requires vm.gc != "Z" & vm.gc != "Shenandoah"
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:-SegmentedCodeCache TestTracePageSizes
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:-SegmentedCodeCache -XX:+UseLargePages TestTracePageSizes
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:-SegmentedCodeCache -XX:+UseTransparentHugePages TestTracePageSizes
@@ -143,10 +143,12 @@ public class TestTracePageSizes {
         //  or the end of file is encountered.
         static final Pattern SECTION_START_PATT = Pattern.compile("^([a-f0-9]+)-([a-f0-9]+) [\\-rwpsx]{4}.*");
         static final Pattern KERNEL_PAGESIZE_PATT = Pattern.compile("^KernelPageSize:\\s*(\\d*) kB");
+        static final Pattern THP_ELIGIBLE_PATT = Pattern.compile("^THPeligible:\\s+(\\d*)");
         static final Pattern VMFLAGS_PATT = Pattern.compile("^VmFlags: ([\\w\\? ]*)");
         String start;
         String end;
         String ps;
+        String thpEligible;
         String vmFlags;
         int lineno;
 
@@ -154,12 +156,13 @@ public class TestTracePageSizes {
             start = null;
             end = null;
             ps = null;
+            thpEligible = null;
             vmFlags = null;
         }
 
         public void finish() {
             if (start != null) {
-                RangeWithPageSize range = new RangeWithPageSize(start, end, ps, vmFlags);
+                RangeWithPageSize range = new RangeWithPageSize(start, end, ps, thpEligible, vmFlags);
                 ranges.add(range);
                 debug("Added range: " + range);
                 reset();
@@ -167,10 +170,15 @@ public class TestTracePageSizes {
         }
 
         void eatNext(String line) {
-            debug("" + (lineno++) + " " + line);
+            //  For better debugging experience call finish here before the debug() call.
             Matcher matSectionStart = SECTION_START_PATT.matcher(line);
             if (matSectionStart.matches()) {
                 finish();
+            }
+
+            debug("" + (lineno++) + " " + line);
+
+            if (matSectionStart.matches()) {
                 start = matSectionStart.group(1);
                 end = matSectionStart.group(2);
                 ps = null;
@@ -180,6 +188,11 @@ public class TestTracePageSizes {
                 Matcher matKernelPageSize = KERNEL_PAGESIZE_PATT.matcher(line);
                 if (matKernelPageSize.matches()) {
                     ps = matKernelPageSize.group(1);
+                    return;
+                }
+                Matcher matTHPEligible = THP_ELIGIBLE_PATT.matcher(line);
+                if (matTHPEligible.matches()) {
+                    thpEligible = matTHPEligible.group(1);
                     return;
                 }
                 Matcher matVmFlags = VMFLAGS_PATT.matcher(line);
@@ -258,7 +271,7 @@ public class TestTracePageSizes {
         parseSmaps();
 
         // Setup patters for the JVM page size logging.
-        String traceLinePatternString = ".*base=(0x[0-9A-Fa-f]*).*page_size=([^ ]+).*";
+        String traceLinePatternString = ".*base=(0x[0-9A-Fa-f]*).* page_size=(\\d+[BKMG]).*";
         Pattern traceLinePattern = Pattern.compile(traceLinePatternString);
 
         // The test needs to be run with page size logging printed to ps-$pid.log.
@@ -326,15 +339,18 @@ class RangeWithPageSize {
     private long start;
     private long end;
     private long pageSize;
+    private boolean thpEligible;
     private boolean vmFlagHG;
     private boolean vmFlagHT;
+    private boolean isTHP;
 
-    public RangeWithPageSize(String start, String end, String pageSize, String vmFlags) {
+    public RangeWithPageSize(String start, String end, String pageSize, String thpEligible, String vmFlags) {
         // Note: since we insist on kernels >= 3.8, all the following information should be present
         //  (none of the input strings be null).
         this.start = Long.parseUnsignedLong(start, 16);
         this.end = Long.parseUnsignedLong(end, 16);
         this.pageSize = Long.parseLong(pageSize);
+        this.thpEligible = thpEligible == null ? false : (Integer.parseInt(thpEligible) == 1);
 
         vmFlagHG = false;
         vmFlagHT = false;
@@ -348,6 +364,12 @@ class RangeWithPageSize {
                 vmFlagHG = true;
             }
         }
+
+        // When the THP policy is 'always' instead of 'madvise, the vmFlagHG property is false,
+        // therefore also check thpEligible. If this is still causing problems in the future,
+        // we might have to check the AnonHugePages field.
+
+        isTHP = vmFlagHG || this.thpEligible;
     }
 
     public long getPageSize() {
@@ -355,7 +377,7 @@ class RangeWithPageSize {
     }
 
     public boolean isTransparentHuge() {
-        return vmFlagHG;
+        return isTHP;
     }
 
     public boolean isExplicitHuge() {
@@ -368,6 +390,6 @@ class RangeWithPageSize {
 
     public String toString() {
         return "[" + Long.toHexString(start) + ", " + Long.toHexString(end) + ") " +
-               "pageSize=" + pageSize + "KB isTHP=" + vmFlagHG + " isHUGETLB=" + vmFlagHT;
+               "pageSize=" + pageSize + "KB isTHP=" + isTHP + " isHUGETLB=" + vmFlagHT;
     }
 }

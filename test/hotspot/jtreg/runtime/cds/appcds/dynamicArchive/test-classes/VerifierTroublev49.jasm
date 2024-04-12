@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ */
+
+// During CDS static dump time, this class will be stored in "unlinked" state.
+// This class should not be stored in a dynamic archive because it will fail verification.
+
+super public class VerifierTroublev49
+	version 49:0
+{
+
+
+public Method "<init>":"()V"
+	stack 1 locals 1
+{
+		aload_0;
+		invokespecial	Method java/lang/Object."<init>":"()V";
+		return;
+}
+
+    /*
+     * The following method tries to return an Object as a String.
+     * Verifier should fail.
+     */
+public Method doit:"()Ljava/lang/String;"
+	stack 2 locals 1
+{
+                new	class java/lang/Object;
+		dup;
+		invokespecial	Method java/lang/Object."<init>":"()V";
+		astore_0;
+		aload_0;
+		areturn;   // tries to return an Object as a String
+}
+
+} // end Class VerifierTroublev49

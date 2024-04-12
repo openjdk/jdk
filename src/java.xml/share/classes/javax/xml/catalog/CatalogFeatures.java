@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 package javax.xml.catalog;
 
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import jdk.xml.internal.SecuritySupport;
@@ -42,7 +40,6 @@ import jdk.xml.internal.SecuritySupport;
  * <th scope="col" rowspan="2">Description</th>
  * <th scope="col" rowspan="2">Property Name</th>
  * <th scope="col" rowspan="2">System Property [1]</th>
- * <th scope="col" rowspan="2">jaxp.properties [1]</th>
  * <th scope="col" colspan="2" style="text-align:center">Value [2]</th>
  * <th scope="col" rowspan="2">Action</th>
  * </tr>
@@ -61,7 +58,6 @@ import jdk.xml.internal.SecuritySupport;
  * </td>
  * <td>javax.xml.catalog.files</td>
  * <td>javax.xml.catalog.files</td>
- * <td>javax.xml.catalog.files</td>
  * <td>String</td>
  * <th id="URIs" scope="row" style="font-weight:normal">URIs</th>
  * <td>
@@ -75,7 +71,6 @@ import jdk.xml.internal.SecuritySupport;
  * <td rowspan="2">Indicates the preference between the public and system
  * identifiers. The default value is public [3].</td>
  * <td rowspan="2">javax.xml.catalog.prefer</td>
- * <td rowspan="2">N/A</td>
  * <td rowspan="2">N/A</td>
  * <td rowspan="2">String</td>
  * <th scope="row" id="system" style="font-weight:normal">{@code system}</th>
@@ -97,7 +92,6 @@ import jdk.xml.internal.SecuritySupport;
  * needed. The default value is true.</td>
  * <td rowspan="2">javax.xml.catalog.defer [4]</td>
  * <td rowspan="2">javax.xml.catalog.defer</td>
- * <td rowspan="2">javax.xml.catalog.defer</td>
  * <td rowspan="2">String</td>
  * <th scope="row" id="true" style="font-weight:normal">{@code true}</th>
  * <td>
@@ -115,7 +109,6 @@ import jdk.xml.internal.SecuritySupport;
  * <td rowspan="3">Determines the action if there is no matching entry found after
  * all of the specified catalogs are exhausted. The default is strict.</td>
  * <td rowspan="3">javax.xml.catalog.resolve [4]</td>
- * <td rowspan="3">javax.xml.catalog.resolve</td>
  * <td rowspan="3">javax.xml.catalog.resolve</td>
  * <td rowspan="3">String</td>
  * <th scope="row" id="strict" style="font-weight:normal">{@code strict}</th>
@@ -140,7 +133,6 @@ import jdk.xml.internal.SecuritySupport;
  * </table>
  * <p>
  * <b>[1]</b> There is no System property for the features that marked as "N/A".
- *
  * <p>
  * <b>[2]</b> The value shall be exactly as listed in this table, case-sensitive.
  * Any unspecified value will result in {@link IllegalArgumentException}.
@@ -164,32 +156,21 @@ import jdk.xml.internal.SecuritySupport;
  * set the property {@code javax.xml.catalog.defer} to false to allow the entire
  * catalog to be pre-loaded.
  *
- * <h2>Scope and Order</h2>
- * Features and properties can be set through the catalog file, the Catalog API,
- * system properties, and {@code jaxp.properties}, with a preference in the same order.
- * <p>
- * Properties that are specified as attributes in the catalog file for the
- * catalog and group entries shall take preference over any of the other settings.
+ * <h2>Property Precedence</h2>
+ * The Catalog Features follow the
+ * <a href="{@docRoot}/java.xml/module-summary.html#PP">Property Precedence</a>
+ * as described in the module summary with regards to the priority with which
+ * their values are retrieved from the various configuration sources such as the
+ * <a href="{@docRoot}/java.xml/module-summary.html#Conf_CF">JAXP configuration file</a>,
+ * system and API properties. In addition to the general configuration sources,
+ * the Catalog Features are further supported in the catalog file itself where
+ * they can be specified as attributes of the catalog and group entries. When the
+ * attributes are specified, they shall take preference over any of the other
+ * configuration sources.
  * For example, if a {@code prefer} attribute is set in the catalog file as in
  * {@code <catalog prefer="public">}, any other input for the "prefer" property
  * is not necessary or will be ignored.
- * <p>
- * Properties set through the Catalog API override those that may have been set
- * by system properties and/or in {@code jaxp.properties}. In case of multiple
- * interfaces, the latest in a procedure shall take preference. For
- * {@link Feature#FILES}, this means that the URI(s) specified through the methods
- * of the {@link CatalogManager} will override any that may have been entered
- * through the {@link Builder}.
  *
- * <p>
- * System properties when set shall override those in {@code jaxp.properties}.
- * <p>
- * The {@code jaxp.properties} file is typically in the conf directory of the Java
- * installation. The file is read only once by the JAXP implementation and
- * its values are then cached for future use. If the file does not exist
- * when the first attempt is made to read from it, no further attempts are
- * made to check for its existence. It is not possible to change the value
- * of any properties in {@code jaxp.properties} after it has been read.
  * <p>
  * A CatalogFeatures instance can be created through its builder as illustrated
  * in the following sample code:
@@ -489,7 +470,7 @@ public class CatalogFeatures {
 
     /**
      * States of the settings of a property, in the order: default value,
-     * jaxp.properties file, jaxp system properties, and jaxp api properties
+     * configuration file, jaxp system properties, and jaxp api properties
      */
     static enum State {
         /** represents the default state of a feature. */
@@ -622,7 +603,7 @@ public class CatalogFeatures {
                 return true;
             }
 
-            value = SecuritySupport.readJAXPProperty(sysPropertyName);
+            value = SecuritySupport.readConfig(sysPropertyName);
             if (value != null && !value.isEmpty()) {
                 setProperty(cf, State.JAXPDOTPROPERTIES, value);
                 return true;

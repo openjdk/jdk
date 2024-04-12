@@ -55,12 +55,6 @@ public:
   // Update oops when the nmethod is re-registered
   void update();
 
-  bool has_cset_oops(ShenandoahHeap* heap);
-
-  inline int oop_count() const;
-  inline bool has_oops() const;
-
-  inline void mark_unregistered();
   inline bool is_unregistered() const;
 
   static ShenandoahNMethod* for_nmethod(nmethod* nm);
@@ -77,7 +71,6 @@ public:
   void assert_same_oops(bool allow_dead = false) NOT_DEBUG_RETURN;
 
 private:
-  bool has_non_immed_oops() const { return _has_non_immed_oops; }
   static void detect_reloc_oops(nmethod* nm, GrowableArray<oop*>& oops, bool& _has_non_immed_oops);
 };
 
@@ -126,7 +119,7 @@ public:
   ShenandoahNMethodTableSnapshot(ShenandoahNMethodTable* table);
   ~ShenandoahNMethodTableSnapshot();
 
-  void parallel_blobs_do(CodeBlobClosure *f);
+  void parallel_nmethods_do(NMethodClosure *f);
   void concurrent_nmethods_do(NMethodClosure* cl);
 };
 

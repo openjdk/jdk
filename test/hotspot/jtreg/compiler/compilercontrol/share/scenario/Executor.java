@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.lang.reflect.Executable;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -45,7 +47,6 @@ import java.util.List;
 import java.util.Map;
 
 public class Executor {
-    private final boolean isValid;
     private final List<String> vmOptions;
     private final Map<Executable, State> states;
     private final List<String> jcmdCommands;
@@ -57,16 +58,13 @@ public class Executor {
     /**
      * Constructor
      *
-     * @param isValid      shows that the input given to the VM is valid and
-     *                     VM shouldn't fail
      * @param vmOptions    a list of VM input options
      * @param states       a state map, or null for the non-checking execution
      * @param jcmdCommands a list of diagnostic commands to be preformed
      *                     on test VM
      */
-    public Executor(boolean isValid, List<String> vmOptions,
-            Map<Executable, State> states, List<String> jcmdCommands) {
-        this.isValid = isValid;
+    public Executor(List<String> vmOptions, Map<Executable, State> states,
+                    List<String> jcmdCommands) {
         if (vmOptions == null) {
             this.vmOptions = new ArrayList<>();
         } else {
@@ -77,15 +75,16 @@ public class Executor {
     }
 
     /**
-     * Executes separate VM a gets an OutputAnalyzer instance with the results
+     * Executes separate VM and gets an OutputAnalyzer instance with the results
      * of execution
      */
     public List<OutputAnalyzer> execute() {
         // Add class name that would be executed in a separate VM
         vmOptions.add(execClass);
         OutputAnalyzer output;
-        try (ServerSocket serverSocket = new ServerSocket(0)) {
+        try (ServerSocket serverSocket = new ServerSocket()) {
             {
+                serverSocket.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
                 // Get port test VM will connect to
                 int port = serverSocket.getLocalPort();
                 if (port == -1) {
@@ -105,7 +104,7 @@ public class Executor {
                     vmInputArgs.length + vmOptions.size());
             System.arraycopy(vmOptions.toArray(), 0, cmds, vmInputArgs.length,
                     vmOptions.size());
-            output = ProcessTools.executeTestJvm(cmds);
+            output = ProcessTools.executeTestJava(cmds);
         } catch (Throwable thr) {
             throw new Error("Execution failed: " + thr.getMessage(), thr);
         }

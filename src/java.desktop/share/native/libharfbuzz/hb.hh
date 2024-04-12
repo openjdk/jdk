@@ -64,6 +64,7 @@
 #pragma GCC diagnostic error   "-Wbitwise-instead-of-logical"
 #pragma GCC diagnostic error   "-Wcast-align"
 #pragma GCC diagnostic error   "-Wcast-function-type"
+#pragma GCC diagnostic error   "-Wconstant-conversion"
 #pragma GCC diagnostic error   "-Wcomma"
 #pragma GCC diagnostic error   "-Wdelete-non-virtual-dtor"
 #pragma GCC diagnostic error   "-Wembedded-directive"
@@ -246,9 +247,17 @@ extern "C" void  hb_free_impl(void *ptr);
  * Compiler attributes
  */
 
-#if (defined(__GNUC__) || defined(__clang__)) && defined(__OPTIMIZE__)
-#define likely(expr) (__builtin_expect (!!(expr), 1))
-#define unlikely(expr) (__builtin_expect (!!(expr), 0))
+// gcc 10 has __has_builtin but not earlier versions. Sanction any gcc >= 5
+// clang defines it so no need.
+#ifdef __has_builtin
+#define hb_has_builtin __has_builtin
+#else
+#define hb_has_builtin(x) ((defined(__GNUC__) && __GNUC__ >= 5))
+#endif
+
+#if defined(__OPTIMIZE__) && hb_has_builtin(__builtin_expect)
+#define likely(expr) __builtin_expect (bool(expr), 1)
+#define unlikely(expr) __builtin_expect (bool(expr), 0)
 #else
 #define likely(expr) (expr)
 #define unlikely(expr) (expr)
@@ -305,6 +314,14 @@ extern "C" void  hb_free_impl(void *ptr);
 #if defined(__SUNPRO_CC) && (__SUNPRO_CC < 0x5140)
 /* https://github.com/harfbuzz/harfbuzz/issues/630 */
 #define __restrict
+#endif
+
+#ifndef HB_ALWAYS_INLINE
+#if defined(_MSC_VER)
+#define HB_ALWAYS_INLINE __forceinline
+#else
+#define HB_ALWAYS_INLINE __attribute__((always_inline)) inline
+#endif
 #endif
 
 /*
@@ -499,6 +516,12 @@ static_assert ((sizeof (hb_codepoint_t) == 4), "");
 static_assert ((sizeof (hb_position_t) == 4), "");
 static_assert ((sizeof (hb_mask_t) == 4), "");
 static_assert ((sizeof (hb_var_int_t) == 4), "");
+
+
+/* Pie time. */
+// https://github.com/harfbuzz/harfbuzz/issues/4166
+#define HB_PI 3.14159265358979f
+#define HB_2_PI (2.f * HB_PI)
 
 
 /* Headers we include for everyone.  Keep topologically sorted by dependency.

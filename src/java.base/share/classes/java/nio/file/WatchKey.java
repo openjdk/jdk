@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,13 +54,13 @@ import java.util.List;
  * created, a watch key has no pending events. Typically events are retrieved
  * when the key is in the signalled state leading to the following idiom:
  *
- * <pre>
+ * {@snippet lang=java :
  *     for (;;) {
  *         // retrieve key
  *         WatchKey key = watcher.take();
  *
  *         // process events
- *         for (WatchEvent&lt;?&gt; event: key.pollEvents()) {
+ *         for (WatchEvent<?> event: key.pollEvents()) {
  *             :
  *         }
  *
@@ -70,7 +70,7 @@ import java.util.List;
  *             // object no longer registered
  *         }
  *     }
- * </pre>
+ * }
  *
  * <p> Watch keys are safe for use by multiple concurrent threads. Where there
  * are several threads retrieving signalled keys from a watch service then care

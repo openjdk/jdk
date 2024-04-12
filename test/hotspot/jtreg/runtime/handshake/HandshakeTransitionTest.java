@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public class HandshakeTransitionTest {
         commands.add("-XX:CICompilerCount=2");
         commands.addAll(Arrays.asList(args));
         commands.add("HandshakeTransitionTest$Test");
-        ProcessBuilder pb = ProcessTools.createTestJvm(commands);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(commands);
 
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
         output.reportDiagnosticSummary();

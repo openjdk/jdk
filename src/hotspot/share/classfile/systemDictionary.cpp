@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
@@ -69,6 +70,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -112,9 +114,11 @@ class InvokeMethodKey : public StackObj {
 
 };
 
-ResourceHashtable<InvokeMethodKey, Method*, 139, AnyObj::C_HEAP, mtClass,
-                  InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison> _invoke_method_intrinsic_table;
-ResourceHashtable<SymbolHandle, OopHandle, 139, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash> _invoke_method_type_table;
+using InvokeMethodIntrinsicTable = ResourceHashtable<InvokeMethodKey, Method*, 139, AnyObj::C_HEAP, mtClass,
+                  InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison>;
+static InvokeMethodIntrinsicTable* _invoke_method_intrinsic_table;
+using InvokeMethodTypeTable = ResourceHashtable<SymbolHandle, OopHandle, 139, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash>;
+static InvokeMethodTypeTable* _invoke_method_type_table;
 
 OopHandle   SystemDictionary::_java_system_loader;
 OopHandle   SystemDictionary::_java_platform_loader;
@@ -136,7 +140,7 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
   } else {
     // It must have been restored from the archived module graph
     assert(UseSharedSpaces, "must be");
-    assert(MetaspaceShared::use_full_module_graph(), "must be");
+    assert(CDSConfig::is_using_full_module_graph(), "must be");
     DEBUG_ONLY(
       oop system_loader = get_system_class_loader_impl(CHECK);
       assert(_java_system_loader.resolve() == system_loader, "must be");
@@ -149,7 +153,7 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
   } else {
     // It must have been restored from the archived module graph
     assert(UseSharedSpaces, "must be");
-    assert(MetaspaceShared::use_full_module_graph(), "must be");
+    assert(CDSConfig::is_using_full_module_graph(), "must be");
     DEBUG_ONLY(
       oop platform_loader = get_platform_class_loader_impl(CHECK);
       assert(_java_platform_loader.resolve() == platform_loader, "must be");
@@ -208,13 +212,13 @@ void SystemDictionary::set_platform_loader(ClassLoaderData *cld) {
 // ----------------------------------------------------------------------------
 // Parallel class loading check
 
-bool is_parallelCapable(Handle class_loader) {
+static bool is_parallelCapable(Handle class_loader) {
   if (class_loader.is_null()) return true;
   return java_lang_ClassLoader::parallelCapable(class_loader());
 }
 // ----------------------------------------------------------------------------
 // ParallelDefineClass flag does not apply to bootclass loader
-bool is_parallelDefine(Handle class_loader) {
+static bool is_parallelDefine(Handle class_loader) {
    if (class_loader.is_null()) return false;
    if (AllowParallelDefineClass && java_lang_ClassLoader::parallelCapable(class_loader())) {
      return true;
@@ -276,7 +280,7 @@ Symbol* SystemDictionary::class_name_symbol(const char* name, Symbol* exception,
 
 #ifdef ASSERT
 // Used to verify that class loading succeeded in adding k to the dictionary.
-void verify_dictionary_entry(Symbol* class_name, InstanceKlass* k) {
+static void verify_dictionary_entry(Symbol* class_name, InstanceKlass* k) {
   MutexLocker mu(SystemDictionary_lock);
   ClassLoaderData* loader_data = k->class_loader_data();
   Dictionary* dictionary = loader_data->dictionary();
@@ -363,8 +367,8 @@ Klass* SystemDictionary::resolve_array_class_or_null(Symbol* class_name,
       k = k->array_klass(ndims, CHECK_NULL);
     }
   } else {
-    k = Universe::typeArrayKlassObj(t);
-    k = TypeArrayKlass::cast(k)->array_klass(ndims, CHECK_NULL);
+    k = Universe::typeArrayKlass(t);
+    k = k->array_klass(ndims, CHECK_NULL);
   }
   return k;
 }
@@ -410,7 +414,7 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
   assert(super_name != nullptr, "null superclass for resolving");
   assert(!Signature::is_array(super_name), "invalid superclass name");
 #if INCLUDE_CDS
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive()) {
     // Special processing for handling UNREGISTERED shared classes.
     InstanceKlass* k = SystemDictionaryShared::lookup_super_for_unregistered_class(class_name,
                            super_name, is_superclass);
@@ -607,7 +611,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   InstanceKlass* loaded_class = nullptr;
   SymbolHandle superclassname; // Keep alive while loading in parallel thread.
 
-  assert(THREAD->can_call_java(),
+  guarantee(THREAD->can_call_java(),
          "can not load classes with compiler thread: class=%s, classloader=%s",
          name->as_C_string(),
          class_loader.is_null() ? "null" : class_loader->klass()->name()->as_C_string());
@@ -719,10 +723,10 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   // Make sure we have the right class in the dictionary
   DEBUG_ONLY(verify_dictionary_entry(name, loaded_class));
 
-  // Check if the protection domain is present it has the right access
   if (protection_domain() != nullptr) {
-    // Verify protection domain. If it fails an exception is thrown
-    dictionary->validate_protection_domain(loaded_class, class_loader, protection_domain, CHECK_NULL);
+    // A SecurityManager (if installed) may prevent this protection_domain from accessing loaded_class
+    // by throwing a SecurityException.
+    dictionary->check_package_access(loaded_class, class_loader, protection_domain, CHECK_NULL);
   }
 
   return loaded_class;
@@ -778,7 +782,7 @@ Klass* SystemDictionary::find_instance_or_array_klass(Thread* current,
     int ndims = ss.skip_array_prefix();  // skip all '['s
     BasicType t = ss.type();
     if (t != T_OBJECT) {
-      k = Universe::typeArrayKlassObj(t);
+      k = Universe::typeArrayKlass(t);
     } else {
       k = SystemDictionary::find_instance_klass(current, ss.as_symbol(), class_loader, protection_domain);
     }
@@ -874,7 +878,7 @@ InstanceKlass* SystemDictionary::resolve_class_from_stream(
  InstanceKlass* k = nullptr;
 
 #if INCLUDE_CDS
-  if (!DumpSharedSpaces) {
+  if (!CDSConfig::is_dumping_static_archive()) {
     k = SystemDictionaryShared::lookup_from_stream(class_name,
                                                    class_loader,
                                                    cl_info.protection_domain(),
@@ -961,7 +965,7 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
 
   // (2) Check if we are loading into the same module from the same location as in dump time.
 
-  if (MetaspaceShared::use_optimized_module_handling()) {
+  if (CDSConfig::is_using_optimized_module_handling()) {
     // Class visibility has not changed between dump time and run time, so a class
     // that was visible (and thus archived) during dump time is always visible during runtime.
     assert(SystemDictionary::is_shared_class_visible_impl(class_name, ik, pkg_entry, class_loader),
@@ -1107,13 +1111,12 @@ InstanceKlass* SystemDictionary::load_shared_lambda_proxy_class(InstanceKlass* i
   if (loaded_ik != nullptr) {
     assert(shared_nest_host->is_same_class_package(ik),
            "lambda proxy class and its nest host must be in the same package");
+    // The lambda proxy class and its nest host have the same class loader and class loader data,
+    // as verified in SystemDictionaryShared::add_lambda_proxy_class()
+    assert(shared_nest_host->class_loader() == class_loader(), "mismatched class loader");
+    assert(shared_nest_host->class_loader_data() == class_loader_data(class_loader), "mismatched class loader data");
+    ik->set_nest_host(shared_nest_host);
   }
-
-  // The lambda proxy class and its nest host have the same class loader and class loader data,
-  // as verified in SystemDictionaryShared::add_lambda_proxy_class()
-  assert(shared_nest_host->class_loader() == class_loader(), "mismatched class loader");
-  assert(shared_nest_host->class_loader_data() == class_loader_data(class_loader), "mismatched class loader data");
-  ik->set_nest_host(shared_nest_host);
 
   return loaded_ik;
 }
@@ -1125,7 +1128,8 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
                                                    PackageEntry* pkg_entry,
                                                    TRAPS) {
   assert(ik != nullptr, "sanity");
-  assert(!ik->is_unshareable_info_restored(), "shared class can be loaded only once");
+  assert(!ik->is_unshareable_info_restored(), "shared class can be restored only once");
+  assert(Atomic::add(&ik->_shared_class_load_count, 1) == 1, "shared class loaded more than once");
   Symbol* class_name = ik->name();
 
   if (!is_shared_class_visible(class_name, ik, pkg_entry, class_loader)) {
@@ -1180,7 +1184,7 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
   // For boot loader, ensure that GetSystemPackage knows that a class in this
   // package was loaded.
   if (loader_data->is_the_null_class_loader_data()) {
-    int path_index = ik->shared_classpath_index();
+    s2 path_index = ik->shared_classpath_index();
     ik->set_classpath_index(path_index);
   }
 
@@ -1272,7 +1276,7 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
     if (k == nullptr) {
       // Use VM class loader
       PerfTraceTime vmtimer(ClassLoader::perf_sys_classload_time());
-      k = ClassLoader::load_class(class_name, search_only_bootloader_append, CHECK_NULL);
+      k = ClassLoader::load_class(class_name, pkg_entry, search_only_bootloader_append, CHECK_NULL);
     }
 
     // find_or_define_instance_class may return a different InstanceKlass
@@ -1520,6 +1524,8 @@ InstanceKlass* SystemDictionary::find_or_define_instance_class(Symbol* class_nam
     assert(defined_k != nullptr, "Should have a klass if there's no exception");
     k->class_loader_data()->add_to_deallocate_list(k);
   } else if (HAS_PENDING_EXCEPTION) {
+    // Remove this InstanceKlass from the LoaderConstraintTable if added.
+    LoaderConstraintTable::remove_failed_loaded_klass(k, class_loader_data(class_loader));
     assert(defined_k == nullptr, "Should not have a klass if there's an exception");
     k->class_loader_data()->add_to_deallocate_list(k);
   }
@@ -1541,10 +1547,10 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
     // First, mark for unload all ClassLoaderData referencing a dead class loader.
     unloading_occurred = ClassLoaderDataGraph::do_unloading();
     if (unloading_occurred) {
-      MutexLocker ml2(is_concurrent ? Module_lock : nullptr);
+      ConditionalMutexLocker ml2(Module_lock, is_concurrent);
       JFR_ONLY(Jfr::on_unloading_classes();)
       MANAGEMENT_ONLY(FinalizerService::purge_unloaded();)
-      MutexLocker ml1(is_concurrent ? SystemDictionary_lock : nullptr);
+      ConditionalMutexLocker ml1(SystemDictionary_lock, is_concurrent);
       ClassLoaderDataGraph::clean_module_and_package_info();
       LoaderConstraintTable::purge_loader_constraints();
       ResolutionErrorTable::purge_resolution_errors();
@@ -1567,7 +1573,7 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
       assert(ProtectionDomainCacheTable::number_of_entries() == 0, "should be empty");
     }
 
-    MutexLocker ml(is_concurrent ? ClassInitError_lock : nullptr);
+    ConditionalMutexLocker ml(ClassInitError_lock, is_concurrent);
     InstanceKlass::clean_initialization_error_table();
   }
 
@@ -1590,7 +1596,7 @@ void SystemDictionary::methods_do(void f(Method*)) {
 
   {
     MutexLocker ml(InvokeMethodIntrinsicTable_lock);
-    _invoke_method_intrinsic_table.iterate_all(doit);
+    _invoke_method_intrinsic_table->iterate_all(doit);
   }
 
 }
@@ -1599,10 +1605,15 @@ void SystemDictionary::methods_do(void f(Method*)) {
 // Initialization
 
 void SystemDictionary::initialize(TRAPS) {
+  _invoke_method_intrinsic_table = new (mtClass) InvokeMethodIntrinsicTable();
+  _invoke_method_type_table = new (mtClass) InvokeMethodTypeTable();
+  ResolutionErrorTable::initialize();
+  LoaderConstraintTable::initialize();
+  PlaceholderTable::initialize();
+  ProtectionDomainCacheTable::initialize();
 #if INCLUDE_CDS
   SystemDictionaryShared::initialize();
 #endif
-
   // Resolve basic classes
   vmClasses::resolve_all(CHECK);
   // Resolve classes used by archived heap objects
@@ -1716,7 +1727,7 @@ Klass* SystemDictionary::find_constrained_instance_or_array_klass(
     int ndims = ss.skip_array_prefix();  // skip all '['s
     BasicType t = ss.type();
     if (t != T_OBJECT) {
-      klass = Universe::typeArrayKlassObj(t);
+      klass = Universe::typeArrayKlass(t);
     } else {
       MutexLocker mu(current, SystemDictionary_lock);
       klass = LoaderConstraintTable::find_constrained_klass(ss.as_symbol(), class_loader_data(class_loader));
@@ -1771,7 +1782,7 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
     bool result = LoaderConstraintTable::add_entry(constraint_name, klass1, loader_data1,
                                                    klass2, loader_data2);
 #if INCLUDE_CDS
-    if (Arguments::is_dumping_archive() && klass_being_linked != nullptr &&
+    if (CDSConfig::is_dumping_archive() && klass_being_linked != nullptr &&
         !klass_being_linked->is_shared()) {
          SystemDictionaryShared::record_linking_constraint(constraint_name,
                                      InstanceKlass::cast(klass_being_linked),
@@ -1952,7 +1963,7 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
     MonitorLocker ml(THREAD, InvokeMethodIntrinsicTable_lock);
     while (true) {
       bool created;
-      met = _invoke_method_intrinsic_table.put_if_absent(key, &created);
+      met = _invoke_method_intrinsic_table->put_if_absent(key, &created);
       assert(met != nullptr, "either created or found");
       if (*met != nullptr) {
         return *met;
@@ -1983,7 +1994,7 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
     MonitorLocker ml(THREAD, InvokeMethodIntrinsicTable_lock);
     if (throw_error) {
       // Remove the entry and let another thread try, or get the same exception.
-      bool removed = _invoke_method_intrinsic_table.remove(key);
+      bool removed = _invoke_method_intrinsic_table->remove(key);
       assert(removed, "must be the owner");
       ml.notify_all();
     } else {
@@ -2044,7 +2055,7 @@ Method* SystemDictionary::find_method_handle_invoker(Klass* klass,
                                                      Klass* accessing_klass,
                                                      Handle* appendix_result,
                                                      TRAPS) {
-  assert(THREAD->can_call_java() ,"");
+  guarantee(THREAD->can_call_java(), "");
   Handle method_type =
     SystemDictionary::find_method_handle_type(signature, accessing_klass, CHECK_NULL);
 
@@ -2146,7 +2157,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
   OopHandle* o;
   {
     MutexLocker ml(THREAD, InvokeMethodTypeTable_lock);
-    o = _invoke_method_type_table.get(signature);
+    o = _invoke_method_type_table->get(signature);
   }
 
   if (o != nullptr) {
@@ -2217,11 +2228,11 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
     MutexLocker ml(THREAD, InvokeMethodTypeTable_lock);
     bool created = false;
     assert(method_type != nullptr, "unexpected null");
-    OopHandle* h = _invoke_method_type_table.get(signature);
+    OopHandle* h = _invoke_method_type_table->get(signature);
     if (h == nullptr) {
       signature->make_permanent(); // The signature is never unloaded.
       OopHandle elem = OopHandle(Universe::vm_global(), method_type());
-      bool created = _invoke_method_type_table.put(signature, elem);
+      bool created = _invoke_method_type_table->put(signature, elem);
       assert(created, "better be created");
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -90,7 +90,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     // so we just assume they are OK.
     // Adapter blobs never have a complete frame and are never OK
     if (!_cb->is_frame_complete_at(_pc)) {
-      if (_cb->is_compiled() || _cb->is_adapter_blob() || _cb->is_runtime_stub()) {
+      if (_cb->is_nmethod() || _cb->is_adapter_blob() || _cb->is_runtime_stub()) {
         return false;
       }
     }
@@ -136,7 +136,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
     // It should be safe to construct the sender though it might not be valid.
 
-    frame sender(sender_sp, sender_pc);
+    frame sender(sender_sp, sender_pc, nullptr /* unextended_sp */, nullptr /* fp */, sender_blob);
 
     // Do we have a valid fp?
     address sender_fp = (address) sender.fp();
@@ -196,23 +196,42 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
   assert(map->include_argument_oops(), "should be set by clear");
 
   if (jfa->last_Java_pc() != nullptr) {
-    frame fr(jfa->last_Java_sp(), jfa->last_Java_pc());
+    frame fr(jfa->last_Java_sp(), jfa->last_Java_pc(), kind::code_blob);
     return fr;
   }
   // Last_java_pc is not set, if we come here from compiled code. The
   // constructor retrieves the PC from the stack.
-  frame fr(jfa->last_Java_sp());
+  frame fr(jfa->last_Java_sp(), nullptr, kind::code_blob);
   return fr;
 }
 
 UpcallStub::FrameData* UpcallStub::frame_data_for_frame(const frame& frame) const {
-  ShouldNotCallThis();
-  return nullptr;
+  assert(frame.is_upcall_stub_frame(), "wrong frame");
+  // need unextended_sp here, since normal sp is wrong for interpreter callees
+  return reinterpret_cast<UpcallStub::FrameData*>(
+    reinterpret_cast<address>(frame.unextended_sp()) + in_bytes(_frame_data_offset));
 }
 
 bool frame::upcall_stub_frame_is_first() const {
-  ShouldNotCallThis();
-  return false;
+  assert(is_upcall_stub_frame(), "must be optimzed entry frame");
+  UpcallStub* blob = _cb->as_upcall_stub();
+  JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);
+  return jfa->last_Java_sp() == nullptr;
+}
+
+frame frame::sender_for_upcall_stub_frame(RegisterMap* map) const {
+  assert(map != nullptr, "map must be set");
+  UpcallStub* blob = _cb->as_upcall_stub();
+  // Java frame called from C; skip all C frames and return top C
+  // frame of that chunk as the sender
+  JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);
+  assert(!upcall_stub_frame_is_first(), "must have a frame anchor to go back to");
+  assert(jfa->last_Java_sp() > sp(), "must be above this frame on stack");
+  map->clear();
+  assert(map->include_argument_oops(), "should be set by clear");
+  frame fr(jfa->last_Java_sp(), jfa->last_Java_pc(), kind::code_blob);
+
+  return fr;
 }
 
 frame frame::sender_for_interpreter_frame(RegisterMap *map) const {
@@ -261,7 +280,7 @@ void frame::patch_pc(Thread* thread, address pc) {
   DEBUG_ONLY(address old_pc = _pc;)
   own_abi()->lr = (uint64_t)pc;
   _pc = pc; // must be set before call to get_deopt_original_pc
-  address original_pc = CompiledMethod::get_deopt_original_pc(this);
+  address original_pc = get_deopt_original_pc();
   if (original_pc != nullptr) {
     assert(original_pc == old_pc, "expected original PC to be stored before patching");
     _deopt_state = is_deoptimized;
@@ -269,7 +288,7 @@ void frame::patch_pc(Thread* thread, address pc) {
   } else {
     _deopt_state = not_deoptimized;
   }
-  assert(!is_compiled_frame() || !_cb->as_compiled_method()->is_deopt_entry(_pc), "must be");
+  assert(!is_compiled_frame() || !_cb->as_nmethod()->is_deopt_entry(_pc), "must be");
 
 #ifdef ASSERT
   {
@@ -305,7 +324,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
   // first the method
 
-  Method* m = *interpreter_frame_method_addr();
+  Method* m = safe_interpreter_frame_method();
 
   // validate the method we'd find in this potential sender
   if (!Method::is_valid_method(m)) return false;
@@ -432,12 +451,11 @@ intptr_t *frame::initial_deoptimization_info() {
 #ifndef PRODUCT
 // This is a generic constructor which is only used by pns() in debug.cpp.
 // fp is dropped and gets determined by backlink.
-frame::frame(void* sp, void* fp, void* pc) : frame((intptr_t*)sp, (address)pc) {}
+frame::frame(void* sp, void* fp, void* pc) : frame((intptr_t*)sp, (address)pc, kind::unknown) {}
 #endif
 
-// Pointer beyond the "oldest/deepest" BasicObjectLock on stack.
 BasicObjectLock* frame::interpreter_frame_monitor_end() const {
-  BasicObjectLock* result = (BasicObjectLock*) at(ijava_idx(monitors));
+  BasicObjectLock* result = (BasicObjectLock*) at_relative(ijava_idx(monitors));
   // make sure the pointer points inside the frame
   assert(sp() <= (intptr_t*) result, "monitor end should be above the stack pointer");
   assert((intptr_t*) result < fp(),  "monitor end should be strictly below the frame pointer: result: " INTPTR_FORMAT " fp: " INTPTR_FORMAT, p2i(result), p2i(fp()));

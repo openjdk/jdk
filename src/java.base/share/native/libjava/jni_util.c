@@ -176,13 +176,23 @@ JNU_ThrowByNameWithMessageAndLastError
 }
 
 /*
- * Convenience method.
+ * Convenience function.
  * Call JNU_ThrowByNameWithLastError for java.io.IOException.
  */
 JNIEXPORT void JNICALL
 JNU_ThrowIOExceptionWithLastError(JNIEnv *env, const char *defaultDetail)
 {
     JNU_ThrowByNameWithLastError(env, "java/io/IOException", defaultDetail);
+}
+
+/*
+ * Throw java.io.IOException using a given message and the string
+ * returned by getLastErrorString to construct the detail string.
+ */
+JNIEXPORT void JNICALL
+JNU_ThrowIOExceptionWithMessageAndLastError(JNIEnv *env, const char *message)
+{
+    JNU_ThrowByNameWithMessageAndLastError(env, "java/io/IOException", message);
 }
 
 
@@ -424,7 +434,7 @@ newString8859_1(JNIEnv *env, const char *str)
 }
 
 static const char*
-getString8859_1Chars(JNIEnv *env, jstring jstr)
+getString8859_1Chars(JNIEnv *env, jstring jstr, jboolean strict)
 {
     int i;
     char *result;
@@ -443,6 +453,13 @@ getString8859_1Chars(JNIEnv *env, jstring jstr)
 
     for (i=0; i<len; i++) {
         jchar unicode = str[i];
+        if (strict && unicode == 0) {
+            (*env)->ReleaseStringCritical(env, jstr, str);
+            free(result);
+            JNU_ThrowIllegalArgumentException(env, "NUL character not allowed in platform string");
+            return 0;
+        }
+
         if (unicode <= 0x00ff)
             result[i] = (char)unicode;
         else
@@ -492,7 +509,7 @@ newString646_US(JNIEnv *env, const char *str)
 }
 
 static const char*
-getString646_USChars(JNIEnv *env, jstring jstr)
+getString646_USChars(JNIEnv *env, jstring jstr, jboolean strict)
 {
     int i;
     char *result;
@@ -511,6 +528,12 @@ getString646_USChars(JNIEnv *env, jstring jstr)
 
     for (i=0; i<len; i++) {
         jchar unicode = str[i];
+        if (strict && unicode == 0) {
+            (*env)->ReleaseStringCritical(env, jstr, str);
+            free(result);
+            JNU_ThrowIllegalArgumentException(env, "NUL character not allowed in platform string");
+            return 0;
+        }
         if (unicode <= 0x007f )
             result[i] = (char)unicode;
         else
@@ -567,7 +590,7 @@ newStringCp1252(JNIEnv *env, const char *str)
 }
 
 static const char*
-getStringCp1252Chars(JNIEnv *env, jstring jstr)
+getStringCp1252Chars(JNIEnv *env, jstring jstr, jboolean strict)
 {
     int i;
     char *result;
@@ -586,6 +609,13 @@ getStringCp1252Chars(JNIEnv *env, jstring jstr)
 
     for (i=0; i<len; i++) {
         jchar c = str[i];
+        if (strict && c == 0) {
+            (*env)->ReleaseStringCritical(env, jstr, str);
+            free(result);
+            JNU_ThrowIllegalArgumentException(env,
+                   "NUL character not allowed in platform string");
+            return 0;
+        }
         if (c < 256) {
             if ((c >= 0x80) && (c <= 0x9f)) {
                 result[i] = '?';
@@ -804,13 +834,22 @@ JNU_NewStringPlatform(JNIEnv *env, const char *str)
     return newStringJava(env, str);
 }
 
+static const char *
+getStringPlatformChars0(JNIEnv *env, jstring jstr, jboolean *isCopy, jboolean);
+
 JNIEXPORT const char *
 GetStringPlatformChars(JNIEnv *env, jstring jstr, jboolean *isCopy)
 {
-    return JNU_GetStringPlatformChars(env, jstr, isCopy);
+    return getStringPlatformChars0(env, jstr, isCopy, JNI_FALSE);
 }
 
-static const char* getStringBytes(JNIEnv *env, jstring jstr) {
+JNIEXPORT const char *
+GetStringPlatformCharsStrict(JNIEnv *env, jstring jstr, jboolean *isCopy)
+{
+    return getStringPlatformChars0(env, jstr, isCopy, JNI_TRUE);
+}
+
+static const char* getStringBytes(JNIEnv *env, jstring jstr, jboolean strict) {
     char *result = NULL;
     jbyteArray hab = 0;
 
@@ -829,15 +868,25 @@ static const char* getStringBytes(JNIEnv *env, jstring jstr) {
             }
             (*env)->GetByteArrayRegion(env, hab, 0, len, (jbyte *)result);
             result[len] = 0; /* NULL-terminate */
+            if (strict) {
+                for (int i=0; i<len; i++) {
+                    if (result[i] == 0) {
+                        JNU_ThrowIllegalArgumentException(env,
+                            "NUL character not allowed in platform string");
+                        free(result);
+                        result = 0;
+                        break;
+                    }
+                }
+            }
         }
-
         (*env)->DeleteLocalRef(env, hab);
     }
     return result;
 }
 
 static const char*
-getStringUTF8(JNIEnv *env, jstring jstr)
+getStringUTF8(JNIEnv *env, jstring jstr, jboolean strict)
 {
     int i;
     char *result;
@@ -848,7 +897,7 @@ getStringUTF8(JNIEnv *env, jstring jstr)
     int ri;
     jbyte coder = (*env)->GetByteField(env, jstr, String_coder_ID);
     if (coder != java_lang_String_LATIN1) {
-        return getStringBytes(env, jstr);
+        return getStringBytes(env, jstr, strict);
     }
     if ((*env)->EnsureLocalCapacity(env, 2) < 0) {
         return NULL;
@@ -865,6 +914,11 @@ getStringUTF8(JNIEnv *env, jstring jstr)
     rlen = len;
     // we need two bytes for each latin-1 char above 127 (negative jbytes)
     for (i = 0; i < len; i++) {
+        if (strict && str[i] == 0) {
+            (*env)->ReleasePrimitiveArrayCritical(env, value, str, JNI_ABORT);
+            JNU_ThrowIllegalArgumentException(env, "NUL character not allowed in platform string");
+            return NULL;
+        }
         if (str[i] < 0) {
             rlen++;
         }
@@ -872,7 +926,7 @@ getStringUTF8(JNIEnv *env, jstring jstr)
 
     result = MALLOC_MIN4(rlen);
     if (result == NULL) {
-        (*env)->ReleasePrimitiveArrayCritical(env, value, str, 0);
+        (*env)->ReleasePrimitiveArrayCritical(env, value, str, JNI_ABORT);
         JNU_ThrowOutOfMemoryError(env, "requested array size exceeds VM limit");
         return NULL;
     }
@@ -886,7 +940,7 @@ getStringUTF8(JNIEnv *env, jstring jstr)
             result[ri++] = c;
         }
     }
-    (*env)->ReleasePrimitiveArrayCritical(env, value, str, 0);
+    (*env)->ReleasePrimitiveArrayCritical(env, value, str, JNI_ABORT);
     result[rlen] = '\0';
     return result;
 }
@@ -894,23 +948,35 @@ getStringUTF8(JNIEnv *env, jstring jstr)
 JNIEXPORT const char * JNICALL
 JNU_GetStringPlatformChars(JNIEnv *env, jstring jstr, jboolean *isCopy)
 {
+    return getStringPlatformChars0(env, jstr, isCopy, JNI_FALSE);
+}
+
+JNIEXPORT const char * JNICALL
+JNU_GetStringPlatformCharsStrict(JNIEnv *env, jstring jstr, jboolean *isCopy)
+{
+    return getStringPlatformChars0(env, jstr, isCopy, JNI_TRUE);
+}
+
+static const char *
+getStringPlatformChars0(JNIEnv *env, jstring jstr, jboolean *isCopy, jboolean strict)
+{
 
     if (isCopy)
         *isCopy = JNI_TRUE;
 
     if (fastEncoding == FAST_UTF_8)
-        return getStringUTF8(env, jstr);
+        return getStringUTF8(env, jstr, strict);
     if (fastEncoding == FAST_8859_1)
-        return getString8859_1Chars(env, jstr);
+        return getString8859_1Chars(env, jstr, strict);
     if (fastEncoding == FAST_646_US)
-        return getString646_USChars(env, jstr);
+        return getString646_USChars(env, jstr, strict);
     if (fastEncoding == FAST_CP1252)
-        return getStringCp1252Chars(env, jstr);
+        return getStringCp1252Chars(env, jstr, strict);
     if (fastEncoding == NO_ENCODING_YET) {
         JNU_ThrowInternalError(env, "platform encoding not initialized");
         return 0;
     } else
-        return getStringBytes(env, jstr);
+        return getStringBytes(env, jstr, strict);
 }
 
 JNIEXPORT void JNICALL

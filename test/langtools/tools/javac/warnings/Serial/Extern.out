@@ -1,6 +1,6 @@
-Extern.java:9:1: compiler.warn.externalizable.missing.public.no.arg.ctor
-Extern.java:9:1: compiler.warn.ineffectual.serial.field.externalizable
-Extern.java:9:1: compiler.warn.ineffectual.serial.method.externalizable: readObject
-Extern.java:9:1: compiler.warn.ineffectual.serial.method.externalizable: writeObject
-Extern.java:9:1: compiler.warn.ineffectual.serial.method.externalizable: readObjectNoData
+Extern.java:10:1: compiler.warn.externalizable.missing.public.no.arg.ctor
+Extern.java:17:46: compiler.warn.ineffectual.serial.field.externalizable
+Extern.java:28:18: compiler.warn.ineffectual.serial.method.externalizable: readObject
+Extern.java:34:18: compiler.warn.ineffectual.serial.method.externalizable: writeObject
+Extern.java:39:18: compiler.warn.ineffectual.serial.method.externalizable: readObjectNoData
 5 warnings

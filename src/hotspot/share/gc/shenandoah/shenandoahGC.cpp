@@ -66,7 +66,6 @@ public:
     assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
     ShenandoahParallelWorkerSession worker_session(worker_id);
 
-    ShenandoahHeap* heap = ShenandoahHeap::heap();
     ShenandoahUpdateRefsClosure cl;
     if (_check_alive) {
       ShenandoahForwardedIsAliveClosure is_alive;

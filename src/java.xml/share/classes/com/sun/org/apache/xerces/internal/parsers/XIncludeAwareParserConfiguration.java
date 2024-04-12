@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,6 +24,7 @@ import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.util.FeatureState;
 import com.sun.org.apache.xerces.internal.util.NamespaceSupport;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xinclude.XIncludeHandler;
 import com.sun.org.apache.xerces.internal.xinclude.XIncludeNamespaceSupport;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
@@ -33,6 +33,7 @@ import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarPool;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentSource;
+import jdk.xml.internal.XMLSecurityManager;
 
 /**
  * This class is the configuration used to parse XML 1.0 and XML 1.1 documents
@@ -40,6 +41,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentSource;
  *
  * @author Michael Glavassevich, IBM
  *
+ * @LastModified: Nov 2023
  */
 public class XIncludeAwareParserConfiguration extends XML11Configuration {
 
@@ -88,7 +90,7 @@ public class XIncludeAwareParserConfiguration extends XML11Configuration {
 
     /** Default constructor. */
     public XIncludeAwareParserConfiguration() {
-        this(null, null, null);
+        this(null, null, null, null, null);
     } // <init>()
 
     /**
@@ -97,7 +99,7 @@ public class XIncludeAwareParserConfiguration extends XML11Configuration {
      * @param symbolTable The symbol table to use.
      */
     public XIncludeAwareParserConfiguration(SymbolTable symbolTable) {
-        this(symbolTable, null, null);
+        this(symbolTable, null, null, null, null);
     } // <init>(SymbolTable)
 
     /**
@@ -111,7 +113,7 @@ public class XIncludeAwareParserConfiguration extends XML11Configuration {
     public XIncludeAwareParserConfiguration(
             SymbolTable symbolTable,
             XMLGrammarPool grammarPool) {
-        this(symbolTable, grammarPool, null);
+        this(symbolTable, grammarPool, null, null, null);
     } // <init>(SymbolTable,XMLGrammarPool)
 
     /**
@@ -123,11 +125,15 @@ public class XIncludeAwareParserConfiguration extends XML11Configuration {
      * @param grammarPool    The grammar pool to use.
      * @param parentSettings The parent settings.
      */
-    public XIncludeAwareParserConfiguration(
-            SymbolTable symbolTable,
-            XMLGrammarPool grammarPool,
+    public XIncludeAwareParserConfiguration(SymbolTable symbolTable, XMLGrammarPool grammarPool,
             XMLComponentManager parentSettings) {
-        super(symbolTable, grammarPool, parentSettings);
+        this(symbolTable, grammarPool, parentSettings, null, null);
+    }
+
+    public XIncludeAwareParserConfiguration(SymbolTable symbolTable, XMLGrammarPool grammarPool,
+            XMLComponentManager parentSettings, XMLSecurityPropertyManager securityPropertyMgr,
+            XMLSecurityManager securityManager) {
+        super(symbolTable, grammarPool, parentSettings, securityPropertyMgr, securityManager);
 
         final String[] recognizedFeatures = {
                 ALLOW_UE_AND_NOTATION_EVENTS,

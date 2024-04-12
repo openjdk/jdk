@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_UTILITIES_POPULATION_COUNT_HPP
 
 #include "metaprogramming/enableIf.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -64,7 +65,7 @@ inline unsigned population_count(T x) {
   // The preceding multiply by z_ones is the only place where the intermediate
   // calculations can exceed the range of T. We need to discard any such excess
   // before the right-shift, hence the conversion back to T.
-  return static_cast<T>(r) >> (((sizeof(T) - 1) * BitsPerByte));
+  return checked_cast<unsigned>(static_cast<T>(r) >> (((sizeof(T) - 1) * BitsPerByte)));
 }
 
 #endif // SHARE_UTILITIES_POPULATION_COUNT_HPP

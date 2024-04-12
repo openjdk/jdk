@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,7 @@ public abstract class Certificate implements java.io.Serializable {
      * @return true iff the encoded forms of the two certificates
      * match, false otherwise.
      */
+    @Override
     public boolean equals(Object other) {
         if (this == other) {
             return true;
@@ -122,11 +123,10 @@ public abstract class Certificate implements java.io.Serializable {
     }
 
     /**
-     * Returns a hashcode value for this certificate from its
-     * encoded form.
-     *
-     * @return the hashcode value.
+     * {@return the hashcode value for this certificate from its
+     * encoded form}
      */
+    @Override
     public int hashCode() {
         int h = hash;
         if (h == -1) {

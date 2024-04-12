@@ -187,8 +187,8 @@ static int setPackedICRdefault(JNIEnv *env, RasterS_t *rasterP,
                                int component, unsigned char *outDataP,
                                int supportsAlpha);
 
-mlib_start_timer start_timer = NULL;
-mlib_stop_timer stop_timer = NULL;
+static mlib_start_timer start_timer = NULL;
+static mlib_stop_timer stop_timer = NULL;
 
 /***************************************************************************
  *                          Debugging Definitions                          *

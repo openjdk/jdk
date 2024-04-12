@@ -47,7 +47,7 @@ import static java.lang.constant.ConstantDescs.*;
 @Warmup(iterations = 3, time = 2)
 @Measurement(iterations = 6, time = 1)
 @Fork(1)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 public class ReferenceClassDescResolve {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private static final ClassDesc CLASS_OR_INTERFACE = CD_String;

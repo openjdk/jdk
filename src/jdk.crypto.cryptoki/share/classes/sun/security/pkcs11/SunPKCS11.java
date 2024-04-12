@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,9 @@ import javax.security.auth.callback.PasswordCallback;
 
 import com.sun.crypto.provider.ChaCha20Poly1305Parameters;
 
+import com.sun.crypto.provider.DHParameters;
 import jdk.internal.misc.InnocuousThread;
+import sun.security.rsa.PSSParameters;
 import sun.security.util.Debug;
 import sun.security.util.ResourcesMgr;
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
@@ -421,14 +423,23 @@ public final class SunPKCS11 extends AuthProvider {
         final String className;
         final List<String> aliases;
         final int[] mechanisms;
+        final int[] requiredMechs;
 
         private Descriptor(String type, String algorithm, String className,
-                List<String> aliases, int[] mechanisms) {
+                           List<String> aliases, int[] mechanisms) {
+            this(type, algorithm, className, aliases, mechanisms, null);
+        }
+        // mechanisms is a list of possible mechanisms that implement the
+        // algorithm, at least one of them must be available. requiredMechs
+        // is a list of auxiliary mechanisms, all of them must be available
+        private Descriptor(String type, String algorithm, String className,
+                List<String> aliases, int[] mechanisms, int[] requiredMechs) {
             this.type = type;
             this.algorithm = algorithm;
             this.className = className;
             this.aliases = aliases;
             this.mechanisms = mechanisms;
+            this.requiredMechs = requiredMechs;
         }
         private P11Service service(Token token, int mechanism) {
             return new P11Service
@@ -470,10 +481,22 @@ public final class SunPKCS11 extends AuthProvider {
         register(new Descriptor(type, algorithm, className, aliases, m));
     }
 
+    private static void d(String type, String algorithm, String className,
+            int[] m, int[] requiredMechs) {
+        register(new Descriptor(type, algorithm, className, null, m,
+                requiredMechs));
+    }
+
     private static void dA(String type, String algorithm, String className,
             int[] m) {
         register(new Descriptor(type, algorithm, className,
                 getAliases(algorithm), m));
+    }
+
+    private static void dA(String type, String algorithm, String className,
+            int[] m, int[] requiredMechs) {
+        register(new Descriptor(type, algorithm, className,
+                getAliases(algorithm), m, requiredMechs));
     }
 
     private static void register(Descriptor d) {
@@ -526,6 +549,7 @@ public final class SunPKCS11 extends AuthProvider {
         String P11KeyWrapCipher    = "sun.security.pkcs11.P11KeyWrapCipher";
         String P11RSACipher        = "sun.security.pkcs11.P11RSACipher";
         String P11AEADCipher       = "sun.security.pkcs11.P11AEADCipher";
+        String P11PBECipher        = "sun.security.pkcs11.P11PBECipher";
         String P11Signature        = "sun.security.pkcs11.P11Signature";
         String P11PSSSignature     = "sun.security.pkcs11.P11PSSSignature";
 
@@ -587,6 +611,24 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_SSL3_MD5_MAC));
         d(MAC, "SslMacSHA1",    P11Mac,
                 m(CKM_SSL3_SHA1_MAC));
+
+        /*
+        * PBA HMacs
+        *
+        * KeyDerivationMech must be supported
+        * for these services to be available.
+        *
+        */
+        d(MAC, "HmacPBESHA1",       P11Mac, m(CKM_SHA_1_HMAC),
+                m(CKM_PBA_SHA1_WITH_SHA1_HMAC));
+        d(MAC, "HmacPBESHA224",     P11Mac, m(CKM_SHA224_HMAC),
+                m(CKM_NSS_PKCS12_PBE_SHA224_HMAC_KEY_GEN));
+        d(MAC, "HmacPBESHA256",     P11Mac, m(CKM_SHA256_HMAC),
+                m(CKM_NSS_PKCS12_PBE_SHA256_HMAC_KEY_GEN));
+        d(MAC, "HmacPBESHA384",     P11Mac, m(CKM_SHA384_HMAC),
+                m(CKM_NSS_PKCS12_PBE_SHA384_HMAC_KEY_GEN));
+        d(MAC, "HmacPBESHA512",     P11Mac, m(CKM_SHA512_HMAC),
+                m(CKM_NSS_PKCS12_PBE_SHA512_HMAC_KEY_GEN));
 
         d(KPG, "RSA",           P11KeyPairGenerator,
                 getAliases("PKCS1"),
@@ -667,6 +709,14 @@ public final class SunPKCS11 extends AuthProvider {
                 "com.sun.crypto.provider.ChaCha20Poly1305Parameters",
                 m(CKM_CHACHA20_POLY1305));
 
+        dA(AGP, "RSASSA-PSS",
+                "sun.security.rsa.PSSParameters",
+                m(CKM_RSA_PKCS_PSS));
+
+        dA(AGP, "DiffieHellman",
+                "com.sun.crypto.provider.DHParameters",
+                m(CKM_DH_PKCS_DERIVE));
+
         d(KA, "DH",             P11KeyAgreement,
                 dhAlias,
                 m(CKM_DH_PKCS_DERIVE));
@@ -685,6 +735,60 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_BLOWFISH_CBC));
         d(SKF, "ChaCha20",      P11SecretKeyFactory,
                 m(CKM_CHACHA20_POLY1305));
+
+        /*
+         * PBE Secret Key Factories
+         *
+         * KeyDerivationPrf must be supported for these services
+         * to be available.
+         *
+        */
+        d(SKF, "PBEWithHmacSHA1AndAES_128",
+                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA_1_HMAC));
+        d(SKF, "PBEWithHmacSHA224AndAES_128",
+                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA224_HMAC));
+        d(SKF, "PBEWithHmacSHA256AndAES_128",
+                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA256_HMAC));
+        d(SKF, "PBEWithHmacSHA384AndAES_128",
+                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA384_HMAC));
+        d(SKF, "PBEWithHmacSHA512AndAES_128",
+                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA512_HMAC));
+        d(SKF, "PBEWithHmacSHA1AndAES_256",
+                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA_1_HMAC));
+        d(SKF, "PBEWithHmacSHA224AndAES_256",
+                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA224_HMAC));
+        d(SKF, "PBEWithHmacSHA256AndAES_256",
+                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA256_HMAC));
+        d(SKF, "PBEWithHmacSHA384AndAES_256",
+                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA384_HMAC));
+        d(SKF, "PBEWithHmacSHA512AndAES_256",
+                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA512_HMAC));
+        /*
+         * PBA Secret Key Factories
+         */
+        d(SKF, "HmacPBESHA1",       P11SecretKeyFactory,
+                m(CKM_PBA_SHA1_WITH_SHA1_HMAC));
+        d(SKF, "HmacPBESHA224",     P11SecretKeyFactory,
+                m(CKM_NSS_PKCS12_PBE_SHA224_HMAC_KEY_GEN));
+        d(SKF, "HmacPBESHA256",     P11SecretKeyFactory,
+                m(CKM_NSS_PKCS12_PBE_SHA256_HMAC_KEY_GEN));
+        d(SKF, "HmacPBESHA384",     P11SecretKeyFactory,
+                m(CKM_NSS_PKCS12_PBE_SHA384_HMAC_KEY_GEN));
+        d(SKF, "HmacPBESHA512",     P11SecretKeyFactory,
+                m(CKM_NSS_PKCS12_PBE_SHA512_HMAC_KEY_GEN));
+        /*
+         * PBKDF2 Secret Key Factories
+         */
+        dA(SKF, "PBKDF2WithHmacSHA1",  P11SecretKeyFactory,
+                m(CKM_PKCS5_PBKD2), m(CKM_SHA_1_HMAC));
+        d(SKF, "PBKDF2WithHmacSHA224", P11SecretKeyFactory,
+                m(CKM_PKCS5_PBKD2), m(CKM_SHA224_HMAC));
+        d(SKF, "PBKDF2WithHmacSHA256", P11SecretKeyFactory,
+                m(CKM_PKCS5_PBKD2), m(CKM_SHA256_HMAC));
+        d(SKF, "PBKDF2WithHmacSHA384", P11SecretKeyFactory,
+                m(CKM_PKCS5_PBKD2), m(CKM_SHA384_HMAC));
+        d(SKF, "PBKDF2WithHmacSHA512", P11SecretKeyFactory,
+                m(CKM_PKCS5_PBKD2), m(CKM_SHA512_HMAC));
 
         // XXX attributes for Ciphers (supported modes, padding)
         dA(CIP, "ARCFOUR",                      P11Cipher,
@@ -778,6 +882,44 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_RSA_PKCS));
         d(CIP, "RSA/ECB/NoPadding",             P11RSACipher,
                 m(CKM_RSA_X_509));
+
+        /*
+         * PBE Ciphers
+         *
+         * KeyDerivationMech and KeyDerivationPrf must be supported
+         * for these services to be available.
+         *
+        */
+        d(CIP, "PBEWithHmacSHA1AndAES_128",   P11PBECipher,
+                m(CKM_AES_CBC_PAD, CKM_AES_CBC),
+                m(CKM_PKCS5_PBKD2, CKM_SHA_1_HMAC));
+        d(CIP, "PBEWithHmacSHA224AndAES_128", P11PBECipher,
+                m(CKM_AES_CBC_PAD, CKM_AES_CBC),
+                m(CKM_PKCS5_PBKD2, CKM_SHA224_HMAC));
+        d(CIP, "PBEWithHmacSHA256AndAES_128", P11PBECipher,
+                m(CKM_AES_CBC_PAD, CKM_AES_CBC),
+                m(CKM_PKCS5_PBKD2, CKM_SHA256_HMAC));
+        d(CIP, "PBEWithHmacSHA384AndAES_128", P11PBECipher,
+                m(CKM_AES_CBC_PAD, CKM_AES_CBC),
+                m(CKM_PKCS5_PBKD2, CKM_SHA384_HMAC));
+        d(CIP, "PBEWithHmacSHA512AndAES_128", P11PBECipher,
+                m(CKM_AES_CBC_PAD, CKM_AES_CBC),
+                m(CKM_PKCS5_PBKD2, CKM_SHA512_HMAC));
+        d(CIP, "PBEWithHmacSHA1AndAES_256",   P11PBECipher,
+                m(CKM_AES_CBC_PAD, CKM_AES_CBC),
+                m(CKM_PKCS5_PBKD2, CKM_SHA_1_HMAC));
+        d(CIP, "PBEWithHmacSHA224AndAES_256", P11PBECipher,
+                m(CKM_AES_CBC_PAD, CKM_AES_CBC),
+                m(CKM_PKCS5_PBKD2, CKM_SHA224_HMAC));
+        d(CIP, "PBEWithHmacSHA256AndAES_256", P11PBECipher,
+                m(CKM_AES_CBC_PAD, CKM_AES_CBC),
+                m(CKM_PKCS5_PBKD2, CKM_SHA256_HMAC));
+        d(CIP, "PBEWithHmacSHA384AndAES_256", P11PBECipher,
+                m(CKM_AES_CBC_PAD, CKM_AES_CBC),
+                m(CKM_PKCS5_PBKD2, CKM_SHA384_HMAC));
+        d(CIP, "PBEWithHmacSHA512AndAES_256", P11PBECipher,
+                m(CKM_AES_CBC_PAD, CKM_AES_CBC),
+                m(CKM_PKCS5_PBKD2, CKM_SHA512_HMAC));
 
         d(SIG, "RawDSA",        P11Signature,
                 List.of("NONEwithDSA"),
@@ -1122,6 +1264,24 @@ public final class SunPKCS11 extends AuthProvider {
                 ("Token info for token in slot " + slotID + ":");
             System.out.println(token.tokenInfo);
         }
+        Set<Long> brokenMechanisms = Set.of();
+        if (P11Util.isNSS(token)) {
+            CK_VERSION nssVersion = slotInfo.hardwareVersion;
+            if (nssVersion.major < 3 ||
+                    nssVersion.major == 3 && nssVersion.minor < 65) {
+                // RSA-PSS is broken in NSS prior to 3.65
+                brokenMechanisms = Set.of(CKM_RSA_PKCS_PSS,
+                        CKM_SHA1_RSA_PKCS_PSS,
+                        CKM_SHA224_RSA_PKCS_PSS,
+                        CKM_SHA256_RSA_PKCS_PSS,
+                        CKM_SHA384_RSA_PKCS_PSS,
+                        CKM_SHA512_RSA_PKCS_PSS,
+                        CKM_SHA3_224_RSA_PKCS_PSS,
+                        CKM_SHA3_256_RSA_PKCS_PSS,
+                        CKM_SHA3_384_RSA_PKCS_PSS,
+                        CKM_SHA3_512_RSA_PKCS_PSS);
+            }
+        }
         long[] supportedMechanisms = p11.C_GetMechanismList(slotID);
 
         // Create a map from the various Descriptors to the "most
@@ -1156,6 +1316,13 @@ public final class SunPKCS11 extends AuthProvider {
                 continue;
             }
 
+            if (brokenMechanisms.contains(longMech)) {
+                if (showInfo) {
+                    System.out.println("DISABLED due to known issue with NSS");
+                }
+                continue;
+            }
+
             // we do not know of mechs with the upper 32 bits set
             if (longMech >>> 32 != 0) {
                 if (showInfo) {
@@ -1169,9 +1336,21 @@ public final class SunPKCS11 extends AuthProvider {
             if (ds == null) {
                 continue;
             }
+            descLoop:
             for (Descriptor d : ds) {
                 Integer oldMech = supportedAlgs.get(d);
                 if (oldMech == null) {
+                    if (d.requiredMechs != null) {
+                        // Check that other mechanisms required for the
+                        // service are supported before listing it as
+                        // available for the first time.
+                        for (int requiredMech : d.requiredMechs) {
+                            if (token.getMechanismInfo(
+                                    requiredMech & 0xFFFFFFFFL) == null) {
+                                continue descLoop;
+                            }
+                        }
+                    }
                     supportedAlgs.put(d, integerMech);
                     continue;
                 }
@@ -1272,6 +1451,8 @@ public final class SunPKCS11 extends AuthProvider {
                 } else if (algorithm.contains("/KW/") ||
                         algorithm.contains("/KWP/")) {
                     return new P11KeyWrapCipher(token, algorithm, mechanism);
+                } else if (algorithm.startsWith("PBE")) {
+                    return new P11PBECipher(token, algorithm, mechanism);
                 } else {
                     return new P11Cipher(token, algorithm, mechanism);
                 }
@@ -1325,6 +1506,10 @@ public final class SunPKCS11 extends AuthProvider {
                     return new sun.security.util.GCMParameters();
                 } else if (algorithm == "ChaCha20-Poly1305") {
                     return new ChaCha20Poly1305Parameters(); // from SunJCE
+                } else if (algorithm == "RSASSA-PSS") {
+                    return new PSSParameters(); // from SunRsaSign
+                } else if (algorithm == "DiffieHellman") {
+                    return new DHParameters(); // from SunJCE
                 } else {
                     throw new NoSuchAlgorithmException("Unsupported algorithm: "
                             + algorithm);

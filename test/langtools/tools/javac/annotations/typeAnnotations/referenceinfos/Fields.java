@@ -25,12 +25,13 @@
  * @test
  * @bug 8042451 8208470
  * @summary Test population of reference info for field
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @compile -g Driver.java ReferenceInfoUtil.java Fields.java
  * @run main Driver Fields
  */
 
-import static com.sun.tools.classfile.TypeAnnotation.TargetType.*;
+import static java.lang.classfile.TypeAnnotation.TargetType.*;
 
 public class Fields {
     // field types

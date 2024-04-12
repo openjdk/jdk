@@ -818,8 +818,7 @@ public sealed class ICC_Profile implements Serializable
     /**
      * Constructs an {@code ICC_Profile} corresponding to one of the specific
      * color spaces defined by the {@code ColorSpace} class (for example
-     * {@code CS_sRGB}). Throws an {@code IllegalArgumentException} if cspace is
-     * not one of the defined color spaces.
+     * {@code CS_sRGB}).
      *
      * @param  cspace the type of color space to create a profile for. The
      *         specified type is one of the color space constants defined in the
@@ -1412,6 +1411,7 @@ public sealed class ICC_Profile implements Serializable
      *
      * @param  s stream used for serialization
      * @throws IOException thrown by {@code ObjectInputStream}
+     * @throws NullPointerException if {@code s} is {@code null}
      * @serialData the {@code String} is the name of one of
      *         <code>CS_<var>*</var></code> constants defined in the
      *         {@link ColorSpace} class if the profile object is a profile for a
@@ -1467,8 +1467,8 @@ public sealed class ICC_Profile implements Serializable
      *
      * @param  s stream used for deserialization
      * @throws IOException thrown by {@code ObjectInputStream}
-     * @throws ClassNotFoundException thrown by {@code
-     *         ObjectInputStream}
+     * @throws ClassNotFoundException thrown by {@code ObjectInputStream}
+     * @throws NullPointerException if {@code s} is {@code null}
      * @serialData the {@code String} is the name of one of
      *         <code>CS_<var>*</var></code> constants defined in the
      *         {@link ColorSpace} class if the profile object is a profile for a

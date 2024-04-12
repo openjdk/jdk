@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.util.Objects;
 import java.util.function.Function;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr.Role;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 
 /**
  * A tree node representing an HTML element, containing the name of the element,
@@ -586,13 +586,26 @@ public class HtmlTree extends Content {
      * @param id    the id
      * @return the element
      */
-    public static HtmlTree INPUT(String type, HtmlId id) {
+    public static HtmlTree INPUT(HtmlAttr.InputType type, HtmlId id) {
         return new HtmlTree(TagName.INPUT)
-                .put(HtmlAttr.TYPE, type)
+                .put(HtmlAttr.TYPE, type.toString())
                 .setId(id)
                 .put(HtmlAttr.DISABLED, "");
     }
 
+    /**
+     * Creates an HTML {@code INPUT} element with the given type
+     * and style. The element is marked as initially disabled.
+     * @param type  the input type
+     * @param style the input style
+     * @return      the element
+     */
+    public static HtmlTree INPUT(HtmlAttr.InputType type, HtmlStyle style) {
+        return new HtmlTree(TagName.INPUT)
+                .put(HtmlAttr.TYPE, type.toString())
+                .setStyle(style)
+                .put(HtmlAttr.DISABLED, "");
+    }
     /**
      * Creates an HTML {@code LABEL} element with the given content.
      *
@@ -716,6 +729,17 @@ public class HtmlTree extends Content {
     public static HtmlTree NOSCRIPT(Content body) {
         return new HtmlTree(TagName.NOSCRIPT)
                 .add(body);
+    }
+
+    /**
+     * Creates an HTML {@code OL} element with the given style.
+     *
+     * @param style the style
+     * @return the element
+     */
+    public static HtmlTree OL(HtmlStyle style) {
+        return new HtmlTree(TagName.OL)
+                .setStyle(style);
     }
 
     /**
@@ -1073,7 +1097,7 @@ public class HtmlTree extends Content {
             out.write(key.toString());
             if (!value.isEmpty()) {
                 out.write("=\"");
-                out.write(value);
+                out.write(value.replace("\"", "&quot;"));
                 out.write("\"");
             }
         }

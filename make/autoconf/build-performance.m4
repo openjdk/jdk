@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -243,8 +243,11 @@ AC_DEFUN([BPERF_SETUP_CCACHE_USAGE],
       fi
     fi
 
+    # The CCACHE_BASEDIR needs to end with '/' as ccache will otherwise think
+    # directories next to it, that have the base dir name as a prefix, are sub
+    # directories of CCACHE_BASEDIR.
     CCACHE="CCACHE_COMPRESS=1 $SET_CCACHE_DIR \
-        CCACHE_SLOPPINESS=$CCACHE_SLOPPINESS CCACHE_BASEDIR=$TOPDIR $CCACHE"
+        CCACHE_SLOPPINESS=$CCACHE_SLOPPINESS CCACHE_BASEDIR=$WORKSPACE_ROOT/ $CCACHE"
 
     if test "x$SET_CCACHE_DIR" != x; then
       mkdir -p $CCACHE_DIR > /dev/null 2>&1
@@ -355,9 +358,6 @@ AC_DEFUN_ONCE([BPERF_SETUP_PRECOMPILED_HEADERS],
   AC_MSG_CHECKING([if precompiled headers are available])
   if test "x$ICECC" != "x"; then
     AC_MSG_RESULT([no, does not work effectively with icecc])
-    PRECOMPILED_HEADERS_AVAILABLE=false
-  elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    AC_MSG_RESULT([no, does not work with xlc])
     PRECOMPILED_HEADERS_AVAILABLE=false
   elif test "x$TOOLCHAIN_TYPE" = xgcc; then
     # Check that the compiler actually supports precomp headers.

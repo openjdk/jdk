@@ -78,17 +78,11 @@ class G1CardSetInlinePtr : public StackObj {
 
   static const uintptr_t SizeFieldMask = (((uint)1 << SizeFieldLen) - 1) << SizeFieldPos;
 
-  static uint8_t card_pos_for(uint const idx, uint const bits_per_card) {
+  static uint card_pos_for(uint const idx, uint const bits_per_card) {
     return (idx * bits_per_card + HeaderSize);
   }
 
   static ContainerPtr merge(ContainerPtr orig_value, uint card_in_region, uint idx, uint bits_per_card);
-
-  static uint card_at(ContainerPtr value, uint const idx, uint const bits_per_card) {
-    uint8_t card_pos = card_pos_for(idx, bits_per_card);
-    uint result = ((uintptr_t)value >> card_pos) & (((uintptr_t)1 << bits_per_card) - 1);
-    return result;
-  }
 
   uint find(uint const card_idx, uint const bits_per_card, uint start_at, uint num_cards);
 

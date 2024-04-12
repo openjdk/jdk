@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -45,6 +46,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/generateOopMap.hpp"
 #include "oops/instanceKlass.hpp"
@@ -70,11 +72,11 @@
 #include "runtime/task.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
+#include "runtime/trimNativeHeap.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_version.hpp"
 #include "sanitizers/leak.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -98,7 +100,7 @@
 
 GrowableArray<Method*>* collected_profiled_methods;
 
-int compare_methods(Method** a, Method** b) {
+static int compare_methods(Method** a, Method** b) {
   // compiled_invocation_count() returns int64_t, forcing the entire expression
   // to be evaluated as int64_t. Overflow is not an issue.
   int64_t diff = (((*b)->invocation_count() + (*b)->compiled_invocation_count())
@@ -106,7 +108,7 @@ int compare_methods(Method** a, Method** b) {
   return (diff < 0) ? -1 : (diff > 0) ? 1 : 0;
 }
 
-void collect_profiled_methods(Method* m) {
+static void collect_profiled_methods(Method* m) {
   Thread* thread = Thread::current();
   methodHandle mh(thread, m);
   if ((m->method_data() != nullptr) &&
@@ -115,7 +117,7 @@ void collect_profiled_methods(Method* m) {
   }
 }
 
-void print_method_profiling_data() {
+static void print_method_profiling_data() {
   if ((ProfileInterpreter COMPILER1_PRESENT(|| C1UpdateMethodData)) &&
      (PrintMethodData || CompilerOracle::should_print_methods())) {
     ResourceMark rm;
@@ -128,17 +130,23 @@ void print_method_profiling_data() {
     if (count > 0) {
       for (int index = 0; index < count; index++) {
         Method* m = collected_profiled_methods->at(index);
-        ttyLocker ttyl;
-        tty->print_cr("------------------------------------------------------------------------");
-        m->print_invocation_count();
-        tty->print_cr("  mdo size: %d bytes", m->method_data()->size_in_bytes());
-        tty->cr();
+
+        // Instead of taking tty lock, we collect all lines into a string stream
+        // and then print them all at once.
+        ResourceMark rm2;
+        stringStream ss;
+
+        ss.print_cr("------------------------------------------------------------------------");
+        m->print_invocation_count(&ss);
+        ss.print_cr("  mdo size: %d bytes", m->method_data()->size_in_bytes());
+        ss.cr();
         // Dump data on parameters if any
         if (m->method_data() != nullptr && m->method_data()->parameters_type_data() != nullptr) {
-          tty->fill_to(2);
-          m->method_data()->parameters_type_data()->print_data_on(tty);
+          ss.fill_to(2);
+          m->method_data()->parameters_type_data()->print_data_on(&ss);
         }
-        m->print_codes();
+        m->print_codes_on(&ss);
+        tty->print("%s", ss.as_string()); // print all at once
         total_size += m->method_data()->size_in_bytes();
       }
       tty->print_cr("------------------------------------------------------------------------");
@@ -154,7 +162,7 @@ void print_method_profiling_data() {
 
 GrowableArray<Method*>* collected_invoked_methods;
 
-void collect_invoked_methods(Method* m) {
+static void collect_invoked_methods(Method* m) {
   if (m->invocation_count() + m->compiled_invocation_count() >= 1) {
     collected_invoked_methods->push(m);
   }
@@ -164,7 +172,7 @@ void collect_invoked_methods(Method* m) {
 // Invocation count accumulators should be unsigned long to shift the
 // overflow border. Longer-running workloads tend to create invocation
 // counts which already overflow 32-bit counters for individual methods.
-void print_method_invocation_histogram() {
+static void print_method_invocation_histogram() {
   ResourceMark rm;
   collected_invoked_methods = new GrowableArray<Method*>(1024);
   SystemDictionary::methods_do(collect_invoked_methods);
@@ -190,7 +198,7 @@ void print_method_invocation_histogram() {
     Method* m = collected_invoked_methods->at(index);
     uint64_t iic = (uint64_t)m->invocation_count();
     uint64_t cic = (uint64_t)m->compiled_invocation_count();
-    if ((iic + cic) >= (uint64_t)MethodHistogramCutoff) m->print_invocation_count();
+    if ((iic + cic) >= (uint64_t)MethodHistogramCutoff) m->print_invocation_count(tty);
     int_total  += iic;
     comp_total += cic;
     if (m->is_final())        final_total  += iic + cic;
@@ -203,25 +211,33 @@ void print_method_invocation_histogram() {
   total = int_total + comp_total;
   special_total = final_total + static_total +synch_total + native_total + access_total;
   tty->print_cr("Invocations summary for %d methods:", collected_invoked_methods->length());
+  double total_div = (double)total;
   tty->print_cr("\t" UINT64_FORMAT_W(12) " (100%%)  total",           total);
-  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%) |- interpreted", int_total,     100.0 * int_total    / total);
-  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%) |- compiled",    comp_total,    100.0 * comp_total   / total);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%) |- interpreted", int_total,     100.0 * (double)int_total    / total_div);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%) |- compiled",    comp_total,    100.0 * (double)comp_total   / total_div);
   tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%) |- special methods (interpreted and compiled)",
-                                                                         special_total, 100.0 * special_total/ total);
-  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- synchronized",synch_total,   100.0 * synch_total  / total);
-  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- final",       final_total,   100.0 * final_total  / total);
-  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- static",      static_total,  100.0 * static_total / total);
-  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- native",      native_total,  100.0 * native_total / total);
-  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- accessor",    access_total,  100.0 * access_total / total);
+                                                                         special_total, 100.0 * (double)special_total/ total_div);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- synchronized",synch_total,   100.0 * (double)synch_total  / total_div);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- final",       final_total,   100.0 * (double)final_total  / total_div);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- static",      static_total,  100.0 * (double)static_total / total_div);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- native",      native_total,  100.0 * (double)native_total / total_div);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- accessor",    access_total,  100.0 * (double)access_total / total_div);
   tty->cr();
   SharedRuntime::print_call_statistics(comp_total);
 }
 
-void print_bytecode_count() {
+static void print_bytecode_count() {
   if (CountBytecodes || TraceBytecodes || StopInterpreterAt) {
     tty->print_cr("[BytecodeCounter::counter_value = %d]", BytecodeCounter::counter_value());
   }
 }
+
+#else
+
+static void print_method_invocation_histogram() {}
+static void print_bytecode_count() {}
+
+#endif // PRODUCT
 
 
 // General statistics printing (profiling ...)
@@ -300,10 +316,12 @@ void print_statistics() {
     CompileBroker::print_heapinfo(nullptr, "all", 4096); // details
   }
 
+#ifndef PRODUCT
   if (PrintCodeCache2) {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::print_internals();
   }
+#endif
 
   if (VerifyOops && Verbose) {
     tty->print_cr("+VerifyOops count: %d", StubRoutines::verify_oop_count());
@@ -332,58 +350,12 @@ void print_statistics() {
     MetaspaceUtils::print_basic_report(tty, 0);
   }
 
-  ThreadsSMRSupport::log_statistics();
-}
-
-#else // PRODUCT MODE STATISTICS
-
-void print_statistics() {
-
-  if (PrintMethodData) {
-    print_method_profiling_data();
-  }
-
-  if (CITime) {
-    CompileBroker::print_times();
-  }
-
-#ifdef COMPILER2_OR_JVMCI
-  if ((LogVMOutput || LogCompilation) && UseCompiler) {
-    // Only print the statistics to the log file
-    FlagSetting fs(DisplayVMOutput, false);
-    Deoptimization::print_statistics();
-  }
-#endif /* COMPILER2 || INCLUDE_JVMCI */
-
-  if (PrintCodeCache) {
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    CodeCache::print();
-  }
-
-  // CodeHeap State Analytics.
-  if (PrintCodeHeapAnalytics) {
-    CompileBroker::print_heapinfo(nullptr, "all", 4096); // details
-  }
-
-#ifdef COMPILER2
-  if (PrintPreciseRTMLockingStatistics) {
-    OptoRuntime::print_named_counters();
-  }
-#endif
-
-  // Native memory tracking data
-  if (PrintNMTStatistics) {
-    MemTracker::final_report(tty);
-  }
-
-  if (PrintMetaspaceStatisticsAtExit) {
-    MetaspaceUtils::print_basic_report(tty, 0);
+  if (CompilerOracle::should_print_final_memstat_report()) {
+    CompilationMemoryStatistic::print_all_by_size(tty, false, 0);
   }
 
   ThreadsSMRSupport::log_statistics();
 }
-
-#endif
 
 // Note: before_exit() can be executed only once, if more than one threads
 //       are trying to shutdown the VM at the same time, only one thread
@@ -471,13 +443,13 @@ void before_exit(JavaThread* thread, bool halt) {
 
   // Stop the WatcherThread. We do this before disenrolling various
   // PeriodicTasks to reduce the likelihood of races.
-  if (PeriodicTask::num_tasks() > 0) {
-    WatcherThread::stop();
-  }
+  WatcherThread::stop();
 
   // shut down the StatSampler task
   StatSampler::disengage();
   StatSampler::destroy();
+
+  NativeHeapTrimmer::cleanup();
 
   // Stop concurrent GC threads
   Universe::heap()->stop();
@@ -600,7 +572,7 @@ void vm_direct_exit(int code, const char* message) {
   vm_direct_exit(code);
 }
 
-void vm_perform_shutdown_actions() {
+static void vm_perform_shutdown_actions() {
   if (is_init_completed()) {
     Thread* thread = Thread::current_or_null();
     if (thread != nullptr && thread->is_Java_thread()) {
@@ -635,7 +607,7 @@ void vm_abort(bool dump_core) {
   ShouldNotReachHere();
 }
 
-void vm_notify_during_cds_dumping(const char* error, const char* message) {
+static void vm_notify_during_cds_dumping(const char* error, const char* message) {
   if (error != nullptr) {
     tty->print_cr("Error occurred during CDS dumping");
     tty->print("%s", error);
@@ -655,7 +627,7 @@ void vm_exit_during_cds_dumping(const char* error, const char* message) {
   vm_abort(false);
 }
 
-void vm_notify_during_shutdown(const char* error, const char* message) {
+static void vm_notify_during_shutdown(const char* error, const char* message) {
   if (error != nullptr) {
     tty->print_cr("Error occurred during initialization of VM");
     tty->print("%s", error);

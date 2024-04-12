@@ -149,7 +149,15 @@ class JvmtiExport : public AllStatic {
     JVMTI_ONLY(_can_access_local_variables = (on != 0);)
   }
   inline static void set_can_hotswap_or_post_breakpoint(bool on) {
-    JVMTI_ONLY(_can_hotswap_or_post_breakpoint = (on != 0);)
+#if INCLUDE_JVMTI
+    // Check that _can_hotswap_or_post_breakpoint is not reset once it
+    // was set to true. When _can_hotswap_or_post_breakpoint is set to true
+    // _all_dependencies_are_recorded is also set to true and never
+    // reset so we have to ensure that evol dependencies are always
+    // recorded from that point on.
+    assert(!_can_hotswap_or_post_breakpoint || on, "sanity check");
+    _can_hotswap_or_post_breakpoint = (on != 0);
+#endif
   }
   inline static void set_can_walk_any_space(bool on) {
     JVMTI_ONLY(_can_walk_any_space = (on != 0);)
@@ -298,6 +306,11 @@ class JvmtiExport : public AllStatic {
   static void decode_version_values(jint version, int * major, int * minor,
                                     int * micro) NOT_JVMTI_RETURN;
 
+  // If the jvmti_thread_state is absent and any thread filtered event
+  // is enabled globally then it is created.
+  // Otherwise, the thread->jvmti_thread_state() is returned.
+  static JvmtiThreadState* get_jvmti_thread_state(JavaThread *thread);
+
   // single stepping management methods
   static void at_single_stepping_point(JavaThread *thread, Method* method, address location) NOT_JVMTI_RETURN;
   static void expose_single_stepping(JavaThread *thread) NOT_JVMTI_RETURN;
@@ -396,8 +409,8 @@ class JvmtiExport : public AllStatic {
     }
   }
 
-  // Used by C2 to post vm_object_alloc
-  static bool _should_notify_object_alloc;
+  // Used by C2 to deoptimize allocation intrinsics and post vm_object_alloc
+  static int _should_notify_object_alloc;
 
   static void record_sampled_internal_object_allocation(oop object) NOT_JVMTI_RETURN;
   // Post objects collected by sampled_object_alloc_event_collector.

@@ -31,7 +31,6 @@
 class WorkerPolicy : public AllStatic {
   static const uint GCWorkersPerJavaThread = 2;
 
-  static bool _debug_perturbation;
   static uint _parallel_worker_threads;
   static bool _parallel_worker_threads_initialized;
 

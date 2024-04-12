@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static sun.security.action.GetPropertyAction.privilegedGetProperty;
 
 public enum CapturableState {
     GET_LAST_ERROR    ("GetLastError",    JAVA_INT, 1 << 0, Utils.IS_WINDOWS),

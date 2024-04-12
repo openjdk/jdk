@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,32 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4990596
- * @summary Make sure that any subclass of Number can be formatted using DecimalFormat.format().
+ * @summary Make sure that any subclass of Number can be formatted using
+ *          DecimalFormat.format() without throwing an exception.
+ * @run junit Bug4990596
  */
 
 import java.text.DecimalFormat;
 
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+
 public class Bug4990596 {
 
-    public static void main(String[] args) {
-        new DecimalFormat().format(new MutableInteger(0));
+    // Test that a custom subclass of Number can be formatted by
+    // DecimalFormat without throwing an IllegalArgumentException
+    @Test
+    public void formatSubclassedNumberTest() {
+        assertDoesNotThrow(() -> new DecimalFormat().format(new MutableInteger(0)),
+                "DecimalFormat.format() should support subclasses of Number");
     }
 
+    // A custom subclass of Number. Prior to this fix, if an instance of this
+    // class was formatted by DecimalFormat, an exception would be thrown.
     @SuppressWarnings("serial")
     public static class MutableInteger extends Number {
         public int value;

@@ -211,16 +211,6 @@ public class TestNestmateAttr extends TestScaffold {
 
     static String origin;
 
-    // override this to correct a bug so arguments can be passed to
-    // the Target class
-    protected void startUp(String targetName) {
-        List<String> argList = new ArrayList<>(Arrays.asList(args));
-        argList.add(0, targetName); // pre-pend so it becomes the first "app" arg
-        println("run args: " + argList);
-        connect((String[]) argList.toArray(args));
-        waitForVMStart();
-    }
-
     TestNestmateAttr (String[] args) {
         super(args);
     }

@@ -36,6 +36,7 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jfr/periodic/jfrCompilerQueueUtilization.hpp"
 #include "jfr/periodic/jfrFinalizerStatisticsEvent.hpp"
 #include "jfr/periodic/jfrModuleEvent.hpp"
 #include "jfr/periodic/jfrOSInterface.hpp"
@@ -65,6 +66,7 @@
 #include "runtime/vm_version.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/management.hpp"
+#include "services/memoryPool.hpp"
 #include "services/threadService.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -94,6 +96,10 @@ PeriodicType JfrPeriodicEventSet::type(void) {
   return _type;
 }
 
+TRACE_REQUEST_FUNC(ResidentSetSize) {
+  os::jfr_report_memory_info();
+}
+
 TRACE_REQUEST_FUNC(JVMInformation) {
   ResourceMark rm;
   EventJVMInformation event;
@@ -109,10 +115,10 @@ TRACE_REQUEST_FUNC(JVMInformation) {
 
 TRACE_REQUEST_FUNC(OSInformation) {
   ResourceMark rm;
-  char* os_name = NEW_RESOURCE_ARRAY(char, 2048);
-  JfrOSInterface::os_version(&os_name);
+  char* os_version = nullptr;
+  JfrOSInterface::os_version(&os_version);
   EventOSInformation event;
-  event.set_osVersion(os_name);
+  event.set_osVersion(os_version);
   event.commit();
 }
 
@@ -133,7 +139,7 @@ TRACE_REQUEST_FUNC(ModuleExport) {
 /*
  * This is left empty on purpose, having ExecutionSample as a requestable
  * is a way of getting the period. The period is passed to ThreadSampling::update_period.
- * Implementation in jfrSamples.cpp
+ * Implementation in periodic/sampling/jfrThreadSampler.cpp.
  */
 TRACE_REQUEST_FUNC(ExecutionSample) {
 }
@@ -216,6 +222,10 @@ TRACE_REQUEST_FUNC(ThreadCPULoad) {
   JfrThreadCPULoadEvent::send_events();
 }
 
+TRACE_REQUEST_FUNC(CompilerQueueUtilization) {
+  JfrCompilerQueueUtilization::send_events();
+}
+
 TRACE_REQUEST_FUNC(NetworkUtilization) {
   JfrNetworkUtilization::send_events();
 }
@@ -231,7 +241,7 @@ TRACE_REQUEST_FUNC(CPUTimeStampCounter) {
 
 TRACE_REQUEST_FUNC(SystemProcess) {
   char pid_buf[16];
-  SystemProcess* processes = NULL;
+  SystemProcess* processes = nullptr;
   int num_of_processes = 0;
   JfrTicks start_time = JfrTicks::now();
   int ret_val = JfrOSInterface::system_processes(&processes, &num_of_processes);
@@ -245,16 +255,16 @@ TRACE_REQUEST_FUNC(SystemProcess) {
   }
   if (ret_val == OS_OK) {
     // feature is implemented, write real event
-    while (processes != NULL) {
+    while (processes != nullptr) {
       SystemProcess* tmp = processes;
       const char* info = processes->command_line();
-      if (info == NULL) {
+      if (info == nullptr) {
          info = processes->path();
       }
-      if (info == NULL) {
+      if (info == nullptr) {
          info = processes->name();
       }
-      if (info == NULL) {
+      if (info == nullptr) {
          info = "?";
       }
       jio_snprintf(pid_buf, sizeof(pid_buf), "%d", processes->pid());
@@ -333,7 +343,7 @@ TRACE_REQUEST_FUNC(ThreadContextSwitchRate) {
 #define SEND_FLAGS_OF_TYPE(eventType, flagType)                   \
   do {                                                            \
     JVMFlag *flag = JVMFlag::flags;                               \
-    while (flag->name() != NULL) {                                \
+    while (flag->name() != nullptr) {                             \
       if (flag->is_ ## flagType()) {                              \
         if (flag->is_unlocked()) {                                \
           Event ## eventType event;                               \
@@ -379,7 +389,7 @@ TRACE_REQUEST_FUNC(StringFlag) {
 
 class VM_GC_SendObjectCountEvent : public VM_GC_HeapInspection {
  public:
-  VM_GC_SendObjectCountEvent() : VM_GC_HeapInspection(NULL, true) {}
+  VM_GC_SendObjectCountEvent() : VM_GC_HeapInspection(nullptr, true) {}
   virtual void doit() {
     ObjectCountEventSender::enable_requestable_event();
     collect();
@@ -411,7 +421,7 @@ TRACE_REQUEST_FUNC(GCConfiguration) {
   event.set_usesDynamicGCThreads(conf.uses_dynamic_gc_threads());
   event.set_isExplicitGCConcurrent(conf.is_explicit_gc_concurrent());
   event.set_isExplicitGCDisabled(conf.is_explicit_gc_disabled());
-  event.set_gcTimeRatio(conf.gc_time_ratio());
+  event.set_gcTimeRatio(static_cast<unsigned int>(conf.gc_time_ratio()));
   event.set_pauseTarget((s8)pause_target);
   event.commit();
 }
@@ -428,8 +438,8 @@ TRACE_REQUEST_FUNC(GCTLABConfiguration) {
 TRACE_REQUEST_FUNC(GCSurvivorConfiguration) {
   GCSurvivorConfiguration conf;
   EventGCSurvivorConfiguration event;
-  event.set_maxTenuringThreshold(conf.max_tenuring_threshold());
-  event.set_initialTenuringThreshold(conf.initial_tenuring_threshold());
+  event.set_maxTenuringThreshold(static_cast<u1>(conf.max_tenuring_threshold()));
+  event.set_initialTenuringThreshold(static_cast<u1>(conf.initial_tenuring_threshold()));
   event.commit();
 }
 
@@ -442,7 +452,7 @@ TRACE_REQUEST_FUNC(GCHeapConfiguration) {
   event.set_usesCompressedOops(conf.uses_compressed_oops());
   event.set_compressedOopsMode(conf.narrow_oop_mode());
   event.set_objectAlignment(conf.object_alignment_in_bytes());
-  event.set_heapAddressBits(conf.heap_address_size_in_bits());
+  event.set_heapAddressBits(static_cast<u1>(conf.heap_address_size_in_bits()));
   event.commit();
 }
 
@@ -452,14 +462,14 @@ TRACE_REQUEST_FUNC(YoungGenerationConfiguration) {
   EventYoungGenerationConfiguration event;
   event.set_maxSize((u8)max_size);
   event.set_minSize(conf.min_size());
-  event.set_newRatio(conf.new_ratio());
+  event.set_newRatio(static_cast<unsigned int>(conf.new_ratio()));
   event.commit();
 }
 
 TRACE_REQUEST_FUNC(InitialSystemProperty) {
   SystemProperty* p = Arguments::system_properties();
   JfrTicks time_stamp = JfrTicks::now();
-  while (p !=  NULL) {
+  while (p !=  nullptr) {
     if (!p->internal()) {
       EventInitialSystemProperty event(UNTIMED);
       event.set_key(p->key());
@@ -481,7 +491,7 @@ TRACE_REQUEST_FUNC(ThreadAllocationStatistics) {
   JfrJavaThreadIterator iter;
   while (iter.has_next()) {
     JavaThread* const jt = iter.next();
-    assert(jt != NULL, "invariant");
+    assert(jt != nullptr, "invariant");
     allocated.append(jt->cooked_allocated_bytes());
     thread_ids.append(JFR_JVM_THREAD_ID(jt));
   }
@@ -517,6 +527,13 @@ TRACE_REQUEST_FUNC(PhysicalMemory) {
   event.commit();
 }
 
+TRACE_REQUEST_FUNC(SwapSpace) {
+  EventSwapSpace event;
+  event.set_totalSize(os::total_swap_space());
+  event.set_freeSize(os::free_swap_space());
+  event.commit();
+}
+
 TRACE_REQUEST_FUNC(JavaThreadStatistics) {
   EventJavaThreadStatistics event;
   event.set_activeCount(ThreadService::get_live_thread_count());
@@ -525,6 +542,37 @@ TRACE_REQUEST_FUNC(JavaThreadStatistics) {
   event.set_peakCount(ThreadService::get_peak_thread_count());
   event.commit();
 }
+
+TRACE_REQUEST_FUNC(GCHeapMemoryUsage) {
+  MemoryUsage usage = Universe::heap()->memory_usage();
+  EventGCHeapMemoryUsage event(UNTIMED);
+  event.set_used(usage.used());
+  event.set_committed(usage.committed());
+  event.set_max(usage.max_size());
+  event.set_starttime(timestamp());
+  event.set_endtime(timestamp());
+  event.commit();
+}
+
+TRACE_REQUEST_FUNC(GCHeapMemoryPoolUsage) {
+  ResourceMark mark;
+  GrowableArray<MemoryPool*> pools = Universe::heap()->memory_pools();
+  for (int i = 0; i < pools.length(); i++) {
+    MemoryPool* pool = pools.at(i);
+    if (pool->is_heap()) {
+      MemoryUsage usage = pool->get_memory_usage();
+      EventGCHeapMemoryPoolUsage event(UNTIMED);
+      event.set_name(pool->name());
+      event.set_used(usage.used());
+      event.set_committed(usage.committed());
+      event.set_max(usage.max_size());
+      event.set_starttime(timestamp());
+      event.set_endtime(timestamp());
+      event.commit();
+    }
+  }
+}
+
 
 TRACE_REQUEST_FUNC(ClassLoadingStatistics) {
 #if INCLUDE_MANAGEMENT
@@ -539,13 +587,13 @@ TRACE_REQUEST_FUNC(ClassLoadingStatistics) {
 
 class JfrClassLoaderStatsClosure : public ClassLoaderStatsClosure {
 public:
-  JfrClassLoaderStatsClosure() : ClassLoaderStatsClosure(NULL) {}
+  JfrClassLoaderStatsClosure() : ClassLoaderStatsClosure(nullptr) {}
 
   bool do_entry(oop const& key, ClassLoaderStats const& cls) {
-    const ClassLoaderData* this_cld = cls._class_loader != NULL ?
-      java_lang_ClassLoader::loader_data_acquire(cls._class_loader) : NULL;
-    const ClassLoaderData* parent_cld = cls._parent != NULL ?
-      java_lang_ClassLoader::loader_data_acquire(cls._parent) : NULL;
+    const ClassLoaderData* this_cld = cls._class_loader != nullptr ?
+      java_lang_ClassLoader::loader_data_acquire(cls._class_loader) : nullptr;
+    const ClassLoaderData* parent_cld = cls._parent != nullptr ?
+      java_lang_ClassLoader::loader_data_acquire(cls._parent) : nullptr;
     EventClassLoaderStatistics event;
     event.set_classLoader(this_cld);
     event.set_parentClassLoader(parent_cld);
@@ -567,7 +615,7 @@ public:
 
 class JfrClassLoaderStatsVMOperation : public ClassLoaderStatsVMOperation {
  public:
-  JfrClassLoaderStatsVMOperation() : ClassLoaderStatsVMOperation(NULL) { }
+  JfrClassLoaderStatsVMOperation() : ClassLoaderStatsVMOperation(nullptr) { }
 
   void doit() {
     JfrClassLoaderStatsClosure clsc;
@@ -624,7 +672,7 @@ TRACE_REQUEST_FUNC(CompilerStatistics) {
 
 TRACE_REQUEST_FUNC(CompilerConfiguration) {
   EventCompilerConfiguration event;
-  event.set_threadCount(CICompilerCount);
+  event.set_threadCount(static_cast<s4>(CICompilerCount));
   event.set_tieredCompilation(TieredCompilation);
   event.set_dynamicCompilerThreadCount(UseDynamicNumberOfCompilerThreads);
   event.commit();

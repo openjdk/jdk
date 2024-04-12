@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,9 @@
 
 /*
  * @test
- * @enablePreview
+ * @key randomness
+ *
+ * @library /test/lib
  * @modules jdk.incubator.vector java.base/jdk.internal.vm.annotation
  * @run testng/othervm -XX:-TieredCompilation Byte128VectorLoadStoreTests
  *
@@ -54,7 +56,7 @@ public class Byte128VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
-    static final ValueLayout.OfByte ELEMENT_LAYOUT = ValueLayout.JAVA_BYTE.withBitAlignment(8);
+    static final ValueLayout.OfByte ELEMENT_LAYOUT = ValueLayout.JAVA_BYTE.withByteAlignment(1);
 
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 128);
@@ -249,7 +251,8 @@ public class Byte128VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static ByteVector fromArray(byte[] a, int i) {
-        return ByteVector.fromArray(SPECIES, a, i);
+        // Tests the species method and the equivalent vector method it defers to
+        return (ByteVector) SPECIES.fromArray(a, i);
     }
 
     @DontInline
@@ -269,7 +272,8 @@ public class Byte128VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static ByteVector fromMemorySegment(MemorySegment a, int i, ByteOrder bo) {
-        return ByteVector.fromMemorySegment(SPECIES, a, i, bo);
+        // Tests the species method and the equivalent vector method it defers to
+        return (ByteVector) SPECIES.fromMemorySegment(a, i, bo);
     }
 
     @DontInline

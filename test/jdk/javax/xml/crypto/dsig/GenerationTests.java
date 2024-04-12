@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 4635230 6283345 6303830 6824440 6867348 7094155 8038184 8038349 8046949
- *      8046724 8079693 8177334 8205507 8210736 8217878 8241306
+ *      8046724 8079693 8177334 8205507 8210736 8217878 8241306 8305972
  * @summary Basic unit tests for generating XML Signatures with JSR 105
  * @modules java.base/sun.security.util
  *          java.base/sun.security.x509
@@ -56,18 +56,8 @@ import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509CRL;
-import java.security.spec.KeySpec;
-import java.security.spec.DSAPrivateKeySpec;
-import java.security.spec.DSAPublicKeySpec;
-import java.security.spec.ECField;
-import java.security.spec.ECFieldFp;
-import java.security.spec.ECParameterSpec;
-import java.security.spec.ECPoint;
-import java.security.spec.ECPrivateKeySpec;
-import java.security.spec.ECPublicKeySpec;
-import java.security.spec.EllipticCurve;
-import java.security.spec.RSAPrivateKeySpec;
-import java.security.spec.RSAPublicKeySpec;
+import java.security.cert.X509Certificate;
+import java.security.spec.*;
 import java.util.*;
 import java.util.stream.Stream;
 import javax.crypto.KeyGenerator;
@@ -110,12 +100,15 @@ public class GenerationTests {
             rsaSha1, rsaSha224, rsaSha256, rsaSha384, rsaSha512,
             ecdsaSha1, ecdsaSha224, ecdsaSha256, ecdsaSha384, ecdsaSha512,
             hmacSha1, hmacSha224, hmacSha256, hmacSha384, hmacSha512,
-            rsaSha1mgf1, rsaSha224mgf1, rsaSha256mgf1, rsaSha384mgf1, rsaSha512mgf1, rsaShaPSS;
+            rsaSha1mgf1, rsaSha224mgf1, rsaSha256mgf1, rsaSha384mgf1, rsaSha512mgf1,
+            rsaSha3_224mgf1, rsaSha3_256mgf1, rsaSha3_384mgf1, rsaSha3_512mgf1,
+            rsaShaPSS, ed25519, ed448;
     private static DigestMethod sha1, sha224, sha256, sha384, sha512,
                                 sha3_224, sha3_256, sha3_384, sha3_512;
     private static KeyInfo dsa1024, dsa2048, rsa, rsa1024, rsa2048,
-                           p256ki, p384ki, p521ki;
+                           p256ki, p384ki, p521ki, ed25519ki, ed448ki;
     private static KeySelector kvks = new KeySelectors.KeyValueKeySelector();
+    private static KeySelector x5ks = new KeySelectors.RawX509KeySelector();
     private static KeySelector sks;
     private static Key signingKey;
     private static PublicKey validatingKey;
@@ -217,7 +210,9 @@ public class GenerationTests {
             SignatureMethod.ECDSA_SHA256,
             SignatureMethod.HMAC_SHA256,
             SignatureMethod.SHA256_RSA_MGF1,
-            SignatureMethod.RSA_PSS);
+            SignatureMethod.SHA3_256_RSA_MGF1,
+            SignatureMethod.RSA_PSS,
+            SignatureMethod.ED25519);
 
     private static final String[] allSignatureMethods
             = Stream.of(SignatureMethod.class.getDeclaredFields())
@@ -249,9 +244,9 @@ public class GenerationTests {
                 })
                 .toArray(String[]::new);
 
-    // As of JDK 17, the number of defined algorithms are...
+    // As of JDK 22, the number of defined algorithms are...
     static {
-        if (allSignatureMethods.length != 23
+        if (allSignatureMethods.length != 29
                 || allDigestMethods.length != 9) {
             System.out.println(Arrays.toString(allSignatureMethods));
             System.out.println(Arrays.toString(allDigestMethods));
@@ -312,6 +307,8 @@ public class GenerationTests {
         test_create_signature_enveloping_p256_sha512();
         test_create_signature_enveloping_p384_sha1();
         test_create_signature_enveloping_p521_sha1();
+        test_create_signature_enveloping_ed25519();
+        test_create_signature_enveloping_ed448();
         test_create_signature_external_b64_dsa();
         test_create_signature_external_dsa();
         test_create_signature_keyname();
@@ -339,6 +336,10 @@ public class GenerationTests {
         test_create_signature_enveloping_sha512_rsa_sha256_mgf1();
         test_create_signature_enveloping_sha512_rsa_sha384_mgf1();
         test_create_signature_enveloping_sha512_rsa_sha512_mgf1();
+        test_create_signature_enveloping_sha512_rsa_sha3_224_mgf1();
+        test_create_signature_enveloping_sha512_rsa_sha3_256_mgf1();
+        test_create_signature_enveloping_sha512_rsa_sha3_384_mgf1();
+        test_create_signature_enveloping_sha512_rsa_sha3_512_mgf1();
         test_create_signature_enveloping_sha512_rsa_pss();
         test_create_signature_reference_dependency();
         test_create_signature_with_attr_in_no_namespace();
@@ -359,8 +360,10 @@ public class GenerationTests {
                         Arrays.stream(xml_transforms).forEach(t ->
                             Arrays.stream(KeyInfoType.values()).forEach(k -> {
                                 if (isMajor(s, d)) {
-                                    test_create_detached_signature(c, s, d, t, k,
-                                            Content.Xml, server.getPort(), false, null);
+                                    if (!s.contains("#eddsa") || k != KeyInfoType.KeyValue) {
+                                        test_create_detached_signature(c, s, d, t, k,
+                                                Content.Xml, server.getPort(), false, null);
+                                    }
                                 }
                         })))));
 
@@ -370,8 +373,10 @@ public class GenerationTests {
                     Arrays.stream(allDigestMethods).forEach(d ->
                         Arrays.stream(KeyInfoType.values()).forEach(k -> {
                             if (isMajor(s, d)) {
-                                test_create_detached_signature(c, s, d, null, k,
-                                        Content.Text, server.getPort(), false, null);
+                                if (!s.contains("#eddsa") || k != KeyInfoType.KeyValue) {
+                                    test_create_detached_signature(c, s, d, null, k,
+                                            Content.Text, server.getPort(), false, null);
+                                }
                             }
                         }))));
 
@@ -382,9 +387,11 @@ public class GenerationTests {
                         Arrays.stream(non_xml_transforms).forEach(t ->
                             Arrays.stream(KeyInfoType.values()).forEach(k -> {
                                 if (isMajor(s, d)) {
-                                    test_create_detached_signature(c, s, d, t, k,
-                                            Content.Base64, server.getPort(),
-                                            false, null);
+                                    if (!s.contains("#eddsa") || k != KeyInfoType.KeyValue) {
+                                        test_create_detached_signature(c, s, d, t, k,
+                                                Content.Base64, server.getPort(),
+                                                false, null);
+                                    }
                                 }
                         })))));
 
@@ -525,6 +532,11 @@ public class GenerationTests {
         p521ki = kifac.newKeyInfo(Collections.singletonList
             (kifac.newKeyValue(getECPublicKey("P521"))));
 
+        ed25519ki = kifac.newKeyInfo(Collections.singletonList
+            (kifac.newX509Data(List.of(getEd25519Certificate()))));
+        ed448ki = kifac.newKeyInfo(Collections.singletonList
+                (kifac.newX509Data(List.of(getEd448Certificate()))));
+
         rsaSha1 = fac.newSignatureMethod(SignatureMethod.RSA_SHA1, null);
         rsaSha224 = fac.newSignatureMethod(SignatureMethod.RSA_SHA224, null);
         rsaSha256 = fac.newSignatureMethod(SignatureMethod.RSA_SHA256, null);
@@ -536,6 +548,10 @@ public class GenerationTests {
         rsaSha256mgf1 = fac.newSignatureMethod(SignatureMethod.SHA256_RSA_MGF1, null);
         rsaSha384mgf1 = fac.newSignatureMethod(SignatureMethod.SHA384_RSA_MGF1, null);
         rsaSha512mgf1 = fac.newSignatureMethod(SignatureMethod.SHA512_RSA_MGF1, null);
+        rsaSha3_224mgf1 = fac.newSignatureMethod(SignatureMethod.SHA3_224_RSA_MGF1, null);
+        rsaSha3_256mgf1 = fac.newSignatureMethod(SignatureMethod.SHA3_256_RSA_MGF1, null);
+        rsaSha3_384mgf1 = fac.newSignatureMethod(SignatureMethod.SHA3_384_RSA_MGF1, null);
+        rsaSha3_512mgf1 = fac.newSignatureMethod(SignatureMethod.SHA3_512_RSA_MGF1, null);
         rsaShaPSS = fac.newSignatureMethod(SignatureMethod. RSA_PSS, null);
 
         ecdsaSha1 = fac.newSignatureMethod(SignatureMethod.ECDSA_SHA1, null);
@@ -543,6 +559,9 @@ public class GenerationTests {
         ecdsaSha256 = fac.newSignatureMethod(SignatureMethod.ECDSA_SHA256, null);
         ecdsaSha384 = fac.newSignatureMethod(SignatureMethod.ECDSA_SHA384, null);
         ecdsaSha512 = fac.newSignatureMethod(SignatureMethod.ECDSA_SHA512, null);
+
+        ed25519 = fac.newSignatureMethod(SignatureMethod.ED25519, null);
+        ed448 = fac.newSignatureMethod(SignatureMethod.ED448, null);
 
         hmacSha1 = fac.newSignatureMethod(SignatureMethod.HMAC_SHA1, null);
         hmacSha224 = fac.newSignatureMethod(SignatureMethod.HMAC_SHA224, null);
@@ -798,6 +817,38 @@ public class GenerationTests {
         System.out.println();
     }
 
+    static void test_create_signature_enveloping_sha512_rsa_sha3_224_mgf1()
+            throws Exception {
+        System.out.println("* Generating signature-enveloping-sha512-rsa_sha3_224_mgf1.xml");
+        test_create_signature_enveloping(sha512, rsaSha3_224mgf1, rsa1024,
+                getPrivateKey("RSA", 1024), kvks, false, true);
+        System.out.println();
+    }
+
+    static void test_create_signature_enveloping_sha512_rsa_sha3_256_mgf1()
+            throws Exception {
+        System.out.println("* Generating signature-enveloping-sha512-rsa_sha3_256_mgf1.xml");
+        test_create_signature_enveloping(sha512, rsaSha3_256mgf1, rsa1024,
+                getPrivateKey("RSA", 1024), kvks, false, true);
+        System.out.println();
+    }
+
+    static void test_create_signature_enveloping_sha512_rsa_sha3_384_mgf1()
+            throws Exception {
+        System.out.println("* Generating signature-enveloping-sha512-rsa_sha3_384_mgf1.xml");
+        test_create_signature_enveloping(sha512, rsaSha3_384mgf1, rsa1024,
+                getPrivateKey("RSA", 1024), kvks, false, true);
+        System.out.println();
+    }
+
+    static void test_create_signature_enveloping_sha512_rsa_sha3_512_mgf1()
+            throws Exception {
+        System.out.println("* Generating signature-enveloping-sha512-rsa_sha3_512_mgf1.xml");
+        test_create_signature_enveloping(sha512, rsaSha3_512mgf1, rsa2048,
+                getPrivateKey("RSA", 2048), kvks, false, true);
+        System.out.println();
+    }
+
     static void test_create_signature_enveloping_sha512_rsa_pss()
             throws Exception {
         System.out.println("* Generating signature-enveloping-sha512_rsa_pss.xml");
@@ -852,6 +903,20 @@ public class GenerationTests {
         System.out.println("* Generating signature-enveloping-p521-sha1.xml");
         test_create_signature_enveloping(sha1, ecdsaSha1, p521ki,
             getECPrivateKey("P521"), kvks, false, true);
+        System.out.println();
+    }
+
+    static void test_create_signature_enveloping_ed25519() throws Exception {
+        System.out.println("* Generating signature-enveloping-ed25519.xml");
+        test_create_signature_enveloping(sha1, ed25519, ed25519ki,
+                getEd25519PrivateKey(), x5ks, false, true);
+        System.out.println();
+    }
+
+    static void test_create_signature_enveloping_ed448() throws Exception {
+        System.out.println("* Generating signature-enveloping-ed448.xml");
+        test_create_signature_enveloping(sha1, ed448, ed448ki,
+                getEd448PrivateKey(), x5ks, false, true);
         System.out.println();
     }
 
@@ -1950,13 +2015,15 @@ public class GenerationTests {
                             || sm.contains("-rsa-MGF1")) {
                         kpg = KeyPairGenerator.getInstance("RSA");
                         kpg.initialize(
-                                sm.contains("#sha512-rsa-MGF1") ? 2048 : 1024);
+                                sm.contains("512-rsa-MGF1") ? 2048 : 1024);
                     } else if (sm.contains("#dsa-")) {
                         kpg = KeyPairGenerator.getInstance("DSA");
                         kpg.initialize(1024);
                     } else if (sm.contains("#ecdsa-")) {
                         kpg = KeyPairGenerator.getInstance("EC");
                         kpg.initialize(256);
+                    } else if (sm.contains("#eddsa-")) {
+                        kpg = KeyPairGenerator.getInstance(sm.substring(sm.lastIndexOf('-') + 1));
                     } else {
                         throw new RuntimeException("Unsupported signature algorithm");
                     }
@@ -2085,6 +2152,20 @@ public class GenerationTests {
         1
     );
 
+    private static final String ED25519_CERT =
+            "3081d730818aa003020102020822bc4997b1893265300506032b657030123110300e0603550403130745643235353139301e170d3233303431333033303732365a170d3433303430383033303" +
+            "732365a30123110300e0603550403130745643235353139302a300506032b657003210012ecd7383ac90c30035dc531285bdb897faafddfc6969271c2ebd9a82b6078e5300506032b65700341" +
+            "00a3cb7c03bbb3e9fa92eaf3f9a6f2608460d472c6a6ce3bebf0f57f45612e87ebdc6aa6d7527ae9e86c8e10bcccf98963f9b082c0bb44adb240c5fce9bb68b301";
+    private static final String ED25519_KEY =
+            "b59e57e352fa03b3a643946ae60b7f1e276f9ab41f25accaa63b660ba36168b2";
+    private static final String ED448_CERT =
+            "3082011f3081a0a003020102020900ceaefd75473d52b2300506032b65713010310e300c060355040313054564343438301e170d3233303431333033303735345a170d3433303430383033303" +
+            "735345a3010310e300c0603550403130545643434383043300506032b6571033a00d605be958f21faf6a1181fa96ebe8580cca3cae9b48dfad5145ee999d9df4ef77c355d33ae8b21e9a3541f" +
+            "b985ae366b9678db1a3fd1fd5c00300506032b65710373000b4dc8de20b261f5ca7cf41777725a2ec6cd107d6b75cd6ad02c00af8096ecf97c7445596aabd70381ce087d2b3b280ca4181566b" +
+            "9230fd6801e22e53f1514989bc5b06cfb5f7cac222ea9a37a0771a3f7cfcbfd1ba9546bbe333d37ee81c3a53d86247d377225114e1e81123f947a391800";
+    private static final String ED448_KEY =
+            "50b72f081f7f2f3383c4b03975cf49a76ba8b17dec51eaea3cd267b6989b81786e8dd8af4df305eaad60bdd24345b8490548c371d62e926f80";
+
     private static ECParameterSpec initECParams(
             String sfield, String a, String b, String gx, String gy,
             String n, int h) {
@@ -2158,6 +2239,16 @@ public class GenerationTests {
         return kf.generatePublic(kspec);
     }
 
+    private static X509Certificate getEd25519Certificate() throws Exception {
+        return (X509Certificate) CertificateFactory.getInstance("X.509")
+                .generateCertificate(new ByteArrayInputStream(HexFormat.of().parseHex(ED25519_CERT)));
+    }
+
+    private static X509Certificate getEd448Certificate() throws Exception {
+        return (X509Certificate) CertificateFactory.getInstance("X.509")
+                .generateCertificate(new ByteArrayInputStream(HexFormat.of().parseHex(ED448_CERT)));
+    }
+
     private static PrivateKey getPrivateKey(String algo, int keysize)
         throws Exception {
         KeyFactory kf = KeyFactory.getInstance(algo);
@@ -2209,6 +2300,16 @@ public class GenerationTests {
         KeyFactory kf = KeyFactory.getInstance("EC");
         KeySpec kspec = new ECPrivateKeySpec(new BigInteger(s), params);
         return kf.generatePrivate(kspec);
+    }
+
+    private static PrivateKey getEd25519PrivateKey() throws Exception {
+        return KeyFactory.getInstance("Ed25519").generatePrivate(new EdECPrivateKeySpec(
+                NamedParameterSpec.ED25519, HexFormat.of().parseHex(ED25519_KEY)));
+    }
+
+    private static PrivateKey getEd448PrivateKey() throws Exception {
+        return KeyFactory.getInstance("Ed448").generatePrivate(new EdECPrivateKeySpec(
+                NamedParameterSpec.ED448, HexFormat.of().parseHex(ED448_KEY)));
     }
 
     private static SecretKey getSecretKey(final byte[] secret) {

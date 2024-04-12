@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -25,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile low JCov attributes.
+ * @summary Testing ClassFile low JCov attributes.
  * @compile -Xjcov LowJCovAttributeTest.java
  * @run junit LowJCovAttributeTest
  */
@@ -34,14 +32,14 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.Utf8Entry;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -61,7 +59,7 @@ class LowJCovAttributeTest {
 
     LowJCovAttributeTest() throws IOException {
         this.path = Paths.get(URI.create(LowJCovAttributeTest.class.getResource(TEST_FILE).toString()));
-        this.classLow = Classfile.parse(path);
+        this.classLow = ClassFile.of().parse(path);
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,20 +28,23 @@
 #include "memory/referenceType.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constMethod.hpp"
-#include "oops/constantPool.hpp"
 #include "oops/fieldInfo.hpp"
 #include "oops/instanceKlassFlags.hpp"
 #include "oops/instanceOop.hpp"
 #include "runtime/handles.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/align.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrKlassExtension.hpp"
 #endif
 
+class ConstantPool;
 class DeoptimizationScope;
 class klassItable;
+class Monitor;
 class RecordComponent;
 
 // An InstanceKlass is the VM level representation of a Java class.
@@ -113,7 +116,7 @@ class OopMapBlock {
   }
 
   // sizeof(OopMapBlock) in words.
-  static const int size_in_words() {
+  static int size_in_words() {
     return align_up((int)sizeof(OopMapBlock), wordSize) >>
       LogBytesPerWord;
   }
@@ -142,7 +145,7 @@ class InstanceKlass: public Klass {
   InstanceKlass(const ClassFileParser& parser, KlassKind kind = Kind, ReferenceType reference_type = REF_NONE);
 
  public:
-  InstanceKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
+  InstanceKlass();
 
   // See "The Java Virtual Machine Specification" section 2.16.2-5 for a detailed description
   // of the class loading & initialization procedure, and the use of the states.
@@ -234,9 +237,9 @@ class InstanceKlass: public Klass {
   JavaThread* volatile _init_thread;        // Pointer to current thread doing initialization (to handle recursive initialization)
 
   OopMapCache*    volatile _oop_map_cache;   // OopMapCache for all methods in the klass (allocated lazily)
-  JNIid*          _jni_ids;              // First JNI identifier for static fields in this class
-  jmethodID*      volatile _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or null if none
-  nmethodBucket*  volatile _dep_context;          // packed DependencyContext structure
+  JNIid*          _jni_ids;                  // First JNI identifier for static fields in this class
+  jmethodID* volatile _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or null if none
+  nmethodBucket*  volatile _dep_context;     // packed DependencyContext structure
   uint64_t        volatile _dep_context_last_cleaned;
   nmethod*        _osr_nmethods_head;    // Head of list of on-stack replacement nmethods for this class
 #if INCLUDE_JVMTI
@@ -253,6 +256,7 @@ class InstanceKlass: public Klass {
 #endif
 
   NOT_PRODUCT(int _verify_count;)  // to avoid redundant verifies
+  NOT_PRODUCT(volatile int _shared_class_load_count;) // ensure a shared class is loaded only once
 
   // Method array.
   Array<Method*>* _methods;
@@ -343,6 +347,7 @@ class InstanceKlass: public Klass {
   ObjArrayKlass* array_klasses() const     { return _array_klasses; }
   inline ObjArrayKlass* array_klasses_acquire() const; // load with acquire semantics
   inline void release_set_array_klasses(ObjArrayKlass* k); // store with release semantics
+  void set_array_klasses(ObjArrayKlass* k) { _array_klasses = k; }
 
   // methods
   Array<Method*>* methods() const          { return _methods; }
@@ -490,6 +495,14 @@ public:
   static void check_prohibited_package(Symbol* class_name,
                                        ClassLoaderData* loader_data,
                                        TRAPS);
+
+  JavaThread* init_thread()  { return Atomic::load(&_init_thread); }
+  // We can safely access the name as long as we hold the _init_monitor.
+  const char* init_thread_name() {
+    assert(_init_monitor->owned_by_self(), "Must hold _init_monitor here");
+    return init_thread()->name_raw();
+  }
+
  public:
   // initialization state
   bool is_loaded() const                   { return init_state() >= loaded; }
@@ -499,7 +512,7 @@ public:
   bool is_not_initialized() const          { return init_state() <  being_initialized; }
   bool is_being_initialized() const        { return init_state() == being_initialized; }
   bool is_in_error_state() const           { return init_state() == initialization_error; }
-  bool is_init_thread(JavaThread *thread)  { return thread == Atomic::load(&_init_thread); }
+  bool is_init_thread(JavaThread *thread)  { return thread == init_thread(); }
   ClassState  init_state() const           { return Atomic::load(&_init_state); }
   const char* init_state_name() const;
   bool is_rewritten() const                { return _misc_flags.rewritten(); }
@@ -546,7 +559,7 @@ public:
   u2 this_class_index() const             { return _this_class_index; }
   void set_this_class_index(u2 index)     { _this_class_index = index; }
 
-  static ByteSize reference_type_offset() { return in_ByteSize(offset_of(InstanceKlass, _reference_type)); }
+  static ByteSize reference_type_offset() { return byte_offset_of(InstanceKlass, _reference_type); }
 
   // find local field, returns true if found
   bool find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const;
@@ -644,15 +657,15 @@ public:
   void set_is_contended(bool value)        { _misc_flags.set_is_contended(value); }
 
   // source file name
-  Symbol* source_file_name() const               { return _constants->source_file_name(); }
-  u2 source_file_name_index() const              { return _constants->source_file_name_index(); }
-  void set_source_file_name_index(u2 sourcefile_index) { _constants->set_source_file_name_index(sourcefile_index); }
+  Symbol* source_file_name() const;
+  u2 source_file_name_index() const;
+  void set_source_file_name_index(u2 sourcefile_index);
 
   // minor and major version numbers of class file
-  u2 minor_version() const                 { return _constants->minor_version(); }
-  void set_minor_version(u2 minor_version) { _constants->set_minor_version(minor_version); }
-  u2 major_version() const                 { return _constants->major_version(); }
-  void set_major_version(u2 major_version) { _constants->set_major_version(major_version); }
+  u2 minor_version() const;
+  void set_minor_version(u2 minor_version);
+  u2 major_version() const;
+  void set_major_version(u2 major_version);
 
   // source debug extension
   const char* source_debug_extension() const { return _source_debug_extension; }
@@ -689,14 +702,7 @@ public:
   InstanceKlass* previous_versions() const { return nullptr; }
 #endif
 
-  InstanceKlass* get_klass_version(int version) {
-    for (InstanceKlass* ik = this; ik != nullptr; ik = ik->previous_versions()) {
-      if (ik->constants()->version() == version) {
-        return ik;
-      }
-    }
-    return nullptr;
-  }
+  InstanceKlass* get_klass_version(int version);
 
   bool has_been_redefined() const { return _misc_flags.has_been_redefined(); }
   void set_has_been_redefined() { _misc_flags.set_has_been_redefined(true); }
@@ -706,6 +712,7 @@ public:
 
   bool has_resolved_methods() const { return _misc_flags.has_resolved_methods(); }
   void set_has_resolved_methods()   { _misc_flags.set_has_resolved_methods(true); }
+  void set_has_resolved_methods(bool value)   { _misc_flags.set_has_resolved_methods(value); }
 
 public:
 #if INCLUDE_JVMTI
@@ -715,7 +722,7 @@ public:
   }
 
  private:
-  static bool  _has_previous_versions;
+  static bool  _should_clean_previous_versions;
  public:
   static void purge_previous_versions(InstanceKlass* ik) {
     if (ik->has_been_redefined()) {
@@ -723,8 +730,8 @@ public:
     }
   }
 
-  static bool has_previous_versions_and_reset();
-  static bool has_previous_versions() { return _has_previous_versions; }
+  static bool should_clean_previous_versions_and_reset();
+  static bool should_clean_previous_versions() { return _should_clean_previous_versions; }
 
   // JVMTI: Support for caching a class file before it is modified by an agent that can do retransformation
   void set_cached_class_file(JvmtiCachedClassFileData *data) {
@@ -744,7 +751,7 @@ public:
 #else // INCLUDE_JVMTI
 
   static void purge_previous_versions(InstanceKlass* ik) { return; };
-  static bool has_previous_versions_and_reset() { return false; }
+  static bool should_clean_previous_versions_and_reset() { return false; }
 
   void set_cached_class_file(JvmtiCachedClassFileData *data) {
     assert(data == nullptr, "unexpected call with JVMTI disabled");
@@ -771,9 +778,9 @@ public:
   void set_initial_method_idnum(u2 value)             { _idnum_allocated_count = value; }
 
   // generics support
-  Symbol* generic_signature() const                   { return _constants->generic_signature(); }
-  u2 generic_signature_index() const                  { return _constants->generic_signature_index(); }
-  void set_generic_signature_index(u2 sig_index)      { _constants->set_generic_signature_index(sig_index); }
+  Symbol* generic_signature() const;
+  u2 generic_signature_index() const;
+  void set_generic_signature_index(u2 sig_index);
 
   u2 enclosing_method_data(int offset) const;
   u2 enclosing_method_class_index() const {
@@ -787,14 +794,9 @@ public:
 
   // jmethodID support
   jmethodID get_jmethod_id(const methodHandle& method_h);
-  jmethodID get_jmethod_id_fetch_or_update(size_t idnum,
-                     jmethodID new_id, jmethodID* new_jmeths,
-                     jmethodID* to_dealloc_id_p,
-                     jmethodID** to_dealloc_jmeths_p);
-  static void get_jmethod_id_length_value(jmethodID* cache, size_t idnum,
-                size_t *length_p, jmethodID* id_p);
   void ensure_space_for_methodids(int start_offset = 0);
   jmethodID jmethod_id_or_null(Method* method);
+  void update_methods_jmethod_cache();
 
   // annotations support
   Annotations* annotations() const          { return _annotations; }
@@ -864,9 +866,9 @@ public:
 #endif
 
   // support for stub routines
-  static ByteSize init_state_offset()  { return in_ByteSize(offset_of(InstanceKlass, _init_state)); }
+  static ByteSize init_state_offset()  { return byte_offset_of(InstanceKlass, _init_state); }
   JFR_ONLY(DEFINE_KLASS_TRACE_ID_OFFSET;)
-  static ByteSize init_thread_offset() { return in_ByteSize(offset_of(InstanceKlass, _init_thread)); }
+  static ByteSize init_thread_offset() { return byte_offset_of(InstanceKlass, _init_thread); }
 
   // subclass/subinterface checks
   bool implements_interface(Klass* k) const;
@@ -942,7 +944,6 @@ public:
 
   inline intptr_t* start_of_itable() const;
   inline intptr_t* end_of_itable() const;
-  inline int itable_offset_in_words() const;
   inline oop static_field_base_raw();
 
   inline OopMapBlock* start_of_nonstatic_oop_maps() const;
@@ -994,9 +995,7 @@ public:
   void static deallocate_record_components(ClassLoaderData* loader_data,
                                            Array<RecordComponent*>* record_component);
 
-  // The constant pool is on stack if any of the methods are executing or
-  // referenced by handles.
-  bool on_stack() const { return _constants->on_stack(); }
+  virtual bool on_stack() const;
 
   // callbacks for actions during class unloading
   static void unload_class(InstanceKlass* ik);
@@ -1069,23 +1068,20 @@ public:
     Atomic::store(&_init_thread, thread);
   }
 
-  // The RedefineClasses() API can cause new method idnums to be needed
-  // which will cause the caches to grow. Safety requires different
-  // cache management logic if the caches can grow instead of just
-  // going from null to non-null.
-  bool idnum_can_increment() const      { return has_been_redefined(); }
   inline jmethodID* methods_jmethod_ids_acquire() const;
   inline void release_set_methods_jmethod_ids(jmethodID* jmeths);
+  // This nulls out jmethodIDs for all methods in 'klass'
+  static void clear_jmethod_ids(InstanceKlass* klass);
+  jmethodID update_jmethod_id(jmethodID* jmeths, Method* method, int idnum);
 
-  // Lock during initialization
 public:
   // Returns the array class for the n'th dimension
-  virtual Klass* array_klass(int n, TRAPS);
-  virtual Klass* array_klass_or_null(int n);
+  virtual ArrayKlass* array_klass(int n, TRAPS);
+  virtual ArrayKlass* array_klass_or_null(int n);
 
   // Returns the array class with this class as element type
-  virtual Klass* array_klass(TRAPS);
-  virtual Klass* array_klass_or_null();
+  virtual ArrayKlass* array_klass(TRAPS);
+  virtual ArrayKlass* array_klass_or_null();
 
   static void clean_initialization_error_table();
 
@@ -1126,6 +1122,7 @@ public:
 #if INCLUDE_CDS
   // CDS support - remove and restore oops from metadata. Oops are not shared.
   virtual void remove_unshareable_info();
+  void remove_unshareable_flags();
   virtual void remove_java_mirror();
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, PackageEntry* pkg_entry, TRAPS);
   void init_shared_package_entry();
@@ -1168,6 +1165,11 @@ public:
   void print_class_load_logging(ClassLoaderData* loader_data,
                                 const ModuleEntry* module_entry,
                                 const ClassFileStream* cfs) const;
+ private:
+  void print_class_load_cause_logging() const;
+  void print_class_load_helper(ClassLoaderData* loader_data,
+                               const ModuleEntry* module_entry,
+                               const ClassFileStream* cfs) const;
 };
 
 // for adding methods

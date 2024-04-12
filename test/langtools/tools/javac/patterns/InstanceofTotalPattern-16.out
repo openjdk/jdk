@@ -1,3 +1,2 @@
-InstanceofTotalPattern.java:18:19: compiler.err.instanceof.pattern.no.subtype: java.lang.String, java.lang.String
-InstanceofTotalPattern.java:22:17: compiler.err.instanceof.pattern.no.subtype: java.lang.String, java.lang.String
-2 errors
+InstanceofTotalPattern.java:19:19: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.unconditional.patterns.in.instanceof), 16, 21
+1 error

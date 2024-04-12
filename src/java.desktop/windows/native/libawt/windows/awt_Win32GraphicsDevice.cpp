@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@
  * array index.
  */
 
+#include <cmath> // ceil()
 #include <awt.h>
-#include <sun_awt_Win32GraphicsDevice.h>
 #include "awt_Canvas.h"
 #include "awt_Win32GraphicsDevice.h"
 #include "awt_Window.h"
@@ -46,7 +46,6 @@
 #include "java_awt_color_ColorSpace.h"
 #include "sun_awt_Win32GraphicsDevice.h"
 #include "java_awt_image_DataBuffer.h"
-#include "dither.h"
 #include "img_util_md.h"
 #include "Devices.h"
 #include "systemScale.h"
@@ -180,7 +179,9 @@ void AwtWin32GraphicsDevice::Initialize()
     }
     gpBitmapInfo->bmiHeader.biBitCount = 0;
     HDC hBMDC = this->GetDC();
+    VERIFY(hBMDC != NULL);
     HBITMAP hBM = ::CreateCompatibleBitmap(hBMDC, 1, 1);
+    VERIFY(hBM != NULL);
     VERIFY(::GetDIBits(hBMDC, hBM, 0, 1, NULL, gpBitmapInfo, DIB_RGB_COLORS));
 
     if (colorData->bitsperpixel > 8) {
@@ -711,16 +712,6 @@ float AwtWin32GraphicsDevice::GetScaleY()
     return scaleY;
 }
 
-/**
- * Disables offscreen acceleration for this device.  This
- * sets a flag in the java object that is used to determine
- * whether offscreen surfaces can be created on the device.
- */
-void AwtWin32GraphicsDevice::DisableOffscreenAcceleration()
-{
-    // REMIND: noop for now
-}
-
 void AwtWin32GraphicsDevice::DisableScaleAutoRefresh()
 {
     disableScaleAutoRefresh = TRUE;
@@ -734,7 +725,6 @@ void AwtWin32GraphicsDevice::DisableScaleAutoRefresh()
 void AwtWin32GraphicsDevice::Invalidate(JNIEnv *env)
 {
     int defIndex = AwtWin32GraphicsDevice::GetDefaultDeviceIndex();
-    DisableOffscreenAcceleration();
     jobject javaDevice = GetJavaDevice();
     if (!JNU_IsNull(env, javaDevice)) {
         JNU_CallMethodByName(env, NULL, javaDevice, "invalidate",
@@ -798,22 +788,6 @@ void AwtWin32GraphicsDevice::ResetAllDesktopScales()
     int devicesNum = devices->GetNumDevices();
     for (int deviceIndex = 0; deviceIndex < devicesNum; deviceIndex++) {
         devices->GetDevice(deviceIndex)->InitDesktopScales();
-    }
-}
-
-void AwtWin32GraphicsDevice::DisableOffscreenAccelerationForDevice(
-    HMONITOR hMonitor)
-{
-    Devices::InstanceAccess devices;
-    if (hMonitor == NULL) {
-        devices->GetDevice(0)->DisableOffscreenAcceleration();
-    } else {
-        int devicesNum = devices->GetNumDevices();
-        for (int i = 0; i < devicesNum; ++i) {
-            if (devices->GetDevice(i)->GetMonitor() == hMonitor) {
-                devices->GetDevice(i)->DisableOffscreenAcceleration();
-            }
-        }
     }
 }
 
@@ -899,7 +873,7 @@ BOOL AwtWin32GraphicsDevice::AreSameMonitors(HMONITOR mon1, HMONITOR mon2) {
     {
         if (::EqualRect(&mi1.rcMonitor, &mi2.rcMonitor) &&
             ::EqualRect(&mi1.rcWork, &mi2.rcWork) &&
-            (mi1.dwFlags  == mi1.dwFlags))
+            (mi1.dwFlags == mi2.dwFlags))
         {
 
             J2dTraceLn(J2D_TRACE_VERBOSE, "  the monitors are the same");

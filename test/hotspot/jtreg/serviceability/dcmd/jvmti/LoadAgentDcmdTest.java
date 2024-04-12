@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public class LoadAgentDcmdTest {
                       "'-Dtest.jdk=/path/to/jdk'.");
         }
 
-        Path libpath = Paths.get(jdkPath, jdkLibPath(), sharedObjectName("instrument"));
+        Path libpath = Paths.get(jdkPath, jdkLibPath(), Platform.buildSharedLibraryName("instrument"));
 
         if (!libpath.toFile().exists()) {
             throw new FileNotFoundException(
@@ -155,19 +155,6 @@ public class LoadAgentDcmdTest {
             return "bin";
         }
         return "lib";
-    }
-
-    /**
-     * Build name of shared object according to platform rules
-     */
-    public static String sharedObjectName(String name) {
-        if (Platform.isWindows()) {
-            return name + ".dll";
-        }
-        if (Platform.isOSX()) {
-            return "lib" + name + ".dylib";
-        }
-        return "lib" + name + ".so";
     }
 
     @Test

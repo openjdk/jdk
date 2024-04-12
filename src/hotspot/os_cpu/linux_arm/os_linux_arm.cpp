@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 // no precompiled headers
 #include "asm/assembler.inline.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
@@ -324,7 +323,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // here if the underlying file has been truncated.
         // Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
-        CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
+        nmethod* nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
         if ((nm != nullptr && nm->has_unsafe_access()) || (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc))) {
           unsafe_access = true;
         }
@@ -483,23 +482,28 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
   address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc, Assembler::InstructionSize);
+  print_instructions(st, pc);
   st->cr();
 }
 
-void os::print_register_info(outputStream *st, const void *context) {
-  if (context == nullptr) return;
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
+  const int register_count = ARM_REGS_IN_CONTEXT;
+  int n = continuation;
+  assert(n >= 0 && n <= register_count, "Invalid continuation value");
+  if (context == nullptr || n == register_count) {
+    return;
+  }
 
   const ucontext_t *uc = (const ucontext_t*)context;
-
   intx* reg_area = (intx*)&uc->uc_mcontext.arm_r0;
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-  for (int r = 0; r < ARM_REGS_IN_CONTEXT; r++) {
-    st->print("  %-3s = ", as_Register(r)->name());
-    print_location(st, reg_area[r]);
+
+  while (n < register_count) {
+    // Update continuation with next index before printing location
+    continuation = n + 1;
+    st->print("  %-3s = ", as_Register(n)->name());
+    print_location(st, reg_area[n]);
+    ++n;
   }
-  st->cr();
 }
 
 

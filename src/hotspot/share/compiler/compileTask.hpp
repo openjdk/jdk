@@ -35,6 +35,12 @@ class DirectiveSet;
 
 JVMCI_ONLY(class JVMCICompileState;)
 
+enum class InliningResult { SUCCESS, FAILURE };
+
+inline InliningResult inlining_result_of(bool success) {
+  return success ? InliningResult::SUCCESS : InliningResult::FAILURE;
+}
+
 // CompileTask
 //
 // An entry in the compile queue.  It represents a pending or current
@@ -56,6 +62,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
       Reason_Whitebox,         // Whitebox API
       Reason_MustBeCompiled,   // Used for -Xcomp or AlwaysCompileLoopMethods (see CompilationPolicy::must_be_compiled())
       Reason_Bootstrap,        // JVMCI bootstrap
+      Reason_DirectivesChanged, // Changed CompilerDirectivesStack
       Reason_Count
   };
 
@@ -68,7 +75,8 @@ class CompileTask : public CHeapObj<mtCompiler> {
       "replay",
       "whitebox",
       "must_be_compiled",
-      "bootstrap"
+      "bootstrap",
+      "directives_changed"
     };
     return reason_names[compile_reason];
   }
@@ -174,7 +182,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   int          comp_level()                      { return _comp_level;}
   void         set_comp_level(int comp_level)    { _comp_level = comp_level;}
 
-  AbstractCompiler* compiler();
+  AbstractCompiler* compiler() const;
   CompileTask*      select_for_compilation();
 
   int          num_inlined_bytecodes() const     { return _num_inlined_bytecodes; }
@@ -225,11 +233,11 @@ public:
 
   bool         check_break_at_flags();
 
-  static void print_inlining_inner(outputStream* st, ciMethod* method, int inline_level, int bci, const char* msg = nullptr);
-  static void print_inlining_tty(ciMethod* method, int inline_level, int bci, const char* msg = nullptr) {
-    print_inlining_inner(tty, method, inline_level, bci, msg);
+  static void print_inlining_inner(outputStream* st, ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr);
+  static void print_inlining_tty(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr) {
+    print_inlining_inner(tty, method, inline_level, bci, result, msg);
   }
-  static void print_inlining_ul(ciMethod* method, int inline_level, int bci, const char* msg = nullptr);
+  static void print_inlining_ul(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr);
 };
 
 #endif // SHARE_COMPILER_COMPILETASK_HPP

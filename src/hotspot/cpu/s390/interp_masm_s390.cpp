@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,11 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/markWord.hpp"
+#include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
+#include "oops/resolvedFieldEntry.hpp"
+#include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
@@ -334,49 +338,64 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index, int bcp_o
   BLOCK_COMMENT("}");
 }
 
-
-void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache, Register cpe_offset,
-                                                           int bcp_offset, size_t index_size) {
-  BLOCK_COMMENT("get_cache_and_index_at_bcp {");
-  assert_different_registers(cache, cpe_offset);
-  get_cache_index_at_bcp(cpe_offset, bcp_offset, index_size);
-  z_lg(cache, Address(Z_fp, _z_ijava_state_neg(cpoolCache)));
-  // Convert from field index to ConstantPoolCache offset in bytes.
-  z_sllg(cpe_offset, cpe_offset, exact_log2(in_words(ConstantPoolCacheEntry::size()) * BytesPerWord));
-  BLOCK_COMMENT("}");
-}
-
 void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Register index) {
-  // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
+  // Get index out of bytecode pointer.
   get_cache_index_at_bcp(index, 1, sizeof(u4));
-  // Get address of invokedynamic array
+
+  // Get the address of the ResolvedIndyEntry array
   get_constant_pool_cache(cache);
   z_lg(cache, Address(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
-  // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
-  z_sllg(index, index, exact_log2(sizeof(ResolvedIndyEntry)));
+
+  // Scale the index to form a byte offset into the ResolvedIndyEntry array
+  size_t entry_size = sizeof(ResolvedIndyEntry);
+  if (is_power_of_2(entry_size)) {
+    z_sllg(index, index, exact_log2(entry_size));
+  } else {
+    z_mghi(index, entry_size);
+  }
+
+  // Calculate the final field address.
   z_la(cache, Array<ResolvedIndyEntry>::base_offset_in_bytes(), index, cache);
 }
 
-// Kills Z_R0_scratch.
-void InterpreterMacroAssembler::get_cache_and_index_and_bytecode_at_bcp(Register cache,
-                                                                        Register cpe_offset,
-                                                                        Register bytecode,
-                                                                        int byte_no,
-                                                                        int bcp_offset,
-                                                                        size_t index_size) {
-  BLOCK_COMMENT("get_cache_and_index_and_bytecode_at_bcp {");
-  get_cache_and_index_at_bcp(cache, cpe_offset, bcp_offset, index_size);
+void InterpreterMacroAssembler::load_field_entry(Register cache, Register index, int bcp_offset) {
+  // Get field index out of bytecode pointer.
+  get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
 
-  // We want to load (from CP cache) the bytecode that corresponds to the passed-in byte_no.
-  // It is located at (cache + cpe_offset + base_offset + indices_offset + (8-1) (last byte in DW) - (byte_no+1).
-  // Instead of loading, shifting and masking a DW, we just load that one byte of interest with z_llgc (unsigned).
-  const int base_ix_off = in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::indices_offset());
-  const int off_in_DW   = (8-1) - (1+byte_no);
-  assert(ConstantPoolCacheEntry::bytecode_1_mask == ConstantPoolCacheEntry::bytecode_2_mask, "common mask");
-  assert(ConstantPoolCacheEntry::bytecode_1_mask == 0xff, "");
-  load_sized_value(bytecode, Address(cache, cpe_offset, base_ix_off+off_in_DW), 1, false /*signed*/);
+  // Get the address of the ResolvedFieldEntry array.
+  get_constant_pool_cache(cache);
+  z_lg(cache, Address(cache, in_bytes(ConstantPoolCache::field_entries_offset())));
 
-  BLOCK_COMMENT("}");
+  // Scale the index to form a byte offset into the ResolvedFieldEntry array
+  size_t entry_size = sizeof(ResolvedFieldEntry);
+  if (is_power_of_2(entry_size)) {
+    z_sllg(index, index, exact_log2(entry_size));
+  } else {
+    z_mghi(index, entry_size);
+  }
+
+  // Calculate the final field address.
+  z_la(cache, Array<ResolvedFieldEntry>::base_offset_in_bytes(), index, cache);
+}
+
+void InterpreterMacroAssembler::load_method_entry(Register cache, Register index, int bcp_offset) {
+  // Get field index out of bytecode pointer.
+  get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
+
+  // Get the address of the ResolvedMethodEntry array.
+  get_constant_pool_cache(cache);
+  z_lg(cache, Address(cache, in_bytes(ConstantPoolCache::method_entries_offset())));
+
+  // Scale the index to form a byte offset into the ResolvedMethodEntry array
+  size_t entry_size = sizeof(ResolvedMethodEntry);
+  if (is_power_of_2(entry_size)) {
+    z_sllg(index, index, exact_log2(entry_size));
+  } else {
+    z_mghi(index, entry_size);
+  }
+
+  // Calculate the final field address.
+  z_la(cache, Array<ResolvedMethodEntry>::base_offset_in_bytes(), index, cache);
 }
 
 // Load object from cpool->resolved_references(index).
@@ -391,8 +410,8 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   Register tmp = index;  // reuse
   z_sllg(index, index, LogBytesPerHeapOop); // Offset into resolved references array.
   // Load pointer for resolved_references[] objArray.
-  z_lg(result, ConstantPool::cache_offset_in_bytes(), result);
-  z_lg(result, ConstantPoolCache::resolved_references_offset_in_bytes(), result);
+  z_lg(result, in_bytes(ConstantPool::cache_offset()), result);
+  z_lg(result, in_bytes(ConstantPoolCache::resolved_references_offset()), result);
   resolve_oop_handle(result); // Load resolved references array itself.
 #ifdef ASSERT
   NearLabel index_ok;
@@ -412,31 +431,8 @@ void InterpreterMacroAssembler::load_resolved_klass_at_offset(Register cpool, Re
   // int resolved_klass_index = extract_low_short_from_int(value);
   z_llgh(offset, Address(cpool, offset, sizeof(ConstantPool) + 2)); // offset = resolved_klass_index (s390 is big-endian)
   z_sllg(offset, offset, LogBytesPerWord);                          // Convert 'index' to 'offset'
-  z_lg(iklass, Address(cpool, ConstantPool::resolved_klasses_offset_in_bytes())); // iklass = cpool->_resolved_klasses
+  z_lg(iklass, Address(cpool, ConstantPool::resolved_klasses_offset())); // iklass = cpool->_resolved_klasses
   z_lg(iklass, Address(iklass, offset, Array<Klass*>::base_offset_in_bytes()));
-}
-
-void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,
-                                                               Register tmp,
-                                                               int bcp_offset,
-                                                               size_t index_size) {
-  BLOCK_COMMENT("get_cache_entry_pointer_at_bcp {");
-    get_cache_and_index_at_bcp(cache, tmp, bcp_offset, index_size);
-    add2reg_with_index(cache, in_bytes(ConstantPoolCache::base_offset()), tmp, cache);
-  BLOCK_COMMENT("}");
-}
-
-void InterpreterMacroAssembler::load_resolved_method_at_index(int byte_no,
-                                                              Register cache,
-                                                              Register cpe_offset,
-                                                              Register method) {
-  const int method_offset = in_bytes(
-    ConstantPoolCache::base_offset() +
-      ((byte_no == TemplateTable::f2_byte)
-       ? ConstantPoolCacheEntry::f2_offset()
-       : ConstantPoolCacheEntry::f1_offset()));
-
-  z_lg(method, Address(cache, cpe_offset, method_offset)); // get f1 Method*
 }
 
 // Generate a subtype check: branch to ok_is_subtype if sub_klass is
@@ -451,9 +447,6 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
 
   // Do the check.
   check_klass_subtype(Rsub_klass, Rsuper_klass, Rtmp1, Rtmp2, ok_is_subtype);
-
-  // Profile the failure of the check.
-  profile_typecheck_failed(Rtmp1, Rtmp2);
 }
 
 // Pop topmost element from stack. It just disappears.
@@ -754,12 +747,12 @@ void InterpreterMacroAssembler::get_constant_pool(Register Rdst) {
 
 void InterpreterMacroAssembler::get_constant_pool_cache(Register Rdst) {
   get_constant_pool(Rdst);
-  mem2reg_opt(Rdst, Address(Rdst, ConstantPool::cache_offset_in_bytes()));
+  mem2reg_opt(Rdst, Address(Rdst, ConstantPool::cache_offset()));
 }
 
 void InterpreterMacroAssembler::get_cpool_and_tags(Register Rcpool, Register Rtags) {
   get_constant_pool(Rcpool);
-  mem2reg_opt(Rtags, Address(Rcpool, ConstantPool::tags_offset_in_bytes()));
+  mem2reg_opt(Rtags, Address(Rcpool, ConstantPool::tags_offset()));
 }
 
 // Unlock if synchronized method.
@@ -810,7 +803,7 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
   // We use Z_ARG2 so that if we go slow path it will be the correct
   // register for unlock_object to pass to VM directly.
   load_address(Z_ARG2, monitor); // Address of first monitor.
-  z_lg(Z_ARG3, Address(Z_ARG2, BasicObjectLock::obj_offset_in_bytes()));
+  z_lg(Z_ARG3, Address(Z_ARG2, BasicObjectLock::obj_offset()));
   compareU64_and_branch(Z_ARG3, (intptr_t)0L, bcondNotEqual, unlock);
 
   if (throw_monitor_exception) {
@@ -838,7 +831,7 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
   // Check that all monitors are unlocked.
   {
     NearLabel loop, exception, entry, restart;
-    const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+    const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
     // We use Z_ARG2 so that if we go slow path it will be the correct
     // register for unlock_object to pass to VM directly.
     Register R_current_monitor = Z_ARG2;
@@ -877,7 +870,7 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
 
     bind(loop);
     // Check if current entry is used.
-    load_and_test_long(Z_R0_scratch, Address(R_current_monitor, BasicObjectLock::obj_offset_in_bytes()));
+    load_and_test_long(Z_R0_scratch, Address(R_current_monitor, BasicObjectLock::obj_offset()));
     z_brne(exception);
 
     add2reg(R_current_monitor, entry_size); // Otherwise advance to next entry.
@@ -951,6 +944,11 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     // Test if reserved zone needs to be enabled.
     Label no_reserved_zone_enabling;
 
+    // check if already enabled - if so no re-enabling needed
+    assert(sizeof(StackOverflow::StackGuardState) == 4, "unexpected size");
+    z_ly(Z_R0, Address(Z_thread, JavaThread::stack_guard_state_offset()));
+    compare32_and_branch(Z_R0, StackOverflow::stack_guard_enabled, bcondEqual, no_reserved_zone_enabling);
+
     // Compare frame pointers. There is no good stack pointer, as with stack
     // frame compression we can get different SPs when we do calls. A subsequent
     // call could have a smaller SP, so that this compare succeeds for an
@@ -977,17 +975,18 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 // lock object
 //
 // Registers alive
-//   monitor - Address of the BasicObjectLock to be used for locking,
+//   monitor (Z_R10) - Address of the BasicObjectLock to be used for locking,
 //             which must be initialized with the object to lock.
-//   object  - Address of the object to be locked.
+//   object  (Z_R11, Z_R2) - Address of the object to be locked.
+//  templateTable (monitorenter) is using Z_R2 for object
 void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
-  if (UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
     return;
   }
 
-  // template code:
+  // template code: (for LM_LEGACY)
   //
   // markWord displaced_header = obj->mark().set_unlocked();
   // monitor->lock()->set_displaced_header(displaced_header);
@@ -1001,68 +1000,77 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   //   InterpreterRuntime::monitorenter(THREAD, monitor);
   // }
 
-  const Register displaced_header = Z_ARG5;
+  const int hdr_offset = oopDesc::mark_offset_in_bytes();
+
+  const Register header           = Z_ARG5;
   const Register object_mark_addr = Z_ARG4;
   const Register current_header   = Z_ARG5;
+  const Register tmp              = Z_R1_scratch;
 
-  NearLabel done;
-  NearLabel slow_case;
+  NearLabel done, slow_case;
 
-  // markWord displaced_header = obj->mark().set_unlocked();
+  // markWord header = obj->mark().set_unlocked();
 
-  // Load markWord from object into displaced_header.
-  z_lg(displaced_header, oopDesc::mark_offset_in_bytes(), object);
+  // Load markWord from object into header.
+  z_lg(header, hdr_offset, object);
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(Z_R1_scratch, object);
-    testbit(Address(Z_R1_scratch, Klass::access_flags_offset()), exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+    load_klass(tmp, object);
+    testbit(Address(tmp, Klass::access_flags_offset()), exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
     z_btrue(slow_case);
   }
 
-  // Set displaced_header to be (markWord of object | UNLOCK_VALUE).
-  z_oill(displaced_header, markWord::unlocked_value);
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    lightweight_lock(object, /* mark word */ header, tmp, slow_case);
+  } else if (LockingMode == LM_LEGACY) {
 
-  // monitor->lock()->set_displaced_header(displaced_header);
+    // Set header to be (markWord of object | UNLOCK_VALUE).
+    // This will not change anything if it was unlocked before.
+    z_oill(header, markWord::unlocked_value);
 
-  // Initialize the box (Must happen before we update the object mark!).
-  z_stg(displaced_header, BasicObjectLock::lock_offset_in_bytes() +
-                          BasicLock::displaced_header_offset_in_bytes(), monitor);
+    // monitor->lock()->set_displaced_header(displaced_header);
+    const int lock_offset = in_bytes(BasicObjectLock::lock_offset());
+    const int mark_offset = lock_offset + BasicLock::displaced_header_offset_in_bytes();
 
-  // if (Atomic::cmpxchg(/*addr*/obj->mark_addr(), /*cmp*/displaced_header, /*ex=*/monitor) == displaced_header) {
+    // Initialize the box (Must happen before we update the object mark!).
+    z_stg(header, mark_offset, monitor);
 
-  // Store stack address of the BasicObjectLock (this is monitor) into object.
-  add2reg(object_mark_addr, oopDesc::mark_offset_in_bytes(), object);
+    // if (Atomic::cmpxchg(/*addr*/obj->mark_addr(), /*cmp*/displaced_header, /*ex=*/monitor) == displaced_header) {
 
-  z_csg(displaced_header, monitor, 0, object_mark_addr);
-  assert(current_header==displaced_header, "must be same register"); // Identified two registers from z/Architecture.
+    // not necessary, use offset in instruction directly.
+    // add2reg(object_mark_addr, hdr_offset, object);
 
-  z_bre(done);
+    // Store stack address of the BasicObjectLock (this is monitor) into object.
+    z_csg(header, monitor, hdr_offset, object);
+    assert(current_header == header,
+           "must be same register"); // Identified two registers from z/Architecture.
 
-  // } else if (THREAD->is_lock_owned((address)displaced_header))
-  //   // Simple recursive case.
-  //   monitor->lock()->set_displaced_header(nullptr);
+    z_bre(done);
 
-  // We did not see an unlocked object so try the fast recursive case.
+    // } else if (THREAD->is_lock_owned((address)displaced_header))
+    //   // Simple recursive case.
+    //   monitor->lock()->set_displaced_header(nullptr);
 
-  // Check if owner is self by comparing the value in the markWord of object
-  // (current_header) with the stack pointer.
-  z_sgr(current_header, Z_SP);
+    // We did not see an unlocked object so try the fast recursive case.
 
-  assert(os::vm_page_size() > 0xfff, "page size too small - change the constant");
+    // Check if owner is self by comparing the value in the markWord of object
+    // (current_header) with the stack pointer.
+    z_sgr(current_header, Z_SP);
 
-  // The prior sequence "LGR, NGR, LTGR" can be done better
-  // (Z_R1 is temp and not used after here).
-  load_const_optimized(Z_R0, (~(os::vm_page_size()-1) | markWord::lock_mask_in_place));
-  z_ngr(Z_R0, current_header); // AND sets CC (result eq/ne 0)
+    assert(os::vm_page_size() > 0xfff, "page size too small - change the constant");
 
-  // If condition is true we are done and hence we can store 0 in the displaced
-  // header indicating it is a recursive lock and be done.
-  z_brne(slow_case);
-  z_release();  // Membar unnecessary on zarch AND because the above csg does a sync before and after.
-  z_stg(Z_R0/*==0!*/, BasicObjectLock::lock_offset_in_bytes() +
-                      BasicLock::displaced_header_offset_in_bytes(), monitor);
+    // The prior sequence "LGR, NGR, LTGR" can be done better
+    // (Z_R1 is temp and not used after here).
+    load_const_optimized(Z_R0, (~(os::vm_page_size() - 1) | markWord::lock_mask_in_place));
+    z_ngr(Z_R0, current_header); // AND sets CC (result eq/ne 0)
+
+    // If condition is true we are done and hence we can store 0 in the displaced
+    // header indicating it is a recursive lock and be done.
+    z_brne(slow_case);
+    z_release();  // Member unnecessary on zarch AND because the above csg does a sync before and after.
+    z_stg(Z_R0/*==0!*/, mark_offset, monitor);
+  }
   z_bru(done);
-
   // } else {
   //   // Slow path.
   //   InterpreterRuntime::monitorenter(THREAD, monitor);
@@ -1070,8 +1078,16 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   // None of the above fast optimizations worked so we have to get into the
   // slow case of monitor enter.
   bind(slow_case);
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
-
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    // for lightweight locking we need to use monitorenter_obj, see interpreterRuntime.cpp
+    call_VM(noreg,
+            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter_obj),
+            object);
+  } else {
+    call_VM(noreg,
+            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
+            monitor);
+  }
   // }
 
   bind(done);
@@ -1086,13 +1102,13 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 // Throw IllegalMonitorException if object is not locked by current thread.
 void InterpreterMacroAssembler::unlock_object(Register monitor, Register object) {
 
-  if (UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
     return;
   }
 
 // else {
-  // template code:
+  // template code: (for LM_LEGACY):
   //
   // if ((displaced_header = monitor->displaced_header()) == nullptr) {
   //   // Recursive unlock. Mark the monitor unlocked by setting the object field to null.
@@ -1105,10 +1121,12 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
   //   InterpreterRuntime::monitorexit(monitor);
   // }
 
-  const Register displaced_header = Z_ARG4;
-  const Register current_header   = Z_R1;
-  Address obj_entry(monitor, BasicObjectLock::obj_offset_in_bytes());
-  Label done;
+  const int hdr_offset = oopDesc::mark_offset_in_bytes();
+
+  const Register header         = Z_ARG4;
+  const Register current_header = Z_R1_scratch;
+  Address obj_entry(monitor, BasicObjectLock::obj_offset());
+  Label done, slow_case;
 
   if (object == noreg) {
     // In the template interpreter, we must assure that the object
@@ -1118,35 +1136,63 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
     z_lg(object, obj_entry);
   }
 
-  assert_different_registers(monitor, object, displaced_header, current_header);
+  assert_different_registers(monitor, object, header, current_header);
 
   // if ((displaced_header = monitor->displaced_header()) == nullptr) {
   //   // Recursive unlock. Mark the monitor unlocked by setting the object field to null.
   //   monitor->set_obj(nullptr);
 
-  clear_mem(obj_entry, sizeof(oop));
+  // monitor->lock()->set_displaced_header(displaced_header);
+  const int lock_offset = in_bytes(BasicObjectLock::lock_offset());
+  const int mark_offset = lock_offset + BasicLock::displaced_header_offset_in_bytes();
 
-  // Test first if we are in the fast recursive case.
-  MacroAssembler::load_and_test_long(displaced_header,
-                                     Address(monitor, BasicObjectLock::lock_offset_in_bytes() +
-                                                      BasicLock::displaced_header_offset_in_bytes()));
-  z_bre(done); // displaced_header == 0 -> goto done
+  clear_mem(obj_entry, sizeof(oop));
+  if (LockingMode != LM_LIGHTWEIGHT) {
+    // Test first if we are in the fast recursive case.
+    MacroAssembler::load_and_test_long(header, Address(monitor, mark_offset));
+    z_bre(done); // header == 0 -> goto done
+  }
 
   // } else if (Atomic::cmpxchg(obj->mark_addr(), monitor, displaced_header) == monitor) {
   //   // We swapped the unlocked mark in displaced_header into the object's mark word.
   //   monitor->set_obj(nullptr);
 
   // If we still have a lightweight lock, unlock the object and be done.
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    // Check for non-symmetric locking. This is allowed by the spec and the interpreter
+    // must handle it.
 
-  // The markword is expected to be at offset 0.
-  assert(oopDesc::mark_offset_in_bytes() == 0, "unlock_object: review code below");
+    Register tmp = current_header;
 
-  // We have the displaced header in displaced_header. If the lock is still
-  // lightweight, it will contain the monitor address and we'll store the
-  // displaced header back into the object's mark word.
-  z_lgr(current_header, monitor);
-  z_csg(current_header, displaced_header, 0, object);
-  z_bre(done);
+    // First check for lock-stack underflow.
+    z_lgf(tmp, Address(Z_thread, JavaThread::lock_stack_top_offset()));
+    compareU32_and_branch(tmp, (unsigned)LockStack::start_offset(), Assembler::bcondNotHigh, slow_case);
+
+    // Then check if the top of the lock-stack matches the unlocked object.
+    z_aghi(tmp, -oopSize);
+    z_lg(tmp, Address(Z_thread, tmp));
+    compare64_and_branch(tmp, object, Assembler::bcondNotEqual, slow_case);
+
+    z_lg(header, Address(object, hdr_offset));
+    z_lgr(tmp, header);
+    z_nill(tmp, markWord::monitor_value);
+    z_brne(slow_case);
+
+    lightweight_unlock(object, header, tmp, slow_case);
+
+    z_bru(done);
+  } else {
+    // The markword is expected to be at offset 0.
+    // This is not required on s390, at least not here.
+    assert(hdr_offset == 0, "unlock_object: review code below");
+
+    // We have the displaced header in header. If the lock is still
+    // lightweight, it will contain the monitor address and we'll store the
+    // displaced header back into the object's mark word.
+    z_lgr(current_header, monitor);
+    z_csg(current_header, header, hdr_offset, object);
+    z_bre(done);
+  }
 
   // } else {
   //   // Slow path.
@@ -1154,6 +1200,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
 
   // The lock has been converted into a heavy lock and hence
   // we need to get into the slow case.
+  bind(slow_case);
   z_stg(object, obj_entry);   // Restore object entry, has been cleared above.
   call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
 
@@ -1375,7 +1422,7 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
     }
 
     // Record the receiver type.
-    record_klass_in_profile(receiver, mdp, reg2, true);
+    record_klass_in_profile(receiver, mdp, reg2);
     bind(skip_receiver_profile);
 
     // The method data pointer needs to be updated to reflect the new target.
@@ -1398,11 +1445,9 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
 void InterpreterMacroAssembler::record_klass_in_profile_helper(
                                         Register receiver, Register mdp,
                                         Register reg2, int start_row,
-                                        Label& done, bool is_virtual_call) {
+                                        Label& done) {
   if (TypeProfileWidth == 0) {
-    if (is_virtual_call) {
-      increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
-    }
+    increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
     return;
   }
 
@@ -1437,23 +1482,19 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
       z_ltgr(reg2, reg2);
       if (start_row == last_row) {
         // The only thing left to do is handle the null case.
-        if (is_virtual_call) {
-          z_brz(found_null);
-          // Receiver did not match any saved receiver and there is no empty row for it.
-          // Increment total counter to indicate polymorphic case.
-          increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
-          z_bru(done);
-          bind(found_null);
-        } else {
-          z_brnz(done);
-        }
+        z_brz(found_null);
+        // Receiver did not match any saved receiver and there is no empty row for it.
+        // Increment total counter to indicate polymorphic case.
+        increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
+        z_bru(done);
+        bind(found_null);
         break;
       }
       // Since null is rare, make it be the branch-taken case.
       z_brz(found_null);
 
       // Put all the "Case 3" tests here.
-      record_klass_in_profile_helper(receiver, mdp, reg2, start_row + 1, done, is_virtual_call);
+      record_klass_in_profile_helper(receiver, mdp, reg2, start_row + 1, done);
 
       // Found a null. Keep searching for a matching receiver,
       // but remember that this is an empty (unused) slot.
@@ -1500,12 +1541,11 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
 //   done:
 
 void InterpreterMacroAssembler::record_klass_in_profile(Register receiver,
-                                                        Register mdp, Register reg2,
-                                                        bool is_virtual_call) {
+                                                        Register mdp, Register reg2) {
   assert(ProfileInterpreter, "must be profiling");
   Label done;
 
-  record_klass_in_profile_helper(receiver, mdp, reg2, 0, done, is_virtual_call);
+  record_klass_in_profile_helper(receiver, mdp, reg2, 0, done);
 
   bind (done);
 }
@@ -1565,24 +1605,6 @@ void InterpreterMacroAssembler::profile_null_seen(Register mdp) {
   }
 }
 
-void InterpreterMacroAssembler::profile_typecheck_failed(Register mdp, Register tmp) {
-  if (ProfileInterpreter && TypeProfileCasts) {
-    Label profile_continue;
-
-    // If no method data exists, go to profile_continue.
-    test_method_data_pointer(mdp, profile_continue);
-
-    int count_offset = in_bytes(CounterData::count_offset());
-    // Back up the address, since we have already bumped the mdp.
-    count_offset -= in_bytes(VirtualCallData::virtual_call_data_size());
-
-    // *Decrement* the counter. We expect to see zero or small negatives.
-    increment_mdp_data_at(mdp, count_offset, tmp, true);
-
-    bind (profile_continue);
-  }
-}
-
 void InterpreterMacroAssembler::profile_typecheck(Register mdp, Register klass, Register reg2) {
   if (ProfileInterpreter) {
     Label profile_continue;
@@ -1596,7 +1618,7 @@ void InterpreterMacroAssembler::profile_typecheck(Register mdp, Register klass, 
       mdp_delta = in_bytes(VirtualCallData::virtual_call_data_size());
 
       // Record the object type.
-      record_klass_in_profile(klass, mdp, reg2, false);
+      record_klass_in_profile(klass, mdp, reg2);
     }
     update_mdp_by_constant(mdp, mdp_delta);
 
@@ -1810,10 +1832,10 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
       get_method(tmp);
       // Supplement to 8139891: _intrinsic_id exceeded 1-byte size limit.
       if (Method::intrinsic_id_size_in_bytes() == 1) {
-        z_cli(Method::intrinsic_id_offset_in_bytes(), tmp, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
+        z_cli(in_bytes(Method::intrinsic_id_offset()), tmp, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
       } else {
         assert(Method::intrinsic_id_size_in_bytes() == 2, "size error: check Method::_intrinsic_id");
-        z_lh(tmp, Method::intrinsic_id_offset_in_bytes(), Z_R0, tmp);
+        z_lh(tmp, in_bytes(Method::intrinsic_id_offset()), Z_R0, tmp);
         z_chi(tmp, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
       }
       z_brne(profile_continue);
@@ -2033,7 +2055,7 @@ void InterpreterMacroAssembler::add_monitor_to_stack(bool     stack_is_empty,
 
   const Register Rcurr_slot = Rtemp1;
   const Register Rlimit     = Rtemp2;
-  const jint delta = -frame::interpreter_frame_monitor_size() * wordSize;
+  const jint delta = -frame::interpreter_frame_monitor_size_in_bytes();
 
   assert((delta & LongAlignmentMask) == 0,
          "sizeof BasicObjectLock must be even number of doublewords");
@@ -2214,6 +2236,6 @@ void InterpreterMacroAssembler::pop_interpreter_frame(Register return_pc, Regist
 
 void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) {
   if (VerifyFPU) {
-    unimplemented("verfiyFPU");
+    unimplemented("verifyFPU");
   }
 }

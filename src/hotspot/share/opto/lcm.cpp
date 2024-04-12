@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,8 +150,9 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
   bool is_decoden = ((intptr_t)val) & 1;
   val = (Node*)(((intptr_t)val) & ~1);
 
-  assert(!is_decoden || (val->in(0) == nullptr) && val->is_Mach() &&
-         (val->as_Mach()->ideal_Opcode() == Op_DecodeN), "sanity");
+  assert(!is_decoden ||
+         ((val->in(0) == nullptr) && val->is_Mach() &&
+          (val->as_Mach()->ideal_Opcode() == Op_DecodeN)), "sanity");
 
   // Search the successor block for a load or store who's base value is also
   // the tested value.  There may be several.
@@ -370,7 +371,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
 
   // ---- Found an implicit null check
 #ifndef PRODUCT
-  extern int implicit_null_checks;
+  extern uint implicit_null_checks;
   implicit_null_checks++;
 #endif
 
@@ -1269,7 +1270,7 @@ Node* PhaseCFG::catch_cleanup_find_cloned_def(Block *use_blk, Node *def, Block *
   if( j == def_blk->_num_succs ) {
     // Block at same level in dom-tree is not a successor.  It needs a
     // PhiNode, the PhiNode uses from the def and IT's uses need fixup.
-    Node_Array inputs = new Node_List();
+    Node_Array inputs;
     for(uint k = 1; k < use_blk->num_preds(); k++) {
       Block* block = get_block_for_node(use_blk->pred(k));
       inputs.map(k, catch_cleanup_find_cloned_def(block, def, def_blk, n_clone_idx));

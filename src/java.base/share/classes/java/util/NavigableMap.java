@@ -237,19 +237,27 @@ public interface NavigableMap<K,V> extends SortedMap<K,V> {
 
     /**
      * Removes and returns a key-value mapping associated with
-     * the least key in this map, or {@code null} if the map is empty.
+     * the least key in this map, or {@code null} if the map is empty
+     * (optional operation).
      *
      * @return the removed first entry of this map,
      *         or {@code null} if this map is empty
+     *
+     * @throws UnsupportedOperationException if the {@code pollFirstEntry}
+     *         operation is not supported by this map
      */
     Map.Entry<K,V> pollFirstEntry();
 
     /**
      * Removes and returns a key-value mapping associated with
-     * the greatest key in this map, or {@code null} if the map is empty.
+     * the greatest key in this map, or {@code null} if the map is empty
+     * (optional operation).
      *
      * @return the removed last entry of this map,
      *         or {@code null} if this map is empty
+     *
+     * @throws UnsupportedOperationException if the {@code pollLastEntry}
+     *         operation is not supported by this map
      */
     Map.Entry<K,V> pollLastEntry();
 

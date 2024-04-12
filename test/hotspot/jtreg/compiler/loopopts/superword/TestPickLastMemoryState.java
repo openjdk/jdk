@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,11 +29,11 @@
  * @bug 8290910 8293216
  * @summary Test which needs to select the memory state of the last load in a load pack in SuperWord::co_locate_pack.
  *
- * @run main/othervm -Xcomp -XX:CompileOnly=compiler/loopopts/superword/TestPickLastMemoryState
+ * @run main/othervm -Xcomp -XX:CompileOnly=compiler.loopopts.superword.TestPickLastMemoryState::*
  *                   -Xbatch -XX:MaxVectorSize=16 compiler.loopopts.superword.TestPickLastMemoryState
- * @run main/othervm -Xcomp -XX:CompileOnly=compiler/loopopts/superword/TestPickLastMemoryState
+ * @run main/othervm -Xcomp -XX:CompileOnly=compiler.loopopts.superword.TestPickLastMemoryState::*
  *                   -Xbatch -XX:MaxVectorSize=32 compiler.loopopts.superword.TestPickLastMemoryState
- * @run main/othervm -Xcomp -XX:CompileOnly=compiler/loopopts/superword/TestPickLastMemoryState
+ * @run main/othervm -Xcomp -XX:CompileOnly=compiler.loopopts.superword.TestPickLastMemoryState::*
  *                   -Xbatch compiler.loopopts.superword.TestPickLastMemoryState
  */
 
@@ -191,4 +192,3 @@ public class TestPickLastMemoryState {
         }
     }
 }
-

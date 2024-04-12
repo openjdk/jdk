@@ -27,9 +27,30 @@ package listpkg;
  * Example class containing "list" matching at beginning of name.
  */
 public class ListProvider {
+    /**
+     * Constructor.
+     */
     public ListProvider() {}
 
+    /**
+     * English camel-case name
+     */
     public List makeNewList() {
         return null;
     }
+
+    /**
+     * Greek camel-case name
+     */
+    public List δημιουργήστεΝέαΛίστα() {
+        return null;
+    }
+
+    /**
+     * Russion camel-case name
+     */
+    public List сделатьНовыйСписок() {
+        return null;
+    }
+
 }

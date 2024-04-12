@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,5 +154,6 @@
  *  ability to get any updates back to the original data source. Another possibility
  *  is a more formal synchronization mechanism such as SyncML
  *  (<a href="http://www.syncml.org/">http://www.syncml.org/</a>)   <br>
+ * @since 1.5
  */
 package com.sun.rowset.providers;

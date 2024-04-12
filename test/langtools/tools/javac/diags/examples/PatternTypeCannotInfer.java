@@ -22,9 +22,6 @@
  */
 
 // key: compiler.err.pattern.type.cannot.infer
-// key: compiler.warn.preview.feature.use.plural
-// key: compiler.misc.feature.deconstruction.patterns
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
 
 class PatternTypeCannotInfer {
     interface A<T> {}

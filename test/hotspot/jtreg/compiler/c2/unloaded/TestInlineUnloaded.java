@@ -210,9 +210,9 @@ public class TestInlineUnloaded {
             output.shouldMatch("TestNull::testRet .* unloaded signature classes");
             output.shouldMatch("TestNull::test .* unloaded signature classes");
 
-            output.shouldNotMatch("TestNull::testArg .* inline");
-            output.shouldNotMatch("TestNull::testRet .* inline");
-            output.shouldNotMatch("TestNull::test .* inline");
+            output.shouldMatch("TestNull::testArg .* failed to inline");
+            output.shouldMatch("TestNull::testRet .* failed to inline");
+            output.shouldMatch("TestNull::test .* failed to inline");
         });
         run("TestLoadedRemotely", output -> {
             output.shouldMatch("TestNull::testArg .* inline");

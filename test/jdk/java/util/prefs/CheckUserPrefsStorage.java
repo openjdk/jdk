@@ -42,7 +42,7 @@ public class CheckUserPrefsStorage {
     }
 
     public static void run(String testName) throws Exception {
-        ProcessTools.executeTestJvm("-Djava.util.prefs.userRoot=.", testName)
+        ProcessTools.executeTestJava("-Djava.util.prefs.userRoot=.", testName)
                     .outputTo(System.out)
                     .errorTo(System.out)
                     .shouldHaveExitValue(0);

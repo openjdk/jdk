@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,37 @@
 package sun.awt;
 
 import java.awt.RenderingHints;
-import static java.awt.RenderingHints.*;
+
+import static java.awt.RenderingHints.KEY_TEXT_ANTIALIASING;
+import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_DEFAULT;
+import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HBGR;
+import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB;
+import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_VBGR;
+import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_VRGB;
+import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.awt.color.ColorSpace;
-import java.awt.image.*;
+
+import java.awt.Window;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowFocusListener;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.ComponentColorModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferByte;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
 
+import sun.awt.X11.XBaseWindow;
 import sun.security.action.GetIntegerAction;
 import com.sun.java.swing.plaf.gtk.GTKConstants.TextDirection;
 import sun.java2d.opengl.OGLRenderQueue;
@@ -44,6 +69,11 @@ public abstract class UNIXToolkit extends SunToolkit
     private static final int[] BAND_OFFSETS = { 0, 1, 2 };
     private static final int[] BAND_OFFSETS_ALPHA = { 0, 1, 2, 3 };
     private static final int DEFAULT_DATATRANSFER_TIMEOUT = 10000;
+
+    private static final String GTK2_DEPRECATION_MESSAGE =
+            "WARNING: the GTK 2 library is deprecated and " +
+                    "its support will be removed in a future release";
+    private static volatile boolean gtk2WarningIssued = false;
 
     // Allowed GTK versions
     public enum GtkVersions {
@@ -212,6 +242,72 @@ public abstract class UNIXToolkit extends SunToolkit
             setDesktopProperty(longname, img);
         }
         return img;
+    }
+
+    private static volatile Boolean shouldDisableSystemTray = null;
+
+    /**
+     * There is an issue displaying the xembed icons in appIndicators
+     * area with certain Gnome Shell versions.
+     * To avoid any loss of quality of service, we are disabling
+     * SystemTray support in such cases.
+     *
+     * @return true if system tray should be disabled
+     */
+    public boolean shouldDisableSystemTray() {
+        Boolean result = shouldDisableSystemTray;
+        if (result == null) {
+            synchronized (GTK_LOCK) {
+                result = shouldDisableSystemTray;
+                if (result == null) {
+                    if ("gnome".equals(getDesktop())) {
+                        @SuppressWarnings("removal")
+                        Integer gnomeShellMajorVersion =
+                                AccessController
+                                        .doPrivileged((PrivilegedAction<Integer>)
+                                                this::getGnomeShellMajorVersion);
+
+                        if (gnomeShellMajorVersion == null
+                                || gnomeShellMajorVersion < 45) {
+
+                            return shouldDisableSystemTray = true;
+                        }
+                    }
+                    shouldDisableSystemTray = result = false;
+                }
+            }
+        }
+        return result;
+    }
+
+    private Integer getGnomeShellMajorVersion() {
+        try {
+            Process process =
+                new ProcessBuilder("/usr/bin/gnome-shell", "--version")
+                        .start();
+            try (InputStreamReader isr = new InputStreamReader(process.getInputStream());
+                 BufferedReader reader = new BufferedReader(isr)) {
+
+                if (process.waitFor(2, SECONDS) &&  process.exitValue() == 0) {
+                    String line = reader.readLine();
+                    if (line != null) {
+                        String[] versionComponents = line
+                                .replaceAll("[^\\d.]", "")
+                                .split("\\.");
+
+                        if (versionComponents.length >= 1) {
+                            return Integer.parseInt(versionComponents[0]);
+                        }
+                    }
+                }
+            }
+        } catch (IOException
+                 | InterruptedException
+                 | IllegalThreadStateException
+                 | NumberFormatException ignored) {
+        }
+
+        return null;
     }
 
     /**
@@ -405,6 +501,10 @@ public abstract class UNIXToolkit extends SunToolkit
         if (version == null) {
             return GtkVersions.ANY;
         } else if (version.startsWith("2")) {
+            if (!gtk2WarningIssued) {
+                System.err.println(GTK2_DEPRECATION_MESSAGE);
+                gtk2WarningIssued = true;
+            }
             return GtkVersions.GTK2;
         } else if("3".equals(version) ){
             return GtkVersions.GTK3;
@@ -420,5 +520,114 @@ public abstract class UNIXToolkit extends SunToolkit
     public static boolean isGtkVerbose() {
         return AccessController.doPrivileged((PrivilegedAction<Boolean>)()
                 -> Boolean.getBoolean("jdk.gtk.verbose"));
+    }
+
+    private static volatile Boolean isOnWayland = null;
+
+    @SuppressWarnings("removal")
+    public static boolean isOnWayland() {
+        Boolean result = isOnWayland;
+        if (result == null) {
+            synchronized (GTK_LOCK) {
+                result = isOnWayland;
+                if (result == null) {
+                    isOnWayland
+                            = result
+                            = AccessController.doPrivileged(
+                            (PrivilegedAction<Boolean>) () -> {
+                                final String display =
+                                        System.getenv("WAYLAND_DISPLAY");
+
+                                return display != null
+                                        && !display.trim().isEmpty();
+                            }
+                    );
+                }
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public boolean isRunningOnWayland() {
+        return isOnWayland();
+    }
+
+    // We rely on the X11 input grab mechanism, but for the Wayland session
+    // it only works inside the XWayland server, so mouse clicks outside of it
+    // will not be detected.
+    // (window decorations, pure Wayland applications, desktop, etc.)
+    //
+    // As a workaround, we can dismiss menus when the window loses focus.
+    //
+    // However, there are "blind spots" though, which, when clicked, don't
+    // transfer the focus away and don't dismiss the menu
+    // (e.g. the window's own title or the area in the side dock without
+    // application icons).
+    private static final WindowFocusListener waylandWindowFocusListener;
+
+    static {
+        if (isOnWayland()) {
+            waylandWindowFocusListener = new WindowAdapter() {
+                @Override
+                public void windowLostFocus(WindowEvent e) {
+                    Window window = e.getWindow();
+                    Window oppositeWindow = e.getOppositeWindow();
+
+                    // The focus can move between the window calling the popup,
+                    // and the popup window itself.
+                    // We only dismiss the popup in other cases.
+                    if (oppositeWindow != null) {
+                        if (window == oppositeWindow.getParent() ) {
+                            addWaylandWindowFocusListenerToWindow(oppositeWindow);
+                            return;
+                        }
+                        if (window.getParent() == oppositeWindow) {
+                            return;
+                        }
+                    }
+
+                    window.removeWindowFocusListener(this);
+
+                    // AWT
+                    XBaseWindow.ungrabInput();
+
+                    // Swing
+                    window.dispatchEvent(new UngrabEvent(window));
+                }
+            };
+        } else {
+            waylandWindowFocusListener = null;
+        }
+    }
+
+    private static void addWaylandWindowFocusListenerToWindow(Window window) {
+        if (!Arrays
+                .asList(window.getWindowFocusListeners())
+                .contains(waylandWindowFocusListener)
+        ) {
+            window.addWindowFocusListener(waylandWindowFocusListener);
+        }
+    }
+
+    @Override
+    public void dismissPopupOnFocusLostIfNeeded(Window invoker) {
+        if (!isOnWayland() || invoker == null) {
+            return;
+        }
+
+        addWaylandWindowFocusListenerToWindow(invoker);
+    }
+
+    @Override
+    public void dismissPopupOnFocusLostIfNeededCleanUp(Window invoker) {
+        if (!isOnWayland() || invoker == null) {
+            return;
+        }
+
+        invoker.removeWindowFocusListener(waylandWindowFocusListener);
+        for (Window ownedWindow : invoker.getOwnedWindows()) {
+            ownedWindow.removeWindowFocusListener(waylandWindowFocusListener);
+        }
     }
 }

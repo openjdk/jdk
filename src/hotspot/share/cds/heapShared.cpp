@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/cdsHeapVerifier.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -124,7 +125,7 @@ static ArchivableStaticFieldInfo archive_subgraph_entry_fields[] = {
 // full module graph
 static ArchivableStaticFieldInfo fmg_archive_subgraph_entry_fields[] = {
   {"jdk/internal/loader/ArchivedClassLoaders",    "archivedClassLoaders"},
-  {"jdk/internal/module/ArchivedBootLayer",       "archivedBootLayer"},
+  {ARCHIVED_BOOT_LAYER_CLASS,                     ARCHIVED_BOOT_LAYER_FIELD},
   {"java/lang/Module$ArchivedData",               "archivedData"},
   {nullptr, nullptr},
 };
@@ -133,7 +134,8 @@ KlassSubGraphInfo* HeapShared::_default_subgraph_info;
 GrowableArrayCHeap<oop, mtClassShared>* HeapShared::_pending_roots = nullptr;
 OopHandle HeapShared::_roots;
 OopHandle HeapShared::_scratch_basic_type_mirrors[T_VOID+1];
-KlassToOopHandleTable* HeapShared::_scratch_java_mirror_table = nullptr;
+MetaspaceObjToOopHandleTable* HeapShared::_scratch_java_mirror_table = nullptr;
+MetaspaceObjToOopHandleTable* HeapShared::_scratch_references_table = nullptr;
 
 static bool is_subgraph_root_class_of(ArchivableStaticFieldInfo fields[], InstanceKlass* ik) {
   for (int i = 0; fields[i].valid(); i++) {
@@ -178,7 +180,7 @@ static void reset_states(oop obj, TRAPS) {
 }
 
 void HeapShared::reset_archived_object_states(TRAPS) {
-  assert(DumpSharedSpaces, "dump-time only");
+  assert(CDSConfig::is_dumping_heap(), "dump-time only");
   log_debug(cds)("Resetting platform loader");
   reset_states(SystemDictionary::java_platform_loader(), CHECK);
   log_debug(cds)("Resetting system loader");
@@ -205,12 +207,12 @@ void HeapShared::reset_archived_object_states(TRAPS) {
 HeapShared::ArchivedObjectCache* HeapShared::_archived_object_cache = nullptr;
 
 bool HeapShared::has_been_archived(oop obj) {
-  assert(DumpSharedSpaces, "dump-time only");
+  assert(CDSConfig::is_dumping_heap(), "dump-time only");
   return archived_object_cache()->get(obj) != nullptr;
 }
 
 int HeapShared::append_root(oop obj) {
-  assert(DumpSharedSpaces, "dump-time only");
+  assert(CDSConfig::is_dumping_heap(), "dump-time only");
 
   // No GC should happen since we aren't scanning _pending_roots.
   assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
@@ -223,7 +225,7 @@ int HeapShared::append_root(oop obj) {
 }
 
 objArrayOop HeapShared::roots() {
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_heap()) {
     assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
     if (!HeapShared::can_write()) {
       return nullptr;
@@ -240,7 +242,7 @@ objArrayOop HeapShared::roots() {
 // Returns an objArray that contains all the roots of the archived objects
 oop HeapShared::get_root(int index, bool clear) {
   assert(index >= 0, "sanity");
-  assert(!DumpSharedSpaces && UseSharedSpaces, "runtime only");
+  assert(!CDSConfig::is_dumping_heap() && UseSharedSpaces, "runtime only");
   assert(!_roots.is_empty(), "must have loaded shared heap");
   oop result = roots()->obj_at(index);
   if (clear) {
@@ -262,7 +264,7 @@ void HeapShared::clear_root(int index) {
 }
 
 bool HeapShared::archive_object(oop obj) {
-  assert(DumpSharedSpaces, "dump-time only");
+  assert(CDSConfig::is_dumping_heap(), "dump-time only");
 
   assert(!obj->is_stackChunk(), "do not archive stack chunks");
   if (has_been_archived(obj)) {
@@ -282,8 +284,9 @@ bool HeapShared::archive_object(oop obj) {
     // the identity_hash in the object header will have a predictable value,
     // making the archive reproducible.
     obj->identity_hash();
-    CachedOopInfo info = make_cached_oop_info();
-    archived_object_cache()->put(obj, info);
+    CachedOopInfo info = make_cached_oop_info(obj);
+    archived_object_cache()->put_when_absent(obj, info);
+    archived_object_cache()->maybe_grow();
     mark_native_pointers(obj);
 
     if (log_is_enabled(Debug, cds, heap)) {
@@ -292,52 +295,51 @@ bool HeapShared::archive_object(oop obj) {
                            p2i(obj), obj->klass()->external_name());
     }
 
-    if (java_lang_Module::is_instance(obj)) {
-      if (Modules::check_module_oop(obj)) {
-        Modules::update_oops_in_archived_module(obj, append_root(obj));
-      }
-      java_lang_Module::set_module_entry(obj, nullptr);
-    } else if (java_lang_ClassLoader::is_instance(obj)) {
-      // class_data will be restored explicitly at run time.
-      guarantee(obj == SystemDictionary::java_platform_loader() ||
-                obj == SystemDictionary::java_system_loader() ||
-                java_lang_ClassLoader::loader_data(obj) == nullptr, "must be");
-      java_lang_ClassLoader::release_set_loader_data(obj, nullptr);
+    if (java_lang_Module::is_instance(obj) && Modules::check_archived_module_oop(obj)) {
+      Modules::update_oops_in_archived_module(obj, append_root(obj));
     }
 
     return true;
   }
 }
 
-class KlassToOopHandleTable: public ResourceHashtable<Klass*, OopHandle,
+class MetaspaceObjToOopHandleTable: public ResourceHashtable<MetaspaceObj*, OopHandle,
     36137, // prime number
     AnyObj::C_HEAP,
     mtClassShared> {
 public:
-  oop get_oop(Klass* k) {
+  oop get_oop(MetaspaceObj* ptr) {
     MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
-    OopHandle* handle = get(k);
+    OopHandle* handle = get(ptr);
     if (handle != nullptr) {
       return handle->resolve();
     } else {
       return nullptr;
     }
   }
-  void set_oop(Klass* k, oop o) {
+  void set_oop(MetaspaceObj* ptr, oop o) {
     MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
     OopHandle handle(Universe::vm_global(), o);
-    bool is_new = put(k, handle);
+    bool is_new = put(ptr, handle);
     assert(is_new, "cannot set twice");
   }
-  void remove_oop(Klass* k) {
+  void remove_oop(MetaspaceObj* ptr) {
     MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
-    OopHandle* handle = get(k);
+    OopHandle* handle = get(ptr);
     if (handle != nullptr) {
       handle->release(Universe::vm_global());
-      remove(k);
+      remove(ptr);
     }
   }
 };
+
+void HeapShared::add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) {
+  _scratch_references_table->set_oop(src, dest);
+}
+
+objArrayOop HeapShared::scratch_resolved_references(ConstantPool* src) {
+  return (objArrayOop)_scratch_references_table->get_oop(src);
+}
 
 void HeapShared::init_scratch_objects(TRAPS) {
   for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
@@ -347,7 +349,8 @@ void HeapShared::init_scratch_objects(TRAPS) {
       _scratch_basic_type_mirrors[i] = OopHandle(Universe::vm_global(), m);
     }
   }
-  _scratch_java_mirror_table = new (mtClass)KlassToOopHandleTable();
+  _scratch_java_mirror_table = new (mtClass)MetaspaceObjToOopHandleTable();
+  _scratch_references_table = new (mtClass)MetaspaceObjToOopHandleTable();
 }
 
 oop HeapShared::scratch_java_mirror(BasicType t) {
@@ -366,6 +369,9 @@ void HeapShared::set_scratch_java_mirror(Klass* k, oop mirror) {
 
 void HeapShared::remove_scratch_objects(Klass* k) {
   _scratch_java_mirror_table->remove_oop(k);
+  if (k->is_instance_klass()) {
+    _scratch_references_table->remove(InstanceKlass::cast(k)->constants());
+  }
 }
 
 void HeapShared::archive_java_mirrors() {
@@ -425,11 +431,30 @@ void HeapShared::archive_strings() {
   StringTable::set_shared_strings_array_index(append_root(shared_strings_array));
 }
 
+int HeapShared::archive_exception_instance(oop exception) {
+  bool success = archive_reachable_objects_from(1, _default_subgraph_info, exception);
+  assert(success, "sanity");
+  return append_root(exception);
+}
+
 void HeapShared::mark_native_pointers(oop orig_obj) {
   if (java_lang_Class::is_instance(orig_obj)) {
     ArchiveHeapWriter::mark_native_pointer(orig_obj, java_lang_Class::klass_offset());
     ArchiveHeapWriter::mark_native_pointer(orig_obj, java_lang_Class::array_klass_offset());
   }
+}
+
+void HeapShared::get_pointer_info(oop src_obj, bool& has_oop_pointers, bool& has_native_pointers) {
+  CachedOopInfo* info = archived_object_cache()->get(src_obj);
+  assert(info != nullptr, "must be");
+  has_oop_pointers = info->has_oop_pointers();
+  has_native_pointers = info->has_native_pointers();
+}
+
+void HeapShared::set_has_native_pointers(oop src_obj) {
+  CachedOopInfo* info = archived_object_cache()->get(src_obj);
+  assert(info != nullptr, "must be");
+  info->set_has_native_pointers();
 }
 
 // -- Handling of Enum objects
@@ -566,6 +591,7 @@ void HeapShared::copy_special_objects() {
   init_seen_objects_table();
   archive_java_mirrors();
   archive_strings();
+  Universe::archive_exception_instances();
   delete_seen_objects_table();
 }
 
@@ -578,7 +604,7 @@ void HeapShared::copy_objects() {
   archive_object_subgraphs(archive_subgraph_entry_fields,
                            false /* is_full_module_graph */);
 
-  if (MetaspaceShared::use_full_module_graph()) {
+  if (CDSConfig::is_dumping_full_module_graph()) {
     archive_object_subgraphs(fmg_archive_subgraph_entry_fields,
                              true /* is_full_module_graph */);
     Modules::verify_archived_modules();
@@ -595,7 +621,7 @@ HeapShared::RunTimeKlassSubGraphInfoTable   HeapShared::_run_time_subgraph_info_
 // there is no existing one for k. The subgraph_info records the "buffered"
 // address of the class.
 KlassSubGraphInfo* HeapShared::init_subgraph_info(Klass* k, bool is_full_module_graph) {
-  assert(DumpSharedSpaces, "dump time only");
+  assert(CDSConfig::is_dumping_heap(), "dump time only");
   bool created;
   Klass* buffered_k = ArchiveBuilder::get_buffered_klass(k);
   KlassSubGraphInfo* info =
@@ -606,7 +632,7 @@ KlassSubGraphInfo* HeapShared::init_subgraph_info(Klass* k, bool is_full_module_
 }
 
 KlassSubGraphInfo* HeapShared::get_subgraph_info(Klass* k) {
-  assert(DumpSharedSpaces, "dump time only");
+  assert(CDSConfig::is_dumping_heap(), "dump time only");
   KlassSubGraphInfo* info = _dump_time_subgraph_info_table->get(k);
   assert(info != nullptr, "must have been initialized");
   return info;
@@ -614,7 +640,7 @@ KlassSubGraphInfo* HeapShared::get_subgraph_info(Klass* k) {
 
 // Add an entry field to the current KlassSubGraphInfo.
 void KlassSubGraphInfo::add_subgraph_entry_field(int static_field_offset, oop v) {
-  assert(DumpSharedSpaces, "dump time only");
+  assert(CDSConfig::is_dumping_heap(), "dump time only");
   if (_subgraph_entry_fields == nullptr) {
     _subgraph_entry_fields =
       new (mtClass) GrowableArray<int>(10, mtClass);
@@ -626,7 +652,7 @@ void KlassSubGraphInfo::add_subgraph_entry_field(int static_field_offset, oop v)
 // Add the Klass* for an object in the current KlassSubGraphInfo's subgraphs.
 // Only objects of boot classes can be included in sub-graph.
 void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
-  assert(DumpSharedSpaces, "dump time only");
+  assert(CDSConfig::is_dumping_heap(), "dump time only");
   Klass* buffered_k = ArchiveBuilder::get_buffered_klass(orig_k);
 
   if (_subgraph_object_klasses == nullptr) {
@@ -661,7 +687,7 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
             "must be boot class");
       check_allowed_klass(InstanceKlass::cast(ObjArrayKlass::cast(orig_k)->bottom_klass()));
     }
-    if (buffered_k == Universe::objectArrayKlassObj()) {
+    if (buffered_k == Universe::objectArrayKlass()) {
       // Initialized early during Universe::genesis. No need to be added
       // to the list.
       return;
@@ -832,30 +858,17 @@ void HeapShared::write_subgraph_info_table() {
   }
 }
 
-void HeapShared::serialize_root(SerializeClosure* soc) {
-  oop roots_oop = nullptr;
-
-  if (soc->reading()) {
-    soc->do_oop(&roots_oop); // read from archive
-    assert(oopDesc::is_oop_or_null(roots_oop), "is oop");
-    // Create an OopHandle only if we have actually mapped or loaded the roots
-    if (roots_oop != nullptr) {
-      assert(ArchiveHeapLoader::is_in_use(), "must be");
-      _roots = OopHandle(Universe::vm_global(), roots_oop);
-    }
-  } else {
-    // writing
-    if (HeapShared::can_write()) {
-      roots_oop = ArchiveHeapWriter::heap_roots_requested_address();
-    }
-    soc->do_oop(&roots_oop); // write to archive
+void HeapShared::init_roots(oop roots_oop) {
+  if (roots_oop != nullptr) {
+    assert(ArchiveHeapLoader::is_in_use(), "must be");
+    _roots = OopHandle(Universe::vm_global(), roots_oop);
   }
 }
 
 void HeapShared::serialize_tables(SerializeClosure* soc) {
 
 #ifndef PRODUCT
-  soc->do_ptr((void**)&_archived_ArchiveHeapTestClass);
+  soc->do_ptr(&_archived_ArchiveHeapTestClass);
   if (soc->reading() && _archived_ArchiveHeapTestClass != nullptr) {
     _test_class_name = _archived_ArchiveHeapTestClass->adr_at(0);
     setup_test_class(_test_class_name);
@@ -955,7 +968,7 @@ void HeapShared::initialize_from_archived_subgraph(JavaThread* current, Klass* k
 
 const ArchivedKlassSubGraphInfoRecord*
 HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAPS) {
-  assert(!DumpSharedSpaces, "Should not be called with DumpSharedSpaces");
+  assert(!CDSConfig::is_dumping_heap(), "Should not be called when dumping heap");
 
   if (!k->is_shared()) {
     return nullptr;
@@ -972,8 +985,15 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
 
   // Initialize from archived data. Currently this is done only
   // during VM initialization time. No lock is needed.
-  if (record != nullptr) {
-    if (record->is_full_module_graph() && !MetaspaceShared::use_full_module_graph()) {
+  if (record == nullptr) {
+    if (log_is_enabled(Info, cds, heap)) {
+      ResourceMark rm(THREAD);
+      log_info(cds, heap)("subgraph %s is not recorded",
+                          k->external_name());
+    }
+    return nullptr;
+  } else {
+    if (record->is_full_module_graph() && !CDSConfig::is_using_full_module_graph()) {
       if (log_is_enabled(Info, cds, heap)) {
         ResourceMark rm(THREAD);
         log_info(cds, heap)("subgraph %s cannot be used because full module graph is disabled",
@@ -1139,10 +1159,27 @@ class WalkOopAndArchiveClosure: public BasicOopIterateClosure {
 
 WalkOopAndArchiveClosure* WalkOopAndArchiveClosure::_current = nullptr;
 
-HeapShared::CachedOopInfo HeapShared::make_cached_oop_info() {
+// Checks if an oop has any non-null oop fields
+class PointsToOopsChecker : public BasicOopIterateClosure {
+  bool _result;
+
+  template <class T> void check(T *p) {
+    _result |= (HeapAccess<>::oop_load(p) != nullptr);
+  }
+
+public:
+  PointsToOopsChecker() : _result(false) {}
+  void do_oop(narrowOop *p) { check(p); }
+  void do_oop(      oop *p) { check(p); }
+  bool result() { return _result; }
+};
+
+HeapShared::CachedOopInfo HeapShared::make_cached_oop_info(oop obj) {
   WalkOopAndArchiveClosure* walker = WalkOopAndArchiveClosure::current();
   oop referrer = (walker == nullptr) ? nullptr : walker->referencing_obj();
-  return CachedOopInfo(referrer);
+  PointsToOopsChecker points_to_oops_checker;
+  obj->oop_iterate(&points_to_oops_checker);
+  return CachedOopInfo(referrer, points_to_oops_checker.result());
 }
 
 // (1) If orig_obj has not been archived yet, archive it.
@@ -1252,7 +1289,7 @@ void HeapShared::archive_reachable_objects_from_static_field(InstanceKlass *k,
                                                              const char* klass_name,
                                                              int field_offset,
                                                              const char* field_name) {
-  assert(DumpSharedSpaces, "dump time only");
+  assert(CDSConfig::is_dumping_heap(), "dump time only");
   assert(k->is_shared_boot_class(), "must be boot class");
 
   oop m = k->java_mirror();
@@ -1303,7 +1340,7 @@ class VerifySharedOopClosure: public BasicOopIterateClosure {
 };
 
 void HeapShared::verify_subgraph_from_static_field(InstanceKlass* k, int field_offset) {
-  assert(DumpSharedSpaces, "dump time only");
+  assert(CDSConfig::is_dumping_heap(), "dump time only");
   assert(k->is_shared_boot_class(), "must be boot class");
 
   oop m = k->java_mirror();
@@ -1353,11 +1390,15 @@ void HeapShared::check_default_subgraph_classes() {
           i, subgraph_k->external_name());
     }
 
-    guarantee(subgraph_k->name()->equals("java/lang/Class") ||
-              subgraph_k->name()->equals("java/lang/String") ||
-              subgraph_k->name()->equals("[Ljava/lang/Object;") ||
-              subgraph_k->name()->equals("[C") ||
-              subgraph_k->name()->equals("[B"),
+    Symbol* name = ArchiveBuilder::current()->get_source_addr(subgraph_k->name());
+    guarantee(name == vmSymbols::java_lang_Class() ||
+              name == vmSymbols::java_lang_String() ||
+              name == vmSymbols::java_lang_ArithmeticException() ||
+              name == vmSymbols::java_lang_NullPointerException() ||
+              name == vmSymbols::java_lang_VirtualMachineError() ||
+              name == vmSymbols::object_array_signature() ||
+              name == vmSymbols::byte_array_signature() ||
+              name == vmSymbols::char_array_signature(),
               "default subgraph can have only these objects");
   }
 }
@@ -1379,7 +1420,8 @@ bool HeapShared::has_been_seen_during_subgraph_recording(oop obj) {
 
 void HeapShared::set_has_been_seen_during_subgraph_recording(oop obj) {
   assert(!has_been_seen_during_subgraph_recording(obj), "sanity");
-  _seen_objects_table->put(obj, true);
+  _seen_objects_table->put_when_absent(obj, true);
+  _seen_objects_table->maybe_grow();
   ++ _num_new_walked_objs;
 }
 
@@ -1440,12 +1482,14 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
 
 #ifndef PRODUCT
     bool is_test_class = (ArchiveHeapTestClass != nullptr) && (strcmp(info->klass_name, ArchiveHeapTestClass) == 0);
+    const char* test_class_name = ArchiveHeapTestClass;
 #else
     bool is_test_class = false;
+    const char* test_class_name = ""; // avoid C++ printf checks warnings.
 #endif
 
     if (is_test_class) {
-      log_warning(cds)("Loading ArchiveHeapTestClass %s ...", ArchiveHeapTestClass);
+      log_warning(cds)("Loading ArchiveHeapTestClass %s ...", test_class_name);
     }
 
     Klass* k = SystemDictionary::resolve_or_fail(klass_name, true, THREAD);
@@ -1471,14 +1515,14 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
         // We don't want ArchiveHeapTestClass to be abused to easily load/initialize arbitrary
         // core-lib classes. You need to at least append to the bootclasspath.
         stringStream st;
-        st.print("ArchiveHeapTestClass %s is not in unnamed module", ArchiveHeapTestClass);
+        st.print("ArchiveHeapTestClass %s is not in unnamed module", test_class_name);
         THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), st.as_string());
       }
 
       if (ik->package() != nullptr) {
         // This restriction makes HeapShared::is_a_test_class_in_unnamed_module() easy.
         stringStream st;
-        st.print("ArchiveHeapTestClass %s is not in unnamed package", ArchiveHeapTestClass);
+        st.print("ArchiveHeapTestClass %s is not in unnamed package", test_class_name);
         THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), st.as_string());
       }
     } else {
@@ -1493,7 +1537,7 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
     }
 
     if (is_test_class) {
-      log_warning(cds)("Initializing ArchiveHeapTestClass %s ...", ArchiveHeapTestClass);
+      log_warning(cds)("Initializing ArchiveHeapTestClass %s ...", test_class_name);
     }
     ik->initialize(CHECK);
 
@@ -1514,7 +1558,7 @@ void HeapShared::init_subgraph_entry_fields(TRAPS) {
   assert(HeapShared::can_write(), "must be");
   _dump_time_subgraph_info_table = new (mtClass)DumpTimeKlassSubGraphInfoTable();
   init_subgraph_entry_fields(archive_subgraph_entry_fields, CHECK);
-  if (MetaspaceShared::use_full_module_graph()) {
+  if (CDSConfig::is_dumping_full_module_graph()) {
     init_subgraph_entry_fields(fmg_archive_subgraph_entry_fields, CHECK);
   }
 }
@@ -1583,7 +1627,7 @@ bool HeapShared::is_a_test_class_in_unnamed_module(Klass* ik) {
 void HeapShared::init_for_dumping(TRAPS) {
   if (HeapShared::can_write()) {
     setup_test_class(ArchiveHeapTestClass);
-    _dumped_interned_strings = new (mtClass)DumpedInternedStrings();
+    _dumped_interned_strings = new (mtClass)DumpedInternedStrings(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE);
     init_subgraph_entry_fields(CHECK);
   }
 }
@@ -1649,6 +1693,9 @@ void HeapShared::add_to_dumped_interned_strings(oop string) {
   assert(!ArchiveHeapWriter::is_string_too_large_to_archive(string), "must be");
   bool created;
   _dumped_interned_strings->put_if_absent(string, true, &created);
+  if (created) {
+    _dumped_interned_strings->maybe_grow();
+  }
 }
 
 #ifndef PRODUCT
@@ -1669,8 +1716,6 @@ class FindEmbeddedNonNullPointers: public BasicOopIterateClosure {
     _num_total_oops ++;
     narrowOop v = *p;
     if (!CompressedOops::is_null(v)) {
-      // Note: HeapShared::to_requested_address() is not necessary because
-      // the heap always starts at a deterministic address with UseCompressedOops==true.
       size_t idx = p - (narrowOop*)_start;
       _oopmap->set_bit(idx);
     } else {
@@ -1691,33 +1736,6 @@ class FindEmbeddedNonNullPointers: public BasicOopIterateClosure {
   int num_null_oops()  const { return _num_null_oops; }
 };
 #endif
-
-address HeapShared::to_requested_address(address dumptime_addr) {
-  assert(DumpSharedSpaces, "static dump time only");
-  if (dumptime_addr == nullptr || UseCompressedOops) {
-    return dumptime_addr;
-  }
-
-  // With UseCompressedOops==false, actual_base is selected by the OS so
-  // it's different across -Xshare:dump runs.
-  address actual_base = (address)G1CollectedHeap::heap()->reserved().start();
-  address actual_end  = (address)G1CollectedHeap::heap()->reserved().end();
-  assert(actual_base <= dumptime_addr && dumptime_addr <= actual_end, "must be an address in the heap");
-
-  // We always write the objects as if the heap started at this address. This
-  // makes the heap content deterministic.
-  //
-  // Note that at runtime, the heap address is also selected by the OS, so
-  // the archive heap will not be mapped at 0x10000000. Instead, we will call
-  // HeapShared::patch_embedded_pointers() to relocate the heap contents
-  // accordingly.
-  const address REQUESTED_BASE = (address)0x10000000;
-  intx delta = REQUESTED_BASE - actual_base;
-
-  address requested_addr = dumptime_addr + delta;
-  assert(REQUESTED_BASE != 0 && requested_addr != nullptr, "sanity");
-  return requested_addr;
-}
 
 #ifndef PRODUCT
 ResourceBitMap HeapShared::calculate_oopmap(MemRegion region) {
@@ -1786,6 +1804,28 @@ void HeapShared::print_stats() {
                       ", avg %8.1f bytes)",
                       _total_obj_count, _total_obj_size * HeapWordSize,
                       avg_size(_total_obj_size, _total_obj_count));
+}
+
+bool HeapShared::is_archived_boot_layer_available(JavaThread* current) {
+  TempNewSymbol klass_name = SymbolTable::new_symbol(ARCHIVED_BOOT_LAYER_CLASS);
+  InstanceKlass* k = SystemDictionary::find_instance_klass(current, klass_name, Handle(), Handle());
+  if (k == nullptr) {
+    return false;
+  } else {
+    TempNewSymbol field_name = SymbolTable::new_symbol(ARCHIVED_BOOT_LAYER_FIELD);
+    TempNewSymbol field_signature = SymbolTable::new_symbol("Ljdk/internal/module/ArchivedBootLayer;");
+    fieldDescriptor fd;
+    if (k->find_field(field_name, field_signature, true, &fd) != nullptr) {
+      oop m = k->java_mirror();
+      oop f = m->obj_field(fd.offset());
+      if (CompressedOops::is_null(f)) {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
+  return true;
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -354,8 +354,8 @@ public class BytecodeName {
         Object[] components0 = components;
         for (int i = 0; i < components.length; i++) {
             Object c = components[i];
-            if (c instanceof String) {
-                String mc = toBytecodeName((String) c);
+            if (c instanceof String s) {
+                String mc = toBytecodeName(s);
                 if (i == 0 && components.length == 1)
                     return mc;  // usual case
                 if ((Object)mc != c) {
@@ -376,8 +376,8 @@ public class BytecodeName {
         }
         int slen = 0;
         for (Object c : components) {
-            if (c instanceof String)
-                slen += String.valueOf(c).length();
+            if (c instanceof String s)
+                slen += s.length();
             else
                 slen += 1;
         }
@@ -408,9 +408,8 @@ public class BytecodeName {
     public static String toDisplayName(String s) {
         Object[] components = parseBytecodeName(s);
         for (int i = 0; i < components.length; i++) {
-            if (!(components[i] instanceof String))
+            if (!(components[i] instanceof String sn))
                 continue;
-            String sn = (String) components[i];
             // note that the name is already demangled!
             //sn = toSourceName(sn);
             if (!isJavaIdent(sn) || sn.indexOf('$') >=0 ) {

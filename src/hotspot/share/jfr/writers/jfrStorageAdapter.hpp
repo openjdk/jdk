@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ class Adapter {
  public:
   typedef typename Flush::Type StorageType;
   Adapter(StorageType* storage, Thread* thread) : _storage(storage), _thread(thread) {}
-  Adapter(Thread* thread) : _storage(NULL), _thread(thread) {}
+  Adapter(Thread* thread) : _storage(nullptr), _thread(thread) {}
 
   void set_storage(StorageType* storage) {
     _storage = storage;
@@ -59,22 +59,22 @@ class Adapter {
   }
 
   const u1* start() const {
-    assert(_storage != NULL, "invariant");
+    assert(_storage != nullptr, "invariant");
     return _storage->start();
   }
 
   u1* pos() {
-    assert(_storage != NULL, "invariant");
+    assert(_storage != nullptr, "invariant");
     return _storage->pos();
   }
 
   const u1* end() const {
-    assert(_storage != NULL, "invariant");
+    assert(_storage != nullptr, "invariant");
     return _storage->end();
   }
 
   void commit(u1* position) {
-    assert(_storage != NULL, "invariant");
+    assert(_storage != nullptr, "invariant");
     _storage->set_pos(position);
   }
 
@@ -86,7 +86,7 @@ class Adapter {
   }
 
   void release() {
-    if (_storage != NULL && _storage->lease()) {
+    if (_storage != nullptr && _storage->lease()) {
       // This flush call will return the lease
       // of a temporary storage area.
       // Since the requested size is 0,
@@ -152,9 +152,9 @@ MallocAdapter<DEFAULT_SIZE> ::MallocAdapter(u1* storage, Thread* thread) :
 
 template <size_t DEFAULT_SIZE>
 MallocAdapter<DEFAULT_SIZE>::MallocAdapter(Thread* thread) :
-  _start(NULL),
-  _pos(NULL),
-  _end(NULL),
+  _start(nullptr),
+  _pos(nullptr),
+  _end(nullptr),
   _initial_size(DEFAULT_SIZE),
   _has_ownership(true) {
   allocate(DEFAULT_SIZE);
@@ -169,7 +169,7 @@ MallocAdapter<DEFAULT_SIZE>::~MallocAdapter() {
 
 template <size_t DEFAULT_SIZE>
 bool MallocAdapter<DEFAULT_SIZE>::allocate(size_t size) {
-  if (NULL == _start) {
+  if (nullptr == _start) {
     _start = JfrCHeapObj::new_array<u1>(size);
     if (_start) {
       _pos = _start;
@@ -177,12 +177,12 @@ bool MallocAdapter<DEFAULT_SIZE>::allocate(size_t size) {
       _initial_size = size;
     }
   }
-  return _start != NULL;
+  return _start != nullptr;
 }
 
 template <size_t DEFAULT_SIZE>
 void MallocAdapter<DEFAULT_SIZE>::deallocate() {
-  if (_start != NULL) {
+  if (_start != nullptr) {
     JfrCHeapObj::free(_start, (size_t)(_end - _start));
   }
 }
@@ -193,7 +193,7 @@ bool MallocAdapter<DEFAULT_SIZE>::flush(size_t used, size_t requested) {
     // can't just realloc a storage that we don't own
     return false;
   }
-  assert(_start != NULL, "invariant");
+  assert(_start != nullptr, "invariant");
   assert(used <= (size_t)(_end - _pos), "invariant");
   assert(_pos + used <= _end, "invariant");
   const size_t previous_storage_size = _end - _start;
@@ -225,7 +225,7 @@ class NoOwnershipAdapter {
   NoOwnershipAdapter(u1* storage, Thread* thread) : _start(storage), _pos(storage), _end(storage), _size(0) {
     ShouldNotCallThis();
   }
-  NoOwnershipAdapter(Thread* thread) : _start(NULL), _pos(NULL), _end(NULL), _size(0) {
+  NoOwnershipAdapter(Thread* thread) : _start(nullptr), _pos(nullptr), _end(nullptr), _size(0) {
     ShouldNotCallThis();
   }
   StorageType* storage() { return _start; }

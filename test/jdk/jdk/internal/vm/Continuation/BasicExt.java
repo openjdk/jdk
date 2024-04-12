@@ -798,7 +798,7 @@ public class BasicExt {
                 cont.stackWalker()
                 .walk(fs -> fs.map(StackWalker.StackFrame::getMethodName).collect(Collectors.toList()));
             assertEquals(frames, cont.isDone() ? List.of()
-                         : Arrays.asList("yield", "ord104_testMethod_dontinline",
+                         : Arrays.asList("yield0", "yield", "ord104_testMethod_dontinline",
                                          "ord103_testMethod_dontinline",
                                          "ord102_testMethod_dontinline",
                                          "ord101_testMethod_dontinline",

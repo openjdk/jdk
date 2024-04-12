@@ -35,6 +35,7 @@ import static java.lang.constant.DirectMethodHandleDesc.Kind.CONSTRUCTOR;
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for a
  * {@link MethodHandle} constant.
  *
+ * @sealedGraph
  * @since 12
  */
 public sealed interface MethodHandleDesc

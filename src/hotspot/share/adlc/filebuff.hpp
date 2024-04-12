@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ class BufferedFile {
  public:
   const char *_name;
   FILE *_fp;
-  inline BufferedFile() { _name = NULL; _fp = NULL; };
+  inline BufferedFile() { _name = nullptr; _fp = nullptr; };
   inline ~BufferedFile() {};
 };
 

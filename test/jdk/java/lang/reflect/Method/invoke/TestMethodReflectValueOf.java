@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,7 @@
  *          makes use of the same caching mechanism as used for autoboxing
  *          when wrapping returned values of the primitive types.
  * @author Andrej Golovnin
- * @run main/othervm -Dsun.reflect.noInflation=true TestMethodReflectValueOf
- * @run main/othervm -Dsun.reflect.noInflation=false -Dsun.reflect.inflationThreshold=500 TestMethodReflectValueOf
+ * @run main/othervm TestMethodReflectValueOf
  */
 
 import java.lang.reflect.InvocationTargetException;

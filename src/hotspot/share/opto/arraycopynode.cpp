@@ -134,12 +134,13 @@ int ArrayCopyNode::get_count(PhaseGVN *phase) const {
       assert (ary_src != nullptr, "not an array or instance?");
       // clone passes a length as a rounded number of longs. If we're
       // cloning an array we'll do it element by element. If the
-      // length input to ArrayCopyNode is constant, length of input
-      // array must be too.
-
-      assert((get_length_if_constant(phase) == -1) != ary_src->size()->is_con() ||
+      // length of the input array is constant, ArrayCopyNode::Length
+      // must be too. Note that the opposite does not need to hold,
+      // because different input array lengths (e.g. int arrays with
+      // 3 or 4 elements) might lead to the same length input
+      // (e.g. 2 double-words).
+      assert(!ary_src->size()->is_con() || (get_length_if_constant(phase) >= 0) ||
              phase->is_IterGVN() || phase->C->inlining_incrementally() || StressReflectiveCode, "inconsistent");
-
       if (ary_src->size()->is_con()) {
         return ary_src->size()->get_con();
       }
@@ -151,7 +152,10 @@ int ArrayCopyNode::get_count(PhaseGVN *phase) const {
 }
 
 Node* ArrayCopyNode::load(BarrierSetC2* bs, PhaseGVN *phase, Node*& ctl, MergeMemNode* mem, Node* adr, const TypePtr* adr_type, const Type *type, BasicType bt) {
-  DecoratorSet decorators = C2_READ_ACCESS | C2_CONTROL_DEPENDENT_LOAD | IN_HEAP | C2_ARRAY_COPY;
+  // Pin the load: if this is an array load, it's going to be dependent on a condition that's not a range check for that
+  // access. If that condition is replaced by an identical dominating one, then an unpinned load would risk floating
+  // above runtime checks that guarantee it is within bounds.
+  DecoratorSet decorators = C2_READ_ACCESS | C2_CONTROL_DEPENDENT_LOAD | IN_HEAP | C2_ARRAY_COPY | C2_UNKNOWN_CONTROL_LOAD;
   C2AccessValuePtr addr(adr, adr_type);
   C2OptAccess access(*phase, ctl, mem, decorators, bt, adr->in(AddPNode::Base), addr);
   Node* res = bs->load_at(access, type);
@@ -654,7 +658,7 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return mem;
 }
 
-bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
+bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) {
   Node* dest = in(ArrayCopyNode::Dest);
   if (dest->is_top()) {
     return false;
@@ -672,7 +676,7 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
   return CallNode::may_modify_arraycopy_helper(dest_t, t_oop, phase);
 }
 
-bool ArrayCopyNode::may_modify_helper(const TypeOopPtr *t_oop, Node* n, PhaseTransform *phase, CallNode*& call) {
+bool ArrayCopyNode::may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseValues* phase, CallNode*& call) {
   if (n != nullptr &&
       n->is_Call() &&
       n->as_Call()->may_modify(t_oop, phase) &&
@@ -683,8 +687,7 @@ bool ArrayCopyNode::may_modify_helper(const TypeOopPtr *t_oop, Node* n, PhaseTra
   return false;
 }
 
-bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTransform *phase, ArrayCopyNode*& ac) {
-
+bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, MemBarNode* mb, PhaseValues* phase, ArrayCopyNode*& ac) {
   Node* c = mb->in(0);
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
@@ -725,7 +728,7 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTra
 // between offset_lo and offset_hi
 // if must_modify is true, return true if the copy is guaranteed to
 // write between offset_lo and offset_hi
-bool ArrayCopyNode::modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseTransform* phase, bool must_modify) const {
+bool ArrayCopyNode::modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseValues* phase, bool must_modify) const {
   assert(_kind == ArrayCopy || _kind == CopyOf || _kind == CopyOfRange, "only for real array copies");
 
   Node* dest = in(Dest);

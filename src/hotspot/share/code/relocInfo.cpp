@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 
 #include <new>
@@ -76,7 +77,7 @@ relocInfo* relocInfo::finish_prefix(short* prefix_limit) {
   assert(sizeof(relocInfo) == sizeof(short), "change this code");
   short* p = (short*)(this+1);
   assert(prefix_limit >= p, "must be a valid span of data");
-  int plen = prefix_limit - p;
+  int plen = checked_cast<int>(prefix_limit - p);
   if (plen == 0) {
     debug_only(_value = 0xFFFF);
     return this;                         // no data: remove self completely
@@ -116,13 +117,13 @@ void relocInfo::change_reloc_info_for_address(RelocIterator *itr, address pc, re
 // ----------------------------------------------------------------------------------------------------
 // Implementation of RelocIterator
 
-void RelocIterator::initialize(CompiledMethod* nm, address begin, address limit) {
+void RelocIterator::initialize(nmethod* nm, address begin, address limit) {
   initialize_misc();
 
   if (nm == nullptr && begin != nullptr) {
     // allow nmethod to be deduced from beginning address
     CodeBlob* cb = CodeCache::find_blob(begin);
-    nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
+    nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
   }
   guarantee(nm != nullptr, "must be able to deduce nmethod from other arguments");
 
@@ -149,8 +150,8 @@ void RelocIterator::initialize(CompiledMethod* nm, address begin, address limit)
 
 RelocIterator::RelocIterator(CodeSection* cs, address begin, address limit) {
   initialize_misc();
-  assert((cs->locs_start() != nullptr) && (cs->locs_end() != nullptr) ||
-         (cs->locs_start() == nullptr) && (cs->locs_end() == nullptr), "valid start and end pointer");
+  assert(((cs->locs_start() != nullptr) && (cs->locs_end() != nullptr)) ||
+         ((cs->locs_start() == nullptr) && (cs->locs_end() == nullptr)), "valid start and end pointer");
   _current = cs->locs_start()-1;
   _end     = cs->locs_end();
   _addr    = cs->start();
@@ -632,20 +633,18 @@ address virtual_call_Relocation::cached_value() {
 }
 
 Method* virtual_call_Relocation::method_value() {
-  CompiledMethod* cm = code();
-  if (cm == nullptr) return (Method*)nullptr;
-  Metadata* m = cm->metadata_at(_method_index);
+  nmethod* nm = code();
+  if (nm == nullptr) return (Method*)nullptr;
+  Metadata* m = nm->metadata_at(_method_index);
   assert(m != nullptr || _method_index == 0, "should be non-null for non-zero index");
   assert(m == nullptr || m->is_method(), "not a method");
   return (Method*)m;
 }
 
-bool virtual_call_Relocation::clear_inline_cache() {
-  // No stubs for ICs
-  // Clean IC
+void virtual_call_Relocation::clear_inline_cache() {
   ResourceMark rm;
   CompiledIC* icache = CompiledIC_at(this);
-  return icache->set_to_clean();
+  icache->set_to_clean();
 }
 
 
@@ -660,26 +659,18 @@ void opt_virtual_call_Relocation::unpack_data() {
 }
 
 Method* opt_virtual_call_Relocation::method_value() {
-  CompiledMethod* cm = code();
-  if (cm == nullptr) return (Method*)nullptr;
-  Metadata* m = cm->metadata_at(_method_index);
+  nmethod* nm = code();
+  if (nm == nullptr) return (Method*)nullptr;
+  Metadata* m = nm->metadata_at(_method_index);
   assert(m != nullptr || _method_index == 0, "should be non-null for non-zero index");
   assert(m == nullptr || m->is_method(), "not a method");
   return (Method*)m;
 }
 
-template<typename CompiledICorStaticCall>
-static bool set_to_clean_no_ic_refill(CompiledICorStaticCall* ic) {
-  guarantee(ic->set_to_clean(), "Should not need transition stubs");
-  return true;
-}
-
-bool opt_virtual_call_Relocation::clear_inline_cache() {
-  // No stubs for ICs
-  // Clean IC
+void opt_virtual_call_Relocation::clear_inline_cache() {
   ResourceMark rm;
-  CompiledIC* icache = CompiledIC_at(this);
-  return set_to_clean_no_ic_refill(icache);
+  CompiledDirectCall* callsite = CompiledDirectCall::at(this);
+  callsite->set_to_clean();
 }
 
 address opt_virtual_call_Relocation::static_stub() {
@@ -698,9 +689,9 @@ address opt_virtual_call_Relocation::static_stub() {
 }
 
 Method* static_call_Relocation::method_value() {
-  CompiledMethod* cm = code();
-  if (cm == nullptr) return (Method*)nullptr;
-  Metadata* m = cm->metadata_at(_method_index);
+  nmethod* nm = code();
+  if (nm == nullptr) return (Method*)nullptr;
+  Metadata* m = nm->metadata_at(_method_index);
   assert(m != nullptr || _method_index == 0, "should be non-null for non-zero index");
   assert(m == nullptr || m->is_method(), "not a method");
   return (Method*)m;
@@ -716,10 +707,10 @@ void static_call_Relocation::unpack_data() {
   _method_index = unpack_1_int();
 }
 
-bool static_call_Relocation::clear_inline_cache() {
-  // Safe call site info
-  CompiledStaticCall* handler = this->code()->compiledStaticCall_at(this);
-  return set_to_clean_no_ic_refill(handler);
+void static_call_Relocation::clear_inline_cache() {
+  ResourceMark rm;
+  CompiledDirectCall* callsite = CompiledDirectCall::at(this);
+  callsite->set_to_clean();
 }
 
 
@@ -758,11 +749,10 @@ address trampoline_stub_Relocation::get_trampoline_for(address call, nmethod* co
   return nullptr;
 }
 
-bool static_stub_Relocation::clear_inline_cache() {
+void static_stub_Relocation::clear_inline_cache() {
   // Call stub is only used when calling the interpreted code.
   // It does not really need to be cleared, except that we want to clean out the methodoop.
-  CompiledDirectStaticCall::set_stub_to_clean(this);
-  return true;
+  CompiledDirectCall::set_stub_to_clean(this);
 }
 
 

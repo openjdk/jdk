@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.inline.hpp"
 #include "cds/archiveUtils.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -45,12 +46,16 @@
 #include "utilities/globalDefinitions.hpp"
 
 CHeapBitMap* ArchivePtrMarker::_ptrmap = nullptr;
+CHeapBitMap* ArchivePtrMarker::_rw_ptrmap = nullptr;
+CHeapBitMap* ArchivePtrMarker::_ro_ptrmap = nullptr;
 VirtualSpace* ArchivePtrMarker::_vs;
 
 bool ArchivePtrMarker::_compacted;
 
 void ArchivePtrMarker::initialize(CHeapBitMap* ptrmap, VirtualSpace* vs) {
   assert(_ptrmap == nullptr, "initialize only once");
+  assert(_rw_ptrmap == nullptr, "initialize only once");
+  assert(_ro_ptrmap == nullptr, "initialize only once");
   _vs = vs;
   _compacted = false;
   _ptrmap = ptrmap;
@@ -64,6 +69,37 @@ void ArchivePtrMarker::initialize(CHeapBitMap* ptrmap, VirtualSpace* vs) {
 
   // We need one bit per pointer in the archive.
   _ptrmap->initialize(estimated_archive_size / sizeof(intptr_t));
+}
+
+void ArchivePtrMarker::initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap) {
+  address* rw_bottom = (address*)ArchiveBuilder::current()->rw_region()->base();
+  address* ro_bottom = (address*)ArchiveBuilder::current()->ro_region()->base();
+
+  _rw_ptrmap = rw_ptrmap;
+  _ro_ptrmap = ro_ptrmap;
+
+  size_t rw_size = ArchiveBuilder::current()->rw_region()->used() / sizeof(address);
+  size_t ro_size = ArchiveBuilder::current()->ro_region()->used() / sizeof(address);
+  // ro_start is the first bit in _ptrmap that covers the pointer that would sit at ro_bottom.
+  // E.g., if rw_bottom = (address*)100
+  //          ro_bottom = (address*)116
+  //       then for 64-bit platform:
+  //          ro_start = ro_bottom - rw_bottom = (116 - 100) / sizeof(address) = 2;
+  size_t ro_start = ro_bottom - rw_bottom;
+
+  // Note: ptrmap is big enough only to cover the last pointer in ro_region.
+  // See ArchivePtrMarker::compact()
+  _rw_ptrmap->initialize(rw_size);
+  _ro_ptrmap->initialize(_ptrmap->size() - ro_start);
+
+  for (size_t rw_bit = 0; rw_bit < _rw_ptrmap->size(); rw_bit++) {
+    _rw_ptrmap->at_put(rw_bit, _ptrmap->at(rw_bit));
+  }
+
+  for(size_t ro_bit = ro_start; ro_bit < _ptrmap->size(); ro_bit++) {
+    _ro_ptrmap->at_put(ro_bit-ro_start, _ptrmap->at(ro_bit));
+  }
+  assert(_ptrmap->size() - ro_start == _ro_ptrmap->size(), "must be");
 }
 
 void ArchivePtrMarker::mark_pointer(address* ptr_loc) {
@@ -173,7 +209,7 @@ char* DumpRegion::expand_top_to(char* newtop) {
 }
 
 void DumpRegion::commit_to(char* newtop) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   char* base = _rs->base();
   size_t need_committed_size = newtop - base;
   size_t has_committed_size = _vs->committed_size();
@@ -262,19 +298,19 @@ void DumpRegion::pack(DumpRegion* next) {
   }
 }
 
-void WriteClosure::do_oop(oop* o) {
-  if (*o == nullptr) {
-    _dump_region->append_intptr_t(0);
-  } else {
-    assert(HeapShared::can_write(), "sanity");
-    intptr_t p;
-    if (UseCompressedOops) {
-      p = (intptr_t)CompressedOops::encode_not_null(*o);
-    } else {
-      p = cast_from_oop<intptr_t>(HeapShared::to_requested_address(*o));
-    }
-    _dump_region->append_intptr_t(p);
+void WriteClosure::do_ptr(void** p) {
+  // Write ptr into the archive; ptr can be:
+  //   (a) null                 -> written as 0
+  //   (b) a "buffered" address -> written as is
+  //   (c) a "source"   address -> convert to "buffered" and write
+  // The common case is (c). E.g., when writing the vmClasses into the archive.
+  // We have (b) only when we don't have a corresponding source object. E.g.,
+  // the archived c++ vtable entries.
+  address ptr = *(address*)p;
+  if (ptr != nullptr && !ArchiveBuilder::current()->is_in_buffer_space(ptr)) {
+    ptr = ArchiveBuilder::current()->get_buffered_addr(ptr);
   }
+  _dump_region->append_intptr_t((intptr_t)ptr, true);
 }
 
 void WriteClosure::do_region(u_char* start, size_t size) {
@@ -282,7 +318,7 @@ void WriteClosure::do_region(u_char* start, size_t size) {
   assert(size % sizeof(intptr_t) == 0, "bad size");
   do_tag((int)size);
   while (size > 0) {
-    _dump_region->append_intptr_t(*(intptr_t*)start, true);
+    do_ptr((void**)start);
     start += sizeof(intptr_t);
     size -= sizeof(intptr_t);
   }
@@ -301,6 +337,11 @@ void ReadClosure::do_u4(u4* p) {
   *p = (u4)(uintx(obj));
 }
 
+void ReadClosure::do_int(int* p) {
+  intptr_t obj = nextPtr();
+  *p = (int)(intx(obj));
+}
+
 void ReadClosure::do_bool(bool* p) {
   intptr_t obj = nextPtr();
   *p = (bool)(uintx(obj));
@@ -312,28 +353,6 @@ void ReadClosure::do_tag(int tag) {
   // do_int(&old_tag);
   assert(tag == old_tag, "old tag doesn't match");
   FileMapInfo::assert_mark(tag == old_tag);
-}
-
-void ReadClosure::do_oop(oop *p) {
-  if (UseCompressedOops) {
-    narrowOop o = CompressedOops::narrow_oop_cast(nextPtr());
-    if (CompressedOops::is_null(o) || !ArchiveHeapLoader::is_in_use()) {
-      *p = nullptr;
-    } else {
-      assert(ArchiveHeapLoader::can_use(), "sanity");
-      assert(ArchiveHeapLoader::is_in_use(), "must be");
-      *p = ArchiveHeapLoader::decode_from_archive(o);
-    }
-  } else {
-    intptr_t dumptime_oop = nextPtr();
-    if (dumptime_oop == 0 || !ArchiveHeapLoader::is_in_use()) {
-      *p = nullptr;
-    } else {
-      assert(!ArchiveHeapLoader::is_loaded(), "ArchiveHeapLoader::can_load() is not supported for uncompessed oops");
-      intptr_t runtime_oop = dumptime_oop + ArchiveHeapLoader::mapped_heap_delta();
-      *p = cast_to_oop(runtime_oop);
-    }
-  }
 }
 
 void ReadClosure::do_region(u_char* start, size_t size) {

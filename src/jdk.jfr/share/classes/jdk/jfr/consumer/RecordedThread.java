@@ -56,6 +56,9 @@ public final class RecordedThread extends RecordedObject {
      * @return the OS thread ID, or {@code -1} if doesn't exist
      */
     public long getOSThreadId() {
+        if (isVirtual()) {
+            return -1L;
+        }
         Long l = getTyped("osThreadId", Long.class, -1L);
         return l.longValue();
     }
@@ -90,7 +93,8 @@ public final class RecordedThread extends RecordedObject {
      */
     public long getJavaThreadId() {
         Long l = getTyped("javaThreadId", Long.class, -1L);
-        return l.longValue();
+        long id = l.longValue();
+        return id == 0 ? -1L : id;
     }
 
     /**

@@ -118,6 +118,4 @@ public class ShortResponseBodyPost extends ShortResponseBody {
             }
         }
     }
-
 }
-

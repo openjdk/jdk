@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ class JfrTypeWriterHost : public StackObj {
                                                 _ctx(writer->context()),
                                                 _count(0),
                                                 _skip_header(skip_header) {
-    assert(_writer != NULL, "invariant");
+    assert(_writer != nullptr, "invariant");
     if (!_skip_header) {
       _writer->write_type((JfrTypeId)ID);
       _count_offset = _writer->reserve(sizeof(u4)); // Don't know how many yet

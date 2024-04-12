@@ -27,12 +27,12 @@
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionRemSet.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -126,7 +126,7 @@ class G1VerifyCodeRootOopClosure: public OopClosure {
 
 public:
   G1VerifyCodeRootOopClosure(G1CollectedHeap* g1h, OopClosure* root_cl, VerifyOption vo):
-    _g1h(g1h), _root_cl(root_cl), _nm(NULL), _vo(vo), _failures(false) {}
+    _g1h(g1h), _root_cl(root_cl), _nm(nullptr), _vo(vo), _failures(false) {}
 
   void do_oop(oop* p) { do_oop_work(p); }
   void do_oop(narrowOop* p) { do_oop_work(p); }
@@ -135,19 +135,17 @@ public:
   bool failures() { return _failures; }
 };
 
-class G1VerifyCodeRootBlobClosure: public CodeBlobClosure {
+class G1VerifyCodeRootNMethodClosure: public NMethodClosure {
   G1VerifyCodeRootOopClosure* _oop_cl;
 
 public:
-  G1VerifyCodeRootBlobClosure(G1VerifyCodeRootOopClosure* oop_cl):
+  G1VerifyCodeRootNMethodClosure(G1VerifyCodeRootOopClosure* oop_cl):
     _oop_cl(oop_cl) {}
 
-  void do_code_blob(CodeBlob* cb) {
-    nmethod* nm = cb->as_nmethod_or_null();
-    if (nm != NULL) {
-      _oop_cl->set_nmethod(nm);
-      nm->oops_do(_oop_cl);
-    }
+  void do_nmethod(nmethod* nm) {
+    assert(nm != nullptr, "Sanity");
+    _oop_cl->set_nmethod(nm);
+    nm->oops_do(_oop_cl);
   }
 };
 
@@ -191,7 +189,7 @@ public:
 
   template <class T> void do_oop_work(T *p) {
     oop obj = RawAccess<>::oop_load(p);
-    guarantee(obj == NULL || !_g1h->is_obj_dead_cond(obj, _vo),
+    guarantee(obj == nullptr || !_g1h->is_obj_dead_cond(obj, _vo),
               "Dead object referenced by a not dead object");
   }
 };
@@ -210,7 +208,7 @@ public:
   }
   void do_object(oop o) {
     VerifyLivenessOopClosure isLive(_g1h, _vo);
-    assert(o != NULL, "Huh?");
+    assert(o != nullptr, "Huh?");
     if (!_g1h->is_obj_dead_cond(o, _vo)) {
       // If the object is alive according to the full gc mark,
       // then verify that the marking information agrees.
@@ -224,7 +222,7 @@ public:
       }
 
       o->oop_iterate(&isLive);
-      if (_hr->obj_in_unparsable_area(o, _hr->parsable_bottom())) {
+      if (!_hr->is_in_parsable_area(o)) {
         size_t obj_size = o->size();
         _live_bytes += (obj_size * HeapWordSize);
       }
@@ -340,7 +338,7 @@ void G1HeapVerifier::verify(VerifyOption vo) {
   // system dictionary, class loader data graph, the string table
   // and the nmethods in the code cache.
   G1VerifyCodeRootOopClosure codeRootsCl(_g1h, &rootsCl, vo);
-  G1VerifyCodeRootBlobClosure blobsCl(&codeRootsCl);
+  G1VerifyCodeRootNMethodClosure blobsCl(&codeRootsCl);
 
   {
     G1RootProcessor root_processor(_g1h, 1);
@@ -409,10 +407,7 @@ public:
       assert(hr->containing_set() == _old_set, "Heap region %u is old but not in the old set.", hr->hrm_index());
       _old_count++;
     } else {
-      // There are no other valid region types. Check for one invalid
-      // one we can identify: pinned without old or humongous set.
-      assert(!hr->is_pinned(), "Heap region %u is pinned but not old or humongous.", hr->hrm_index());
-      ShouldNotReachHere();
+      fatal("Invalid region type for region %u (%s)", hr->hrm_index(), hr->get_short_type_str());
     }
     return false;
   }
@@ -436,6 +431,82 @@ void G1HeapVerifier::verify_region_sets() {
   VerifyRegionListsClosure cl(&_g1h->_old_set, &_g1h->_humongous_set, &_g1h->_hrm);
   _g1h->heap_region_iterate(&cl);
   cl.verify_counts(&_g1h->_old_set, &_g1h->_humongous_set, &_g1h->_hrm);
+
+  _g1h->collection_set()->candidates()->verify();
+}
+
+class G1VerifyRegionMarkingStateClosure : public HeapRegionClosure {
+  class MarkedBytesClosure {
+    size_t _marked_words;
+
+  public:
+    MarkedBytesClosure() : _marked_words(0) { }
+
+    inline size_t apply(oop obj) {
+      size_t result = obj->size();
+      _marked_words += result;
+      return result;
+    }
+
+    size_t marked_bytes() const { return _marked_words * HeapWordSize; }
+  };
+
+public:
+  virtual bool do_heap_region(HeapRegion* r) {
+    if (r->is_free()) {
+      return false;
+    }
+
+    G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
+
+    bool part_of_marking = r->is_old_or_humongous() && !r->is_collection_set_candidate();
+    HeapWord* top_at_mark_start = cm->top_at_mark_start(r);
+
+    if (part_of_marking) {
+      guarantee(r->bottom() != top_at_mark_start,
+                "region %u (%s) does not have TAMS set",
+                r->hrm_index(), r->get_short_type_str());
+      size_t marked_bytes = cm->live_bytes(r->hrm_index());
+
+      MarkedBytesClosure cl;
+      r->apply_to_marked_objects(cm->mark_bitmap(), &cl);
+
+      guarantee(cl.marked_bytes() == marked_bytes,
+                "region %u (%s) live bytes actual %zu and cache %zu differ",
+                r->hrm_index(), r->get_short_type_str(), cl.marked_bytes(), marked_bytes);
+    } else {
+      guarantee(r->bottom() == top_at_mark_start,
+                "region %u (%s) has TAMS set " PTR_FORMAT " " PTR_FORMAT,
+                r->hrm_index(), r->get_short_type_str(), p2i(r->bottom()), p2i(top_at_mark_start));
+      guarantee(cm->live_bytes(r->hrm_index()) == 0,
+                "region %u (%s) has %zu live bytes recorded",
+                r->hrm_index(), r->get_short_type_str(), cm->live_bytes(r->hrm_index()));
+      guarantee(cm->mark_bitmap()->get_next_marked_addr(r->bottom(), r->end()) == r->end(),
+                "region %u (%s) has mark",
+                r->hrm_index(), r->get_short_type_str());
+      guarantee(cm->is_root_region(r),
+                "region %u (%s) should be root region",
+                r->hrm_index(), r->get_short_type_str());
+    }
+    return false;
+  }
+};
+
+void G1HeapVerifier::verify_marking_state() {
+  assert(G1CollectedHeap::heap()->collector_state()->in_concurrent_start_gc(), "must be");
+
+  // Verify TAMSes, bitmaps and liveness statistics.
+  //
+  // - if part of marking: TAMS != bottom, liveness == 0, bitmap clear
+  // - if evacuation failed + part of marking: TAMS != bottom, liveness != 0, bitmap has at least on object set (corresponding to liveness)
+  // - if not part of marking: TAMS == bottom, liveness == 0, bitmap clear; must be in root region
+
+  // To compare liveness recorded in G1ConcurrentMark and actual we need to flush the
+  // cache.
+  G1CollectedHeap::heap()->concurrent_mark()->flush_all_task_caches();
+
+  G1VerifyRegionMarkingStateClosure cl;
+  _g1h->heap_region_iterate(&cl);
 }
 
 void G1HeapVerifier::prepare_for_verify() {
@@ -471,9 +542,10 @@ void G1HeapVerifier::verify_bitmap_clear(bool from_tams) {
     G1VerifyBitmapClear(bool from_tams) : _from_tams(from_tams) { }
 
     virtual bool do_heap_region(HeapRegion* r) {
-      G1CMBitMap* bitmap = G1CollectedHeap::heap()->concurrent_mark()->mark_bitmap();
+      G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
+      G1CMBitMap* bitmap = cm->mark_bitmap();
 
-      HeapWord* start = _from_tams ? r->top_at_mark_start() : r->bottom();
+      HeapWord* start = _from_tams ? cm->top_at_mark_start(r) : r->bottom();
 
       HeapWord* mark = bitmap->get_next_marked_addr(start, r->end());
       guarantee(mark == r->end(), "Found mark at " PTR_FORMAT " in region %u from start " PTR_FORMAT, p2i(mark), r->hrm_index(), p2i(start));

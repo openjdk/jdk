@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,25 @@
  */
 package jdk.internal.foreign.layout;
 
+import jdk.internal.foreign.LayoutPath;
+import jdk.internal.foreign.Utils;
+
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemoryLayout.PathElement;
 import java.lang.foreign.SequenceLayout;
 import java.lang.foreign.StructLayout;
 import java.lang.foreign.UnionLayout;
 import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.VarHandle;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & MemoryLayout>
         permits AbstractGroupLayout, PaddingLayoutImpl, SequenceLayoutImpl, ValueLayouts.AbstractValueLayout {
@@ -41,30 +52,27 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
     private final long byteAlignment;
     private final Optional<String> name;
 
-    AbstractLayout(long bitSize, long bitAlignment, Optional<String> name) {
-        this.byteSize = MemoryLayoutUtil.requireBitSizeValid(bitSize, true) / 8;
-        this.byteAlignment = requirePowerOfTwoAndGreaterOrEqualToEight(bitAlignment) / 8;
+    AbstractLayout(long byteSize, long byteAlignment, Optional<String> name) {
+        this.byteSize = MemoryLayoutUtil.requireByteSizeValid(byteSize, true);
+        this.byteAlignment = requirePowerOfTwoAndGreaterOrEqualToOne(byteAlignment);
         this.name = Objects.requireNonNull(name);
     }
 
     public final L withName(String name) {
-        return dup(bitAlignment(), Optional.of(name));
+        return dup(byteAlignment(), Optional.of(name));
     }
 
+    @SuppressWarnings("unchecked")
     public final L withoutName() {
-        return dup(bitAlignment(), Optional.empty());
+        return name.isPresent() ? dup(byteAlignment(), Optional.empty()) : (L) this;
     }
 
     public final Optional<String> name() {
         return name;
     }
 
-    public L withBitAlignment(long bitAlignment) {
-        return dup(bitAlignment, name);
-    }
-
-    public final long bitAlignment() {
-        return byteAlignment * 8;
+    public L withByteAlignment(long byteAlignment) {
+        return dup(byteAlignment, name);
     }
 
     public final long byteAlignment() {
@@ -73,10 +81,6 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
 
     public final long byteSize() {
         return byteSize;
-    }
-
-    public final long bitSize() {
-        return byteSize * 8;
     }
 
     public boolean hasNaturalAlignment() {
@@ -125,24 +129,97 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
     @Override
     public abstract String toString();
 
-    abstract L dup(long bitAlignment, Optional<String> name);
+    abstract L dup(long byteAlignment, Optional<String> name);
 
     String decorateLayoutString(String s) {
         if (name().isPresent()) {
             s = String.format("%s(%s)", s, name().get());
         }
         if (!hasNaturalAlignment()) {
-            s = bitAlignment() + "%" + s;
+            s = byteAlignment() + "%" + s;
         }
         return s;
     }
 
-    private static long requirePowerOfTwoAndGreaterOrEqualToEight(long value) {
-        if (((value & (value - 1)) != 0L) || // value must be a power of two
-                (value < 8)) { // value must be greater or equal to 8
+    private static long requirePowerOfTwoAndGreaterOrEqualToOne(long value) {
+        if (!Utils.isPowerOfTwo(value) || // value must be a power of two
+                value < 1) { // value must be greater or equal to 1
             throw new IllegalArgumentException("Invalid alignment: " + value);
         }
         return value;
     }
 
+    public long scale(long offset, long index) {
+        Utils.checkNonNegativeArgument(offset, "offset");
+        Utils.checkNonNegativeArgument(index, "index");
+        return Math.addExact(offset, Math.multiplyExact(byteSize(), index));
+    }
+
+    public MethodHandle scaleHandle() {
+        class Holder {
+            static final MethodHandle MH_SCALE;
+            static {
+                try {
+                    MH_SCALE = MethodHandles.lookup().findVirtual(MemoryLayout.class, "scale",
+                            MethodType.methodType(long.class, long.class, long.class));
+                } catch (ReflectiveOperationException e) {
+                    throw new ExceptionInInitializerError(e);
+                }
+            }
+        }
+        return Holder.MH_SCALE.bindTo(this);
+    }
+
+
+    public long byteOffset(PathElement... elements) {
+        return computePathOp(LayoutPath.rootPath((MemoryLayout) this), LayoutPath::offset,
+                Set.of(LayoutPath.SequenceElement.class, LayoutPath.SequenceElementByRange.class, LayoutPath.DereferenceElement.class),
+                elements);
+    }
+
+    public MethodHandle byteOffsetHandle(PathElement... elements) {
+        return computePathOp(LayoutPath.rootPath((MemoryLayout) this), LayoutPath::offsetHandle,
+                Set.of(LayoutPath.DereferenceElement.class),
+                elements);
+    }
+
+    public VarHandle varHandle(PathElement... elements) {
+        Objects.requireNonNull(elements);
+        if (this instanceof ValueLayout vl && elements.length == 0) {
+            return vl.varHandle(); // fast path
+        }
+        return computePathOp(LayoutPath.rootPath((MemoryLayout) this), LayoutPath::dereferenceHandle,
+                Set.of(), elements);
+    }
+
+    public VarHandle arrayElementVarHandle(PathElement... elements) {
+        return MethodHandles.collectCoordinates(varHandle(elements), 1, scaleHandle());
+    }
+
+    public MethodHandle sliceHandle(PathElement... elements) {
+        return computePathOp(LayoutPath.rootPath((MemoryLayout) this), LayoutPath::sliceHandle,
+                Set.of(LayoutPath.DereferenceElement.class),
+                elements);
+    }
+
+    public MemoryLayout select(PathElement... elements) {
+        return computePathOp(LayoutPath.rootPath((MemoryLayout) this), LayoutPath::layout,
+                Set.of(LayoutPath.SequenceElementByIndex.class, LayoutPath.SequenceElementByRange.class, LayoutPath.DereferenceElement.class),
+                elements);
+    }
+
+    private static <Z> Z computePathOp(LayoutPath path, Function<LayoutPath, Z> finalizer,
+                                       Set<Class<?>> badTypes, PathElement... elements) {
+        Objects.requireNonNull(elements);
+        for (PathElement e : elements) {
+            Objects.requireNonNull(e);
+            if (badTypes.contains(e.getClass())) {
+                throw new IllegalArgumentException("Invalid selection in layout path: " + e);
+            }
+            @SuppressWarnings("unchecked")
+            UnaryOperator<LayoutPath> pathOp = (UnaryOperator<LayoutPath>) e;
+            path = pathOp.apply(path);
+        }
+        return finalizer.apply(path);
+    }
 }

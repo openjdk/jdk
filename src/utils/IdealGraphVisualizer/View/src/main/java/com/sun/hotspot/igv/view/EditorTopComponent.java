@@ -175,6 +175,11 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         toolBar.addSeparator();
         ButtonGroup layoutButtons = new ButtonGroup();
 
+        JToggleButton stableSeaLayoutButton = new JToggleButton(new EnableStableSeaLayoutAction(this));
+        stableSeaLayoutButton.setSelected(diagramViewModel.getShowStableSea());
+        layoutButtons.add(stableSeaLayoutButton);
+        toolBar.add(stableSeaLayoutButton);
+
         JToggleButton seaLayoutButton = new JToggleButton(new EnableSeaLayoutAction(this));
         seaLayoutButton.setSelected(diagramViewModel.getShowSea());
         layoutButtons.add(seaLayoutButton);
@@ -190,6 +195,17 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         cfgLayoutButton.setSelected(diagramViewModel.getShowCFG());
         layoutButtons.add(cfgLayoutButton);
         toolBar.add(cfgLayoutButton);
+
+        diagramViewModel.getGraphChangedEvent().addListener(model -> {
+            // HierarchicalStableLayoutManager is not reliable for difference graphs
+            boolean isDiffGraph = model.getGraph().isDiffGraph();
+            // deactivate HierarchicalStableLayoutManager for difference graphs
+            stableSeaLayoutButton.setEnabled(!isDiffGraph);
+            if (stableSeaLayoutButton.isSelected() && isDiffGraph) {
+                // fallback to HierarchicalLayoutManager for difference graphs
+                seaLayoutButton.setSelected(true);
+            }
+        });
 
         toolBar.addSeparator();
         toolBar.add(new JToggleButton(new PredSuccAction(diagramViewModel.getShowNodeHull())));

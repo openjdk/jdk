@@ -52,7 +52,7 @@ import static java.awt.image.BufferedImage.TYPE_USHORT_GRAY;
 
 /*
  * @test
- * @bug 8012229 8300725 8279216
+ * @bug 8012229 8300725 8279216 8323210
  * @summary one more test to check the alpha channel
  */
 public final class ColCvtAlphaDifferentSrcDst {

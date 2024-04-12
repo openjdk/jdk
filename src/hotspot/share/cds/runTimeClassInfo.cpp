@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@
 
 void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
   ArchiveBuilder* builder = ArchiveBuilder::current();
-  assert(builder->is_in_buffer_space(info._klass), "must be");
-  _klass = info._klass;
+  builder->write_pointer_in_buffer(&_klass, info._klass);
+
   if (!SystemDictionaryShared::is_builtin(_klass)) {
     CrcInfo* c = crc();
     c->_clsfile_size = info._clsfile_size;
@@ -62,8 +62,7 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
   }
 
   if (_klass->is_hidden()) {
-    InstanceKlass* n_h = info.nest_host();
-    set_nest_host(n_h);
+    builder->write_pointer_in_buffer(nest_host_addr(), info.nest_host());
   }
   if (_klass->has_archived_enum_objs()) {
     int num = info.num_enum_klass_static_fields();
@@ -73,8 +72,6 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
       set_enum_klass_static_field_root_index_at(i, root_index);
     }
   }
-
-  ArchivePtrMarker::mark_pointer(&_klass);
 }
 
 size_t RunTimeClassInfo::crc_size(InstanceKlass* klass) {

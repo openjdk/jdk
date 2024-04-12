@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,7 +319,8 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
   // this CodeEmitInfo must not have the xhandlers because here the
   // object is already locked (xhandlers expect object to be unlocked)
   CodeEmitInfo* info = state_for(x, x->state(), true);
-  monitor_enter(obj.result(), lock, syncTempOpr(), LIR_OprFact::illegalOpr,
+  LIR_Opr tmp = LockingMode == LM_LIGHTWEIGHT ? new_register(T_ADDRESS) : LIR_OprFact::illegalOpr;
+  monitor_enter(obj.result(), lock, syncTempOpr(), tmp,
                         x->monitor_no(), info_for_exception, info);
 }
 
@@ -967,7 +968,7 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
       break;
     case vmIntrinsics::_dpow:
        if (StubRoutines::dpow() != nullptr) {
-      __ call_runtime_leaf(StubRoutines::dpow(), getThreadTemp(), result_reg, cc->args());
+        __ call_runtime_leaf(StubRoutines::dpow(), getThreadTemp(), result_reg, cc->args());
       } else {
         __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dpow), getThreadTemp(), result_reg, cc->args());
       }
@@ -1206,9 +1207,10 @@ void LIRGenerator::do_vectorizedMismatch(Intrinsic* x) {
   __ move(result_reg, result);
 }
 
+#ifndef _LP64
 // _i2l, _i2f, _i2d, _l2i, _l2f, _l2d, _f2i, _f2l, _f2d, _d2i, _d2l, _d2f
 // _i2b, _i2c, _i2s
-LIR_Opr fixed_register_for(BasicType type) {
+static LIR_Opr fixed_register_for(BasicType type) {
   switch (type) {
     case T_FLOAT:  return FrameMap::fpu0_float_opr;
     case T_DOUBLE: return FrameMap::fpu0_double_opr;
@@ -1217,6 +1219,7 @@ LIR_Opr fixed_register_for(BasicType type) {
     default:       ShouldNotReachHere(); return LIR_OprFact::illegalOpr;
   }
 }
+#endif
 
 void LIRGenerator::do_Convert(Convert* x) {
 #ifdef _LP64

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import javax.net.ssl.StandardConstants;
 import static sun.security.ssl.SSLExtension.CH_SERVER_NAME;
 import static sun.security.ssl.SSLExtension.EE_SERVER_NAME;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
+import static sun.security.ssl.SSLExtension.SH_PRE_SHARED_KEY;
 import static sun.security.ssl.SSLExtension.SH_SERVER_NAME;
 import sun.security.ssl.SSLExtension.SSLExtensionSpec;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
@@ -342,6 +343,10 @@ final class ServerNameExtension {
                         sni, shc.resumingSession.serverNameIndication)) {
                     shc.isResumption = false;
                     shc.resumingSession = null;
+                    // this server is disallowing this session resumption,
+                    // so don't include the pre-shared key in the
+                    // ServerHello handshake message
+                    shc.handshakeExtensions.remove(SH_PRE_SHARED_KEY);
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine(
                                 "abort session resumption, " +

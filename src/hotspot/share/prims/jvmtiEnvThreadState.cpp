@@ -175,7 +175,7 @@ void JvmtiEnvThreadState::set_agent_thread_local_storage_data (void *data) {
 void JvmtiEnvThreadState::compare_and_set_current_location(Method* new_method,
                                                            address new_location, jvmtiEvent event) {
 
-  int new_bci = new_location - new_method->code_base();
+  int new_bci = pointer_delta_as_int(new_location, new_method->code_base());
 
   // The method is identified and stored as a jmethodID which is safe in this
   // case because the class cannot be unloaded while a method is executing.

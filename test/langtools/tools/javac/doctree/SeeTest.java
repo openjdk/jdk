@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8031212 8273244 8284908 8200337
+ * @bug 7021614 8031212 8273244 8284908 8200337 8288619
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -48,6 +48,44 @@ DocComment[DOC_COMMENT, pos:1
     See[SEE, pos:7
       reference: 1
         Text[TEXT, pos:12, "String"]
+    ]
+]
+*/
+
+    /**
+     * Test '@' in quoted string.
+     * @see "{@code}"
+     */
+    void at_sign_in_quoted_string() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 1
+    Text[TEXT, pos:1, Test_'@'_in_quoted_string.]
+  body: empty
+  block tags: 1
+    See[SEE, pos:29
+      reference: 1
+        Text[TEXT, pos:34, "{@code}"]
+    ]
+]
+*/
+
+    /**
+     * Test new line before quoted string.
+     * @see
+     *    "{@code}"
+     */
+    @PrettyCheck(false)
+    void new_line_before_quoted_string() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 1
+    Text[TEXT, pos:1, Test_new_line_before_quoted_string.]
+  body: empty
+  block tags: 1
+    See[SEE, pos:38
+      reference: 1
+        Text[TEXT, pos:47, "{@code}"]
     ]
 ]
 */

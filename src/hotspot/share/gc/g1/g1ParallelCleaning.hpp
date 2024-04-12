@@ -29,7 +29,7 @@
 
 #if INCLUDE_JVMCI
 class JVMCICleaningTask : public StackObj {
-  volatile int       _cleaning_claimed;
+  volatile bool _cleaning_claimed;
 
 public:
   JVMCICleaningTask();

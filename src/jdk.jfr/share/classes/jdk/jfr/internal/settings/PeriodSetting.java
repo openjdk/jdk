@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import jdk.jfr.MetadataDefinition;
 import jdk.jfr.Name;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.ValueParser;
 
 @MetadataDefinition
 @Label("Period")
@@ -74,7 +74,7 @@ public final class PeriodSetting extends JDKSettingControl {
                 endChunk = true;
                 break;
             default:
-                long l = Utils.parseTimespanWithInfinity(value);
+                long l = ValueParser.parseTimespanWithInfinity(value);
                 // Always accept first specified value
                 if (min == null) {
                     text = value;
@@ -113,7 +113,7 @@ public final class PeriodSetting extends JDKSettingControl {
             eventType.setPeriod(0, false, true);
             break;
         default:
-            long nanos = Utils.parseTimespanWithInfinity(value);
+            long nanos = ValueParser.parseTimespanWithInfinity(value);
             if (nanos == 0 || nanos == Long.MAX_VALUE) {
                 eventType.setPeriod(nanos, false, false);
             } else {

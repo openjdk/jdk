@@ -30,11 +30,11 @@
  */
 
 import java.io.InputStream;
-
+import java.awt.EventQueue;
 import javax.swing.ProgressMonitorInputStream;
 
 public class ProgressTest {
-
+    static volatile long total = 0;
     private static final String instructionsText =
             "A ProgressMonitor will be shown.\n" +
             " If it shows blank progressbar after 2048MB bytes read,\n"+
@@ -69,15 +69,20 @@ public class ProgressTest {
             public void run() {
                 byte[] buffer = new byte[512];
                 int nb = 0;
-                long total = 0;
                 while (true) {
                     try {
                         nb = pmis.read(buffer);
                     } catch (Exception e){}
                     if (nb == 0) break;
                     total += nb;
-
-                    pmis.getProgressMonitor().setNote(total/(1024*1024)+" MB Read");
+                    System.out.println("total " + total);
+                    if ((total % (1024*1024)) == 0) {
+                        try {
+                            EventQueue.invokeAndWait(() -> {
+                                pmis.getProgressMonitor().setNote(total/(1024*1024)+" MB Read");
+                            });
+                        } catch (Exception e) {}
+                    }
                 }
             }
         };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "interpreter/interpreter.hpp"
@@ -39,10 +39,15 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/compressedOops.inline.hpp"
+#include "nmt/mallocHeader.inline.hpp"
+#include "nmt/mallocTracker.hpp"
+#include "nmt/memTracker.inline.hpp"
+#include "nmt/nmtCommon.hpp"
+#include "nmt/nmtPreInit.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvmtiAgent.hpp"
 #include "prims/jvm_misc.hpp"
+#include "prims/jvmtiAgent.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
@@ -63,16 +68,14 @@
 #include "runtime/vm_version.hpp"
 #include "sanitizers/address.hpp"
 #include "services/attachListener.hpp"
-#include "services/mallocTracker.hpp"
-#include "services/mallocHeader.inline.hpp"
-#include "services/memTracker.inline.hpp"
-#include "services/nmtPreInit.hpp"
-#include "services/nmtCommon.hpp"
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
+#include "utilities/fastrand.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #ifndef _WINDOWS
@@ -136,11 +139,11 @@ char* os::iso8601_time(jlong milliseconds_since_19700101, char* buffer, size_t b
     assert(false, "buffer_length too small");
     return nullptr;
   }
-  const int milliseconds_per_microsecond = 1000;
+  const int milliseconds_per_second = 1000;
   const time_t seconds_since_19700101 =
-    milliseconds_since_19700101 / milliseconds_per_microsecond;
+    milliseconds_since_19700101 / milliseconds_per_second;
   const int milliseconds_after_second =
-    milliseconds_since_19700101 % milliseconds_per_microsecond;
+    checked_cast<int>(milliseconds_since_19700101 % milliseconds_per_second);
   // Convert the time value to a tm and timezone variable
   struct tm time_struct;
   if (utc) {
@@ -162,7 +165,7 @@ char* os::iso8601_time(jlong milliseconds_since_19700101, char* buffer, size_t b
   // No offset when dealing with UTC
   time_t UTC_to_local = 0;
   if (!utc) {
-#if defined(_ALLBSD_SOURCE) || defined(_GNU_SOURCE)
+#if (defined(_ALLBSD_SOURCE) || defined(_GNU_SOURCE)) && !defined(AIX)
     UTC_to_local = -(time_struct.tm_gmtoff);
 #elif defined(_WINDOWS)
     long zone;
@@ -628,7 +631,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
   if (NMTPreInit::handle_malloc(&rc, size)) {
-    // No need to fill with 0 because DumpSharedSpaces doesn't use these
+    // No need to fill with 0 because CDS static dumping doesn't use these
     // early allocations.
     return rc;
   }
@@ -659,7 +662,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
   void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, memflags, stack);
 
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive()) {
     // Need to deterministically fill all the alignment gaps in C++ structures.
     ::memset(inner_ptr, 0, size);
   } else {
@@ -878,8 +881,8 @@ bool os::print_function_and_library_name(outputStream* st,
   // this as a function descriptor for the reader (see below).
   if (!have_function_name && os::is_readable_pointer(addr)) {
     address addr2 = (address)os::resolve_function_descriptor(addr);
-    if (have_function_name = is_function_descriptor =
-        dll_address_to_function_name(addr2, p, buflen, &offset, demangle)) {
+    if ((have_function_name = is_function_descriptor =
+        dll_address_to_function_name(addr2, p, buflen, &offset, demangle))) {
       addr = addr2;
     }
   }
@@ -928,13 +931,63 @@ bool os::print_function_and_library_name(outputStream* st,
   return have_function_name || have_library_name;
 }
 
-ATTRIBUTE_NO_ASAN static void print_hex_readable_pointer(outputStream* st, address p,
-                                                         int unitsize) {
-  switch (unitsize) {
-    case 1: st->print("%02x", *(u1*)p); break;
-    case 2: st->print("%04x", *(u2*)p); break;
-    case 4: st->print("%08x", *(u4*)p); break;
-    case 8: st->print("%016" FORMAT64_MODIFIER "x", *(u8*)p); break;
+ATTRIBUTE_NO_ASAN static bool read_safely_from(intptr_t* p, intptr_t* result) {
+  const intptr_t errval = 0x1717;
+  intptr_t i = SafeFetchN(p, errval);
+  if (i == errval) {
+    i = SafeFetchN(p, ~errval);
+    if (i == ~errval) {
+      return false;
+    }
+  }
+  (*result) = i;
+  return true;
+}
+
+static void print_hex_location(outputStream* st, address p, int unitsize) {
+  assert(is_aligned(p, unitsize), "Unaligned");
+  address pa = align_down(p, sizeof(intptr_t));
+#ifndef _LP64
+  // Special handling for printing qwords on 32-bit platforms
+  if (unitsize == 8) {
+    intptr_t i1, i2;
+    if (read_safely_from((intptr_t*)pa, &i1) &&
+        read_safely_from((intptr_t*)pa + 1, &i2)) {
+      const uint64_t value =
+        LITTLE_ENDIAN_ONLY((((uint64_t)i2) << 32) | i1)
+        BIG_ENDIAN_ONLY((((uint64_t)i1) << 32) | i2);
+      st->print("%016" FORMAT64_MODIFIER "x", value);
+    } else {
+      st->print_raw("????????????????");
+    }
+    return;
+  }
+#endif // 32-bit, qwords
+  intptr_t i = 0;
+  if (read_safely_from((intptr_t*)pa, &i)) {
+    // bytes:   CA FE BA BE DE AD C0 DE
+    // bytoff:   0  1  2  3  4  5  6  7
+    // LE bits:  0  8 16 24 32 40 48 56
+    // BE bits: 56 48 40 32 24 16  8  0
+    const int offset = (int)(p - (address)pa);
+    const int bitoffset =
+      LITTLE_ENDIAN_ONLY(offset * BitsPerByte)
+      BIG_ENDIAN_ONLY((int)((sizeof(intptr_t) - unitsize - offset) * BitsPerByte));
+    const int bitfieldsize = unitsize * BitsPerByte;
+    intptr_t value = bitfield(i, bitoffset, bitfieldsize);
+    switch (unitsize) {
+      case 1: st->print("%02x", (u1)value); break;
+      case 2: st->print("%04x", (u2)value); break;
+      case 4: st->print("%08x", (u4)value); break;
+      case 8: st->print("%016" FORMAT64_MODIFIER "x", (u8)value); break;
+    }
+  } else {
+    switch (unitsize) {
+      case 1: st->print_raw("??"); break;
+      case 2: st->print_raw("????"); break;
+      case 4: st->print_raw("????????"); break;
+      case 8: st->print_raw("????????????????"); break;
+    }
   }
 }
 
@@ -955,11 +1008,7 @@ void os::print_hex_dump(outputStream* st, address start, address end, int unitsi
   // Print out the addresses as if we were starting from logical_start.
   st->print(PTR_FORMAT ":   ", p2i(logical_p));
   while (p < end) {
-    if (is_readable_pointer(p)) {
-      print_hex_readable_pointer(st, p, unitsize);
-    } else {
-      st->print("%*.*s", 2*unitsize, 2*unitsize, "????????????????");
-    }
+    print_hex_location(st, p, unitsize);
     p += unitsize;
     logical_p += unitsize;
     cols++;
@@ -1009,6 +1058,11 @@ void os::print_environment_variables(outputStream* st, const char** env_list) {
   }
 }
 
+void os::print_register_info(outputStream* st, const void* context) {
+  int continuation = 0;
+  print_register_info(st, context, continuation);
+}
+
 void os::print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // cpu
   st->print("CPU:");
@@ -1051,10 +1105,11 @@ void os::print_summary_info(outputStream* st, char* buf, size_t buflen) {
   st->cr();
 }
 
+static constexpr int secs_per_day  = 86400;
+static constexpr int secs_per_hour = 3600;
+static constexpr int secs_per_min  = 60;
+
 void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
-  const int secs_per_day  = 86400;
-  const int secs_per_hour = 3600;
-  const int secs_per_min  = 60;
 
   time_t tloc;
   (void)time(&tloc);
@@ -1080,9 +1135,15 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
   }
 
   double t = os::elapsedTime();
+  st->print(" elapsed time: ");
+  print_elapsed_time(st, t);
+  st->cr();
+}
+
+void os::print_elapsed_time(outputStream* st, double time) {
   // NOTE: a crash using printf("%f",...) on Linux was historically noted here.
-  int eltime = (int)t;  // elapsed time in seconds
-  int eltimeFraction = (int) ((t - eltime) * 1000000);
+  int eltime = (int)time;  // elapsed time in seconds
+  int eltimeFraction = (int) ((time - eltime) * 1000000);
 
   // print elapsed time in a human-readable format:
   int eldays = eltime / secs_per_day;
@@ -1092,7 +1153,7 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
   int elmins = (eltime - day_secs - hour_secs) / secs_per_min;
   int minute_secs = elmins * secs_per_min;
   int elsecs = (eltime - day_secs - hour_secs - minute_secs);
-  st->print_cr(" elapsed time: %d.%06d seconds (%dd %dh %dm %ds)", eltime, eltimeFraction, eldays, elhours, elmins, elsecs);
+  st->print("%d.%06d seconds (%dd %dh %dm %ds)", eltime, eltimeFraction, eldays, elhours, elmins, elsecs);
 }
 
 
@@ -1123,7 +1184,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   address addr = (address)x;
   // Handle null first, so later checks don't need to protect against it.
   if (addr == nullptr) {
-    st->print_cr("0x0 is nullptr");
+    st->print_cr("0x0 is null");
     return;
   }
 
@@ -1138,6 +1199,8 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   if (Universe::heap()->print_location(st, addr)) {
     return;
   }
+
+#if !INCLUDE_ASAN
 
   bool accessible = is_readable_pointer(addr);
 
@@ -1193,7 +1256,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 #ifdef _LP64
   if (UseCompressedClassPointers && ((uintptr_t)addr &~ (uintptr_t)max_juint) == 0) {
     narrowKlass narrow_klass = (narrowKlass)(uintptr_t)addr;
-    Klass* k = CompressedKlassPointers::decode_raw(narrow_klass);
+    Klass* k = CompressedKlassPointers::decode_without_asserts(narrow_klass);
 
     if (Klass::is_valid(k)) {
       st->print_cr(UINT32_FORMAT " is a compressed pointer to class: " INTPTR_FORMAT, narrow_klass, p2i((HeapWord*)k));
@@ -1225,10 +1288,13 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     return;
   }
 
+#endif // !INCLUDE_ASAN
+
   st->print_cr(INTPTR_FORMAT " is an unknown value", p2i(addr));
+
 }
 
-bool is_pointer_bad(intptr_t* ptr) {
+static bool is_pointer_bad(intptr_t* ptr) {
   return !is_aligned(ptr, sizeof(uintptr_t)) || !os::is_readable_pointer(ptr);
 }
 
@@ -1377,6 +1443,22 @@ bool os::file_exists(const char* filename) {
   }
   return os::stat(filename, &statbuf) == 0;
 }
+
+bool os::write(int fd, const void *buf, size_t nBytes) {
+  ssize_t res;
+
+  while (nBytes > 0) {
+    res = pd_write(fd, buf, nBytes);
+    if (res == OS_ERR) {
+      return false;
+    }
+    buf = (void *)((char *)buf + res);
+    nBytes -= res;
+  }
+
+  return true;
+}
+
 
 // Splits a path, based on its separator, the number of
 // elements is returned back in "elements".
@@ -1634,43 +1716,43 @@ const char* os::errno_name(int e) {
 void os::trace_page_sizes(const char* str,
                           const size_t region_min_size,
                           const size_t region_max_size,
-                          const size_t page_size,
                           const char* base,
-                          const size_t size) {
+                          const size_t size,
+                          const size_t page_size) {
 
   log_info(pagesize)("%s: "
                      " min=" SIZE_FORMAT "%s"
                      " max=" SIZE_FORMAT "%s"
                      " base=" PTR_FORMAT
-                     " page_size=" SIZE_FORMAT "%s"
-                     " size=" SIZE_FORMAT "%s",
+                     " size=" SIZE_FORMAT "%s"
+                     " page_size=" SIZE_FORMAT "%s",
                      str,
                      trace_page_size_params(region_min_size),
                      trace_page_size_params(region_max_size),
                      p2i(base),
-                     trace_page_size_params(page_size),
-                     trace_page_size_params(size));
+                     trace_page_size_params(size),
+                     trace_page_size_params(page_size));
 }
 
 void os::trace_page_sizes_for_requested_size(const char* str,
                                              const size_t requested_size,
-                                             const size_t page_size,
-                                             const size_t alignment,
+                                             const size_t requested_page_size,
                                              const char* base,
-                                             const size_t size) {
+                                             const size_t size,
+                                             const size_t page_size) {
 
   log_info(pagesize)("%s:"
                      " req_size=" SIZE_FORMAT "%s"
+                     " req_page_size=" SIZE_FORMAT "%s"
                      " base=" PTR_FORMAT
-                     " page_size=" SIZE_FORMAT "%s"
-                     " alignment=" SIZE_FORMAT "%s"
-                     " size=" SIZE_FORMAT "%s",
+                     " size=" SIZE_FORMAT "%s"
+                     " page_size=" SIZE_FORMAT "%s",
                      str,
                      trace_page_size_params(requested_size),
+                     trace_page_size_params(requested_page_size),
                      p2i(base),
-                     trace_page_size_params(page_size),
-                     trace_page_size_params(alignment),
-                     trace_page_size_params(size));
+                     trace_page_size_params(size),
+                     trace_page_size_params(page_size));
 }
 
 
@@ -1735,19 +1817,225 @@ char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
   char* result = pd_reserve_memory(bytes, executable);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC, flags);
+    log_debug(os, map)("Reserved " RANGEFMT, RANGEFMTARGS(result, bytes));
+  } else {
+    log_info(os, map)("Reserve failed (%zu bytes)", bytes);
   }
   return result;
 }
 
-char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable) {
-  char* result = pd_attempt_reserve_memory_at(addr, bytes, executable);
+char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable, MEMFLAGS flag) {
+  char* result = SimulateFullAddressSpace ? nullptr : pd_attempt_reserve_memory_at(addr, bytes, executable);
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC, flag);
+    log_debug(os, map)("Reserved " RANGEFMT, RANGEFMTARGS(result, bytes));
   } else {
-    log_debug(os)("Attempt to reserve memory at " INTPTR_FORMAT " for "
-                 SIZE_FORMAT " bytes failed, errno %d", p2i(addr), bytes, get_last_error());
+    log_info(os, map)("Attempt to reserve " RANGEFMT " failed",
+                      RANGEFMTARGS(addr, bytes));
   }
   return result;
+}
+
+#ifdef ASSERT
+static void print_points(const char* s, unsigned* points, unsigned num) {
+  stringStream ss;
+  for (unsigned i = 0; i < num; i ++) {
+    ss.print("%u ", points[i]);
+  }
+  log_trace(os, map)("%s, %u Points: %s", s, num, ss.base());
+}
+#endif
+
+// Helper for os::attempt_reserve_memory_between
+// Given an array of things, shuffle them (Fisher-Yates)
+template <typename T>
+static void shuffle_fisher_yates(T* arr, unsigned num, FastRandom& frand) {
+  for (unsigned i = num - 1; i >= 1; i--) {
+    unsigned j = frand.next() % i;
+    swap(arr[i], arr[j]);
+  }
+}
+
+// Helper for os::attempt_reserve_memory_between
+// Given an array of things, do a hemisphere split such that the resulting
+// order is: [first, last, first + 1, last - 1, ...]
+template <typename T>
+static void hemi_split(T* arr, unsigned num) {
+  T* tmp = (T*)::alloca(sizeof(T) * num);
+  for (unsigned i = 0; i < num; i++) {
+    tmp[i] = arr[i];
+  }
+  for (unsigned i = 0; i < num; i++) {
+    arr[i] = is_even(i) ? tmp[i / 2] : tmp[num - (i / 2) - 1];
+  }
+}
+
+// Given an address range [min, max), attempts to reserve memory within this area, with the given alignment.
+// If randomize is true, the location will be randomized.
+char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize) {
+
+  // Please keep the following constants in sync with the companion gtests:
+
+  // Number of mmap attemts we will undertake.
+  constexpr unsigned max_attempts = 32;
+
+  // In randomization mode: We require a minimum number of possible attach points for
+  // randomness. Below that we refuse to reserve anything.
+  constexpr unsigned min_random_value_range = 16;
+
+  // In randomization mode: If the possible value range is below this threshold, we
+  // use a total shuffle without regard for address space fragmentation, otherwise
+  // we attempt to minimize fragmentation.
+  constexpr unsigned total_shuffle_threshold = 1024;
+
+#define ARGSFMT "range [" PTR_FORMAT "-" PTR_FORMAT "), size " SIZE_FORMAT_X ", alignment " SIZE_FORMAT_X ", randomize: %d"
+#define ARGSFMTARGS p2i(min), p2i(max), bytes, alignment, randomize
+
+  log_debug(os, map) ("reserve_between (" ARGSFMT ")", ARGSFMTARGS);
+
+  assert(is_power_of_2(alignment), "alignment invalid (" ARGSFMT ")", ARGSFMTARGS);
+  assert(alignment < SIZE_MAX / 2, "alignment too large (" ARGSFMT ")", ARGSFMTARGS);
+  assert(is_aligned(bytes, os::vm_page_size()), "size not page aligned (" ARGSFMT ")", ARGSFMTARGS);
+  assert(max >= min, "invalid range (" ARGSFMT ")", ARGSFMTARGS);
+
+  char* const absolute_max = (char*)(NOT_LP64(G * 3) LP64_ONLY(G * 128 * 1024));
+  char* const absolute_min = (char*) os::vm_min_address();
+
+  // AIX is the only platform that uses System V shm for reserving virtual memory.
+  // In this case, the required alignment of the allocated size (64K) and the alignment
+  // of possible start points of the memory region (256M) differ.
+  // This is not reflected by os_allocation_granularity().
+  // The logic here is dual to the one in pd_reserve_memory in os_aix.cpp
+  const size_t system_allocation_granularity =
+    AIX_ONLY(os::vm_page_size() == 4*K ? 4*K : 256*M)
+    NOT_AIX(os::vm_allocation_granularity());
+
+  const size_t alignment_adjusted = MAX2(alignment, system_allocation_granularity);
+
+  // Calculate first and last possible attach points:
+  char* const lo_att = align_up(MAX2(absolute_min, min), alignment_adjusted);
+  if (lo_att == nullptr) {
+    return nullptr; // overflow
+  }
+
+  char* const hi_att = align_down(MIN2(max, absolute_max) - bytes, alignment_adjusted);
+  if (hi_att > max) {
+    return nullptr; // overflow
+  }
+
+  // no possible attach points
+  if (hi_att < lo_att) {
+    return nullptr;
+  }
+
+  char* result = nullptr;
+
+  const size_t num_attach_points = (size_t)((hi_att - lo_att) / alignment_adjusted) + 1;
+  assert(num_attach_points > 0, "Sanity");
+
+  // If this fires, the input range is too large for the given alignment (we work
+  // with int below to keep things simple). Since alignment is bound to page size,
+  // and the lowest page size is 4K, this gives us a minimum of 4K*4G=8TB address
+  // range.
+  assert(num_attach_points <= UINT_MAX,
+         "Too many possible attach points - range too large or alignment too small (" ARGSFMT ")", ARGSFMTARGS);
+
+  const unsigned num_attempts = MIN2((unsigned)num_attach_points, max_attempts);
+  unsigned points[max_attempts];
+
+  if (randomize) {
+    FastRandom frand;
+
+    if (num_attach_points < min_random_value_range) {
+      return nullptr;
+    }
+
+    // We pre-calc the attach points:
+    // 1 We divide the attach range into equidistant sections and calculate an attach
+    //   point within each section.
+    // 2 We wiggle those attach points around within their section (depends on attach
+    //   point granularity)
+    // 3 Should that not be enough to get effective randomization, shuffle all
+    //   attach points
+    // 4 Otherwise, re-order them to get an optimized probing sequence.
+    const unsigned stepsize = (unsigned)num_attach_points / num_attempts;
+    const unsigned half = num_attempts / 2;
+
+    // 1+2: pre-calc points
+    for (unsigned i = 0; i < num_attempts; i++) {
+      const unsigned deviation = stepsize > 1 ? (frand.next() % stepsize) : 0;
+      points[i] = (i * stepsize) + deviation;
+    }
+
+    if (num_attach_points < total_shuffle_threshold) {
+      // 3:
+      // The numeber of possible attach points is too low for the "wiggle" from
+      // point 2 to be enough to provide randomization. In that case, shuffle
+      // all attach points at the cost of possible fragmentation (e.g. if we
+      // end up mapping into the middle of the range).
+      shuffle_fisher_yates(points, num_attempts, frand);
+    } else {
+      // 4
+      // We have a large enough number of attach points to satisfy the randomness
+      // goal without. In that case, we optimize probing by sorting the attach
+      // points: We attempt outermost points first, then work ourselves up to
+      // the middle. That reduces address space fragmentation. We also alternate
+      // hemispheres, which increases the chance of successfull mappings if the
+      // previous mapping had been blocked by large maps.
+      hemi_split(points, num_attempts);
+    }
+  } // end: randomized
+  else
+  {
+    // Non-randomized. We just attempt to reserve by probing sequentially. We
+    // alternate between hemispheres, working ourselves up to the middle.
+    const int stepsize = (unsigned)num_attach_points / num_attempts;
+    for (unsigned i = 0; i < num_attempts; i++) {
+      points[i] = (i * stepsize);
+    }
+    hemi_split(points, num_attempts);
+  }
+
+#ifdef ASSERT
+  // Print + check all pre-calculated attach points
+  print_points("before reserve", points, num_attempts);
+  for (unsigned i = 0; i < num_attempts; i++) {
+    assert(points[i] < num_attach_points, "Candidate attach point %d out of range (%u, num_attach_points: %zu) " ARGSFMT,
+           i, points[i], num_attach_points, ARGSFMTARGS);
+  }
+#endif
+
+  // Now reserve
+  for (unsigned i = 0; result == nullptr && i < num_attempts; i++) {
+    const unsigned candidate_offset = points[i];
+    char* const candidate = lo_att + candidate_offset * alignment_adjusted;
+    assert(candidate <= hi_att, "Invalid offset %u (" ARGSFMT ")", candidate_offset, ARGSFMTARGS);
+    result = SimulateFullAddressSpace ? nullptr : os::pd_attempt_reserve_memory_at(candidate, bytes, false);
+    if (!result) {
+      log_trace(os, map)("Failed to attach at " PTR_FORMAT, p2i(candidate));
+    }
+  }
+
+  // Sanity checks, logging, NMT stuff:
+  if (result != nullptr) {
+#define ERRFMT "result: " PTR_FORMAT " " ARGSFMT
+#define ERRFMTARGS p2i(result), ARGSFMTARGS
+    assert(result >= min, "OOB min (" ERRFMT ")", ERRFMTARGS);
+    assert((result + bytes) <= max, "OOB max (" ERRFMT ")", ERRFMTARGS);
+    assert(result >= (char*)os::vm_min_address(), "OOB vm.map min (" ERRFMT ")", ERRFMTARGS);
+    assert((result + bytes) <= absolute_max, "OOB vm.map max (" ERRFMT ")", ERRFMTARGS);
+    assert(is_aligned(result, alignment), "alignment invalid (" ERRFMT ")", ERRFMTARGS);
+    log_trace(os, map)(ERRFMT, ERRFMTARGS);
+    log_debug(os, map)("successfully attached at " PTR_FORMAT, p2i(result));
+    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+  } else {
+    log_debug(os, map)("failed to attach anywhere in [" PTR_FORMAT "-" PTR_FORMAT ")", p2i(min), p2i(max));
+  }
+  return result;
+#undef ARGSFMT
+#undef ERRFMT
+#undef ARGSFMTARGS
+#undef ERRFMTARGS
 }
 
 static void assert_nonempty_range(const char* addr, size_t bytes) {
@@ -1760,6 +2048,9 @@ bool os::commit_memory(char* addr, size_t bytes, bool executable) {
   bool res = pd_commit_memory(addr, bytes, executable);
   if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
+    log_debug(os, map)("Committed " RANGEFMT, RANGEFMTARGS(addr, bytes));
+  } else {
+    log_info(os, map)("Failed to commit " RANGEFMT, RANGEFMTARGS(addr, bytes));
   }
   return res;
 }
@@ -1770,6 +2061,9 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
   bool res = os::pd_commit_memory(addr, size, alignment_hint, executable);
   if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
+    log_debug(os, map)("Committed " RANGEFMT, RANGEFMTARGS(addr, size));
+  } else {
+    log_info(os, map)("Failed to commit " RANGEFMT, RANGEFMTARGS(addr, size));
   }
   return res;
 }
@@ -1792,14 +2086,21 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
-    Tracker tkr(Tracker::uncommit);
+    ThreadCritical tc;
     res = pd_uncommit_memory(addr, bytes, executable);
     if (res) {
-      tkr.record((address)addr, bytes);
+      MemTracker::record_virtual_memory_uncommit((address)addr, bytes);
     }
   } else {
     res = pd_uncommit_memory(addr, bytes, executable);
   }
+
+  if (res) {
+    log_debug(os, map)("Uncommitted " RANGEFMT, RANGEFMTARGS(addr, bytes));
+  } else {
+    log_info(os, map)("Failed to uncommit " RANGEFMT, RANGEFMTARGS(addr, bytes));
+  }
+
   return res;
 }
 
@@ -1807,17 +2108,18 @@ bool os::release_memory(char* addr, size_t bytes) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
-    // Note: Tracker contains a ThreadCritical.
-    Tracker tkr(Tracker::release);
+    ThreadCritical tc;
     res = pd_release_memory(addr, bytes);
     if (res) {
-      tkr.record((address)addr, bytes);
+      MemTracker::record_virtual_memory_release((address)addr, bytes);
     }
   } else {
     res = pd_release_memory(addr, bytes);
   }
   if (!res) {
-    log_info(os)("os::release_memory failed (" PTR_FORMAT ", " SIZE_FORMAT ")", p2i(addr), bytes);
+    log_info(os, map)("Failed to release " RANGEFMT, RANGEFMTARGS(addr, bytes));
+  } else {
+    log_debug(os, map)("Released " RANGEFMT, RANGEFMTARGS(addr, bytes));
   }
   return res;
 }
@@ -1843,33 +2145,37 @@ void os::pretouch_memory(void* start, void* end, size_t page_size) {
     // We're doing concurrent-safe touch and memory state has page
     // granularity, so we can touch anywhere in a page.  Touch at the
     // beginning of each page to simplify iteration.
-    char* cur = static_cast<char*>(align_down(start, page_size));
+    void* first = align_down(start, page_size);
     void* last = align_down(static_cast<char*>(end) - 1, page_size);
-    assert(cur <= last, "invariant");
-    // Iterate from first page through last (inclusive), being careful to
-    // avoid overflow if the last page abuts the end of the address range.
-    for ( ; true; cur += page_size) {
-      Atomic::add(reinterpret_cast<int*>(cur), 0, memory_order_relaxed);
-      if (cur >= last) break;
+    assert(first <= last, "invariant");
+    const size_t pd_page_size = pd_pretouch_memory(first, last, page_size);
+    if (pd_page_size > 0) {
+      // Iterate from first page through last (inclusive), being careful to
+      // avoid overflow if the last page abuts the end of the address range.
+      last = align_down(static_cast<char*>(end) - 1, pd_page_size);
+      for (char* cur = static_cast<char*>(first); /* break */; cur += pd_page_size) {
+        Atomic::add(reinterpret_cast<int*>(cur), 0, memory_order_relaxed);
+        if (cur >= last) break;
+      }
     }
   }
 }
 
-char* os::map_memory_to_file(size_t bytes, int file_desc) {
+char* os::map_memory_to_file(size_t bytes, int file_desc, MEMFLAGS flag) {
   // Could have called pd_reserve_memory() followed by replace_existing_mapping_with_file_mapping(),
   // but AIX may use SHM in which case its more trouble to detach the segment and remap memory to the file.
   // On all current implementations null is interpreted as any available address.
   char* result = os::map_memory_to_file(nullptr /* addr */, bytes, file_desc);
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve_and_commit(result, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve_and_commit(result, bytes, CALLER_PC, flag);
   }
   return result;
 }
 
-char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc) {
+char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc, MEMFLAGS flag) {
   char* result = pd_attempt_map_memory_to_file_at(addr, bytes, file_desc);
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, flag);
   }
   return result;
 }
@@ -1884,20 +2190,13 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
   return result;
 }
 
-char* os::remap_memory(int fd, const char* file_name, size_t file_offset,
-                             char *addr, size_t bytes, bool read_only,
-                             bool allow_exec) {
-  return pd_remap_memory(fd, file_name, file_offset, addr, bytes,
-                    read_only, allow_exec);
-}
-
 bool os::unmap_memory(char *addr, size_t bytes) {
   bool result;
   if (MemTracker::enabled()) {
-    Tracker tkr(Tracker::release);
+    ThreadCritical tc;
     result = pd_unmap_memory(addr, bytes);
     if (result) {
-      tkr.record((address)addr, bytes);
+      MemTracker::record_virtual_memory_release((address)addr, bytes);
     }
   } else {
     result = pd_unmap_memory(addr, bytes);
@@ -1922,6 +2221,9 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
   if (result != nullptr) {
     // The memory is committed
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, size, CALLER_PC);
+    log_debug(os, map)("Reserved and committed " RANGEFMT, RANGEFMTARGS(result, size));
+  } else {
+    log_info(os, map)("Reserve and commit failed (%zu bytes)", size);
   }
 
   return result;
@@ -1930,11 +2232,10 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
 bool os::release_memory_special(char* addr, size_t bytes) {
   bool res;
   if (MemTracker::enabled()) {
-    // Note: Tracker contains a ThreadCritical.
-    Tracker tkr(Tracker::release);
+    ThreadCritical tc;
     res = pd_release_memory_special(addr, bytes);
     if (res) {
-      tkr.record((address)addr, bytes);
+      MemTracker::record_virtual_memory_release((address)addr, bytes);
     }
   } else {
     res = pd_release_memory_special(addr, bytes);

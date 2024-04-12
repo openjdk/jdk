@@ -50,7 +50,7 @@ public:
   // Compute a new Type for this node.  Basically we just do the pre-check,
   // then call the virtual add() to set the type.
   virtual const Type* Value(PhaseGVN* phase) const;
-  const Type* Value_common( PhaseTransform *phase ) const;
+  const Type* Value_common(PhaseValues* phase) const;
 
   // Supplied function returns the subtractend of the inputs.
   // This also type-checks the inputs for sanity.  Guaranteed never to
@@ -430,7 +430,9 @@ public:
 //------------------------------NegNode----------------------------------------
 class NegNode : public Node {
 public:
-  NegNode( Node *in1 ) : Node(0,in1) {}
+  NegNode(Node* in1) : Node(0, in1) {
+    init_class_id(Class_Neg);
+  }
 };
 
 //------------------------------NegINode---------------------------------------

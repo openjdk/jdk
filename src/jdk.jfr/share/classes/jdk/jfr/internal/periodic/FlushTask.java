@@ -26,7 +26,7 @@ package jdk.jfr.internal.periodic;
 
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.MetadataRepository;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * Periodic task that flushes event data to disk.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,15 @@
 
 #include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderHierarchyDCmd.hpp"
 #include "classfile/classLoaderStats.hpp"
-#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/directivesParser.hpp"
 #include "gc/shared/gcVMOperations.hpp"
@@ -38,6 +40,9 @@
 #include "memory/metaspace/metaspaceDCmd.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memMapPrinter.hpp"
+#include "nmt/memTracker.hpp"
+#include "nmt/nmtDCmd.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -57,15 +62,17 @@
 #include "services/diagnosticFramework.hpp"
 #include "services/heapDumper.hpp"
 #include "services/management.hpp"
-#include "services/nmtDCmd.hpp"
 #include "services/writeableFlags.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/parseInteger.hpp"
 #ifdef LINUX
-#include "trimCHeapDCmd.hpp"
+#include "os_posix.hpp"
 #include "mallocInfoDcmd.hpp"
+#include "trimCHeapDCmd.hpp"
+#include <errno.h>
 #endif
 
 static void loadAgentModule(TRAPS) {
@@ -130,13 +137,17 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PerfMapDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<MallocInfoDcmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemMapDCmd>(full_export, true,false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemDumpMapDCmd>(full_export, true,false));
 #endif // LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));
 
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesPrintDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesAddDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesReplaceDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesRemoveDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesClearDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilationMemoryStatisticDCmd>(full_export, true, false));
 
   // Enhanced JMX Agent Support
   // These commands won't be exported via the DiagnosticCommandMBean until an
@@ -298,7 +309,7 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
 
   if (is_java_agent) {
     if (_option.value() == nullptr) {
-      JvmtiAgentList::load_agent("instrument", "false", _libpath.value(), output());
+      JvmtiAgentList::load_agent("instrument", false, _libpath.value(), output());
     } else {
       size_t opt_len = strlen(_libpath.value()) + strlen(_option.value()) + 2;
       if (opt_len > 4096) {
@@ -315,12 +326,12 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
       }
 
       jio_snprintf(opt, opt_len, "%s=%s", _libpath.value(), _option.value());
-      JvmtiAgentList::load_agent("instrument", "false", opt, output());
+      JvmtiAgentList::load_agent("instrument", false, opt, output());
 
       os::free(opt);
     }
   } else {
-    JvmtiAgentList::load_agent(_libpath.value(), "true", _option.value(), output());
+    JvmtiAgentList::load_agent(_libpath.value(), true, _option.value(), output());
   }
 }
 
@@ -469,15 +480,20 @@ HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
                "using the given compression level. 1 (recommended) is the fastest, "
                "9 the strongest compression.", "INT", false, "1"),
   _overwrite("-overwrite", "If specified, the dump file will be overwritten if it exists",
-           "BOOLEAN", false, "false") {
+           "BOOLEAN", false, "false"),
+  _parallel("-parallel", "Number of parallel threads to use for heap dump. The VM "
+                          "will try to use the specified number of threads, but might use fewer.",
+            "INT", false, "1") {
   _dcmdparser.add_dcmd_option(&_all);
   _dcmdparser.add_dcmd_argument(&_filename);
   _dcmdparser.add_dcmd_option(&_gzip);
   _dcmdparser.add_dcmd_option(&_overwrite);
+  _dcmdparser.add_dcmd_option(&_parallel);
 }
 
 void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
   jlong level = -1; // -1 means no compression.
+  jlong parallel = HeapDumper::default_num_of_dump_threads();
 
   if (_gzip.is_set()) {
     level = _gzip.value();
@@ -488,11 +504,23 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
     }
   }
 
+  if (_parallel.is_set()) {
+    parallel = _parallel.value();
+
+    if (parallel < 0) {
+      output()->print_cr("Invalid number of parallel dump threads.");
+      return;
+    } else if (parallel == 0) {
+      // 0 implies to disable parallel heap dump, in such case, we use serial dump instead
+      parallel = 1;
+    }
+  }
+
   // Request a full GC before heap dump if _all is false
   // This helps reduces the amount of unreachable objects in the dump
   // and makes it easier to browse.
   HeapDumper dumper(!_all.value() /* request GC if _all is false*/);
-  dumper.dump(_filename.value(), output(), (int) level, _overwrite.value());
+  dumper.dump(_filename.value(), output(), (int) level, _overwrite.value(), (uint)parallel);
 }
 
 ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
@@ -824,8 +852,20 @@ void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 #ifdef LINUX
+#define DEFAULT_PERFMAP_FILENAME "/tmp/perf-<pid>.map"
+
+PerfMapDCmd::PerfMapDCmd(outputStream* output, bool heap) :
+             DCmdWithParser(output, heap),
+  _filename("filename", "Name of the map file", "STRING", false, DEFAULT_PERFMAP_FILENAME)
+{
+  _dcmdparser.add_dcmd_argument(&_filename);
+}
+
 void PerfMapDCmd::execute(DCmdSource source, TRAPS) {
-  CodeCache::write_perf_map();
+  // The check for _filename.is_set() is because we don't want to use
+  // DEFAULT_PERFMAP_FILENAME, since it is meant as a description
+  // of the default, not the actual default.
+  CodeCache::write_perf_map(_filename.is_set() ? _filename.value() : nullptr);
 }
 #endif // LINUX
 
@@ -861,11 +901,11 @@ EventLogDCmd::EventLogDCmd(outputStream* output, bool heap) :
 
 void EventLogDCmd::execute(DCmdSource source, TRAPS) {
   const char* max_value = _max.value();
-  long max = -1;
+  int max = -1;
   if (max_value != nullptr) {
     char* endptr = nullptr;
-    max = ::strtol(max_value, &endptr, 10);
-    if (max == 0 && max_value == endptr) {
+    int max;
+    if (!parse_integer(max_value, &max)) {
       output()->print_cr("Invalid max option: \"%s\".", max_value);
       return;
     }
@@ -884,21 +924,81 @@ void CompilerDirectivesPrintDCmd::execute(DCmdSource source, TRAPS) {
 
 CompilerDirectivesAddDCmd::CompilerDirectivesAddDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
-  _filename("filename","Name of the directives file", "STRING",true) {
+  _filename("filename", "Name of the directives file", "STRING", true),
+  _refresh("-r", "Refresh affected methods", "BOOLEAN", false, "false") {
+
   _dcmdparser.add_dcmd_argument(&_filename);
+  _dcmdparser.add_dcmd_option(&_refresh);
 }
 
 void CompilerDirectivesAddDCmd::execute(DCmdSource source, TRAPS) {
-  DirectivesParser::parse_from_file(_filename.value(), output());
+  DirectivesParser::parse_from_file(_filename.value(), output(), true);
+  if (_refresh.value()) {
+    CodeCache::mark_directives_matches(true);
+    CodeCache::recompile_marked_directives_matches();
+  }
+}
+
+CompilerDirectivesReplaceDCmd::CompilerDirectivesReplaceDCmd(outputStream* output, bool heap) :
+                           DCmdWithParser(output, heap),
+  _filename("filename", "Name of the directives file", "STRING", true),
+  _refresh("-r", "Refresh affected methods", "BOOLEAN", false, "false") {
+
+  _dcmdparser.add_dcmd_argument(&_filename);
+  _dcmdparser.add_dcmd_option(&_refresh);
+}
+
+void CompilerDirectivesReplaceDCmd::execute(DCmdSource source, TRAPS) {
+  // Need to mark the methods twice, to account for the method that doesn't match
+  // the directives anymore
+  if (_refresh.value()) {
+    CodeCache::mark_directives_matches();
+
+    DirectivesStack::clear();
+    DirectivesParser::parse_from_file(_filename.value(), output(), true);
+
+    CodeCache::mark_directives_matches();
+    CodeCache::recompile_marked_directives_matches();
+  } else {
+    DirectivesStack::clear();
+    DirectivesParser::parse_from_file(_filename.value(), output(), true);
+  }
+}
+
+CompilerDirectivesRemoveDCmd::CompilerDirectivesRemoveDCmd(outputStream* output, bool heap) :
+                           DCmdWithParser(output, heap),
+  _refresh("-r", "Refresh affected methods", "BOOLEAN", false, "false") {
+
+  _dcmdparser.add_dcmd_option(&_refresh);
 }
 
 void CompilerDirectivesRemoveDCmd::execute(DCmdSource source, TRAPS) {
-  DirectivesStack::pop(1);
+  if (_refresh.value()) {
+    CodeCache::mark_directives_matches(true);
+    DirectivesStack::pop(1);
+    CodeCache::recompile_marked_directives_matches();
+  } else {
+    DirectivesStack::pop(1);
+  }
+}
+
+CompilerDirectivesClearDCmd::CompilerDirectivesClearDCmd(outputStream* output, bool heap) :
+                           DCmdWithParser(output, heap),
+  _refresh("-r", "Refresh affected methods", "BOOLEAN", false, "false") {
+
+  _dcmdparser.add_dcmd_option(&_refresh);
 }
 
 void CompilerDirectivesClearDCmd::execute(DCmdSource source, TRAPS) {
-  DirectivesStack::clear();
+  if (_refresh.value()) {
+    CodeCache::mark_directives_matches();
+    DirectivesStack::clear();
+    CodeCache::recompile_marked_directives_matches();
+  } else {
+    DirectivesStack::clear();
+  }
 }
+
 #if INCLUDE_SERVICES
 ClassHierarchyDCmd::ClassHierarchyDCmd(outputStream* output, bool heap) :
                                        DCmdWithParser(output, heap),
@@ -957,10 +1057,13 @@ void ClassesDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 #if INCLUDE_CDS
+#define DEFAULT_CDS_ARCHIVE_FILENAME "java_pid<pid>_<subcmd>.jsa"
+
 DumpSharedArchiveDCmd::DumpSharedArchiveDCmd(outputStream* output, bool heap) :
                                      DCmdWithParser(output, heap),
   _suboption("subcmd", "static_dump | dynamic_dump", "STRING", true),
-  _filename("filename", "Name of shared archive to be dumped", "STRING", false)
+  _filename("filename", "Name of shared archive to be dumped", "STRING", false,
+            DEFAULT_CDS_ARCHIVE_FILENAME)
 {
   _dcmdparser.add_dcmd_argument(&_suboption);
   _dcmdparser.add_dcmd_argument(&_filename);
@@ -969,7 +1072,11 @@ DumpSharedArchiveDCmd::DumpSharedArchiveDCmd(outputStream* output, bool heap) :
 void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
   jboolean is_static;
   const char* scmd = _suboption.value();
-  const char* file = _filename.value();
+
+  // The check for _filename.is_set() is because we don't want to use
+  // DEFAULT_CDS_ARCHIVE_FILENAME, since it is meant as a description
+  // of the default, not the actual default.
+  const char* file = _filename.is_set() ? _filename.value() : nullptr;
 
   if (strcmp(scmd, "static_dump") == 0) {
     is_static = JNI_TRUE;
@@ -1116,3 +1223,59 @@ void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const cha
   jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
   output()->print_raw((const char*)addr, ba->length());
 }
+
+CompilationMemoryStatisticDCmd::CompilationMemoryStatisticDCmd(outputStream* output, bool heap) :
+    DCmdWithParser(output, heap),
+  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false"),
+  _minsize("-s", "Minimum memory size", "MEMORY SIZE", false, "0") {
+  _dcmdparser.add_dcmd_option(&_human_readable);
+  _dcmdparser.add_dcmd_option(&_minsize);
+}
+
+void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
+  const bool human_readable = _human_readable.value();
+  const size_t minsize = _minsize.has_value() ? _minsize.value()._size : 0;
+  CompilationMemoryStatistic::print_all_by_size(output(), human_readable, minsize);
+}
+
+#ifdef LINUX
+
+SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) :
+    DCmdWithParser(output, heap),
+  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false") {
+  _dcmdparser.add_dcmd_option(&_human_readable);
+}
+
+void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
+  MemMapPrinter::print_all_mappings(output(), _human_readable.value());
+}
+
+SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
+    DCmdWithParser(output, heap),
+  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false"),
+  _filename("-F", "file path (defaults: \"vm_memory_map_<pid>.txt\")", "STRING", false) {
+  _dcmdparser.add_dcmd_option(&_human_readable);
+  _dcmdparser.add_dcmd_option(&_filename);
+}
+
+void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
+  stringStream default_name;
+  default_name.print("vm_memory_map_%d.txt", os::current_process_id());
+  const char* name = _filename.is_set() ? _filename.value() : default_name.base();
+  fileStream fs(name);
+  if (fs.is_open()) {
+    if (!MemTracker::enabled()) {
+      output()->print_cr("(NMT is disabled, will not annotate mappings).");
+    }
+    MemMapPrinter::print_all_mappings(&fs, _human_readable.value());
+    // For the readers convenience, resolve path name.
+    char tmp[JVM_MAXPATHLEN];
+    const char* absname = os::Posix::realpath(name, tmp, sizeof(tmp));
+    name = absname != nullptr ? absname : name;
+    output()->print_cr("Memory map dumped to \"%s\".", name);
+  } else {
+    output()->print_cr("Failed to open \"%s\" for writing (%s).", name, os::strerror(errno));
+  }
+}
+
+#endif // LINUX

@@ -1,8 +1,8 @@
 /**
  * @test
- * @compile/fail/ref=SimpleDeconstructionPatternNoPreview.out -XDrawDiagnostics SimpleDeconstructionPattern.java
- * @compile --enable-preview -source ${jdk.version} SimpleDeconstructionPattern.java
- * @run main/othervm --enable-preview SimpleDeconstructionPattern
+ * @compile/fail/ref=SimpleDeconstructionPatternOld.out --release 20 -XDrawDiagnostics SimpleDeconstructionPattern.java
+ * @compile SimpleDeconstructionPattern.java
+ * @run main SimpleDeconstructionPattern
  */
 
 import java.util.ArrayList;

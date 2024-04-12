@@ -84,8 +84,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // load cpool->resolved_klass_at(index)
   void load_resolved_klass_at_offset(Register Rcpool, Register Roffset, Register Rklass);
 
-  void load_resolved_method_at_index(int byte_no, Register cache, Register method);
-
   void load_receiver(Register Rparam_count, Register Rrecv_dst);
 
   // helpers for expression stack
@@ -126,8 +124,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void get_cache_index_at_bcp(Register Rdst, int bcp_offset, size_t index_size);
 
-  void get_cache_and_index_at_bcp(Register cache, int bcp_offset, size_t index_size = sizeof(u2));
   void load_resolved_indy_entry(Register cache, Register index);
+  void load_field_entry(Register cache, Register index, int bcp_offset = 1);
+  void load_method_entry(Register cache, Register index, int bcp_offset = 1);
 
   void get_u4(Register Rdst, Register Rsrc, int offset, signedOrNot is_signed);
 
@@ -242,13 +241,12 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_final_call(Register scratch1, Register scratch2);
   void profile_virtual_call(Register Rreceiver, Register Rscratch1, Register Rscratch2,  bool receiver_can_be_null);
   void profile_typecheck(Register Rklass, Register Rscratch1, Register Rscratch2);
-  void profile_typecheck_failed(Register Rscratch1, Register Rscratch2);
   void profile_ret(TosState state, Register return_bci, Register scratch1, Register scratch2);
   void profile_switch_default(Register scratch1, Register scratch2);
   void profile_switch_case(Register index, Register scratch1,Register scratch2, Register scratch3);
   void profile_null_seen(Register Rscratch1, Register Rscratch2);
-  void record_klass_in_profile(Register receiver, Register scratch1, Register scratch2, bool is_virtual_call);
-  void record_klass_in_profile_helper(Register receiver, Register scratch1, Register scratch2, int start_row, Label& done, bool is_virtual_call);
+  void record_klass_in_profile(Register receiver, Register scratch1, Register scratch2);
+  void record_klass_in_profile_helper(Register receiver, Register scratch1, Register scratch2, int start_row, Label& done);
 
   // Argument and return type profiling.
   void profile_obj_type(Register obj, Register mdo_addr_base, RegisterOrConstant mdo_addr_offs, Register tmp, Register tmp2);

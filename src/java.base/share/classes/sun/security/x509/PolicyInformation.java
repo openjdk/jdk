@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,28 +122,22 @@ public class PolicyInformation implements DerEncoder {
     /**
      * Compare this PolicyInformation with another object for equality
      *
-     * @param other object to be compared with this
+     * @param obj object to be compared with this
      * @return true iff the PolicyInformation objects match
      */
-    public boolean equals(Object other) {
-        if (!(other instanceof PolicyInformation piOther))
-            return false;
-
-        if (!policyIdentifier.equals(piOther.getPolicyIdentifier()))
-            return false;
-
-        return policyQualifiers.equals(piOther.getPolicyQualifiers());
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof PolicyInformation other
+                && policyIdentifier.equals(other.getPolicyIdentifier())
+                && policyQualifiers.equals(other.getPolicyQualifiers());
     }
 
     /**
-     * Returns the hash code for this PolicyInformation.
-     *
-     * @return a hash code value.
+     * {@return the hash code for this PolicyInformation}
      */
+    @Override
     public int hashCode() {
-        int myhash = 37 + policyIdentifier.hashCode();
-        myhash = 37 * myhash + policyQualifiers.hashCode();
-        return myhash;
+        return Objects.hash(policyIdentifier, policyQualifiers);
     }
 
     /**

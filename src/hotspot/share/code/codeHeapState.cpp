@@ -1216,6 +1216,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
 
 void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
   if (!initialization_complete) {
+    print_aggregate_missing(out, nullptr);
     return;
   }
 
@@ -1223,6 +1224,7 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
   get_HeapStatGlobals(out, heapName);
 
   if ((StatArray == nullptr) || (TopSizeArray == nullptr) || (used_topSizeBlocks == 0)) {
+    print_aggregate_missing(out, heapName);
     return;
   }
   BUFFEREDSTREAM_DECL(ast, out)
@@ -1426,6 +1428,7 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
 
 void CodeHeapState::print_freeSpace(outputStream* out, CodeHeap* heap) {
   if (!initialization_complete) {
+    print_aggregate_missing(out, nullptr);
     return;
   }
 
@@ -1433,6 +1436,7 @@ void CodeHeapState::print_freeSpace(outputStream* out, CodeHeap* heap) {
   get_HeapStatGlobals(out, heapName);
 
   if ((StatArray == nullptr) || (FreeArray == nullptr) || (alloc_granules == 0)) {
+    print_aggregate_missing(out, heapName);
     return;
   }
   BUFFEREDSTREAM_DECL(ast, out)
@@ -1600,6 +1604,7 @@ void CodeHeapState::print_freeSpace(outputStream* out, CodeHeap* heap) {
 
 void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
   if (!initialization_complete) {
+    print_aggregate_missing(out, nullptr);
     return;
   }
 
@@ -1607,6 +1612,7 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
   get_HeapStatGlobals(out, heapName);
 
   if ((StatArray == nullptr) || (alloc_granules == 0)) {
+    print_aggregate_missing(out, heapName);
     return;
   }
   BUFFEREDSTREAM_DECL(ast, out)
@@ -1758,6 +1764,7 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
 
 void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
   if (!initialization_complete) {
+    print_aggregate_missing(out, nullptr);
     return;
   }
 
@@ -1765,6 +1772,7 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
   get_HeapStatGlobals(out, heapName);
 
   if ((StatArray == nullptr) || (alloc_granules == 0)) {
+    print_aggregate_missing(out, heapName);
     return;
   }
   BUFFEREDSTREAM_DECL(ast, out)
@@ -1927,6 +1935,7 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
 
 void CodeHeapState::print_age(outputStream* out, CodeHeap* heap) {
   if (!initialization_complete) {
+    print_aggregate_missing(out, nullptr);
     return;
   }
 
@@ -1934,6 +1943,7 @@ void CodeHeapState::print_age(outputStream* out, CodeHeap* heap) {
   get_HeapStatGlobals(out, heapName);
 
   if ((StatArray == nullptr) || (alloc_granules == 0)) {
+    print_aggregate_missing(out, heapName);
     return;
   }
   BUFFEREDSTREAM_DECL(ast, out)
@@ -2039,6 +2049,7 @@ void CodeHeapState::print_age(outputStream* out, CodeHeap* heap) {
 
 void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
   if (!initialization_complete) {
+    print_aggregate_missing(out, nullptr);
     return;
   }
 
@@ -2046,6 +2057,7 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
   get_HeapStatGlobals(out, heapName);
 
   if ((StatArray == nullptr) || (alloc_granules == 0)) {
+    print_aggregate_missing(out, heapName);
     return;
   }
   BUFFEREDSTREAM_DECL(ast, out)
@@ -2340,6 +2352,14 @@ void CodeHeapState::print_line_delim(outputStream* out, bufferedStream* ast, cha
     ast->print(INTPTR_FORMAT, p2i(low_bound + ix*granule_size));
     ast->fill_to(19);
     ast->print("(+" UINT32_FORMAT_X_0 "): |", (unsigned int)(ix*granule_size));
+  }
+}
+
+void CodeHeapState::print_aggregate_missing(outputStream* out, const char* heapName) {
+  if (heapName == nullptr) {
+    out->print_cr("No aggregated code heap data available. Run function aggregate first.");
+  } else {
+    out->print_cr("No aggregated data available for heap %s. Run function aggregate first.", heapName);
   }
 }
 

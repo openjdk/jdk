@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,6 +296,11 @@ Java_sun_java2d_metal_MTLSurfaceData_initOps
     BMTLSDOps *bmtlsdo = (BMTLSDOps *)SurfaceData_InitOps(env, mtlsd, sizeof(BMTLSDOps));
     MTLSDOps *mtlsdo = (MTLSDOps *)malloc(sizeof(MTLSDOps));
 
+    if (mtlsdo == NULL) {
+        JNU_ThrowOutOfMemoryError(env, "Initialization of SurfaceData failed.");
+        return;
+    }
+
     J2dTraceLn1(J2D_TRACE_INFO, "MTLSurfaceData_initOps p=%p", bmtlsdo);
     J2dTraceLn1(J2D_TRACE_INFO, "  pPeerData=%p", jlong_to_ptr(pPeerData));
     J2dTraceLn1(J2D_TRACE_INFO, "  layerPtr=%p", jlong_to_ptr(layerPtr));
@@ -303,12 +308,7 @@ Java_sun_java2d_metal_MTLSurfaceData_initOps
 
     gc = (*env)->NewGlobalRef(env, gc);
     if (gc == NULL) {
-        JNU_ThrowOutOfMemoryError(env, "Initialization of SurfaceData failed.");
-        return;
-    }
-
-    if (mtlsdo == NULL) {
-        (*env)->DeleteGlobalRef(env, gc);
+        free(mtlsdo);
         JNU_ThrowOutOfMemoryError(env, "Initialization of SurfaceData failed.");
         return;
     }

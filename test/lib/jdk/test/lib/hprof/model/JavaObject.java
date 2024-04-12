@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -190,9 +188,14 @@ public class JavaObject extends JavaLazyReadObject {
 
     public String toString() {
         if (getClazz().isString()) {
+            JavaThing coder = getField("coder");
+            boolean compact = false;
+            if (coder instanceof JavaByte) {
+                compact = ((JavaByte)coder).value == 0;
+            }
             JavaThing value = getField("value");
             if (value instanceof JavaValueArray) {
-                return ((JavaValueArray)value).valueString();
+                return ((JavaValueArray)value).valueAsString(compact);
             } else {
                 return "null";
             }

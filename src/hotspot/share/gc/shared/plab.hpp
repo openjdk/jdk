@@ -178,11 +178,11 @@ public:
   size_t used() const { return allocated() - (wasted() + unused()); }
   size_t undo_wasted() const { return _undo_wasted; }
 
-  static const size_t min_size() {
+  static size_t min_size() {
     return PLAB::min_size();
   }
 
-  static const size_t max_size() {
+  static size_t max_size() {
     return PLAB::max_size();
   }
 

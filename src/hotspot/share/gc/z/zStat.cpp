@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,22 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
+#include "gc/z/zDirector.hpp"
+#include "gc/z/zDriver.hpp"
 #include "gc/z/zCPU.inline.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zNMethodTable.hpp"
 #include "gc/z/zPageAllocator.inline.hpp"
 #include "gc/z/zRelocationSetSelector.inline.hpp"
 #include "gc/z/zStat.hpp"
-#include "gc/z/zThread.inline.hpp"
 #include "gc/z/zTracer.inline.hpp"
 #include "gc/z/zUtils.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -59,10 +62,10 @@ struct ZStatSamplerData {
   uint64_t _sum;
   uint64_t _max;
 
-  ZStatSamplerData() :
-    _nsamples(0),
-    _sum(0),
-    _max(0) {}
+  ZStatSamplerData()
+    : _nsamples(0),
+      _sum(0),
+      _max(0) {}
 
   void add(const ZStatSamplerData& new_sample) {
     _nsamples += new_sample._nsamples;
@@ -74,8 +77,8 @@ struct ZStatSamplerData {
 struct ZStatCounterData {
   uint64_t _counter;
 
-  ZStatCounterData() :
-    _counter(0) {}
+  ZStatCounterData()
+    : _counter(0) {}
 };
 
 //
@@ -90,8 +93,8 @@ private:
   ZStatSamplerData _total;
 
 public:
-  ZStatSamplerHistoryInterval() :
-      _next(0),
+  ZStatSamplerHistoryInterval()
+    : _next(0),
       _samples(),
       _accumulated(),
       _total() {}
@@ -161,8 +164,8 @@ private:
   }
 
 public:
-  ZStatSamplerHistory() :
-      _10seconds(),
+  ZStatSamplerHistory()
+    : _10seconds(),
       _10minutes(),
       _10hours(),
       _total() {}
@@ -240,7 +243,7 @@ public:
 // Stat unit printers
 //
 void ZStatUnitTime(LogTargetHandle log, const ZStatSampler& sampler, const ZStatSamplerHistory& history) {
-  log.print(" %10s: %-41s "
+  log.print(" %16s: %-41s "
             "%9.3f / %-9.3f "
             "%9.3f / %-9.3f "
             "%9.3f / %-9.3f "
@@ -258,7 +261,7 @@ void ZStatUnitTime(LogTargetHandle log, const ZStatSampler& sampler, const ZStat
 }
 
 void ZStatUnitBytes(LogTargetHandle log, const ZStatSampler& sampler, const ZStatSamplerHistory& history) {
-  log.print(" %10s: %-41s "
+  log.print(" %16s: %-41s "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
@@ -276,7 +279,7 @@ void ZStatUnitBytes(LogTargetHandle log, const ZStatSampler& sampler, const ZSta
 }
 
 void ZStatUnitThreads(LogTargetHandle log, const ZStatSampler& sampler, const ZStatSamplerHistory& history) {
-  log.print(" %10s: %-41s "
+  log.print(" %16s: %-41s "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
@@ -294,7 +297,7 @@ void ZStatUnitThreads(LogTargetHandle log, const ZStatSampler& sampler, const ZS
 }
 
 void ZStatUnitBytesPerSecond(LogTargetHandle log, const ZStatSampler& sampler, const ZStatSamplerHistory& history) {
-  log.print(" %10s: %-41s "
+  log.print(" %16s: %-41s "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
@@ -312,7 +315,7 @@ void ZStatUnitBytesPerSecond(LogTargetHandle log, const ZStatSampler& sampler, c
 }
 
 void ZStatUnitOpsPerSecond(LogTargetHandle log, const ZStatSampler& sampler, const ZStatSamplerHistory& history) {
-  log.print(" %10s: %-41s "
+  log.print(" %16s: %-41s "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
@@ -338,8 +341,8 @@ uint32_t  ZStatValue::_cpu_offset = 0;
 ZStatValue::ZStatValue(const char* group,
                           const char* name,
                           uint32_t id,
-                          uint32_t size) :
-    _group(group),
+                          uint32_t size)
+  : _group(group),
     _name(name),
     _id(id),
     _offset(_cpu_offset) {
@@ -380,7 +383,7 @@ uint32_t ZStatValue::id() const {
 // Stat iterable value
 //
 template <typename T> uint32_t ZStatIterableValue<T>::_count = 0;
-template <typename T> T*       ZStatIterableValue<T>::_first = NULL;
+template <typename T> T*       ZStatIterableValue<T>::_first = nullptr;
 
 template <typename T>
 ZStatIterableValue<T>::ZStatIterableValue(const char* group,
@@ -399,16 +402,16 @@ T* ZStatIterableValue<T>::insert() const {
 template <typename T>
 void ZStatIterableValue<T>::sort() {
   T* first_unsorted = _first;
-  _first = NULL;
+  _first = nullptr;
 
-  while (first_unsorted != NULL) {
+  while (first_unsorted != nullptr) {
     T* const value = first_unsorted;
     first_unsorted = value->_next;
-    value->_next = NULL;
+    value->_next = nullptr;
 
     T** current = &_first;
 
-    while (*current != NULL) {
+    while (*current != nullptr) {
       // First sort by group, then by name
       const int group_cmp = strcmp((*current)->group(), value->group());
       if ((group_cmp > 0) || (group_cmp == 0 && strcmp((*current)->name(), value->name()) > 0)) {
@@ -425,8 +428,8 @@ void ZStatIterableValue<T>::sort() {
 //
 // Stat sampler
 //
-ZStatSampler::ZStatSampler(const char* group, const char* name, ZStatUnitPrinter printer) :
-    ZStatIterableValue<ZStatSampler>(group, name, sizeof(ZStatSamplerData)),
+ZStatSampler::ZStatSampler(const char* group, const char* name, ZStatUnitPrinter printer)
+  : ZStatIterableValue<ZStatSampler>(group, name, sizeof(ZStatSamplerData)),
     _printer(printer) {}
 
 ZStatSamplerData* ZStatSampler::get() const {
@@ -461,8 +464,8 @@ ZStatUnitPrinter ZStatSampler::printer() const {
 //
 // Stat counter
 //
-ZStatCounter::ZStatCounter(const char* group, const char* name, ZStatUnitPrinter printer) :
-    ZStatIterableValue<ZStatCounter>(group, name, sizeof(ZStatCounterData)),
+ZStatCounter::ZStatCounter(const char* group, const char* name, ZStatUnitPrinter printer)
+  : ZStatIterableValue<ZStatCounter>(group, name, sizeof(ZStatCounterData)),
     _sampler(group, name, printer) {}
 
 ZStatCounterData* ZStatCounter::get() const {
@@ -484,8 +487,8 @@ void ZStatCounter::sample_and_reset() const {
 //
 // Stat unsampled counter
 //
-ZStatUnsampledCounter::ZStatUnsampledCounter(const char* name) :
-    ZStatIterableValue<ZStatUnsampledCounter>("Unsampled", name, sizeof(ZStatCounterData)) {}
+ZStatUnsampledCounter::ZStatUnsampledCounter(const char* name)
+  : ZStatIterableValue<ZStatUnsampledCounter>("Unsampled", name, sizeof(ZStatCounterData)) {}
 
 ZStatCounterData* ZStatUnsampledCounter::get() const {
   return get_cpu_local<ZStatCounterData>(ZCPU::id());
@@ -506,12 +509,12 @@ ZStatCounterData ZStatUnsampledCounter::collect_and_reset() const {
 //
 // Stat MMU (Minimum Mutator Utilization)
 //
-ZStatMMUPause::ZStatMMUPause() :
-    _start(0.0),
+ZStatMMUPause::ZStatMMUPause()
+  : _start(0.0),
     _end(0.0) {}
 
-ZStatMMUPause::ZStatMMUPause(const Ticks& start, const Ticks& end) :
-    _start(TimeHelper::counter_to_millis(start.value())),
+ZStatMMUPause::ZStatMMUPause(const Ticks& start, const Ticks& end)
+  : _start(TimeHelper::counter_to_millis(start.value())),
     _end(TimeHelper::counter_to_millis(end.value())) {}
 
 double ZStatMMUPause::end() const {
@@ -589,10 +592,9 @@ void ZStatMMU::print() {
 //
 // Stat phases
 //
-ConcurrentGCTimer ZStatPhase::_timer;
 
-ZStatPhase::ZStatPhase(const char* group, const char* name) :
-    _sampler(group, name, ZStatUnitTime) {}
+ZStatPhase::ZStatPhase(const char* group, const char* name)
+  : _sampler(group, name, ZStatUnitTime) {}
 
 void ZStatPhase::log_start(LogTargetHandle log, bool thread) const {
   if (!log.is_enabled()) {
@@ -620,79 +622,148 @@ void ZStatPhase::log_end(LogTargetHandle log, const Tickspan& duration, bool thr
   }
 }
 
-ConcurrentGCTimer* ZStatPhase::timer() {
-  return &_timer;
-}
-
 const char* ZStatPhase::name() const {
   return _sampler.name();
 }
 
-ZStatPhaseCycle::ZStatPhaseCycle(const char* name) :
-    ZStatPhase("Collector", name) {}
+ZStatPhaseCollection::ZStatPhaseCollection(const char* name, bool minor)
+  : ZStatPhase(minor ? "Minor Collection" : "Major Collection", name),
+    _minor(minor) {}
 
-void ZStatPhaseCycle::register_start(const Ticks& start) const {
-  timer()->register_gc_start(start);
-
-  ZTracer::tracer()->report_gc_start(ZCollectedHeap::heap()->gc_cause(), start);
-
-  ZCollectedHeap::heap()->print_heap_before_gc();
-  ZCollectedHeap::heap()->trace_heap_before_gc(ZTracer::tracer());
-
-  log_info(gc, start)("Garbage Collection (%s)",
-                       GCCause::to_string(ZCollectedHeap::heap()->gc_cause()));
+GCTracer* ZStatPhaseCollection::jfr_tracer() const {
+  return _minor
+      ? ZDriver::minor()->jfr_tracer()
+      : ZDriver::major()->jfr_tracer();
 }
 
-void ZStatPhaseCycle::register_end(const Ticks& start, const Ticks& end) const {
+void ZStatPhaseCollection::set_used_at_start(size_t used) const {
+  if (_minor) {
+    ZDriver::minor()->set_used_at_start(used);
+  } else {
+    ZDriver::major()->set_used_at_start(used);
+  }
+}
+
+size_t ZStatPhaseCollection::used_at_start() const {
+  return _minor
+      ? ZDriver::minor()->used_at_start()
+      : ZDriver::major()->used_at_start();
+}
+
+void ZStatPhaseCollection::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
+  const GCCause::Cause cause = _minor ? ZDriver::minor()->gc_cause() : ZDriver::major()->gc_cause();
+
+  timer->register_gc_start(start);
+
+  jfr_tracer()->report_gc_start(cause, start);
+  ZCollectedHeap::heap()->trace_heap_before_gc(jfr_tracer());
+
+  set_used_at_start(ZHeap::heap()->used());
+
+  log_info(gc)("%s (%s)", name(), GCCause::to_string(cause));
+}
+
+void ZStatPhaseCollection::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
+  const GCCause::Cause cause = _minor ? ZDriver::minor()->gc_cause() : ZDriver::major()->gc_cause();
+
   if (ZAbort::should_abort()) {
-    log_info(gc)("Garbage Collection (%s) Aborted",
-                 GCCause::to_string(ZCollectedHeap::heap()->gc_cause()));
+    log_info(gc)("%s (%s) Aborted", name(), GCCause::to_string(cause));
     return;
   }
 
-  timer()->register_gc_end(end);
+  timer->register_gc_end(end);
 
-  ZCollectedHeap::heap()->print_heap_after_gc();
-  ZCollectedHeap::heap()->trace_heap_after_gc(ZTracer::tracer());
-
-  ZTracer::tracer()->report_gc_end(end, timer()->time_partitions());
+  jfr_tracer()->report_gc_end(end, timer->time_partitions());
+  ZCollectedHeap::heap()->trace_heap_after_gc(jfr_tracer());
 
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
 
+  const size_t used_at_end = ZHeap::heap()->used();
+
+  log_info(gc)("%s (%s) " ZSIZE_FMT "->" ZSIZE_FMT " %.3fs",
+               name(),
+               GCCause::to_string(cause),
+               ZSIZE_ARGS(used_at_start()),
+               ZSIZE_ARGS(used_at_end),
+               duration.seconds());
+}
+
+ZStatPhaseGeneration::ZStatPhaseGeneration(const char* name, ZGenerationId id)
+  : ZStatPhase(id == ZGenerationId::old ? "Old Generation" : "Young Generation", name),
+    _id(id) {}
+
+ZGenerationTracer* ZStatPhaseGeneration::jfr_tracer() const {
+  return _id == ZGenerationId::young
+      ? ZGeneration::young()->jfr_tracer()
+      : ZGeneration::old()->jfr_tracer();
+}
+
+void ZStatPhaseGeneration::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
+  ZCollectedHeap::heap()->print_heap_before_gc();
+
+  jfr_tracer()->report_start(start);
+
+  log_info(gc, phases)("%s", name());
+}
+
+void ZStatPhaseGeneration::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
+  if (ZAbort::should_abort()) {
+    log_info(gc, phases)("%s Aborted", name());
+    return;
+  }
+
+  jfr_tracer()->report_end(end);
+
+  ZCollectedHeap::heap()->print_heap_after_gc();
+
+  const Tickspan duration = end - start;
+  ZStatSample(_sampler, duration.value());
+
+  ZGeneration* const generation = ZGeneration::generation(_id);
+
+  generation->stat_heap()->print_stalls();
   ZStatLoad::print();
   ZStatMMU::print();
-  ZStatMark::print();
+  generation->stat_mark()->print();
   ZStatNMethods::print();
   ZStatMetaspace::print();
-  ZStatReferences::print();
-  ZStatRelocation::print();
-  ZStatHeap::print();
+  if (generation->is_old()) {
+    ZStatReferences::print();
+  }
 
-  log_info(gc)("Garbage Collection (%s) " ZSIZE_FMT "->" ZSIZE_FMT,
-               GCCause::to_string(ZCollectedHeap::heap()->gc_cause()),
-               ZSIZE_ARGS(ZStatHeap::used_at_mark_start()),
-               ZSIZE_ARGS(ZStatHeap::used_at_relocate_end()));
+  generation->stat_relocation()->print_page_summary();
+  if (generation->is_young()) {
+    generation->stat_relocation()->print_age_table();
+  }
+
+  generation->stat_heap()->print(generation);
+
+  log_info(gc, phases)("%s " ZSIZE_FMT "->" ZSIZE_FMT " %.3fs",
+                       name(),
+                       ZSIZE_ARGS(generation->stat_heap()->used_at_collection_start()),
+                       ZSIZE_ARGS(generation->stat_heap()->used_at_collection_end()),
+                       duration.seconds());
 }
 
 Tickspan ZStatPhasePause::_max;
 
-ZStatPhasePause::ZStatPhasePause(const char* name) :
-    ZStatPhase("Phase", name) {}
+ZStatPhasePause::ZStatPhasePause(const char* name, ZGenerationId id)
+  : ZStatPhase(id == ZGenerationId::young ? "Young Pause" : "Old Pause", name) {}
 
 const Tickspan& ZStatPhasePause::max() {
   return _max;
 }
 
-void ZStatPhasePause::register_start(const Ticks& start) const {
-  timer()->register_gc_pause_start(name(), start);
+void ZStatPhasePause::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
+  timer->register_gc_pause_start(name(), start);
 
   LogTarget(Debug, gc, phases, start) log;
   log_start(log);
 }
 
-void ZStatPhasePause::register_end(const Ticks& start, const Ticks& end) const {
-  timer()->register_gc_pause_end(end);
+void ZStatPhasePause::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
+  timer->register_gc_pause_end(end);
 
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
@@ -709,22 +780,22 @@ void ZStatPhasePause::register_end(const Ticks& start, const Ticks& end) const {
   log_end(log, duration);
 }
 
-ZStatPhaseConcurrent::ZStatPhaseConcurrent(const char* name) :
-    ZStatPhase("Phase", name) {}
+ZStatPhaseConcurrent::ZStatPhaseConcurrent(const char* name, ZGenerationId id)
+  : ZStatPhase(id == ZGenerationId::young ? "Young Phase" : "Old Phase", name) {}
 
-void ZStatPhaseConcurrent::register_start(const Ticks& start) const {
-  timer()->register_gc_concurrent_start(name(), start);
+void ZStatPhaseConcurrent::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
+  timer->register_gc_concurrent_start(name(), start);
 
   LogTarget(Debug, gc, phases, start) log;
   log_start(log);
 }
 
-void ZStatPhaseConcurrent::register_end(const Ticks& start, const Ticks& end) const {
+void ZStatPhaseConcurrent::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
   if (ZAbort::should_abort()) {
     return;
   }
 
-  timer()->register_gc_concurrent_end(end);
+  timer->register_gc_concurrent_end(end);
 
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
@@ -733,11 +804,16 @@ void ZStatPhaseConcurrent::register_end(const Ticks& start, const Ticks& end) co
   log_end(log, duration);
 }
 
-ZStatSubPhase::ZStatSubPhase(const char* name) :
-    ZStatPhase("Subphase", name) {}
+ZStatSubPhase::ZStatSubPhase(const char* name, ZGenerationId id)
+  : ZStatPhase(id == ZGenerationId::young ? "Young Subphase" : "Old Subphase", name) {}
 
-void ZStatSubPhase::register_start(const Ticks& start) const {
-  if (ZThread::is_worker()) {
+void ZStatSubPhase::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
+  if (timer != nullptr && !ZAbort::should_abort()) {
+    assert(!Thread::current()->is_Worker_thread(), "Unexpected timer value");
+    timer->register_gc_phase_start(name(), start);
+  }
+
+  if (Thread::current()->is_Worker_thread()) {
     LogTarget(Trace, gc, phases, start) log;
     log_start(log, true /* thread */);
   } else {
@@ -746,17 +822,22 @@ void ZStatSubPhase::register_start(const Ticks& start) const {
   }
 }
 
-void ZStatSubPhase::register_end(const Ticks& start, const Ticks& end) const {
+void ZStatSubPhase::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
   if (ZAbort::should_abort()) {
     return;
   }
 
-  ZTracer::tracer()->report_thread_phase(name(), start, end);
+  if (timer != nullptr) {
+    assert(!Thread::current()->is_Worker_thread(), "Unexpected timer value");
+    timer->register_gc_phase_end(end);
+  }
+
+  ZTracer::report_thread_phase(name(), start, end);
 
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
 
-  if (ZThread::is_worker()) {
+  if (Thread::current()->is_Worker_thread()) {
     LogTarget(Trace, gc, phases) log;
     log_end(log, duration, true /* thread */);
   } else {
@@ -765,20 +846,20 @@ void ZStatSubPhase::register_end(const Ticks& start, const Ticks& end) const {
   }
 }
 
-ZStatCriticalPhase::ZStatCriticalPhase(const char* name, bool verbose) :
-    ZStatPhase("Critical", name),
+ZStatCriticalPhase::ZStatCriticalPhase(const char* name, bool verbose)
+  : ZStatPhase("Critical", name),
     _counter("Critical", name, ZStatUnitOpsPerSecond),
     _verbose(verbose) {}
 
-void ZStatCriticalPhase::register_start(const Ticks& start) const {
+void ZStatCriticalPhase::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
   // This is called from sensitive contexts, for example before an allocation stall
   // has been resolved. This means we must not access any oops in here since that
   // could lead to infinite recursion. Without access to the thread name we can't
   // really log anything useful here.
 }
 
-void ZStatCriticalPhase::register_end(const Ticks& start, const Ticks& end) const {
-  ZTracer::tracer()->report_thread_phase(name(), start, end);
+void ZStatCriticalPhase::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
+  ZTracer::report_thread_phase(name(), start, end);
 
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
@@ -793,10 +874,16 @@ void ZStatCriticalPhase::register_end(const Ticks& start, const Ticks& end) cons
   }
 }
 
-//
-// Stat timer
-//
-THREAD_LOCAL uint32_t ZStatTimerDisable::_active = 0;
+ZStatTimerYoung::ZStatTimerYoung(const ZStatPhase& phase)
+  : ZStatTimer(phase, ZGeneration::young()->gc_timer()) {}
+
+ZStatTimerOld::ZStatTimerOld(const ZStatPhase& phase)
+  : ZStatTimer(phase, ZGeneration::old()->gc_timer()) {}
+
+ZStatTimerWorker::ZStatTimerWorker(const ZStatPhase& phase)
+  : ZStatTimer(phase, nullptr /* gc_timer */) {
+  assert(Thread::current()->is_Worker_thread(), "Should only be called by worker thread");
+}
 
 //
 // Stat sample/inc
@@ -824,14 +911,14 @@ void ZStatSample(const ZStatSampler& sampler, uint64_t value) {
     max = prev_max;
   }
 
-  ZTracer::tracer()->report_stat_sampler(sampler, value);
+  ZTracer::report_stat_sampler(sampler, value);
 }
 
 void ZStatInc(const ZStatCounter& counter, uint64_t increment) {
   ZStatCounterData* const cpu_data = counter.get();
   const uint64_t value = Atomic::add(&cpu_data->_counter, increment);
 
-  ZTracer::tracer()->report_stat_counter(counter, increment, value);
+  ZTracer::report_stat_counter(counter, increment, value);
 }
 
 void ZStatInc(const ZStatUnsampledCounter& counter, uint64_t increment) {
@@ -840,55 +927,108 @@ void ZStatInc(const ZStatUnsampledCounter& counter, uint64_t increment) {
 }
 
 //
-// Stat allocation rate
+// Stat mutator allocation rate
 //
-const ZStatUnsampledCounter ZStatAllocRate::_counter("Allocation Rate");
-TruncatedSeq                ZStatAllocRate::_samples(ZStatAllocRate::sample_hz);
-TruncatedSeq                ZStatAllocRate::_rate(ZStatAllocRate::sample_hz);
+ZLock*          ZStatMutatorAllocRate::_stat_lock;
+jlong           ZStatMutatorAllocRate::_last_sample_time;
+volatile size_t ZStatMutatorAllocRate::_sampling_granule;
+volatile size_t ZStatMutatorAllocRate::_allocated_since_sample;
+TruncatedSeq    ZStatMutatorAllocRate::_samples_time(100);
+TruncatedSeq    ZStatMutatorAllocRate::_samples_bytes(100);
+TruncatedSeq    ZStatMutatorAllocRate::_rate(100);
 
-const ZStatUnsampledCounter& ZStatAllocRate::counter() {
-  return _counter;
+void ZStatMutatorAllocRate::initialize() {
+  _last_sample_time = os::elapsed_counter();
+  _stat_lock = new ZLock();
+  update_sampling_granule();
 }
 
-uint64_t ZStatAllocRate::sample_and_reset() {
-  const ZStatCounterData bytes_per_sample = _counter.collect_and_reset();
-  _samples.add(bytes_per_sample._counter);
+void ZStatMutatorAllocRate::update_sampling_granule() {
+  const size_t sampling_heap_granules = 128;
+  const size_t soft_max_capacity = ZHeap::heap()->soft_max_capacity();
+  _sampling_granule = align_up(soft_max_capacity / sampling_heap_granules, ZGranuleSize);
+}
 
-  const uint64_t bytes_per_second = _samples.sum();
+void ZStatMutatorAllocRate::sample_allocation(size_t allocation_bytes) {
+  const size_t allocated = Atomic::add(&_allocated_since_sample, allocation_bytes);
+
+  if (allocated < Atomic::load(&_sampling_granule)) {
+    // No need for sampling yet
+    return;
+  }
+
+  if (!_stat_lock->try_lock()) {
+    // Someone beat us to it
+    return;
+  }
+
+  const size_t allocated_sample = Atomic::load(&_allocated_since_sample);
+
+  if (allocated_sample < _sampling_granule) {
+    // Someone beat us to it
+    _stat_lock->unlock();
+    return;
+  }
+
+  const jlong now = os::elapsed_counter();
+  const jlong elapsed = now - _last_sample_time;
+
+  if (elapsed <= 0) {
+    // Avoid sampling nonsense allocation rates
+    _stat_lock->unlock();
+    return;
+  }
+
+  Atomic::sub(&_allocated_since_sample, allocated_sample);
+
+  _samples_time.add(elapsed);
+  _samples_bytes.add(allocated_sample);
+
+  const double last_sample_bytes = _samples_bytes.sum();
+  const double elapsed_time = _samples_time.sum();
+
+  const double elapsed_seconds = elapsed_time / os::elapsed_frequency();
+  const double bytes_per_second = double(last_sample_bytes) / elapsed_seconds;
   _rate.add(bytes_per_second);
 
-  return bytes_per_second;
+  update_sampling_granule();
+
+  _last_sample_time = now;
+
+  log_debug(gc, alloc)("Mutator Allocation Rate: %.1fMB/s Predicted: %.1fMB/s, Avg: %.1f(+/-%.1f)MB/s",
+                       bytes_per_second / M,
+                       _rate.predict_next() / M,
+                       _rate.avg() / M,
+                       _rate.sd() / M);
+
+  _stat_lock->unlock();
+
+  ZDirector::evaluate_rules();
 }
 
-double ZStatAllocRate::predict() {
-  return _rate.predict_next();
-}
-
-double ZStatAllocRate::avg() {
-  return _rate.avg();
-}
-
-double ZStatAllocRate::sd() {
-  return _rate.sd();
+ZStatMutatorAllocRateStats ZStatMutatorAllocRate::stats() {
+  ZLocker<ZLock> locker(_stat_lock);
+  return {_rate.avg(), _rate.predict_next(), _rate.sd()};
 }
 
 //
 // Stat thread
 //
-ZStat::ZStat() :
-    _metronome(sample_hz) {
+ZStat::ZStat()
+  : _metronome(sample_hz) {
   set_name("ZStat");
   create_and_start();
+  ZStatMutatorAllocRate::initialize();
 }
 
 void ZStat::sample_and_collect(ZStatSamplerHistory* history) const {
   // Sample counters
-  for (const ZStatCounter* counter = ZStatCounter::first(); counter != NULL; counter = counter->next()) {
+  for (const ZStatCounter* counter = ZStatCounter::first(); counter != nullptr; counter = counter->next()) {
     counter->sample_and_reset();
   }
 
   // Collect samples
-  for (const ZStatSampler* sampler = ZStatSampler::first(); sampler != NULL; sampler = sampler->next()) {
+  for (const ZStatSampler* sampler = ZStatSampler::first(); sampler != nullptr; sampler = sampler->next()) {
     ZStatSamplerHistory& sampler_history = history[sampler->id()];
     sampler_history.add(sampler->collect_and_reset());
   }
@@ -913,7 +1053,7 @@ void ZStat::print(LogTargetHandle log, const ZStatSamplerHistory* history) const
   log.print("                                                             Last 10s              Last 10m              Last 10h                Total");
   log.print("                                                             Avg / Max             Avg / Max             Avg / Max             Avg / Max");
 
-  for (const ZStatSampler* sampler = ZStatSampler::first(); sampler != NULL; sampler = sampler->next()) {
+  for (const ZStatSampler* sampler = ZStatSampler::first(); sampler != nullptr; sampler = sampler->next()) {
     const ZStatSamplerHistory& sampler_history = history[sampler->id()];
     const ZStatUnitPrinter printer = sampler->printer();
     printer(log, *sampler, sampler_history);
@@ -922,9 +1062,9 @@ void ZStat::print(LogTargetHandle log, const ZStatSamplerHistory* history) const
   log.print("=========================================================================================================================================================");
 }
 
-void ZStat::run_service() {
+void ZStat::run_thread() {
   ZStatSamplerHistory* const history = new ZStatSamplerHistory[ZStatSampler::count()];
-  LogTarget(Info, gc, stats) log;
+  LogTarget(Debug, gc, stats) log;
 
   ZStatSampler::sort();
 
@@ -936,10 +1076,16 @@ void ZStat::run_service() {
     }
   }
 
+  // At exit print the final stats
+  LogTarget(Info, gc, stats) exit_log;
+  if (exit_log.is_enabled()) {
+    print(exit_log, history);
+  }
+
   delete [] history;
 }
 
-void ZStat::stop_service() {
+void ZStat::terminate() {
   _metronome.stop();
 }
 
@@ -978,8 +1124,8 @@ public:
     }
 
   public:
-    ZColumn(char* buffer, size_t position, size_t width, size_t width_next) :
-        _buffer(buffer),
+    ZColumn(char* buffer, size_t position, size_t width, size_t width_next)
+      : _buffer(buffer),
         _position(position),
         _width(width),
         _width_next(width_next) {}
@@ -1060,8 +1206,8 @@ public:
   };
 
 public:
-  ZStatTablePrinter(size_t column0_width, size_t columnN_width) :
-      _column0_width(column0_width),
+  ZStatTablePrinter(size_t column0_width, size_t columnN_width)
+    : _column0_width(column0_width),
       _columnN_width(columnN_width) {}
 
   ZColumn operator()() {
@@ -1072,41 +1218,52 @@ public:
 //
 // Stat cycle
 //
-uint64_t  ZStatCycle::_nwarmup_cycles = 0;
-Ticks     ZStatCycle::_start_of_last;
-Ticks     ZStatCycle::_end_of_last;
-NumberSeq ZStatCycle::_serial_time(0.7 /* alpha */);
-NumberSeq ZStatCycle::_parallelizable_time(0.7 /* alpha */);
-uint      ZStatCycle::_last_active_workers = 0;
+ZStatCycle::ZStatCycle()
+  : _stat_lock(),
+    _nwarmup_cycles(0),
+    _start_of_last(),
+    _end_of_last(),
+    _cycle_intervals(0.7 /* alpha */),
+    _serial_time(0.7 /* alpha */),
+    _parallelizable_time(0.7 /* alpha */),
+    _parallelizable_duration(0.7 /* alpha */),
+    _last_active_workers(0.0) {}
 
 void ZStatCycle::at_start() {
+  ZLocker<ZLock> locker(&_stat_lock);
   _start_of_last = Ticks::now();
 }
 
-void ZStatCycle::at_end(GCCause::Cause cause, uint active_workers) {
+void ZStatCycle::at_end(ZStatWorkers* stat_workers, bool record_stats) {
+  ZLocker<ZLock> locker(&_stat_lock);
+  const Ticks end_of_last = _end_of_last;
   _end_of_last = Ticks::now();
 
-  if (cause == GCCause::_z_warmup) {
+  if (ZDriver::major()->gc_cause() == GCCause::_z_warmup && _nwarmup_cycles < 3) {
     _nwarmup_cycles++;
   }
 
-  _last_active_workers = active_workers;
-
   // Calculate serial and parallelizable GC cycle times
   const double duration = (_end_of_last - _start_of_last).seconds();
-  const double workers_duration = ZStatWorkers::get_and_reset_duration();
+  const double workers_duration = stat_workers->get_and_reset_duration();
+  const double workers_time = stat_workers->get_and_reset_time();
   const double serial_time = duration - workers_duration;
-  const double parallelizable_time = workers_duration * active_workers;
-  _serial_time.add(serial_time);
-  _parallelizable_time.add(parallelizable_time);
+
+  _last_active_workers = workers_time / workers_duration;
+
+  if (record_stats) {
+    _serial_time.add(serial_time);
+    _parallelizable_time.add(workers_time);
+    _parallelizable_duration.add(workers_duration);
+    if (end_of_last.value() != 0) {
+      const double cycle_interval = (_end_of_last - end_of_last).seconds();
+      _cycle_intervals.add(cycle_interval);
+    }
+  }
 }
 
 bool ZStatCycle::is_warm() {
   return _nwarmup_cycles >= 3;
-}
-
-uint64_t ZStatCycle::nwarmup_cycles() {
-  return _nwarmup_cycles;
 }
 
 bool ZStatCycle::is_time_trustable() {
@@ -1115,16 +1272,20 @@ bool ZStatCycle::is_time_trustable() {
   return _nwarmup_cycles > 0;
 }
 
-const AbsSeq& ZStatCycle::serial_time() {
-  return _serial_time;
-}
-
-const AbsSeq& ZStatCycle::parallelizable_time() {
-  return _parallelizable_time;
-}
-
-uint ZStatCycle::last_active_workers() {
+double ZStatCycle::last_active_workers() {
   return _last_active_workers;
+}
+
+double ZStatCycle::duration_since_start() {
+  const Ticks start = _start_of_last;
+  if (start.value() == 0) {
+    // No end recorded yet, return time since VM start
+    return 0.0;
+  }
+
+  const Ticks now = Ticks::now();
+  const Tickspan duration_since_start = now - start;
+  return duration_since_start.seconds();
 }
 
 double ZStatCycle::time_since_last() {
@@ -1138,27 +1299,104 @@ double ZStatCycle::time_since_last() {
   return time_since_last.seconds();
 }
 
+ZStatCycleStats ZStatCycle::stats() {
+  ZLocker<ZLock> locker(&_stat_lock);
+
+  return {
+    is_warm(),
+    _nwarmup_cycles,
+    is_time_trustable(),
+    time_since_last(),
+    last_active_workers(),
+    duration_since_start(),
+    _cycle_intervals.davg(),
+    _serial_time.davg(),
+    _serial_time.dsd(),
+    _parallelizable_time.davg(),
+    _parallelizable_time.dsd(),
+    _parallelizable_duration.davg(),
+    _parallelizable_duration.dsd()
+  };
+}
+
 //
 // Stat workers
 //
-Ticks ZStatWorkers::_start_of_last;
-Tickspan ZStatWorkers::_accumulated_duration;
+ZStatWorkers::ZStatWorkers()
+  : _stat_lock(),
+    _active_workers(0),
+    _start_of_last(),
+    _accumulated_duration(),
+    _accumulated_time() {}
 
-void ZStatWorkers::at_start() {
+void ZStatWorkers::at_start(uint active_workers) {
+  ZLocker<ZLock> locker(&_stat_lock);
   _start_of_last = Ticks::now();
+  _active_workers = active_workers;
 }
 
 void ZStatWorkers::at_end() {
+  ZLocker<ZLock> locker(&_stat_lock);
   const Ticks now = Ticks::now();
   const Tickspan duration = now - _start_of_last;
+  Tickspan time = duration;
+  for (uint i = 1; i < _active_workers; ++i) {
+    time += duration;
+  }
+  _accumulated_time += time;
   _accumulated_duration += duration;
+  _active_workers = 0;
+}
+
+double ZStatWorkers::accumulated_time() {
+  const uint nworkers = _active_workers;
+  const Ticks now = Ticks::now();
+  const Ticks start = _start_of_last;
+  Tickspan time = _accumulated_time;
+  if (nworkers != 0) {
+    for (uint i = 0; i < nworkers; ++i) {
+      time += now - start;
+    }
+  }
+  return time.seconds();
+}
+
+double ZStatWorkers::accumulated_duration() {
+  const Ticks now = Ticks::now();
+  const Ticks start = _start_of_last;
+  Tickspan duration = _accumulated_duration;
+  if (_active_workers != 0) {
+    duration += now - start;
+  }
+  return duration.seconds();
+}
+
+uint ZStatWorkers::active_workers() {
+  return _active_workers;
 }
 
 double ZStatWorkers::get_and_reset_duration() {
+  ZLocker<ZLock> locker(&_stat_lock);
   const double duration = _accumulated_duration.seconds();
   const Ticks now = Ticks::now();
   _accumulated_duration = now - now;
   return duration;
+}
+
+double ZStatWorkers::get_and_reset_time() {
+  ZLocker<ZLock> locker(&_stat_lock);
+  const double time = _accumulated_time.seconds();
+  const Ticks now = Ticks::now();
+  _accumulated_time = now - now;
+  return time;
+}
+
+ZStatWorkersStats ZStatWorkers::stats() {
+  ZLocker<ZLock> locker(&_stat_lock);
+  return {
+    accumulated_time(),
+    accumulated_duration()
+  };
 }
 
 //
@@ -1167,34 +1405,38 @@ double ZStatWorkers::get_and_reset_duration() {
 void ZStatLoad::print() {
   double loadavg[3] = {};
   os::loadavg(loadavg, ARRAY_SIZE(loadavg));
-  log_info(gc, load)("Load: %.2f/%.2f/%.2f", loadavg[0], loadavg[1], loadavg[2]);
+  log_info(gc, load)("Load: %.2f (%.0f%%) / %.2f (%.0f%%) / %.2f (%.0f%%)",
+                     loadavg[0], percent_of(loadavg[0], (double) ZCPU::count()),
+                     loadavg[1], percent_of(loadavg[1], (double) ZCPU::count()),
+                     loadavg[2], percent_of(loadavg[2], (double) ZCPU::count()));
 }
 
 //
 // Stat mark
 //
-size_t ZStatMark::_nstripes;
-size_t ZStatMark::_nproactiveflush;
-size_t ZStatMark::_nterminateflush;
-size_t ZStatMark::_ntrycomplete;
-size_t ZStatMark::_ncontinue;
-size_t ZStatMark::_mark_stack_usage;
+ZStatMark::ZStatMark()
+  : _nstripes(),
+    _nproactiveflush(),
+    _nterminateflush(),
+    _ntrycomplete(),
+    _ncontinue(),
+    _mark_stack_usage() {}
 
-void ZStatMark::set_at_mark_start(size_t nstripes) {
+void ZStatMark::at_mark_start(size_t nstripes) {
   _nstripes = nstripes;
 }
 
-void ZStatMark::set_at_mark_end(size_t nproactiveflush,
-                                size_t nterminateflush,
-                                size_t ntrycomplete,
-                                size_t ncontinue) {
+void ZStatMark::at_mark_end(size_t nproactiveflush,
+                            size_t nterminateflush,
+                            size_t ntrycomplete,
+                            size_t ncontinue) {
   _nproactiveflush = nproactiveflush;
   _nterminateflush = nterminateflush;
   _ntrycomplete = ntrycomplete;
   _ncontinue = ncontinue;
 }
 
-void ZStatMark::set_at_mark_free(size_t mark_stack_usage) {
+void ZStatMark::at_mark_free(size_t mark_stack_usage) {
   _mark_stack_usage = mark_stack_usage;
 }
 
@@ -1217,45 +1459,162 @@ void ZStatMark::print() {
 //
 // Stat relocation
 //
-ZRelocationSetSelectorStats ZStatRelocation::_selector_stats;
-size_t                      ZStatRelocation::_forwarding_usage;
-size_t                      ZStatRelocation::_small_in_place_count;
-size_t                      ZStatRelocation::_medium_in_place_count;
+ZStatRelocation::ZStatRelocation()
+  : _selector_stats(),
+    _forwarding_usage(),
+    _small_selected(),
+    _small_in_place_count(),
+    _medium_selected(),
+    _medium_in_place_count() {}
 
-void ZStatRelocation::set_at_select_relocation_set(const ZRelocationSetSelectorStats& selector_stats) {
+void ZStatRelocation::at_select_relocation_set(const ZRelocationSetSelectorStats& selector_stats) {
   _selector_stats = selector_stats;
 }
 
-void ZStatRelocation::set_at_install_relocation_set(size_t forwarding_usage) {
+void ZStatRelocation::at_install_relocation_set(size_t forwarding_usage) {
   _forwarding_usage = forwarding_usage;
 }
 
-void ZStatRelocation::set_at_relocate_end(size_t small_in_place_count, size_t medium_in_place_count) {
+void ZStatRelocation::at_relocate_end(size_t small_in_place_count, size_t medium_in_place_count) {
   _small_in_place_count = small_in_place_count;
   _medium_in_place_count = medium_in_place_count;
 }
 
-void ZStatRelocation::print(const char* name,
-                            const ZRelocationSetSelectorGroupStats& selector_group,
-                            size_t in_place_count) {
-  log_info(gc, reloc)("%s Pages: " SIZE_FORMAT " / " SIZE_FORMAT "M, Empty: " SIZE_FORMAT "M, "
-                      "Relocated: " SIZE_FORMAT "M, In-Place: " SIZE_FORMAT,
-                      name,
-                      selector_group.npages(),
-                      selector_group.total() / M,
-                      selector_group.empty() / M,
-                      selector_group.relocate() / M,
-                      in_place_count);
+void ZStatRelocation::print_page_summary() {
+  LogTarget(Info, gc, reloc) lt;
+
+  if (!_selector_stats.has_relocatable_pages() || !lt.is_enabled()) {
+    // Nothing to log or logging not enabled.
+    return;
+  }
+
+  // Zero initialize
+  ZStatRelocationSummary small_summary{};
+  ZStatRelocationSummary medium_summary{};
+  ZStatRelocationSummary large_summary{};
+
+  auto account_page_size = [&](ZStatRelocationSummary& summary, const ZRelocationSetSelectorGroupStats& stats) {
+    summary.npages_candidates += stats.npages_candidates();
+    summary.total += stats.total();
+    summary.empty += stats.empty();
+    summary.npages_selected += stats.npages_selected();
+    summary.relocate += stats.relocate();
+  };
+
+  for (uint i = 0; i <= ZPageAgeMax; ++i) {
+    const ZPageAge age = static_cast<ZPageAge>(i);
+
+    account_page_size(small_summary, _selector_stats.small(age));
+    account_page_size(medium_summary, _selector_stats.medium(age));
+    account_page_size(large_summary, _selector_stats.large(age));
+  }
+
+  ZStatTablePrinter pages(20, 12);
+  lt.print("%s", pages()
+           .fill()
+           .right("Candidates")
+           .right("Selected")
+           .right("In-Place")
+           .right("Size")
+           .right("Empty")
+           .right("Relocated")
+           .end());
+
+  auto print_summary = [&](const char* name, ZStatRelocationSummary& summary, size_t in_place_count) {
+    lt.print("%s", pages()
+             .left("%s Pages:", name)
+             .right("%zu", summary.npages_candidates)
+             .right("%zu", summary.npages_selected)
+             .right("%zu", in_place_count)
+             .right("%zuM", summary.total / M)
+             .right("%zuM", summary.empty / M)
+             .right("%zuM", summary.relocate /M)
+             .end());
+  };
+
+  print_summary("Small", small_summary, _small_in_place_count);
+  if (ZPageSizeMedium != 0) {
+    print_summary("Medium", medium_summary, _medium_in_place_count);
+  }
+  print_summary("Large", large_summary, 0 /* in_place_count */);
+
+  lt.print("Forwarding Usage: " SIZE_FORMAT "M", _forwarding_usage / M);
 }
 
-void ZStatRelocation::print() {
-  print("Small", _selector_stats.small(), _small_in_place_count);
-  if (ZPageSizeMedium != 0) {
-    print("Medium", _selector_stats.medium(), _medium_in_place_count);
+void ZStatRelocation::print_age_table() {
+  LogTarget(Info, gc, reloc) lt;
+  if (!_selector_stats.has_relocatable_pages() || !lt.is_enabled()) {
+    // Nothing to log or logging not enabled.
+    return;
   }
-  print("Large", _selector_stats.large(), 0 /* in_place_count */);
 
-  log_info(gc, reloc)("Forwarding Usage: " SIZE_FORMAT "M", _forwarding_usage / M);
+  ZStatTablePrinter age_table(11, 18);
+  lt.print("Age Table:");
+  lt.print("%s", age_table()
+           .fill()
+           .center("Live")
+           .center("Garbage")
+           .center("Small")
+           .center("Medium")
+           .center("Large")
+           .end());
+
+  size_t live[ZPageAgeMax + 1] = {};
+  size_t total[ZPageAgeMax + 1] = {};
+
+  uint oldest_none_empty_age = 0;
+
+  for (uint i = 0; i <= ZPageAgeMax; ++i) {
+    ZPageAge age = static_cast<ZPageAge>(i);
+    auto summarize_pages = [&](const ZRelocationSetSelectorGroupStats& stats) {
+      live[i] += stats.live();
+      total[i] += stats.total();
+    };
+
+    summarize_pages(_selector_stats.small(age));
+    summarize_pages(_selector_stats.medium(age));
+    summarize_pages(_selector_stats.large(age));
+
+    if (total[i] != 0) {
+      oldest_none_empty_age = i;
+    }
+  }
+
+  for (uint i = 0; i <= oldest_none_empty_age; ++i) {
+    ZPageAge age = static_cast<ZPageAge>(i);
+
+    FormatBuffer<> age_str("");
+    if (age == ZPageAge::eden) {
+      age_str.append("Eden");
+    } else if (age != ZPageAge::old) {
+      age_str.append("Survivor %d", i);
+    }
+
+    auto create_age_table = [&]() {
+      if (live[i] == 0) {
+        return age_table()
+              .left("%s", age_str.buffer())
+              .left(ZTABLE_ARGS_NA);
+      } else {
+        return age_table()
+              .left("%s", age_str.buffer())
+              .left(ZTABLE_ARGS(live[i]));
+      }
+    };
+
+    lt.print("%s", create_age_table()
+              .left(ZTABLE_ARGS(total[i] - live[i]))
+              .left(SIZE_FORMAT_W(7) " / " SIZE_FORMAT,
+                    _selector_stats.small(age).npages_candidates(),
+                    _selector_stats.small(age).npages_selected())
+              .left(SIZE_FORMAT_W(7) " / " SIZE_FORMAT,
+                    _selector_stats.medium(age).npages_candidates(),
+                    _selector_stats.medium(age).npages_selected())
+              .left(SIZE_FORMAT_W(7) " / " SIZE_FORMAT,
+                    _selector_stats.large(age).npages_candidates(),
+                    _selector_stats.large(age).npages_selected())
+              .end());
+  }
 }
 
 //
@@ -1271,7 +1630,7 @@ void ZStatNMethods::print() {
 // Stat metaspace
 //
 void ZStatMetaspace::print() {
-  MetaspaceCombinedStats stats = MetaspaceUtils::get_combined_statistics();
+  const MetaspaceCombinedStats stats = MetaspaceUtils::get_combined_statistics();
   log_info(gc, metaspace)("Metaspace: "
                           SIZE_FORMAT "M used, "
                           SIZE_FORMAT "M committed, " SIZE_FORMAT "M reserved",
@@ -1310,100 +1669,158 @@ void ZStatReferences::set_phantom(size_t encountered, size_t discovered, size_t 
   set(&_phantom, encountered, discovered, enqueued);
 }
 
-void ZStatReferences::print(const char* name, const ZStatReferences::ZCount& ref) {
-  log_info(gc, ref)("%s: "
-                    SIZE_FORMAT " encountered, "
-                    SIZE_FORMAT " discovered, "
-                    SIZE_FORMAT " enqueued",
-                    name,
-                    ref.encountered,
-                    ref.discovered,
-                    ref.enqueued);
-}
-
 void ZStatReferences::print() {
-  print("Soft", _soft);
-  print("Weak", _weak);
-  print("Final", _final);
-  print("Phantom", _phantom);
+  LogTarget(Info, gc, ref) lt;
+  if (!lt.is_enabled()) {
+    // Nothing to log
+    return;
+  }
+
+  ZStatTablePrinter refs(20, 12);
+  lt.print("%s", refs()
+           .fill()
+           .right("Encountered")
+           .right("Discovered")
+           .right("Enqueued")
+           .end());
+
+  auto ref_print = [&] (const char* name, const ZStatReferences::ZCount& ref) {
+    lt.print("%s", refs()
+             .left("%s References:", name)
+             .right("%zu", ref.encountered)
+             .right("%zu", ref.discovered)
+             .right("%zu", ref.enqueued)
+             .end());
+  };
+
+  ref_print("Soft", _soft);
+  ref_print("Weak", _weak);
+  ref_print("Final", _final);
+  ref_print("Phantom", _phantom);
 }
 
 //
 // Stat heap
 //
-ZStatHeap::ZAtInitialize ZStatHeap::_at_initialize;
-ZStatHeap::ZAtMarkStart ZStatHeap::_at_mark_start;
-ZStatHeap::ZAtMarkEnd ZStatHeap::_at_mark_end;
-ZStatHeap::ZAtRelocateStart ZStatHeap::_at_relocate_start;
-ZStatHeap::ZAtRelocateEnd ZStatHeap::_at_relocate_end;
 
-size_t ZStatHeap::capacity_high() {
+ZStatHeap::ZStatHeap()
+  : _stat_lock(),
+    _at_collection_start(),
+    _at_mark_start(),
+    _at_mark_end(),
+    _at_relocate_start(),
+    _at_relocate_end(),
+    _reclaimed_bytes(0.7 /* alpha */) {}
+
+ZStatHeap::ZAtInitialize ZStatHeap::_at_initialize;
+
+size_t ZStatHeap::capacity_high() const {
   return MAX4(_at_mark_start.capacity,
               _at_mark_end.capacity,
               _at_relocate_start.capacity,
               _at_relocate_end.capacity);
 }
 
-size_t ZStatHeap::capacity_low() {
+size_t ZStatHeap::capacity_low() const {
   return MIN4(_at_mark_start.capacity,
               _at_mark_end.capacity,
               _at_relocate_start.capacity,
               _at_relocate_end.capacity);
 }
 
-size_t ZStatHeap::free(size_t used) {
+size_t ZStatHeap::free(size_t used) const {
   return _at_initialize.max_capacity - used;
 }
 
-size_t ZStatHeap::allocated(size_t used, size_t reclaimed) {
+size_t ZStatHeap::mutator_allocated(size_t used_generation, size_t freed, size_t relocated) const {
   // The amount of allocated memory between point A and B is used(B) - used(A).
   // However, we might also have reclaimed memory between point A and B. This
   // means the current amount of used memory must be incremented by the amount
   // reclaimed, so that used(B) represents the amount of used memory we would
   // have had if we had not reclaimed anything.
-  return (used + reclaimed) - _at_mark_start.used;
+  const size_t used_generation_delta = used_generation - _at_mark_start.used_generation;
+  return  used_generation_delta + freed - relocated;
 }
 
-size_t ZStatHeap::garbage(size_t reclaimed) {
-  return _at_mark_end.garbage - reclaimed;
+size_t ZStatHeap::garbage(size_t freed, size_t relocated, size_t promoted) const {
+  return _at_mark_end.garbage - (freed - promoted - relocated);
 }
 
-void ZStatHeap::set_at_initialize(const ZPageAllocatorStats& stats) {
-  _at_initialize.min_capacity = stats.min_capacity();
-  _at_initialize.max_capacity = stats.max_capacity();
+size_t ZStatHeap::reclaimed(size_t freed, size_t relocated, size_t promoted) const {
+  return freed - relocated - promoted;
 }
 
-void ZStatHeap::set_at_mark_start(const ZPageAllocatorStats& stats) {
+void ZStatHeap::at_initialize(size_t min_capacity, size_t max_capacity) {
+  ZLocker<ZLock> locker(&_stat_lock);
+
+  _at_initialize.min_capacity = min_capacity;
+  _at_initialize.max_capacity = max_capacity;
+}
+
+void ZStatHeap::at_collection_start(const ZPageAllocatorStats& stats) {
+  ZLocker<ZLock> locker(&_stat_lock);
+
+  _at_collection_start.soft_max_capacity = stats.soft_max_capacity();
+  _at_collection_start.capacity = stats.capacity();
+  _at_collection_start.free = free(stats.used());
+  _at_collection_start.used = stats.used();
+  _at_collection_start.used_generation = stats.used_generation();
+}
+
+void ZStatHeap::at_mark_start(const ZPageAllocatorStats& stats) {
+  ZLocker<ZLock> locker(&_stat_lock);
+
   _at_mark_start.soft_max_capacity = stats.soft_max_capacity();
   _at_mark_start.capacity = stats.capacity();
   _at_mark_start.free = free(stats.used());
   _at_mark_start.used = stats.used();
+  _at_mark_start.used_generation = stats.used_generation();
+  _at_mark_start.allocation_stalls = stats.allocation_stalls();
 }
 
-void ZStatHeap::set_at_mark_end(const ZPageAllocatorStats& stats) {
+void ZStatHeap::at_mark_end(const ZPageAllocatorStats& stats) {
+  ZLocker<ZLock> locker(&_stat_lock);
+
   _at_mark_end.capacity = stats.capacity();
   _at_mark_end.free = free(stats.used());
   _at_mark_end.used = stats.used();
-  _at_mark_end.allocated = allocated(stats.used(), 0 /* reclaimed */);
+  _at_mark_end.used_generation = stats.used_generation();
+  _at_mark_end.mutator_allocated = mutator_allocated(stats.used_generation(), 0 /* reclaimed */, 0 /* relocated */);
+  _at_mark_end.allocation_stalls = stats.allocation_stalls();
 }
 
-void ZStatHeap::set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats) {
-  const size_t live = stats.small().live() + stats.medium().live() + stats.large().live();
+void ZStatHeap::at_select_relocation_set(const ZRelocationSetSelectorStats& stats) {
+  ZLocker<ZLock> locker(&_stat_lock);
+
+  size_t live = 0;
+  for (uint i = 0; i <= ZPageAgeMax; ++i) {
+    const ZPageAge age = static_cast<ZPageAge>(i);
+    live += stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
+  }
   _at_mark_end.live = live;
-  _at_mark_end.garbage = _at_mark_start.used - live;
+  _at_mark_end.garbage = _at_mark_start.used_generation - live;
 }
 
-void ZStatHeap::set_at_relocate_start(const ZPageAllocatorStats& stats) {
+void ZStatHeap::at_relocate_start(const ZPageAllocatorStats& stats) {
+  ZLocker<ZLock> locker(&_stat_lock);
+
+  assert(stats.compacted() == 0, "Nothing should have been compacted");
+
   _at_relocate_start.capacity = stats.capacity();
   _at_relocate_start.free = free(stats.used());
   _at_relocate_start.used = stats.used();
-  _at_relocate_start.allocated = allocated(stats.used(), stats.reclaimed());
-  _at_relocate_start.garbage = garbage(stats.reclaimed());
-  _at_relocate_start.reclaimed = stats.reclaimed();
+  _at_relocate_start.used_generation = stats.used_generation();
+  _at_relocate_start.live = _at_mark_end.live - stats.promoted();
+  _at_relocate_start.garbage = garbage(stats.freed(), stats.compacted(), stats.promoted());
+  _at_relocate_start.mutator_allocated = mutator_allocated(stats.used_generation(), stats.freed(), stats.compacted());
+  _at_relocate_start.reclaimed = reclaimed(stats.freed(), stats.compacted(), stats.promoted());
+  _at_relocate_start.promoted = stats.promoted();
+  _at_relocate_start.compacted = stats.compacted();
+  _at_relocate_start.allocation_stalls = stats.allocation_stalls();
 }
 
-void ZStatHeap::set_at_relocate_end(const ZPageAllocatorStats& stats, size_t non_worker_relocated) {
-  const size_t reclaimed = stats.reclaimed() - MIN2(non_worker_relocated, stats.reclaimed());
+void ZStatHeap::at_relocate_end(const ZPageAllocatorStats& stats, bool record_stats) {
+  ZLocker<ZLock> locker(&_stat_lock);
 
   _at_relocate_end.capacity = stats.capacity();
   _at_relocate_end.capacity_high = capacity_high();
@@ -1414,24 +1831,87 @@ void ZStatHeap::set_at_relocate_end(const ZPageAllocatorStats& stats, size_t non
   _at_relocate_end.used = stats.used();
   _at_relocate_end.used_high = stats.used_high();
   _at_relocate_end.used_low = stats.used_low();
-  _at_relocate_end.allocated = allocated(stats.used(), reclaimed);
-  _at_relocate_end.garbage = garbage(reclaimed);
-  _at_relocate_end.reclaimed = reclaimed;
+  _at_relocate_end.used_generation = stats.used_generation();
+  _at_relocate_end.live = _at_mark_end.live - stats.promoted();
+  _at_relocate_end.garbage = garbage(stats.freed(), stats.compacted(), stats.promoted());
+  _at_relocate_end.mutator_allocated = mutator_allocated(stats.used_generation(), stats.freed(), stats.compacted());
+  _at_relocate_end.reclaimed = reclaimed(stats.freed(), stats.compacted(), stats.promoted());
+  _at_relocate_end.promoted = stats.promoted();
+  _at_relocate_end.compacted = stats.compacted();
+  _at_relocate_end.allocation_stalls = stats.allocation_stalls();
+
+  if (record_stats) {
+    _reclaimed_bytes.add(_at_relocate_end.reclaimed);
+  }
+}
+
+size_t ZStatHeap::reclaimed_avg() {
+  return _reclaimed_bytes.davg();
 }
 
 size_t ZStatHeap::max_capacity() {
   return _at_initialize.max_capacity;
 }
 
-size_t ZStatHeap::used_at_mark_start() {
+size_t ZStatHeap::used_at_collection_start() const {
+  return _at_collection_start.used;
+}
+
+size_t ZStatHeap::used_at_mark_start() const {
   return _at_mark_start.used;
 }
 
-size_t ZStatHeap::used_at_relocate_end() {
+size_t ZStatHeap::used_generation_at_mark_start() const {
+  return _at_mark_start.used_generation;
+}
+
+size_t ZStatHeap::live_at_mark_end() const {
+  return _at_mark_end.live;
+}
+
+size_t ZStatHeap::allocated_at_mark_end() const {
+  return _at_mark_end.mutator_allocated;
+}
+
+size_t ZStatHeap::garbage_at_mark_end() const {
+  return _at_mark_end.garbage;
+}
+
+size_t ZStatHeap::used_at_relocate_end() const {
   return _at_relocate_end.used;
 }
 
-void ZStatHeap::print() {
+size_t ZStatHeap::used_at_collection_end() const {
+  return used_at_relocate_end();
+}
+
+size_t ZStatHeap::stalls_at_mark_start() const {
+  return _at_mark_start.allocation_stalls;
+}
+
+size_t ZStatHeap::stalls_at_mark_end() const {
+  return _at_mark_end.allocation_stalls;
+}
+
+size_t ZStatHeap::stalls_at_relocate_start() const {
+  return _at_relocate_start.allocation_stalls;
+}
+
+size_t ZStatHeap::stalls_at_relocate_end() const {
+  return _at_relocate_end.allocation_stalls;
+}
+
+ZStatHeapStats ZStatHeap::stats() {
+  ZLocker<ZLock> locker(&_stat_lock);
+
+  return {
+    live_at_mark_end(),
+    used_at_relocate_end(),
+    reclaimed_avg()
+  };
+}
+
+void ZStatHeap::print(const ZGeneration* generation) const {
   log_info(gc, heap)("Min Capacity: "
                      ZSIZE_FMT, ZSIZE_ARGS(_at_initialize.min_capacity));
   log_info(gc, heap)("Max Capacity: "
@@ -1439,8 +1919,9 @@ void ZStatHeap::print() {
   log_info(gc, heap)("Soft Max Capacity: "
                      ZSIZE_FMT, ZSIZE_ARGS(_at_mark_start.soft_max_capacity));
 
-  ZStatTablePrinter table(10, 18);
-  log_info(gc, heap)("%s", table()
+  log_info(gc, heap)("Heap Statistics:");
+  ZStatTablePrinter heap_table(10, 18);
+  log_info(gc, heap)("%s", heap_table()
                      .fill()
                      .center("Mark Start")
                      .center("Mark End")
@@ -1449,7 +1930,7 @@ void ZStatHeap::print() {
                      .center("High")
                      .center("Low")
                      .end());
-  log_info(gc, heap)("%s", table()
+  log_info(gc, heap)("%s", heap_table()
                      .right("Capacity:")
                      .left(ZTABLE_ARGS(_at_mark_start.capacity))
                      .left(ZTABLE_ARGS(_at_mark_end.capacity))
@@ -1458,7 +1939,7 @@ void ZStatHeap::print() {
                      .left(ZTABLE_ARGS(_at_relocate_end.capacity_high))
                      .left(ZTABLE_ARGS(_at_relocate_end.capacity_low))
                      .end());
-  log_info(gc, heap)("%s", table()
+  log_info(gc, heap)("%s", heap_table()
                      .right("Free:")
                      .left(ZTABLE_ARGS(_at_mark_start.free))
                      .left(ZTABLE_ARGS(_at_mark_end.free))
@@ -1467,7 +1948,7 @@ void ZStatHeap::print() {
                      .left(ZTABLE_ARGS(_at_relocate_end.free_high))
                      .left(ZTABLE_ARGS(_at_relocate_end.free_low))
                      .end());
-  log_info(gc, heap)("%s", table()
+  log_info(gc, heap)("%s", heap_table()
                      .right("Used:")
                      .left(ZTABLE_ARGS(_at_mark_start.used))
                      .left(ZTABLE_ARGS(_at_mark_end.used))
@@ -1476,40 +1957,83 @@ void ZStatHeap::print() {
                      .left(ZTABLE_ARGS(_at_relocate_end.used_high))
                      .left(ZTABLE_ARGS(_at_relocate_end.used_low))
                      .end());
-  log_info(gc, heap)("%s", table()
+
+  log_info(gc, heap)("%s Generation Statistics:", generation->is_young() ? "Young" : "Old");
+  ZStatTablePrinter gen_table(10, 18);
+  log_info(gc, heap)("%s", gen_table()
+                     .fill()
+                     .center("Mark Start")
+                     .center("Mark End")
+                     .center("Relocate Start")
+                     .center("Relocate End")
+                     .end());
+  log_info(gc, heap)("%s", gen_table()
+                     .right("Used:")
+                     .left(ZTABLE_ARGS(_at_mark_start.used_generation))
+                     .left(ZTABLE_ARGS(_at_mark_end.used_generation))
+                     .left(ZTABLE_ARGS(_at_relocate_start.used_generation))
+                     .left(ZTABLE_ARGS(_at_relocate_end.used_generation))
+                     .end());
+  log_info(gc, heap)("%s", gen_table()
                      .right("Live:")
                      .left(ZTABLE_ARGS_NA)
                      .left(ZTABLE_ARGS(_at_mark_end.live))
-                     .left(ZTABLE_ARGS(_at_mark_end.live /* Same as at mark end */))
-                     .left(ZTABLE_ARGS(_at_mark_end.live /* Same as at mark end */))
-                     .left(ZTABLE_ARGS_NA)
-                     .left(ZTABLE_ARGS_NA)
+                     .left(ZTABLE_ARGS(_at_relocate_start.live))
+                     .left(ZTABLE_ARGS(_at_relocate_end.live))
                      .end());
-  log_info(gc, heap)("%s", table()
-                     .right("Allocated:")
-                     .left(ZTABLE_ARGS_NA)
-                     .left(ZTABLE_ARGS(_at_mark_end.allocated))
-                     .left(ZTABLE_ARGS(_at_relocate_start.allocated))
-                     .left(ZTABLE_ARGS(_at_relocate_end.allocated))
-                     .left(ZTABLE_ARGS_NA)
-                     .left(ZTABLE_ARGS_NA)
-                     .end());
-  log_info(gc, heap)("%s", table()
+  log_info(gc, heap)("%s", gen_table()
                      .right("Garbage:")
                      .left(ZTABLE_ARGS_NA)
                      .left(ZTABLE_ARGS(_at_mark_end.garbage))
                      .left(ZTABLE_ARGS(_at_relocate_start.garbage))
                      .left(ZTABLE_ARGS(_at_relocate_end.garbage))
-                     .left(ZTABLE_ARGS_NA)
-                     .left(ZTABLE_ARGS_NA)
                      .end());
-  log_info(gc, heap)("%s", table()
+  log_info(gc, heap)("%s", gen_table()
+                     .right("Allocated:")
+                     .left(ZTABLE_ARGS_NA)
+                     .left(ZTABLE_ARGS(_at_mark_end.mutator_allocated))
+                     .left(ZTABLE_ARGS(_at_relocate_start.mutator_allocated))
+                     .left(ZTABLE_ARGS(_at_relocate_end.mutator_allocated))
+                     .end());
+  log_info(gc, heap)("%s", gen_table()
                      .right("Reclaimed:")
                      .left(ZTABLE_ARGS_NA)
                      .left(ZTABLE_ARGS_NA)
                      .left(ZTABLE_ARGS(_at_relocate_start.reclaimed))
                      .left(ZTABLE_ARGS(_at_relocate_end.reclaimed))
+                     .end());
+  if (generation->is_young()) {
+    log_info(gc, heap)("%s", gen_table()
+                       .right("Promoted:")
+                       .left(ZTABLE_ARGS_NA)
+                       .left(ZTABLE_ARGS_NA)
+                       .left(ZTABLE_ARGS(_at_relocate_start.promoted))
+                       .left(ZTABLE_ARGS(_at_relocate_end.promoted))
+                       .end());
+  }
+  log_info(gc, heap)("%s", gen_table()
+                     .right("Compacted:")
                      .left(ZTABLE_ARGS_NA)
                      .left(ZTABLE_ARGS_NA)
+                     .left(ZTABLE_ARGS_NA)
+                     .left(ZTABLE_ARGS(_at_relocate_end.compacted))
+                     .end());
+}
+
+void ZStatHeap::print_stalls() const {
+  ZStatTablePrinter stall_table(20, 16);
+  log_info(gc, alloc)("%s", stall_table()
+                     .fill()
+                     .center("Mark Start")
+                     .center("Mark End")
+                     .center("Relocate Start")
+                     .center("Relocate End")
+                     .end());
+  log_info(gc, alloc)("%s", stall_table()
+                     .left("%s", "Allocation Stalls:")
+                     .center("%zu", _at_mark_start.allocation_stalls)
+                     .center("%zu", _at_mark_end.allocation_stalls)
+                     .center("%zu", _at_relocate_start.allocation_stalls)
+                     .center("%zu", _at_relocate_end.allocation_stalls)
                      .end());
 }

@@ -28,11 +28,11 @@
 #include <errno.h>
 #include <string.h>
 
-ZErrno::ZErrno() :
-    _error(errno) {}
+ZErrno::ZErrno()
+  : _error(errno) {}
 
-ZErrno::ZErrno(int error) :
-    _error(error) {}
+ZErrno::ZErrno(int error)
+  : _error(error) {}
 
 ZErrno::operator bool() const {
   return _error != 0;

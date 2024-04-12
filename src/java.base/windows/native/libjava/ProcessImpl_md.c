@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "io_util_md.h"
 #include <windows.h>
 #include <io.h>
+#include <wchar.h>
 
 /* We try to make sure that we can read and write 4095 bytes (the
  * fixed limit on Linux) to the pipe on all operating systems without
@@ -379,13 +380,22 @@ Java_java_lang_ProcessImpl_create(JNIEnv *env, jclass ignored,
                 if (!(*env)->ExceptionCheck(env)) {
                     jlong *handles = (*env)->GetLongArrayElements(env, stdHandles, NULL);
                     if (handles != NULL) {
-                        ret = processCreate(
-                            env,
-                            pcmd,
-                            penvBlock,
-                            pdir,
-                            handles,
-                            redirectErrorStream);
+                        // Copy command line to mutable char buffer; CreateProcessW may modify it
+                        jsize cmdLen = (*env)->GetStringLength(env, cmd);
+                        WCHAR *pcmdCopy = (WCHAR*)malloc((cmdLen + 1) * sizeof(WCHAR));
+                        if (pcmdCopy != NULL) {
+                            wmemcpy(pcmdCopy, pcmd, cmdLen);
+                            pcmdCopy[cmdLen] = 0;    // null terminate
+
+                            ret = processCreate(
+                                env,
+                                pcmd,
+                                penvBlock,
+                                pdir,
+                                handles,
+                                redirectErrorStream);
+                            free(pcmdCopy);   // free mutable command line
+                        }
                         (*env)->ReleaseLongArrayElements(env, stdHandles, handles, 0);
                     }
                     if (pdir != NULL)

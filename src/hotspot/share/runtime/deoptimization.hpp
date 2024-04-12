@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +57,9 @@ class DeoptimizationScope {
   DeoptimizationScope();
   ~DeoptimizationScope();
   // Mark a method, if already marked as dependent.
-  void mark(CompiledMethod* cm, bool inc_recompile_counts = true);
+  void mark(nmethod* nm, bool inc_recompile_counts = true);
   // Record this as a dependent method.
-  void dependent(CompiledMethod* cm);
+  void dependent(nmethod* nm);
 
   // Execute the deoptimization.
   // Make the nmethods not entrant, stackwalks and patch return pcs and sets post call nops.
@@ -184,7 +184,7 @@ class Deoptimization : AllStatic {
   static void deoptimize(JavaThread* thread, frame fr, DeoptReason reason = Reason_constraint);
 
 #if INCLUDE_JVMCI
-  static address deoptimize_for_missing_exception_handler(CompiledMethod* cm);
+  static address deoptimize_for_missing_exception_handler(nmethod* nm);
   static oop get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, bool& cache_init_error, TRAPS);
 #endif
 
@@ -264,16 +264,16 @@ class Deoptimization : AllStatic {
     int caller_actual_parameters() const { return _caller_actual_parameters; }
 
     // Accessors used by the code generator for the unpack stub.
-    static int size_of_deoptimized_frame_offset_in_bytes() { return offset_of(UnrollBlock, _size_of_deoptimized_frame); }
-    static int caller_adjustment_offset_in_bytes()         { return offset_of(UnrollBlock, _caller_adjustment);         }
-    static int number_of_frames_offset_in_bytes()          { return offset_of(UnrollBlock, _number_of_frames);          }
-    static int frame_sizes_offset_in_bytes()               { return offset_of(UnrollBlock, _frame_sizes);               }
-    static int total_frame_sizes_offset_in_bytes()         { return offset_of(UnrollBlock, _total_frame_sizes);         }
-    static int frame_pcs_offset_in_bytes()                 { return offset_of(UnrollBlock, _frame_pcs);                 }
-    static int counter_temp_offset_in_bytes()              { return offset_of(UnrollBlock, _counter_temp);              }
-    static int initial_info_offset_in_bytes()              { return offset_of(UnrollBlock, _initial_info);              }
-    static int unpack_kind_offset_in_bytes()               { return offset_of(UnrollBlock, _unpack_kind);               }
-    static int sender_sp_temp_offset_in_bytes()            { return offset_of(UnrollBlock, _sender_sp_temp);            }
+    static ByteSize size_of_deoptimized_frame_offset() { return byte_offset_of(UnrollBlock, _size_of_deoptimized_frame); }
+    static ByteSize caller_adjustment_offset()         { return byte_offset_of(UnrollBlock, _caller_adjustment);         }
+    static ByteSize number_of_frames_offset()          { return byte_offset_of(UnrollBlock, _number_of_frames);          }
+    static ByteSize frame_sizes_offset()               { return byte_offset_of(UnrollBlock, _frame_sizes);               }
+    static ByteSize total_frame_sizes_offset()         { return byte_offset_of(UnrollBlock, _total_frame_sizes);         }
+    static ByteSize frame_pcs_offset()                 { return byte_offset_of(UnrollBlock, _frame_pcs);                 }
+    static ByteSize counter_temp_offset()              { return byte_offset_of(UnrollBlock, _counter_temp);              }
+    static ByteSize initial_info_offset()              { return byte_offset_of(UnrollBlock, _initial_info);              }
+    static ByteSize unpack_kind_offset()               { return byte_offset_of(UnrollBlock, _unpack_kind);               }
+    static ByteSize sender_sp_temp_offset()            { return byte_offset_of(UnrollBlock, _sender_sp_temp);            }
 
     BasicType return_type() const { return _return_type; }
     void print();

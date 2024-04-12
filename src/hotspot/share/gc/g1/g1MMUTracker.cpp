@@ -136,7 +136,7 @@ void G1MMUTracker::add_pause(double start, double end) {
 //
 // When there are not enough GC events, i.e. we have a surplus budget, a new GC
 // pause can start right away, so return 0.
-double G1MMUTracker::when_sec(double current_timestamp, double pause_time) {
+double G1MMUTracker::when_sec(double current_timestamp, double pause_time) const {
   assert(pause_time > 0.0, "precondition");
 
   // If the pause is over the maximum, just assume that it's the maximum.
@@ -148,7 +148,7 @@ double G1MMUTracker::when_sec(double current_timestamp, double pause_time) {
   // Iterate from newest to oldest.
   for (int i = 0; i < _no_entries; ++i) {
     int index = trim_index(_head_index - i);
-    G1MMUTrackerElem *elem = &_array[index];
+    const G1MMUTrackerElem *elem = &_array[index];
     // Outside the window.
     if (elem->end_time() <= limit) {
       break;

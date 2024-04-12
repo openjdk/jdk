@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,14 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.DateFormatSymbols;
+import java.text.DecimalFormatSymbols;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
+import java.time.ZoneOffset;
+import java.time.chrono.*;
+import java.time.temporal.ChronoField;
 import java.util.*;
 
 import static java.util.Calendar.*;
@@ -450,5 +458,59 @@ public class BasicDateTime extends Basic {
         tryCatch("%%%", UnknownFormatConversionException.class);
         // perhaps an IllegalFormatArgumentIndexException should be defined?
         tryCatch("%<%", IllegalFormatFlagsException.class);
+
+        // %tF LocalDate
+        test("%tF", "2023-01-13", LocalDate.of(2023, 1, 13));
+        test("%tF", "2023-10-03", LocalDate.of(2023, 10, 3));
+        test("%tF", "0001-10-03", LocalDate.of(1, 10, 3));
+        test("%tF", "0012-10-03", LocalDate.of(12, 10, 3));
+        test("%tF", "0123-10-03", LocalDate.of(123, 10, 3));
+        test("%tF", "+12345-10-03", LocalDate.of(12345, 10, 3));
+        test("%tF", "+12345-10-03", LocalDateTime.of(12345, 10, 3, 0, 0, 0));
+        test("%tF", "+12345-10-03", OffsetDateTime.of(LocalDateTime.of(12345, 10, 3, 0, 0, 0), ZoneOffset.UTC));
+        test("%tF", "+12345-10-03", ZonedDateTime.of(LocalDateTime.of(12345, 10, 3, 0, 0, 0), ZoneOffset.UTC));
+        test("%tF", "-0001-10-03", LocalDate.of(-1, 10, 3));
+        test("%tF", "-0012-10-03", LocalDate.of(-12, 10, 3));
+        test("%tF", "-0123-10-03", LocalDate.of(-123, 10, 3));
+        test("%tF", "-1234-10-03", LocalDate.of(-1234, 10, 3));
+        test("%tF", "-12345-10-03", LocalDate.of(-12345, 10, 3));
+        test("%tF", "-12345-10-03", LocalDate.of(-12345, 10, 3));
+        test("%tF", "-12345-10-03", LocalDateTime.of(-12345, 10, 3, 0, 0, 0));
+        test("%tF", "-12345-10-03", OffsetDateTime.of(LocalDateTime.of(-12345, 10, 3, 0, 0, 0), ZoneOffset.UTC));
+        test("%tF", "-12345-10-03", ZonedDateTime.of(LocalDateTime.of(-12345, 10, 3, 0, 0, 0), ZoneOffset.UTC));
+
+        // check minusSign
+        int year = 2023, month = 1, dayOfMonth = 13;
+        String specifier = "%tF";
+        for (Locale locale : Locale.getAvailableLocales()) {
+            char minusSign = DecimalFormatSymbols.getInstance(locale).getMinusSign();
+            String str = new Formatter(new StringBuilder(), locale)
+                    .format(specifier, LocalDate.of(year, month, dayOfMonth))
+                    .toString();
+            test(locale, specifier, minusSign + str, LocalDate.of(-year, month, dayOfMonth));
+        }
+
+        // ja-JP-u-ca-japanese
+        ChronoLocalDate jpDate = Chronology
+                .ofLocale(Locale.forLanguageTag("ja-JP-u-ca-japanese"))
+                .dateNow();
+        test(Locale.JAPANESE,
+                "%tF",
+                String.format(
+                        "%04d-%02d-%02d",
+                        jpDate.get(ChronoField.YEAR_OF_ERA),
+                        jpDate.get(ChronoField.MONTH_OF_YEAR),
+                        jpDate.get(ChronoField.DAY_OF_MONTH)),
+                jpDate);
+
+        ChronoLocalDate jpDate1 = JapaneseChronology.INSTANCE.dateNow();
+        test(Locale.JAPANESE,
+                "%tF",
+                String.format(
+                        "%04d-%02d-%02d",
+                        jpDate1.get(ChronoField.YEAR_OF_ERA),
+                        jpDate1.get(ChronoField.MONTH_OF_YEAR),
+                        jpDate1.get(ChronoField.DAY_OF_MONTH)),
+                jpDate1);
     }
 }

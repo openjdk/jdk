@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@ package jdk.test.lib.hexdump;
 
 import jdk.test.lib.hexdump.HexPrinter;
 
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.Arguments;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -36,6 +37,9 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 
 /*
@@ -43,12 +47,12 @@ import java.nio.ByteBuffer;
  * @summary Check HexPrinter formatting
  * @library /test/lib
  * @compile HexPrinterTest.java
- * @run testng jdk.test.lib.hexdump.HexPrinterTest
+ * @run junit jdk.test.lib.hexdump.HexPrinterTest
  */
-public class HexPrinterTest {
+class HexPrinterTest {
 
     @Test
-    static void testMinimalToStringByteArray() {
+    void testMinimalToStringByteArray() {
         int len = 16;
         byte[] bytes = genData(len);
         StringBuilder expected = new StringBuilder(bytes.length * 2);
@@ -56,35 +60,34 @@ public class HexPrinterTest {
             expected.append(String.format("%02x", bytes[i]));
         String actual = HexPrinter.minimal().toString(bytes);
         System.out.println(actual);
-        Assert.assertEquals(actual, expected.toString(), "Minimal format incorrect");
+        assertEquals(expected.toString(), actual, "Minimal format incorrect");
     }
 
-    @DataProvider(name = "ColumnParams")
-    Object[][] columnParams() {
-        return new Object[][]{
-                {"%4d: ", "%d ", 10, " ; ", 50, HexPrinter.Formatters.PRINTABLE, "\n"},
-                {"%03o: ", "%d ", 16, " ; ", 50, HexPrinter.Formatters.ofPrimitive(byte.class, ""), "\n"},
-                {"%5d: ", "%02x:", 16, " ; ", 50, HexPrinter.Formatters.ofPrimitive(byte.class, ""), "\n"},
-                {"%5d: ", "%3d", 16, " ; ", 50, HexPrinter.Formatters.ofPrimitive(byte.class, ""), "\n"},
-                {"%05o: ", "%3o", 8, " ; ", 50, HexPrinter.Formatters.ofPrimitive(byte.class, ""), "\n"},
-                {"%6x: ", "%02x", 8, " | ", 50, HexPrinter.Formatters.ofPrimitive(byte.class, "%d "), "\n"},
-                {"%2x: ", "%02x", 8, " | ", 50, HexPrinter.Formatters.PRINTABLE, "\n"},
-                {"%5d: ", "%02x", 16, " | ", 50, HexPrinter.Formatters.ofPrimitive(short.class, "%d "), "\n"},
-        };
+    static Stream<Arguments> columnParams() {
+        return Stream.of(
+                Arguments.of("%4d: ", "%d ", 10, " ; ", 50, HexPrinter.Formatters.PRINTABLE, "\n"),
+                Arguments.of("%03o: ", "%d ", 16, " ; ", 50, HexPrinter.Formatters.ofPrimitive(byte.class, ""), "\n"),
+                Arguments.of("%5d: ", "%02x:", 16, " ; ", 50, HexPrinter.Formatters.ofPrimitive(byte.class, ""), "\n"),
+                Arguments.of("%5d: ", "%3d", 16, " ; ", 50, HexPrinter.Formatters.ofPrimitive(byte.class, ""), "\n"),
+                Arguments.of("%05o: ", "%3o", 8, " ; ", 50, HexPrinter.Formatters.ofPrimitive(byte.class, ""), "\n"),
+                Arguments.of("%6x: ", "%02x", 8, " | ", 50, HexPrinter.Formatters.ofPrimitive(byte.class, "%d "), "\n"),
+                Arguments.of("%2x: ", "%02x", 8, " | ", 50, HexPrinter.Formatters.PRINTABLE, "\n"),
+                Arguments.of("%5d: ", "%02x", 16, " | ", 50, HexPrinter.Formatters.ofPrimitive(short.class, "%d "), "\n")
+        );
     }
 
-    @DataProvider(name = "BuiltinParams")
-    Object[][] builtinParams() {
-        return new Object[][]{
-                {"minimal", "", "%02x", 16, "", 64, HexPrinter.Formatters.NONE, ""},
-                {"canonical", "%08x  ", "%02x ", 16, "|", 31, HexPrinter.Formatters.PRINTABLE, "|" + System.lineSeparator()},
-                {"simple", "%04x: ", "%02x ", 16, " // ", 64, HexPrinter.Formatters.ASCII, System.lineSeparator()},
-                {"source", "    ", "(byte)%3d, ", 8, " // ", 64, HexPrinter.Formatters.PRINTABLE,  System.lineSeparator()},
-        };
+    static Stream<Arguments> builtinParams() {
+        return Stream.of(
+                Arguments.of("minimal", "", "%02x", 16, "", 64, HexPrinter.Formatters.NONE, ""),
+                Arguments.of("canonical", "%08x  ", "%02x ", 16, "|", 31, HexPrinter.Formatters.PRINTABLE, "|" + System.lineSeparator()),
+                Arguments.of("simple", "%04x: ", "%02x ", 16, " // ", 64, HexPrinter.Formatters.ASCII, System.lineSeparator()),
+                Arguments.of("source", "    ", "(byte)%3d, ", 8, " // ", 64, HexPrinter.Formatters.PRINTABLE, System.lineSeparator())
+        );
     }
 
-    @Test(dataProvider = "BuiltinParams")
-    public void testBuiltins(String name, String offsetFormat, String binFormat, int colWidth,
+    @ParameterizedTest
+    @MethodSource("builtinParams")
+    void testBuiltins(String name, String offsetFormat, String binFormat, int colWidth,
                              String annoDelim, int annoWidth,
                              HexPrinter.Formatter mapper, String lineSep) {
         HexPrinter f = switch (name) {
@@ -104,11 +107,12 @@ public class HexPrinterTest {
                 .formatter(mapper, annoDelim, annoWidth)
                 .withLineSeparator(lineSep);
         String expected = f2.toString();
-        Assert.assertEquals(actual, expected, "toString of " + name + " does not match");
+        assertEquals(expected, actual, "toString of " + name + " does not match");
     }
 
-    @Test(dataProvider = "ColumnParams")
-    public void testToStringTwoLines(String offsetFormat, String binFormat, int colWidth,
+    @ParameterizedTest
+    @MethodSource("columnParams")
+    void testToStringTwoLines(String offsetFormat, String binFormat, int colWidth,
                                      String annoDelim, int annoWidth,
                                      HexPrinter.Formatter mapper, String lineSep) {
         HexPrinter f = HexPrinter.simple()
@@ -119,7 +123,7 @@ public class HexPrinterTest {
         testParams(f, offsetFormat, binFormat, colWidth, annoDelim, annoWidth, mapper, lineSep);
     }
 
-    public static void testParams(HexPrinter printer, String offsetFormat, String binFormat, int colWidth,
+    static void testParams(HexPrinter printer, String offsetFormat, String binFormat, int colWidth,
                                   String annoDelim, int annoWidth,
                                   HexPrinter.Formatter mapper, String lineSep) {
         byte[] bytes = genData(colWidth * 2);
@@ -136,22 +140,22 @@ public class HexPrinterTest {
             if (i % colWidth == 0) {
                 String offset = String.format(offsetFormat, i);
                 l = offset.length();
-                Assert.assertEquals(out.substring(ndx, ndx + l), offset,
+                assertEquals(offset, out.substring(ndx, ndx + l),
                         "offset format mismatch: " + ndx);
                 ndx += l;
                 valuesStart = ndx;
             }
             String value = String.format(binFormat, (0xff & bytes[i]));
             l = value.length();
-            Assert.assertEquals(out.substring(ndx, ndx + l), value,
+            assertEquals(value, out.substring(ndx, ndx + l),
                     "value format mismatch: " + ndx + ", i: " + i);
             ndx += l;
             if (((i + 1) % colWidth) == 0) {
                 // Rest of line is for padding, delimiter, formatter
                 String padding = " ".repeat(padToWidth - (ndx - valuesStart));
-                Assert.assertEquals(out.substring(ndx, ndx + padding.length()), padding, "padding");
+                assertEquals(padding, out.substring(ndx, ndx + padding.length()), "padding");
                 ndx += padding.length();
-                Assert.assertEquals(out.substring(ndx, ndx + annoDelim.length()), annoDelim,
+                assertEquals(annoDelim, out.substring(ndx, ndx + annoDelim.length()),
                         "delimiter mismatch");
                 ndx += annoDelim.length();
 
@@ -162,7 +166,7 @@ public class HexPrinterTest {
     }
 
     @Test
-    static void testPrintable() {
+    void testPrintable() {
         String expected =
                 "................................" +
                 " !\"#$%&'()*+,-./0123456789:;<=>?" +
@@ -179,11 +183,11 @@ public class HexPrinterTest {
                         .withBytesFormat("", 256)
                         .formatter(HexPrinter.Formatters.PRINTABLE, "", 512);
         String actual = p.toString(bytes);
-        Assert.assertEquals(actual, expected, "Formatters.Printable mismatch");
+        assertEquals(expected, actual, "Formatters.Printable mismatch");
     }
 
     @Test
-    static void testASCII() {
+    void testASCII() {
         String expected = "\\nul\\soh\\stx\\etx\\eot\\enq\\ack\\bel\\b\\t\\n\\vt\\f\\r\\so\\si\\dle" +
                 "\\dc1\\dc2\\dc3\\dc4\\nak\\syn\\etb\\can\\em\\sub\\esc\\fs\\gs\\rs\\us" +
                 " !\"#$%&'()*+,-./0123456789:;<=>?" +
@@ -204,25 +208,25 @@ public class HexPrinterTest {
                         .withBytesFormat("", 256)
                         .formatter(HexPrinter.Formatters.ASCII, "", 256);
         String actual = p.toString(bytes);
-        Assert.assertEquals(actual, expected, "Formatters.ASCII mismatch");
+        assertEquals(expected, actual, "Formatters.ASCII mismatch");
     }
 
-    @DataProvider(name = "PrimitiveFormatters")
-    Object[][] formatterParams() {
-        return new Object[][]{
-                {byte.class, ""},
-                {byte.class, "%02x: "},
-                {short.class, "%d "},
-                {int.class, "%08x, "},
-                {long.class, "%16x "},
-                {float.class, "%3.4f "},
-                {double.class, "%6.3g "},
-                {boolean.class, "%b "},
-        };
+    static Stream<Arguments> formatterParams() {
+        return Stream.of(
+                Arguments.of(byte.class, ""),
+                Arguments.of(byte.class, "%02x: "),
+                Arguments.of(short.class, "%d "),
+                Arguments.of(int.class, "%08x, "),
+                Arguments.of(long.class, "%16x "),
+                Arguments.of(float.class, "%3.4f "),
+                Arguments.of(double.class, "%6.3g "),
+                Arguments.of(boolean.class, "%b ")
+        );
     }
 
-    @Test(dataProvider = "PrimitiveFormatters")
-    public void testFormatter(Class<?> primClass, String fmtString) {
+    @ParameterizedTest
+    @MethodSource("formatterParams")
+    void testFormatter(Class<?> primClass, String fmtString) {
         HexPrinter.Formatter formatter = HexPrinter.Formatters.ofPrimitive(primClass, fmtString);
         // Create a byte array with data for two lines
         int colWidth = 8;
@@ -235,22 +239,23 @@ public class HexPrinterTest {
                 formatter.annotate(in, sb);
                 Object n = readPrimitive(primClass, in2);
                 String expected = String.format(fmtString, n);
-                Assert.assertEquals(sb.toString(), expected, "mismatch");
+                assertEquals(expected, sb.toString(), "mismatch");
                 sb.setLength(0);
             }
         } catch (IOException ioe) {
             // EOF is done
         }
         try {
-            Assert.assertEquals(in.available(), 0, "not all input consumed");
-            Assert.assertEquals(in2.available(), 0, "not all 2nd stream input consumed");
+            assertEquals(0, in.available(), "not all input consumed");
+            assertEquals(0, in2.available(), "not all 2nd stream input consumed");
         } catch (IOException ioe) {
             //
         }
     }
 
-    @Test(dataProvider = "PrimitiveFormatters")
-    static void testHexPrinterPrimFormatter(Class<?> primClass, String fmtString) {
+    @ParameterizedTest
+    @MethodSource("formatterParams")
+    void testHexPrinterPrimFormatter(Class<?> primClass, String fmtString) {
         // Create a byte array with data for two lines
         int colWidth = 8;
         byte[] bytes = genData(colWidth);
@@ -264,7 +269,7 @@ public class HexPrinterTest {
         String expected = HexPrinter.simple()
                 .formatter(HexPrinter.Formatters.ofPrimitive(primClass, fmtString))
                 .toString(bytes);
-        Assert.assertEquals(actual, expected, "mismatch");
+        assertEquals(expected, actual, "mismatch");
     }
 
     private static Object readPrimitive(Class<?> primClass, DataInputStream in) throws IOException {
@@ -289,22 +294,20 @@ public class HexPrinterTest {
         }
     }
 
-    @DataProvider(name = "sources")
-    Object[][] sources() {
-        return new Object[][]{
-                {genBytes(21), 0, -1},
-                {genBytes(21), 5, 12},
-        };
+    static Stream<Arguments> sources() {
+        return Stream.of(
+                Arguments.of(genBytes(21), 0, -1),
+                Arguments.of(genBytes(21), 5, 12)
+        );
     }
 
-    @DataProvider(name = "badsources")
-    Object[][] badSources() {
-        return new Object[][]{
-                {genBytes(21), 5, 22},
-        };
+    static Stream<Arguments> badSources() {
+        return Stream.of(
+                Arguments.of(genBytes(21), 5, 22)
+        );
     }
 
-    public static byte[] genData(int len) {
+    static byte[] genData(int len) {
         // Create a byte array with data for two lines
         byte[] bytes = new byte[len];
         for (int i = 0; i < len / 2; i++) {
@@ -314,7 +317,7 @@ public class HexPrinterTest {
         return bytes;
     }
 
-    public static byte[] genFloat(int len) {
+    static byte[] genFloat(int len) {
         byte[] bytes = null;
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
              DataOutputStream out = new DataOutputStream(baos)) {
@@ -327,7 +330,7 @@ public class HexPrinterTest {
         return bytes;
     }
 
-    public static byte[] genDouble(int len) {
+    static byte[] genDouble(int len) {
         byte[] bytes = null;
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
              DataOutputStream out = new DataOutputStream(baos)) {
@@ -340,33 +343,38 @@ public class HexPrinterTest {
         return bytes;
     }
 
-    public static byte[] genBytes(int len) {
+    static byte[] genBytes(int len) {
         byte[] bytes = new byte[len];
         for (int i = 0; i < len; i++)
             bytes[i] = (byte) ('A' + i);
         return bytes;
     }
 
-    public ByteBuffer genByteBuffer(int len) {
+    ByteBuffer genByteBuffer(int len) {
         return ByteBuffer.wrap(genBytes(len));
     }
 
-    public InputStream genInputStream(int len) {
+    InputStream genInputStream(int len) {
         return new ByteArrayInputStream(genBytes(len));
     }
 
     @Test
-    public void testNilPrinterBigBuffer() {
+    void testNilPrinterBigBuffer() {
         byte[] bytes = new byte[1024];
         HexPrinter p = HexPrinter.minimal();
         String r = p.toString(bytes);
-        Assert.assertEquals(r.length(), bytes.length * 2, "encoded byte wrong size");
-        Assert.assertEquals(r.replace("00", "").length(), 0, "contents not all zeros");
+        assertEquals(bytes.length * 2, r.length(), "encoded byte wrong size");
+        assertEquals(0, r.replace("00", "").length(), "contents not all zeros");
     }
 
-    @Test(dataProvider = "badsources",
-            expectedExceptions = java.lang.IndexOutOfBoundsException.class)
-    public void testBadToStringByteBuffer(byte[] bytes, int offset, int length) {
+    @ParameterizedTest
+    @MethodSource("badSources")
+    void testBadToStringByteBuffer(byte[] bytes, int offset, int length) {
+        assertThrows(java.lang.IndexOutOfBoundsException.class,
+                () -> testThrowsForBadToStringByteBuffer(bytes, offset, length));
+    }
+
+    void testThrowsForBadToStringByteBuffer(byte[] bytes, int offset, int length) {
         if (length < 0)
             length = bytes.length - offset;
         ByteBuffer bb = ByteBuffer.wrap(bytes, 0, bytes.length);
@@ -381,11 +389,12 @@ public class HexPrinterTest {
             actual = HexPrinter.simple().toString(bb, offset, length);
         System.out.println(actual);
         String expected = HexPrinter.simple().toString(bytes, offset, length);
-        Assert.assertEquals(actual, expected, "mismatch in format()");
+        assertEquals(expected, actual, "mismatch in format()");
     }
 
-    @Test(dataProvider = "sources")
-    public void testToStringByteBuffer(byte[] bytes, int offset, int length) {
+    @ParameterizedTest
+    @MethodSource("sources")
+    void testToStringByteBuffer(byte[] bytes, int offset, int length) {
         if (length < 0)
             length = bytes.length - offset;
         ByteBuffer bb = ByteBuffer.wrap(bytes, 0, bytes.length);
@@ -400,11 +409,12 @@ public class HexPrinterTest {
             actual = HexPrinter.simple().toString(bb, offset, length);
         System.out.println(actual);
         String expected = HexPrinter.simple().toString(bytes, offset, length);
-        Assert.assertEquals(actual, expected, "mismatch in format()");
+        assertEquals(expected, actual, "mismatch in format()");
     }
 
-    @Test(dataProvider = "sources")
-    public void testFormatBytes(byte[] bytes, int offset, int length) {
+    @ParameterizedTest
+    @MethodSource("sources")
+    void testFormatBytes(byte[] bytes, int offset, int length) {
         int len = length >= 0 ? length : bytes.length;
         System.out.printf("Source: %s, off: %d, len: %d%n",
                 "bytes", offset, len);
@@ -416,11 +426,12 @@ public class HexPrinterTest {
         String actual = sb.toString();
         System.out.println(actual);
         String expected = HexPrinter.simple().toString(bytes, offset, len);
-        Assert.assertEquals(actual, expected, "mismatch in format()");
+        assertEquals(expected, actual, "mismatch in format()");
     }
 
-    @Test(dataProvider = "sources")
-    public void testFormatByteBuffer(byte[] bytes, int offset, int length) {
+    @ParameterizedTest
+    @MethodSource("sources")
+    void testFormatByteBuffer(byte[] bytes, int offset, int length) {
         if (length < 0)
             length = bytes.length - offset;
         ByteBuffer bb = ByteBuffer.wrap(bytes, 0, bytes.length);
@@ -436,11 +447,12 @@ public class HexPrinterTest {
         String actual = sb.toString();
         System.out.println(actual);
         String expected = HexPrinter.simple().toString(bytes, offset, length);
-        Assert.assertEquals(actual, expected, "mismatch in format()");
+        assertEquals(expected, actual, "mismatch in format()");
     }
 
-    @Test(dataProvider = "sources")
-    public void testFormatInputStream(byte[] bytes, int offset, int length) {
+    @ParameterizedTest
+    @MethodSource("sources")
+    void testFormatInputStream(byte[] bytes, int offset, int length) {
         // Offset is ignored
         InputStream is = new ByteArrayInputStream(bytes, 0, length);
         StringBuilder sb = new StringBuilder();
@@ -450,32 +462,37 @@ public class HexPrinterTest {
         String actual = sb.toString();
         System.out.println(actual);
         String expected = HexPrinter.simple().toString(bytes, 0, length);
-        Assert.assertEquals(actual, expected, "mismatch in format()");
+        assertEquals(expected, actual, "mismatch in format()");
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNullByteArray() {
-        HexPrinter.simple().dest(System.out).format((byte[]) null);
+    @Test
+    void testNullByteArray() {
+        assertThrows(NullPointerException.class,
+                () -> HexPrinter.simple().dest(System.out).format((byte[]) null));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNullByteArrayOff() {
-        HexPrinter.simple().dest(System.out).format((byte[]) null, 0, 1);
+    @Test
+    void testNullByteArrayOff() {
+        assertThrows(NullPointerException.class,
+                () -> HexPrinter.simple().dest(System.out).format((byte[]) null, 0, 1));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNullByteBuffer() {
-        HexPrinter.simple().dest(System.out).format((ByteBuffer) null);
+    @Test
+    void testNullByteBuffer() {
+        assertThrows(NullPointerException.class,
+                () -> HexPrinter.simple().dest(System.out).format((ByteBuffer) null));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNullByteBufferOff() {
-        HexPrinter.simple().dest(System.out).format((ByteBuffer) null, 0, 1);
+    @Test
+    void testNullByteBufferOff() {
+        assertThrows(NullPointerException.class,
+                () -> HexPrinter.simple().dest(System.out).format((ByteBuffer) null, 0, 1));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNullInputStream() {
-        HexPrinter.simple().dest(System.out).format((InputStream) null);
+    @Test
+    void testNullInputStream() {
+        assertThrows(NullPointerException.class, () ->
+                HexPrinter.simple().dest(System.out).format((InputStream) null));
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,20 +48,31 @@
  */
 package compiler.runtime;
 
+import java.lang.ref.Cleaner;
 import java.util.*;
 
 public class Test8168712 {
     static HashSet<Test8168712> m = new HashSet<>();
+
+    // One cleaner thread for cleaning all the instances. Otherwise, we get OOME.
+    static Cleaner cleaner = Cleaner.create();
+
+    public Test8168712() {
+        cleaner.register(this, () -> cleanup());
+    }
+
     public static void main(String args[]) {
         int i = 0;
         while (i++<15000) {
             test();
         }
     }
+
     static Test8168712 test() {
         return new Test8168712();
     }
-    protected void finalize() {
+
+    public void cleanup() {
         m.add(this);
     }
 }
