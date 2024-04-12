@@ -2596,7 +2596,7 @@ void VM_HeapDumper::dump_vthread(oop vt, AbstractDumpWriter* segment_writer) {
 }
 
 // dump the heap to given path.
-int HeapDumper::dump(const char* path, outputStream* out, int compression, bool overwrite, uint num_dump_threads) {
+int HeapDumper::dump(const char* path, outputStream* out, int compression, bool overwrite, int num_dump_threads) {
   assert(path != nullptr && strlen(path) > 0, "path missing");
 
   // print message in interactive case
@@ -2604,6 +2604,11 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
     out->print_cr("Dumping heap to %s ...", path);
     timer()->start();
   }
+
+  if (num_dump_threads < 0) {
+    num_dump_threads = default_num_of_dump_threads();
+  }
+
   // create JFR event
   EventHeapDump event;
 
@@ -2630,7 +2635,7 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
   }
 
   // generate the segmented heap dump into separate files
-  VM_HeapDumper dumper(&writer, _gc_before_heap_dump, _oome, num_dump_threads);
+  VM_HeapDumper dumper(&writer, _gc_before_heap_dump, _oome, (uint)num_dump_threads);
   VMThread::execute(&dumper);
 
   // record any error that the writer may have encountered

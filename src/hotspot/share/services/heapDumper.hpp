@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,8 @@ class HeapDumper : public StackObj {
   // dumps the heap to the specified file, returns 0 if success.
   // additional info is written to out if not null.
   // compression >= 0 creates a gzipped file with the given compression level.
-  // parallel_thread_num >= 0 indicates thread numbers of parallel object dump
-  int dump(const char* path, outputStream* out = nullptr, int compression = -1, bool overwrite = false, uint parallel_thread_num = 1);
+  // parallel_thread_num >= 0 indicates thread numbers of parallel object dump, -1 means "auto select".
+  int dump(const char* path, outputStream* out = nullptr, int compression = -1, bool overwrite = false, int parallel_thread_num = -1);
 
   // returns error message (resource allocated), or null if no error
   char* error_as_C_string() const;
@@ -71,8 +71,8 @@ class HeapDumper : public StackObj {
   static void dump_heap_from_oome()    NOT_SERVICES_RETURN;
 
   // Parallel thread number for heap dump, initialize based on active processor count.
-  static uint default_num_of_dump_threads() {
-    return MAX2<uint>(1, (uint)os::initial_active_processor_count() * 3 / 8);
+  static int default_num_of_dump_threads() {
+    return MAX2<int>(1, os::initial_active_processor_count() * 3 / 8);
   }
 };
 
