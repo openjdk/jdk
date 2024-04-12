@@ -30,7 +30,6 @@
 #include "code/codeCache.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/serial/cardTableRS.hpp"
-#include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/serial/serialFullGC.hpp"
 #include "gc/serial/serialHeap.inline.hpp"
 #include "gc/serial/serialMemoryPools.hpp"
@@ -762,12 +761,40 @@ bool SerialHeap::no_allocs_since_save_marks() {
          _old_gen->no_allocs_since_save_marks();
 }
 
+template <typename OopClosureType>
+static void oop_iterate_from(OopClosureType* blk, ContiguousSpace* space, HeapWord* from) {
+  assert(from != nullptr, "precondition");
+  HeapWord* t;
+  HeapWord* p = from;
+
+  const intx interval = PrefetchScanIntervalInBytes;
+  do {
+    t = space->top();
+    while (p < t) {
+      Prefetch::write(p, interval);
+      oop m = cast_to_oop(p);
+      p += m->oop_iterate_size(blk);
+    }
+  } while (t < space->top());
+}
+
 void SerialHeap::scan_evacuated_objs(YoungGenScanClosure* young_cl,
                                      OldGenScanClosure* old_cl) {
   do {
-    young_gen()->oop_since_save_marks_iterate(young_cl);
-    old_gen()->oop_since_save_marks_iterate(old_cl);
-  } while (!no_allocs_since_save_marks());
+    {
+      HeapWord* saved_top = young_gen()->saved_mark_word();
+      oop_iterate_from(young_cl, young_gen()->to(), saved_top);
+      young_gen()->set_saved_mark_word();
+    }
+    {
+      HeapWord* saved_top = old_gen()->saved_mark_word();
+      oop_iterate_from(old_cl, old_gen()->space(), saved_top);
+      old_gen()->set_saved_mark_word();
+    }
+    if (young_gen()->no_allocs_since_save_marks()) {
+      break;
+    }
+  } while (true);
   guarantee(young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
 }
 

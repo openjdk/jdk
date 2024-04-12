@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "gc/serial/cardTableRS.hpp"
-#include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/serial/serialHeap.inline.hpp"
 #include "gc/serial/serialStringDedup.inline.hpp"
@@ -909,7 +908,6 @@ void DefNewGeneration::drain_promo_failure_scan_stack() {
 void DefNewGeneration::save_marks() {
   set_saved_mark_word();
 }
-
 
 bool DefNewGeneration::no_allocs_since_save_marks() {
   return saved_mark_at_top();
