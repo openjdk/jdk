@@ -98,6 +98,9 @@ public class stoplis001 {
         // argHandler.getTransportPort() returns a free port (different from the listening port in cArgs2)
         Map<String,? extends com.sun.jdi.connect.Connector.Argument> cArgs1 = initConnector(argHandler.getTransportPort());
 
+        log.display("cArgs1: " + cArgs1);
+        log.display("cArgs2: " + cArgs2);
+
 /* Check that an Exception is thrown if ListeningConnector.stopListening
  has been invoked with argument map different from the one given for
  a previous ListeningConnector.startListening() invocation */
