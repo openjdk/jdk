@@ -85,7 +85,7 @@ public class CipherInputStream extends FilterInputStream {
     /* the buffer holding data that have been read in from the
        underlying stream, but have not been processed by the cipher
        engine. */
-    private final byte[] ibuffer = new byte[8192512];
+    private final byte[] ibuffer = new byte[8192];
 
     // having reached the end of the underlying input stream
     private boolean done = false;
