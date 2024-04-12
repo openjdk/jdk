@@ -63,7 +63,6 @@ import org.openide.nodes.Node;
 import org.openide.util.Exceptions;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
-import org.openide.util.RequestProcessor;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
@@ -77,7 +76,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     public static final String PREFERRED_ID = "OutlineTopComponent";
     private static final GraphDocument document = new GraphDocument();
     private static final int WORK_UNITS = 10000;
-    private static final RequestProcessor RP = new RequestProcessor("OutlineTopComponent", 1);
     private static final FileFilter xmlFileFilter = new FileFilter() {
         @Override
         public boolean accept(File f) {
@@ -89,6 +87,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             return "Graph files (*.xml)";
         }
     };
+    private static final Server server = new Server(document, OutlineTopComponent::loadContext);
     public static OutlineTopComponent instance;
     private final Set<FolderNode> selectedFolders = new HashSet<>();
     private ExplorerManager manager;
@@ -106,7 +105,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         setToolTipText(NbBundle.getMessage(OutlineTopComponent.class, "HINT_OutlineTopComponent"));
         initListView();
         initToolbar();
-        initReceivers();
+        server.startServer();
     }
 
     public static GraphDocument getDocument() {
@@ -229,10 +228,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         saveAction.setEnabled(enableButton);
         saveAsAction.setEnabled(enableButton);
         removeAllAction.setEnabled(enableButton);
-    }
-
-    private void initReceivers() {
-        new Server(document, this::loadContext);
     }
 
     @Override
@@ -463,11 +458,9 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     /**
      * Loads and opens the given a graph contexts (opened graphs and visible nodes).
      */
-    private void loadContext(GraphContext context) {
-        RP.post(() -> {
-            final GraphViewer viewer = Lookup.getDefault().lookup(GraphViewer.class);
-            assert viewer != null;
-
+    private static void loadContext(GraphContext context) {
+        final GraphViewer viewer = Lookup.getDefault().lookup(GraphViewer.class);
+        if (viewer != null) {
             final int difference = context.posDiff().get();
             final InputGraph firstGraph = context.inputGraph();
             final Set<Integer> visibleNodes = context.visibleNodes();
@@ -490,7 +483,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
                     }
                 }
             });
-        });
+        }
     }
 
     /**
@@ -498,58 +491,56 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
      * Parse the XML file, add the parsed document to the workspace, and load associated contexts if specified.
      */
     private void loadGraphDocument(String path, boolean loadContext) throws IOException {
-        RP.post(() -> {
-            if (path == null || Files.notExists(Path.of(path))) {
-                return;
-            }
-            File file = new File(path);
-            final FileChannel channel;
-            final long start;
-            try {
-                channel = FileChannel.open(file.toPath(), StandardOpenOption.READ);
-                start = channel.size();
-            } catch (Exception ex) {
-                Exceptions.printStackTrace(ex);
-                return;
+        if (path == null || Files.notExists(Path.of(path))) {
+            return;
+        }
+        File file = new File(path);
+        final FileChannel channel;
+        final long start;
+        try {
+            channel = FileChannel.open(file.toPath(), StandardOpenOption.READ);
+            start = channel.size();
+        } catch (Exception ex) {
+            Exceptions.printStackTrace(ex);
+            return;
+        }
+
+        final ProgressHandle handle = ProgressHandleFactory.createHandle("Opening file " + file.getName());
+        handle.start(WORK_UNITS);
+
+        ParseMonitor monitor = new ParseMonitor() {
+            @Override
+            public void updateProgress() {
+                try {
+                    int prog = (int) (WORK_UNITS * (double) channel.position() / (double) start);
+                    handle.progress(prog);
+                } catch (IOException ignored) {
+                }
             }
 
-            final ProgressHandle handle = ProgressHandleFactory.createHandle("Opening file " + file.getName());
-            handle.start(WORK_UNITS);
+            @Override
+            public void setState(String state) {
+                updateProgress();
+                handle.progress(state);
+            }
+        };
+        try {
+            if (file.getName().endsWith(".xml")) {
+                final Parser parser = new Parser(channel, monitor, document, loadContext ? OutlineTopComponent::loadContext : null);
+                parser.parse();
 
-            ParseMonitor monitor = new ParseMonitor() {
-                @Override
-                public void updateProgress() {
-                    try {
-                        int prog = (int) (WORK_UNITS * (double) channel.position() / (double) start);
-                        handle.progress(prog);
-                    } catch (IOException ignored) {
-                    }
+                for (Node child : manager.getRootContext().getChildren().getNodes(true)) {
+                    // Nodes a lazily created. By expanding and collapsing they are all initialized
+                    ((BeanTreeView) this.treeView).expandNode(child);
+                    ((BeanTreeView) this.treeView).collapseNode(child);
                 }
 
-                @Override
-                public void setState(String state) {
-                    updateProgress();
-                    handle.progress(state);
-                }
-            };
-            try {
-                if (file.getName().endsWith(".xml")) {
-                    final Parser parser = new Parser(channel, monitor, document, loadContext ? this::loadContext : null);
-                    parser.parse();
-
-                    for (Node child : manager.getRootContext().getChildren().getNodes(true)) {
-                        // Nodes a lazily created. By expanding and collapsing they are all initialized
-                        ((BeanTreeView) this.treeView).expandNode(child);
-                        ((BeanTreeView) this.treeView).collapseNode(child);
-                    }
-
-                    SwingUtilities.invokeLater(this::requestActive);
-                }
-            } catch (IOException ex) {
-                Exceptions.printStackTrace(ex);
+                SwingUtilities.invokeLater(this::requestActive);
             }
-            handle.finish();
-        });
+        } catch (IOException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+        handle.finish();
     }
 
     /** This method is called from within the constructor to

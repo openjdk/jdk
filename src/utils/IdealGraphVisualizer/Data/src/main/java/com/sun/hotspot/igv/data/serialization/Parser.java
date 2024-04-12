@@ -36,6 +36,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.swing.SwingUtilities;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.InputSource;
@@ -94,10 +95,13 @@ public class Parser implements GraphParser {
     private final Map<Group, InputGraph> lastParsedGraph = new HashMap<>();
     private final GraphDocument callbackDocument;
     private final GraphContextAction contextAction;
+    private final Set<GraphContext> contexts = new HashSet<>();
     private final HashMap<String, Integer> idCache = new HashMap<>();
     private final ArrayList<Pair<String, String>> blockConnections = new ArrayList<>();
     private final ParseMonitor monitor;
     private final ReadableByteChannel channel;
+    private boolean invokeLater = true;
+
     // <method>
     private final ElementHandler<InputMethod, Group> methodHandler = new XMLParser.ElementHandler<>(METHOD_ELEMENT) {
 
@@ -141,7 +145,7 @@ public class Parser implements GraphParser {
             InputGraph inputGraph = getParentObject();
             GraphContext graphContext = new GraphContext(inputGraph, new AtomicInteger(0), new HashSet<>(), new AtomicBoolean(false));
             if (contextAction != null) {
-                contextAction.performAction(graphContext);
+                contexts.add(graphContext);
             }
             return graphContext;
         }
@@ -331,7 +335,11 @@ public class Parser implements GraphParser {
             }
 
             if (callbackDocument == null || folder instanceof Group) {
-                folder.addElement(group);
+                if (invokeLater) {
+                    SwingUtilities.invokeLater(() -> folder.addElement(group));
+                } else {
+                    folder.addElement(group);
+                }
             }
 
             return group;
@@ -420,7 +428,17 @@ public class Parser implements GraphParser {
             }
             blockConnections.clear();
 
-            parent.addElement(graph);
+            if (invokeLater) {
+                SwingUtilities.invokeLater(() -> parent.addElement(graph));
+            } else {
+                parent.addElement(graph);
+            }
+            if (contextAction != null) {
+                for (GraphContext ctx : contexts) {
+                    contextAction.performAction(ctx);
+                }
+            }
+            contexts.clear();
         }
     };
     // <properties>
@@ -431,7 +449,11 @@ public class Parser implements GraphParser {
             final Group group = getParentObject();
             if (callbackDocument != null && group.getParent() instanceof GraphDocument) {
                 group.setParent(callbackDocument);
-                callbackDocument.addElement(group);
+                if (invokeLater) {
+                    SwingUtilities.invokeLater(() -> callbackDocument.addElement(group));
+                } else {
+                    callbackDocument.addElement(group);
+                }
             }
         }
     };
@@ -536,6 +558,12 @@ public class Parser implements GraphParser {
         }
 
         return graphDocument;
+    }
+
+    // Whether the parser is allowed to defer connecting the parsed elements.
+    // Setting to false is useful for synchronization in unit tests.
+    public void setInvokeLater(boolean invokeLater) {
+        this.invokeLater = invokeLater;
     }
 
     private XMLReader createReader() throws SAXException {
