@@ -3359,12 +3359,8 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
   if (cast_obj == nullptr) {
     // Generate the subtype check
     Node* improved_superklass = superklass;
-    if (improved_klass_ptr_type != klass_ptr_type) {
-      if (improved_klass_ptr_type->singleton()) {
-        improved_superklass = makecon(improved_klass_ptr_type);
-      } else {
-        improved_superklass = _gvn.transform(new CastPPNode(nullptr, superklass, improved_klass_ptr_type));
-      }
+    if (improved_klass_ptr_type != klass_ptr_type && improved_klass_ptr_type->singleton()) {
+      improved_superklass = makecon(improved_klass_ptr_type);
     }
     Node* not_subtype_ctrl = gen_subtype_check(not_null_obj, improved_superklass);
 
