@@ -60,12 +60,11 @@ ifeq ($(call isTargetOs, aix), false)
       NAME := jsound, \
       LINK_TYPE := $(LIBJSOUND_LINK_TYPE), \
       OPTIMIZATION := LOW, \
+      EXTRA_HEADER_DIRS := java.base:libjava, \
       CFLAGS := $(LIBJSOUND_CFLAGS), \
       CXXFLAGS := $(LIBJSOUND_CFLAGS), \
       DISABLED_WARNINGS_gcc := undef, \
       DISABLED_WARNINGS_clang := undef, \
-      JDK_LIBS_unix := -ljava -ljvm, \
-      JDK_LIBS_windows := $(WIN_JAVA_LIB), \
       LIBS_linux := $(ALSA_LIBS), \
       LIBS_macosx := \
           -framework AudioToolbox \
@@ -76,8 +75,6 @@ ifeq ($(call isTargetOs, aix), false)
           -framework CoreServices, \
       LIBS_windows := advapi32.lib dsound.lib ole32.lib user32.lib winmm.lib, \
   ))
-
-  $(BUILD_LIBJSOUND): $(call FindLib, java.base, java)
 
   TARGETS += $(BUILD_LIBJSOUND)
 endif
@@ -94,7 +91,7 @@ ifeq ($(call isTargetOs, macosx), true)
           format-nonliteral, \
       DISABLED_WARNINGS_clang_QueuingApplicationDelegate.m := \
           objc-method-access, \
-      JDK_LIBS_macosx := -ljava, \
+      JDK_LIBS := java.base:libjava, \
       LIBS_macosx := \
           -framework Accelerate \
           -framework ApplicationServices \
@@ -109,8 +106,6 @@ ifeq ($(call isTargetOs, macosx), true)
           -framework Security, \
   ))
 
-  $(BUILD_LIBOSXAPP): $(call FindLib, java.base, java)
-
   TARGETS += $(BUILD_LIBOSXAPP)
 
   ##############################################################################
@@ -120,10 +115,9 @@ ifeq ($(call isTargetOs, macosx), true)
   $(eval $(call SetupJdkLibrary, BUILD_LIBOSX, \
       NAME := osx, \
       OPTIMIZATION := LOW, \
-      EXTRA_HEADER_DIRS := libosxapp, \
+      EXTRA_HEADER_DIRS := java.base:libjava, \
       DISABLED_WARNINGS_clang_CFileManager.m := deprecated-declarations, \
-      LDFLAGS := -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.desktop, \
-      JDK_LIBS_macosx := $(JDKLIB_LIBS) -losxapp, \
+      JDK_LIBS := libosxapp, \
       LIBS_macosx := \
           -framework ApplicationServices \
           -framework Cocoa \
@@ -132,8 +126,4 @@ ifeq ($(call isTargetOs, macosx), true)
   ))
 
   TARGETS += $(BUILD_LIBOSX)
-
-  $(BUILD_LIBOSX): $(call FindLib, java.desktop, osxapp)
-
-  $(BUILD_LIBOSX): $(call FindLib, java.base, java)
 endif

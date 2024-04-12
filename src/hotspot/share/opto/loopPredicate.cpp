@@ -932,7 +932,7 @@ bool PhaseIdealLoop::loop_predication_should_follow_branches(IdealLoopTree* loop
         CountedLoopNode* cl = head->as_CountedLoop();
         if (cl->phi() != nullptr) {
           const TypeInt* t = _igvn.type(cl->phi())->is_int();
-          float worst_case_trip_cnt = ((float)t->_hi - t->_lo) / ABS(cl->stride_con());
+          float worst_case_trip_cnt = ((float)t->_hi - t->_lo) / ABS((float)cl->stride_con());
           if (worst_case_trip_cnt < loop_trip_cnt) {
             loop_trip_cnt = worst_case_trip_cnt;
           }

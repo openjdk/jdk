@@ -242,10 +242,3 @@ void G1BlockOffsetTable::verify_for_block(HeapWord* blk_start, HeapWord* blk_end
     }
   }
 }
-
-void G1BlockOffsetTable::set_for_starts_humongous(HeapRegion* hr, HeapWord* obj_top, size_t fill_size) {
-  update_for_block(hr->bottom(), obj_top);
-  if (fill_size > 0) {
-    update_for_block(obj_top, fill_size);
-  }
-}

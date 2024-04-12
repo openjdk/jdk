@@ -81,10 +81,6 @@ private:
     return align_up(addr, CardTable::card_size());
   }
 
-  void update_for_block(HeapWord* blk_start, size_t size) {
-    update_for_block(blk_start, blk_start + size);
-  }
-
 public:
 
   // Return the number of slots needed for an offset array
@@ -127,8 +123,6 @@ public:
       update_for_block_work(blk_start, blk_end);
     }
   }
-
-  void set_for_starts_humongous(HeapRegion* hr, HeapWord* obj_top, size_t fill_size);
 };
 
 #endif // SHARE_GC_G1_G1BLOCKOFFSETTABLE_HPP

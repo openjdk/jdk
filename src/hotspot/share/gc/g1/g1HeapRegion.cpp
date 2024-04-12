@@ -188,7 +188,10 @@ void HeapRegion::set_starts_humongous(HeapWord* obj_top, size_t fill_size) {
   _type.set_starts_humongous();
   _humongous_start_region = this;
 
-  _bot->set_for_starts_humongous(this, obj_top, fill_size);
+  _bot->update_for_block(bottom(), obj_top);
+  if (fill_size > 0) {
+    _bot->update_for_block(obj_top, obj_top + fill_size);
+  }
 }
 
 void HeapRegion::set_continues_humongous(HeapRegion* first_hr) {

@@ -76,20 +76,6 @@ public:
   void do_oop(narrowOop* p) { do_oop_work(p); }
 };
 
-class YoungGenScanClosure : public InHeapScanClosure {
-  template <typename T>
-  void do_oop_work(T* p) {
-    assert(SerialHeap::heap()->young_gen()->to()->is_in_reserved(p), "precondition");
-
-    try_scavenge(p, [] (auto) {});
-  }
-public:
-  YoungGenScanClosure(DefNewGeneration* g) : InHeapScanClosure(g) {}
-
-  void do_oop(oop* p)       { do_oop_work(p); }
-  void do_oop(narrowOop* p) { do_oop_work(p); }
-};
-
 class RootScanClosure : public OffHeapScanClosure {
   template <typename T>
   void do_oop_work(T* p) {
@@ -231,10 +217,7 @@ public:
   {}
 
   void do_void() {
-    do {
-      _heap->oop_since_save_marks_iterate(_young_cl, _old_cl);
-    } while (!_heap->no_allocs_since_save_marks());
-    guarantee(_heap->young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
+    _heap->scan_evacuated_objs(_young_cl, _old_cl);
   }
 };
 
@@ -588,15 +571,38 @@ void DefNewGeneration::object_iterate(ObjectClosure* blk) {
   from()->object_iterate(blk);
 }
 
+// If "p" is in the space, returns the address of the start of the
+// "block" that contains "p".  We say "block" instead of "object" since
+// some heaps may not pack objects densely; a chunk may either be an
+// object or a non-object.  If "p" is not in the space, return null.
+// Very general, slow implementation.
+static HeapWord* block_start_const(const ContiguousSpace* cs, const void* p) {
+  assert(MemRegion(cs->bottom(), cs->end()).contains(p),
+         "p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
+         p2i(p), p2i(cs->bottom()), p2i(cs->end()));
+  if (p >= cs->top()) {
+    return cs->top();
+  } else {
+    HeapWord* last = cs->bottom();
+    HeapWord* cur = last;
+    while (cur <= p) {
+      last = cur;
+      cur += cast_to_oop(cur)->size();
+    }
+    assert(oopDesc::is_oop(cast_to_oop(last)), PTR_FORMAT " should be an object start", p2i(last));
+    return last;
+  }
+}
+
 HeapWord* DefNewGeneration::block_start(const void* p) const {
   if (eden()->is_in_reserved(p)) {
-    return eden()->block_start_const(p);
+    return block_start_const(eden(), p);
   }
   if (from()->is_in_reserved(p)) {
-    return from()->block_start_const(p);
+    return block_start_const(from(), p);
   }
   assert(to()->is_in_reserved(p), "inv");
-  return to()->block_start_const(p);
+  return block_start_const(to(), p);
 }
 
 // The last collection bailed out, we are running out of heap space,
