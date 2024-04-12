@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ public final class SSLLogger {
     private static final System.Logger logger;
     private static final String property;
     public static final boolean isOn;
+    public static final boolean sslOn;
 
     static {
         String p = GetPropertyAction.privilegedGetProperty("javax.net.debug");
@@ -74,14 +75,17 @@ public final class SSLLogger {
                 if (property.equals("help")) {
                     help();
                 }
-
                 logger = new SSLConsoleLogger("javax.net.ssl", p);
             }
             isOn = true;
+            // log almost everything for the "ssl" value.
+            // However, if "ssl:<option>" is specified, we narrow logging
+            sslOn = property.contains("ssl") && !property.contains("ssl:");
         } else {
             property = null;
             logger = null;
             isOn = false;
+            sslOn = false;
         }
     }
 
@@ -118,43 +122,39 @@ public final class SSLLogger {
 
     /**
      * Return true if the "javax.net.debug" property contains the
-     * debug check points, or System.Logger is used.
+     * debug check points, "all" or if the System.Logger is used.
+     *
+     * Specify all string tokens required when calling this method.
+     * E.g. since "plaintext" is a widened option of the "record" option,
+     * the call needs to be isOn("ssl,record,plaintext") to ensure
+     * correct use. It also ensures that the user specifies the correct
+     * system property value syntax as per help menu.
      */
     public static boolean isOn(String checkPoints) {
-        if (property == null) {              // debugging is turned off
+        if (property == null) {
+            // debugging is turned off
             return false;
-        } else if (property.isEmpty()) {     // use System.Logger
+        } else if (property.isEmpty() || property.equals("all")) {
+            // System.Logger in use or property = "all"
             return true;
-        }                                   // use provider logger
+        } else if (sslOn && !containsWidenOption(checkPoints)) {
+            // fast path - in sslOn mode, we always log except for widen options
+            return true;
+        }
 
         String[] options = checkPoints.split(",");
         for (String option : options) {
-            option = option.trim();
-            if (!SSLLogger.hasOption(option)) {
+            option = option.trim().toLowerCase(Locale.ROOT);
+            if (!property.contains(option)) {
                 return false;
             }
         }
-
         return true;
     }
 
-    private static boolean hasOption(String option) {
-        option = option.toLowerCase(Locale.ENGLISH);
-        if (property.contains("all")) {
-            return true;
-        } else {
-            int offset = property.indexOf("ssl");
-            if (offset != -1 && property.indexOf("sslctx", offset) != -1) {
-                // don't enable data and plaintext options by default
-                if (!(option.equals("data")
-                        || option.equals("packet")
-                        || option.equals("plaintext"))) {
-                    return true;
-                }
-            }
-        }
-
-        return property.contains(option);
+    private static boolean containsWidenOption(String options) {
+        return options.contains("data") || options.contains("verbose") ||
+                options.contains("plaintext") || options.contains("packet");
     }
 
     public static void severe(String msg, Object... params) {
@@ -187,9 +187,7 @@ public final class SSLLogger {
                 logger.log(level, msg);
             } else {
                 try {
-                    String formatted =
-                            SSLSimpleFormatter.formatParameters(params);
-                    logger.log(level, msg, formatted);
+                     logger.log(level, () -> msg + ":\n" + SSLSimpleFormatter.formatParameters(params));
                 } catch (Exception exp) {
                     // ignore it, just for debugging.
                 }
@@ -281,7 +279,7 @@ public final class SSLLogger {
                         """,
                 Locale.ENGLISH);
 
-        private static final MessageFormat extendedCertFormart =
+        private static final MessageFormat extendedCertFormat =
             new MessageFormat(
                     """
                             "version"            : "v{0}",
@@ -297,15 +295,6 @@ public final class SSLLogger {
                             ]
                             """,
                 Locale.ENGLISH);
-
-        //
-        // private static MessageFormat certExtFormat = new MessageFormat(
-        //         "{0} [{1}] '{'\n" +
-        //         "  critical: {2}\n" +
-        //         "  value: {3}\n" +
-        //         "'}'",
-        //         Locale.ENGLISH);
-        //
 
         private static final MessageFormat messageFormatNoParas =
             new MessageFormat(
@@ -520,7 +509,7 @@ public final class SSLLogger {
                         Utilities.indent(extBuilder.toString())
                         };
                     builder.append(Utilities.indent(
-                            extendedCertFormart.format(certFields)));
+                            extendedCertFormat.format(certFields)));
                 }
             } catch (Exception ce) {
                 // ignore the exception

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -708,7 +708,7 @@ final class KeyShareExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Cannot use the previous requested key shares anymore.
-            if (SSLLogger.isOn && SSLLogger.isOn("handshake")) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "No key_share extension in ServerHello, " +
                         "cleanup the key shares if necessary");

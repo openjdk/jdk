@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,8 +220,7 @@ class DomainName {
                 }
             );
             if (is == null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl") &&
-                        SSLLogger.isOn("trustmanager")) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
                     SSLLogger.fine(
                         "lib/security/public_suffix_list.dat not found");
                 }
