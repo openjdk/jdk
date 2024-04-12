@@ -37,6 +37,7 @@ import sun.invoke.util.Wrapper;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.TypeKind;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles.Lookup;
@@ -1403,17 +1404,18 @@ public final class StringConcatFactory {
                     new Consumer<ClassBuilder>() {
                         @Override
                         public void accept(ClassBuilder clb) {
-                            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
+                            clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
                                 .withMethodBody(METHOD_NAME,
                                         MethodTypeDesc.ofDescriptor(args.toMethodDescriptorString()),
-                                        ClassFile.ACC_FINAL | ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC,
+                                        ClassFile.ACC_FINAL | ClassFile.ACC_PRIVATE | ClassFile.ACC_STATIC,
                                         generateMethod(constants, args));
                     }});
 
             try {
-                Class<?> innerClass = lookup.defineHiddenClass(classBytes, true, STRONG).lookupClass();
+                Lookup hiddenLookup = lookup.defineHiddenClass(classBytes, true, STRONG);
+                Class<?> innerClass = hiddenLookup.lookupClass();
                 DUMPER.dumpClass(className, innerClass, classBytes);
-                MethodHandle mh = lookup.findStatic(innerClass, METHOD_NAME, args);
+                MethodHandle mh = hiddenLookup.findStatic(innerClass, METHOD_NAME, args);
                 return mh;
             } catch (Exception e) {
                 DUMPER.dumpFailedClass(className, classBytes);
@@ -1438,7 +1440,9 @@ public final class StringConcatFactory {
                                 cb.invokevirtual(STRING_BUILDER, "append", APPEND_STRING_TYPE);
                             }
                             Class<?> cl = args.parameterType(c);
-                            off += load(cb, cl, off);
+                            TypeKind kind = TypeKind.from(cl);
+                            cb.loadInstruction(kind, off);
+                            off += kind.slotSize();
                             MethodTypeDesc desc = getSBAppendDesc(cl);
                             cb.invokevirtual(STRING_BUILDER, "append", desc);
                         }
@@ -1452,29 +1456,6 @@ public final class StringConcatFactory {
                     cb.areturn();
                 }
             };
-        }
-
-        // Load the argument of type cl at slot onto stack, return the number of argument stack slots consumed.
-        private static int load(CodeBuilder cb, Class<?> cl, int slot) {
-            if (cl == Void.TYPE) {
-                throw new InternalError("Unexpected void type of load opcode");
-            }
-            if (cl.isPrimitive()) {
-                if (cl == Float.TYPE) {
-                    cb.fload(slot);
-                } else if (cl == Double.TYPE) {
-                    cb.dload(slot);
-                    return 2;
-                } else if (cl == Long.TYPE) {
-                    cb.lload(slot);
-                    return 2;
-                } else {
-                    cb.iload(slot);
-                }
-            } else {
-                cb.aload(slot);
-            }
-            return 1;
         }
 
         /**
