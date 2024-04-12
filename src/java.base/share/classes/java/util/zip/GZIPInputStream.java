@@ -330,14 +330,8 @@ public class GZIPInputStream extends InflaterInputStream {
                 return true;
             }
 
-            // We are allowing concatenation; try to read the next GZIP header
-            try {
-                m += readHeader(in, nextByte);              // next.header
-            } catch (IOException e) {
-                if (!ignoreTrailingGarbage)
-                    throw e;
-                return true;
-            }
+            // We are allowing concatenation and not ignoring trailing garbage; read the next header
+            m += readHeader(in, nextByte);                  // next.header
         }
 
         // Pass along any remaining buffered data to the new inflater
