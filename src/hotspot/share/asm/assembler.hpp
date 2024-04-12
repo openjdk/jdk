@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -378,9 +378,10 @@ class AbstractAssembler : public ResourceObj  {
 
   void   register_skipped(int size) { code_section()->register_skipped(size); }
 
-  address       inst_mark() const { return code_section()->mark();       }
-  void      set_inst_mark()       {        code_section()->set_mark(pc());   }
-  void    clear_inst_mark()       {        code_section()->clear_mark(); }
+  address       inst_mark() const         { return code_section()->mark();          }
+  void      set_inst_mark()               {        code_section()->set_mark(pc());  }
+  void      set_inst_mark(address addr)   {        code_section()->set_mark(addr);  }
+  void    clear_inst_mark()               {        code_section()->clear_mark();    }
   void set_inst_end(address addr)         {        code_section()->set_end(addr);   }
 
   // Constants in code
