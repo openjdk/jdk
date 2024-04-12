@@ -623,7 +623,6 @@ public class JavacParser implements Parser {
      */
     protected void attach(JCTree tree, Comment dc) {
         if (keepDocComments && dc != null) {
-//          System.out.println("doc comment = ");System.out.println(dc);//DEBUG
             docComments.putComment(tree, dc);
         }
         reportDanglingComments(tree, dc);
@@ -2963,7 +2962,7 @@ public class JavacParser implements Parser {
                 return List.of(classOrRecordOrInterfaceOrEnumDeclaration(mods, dc));
             } else {
                 JCExpression t = parseType(true);
-                return localVariableDeclarations(mods, t);
+                return localVariableDeclarations(mods, t, dc);
             }
         }
         case ABSTRACT: case STRICTFP: {
@@ -3049,8 +3048,8 @@ public class JavacParser implements Parser {
                 }
             }
         }
+        dc = token.docComment();
         if (isRecordStart() && allowRecords) {
-            dc = token.docComment();
             return List.of(recordDeclaration(F.at(pos).Modifiers(0), dc));
         } else {
             Token prevToken = token;
@@ -3063,7 +3062,7 @@ public class JavacParser implements Parser {
                 pos = token.pos;
                 JCModifiers mods = F.at(Position.NOPOS).Modifiers(0);
                 F.at(pos);
-                return localVariableDeclarations(mods, t);
+                return localVariableDeclarations(mods, t, dc);
             } else {
                 // This Exec is an "ExpressionStatement"; it subsumes the terminating semicolon
                 t = checkExprStat(t);
@@ -3074,7 +3073,11 @@ public class JavacParser implements Parser {
         }
     }
     //where
-        private List<JCStatement> localVariableDeclarations(JCModifiers mods, JCExpression type) {
+        private List<JCStatement> localVariableDeclarations(JCModifiers mods, JCExpression type, Comment dc) {
+            if (dc != null) {
+                // ignore a well-placed doc comment, but save any misplaced ones
+                saveDanglingDocComments(dc);
+            }
             ListBuffer<JCStatement> stats =
                     variableDeclarators(mods, type, new ListBuffer<>(), true);
             // A "LocalVariableDeclarationStatement" subsumes the terminating semicolon
