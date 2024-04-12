@@ -297,14 +297,9 @@ class GetCurrentLocationClosure : public JvmtiUnitedHandshakeClosure {
     _completed = true;
   }
   void do_vthread(Handle target_h) {
-    if (_target_jt != nullptr) {
-      assert(_target_jt->vthread() == target_h(), "sanity check");
-      do_thread(_target_jt);
-      return;
-    }
-    if (!JvmtiEnvBase::is_vthread_alive(target_h())) {
-      return; // _completed remains false.
-    }
+    assert(_target_jt == nullptr || !_target_jt->is_exiting(), "sanity check");
+    // use jvmti_vthread() as vthread() can be outdated
+    assert(_target_jt == nullptr || _target_jt->jvmti_vthread() == target_h(), "sanity check");
     ResourceMark rm;
     javaVFrame *jvf = JvmtiEnvBase::get_vthread_jvf(target_h());
 
