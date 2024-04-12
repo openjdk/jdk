@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,12 +64,6 @@ class ContiguousSpace: public CHeapObj<mtGC> {
 private:
   HeapWord* _bottom;
   HeapWord* _end;
-
-  // Used in support of save_marks()
-  HeapWord* _saved_mark_word;
-
-  ContiguousSpace* _next_compaction_space;
-
   HeapWord* _top;
   // A helper for mangling the unused area of the space in debug builds.
   GenSpaceMangler* _mangler;
@@ -89,20 +83,6 @@ public:
   HeapWord* end() const            { return _end;    }
   void set_bottom(HeapWord* value) { _bottom = value; }
   void set_end(HeapWord* value)    { _end = value; }
-
-  HeapWord* saved_mark_word() const  { return _saved_mark_word; }
-
-  // Returns a region that is guaranteed to contain (at least) all objects
-  // allocated at the time of the last call to "save_marks".  If the space
-  // initializes its DirtyCardToOopClosure's specifying the "contig" option
-  // (that is, if the space is contiguous), then this region must contain only
-  // such objects: the memregion will be from the bottom of the region to the
-  // saved mark.  Otherwise, the "obj_allocated_since_save_marks" method of
-  // the space must distinguish between objects in the region allocated before
-  // and after the call to save marks.
-  MemRegion used_region_at_save_marks() const {
-    return MemRegion(bottom(), saved_mark_word());
-  }
 
   // Testers
   bool is_empty() const              { return used() == 0; }
@@ -140,29 +120,9 @@ public:
   // had allocation performed in it, but is now to be considered empty.
   void clear(bool mangle_space);
 
-  // Returns the next space (in the current generation) to be compacted in
-  // the global compaction order.  Also is used to select the next
-  // space into which to compact.
-
-  ContiguousSpace* next_compaction_space() const {
-    return _next_compaction_space;
-  }
-
-  void set_next_compaction_space(ContiguousSpace* csp) {
-    _next_compaction_space = csp;
-  }
-
-  // The maximum percentage of objects that can be dead in the compacted
-  // live part of a compacted space ("deadwood" support.)
-  virtual size_t allowed_dead_ratio() const { return 0; };
-
   // Accessors
   HeapWord* top() const            { return _top;    }
   void set_top(HeapWord* value)    { _top = value; }
-
-  void set_saved_mark()            { _saved_mark_word = top();    }
-
-  bool saved_mark_at_top() const { return saved_mark_word() == top(); }
 
   // Used to save the space's current top for later use during mangling.
   void set_top_for_allocations() PRODUCT_RETURN;
@@ -194,22 +154,6 @@ public:
   // Iteration
   void object_iterate(ObjectClosure* blk);
 
-  // Apply "blk->do_oop" to the addresses of all reference fields in objects
-  // starting with the _saved_mark_word, which was noted during a generation's
-  // save_marks and is required to denote the head of an object.
-  // Fields in objects allocated by applications of the closure
-  // *are* included in the iteration.
-  // Updates _saved_mark_word to point to just after the last object
-  // iterated over.
-  template <typename OopClosureType>
-  void oop_since_save_marks_iterate(OopClosureType* blk);
-
-  // If "p" is in the space, returns the address of the start of the
-  // "block" that contains "p".  We say "block" instead of "object" since
-  // some heaps may not pack objects densely; a chunk may either be an
-  // object or a non-object.  If "p" is not in the space, return null.
-  virtual HeapWord* block_start_const(const void* p) const;
-
   // Addresses for inlined allocation
   HeapWord** top_addr() { return &_top; }
 
@@ -225,16 +169,12 @@ public:
 class TenuredSpace: public ContiguousSpace {
   friend class VMStructs;
  protected:
-  SerialBlockOffsetTable _offsets;
+  SerialBlockOffsetTable* _offsets;
 
-  // Mark sweep support
-  size_t allowed_dead_ratio() const override;
  public:
   // Constructor
-  TenuredSpace(SerialBlockOffsetSharedArray* sharedOffsetArray,
+  TenuredSpace(SerialBlockOffsetTable* offsets,
                MemRegion mr);
-
-  HeapWord* block_start_const(const void* addr) const override;
 
   // Add offset table update.
   inline HeapWord* allocate(size_t word_size) override;

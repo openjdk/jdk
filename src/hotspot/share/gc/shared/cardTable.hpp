@@ -73,7 +73,6 @@ protected:
 
   // CardTable entry size
   static uint _card_shift;
-  static uint _card_shift_in_words;
   static uint _card_size;
   static uint _card_size_in_words;
 
@@ -132,8 +131,6 @@ public:
     return byte_for(p) + 1;
   }
 
-  void invalidate(MemRegion mr);
-
   // Provide read-only access to the card table array.
   const CardValue* byte_for_const(const void* p) const {
     return byte_for(p);
@@ -181,10 +178,6 @@ public:
 
   static uint card_shift() {
     return _card_shift;
-  }
-
-  static uint card_shift_in_words() {
-    return _card_shift_in_words;
   }
 
   static uint card_size() {
