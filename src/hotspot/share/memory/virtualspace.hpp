@@ -62,7 +62,7 @@ class ReservedSpace {
                           size_t page_size, bool special, bool executable, MEMFLAGS flag);
 
   void initialize(size_t size, size_t alignment, size_t page_size,
-                  char* requested_address, bool executable);
+                  char* requested_address, bool executable, MEMFLAGS flag);
 
   void reserve(size_t size, size_t alignment, size_t page_size,
                char* requested_address, bool executable);

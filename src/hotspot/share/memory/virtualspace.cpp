@@ -51,7 +51,7 @@ ReservedSpace::ReservedSpace(size_t size, MEMFLAGS flag) : _fd_for_heap(-1), _nm
   // large and normal pages.
   size_t page_size = os::page_size_for_region_unaligned(size, 1);
   size_t alignment = os::vm_allocation_granularity();
-  initialize(size, alignment, page_size, nullptr, false);
+  initialize(size, alignment, page_size, nullptr, false, flag);
 }
 
 ReservedSpace::ReservedSpace(size_t size, size_t preferred_page_size, MEMFLAGS flag) : _fd_for_heap(-1), _nmt_flag(flag) {
@@ -63,7 +63,7 @@ ReservedSpace::ReservedSpace(size_t size, size_t preferred_page_size, MEMFLAGS f
     alignment = MAX2(preferred_page_size, alignment);
     size = align_up(size, alignment);
   }
-  initialize(size, alignment, preferred_page_size, nullptr, false);
+  initialize(size, alignment, preferred_page_size, nullptr, false, flag);
 }
 
 ReservedSpace::ReservedSpace(size_t size,
@@ -71,7 +71,7 @@ ReservedSpace::ReservedSpace(size_t size,
                              size_t page_size,
                              MEMFLAGS flag,
                              char* requested_address) : _fd_for_heap(-1), _nmt_flag(flag) {
-  initialize(size, alignment, page_size, requested_address, false);
+  initialize(size, alignment, page_size, requested_address, false, flag);
 }
 
 ReservedSpace::ReservedSpace(char* base, size_t size, size_t alignment, size_t page_size,
@@ -279,7 +279,8 @@ void ReservedSpace::initialize(size_t size,
                                size_t alignment,
                                size_t page_size,
                                char* requested_address,
-                               bool executable) {
+                               bool executable,
+                               MEMFLAGS flag) {
   const size_t granularity = os::vm_allocation_granularity();
   assert((size & (granularity - 1)) == 0,
          "size not aligned to os::vm_allocation_granularity()");
@@ -291,6 +292,7 @@ void ReservedSpace::initialize(size_t size,
   assert(is_power_of_2(page_size), "Invalid page size");
 
   clear_members();
+  set_nmt_flag(flag);
 
   if (size == 0) {
     return;
@@ -606,7 +608,7 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
     // Last, desperate try without any placement.
     if (_base == nullptr) {
       log_trace(gc, heap, coops)("Trying to allocate at address null heap of size " SIZE_FORMAT_X, size + noaccess_prefix);
-      initialize(size + noaccess_prefix, alignment, page_size, nullptr, false);
+      initialize(size + noaccess_prefix, alignment, page_size, nullptr, false, nmt_flag());
     }
   }
 }
@@ -643,7 +645,7 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_
       establish_noaccess_prefix();
     }
   } else {
-    initialize(size, alignment, page_size, nullptr, false);
+    initialize(size, alignment, page_size, nullptr, false, nmt_flag());
   }
 
   assert(markWord::encode_pointer_as_mark(_base).decode_pointer() == _base,
@@ -670,7 +672,7 @@ ReservedCodeSpace::ReservedCodeSpace(size_t r_size,
                                      size_t rs_align,
                                      size_t rs_page_size) : ReservedSpace() {
   set_nmt_flag(mtCode);
-  initialize(r_size, rs_align, rs_page_size, /*requested address*/ nullptr, /*executable*/ true);
+  initialize(r_size, rs_align, rs_page_size, /*requested address*/ nullptr, /*executable*/ true, mtCode);
 }
 
 // VirtualSpace

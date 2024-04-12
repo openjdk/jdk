@@ -69,7 +69,7 @@ void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t
 
 char* CompressedKlassPointers::reserve_address_space_X(uintptr_t from, uintptr_t to, size_t size, size_t alignment, bool aslr) {
   alignment = MAX2(Metaspace::reserve_alignment(), alignment);
-  return os::attempt_reserve_memory_between((char*)from, (char*)to, size, alignment, aslr, mtClass);
+  return os::attempt_reserve_memory_between((char*)from, (char*)to, size, alignment, aslr, mtMetaspace);
 }
 
 char* CompressedKlassPointers::reserve_address_space_for_unscaled_encoding(size_t size, bool aslr) {
