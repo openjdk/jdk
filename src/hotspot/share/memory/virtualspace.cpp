@@ -840,7 +840,7 @@ static bool commit_expanded(char* start, size_t size, size_t alignment, bool pre
   if (os::commit_memory(start, size, alignment, executable)) {
     if (pre_touch || AlwaysPreTouch) {
       if (executable){
-        os::current_thread_enable_wx(WXWrite);
+        MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXWrite));
       }
       pretouch_expanded_memory(start, start + size);
     }
