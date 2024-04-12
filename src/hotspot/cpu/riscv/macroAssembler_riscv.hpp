@@ -678,6 +678,12 @@ private:
   int pop_v(unsigned int bitset, Register stack);
 #endif // COMPILER2
 
+  bool in_range_auipc_s12(int64_t x) {
+    int64_t twoG = (2 * G);
+    int64_t twoK = (2 * K);
+    return x <= (twoG - twoK) && x >= (-twoG + twoK);
+  }
+
 public:
   void push_reg(Register Rs);
   void pop_reg(Register Rd);
@@ -833,7 +839,7 @@ public:
   void NAME(Register Rd, address dest) {                                                           \
     assert_cond(dest != nullptr);                                                                  \
     int64_t distance = dest - pc();                                                                \
-    if (is_simm32(distance)) {                                                                     \
+    if (in_range_auipc_s12(distance)) {                                                            \
       auipc(Rd, (int32_t)distance + 0x800);                                                        \
       Assembler::NAME(Rd, Rd, ((int32_t)distance << 20) >> 20);                                    \
     } else {                                                                                       \
@@ -890,7 +896,7 @@ public:
   void NAME(FloatRegister Rd, address dest, Register temp = t0) {                                  \
     assert_cond(dest != nullptr);                                                                  \
     int64_t distance = dest - pc();                                                                \
-    if (is_simm32(distance)) {                                                                     \
+    if (in_range_auipc_s12(distance)) {                                                            \
       auipc(temp, (int32_t)distance + 0x800);                                                      \
       Assembler::NAME(Rd, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
@@ -951,7 +957,7 @@ public:
     assert_cond(dest != nullptr);                                                                  \
     assert_different_registers(Rs, temp);                                                          \
     int64_t distance = dest - pc();                                                                \
-    if (is_simm32(distance)) {                                                                     \
+    if (in_range_auipc_s12(distance)) {                                                            \
       auipc(temp, (int32_t)distance + 0x800);                                                      \
       Assembler::NAME(Rs, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
@@ -996,7 +1002,7 @@ public:
   void NAME(FloatRegister Rs, address dest, Register temp = t0) {                                  \
     assert_cond(dest != nullptr);                                                                  \
     int64_t distance = dest - pc();                                                                \
-    if (is_simm32(distance)) {                                                                     \
+    if (in_range_auipc_s12(distance)) {                                                            \
       auipc(temp, (int32_t)distance + 0x800);                                                      \
       Assembler::NAME(Rs, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
