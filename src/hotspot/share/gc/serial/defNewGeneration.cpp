@@ -359,24 +359,12 @@ void DefNewGeneration::compute_space_boundaries(uintx minimum_eden_size,
   }
   from()->initialize(fromMR, clear_space, mangle_space);
   to()->initialize(toMR, clear_space, mangle_space);
-
-  // Set next compaction spaces.
-  eden()->set_next_compaction_space(from());
-  // The to-space is normally empty before a compaction so need
-  // not be considered.  The exception is during promotion
-  // failure handling when to-space can contain live objects.
-  from()->set_next_compaction_space(nullptr);
 }
 
 void DefNewGeneration::swap_spaces() {
   ContiguousSpace* s = from();
   _from_space        = to();
   _to_space          = s;
-  eden()->set_next_compaction_space(from());
-  // The to-space is normally empty before a compaction so need
-  // not be considered.  The exception is during promotion
-  // failure handling when to-space can contain live objects.
-  from()->set_next_compaction_space(nullptr);
 
   if (UsePerfData) {
     CSpaceCounters* c = _from_counters;
@@ -780,7 +768,6 @@ void DefNewGeneration::collect(bool   full,
     // as a result of a partial evacuation of eden
     // and from-space.
     swap_spaces();   // For uniformity wrt ParNewGeneration.
-    from()->set_next_compaction_space(to());
     heap->set_incremental_collection_failed();
 
     _gc_tracer->report_promotion_failed(_promotion_failed_info);
@@ -801,7 +788,6 @@ void DefNewGeneration::collect(bool   full,
 void DefNewGeneration::init_assuming_no_promotion_failure() {
   _promotion_failed = false;
   _promotion_failed_info.reset();
-  from()->set_next_compaction_space(nullptr);
 }
 
 void DefNewGeneration::remove_forwarding_pointers() {

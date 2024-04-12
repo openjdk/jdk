@@ -64,9 +64,6 @@ class ContiguousSpace: public CHeapObj<mtGC> {
 private:
   HeapWord* _bottom;
   HeapWord* _end;
-
-  ContiguousSpace* _next_compaction_space;
-
   HeapWord* _top;
   // A helper for mangling the unused area of the space in debug builds.
   GenSpaceMangler* _mangler;
@@ -122,18 +119,6 @@ public:
   // The "clear" method must be called on a region that may have
   // had allocation performed in it, but is now to be considered empty.
   void clear(bool mangle_space);
-
-  // Returns the next space (in the current generation) to be compacted in
-  // the global compaction order.  Also is used to select the next
-  // space into which to compact.
-
-  ContiguousSpace* next_compaction_space() const {
-    return _next_compaction_space;
-  }
-
-  void set_next_compaction_space(ContiguousSpace* csp) {
-    _next_compaction_space = csp;
-  }
 
   // Accessors
   HeapWord* top() const            { return _top;    }
