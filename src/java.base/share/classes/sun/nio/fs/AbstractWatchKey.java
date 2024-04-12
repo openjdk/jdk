@@ -39,7 +39,7 @@ abstract class AbstractWatchKey implements WatchKey {
     private static final int DEFAULT_MAX_EVENT_LIST_SIZE = 512;
 
     /**
-     * Maximum size of event list
+     * Maximum size of event list before dropping events and signalling OVERFLOW
      */
     @SuppressWarnings("removal")
     static final int MAX_EVENT_LIST_SIZE;
@@ -49,8 +49,12 @@ abstract class AbstractWatchKey implements WatchKey {
             String.valueOf(DEFAULT_MAX_EVENT_LIST_SIZE));
         int intValue;
         try {
+            // Clamp to Integer.MAX_VALUE - 1 to signal OVERFLOW and drop events
+            // before OOMing.
             intValue = Math.clamp(
-                Long.decode(rawValue), DEFAULT_MAX_EVENT_LIST_SIZE, Integer.MAX_VALUE);
+                Long.decode(rawValue),
+                DEFAULT_MAX_EVENT_LIST_SIZE,
+                Integer.MAX_VALUE - 1);
         } catch (NumberFormatException e) {
             intValue = DEFAULT_MAX_EVENT_LIST_SIZE;
         }
