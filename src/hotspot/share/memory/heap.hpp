@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@ class HeapBlock {
 
  public:
   struct Header {
-    size_t  _length;                             // the length in segments
-    bool    _used;                               // Used bit
+    uint32_t  _length;                           // the length in segments
+    bool      _used;                             // Used bit
   };
 
  protected:
@@ -51,13 +51,16 @@ class HeapBlock {
 
  public:
   // Initialization
-  void initialize(size_t length)                 { _header._length = length; set_used(); }
+  void initialize(size_t length)                 { set_length(length); set_used(); }
   // Merging/splitting
-  void set_length(size_t length)                 { _header._length = length; }
+  void set_length(size_t length)                 {
+    LP64_ONLY( assert(((length >> 32) == 0), "sanity"); )
+    _header._length = (uint32_t)length;
+  }
 
   // Accessors
   void* allocated_space() const                  { return (void*)(this + 1); }
-  size_t length() const                          { return _header._length; }
+  size_t length() const                          { return (size_t)_header._length; }
 
   // Used/free
   void set_used()                                { _header._used = true; }

@@ -137,9 +137,6 @@ struct java_nmethod_stats_struct {
   uint oops_size;
   uint metadata_size;
 
-  uint size_gt_32k;
-  int size_max;
-
   void note_nmethod(nmethod* nm) {
     nmethod_count += 1;
     total_size          += nm->size();
@@ -158,9 +155,6 @@ struct java_nmethod_stats_struct {
     speculations_size   += nm->speculations_size();
     jvmci_data_size     += nm->jvmci_data_size();
 #endif
-    int short_pos_max = ((1<<15) - 1);
-    if (nm->size() > short_pos_max) size_gt_32k++;
-    if (nm->size() > size_max) size_max = nm->size();
   }
   void print_nmethod_stats(const char* name) {
     if (nmethod_count == 0)  return;
@@ -183,8 +177,6 @@ struct java_nmethod_stats_struct {
     if (speculations_size != 0)   tty->print_cr(" speculations   = %u (%f%%)", speculations_size, (speculations_size * 100.0f)/total_size);
     if (jvmci_data_size != 0)     tty->print_cr(" JVMCI data     = %u (%f%%)", jvmci_data_size, (jvmci_data_size * 100.0f)/total_size);
 #endif
-    if (size_gt_32k != 0)         tty->print_cr(" size > 32k     = %u", size_gt_32k);
-    if (size_max != 0)            tty->print_cr(" max size       = %d", size_max);
   }
 };
 
@@ -1016,7 +1008,8 @@ void nmethod::init_defaults() {
 
   _state                      = not_installed;
   _has_flushed_dependencies   = 0;
-  _load_reported              = false; // jvmti state
+  _is_unlinked                = 0;
+  _load_reported              = 0; // jvmti state
 
   _oops_do_mark_link          = nullptr;
   _osr_link                   = nullptr;
@@ -1217,7 +1210,6 @@ nmethod::nmethod(
   _method(method),
   _gc_data(nullptr),
   _compiled_ic_data(nullptr),
-  _is_unlinked(false),
   _native_receiver_sp_offset(basic_lock_owner_sp_offset),
   _native_basic_lock_sp_offset(basic_lock_sp_offset),
   _is_unloading_state(0),
@@ -1236,35 +1228,52 @@ nmethod::nmethod(
     _orig_pc_offset          = 0;
     _deopt_handler_offset    = 0;
     _deopt_mh_handler_offset = 0;
+    _unwind_handler_offset   = 0;
     _gc_epoch                = CodeCache::gc_epoch();
 
-    _consts_offset           = content_offset()      + code_buffer->total_offset_of(code_buffer->consts());
-    _stub_offset             = content_offset()      + code_buffer->total_offset_of(code_buffer->stubs());
-    _oops_offset             = data_offset();
-    _metadata_offset         = _oops_offset          + align_up(code_buffer->total_oop_size(), oopSize);
-    _scopes_data_offset      = _metadata_offset      + align_up(code_buffer->total_metadata_size(), wordSize);
-    _scopes_pcs_offset       = _scopes_data_offset;
-    _dependencies_offset     = _scopes_pcs_offset;
-    _handler_table_offset    = _dependencies_offset;
+    int skipped_insts_size   = code_buffer->total_skipped_instructions_size();
+#ifdef ASSERT
+    assert(((skipped_insts_size >> 16) == 0), "size is bigger than 64Kb: %d", skipped_insts_size);
+
+    // SECT_CONSTS is first in code buffer so the offset should be 0.
+    int consts_offset = code_buffer->total_offset_of(code_buffer->consts());
+    assert(consts_offset == 0, "const_offset: %d", consts_offset);
+#endif
+    _skipped_instructions_size = (uint16_t)skipped_insts_size;
+
+    _stub_offset             = content_offset() + code_buffer->total_offset_of(code_buffer->stubs());
+
+    int oops_size     = align_up(code_buffer->total_oop_size(), oopSize);
+    int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
+    int sum_size      = oops_size + metadata_size;
+    assert((sum_size >> 16) == 0, "data size is bigger than 64Kb: %d", sum_size);
+
+    _metadata_offset         = (uint16_t)oops_size;
+    _dependencies_offset     = _metadata_offset + (uint16_t)metadata_size;
+    _scopes_pcs_offset       = _dependencies_offset;
+    _scopes_data_offset      = _scopes_pcs_offset;
+    _handler_table_offset    = _scopes_data_offset;
     _nul_chk_table_offset    = _handler_table_offset;
-    _skipped_instructions_size = code_buffer->total_skipped_instructions_size();
 #if INCLUDE_JVMCI
     _speculations_offset     = _nul_chk_table_offset;
     _jvmci_data_offset       = _speculations_offset;
-    _nmethod_end_offset      = _jvmci_data_offset;
+    DEBUG_ONLY( int data_end_offset = _jvmci_data_offset; )
 #else
-    _nmethod_end_offset      = _nul_chk_table_offset;
+    DEBUG_ONLY( int data_end_offset = _nul_chk_table_offset; )
 #endif
+    assert((data_offset() + data_end_offset) <= nmethod_size, "wrong nmethod's size: %d < %d", nmethod_size, (data_offset() + data_end_offset));
+
     _compile_id              = compile_id;
     _compiler_type           = type;
-    _entry_point             = code_begin()          + offsets->value(CodeOffsets::Entry);
-    _verified_entry_point    = code_begin()          + offsets->value(CodeOffsets::Verified_Entry);
+    _entry_offset            = (uint16_t)offsets->value(CodeOffsets::Entry);
+    _verified_entry_offset   = (uint16_t)offsets->value(CodeOffsets::Verified_Entry);
     _osr_entry_point         = nullptr;
     _exception_cache         = nullptr;
     _pc_desc_container.reset_to(nullptr);
 
-    _exception_offset        = code_offset()         + offsets->value(CodeOffsets::Exceptions);
-
+    if (offsets->value(CodeOffsets::Exceptions) != -1) {
+      _exception_offset      = code_offset() + offsets->value(CodeOffsets::Exceptions);
+    }
     code_buffer->copy_code_and_locs_to(this);
     code_buffer->copy_values_to(this);
 
@@ -1362,7 +1371,6 @@ nmethod::nmethod(
   _method(method),
   _gc_data(nullptr),
   _compiled_ic_data(nullptr),
-  _is_unlinked(false),
   _native_receiver_sp_offset(in_ByteSize(-1)),
   _native_basic_lock_sp_offset(in_ByteSize(-1)),
   _is_unloading_state(0),
@@ -1381,11 +1389,18 @@ nmethod::nmethod(
     _orig_pc_offset = orig_pc_offset;
     _gc_epoch       = CodeCache::gc_epoch();
 
-    // Section offsets
-    _consts_offset  = content_offset() + code_buffer->total_offset_of(code_buffer->consts());
-    _stub_offset    = content_offset() + code_buffer->total_offset_of(code_buffer->stubs());
-    set_ctable_begin(header_begin() + _consts_offset);
-    _skipped_instructions_size = code_buffer->total_skipped_instructions_size();
+    int skipped_insts_size = code_buffer->total_skipped_instructions_size();
+#ifdef ASSERT
+    assert(((skipped_insts_size >> 16) == 0), "size is bigger than 64Kb: %d", skipped_insts_size);
+
+    // SECT_CONSTS is first in code buffer so the offset should be 0.
+    int consts_offset = code_buffer->total_offset_of(code_buffer->consts());
+    assert(consts_offset == 0, "const_offset: %d", consts_offset);
+#endif
+    _skipped_instructions_size = (uint16_t)skipped_insts_size;
+
+    _stub_offset = content_offset() + code_buffer->total_offset_of(code_buffer->stubs());
+    set_ctable_begin(header_begin() + content_offset());
 
 #if INCLUDE_JVMCI
     if (compiler->is_jvmci()) {
@@ -1426,26 +1441,32 @@ nmethod::nmethod(
       _unwind_handler_offset = -1;
     }
 
-    _oops_offset             = data_offset();
-    _metadata_offset         = _oops_offset          + align_up(code_buffer->total_oop_size(), oopSize);
-    _scopes_data_offset      = _metadata_offset      + align_up(code_buffer->total_metadata_size(), wordSize);
+    int oops_size     = align_up(code_buffer->total_oop_size(), oopSize);
+    int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
+    int deps_size     = align_up((int)dependencies->size_in_bytes(), oopSize);
+    int sum_size      = oops_size + metadata_size + deps_size;
+    assert((sum_size >> 16) == 0, "data size is bigger than 64Kb: %d", sum_size);
 
-    _scopes_pcs_offset       = _scopes_data_offset   + align_up(debug_info->data_size       (), oopSize);
-    _dependencies_offset     = _scopes_pcs_offset    + adjust_pcs_size(debug_info->pcs_size());
-    _handler_table_offset    = _dependencies_offset  + align_up((int)dependencies->size_in_bytes(), oopSize);
-    _nul_chk_table_offset    = _handler_table_offset + align_up(handler_table->size_in_bytes(), oopSize);
+    _metadata_offset      = (uint16_t)oops_size;
+    _dependencies_offset  = _metadata_offset      + (uint16_t)metadata_size;
+    _scopes_pcs_offset    = _dependencies_offset  + (uint16_t)deps_size;
+    _scopes_data_offset   = _scopes_pcs_offset    + adjust_pcs_size(debug_info->pcs_size());
+    _handler_table_offset = _scopes_data_offset   + align_up(debug_info->data_size       (), oopSize);
+    _nul_chk_table_offset = _handler_table_offset + align_up(handler_table->size_in_bytes(), oopSize);
 #if INCLUDE_JVMCI
-    _speculations_offset     = _nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize);
-    _jvmci_data_offset       = _speculations_offset  + align_up(speculations_len, oopSize);
-    int jvmci_data_size      = compiler->is_jvmci() ? jvmci_data->size() : 0;
-    _nmethod_end_offset      = _jvmci_data_offset    + align_up(jvmci_data_size, oopSize);
+    _speculations_offset  = _nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize);
+    _jvmci_data_offset    = _speculations_offset  + align_up(speculations_len, oopSize);
+    int jvmci_data_size   = compiler->is_jvmci() ? jvmci_data->size() : 0;
+    DEBUG_ONLY( int data_end_offset = _jvmci_data_offset    + align_up(jvmci_data_size, oopSize); )
 #else
-    _nmethod_end_offset      = _nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize);
+    DEBUG_ONLY( int data_end_offset = _nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize); )
 #endif
-    _entry_point             = code_begin()          + offsets->value(CodeOffsets::Entry);
-    _verified_entry_point    = code_begin()          + offsets->value(CodeOffsets::Verified_Entry);
-    _osr_entry_point         = code_begin()          + offsets->value(CodeOffsets::OSR_Entry);
-    _exception_cache         = nullptr;
+    assert((data_offset() + data_end_offset) <= nmethod_size, "wrong nmethod's size: %d < %d", nmethod_size, (data_offset() + data_end_offset));
+
+    _entry_offset          = (uint16_t)offsets->value(CodeOffsets::Entry);
+    _verified_entry_offset = (uint16_t)offsets->value(CodeOffsets::Verified_Entry);
+    _osr_entry_point       = code_begin()          + offsets->value(CodeOffsets::OSR_Entry);
+    _exception_cache       = nullptr;
 
     _pc_desc_container.reset_to(scopes_pcs_begin());
 
@@ -1453,7 +1474,7 @@ nmethod::nmethod(
     // Copy contents of ScopeDescRecorder to nmethod
     code_buffer->copy_values_to(this);
     debug_info->copy_to(this);
-    dependencies->copy_to(this);
+    //dependencies->copy_to(this);
     clear_unloading_state();
 
 #if INCLUDE_JVMCI
@@ -1462,6 +1483,7 @@ nmethod::nmethod(
       jvmci_nmethod_data()->copy(jvmci_data);
     }
 #endif
+    dependencies->copy_to(this);
 
     finalize_relocations();
 
@@ -1484,7 +1506,7 @@ nmethod::nmethod(
     // we use the information of entry points to find out if a method is
     // static or non static
     assert(compiler->is_c2() || compiler->is_jvmci() ||
-           _method->is_static() == (entry_point() == _verified_entry_point),
+           _method->is_static() == (entry_point() == verified_entry_point()),
            " entry points must be same for static methods and vice versa");
   }
 }
@@ -1997,7 +2019,7 @@ bool nmethod::make_not_entrant() {
 
 // For concurrent GCs, there must be a handshake between unlink and flush
 void nmethod::unlink() {
-  if (_is_unlinked) {
+  if (is_unlinked()) {
     // Already unlinked.
     return;
   }
@@ -2031,8 +2053,7 @@ void nmethod::unlink() {
   ClassUnloadingContext::context()->register_unlinked_nmethod(this);
 }
 
-void nmethod::purge(bool free_code_cache_data, bool unregister_nmethod) {
-  assert(!free_code_cache_data, "must only call not freeing code cache data");
+void nmethod::purge(bool unregister_nmethod) {
 
   MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
@@ -2060,7 +2081,7 @@ void nmethod::purge(bool free_code_cache_data, bool unregister_nmethod) {
   }
   CodeCache::unregister_old_nmethod(this);
 
-  CodeBlob::purge(free_code_cache_data, unregister_nmethod);
+  CodeBlob::purge();
 }
 
 oop nmethod::oop_at(int index) const {

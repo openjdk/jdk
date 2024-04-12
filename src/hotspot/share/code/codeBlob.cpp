@@ -73,57 +73,32 @@ unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size) {
   return size;
 }
 
-#ifdef ASSERT
-void CodeBlob::verify_parameters() {
-  assert(is_aligned(_size,            oopSize), "unaligned size");
-  assert(is_aligned(_header_size,     oopSize), "unaligned size");
-  assert(is_aligned(_relocation_size, oopSize), "unaligned size");
-  assert(_data_offset <= size(), "codeBlob is too small");
-  assert(code_end() == content_end(), "must be the same - see code_end()");
-#ifdef COMPILER1
-  // probably wrong for tiered
-  assert(frame_size() >= -1, "must use frame size or -1 for runtime stubs");
-#endif // COMPILER1
-}
-#endif
-
-CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, int header_size, int relocation_size,
-                   int content_offset, int code_offset, int frame_complete_offset, int data_offset,
-                   int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments) :
-  _oop_maps(oop_maps),
-  _name(name),
-  _size(size),
-  _header_size(header_size),
-  _relocation_size(relocation_size),
-  _content_offset(content_offset),
-  _code_offset(code_offset),
-  _frame_complete_offset(frame_complete_offset),
-  _data_offset(data_offset),
-  _frame_size(frame_size),
-  S390_ONLY(_ctable_offset(0) COMMA)
-  _kind(kind),
-  _caller_must_gc_arguments(caller_must_gc_arguments)
-{
-  DEBUG_ONLY( verify_parameters(); )
-}
-
 CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, int header_size,
                    int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments) :
   _oop_maps(nullptr), // will be set by set_oop_maps() call
   _name(name),
   _size(size),
-  _header_size(header_size),
   _relocation_size(align_up(cb->total_relocation_size(), oopSize)),
-  _content_offset(CodeBlob::align_code_offset(_header_size + _relocation_size)),
+  _content_offset(CodeBlob::align_code_offset(header_size + _relocation_size)),
   _code_offset(_content_offset + cb->total_offset_of(cb->insts())),
-  _frame_complete_offset(frame_complete_offset),
   _data_offset(_content_offset + align_up(cb->total_content_size(), oopSize)),
   _frame_size(frame_size),
   S390_ONLY(_ctable_offset(0) COMMA)
+  _header_size((uint16_t)header_size),
+  _frame_complete_offset((int16_t)frame_complete_offset),
   _kind(kind),
   _caller_must_gc_arguments(caller_must_gc_arguments)
 {
-  DEBUG_ONLY( verify_parameters(); )
+  assert(((header_size     >> 16) == 0), "sanity");
+  assert(is_aligned(_size,            oopSize), "unaligned size");
+  assert(is_aligned(header_size,      oopSize), "unaligned size");
+  assert(is_aligned(_relocation_size, oopSize), "unaligned size");
+  assert(_data_offset <= _size, "codeBlob is too small: %d > %d", _data_offset, _size);
+  assert(code_end() == content_end(), "must be the same - see code_end()");
+#ifdef COMPILER1
+  // probably wrong for tiered
+  assert(_frame_size >= -1, "must use frame size or -1 for runtime stubs");
+#endif // COMPILER1
 
   set_oop_maps(oop_maps);
 }
@@ -133,22 +108,25 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, int header_siz
   _oop_maps(nullptr),
   _name(name),
   _size(size),
-  _header_size(header_size),
   _relocation_size(0),
   _content_offset(CodeBlob::align_code_offset(header_size)),
   _code_offset(_content_offset),
-  _frame_complete_offset(CodeOffsets::frame_never_safe),
   _data_offset(size),
   _frame_size(0),
+
   S390_ONLY(_ctable_offset(0) COMMA)
+
+  _header_size((uint16_t)header_size),
+  _frame_complete_offset((int16_t)CodeOffsets::frame_never_safe),
   _kind(kind),
   _caller_must_gc_arguments(false)
 {
   assert(is_aligned(size,            oopSize), "unaligned size");
   assert(is_aligned(header_size,     oopSize), "unaligned size");
+  assert(((header_size >> 16) == 0), "sanity");
 }
 
-void CodeBlob::purge(bool free_code_cache_data, bool unregister_nmethod) {
+void CodeBlob::purge() {
   if (_oop_maps != nullptr) {
     delete _oop_maps;
     _oop_maps = nullptr;
@@ -198,7 +176,7 @@ RuntimeBlob::RuntimeBlob(
 void RuntimeBlob::free(RuntimeBlob* blob) {
   assert(blob != nullptr, "caller must check for nullptr");
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
-  blob->purge(true /* free_code_cache_data */, true /* unregister_nmethod */);
+  blob->purge();
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::free(blob);
@@ -666,10 +644,6 @@ void UpcallStub::free(UpcallStub* blob) {
   assert(blob != nullptr, "caller must check for nullptr");
   JNIHandles::destroy_global(blob->receiver());
   RuntimeBlob::free(blob);
-}
-
-void UpcallStub::preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f) {
-  ShouldNotReachHere(); // caller should never have to gc arguments
 }
 
 //----------------------------------------------------------------------------------------------------
