@@ -220,8 +220,8 @@ class Events : AllStatic {
   // A log for generic messages that aren't well categorized.
   static StringEventLog* _messages;
 
-  // A log for generic messages that aren't well categorized and appear rather often/frequent
-  static StringEventLog* _frequent_messages;
+  // A log for memory protection related messages
+  static StringEventLog* _memprotect_messages;
 
   // A log for nmethod flush operations
   static StringEventLog* _nmethod_flush_messages;
@@ -265,7 +265,7 @@ class Events : AllStatic {
   // Logs a generic message with timestamp and format as printf.
   static void log(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
-  static void log_frequent(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+  static void log_memprotect(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
   static void log_nmethod_flush(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
@@ -300,11 +300,11 @@ inline void Events::log(Thread* thread, const char* format, ...) {
   }
 }
 
-inline void Events::log_frequent(Thread* thread, const char* format, ...) {
-  if (LogEvents && _frequent_messages != nullptr) {
+inline void Events::log_memprotect(Thread* thread, const char* format, ...) {
+  if (LogEvents && _memprotect_messages != nullptr) {
     va_list ap;
     va_start(ap, format);
-    _frequent_messages->logv(thread, format, ap);
+    _memprotect_messages->logv(thread, format, ap);
     va_end(ap);
   }
 }
