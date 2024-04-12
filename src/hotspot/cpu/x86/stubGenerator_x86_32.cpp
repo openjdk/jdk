@@ -4127,7 +4127,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Initialize table for fill memory check.
     if (UnsafeSetMemory::_table == nullptr) {
-      UnsafeSetMemory::create_table(8);
+      UnsafeSetMemory::create_table(22);
     }
 
     StubRoutines::x86::_verify_mxcsr_entry         = generate_verify_mxcsr();

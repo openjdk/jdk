@@ -4015,7 +4015,7 @@ void StubGenerator::generate_initial_stubs() {
 
   // Initialize table for unsafe set memeory check.
   if (UnsafeSetMemory::_table == nullptr) {
-    UnsafeSetMemory::create_table(16);
+    UnsafeSetMemory::create_table(22);
   }
 
   // entry points that exist in all platforms Note: This is code
