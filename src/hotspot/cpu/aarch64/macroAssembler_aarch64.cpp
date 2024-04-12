@@ -1514,6 +1514,9 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
                                                    Label* L_success,
                                                    Label* L_failure,
                                                    bool set_cond_codes) {
+  // NB! Callers may assume that, when temp2_reg is a valid register,
+  // this code sets it to a nonzero value.
+
   assert_different_registers(sub_klass, super_klass, temp_reg);
   if (temp2_reg != noreg)
     assert_different_registers(sub_klass, super_klass, temp_reg, temp2_reg, rscratch1);
@@ -1729,7 +1732,7 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
   add(r_array_base, r_array_base, Array<Klass*>::base_offset_in_bytes());
 
   // The bitmap is full to bursting.
-  // Implicit invariant: BITMAP_FULL => (length > 0)
+  // Implicit invariant: BITMAP_FULL implies (length > 0)
   assert(Klass::SECONDARY_SUPERS_BITMAP_FULL == ~uintx(0), "");
   cmn(r_bitmap, (u1)1);
   br(EQ, L_huge);

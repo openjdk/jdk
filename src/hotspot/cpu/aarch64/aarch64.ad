@@ -3663,7 +3663,6 @@ encode %{
 
      Label miss;
      C2_MacroAssembler _masm(&cbuf);
-     __ mov(result_reg, 1);
      __ check_klass_subtype_slow_path(sub_reg, super_reg, temp_reg, result_reg,
                                      nullptr, &miss,
                                      /*set_cond_codes:*/ true);
