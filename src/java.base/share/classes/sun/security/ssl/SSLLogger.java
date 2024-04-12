@@ -79,8 +79,7 @@ public final class SSLLogger {
             }
             isOn = true;
             // log almost everything for the "ssl" value.
-            // However, if "ssl:<option>" is specified, we narrow logging
-            sslOn = property.contains("ssl") && !property.contains("ssl:");
+            sslOn = property.equals("ssl");
         } else {
             property = null;
             logger = null;
@@ -137,6 +136,10 @@ public final class SSLLogger {
         } else if (property.isEmpty() || property.equals("all")) {
             // System.Logger in use or property = "all"
             return true;
+        } else if (checkPoints.equals("ssl") && !sslOn) {
+            // this helps prevent cases where property might have
+            // been specified as "ssltypo" -- shouldn't log.
+            return false;
         } else if (sslOn && !containsWidenOption(checkPoints)) {
             // fast path - in sslOn mode, we always log except for widen options
             return true;

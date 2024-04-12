@@ -76,8 +76,9 @@ public class DebugPropertyValues extends SSLSocketTemplate {
                         List.of("Plaintext before ENCRYPTION")),
                 // ssl:plaintext isn't valid. "plaintext" is sub-option for "record"
                 Arguments.of("ssl:plaintext",
-                        List.of("jdk.tls.keyLimits:"),
+                        null,
                         List.of("Plaintext before ENCRYPTION",
+                                "jdk.tls.keyLimits:",
                                 "trigger seeding of SecureRandom",
                                 "length =")),
                 Arguments.of("ssl:record:plaintext",
@@ -92,6 +93,12 @@ public class DebugPropertyValues extends SSLSocketTemplate {
                         List.of("trigger seeding of SecureRandom"),
                         List.of("Plaintext before ENCRYPTION",
                                 "length =")),
+                // ssltypo contains "ssl" but it's an invalid option
+                Arguments.of("ssltypo",
+                        null,
+                        List.of("Plaintext before ENCRYPTION",
+                                "adding as trusted certificates",
+                                "length =")),
                 Arguments.of("", // empty invokes System.Logger use
                         List.of("FINE: adding as trusted certificates",
                         "FINE: WRITE: TLSv1.3 application_data",
@@ -105,18 +112,22 @@ public class DebugPropertyValues extends SSLSocketTemplate {
     public void checkDebugOutput(String params, List<String> expected,
                                  List<String> notExpected) throws Exception {
         OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
-                "-Djavax.net.debug=" + params,
                 "-Djava.util.logging.config.file=" + LOG_FILE,
+                "-Djavax.net.debug=" + params,
                 "DebugPropertyValues"
         );
         outputAnalyzer.shouldHaveExitValue(0);
-        for (String s : expected) {
-            outputAnalyzer.shouldMatch(s);
+        if (expected != null) {
+            for (String s : expected) {
+                outputAnalyzer.shouldMatch(s);
+            }
         }
         if (notExpected != null) {
             for (String s : notExpected) {
                 outputAnalyzer.shouldNotMatch(s);
             }
+        } else {
+            outputAnalyzer.stderrShouldNotBeEmpty();
         }
     }
 
