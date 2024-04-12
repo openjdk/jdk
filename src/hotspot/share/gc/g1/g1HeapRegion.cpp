@@ -695,11 +695,6 @@ bool HeapRegion::verify(VerifyOption vo) const {
     return true;
   }
 
-  // Only regions in old generation contain valid BOT.
-  if (!is_empty() && !is_young()) {
-    _bot->verify(this);
-  }
-
   if (is_humongous()) {
     oop obj = cast_to_oop(this->humongous_start_region()->bottom());
     if (cast_from_oop<HeapWord*>(obj) > bottom() || cast_from_oop<HeapWord*>(obj) + obj->size() < bottom()) {
