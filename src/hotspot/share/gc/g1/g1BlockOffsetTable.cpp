@@ -217,22 +217,26 @@ void G1BlockOffsetTable::update_for_block_work(HeapWord* blk_start, HeapWord* bl
 }
 
 #ifdef ASSERT
+void G1BlockOffsetTable::verify_offset(uint8_t* card_index, uint8_t upper_boundary) const {
+  assert(offset_array(card_index) <= upper_boundary,
+         "Offset %u should not be larger than upper boundary %u.",
+         (uint) offset_array(card_index),
+         (uint) upper_boundary);
+}
+
 void G1BlockOffsetTable::verify_for_block(HeapWord* blk_start, HeapWord* blk_end) const {
   assert(is_crossing_card_boundary(blk_start, blk_end), "precondition");
 
   uint8_t* start_card = entry_for_addr(align_up_by_card_size(blk_start));
   uint8_t* end_card = entry_for_addr(blk_end - 1);
   // Check cards in [start_card, end_card]
-  assert(offset_array(start_card) < CardTable::card_size_in_words(), "offset card");
+  verify_offset(start_card, CardTable::card_size_in_words());
 
   for (uint8_t* current_card = start_card + 1; current_card <= end_card; ++current_card) {
-    assert(offset_array(current_card) > 0 &&
-           offset_array(current_card) <= (uint8_t) (CardTable::card_size_in_words() + BOTConstants::N_powers - 1),
-           "offset array should have been set - "
-           "%u not > 0 OR %u not <= %u",
-           (uint) offset_array(current_card),
-           (uint) offset_array(current_card),
-           (uint) (CardTable::card_size_in_words() + BOTConstants::N_powers - 1));
+    assert(offset_array(current_card) > 0,
+           "Offset %u is not larger than 0.",
+           (uint) offset_array(current_card));
+    verify_offset(current_card, (uint8_t) (CardTable::card_size_in_words() + BOTConstants::N_powers - 1));
 
     uint8_t* prev  = current_card - 1;
     uint8_t* value = current_card;
