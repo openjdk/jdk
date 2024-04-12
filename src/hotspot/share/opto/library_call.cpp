@@ -4949,6 +4949,8 @@ bool LibraryCallKit::inline_unsafe_copyMemory() {
   return true;
 }
 
+// unsafe_setmemory(void *base, ulong offset, size_t length, char fill_value);
+// Fill 'length' bytes starting from 'base[offset]' with 'fill_value'
 bool LibraryCallKit::inline_unsafe_setMemory() {
   if (callee()->is_static())  return false;  // caller must have the capability!
   null_check_receiver();  // null-check receiver

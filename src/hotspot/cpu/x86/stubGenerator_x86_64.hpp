@@ -274,7 +274,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // Examines the alignment of the operands and dispatches
   // to an int, short, or byte copy loop.
-  address generate_unsafe_setmemory(const char *name, address byte_fill_entry);
+  address generate_unsafe_setmemory(const char *name);
 
   // Perform range checks on the proposed arraycopy.
   // Kills temp, but nothing else.

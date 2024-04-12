@@ -207,11 +207,6 @@ public class CopyMemory {
     public static void main(String[] args) throws Exception {
         Unsafe unsafe = getUnsafe();
 
-        // long seed = 6742745864802755133L;
-        long seed = random.nextLong();
-        random.setSeed(seed);
-        System.out.println("Seed set to "+ seed);
-
         testSetByteArray(unsafe);
         testSetRawMemory(unsafe);
         testCopyByteArrayToByteArray(unsafe);

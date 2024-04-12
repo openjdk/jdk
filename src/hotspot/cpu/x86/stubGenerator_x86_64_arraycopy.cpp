@@ -152,8 +152,7 @@ void StubGenerator::generate_arraycopy_stubs() {
   StubRoutines::_arrayof_jshort_fill = generate_fill(T_SHORT, true, "arrayof_jshort_fill");
   StubRoutines::_arrayof_jint_fill = generate_fill(T_INT, true, "arrayof_jint_fill");
 
-  StubRoutines::_unsafe_setmemory =
-      generate_unsafe_setmemory("unsafe_setmemory", StubRoutines::_jbyte_fill);
+  StubRoutines::_unsafe_setmemory = generate_unsafe_setmemory("unsafe_setmemory");
 
   // We don't generate specialized code for HeapWord-aligned source
   // arrays, so just use the code we've already generated
@@ -730,7 +729,6 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(address* entry, const 
   __ ret(0);
 
   if (MaxVectorSize == 64) {
-    UnsafeCopyMemoryMark ucmm(this, !is_oop && !aligned, false, ucme_exit_pc);
     __ BIND(L_copy_large);
     arraycopy_avx3_large(to, from, temp1, temp2, temp3, temp4, count, xmm1, xmm2, xmm3, xmm4, shift);
     __ jmp(L_finish);
@@ -2492,8 +2490,7 @@ address StubGenerator::generate_unsafe_copy(const char *name,
 // Examines the alignment of the operands and dispatches
 // to an int, short, or byte fill loop.
 //
-address StubGenerator::generate_unsafe_setmemory(const char *name,
-                                                 address byte_fill_entry) {
+address StubGenerator::generate_unsafe_setmemory(const char *name) {
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, "StubRoutines", name);
   address start = __ pc();
