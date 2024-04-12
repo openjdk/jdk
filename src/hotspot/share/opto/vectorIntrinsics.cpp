@@ -1037,7 +1037,13 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
   const bool needs_cpu_membar = is_mixed_access || is_mismatched_access;
 
   bool mismatched_ms = from_ms->get_con() && !is_mask && arr_type != nullptr && arr_type->elem()->array_element_basic_type() != elem_bt;
-  BasicType mem_elem_bt = mismatched_ms ? arr_type->elem()->array_element_basic_type() : elem_bt;
+  BasicType mem_elem_bt = LITTLE_ENDIAN_ONLY(elem_bt) BIG_ENDIAN_ONLY(arr_type->elem()->array_element_basic_type());
+  if (!is_java_primitive(mem_elem_bt)) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** non-primitive array element type");
+    }
+    return false;
+  }
   int mem_num_elem = mismatched_ms ? (num_elem * type2aelembytes(elem_bt)) / type2aelembytes(mem_elem_bt) : num_elem;
   if (arr_type != nullptr && !is_mask && !elem_consistent_with_arr(elem_bt, arr_type, mismatched_ms)) {
     if (C->print_intrinsics()) {
