@@ -359,13 +359,13 @@ class Method : public Metadata {
   bool check_code() const;      // Not inline to avoid circular ref
   nmethod* code() const;
 
-  // Locks CompiledMethod_lock if not held.
+  // Locks NMethodState_lock if not held.
   void unlink_code(nmethod *compare);
-  // Locks CompiledMethod_lock if not held.
+  // Locks NMethodState_lock if not held.
   void unlink_code();
 
 private:
-  // Either called with CompiledMethod_lock held or from constructor.
+  // Either called with NMethodState_lock held or from constructor.
   void clear_code();
 
   void clear_method_data() {

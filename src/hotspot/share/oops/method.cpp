@@ -1160,7 +1160,7 @@ void Method::clear_code() {
 }
 
 void Method::unlink_code(nmethod *compare) {
-  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   // We need to check if either the _code or _from_compiled_code_entry_point
   // refer to this nmethod because there is a race in setting these two fields
   // in Method* as seen in bugid 4947125.
@@ -1171,7 +1171,7 @@ void Method::unlink_code(nmethod *compare) {
 }
 
 void Method::unlink_code() {
-  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   clear_code();
 }
 
@@ -1309,7 +1309,7 @@ bool Method::check_code() const {
 
 // Install compiled code.  Instantly it can execute.
 void Method::set_code(const methodHandle& mh, nmethod *code) {
-  assert_lock_strong(CompiledMethod_lock);
+  assert_lock_strong(NMethodState_lock);
   assert( code, "use clear_code to remove code" );
   assert( mh->check_code(), "" );
 

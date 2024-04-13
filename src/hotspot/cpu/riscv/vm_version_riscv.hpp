@@ -61,6 +61,10 @@ class VM_Version : public Abstract_VM_Version {
       _enabled = true;
       _value = value;
     }
+    void disable_feature() {
+      _enabled = false;
+      _value = -1;
+    }
     const char* pretty()         { return _pretty; }
     uint64_t feature_bit()       { return _feature_bit; }
     bool feature_string()        { return _feature_string; }
@@ -69,16 +73,21 @@ class VM_Version : public Abstract_VM_Version {
     virtual void update_flag() = 0;
   };
 
-  #define UPDATE_DEFAULT(flag)        \
-  void update_flag() {                \
-      assert(enabled(), "Must be.");  \
-      if (FLAG_IS_DEFAULT(flag)) {    \
-        FLAG_SET_DEFAULT(flag, true); \
-      }                               \
-  }                                   \
+  #define UPDATE_DEFAULT(flag)             \
+  void update_flag() {                     \
+      assert(enabled(), "Must be.");       \
+      if (FLAG_IS_DEFAULT(flag)) {         \
+        FLAG_SET_DEFAULT(flag, true);      \
+      } else {                             \
+        /* Sync CPU features with flags */ \
+        if (!flag) {                       \
+          disable_feature();               \
+        }                                  \
+      }                                    \
+  }                                        \
 
-  #define NO_UPDATE_DEFAULT           \
-  void update_flag() {}               \
+  #define NO_UPDATE_DEFAULT                \
+  void update_flag() {}                    \
 
   // Frozen standard extensions
   // I RV64I

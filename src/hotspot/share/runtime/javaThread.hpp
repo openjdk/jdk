@@ -891,11 +891,11 @@ private:
   void frames_do(void f(frame*, const RegisterMap*));
 
   // Memory operations
-  void oops_do_frames(OopClosure* f, CodeBlobClosure* cf);
-  void oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf);
+  void oops_do_frames(OopClosure* f, NMethodClosure* cf);
+  void oops_do_no_frames(OopClosure* f, NMethodClosure* cf);
 
   // GC operations
-  virtual void nmethods_do(CodeBlobClosure* cf);
+  virtual void nmethods_do(NMethodClosure* cf);
 
   // RedefineClasses Support
   void metadata_do(MetadataClosure* f);

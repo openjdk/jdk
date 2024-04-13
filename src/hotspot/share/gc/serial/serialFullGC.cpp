@@ -24,7 +24,8 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/classLoaderData.inline.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -34,17 +35,20 @@
 #include "compiler/oopMap.hpp"
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/defNewGeneration.hpp"
-#include "gc/serial/serialFullGC.inline.hpp"
+#include "gc/serial/serialFullGC.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/serial/serialHeap.hpp"
+#include "gc/serial/serialStringDedup.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/modRefBarrierSet.hpp"
+#include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/space.inline.hpp"
@@ -55,11 +59,13 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/instanceRefKlass.hpp"
+#include "oops/markWord.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
+#include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
 #include "utilities/stack.inline.hpp"
@@ -97,7 +103,8 @@ class DeadSpacer : StackObj {
 
 public:
   DeadSpacer(ContiguousSpace* space) : _allowed_deadspace_words(0), _space(space) {
-    size_t ratio = _space->allowed_dead_ratio();
+    size_t ratio = (_space == SerialHeap::heap()->old_gen()->space())
+                   ? MarkSweepDeadRatio : 0;
     _active = ratio > 0;
 
     if (_active) {
@@ -265,7 +272,7 @@ public:
     _spaces[1].init(heap->young_gen()->eden());
     _spaces[2].init(heap->young_gen()->from());
 
-    bool is_promotion_failed = (heap->young_gen()->from()->next_compaction_space() != nullptr);
+    bool is_promotion_failed = !heap->young_gen()->to()->is_empty();
     if (is_promotion_failed) {
       _spaces[3].init(heap->young_gen()->to());
       _num_spaces = 4;
@@ -325,7 +332,7 @@ public:
       while (cur_addr < top) {
         prefetch_write_scan(cur_addr);
         if (cur_addr < first_dead || cast_to_oop(cur_addr)->is_gc_marked()) {
-          size_t size = SerialFullGC::adjust_pointers(cast_to_oop(cur_addr));
+          size_t size = cast_to_oop(cur_addr)->oop_iterate_size(&SerialFullGC::adjust_pointer_closure);
           cur_addr += size;
         } else {
           assert(*(HeapWord**)cur_addr > cur_addr, "forward progress");
@@ -473,7 +480,7 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
     StrongRootsScope srs(0);
 
     CLDClosure* weak_cld_closure = ClassUnloading ? nullptr : &follow_cld_closure;
-    MarkingCodeBlobClosure mark_code_closure(&follow_root_closure, !CodeBlobToOopClosure::FixRelocations, true);
+    MarkingNMethodClosure mark_code_closure(&follow_root_closure, !NMethodToOopClosure::FixRelocations, true);
     gch->process_roots(SerialHeap::SO_None,
                        &follow_root_closure,
                        &follow_cld_closure,
@@ -527,7 +534,7 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
     }
     {
       GCTraceTime(Debug, gc, phases) t("Free Code Blobs", gc_timer());
-      ctx->free_code_blobs();
+      ctx->free_nmethods();
     }
 
     // Prune dead klasses from subklass/sibling/implementor lists.
@@ -606,6 +613,25 @@ template <typename T>
 void MarkAndPushClosure::do_oop_work(T* p)            { SerialFullGC::mark_and_push(p); }
 void MarkAndPushClosure::do_oop(      oop* p)         { do_oop_work(p); }
 void MarkAndPushClosure::do_oop(narrowOop* p)         { do_oop_work(p); }
+
+template <class T> void SerialFullGC::adjust_pointer(T* p) {
+  T heap_oop = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(heap_oop)) {
+    oop obj = CompressedOops::decode_not_null(heap_oop);
+    assert(Universe::heap()->is_in(obj), "should be in heap");
+
+    if (obj->is_forwarded()) {
+      oop new_obj = obj->forwardee();
+      assert(is_object_aligned(new_obj), "oop must be aligned");
+      RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
+    }
+  }
+}
+
+template <typename T>
+void AdjustPointerClosure::do_oop_work(T* p)           { SerialFullGC::adjust_pointer(p); }
+inline void AdjustPointerClosure::do_oop(oop* p)       { do_oop_work(p); }
+inline void AdjustPointerClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 AdjustPointerClosure SerialFullGC::adjust_pointer_closure;
 
@@ -695,7 +721,7 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
 
     ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
 
-    CodeBlobToOopClosure code_closure(&adjust_pointer_closure, CodeBlobToOopClosure::FixRelocations);
+    NMethodToOopClosure code_closure(&adjust_pointer_closure, NMethodToOopClosure::FixRelocations);
     gch->process_roots(SerialHeap::SO_AllCodeCache,
                        &adjust_pointer_closure,
                        &adjust_cld_closure,
