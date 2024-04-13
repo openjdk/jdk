@@ -284,12 +284,14 @@ public class VerifyAccess {
         if (refcLoader == null && typeLoader != null) {
             return false;
         }
-        if (typeLoader == null && type.getName().startsWith("java.")) {
-            // Note:  The API for actually loading classes, ClassLoader.defineClass,
-            // guarantees that classes with names beginning "java." cannot be aliased,
-            // because class loaders cannot load them directly.
-            return true;
-        }
+
+        // The API for actually loading classes, ClassLoader.defineClass,
+        // guarantees that classes with names beginning "java." cannot be aliased,
+        // because class loaders cannot load them directly. However, it is beneficial
+        // for JIT-compilers to ensure all signature classes are loaded.
+        // JVM doesn't install any loader contraints when performing MemberName resolution,
+        // so eagerly resolving signature classes is a way to match what JVM achieves
+        // with loader constraints during method resolution for invoke bytecodes.
 
         // Do it the hard way:  Look up the type name from the refc loader.
         //
