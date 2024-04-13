@@ -23,10 +23,10 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFREESET_INLINE_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHFREESET_INLINE_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSIMPLEBITMAP_INLINE_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHSIMPLEBITMAP_INLINE_HPP
 
-#include "gc/shenandoah/shenandoahFreeSet.hpp"
+#include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 
 inline ssize_t ShenandoahSimpleBitMap::find_next_set_bit(ssize_t start_idx, ssize_t boundary_idx) const {
   assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
@@ -98,4 +98,4 @@ inline ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(size_t num_bit
   return find_prev_consecutive_bits(num_bits, last_idx, (ssize_t) -1);
 }
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHFREESET_INLINE_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHSIMPLEBITMAP_INLINE_HPP

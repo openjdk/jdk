@@ -23,15 +23,13 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shenandoah/shenandoahFreeSet.hpp"
-#include "gc/shenandoah/shenandoahFreeSet.inline.hpp"
+#include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
+#include "gc/shenandoah/shenandoahSimpleBitMap.inline.hpp"
 
-#include "utilities/ostream.hpp"
-
-#include "utilities/vmassert_uninstall.hpp"
 #include <iostream>
+#include "utilities/ostream.hpp"
+#include "utilities/vmassert_uninstall.hpp"
 #include "utilities/vmassert_reinstall.hpp"
-
 #include "unittest.hpp"
 
 static bool _success;
