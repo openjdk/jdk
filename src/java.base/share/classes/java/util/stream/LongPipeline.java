@@ -294,7 +294,7 @@ abstract class LongPipeline<E_IN>
 
                     @Override
                     public void accept(long e) {
-                        try (final var result = mapper.apply(e)) {
+                        try (LongStream result = mapper.apply(e)) {
                             if (result != null) {
                                 if (fastPath == null)
                                     result.sequential().allMatch(this);

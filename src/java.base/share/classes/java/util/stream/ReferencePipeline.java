@@ -277,7 +277,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                 StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<R> sink) {
-                final boolean shorts = isShortCircuitingPipeline();
+                boolean shorts = isShortCircuitingPipeline();
                 final class FlatMap implements Sink<P_OUT>, Predicate<R> {
                     boolean cancel;
 
@@ -286,7 +286,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
 
                     @Override
                     public void accept(P_OUT e) {
-                        try (final var result = mapper.apply(e)) {
+                        try (Stream<? extends R> result = mapper.apply(e)) {
                             if (result != null) {
                                 if (shorts)
                                     result.sequential().allMatch(this);
@@ -323,12 +323,12 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                 StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<Integer> sink) {
-                final IntConsumer fastPath =
-                        isShortCircuitingPipeline()
-                                ? null
-                                : (sink instanceof IntConsumer ic)
-                                ? ic
-                                : sink::accept;
+                IntConsumer fastPath =
+                    isShortCircuitingPipeline()
+                        ? null
+                        : (sink instanceof IntConsumer ic)
+                            ? ic
+                            : sink::accept;
                 final class FlatMap implements Sink<P_OUT>, IntPredicate {
                     boolean cancel;
 
@@ -337,7 +337,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
 
                     @Override
                     public void accept(P_OUT e) {
-                        try (final var result = mapper.apply(e)) {
+                        try (IntStream result = mapper.apply(e)) {
                             if (result != null) {
                                 if (fastPath == null)
                                     result.sequential().allMatch(this);
@@ -374,12 +374,12 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                 StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<Double> sink) {
-                final DoubleConsumer fastPath =
-                        isShortCircuitingPipeline()
-                                ? null
-                                : (sink instanceof DoubleConsumer dc)
-                                ? dc
-                                : sink::accept;
+                DoubleConsumer fastPath =
+                    isShortCircuitingPipeline()
+                        ? null
+                        : (sink instanceof DoubleConsumer dc)
+                            ? dc
+                            : sink::accept;
                 final class FlatMap implements Sink<P_OUT>, DoublePredicate {
                     boolean cancel;
 
@@ -388,7 +388,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
 
                     @Override
                     public void accept(P_OUT e) {
-                        try (final var result = mapper.apply(e)) {
+                        try (DoubleStream result = mapper.apply(e)) {
                             if (result != null) {
                                 if (fastPath == null)
                                     result.sequential().allMatch(this);
@@ -426,12 +426,12 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                 StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<Long> sink) {
-                final LongConsumer fastPath =
-                        isShortCircuitingPipeline()
-                                ? null
-                                : (sink instanceof LongConsumer lc)
-                                ? lc
-                                : sink::accept;
+                LongConsumer fastPath =
+                    isShortCircuitingPipeline()
+                        ? null
+                        : (sink instanceof LongConsumer lc)
+                            ? lc
+                            : sink::accept;
                 final class FlatMap implements Sink<P_OUT>, LongPredicate {
                     boolean cancel;
 
@@ -440,7 +440,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
 
                     @Override
                     public void accept(P_OUT e) {
-                        try (final var result = mapper.apply(e)) {
+                        try (LongStream result = mapper.apply(e)) {
                             if (result != null) {
                                 if (fastPath == null)
                                     result.sequential().allMatch(this);

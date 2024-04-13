@@ -278,7 +278,7 @@ abstract class DoublePipeline<E_IN>
 
                     @Override
                     public void accept(double e) {
-                        try (final var result = mapper.apply(e)) {
+                        try (DoubleStream result = mapper.apply(e)) {
                             if (result != null) {
                                 if (fastPath == null)
                                     result.sequential().allMatch(this);

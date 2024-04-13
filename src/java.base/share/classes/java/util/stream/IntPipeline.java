@@ -311,7 +311,7 @@ abstract class IntPipeline<E_IN>
 
                     @Override
                     public void accept(int e) {
-                        try (final var result = mapper.apply(e)) {
+                        try (IntStream result = mapper.apply(e)) {
                             if (result != null) {
                                 if (fastPath == null)
                                     result.sequential().allMatch(this);
