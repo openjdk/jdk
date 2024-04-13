@@ -65,6 +65,8 @@ public:
   void set_mark_incomplete() override;
 
   ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode) override;
+
+  virtual void prepare_gc() override;
 };
 
 #endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHGLOBALGENERATION_HPP

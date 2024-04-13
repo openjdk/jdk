@@ -103,3 +103,12 @@ size_t ShenandoahYoungGeneration::soft_available() const {
   return MIN2(available, ShenandoahHeap::heap()->free_set()->available());
 }
 
+void ShenandoahYoungGeneration::prepare_gc() {
+
+  ShenandoahGeneration::prepare_gc();
+
+  assert(type() == YOUNG, "Error?");
+  // Clear any stale/partial local census data before the start of a
+  // new marking cycle
+  ShenandoahHeap::heap()->age_census()->reset_local();
+}

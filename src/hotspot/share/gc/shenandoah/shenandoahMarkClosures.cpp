@@ -81,7 +81,7 @@ void ShenandoahFinalMarkUpdateRegionStateClosure::heap_region_do(ShenandoahHeapR
 
 ShenandoahUpdateCensusZeroCohortClosure::ShenandoahUpdateCensusZeroCohortClosure(
   ShenandoahMarkingContext *ctx) :
-  _ctx(ctx), _pop(0) {}
+  _ctx(ctx), _age0_pop(0), _total_pop(0) {}
 
 void ShenandoahUpdateCensusZeroCohortClosure::heap_region_do(ShenandoahHeapRegion* r) {
   if (_ctx != nullptr && r->is_active()) {
@@ -89,7 +89,10 @@ void ShenandoahUpdateCensusZeroCohortClosure::heap_region_do(ShenandoahHeapRegio
     HeapWord* tams = _ctx->top_at_mark_start(r);
     HeapWord* top  = r->top();
     if (top > tams) {
-      _pop += pointer_delta(top, tams);
+      _age0_pop += pointer_delta(top, tams);
     }
+    // TODO: check significance of _ctx != nullptr above, can that
+    // spoof _total_pop in some corner cases?
+    NOT_PRODUCT(_total_pop += r->get_live_data_words();)
   }
 }

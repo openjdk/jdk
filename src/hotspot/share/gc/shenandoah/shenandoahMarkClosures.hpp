@@ -45,15 +45,20 @@ public:
 
 // Add [TAMS, top) volume over young regions. Used to correct age 0 cohort census
 // for adaptive tenuring when census is taken during marking.
+// In non-product builds, for the purposes of verification, we also collect the total
+// live objects in young regions as well.
 class ShenandoahUpdateCensusZeroCohortClosure : public ShenandoahHeapRegionClosure {
 private:
   ShenandoahMarkingContext* const _ctx;
-  size_t _pop;   // running tally of population
+  // Population size units are words (not bytes)
+  size_t _age0_pop;                // running tally of age0 population size
+  size_t _total_pop;               // total live population size
 public:
   ShenandoahUpdateCensusZeroCohortClosure(ShenandoahMarkingContext* ctx);
 
   void heap_region_do(ShenandoahHeapRegion* r);
 
-  size_t get_population() { return _pop; }
+  size_t get_age0_population()  { return _age0_pop; }
+  size_t get_total_population() { return _total_pop; }
 };
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARKCLOSURES_HPP

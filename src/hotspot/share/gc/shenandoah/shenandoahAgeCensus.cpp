@@ -125,9 +125,7 @@ void ShenandoahAgeCensus::prepare_for_census_update() {
 // Update the census data from appropriate sources,
 // and compute the new tenuring threshold.
 void ShenandoahAgeCensus::update_census(size_t age0_pop, AgeTable* pv1, AgeTable* pv2) {
-  // Check that we won't overwrite existing data: caller is
-  // responsible for explicitly clearing the slot via calling
-  // prepare_for_census_update().
+  prepare_for_census_update();
   assert(_global_age_table[_epoch]->is_clear(), "Dirty decks");
   CENSUS_NOISE(assert(_global_noise[_epoch].is_clear(), "Dirty decks");)
   if (ShenandoahGenerationalAdaptiveTenuring && !ShenandoahGenerationalCensusAtEvac) {
@@ -155,6 +153,10 @@ void ShenandoahAgeCensus::update_census(size_t age0_pop, AgeTable* pv1, AgeTable
   }
 
   update_tenuring_threshold();
+
+  // used for checking reasonableness of census coverage, non-product
+  // only.
+  NOT_PRODUCT(update_total();)
 }
 
 
@@ -212,6 +214,27 @@ bool ShenandoahAgeCensus::is_clear_local() {
     }
   }
   return true;
+}
+
+size_t ShenandoahAgeCensus::get_all_ages(uint snap) {
+  assert(snap < MAX_SNAPSHOTS, "Out of bounds");
+  size_t pop = 0;
+  const AgeTable* pv = _global_age_table[snap];
+  for (uint i = 0; i < MAX_COHORTS; i++) {
+    pop += pv->sizes[i];
+  }
+  return pop;
+}
+
+size_t ShenandoahAgeCensus::get_skipped(uint snap) {
+  assert(snap < MAX_SNAPSHOTS, "Out of bounds");
+  return _global_noise[snap].skipped;
+}
+
+void ShenandoahAgeCensus::update_total() {
+  _counted = get_all_ages(_epoch);
+  _skipped = get_skipped(_epoch);
+  _total   = _counted + _skipped;
 }
 #endif // !PRODUCT
 

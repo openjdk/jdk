@@ -677,14 +677,20 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     // young regions and sum the volume of objects between TAMS and top.
     ShenandoahUpdateCensusZeroCohortClosure age0_cl(complete_marking_context());
     heap->young_generation()->heap_region_iterate(&age0_cl);
-    size_t age0_pop = age0_cl.get_population();
+    size_t age0_pop = age0_cl.get_age0_population();
 
-    // Age table updates
-    ShenandoahAgeCensus* census = heap->age_census();
-    census->prepare_for_census_update();
     // Update the global census, including the missed age 0 cohort above,
-    // along with the census during marking, and compute the tenuring threshold
-    census->update_census(age0_pop);
+    // along with the census done during marking, and compute the tenuring threshold.
+    heap->age_census()->update_census(age0_pop);
+#ifndef PRODUCT
+    size_t total_pop = age0_cl.get_total_population();
+    size_t total_census = heap->age_census()->get_total();
+    // Usually total_pop > total_census, but not by too much.
+    // We use integer division so anything up to just less than 2 is considered
+    // reasonable, and the "+1" is to avoid divide-by-zero.
+    assert((total_pop+1)/(total_census+1) ==  1, "Extreme divergence: "
+           SIZE_FORMAT "/" SIZE_FORMAT, total_pop, total_census);
+#endif
   }
 
   {

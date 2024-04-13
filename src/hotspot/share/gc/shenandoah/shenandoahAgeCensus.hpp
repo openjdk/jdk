@@ -101,7 +101,15 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
 #ifdef SHENANDOAH_CENSUS_NOISE
   ShenandoahNoiseStats* _global_noise; // Noise stats, one per snapshot
   ShenandoahNoiseStats* _local_noise;  // Local scratch table for noise stats, one per worker
+
+  size_t _skipped;                   // net size of objects encountered, but skipped during census,
+                                     // because their age was indeterminate
 #endif // SHENANDOAH_CENSUS_NOISE
+
+#ifndef PRODUCT
+  size_t _counted;                   // net size of objects counted in census
+  size_t _total;                     // net size of objects encountered (counted or skipped) in census
+#endif
 
   uint _epoch;                       // Current epoch (modulo max age)
   uint *_tenuring_threshold;         // An array of the last N tenuring threshold values we
@@ -111,15 +119,44 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   // previous and current epochs
   double mortality_rate(size_t prev_pop, size_t cur_pop);
 
+  // Update to a new epoch, creating a slot for new census.
+  void prepare_for_census_update();
+
   // Update the tenuring threshold, calling
-  // compute_tenuring_threshold to calculate the new
+  // compute_tenuring_threshold() to calculate the new
   // value
   void update_tenuring_threshold();
 
-  // This uses the data in the ShenandoahAgeCensus object's _global_age_table and the
-  // current _epoch to compute a new tenuring threshold, which will be remembered
-  // until the next invocation of compute_tenuring_threshold.
+  // Use _global_age_table and the current _epoch to compute a new tenuring
+  // threshold, which will be remembered until the next invocation of
+  // compute_tenuring_threshold.
   uint compute_tenuring_threshold();
+
+  // Return the tenuring threshold computed for the previous epoch
+  uint previous_tenuring_threshold() const {
+    assert(_epoch < MAX_SNAPSHOTS, "Error");
+    uint prev = _epoch - 1;
+    if (prev >= MAX_SNAPSHOTS) {
+      // _epoch is 0
+      assert(_epoch == 0, "Error");
+      prev = MAX_SNAPSHOTS - 1;
+    }
+    return _tenuring_threshold[prev];
+  }
+
+#ifndef PRODUCT
+  // Return the sum of size of objects of all ages recorded in the
+  // census at snapshot indexed by snap.
+  size_t get_all_ages(uint snap);
+
+  // Return the size of all objects that were encountered, but skipped,
+  // during the census, because their age was indeterminate.
+  size_t get_skipped(uint snap);
+
+  // Update the total size of objects counted or skipped at the census for
+  // the most recent epoch.
+  void update_total();
+#endif // !PRODUCT
 
  public:
   enum {
@@ -151,37 +188,38 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   void add_young(size_t size, uint worker_id);
 #endif // SHENANDOAH_CENSUS_NOISE
 
-  // Update to a new epoch, creating a slot for new census.
-  void prepare_for_census_update();
-
   // Update the census data, and compute the new tenuring threshold.
+  // This method should be called at the end of each marking (or optionally
+  // evacuation) cycle to update the tenuring threshold to be used in
+  // the next cycle.
   // age0_pop is the population of Cohort 0 that may have been missed in
-  // the regular census.
+  // the regular census during the marking cycle, corresponding to objects
+  // allocated when the concurrent marking was in progress.
+  // Optional parameters, pv1 and pv2 are population vectors that together
+  // provide object census data (only) for the case when
+  // ShenandoahGenerationalCensusAtEvac. In this case, the age0_pop
+  // is 0, because the evacuated objects have all had their ages incremented.
   void update_census(size_t age0_pop, AgeTable* pv1 = nullptr, AgeTable* pv2 = nullptr);
 
   // Return the most recently computed tenuring threshold
   uint tenuring_threshold() const { return _tenuring_threshold[_epoch]; }
 
-  // Return the tenuring threshold computed for the previous epoch
-  uint previous_tenuring_threshold() const {
-    assert(_epoch < MAX_SNAPSHOTS, "Error");
-    uint prev = _epoch - 1;
-    if (prev >= MAX_SNAPSHOTS) {
-      // _epoch is 0
-      prev = MAX_SNAPSHOTS - 1;
-    }
-    return _tenuring_threshold[prev];
-  }
-
   // Reset the epoch, clearing accumulated census history
+  // Note: this isn't currently used, but reserved for planned
+  // future usage.
   void reset_global();
-  // Reset any partial census information
+
+  // Reset any (potentially partial) census information in worker-local age tables
   void reset_local();
 
 #ifndef PRODUCT
   // Check whether census information is clear
   bool is_clear_global();
   bool is_clear_local();
+
+  // Return the net size of objects encountered (counted or skipped) in census
+  // at most recent epoch.
+  size_t get_total() { return _total; }
 #endif // !PRODUCT
 
   // Print the age census information

@@ -149,14 +149,12 @@ ShenandoahCycleStats ShenandoahEvacuationTracker::flush_cycle_to_global() {
   _workers_global.accumulate(&workers);
 
   if (_generational && (ShenandoahGenerationalCensusAtEvac || !ShenandoahGenerationalAdaptiveTenuring)) {
-    // Ingest population vectors into the heap's global census
-    // data, and use it to compute an appropriate tenuring threshold
+    // Ingest mutator & worker collected population vectors into the heap's
+    // global census data, and use it to compute an appropriate tenuring threshold
     // for use in the next cycle.
-    ShenandoahAgeCensus* census = ShenandoahHeap::heap()->age_census();
-    census->prepare_for_census_update();
     // The first argument is used for any age 0 cohort population that we may otherwise have
     // missed during the census. This is non-zero only when census happens at marking.
-    census->update_census(0, _mutators_global.age_table(), _workers_global.age_table());
+    ShenandoahHeap::heap()->age_census()->update_census(0, _mutators_global.age_table(), _workers_global.age_table());
   }
 
   return {workers, mutators};
