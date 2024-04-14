@@ -49,6 +49,7 @@ Compiler::Compiler() : AbstractCompiler(compiler_c1) {
 }
 
 void Compiler::init_c1_runtime() {
+  if (Runtime1::blob_for((Runtime1::StubID)0) == nullptr) // check if Runtime1 is initialized
   Runtime1::initialize(CompilerThread::current()->get_buffer_blob());
 }
 
@@ -243,7 +244,9 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
 }
 
 void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci, bool install_code, DirectiveSet* directive) {
-  BufferBlob* buffer_blob = init_buffer_blob();
+  BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
+  if (buffer_blob == nullptr) { buffer_blob = init_buffer_blob(); }
+
   if (buffer_blob == nullptr) {
     warning("no space to run C1 compiler");
     return;

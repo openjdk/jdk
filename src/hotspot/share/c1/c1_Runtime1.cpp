@@ -109,7 +109,7 @@ void StubAssembler::set_num_rt_args(int args) {
 
 // Implementation of Runtime1
 
-CodeBlob* Runtime1::_blobs[Runtime1::number_of_ids];
+CodeBlob* Runtime1::_blobs[Runtime1::number_of_ids] = {nullptr};
 const char *Runtime1::_blob_names[] = {
   RUNTIME1_STUBS(STUB_NAME, LAST_STUB_NAME)
 };

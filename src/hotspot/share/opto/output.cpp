@@ -253,7 +253,7 @@ PhaseOutput::PhaseOutput()
 PhaseOutput::~PhaseOutput() {
   C->set_output(nullptr);
   if (_scratch_buffer_blob != nullptr) {
-//    BufferBlob::free(_scratch_buffer_blob);
+    BufferBlob::free(_scratch_buffer_blob);
   }
 }
 
