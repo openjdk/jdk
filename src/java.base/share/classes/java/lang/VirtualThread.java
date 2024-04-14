@@ -1188,9 +1188,6 @@ final class VirtualThread extends BaseVirtualThread {
     @IntrinsicCandidate
     private static native void notifyJvmtiDisableSuspend(boolean enter);
 
-    @JvmtiMountTransition
-    private native long swapJfrContext(long newContext);
-
     private static native void registerNatives();
     static {
         registerNatives();
