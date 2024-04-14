@@ -27,6 +27,7 @@
 package jdk.jfr.internal;
 
 import jdk.jfr.MetadataDefinition;
+import jdk.jfr.internal.settings.SelectorValue;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -43,7 +44,7 @@ public @interface Selector {
 
     /**
      * Event selector.
-     * Supported values are "all" and "if-context". More values may be added in the future.
+     * Supported values are "all", "none, "if-context" and "if-triggered". More values may be added in the future.
      *
      * @return the selector; default is "all", not {@code null}
      */

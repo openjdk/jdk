@@ -47,12 +47,12 @@ import jdk.jfr.StackTrace;
 import jdk.jfr.Threshold;
 import jdk.jfr.events.ActiveSettingEvent;
 import jdk.jfr.events.StackFilter;
-import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.settings.CutoffSetting;
 import jdk.jfr.internal.settings.EnabledSetting;
 import jdk.jfr.internal.settings.LevelSetting;
 import jdk.jfr.internal.settings.PeriodSetting;
 import jdk.jfr.internal.settings.SelectorSetting;
+import jdk.jfr.internal.settings.SelectorValue;
 import jdk.jfr.internal.settings.StackTraceSetting;
 import jdk.jfr.internal.settings.ThresholdSetting;
 import jdk.jfr.internal.settings.ThrottleSetting;
@@ -369,7 +369,7 @@ public final class EventControl {
 
     private static Control defineSelector(PlatformEventType type) {
         Selector selector = type.getAnnotation(Selector.class);
-        String def = selector != null ? selector.value() : "all";
+        String def = selector != null ? selector.value() : SelectorValue.ALL.key;
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_SELECTOR, Selector.NAME, def, Collections.emptyList()));
         return new Control(new SelectorSetting(type), def);
     }

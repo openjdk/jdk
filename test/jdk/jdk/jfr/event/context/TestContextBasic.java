@@ -93,14 +93,14 @@ public class TestContextBasic {
         checkNestedContext();
         checkWithExecutionSamples();
         checkWithVirtualThreads();
-        for (String selector : Arrays.asList("", "all", "if-context", "none")) {
+        for (String selector : Arrays.asList("", "all", "if-context")) {
             checkContextWithSelector(selector);
         }
     }
 
     private static void checkInactiveContext() throws IOException {
         Recording r = new Recording();
-        r.enable(MyContextEvent.class);
+        r.enable(MyContextEvent.class).with("select", "if-triggered");
         r.enable(MyWorkEvent.class).with("select", "all");
         r.start();
 
@@ -127,7 +127,7 @@ public class TestContextBasic {
 
     private static void checkSimpleContext() throws IOException {
         Recording r = new Recording();
-        r.enable(MyContextEvent.class);
+        r.enable(MyContextEvent.class).with("select", "if-triggered");
         r.enable(MyWorkEvent.class).with("select", "all");
         r.start();
 
@@ -150,7 +150,7 @@ public class TestContextBasic {
 
     private static void checkNestedContext() throws IOException {
         Recording r = new Recording();
-        r.enable(MyContextEvent.class);
+        r.enable(MyContextEvent.class).with("select", "if-triggered");
         r.enable(MyWorkEvent.class).with("select", "all");
         r.start();
 
@@ -241,7 +241,7 @@ public class TestContextBasic {
     private static void checkWithVirtualThreads() throws Exception {
         try (Recording r = new Recording()) {
             r.enable(MyWorkEvent.class).with("select", "all");
-            r.enable(MyContextEvent.class);
+            r.enable(MyContextEvent.class).with("select", "if-triggered");
 
             r.start();
 
@@ -295,7 +295,7 @@ public class TestContextBasic {
         }
 
         Recording r = new Recording();
-        r.enable(MyContextEvent.class);
+        r.enable(MyContextEvent.class).with("select", "if-triggered");
         var settings = r.enable(MyWorkEvent.class);
         if (!selector.isEmpty()) {
             settings.with("select", selector);

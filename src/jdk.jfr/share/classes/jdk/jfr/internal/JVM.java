@@ -720,7 +720,7 @@ public final class JVM {
      * A helper function for the 'select' event configuration.<br>
      * This configuration allow eg. emitting an event only if there is an open context present.
      * @param eventTypeId the event type id
-     * @param selector selector value, one of [0 = "all", 1 = "if-context"]
+     * @param selector selector value, one of [0 = "all", 1 = "if-context", 2 = "if-triggered"]
      */
     public static native void setSelector(long eventTypeId, byte selector);
 }

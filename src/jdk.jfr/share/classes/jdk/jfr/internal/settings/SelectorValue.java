@@ -29,9 +29,15 @@ package jdk.jfr.internal.settings;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
+import jdk.jfr.internal.util.Tokenizer;
+
+import java.text.ParseException;
+import java.util.EnumSet;
 
 public enum SelectorValue {
-    ALL("all", (byte)0), CONTEXT("if-context", (byte)1), NONE("none", (byte)0xff);
+    CONTEXT("if-context", (byte)0x1),
+    TRIGGERED("if-triggered", (byte)0x2),
+    ALL("all", (byte)0x0);
 
     public final String key;
     public final byte value;
@@ -41,18 +47,29 @@ public enum SelectorValue {
         this.value = value;
     }
 
-    public static SelectorValue of(String option) {
-        option = option == null || option.isEmpty() ? ALL.name().toLowerCase() : option;
-        if (option.equals(ALL.key)) {
-            return ALL;
-        } else if (option.equals(CONTEXT.key)) {
-            return CONTEXT;
-        } else if (option.equals(NONE.key)) {
-            Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, option + " is not recommended for production use, using " + ALL.key + " instead");
-            return ALL;
-        } else {
-            Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, "Unknown selection: " + option + ", using default value " + ALL.key);
-            return ALL;
+    public static EnumSet<SelectorValue> of(String option) {
+        EnumSet<SelectorValue> set = EnumSet.noneOf(SelectorValue.class);
+        try (Tokenizer tokenizer = new Tokenizer(option, ',')) {
+            while (tokenizer.hasNext()) {
+                String token = tokenizer.next();
+                if (token.equals(ALL.key)) {
+                    set.add(ALL);
+                } else if (token.equals(CONTEXT.key)) {
+                    set.add(CONTEXT);
+                } else if (token.equals(TRIGGERED.key)) {
+                    set.add(TRIGGERED);
+                } else {
+                    Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, "Unknown option \"" + token + "\". Using \"" + SelectorValue.ALL + "\" instead");
+                    set.add(ALL);
+                }
+            }
+        } catch (ParseException e) {
+            Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, "Error while parsing \"" + option + "\". Using \" + " + SelectorValue.ALL + "\" instead.\n" + e);
         }
+        return set;
+    }
+
+    public byte getValue() {
+        return value;
     }
 }

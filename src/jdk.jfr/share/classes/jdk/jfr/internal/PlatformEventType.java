@@ -194,7 +194,7 @@ public final class PlatformEventType extends Type {
     }
 
     public boolean hasSelector() {
-        return this.hasSelector || getAnnotation(Selector.class) != null;
+        return this.hasSelector || getAnnotation(Selector.class) != null || getAnnotation(Contextual.class) != null;
     }
 
     public boolean hasStackTrace() {

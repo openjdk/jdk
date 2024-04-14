@@ -33,6 +33,8 @@ import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.SettingControl;
 
+import jdk.jfr.internal.settings.SelectorValue;
+
 // Users should not be able to subclass or instantiate for security reasons.
 public final class EventConfiguration {
     private final PlatformEventType platformEventType;
@@ -60,19 +62,24 @@ public final class EventConfiguration {
         return eventControl;
     }
 
-    // Accessed by generated code in event class
     public boolean shouldCommit(long duration) {
+        return shouldCommit(duration, -1);
+    }
+    // Accessed by generated code in event class
+    public boolean shouldCommit(long duration, long offsetDiff) {
         if (!isEnabled()) {
             return false;
         }
-        if (getPlatformEventType().getSelector() == 1) {
+        boolean shouldCommit = true;
+        if ((getPlatformEventType().getSelector() & SelectorValue.CONTEXT.getValue()) != 0) {
             // selector="if-context"
-            if (!JVM.hasContext()) {
-                // no context present, don't commit
-                return false;
-            }
+            shouldCommit &= JVM.hasContext();
         }
-        return duration >= platformEventType.getThresholdTicks();
+        if (offsetDiff > -1 && (getPlatformEventType().getSelector() & SelectorValue.TRIGGERED.getValue()) != 0) {
+            // selector="if-triggered"
+            shouldCommit &= offsetDiff > 0;
+        }
+        return shouldCommit && duration >= platformEventType.getThresholdTicks();
     }
 
     // Accessed by generated code in event class

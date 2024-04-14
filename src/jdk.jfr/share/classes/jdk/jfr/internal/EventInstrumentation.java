@@ -101,7 +101,7 @@ final class EventInstrumentation {
     private static final MethodDesc METHOD_DURATION = MethodDesc.of("duration", "(J)J");
     private static final MethodDesc METHOD_ENABLED = MethodDesc.of("enabled", "()Z");
     private static final MethodDesc METHOD_END = MethodDesc.of("end", "()V");
-    private static final MethodDesc METHOD_EVENT_CONFIGURATION_SHOULD_COMMIT = MethodDesc.of("shouldCommit", "(J)Z");
+    private static final MethodDesc METHOD_EVENT_CONFIGURATION_SHOULD_COMMIT = MethodDesc.of("shouldCommit", "(JJ)Z");
     private static final MethodDesc METHOD_EVENT_CONFIGURATION_GET_SETTING = MethodDesc.of("getSetting", SettingControl.class, int.class);
     private static final MethodDesc METHOD_EVENT_SHOULD_COMMIT = MethodDesc.of("shouldCommit", "()Z");
     private static final MethodDesc METHOD_GET_EVENT_WRITER_KEY = MethodDesc.of("getEventWriter", "(J)" + TYPE_EVENT_WRITER.descriptorString());
@@ -558,13 +558,6 @@ final class EventInstrumentation {
         // MyEvent#shouldCommit()
         updateMethod(METHOD_EVENT_SHOULD_COMMIT, codeBuilder -> {
             Label fail = codeBuilder.newLabel();
-            if (isContextualEvent()) {
-                codeBuilder.aload(0); // [this]
-                getfield(codeBuilder, getEventClassDesc(), FIELD_CTX_OFFSET); // [fld, fld]
-                codeBuilder.ldc(0L); // [fld, fld, 0, 0]
-                codeBuilder.lcmp(); // [result]
-                codeBuilder.ifeq(fail); // []
-            }
             if (guardEventConfiguration) {
                 getEventConfiguration(codeBuilder);
                 codeBuilder.if_null(fail);
@@ -573,6 +566,12 @@ final class EventInstrumentation {
             getEventConfiguration(codeBuilder);
             codeBuilder.aload(0);
             getfield(codeBuilder, getEventClassDesc(), FIELD_DURATION);
+            if (isContextualEvent()) {
+                codeBuilder.aload(0); // [this]
+                getfield(codeBuilder, getEventClassDesc(), FIELD_CTX_OFFSET); // [fld, fld]
+            } else {
+                codeBuilder.ldc(0L); // [fld, fld]
+            }
             invokevirtual(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_EVENT_CONFIGURATION_SHOULD_COMMIT);
             codeBuilder.ifeq(fail);
             for (int index = 0; index < settingDescs.size(); index++) {

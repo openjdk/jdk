@@ -33,8 +33,11 @@ import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.Type;
 
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @MetadataDefinition
 @Label("Selector")
@@ -42,7 +45,7 @@ import java.util.Set;
 public final class SelectorSetting extends JDKSettingControl {
 
     private final PlatformEventType eventType;
-    private SelectorValue value;
+    private EnumSet<SelectorValue> value;
 
     public SelectorSetting(PlatformEventType eventType) {
         this.eventType = Objects.requireNonNull(eventType);
@@ -51,32 +54,37 @@ public final class SelectorSetting extends JDKSettingControl {
     @Override
     public void setValue(String value) {
         this.value = SelectorValue.of(value);
-        eventType.setSelector(this.value.ordinal());
+        int mask = this.value.stream().map(SelectorValue::getValue).reduce((byte)0, (l, r) -> (byte) (l | r));
+        eventType.setSelector(mask);
     }
 
     @Override
     public String combine(Set<String> values) {
-        SelectorValue combined = SelectorValue.NONE;
-        return values.stream().map(SelectorValue::of).reduce(combined, (a, b) -> {
-            if (a == SelectorValue.NONE) {
-                return b;
-            } else {
-                // simplified check - only "all" and "if-context" values are supported for now
-                return a == SelectorValue.ALL || b == SelectorValue.ALL ? SelectorValue.ALL : SelectorValue.CONTEXT;
-            }
-        }).key;
+        Set<SelectorValue> combined = values.stream().map(SelectorValue::of).flatMap(Collection::stream).collect(Collectors.toSet());
+        if (!combined.isEmpty()) {
+            combined.remove(SelectorValue.ALL);
+        }
+        return asString(combined);
     }
 
     @Override
     public String getValue() {
-        return value.key;
+        return asString(value);
+    }
+
+    private static String asString(Set<SelectorValue> value) {
+        return value.stream().map(s -> s.key).collect(Collectors.joining(","));
     }
 
     public boolean isSelected() {
-        return switch (value) {
-            case ALL -> true;
-            case CONTEXT -> JVM.hasContext();
-            case NONE -> false;
-        };
+        boolean selected = false;
+        if (value.contains(SelectorValue.ALL)) {
+            selected = true;
+        } else if (value.contains(SelectorValue.CONTEXT)) {
+            selected = JVM.hasContext();
+        } else if (value.contains(SelectorValue.TRIGGERED)) {
+            // TODO
+        }
+        return selected;
     }
 }
