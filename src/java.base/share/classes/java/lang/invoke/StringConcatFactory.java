@@ -1388,6 +1388,13 @@ public final class StringConcatFactory {
         static final MethodTypeDesc APPEND_LONG_TYPE = MethodTypeDesc.ofDescriptor("(J)Ljava/lang/StringBuilder;");
         static final MethodTypeDesc APPEND_OBJECT_TYPE = MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;)Ljava/lang/StringBuilder;");
         static final MethodTypeDesc APPEND_STRING_TYPE = MethodTypeDesc.ofDescriptor("(Ljava/lang/String;)Ljava/lang/StringBuilder;");
+        static final MethodTypeDesc INT_VOID_TYPE = MethodTypeDesc.ofDescriptor("(I)V");
+
+        /**
+         * Ensure a capacity in the initial StringBuilder to accommodate all constants plus this factor times the number
+         * of arguments.
+         */
+        static final int ARGUMENT_SIZE_FACTOR = 4;
 
         static {
             DUMPER = ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
@@ -1429,7 +1436,15 @@ public final class StringConcatFactory {
                 public void accept(CodeBuilder cb) {
                     cb.new_(STRING_BUILDER);
                     cb.dup();
-                    cb.invokespecial(STRING_BUILDER, "<init>", MethodTypeDesc.ofDescriptor("()V"));
+
+                    int len = 0;
+                    for (int c = 0; c < constants.length; c++) {
+                        if (constants[c] != null)
+                            len += constants[c].length();
+                    }
+                    len += args.parameterCount() * ARGUMENT_SIZE_FACTOR;
+                    cb.constantInstruction(len);
+                    cb.invokespecial(STRING_BUILDER, "<init>", INT_VOID_TYPE);
 
                     // At this point, we have a blank StringBuilder on stack, fill it in with .append calls.
                     {
