@@ -55,7 +55,7 @@ public:
   explicit ShenandoahFlushAllSATB(SATBMarkQueueSet& satb_qset) :
     _satb_qset(satb_qset) {}
 
-  void do_thread(Thread* thread) {
+  void do_thread(Thread* thread) override {
     // Transfer any partial buffer to the qset for completed buffer processing.
     _satb_qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
   }
@@ -75,7 +75,7 @@ public:
     _mark_context(_heap->marking_context()),
     _trashed_oops(0) {}
 
-  void do_buffer(void** buffer, size_t size) {
+  void do_buffer(void** buffer, size_t size) override {
     assert(size == 0 || !_heap->has_forwarded_objects() || _heap->is_concurrent_old_mark_in_progress(), "Forwarded objects are not expected here");
     for (size_t i = 0; i < size; ++i) {
       oop *p = (oop *) &buffer[i];
@@ -112,7 +112,7 @@ public:
     }
   }
 
-  void work(uint worker_id) {
+  void work(uint worker_id) override {
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahSATBMarkQueueSet &satb_queues = ShenandoahBarrierSet::satb_mark_queue_set();
     ShenandoahFlushAllSATB flusher(satb_queues);
@@ -144,7 +144,7 @@ public:
     _is_preempted(false) {
   }
 
-  void work(uint worker_id) {
+  void work(uint worker_id) override {
     for (uint region_idx = worker_id; region_idx < _coalesce_and_fill_region_count; region_idx += _nworkers) {
       ShenandoahHeapRegion* r = _coalesce_and_fill_region_array[region_idx];
       if (r->is_humongous()) {
@@ -305,8 +305,6 @@ bool ShenandoahOldGeneration::coalesce_and_fill() {
   WorkerThreads* workers = heap->workers();
   uint nworkers = workers->active_workers();
 
-  log_debug(gc)("Starting (or resuming) coalesce-and-fill of old heap regions");
-
   // This code will see the same set of regions to fill on each resumption as it did
   // on the initial run. That's okay because each region keeps track of its own coalesce
   // and fill state. Regions that were filled on a prior attempt will not try to fill again.
@@ -314,6 +312,7 @@ bool ShenandoahOldGeneration::coalesce_and_fill() {
   assert(coalesce_and_fill_regions_count <= heap->num_regions(), "Sanity");
   ShenandoahConcurrentCoalesceAndFillTask task(nworkers, _coalesce_and_fill_region_array, coalesce_and_fill_regions_count);
 
+  log_info(gc)("Starting (or resuming) coalesce-and-fill of " UINT32_FORMAT " old heap regions", coalesce_and_fill_regions_count);
   workers->run_task(&task);
   if (task.is_completed()) {
     abandon_collection_candidates();

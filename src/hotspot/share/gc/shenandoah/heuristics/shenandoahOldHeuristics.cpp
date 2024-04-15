@@ -70,7 +70,6 @@ ShenandoahOldHeuristics::ShenandoahOldHeuristics(ShenandoahOldGeneration* genera
 }
 
 bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* collection_set) {
-  auto heap = ShenandoahGenerationalHeap::heap();
   if (unprocessed_old_collection_candidates() == 0) {
     return false;
   }
@@ -86,7 +85,7 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
   // of memory that can still be evacuated.  We address this by reducing the evacuation budget by the amount
   // of live memory in that region and by the amount of unallocated memory in that region if the evacuation
   // budget is constrained by availability of free memory.
-  const size_t old_evacuation_reserve = heap->old_generation()->get_evacuation_reserve();
+  const size_t old_evacuation_reserve = _old_generation->get_evacuation_reserve();
   const size_t old_evacuation_budget = (size_t) ((double) old_evacuation_reserve / ShenandoahOldEvacWaste);
   size_t unfragmented_available = _old_generation->free_unaffiliated_regions() * ShenandoahHeapRegion::region_size_bytes();
   size_t fragmented_available;
@@ -310,7 +309,6 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
 
   const size_t num_regions = heap->num_regions();
   size_t cand_idx = 0;
-  size_t total_garbage = 0;
   size_t immediate_garbage = 0;
   size_t immediate_regions = 0;
   size_t live_data = 0;
@@ -318,17 +316,19 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   RegionData* candidates = _region_data;
   for (size_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* region = heap->get_region(i);
-    if (!_old_generation->contains(region)) {
+    if (!region->is_old()) {
       continue;
     }
 
     size_t garbage = region->garbage();
     size_t live_bytes = region->get_live_data_bytes();
-    total_garbage += garbage;
     live_data += live_bytes;
 
-    // Only place regular regions into the candidate set
-    if (region->is_regular()) {
+    if (region->is_regular() || region->is_regular_pinned()) {
+        // Only place regular or pinned regions with live data into the candidate set.
+        // Pinned regions cannot be evacuated, but we are not actually choosing candidates
+        // for the collection set here. That happens later during the next young GC cycle,
+        // by which time, the pinned region may no longer be pinned.
       if (!region->has_live()) {
         assert(!region->is_pinned(), "Pinned region should have live (pinned) objects.");
         region->make_trash_immediate();
@@ -341,6 +341,9 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
         cand_idx++;
       }
     } else if (region->is_humongous_start()) {
+      // This will handle humongous start regions whether they are also pinned, or not.
+      // If they are pinned, we expect them to hold live data, so they will not be
+      // turned into immediate garbage.
       if (!region->has_live()) {
         assert(!region->is_pinned(), "Pinned region should have live (pinned) objects.");
         // The humongous object is dead, we can just return this region and the continuations
@@ -385,12 +388,12 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   // Enlightened interpretation: collect regions that have less than this amount of live.
   const size_t live_threshold = region_size_bytes - garbage_threshold;
 
-  size_t candidates_garbage = 0;
   _last_old_region = (uint)cand_idx;
   _last_old_collection_candidate = (uint)cand_idx;
   _next_old_collection_candidate = 0;
 
   size_t unfragmented = 0;
+  size_t candidates_garbage = 0;
 
   for (size_t i = 0; i < cand_idx; i++) {
     size_t live = candidates[i]._u._live_data;
@@ -405,7 +408,11 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     unfragmented += region_free;
   }
 
+  // defrag_count represents regions that are placed into the old collection set in order to defragment the memory
+  // that we try to "reserve" for humongous allocations.
   size_t defrag_count = 0;
+  size_t total_uncollected_old_regions = _last_old_region - _last_old_collection_candidate;
+
   if (cand_idx > _last_old_collection_candidate) {
     // Above, we have added into the set of mixed-evacuation candidates all old-gen regions for which the live memory
     // that they contain is below a particular old-garbage threshold.  Regions that were not selected for the collection
@@ -425,7 +432,6 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     const size_t first_unselected_old_region = candidates[_last_old_collection_candidate]._region->index();
     const size_t last_unselected_old_region = candidates[cand_idx - 1]._region->index();
     size_t span_of_uncollected_regions = 1 + last_unselected_old_region - first_unselected_old_region;
-    size_t total_uncollected_old_regions = cand_idx - _last_old_collection_candidate;
 
     // Add no more than 1/8 of the existing old-gen regions to the set of mixed evacuation candidates.
     const int MAX_FRACTION_OF_HUMONGOUS_DEFRAG_REGIONS = 8;
@@ -436,7 +442,8 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     while ((defrag_count < bound_on_additional_regions) &&
            (total_uncollected_old_regions < 15 * span_of_uncollected_regions / 16)) {
       ShenandoahHeapRegion* r = candidates[_last_old_collection_candidate]._region;
-      assert (r->is_regular(), "Only regular regions are in the candidate set");
+      assert(r->is_regular() || r->is_regular_pinned(), "Region " SIZE_FORMAT " has wrong state for collection: %s",
+             r->index(), ShenandoahHeapRegion::region_state_to_string(r->state()));
       const size_t region_garbage = candidates[_last_old_collection_candidate]._region->garbage();
       const size_t region_free = r->free();
       candidates_garbage += region_garbage;
@@ -457,13 +464,12 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   const size_t mixed_evac_live = old_candidates * region_size_bytes - (candidates_garbage + unfragmented);
   set_unprocessed_old_collection_candidates_live_memory(mixed_evac_live);
 
-  log_info(gc)("Old-Gen Collectable Garbage: " SIZE_FORMAT "%s "
-               "consolidated with free: " SIZE_FORMAT "%s, over " SIZE_FORMAT " regions (humongous defragmentation: "
-               SIZE_FORMAT " regions), Old-Gen Immediate Garbage: " SIZE_FORMAT "%s over " SIZE_FORMAT " regions.",
-               byte_size_in_proper_unit(collectable_garbage), proper_unit_for_byte_size(collectable_garbage),
-               byte_size_in_proper_unit(unfragmented),        proper_unit_for_byte_size(unfragmented),
-               old_candidates, defrag_count,
-               byte_size_in_proper_unit(immediate_garbage),   proper_unit_for_byte_size(immediate_garbage), immediate_regions);
+  log_info(gc)("Old-Gen Collectable Garbage: " PROPERFMT " consolidated with free: " PROPERFMT ", over " SIZE_FORMAT " regions",
+               PROPERFMTARGS(collectable_garbage), PROPERFMTARGS(unfragmented), old_candidates);
+  log_info(gc)("Old-Gen Immediate Garbage: " PROPERFMT " over " SIZE_FORMAT " regions",
+              PROPERFMTARGS(immediate_garbage), immediate_regions);
+  log_info(gc)("Old regions selected for defragmentation: " SIZE_FORMAT, defrag_count);
+  log_info(gc)("Old regions not selected: " SIZE_FORMAT, total_uncollected_old_regions);
 
   if (unprocessed_old_collection_candidates() > 0) {
     _old_generation->transition_to(ShenandoahOldGeneration::EVACUATING);
