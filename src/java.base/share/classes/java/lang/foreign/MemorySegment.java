@@ -614,12 +614,12 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * The returned alignment is always an even power of two and is derived from:
      * <ul>
+     *     <li>Heap:
+     *     the segment offset and backing array type.</li>
      *     <li>Native:
      *     the {@linkplain MemorySegment#address() address()} function.</li>
-     *     <li>Heap:
-     *     the array type and segment offset.</li>
      * </ul>
-     * The {@linkplain MemorySegment#NULL NULL} segment returns a byte alignment
+     * The {@linkplain MemorySegment#NULL NULL} segment returns a maximum byte alignment
      * of 2<sup>62</sup>
      * <p>
      * This method can be used to ensure, a {@code segment} is sufficiently aligned
