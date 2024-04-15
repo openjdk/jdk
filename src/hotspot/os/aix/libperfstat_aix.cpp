@@ -26,6 +26,7 @@
 
 #include "libperfstat_aix.hpp"
 #include "misc_aix.hpp"
+#include "logging/log.hpp"
 #include "runtime/os.hpp"
 
 #include <dlfcn.h>
@@ -76,7 +77,7 @@ bool libperfstat::init() {
   char ebuf[512];
   g_libhandle = os::dll_load(libperfstat, ebuf, sizeof(ebuf));
   if (!g_libhandle) {
-    trcVerbose("Cannot load %s (error: %s)", libperfstat, ebuf);
+    log_warning(os)("Cannot load %s (error: %s)", libperfstat, ebuf);
     return false;
   }
 
@@ -213,7 +214,7 @@ bool libperfstat::get_cpuinfo(cpuinfo_t* pci) {
 
   if (-1 == libperfstat::perfstat_cpu_total(nullptr, &psct, sizeof(PERFSTAT_CPU_TOTAL_T_LATEST), 1)) {
     if (-1 == libperfstat::perfstat_cpu_total(nullptr, &psct, sizeof(perfstat_cpu_total_t_71), 1)) {
-      trcVerbose("perfstat_cpu_total() failed (errno=%d)", errno);
+      log_warning(os)("perfstat_cpu_total() failed (errno=%d)", errno);
       return false;
     }
   }
@@ -248,7 +249,7 @@ bool libperfstat::get_partitioninfo(partitioninfo_t* ppi) {
   if (-1 == libperfstat::perfstat_partition_total(nullptr, &pspt, sizeof(PERFSTAT_PARTITON_TOTAL_T_LATEST), 1)) {
     if (-1 == libperfstat::perfstat_partition_total(nullptr, &pspt, sizeof(perfstat_partition_total_t_71), 1)) {
       ame_details = false;
-      trcVerbose("perfstat_partition_total() failed (errno=%d)", errno);
+      log_warning(os)("perfstat_partition_total() failed (errno=%d)", errno);
       return false;
     }
   }
@@ -314,7 +315,7 @@ bool libperfstat::get_wparinfo(wparinfo_t* pwi) {
   memset (&pswt, '\0', sizeof(pswt));
 
   if (-1 == libperfstat::perfstat_wpar_total(nullptr, &pswt, sizeof(PERFSTAT_WPAR_TOTAL_T_LATEST), 1)) {
-    trcVerbose("perfstat_wpar_total() failed (errno=%d)", errno);
+    log_warning(os)("perfstat_wpar_total() failed (errno=%d)", errno);
     return false;
   }
 
