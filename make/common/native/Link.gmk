@@ -181,7 +181,7 @@ define CreateDynamicLibraryOrExecutable
         endif
         ifneq ($$($1_STRIP_SYMBOLS), false)
 	  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_strip, \
-	    $$($1_STRIP) $$($1_STRIPFLAGS) $$($1_TARGET)
+	    $$($1_STRIP) $$($1_STRIPFLAGS) $$($1_TARGET))
         endif
         ifeq ($$($1_CREATE_DEBUGINFO), true)
           ifeq ($(call isTargetOs, linux), true)
