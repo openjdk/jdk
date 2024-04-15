@@ -276,6 +276,9 @@ void GenArguments::initialize_size_info() {
   // and maximum heap size since no explicit flags exist
   // for setting the old generation maximum.
   MaxOldSize = MAX2(MaxHeapSize - max_young_size, GenAlignment);
+  MinOldSize = MIN3(MaxOldSize,
+                    InitialHeapSize - initial_young_size,
+                    MinHeapSize - MinNewSize);
 
   size_t initial_old_size = OldSize;
 
@@ -287,9 +290,8 @@ void GenArguments::initialize_size_info() {
     // with the overall heap size).  In either case make
     // the minimum, maximum and initial sizes consistent
     // with the young sizes and the overall heap sizes.
-    MinOldSize = GenAlignment;
     initial_old_size = clamp(InitialHeapSize - initial_young_size, MinOldSize, MaxOldSize);
-    // MaxOldSize has already been made consistent above.
+    // MaxOldSize and MinOldSize have already been made consistent above.
   } else {
     // OldSize has been explicitly set on the command line. Use it
     // for the initial size but make sure the minimum allow a young
@@ -305,13 +307,6 @@ void GenArguments::initialize_size_info() {
                             MaxHeapSize);
       initial_old_size = MaxOldSize;
     }
-
-    MinOldSize = MIN2(initial_old_size, MinHeapSize - MinNewSize);
-  }
-
-  // Don't resize old gen if -Xmx == -Xms
-  if (InitialHeapSize == MaxHeapSize && MinHeapSize == MaxHeapSize) {
-    MinOldSize = MaxOldSize;
   }
 
   // The initial generation sizes should match the initial heap size,
