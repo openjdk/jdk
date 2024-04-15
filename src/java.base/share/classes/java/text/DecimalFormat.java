@@ -55,7 +55,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
 
 /**
  * {@code DecimalFormat} is a concrete subclass of
- * {@code NumberFormat} that formats decimal numbers in a {@link Locale localized} manner.
+ * {@code NumberFormat} that formats decimal numbers in a localized manner.
  * It has a variety of features designed to make it possible to parse and format
  * numbers in any locale, including support for Western, Arabic, and Indic digits.
  * It also supports different kinds of numbers, including integers (123), fixed-point
@@ -85,12 +85,12 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <small>Note: It is recommended to use one of the NumberFormat factory methods
  * which is tailored to the conventions of the given locale to retrieve a
  * DecimalFormat.</small>
- *<p>
+ * <p>
  * Alternatively, if a {@code DecimalFormat} for a different locale is required, use
- * one of the factory method variants that take {@code locale} as a parameter,
- * for example, {@link #getIntegerInstance(Locale)}. {@link
- * NumberFormat#getAvailableLocales()} can be used to determine if the desired
- * locale is supported.
+ * one of the overloaded factory methods that take {@code Locale} as a parameter,
+ * for example, {@link #getIntegerInstance(Locale)}. If the installed locale-sensitive
+ * service implementation does not support the given locale, {@link Locale#ROOT}
+ * will be used as a fallback.
  *
  * <h2>Using DecimalFormat</h2>
  * The following is an example of formatting and parsing in a customized localized fashion,

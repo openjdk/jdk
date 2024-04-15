@@ -58,12 +58,12 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
 /**
  * {@code NumberFormat} is the abstract base class for all number
  * formats. This class provides the interface for formatting and parsing
- * numbers in a {@link Locale localized} manner. This enables code that can be completely
+ * numbers in a localized manner. This enables code that can be completely
  * independent of the locale conventions for decimal points, thousands-separators,
- * whether the number format is even decimal, or even the particular decimal
- * digits used. For example, this class could be used within an application to
- * produce a number in a currency format according to conventions of the locale
- * a user resides in.
+ * the particular decimal digits used, or whether the number format is even
+ * decimal. For example, this class could be used within an application to
+ * produce a number in a currency format according to the conventions of the desired
+ * locale.
  *
  * <h2>Getting a NumberFormat</h2>
  * To get a {@code NumberFormat} for the default Locale, use one of the static
@@ -84,27 +84,34 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * </ul>
  *
  * Alternatively, if a {@code NumberFormat} for a different locale is required, use
- * one of the factory method variants that take {@code locale} as a parameter,
- * for example, {@link #getIntegerInstance(Locale)}. To determine if the current
- * locale is supported by the installed locale-sensitive service implementation,
- * either use {@link #getAvailableLocales()} or ensure a factory method call is enclosed
- * within a try block.
+ * one of the overloaded factory methods that take {@code Locale} as a parameter,
+ * for example, {@link #getIntegerInstance(Locale)}. If the installed locale-sensitive
+ * service implementation does not support the given {@code Locale}, {@link Locale#ROOT}
+ * will be used as the fallback {@code Locale}.
  *
  * <h3>Locale Extensions</h3>
- * <p>If the locale used for formatting contains "nu"
- * (<a href="https://unicode.org/reports/tr35/#UnicodeNumberSystemIdentifier">Numbering System</a>)
- * and/or "rg" (<a href="https://unicode.org/reports/tr35/#RegionOverride">Region Override</a>)
+ * Formatting behavior can be changed when using a locale that contains any of the following
  * <a href="../util/Locale.html#def_locale_extension">Unicode extensions</a>,
- * the decimal digits, and/or the country used for formatting are overridden.
+ * <ul>
+ * <li> "nu"
+ * (<a href="https://unicode.org/reports/tr35/#UnicodeNumberSystemIdentifier">
+ * Numbering System</a>) - Overrides the decimal digits used
+ * <li> "rg"
+ * (<a href="https://unicode.org/reports/tr35/#RegionOverride">
+ * Region Override</a>) - Overrides the country used
+ * <li> "cf"
+ * (<a href="https://www.unicode.org/reports/tr35/tr35.html#UnicodeCurrencyFormatIdentifier">
+ * Currency Format style</a>) - Overrides the Currency Format style used
+ * </ul>
+ * <p>
  * If both "nu" and "rg" are specified, the decimal digits from the "nu"
- * extension supersedes the implicit one from the "rg" extension. Additionally,
- * currency formats support the "cf" ({@link #getCurrencyInstance(Locale) Currency
- * Format style}) extension. Although the LDML specification defines various
- * keys and values, actual locale-sensitive service implementations in a Java
- * Runtime Environment might not support any particular Unicode locale attributes
- * or key/type pairs.
- * <p>Below is an example of a "en-US" locale with Thai digits,
- * <blockquote>{@code NumberFormat.getInstance(Locale.forLanguageTag("en-US-u-nu-thai"));}</blockquote>
+ * extension supersedes the implicit one from the "rg" extension.
+ * Although <a href="../util/Locale.html#def_locale_extension">Unicode extensions</a>
+ * defines various keys and values, actual locale-sensitive service implementations
+ * in a Java Runtime Environment might not support any particular Unicode locale
+ * attributes or key/type pairs.
+ * <p>Below is an example of a "US" locale currency format with accounting style,
+ * <blockquote>{@code NumberFormat.getInstance(Locale.forLanguageTag("en-US-u-cf-account"));}</blockquote>
  *
  * <h2>Using NumberFormat</h2>
  * The following is an example of formatting and parsing in a localized fashion,
@@ -119,22 +126,29 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * <ul>
  * <li> {@link #setParseIntegerOnly(boolean)}; when {@code true}, will only return the
  * integer portion of the number parsed from the String.
- * <li> {@link #setMinimumFractionDigits}; Use to adjust the expected digits when
+ * <li> {@link #setMinimumFractionDigits(int)}; Use to adjust the expected digits when
  * formatting. Use any of the other minimum/maximum or fraction/integer setter methods
  * in the same manner.
- * <li> {@link #setGroupingUsed}; when {@code true}, formatted numbers will be displayed
+ * <li> {@link #setGroupingUsed(boolean)}; when {@code true}, formatted numbers will be displayed
  * with grouping separators. Additionally, when {@code false}, parsing will not expect
  * grouping separators in the parsed String.
  * </ul>
  *
  * <p>
- * To provide more control over the format or parsing, cast the {@code
- * NumberFormat} you get from the factory methods to a {@code DecimalFormat} or
- * {@code CompactNumberFormat} depending on the factory method used. For example,
- * cast to {@code DecimalFormat} to call {@link DecimalFormat#setGroupingSize(int)}
- * to change the desired digits between grouping separators.
- * While this will work for the vast majority of locales; a {@code
- * try} block should be used in case a non-supported locale is encountered.
+ * To provide more control over formatting or parsing behavior, type checking can
+ * be done to safely cast to an implementing subclass of {@code NumberFormat}; this
+ * provides additional methods defined by the subclass.
+ * For example,
+ * {@snippet lang=java :
+ * NumberFormat nFmt = NumberFormat.getInstance(Locale.US);
+ * if (nFmt instanceof DecimalFormat dFmt) {
+ *     dFmt.setDecimalSeparatorAlwaysShown(true);
+ *     dFmt.format(100); // returns "100."
+ * }
+ * }
+ * The {@code NumberFormat} subclass returned by the factory methods is dependent
+ * on the locale-service provider implementation installed, and may not always
+ * be {@link DecimalFormat} or {@link CompactNumberFormat}.
  *
  * <p>
  * You can also use forms of the {@code parse} and {@code format}
@@ -172,16 +186,19 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * externally.
  *
  * @implSpec
- * <h3>Null Parameter Handling</h3>
- * The {@link #format(double, StringBuffer, FieldPosition)},
+ * Null Parameter Handling
+ * <ul>
+ * <li> The {@link #format(double, StringBuffer, FieldPosition)},
  * {@link #format(long, StringBuffer, FieldPosition)} and
  * {@link #parse(String, ParsePosition)} methods may throw
  * {@code NullPointerException}, if any of their parameter is {@code null}.
  * The subclass may provide its own implementation and specification about
  * {@code NullPointerException}.
+ * </ul>
  *
- * <h3>Default RoundingMode</h3>
- * The default implementation provides rounding modes defined
+ * Default RoundingMode
+ * <ul>
+ * <li> The default implementation provides rounding modes defined
  * in {@link java.math.RoundingMode} for formatting numbers. It
  * uses the {@linkplain java.math.RoundingMode#HALF_EVEN
  * round half-even algorithm}. To change the rounding mode use
@@ -190,6 +207,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * configured to round floating point numbers using half-even
  * rounding (see {@link java.math.RoundingMode#HALF_EVEN
  * RoundingMode.HALF_EVEN}) for formatting.
+ * </ul>
  *
  * @spec         https://www.unicode.org/reports/tr35
  *               Unicode Locale Data Markup Language (LDML)

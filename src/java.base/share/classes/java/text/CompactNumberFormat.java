@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
 /**
  * <p>
  * {@code CompactNumberFormat} is a concrete subclass of {@code NumberFormat}
- * that formats a decimal number in a {@link Locale localized} compact form.
+ * that formats a decimal number in a localized compact form.
  * Compact number formatting is designed for an environment with limited space.
  * For example, displaying the formatted number {@code 7M} instead of {@code
  * 7,000,000.00} in the {@link java.util.Locale#US US locale}. The {@code
