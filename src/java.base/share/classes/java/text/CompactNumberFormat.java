@@ -56,22 +56,26 @@ import java.util.stream.Collectors;
  * Compact Number Formats</a>.
  *
  * <h2>Getting a CompactNumberFormat</h2>
- * To get a {@code CompactNumberFormat}, use one of the {@code NumberFormat} static
- * factory methods listed below.
+ * To get a compact number format, use one of the ways listed below.
  * <ul>
- * <li> Use {@link NumberFormat#getCompactNumberInstance()}
- * to obtain a {@code CompactNumberFormat} for the default locale.
- * <li> Use {@link NumberFormat#getCompactNumberInstance(Locale, Style)}
- * to obtain a {@code CompactNumberFormat} for a different locale
+ * <li> Use the factory method {@link NumberFormat#getCompactNumberInstance()}
+ * to obtain a format for the default locale with
+ * {@link NumberFormat.Style#SHORT SHORT} style.
+ * <li> Use the factory methood {@link NumberFormat#getCompactNumberInstance(Locale, Style)}
+ * to obtain a format for a different locale
  * and to control the {@linkplain ##compact_number_style Style}.
  * <li> Use one of the {@code CompactNumberFormat} constructors, for example, {@link
  * CompactNumberFormat#CompactNumberFormat(String, DecimalFormatSymbols, String[])
  * CompactNumberFormat(decimalPattern, symbols, compactPatterns)}, to obtain a
  * {@code CompactNumberFormat} with further customization.
  * </ul>
- * <small>Note: It is recommended to use one of the NumberFormat factory methods
- * which is tailored to the conventions of the given locale to retrieve a
- * CompactNumberFormat.</small>
+ * <p>If a standard compact formatting for a given locale and {@link
+ * ##compact_number_style style} is desired, it is recommended to use one of the
+ * NumberFormat factory methods listed above. These factory methods may not always return
+ * a {@code CompactNumberFormat} depending on the locale-service provider implementation
+ * installed. Thus, to use an instance method defined by {@code CompactNumberFormat},
+ * the {@code NumberFormat} returned by the factory method should first be type
+ * checked before cast to {@code CompactNumberFormat}.
  *
  * <h2><a id="compact_number_style">Style</a></h2>
  * When using {@link NumberFormat#getCompactNumberInstance(Locale, Style)}, a
@@ -83,7 +87,7 @@ import java.util.stream.Collectors;
  * the same locale formats {@code 10000} as {@code "10 thousand"}.
  *
  * <h2>Using CompactNumberFormat</h2>
- * The following is an example of formatting and parsing in a localized fashion,
+ * The following is an example of formatting and parsing in a localized manner,
  *
  * {@snippet lang=java :
  * NumberFormat compactFormat = NumberFormat.getCompactNumberInstance(Locale.US, NumberFormat.Style.SHORT);
@@ -91,17 +95,39 @@ import java.util.stream.Collectors;
  * compactFormat.parse("1K"); // returns 1000
  * }
  *
+ * <h2 id="formatting">Formatting</h2>
+ * The default formatting behavior returns a formatted string with no fractional
+ * digits, however users can use the {@link #setMinimumFractionDigits(int)}
+ * method to include the fractional part.
+ * The number {@code 1000.0} or {@code 1000} is formatted as {@code "1K"}
+ * not {@code "1.00K"} (in the {@link java.util.Locale#US US locale}). For this
+ * reason, the patterns provided for formatting contain only the minimum
+ * integer digits, prefix and/or suffix, but no fractional part.
+ * For example, patterns used are {@code {"", "", "", 0K, 00K, ...}}. If the pattern
+ * selected for formatting a number is {@code "0"} (special pattern),
+ * either explicit or defaulted, then the general number formatting provided by
+ * {@link java.text.DecimalFormat DecimalFormat}
+ * for the specified locale is used.
+ *
+ * <h3>Rounding</h3>
+ * {@code CompactNumberFormat} provides rounding modes defined in
+ * {@link java.math.RoundingMode} for formatting.  By default, it uses
+ * {@link java.math.RoundingMode#HALF_EVEN RoundingMode.HALF_EVEN}.
+ *
+ * <h2>Parsing</h2>
+ * The default parsing behavior does not allow a grouping separator until
+ * grouping used is set to {@code true} by using
+ * {@link #setGroupingUsed(boolean)}. The parsing of the fractional part
+ * depends on the {@link #isParseIntegerOnly()}. For example, if the
+ * parse integer only is set to true, then the fractional part is skipped.
+ *
  * <h2><a id="compact_number_patterns">Compact Number Patterns</a></h2>
  * <p>
  * The {@code compactPatterns} in {@link
  * CompactNumberFormat#CompactNumberFormat(String, DecimalFormatSymbols, String[])
- * CompactNumberFormat(decimalPattern, symbols, compactPatterns}} are represented
+ * CompactNumberFormat(decimalPattern, symbols, compactPatterns)} are represented
  * as a series of strings, where each string is a {@link ##compact_number_syntax
  * pattern} that is used to format a range of numbers.
- *
- * <p><b>For those planning to only use the factory methods, the pattern syntax may
- * not be relevant. If this is the case, continue reading at the {@link ##formatting
- * Formatting} section.</b>
  *
  * <p> An example of the {@link NumberFormat.Style#SHORT SHORT} styled compact number patterns
  * for the {@link java.util.Locale#US US locale} is {@code {"", "", "", "0K",
@@ -126,7 +152,7 @@ import java.util.stream.Collectors;
  * for example, {@code "0K;-0K"}. Each subpattern has a prefix,
  * minimum integer digits, and suffix. The negative subpattern
  * is optional, if absent, then the positive subpattern prefixed with the
- * minus sign ({@code '-'}) is used as the negative
+ * minus sign {@code '-' (U+002D HYPHEN-MINUS)} is used as the negative
  * subpattern. That is, {@code "0K"} alone is equivalent to {@code "0K;-0K"}.
  * If there is an explicit negative subpattern, it serves only to specify
  * the negative prefix and suffix. The number of minimum integer digits,
@@ -139,22 +165,25 @@ import java.util.stream.Collectors;
  * during parsing and output unchanged during formatting.
  * {@linkplain DecimalFormat##special_pattern_character Special characters},
  * on the other hand, stand for other characters, strings, or classes of
- * characters. These characters must be quoted using single quotes ({@code '})
+ * characters. These characters must be quoted using single quotes {@code ' (U+0027)}
  * unless noted otherwise, if they are to appear in the prefix or suffix
  * as literals. For example, 0\u0915'.'.
  *
  * <h3>Plurals</h3>
- * <p>
- * Plural rules differ between locales, in some cases, the compact number patterns
- * will have distinct forms for singular and plural.
+ * <p> {@code CompactNumberFormat} support patterns for both singular and plural
+ * compact forms. For the plural form, the {@code Pattern} should consist
+ * of {@code PluralPattern}(s) separated by a space ' ' (U+0020) that are enumerated
+ * within a pair of curly brackets '{' (U+007B) and '}' (U+007D).
+ * In this format, each {@code PluralPattern} consists of its {@code count},
+ * followed by a single colon {@code ':' (U+003A)} and a {@code SimplePattern}.
+ * As a space is reserved for separating subsequent {@code PluralPattern}s, it must
+ * be quoted to be used literally in either the {@code prefix} or {@code suffix}.
  * <p>
  * For example, while the pattern representing millions ({@code 10}<sup>{@code 6}
  * </sup>) in the US locale can be specified as the SimplePattern: {@code "0 Million"}, for the
  * German locale it can be specified as the PluralPattern:
  * {@code "{one:0' 'Million other:0' 'Millionen}"}.
- * As a space is reserved for separating subsequent {@code PluralPattern}s, it must
- * be quoted to be used literally in either the prefix or suffix, as seen in the German
- * locale example.
+ *
  * <p>
  * <a id="compact_number_syntax">A compact pattern has the following syntax, with {@code count}</a>
  * following LDML's
@@ -185,32 +214,6 @@ import java.util.stream.Collectors;
  *      0
  *      0 <i>MinimumInteger</i>
  * </pre></blockquote>
- *
- * <h2 id="formatting">Formatting</h2>
- * The default formatting behavior returns a formatted string with no fractional
- * digits, however users can use the {@link #setMinimumFractionDigits(int)}
- * method to include the fractional part.
- * The number {@code 1000.0} or {@code 1000} is formatted as {@code "1K"}
- * not {@code "1.00K"} (in the {@link java.util.Locale#US US locale}). For this
- * reason, the patterns provided for formatting contain only the minimum
- * integer digits, prefix and/or suffix, but no fractional part.
- * For example, patterns used are {@code {"", "", "", 0K, 00K, ...}}. If the pattern
- * selected for formatting a number is {@code "0"} (special pattern),
- * either explicit or defaulted, then the general number formatting provided by
- * {@link java.text.DecimalFormat DecimalFormat}
- * for the specified locale is used.
- *
- * <h3>Rounding</h3>
- * {@code CompactNumberFormat} provides rounding modes defined in
- * {@link java.math.RoundingMode} for formatting.  By default, it uses
- * {@link java.math.RoundingMode#HALF_EVEN RoundingMode.HALF_EVEN}.
- *
- * <h2>Parsing</h2>
- * The default parsing behavior does not allow a grouping separator until
- * grouping used is set to {@code true} by using
- * {@link #setGroupingUsed(boolean)}. The parsing of the fractional part
- * depends on the {@link #isParseIntegerOnly()}. For example, if the
- * parse integer only is set to true, then the fractional part is skipped.
  *
  * @spec https://www.unicode.org/reports/tr35
  *      Unicode Locale Data Markup Language (LDML)
