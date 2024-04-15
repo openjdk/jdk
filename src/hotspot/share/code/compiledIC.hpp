@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "code/nativeInst.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "opto/c2_MacroAssembler.hpp"
 
 //-----------------------------------------------------------------------------
 // The CompiledIC represents a compiled inline cache.
@@ -39,18 +40,18 @@
 //
 class CompiledIC;
 class CompiledICProtectionBehaviour;
-class CompiledMethod;
+class nmethod;
 
 class CompiledICLocker: public StackObj {
-  CompiledMethod* _method;
+  nmethod* _method;
   CompiledICProtectionBehaviour* _behaviour;
   bool _locked;
   NoSafepointVerifier _nsv;
 
 public:
-  CompiledICLocker(CompiledMethod* method);
+  CompiledICLocker(nmethod* method);
   ~CompiledICLocker();
-  static bool is_safe(CompiledMethod* method);
+  static bool is_safe(nmethod* method);
   static bool is_safe(address code);
 };
 
@@ -98,7 +99,7 @@ class CompiledICData : public CHeapObj<mtCode> {
 
 class CompiledIC: public ResourceObj {
 private:
-  CompiledMethod* _method;
+  nmethod* _method;
   CompiledICData* _data;
   NativeCall* _call;
 
@@ -114,8 +115,8 @@ private:
 
 public:
   // conversion (machine PC to CompiledIC*)
-  friend CompiledIC* CompiledIC_before(CompiledMethod* nm, address return_addr);
-  friend CompiledIC* CompiledIC_at(CompiledMethod* nm, address call_site);
+  friend CompiledIC* CompiledIC_before(nmethod* nm, address return_addr);
+  friend CompiledIC* CompiledIC_at(nmethod* nm, address call_site);
   friend CompiledIC* CompiledIC_at(Relocation* call_site);
   friend CompiledIC* CompiledIC_at(RelocIterator* reloc_iter);
 
@@ -146,8 +147,8 @@ public:
   void verify()            PRODUCT_RETURN;
 };
 
-CompiledIC* CompiledIC_before(CompiledMethod* nm, address return_addr);
-CompiledIC* CompiledIC_at(CompiledMethod* nm, address call_site);
+CompiledIC* CompiledIC_before(nmethod* nm, address return_addr);
+CompiledIC* CompiledIC_at(nmethod* nm, address call_site);
 CompiledIC* CompiledIC_at(Relocation* call_site);
 CompiledIC* CompiledIC_at(RelocIterator* reloc_iter);
 
@@ -185,7 +186,7 @@ private:
 
  public:
   // Returns null if CodeBuffer::expand fails
-  static address emit_to_interp_stub(CodeBuffer &cbuf, address mark = nullptr);
+  static address emit_to_interp_stub(MacroAssembler *masm, address mark = nullptr);
   static int to_interp_stub_size();
   static int to_trampoline_stub_size();
   static int reloc_to_interp_stub();

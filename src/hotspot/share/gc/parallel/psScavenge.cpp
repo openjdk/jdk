@@ -99,7 +99,7 @@ static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_i
 
     case ParallelRootType::code_cache:
       {
-        MarkingCodeBlobClosure code_closure(&roots_to_old_closure, CodeBlobToOopClosure::FixRelocations, false /* keepalive nmethods */);
+        MarkingNMethodClosure code_closure(&roots_to_old_closure, NMethodToOopClosure::FixRelocations, false /* keepalive nmethods */);
         ScavengableNMethods::nmethods_do(&code_closure);
       }
       break;
@@ -268,9 +268,9 @@ public:
 
     PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(_worker_id);
     PSScavengeRootsClosure roots_closure(pm);
-    MarkingCodeBlobClosure roots_in_blobs(&roots_closure, CodeBlobToOopClosure::FixRelocations, false /* keepalive nmethods */);
+    MarkingNMethodClosure roots_in_nmethods(&roots_closure, NMethodToOopClosure::FixRelocations, false /* keepalive nmethods */);
 
-    thread->oops_do(&roots_closure, &roots_in_blobs);
+    thread->oops_do(&roots_closure, &roots_in_nmethods);
 
     // Do the real work
     pm->drain_stacks(false);
@@ -418,12 +418,6 @@ bool PSScavenge::invoke_no_policy() {
 
     // Let the size policy know we're starting
     size_policy->minor_collection_begin();
-
-    // Verify the object start arrays.
-    if (VerifyObjectStartArray &&
-        VerifyBeforeGC) {
-      old_gen->verify_object_start_array();
-    }
 
     // Verify no unmarked old->young roots
     if (VerifyRememberedSets) {
@@ -633,12 +627,6 @@ bool PSScavenge::invoke_no_policy() {
 #if COMPILER2_OR_JVMCI
     DerivedPointerTable::update_pointers();
 #endif
-
-    // Re-verify object start arrays
-    if (VerifyObjectStartArray &&
-        VerifyAfterGC) {
-      old_gen->verify_object_start_array();
-    }
 
     if (VerifyRememberedSets) {
       heap->card_table()->verify_all_young_refs_imprecise();

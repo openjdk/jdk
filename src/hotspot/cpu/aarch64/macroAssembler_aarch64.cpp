@@ -867,7 +867,7 @@ static bool is_always_within_branch_range(Address entry) {
     // Non-compiled methods stay forever in CodeCache.
     // We check whether the longest possible branch is within the branch range.
     assert(CodeCache::find_blob(target) != nullptr &&
-          !CodeCache::find_blob(target)->is_compiled(),
+          !CodeCache::find_blob(target)->is_nmethod(),
           "runtime call of compiled method");
     const address right_longest_branch_start = CodeCache::high_bound() - NativeInstruction::instruction_size;
     const address left_longest_branch_start = CodeCache::low_bound();
@@ -1199,7 +1199,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   ldrw(scan_temp, Address(recv_klass, Klass::vtable_length_offset()));
 
-  // %%% Could store the aligned, prescaled offset in the klassoop.
+  // Could store the aligned, prescaled offset in the klass.
   // lea(scan_temp, Address(recv_klass, scan_temp, times_vte_scale, vtable_base));
   lea(scan_temp, Address(recv_klass, scan_temp, Address::lsl(3)));
   add(scan_temp, scan_temp, vtable_base);

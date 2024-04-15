@@ -87,18 +87,28 @@ to the debugger machine and included in <b>PATH</b>.
 </p>
 
 <p>
-By default symbols are also located using <b>PATH</b>. However, there are also Java properties that can be used to specify both the location of the binaries, and also separately the location of symbols. Use <b>sun.jvm.hotspot.debugger.windbg.imagePath</b> for the location of binaries, and use <b>sun.jvm.hotspot.debugger.windbg.symbolPath</b> for the location of symbols. <b>imagePath</b> defaults to <b>PATH</b> if not set, and <b>symbolPath</b> defaults to <b>imagePath</b>. The advantage of using these propeties is that you don't need to change your <b>PATH</b> setting, and they allow for binaries to be located separately from symbols.
+By default symbols are also located using <b>PATH</b>. However, there are also Java properties that
+can be used to specify both the location of the binaries, and also separately the location of
+symbols. Use <b>sun.jvm.hotspot.debugger.windbg.imagePath</b> for the location of binaries, and use
+<b>sun.jvm.hotspot.debugger.windbg.symbolPath</b> for the location of symbols. <b>imagePath</b>
+defaults to <b>PATH</b> if not set, and <b>symbolPath</b> defaults to <b>imagePath</b>. The
+advantage of using these propeties is that you don't need to change your <b>PATH</b> setting, and
+they allow for binaries to be located separately from symbols.
 </p>
 
 <p>
-How you set these properties will depend on the SA tool being used. The following example demonstrates how to set one of the properties when launching the clhsdb tool:
+How you set these properties will depend on the SA tool being used. The following example
+demonstrates how to set one of the properties when launching the clhsdb tool:
 </p>
 
 <code>
 jhsdb -J-Dsun.jvm.hotspot.debugger.windbg.imagePath="%PATH%;D:\SomePath" clhsdb
 </code>
 
-<p>If you are not seeing symbols for Windows libraries, try setting <b>sun.jvm.hotspot.debugger.windbg.symbolPath</b> to include "<b>srv*https://msdl.microsoft.com/download/symbols</b>". Also include <b>PATH</b> so SA will still find your JVM and JNI symbols. For example:
+<p>If you are not seeing symbols for Windows libraries, try setting
+<b>sun.jvm.hotspot.debugger.windbg.symbolPath</b> to include
+"<b>srv*https://msdl.microsoft.com/download/symbols</b>". Also include <b>PATH</b> so SA will still
+find your JVM and JNI symbols. For example:
 </p>
 
 <code>
@@ -117,13 +127,13 @@ jhsdb -J-Dsun.jvm.hotspot.debugger.windbg.symbolPath="%PATH%;srv*https://msdl.mi
 <p>
  For locating the user JNI libraries, SA uses <b>DYLD_LIBRARY_PATH</b>. It can contain
  more than one directory separated by a colon. <b>DYLD_LIBRARY_PATH</b> can also be
- used for locating the JDK libraries, but it needs to specify the full path to the libraries. SA will
- not automatically search subdirs such as <b>lib/server</b> as it does for <b>JAVA_HOME</b>.
+ used for locating the JDK libraries, but it needs to specify the full path to the libraries. SA
+ will not automatically search subdirs such as <b>lib/server</b> as it does for <b>JAVA_HOME</b>.
 </p>
 
 <p>
  For locating the macOS libraries, SA uses <b>SA_ALTROOT</b> similar to the linux support,
- except it does not use it to map all the subdirs. It just appends <b>SA_ALTROOT</b> to the
+ except it does not use it to map all the subdirs. It just prepends <b>SA_ALTROOT</b> to the
  full path of each macOS library. So if you specify <b>SA_ALTROOT=/altroot</b>, SA will
  prepend <b>/altroot</b> to the full path of each macOS library. Note however, due to
  <a href="https://bugs.openjdk.org/browse/JDK-8249779">JDK-8249779</a> , SA will not

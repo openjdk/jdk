@@ -429,7 +429,6 @@ JavaThread::JavaThread() :
   _current_waiting_monitor(nullptr),
   _active_handles(nullptr),
   _free_handle_block(nullptr),
-  _Stalled(0),
 
   _monitor_chunks(nullptr),
 
@@ -1291,8 +1290,8 @@ void JavaThread::deoptimize() {
         // Deoptimize only at particular bcis.  DeoptimizeOnlyAt
         // consists of comma or carriage return separated numbers so
         // search for the current bci in that string.
-        address pc = fst.current()->pc();
-        nmethod* nm =  (nmethod*) fst.current()->cb();
+        address    pc = fst.current()->pc();
+        nmethod*   nm = fst.current()->cb()->as_nmethod();
         ScopeDesc* sd = nm->scope_desc_at(pc);
         char buffer[8];
         jio_snprintf(buffer, sizeof(buffer), "%d", sd->bci());
@@ -1334,6 +1333,7 @@ void JavaThread::make_zombies() {
     if (fst.current()->can_be_deoptimized()) {
       // it is a Java nmethod
       nmethod* nm = CodeCache::find_nmethod(fst.current()->pc());
+      assert(nm != nullptr, "did not find nmethod");
       nm->make_not_entrant();
     }
   }
@@ -1382,7 +1382,7 @@ void JavaThread::pop_jni_handle_block() {
   JNIHandleBlock::release_block(old_handles, this);
 }
 
-void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
+void JavaThread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
   // Verify that the deferred card marks have been flushed.
   assert(deferred_card_mark().is_empty(), "Should be empty during GC");
 
@@ -1440,7 +1440,7 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   }
 }
 
-void JavaThread::oops_do_frames(OopClosure* f, CodeBlobClosure* cf) {
+void JavaThread::oops_do_frames(OopClosure* f, NMethodClosure* cf) {
   if (!has_last_Java_frame()) {
     return;
   }
@@ -1459,14 +1459,14 @@ void JavaThread::verify_states_for_handshake() {
 }
 #endif
 
-void JavaThread::nmethods_do(CodeBlobClosure* cf) {
+void JavaThread::nmethods_do(NMethodClosure* cf) {
   DEBUG_ONLY(verify_frame_info();)
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current());)
 
   if (has_last_Java_frame()) {
     // Traverse the execution stack
     for (StackFrameStream fst(this, true /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
-      fst.current()->nmethods_do(cf);
+      fst.current()->nmethod_do(cf);
     }
   }
 
@@ -1580,9 +1580,11 @@ void JavaThread::print_on_error(outputStream* st, char *buf, int buflen) const {
   if (osthread()) {
     st->print(", id=%d", osthread()->thread_id());
   }
+  // Use raw field members for stack base/size as this could be
+  // called before a thread has run enough to initialize them.
   st->print(", stack(" PTR_FORMAT "," PTR_FORMAT ") (" PROPERFMT ")",
-            p2i(stack_end()), p2i(stack_base()),
-            PROPERFMTARGS(stack_size()));
+            p2i(_stack_base - _stack_size), p2i(_stack_base),
+            PROPERFMTARGS(_stack_size));
   st->print("]");
 
   ThreadsSMRSupport::print_info_on(this, st);

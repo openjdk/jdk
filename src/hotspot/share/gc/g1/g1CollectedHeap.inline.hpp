@@ -248,8 +248,8 @@ inline bool G1CollectedHeap::requires_barriers(stackChunkOop obj) const {
 }
 
 inline bool G1CollectedHeap::is_obj_filler(const oop obj) {
-  Klass* k = obj->klass_raw();
-  return k == Universe::fillerArrayKlassObj() || k == vmClasses::FillerObject_klass();
+  Klass* k = obj->klass_without_asserts();
+  return k == Universe::fillerArrayKlass() || k == vmClasses::FillerObject_klass();
 }
 
 inline bool G1CollectedHeap::is_obj_dead(const oop obj, const HeapRegion* hr) const {

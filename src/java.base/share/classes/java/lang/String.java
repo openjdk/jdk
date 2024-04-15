@@ -1335,7 +1335,13 @@ public final class String
         int dp = 0;
         int sp = 0;
         int sl = val.length >> 1;
-        byte[] dst = new byte[sl * 3];
+        // UTF-8 encoded can be as much as 3 times the string length
+        // For very large estimate, (as in overflow of 32 bit int), precompute the exact size
+        long allocLen = (sl * 3 < 0) ? computeSizeUTF8_UTF16(val, doReplace) : sl * 3;
+        if (allocLen > (long)Integer.MAX_VALUE) {
+            throw new OutOfMemoryError("Required length exceeds implementation limit");
+        }
+        byte[] dst = new byte[(int) allocLen];
         while (sp < sl) {
             // ascii fast loop;
             char c = StringUTF16.getChar(val, sp);
@@ -1383,6 +1389,47 @@ public final class String
             return dst;
         }
         return Arrays.copyOf(dst, dp);
+    }
+
+    /**
+     * {@return the exact size required to UTF_8 encode this UTF16 string}
+     * @param val UTF16 encoded byte array
+     * @param doReplace true to replace unmappable characters
+     */
+    private static long computeSizeUTF8_UTF16(byte[] val, boolean doReplace) {
+        long dp = 0L;
+        int sp = 0;
+        int sl = val.length >> 1;
+
+        while (sp < sl) {
+            char c = StringUTF16.getChar(val, sp++);
+            if (c < 0x80) {
+                dp++;
+            } else if (c < 0x800) {
+                dp += 2;
+            } else if (Character.isSurrogate(c)) {
+                int uc = -1;
+                char c2;
+                if (Character.isHighSurrogate(c) && sp < sl &&
+                        Character.isLowSurrogate(c2 = StringUTF16.getChar(val, sp))) {
+                    uc = Character.toCodePoint(c, c2);
+                }
+                if (uc < 0) {
+                    if (doReplace) {
+                        dp++;
+                    } else {
+                        throwUnmappable(sp - 1);
+                    }
+                } else {
+                    dp += 4;
+                    sp++;  // 2 chars
+                }
+            } else {
+                // 3 bytes, 16 bits
+                dp += 3;
+            }
+        }
+        return dp;
     }
 
     /**
