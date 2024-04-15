@@ -440,8 +440,15 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
     }
   }
 #ifdef ASSERT
-  if (LockingMode == LM_LIGHTWEIGHT && !realloc_failures) {
-    deoptee_thread->lock_stack().verify_consistent_lock_order(lock_order, exec_mode != Deoptimization::Unpack_none);
+  if (LockingMode == LM_LIGHTWEIGHT && !realloc_failures && lock_order.is_nonempty()) {
+    const int bci = chunk->first()->bci();
+    const Bytecodes::Code bc = chunk->first()->method()->code_at(bci);
+    const bool is_syncronized_entry = chunk->first()->method()->is_synchronized() &&
+                                      chunk->first()->raw_bci() == SynchronizationEntryBCI;
+    // If deoptimizing from monitorenter bytecode we maybe in transitional state. Skip verification.
+    if (!is_syncronized_entry && bc != Bytecodes::Code::_monitorenter) {
+      deoptee_thread->lock_stack().verify_consistent_lock_order(lock_order, exec_mode != Deoptimization::Unpack_none);
+    }
   }
 #endif // ASSERT
 }
