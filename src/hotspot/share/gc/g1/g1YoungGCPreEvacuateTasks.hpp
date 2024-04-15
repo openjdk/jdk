@@ -29,6 +29,7 @@
 
 // Set of pre evacuate collection set tasks containing ("s" means serial):
 // - Retire TLAB and Flush Logs (Java threads)
+// - Flush pin count cache (Java threads)
 // - Flush Logs (s) (Non-Java threads)
 class G1PreEvacuateCollectionSetBatchTask : public G1BatchedTask {
   class JavaThreadRetireTLABAndFlushLogs;

@@ -43,7 +43,10 @@ define CreateStaticLibraryMicrosoft
   $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
       $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
 
-  $$($1_TARGET): $$($1_ALL_OBJS) $$($1_RES) $$($1_VARDEPS_FILE)
+  $1_TARGET_DEPS :=  $$($1_ALL_OBJS) $$($1_RES) $$($1_EXTRA_LINK_DEPS) \
+      $$($1_VARDEPS_FILE)
+
+  $$($1_TARGET): $$($1_TARGET_DEPS)
         ifneq ($$($1_OBJ_FILE_LIST), )
 	  $$(eval $$(call ListPathsSafely, $1_ALL_OBJS, $$($1_OBJ_FILE_LIST)))
         endif
@@ -87,7 +90,7 @@ define CreateDynamicLibraryOrExecutableMicrosoft
       $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
 
   $1_TARGET_DEPS := $$($1_ALL_OBJS) $$($1_RES) $$($1_MANIFEST) \
-      $$($1_VARDEPS_FILE)
+      $$($1_EXTRA_LINK_DEPS) $$($1_VARDEPS_FILE)
 
   $$($1_TARGET): $$($1_TARGET_DEPS)
         ifneq ($$($1_OBJ_FILE_LIST), )

@@ -2502,7 +2502,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   lwu(scan_tmp, Address(recv_klass, Klass::vtable_length_offset()));
 
-  // %%% Could store the aligned, prescaled offset in the klassoop.
+  // Could store the aligned, prescaled offset in the klass.
   shadd(scan_tmp, scan_tmp, recv_klass, scan_tmp, 3);
   add(scan_tmp, scan_tmp, vtable_base);
 
