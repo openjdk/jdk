@@ -149,17 +149,19 @@ public interface SymbolLookup {
     Optional<MemorySegment> find(String name);
 
     /**
-     * {@return the address of the symbol with the provided {@code name} or throws an
-     *          {@linkplain IllegalArgumentException} if no such address can be found}
+     * Returns the address of the symbol with the given name or throws an Exception.
      *<p>
-     * This is a convenience method that provides better exception messages compared
+     * This is equivalent to the following code, but is more resource efficient:
      * to:
      * {@snippet lang= java :
-     *    MemorySegment address = lookup.find("foo")
-     *        .orElseThrow(IllegalArgumentException::new);
+     *    String name = ...
+     *    MemorySegment address = lookup.find(name)
+     *        .orElseThrow(() -> new IllegalArgumentException("Symbol not found: " + name));
      * }
      *
-     * @param name the symbol name to look up
+     * @param name the symbol name
+     * @return a zero-length memory segment whose address indicates the address of
+     *         the symbol
      * @throws IllegalArgumentException if no symbol address can be found for the
      *         provided name
      * @see #find(String)
@@ -169,12 +171,11 @@ public interface SymbolLookup {
     default MemorySegment findOrThrow(String name) {
         Objects.requireNonNull(name);
         Optional<MemorySegment> address = find(name);
-        // Avoid capturing lambda
+        // Avoid lambda capturing
         if (address.isPresent()) {
             return address.get();
         }
-        throw new IllegalArgumentException(
-                "Unable to to find a symbol with the name: " + name);
+        throw new IllegalArgumentException("Symbol not found: " + name);
     }
 
     /**
