@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Intel Corporation. All rights reserved.
+ * Copyright (c) 2024, Intel Corporation. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,6 +36,7 @@ import sun.security.ec.point.*;
 import java.security.spec.ECPoint;
 import sun.security.util.KnownOIDs;
 import sun.security.util.math.IntegerMontgomeryFieldModuloP;
+import sun.security.util.math.intpoly.*;
 
 /*
  * @test
@@ -161,22 +162,18 @@ public class ECOperationsKATTest {
                 ECParameterSpec params = ECUtil.getECParameterSpec(keySize);
                 NamedCurve curve = CurveDB.lookup(KnownOIDs.secp256r1.value());
                 ECPoint generator = curve.getGenerator();
+                BigInteger b = curve.getCurve().getB();
                 if (params == null || generator == null) {
                         throw new RuntimeException("No EC parameters available for key size " + keySize + " bits");
                 }
 
                 ECOperations ops = ECOperations.forParameters(params).get();
-                ECOperations opsReference = ECOperations.forParameters(params).get();
+                ECOperations opsReference = new ECOperations(IntegerPolynomialP256.ONE.getElement(b), P256OrderField.ONE);
 
-                try {
-                        Field montgomeryOps = ECOperations.class.getDeclaredField("montgomeryOps");
-                        montgomeryOps.setAccessible(true);
-                        if (montgomeryOps.get(ops) == null) {
-                                throw new RuntimeException("Expected to find montgomery field for P256");
-                        }
-                        montgomeryOps.set(opsReference, null); // Disable Montgomery field operations
-                } catch (NoSuchFieldException | IllegalAccessException ex) {
-                        throw new RuntimeException(ex);
+                boolean instanceTest1 = ops.getField() instanceof IntegerMontgomeryFieldModuloP;
+                boolean instanceTest2 = opsReference.getField() instanceof IntegerMontgomeryFieldModuloP;
+                if (instanceTest1 == false || instanceTest2 == true) {
+                        throw new RuntimeException("Bad Initialization: ["+instanceTest1+","+instanceTest2+"]");
                 }
 
                 MutablePoint nextPoint = ops.multiply(generator, testData.multiplier);

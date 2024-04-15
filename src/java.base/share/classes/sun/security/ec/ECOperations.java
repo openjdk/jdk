@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public class ECOperations {
     }
 
     static final Map<BigInteger, IntegerFieldModuloP> fields = Map.of(
-        IntegerPolynomialP256.MODULUS, IntegerPolynomialP256.ONE,
+        IntegerPolynomialP256.MODULUS, MontgomeryIntegerPolynomialP256.ONE,
         IntegerPolynomialP384.MODULUS, IntegerPolynomialP384.ONE,
         IntegerPolynomialP521.MODULUS, IntegerPolynomialP521.ONE
     );
@@ -68,14 +68,6 @@ public class ECOperations {
         P256OrderField.MODULUS, P256OrderField.ONE,
         P384OrderField.MODULUS, P384OrderField.ONE,
         P521OrderField.MODULUS, P521OrderField.ONE
-    );
-
-    // This field is optional.
-    // It is set, when the operations are also available in Montgomery domain.
-    private ECOperations montgomeryOps;
-
-    static final Map<BigInteger, IntegerMontgomeryFieldModuloP> montgomeryFields = Map.of(
-        IntegerPolynomialP256.MODULUS, MontgomeryIntegerPolynomialP256.ONE
     );
 
     public static Optional<ECOperations> forParameters(ECParameterSpec params) {
@@ -99,14 +91,8 @@ public class ECOperations {
             return Optional.empty();
         }
 
-        ECOperations montOps = null;
-        IntegerMontgomeryFieldModuloP montField = montgomeryFields.get(primeField.getP());
-        if (montField != null) {
-            montOps = new ECOperations(montField.getElement(curve.getB()), orderField);
-        }
-
         ImmutableIntegerModuloP b = field.getElement(curve.getB());
-        ECOperations ecOps = new ECOperations(b, orderField, montOps);
+        ECOperations ecOps = new ECOperations(b, orderField);
         return Optional.of(ecOps);
     }
 
@@ -119,11 +105,6 @@ public class ECOperations {
     private final IntegerFieldModuloP orderField;
 
     public ECOperations(IntegerModuloP b, IntegerFieldModuloP orderField) {
-        this(b, orderField, null);
-    }
-
-    private ECOperations(IntegerModuloP b, IntegerFieldModuloP orderField, ECOperations montgomeryOps) {
-        this.montgomeryOps = montgomeryOps;
         this.b = b.fixed();
         this.orderField = orderField;
 
@@ -225,14 +206,14 @@ public class ECOperations {
 
         ECPoint ecPoint = affineP.toECPoint();
         PointMultiplier multiplier = null;
-        if (montgomeryOps == null) {
+        if (!(b.getField() instanceof IntegerMontgomeryFieldModuloP)) {
             multiplier = new DefaultMultiplier(this, affineP);
         } else if (ecPoint.equals(Secp256R1GeneratorMontgomeryMultiplier.generator)) {
             // Lazy class loading upon function call (large static constant table)
             multiplier = Secp256R1GeneratorMontgomeryMultiplier.multiplier;
         } else {
             // affineP is in residue domain, use ecPoint to get domain conversion
-            multiplier = new DefaultMontgomeryMultiplier(montgomeryOps, ecPoint);
+            multiplier = new DefaultMontgomeryMultiplier(this, ecPoint);
         }
 
         return multiplier.pointMultiply(s);
@@ -242,13 +223,13 @@ public class ECOperations {
         // Route to Basepoint and/or Montgomery pointMultiply as appropriate
 
         PointMultiplier multiplier = null;
-        if (montgomeryOps == null) {
+        if (!(b.getField() instanceof IntegerMontgomeryFieldModuloP)) {
             multiplier = new DefaultMultiplier(this, ecPoint);
         } else if (ecPoint.equals(Secp256R1GeneratorMontgomeryMultiplier.generator)) {
             // Lazy class loading upon function call (large static constant table)
             multiplier = Secp256R1GeneratorMontgomeryMultiplier.multiplier;
         } else {
-            multiplier = new DefaultMontgomeryMultiplier(montgomeryOps, ecPoint);
+            multiplier = new DefaultMontgomeryMultiplier(this, ecPoint);
         }
 
         return multiplier.pointMultiply(s);
@@ -315,14 +296,7 @@ public class ECOperations {
         MutableIntegerModuloP t3 = zero.mutable();
         MutableIntegerModuloP t4 = zero.mutable();
 
-        // Route to Montgomery setSum, if field implemented
-        ECOperations ops = this;
-        if (this.montgomeryOps != null) {
-            assert p.getField() instanceof IntegerMontgomeryFieldModuloP;
-            assert p2.getField() instanceof IntegerMontgomeryFieldModuloP;
-            ops = this.montgomeryOps;
-        }
-        ops.setSum((ProjectivePoint.Mutable) p, (ProjectivePoint.Mutable) p2, t0, t1, t2, t3, t4);
+        setSum((ProjectivePoint.Mutable) p, (ProjectivePoint.Mutable) p2, t0, t1, t2, t3, t4);
     }
 
     /*
