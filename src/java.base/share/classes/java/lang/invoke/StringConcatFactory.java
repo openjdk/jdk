@@ -1421,7 +1421,7 @@ public final class StringConcatFactory {
             try {
                 Lookup hiddenLookup = lookup.defineHiddenClass(classBytes, true, STRONG);
                 Class<?> innerClass = hiddenLookup.lookupClass();
-                DUMPER.dumpClass(className, innerClass, classBytes);
+                DUMPER.dumpClass(innerClass.getName(), innerClass, classBytes);
                 MethodHandle mh = hiddenLookup.findStatic(innerClass, METHOD_NAME, args);
                 return mh;
             } catch (Exception e) {
