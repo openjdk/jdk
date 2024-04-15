@@ -2502,6 +2502,7 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
     }
     case Op_PartialSubtypeCheck: {
       if (UseSecondarySupersTable && n->in(2)->is_Con()) {
+        // PartialSubtypeCheck uses both constant and register operands for superclass input.
         n->set_req(2, new BinaryNode(n->in(2), n->in(2)));
         break;
       }
