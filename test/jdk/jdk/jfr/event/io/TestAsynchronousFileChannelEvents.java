@@ -61,7 +61,7 @@ public class TestAsynchronousFileChannelEvents {
             recording.start();
 
             data.flip();
-            ch.write(data, 0);
+            ch.write(data, 0).get();
 
             // test force(boolean)
             ch.force(true);

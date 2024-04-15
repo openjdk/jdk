@@ -27,8 +27,8 @@ package jdk.internal.event;
 
 /**
  * A JFR event for forced updates written to files.  This event is mirrored in
- * {@code jdk.jfr.events.FileForceEvent } where the metadata for the event is
- * provided with annotations.  Some of the methods are replaced by generated
+ * {@code jdk.jfr.events.FileForceEvent } where the event annotations are
+ * provided.  Some of the methods are replaced by generated
  * methods when jfr is enabled.  Note that the order of the arguments of the
  * {@link #commit(long, long, String, boolean)} method
  * must be the same as the order of the fields.
@@ -47,6 +47,10 @@ public class FileForceEvent extends Event {
      * or exceeds the configured value (determined by calling the generated method
      * {@link #shouldCommit(long)}), an event will be emitted by calling
      * {@link #commit(long, long, String, boolean)}.
+     *
+     * @param start     timestamp of the start of the operation
+     * @param path      the full pathname of the file
+     * @param metaData  true if the file metadata is updated
      */
     public static void offer(long start, String path, boolean metaData) {
         long duration = timestamp() - start;
