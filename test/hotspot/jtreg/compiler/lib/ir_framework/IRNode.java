@@ -819,7 +819,7 @@ public class IRNode {
 
     public static final String MAX = PREFIX + "MAX" + POSTFIX;
     static {
-        beforeMatchingNameRegex(MAX, "Max(I|L)");
+        beforeMatchingNameRegex(MAX, "Max(I|L|F|D)");
     }
 
     public static final String MAX_D = PREFIX + "MAX_D" + POSTFIX;
