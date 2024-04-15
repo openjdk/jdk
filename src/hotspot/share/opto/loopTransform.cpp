@@ -254,11 +254,10 @@ void IdealLoopTree::compute_profile_trip_cnt(PhaseIdealLoop *phase) {
   head->set_profile_trip_cnt(trip_cnt);
 }
 
-//---------------------find_invariant-----------------------------
 // Return nonzero index of invariant operand for an associative
 // binary operation of (nonconstant) invariant and variant values.
 // Helper for reassociate_invariants.
-int IdealLoopTree::find_invariant(Node* n, PhaseIdealLoop *phase) {
+int IdealLoopTree::find_invariant(Node* n, PhaseIdealLoop* phase) {
   bool in1_invar = this->is_invariant(n->in(1));
   bool in2_invar = this->is_invariant(n->in(2));
   if (in1_invar && !in2_invar) return 1;
@@ -266,7 +265,24 @@ int IdealLoopTree::find_invariant(Node* n, PhaseIdealLoop *phase) {
   return 0;
 }
 
-//---------------------is_associative-----------------------------
+// Return TRUE if "n" is an associative cmp node. A cmp node is
+// associative if it is only used for equals or not-equals
+// comparisons of integers or longs. We cannot reassociate
+// non-equality comparisons due to possibility of overflow.
+bool IdealLoopTree::is_associative_cmp(Node* n) {
+  if (n->Opcode() != Op_CmpI && n->Opcode() != Op_CmpL) {
+    return false;
+  }
+  for (DUIterator i = n->outs(); n->has_out(i); i++) {
+    BoolNode* bool_out = n->out(i)->isa_Bool();
+    if (bool_out == nullptr || !(bool_out->_test._test == BoolTest::eq ||
+                                 bool_out->_test._test == BoolTest::ne)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // Return TRUE if "n" is an associative binary node. If "base" is
 // not null, "n" must be re-associative with it.
 bool IdealLoopTree::is_associative(Node* n, Node* base) {
@@ -274,25 +290,26 @@ bool IdealLoopTree::is_associative(Node* n, Node* base) {
   if (base != nullptr) {
     assert(is_associative(base), "Base node should be associative");
     int base_op = base->Opcode();
-    if (base_op == Op_AddI || base_op == Op_SubI) {
+    if (base_op == Op_AddI || base_op == Op_SubI || base_op == Op_CmpI) {
       return op == Op_AddI || op == Op_SubI;
     }
-    if (base_op == Op_AddL || base_op == Op_SubL) {
+    if (base_op == Op_AddL || base_op == Op_SubL || base_op == Op_CmpL) {
       return op == Op_AddL || op == Op_SubL;
     }
     return op == base_op;
   } else {
-    // Integer "add/sub/mul/and/or/xor" operations are associative.
+    // Integer "add/sub/mul/and/or/xor" operations are associative. Integer
+    // "cmp" operations are associative if it is an equality comparison.
     return op == Op_AddI || op == Op_AddL
         || op == Op_SubI || op == Op_SubL
         || op == Op_MulI || op == Op_MulL
         || op == Op_AndI || op == Op_AndL
         || op == Op_OrI  || op == Op_OrL
-        || op == Op_XorI || op == Op_XorL;
+        || op == Op_XorI || op == Op_XorL
+        || is_associative_cmp(n);
   }
 }
 
-//---------------------reassociate_add_sub------------------------
 // Reassociate invariant add and subtract expressions:
 //
 // inv1 + (x + inv2)  =>  ( inv1 + inv2) + x
@@ -308,22 +325,32 @@ bool IdealLoopTree::is_associative(Node* n, Node* base) {
 // (inv2 - x) - inv1  =>  (-inv1 + inv2) - x
 // inv1 - (x + inv2)  =>  ( inv1 - inv2) - x
 //
-Node* IdealLoopTree::reassociate_add_sub(Node* n1, int inv1_idx, int inv2_idx, PhaseIdealLoop *phase) {
-  assert(n1->is_Add() || n1->is_Sub(), "Target node should be add or subtract");
+// Apply the same transformations to == and !=
+// inv1 == (x + inv2) => ( inv1 - inv2 ) == x
+// inv1 == (x - inv2) => ( inv1 + inv2 ) == x
+// inv1 == (inv2 - x) => (-inv1 + inv2 ) == x
+Node* IdealLoopTree::reassociate_add_sub_cmp(Node* n1, int inv1_idx, int inv2_idx, PhaseIdealLoop* phase) {
   Node* n2   = n1->in(3 - inv1_idx);
+  bool n1_is_sub = n1->is_Sub() && !n1->is_Cmp();
+  bool n1_is_cmp = n1->is_Cmp();
+  bool n2_is_sub = n2->is_Sub();
+  assert(n1->is_Add() || n1_is_sub || n1_is_cmp, "Target node should be add, subtract, or compare");
+  assert(n2->is_Add() || (n2_is_sub && !n2->is_Cmp()), "Child node should be add or subtract");
   Node* inv1 = n1->in(inv1_idx);
   Node* inv2 = n2->in(inv2_idx);
   Node* x    = n2->in(3 - inv2_idx);
 
-  bool neg_x    = n2->is_Sub() && inv2_idx == 1;
-  bool neg_inv2 = n2->is_Sub() && inv2_idx == 2;
-  bool neg_inv1 = n1->is_Sub() && inv1_idx == 2;
-  if (n1->is_Sub() && inv1_idx == 1) {
+  // Determine whether x, inv1, or inv2 should be negative in the transformed
+  // expression
+  bool neg_x = n2_is_sub && inv2_idx == 1;
+  bool neg_inv2 = (n2_is_sub && !n1_is_cmp && inv2_idx == 2) || (n1_is_cmp && !n2_is_sub);
+  bool neg_inv1 = (n1_is_sub && inv1_idx == 2) || (n1_is_cmp && inv2_idx == 1 && n2_is_sub);
+  if (n1_is_sub && inv1_idx == 1) {
     neg_x    = !neg_x;
     neg_inv2 = !neg_inv2;
   }
 
-  bool is_int = n1->bottom_type()->isa_int() != nullptr;
+  bool is_int = n2->bottom_type()->isa_int() != nullptr;
   Node* inv1_c = phase->get_ctrl(inv1);
   Node* n_inv1;
   if (neg_inv1) {
@@ -349,6 +376,9 @@ Node* IdealLoopTree::reassociate_add_sub(Node* n1, int inv1_idx, int inv2_idx, P
       inv = new AddINode(n_inv1, inv2);
     }
     phase->register_new_node(inv, phase->get_early_ctrl(inv));
+    if (n1_is_cmp) {
+      return new CmpINode(x, inv);
+    }
     if (neg_x) {
       return new SubINode(inv, x);
     } else {
@@ -361,6 +391,9 @@ Node* IdealLoopTree::reassociate_add_sub(Node* n1, int inv1_idx, int inv2_idx, P
       inv = new AddLNode(n_inv1, inv2);
     }
     phase->register_new_node(inv, phase->get_early_ctrl(inv));
+    if (n1_is_cmp) {
+      return new CmpLNode(x, inv);
+    }
     if (neg_x) {
       return new SubLNode(inv, x);
     } else {
@@ -369,10 +402,9 @@ Node* IdealLoopTree::reassociate_add_sub(Node* n1, int inv1_idx, int inv2_idx, P
   }
 }
 
-//---------------------reassociate-----------------------------
 // Reassociate invariant binary expressions with add/sub/mul/
-// and/or/xor operators.
-// For add/sub expressions: see "reassociate_add_sub"
+// and/or/xor/cmp operators.
+// For add/sub/cmp expressions: see "reassociate_add_sub_cmp"
 //
 // For mul/and/or/xor expressions:
 //
@@ -399,7 +431,9 @@ Node* IdealLoopTree::reassociate(Node* n1, PhaseIdealLoop *phase) {
     case Op_AddL:
     case Op_SubI:
     case Op_SubL:
-      result = reassociate_add_sub(n1, inv1_idx, inv2_idx, phase);
+    case Op_CmpI:
+    case Op_CmpL:
+      result = reassociate_add_sub_cmp(n1, inv1_idx, inv2_idx, phase);
       break;
     case Op_MulI:
     case Op_MulL:
