@@ -188,8 +188,23 @@ class nmethod : public CodeBlob {
 
   Method*   _method;
 
-  // To support simple linked-list chaining of nmethods:
-  nmethod*  _osr_link;         // from InstanceKlass::osr_nmethods_head
+  // To reduce header size union fields which usages do not overlap.
+  union {
+    // To support simple linked-list chaining of nmethods:
+    nmethod*  _osr_link; // from InstanceKlass::osr_nmethods_head
+    struct {
+      // These are used for compiled synchronized native methods to
+      // locate the owner and stack slot for the BasicLock. They are
+      // needed because there is no debug information for compiled native
+      // wrappers and the oop maps are insufficient to allow
+      // frame::retrieve_receiver() to work. Currently they are expected
+      // to be byte offsets from the Java stack pointer for maximum code
+      // sharing between platforms. JVMTI's GetLocalInstance() uses these
+      // offsets to find the receiver for non-static native wrapper frames.
+      ByteSize _native_receiver_sp_offset;
+      ByteSize _native_basic_lock_sp_offset;
+    };
+  };
 
   PcDescContainer _pc_desc_container;
   ExceptionCache* volatile _exception_cache;
@@ -240,17 +255,6 @@ class nmethod : public CodeBlob {
   // location in frame (offset for sp) that deopt can store the original
   // pc during a deopt.
   int _orig_pc_offset;
-
-  // These are used for compiled synchronized native methods to
-  // locate the owner and stack slot for the BasicLock. They are
-  // needed because there is no debug information for compiled native
-  // wrappers and the oop maps are insufficient to allow
-  // frame::retrieve_receiver() to work. Currently they are expected
-  // to be byte offsets from the Java stack pointer for maximum code
-  // sharing between platforms. JVMTI's GetLocalInstance() uses these
-  // offsets to find the receiver for non-static native wrapper frames.
-  ByteSize _native_receiver_sp_offset;
-  ByteSize _native_basic_lock_sp_offset;
 
   int          _compile_id;            // which compilation made this nmethod
   CompLevel    _comp_level;            // compilation level (s1)

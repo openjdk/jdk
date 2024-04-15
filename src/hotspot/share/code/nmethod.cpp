@@ -999,7 +999,6 @@ const char* nmethod::compiler_name() const {
 // Fill in default values for various flag fields
 void nmethod::init_defaults() {
   // avoid uninitialized fields, even for short time periods
-  _osr_link                   = nullptr;
   _exception_cache            = nullptr;
   _gc_data                    = nullptr;
   _oops_do_mark_link          = nullptr;
@@ -1368,8 +1367,7 @@ nmethod::nmethod(
              offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
   _deoptimization_generation(0),
   _method(method),
-  _native_receiver_sp_offset(in_ByteSize(-1)),
-  _native_basic_lock_sp_offset(in_ByteSize(-1))
+  _osr_link(nullptr)
 {
   assert(debug_info->oop_recorder() == code_buffer->oop_recorder(), "shared OR");
   {
