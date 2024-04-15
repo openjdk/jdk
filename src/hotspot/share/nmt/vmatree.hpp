@@ -74,8 +74,8 @@ public:
 
     void merge(const IntervalState& b) {
       if (this->type == StateType::Released) {
-        this->data.flag = b.data.flag;
-        this->data.stack_idx = b.data.stack_idx;
+        //this->data.flag = b.data.flag;
+        //this->data.stack_idx = b.data.stack_idx;
       }
     }
 
