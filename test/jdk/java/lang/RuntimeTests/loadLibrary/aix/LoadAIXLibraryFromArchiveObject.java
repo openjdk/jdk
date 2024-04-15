@@ -52,9 +52,9 @@ public class LoadAIXLibraryFromArchiveObject {
         Files.createDirectories(testNativeLibDir);
         final Path libDummyArchive = testNativeLibDir.resolve(archiveFileName);
         Files.copy(libj2pcscSo, libDummyArchive);
-        // // launch a java application which calls System.loadLibrary and is passed
-        // // the directory containing the native library archive file, through
-        // // -Djava.library.path
+        // launch a java application which calls System.loadLibrary and is passed
+        // the directory containing the native library archive file, through
+        // -Djava.library.path
         final ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(
                 "-Djava.library.path=" + testNativeLibDir,
                 LoadAIXLibraryFromArchiveObject.LoadLibraryApp.class.getName());
