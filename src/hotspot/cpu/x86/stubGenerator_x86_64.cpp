@@ -4009,13 +4009,8 @@ void StubGenerator::generate_initial_stubs() {
   create_control_words();
 
   // Initialize table for unsafe copy memeory check.
-  if (UnsafeCopyMemory::_table == nullptr) {
-    UnsafeCopyMemory::create_table(16);
-  }
-
-  // Initialize table for unsafe set memeory check.
-  if (UnsafeSetMemory::_table == nullptr) {
-    UnsafeSetMemory::create_table(22);
+  if (UnsafeMemoryAccess::_table == nullptr) {
+    UnsafeMemoryAccess::create_table(26);
   }
 
   // entry points that exist in all platforms Note: This is code
