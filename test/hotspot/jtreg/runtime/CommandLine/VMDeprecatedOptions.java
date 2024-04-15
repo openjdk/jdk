@@ -65,9 +65,6 @@ public class VMDeprecatedOptions {
         if (Platform.isX86() || Platform.isX64()) {
           deprecated.addAll(
             Arrays.asList(new String[][] {
-              {"UseRTMLocking",         "false"},
-              {"UseRTMDeopt",           "false"},
-              {"RTMRetryCount",         "5"}
             })
           );
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1478,6 +1478,9 @@ public sealed interface ClassFile
     /** 67 */
     int JAVA_23_VERSION = 67;
 
+    /** 68 */
+    int JAVA_24_VERSION = 68;
+
     /**
      * A minor version number indicating a class uses preview features
      * of a Java SE version since 12, for major versions {@value
@@ -1489,7 +1492,7 @@ public sealed interface ClassFile
      * {@return the latest major Java version}
      */
     static int latestMajorVersion() {
-        return JAVA_23_VERSION;
+        return JAVA_24_VERSION;
     }
 
     /**

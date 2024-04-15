@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -427,6 +427,18 @@ public enum SourceVersion {
      * <cite>The Java Language Specification, Java SE 23 Edition</cite></a>
      */
     RELEASE_23,
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 24.
+     *
+     * @since 24
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se24/html/index.html">
+     * <cite>The Java Language Specification, Java SE 24 Edition</cite></a>
+     */
+    RELEASE_24,
     ; // Reduce code churn when appending new constants
 
     // Note that when adding constants for newer releases, the
@@ -436,7 +448,7 @@ public enum SourceVersion {
      * {@return the latest source version that can be modeled}
      */
     public static SourceVersion latest() {
-        return RELEASE_23;
+        return RELEASE_24;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -451,7 +463,7 @@ public enum SourceVersion {
     private static SourceVersion getLatestSupported() {
         int intVersion = Runtime.version().feature();
         return (intVersion >= 11) ?
-            valueOf("RELEASE_" + Math.min(23, intVersion)):
+            valueOf("RELEASE_" + Math.min(24, intVersion)):
             RELEASE_10;
     }
 
