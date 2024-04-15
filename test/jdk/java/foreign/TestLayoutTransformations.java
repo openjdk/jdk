@@ -28,6 +28,7 @@
  */
 
 import jdk.internal.foreign.layout.LayoutTransformer;
+import jdk.internal.foreign.layout.LayoutTransformers;
 import org.junit.jupiter.api.Test;
 
 import java.lang.foreign.MemoryLayout;
@@ -81,8 +82,8 @@ public class TestLayoutTransformations {
                 ADDRESS.withTargetLayout(MemoryLayout.unionLayout(JAVA_INT, JAVA_FLOAT))
         );
 
-        var transformer = LayoutTransformer.removeName();
-        var actual = transformer.deepTransform(layout);
+        var transformer = LayoutTransformers.removeNames();
+        var actual = transformer.apply(layout);
         assertEquals(expected, actual);
     }
 

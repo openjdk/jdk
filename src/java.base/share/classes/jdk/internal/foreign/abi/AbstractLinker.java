@@ -38,7 +38,7 @@ import jdk.internal.foreign.abi.s390.linux.LinuxS390Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
 import jdk.internal.foreign.layout.AbstractLayout;
-import jdk.internal.foreign.layout.LayoutTransformer;
+import jdk.internal.foreign.layout.LayoutTransformers;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
@@ -260,8 +260,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     private static MemoryLayout stripNames(MemoryLayout ml) {
         // we don't care about transferring alignment and byte order here
         // since the linker already restricts those such that they will always be the same
-        return LayoutTransformer.removeName()
-                .deepTransform(ml);
+        return LayoutTransformers.removeNames().apply(ml);
     }
 
     private static MemoryLayout[] stripNames(List<MemoryLayout> layouts) {
