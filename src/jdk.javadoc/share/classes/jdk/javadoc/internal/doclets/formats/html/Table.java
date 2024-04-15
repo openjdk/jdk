@@ -336,7 +336,7 @@ public class Table<T> extends Content {
         for (Content c : contents) {
             HtmlStyle cellStyle = columnStyles.get(colIndex);
 
-            // Add tab order to plain text
+            // Add tab order to only plain text to avoid widget_tabbable_single(potential violation)
             String regex = "<(?:a|area|button|input|object|select|textarea)\\b";
             Pattern pattern = Pattern.compile(regex);
             Matcher matcher = pattern.matcher(c.toString());
