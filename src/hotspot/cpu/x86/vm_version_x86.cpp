@@ -1773,17 +1773,9 @@ void VM_Version::get_processor_features() {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
       UsePopCountInstruction = true;
     }
-  } else {
-    if (UsePopCountInstruction) {
-      warning("POPCNT instruction is not available on this CPU");
-      FLAG_SET_DEFAULT(UsePopCountInstruction, false);
-    }
-    if (UseSecondarySupersTable) {
-      if (!FLAG_IS_DEFAULT(UseSecondarySupersTable)) {
-        warning("UseSecondarySupersTable is not supported on this CPU");
-      }
-      FLAG_SET_DEFAULT(UseSecondarySupersTable, false);
-    }
+  } else if (UsePopCountInstruction) {
+    warning("POPCNT instruction is not available on this CPU");
+    FLAG_SET_DEFAULT(UsePopCountInstruction, false);
   }
 
   // Use fast-string operations if available.

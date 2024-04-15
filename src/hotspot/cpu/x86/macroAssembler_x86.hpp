@@ -595,6 +595,8 @@ public:
   );
   void zero_memory(Register address, Register length_in_bytes, int offset_in_bytes, Register temp);
 
+  void population_count(Register dst, Register src, Register scratch1, Register scratch2);
+
   // interface method calling
   void lookup_interface_method(Register recv_klass,
                                Register intf_klass,

@@ -4728,6 +4728,39 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 
 #ifdef _LP64
 
+// population_count variant for running without the POPCNT
+// instruction, which was introduced with SSE4.2 in 2008.
+void MacroAssembler::population_count(Register dst, Register src,
+                                      Register scratch1, Register scratch2) {
+  assert_different_registers(src, scratch1, scratch2);
+  if (UsePopCountInstruction) {
+    Assembler::popcntq(dst, src);
+  } else {
+    assert_different_registers(src, scratch1, scratch2);
+    assert_different_registers(dst, scratch1, scratch2);
+    Label loop, done;
+
+    mov(scratch1, src);
+    // dst = 0;
+    // while(scratch1 != 0) {
+    //   dst++;
+    //   scratch1 &= (scratch1 - 1);
+    // }
+    xorl(dst, dst);
+    testq(scratch1, scratch1);
+    jccb(Assembler::equal, done);
+    {
+      bind(loop);
+      incq(dst);
+      movq(scratch2, scratch1);
+      decq(scratch2);
+      andq(scratch1, scratch2);
+      jccb(Assembler::notEqual, loop);
+    }
+    bind(done);
+  }
+}
+
 // Ensure that the inline code and the stub are using the same registers.
 #define LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS                      \
 do {                                                                 \
@@ -4786,7 +4819,7 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
 
   // Get the first array index that can contain super_klass into r_array_index.
   if (bit != 0) {
-    popcntq(r_array_index, r_array_index);
+    population_count(r_array_index, r_array_index, temp2, temp3);
   } else {
     movl(r_array_index, 1);
   }
