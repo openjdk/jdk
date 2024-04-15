@@ -572,13 +572,13 @@ public class TestHtmlTableTags extends JavadocTester {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <div class="col-first odd-row-color class-summary class-summary-tab1" role="tablist" tabindex="0"><a \
+                    <div class="col-first odd-row-color class-summary class-summary-tab1"><a \
                     href="I1.html" title="interface in pkg1">I1</a></div>
                     <div class="col-last odd-row-color class-summary class-summary-tab1" role="tablist" tabindex="0">
                     <div class="block">A sample interface used to test table tags.</div>
                     </div>""",
                 """
-                    <div class="col-first even-row-color class-summary class-summary-tab2" role="tablist" tabindex="0"><a\
+                    <div class="col-first even-row-color class-summary class-summary-tab2"><a\
                      href="C1.html" title="class in pkg1">C1</a></div>
                     <div class="col-last even-row-color class-summary class-summary-tab2" role="tablist" tabindex="0">
                     <div class="block">A test class.</div>
@@ -586,13 +586,13 @@ public class TestHtmlTableTags extends JavadocTester {
 
         checkOutput("pkg2/package-summary.html", true,
                 """
-                    <div class="col-first odd-row-color class-summary class-summary-tab3" role="tablist" tabindex="0"><a \
+                    <div class="col-first odd-row-color class-summary class-summary-tab3"><a \
                     href="C2.ModalExclusionType.html" title="enum class in pkg2">C2.ModalExclusionType</a></div>
                     <div class="col-last odd-row-color class-summary class-summary-tab3" role="tablist" tabindex="0">
                     <div class="block">A sample enum.</div>
                     </div>""",
                 """
-                    <div class="col-first even-row-color class-summary class-summary-tab6" role="tablist" tabindex="0"><a\
+                    <div class="col-first even-row-color class-summary class-summary-tab6"><a\
                      href="C3.html" title="annotation interface in pkg2">C3</a></div>
                     <div class="col-last even-row-color class-summary class-summary-tab6" role="tablist" tabindex="0">
                     <div class="block">Test Annotation class.</div>
@@ -655,7 +655,7 @@ public class TestHtmlTableTags extends JavadocTester {
 
         checkOutput("pkg2/C4.html", true,
                 """
-                    <div class="col-first even-row-color"><code>boolean</code></div>
+                    <div class="col-first even-row-color" role="tablist" tabindex="0"><code>boolean</code></div>
                     <div class="col-second even-row-color"><code><a href="#value()" class="member-name-link">value</a></code></div>
                     <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>
                     </div>""");
