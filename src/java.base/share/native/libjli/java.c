@@ -396,16 +396,6 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     } while (JNI_FALSE)
 
 
-#define CHECK_EXCEPTION_NULL_PASS(mainObject) \
-    do { \
-        if ((*env)->ExceptionOccurred(env)) { \
-            /*leave the exception pending, so that it is reported eventually*/ \
-            return 1; \
-        } else if (mainObject == NULL) { \
-            return 1; \
-        } \
-    } while (JNI_FALSE)
-
 /*
  * Invoke a static main with arguments. Returns 1 (true) if successful otherwise
  * processes the pending exception from GetStaticMethodID and returns 0 (false).
@@ -431,7 +421,12 @@ invokeInstanceMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs)
                                  "([Ljava/lang/String;)V");
     CHECK_EXCEPTION_FAIL();
     jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
-    CHECK_EXCEPTION_NULL_PASS(mainObject);
+    if (mainObject == NULL) {
+        //new instance construction failed, don't call the main method,
+        //and don't continue with the next variant;
+        //leave any exception pending, so that it is visible to the caller:
+        return 1;
+    }
     (*env)->CallVoidMethod(env, mainObject, mainID, mainArgs);
     return 1;
  }
@@ -461,7 +456,12 @@ invokeInstanceMainWithoutArgs(JNIEnv *env, jclass mainClass) {
                                  "()V");
     CHECK_EXCEPTION_FAIL();
     jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
-    CHECK_EXCEPTION_NULL_PASS(mainObject);
+    if (mainObject == NULL) {
+        //new instance construction failed, don't call the main method,
+        //and don't continue with the next variant;
+        //leave any exception pending, so that it is visible to the caller:
+        return 1;
+    }
     (*env)->CallVoidMethod(env, mainObject, mainID);
     return 1;
 }
