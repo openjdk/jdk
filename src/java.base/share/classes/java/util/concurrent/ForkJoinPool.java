@@ -584,15 +584,15 @@ public class ForkJoinPool extends AbstractExecutorService {
      * term. We use Marsaglia XorShifts, seeded with the Weyl sequence
      * from ThreadLocalRandom probes, which are cheap and
      * suffice. Each queue's polling attempt uses a bounded retry
-     * (MAX_SCAN_STALLS) to avoid becoming stuck when other
+     * (MAX_SCAN_RETRIES) to avoid becoming stuck when other
      * scanners/pollers stall.  Scans do not otherwise explicitly take
      * into account core affinities, loads, cache localities, etc,
      * However, they do exploit temporal locality (which usually
      * approximates these) by preferring to re-poll from the same
-     * queue after a successful poll before trying others (see method
-     * topLevelExec), which also reduces bookkeeping, cache traffic,
-     * and scanning overhead. But it also reduces fairness, which is
-     * partially counteracted by giving up on contention.
+     * queue after a successful poll before trying others, which also
+     * reduces bookkeeping, cache traffic, and scanning overhead. But
+     * it also reduces fairness, which is partially counteracted by
+     * giving up on contention.
      *
      * Deactivation. When method scan indicates that no tasks are
      * found by a worker, it tries to deactivate(), giving up (and
@@ -1003,7 +1003,7 @@ public class ForkJoinPool extends AbstractExecutorService {
     static final int DEREGISTERED     = 1 << 31;  // worker terminating
     static final int UNCOMPENSATE     = 1 << 16;  // tryCompensate return
     static final int IDLE             = 1 << 16;  // phase seqlock/version count
-    static final int MAX_SCAN_STALLS  = 8;        // scan retry limit
+    static final int MAX_SCAN_RETRIES = 8;        // scan retry limit
 
     /*
      * Bits and masks for ctl and bounds are packed with 4 16 bit subfields:
@@ -1279,8 +1279,7 @@ public class ForkJoinPool extends AbstractExecutorService {
          * @param s current top
          */
         private void growArray(ForkJoinTask<?>[] a, int cap, int s) {
-            int newCap = ((cap <= 1 << 12) ? cap << 3 : // rapidly grow if small
-                          (cap <= 1 << 24) ? cap << 2 : cap << 1);
+            int newCap = (cap < 1 << 24) ? cap << 2 : cap << 1;
             if (a != null && a.length == cap && cap > 0 && newCap > 0) {
                 ForkJoinTask<?>[] newArray = null;
                 try {
@@ -1426,31 +1425,16 @@ public class ForkJoinPool extends AbstractExecutorService {
         // specialized execution methods
 
         /**
-         * Runs the given task, as well as remaining local tasks, plus
-         * those from src queue that can be taken without interference.
+         * Runs the given task, as well as remaining local tasks.
          */
-        final void topLevelExec(ForkJoinTask<?> task, WorkQueue src) {
-            if (task != null && src != null) {
-                int cfg = config, fifo = cfg & FIFO, nstolen = 1;
-                for (;;) {
-                    task.doExec();
-                    if ((task = nextLocalTask(fifo)) == null) {
-                        int b, k, cap; ForkJoinTask<?>[] a;
-                        if ((a = src.array) == null || (cap = a.length) <= 0 ||
-                            (task = a[k = (cap - 1) & (b = src.base)]) == null)
-                            break;
-                        U.loadFence();
-                        if (src.base != b || !U.compareAndSetReference(
-                                a, slotOffset(k), task, null))
-                            break;
-                        src.updateBase(b + 1);
-                        ++nstolen;
-                    }
-                }
-                nsteals += nstolen;
-                if ((cfg & CLEAR_TLS) != 0)
-                    ThreadLocalRandom.eraseThreadLocals(Thread.currentThread());
+        final void topLevelExec(ForkJoinTask<?> task, int cfg) {
+            int fifo = cfg & FIFO;
+            while (task != null) {
+                task.doExec();
+                task = nextLocalTask(fifo);
             }
+            if ((cfg & CLEAR_TLS) != 0)
+                ThreadLocalRandom.eraseThreadLocals(Thread.currentThread());
         }
 
         /**
@@ -1979,12 +1963,12 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     final void runWorker(WorkQueue w) {
         if (w != null) {              // use seed from registerWorker
-            int phase = w.phase, r = w.stackPred, stop;
+            int phase = w.phase, r = w.stackPred, cfg = w.config, stop;
             do {
                 stop = runState & STOP;
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
             } while (stop == 0 &&
-                     (scan(w, r) ||
+                     (scan(w, r, cfg) ||
                       ((phase = deactivate(w, phase)) & IDLE) == 0 ||
                       ((phase = awaitWork(w, phase)) & IDLE) == 0));
         }
@@ -1997,13 +1981,15 @@ public class ForkJoinPool extends AbstractExecutorService {
      *
      * @param w caller's WorkQueue
      * @param r random seed
+     * @param cfg config bits
      * @return true for rescan
      */
-    private boolean scan(WorkQueue w, int r) {
+    private boolean scan(WorkQueue w, int r, int cfg) {
         WorkQueue[] qs; int n;
+        boolean rescan = false;
         if ((qs = queues) != null && (n = qs.length) > 0 && w != null) {
-            int i = r, step = (r >>> 16) | 1;
-            for (int l = n; l > 0; --l, i += step) {
+            int i = r, step = (r >>> 16) | 1, nstolen = 0;
+            sweep: for (int l = n; l > 0; --l, i += step) {
                 int j; WorkQueue q;
                 if ((q = qs[j = i & (n - 1)]) != null) {
                     for (int retries = 0;;) {
@@ -2025,20 +2011,24 @@ public class ForkJoinPool extends AbstractExecutorService {
                         else if (U.compareAndSetReference(a, kp, t, null)) {
                             q.base = nb;
                             w.source = j;                 // volatile write
-                            if (a[nk] != null)
+                            rescan = true;
+                            if (nstolen++ == 0 && a[nk] != null)
                                 signalWork();             // propagate signal
-                            w.topLevelExec(t, q);
-                            return true;
+                            w.topLevelExec(t, cfg);
+                            if (q.base == nb)
+                                continue;                 // no other pollers
                         }
-                        if (++retries > MAX_SCAN_STALLS)
-                            return true;                  // randomly move
-                        else if (retries > 1)
-                            Thread.onSpinWait();          // stalled
+                        if (++retries >= MAX_SCAN_RETRIES) {
+                            rescan = true;
+                            break sweep;                  // randomly move
+                        }
                     }
                 }
             }
+            if (nstolen != 0)
+                w.nsteals += nstolen;
         }
-        return false;
+        return rescan;
     }
 
     /**
@@ -2067,11 +2057,12 @@ public class ForkJoinPool extends AbstractExecutorService {
                     if (((p = w.phase) & IDLE) == 0)
                         break;                   // interleave signal checks
                     if (q != null && q.top - q.base > 0) {
-                        if (release && ctl == qc && compareAndSetCtl(qc, pc)) {
+                        if (!release)            // need multiple or reencounter
+                            release = true;
+                        else if (ctl == qc && compareAndSetCtl(qc, pc)) {
                             p = w.phase = active;
                             break;               // possible missed signal
                         }
-                        release = true;          // track multiple or reencounter
                     }
                     Thread.onSpinWait();         // reduce memory traffic
                 }
