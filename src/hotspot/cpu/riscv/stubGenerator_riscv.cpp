@@ -128,7 +128,7 @@ class StubGenerator: public StubCodeGenerator {
   //     [ argument word n      ]
   //      ...
   // -35 [ argument word 1      ]
-  // -34 [ saved Floating-point Control and Status Register ] <--- sp_after_call
+  // -34 [ saved FRM in Floating-point Control and Status Register ] <--- sp_after_call
   // -33 [ saved f27            ]
   // -32 [ saved f26            ]
   // -31 [ saved f25            ]
