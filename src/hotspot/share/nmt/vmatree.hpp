@@ -98,6 +98,7 @@ public:
 
   using VTreap = TreapNode<size_t, IntervalChange, addr_cmp>;
   TreapCHeap<size_t, IntervalChange, addr_cmp> tree;
+
   VMATree()
     : tree() {
   }
@@ -110,7 +111,7 @@ public:
     SingleDiff flag[mt_number_of_types];
     SummaryDiff() {
       for (int i = 0; i < mt_number_of_types; i++) {
-        flag[i] = {0, 0};
+        flag[i] = SingleDiff{0, 0};
       }
     }
   };
@@ -136,7 +137,7 @@ public:
     ResourceArea area(mtNMT);
     ResourceMark rm(&area);
     GrowableArray<VTreap*> to_visit(&area, 16, 0, nullptr);
-    to_visit.push(tree.tree);
+    to_visit.push(tree.root);
     VTreap* head = nullptr;
     while (!to_visit.is_empty()) {
       head = to_visit.pop();
@@ -170,7 +171,7 @@ private:
 public:
   template<typename F>
   void in_order_traversal(F f) const {
-    in_order_traversal_doer(f, tree.tree);
+    in_order_traversal_doer(f, tree.root);
   }
 };
 

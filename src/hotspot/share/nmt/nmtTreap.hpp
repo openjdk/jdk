@@ -193,11 +193,11 @@ class TreapCHeap {
   friend class VMATree;
   friend class VMATreeTest;
   using CTreap = TreapNode<K, V, CMP>;
-  CTreap* tree;
+  CTreap* root;
   uint64_t prng_seed;
 
 public:
-  TreapCHeap(uint64_t seed = 1234) : tree(nullptr), prng_seed(seed) {
+  TreapCHeap(uint64_t seed = 1234) : root(nullptr), prng_seed(seed) {
   }
   ~TreapCHeap() {
     this->remove_all();
@@ -214,7 +214,7 @@ public:
   }
 
   void upsert(const K& k, const V& v) {
-    tree = CTreap::upsert(tree, k, v, [&](const K& k, const V& v) {
+    root = CTreap::upsert(root, k, v, [&](const K& k, const V& v) {
       uint64_t rand = this->prng_next();
       void* place = os::malloc(sizeof(CTreap), mtNMT);
       new (place) CTreap(k, v, rand);
@@ -223,13 +223,13 @@ public:
   }
 
   void remove(const K& k) {
-    tree = CTreap::remove(tree, k, [](void* ptr) {
+    root = CTreap::remove(root, k, [](void* ptr) {
       os::free(ptr);
     });
   }
 
   void remove_all() {
-    tree = CTreap::remove_all(tree, [](void* ptr){
+    root = CTreap::remove_all(root, [](void* ptr){
       os::free(ptr);
     });
   }
@@ -241,7 +241,7 @@ public:
       return leqB;
     }
     CTreap* gtB = nullptr;
-    CTreap* head = tree;
+    CTreap* head = root;
     while (head != nullptr) {
       int cmp_r = CMP(head->key(), key);
       if (cmp_r == 0) { // Exact match
@@ -260,7 +260,7 @@ public:
   }
   CTreap* closest_leq(const K& key) {
     CTreap* leqA_n = nullptr;
-    CTreap* head = tree;
+    CTreap* head = root;
     while (head != nullptr) {
       int cmp_r = CMP(head->key(), key);
       if (cmp_r == 0) { // Exact match
