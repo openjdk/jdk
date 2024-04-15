@@ -69,18 +69,33 @@ public:
   };
 
   struct IntervalState {
-    StateType type;
-    Metadata data;
+  private:
+    // Store the type and flag as two bytes
+    uint8_t type_flag[2];
+    NativeCallStackStorage::StackIndex sidx;
+  public:
+    IntervalState() : type_flag{0,0}, sidx() {}
+    IntervalState(StateType type, Metadata data) {
+      type_flag[0] = static_cast<uint8_t>(type);
+      type_flag[1] = static_cast<uint8_t>(data.flag);
+      data.stack_idx = sidx;
+    }
+
+    StateType type() const {
+      return static_cast<StateType>(type_flag[0]);
+    }
+    MEMFLAGS flag() const {
+      return static_cast<MEMFLAGS>(type_flag[1]);
+    }
+    Metadata metadata() const {
+      return Metadata{sidx, flag()};
+    }
 
     void merge(const IntervalState& b) {
-      if (this->type == StateType::Released) {
+      if (type() == StateType::Released) {
         //this->data.flag = b.data.flag;
         //this->data.stack_idx = b.data.stack_idx;
       }
-    }
-
-    Metadata metadata() const {
-      return data;
     }
   };
 
@@ -91,8 +106,8 @@ public:
     IntervalState out;
 
     bool is_noop() {
-      return (in.type == StateType::Released && out.type == StateType::Released) ||
-             (in.type == out.type && Metadata::equals(in.data, out.data));
+      return (in.type() == StateType::Released && out.type() == StateType::Released) ||
+             (in.type() == out.type() && Metadata::equals(in.metadata(), out.metadata()));
     }
   };
 

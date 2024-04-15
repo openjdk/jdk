@@ -1,7 +1,30 @@
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/vmatree.hpp"
-#include "nmt/memTracker.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 
@@ -10,6 +33,7 @@ public:
   VMATree::VTreap* treap_of(VMATree& tree) {
     return tree.tree.root;
   }
+
   NativeCallStack make_stack(size_t a, size_t b, size_t c, size_t d) {
     NativeCallStack stack;
     stack._stack[0] = (address)a;
@@ -18,6 +42,7 @@ public:
     stack._stack[3] = (address)d;
     return stack;
   }
+
   NativeCallStack stack1 = make_stack(size_t{0x7bece59b89ac},
                                       size_t{0x7bece59b1fdd},
                                       size_t{0x7bece59b2997},
@@ -103,8 +128,8 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     tree.visit(0, 999999, [&](Node* x) {
       found_nodes++;
       VMATree::IntervalChange& v = x->val();
-      EXPECT_TRUE((v.in.type == VMATree::StateType::Released && v.out.type == VMATree::StateType::Committed) ||
-                  (v.in.type == VMATree::StateType::Committed && v.out.type == VMATree::StateType::Released));
+      EXPECT_TRUE((v.in.type() == VMATree::StateType::Released && v.out.type() == VMATree::StateType::Committed) ||
+                  (v.in.type() == VMATree::StateType::Committed && v.out.type() == VMATree::StateType::Released));
     });
     EXPECT_EQ(2, found_nodes);
   };

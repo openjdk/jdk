@@ -187,9 +187,9 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
     // We have smashed a hole in an existing region (or replaced it entirely).
     // LEQ_A - A - B - GEQ_B
     auto& rescom = diff.flag[NMTUtil::flag_to_index(LEQ_A.flag_out())];
-    if (LEQ_A.state.out.type == StateType::Reserved) {
+    if (LEQ_A.state.out.type() == StateType::Reserved) {
       rescom.reserve -= B - A;
-    } else if (LEQ_A.state.out.type == StateType::Committed) {
+    } else if (LEQ_A.state.out.type() == StateType::Committed) {
       rescom.commit -= B - A;
       rescom.reserve -= B - A;
     }
@@ -202,24 +202,24 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
     to_be_deleted_inbetween_a_b.pop();
     tree.remove(delete_me.address);
     auto& rescom = diff.flag[NMTUtil::flag_to_index(flag_in)];
-    if (delete_me.state.in.type == StateType::Reserved) {
+    if (delete_me.state.in.type() == StateType::Reserved) {
       rescom.reserve -= delete_me.address - prev.address;
-    } else if (delete_me.state.in.type == StateType::Committed) {
+    } else if (delete_me.state.in.type() == StateType::Committed) {
       rescom.commit -= delete_me.address - prev.address;
       rescom.reserve -= delete_me.address - prev.address;
     }
     prev = delete_me;
     flag_in = delete_me.flag_out();
   }
-  if (prev.address != A && prev.state.out.type != StateType::Released &&
-      GEQ_B.state.in.type != StateType::Released) {
+  if (prev.address != A && prev.state.out.type() != StateType::Released &&
+      GEQ_B.state.in.type() != StateType::Released) {
     // There was some node inside of (A, B) and it is connected to GEQ_B
     // A - prev - B - GEQ_B
     // It might be that prev.address == B == GEQ_B.address, this is fine.
-    if (prev.state.out.type == StateType::Reserved) {
+    if (prev.state.out.type() == StateType::Reserved) {
       auto& rescom = diff.flag[NMTUtil::flag_to_index(prev.flag_out())];
       rescom.reserve -= B - prev.address;
-    } else if (prev.state.out.type == StateType::Committed) {
+    } else if (prev.state.out.type() == StateType::Committed) {
       auto& rescom = diff.flag[NMTUtil::flag_to_index(prev.flag_out())];
       rescom.commit -= B - prev.address;
       rescom.reserve -= B - prev.address;

@@ -51,15 +51,15 @@ void MemoryFileTracker::print_report_on(const MemoryFile* device, outputStream* 
     }
     const VMATree::IntervalChange& pval = prev->val();
     const VMATree::IntervalChange& cval = current->val();
-    assert(pval.out.type == cval.in.type, "must be");
-    if (pval.out.type == VMATree::StateType::Reserved) {
+    assert(pval.out.type() == cval.in.type(), "must be");
+    if (pval.out.type() == VMATree::StateType::Reserved) {
       const auto& start_addr = prev->key();
       const auto& end_addr = current->key();
       stream->print_cr("[" PTR_FORMAT " - " PTR_FORMAT "] allocated " SIZE_FORMAT "%s" " for %s", start_addr, end_addr,
                        NMTUtil::amount_in_scale(end_addr - start_addr, scale),
                        NMTUtil::scale_name(scale),
-                       NMTUtil::flag_to_name(pval.out.data.flag));
-      pval.out.data.stack_idx.stack().print_on(stream, 4);
+                       NMTUtil::flag_to_name(pval.out.metadata().flag));
+      pval.out.metadata().stack_idx.stack().print_on(stream, 4);
       stream->cr();
     }
     prev = current;
