@@ -4440,8 +4440,7 @@ void GraphBuilder::append_char_access(ciMethod* callee, bool is_store) {
 void GraphBuilder::append_alloc_array_copy(ciMethod* callee) {
   {
     // Peek at receiver
-    Value recv = apop();
-    apush(recv);
+    Value recv = state()->stack_at(state()->stack_size() - callee->arg_size());
     ciType* receiver_type = recv->exact_type();
     if (receiver_type == nullptr || // clone target is phi
         !receiver_type->is_type_array_klass()) // not primtive array
