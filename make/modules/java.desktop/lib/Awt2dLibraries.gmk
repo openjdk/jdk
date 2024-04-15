@@ -23,6 +23,8 @@
 # questions.
 #
 
+include CopyFiles.gmk
+
 LIBAWT_DEFAULT_HEADER_DIRS := \
     common/awt/utility \
     libawt/awt/image \

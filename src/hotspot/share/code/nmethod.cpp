@@ -2037,7 +2037,7 @@ void nmethod::purge(bool free_code_cache_data, bool unregister_nmethod) {
   MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   // completely deallocate this method
-  Events::log(Thread::current(), "flushing nmethod " INTPTR_FORMAT, p2i(this));
+  Events::log_nmethod_flush(Thread::current(), "flushing %s nmethod " INTPTR_FORMAT, is_osr_method() ? "osr" : "", p2i(this));
   log_debug(codecache)("*flushing %s nmethod %3d/" INTPTR_FORMAT ". Live blobs:" UINT32_FORMAT
                        "/Free CodeCache:" SIZE_FORMAT "Kb",
                        is_osr_method() ? "osr" : "",_compile_id, p2i(this), CodeCache::blob_count(),

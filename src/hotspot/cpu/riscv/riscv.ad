@@ -1060,8 +1060,8 @@ class HandlerImpl {
 
  public:
 
-  static int emit_exception_handler(CodeBuffer &cbuf);
-  static int emit_deopt_handler(CodeBuffer& cbuf);
+  static int emit_exception_handler(C2_MacroAssembler *masm);
+  static int emit_deopt_handler(C2_MacroAssembler* masm);
 
   static uint size_exception_handler() {
     return MacroAssembler::far_branch_size();
@@ -1207,7 +1207,7 @@ bool needs_acquiring_load_reserved(const Node *n)
   // so we can just return true here
   return true;
 }
-#define __ _masm.
+#define __ masm->
 
 // advance declarations for helper functions to convert register
 // indices to register objects
@@ -1291,8 +1291,7 @@ void MachBreakpointNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 }
 #endif
 
-void MachBreakpointNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  C2_MacroAssembler _masm(&cbuf);
+void MachBreakpointNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   __ ebreak();
 }
 
@@ -1308,9 +1307,8 @@ uint MachBreakpointNode::size(PhaseRegAlloc *ra_) const {
   }
 #endif
 
-  void MachNopNode::emit(CodeBuffer &cbuf, PhaseRegAlloc*) const {
-    C2_MacroAssembler _masm(&cbuf);
-    Assembler::CompressibleRegion cr(&_masm); // nops shall be 2-byte under RVC for alignment purposes.
+  void MachNopNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc*) const {
+    Assembler::CompressibleRegion cr(masm); // nops shall be 2-byte under RVC for alignment purposes.
     for (int i = 0; i < _count; i++) {
       __ nop();
     }
@@ -1332,7 +1330,7 @@ void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, Phase
   ShouldNotReachHere();
 }
 
-void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
+void MachConstantBaseNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const {
   // Empty encoding
 }
 
@@ -1376,10 +1374,9 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 }
 #endif
 
-void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   assert_cond(ra_ != nullptr);
   Compile* C = ra_->C;
-  C2_MacroAssembler _masm(&cbuf);
 
   // n.b. frame size includes space for return pc and fp
   const int framesize = C->output()->frame_size_in_bytes();
@@ -1387,7 +1384,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   // insert a nop at the start of the prolog so we can patch in a
   // branch if we need to invalidate the method later
   {
-    Assembler::IncompressibleRegion ir(&_masm);  // keep the nop as 4 bytes for patching.
+    Assembler::IncompressibleRegion ir(masm);  // keep the nop as 4 bytes for patching.
     MacroAssembler::assert_alignment(__ pc());
     __ nop();  // 4 bytes
   }
@@ -1431,7 +1428,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
         guard = &stub->guard();
       }
       // In the C2 code, we move the non-hot part of nmethod entry barriers out-of-line to a stub.
-      bs->nmethod_entry_barrier(&_masm, slow_path, continuation, guard);
+      bs->nmethod_entry_barrier(masm, slow_path, continuation, guard);
     }
   }
 
@@ -1439,7 +1436,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     Unimplemented();
   }
 
-  C->output()->set_frame_complete(cbuf.insts_size());
+  C->output()->set_frame_complete(__ offset());
 
   if (C->has_mach_constant_base_node()) {
     // NOTE: We set the table base offset here because users might be
@@ -1490,10 +1487,9 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 }
 #endif
 
-void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+void MachEpilogNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   assert_cond(ra_ != nullptr);
   Compile* C = ra_->C;
-  C2_MacroAssembler _masm(&cbuf);
   assert_cond(C != nullptr);
   int framesize = C->output()->frame_size_in_bytes();
 
@@ -1567,7 +1563,7 @@ static enum RC rc_class(OptoReg::Name reg) {
   return rc_stack;
 }
 
-uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, bool do_size, outputStream *st) const {
+uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *ra_, bool do_size, outputStream *st) const {
   assert_cond(ra_ != nullptr);
   Compile* C = ra_->C;
 
@@ -1601,8 +1597,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
 
   if (bottom_type()->isa_vect() != nullptr) {
     uint ireg = ideal_reg();
-    if (ireg == Op_VecA && cbuf) {
-      C2_MacroAssembler _masm(cbuf);
+    if (ireg == Op_VecA && masm) {
       int vector_reg_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
       if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
         // stack to stack
@@ -1620,8 +1615,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
       } else {
         ShouldNotReachHere();
       }
-    } else if (bottom_type()->isa_vectmask() && cbuf) {
-      C2_MacroAssembler _masm(cbuf);
+    } else if (bottom_type()->isa_vectmask() && masm) {
       int vmask_size_in_bytes = Matcher::scalable_predicate_reg_slots() * 32 / 8;
       if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
         // stack to stack
@@ -1640,8 +1634,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
         ShouldNotReachHere();
       }
     }
-  } else if (cbuf != nullptr) {
-    C2_MacroAssembler _masm(cbuf);
+  } else if (masm != nullptr) {
     switch (src_lo_rc) {
       case rc_int:
         if (dst_lo_rc == rc_int) {  // gpr --> gpr copy
@@ -1753,8 +1746,8 @@ void MachSpillCopyNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 }
 #endif
 
-void MachSpillCopyNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  implementation(&cbuf, ra_, false, nullptr);
+void MachSpillCopyNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
+  implementation(masm, ra_, false, nullptr);
 }
 
 uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const {
@@ -1773,9 +1766,8 @@ void BoxLockNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 }
 #endif
 
-void BoxLockNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  C2_MacroAssembler _masm(&cbuf);
-  Assembler::IncompressibleRegion ir(&_masm);  // Fixed length: see BoxLockNode::size()
+void BoxLockNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
+  Assembler::IncompressibleRegion ir(masm);  // Fixed length: see BoxLockNode::size()
 
   assert_cond(ra_ != nullptr);
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
@@ -1820,10 +1812,9 @@ void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 }
 #endif
 
-void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
+void MachUEPNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
 {
   // This is the unverified entry point.
-  C2_MacroAssembler _masm(&cbuf);
   __ ic_check(CodeEntryAlignment);
 
   // Verified entry point must be properly 4 bytes aligned for patching by NativeJump::patch_verified_entry().
@@ -1842,13 +1833,12 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 //=============================================================================
 
 // Emit exception handler code.
-int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf)
+int HandlerImpl::emit_exception_handler(C2_MacroAssembler* masm)
 {
   // auipc t0, #exception_blob_entry_point
   // jr (offset)t0
   // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
-  C2_MacroAssembler _masm(&cbuf);
   address base = __ start_a_stub(size_exception_handler());
   if (base == nullptr) {
     ciEnv::current()->record_failure("CodeCache is full");
@@ -1862,11 +1852,8 @@ int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf)
 }
 
 // Emit deopt handler code.
-int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
+int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm)
 {
-  // Note that the code buffer's insts_mark is always relative to insts.
-  // That's why we must use the macroassembler to generate a handler.
-  C2_MacroAssembler _masm(&cbuf);
   address base = __ start_a_stub(size_deopt_handler());
   if (base == nullptr) {
     ciEnv::current()->record_failure("CodeCache is full");
@@ -2201,14 +2188,12 @@ encode %{
   // BEGIN Non-volatile memory access
 
   enc_class riscv_enc_mov_imm(iRegIorL dst, immIorL src) %{
-    C2_MacroAssembler _masm(&cbuf);
     int64_t con = (int64_t)$src$$constant;
     Register dst_reg = as_Register($dst$$reg);
     __ mv(dst_reg, con);
   %}
 
   enc_class riscv_enc_mov_p(iRegP dst, immP src) %{
-    C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     address con = (address)$src$$constant;
     if (con == nullptr || con == (address)1) {
@@ -2227,18 +2212,15 @@ encode %{
   %}
 
   enc_class riscv_enc_mov_p1(iRegP dst) %{
-    C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     __ mv(dst_reg, 1);
   %}
 
   enc_class riscv_enc_mov_byte_map_base(iRegP dst) %{
-    C2_MacroAssembler _masm(&cbuf);
     __ load_byte_map_base($dst$$Register);
   %}
 
   enc_class riscv_enc_mov_n(iRegN dst, immN src) %{
-    C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     address con = (address)$src$$constant;
     if (con == nullptr) {
@@ -2251,13 +2233,11 @@ encode %{
   %}
 
   enc_class riscv_enc_mov_zero(iRegNorP dst) %{
-    C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     __ mv(dst_reg, zr);
   %}
 
   enc_class riscv_enc_mov_nk(iRegN dst, immNKlass src) %{
-    C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     address con = (address)$src$$constant;
     if (con == nullptr) {
@@ -2270,42 +2250,36 @@ encode %{
   %}
 
   enc_class riscv_enc_cmpxchgw(iRegINoSp res, memory mem, iRegI oldval, iRegI newval) %{
-    C2_MacroAssembler _masm(&cbuf);
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int32,
                /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register,
                /*result as bool*/ true);
   %}
 
   enc_class riscv_enc_cmpxchgn(iRegINoSp res, memory mem, iRegI oldval, iRegI newval) %{
-    C2_MacroAssembler _masm(&cbuf);
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::uint32,
                /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register,
                /*result as bool*/ true);
   %}
 
   enc_class riscv_enc_cmpxchg(iRegINoSp res, memory mem, iRegL oldval, iRegL newval) %{
-    C2_MacroAssembler _masm(&cbuf);
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
                /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register,
                /*result as bool*/ true);
   %}
 
   enc_class riscv_enc_cmpxchgw_acq(iRegINoSp res, memory mem, iRegI oldval, iRegI newval) %{
-    C2_MacroAssembler _masm(&cbuf);
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int32,
                /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register,
                /*result as bool*/ true);
   %}
 
   enc_class riscv_enc_cmpxchgn_acq(iRegINoSp res, memory mem, iRegI oldval, iRegI newval) %{
-    C2_MacroAssembler _masm(&cbuf);
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::uint32,
                /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register,
                /*result as bool*/ true);
   %}
 
   enc_class riscv_enc_cmpxchg_acq(iRegINoSp res, memory mem, iRegL oldval, iRegL newval) %{
-    C2_MacroAssembler _masm(&cbuf);
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
                /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register,
                /*result as bool*/ true);
@@ -2314,13 +2288,11 @@ encode %{
   // compare and branch instruction encodings
 
   enc_class riscv_enc_j(label lbl) %{
-    C2_MacroAssembler _masm(&cbuf);
     Label* L = $lbl$$label;
     __ j(*L);
   %}
 
   enc_class riscv_enc_far_cmpULtGe_imm0_branch(cmpOpULtGe cmp, iRegIorL op1, label lbl) %{
-    C2_MacroAssembler _masm(&cbuf);
     Label* L = $lbl$$label;
     switch ($cmp$$cmpcode) {
       case(BoolTest::ge):
@@ -2344,7 +2316,6 @@ encode %{
 
     Label miss;
     Label done;
-    C2_MacroAssembler _masm(&cbuf);
     __ check_klass_subtype_slow_path(sub_reg, super_reg, temp_reg, result_reg,
                                      nullptr, &miss);
     if ($primary) {
@@ -2363,8 +2334,7 @@ encode %{
   %}
 
   enc_class riscv_enc_java_static_call(method meth) %{
-    C2_MacroAssembler _masm(&cbuf);
-    Assembler::IncompressibleRegion ir(&_masm);  // Fixed length: see ret_addr_offset
+    Assembler::IncompressibleRegion ir(masm);  // Fixed length: see ret_addr_offset
 
     address addr = (address)$meth$$method;
     address call = nullptr;
@@ -2382,7 +2352,7 @@ encode %{
       __ nop();
       __ block_comment("call JVM_EnsureMaterializedForStackWalk (elided)");
     } else {
-      int method_index = resolved_method_index(cbuf);
+      int method_index = resolved_method_index(masm);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
       call = __ trampoline_call(Address(addr, rspec));
@@ -2394,10 +2364,10 @@ encode %{
       if (CodeBuffer::supports_shared_stubs() && _method->can_be_statically_bound()) {
         // Calls of the same statically bound method can share
         // a stub to the interpreter.
-        cbuf.shared_stub_to_interp_for(_method, call - cbuf.insts_begin());
+        __ code()->shared_stub_to_interp_for(_method, call - (__ begin()));
       } else {
         // Emit stub for static call
-        address stub = CompiledDirectCall::emit_to_interp_stub(cbuf, call);
+        address stub = CompiledDirectCall::emit_to_interp_stub(masm, call);
         if (stub == nullptr) {
           ciEnv::current()->record_failure("CodeCache is full");
           return;
@@ -2409,9 +2379,8 @@ encode %{
   %}
 
   enc_class riscv_enc_java_dynamic_call(method meth) %{
-    C2_MacroAssembler _masm(&cbuf);
-    Assembler::IncompressibleRegion ir(&_masm);  // Fixed length: see ret_addr_offset
-    int method_index = resolved_method_index(cbuf);
+    Assembler::IncompressibleRegion ir(masm);  // Fixed length: see ret_addr_offset
+    int method_index = resolved_method_index(masm);
     address call = __ ic_call((address)$meth$$method, method_index);
     if (call == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
@@ -2422,7 +2391,6 @@ encode %{
   %}
 
   enc_class riscv_enc_call_epilog() %{
-    C2_MacroAssembler _masm(&cbuf);
     if (VerifyStackAtCalls) {
       // Check that stack depth is unchanged: find majik cookie on stack
       __ call_Unimplemented();
@@ -2430,8 +2398,7 @@ encode %{
   %}
 
   enc_class riscv_enc_java_to_runtime(method meth) %{
-    C2_MacroAssembler _masm(&cbuf);
-    Assembler::IncompressibleRegion ir(&_masm);  // Fixed length: see ret_addr_offset
+    Assembler::IncompressibleRegion ir(masm);  // Fixed length: see ret_addr_offset
 
     // some calls to generated routines (arraycopy code) are scheduled
     // by C2 as runtime calls. if so we can call them using a jr (they
@@ -2463,7 +2430,6 @@ encode %{
   // arithmetic encodings
 
   enc_class riscv_enc_divw(iRegI dst, iRegI src1, iRegI src2) %{
-    C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
@@ -2471,7 +2437,6 @@ encode %{
   %}
 
   enc_class riscv_enc_divuw(iRegI dst, iRegI src1, iRegI src2) %{
-    C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
@@ -2479,7 +2444,6 @@ encode %{
   %}
 
   enc_class riscv_enc_div(iRegI dst, iRegI src1, iRegI src2) %{
-    C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
@@ -2487,7 +2451,6 @@ encode %{
   %}
 
   enc_class riscv_enc_divu(iRegI dst, iRegI src1, iRegI src2) %{
-    C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
@@ -2495,7 +2458,6 @@ encode %{
   %}
 
   enc_class riscv_enc_modw(iRegI dst, iRegI src1, iRegI src2) %{
-    C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
@@ -2503,7 +2465,6 @@ encode %{
   %}
 
   enc_class riscv_enc_moduw(iRegI dst, iRegI src1, iRegI src2) %{
-    C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
@@ -2511,7 +2472,6 @@ encode %{
   %}
 
   enc_class riscv_enc_mod(iRegI dst, iRegI src1, iRegI src2) %{
-    C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
@@ -2519,7 +2479,6 @@ encode %{
   %}
 
   enc_class riscv_enc_modu(iRegI dst, iRegI src1, iRegI src2) %{
-    C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
@@ -2527,13 +2486,11 @@ encode %{
   %}
 
   enc_class riscv_enc_tail_call(iRegP jump_target) %{
-    C2_MacroAssembler _masm(&cbuf);
     Register target_reg = as_Register($jump_target$$reg);
     __ jr(target_reg);
   %}
 
   enc_class riscv_enc_tail_jmp(iRegP jump_target) %{
-    C2_MacroAssembler _masm(&cbuf);
     Register target_reg = as_Register($jump_target$$reg);
     // exception oop should be in x10
     // ret addr has been popped into ra
@@ -2543,12 +2500,10 @@ encode %{
   %}
 
   enc_class riscv_enc_rethrow() %{
-    C2_MacroAssembler _masm(&cbuf);
     __ far_jump(RuntimeAddress(OptoRuntime::rethrow_stub()));
   %}
 
   enc_class riscv_enc_ret() %{
-    C2_MacroAssembler _masm(&cbuf);
     __ ret();
   %}
 
