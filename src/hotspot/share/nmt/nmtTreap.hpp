@@ -29,7 +29,6 @@
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
 #include "utilities/growableArray.hpp"
-#include <stddef.h>
 #include <stdint.h>
 
 // A Treap is a self-balanced binary tree where each node is equipped with a
@@ -72,14 +71,14 @@ class TreapNode {
       return {nullptr, nullptr};
     }
     if ( (CMP(head->_key, key) <= 0 && mode == LEQ) ||
-         (CMP(head->_key, key) < 0 && mode == LT) ) {
+         (CMP(head->_key, key) < 0  && mode == LT) ) {
       nd_pair p = split(head->_right, key, mode);
       head->_right = p.left;
-      return {head, p.right};
+      return nd_pair{head, p.right};
     } else {
       nd_pair p = split(head->_left, key, mode);
       head->_left = p.right;
-      return {p.left, head};
+      return nd_pair{p.left, head};
     }
   }
 
@@ -174,7 +173,7 @@ public:
 
   // Delete all nodes.
   template<typename Free>
-  static Nd* delete_all(Nd* tree, Free free) {
+  static Nd* remove_all(Nd* tree, Free free) {
     GrowableArrayCHeap<Nd*, mtNMT> to_delete;
     to_delete.push(tree);
 
@@ -196,6 +195,7 @@ class TreapCHeap {
   using CTreap = TreapNode<K, V, CMP>;
   CTreap* tree;
   uint64_t prng_seed;
+
 public:
   TreapCHeap(uint64_t seed = 1234) : tree(nullptr), prng_seed(seed) {
   }
@@ -229,7 +229,7 @@ public:
   }
 
   void remove_all() {
-    tree = CTreap::delete_all(tree, [](void* ptr){
+    tree = CTreap::remove_all(tree, [](void* ptr){
       os::free(ptr);
     });
   }
