@@ -151,7 +151,7 @@ public interface SymbolLookup {
     /**
      * Returns the address of the symbol with the given name or throws an Exception.
      *<p>
-     * This is equivalent to the following code, but is more resource efficient:
+     * This is equivalent to the following code, but is more efficient:
      * to:
      * {@snippet lang= java :
      *    String name = ...
