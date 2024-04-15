@@ -388,7 +388,7 @@ public:
   // Given an instance of HotSpotInstalledCode, return the corresponding CodeBlob*.
   CodeBlob* get_code_blob(JVMCIObject code);
 
-  // Given an instance of HotSpotInstalledCode return the corresponding nmethod.
+  // Given an instance of HotSpotInstalledCode, return the corresponding nmethod.
   nmethod* get_nmethod(JVMCIObject code, JVMCINMethodHandle& nmethod_handle);
 
   const char* klass_name(JVMCIObject object);

@@ -819,6 +819,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
       if (_nmethod_entry_patch_offset != -1) {
         BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
 
+        // an empty error buffer for use by the verify_barrier code
         err_msg msg("");
         if (!bs_nm->verify_barrier(nm, msg)) {
           JVMCI_THROW_MSG_(IllegalArgumentException, err_msg("nmethod entry barrier is malformed: %s", msg.buffer()), JVMCI::ok);
