@@ -665,10 +665,12 @@ void MetaspaceShared::preload_and_dump() {
     if (PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {
       log_error(cds)("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
                      SIZE_FORMAT "M", MaxHeapSize/M);
+      CLEAR_PENDING_EXCEPTION;
       MetaspaceShared::unrecoverable_writing_error();
     } else {
       log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
                      java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
+      CLEAR_PENDING_EXCEPTION;
       MetaspaceShared::unrecoverable_writing_error("VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
     }
   }
