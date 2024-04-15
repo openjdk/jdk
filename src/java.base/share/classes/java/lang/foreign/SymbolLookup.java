@@ -163,7 +163,7 @@ public interface SymbolLookup {
      * @return a zero-length memory segment whose address indicates the address of
      *         the symbol
      * @throws IllegalArgumentException if no symbol address can be found for the
-     *         provided name
+     *         given name
      * @see #find(String)
      *
      * @since 23
