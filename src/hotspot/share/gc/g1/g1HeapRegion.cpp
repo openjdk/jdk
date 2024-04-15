@@ -621,14 +621,18 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
 
   template <class T>
   void do_oop_work(T* p) {
-    if (_failures->count() >= G1MaxVerifyFailures) {
-      return;
-    }
-
+    // Check for null references first - they are fairly common and since there is
+    // nothing to do for them anyway (they can't fail verification), it makes sense
+    // to handle them first.
     T heap_oop = RawAccess<>::oop_load(p);
     if (CompressedOops::is_null(heap_oop)) {
       return;
     }
+
+    if (_failures->count() >= G1MaxVerifyFailures) {
+      return;
+    }
+
     oop obj = CompressedOops::decode_raw_not_null(heap_oop);
 
     LiveChecker<T> live_check(_failures, _containing_obj, p, obj, _vo);
@@ -693,11 +697,6 @@ bool HeapRegion::verify(VerifyOption vo) const {
 
   if (verify_liveness_and_remset(vo)) {
     return true;
-  }
-
-  // Only regions in old generation contain valid BOT.
-  if (!is_empty() && !is_young()) {
-    _bot->verify(this);
   }
 
   if (is_humongous()) {
