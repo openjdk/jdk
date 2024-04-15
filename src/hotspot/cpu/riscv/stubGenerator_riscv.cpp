@@ -304,8 +304,8 @@ class StubGenerator: public StubCodeGenerator {
     // Set fcsr to the state we need. We do want Round to Nearest. We
     // don't want non-IEEE rounding modes.
     Label skip_fsrmi;
-    __ mv(t1, __ RoundingMode::rne);
-    __ beq(t0, t1, skip_fsrmi);
+    guarantee(__ RoundingMode::rne == 0, "must be");
+    __ beq(t0, zr, skip_fsrmi);
     __ fsrmi(__ RoundingMode::rne);
     __ bind(skip_fsrmi);
 
