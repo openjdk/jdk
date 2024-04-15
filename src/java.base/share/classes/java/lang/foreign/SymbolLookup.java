@@ -149,7 +149,7 @@ public interface SymbolLookup {
     Optional<MemorySegment> find(String name);
 
     /**
-     * Returns the address of the symbol with the given name or throws an Exception.
+     * Returns the address of the symbol with the given name or throws an exception.
      *<p>
      * This is equivalent to the following code, but is more efficient:
      * to:
