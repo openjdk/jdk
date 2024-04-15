@@ -904,6 +904,28 @@ public final class LauncherHelper {
         return false;
     }
 
+    /*
+     * main type flags
+     */
+    private static final int MAIN_WITHOUT_ARGS = 1;
+    private static final int MAIN_NONSTATIC = 2;
+    private static int mainType = 0;
+
+    /*
+     * Return type so that launcher invokes the correct main
+     */
+    public static int getMainType() {
+        return mainType;
+    }
+
+    private static void setMainType(Method mainMethod) {
+        int mods = mainMethod.getModifiers();
+        boolean isStatic = Modifier.isStatic(mods);
+        boolean noArgs = mainMethod.getParameterCount() == 0;
+        mainType = (isStatic ? 0 : MAIN_NONSTATIC) | (noArgs ? MAIN_WITHOUT_ARGS : 0);
+    }
+
+
     // Check the existence and signature of main and abort if incorrect.
     private static void validateMainMethod(Class<?> mainClass) {
         Method mainMethod = null;
@@ -925,6 +947,8 @@ public final class LauncherHelper {
                       e.getClass().getName(), e.getLocalizedMessage());
             }
         }
+
+        setMainType(mainMethod);
 
         int mods = mainMethod.getModifiers();
         boolean isStatic = Modifier.isStatic(mods);

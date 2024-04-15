@@ -390,7 +390,6 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
 #define CHECK_EXCEPTION_FAIL() \
     do { \
         if ((*env)->ExceptionOccurred(env)) { \
-            (*env)->ExceptionClear(env); \
             return 0; \
         } \
     } while (JNI_FALSE)
@@ -399,7 +398,6 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
 #define CHECK_EXCEPTION_NULL_FAIL(mainObject) \
     do { \
         if ((*env)->ExceptionOccurred(env)) { \
-            (*env)->ExceptionClear(env); \
             return 0; \
         } else if (mainObject == NULL) { \
             return 0; \
@@ -620,12 +618,33 @@ JavaMain(void* _args)
      * The main method is invoked here so that extraneous java stacks are not in
      * the application stack trace.
      */
-    if (!invokeStaticMainWithArgs(env, mainClass, mainArgs) &&
-        !invokeInstanceMainWithArgs(env, mainClass, mainArgs) &&
-        !invokeStaticMainWithoutArgs(env, mainClass) &&
-        !invokeInstanceMainWithoutArgs(env, mainClass)) {
-        ret = 1;
-        LEAVE();
+
+#define MAIN_WITH_ARGS 0
+#define MAIN_WITHOUT_ARGS 1
+#define MAIN_NONSTATIC 2
+
+    jclass helperClass = GetLauncherHelperClass(env);
+    jmethodID getMainType =
+        (*env)->GetStaticMethodID(env, helperClass, "getMainType", "()I");
+
+    int mainType = (*env)->CallStaticIntMethod(env, helperClass, getMainType);
+    int res = 0;
+    switch (mainType) {
+    case MAIN_WITH_ARGS:
+        res = invokeStaticMainWithArgs(env, mainClass, mainArgs);
+        break;
+    case MAIN_WITHOUT_ARGS:
+        res = invokeStaticMainWithoutArgs(env, mainClass);
+        break;
+    case MAIN_NONSTATIC:
+        res = invokeInstanceMainWithArgs(env, mainClass, mainArgs);
+        break;
+    case MAIN_NONSTATIC | MAIN_WITHOUT_ARGS:
+        res = invokeInstanceMainWithoutArgs(env, mainClass);
+        break;
+    }
+    if (!res) {
+        CHECK_EXCEPTION_LEAVE(1);
     }
 
     /*
