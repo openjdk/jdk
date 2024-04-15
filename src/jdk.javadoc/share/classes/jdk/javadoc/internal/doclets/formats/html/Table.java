@@ -337,12 +337,16 @@ public class Table<T> extends Content {
             HtmlStyle cellStyle = columnStyles.get(colIndex);
 
             // Add tab order to plain text
-            String regex = "<a|<area|<button|<input|<object|<select|<textarea";
+            String regex = "<(?:a|area|button|input|object|select|textarea)\\b";
             Pattern pattern = Pattern.compile(regex);
             Matcher matcher = pattern.matcher(c.toString());
+            boolean matchFound = false;
+            while(matcher.find()) {
+                matchFound = true;
+            }
             // Always add content to make sure the cell isn't dropped
             var cell = HtmlTree.DIV(cellStyle).addUnchecked(c.isEmpty() ? Text.EMPTY : c);
-            if(matcher.find()) {
+            if(matchFound) {
                 cell.addStyle(rowStyle);
             } else {
                 cell.addStyle(rowStyle)
@@ -351,9 +355,13 @@ public class Table<T> extends Content {
             }
             
             for (String tabClass : tabClasses) {
-                System.out.println("Print tabClass is " +tabClass);
-                System.out.println("tabClass content is " +c.toString();)
-                cell.addStyle(tabClass);
+                if(matchFound) {
+                    cell.addStyle(tabClass);
+                } else {
+                    cell.addStyle(tabClass)
+                        .put(HtmlAttr.ROLE, "tablist")
+                        .put(HtmlAttr.TABINDEX, "0");
+                }
             }
             
             row.add(cell);
