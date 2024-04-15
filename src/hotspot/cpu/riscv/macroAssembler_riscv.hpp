@@ -679,9 +679,9 @@ private:
 #endif // COMPILER2
 
   bool in_range_auipc_s12(int64_t x) {
-    int64_t twoG = (2 * G);
-    int64_t twoK = (2 * K);
-    return x <= (twoG - twoK) && x >= (-twoG + twoK);
+    constexpr int64_t twoG = (2 * G);
+    constexpr int64_t twoK = (2 * K);
+    return x <= (twoG - twoK) && x >= (-twoG - twoK);
   }
 
 public:
