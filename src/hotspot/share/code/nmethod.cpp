@@ -999,23 +999,27 @@ const char* nmethod::compiler_name() const {
 // Fill in default values for various flag fields
 void nmethod::init_defaults() {
   // avoid uninitialized fields, even for short time periods
+  _osr_link                   = nullptr;
   _exception_cache            = nullptr;
+  _gc_data                    = nullptr;
+  _oops_do_mark_link          = nullptr;
+  _compiled_ic_data           = nullptr;
+
+#if INCLUDE_RTM_OPT
+  _rtm_state                  = NoRTM;
+#endif
+  _is_unloading_state         = 0;
+  _state                      = not_installed;
 
   _has_unsafe_access          = 0;
   _has_method_handle_invokes  = 0;
   _has_wide_vectors           = 0;
   _has_monitors               = 0;
-
-  _state                      = not_installed;
   _has_flushed_dependencies   = 0;
   _is_unlinked                = 0;
   _load_reported              = 0; // jvmti state
 
-  _oops_do_mark_link          = nullptr;
-  _osr_link                   = nullptr;
-#if INCLUDE_RTM_OPT
-  _rtm_state                  = NoRTM;
-#endif
+  _deoptimization_status      = not_marked;
 }
 
 #ifdef ASSERT
@@ -1208,12 +1212,8 @@ nmethod::nmethod(
              offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
   _deoptimization_generation(0),
   _method(method),
-  _gc_data(nullptr),
-  _compiled_ic_data(nullptr),
   _native_receiver_sp_offset(basic_lock_owner_sp_offset),
-  _native_basic_lock_sp_offset(basic_lock_sp_offset),
-  _is_unloading_state(0),
-  _deoptimization_status(not_marked)
+  _native_basic_lock_sp_offset(basic_lock_sp_offset)
 {
   {
     debug_only(NoSafepointVerifier nsv;)
@@ -1268,7 +1268,6 @@ nmethod::nmethod(
     _entry_offset            = (uint16_t)offsets->value(CodeOffsets::Entry);
     _verified_entry_offset   = (uint16_t)offsets->value(CodeOffsets::Verified_Entry);
     _osr_entry_point         = nullptr;
-    _exception_cache         = nullptr;
     _pc_desc_container.reset_to(nullptr);
 
     if (offsets->value(CodeOffsets::Exceptions) != -1) {
@@ -1369,12 +1368,8 @@ nmethod::nmethod(
              offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
   _deoptimization_generation(0),
   _method(method),
-  _gc_data(nullptr),
-  _compiled_ic_data(nullptr),
   _native_receiver_sp_offset(in_ByteSize(-1)),
-  _native_basic_lock_sp_offset(in_ByteSize(-1)),
-  _is_unloading_state(0),
-  _deoptimization_status(not_marked)
+  _native_basic_lock_sp_offset(in_ByteSize(-1))
 {
   assert(debug_info->oop_recorder() == code_buffer->oop_recorder(), "shared OR");
   {
@@ -1466,7 +1461,6 @@ nmethod::nmethod(
     _entry_offset          = (uint16_t)offsets->value(CodeOffsets::Entry);
     _verified_entry_offset = (uint16_t)offsets->value(CodeOffsets::Verified_Entry);
     _osr_entry_point       = code_begin()          + offsets->value(CodeOffsets::OSR_Entry);
-    _exception_cache       = nullptr;
 
     _pc_desc_container.reset_to(scopes_pcs_begin());
 
@@ -1474,7 +1468,7 @@ nmethod::nmethod(
     // Copy contents of ScopeDescRecorder to nmethod
     code_buffer->copy_values_to(this);
     debug_info->copy_to(this);
-    //dependencies->copy_to(this);
+    dependencies->copy_to(this);
     clear_unloading_state();
 
 #if INCLUDE_JVMCI
@@ -1483,7 +1477,6 @@ nmethod::nmethod(
       jvmci_nmethod_data()->copy(jvmci_data);
     }
 #endif
-    dependencies->copy_to(this);
 
     finalize_relocations();
 
