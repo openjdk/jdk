@@ -5130,6 +5130,9 @@ class StubGenerator: public StubCodeGenerator {
     const uint64_t BASE = 0xfff1;
     const uint64_t NMAX = 0x15B0;
 
+    // Unroll factor for L_nmax loop
+    const int unroll = 8;
+
     __ enter(); // required for proper stackwalking of RuntimeStub frame
     __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
 
@@ -5197,13 +5200,12 @@ class StubGenerator: public StubCodeGenerator {
                                   // and bytes for one of them are already subtracted
 
   __ bind(L_nmax_loop);
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < unroll; i++)
       generate_updateBytesAdler32_accum(buff, temp0, vtemp1, vtemp2, vtemp3, vzero, vbytes, unroll_regs[i], unroll_regs[i + 8], vtable);
-
     // Summing up
     __ vsetivli(temp0, 2, Assembler::e64, Assembler::m1); // Set SEW to 64 to avoid sign-extension
                                                           // in the next instructions
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < unroll; i++) {
       // s2 = s2 + s1 * 16
       __ slli(temp1, s1, 4);
       __ add(s2, s2, temp1);
@@ -5215,14 +5217,15 @@ class StubGenerator: public StubCodeGenerator {
     }
     __ blt(buff, buf_end, L_nmax_loop);
 
-    // Do the calculations for remaining 48 bytes
-    generate_updateBytesAdler32_accum(buff, temp0, vtemp1, vtemp2, vtemp3, vzero, vbytes, unroll_regs[0], unroll_regs[8], vtable);
-    generate_updateBytesAdler32_accum(buff, temp0, vtemp1, vtemp2, vtemp3, vzero, vbytes, unroll_regs[1], unroll_regs[9], vtable);
-    generate_updateBytesAdler32_accum(buff, temp0, vtemp1, vtemp2, vtemp3, vzero, vbytes, unroll_regs[2], unroll_regs[10], vtable);
+    const int remainder = ((NMAX / 16) % unroll);
+    assert(remainder < 8, "There are not enough vector registers in unroll_regs");
+    // Do the calculations for remaining 16*remainder bytes
+    for (int i = 0; i < remainder; i++)
+      generate_updateBytesAdler32_accum(buff, temp0, vtemp1, vtemp2, vtemp3, vzero, vbytes, unroll_regs[i], unroll_regs[i + 8], vtable);
     // Summing up
     __ vsetivli(temp0, 2, Assembler::e64, Assembler::m1); // Set SEW to 64 to avoid sign-extension
                                                           // in the next instructions
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < remainder; i++) {
       // s2 = s2 + s1 * 16
       __ slli(temp1, s1, 4);
       __ add(s2, s2, temp1);
