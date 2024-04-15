@@ -94,17 +94,10 @@ import jdk.internal.vm.annotation.ForceInline;
  * address of the region of memory which backs the segment.</li>
  * </ul>
  * <p>
- * Every memory segment has a {@linkplain #maxByteAlignment() maximum byte alignment}
- * (see <a href="#segment-alignment">Alignment</a>"), expressed as a {@code long} value
- * that is always an even power of two.
- * <ul>
- * <li>Just as the address of a heap segment is not a physical address but an offset,
- * the maximum byte alignment is not directly derived from a physical address but
- * is rather derived from the offset and also depends on the type of the backing array.
- * </li>
- * <li>The maximum byte alignment of a native segment (including mapped segments) is
- * derived directly from the physical address of the region which backs the segment.</li>
- * </ul>
+ * Every memory segment has a {@linkplain #maxByteAlignment() maximum byte alignment},
+ * expressed as a {@code long} value. The maximum alignment is always a power of two,
+ * derived from the segment address, and the segment type, as explained in more detail
+ * (see <a href="#segment-alignment">below</a>).
  * <p>
  * Every memory segment has a {@linkplain #byteSize() size}. The size of a heap segment
  * is derived from the Java array from which it is obtained. This size is predictable
@@ -405,12 +398,12 @@ import jdk.internal.vm.annotation.ForceInline;
  * byteSegment.get(ValueLayout.JAVA_INT_UNALIGNED, 0); // ok: ValueLayout.JAVA_INT_UNALIGNED.byteAlignment() == ValueLayout.JAVA_BYTE.byteAlignment()
  * }
  *
- * In order to simplify determination of alignment, in the case of either native or heap
- * segment, clients can use the {@linkplain MemorySegment#maxByteAlignment()} method:
+ * Clients can use the {@linkplain MemorySegment#maxByteAlignment()} method to check if
+ * a memory segment supports the alignment constraint of a memory layout, as follows:
  * {@snippet lang=java:
- * boolean isAligned(MemorySegment segment, long offset, MemoryLayout layout) {
- *   return segment.asSlice(offset).maxByteAlignment() >= layout.byteAlignment();
- * }
+ * MemoryLayout layout = ...
+ * MemorySegment segment = ...
+ * boolean isAligned = segment.maxByteAlignment() >= layout.byteAlignment();
  * }
  *
  * <h2 id="wrapping-addresses">Zero-length memory segments</h2>
@@ -609,25 +602,24 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     long byteSize();
 
     /**
-     * {@return the <em>maximum</em> byte alignment (which is equal to or higher than
-     * the requested byte alignment during native segment allocation)}
+     * {@return the <a href="#segment-alignment">maximum byte alignment</a>
+     * associated with this memory segment}
      * <p>
-     * The returned alignment is always an even power of two and is derived from:
+     * The returned alignment is always a power of two and is derived from:
      * <ul>
      *     <li>Heap:
-     *     the segment offset and backing array type.</li>
+            derived from the segment {@linkplain #address() address()}
+            and the type of the <a href="#segment-alignment">backing heap storage</a>.
      *     <li>Native:
      *     the {@linkplain MemorySegment#address() address()} function.</li>
      * </ul>
-     * The {@linkplain MemorySegment#NULL NULL} segment returns a maximum byte alignment
-     * of 2<sup>62</sup>
      * <p>
      * This method can be used to ensure, a {@code segment} is sufficiently aligned
      * with a {@code layout}:
      * {@snippet lang=java:
      * MemoryLayout layout = ...
      * MemorySegment segment = ...
-     * if (segment.maxByteAlignment() < layout.byteAlignment) {
+     * if (segment.maxByteAlignment() < layout.byteAlignment()) {
      *     // Take action (e.g. throw an Exception)
      * }
      * }
@@ -1469,6 +1461,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * A zero-length native segment modelling the {@code NULL} address. Equivalent to
      * {@code MemorySegment.ofAddress(0L)}.
+     * <p>
+     * The {@linkplain MemorySegment#maxByteAlignment() maximum byte alignment} for
+     * the {@code NULL} segment is of 2<sup>62</sup>.
      */
     MemorySegment NULL = MemorySegment.ofAddress(0L);
 

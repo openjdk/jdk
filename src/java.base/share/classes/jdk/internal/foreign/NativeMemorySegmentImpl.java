@@ -64,6 +64,7 @@ sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl permits M
         return address() == 0
                 ? 1L << 62
                 : Long.lowestOneBit(address());
+    }
 
     @ForceInline
     @Override

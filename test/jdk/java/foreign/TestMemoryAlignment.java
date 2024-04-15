@@ -33,6 +33,12 @@ import java.lang.foreign.MemoryLayout.PathElement;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.CharBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+import java.nio.ShortBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -140,7 +146,7 @@ public class TestMemoryAlignment {
         try (Arena arena = Arena.ofConfined()) {
             var segment = arena.allocate(4, align);
             assertTrue(segment.maxByteAlignment() >= align);
-            // Even power of two?
+            // Power of two?
             assertEquals(Long.bitCount(segment.maxByteAlignment()), 1);
             assertEquals(segment.asSlice(1).maxByteAlignment(), 1);
         }
@@ -151,8 +157,10 @@ public class TestMemoryAlignment {
         try (FileChannel channel = FileChannel.open(tmp.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE);
              Arena arena = Arena.ofConfined()) {
             var segment =channel.map(FileChannel.MapMode.READ_WRITE, 0L, 32L, arena);
-            assertTrue(segment.maxByteAlignment() >= Long.BYTES);
-            // Even power of two?
+            // We do not know anything about mapping alignment other than it should
+            // be positive.
+            assertTrue(segment.maxByteAlignment() >= Byte.BYTES);
+            // Power of two?
             assertEquals(Long.bitCount(segment.maxByteAlignment()), 1);
             assertEquals(segment.asSlice(1).maxByteAlignment(), 1);
         } finally {
@@ -191,7 +199,13 @@ public class TestMemoryAlignment {
                         new Object[]{MemorySegment.ofArray(new long[]{1}), Long.BYTES},
                         new Object[]{MemorySegment.ofArray(new float[]{1}), Float.BYTES},
                         new Object[]{MemorySegment.ofArray(new double[]{1}), Double.BYTES},
-                        new Object[]{MemorySegment.ofBuffer(ByteBuffer.allocate(8)), Byte.BYTES}
+                        new Object[]{MemorySegment.ofBuffer(ByteBuffer.allocate(8)), Byte.BYTES},
+                        new Object[]{MemorySegment.ofBuffer(CharBuffer.allocate(8)), Character.BYTES},
+                        new Object[]{MemorySegment.ofBuffer(ShortBuffer.allocate(8)), Short.BYTES},
+                        new Object[]{MemorySegment.ofBuffer(IntBuffer.allocate(8)), Integer.BYTES},
+                        new Object[]{MemorySegment.ofBuffer(LongBuffer.allocate(8)), Long.BYTES},
+                        new Object[]{MemorySegment.ofBuffer(FloatBuffer.allocate(8)), Float.BYTES},
+                        new Object[]{MemorySegment.ofBuffer(DoubleBuffer.allocate(8)), Double.BYTES}
         )
                 .toArray(Object[][]::new);
     }
