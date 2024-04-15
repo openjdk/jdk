@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,18 +30,17 @@ import jdk.jfr.internal.MirrorEvent;
 import jdk.jfr.internal.Type;
 
 @Name(Type.EVENT_NAME_PREFIX + "SelectorSelect")
-@Label("SelectorSelect")
+@Label("Selector Select")
 @Category("Java Application")
-@Description("Selector Select Operation")
 @MirrorEvent(className = "jdk.internal.event.SelectorSelectEvent")
 public class SelectorSelectEvent extends AbstractJDKEvent {
 
     @Label("SelectionKey Count")
-    @Description("Number of channels ready for I/O or added to ready set")
+    @Description("The number of unique keys consumed, possibly zero")
     public int selectionKeyCount;
 
     @Label("Timeout Value")
-    @Description("Milliseconds to block, or zero to block indefinitely")
+    @Description("time to block, or zero to block indefinitely")
     @Timespan(Timespan.MILLISECONDS)
     public long timeout;
 
