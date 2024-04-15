@@ -2878,6 +2878,25 @@ public:
 // the optimization, if this RangeCheck[i+1] fails, then we execute only StoreB[i+0], and then trap. After
 // the optimization, the new StoreI[i+0] is on the passing path of RangeCheck[i+1], and StoreB[i+0] on the
 // failing path.
+//
+// Note: For normal array stores, every store at first has a RangeCheck. But they can be removed with:
+//       - RCE (RangeCheck Elimination): the RangeChecks in the loop are hoisted out and before the loop,
+//                                       and possibly no RangeChecks remain between the stores.
+//       - RangeCheck smearing: the earlier RangeChecks are adjusted such that they cover later RangeChecks,
+//                              and those later RangeChecks can be removed. Example:
+//
+//                              RangeCheck[i+0]                         RangeCheck[i+0]
+//                              StoreB[i+0]                             StoreB[i+0]
+//                              RangeCheck[i+1]     --> smeared -->     RangeCheck[i+3]
+//                              StoreB[i+0]                             StoreB[i+1]
+//                              RangeCheck[i+2]     --> removed
+//                              StoreB[i+0]                             StoreB[i+2]
+//                              RangeCheck[i+3]     --> removed
+//                              StoreB[i+0]                             StoreB[i+3]
+//
+//                              Thus, it is a common pattern that in a long chain of adjacent stores there
+//                              remains exactly one RangeCheck, between the first and the second store.
+//
 class MergePrimitiveArrayStores : public StackObj {
 private:
   PhaseGVN* _phase;
