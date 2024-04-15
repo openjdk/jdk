@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class bug4203039 {
             locations but can dock on the NORTH and WEST""";
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .title("bug4203039 Instructions")
                 .instructions(instructionsText)
                 .testTimeOut(5)

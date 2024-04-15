@@ -643,12 +643,16 @@ public class Inflater {
     /**
      * Returns the total number of compressed bytes input so far.
      *
-     * <p>Since the number of bytes may be greater than
-     * Integer.MAX_VALUE, the {@link #getBytesRead()} method is now
-     * the preferred means of obtaining this information.</p>
+     * @implSpec
+     * This method returns the equivalent of {@code (int) getBytesRead()}
+     * and therefore cannot return the correct value when it is greater
+     * than {@link Integer#MAX_VALUE}.
+     *
+     * @deprecated Use {@link #getBytesRead()} instead
      *
      * @return the total number of compressed bytes input so far
      */
+    @Deprecated(since = "23")
     public int getTotalIn() {
         return (int) getBytesRead();
     }
@@ -669,12 +673,16 @@ public class Inflater {
     /**
      * Returns the total number of uncompressed bytes output so far.
      *
-     * <p>Since the number of bytes may be greater than
-     * Integer.MAX_VALUE, the {@link #getBytesWritten()} method is now
-     * the preferred means of obtaining this information.</p>
+     * @implSpec
+     * This method returns the equivalent of {@code (int) getBytesWritten()}
+     * and therefore cannot return the correct value when it is greater
+     * than {@link Integer#MAX_VALUE}.
+     *
+     * @deprecated Use {@link #getBytesWritten()} instead
      *
      * @return the total number of uncompressed bytes output so far
      */
+    @Deprecated(since = "23")
     public int getTotalOut() {
         return (int) getBytesWritten();
     }

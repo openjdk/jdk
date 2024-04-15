@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,7 @@ class outputStream;
   LOG_TAG(itables) \
   LOG_TAG(jfr) \
   LOG_TAG(jit) \
+  LOG_TAG(jmethod) \
   LOG_TAG(jni) \
   LOG_TAG(jvmci) \
   LOG_TAG(jvmti) \
