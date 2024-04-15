@@ -692,7 +692,7 @@ VirtualSpace::VirtualSpace() {
   _upper_alignment        = 0;
   _special                = false;
   _executable             = false;
-  _nmt_flag                = mtNone;
+  _nmt_flag               = mtNone;
 }
 
 
