@@ -1623,7 +1623,7 @@ address StubGenerator::generate_fill(BasicType t, bool aligned, const char *name
 
   {
     // Add set memory mark to protect against unsafe accesses faulting
-    UnsafeMemoryMark(this, ((t == T_BYTE) && !aligned)), true);
+    UnsafeMemoryMark(this, ((t == T_BYTE) && !aligned), true);
     __ generate_fill(t, aligned, to, value, r11, rax, xmm0);
   }
 
@@ -2675,54 +2675,6 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
     __ jmp(L_exit);
 
     __ BIND(L_fillBytes);
-#ifdef MUSL_LIBC
-    {
-      Label L_byteLoop, L_longByteLoop, L_byteTail, L_byteTailLoop;
-
-      const Register savedSize = rax;
-      const Register byteVal = rdx;
-
-      UnsafeMemoryMark usmm(this, true, true);
-
-      __ movq(savedSize, size);
-      __ andq(savedSize, 7);
-      __ cmpq(size, 8);
-      __ jccb(Assembler::aboveEqual, L_byteLoop);
-      __ xorl(rScratch1, rScratch1);
-      __ jmpb(L_byteTail);
-
-      __ BIND(L_byteLoop);
-
-      __ andq(size, -8);
-      __ xorl(rScratch1, rScratch1);
-
-      __ BIND(L_longByteLoop);
-
-      // Unroll 8 byte stores
-      for (int i = 0; i < 8; i++) {
-        __ movb(Address(dest, rScratch1, Address::times_1, i), byteVal);
-      }
-
-      __ addq(rScratch1, 8);
-      __ cmpq(size, rScratch1);
-      __ jccb(Assembler::notEqual, L_longByteLoop);
-
-      __ BIND(L_byteTail);
-
-      __ testq(savedSize, savedSize);
-      __ jccb(Assembler::zero, L_exit);
-      __ addq(dest, rScratch1);
-      __ xorl(rScratch1, rScratch1);
-
-      __ BIND(L_byteTailLoop);
-
-      __ movb(Address(dest, rScratch1, Address::times_1), byteVal);
-      __ incrementq(rScratch1);
-      __ cmpq(savedSize, rScratch1);
-      __ jccb(Assembler::notEqual, L_byteTailLoop);
-    }
-    __ jmp(L_exit);
-#else  // MUSL_LIBC
     {
       const Register byteVal = rdx;
 #ifdef _WIN32
@@ -2739,7 +2691,6 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
       __ xchgq(c_rarg1, c_rarg2);
       __ jump(RuntimeAddress(unsafe_byte_fill));
     }
-#endif  // MUSL_LIBC
   }
 
   return start;
