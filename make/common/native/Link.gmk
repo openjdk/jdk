@@ -106,13 +106,12 @@ define CreateStaticLibrary
         # Do partial linking.
         ifeq ($$($1_ENABLE_PARTIAL_LINKING), true)
 	  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_partial_link, \
-	    $(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUTDIR) ; ) \
+	      $(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUTDIR) ; ) \
 	      $$($1_LD) $(LDFLAGS_CXX_PARTIAL_LINKING) $$($1_SYSROOT_LDFLAGS) \
-	        -o $$($1_TARGET_RELOCATABLE) \
-	        $$($1_LD_OBJ_ARG))
+	          -o $$($1_TARGET_RELOCATABLE) $$($1_LD_OBJ_ARG))
         endif
 	$$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_run_ar, \
-	  $(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUTDIR) ; ) \
+	    $(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUTDIR) ; ) \
 	    $$($1_AR) $$(ARFLAGS) -r -cs $$($1_TARGET) \
 	        $$($1_AR_OBJ_ARG) $$($1_RES))
         ifeq ($(STATIC_BUILD), true)
@@ -167,38 +166,38 @@ define CreateDynamicLibraryOrExecutable
             # This cannot be run separately since it updates the original target
             # file.
 	    $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_create_debuginfo, \
-	      $$($1_OBJCOPY) --only-keep-debug $$($1_TARGET) $$($1_DEBUGINFO_FILES))
+	        $$($1_OBJCOPY) --only-keep-debug $$($1_TARGET) $$($1_DEBUGINFO_FILES))
 	    $$(CHMOD) -x $$($1_DEBUGINFO_FILES)
           else ifeq ($(call isTargetOs, aix), true)
             # AIX does not provide the equivalent of objcopy to extract debug
             # symbols, so we copy unstripped library instead.
 	    $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_create_debuginfo, \
-	      $(CP) $$($1_TARGET) $$($1_DEBUGINFO_FILES))
+	        $(CP) $$($1_TARGET) $$($1_DEBUGINFO_FILES))
           else ifeq ($(call isTargetOs, macosx), true)
 	    $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_create_debuginfo, \
-	      $(DSYMUTIL) --out $$($1_SYMBOLS_DIR)/$$($1_BASENAME).dSYM $$($1_TARGET))
+	        $(DSYMUTIL) --out $$($1_SYMBOLS_DIR)/$$($1_BASENAME).dSYM $$($1_TARGET))
           endif
         endif
         ifneq ($$($1_STRIP_SYMBOLS), false)
 	  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_strip, \
-	    $$($1_STRIP) $$($1_STRIPFLAGS) $$($1_TARGET))
+	      $$($1_STRIP) $$($1_STRIPFLAGS) $$($1_TARGET))
         endif
         ifeq ($$($1_CREATE_DEBUGINFO), true)
           ifeq ($(call isTargetOs, linux), true)
             # Run this after strip is called, since strip can sometimes mangle
             # the embedded debuglink, which we want to avoid.
 	    $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_add_debuginfo_link, \
-	      $(CD) $$($1_SYMBOLS_DIR) && \
-	          $$($1_OBJCOPY) --add-gnu-debuglink=$$($1_DEBUGINFO_FILES) $$($1_TARGET))
+	        $(CD) $$($1_SYMBOLS_DIR) && \
+	            $$($1_OBJCOPY) --add-gnu-debuglink=$$($1_DEBUGINFO_FILES) $$($1_TARGET))
           endif
         endif
         ifneq ($(MACOSX_CODESIGN_MODE), disabled)
           # Remove signature explicitly first to avoid warnings if the linker
           # added a default adhoc signature.
 	  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_codesign_clear, \
-	    $(CODESIGN) --remove-signature $$@)
+	      $(CODESIGN) --remove-signature $$@)
 	  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_codesign_add, \
-	    $(CODESIGN) -f -s $$($1_CODESIGN_OPTS) --entitlements \
-	        $$(call GetEntitlementsFile, $$@) $$@)
+	      $(CODESIGN) -f -s $$($1_CODESIGN_OPTS) --entitlements \
+	          $$(call GetEntitlementsFile, $$@) $$@)
         endif
 endef
