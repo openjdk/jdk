@@ -73,6 +73,7 @@ public:
     // Store the type and flag as two bytes
     uint8_t type_flag[2];
     NativeCallStackStorage::StackIndex sidx;
+
   public:
     IntervalState() : type_flag{0,0}, sidx() {}
     IntervalState(StateType type, Metadata data) {
@@ -84,18 +85,13 @@ public:
     StateType type() const {
       return static_cast<StateType>(type_flag[0]);
     }
+
     MEMFLAGS flag() const {
       return static_cast<MEMFLAGS>(type_flag[1]);
     }
+
     Metadata metadata() const {
       return Metadata{sidx, flag()};
-    }
-
-    void merge(const IntervalState& b) {
-      if (type() == StateType::Released) {
-        //this->data.flag = b.data.flag;
-        //this->data.stack_idx = b.data.stack_idx;
-      }
     }
   };
 

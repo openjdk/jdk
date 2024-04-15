@@ -86,8 +86,6 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
       // when expanding a committed area: commit [x1, A); ... commit [A, x3)
       // and the result should be a larger area, [x1, x3). In that case, the middle node (A and le_n)
       // is not needed anymore. So we just remove the old node.
-      // We can only do this merge if the metadata is considered equivalent.
-      stA.out.merge(leqA_n->val().out);
       stB.in = stA.out;
       if (stA.is_noop()) {
         // invalidates leqA_n
@@ -155,7 +153,6 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
         } else if (cmp_B == 0) {
           // Re-purpose B node, unless it would result in a noop node, in
           // which case record old node at B for deletion and summary accounting.
-          stB.out.merge(head->val().out);
           if (stB.is_noop()) {
             to_be_deleted_inbetween_a_b.push(AddressState{B, head->val()});
           } else {
