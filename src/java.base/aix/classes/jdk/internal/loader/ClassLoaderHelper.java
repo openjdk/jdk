@@ -41,7 +41,7 @@ class ClassLoaderHelper {
     static boolean loadLibraryOnlyIfPresent() {
         return false;
     }
-    
+
     /**
      * AIX implementation of JVM_LoadLibrary handles the alternate path name mapping.
      * If loading of the given library name with ".so" suffix fails, it will attempt
