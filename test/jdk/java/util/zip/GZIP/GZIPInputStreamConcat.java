@@ -42,7 +42,7 @@ public class GZIPInputStreamConcat {
 
     private int bufsize;
     private boolean allowConcatenation;
-    private boolean allowTrailingGarbage;
+    private boolean ignoreExtraBytes;
 
     public static Stream<Object[]> testScenarios() throws IOException {
 
@@ -64,7 +64,7 @@ public class GZIPInputStreamConcat {
     public void testScenario(byte[] uncompressed, int size, boolean concat, boolean garbage) throws IOException {
         this.bufsize = size;
         this.allowConcatenation = concat;
-        this.allowTrailingGarbage = garbage;
+        this.ignoreExtraBytes = garbage;
         testScenario(uncompressed);
     }
 
@@ -91,33 +91,33 @@ public class GZIPInputStreamConcat {
         for (int extra = 0; extra < 0x100; extra++) {
             input = oneByteLong(compressed, extra);
             output = uncompressed;
-            testDecomp(input, output, !allowTrailingGarbage ? IOException.class : null);
+            testDecomp(input, output, !ignoreExtraBytes ? IOException.class : null);
         }
 
         // Decompress a single stream followed by a truncated GZIP header
         input = concat(compressed, oneByteShort(gzipHeader()));
         output = uncompressed;
-        testDecomp(input, output, !allowTrailingGarbage ? IOException.class : null);
+        testDecomp(input, output, !ignoreExtraBytes ? IOException.class : null);
 
         // Decompress a single stream followed by another stream that is one byte short
         input = concat(compressed, oneByteShort(compressed));
         output = uncompressed;
-        testDecomp(input, output, allowConcatenation || !allowTrailingGarbage ? IOException.class : null);
+        testDecomp(input, output, allowConcatenation || !ignoreExtraBytes ? IOException.class : null);
 
         // Decompress two streams concatenated
         input = concat(compressed, compressed);
         output = allowConcatenation ? concat(uncompressed, uncompressed) : uncompressed;
-        testDecomp(input, output, !allowConcatenation && !allowTrailingGarbage ? ZipException.class : null);
+        testDecomp(input, output, !allowConcatenation && !ignoreExtraBytes ? ZipException.class : null);
 
         // Decompress three streams concatenated
         input = concat(compressed, compressed, compressed);
         output = allowConcatenation ? concat(uncompressed, uncompressed, uncompressed) : uncompressed;
-        testDecomp(input, output, !allowConcatenation && !allowTrailingGarbage ? ZipException.class : null);
+        testDecomp(input, output, !allowConcatenation && !ignoreExtraBytes ? ZipException.class : null);
 
         // Decompress three streams concatenated followed by a truncated GZIP header
         input = concat(compressed, compressed, compressed, oneByteShort(gzipHeader()));
         output = allowConcatenation ? concat(uncompressed, uncompressed, uncompressed) : uncompressed;
-        testDecomp(input, output, !allowTrailingGarbage ? IOException.class : null);
+        testDecomp(input, output, !ignoreExtraBytes ? IOException.class : null);
     }
 
     // Do decompression and check result
@@ -183,6 +183,6 @@ public class GZIPInputStreamConcat {
 
     // GZIP decompress data
     public byte[] inflate(InputStream in) throws IOException {
-        return new GZIPInputStream(in, bufsize, allowConcatenation, allowTrailingGarbage).readAllBytes();
+        return new GZIPInputStream(in, bufsize, allowConcatenation, ignoreExtraBytes).readAllBytes();
     }
 }

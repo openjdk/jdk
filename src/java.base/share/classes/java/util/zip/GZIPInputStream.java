@@ -60,7 +60,7 @@ public class GZIPInputStream extends InflaterInputStream {
     protected boolean eos;
 
     private final boolean allowConcatenation;
-    private final boolean ignoreTrailingGarbage;
+    private final boolean ignoreExtraBytes;
 
     private boolean closed = false;
 
@@ -75,7 +75,7 @@ public class GZIPInputStream extends InflaterInputStream {
 
     /**
      * Creates a new input stream with the specified buffer size that
-     * allows concatenated compressed streams and ignores trailing garbage.
+     * allows concatenated compressed streams and ignores extra bytes.
      *
      * @param in the input stream
      * @param size the input buffer size
@@ -92,7 +92,7 @@ public class GZIPInputStream extends InflaterInputStream {
 
     /**
      * Creates a new input stream with the default buffer size that
-     * allows concatenated compressed streams and ignores trailing garbage.
+     * allows concatenated compressed streams and ignores extra bytes.
      *
      * @param in the input stream
      *
@@ -107,7 +107,7 @@ public class GZIPInputStream extends InflaterInputStream {
 
     /**
      * Creates a new input stream with the specified buffer size,
-     * support for concatenated streams, and tolerance for traliling garbage.
+     * support for concatenated streams, and tolerance for extra bytes.
      *
      * <p>
      * When {@code allowConcatenation} is true, this class will attempt to decode any data that
@@ -115,23 +115,23 @@ public class GZIPInputStream extends InflaterInputStream {
      * and proceed to decompress it. As a result, arbitrarily many consecutive compressed data
      * streams in the underlying input will be read back as a single uncompressed stream. When
      * {@code allowConcatenation} is false, decompression stops after the first GZIP trailer
-     * frame encountered, and any additional bytes are considered "trailing garbage".
+     * frame encountered, and any additional bytes are considered extraneous.
      *
      * <p>
-     * The {@code ignoreTrailingGarbage} flag controls the behavior when "trailing garbage"
-     * appears, i.e., any data after the GZIP trailer frame (if {@code allowConcatenation} is
-     * false), or any data other than a valid GZIP header frame after a GZIP trailer frame
-     * (if {@code allowConcatenation} is true). When {@code ignoreTrailingGarbage} is true,
+     * The {@code ignoreExtraBytes} flag controls the behavior when extraneous data appears,
+     * i.e., when any data follows the GZIP trailer frame (if {@code allowConcatenation} is
+     * false), or when any data other than a valid GZIP header frame follows a GZIP trailer
+     * frame (if {@code allowConcatenation} is true). When {@code ignoreExtraBytes} is true,
      * the unexpected data, and any {@link IOException} thrown while trying to read that
-     * data, are simply discarded, and EOF is returned; when {@code ignoreTrailingGarbage} is
+     * data, are simply discarded, and EOF is returned; when {@code ignoreExtraBytes} is
      * false, any unexpected data triggers an {@link IOException}, and any {@link IOException}
      * thrown while trying to read a concatenated GZIP header frame is propagated to the caller.
      * In other words, every byte of the underlying data stream is part of a complete and valid
      * compressed data stream, or else an {@link IOException} is guaranteed to be thrown.
      *
      * @apiNote The original behavior of this class is replicated by setting both
-     * {@code allowConcatenation} and {@code ignoreTrailingGarbage} to true. However,
-     * enabling {@code ignoreTrailingGarbage} is discouraged because of its imprecision in
+     * {@code allowConcatenation} and {@code ignoreExtraBytes} to true. However,
+     * enabling {@code ignoreExtraBytes} is discouraged because of its imprecision in
      * how many additional bytes are read and the possibility that {@link IOException}s
      * and data corruption in the underlying stream can go unnoticed.
      *
@@ -139,8 +139,8 @@ public class GZIPInputStream extends InflaterInputStream {
      * @param size the input buffer size
      * @param allowConcatenation true to allow multiple concatenated compressed data streams,
      *                           or false to expect exactly one compressed data stream
-     * @param ignoreTrailingGarbage true to tolerate and ignore trailing garbage, false to
-     *                             throw {@link IOException} if trailing garbage is encountered
+     * @param ignoreExtraBytes true to tolerate and ignore extra bytes, false to throw
+     *                             {@link IOException} if any extra bytes are encountered
      *
      * @throws    ZipException if a GZIP format error has occurred or the
      *                         compression method used is unsupported
@@ -149,11 +149,11 @@ public class GZIPInputStream extends InflaterInputStream {
      * @since     23
      */
     public GZIPInputStream(InputStream in, int size,
-            boolean allowConcatenation, boolean ignoreTrailingGarbage) throws IOException {
+            boolean allowConcatenation, boolean ignoreExtraBytes) throws IOException {
         super(in, in != null ? new Inflater(true) : null, size);
         usesDefaultInflater = true;
         this.allowConcatenation = allowConcatenation;
-        this.ignoreTrailingGarbage = ignoreTrailingGarbage;
+        this.ignoreExtraBytes = ignoreExtraBytes;
         readHeader(in, -1);
     }
 
@@ -309,8 +309,8 @@ public class GZIPInputStream extends InflaterInputStream {
         // Keep track of how many bytes of buffered data we may have read
         int m = 8;                                          // this.trailer
 
-        // Handle concatenation and/or trailing garbage
-        if (allowConcatenation && ignoreTrailingGarbage) {  // i.e., the legacy behavior
+        // Handle concatenation and/or extra bytes
+        if (allowConcatenation && ignoreExtraBytes) {       // i.e., the legacy behavior
             try {
                 m += readHeader(in, -1);                    // next.header
             } catch (IOException ze) {
@@ -323,14 +323,14 @@ public class GZIPInputStream extends InflaterInputStream {
             if (nextByte == -1)
                 return true;
 
-            // There is more data. If we are not allowing concatenation, then we have trailing garbage
+            // There is more data; if we are not allowing concatenation, then there are extra bytes
             if (!allowConcatenation) {
-                if (!ignoreTrailingGarbage)
-                    throw new ZipException("Trailing garbage after GZIP trailer");
+                if (!ignoreExtraBytes)
+                    throw new ZipException("Extra bytes after GZIP trailer");
                 return true;
             }
 
-            // We are allowing concatenation and not ignoring trailing garbage; read the next header
+            // We are allowing concatenation and not ignoring extra bytes; read the next header
             m += readHeader(in, nextByte);                  // next.header
         }
 
