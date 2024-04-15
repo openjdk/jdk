@@ -1580,9 +1580,11 @@ void JavaThread::print_on_error(outputStream* st, char *buf, int buflen) const {
   if (osthread()) {
     st->print(", id=%d", osthread()->thread_id());
   }
+  // Use raw field members for stack base/size as this could be
+  // called before a thread has run enough to initialize them.
   st->print(", stack(" PTR_FORMAT "," PTR_FORMAT ") (" PROPERFMT ")",
-            p2i(stack_end()), p2i(stack_base()),
-            PROPERFMTARGS(stack_size()));
+            p2i(_stack_base - _stack_size), p2i(_stack_base),
+            PROPERFMTARGS(_stack_size));
   st->print("]");
 
   ThreadsSMRSupport::print_info_on(this, st);
