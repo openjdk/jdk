@@ -220,11 +220,9 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     protected Navigation getNavBar(PageMode pageMode, Element element) {
         List<Content> subnavLinks = new ArrayList<>();
         if (configuration.showModules) {
-            var mdle = utils.elementUtils.getModuleOf(packageElement);
-            subnavLinks.add(getModuleLink(mdle, Text.of(mdle.getQualifiedName())));
+            subnavLinks.add(getBreadcrumbLink(utils.elementUtils.getModuleOf(packageElement), false));
         }
-        subnavLinks.add(links.createLink(pathString(packageElement, DocPaths.PACKAGE_SUMMARY),
-                getLocalizedPackageName(packageElement), HtmlStyle.currentSelection, ""));
+        subnavLinks.add(getBreadcrumbLink(packageElement, true));
         return super.getNavBar(pageMode, element).setSubNavLinks(subnavLinks);
     }
 }

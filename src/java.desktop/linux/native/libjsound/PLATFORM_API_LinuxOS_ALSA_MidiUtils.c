@@ -383,7 +383,7 @@ INT32 openMidiDevice(snd_rawmidi_stream_t direction, INT32 deviceIndex,
 
     TRACE0("> openMidiDevice()\n");
 
-    (*handle) = (MidiDeviceHandle*) calloc(sizeof(MidiDeviceHandle), 1);
+    (*handle) = (MidiDeviceHandle*) calloc(1, sizeof(MidiDeviceHandle));
     if (!(*handle)) {
         ERROR0("ERROR: openDevice: out of memory\n");
         return MIDI_OUT_OF_MEMORY;

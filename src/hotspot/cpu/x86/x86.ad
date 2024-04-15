@@ -1187,8 +1187,8 @@ class HandlerImpl {
 
  public:
 
-  static int emit_exception_handler(CodeBuffer &cbuf);
-  static int emit_deopt_handler(CodeBuffer& cbuf);
+  static int emit_exception_handler(C2_MacroAssembler *masm);
+  static int emit_deopt_handler(C2_MacroAssembler* masm);
 
   static uint size_exception_handler() {
     // NativeCall instruction size is the same as NativeJump.
@@ -1306,11 +1306,10 @@ int MachNode::compute_padding(int current_offset) const {
 
 // Emit exception handler code.
 // Stuff framesize into a register and call a VM stub routine.
-int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf) {
+int HandlerImpl::emit_exception_handler(C2_MacroAssembler* masm) {
 
   // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
-  C2_MacroAssembler _masm(&cbuf);
   address base = __ start_a_stub(size_exception_handler());
   if (base == nullptr) {
     ciEnv::current()->record_failure("CodeCache is full");
@@ -1324,11 +1323,10 @@ int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf) {
 }
 
 // Emit deopt handler code.
-int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
+int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
 
   // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
-  C2_MacroAssembler _masm(&cbuf);
   address base = __ start_a_stub(size_deopt_handler());
   if (base == nullptr) {
     ciEnv::current()->record_failure("CodeCache is full");
@@ -1358,7 +1356,7 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
   return offset;
 }
 
-Assembler::Width widthForType(BasicType bt) {
+static Assembler::Width widthForType(BasicType bt) {
   if (bt == T_BYTE) {
     return Assembler::B;
   } else if (bt == T_SHORT) {
@@ -1750,7 +1748,6 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
         return false;
       }
       break;
-    case Op_ClearArray:
     case Op_VectorMaskGen:
     case Op_VectorCmpMasked:
       if (!is_LP64 || !VM_Version::supports_avx512bw()) {
@@ -2524,14 +2521,13 @@ static inline Assembler::ComparisonPredicateFP booltest_pred_to_comparison_pred_
 }
 
 // Helper methods for MachSpillCopyNode::implementation().
-static void vec_mov_helper(CodeBuffer *cbuf, int src_lo, int dst_lo,
+static void vec_mov_helper(C2_MacroAssembler *masm, int src_lo, int dst_lo,
                           int src_hi, int dst_hi, uint ireg, outputStream* st) {
   assert(ireg == Op_VecS || // 32bit vector
          ((src_lo & 1) == 0 && (src_lo + 1) == src_hi &&
           (dst_lo & 1) == 0 && (dst_lo + 1) == dst_hi),
          "no non-adjacent vector moves" );
-  if (cbuf) {
-    C2_MacroAssembler _masm(cbuf);
+  if (masm) {
     switch (ireg) {
     case Op_VecS: // copy whole register
     case Op_VecD:
@@ -2582,10 +2578,9 @@ static void vec_mov_helper(CodeBuffer *cbuf, int src_lo, int dst_lo,
   }
 }
 
-void vec_spill_helper(CodeBuffer *cbuf, bool is_load,
+void vec_spill_helper(C2_MacroAssembler *masm, bool is_load,
                      int stack_offset, int reg, uint ireg, outputStream* st) {
-  if (cbuf) {
-    C2_MacroAssembler _masm(cbuf);
+  if (masm) {
     if (is_load) {
       switch (ireg) {
       case Op_VecS:
@@ -2743,8 +2738,7 @@ static inline jlong high_bit_set(BasicType bt) {
   }
 #endif
 
-  void MachNopNode::emit(CodeBuffer &cbuf, PhaseRegAlloc*) const {
-    C2_MacroAssembler _masm(&cbuf);
+  void MachNopNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc*) const {
     __ nop(_count);
   }
 
@@ -2758,8 +2752,7 @@ static inline jlong high_bit_set(BasicType bt) {
   }
 #endif
 
-  void MachBreakpointNode::emit(CodeBuffer &cbuf, PhaseRegAlloc* ra_) const {
-    C2_MacroAssembler _masm(&cbuf);
+  void MachBreakpointNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc* ra_) const {
     __ int3();
   }
 
@@ -2772,7 +2765,6 @@ static inline jlong high_bit_set(BasicType bt) {
 encode %{
 
   enc_class call_epilog %{
-    C2_MacroAssembler _masm(&cbuf);
     if (VerifyStackAtCalls) {
       // Check that stack depth is unchanged: find majik cookie on stack
       int framesize = ra_->reg2offset_unchecked(OptoReg::add(ra_->_matcher._old_SP, -3*VMRegImpl::slots_per_word));
@@ -3874,18 +3866,10 @@ instruct roundD_reg(legRegD dst, legRegD src, immU8 rmode) %{
   ins_cost(150);
   ins_encode %{
     assert(UseSSE >= 4, "required");
+    if ((UseAVX == 0) && ($dst$$XMMRegister != $src$$XMMRegister)) {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ roundsd($dst$$XMMRegister, $src$$XMMRegister, $rmode$$constant);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct roundD_mem(legRegD dst, memory src, immU8 rmode) %{
-  match(Set dst (RoundDoubleMode (LoadD src) rmode));
-  format %{ "roundsd $dst,$src" %}
-  ins_cost(150);
-  ins_encode %{
-    assert(UseSSE >= 4, "required");
-    __ roundsd($dst$$XMMRegister, $src$$Address, $rmode$$constant);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -9673,21 +9657,6 @@ instruct vlshiftv_reg_masked(vec dst, vec src2, kReg mask) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vlshift_mem_masked(vec dst, memory src2, kReg mask) %{
-  match(Set dst (LShiftVS (Binary dst (LoadVector src2)) mask));
-  match(Set dst (LShiftVI (Binary dst (LoadVector src2)) mask));
-  match(Set dst (LShiftVL (Binary dst (LoadVector src2)) mask));
-  format %{ "vplshift_masked $dst, $dst, $src2, $mask\t! lshift masked operation" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    int opc = this->ideal_Opcode();
-    __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
-                   $dst$$XMMRegister, $src2$$Address, true, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct vrshift_imm_masked(vec dst, immI8 shift, kReg mask) %{
   match(Set dst (RShiftVS (Binary dst (RShiftCntV shift)) mask));
   match(Set dst (RShiftVI (Binary dst (RShiftCntV shift)) mask));
@@ -9735,21 +9704,6 @@ instruct vrshiftv_reg_masked(vec dst, vec src2, kReg mask) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vrshift_mem_masked(vec dst, memory src2, kReg mask) %{
-  match(Set dst (RShiftVS (Binary dst (LoadVector src2)) mask));
-  match(Set dst (RShiftVI (Binary dst (LoadVector src2)) mask));
-  match(Set dst (RShiftVL (Binary dst (LoadVector src2)) mask));
-  format %{ "vprshift_masked $dst, $dst, $src2, $mask\t! rshift masked operation" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    int opc = this->ideal_Opcode();
-    __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
-                   $dst$$XMMRegister, $src2$$Address, true, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct vurshift_imm_masked(vec dst, immI8 shift, kReg mask) %{
   match(Set dst (URShiftVS (Binary dst (RShiftCntV shift)) mask));
   match(Set dst (URShiftVI (Binary dst (RShiftCntV shift)) mask));
@@ -9793,21 +9747,6 @@ instruct vurshiftv_reg_masked(vec dst, vec src2, kReg mask) %{
     int opc = this->ideal_Opcode();
     __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
                    $dst$$XMMRegister, $src2$$XMMRegister, true, vlen_enc, true);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vurshift_mem_masked(vec dst, memory src2, kReg mask) %{
-  match(Set dst (URShiftVS (Binary dst (LoadVector src2)) mask));
-  match(Set dst (URShiftVI (Binary dst (LoadVector src2)) mask));
-  match(Set dst (URShiftVL (Binary dst (LoadVector src2)) mask));
-  format %{ "vpurshift_masked $dst, $dst, $src2, $mask\t! urshift masked operation" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    int opc = this->ideal_Opcode();
-    __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
-                   $dst$$XMMRegister, $src2$$Address, true, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}

@@ -1,0 +1,351 @@
+#
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# This file contains functionality related to compiling a single native source
+# file (C, C++ or Objective-C) into an object file. It also harbours related
+# functionality for generating PCH (precompiled headers) and Windows resource
+# files.
+
+################################################################################
+# Creates a recipe that creates a compile_commands.json fragment. Remove any
+# occurrences of FIXPATH programs from the command to show the actual invocation.
+#
+# Param 1: Name of file to create
+# Param 2: Working directory
+# Param 3: Source file
+# Param 4: Compile command
+################################################################################
+define WriteCompileCommandsFragment
+  $(call LogInfo, Creating compile commands fragment for $(notdir $3))
+  $(call MakeDir, $(dir $1))
+  $(call WriteFile,{ \
+      "directory": "$(strip $(call FixPath, $2))"$(COMMA) \
+      "file": "$(strip $(call FixPath, $3))"$(COMMA) \
+      "command": "$(strip $(subst $(DQUOTE),\$(DQUOTE),$(subst \,\\,\
+        $(subst $(FIXPATH),,$(call FixPath, $4)))))" \
+    }$(COMMA), \
+    $1)
+endef
+
+################################################################################
+# Extensions of files handled by this macro.
+NATIVE_SOURCE_EXTENSIONS := %.S %.c %.cpp %.cc %.m %.mm
+
+# Replaces native source extensions with the object file extension in a string.
+# Param 1: the string containing source file names with extensions
+# The surrounding strip is needed to keep additional whitespace out
+define replace_with_obj_extension
+$(strip \
+  $(foreach extension, $(NATIVE_SOURCE_EXTENSIONS), \
+      $(patsubst $(extension),%$(OBJ_SUFFIX), $(filter $(extension), $1))) \
+)
+endef
+
+################################################################################
+# This pattern is used to transform the output of the microsoft CL compiler
+# into a make syntax dependency file (.d)
+WINDOWS_SHOWINCLUDE_SED_PATTERN := \
+    -e '/^Note: including file:/!d' \
+    -e 's|Note: including file: *||' \
+    -e 's|\r||g' \
+    -e 's|\\|/|g' \
+    -e 's|^\([a-zA-Z]\):|$(WINENV_PREFIX)/\1|g' \
+    -e '\|$(TOPDIR)|I !d' \
+    -e 's|$$$$| \\|g' \
+    #
+
+################################################################################
+# This pattern is used to transform a dependency file (.d) to a list
+# of make targets for dependent files (.d.targets)
+DEPENDENCY_TARGET_SED_PATTERN := \
+    -e 's/\#.*//' \
+    -e 's/^[^:]*: *//' \
+    -e 's/ *\\$$$$//' \
+    -e 's/^[	 ]*//' \
+    -e '/^$$$$/ d' \
+    -e 's/$$$$/ :/' \
+    #
+
+################################################################################
+# Create the recipe needed to compile a single native source file.
+#
+# Parameter 1 is the name of the rule, based on the name of the library/
+# program being build and the name of the source code file, e.g.
+# BUILD_LIBFOO_fooMain.cpp.
+#
+# Remaining parameters are named arguments:
+#   FILE - The full path of the source file to compiler
+#   BASE - The name of the rule for the entire binary to build ($1)
+#
+CreateCompiledNativeFile = $(NamedParamsMacroTemplate)
+define CreateCompiledNativeFileBody
+  $1_FILENAME := $$(notdir $$($1_FILE))
+
+  # The target file to be generated.
+  $1_OBJ := $$($$($1_BASE)_OBJECT_DIR)/$$(call replace_with_obj_extension, \
+      $$($1_FILENAME))
+
+  # Generate the corresponding compile_commands.json fragment.
+  $1_OBJ_JSON = $$(MAKESUPPORT_OUTPUTDIR)/compile-commands/$$(subst /,_,$$(subst \
+      $$(OUTPUTDIR)/,,$$($1_OBJ))).json
+  $$($1_BASE)_ALL_OBJS_JSON += $$($1_OBJ_JSON)
+
+  # Only continue if this object file hasn't been processed already. This lets
+  # the first found source file override any other with the same name.
+  ifeq ($$($1_OBJ_PROCESSED), )
+    $1_OBJ_PROCESSED := true
+    # This is the definite source file to use for $1_FILENAME.
+    $1_SRC_FILE := $$($1_FILE)
+
+    $$(eval $$(call SetupCompileFileFlags,$1,$$($1_BASE)))
+
+    ifneq ($$(filter %.c, $$($1_FILENAME)), )
+      # Compile as a C file
+      $1_CFLAGS += $$($1_WARNINGS_FLAGS)
+      $1_FLAGS := $(CFLAGS_CCACHE) $$($1_USE_PCH_FLAGS) $$($1_BASE_CFLAGS) \
+          $$($1_OPT_CFLAGS) $$($1_CFLAGS) -c
+      $1_COMPILER := $$($$($1_BASE)_CC)
+    else ifneq ($$(filter %.m, $$($1_FILENAME)), )
+      # Compile as an Objective-C file
+      $1_CFLAGS += $$($1_WARNINGS_FLAGS)
+      $1_FLAGS := -x objective-c $(CFLAGS_CCACHE) $$($1_USE_PCH_FLAGS) \
+          $$($1_BASE_CFLAGS) $$($1_OPT_CFLAGS) $$($1_CFLAGS) -c
+      $1_COMPILER := $$($$($1_BASE)_CC)
+    else ifneq ($$(filter %.S, $$($1_FILENAME)), )
+      # Compile as preprocessed assembler file
+      $1_FLAGS := $(BASIC_ASFLAGS) $$($1_BASE_ASFLAGS)
+      $1_COMPILER := $(AS)
+
+      # gcc or clang assembly files must contain an appropriate relative .file
+      # path for reproducible builds.
+      ifneq ($(findstring $(TOOLCHAIN_TYPE), gcc clang), )
+        # If no absolute paths allowed, work out relative source file path
+        # for assembly .file substitution, otherwise use full file path
+        ifeq ($(ALLOW_ABSOLUTE_PATHS_IN_OUTPUT), false)
+          $1_REL_ASM_SRC := $$(call RelativePath, $$($1_FILE), $(WORKSPACE_ROOT))
+        else
+          $1_REL_ASM_SRC := $$($1_FILE)
+        endif
+        $1_FLAGS := $$($1_FLAGS) -DASSEMBLY_SRC_FILE='"$$($1_REL_ASM_SRC)"' \
+            -include $(TOPDIR)/make/data/autoheaders/assemblyprefix.h
+      endif
+    else ifneq ($$(filter %.cpp %.cc %.mm, $$($1_FILENAME)), )
+      # Compile as a C++ or Objective-C++ file
+      $1_CXXFLAGS += $$($1_WARNINGS_FLAGS)
+      $1_FLAGS := $(CFLAGS_CCACHE) $$($1_USE_PCH_FLAGS) $$($1_BASE_CXXFLAGS) \
+          $$($1_OPT_CXXFLAGS) $$($1_CXXFLAGS) -c
+      $1_COMPILER := $$($$($1_BASE)_CXX)
+    else
+      $$(error Internal error in NativeCompilation.gmk: no compiler for file $$($1_FILENAME))
+    endif
+
+    # And this is the dependency file for this obj file.
+    $1_DEPS_FILE := $$(patsubst %$(OBJ_SUFFIX),%.d,$$($1_OBJ))
+    # The dependency target file lists all dependencies as empty targets to
+    # avoid make error "No rule to make target" for removed files
+    $1_DEPS_TARGETS_FILE := $$(patsubst %$(OBJ_SUFFIX),%.d.targets,$$($1_OBJ))
+
+    # Only try to load individual dependency information files if the global
+    # file hasn't been loaded (could happen if make was interrupted).
+    ifneq ($$($$($1_BASE)_DEPS_FILE_LOADED), true)
+      # Include previously generated dependency information. (if it exists)
+      -include $$($1_DEPS_FILE)
+      -include $$($1_DEPS_TARGETS_FILE)
+    endif
+
+    ifneq ($$(strip $$($1_CFLAGS) $$($1_CXXFLAGS) $$($1_OPTIMIZATION)), )
+      $1_VARDEPS := $$($1_CFLAGS) $$($1_CXXFLAGS) $$($1_OPTIMIZATION)
+      $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, $$($1_OBJ).vardeps)
+    endif
+
+    $1_OBJ_DEPS := $$($1_SRC_FILE) $$($$($1_BASE)_COMPILE_VARDEPS_FILE) \
+        $$($$($1_BASE)_EXTRA_DEPS) $$($1_VARDEPS_FILE)
+    $1_COMPILE_OPTIONS := $$($1_FLAGS) $(CC_OUT_OPTION)$$($1_OBJ) $$($1_SRC_FILE)
+    # For reproducible builds with gcc and clang ensure random symbol generation is
+    # seeded deterministically
+    ifneq ($(findstring $(TOOLCHAIN_TYPE), gcc clang), )
+      $1_COMPILE_OPTIONS += -frandom-seed="$$($1_FILENAME)"
+    endif
+
+    $$($1_OBJ_JSON): $$($1_OBJ_DEPS)
+	$$(call WriteCompileCommandsFragment, $$@, $$(PWD), $$($1_SRC_FILE), \
+	    $$($1_COMPILER) $$($1_COMPILE_OPTIONS))
+
+    $$($1_OBJ): $$($1_OBJ_DEPS) | $$($$($1_BASE)_BUILD_INFO)
+	$$(call LogInfo, Compiling $$($1_FILENAME) (for $$($$($1_BASE)_BASENAME)))
+	$$(call MakeDir, $$(@D))
+        ifneq ($(TOOLCHAIN_TYPE), microsoft)
+	  $$(call ExecuteWithLog, $$@, $$(call MakeCommandRelative, \
+	      $$($1_COMPILER) $$(GENDEPS_FLAGS) \
+	      $$(addsuffix .tmp, $$($1_DEPS_FILE)) \
+	      $$($1_COMPILE_OPTIONS)))
+          ifneq ($$($1_DEPS_FILE), )
+	    $$(call fix-deps-file, $$($1_DEPS_FILE))
+            # Create a dependency target file from the dependency file.
+            # Solution suggested by:
+            # http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
+	    $(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_DEPS_FILE) \
+	        > $$($1_DEPS_TARGETS_FILE)
+          endif
+        else
+          # The Visual Studio compiler lacks a feature for generating make
+          # dependencies, but by setting -showIncludes, all included files are
+          # printed. These are filtered out and parsed into make dependences.
+          #
+          # Keep as much as possible on one execution line for best performance
+          # on Windows. No need to save exit code from compilation since
+          # pipefail is always active on Windows.
+          ifeq ($$(filter %.S, $$($1_FILENAME)), )
+	    $$(call ExecuteWithLog, $$@, $$(call MakeCommandRelative, \
+	        $$($1_COMPILER) -showIncludes $$($1_COMPILE_OPTIONS))) \
+	        | $(TR) -d '\r' | $(GREP) -v -e "^Note: including file:" \
+	            -e "^$$($1_FILENAME)$$$$" || test "$$$$?" = "1" ; \
+	    $(ECHO) $$@: \\ > $$($1_DEPS_FILE) ; \
+	    $(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_OBJ).log \
+	        | $(SORT) -u >> $$($1_DEPS_FILE) ; \
+	    $(ECHO) >> $$($1_DEPS_FILE) ; \
+	    $(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_DEPS_FILE) > $$($1_DEPS_TARGETS_FILE)
+          else
+            # For assembler calls just create empty dependency lists
+	    $$(call ExecuteWithLog, $$@, $$(call MakeCommandRelative, \
+	        $$($1_COMPILER) $$($1_FLAGS) \
+	        $(CC_OUT_OPTION)$$($1_OBJ) -Ta $$($1_SRC_FILE))) \
+	        | $(TR) -d '\r' | $(GREP) -v -e "Assembling:" || test "$$$$?" = "1" ; \
+	    $(ECHO) > $$($1_DEPS_FILE) ; \
+	    $(ECHO) > $$($1_DEPS_TARGETS_FILE)
+          endif
+        endif
+  endif
+endef
+
+################################################################################
+define CreatePrecompiledHeader
+  ifneq ($$($1_PRECOMPILED_HEADER), )
+    ifeq ($(USE_PRECOMPILED_HEADER), true)
+      ifeq ($(TOOLCHAIN_TYPE), microsoft)
+        $1_PCH_FILE := $$($1_OBJECT_DIR)/$1.pch
+        $1_GENERATED_PCH_SRC := $$($1_OBJECT_DIR)/$1_pch.cpp
+        $1_GENERATED_PCH_OBJ := $$($1_OBJECT_DIR)/$1_pch$(OBJ_SUFFIX)
+
+        $$(eval $$(call CreateCompiledNativeFile, $1_$$(notdir $$($1_GENERATED_PCH_SRC)), \
+            FILE := $$($1_GENERATED_PCH_SRC), \
+            BASE := $1, \
+            EXTRA_CXXFLAGS := -Fp$$($1_PCH_FILE) -Yc$$(notdir $$($1_PRECOMPILED_HEADER)), \
+        ))
+
+        $1_USE_PCH_FLAGS := \
+            -Fp$$($1_PCH_FILE) -Yu$$(notdir $$($1_PRECOMPILED_HEADER))
+
+        $$($1_ALL_OBJS): $$($1_GENERATED_PCH_OBJ)
+
+        # Explicitly add the pch obj file first to ease comparing to old
+        # hotspot build.
+        $1_ALL_OBJS := $$($1_GENERATED_PCH_OBJ) $$($1_ALL_OBJS)
+
+        $$($1_GENERATED_PCH_SRC):
+		$(ECHO) "#include \"$$(notdir $$($1_PRECOMPILED_HEADER))\"" > $$@
+
+      else ifneq ($(findstring $(TOOLCHAIN_TYPE), gcc clang), )
+        ifeq ($(TOOLCHAIN_TYPE), gcc)
+          $1_PCH_FILE := $$($1_OBJECT_DIR)/precompiled/$$(notdir $$($1_PRECOMPILED_HEADER)).gch
+          $1_USE_PCH_FLAGS := -I$$($1_OBJECT_DIR)/precompiled
+        else ifeq ($(TOOLCHAIN_TYPE), clang)
+          $1_PCH_FILE := $$($1_OBJECT_DIR)/precompiled/$$(notdir $$($1_PRECOMPILED_HEADER)).pch
+          $1_USE_PCH_FLAGS := -include-pch $$($1_PCH_FILE)
+        endif
+        $1_PCH_DEPS_FILE := $$($1_PCH_FILE).d
+        $1_PCH_DEPS_TARGETS_FILE := $$($1_PCH_FILE).d.targets
+
+        -include $$($1_PCH_DEPS_FILE)
+        -include $$($1_PCH_DEPS_TARGETS_FILE)
+
+        $1_PCH_COMMAND := $$($1_CC) $$($1_CFLAGS) $$($1_EXTRA_CFLAGS) $$($1_SYSROOT_CFLAGS) \
+            $$($1_OPT_CFLAGS) -x c++-header -c $(GENDEPS_FLAGS) \
+            $$(addsuffix .tmp, $$($1_PCH_DEPS_FILE))
+
+        $$($1_PCH_FILE): $$($1_PRECOMPILED_HEADER) $$($1_COMPILE_VARDEPS_FILE)
+		$$(call LogInfo, Generating precompiled header)
+		$$(call MakeDir, $$(@D))
+		$$(call ExecuteWithLog, $$@, $$(call MakeCommandRelative, \
+		    $$($1_PCH_COMMAND) $$< -o $$@))
+		$$(call fix-deps-file, $$($1_PCH_DEPS_FILE))
+		$(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_PCH_DEPS_FILE) \
+		    > $$($1_PCH_DEPS_TARGETS_FILE)
+
+        $$($1_ALL_OBJS): $$($1_PCH_FILE)
+
+        # Generate the corresponding compile_commands.json fragment.
+        $1_PCH_FILE_JSON := $$(MAKESUPPORT_OUTPUTDIR)/compile-commands/$$(subst /,_,$$(subst \
+            $$(OUTPUTDIR)/,,$$($1_PCH_FILE))).json
+        $1_ALL_OBJS_JSON += $$($1_PCH_FILE_JSON)
+
+        $$($1_PCH_FILE_JSON): $$($1_PRECOMPILED_HEADER) $$($1_COMPILE_VARDEPS_FILE)
+		$$(call WriteCompileCommandsFragment, $$@, $$(PWD), $$<, \
+		    $$($1_PCH_COMMAND) $$< -o $$($1_PCH_FILE))
+      endif
+    endif
+  endif
+endef
+
+################################################################################
+define CreateWindowsResourceFile
+  ifneq ($$($1_VERSIONINFO_RESOURCE), )
+    $1_RES := $$($1_OBJECT_DIR)/$$($1_BASENAME).res
+    $1_RES_DEPS_FILE := $$($1_RES).d
+    $1_RES_DEPS_TARGETS_FILE := $$($1_RES).d.targets
+    -include $$($1_RES_DEPS_FILE)
+    -include $$($1_RES_DEPS_TARGETS_FILE)
+
+    $1_RES_VARDEPS := $$($1_RC) $$($1_RCFLAGS)
+    $1_RES_VARDEPS_FILE := $$(call DependOnVariable, $1_RES_VARDEPS, \
+        $$($1_RES).vardeps)
+
+    $$($1_RES): $$($1_VERSIONINFO_RESOURCE) $$($1_RES_VARDEPS_FILE)
+		$$(call LogInfo, Compiling resource $$(notdir $$($1_VERSIONINFO_RESOURCE)) (for $$($1_BASENAME)))
+		$$(call MakeDir, $$(@D) $$($1_OBJECT_DIR))
+		$$(call ExecuteWithLog, $$@, $$(call MakeCommandRelative, \
+		    $$($1_RC) $$($1_RCFLAGS) $$($1_SYSROOT_CFLAGS) $(CC_OUT_OPTION)$$@ \
+		    $$($1_VERSIONINFO_RESOURCE) 2>&1 ))
+                # Windows RC compiler does not support -showIncludes, so we mis-use CL
+                # for this. Filter out RC specific arguments that are unknown to CL.
+                # For some unknown reason, in this case CL actually outputs the show
+                # includes to stderr so need to redirect it to hide the output from the
+                # main log.
+		$$(call ExecuteWithLog, $$($1_RES_DEPS_FILE)$(OBJ_SUFFIX), \
+		    $$($1_CC) $$(filter-out -l%, $$($1_RCFLAGS)) \
+		        $$($1_SYSROOT_CFLAGS) -showIncludes -nologo -TC \
+		        $(CC_OUT_OPTION)$$($1_RES_DEPS_FILE)$(OBJ_SUFFIX) -P -Fi$$($1_RES_DEPS_FILE).pp \
+		        $$($1_VERSIONINFO_RESOURCE)) 2>&1 \
+		    | $(TR) -d '\r' | $(GREP) -v -e "^Note: including file:" \
+		        -e "^$$(notdir $$($1_VERSIONINFO_RESOURCE))$$$$" || test "$$$$?" = "1" ; \
+		$(ECHO) $$($1_RES): \\ > $$($1_RES_DEPS_FILE) ; \
+		$(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_RES_DEPS_FILE)$(OBJ_SUFFIX).log \
+		    >> $$($1_RES_DEPS_FILE) ; \
+		$(ECHO) >> $$($1_RES_DEPS_FILE) ;\
+		$(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_RES_DEPS_FILE) \
+		    > $$($1_RES_DEPS_TARGETS_FILE)
+  endif
+endef

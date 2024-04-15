@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,7 +204,14 @@ private:
 
   DumpRegion _rw_region;
   DumpRegion _ro_region;
-  CHeapBitMap _ptrmap;    // bitmap used by ArchivePtrMarker
+
+  // Combined bitmap to track pointers in both RW and RO regions. This is updated
+  // as objects are copied into RW and RO.
+  CHeapBitMap _ptrmap;
+
+  // _ptrmap is split into these two bitmaps which are written into the archive.
+  CHeapBitMap _rw_ptrmap;   // marks pointers in the RW region
+  CHeapBitMap _ro_ptrmap;   // marks pointers in the RO region
 
   SourceObjList _rw_src_objs;                 // objs to put in rw region
   SourceObjList _ro_src_objs;                 // objs to put in ro region

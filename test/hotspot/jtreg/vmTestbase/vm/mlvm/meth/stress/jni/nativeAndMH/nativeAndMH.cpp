@@ -25,7 +25,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "jni.h"
-#include "jni_tools.h"
+#include "jni_tools.hpp"
 
 extern "C" {
 

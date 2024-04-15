@@ -897,7 +897,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         }
     }
 
-    public static abstract non-sealed class AdHocAttribute<T extends Attribute<T>>
+    public abstract static non-sealed class AdHocAttribute<T extends Attribute<T>>
             extends UnboundAttribute<T> {
 
         public AdHocAttribute(AttributeMapper<T> mapper) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -582,7 +582,7 @@ CompilerCounters::CompilerCounters() {
 // c2 uses explicit CompilerPhaseType idToPhase mapping in opto/phasetype.hpp,
 // so if c2 is used, it should be always registered first.
 // This function is called during vm initialization.
-void register_jfr_phasetype_serializer(CompilerType compiler_type) {
+static void register_jfr_phasetype_serializer(CompilerType compiler_type) {
   ResourceMark rm;
   static bool first_registration = true;
   if (compiler_type == compiler_jvmci) {
@@ -1171,11 +1171,13 @@ void CompileBroker::compile_method_base(const methodHandle& method,
     tty->cr();
   }
 
-  // A request has been made for compilation.  Before we do any
-  // real work, check to see if the method has been compiled
-  // in the meantime with a definitive result.
-  if (compilation_is_complete(method, osr_bci, comp_level)) {
-    return;
+  if (compile_reason != CompileTask::Reason_DirectivesChanged) {
+    // A request has been made for compilation.  Before we do any
+    // real work, check to see if the method has been compiled
+    // in the meantime with a definitive result.
+    if (compilation_is_complete(method, osr_bci, comp_level)) {
+      return;
+    }
   }
 
 #ifndef PRODUCT
@@ -1220,11 +1222,13 @@ void CompileBroker::compile_method_base(const methodHandle& method,
       return;
     }
 
-    // We need to check again to see if the compilation has
-    // completed.  A previous compilation may have registered
-    // some result.
-    if (compilation_is_complete(method, osr_bci, comp_level)) {
-      return;
+    if (compile_reason != CompileTask::Reason_DirectivesChanged) {
+      // We need to check again to see if the compilation has
+      // completed.  A previous compilation may have registered
+      // some result.
+      if (compilation_is_complete(method, osr_bci, comp_level)) {
+        return;
+      }
     }
 
     // We now know that this compilation is not pending, complete,
@@ -1372,10 +1376,10 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
 
   if (osr_bci == InvocationEntryBci) {
     // standard compilation
-    CompiledMethod* method_code = method->code();
-    if (method_code != nullptr && method_code->is_nmethod()) {
+    nmethod* method_code = method->code();
+    if (method_code != nullptr && (compile_reason != CompileTask::Reason_DirectivesChanged)) {
       if (compilation_is_complete(method, osr_bci, comp_level)) {
-        return (nmethod*) method_code;
+        return method_code;
       }
     }
     if (method->is_not_compilable(comp_level)) {
@@ -1476,12 +1480,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   // return requested nmethod
   // We accept a higher level osr method
   if (osr_bci == InvocationEntryBci) {
-    CompiledMethod* code = method->code();
-    if (code == nullptr) {
-      return (nmethod*) code;
-    } else {
-      return code->as_nmethod_or_null();
-    }
+    return method->code();
   }
   return method->lookup_osr_nmethod_for(osr_bci, comp_level, false);
 }
@@ -1506,7 +1505,7 @@ bool CompileBroker::compilation_is_complete(const methodHandle& method,
     if (method->is_not_compilable(comp_level)) {
       return true;
     } else {
-      CompiledMethod* result = method->code();
+      nmethod* result = method->code();
       if (result == nullptr) return false;
       return comp_level == result->comp_level();
     }
@@ -2328,7 +2327,9 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     compilable = ci_env.compilable();
 
     if (ci_env.failing()) {
-      failure_reason = ci_env.failure_reason();
+      // Duplicate the failure reason string, so that it outlives ciEnv
+      failure_reason = os::strdup(ci_env.failure_reason(), mtCompiler);
+      failure_reason_on_C_heap = true;
       retry_message = ci_env.retry_message();
       ci_env.report_failure(failure_reason);
     }

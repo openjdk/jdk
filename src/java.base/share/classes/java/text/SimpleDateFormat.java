@@ -1487,7 +1487,8 @@ public class SimpleDateFormat extends DateFormat {
 
             switch (tag) {
             case TAG_QUOTE_ASCII_CHAR:
-                if (start >= textLength || text.charAt(start) != (char)count) {
+                if (start >= textLength ||
+                        !charEquals(text.charAt(start), (char)count)) {
                     pos.index = oldStart;
                     pos.errorIndex = start;
                     return null;
@@ -1497,7 +1498,8 @@ public class SimpleDateFormat extends DateFormat {
 
             case TAG_QUOTE_CHARS:
                 while (count-- > 0) {
-                    if (start >= textLength || text.charAt(start) != compiledPattern[i++]) {
+                    if (start >= textLength ||
+                            !charEquals(text.charAt(start), compiledPattern[i++])) {
                         pos.index = oldStart;
                         pos.errorIndex = start;
                         return null;
@@ -1579,6 +1581,13 @@ public class SimpleDateFormat extends DateFormat {
 
         return parsedDate;
     }
+
+    private boolean charEquals(char ch1, char ch2) {
+        return ch1 == ch2 ||
+            isLenient() &&
+                Character.getType(ch1) == Character.SPACE_SEPARATOR &&
+                Character.getType(ch2) == Character.SPACE_SEPARATOR;
+     }
 
     /* If the next tag/pattern is a <Numeric_Field> then the parser
      * should consider the count of digits while parsing the contiguous digits

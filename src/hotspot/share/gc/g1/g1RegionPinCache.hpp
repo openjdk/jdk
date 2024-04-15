@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_G1REGIONPINCACHE_HPP
 #define SHARE_GC_G1_G1REGIONPINCACHE_HPP
 
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
