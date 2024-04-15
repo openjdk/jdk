@@ -89,7 +89,7 @@ public class ObjectMonitorUsage {
             // the WaitingTask has to wait to be notified in lockCheck.wait()
             Thread thread = startTask(i, new WaitingTask(), isVirtual, "Waiting");
             ensureWaitsToBeNotified(thread);
-            threads[i] = thread; 
+            threads[i] = thread;
         }
         return threads;
     }
@@ -100,7 +100,7 @@ public class ObjectMonitorUsage {
             // the EnteringTask has to be blocked at the lockCheck enter
             Thread thread = startTask(i, new EnteringTask(), isVirtual, "Entering");
             ensureBlockedOnEnter(thread);
-            threads[i] = thread; 
+            threads[i] = thread;
         }
         return threads;
     }
