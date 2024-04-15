@@ -76,12 +76,9 @@ public:
       if (this->type == StateType::Released) {
         this->data.flag = b.data.flag;
         this->data.stack_idx = b.data.stack_idx;
-      } else if (this->type == StateType::Committed) {
-        if (this->type == StateType::Committed) {
-          this->data.flag = b.data.flag;
-        }
       }
     }
+
     Metadata metadata() const {
       return data;
     }

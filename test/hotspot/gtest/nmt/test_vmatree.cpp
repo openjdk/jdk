@@ -64,16 +64,16 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     EXPECT_EQ(nullptr, treap_of(tree)) << "Releasing all memory should result in an empty tree";
   };
 
-  // Committing in middle works as expected
+  // Committing in middle of reservation ends with a sequence of 4 nodes
   auto commit_middle = [&](VMATree::Metadata& md) {
     Tree tree;
     tree.reserve_mapping(0, 100, md);
-    tree.commit_mapping(0, 50, md);
+    tree.commit_mapping(50, 25, md);
 
     size_t found[16];
-    size_t wanted[3] = {0, 50, 100};
+    size_t wanted[4] = {0, 50, 75, 100};
     auto exists = [&](size_t x) {
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < 4; i++) {
         if (wanted[i] == x) return true;
       }
       return false;
@@ -85,13 +85,15 @@ TEST_VM_F(VMATreeTest, LowLevel) {
       }
       i++;
     });
-    ASSERT_EQ(3, i) << "0 - 50 - 100 nodes expected";
+    ASSERT_EQ(4, i) << "0 - 50 - 75 - 100 nodes expected";
     EXPECT_TRUE(exists(found[0]));
     EXPECT_TRUE(exists(found[1]));
     EXPECT_TRUE(exists(found[2]));
+    EXPECT_TRUE(exists(found[3]));
   };
 
-  auto commit_whole = [&](VMATree::Metadata& md) { // Committing in a whole reserved range results in 2 nodes
+  // Committing in a whole reserved range results in 2 nodes
+  auto commit_whole = [&](VMATree::Metadata& md) {
     Tree tree;
     tree.reserve_mapping(0, 100*100, md);
     for (int i = 0; i < 100; i++) {
@@ -106,6 +108,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     });
     EXPECT_EQ(2, found_nodes);
   };
+
   VMATree::Metadata nothing;
   adjacent_2_nodes(nothing);
   remove_all_leaves_empty_tree(nothing);
@@ -118,7 +121,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
   commit_middle(md);
   commit_whole(md);
 
-  { // Identical operation but different metadata should store both
+  { // Identical operation but different metadata should not merge
     Tree tree;
     VMATree::Metadata md{si1, mtTest };
     VMATree::Metadata md2{si2, mtNMT };
@@ -131,7 +134,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     EXPECT_EQ(3, found_nodes);
   }
 
-  { // Reserving should overwrite commit
+  { // Reserving after commit should overwrite commit
     Tree tree;
     VMATree::Metadata md{si1, mtTest };
     VMATree::Metadata md2{si2, mtNMT };
@@ -170,41 +173,20 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     EXPECT_EQ(nullptr, treap_of(tree));
   }
   { // A committed region inside of/replacing a reserved region
-    // should inherit the reserved region
+    // should replace the reserved region's metadata.
     Tree::Metadata md{si1, mtNMT};
-    VMATree::Metadata md2{si2, mtNone};
+    VMATree::Metadata md2{si2, mtTest};
     Tree tree;
     tree.reserve_mapping(0, 100, md);
     tree.commit_mapping(0, 100, md2);
     tree.visit(0, 99999, [&](Node* x) {
       if (x->key() == 0) {
-        EXPECT_EQ(mtNMT, x->val().out.metadata().flag);
+        EXPECT_EQ(mtTest, x->val().out.metadata().flag);
       }
       if (x->key() == 100) {
-        EXPECT_EQ(mtNMT, x->val().in.metadata().flag);
+        EXPECT_EQ(mtTest, x->val().in.metadata().flag);
       }
     });
-  }
-  { // Merging prioritises the first region when committing over two reserved regions.
-    Tree tree;
-    VMATree::Metadata md{si1, mtTest };
-    VMATree::Metadata md2{si2, mtNMT };
-    VMATree::Metadata md3{si1, mtNone };
-    tree.reserve_mapping(0, 50, md);
-    tree.reserve_mapping(50, 50, md2);
-    tree.commit_mapping(0, 100, md3);
-    int found_nodes = 0;
-    tree.visit(0, 99999, [&](Node* x) {
-      EXPECT_TRUE(x->key() == 0 || x->key() == 100);
-      if (x->key() == 0) {
-        EXPECT_EQ(x->val().out.metadata().flag, mtTest);
-      }
-      if (x->key() == 100) {
-        EXPECT_EQ(x->val().in.metadata().flag, mtTest);
-      }
-      found_nodes++;
-    });
-    EXPECT_EQ(2, found_nodes);
   }
 }
 
