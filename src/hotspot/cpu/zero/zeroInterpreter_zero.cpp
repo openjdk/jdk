@@ -37,6 +37,7 @@
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/basicLock.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -44,6 +45,7 @@
 #include "runtime/timer.hpp"
 #include "runtime/timerTrace.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 #include "entry_zero.hpp"
@@ -331,23 +333,27 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   if (method->is_synchronized()) {
     monitor = (BasicObjectLock*) istate->stack_base();
     oop lockee = monitor->obj();
-    markWord disp = lockee->mark().set_unlocked();
-    monitor->lock()->set_displaced_header(disp);
-    bool call_vm = (LockingMode == LM_MONITOR);
-    bool inc_monitor_count = true;
-    if (call_vm || lockee->cas_set_mark(markWord::from_pointer(monitor), disp) != disp) {
-      // Is it simple recursive case?
-      if (!call_vm && thread->is_lock_owned((address) disp.clear_lock_bits().to_pointer())) {
-        monitor->lock()->set_displaced_header(markWord::from_pointer(nullptr));
-      } else {
-        inc_monitor_count = false;
-        CALL_VM_NOCHECK(InterpreterRuntime::monitorenter(thread, monitor));
-        if (HAS_PENDING_EXCEPTION)
-          goto unwind_and_return;
+    bool success = false;
+    if (LockingMode == LM_LEGACY) {
+      markWord disp = lockee->mark().set_unlocked();
+      monitor->lock()->set_displaced_header(disp);
+      success = true;
+      if (lockee->cas_set_mark(markWord::from_pointer(monitor), disp) != disp) {
+        // Is it simple recursive case?
+        if (thread->is_lock_owned((address) disp.clear_lock_bits().to_pointer())) {
+          monitor->lock()->set_displaced_header(markWord::from_pointer(nullptr));
+        } else {
+          success = false;
+        }
+      }
+      if (success) {
+        THREAD->inc_held_monitor_count();
       }
     }
-    if (inc_monitor_count) {
-      THREAD->inc_held_monitor_count();
+    if (!success) {
+      CALL_VM_NOCHECK(InterpreterRuntime::monitorenter(thread, monitor));
+          if (HAS_PENDING_EXCEPTION)
+            goto unwind_and_return;
     }
   }
 

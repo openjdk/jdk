@@ -410,11 +410,12 @@ class ConcurrentHashTable : public CHeapObj<F> {
   static const size_t DEFAULT_START_SIZE_LOG2 = 13;
   static const size_t DEFAULT_GROW_HINT = 4; // Chain length
   static const bool DEFAULT_ENABLE_STATISTICS = false;
+  static const Mutex::Rank DEFAULT_MUTEX_RANK = static_cast<Mutex::Rank>(static_cast<int>(Mutex::nosafepoint) - 2);
   ConcurrentHashTable(size_t log2size = DEFAULT_START_SIZE_LOG2,
                       size_t log2size_limit = DEFAULT_MAX_SIZE_LOG2,
                       size_t grow_hint = DEFAULT_GROW_HINT,
                       bool enable_statistics = DEFAULT_ENABLE_STATISTICS,
-                      Mutex::Rank rank = Mutex::nosafepoint-2,
+                      Mutex::Rank rank = DEFAULT_MUTEX_RANK,
                       void* context = nullptr);
 
   explicit ConcurrentHashTable(Mutex::Rank rank, void* context, size_t log2size = DEFAULT_START_SIZE_LOG2, bool enable_statistics = DEFAULT_ENABLE_STATISTICS) :
