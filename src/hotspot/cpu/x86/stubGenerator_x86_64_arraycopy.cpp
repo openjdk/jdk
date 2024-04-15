@@ -1623,7 +1623,7 @@ address StubGenerator::generate_fill(BasicType t, bool aligned, const char *name
 
   {
     // Add set memory mark to protect against unsafe accesses faulting
-    UnsafeMemoryMark(this, true, true);
+    UnsafeMemoryMark(this, ((t == T_BYTE) && !aligned)), true);
     __ generate_fill(t, aligned, to, value, r11, rax, xmm0);
   }
 
