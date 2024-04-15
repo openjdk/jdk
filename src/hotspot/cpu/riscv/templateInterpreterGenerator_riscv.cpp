@@ -1158,7 +1158,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // result potentially in x10 or f10
 
   // Restore cpu control state after JNI call
-  __ restore_cpu_control_state_after_jni(t0, t1);
+  __ restore_cpu_control_state_after_jni(t0);
 
   // make room for the pushes we're about to do
   __ sub(t0, esp, 4 * wordSize);
