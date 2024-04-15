@@ -409,7 +409,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * segment, clients can use the {@linkplain MemorySegment#maxByteAlignment()} method:
  * {@snippet lang=java:
  * boolean isAligned(MemorySegment segment, long offset, MemoryLayout layout) {
- *   return segment.asSlice(offset).maxByteAlignment() >= layout.byteAlignment;
+ *   return segment.asSlice(offset).maxByteAlignment() >= layout.byteAlignment();
  * }
  * }
  *
