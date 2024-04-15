@@ -42,9 +42,9 @@ class ReservedSpace {
   size_t   _page_size;
   bool     _special;
   int      _fd_for_heap;
+  bool     _executable;
   MEMFLAGS _nmt_flag;
  private:
-  bool   _executable;
 
   // ReservedSpace
   ReservedSpace(char* base, size_t size, size_t alignment,
@@ -69,7 +69,6 @@ class ReservedSpace {
  public:
 
   MEMFLAGS nmt_flag() { return _nmt_flag; }
-  void set_nmt_flag(MEMFLAGS flag) { _nmt_flag = flag; }
 
   // Constructor
   ReservedSpace();

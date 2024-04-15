@@ -208,9 +208,9 @@ class os: AllStatic {
   // low enough to leave most of the valuable low-4gb address space open.
   static constexpr size_t _vm_min_address_default = 16 * M;
 
-  static char*  pd_reserve_memory(size_t bytes, bool executable);
+  static char*  pd_reserve_memory(size_t bytes, bool executable, MEMFLAGS flag);
 
-  static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool executable);
+  static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool executable, MEMFLAGS flag);
 
   static bool   pd_commit_memory(char* addr, size_t bytes, bool executable);
   static bool   pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
@@ -225,10 +225,12 @@ class os: AllStatic {
   static bool   pd_uncommit_memory(char* addr, size_t bytes, bool executable);
   static bool   pd_release_memory(char* addr, size_t bytes);
 
-  static char*  pd_attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc);
+  static char*  pd_attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc, MEMFLAGS flag);
 
   static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset,
-                           char *addr, size_t bytes, bool read_only = false,
+                           char *addr, size_t bytes,
+                           MEMFLAGS flag,
+                           bool read_only = false,
                            bool allow_exec = false);
   static bool   pd_unmap_memory(char *addr, size_t bytes);
   static void   pd_free_memory(char *addr, size_t bytes, size_t alignment_hint, MEMFLAGS flag);
@@ -239,8 +241,7 @@ class os: AllStatic {
   static size_t pd_pretouch_memory(void* first, void* last, size_t page_size);
 
   static char*  pd_reserve_memory_special(size_t size, size_t alignment, size_t page_size,
-
-                                          char* addr, bool executable);
+                                          char* addr, bool executable, MEMFLAGS flag);
   static bool   pd_release_memory_special(char* addr, size_t bytes);
 
   static size_t page_size_for_region(size_t region_size, size_t min_pages, bool must_be_aligned);
@@ -507,16 +508,18 @@ class os: AllStatic {
   static int create_file_for_heap(const char* dir);
   // Map memory to the file referred by fd. This function is slightly different from map_memory()
   // and is added to be used for implementation of -XX:AllocateHeapAt
-  static char* map_memory_to_file(size_t size, int fd, MEMFLAGS flag = mtNone);
+  static char* map_memory_to_file(size_t size, int fd, MEMFLAGS flag);
   static char* map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MEMFLAGS flag);
   static char* map_memory_to_file(char* base, size_t size, int fd);
-  static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd, MEMFLAGS flag = mtNone);
+  static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd, MEMFLAGS flag);
   // Replace existing reserved memory with file mapping
   static char* replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd);
 
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
-                           char *addr, size_t bytes, bool read_only = false,
-                           bool allow_exec = false, MEMFLAGS flags = mtNone);
+                           char *addr, size_t bytes,
+                           MEMFLAGS flag,
+                           bool read_only = false,
+                           bool allow_exec = false);
   static bool   unmap_memory(char *addr, size_t bytes);
   static void   free_memory(char *addr, size_t bytes, size_t alignment_hint, MEMFLAGS flag);
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);

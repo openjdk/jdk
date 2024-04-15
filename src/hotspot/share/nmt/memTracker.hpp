@@ -146,7 +146,7 @@ class MemTracker : AllStatic {
   }
 
   static inline void record_virtual_memory_reserve_and_commit(void* addr, size_t size,
-    const NativeCallStack& stack, MEMFLAGS flag = mtNone) {
+    const NativeCallStack& stack, MEMFLAGS flag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {

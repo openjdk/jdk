@@ -1890,7 +1890,7 @@ bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, siz
 }
 
 // Reserves and attaches a shared memory segment.
-char* os::pd_reserve_memory(size_t bytes, bool exec) {
+char* os::pd_reserve_memory(size_t bytes, bool exec, MEMFLAGS flag) {
   // Always round to os::vm_page_size(), which may be larger than 4K.
   bytes = align_up(bytes, os::vm_page_size());
 
@@ -2039,7 +2039,7 @@ void os::large_page_init() {
   return; // Nothing to do. See query_multipage_support and friends.
 }
 
-char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size, char* req_addr, bool exec) {
+char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size, char* req_addr, bool exec, MEMFLAGS flag) {
   fatal("os::reserve_memory_special should not be called on AIX.");
   return nullptr;
 }
@@ -2058,7 +2058,7 @@ bool os::can_commit_large_page_memory() {
   return false;
 }
 
-char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
+char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc, MEMFLAGS flag) {
   assert(file_desc >= 0, "file_desc is not valid");
   char* result = nullptr;
 
@@ -2076,7 +2076,7 @@ char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, i
 
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
-char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool exec) {
+char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool exec, MEMFLAGS flag) {
   char* addr = nullptr;
 
   // Always round to os::vm_page_size(), which may be larger than 4K.

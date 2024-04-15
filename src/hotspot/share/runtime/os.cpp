@@ -1814,7 +1814,7 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
 }
 
 char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
-  char* result = pd_reserve_memory(bytes, executable);
+  char* result = pd_reserve_memory(bytes, executable, flags);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC, flags);
     log_debug(os, map)("Reserved " RANGEFMT, RANGEFMTARGS(result, bytes));
@@ -1825,7 +1825,7 @@ char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
 }
 
 char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable, MEMFLAGS flag) {
-  char* result = SimulateFullAddressSpace ? nullptr : pd_attempt_reserve_memory_at(addr, bytes, executable);
+  char* result = SimulateFullAddressSpace ? nullptr : pd_attempt_reserve_memory_at(addr, bytes, executable, flag);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC, flag);
     log_debug(os, map)("Reserved " RANGEFMT, RANGEFMTARGS(result, bytes));
@@ -2010,7 +2010,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     const unsigned candidate_offset = points[i];
     char* const candidate = lo_att + candidate_offset * alignment_adjusted;
     assert(candidate <= hi_att, "Invalid offset %u (" ARGSFMT ")", candidate_offset, ARGSFMTARGS);
-    result = SimulateFullAddressSpace ? nullptr : os::pd_attempt_reserve_memory_at(candidate, bytes, false);
+    result = SimulateFullAddressSpace ? nullptr : os::pd_attempt_reserve_memory_at(candidate, bytes, !ExecMem, flag);
     if (!result) {
       log_trace(os, map)("Failed to attach at " PTR_FORMAT, p2i(candidate));
     }
@@ -2173,7 +2173,7 @@ char* os::map_memory_to_file(size_t bytes, int file_desc, MEMFLAGS flag) {
 }
 
 char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc, MEMFLAGS flag) {
-  char* result = pd_attempt_map_memory_to_file_at(addr, bytes, file_desc);
+  char* result = pd_attempt_map_memory_to_file_at(addr, bytes, file_desc, flag);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, flag);
   }
@@ -2181,9 +2181,11 @@ char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc,
 }
 
 char* os::map_memory(int fd, const char* file_name, size_t file_offset,
-                           char *addr, size_t bytes, bool read_only,
-                           bool allow_exec, MEMFLAGS flags) {
-  char* result = pd_map_memory(fd, file_name, file_offset, addr, bytes, read_only, allow_exec);
+                     char *addr, size_t bytes,
+                     MEMFLAGS flags,
+                     bool read_only,
+                     bool allow_exec) {
+  char* result = pd_map_memory(fd, file_name, file_offset, addr, bytes, flags, read_only, allow_exec);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, flags);
   }
@@ -2217,7 +2219,7 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
 
   assert(is_aligned(addr, alignment), "Unaligned request address");
 
-  char* result = pd_reserve_memory_special(size, alignment, page_size, addr, executable);
+  char* result = pd_reserve_memory_special(size, alignment, page_size, addr, executable, flag);
   if (result != nullptr) {
     // The memory is committed
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, size, CALLER_PC, flag);

@@ -220,7 +220,8 @@ namespace {
       case Commit:
         return ReservedSpace(reserve_size_aligned,
                              os::vm_allocation_granularity(),
-                             os::vm_page_size(), mtTest);
+                             os::vm_page_size(),
+                             mtTest);
     }
   }
 

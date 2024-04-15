@@ -100,7 +100,7 @@ public:
 
     _reserved = reserved;
 
-    os::commit_memory((char*)_reserved, ZGranuleSize, !ExecMem /* executable */, mtGC);
+    os::commit_memory((char*)_reserved, ZGranuleSize, !ExecMem /* executable */, mtTest);
 
     _page_offset = uintptr_t(_reserved) - ZAddressHeapBase;
   }
@@ -111,7 +111,7 @@ public:
     ZGeneration::_old = _old_old;
     ZGeneration::_young = _old_young;
     if (_reserved != nullptr) {
-      os::uncommit_memory((char*)_reserved, ZGranuleSize, !ExecMem, mtGC);
+      os::uncommit_memory((char*)_reserved, ZGranuleSize, !ExecMem, mtTest);
       os::release_memory((char*)_reserved, ZGranuleSize);
     }
   }

@@ -1694,10 +1694,11 @@ void FileMapInfo::close() {
  */
 static char* map_memory(int fd, const char* file_name, size_t file_offset,
                         char *addr, size_t bytes, bool read_only,
-                        bool allow_exec, MEMFLAGS flags = mtNone) {
+                        bool allow_exec, MEMFLAGS flags) {
   char* mem = os::map_memory(fd, file_name, file_offset, addr, bytes,
+                             flags,
                              AlwaysPreTouch ? false : read_only,
-                             allow_exec, flags);
+                             allow_exec);
   if (mem != nullptr && AlwaysPreTouch) {
     os::pretouch_memory(mem, mem + bytes);
   }
@@ -1722,7 +1723,8 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
   assert(WINDOWS_ONLY(false) NOT_WINDOWS(true), "Don't call on Windows");
   // Replace old mapping with new one that is writable.
   char *base = os::map_memory(_fd, _full_path, r->file_offset(),
-                              addr, size, false /* !read_only */,
+                              addr, size, mtClassShared,
+                              false /* !read_only */,
                               r->allow_exec());
   close();
   // These have to be errors because the shared region is now unmapped.
@@ -2151,10 +2153,11 @@ bool FileMapInfo::map_heap_region_impl() {
 
   // Map the archived heap data. No need to call MemTracker::record_virtual_memory_type()
   // for mapped region as it is part of the reserved java heap, which is already recorded.
+  // So we pass the mtJavaHeap to tell MemTracker the type of the already tracked memory.
   char* addr = (char*)_mapped_heap_memregion.start();
   char* base = map_memory(_fd, _full_path, r->file_offset(),
                           addr, _mapped_heap_memregion.byte_size(), r->read_only(),
-                          r->allow_exec());
+                          r->allow_exec(), mtJavaHeap);
   if (base == nullptr || base != addr) {
     dealloc_heap_region();
     log_info(cds)("UseSharedSpaces: Unable to map at required address in java heap. "

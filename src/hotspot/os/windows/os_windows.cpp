@@ -3111,6 +3111,7 @@ static bool numa_interleaving_init() {
 //  * UseNUMAInterleaving requires a separate node for each piece
 static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
                                          DWORD prot,
+                                         MEMFLAGS nmt_flag,
                                          bool should_inject_error = false) {
   char * p_buf;
   // note: at setup time we guaranteed that NUMAInterleaveGranularity was aligned up to a page size
@@ -3134,7 +3135,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
                                 PAGE_READWRITE);
   // If reservation failed, return null
   if (p_buf == nullptr) return nullptr;
-  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC, mtInternal);
+  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC, nmt_flag);
   os::release_memory(p_buf, bytes + chunk_size);
 
   // we still need to round up to a page boundary (in case we are using large pages)
@@ -3195,7 +3196,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
         // need to create a dummy 'reserve' record to match
         // the release.
         MemTracker::record_virtual_memory_reserve((address)p_buf,
-                                                  bytes_to_release, CALLER_PC, mtNone);
+                                                  bytes_to_release, CALLER_PC, nmt_flag);
         os::release_memory(p_buf, bytes_to_release);
       }
 #ifdef ASSERT
@@ -3213,9 +3214,9 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
   // Although the memory is allocated individually, it is returned as one.
   // NMT records it as one block.
   if ((flags & MEM_COMMIT) != 0) {
-    MemTracker::record_virtual_memory_reserve_and_commit((address)p_buf, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)p_buf, bytes, CALLER_PC, nmt_flag);
   } else {
-    MemTracker::record_virtual_memory_reserve((address)p_buf, bytes, CALLER_PC, mtNone);
+    MemTracker::record_virtual_memory_reserve((address)p_buf, bytes, CALLER_PC, nmt_flag);
   }
 
   // made it this far, success
@@ -3343,7 +3344,7 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
 // Multiple threads can race in this code but it's not possible to unmap small sections of
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
-static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc, MEMFLAGS flag = mtNone) {
+static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc, MEMFLAGS flag) {
   assert(is_aligned(alignment, os::vm_allocation_granularity()),
       "Alignment must be a multiple of allocation granularity (page size)");
   assert(is_aligned(size, os::vm_allocation_granularity()),
@@ -3384,20 +3385,20 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
 
 char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec, MEMFLAGS flag) {
   // exec can be ignored
-  return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */);
+  return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */, flag);
 }
 
 char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MEMFLAGS flag) {
   return map_or_reserve_memory_aligned(size, alignment, fd, flag);
 }
 
-char* os::pd_reserve_memory(size_t bytes, bool exec) {
-  return pd_attempt_reserve_memory_at(nullptr /* addr */, bytes, exec);
+char* os::pd_reserve_memory(size_t bytes, bool exec, MEMFLAGS flag) {
+  return pd_attempt_reserve_memory_at(nullptr /* addr */, bytes, exec, flag);
 }
 
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
-char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec) {
+char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec, MEMFLAGS nmt_flag) {
   assert((size_t)addr % os::vm_allocation_granularity() == 0,
          "reserve alignment");
   assert(bytes % os::vm_page_size() == 0, "reserve page size");
@@ -3412,7 +3413,7 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec) {
     if (Verbose && PrintMiscellaneous) reserveTimer.start();
     // in numa interleaving, we have to allocate pages individually
     // (well really chunks of NUMAInterleaveGranularity size)
-    res = allocate_pages_individually(bytes, addr, MEM_RESERVE, PAGE_READWRITE);
+    res = allocate_pages_individually(bytes, addr, MEM_RESERVE, PAGE_READWRITE, nmt_flag);
     if (res == nullptr) {
       warning("NUMA page allocation failed");
     }
@@ -3433,7 +3434,7 @@ size_t os::vm_min_address() {
   return _vm_min_address_default;
 }
 
-char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
+char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc, MEMFLAGS flag) {
   assert(file_desc >= 0, "file_desc is not valid");
   return map_memory_to_file(requested_addr, bytes, file_desc);
 }
@@ -3449,13 +3450,13 @@ bool os::can_commit_large_page_memory() {
   return false;
 }
 
-static char* reserve_large_pages_individually(size_t size, char* req_addr, bool exec) {
+static char* reserve_large_pages_individually(size_t size, char* req_addr, bool exec, MEMFLAGS nmt_flag) {
   log_debug(pagesize)("Reserving large pages individually.");
 
   const DWORD prot = exec ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE;
   const DWORD flags = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
 
-  char * p_buf = allocate_pages_individually(size, req_addr, flags, prot, LargePagesIndividualAllocationInjectError);
+  char * p_buf = allocate_pages_individually(size, req_addr, flags, prot, nmt_flag, LargePagesIndividualAllocationInjectError);
   if (p_buf == nullptr) {
     // give an appropriate warning message
     if (UseNUMAInterleaving) {
@@ -3479,12 +3480,12 @@ static char* reserve_large_pages_single_range(size_t size, char* req_addr, bool 
   return (char *) virtualAlloc(req_addr, size, flags, prot);
 }
 
-static char* reserve_large_pages(size_t size, char* req_addr, bool exec) {
+static char* reserve_large_pages(size_t size, char* req_addr, bool exec, MEMFLAGS flag) {
   // with large pages, there are two cases where we need to use Individual Allocation
   // 1) the UseLargePagesIndividualAllocation flag is set (set by default on WS2003)
   // 2) NUMA Interleaving is enabled, in which case we use a different node for each page
   if (UseLargePagesIndividualAllocation || UseNUMAInterleaving) {
-    return reserve_large_pages_individually(size, req_addr, exec);
+    return reserve_large_pages_individually(size, req_addr, exec, flag);
   }
   return reserve_large_pages_single_range(size, req_addr, exec);
 }
@@ -3501,7 +3502,7 @@ static char* find_aligned_address(size_t size, size_t alignment) {
   return aligned_addr;
 }
 
-static char* reserve_large_pages_aligned(size_t size, size_t alignment, bool exec) {
+static char* reserve_large_pages_aligned(size_t size, size_t alignment, bool exec, MEMFLAGS flag) {
   log_debug(pagesize)("Reserving large pages at an aligned address, alignment=" SIZE_FORMAT "%s",
                       byte_size_in_exact_unit(alignment), exact_unit_for_byte_size(alignment));
 
@@ -3514,7 +3515,7 @@ static char* reserve_large_pages_aligned(size_t size, size_t alignment, bool exe
     char* aligned_address = find_aligned_address(size, alignment);
 
     // Try to do the large page reservation using the aligned address.
-    aligned_address = reserve_large_pages(size, aligned_address, exec);
+    aligned_address = reserve_large_pages(size, aligned_address, exec, flag);
     if (aligned_address != nullptr) {
       // Reservation at the aligned address succeeded.
       guarantee(is_aligned(aligned_address, alignment), "Must be aligned");
@@ -3527,7 +3528,7 @@ static char* reserve_large_pages_aligned(size_t size, size_t alignment, bool exe
 }
 
 char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size, char* addr,
-                                    bool exec) {
+                                    bool exec, MEMFLAGS flag) {
   assert(UseLargePages, "only for large pages");
   assert(page_size == os::large_page_size(), "Currently only support one large page size on Windows");
   assert(is_aligned(addr, alignment), "Must be");
@@ -3543,11 +3544,11 @@ char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_
   // ensure that the requested alignment is met. When there is a requested address
   // this solves it self, since it must be properly aligned already.
   if (addr == nullptr && alignment > page_size) {
-    return reserve_large_pages_aligned(bytes, alignment, exec);
+    return reserve_large_pages_aligned(bytes, alignment, exec, flag);
   }
 
   // No additional requirements, just reserve the large pages.
-  return reserve_large_pages(bytes, addr, exec);
+  return reserve_large_pages(bytes, addr, exec, flag);
 }
 
 bool os::pd_release_memory_special(char* base, size_t bytes) {
@@ -3768,7 +3769,7 @@ bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
   // memory, not a big deal anyway, as bytes less or equal than 64K
   if (!is_committed) {
     commit_memory_or_exit(addr, bytes, prot == MEM_PROT_RWX,
-                          "cannot commit protection page", mtNone);
+                          "cannot commit protection page", mtInternal);
   }
   // One cannot use os::guard_memory() here, as on Win32 guard page
   // have different (one-shot) semantics, from MSDN on PAGE_GUARD:
@@ -5063,7 +5064,9 @@ void os::funlockfile(FILE* fp) {
 
 // Map a block of memory.
 char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
-                        char *addr, size_t bytes, bool read_only,
+                        char *addr, size_t bytes,
+                        MEMFLAGS flag,
+                        bool read_only,
                         bool allow_exec) {
 
   errno_t err;
@@ -5104,7 +5107,7 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
     }
 
     // Record virtual memory allocation
-    MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, CALLER_PC, flag);
 
     DWORD bytes_read;
     OVERLAPPED overlapped;

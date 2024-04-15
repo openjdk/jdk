@@ -42,7 +42,7 @@
 
 // Dummy constructor
 ReservedSpace::ReservedSpace() : _base(nullptr), _size(0), _noaccess_prefix(0),
-    _alignment(0), _special(false), _fd_for_heap(-1), _nmt_flag(mtNone), _executable(false) {
+    _alignment(0), _special(false), _fd_for_heap(-1), _executable(false), _nmt_flag(mtNone) {
 }
 
 ReservedSpace::ReservedSpace(size_t size, MEMFLAGS flag) : _fd_for_heap(-1), _nmt_flag(flag) {
@@ -84,7 +84,7 @@ ReservedSpace::ReservedSpace(char* base, size_t size, size_t alignment, size_t p
 // Helper method
 static char* attempt_map_or_reserve_memory_at(char* base, size_t size, int fd, bool executable, MEMFLAGS flag) {
   if (fd != -1) {
-    return os::attempt_map_memory_to_file_at(base, size, fd);
+    return os::attempt_map_memory_to_file_at(base, size, fd, flag);
   }
   return os::attempt_reserve_memory_at(base, size, executable, flag);
 }
@@ -92,7 +92,7 @@ static char* attempt_map_or_reserve_memory_at(char* base, size_t size, int fd, b
 // Helper method
 static char* map_or_reserve_memory(size_t size, int fd, bool executable, MEMFLAGS flag) {
   if (fd != -1) {
-    return os::map_memory_to_file(size, fd);
+    return os::map_memory_to_file(size, fd, flag);
   }
   return os::reserve_memory(size, executable, flag);
 }
@@ -210,11 +210,11 @@ void ReservedSpace::initialize_members(char* base, size_t size, size_t alignment
                                        size_t page_size, bool special, bool executable, MEMFLAGS flag) {
   _base = base;
   _size = size;
+  _noaccess_prefix = 0;
   _alignment = alignment;
   _page_size = page_size;
   _special = special;
   _executable = executable;
-  _noaccess_prefix = 0;
   _nmt_flag = flag;
 }
 
@@ -292,7 +292,9 @@ void ReservedSpace::initialize(size_t size,
   assert(is_power_of_2(page_size), "Invalid page size");
 
   clear_members();
-  set_nmt_flag(flag);
+
+  // _nmt_flag is cleared in clear_members in above call
+  _nmt_flag = flag;
 
   if (size == 0) {
     return;
@@ -608,16 +610,17 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
     // Last, desperate try without any placement.
     if (_base == nullptr) {
       log_trace(gc, heap, coops)("Trying to allocate at address null heap of size " SIZE_FORMAT_X, size + noaccess_prefix);
-      initialize(size + noaccess_prefix, alignment, page_size, nullptr, false, nmt_flag());
+      initialize(size + noaccess_prefix, alignment, page_size, nullptr, !ExecMem, nmt_flag());
     }
   }
 }
 
 ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_size, const char* heap_allocation_directory) : ReservedSpace() {
-  set_nmt_flag(mtJavaHeap);
   if (size == 0) {
     return;
   }
+  // _nmt_flag is used internally by initialize_compressed_heap
+  _nmt_flag = mtJavaHeap;
 
   if (heap_allocation_directory != nullptr) {
     _fd_for_heap = os::create_file_for_heap(heap_allocation_directory);
@@ -653,9 +656,6 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_
   assert(markWord::encode_pointer_as_mark(&_base[size]).decode_pointer() == &_base[size],
          "area must be distinguishable from marks for mark-sweep");
 
-  if (base() != nullptr) {
-    MemTracker::record_virtual_memory_type((address)base(), mtJavaHeap);
-  }
 
   if (_fd_for_heap != -1) {
     ::close(_fd_for_heap);
@@ -671,7 +671,6 @@ MemRegion ReservedHeapSpace::region() const {
 ReservedCodeSpace::ReservedCodeSpace(size_t r_size,
                                      size_t rs_align,
                                      size_t rs_page_size) : ReservedSpace() {
-  set_nmt_flag(mtCode);
   initialize(r_size, rs_align, rs_page_size, /*requested address*/ nullptr, /*executable*/ true, mtCode);
 }
 
@@ -707,7 +706,7 @@ bool VirtualSpace::initialize_with_granularity(ReservedSpace rs, size_t committe
   assert(_low_boundary == nullptr, "VirtualSpace already initialized");
   assert(max_commit_granularity > 0, "Granularity must be non-zero.");
 
-  _nmt_flag = rs.nmt_flag();
+
   _low_boundary  = rs.base();
   _high_boundary = low_boundary() + rs.size();
 
@@ -716,6 +715,8 @@ bool VirtualSpace::initialize_with_granularity(ReservedSpace rs, size_t committe
 
   _special = rs.special();
   _executable = rs.executable();
+
+  _nmt_flag = rs.nmt_flag();
 
   // When a VirtualSpace begins life at a large size, make all future expansion
   // and shrinking occur aligned to a granularity of large pages.  This avoids
