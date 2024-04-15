@@ -581,6 +581,9 @@ class MacroAssembler: public Assembler {
   void fsflagsi(Register Rd, unsigned imm);
   void fsflagsi(unsigned imm);
 
+  // Restore cpu control state after JNI call
+  void restore_cpu_control_state_after_jni();
+
   // Control transfer pseudo instructions
   void beqz(Register Rs, const address dest);
   void bnez(Register Rs, const address dest);
