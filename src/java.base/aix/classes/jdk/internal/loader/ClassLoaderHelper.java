@@ -39,7 +39,7 @@ class ClassLoaderHelper {
     * libname.so is not present.
     */
     static boolean loadLibraryOnlyIfPresent() {
-        return false;
+        return true;
     }
 
    /**
