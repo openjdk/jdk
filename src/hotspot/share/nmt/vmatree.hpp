@@ -49,7 +49,7 @@ class VMATree {
 public:
   enum class StateType : uint8_t { Reserved, Committed, Released };
 
-  // Each node has some stack and a flag associated with it.
+  // Each point has some stack and a flag associated with it.
   struct Metadata {
     NativeCallStackStorage::StackIndex stack_idx;
     MEMFLAGS flag;
@@ -82,7 +82,7 @@ public:
         }
       }
     }
-    Metadata mdata() const {
+    Metadata metadata() const {
       return data;
     }
   };
