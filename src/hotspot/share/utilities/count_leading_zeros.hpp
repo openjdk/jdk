@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,37 +120,6 @@ template <typename T> struct CountLeadingZerosImpl<T, 8> {
       return count_leading_zeros((uint32_t)v) + 32;
     }
 #endif
-  }
-};
-
-/*****************************************************************************
- * IBM XL C/C++
- *****************************************************************************/
-#elif defined(TARGET_COMPILER_xlc)
-
-#include <builtins.h>
-
-template <typename T> struct CountLeadingZerosImpl<T, 1> {
-  static unsigned doit(T v) {
-    return __cntlz4((uint32_t)v & 0xFF) - 24u;
-  }
-};
-
-template <typename T> struct CountLeadingZerosImpl<T, 2> {
-  static unsigned doit(T v) {
-    return __cntlz4((uint32_t)v & 0xFFFF) - 16u;
-  }
-};
-
-template <typename T> struct CountLeadingZerosImpl<T, 4> {
-  static unsigned doit(T v) {
-    return __cntlz4(v);
-  }
-};
-
-template <typename T> struct CountLeadingZerosImpl<T, 8> {
-  static unsigned doit(T v) {
-    return __cntlz8(v);
   }
 };
 
