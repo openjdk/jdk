@@ -1109,14 +1109,14 @@ template<class T> constexpr T MIN4(T a, T b, T c, T d) { return MIN2(MIN3(a, b, 
 #define ABS(x) asserted_abs(x, __FILE__, __LINE__)
 
 template<class T> inline T asserted_abs(T x, const char* file, int line) {
-  bool invalid_arg = std::is_integral<T>::value && x == std::numeric_limits<T>::min();
+  bool valid_arg = !(std::is_integral<T>::value && x == std::numeric_limits<T>::min());
 #ifdef ASSERT
-  if (invalid_arg) {
+  if (!valid_arg) {
     report_vm_error(file, line, "ABS: argument should not allow overflow");
   }
 #endif
   // Prevent exposure to UB by checking valid_arg here as well.
-  return (x < 0 && !invalid_arg) ? -x : x;
+  return (x < 0 && valid_arg) ? -x : x;
 }
 
 // Return the given value clamped to the range [min ... max]
