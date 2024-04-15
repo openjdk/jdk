@@ -27,7 +27,6 @@
  * @run junit TestLayoutTransformations
  */
 
-import jdk.internal.foreign.layout.LayoutTransformer;
 import jdk.internal.foreign.layout.LayoutTransformers;
 import org.junit.jupiter.api.Test;
 
@@ -38,13 +37,12 @@ import java.nio.ByteOrder;
 import static java.lang.foreign.ValueLayout.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class TestLayoutTransformations {
+final class TestLayoutTransformations {
 
     @Test
     void single() {
         ValueLayout.OfInt intLayout = JAVA_INT.withName("someName");
-        var transformer = LayoutTransformer.of(ValueLayout.OfInt.class, ValueLayout.OfInt::withoutName);
-        var actual = transformer.deepTransform(intLayout);
+        var actual = LayoutTransformers.removeNames().apply(intLayout);
         assertEquals(JAVA_INT, actual);
     }
 
@@ -59,9 +57,7 @@ public class TestLayoutTransformations {
                 JAVA_INT.withName("x").withOrder(ByteOrder.BIG_ENDIAN),
                 JAVA_INT.withName("Y").withOrder(ByteOrder.BIG_ENDIAN)
         );
-
-        var transformer = LayoutTransformer.of(ValueLayout.class, vl -> vl.withOrder(ByteOrder.BIG_ENDIAN));
-        var actual = transformer.deepTransform(layout);
+        var actual = LayoutTransformers.setByteOrder(ByteOrder.BIG_ENDIAN).apply(layout);
         assertEquals(expected, actual);
     }
 
@@ -84,23 +80,6 @@ public class TestLayoutTransformations {
 
         var transformer = LayoutTransformers.removeNames();
         var actual = transformer.apply(layout);
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    void setByteOrder() {
-        MemoryLayout layout = MemoryLayout.structLayout(
-                JAVA_INT.withName("x").withOrder(ByteOrder.LITTLE_ENDIAN),
-                JAVA_INT.withName("Y").withOrder(ByteOrder.LITTLE_ENDIAN)
-        );
-
-        MemoryLayout expected = MemoryLayout.structLayout(
-                JAVA_INT.withName("x").withOrder(ByteOrder.BIG_ENDIAN),
-                JAVA_INT.withName("Y").withOrder(ByteOrder.BIG_ENDIAN)
-        );
-
-        var transformer = LayoutTransformer.setByteOrder(ByteOrder.BIG_ENDIAN);
-        var actual = transformer.deepTransform(layout);
         assertEquals(expected, actual);
     }
 
