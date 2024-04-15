@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,18 @@ import jdk.internal.vm.annotation.ForceInline;
  * an address of zero.</li>
  * <li>The address of a native segment (including mapped segments) denotes the physical
  * address of the region of memory which backs the segment.</li>
+ * </ul>
+ * <p>
+ * Every memory segment has a {@linkplain #maxByteAlignment() maximum byte alignment}
+ * (see <a href="#segment-alignment">Alignment</a>"), expressed as a {@code long} value
+ * that is always an even power of two.
+ * <ul>
+ * <li>Just as the address of a heap segment is not a physical address but an offset,
+ * the maximum byte alignment is not directly derived from a physical address but
+ * is rather derived from the offset and also depends on the type of the backing array.
+ * </li>
+ * <li>The maximum byte alignment of a native segment (including mapped segments) is
+ * derived directly from the physical address of the region which backs the segment.</li>
  * </ul>
  * <p>
  * Every memory segment has a {@linkplain #byteSize() size}. The size of a heap segment
@@ -396,10 +408,8 @@ import jdk.internal.vm.annotation.ForceInline;
  * In order to simplify determination of alignment, in the case of either native or heap
  * segment, clients can use the {@linkplain MemorySegment#maxByteAlignment()} method:
  * {@snippet lang=java:
- * MemoryLayout layout = ...
- * MemorySegment segment = ...
- * if (segment.maxByteAlignment() < layout.byteAlignment) {
- *     // Take action (e.g. throw an Exception)
+ * boolean isAligned(MemorySegment segment, long offset, MemoryLayout layout) {
+ *   return segment.asSlice(offset).maxByteAlignment() >= layout.byteAlignment;
  * }
  * }
  *
