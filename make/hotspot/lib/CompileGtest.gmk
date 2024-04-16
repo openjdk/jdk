@@ -44,7 +44,8 @@ else
 endif
 
 ################################################################################
-
+## Build libgtest
+################################################################################
 
 $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBGTEST, \
     NAME := gtest, \
@@ -75,8 +76,10 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBGTEST, \
 TARGETS += $(BUILD_GTEST_LIBGTEST)
 
 ################################################################################
-# Additional disabled warnings are due to code in the test source.
+## Build libjvm (for gtest)
+################################################################################
 
+# Additional disabled warnings are due to code in the test source.
 $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
     NAME := jvm, \
     LINK_TYPE := C++, \
@@ -107,9 +110,7 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
     LD_SET_ORIGIN := false, \
     DEFAULT_LDFLAGS := false, \
     LDFLAGS := $(JVM_LDFLAGS), \
-    LDFLAGS_unix := -L$(JVM_OUTPUTDIR)/libgtest, \
-    JDK_LIBS_unix := -lgtest, \
-    JDK_LIBS_windows := $(JVM_OUTPUTDIR)/libgtest/gtest.lib, \
+    JDK_LIBS := gtest:libgtest, \
     LIBS := $(JVM_LIBS), \
     OPTIMIZATION := $(JVM_OPTIMIZATION), \
     COPY_DEBUG_SYMBOLS := $(GTEST_COPY_DEBUG_SYMBOLS), \
@@ -129,6 +130,8 @@ endif
 TARGETS += $(BUILD_GTEST_LIBJVM)
 
 ################################################################################
+## Build gtestLauncher
+################################################################################
 
 $(eval $(call SetupJdkExecutable, BUILD_GTEST_LAUNCHER, \
     NAME := gtestLauncher, \
@@ -146,14 +149,11 @@ $(eval $(call SetupJdkExecutable, BUILD_GTEST_LAUNCHER, \
         -I$(GTEST_FRAMEWORK_SRC)/googlemock \
         -I$(GTEST_FRAMEWORK_SRC)/googlemock/include, \
     LD_SET_ORIGIN := false, \
-    LDFLAGS_unix := -L$(JVM_OUTPUTDIR)/gtest $(call SET_SHARED_LIBRARY_ORIGIN), \
-    JDK_LIBS_unix := -ljvm, \
-    JDK_LIBS_windows := $(JVM_OUTPUTDIR)/gtest/objs/jvm.lib, \
+    LDFLAGS_unix := $(call SET_SHARED_LIBRARY_ORIGIN), \
+    JDK_LIBS := gtest:libjvm, \
     COPY_DEBUG_SYMBOLS := $(GTEST_COPY_DEBUG_SYMBOLS), \
     ZIP_EXTERNAL_DEBUG_SYMBOLS := false, \
 ))
-
-$(BUILD_GTEST_LAUNCHER): $(BUILD_GTEST_LIBJVM)
 
 TARGETS += $(BUILD_GTEST_LAUNCHER)
 

@@ -1282,6 +1282,11 @@ const int ObjectAlignmentInBytes = 8;
           "(0 means none)")                                                 \
           range(0, max_jint)                                                \
                                                                             \
+  product(intx, ServiceThreadCleanupInterval, 1000, DIAGNOSTIC,             \
+          "Wake the ServiceThread to do periodic cleanup checks every so "  \
+          "many milliseconds (0 means none)")                               \
+          range(0, max_jint)                                                \
+                                                                            \
   product(double, SafepointTimeoutDelay, 10000,                             \
           "Delay in milliseconds for option SafepointTimeout; "             \
           "supports sub-millisecond resolution with fractional values.")    \
@@ -1993,6 +1998,18 @@ const int ObjectAlignmentInBytes = 8;
                 "Unconditionally record nmethod dependencies on class "     \
                 "rewriting/transformation independently of the JVMTI "      \
                 "can_{retransform/redefine}_classes capabilities.")         \
+                                                                            \
+  product(bool, UseSecondarySupersCache, true, DIAGNOSTIC,                  \
+                "Use secondary supers cache during subtype checks.")        \
+                                                                            \
+  product(bool, UseSecondarySupersTable, false, DIAGNOSTIC,                 \
+                "Use hash table to lookup secondary supers.")               \
+                                                                            \
+  product(bool, VerifySecondarySupers, false, DIAGNOSTIC,                   \
+          "Check that linear and hashed secondary lookups return the same result.") \
+                                                                            \
+  product(bool, StressSecondarySupers, false, DIAGNOSTIC,                   \
+          "Use a terrible hash function in order to generate many collisions.") \
 
 // end of RUNTIME_FLAGS
 

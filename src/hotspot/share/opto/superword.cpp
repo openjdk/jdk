@@ -33,6 +33,7 @@
 #include "opto/memnode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/rootnode.hpp"
 #include "opto/superword.hpp"
 #include "opto/vectornode.hpp"
 #include "opto/movenode.hpp"
@@ -531,13 +532,13 @@ void SuperWord::find_adjacent_refs() {
       set_align_to_ref(align_to_mem_ref);
     }
 
-    VPointer align_to_ref_p(mem_ref, _vloop);
+    const VPointer& align_to_ref_p = vpointer(mem_ref);
     // Set alignment relative to "align_to_ref" for all related memory operations.
     for (int i = memops.size() - 1; i >= 0; i--) {
       MemNode* s = memops.at(i)->as_Mem();
       if (isomorphic(s, mem_ref) &&
            (!_do_vector_loop || same_origin_idx(s, mem_ref))) {
-        VPointer p2(s, _vloop);
+        const VPointer& p2 = vpointer(s);
         if (p2.comparable(align_to_ref_p)) {
           int align = memory_alignment(s, iv_adjustment);
           set_alignment(s, align);
@@ -593,11 +594,11 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
   // Count number of comparable memory ops
   for (uint i = 0; i < memops.size(); i++) {
     MemNode* s1 = memops.at(i)->as_Mem();
-    VPointer p1(s1, _vloop);
+    const VPointer& p1 = vpointer(s1);
     for (uint j = i+1; j < memops.size(); j++) {
       MemNode* s2 = memops.at(j)->as_Mem();
       if (isomorphic(s1, s2)) {
-        VPointer p2(s2, _vloop);
+        const VPointer& p2 = vpointer(s2);
         if (p1.comparable(p2)) {
           (*cmp_ct.adr_at(i))++;
           (*cmp_ct.adr_at(j))++;
@@ -618,7 +619,7 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
     if (s->is_Store()) {
       int vw = vector_width_in_bytes(s);
       assert(vw > 1, "sanity");
-      VPointer p(s, _vloop);
+      const VPointer& p = vpointer(s);
       if ( cmp_ct.at(j) >  max_ct ||
           (cmp_ct.at(j) == max_ct &&
             ( vw >  max_vw ||
@@ -641,7 +642,7 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
       if (s->is_Load()) {
         int vw = vector_width_in_bytes(s);
         assert(vw > 1, "sanity");
-        VPointer p(s, _vloop);
+        const VPointer& p = vpointer(s);
         if ( cmp_ct.at(j) >  max_ct ||
             (cmp_ct.at(j) == max_ct &&
               ( vw >  max_vw ||
@@ -714,7 +715,7 @@ int SuperWord::get_vw_bytes_special(MemNode* s) {
 //---------------------------get_iv_adjustment---------------------------
 // Calculate loop's iv adjustment for this memory ops.
 int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
-  VPointer align_to_ref_p(mem_ref, _vloop);
+  const VPointer& align_to_ref_p = vpointer(mem_ref);
   int offset = align_to_ref_p.offset_in_bytes();
   int scale  = align_to_ref_p.scale_in_bytes();
   int elt_size = align_to_ref_p.memory_size();
@@ -875,8 +876,8 @@ bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) const {
 
   // Adjacent memory references must have the same base, be comparable
   // and have the correct distance between them.
-  VPointer p1(s1->as_Mem(), _vloop);
-  VPointer p2(s2->as_Mem(), _vloop);
+  const VPointer& p1 = vpointer(s1->as_Mem());
+  const VPointer& p2 = vpointer(s2->as_Mem());
   if (p1.base() != p2.base() || !p1.comparable(p2)) return false;
   int diff = p2.offset_in_bytes() - p1.offset_in_bytes();
   return diff == data_size(s1);
@@ -1637,7 +1638,7 @@ const AlignmentSolution* SuperWord::pack_alignment_solution(const Node_List* pac
   assert(pack != nullptr && (pack->at(0)->is_Load() || pack->at(0)->is_Store()), "only load/store packs");
 
   const MemNode* mem_ref = pack->at(0)->as_Mem();
-  VPointer mem_ref_p(mem_ref, _vloop);
+  const VPointer& mem_ref_p = vpointer(mem_ref);
   const CountedLoopEndNode* pre_end = _vloop.pre_loop_end();
   assert(pre_end->stride_is_con(), "pre loop stride is constant");
 
@@ -2553,8 +2554,7 @@ bool SuperWord::output() {
         BasicType bt = velt_basic_type(cmp);
         const TypeVect* vt = TypeVect::make(bt, vlen);
         VectorNode* mask = new VectorMaskCmpNode(bol_test, cmp_in1, cmp_in2, bol_test_node, vt);
-        igvn().register_new_node_with_optimizer(mask);
-        phase()->set_ctrl(mask, phase()->get_ctrl(p->at(0)));
+        phase()->register_new_node_with_ctrl_of(mask, p->at(0));
         igvn()._worklist.push(mask);
 
         // VectorBlend
@@ -2628,8 +2628,7 @@ bool SuperWord::output() {
         assert(n->req() == 2, "only one input expected");
         Node* in = vector_opd(p, 1);
         Node* longval = VectorNode::make(opc, in, nullptr, vlen, T_LONG);
-        igvn().register_new_node_with_optimizer(longval);
-        phase()->set_ctrl(longval, phase()->get_ctrl(first));
+        phase()->register_new_node_with_ctrl_of(longval, first);
         vn = VectorCastNode::make(Op_VectorCastL2X, longval, T_INT, vlen);
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (VectorNode::is_convert_opcode(opc)) {
@@ -2669,8 +2668,7 @@ bool SuperWord::output() {
       }
 #endif
 
-      igvn().register_new_node_with_optimizer(vn);
-      phase()->set_ctrl(vn, phase()->get_ctrl(first));
+      phase()->register_new_node_with_ctrl_of(vn, first);
       for (uint j = 0; j < p->size(); j++) {
         Node* pm = p->at(j);
         igvn().replace_node(pm, vn);
@@ -2739,8 +2737,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     const TypeVect* vt = TypeVect::make(iv_bt, vlen);
     Node* vn = new PopulateIndexNode(iv(), igvn().intcon(1), vt);
     VectorNode::trace_new_vector(vn, "SuperWord");
-    igvn().register_new_node_with_optimizer(vn);
-    phase()->set_ctrl(vn, phase()->get_ctrl(opd));
+    phase()->register_new_node_with_ctrl_of(vn, opd);
     return vn;
   }
 
@@ -2760,16 +2757,14 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
       if (t != nullptr && t->is_con()) {
         juint shift = t->get_con();
         if (shift > mask) { // Unsigned cmp
-          cnt = ConNode::make(TypeInt::make(shift & mask));
-          igvn().register_new_node_with_optimizer(cnt);
+          cnt = igvn().intcon(shift & mask);
+          phase()->set_ctrl(cnt, phase()->C->root());
         }
       } else {
         if (t == nullptr || t->_lo < 0 || t->_hi > (int)mask) {
-          cnt = ConNode::make(TypeInt::make(mask));
-          igvn().register_new_node_with_optimizer(cnt);
+          cnt = igvn().intcon(mask);
           cnt = new AndINode(opd, cnt);
-          igvn().register_new_node_with_optimizer(cnt);
-          phase()->set_ctrl(cnt, phase()->get_ctrl(opd));
+          phase()->register_new_node_with_ctrl_of(cnt, opd);
         }
         if (!opd->bottom_type()->isa_int()) {
           assert(false, "int type only");
@@ -2778,8 +2773,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
       }
       // Move shift count into vector register.
       cnt = VectorNode::shift_count(p0->Opcode(), cnt, vlen, velt_basic_type(p0));
-      igvn().register_new_node_with_optimizer(cnt);
-      phase()->set_ctrl(cnt, phase()->get_ctrl(opd));
+      phase()->register_new_node_with_ctrl_of(cnt, opd);
       return cnt;
     }
     if (opd->is_StoreVector()) {
@@ -2797,8 +2791,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
        if (p0->bottom_type()->isa_long()) {
          p0_t = TypeLong::LONG;
          conv = new ConvI2LNode(opd);
-         igvn().register_new_node_with_optimizer(conv);
-         phase()->set_ctrl(conv, phase()->get_ctrl(opd));
+         phase()->register_new_node_with_ctrl_of(conv, opd);
        }
        vn = VectorNode::scalar2vector(conv, vlen, p0_t);
     } else {
@@ -2806,8 +2799,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
        vn = VectorNode::scalar2vector(opd, vlen, p0_t);
     }
 
-    igvn().register_new_node_with_optimizer(vn);
-    phase()->set_ctrl(vn, phase()->get_ctrl(opd));
+    phase()->register_new_node_with_ctrl_of(vn, opd);
     VectorNode::trace_new_vector(vn, "SuperWord");
     return vn;
   }
@@ -2836,8 +2828,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
       pk->add_opd(in2);
     }
   }
-  igvn().register_new_node_with_optimizer(pk);
-  phase()->set_ctrl(pk, phase()->get_ctrl(opd));
+  phase()->register_new_node_with_ctrl_of(pk, opd);
   VectorNode::trace_new_vector(pk, "SuperWord");
   return pk;
 }
@@ -3106,14 +3097,37 @@ VStatus VLoopBody::construct() {
     } else if (!post_visited.test(bb_idx(n))) {
       // cross or back arc
       const int old_length = stack.length();
+
+      // If a Load depends on the same memory state as a Store, we must make sure that
+      // the Load is ordered before the Store.
+      //
+      //      mem
+      //       |
+      //    +--+--+
+      //    |     |
+      //    |    Load (n)
+      //    |
+      //   Store (mem_use)
+      //
+      if (n->is_Load()) {
+        Node* mem = n->in(MemNode::Memory);
+        for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
+          Node* mem_use = mem->fast_out(i);
+          if (mem_use->is_Store() && _vloop.in_bb(mem_use) && !visited.test(bb_idx(mem_use))) {
+            stack.push(mem_use); // Ordering edge: Load (n) -> Store (mem_use)
+          }
+        }
+      }
+
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node* use = n->fast_out(i);
         if (_vloop.in_bb(use) && !visited.test(bb_idx(use)) &&
             // Don't go around backedge
             (!use->is_Phi() || n == _vloop.cl())) {
-          stack.push(use);
+          stack.push(use); // Ordering edge: n -> use
         }
       }
+
       if (stack.length() == old_length) {
         // There were no additional uses, post visit node now
         stack.pop(); // Remove node from stack
@@ -3310,7 +3324,7 @@ int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
     tty->print("SuperWord::memory_alignment within a vector memory reference for %d:  ", s->_idx); s->dump();
   }
 #endif
-  VPointer p(s, _vloop);
+  const VPointer& p = vpointer(s);
   if (!p.valid()) {
     NOT_PRODUCT(if(is_trace_superword_alignment()) tty->print_cr("SuperWord::memory_alignment: VPointer p invalid, return bottom_align");)
     return bottom_align;
@@ -3413,7 +3427,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   Node* orig_limit = pre_opaq->original_loop_limit();
   assert(orig_limit != nullptr && igvn().type(orig_limit) != Type::TOP, "");
 
-  VPointer align_to_ref_p(align_to_ref, _vloop);
+  const VPointer& align_to_ref_p = vpointer(align_to_ref);
   assert(align_to_ref_p.valid(), "sanity");
 
   // For the main-loop, we want the address of align_to_ref to be memory aligned
@@ -3617,7 +3631,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
       // safe to simply convert invar to an int and loose the upper 32
       // bit half.
       invar = new ConvL2INode(invar);
-      igvn().register_new_node_with_optimizer(invar);
+      phase()->register_new_node(invar, pre_ctrl);
       TRACE_ALIGN_VECTOR_NODE(invar);
    }
     if (is_sub) {
@@ -3625,8 +3639,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     } else {
       xboi = new AddINode(xboi, invar);
     }
-    igvn().register_new_node_with_optimizer(xboi);
-    phase()->set_ctrl(xboi, pre_ctrl);
+    phase()->register_new_node(xboi, pre_ctrl);
     TRACE_ALIGN_VECTOR_NODE(xboi);
   }
 
@@ -3636,11 +3649,11 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     // When the base() is top, we have no alignment guarantee at all.
     // Hence, we must now take the base into account for the calculation.
     Node* xbase = new CastP2XNode(nullptr, base);
-    igvn().register_new_node_with_optimizer(xbase);
+    phase()->register_new_node(xbase, pre_ctrl);
     TRACE_ALIGN_VECTOR_NODE(xbase);
 #ifdef _LP64
     xbase  = new ConvL2INode(xbase);
-    igvn().register_new_node_with_optimizer(xbase);
+    phase()->register_new_node(xbase, pre_ctrl);
     TRACE_ALIGN_VECTOR_NODE(xbase);
 #endif
     if (is_sub) {
@@ -3648,8 +3661,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     } else {
       xboi = new AddINode(xboi, xbase);
     }
-    igvn().register_new_node_with_optimizer(xboi);
-    phase()->set_ctrl(xboi, pre_ctrl);
+    phase()->register_new_node(xboi, pre_ctrl);
     TRACE_ALIGN_VECTOR_NODE(xboi);
   }
 
@@ -3658,8 +3670,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //    The division is executed as shift
   Node* log2_abs_scale = igvn().intcon(exact_log2(abs(scale)));
   Node* XBOI = new URShiftINode(xboi, log2_abs_scale);
-  igvn().register_new_node_with_optimizer(XBOI);
-  phase()->set_ctrl(XBOI, pre_ctrl);
+  phase()->register_new_node(XBOI, pre_ctrl);
   TRACE_ALIGN_VECTOR_NODE(log2_abs_scale);
   TRACE_ALIGN_VECTOR_NODE(XBOI);
 
@@ -3673,8 +3684,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   } else {
     XBOI_OP_old_limit = new AddINode(XBOI, old_limit);
   }
-  igvn().register_new_node_with_optimizer(XBOI_OP_old_limit);
-  phase()->set_ctrl(XBOI_OP_old_limit, pre_ctrl);
+  phase()->register_new_node(XBOI_OP_old_limit, pre_ctrl);
   TRACE_ALIGN_VECTOR_NODE(XBOI_OP_old_limit);
 
   // 3.2: Compute:
@@ -3685,8 +3695,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //    a bitmask operation.
   Node* mask_AW = igvn().intcon(AW-1);
   Node* adjust_pre_iter = new AndINode(XBOI_OP_old_limit, mask_AW);
-  igvn().register_new_node_with_optimizer(adjust_pre_iter);
-  phase()->set_ctrl(adjust_pre_iter, pre_ctrl);
+  phase()->register_new_node(adjust_pre_iter, pre_ctrl);
   TRACE_ALIGN_VECTOR_NODE(mask_AW);
   TRACE_ALIGN_VECTOR_NODE(adjust_pre_iter);
 
@@ -3699,8 +3708,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   } else {
     new_limit = new AddINode(old_limit, adjust_pre_iter);
   }
-  igvn().register_new_node_with_optimizer(new_limit);
-  phase()->set_ctrl(new_limit, pre_ctrl);
+  phase()->register_new_node(new_limit, pre_ctrl);
   TRACE_ALIGN_VECTOR_NODE(new_limit);
 
   // 5: Compute (15a, b):
@@ -3708,8 +3716,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   Node* constrained_limit =
     (stride > 0) ? (Node*) new MinINode(new_limit, orig_limit)
                  : (Node*) new MaxINode(new_limit, orig_limit);
-  igvn().register_new_node_with_optimizer(constrained_limit);
-  phase()->set_ctrl(constrained_limit, pre_ctrl);
+  phase()->register_new_node(constrained_limit, pre_ctrl);
   TRACE_ALIGN_VECTOR_NODE(constrained_limit);
 
   // 6: Hack the pre-loop limit

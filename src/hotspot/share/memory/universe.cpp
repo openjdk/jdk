@@ -111,9 +111,9 @@ static LatestMethodCache _throw_no_such_method_error_cache; // Unsafe.throwNoSuc
 static LatestMethodCache _do_stack_walk_cache;              // AbstractStackWalker.doStackWalk()
 
 // Known objects
-Klass* Universe::_typeArrayKlassObjs[T_LONG+1]        = { nullptr /*, nullptr...*/ };
-Klass* Universe::_objectArrayKlassObj                 = nullptr;
-Klass* Universe::_fillerArrayKlassObj                 = nullptr;
+TypeArrayKlass* Universe::_typeArrayKlasses[T_LONG+1] = { nullptr /*, nullptr...*/ };
+ObjArrayKlass* Universe::_objectArrayKlass            = nullptr;
+Klass* Universe::_fillerArrayKlass                    = nullptr;
 OopHandle Universe::_basic_type_mirrors[T_VOID+1];
 #if INCLUDE_CDS_JAVA_HEAP
 int Universe::_archived_basic_type_mirror_indices[T_VOID+1];
@@ -160,6 +160,9 @@ Array<u2>* Universe::_the_empty_short_array           = nullptr;
 Array<Klass*>* Universe::_the_empty_klass_array     = nullptr;
 Array<InstanceKlass*>* Universe::_the_empty_instance_klass_array  = nullptr;
 Array<Method*>* Universe::_the_empty_method_array   = nullptr;
+
+uintx Universe::_the_array_interfaces_bitmap = 0;
+uintx Universe::_the_empty_klass_bitmap      = 0;
 
 // These variables are guarded by FullGCALot_lock.
 debug_only(OopHandle Universe::_fullgc_alot_dummy_array;)
@@ -265,21 +268,21 @@ oop Universe::java_mirror(BasicType t) {
 
 void Universe::basic_type_classes_do(KlassClosure *closure) {
   for (int i = T_BOOLEAN; i < T_LONG+1; i++) {
-    closure->do_klass(_typeArrayKlassObjs[i]);
+    closure->do_klass(_typeArrayKlasses[i]);
   }
   // We don't do the following because it will confuse JVMTI.
-  // _fillerArrayKlassObj is used only by GC, which doesn't need to see
+  // _fillerArrayKlass is used only by GC, which doesn't need to see
   // this klass from basic_type_classes_do().
   //
-  // closure->do_klass(_fillerArrayKlassObj);
+  // closure->do_klass(_fillerArrayKlass);
 }
 
 void Universe::metaspace_pointers_do(MetaspaceClosure* it) {
-  it->push(&_fillerArrayKlassObj);
+  it->push(&_fillerArrayKlass);
   for (int i = 0; i < T_LONG+1; i++) {
-    it->push(&_typeArrayKlassObjs[i]);
+    it->push(&_typeArrayKlasses[i]);
   }
-  it->push(&_objectArrayKlassObj);
+  it->push(&_objectArrayKlass);
 
   it->push(&_the_empty_int_array);
   it->push(&_the_empty_short_array);
@@ -334,12 +337,12 @@ void Universe::serialize(SerializeClosure* f) {
   _virtual_machine_error.serialize(f);
 #endif
 
-  f->do_ptr(&_fillerArrayKlassObj);
+  f->do_ptr(&_fillerArrayKlass);
   for (int i = 0; i < T_LONG+1; i++) {
-    f->do_ptr(&_typeArrayKlassObjs[i]);
+    f->do_ptr(&_typeArrayKlasses[i]);
   }
 
-  f->do_ptr(&_objectArrayKlassObj);
+  f->do_ptr(&_objectArrayKlass);
   f->do_ptr(&_the_array_interfaces_array);
   f->do_ptr(&_the_empty_int_array);
   f->do_ptr(&_the_empty_short_array);
@@ -396,9 +399,9 @@ void Universe::genesis(TRAPS) {
       // Initialization of the fillerArrayKlass must come before regular
       // int-TypeArrayKlass so that the int-Array mirror points to the
       // int-TypeArrayKlass.
-      _fillerArrayKlassObj = TypeArrayKlass::create_klass(T_INT, "[Ljdk/internal/vm/FillerElement;", CHECK);
+      _fillerArrayKlass = TypeArrayKlass::create_klass(T_INT, "[Ljdk/internal/vm/FillerElement;", CHECK);
       for (int i = T_BOOLEAN; i < T_LONG+1; i++) {
-        _typeArrayKlassObjs[i] = TypeArrayKlass::create_klass((BasicType)i, CHECK);
+        _typeArrayKlasses[i] = TypeArrayKlass::create_klass((BasicType)i, CHECK);
       }
 
       ClassLoaderData* null_cld = ClassLoaderData::the_null_class_loader_data();
@@ -437,18 +440,23 @@ void Universe::genesis(TRAPS) {
       _the_array_interfaces_array->at_put(1, vmClasses::Serializable_klass());
     }
 
-    initialize_basic_type_klass(_fillerArrayKlassObj, CHECK);
+    if (UseSecondarySupersTable) {
+      Universe::_the_array_interfaces_bitmap = Klass::compute_secondary_supers_bitmap(_the_array_interfaces_array);
+      Universe::_the_empty_klass_bitmap      = Klass::compute_secondary_supers_bitmap(_the_empty_klass_array);
+    }
 
-    initialize_basic_type_klass(boolArrayKlassObj(), CHECK);
-    initialize_basic_type_klass(charArrayKlassObj(), CHECK);
-    initialize_basic_type_klass(floatArrayKlassObj(), CHECK);
-    initialize_basic_type_klass(doubleArrayKlassObj(), CHECK);
-    initialize_basic_type_klass(byteArrayKlassObj(), CHECK);
-    initialize_basic_type_klass(shortArrayKlassObj(), CHECK);
-    initialize_basic_type_klass(intArrayKlassObj(), CHECK);
-    initialize_basic_type_klass(longArrayKlassObj(), CHECK);
+    initialize_basic_type_klass(_fillerArrayKlass, CHECK);
 
-    assert(_fillerArrayKlassObj != intArrayKlassObj(),
+    initialize_basic_type_klass(boolArrayKlass(), CHECK);
+    initialize_basic_type_klass(charArrayKlass(), CHECK);
+    initialize_basic_type_klass(floatArrayKlass(), CHECK);
+    initialize_basic_type_klass(doubleArrayKlass(), CHECK);
+    initialize_basic_type_klass(byteArrayKlass(), CHECK);
+    initialize_basic_type_klass(shortArrayKlass(), CHECK);
+    initialize_basic_type_klass(intArrayKlass(), CHECK);
+    initialize_basic_type_klass(longArrayKlass(), CHECK);
+
+    assert(_fillerArrayKlass != intArrayKlass(),
            "Internal filler array klass should be different to int array Klass");
   } // end of core bootstrapping
 
@@ -472,15 +480,17 @@ void Universe::genesis(TRAPS) {
   // ordinary object arrays, _objectArrayKlass will be loaded when
   // SystemDictionary::initialize(CHECK); is run. See the extra check
   // for Object_klass_loaded in objArrayKlassKlass::allocate_objArray_klass_impl.
-  _objectArrayKlassObj = InstanceKlass::
-    cast(vmClasses::Object_klass())->array_klass(1, CHECK);
+  {
+    Klass* oak = vmClasses::Object_klass()->array_klass(CHECK);
+    _objectArrayKlass = ObjArrayKlass::cast(oak);
+  }
   // OLD
   // Add the class to the class hierarchy manually to make sure that
   // its vtable is initialized after core bootstrapping is completed.
   // ---
   // New
   // Have already been initialized.
-  _objectArrayKlassObj->append_to_sibling_list();
+  _objectArrayKlass->append_to_sibling_list();
 
   #ifdef ASSERT
   if (FullGCALot) {

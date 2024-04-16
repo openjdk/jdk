@@ -36,7 +36,6 @@ ifeq ($(call isTargetOs, windows), true)
       EXTRA_HEADER_DIRS := \
           jdk.jdwp.agent:include \
           jdk.jdwp.agent:libjdwp/export, \
-      JDK_LIBS := $(JDKLIB_LIBS), \
   ))
 
   TARGETS += $(BUILD_LIBDT_SHMEM)
