@@ -5243,7 +5243,6 @@ class StubGenerator: public StubCodeGenerator {
     __ blt(buff, buf_end, L_nmax_loop);
 
     const int remainder = ((NMAX / 16) % unroll);
-    assert(remainder < 8, "There are not enough vector registers in unroll_regs");
     // Do the calculations for remaining 16*remainder bytes
     generate_updateBytesAdler32_unroll(buff, s1, s2, remainder, vtable, vbytes,
       vzero, unroll_regs, temp0, temp1, temp2, vtemp1, vtemp2);
