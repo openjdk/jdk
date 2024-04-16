@@ -108,8 +108,8 @@ define CreateDynamicLibraryOrExecutableMicrosoft
 	  $$(CHMOD) +x $$($1_TARGET)
         endif
         ifneq ($$($1_MANIFEST), )
-	    $$($1_MT) -nologo -manifest $$($1_MANIFEST) \
-	        -identity:"$$($1_NAME).exe, version=$$($1_MANIFEST_VERSION)" \
-	        -outputresource:$$@;#1
+	  $$($1_MT) -nologo -manifest $$($1_MANIFEST) \
+	      -identity:"$$($1_NAME).exe, version=$$($1_MANIFEST_VERSION)" \
+	      -outputresource:$$@;#1
         endif
 endef
