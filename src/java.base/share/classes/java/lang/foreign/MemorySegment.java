@@ -610,7 +610,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *     <li>Heap segments:
             derived from the segment {@linkplain #address() address()}
             and the type of the <a href="#segment-alignment">backing heap storage</a>.
-     *     <li>Native:
+     *     <li>Native segments:
      *     the {@linkplain MemorySegment#address() address()} function.</li>
      * </ul>
      * <p>
