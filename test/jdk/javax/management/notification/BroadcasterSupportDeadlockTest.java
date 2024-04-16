@@ -61,8 +61,7 @@ public class BroadcasterSupportDeadlockTest {
                 } catch (Exception e) {
                     e.printStackTrace(System.out);
                 } finally {
-                    System.out.println("TEST INCORRECT: block returned");
-                    System.exit(1);
+                    throw new RuntimeException("TEST INCORRECT: block returned");
                 }
             }
         };
@@ -120,7 +119,7 @@ public class BroadcasterSupportDeadlockTest {
         java.util.Map<Thread,StackTraceElement[]> traces = Thread.getAllStackTraces();
         showStackTrace("Thread 1", traces.get(t1));
         showStackTrace("Thread 2", traces.get(t2));
-        System.exit(1);
+        throw new RuntimeException("TEST FAILED");
     }
 
     private static void showStackTrace(String title,
@@ -152,9 +151,7 @@ public class BroadcasterSupportDeadlockTest {
                     semaphore.release();
                     lock.wait(); // block forever
                 } catch (InterruptedException e) {
-                    System.out.println("TEST INCORRECT: lock interrupted:");
-                    e.printStackTrace(System.out);
-                    System.exit(1);
+                    throw new RuntimeException("TEST INCORRECT: lock interrupted");
                 }
             }
         }
