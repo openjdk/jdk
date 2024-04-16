@@ -174,8 +174,8 @@ ssize_t ShenandoahSimpleBitMap::find_next_consecutive_bits(size_t num_bits, ssiz
   }
 }
 
-ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(
-  const size_t num_bits, ssize_t last_idx, const ssize_t boundary_idx) const {
+ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(const size_t num_bits,
+                                                           ssize_t last_idx, const ssize_t boundary_idx) const {
   assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
 
   // Stop looking if there are not num_bits remaining in probe space.
