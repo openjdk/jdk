@@ -160,7 +160,7 @@ public class FileCredentialsCache extends CredentialsCache
 
     synchronized void load() throws IOException, KrbException {
         try (FileInputStream fis = new FileInputStream(localCacheName);
-             CCacheInputStream cis = new CCacheInputStream(fis)) {
+                CCacheInputStream cis = new CCacheInputStream(fis)) {
             version = cis.readVersion();
             if (version == KRB5_FCC_FVNO_4) {
                 tag = cis.readTag();

@@ -147,9 +147,9 @@ public class Klist {
                 CredentialsCache cc = CredentialsCache.getInstance();
                 target = cc;
                 name = cc.cacheName();
-            } else
+            } else {
                 target = CredentialsCache.getInstance(name);
-
+            }
             if (target != null) {
                 return displayCache();
             } else {
