@@ -5042,8 +5042,8 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
-  void generate_updateBytesAdler32_accum(Register buff, VectorRegister vzero,
-    VectorRegister vbytes, VectorRegister vs1acc, VectorRegister vs2acc, VectorRegister vtable) {
+  void generate_updateBytesAdler32_accum(Register buff, VectorRegister vzero, VectorRegister vbytes,
+                                         VectorRegister vs1acc, VectorRegister vs2acc, VectorRegister vtable) {
     // Below is a vectorized implementation of updating s1 and s2 for 16 bytes.
     // We use b1, b2, ..., b16 to denote the 16 bytes loaded in each iteration.
     // In non-vectorized code, we update s1 and s2 as:
@@ -5071,8 +5071,8 @@ class StubGenerator: public StubCodeGenerator {
     __ vwredsumu_vs(vs1acc, vbytes, vzero);
 
     // vs2acc = { (b1 * 16) + (b2 * 15) + (b3 * 14) + ... + (b8 * 9) }
-    // vs2acc + 1 register = { (b9 * 8) + (b10 * 7) + (b11 * 6) + ... + (b16 * 1) }
-    __ vwmulu_vv(vs2acc, vtable, vbytes); // vs2acc + 1 register now contains the second part of multiplication
+    // vs2acc->successor() = { (b9 * 8) + (b10 * 7) + (b11 * 6) + ... + (b16 * 1) }
+    __ vwmulu_vv(vs2acc, vtable, vbytes); // vs2acc->successor() now contains the second part of multiplication
   }
 
   /***
