@@ -51,17 +51,17 @@ final class JepDemo {
 
     static
     class Bar {
-        // 1. Declare a Lazy field
+        // 1. Declare a stable value field
         private static final StableValue<Logger> LOGGER = StableValue.of();
 
         static Logger logger() {
 
             if (!LOGGER.isSet()) {
-                // 2. Set the lazy value _after_ the field was declared
+                // 2. Set the stable value _after_ the field was declared
                 return LOGGER.setIfUnset(Logger.getLogger("com.foo.Bar"));
             }
 
-            // 3. Access the lazy value with as-declared-final performance
+            // 3. Access the stable value with as-declared-final performance
             return LOGGER.orThrow();
         }
 
@@ -69,11 +69,11 @@ final class JepDemo {
 
     static
     class Bar2 {
-        // 1. Declare a Lazy field
+        // 1. Declare a stable value field
         private static final StableValue<Logger> LOGGER = StableValue.of();
 
         static Logger logger() {
-            // 2. Access the lazy value with as-declared-final performance
+            // 2. Access the stable value with as-declared-final performance
             //    (single evaluation made before the first access)
             return LOGGER.computeIfUnset( () -> Logger.getLogger("com.foo.Bar") );
         }
@@ -81,15 +81,15 @@ final class JepDemo {
 
     static
     class Bar3 {
-        // 1. Declare a backing lazy value
-        private static final StableValue<Logger> LAZY = StableValue.of();
+        // 1. Declare a backing stable value
+        private static final StableValue<Logger> STABLE = StableValue.of();
 
-        // 2. Declare a memoized (cached) Supplier backed by the lazy value
-        private static final Supplier<Logger> LOGGER = () -> LAZY
+        // 2. Declare a memoized (cached) Supplier backed by the stable value
+        private static final Supplier<Logger> LOGGER = () -> STABLE
                 .computeIfUnset( () -> Logger.getLogger("com.foo.Bar") );
 
         static Logger logger() {
-            // 2. Access the memoized value with as-declared-final performance
+            // 2. Access the memoized suppler with as-declared-final performance
             //    (evaluation made before the first access)
             return LOGGER.get();
         }
@@ -98,8 +98,8 @@ final class JepDemo {
 /*    static
     class Bar4 {
         // 1. Declare a memoized (cached) Supplier (backed by an
-        //    internal lazy value) that is invoked at most once
-        private static final Supplier<Logger> LOGGER = Lazy.asSupplier(
+        //    internal stable value) that is invoked at most once
+        private static final Supplier<Logger> LOGGER = StableValue.asSupplier(
                         () -> Logger.getLogger("com.foo.Bar"));
 
         static Logger logger() {
@@ -132,7 +132,7 @@ final class JepDemo {
     static
     class MapDemo {
 
-        // 1. Declare a lazy map of loggers with two allowable keys:
+        // 1. Declare a stable map of loggers with two allowable keys:
         //    "com.foo.Bar" and "com.foo.Baz"
         static final Map<String, StableValue<Logger>> LOGGERS =
                 StableValue.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
@@ -230,7 +230,7 @@ final class JepDemo {
 
             private static final int SIZE = 8;
 
-            // 1. Declare a lazy list of default error pages to serve up
+            // 1. Declare a stable list of default error pages to serve up
             private static final List<StableValue<String>> MESSAGES = StableValue.ofList(SIZE);
 
             // 2. Define a function that is to be called the first
@@ -267,11 +267,11 @@ final class JepDemo {
 
         private static final int SIZE = 8;
 
-        // 1. Declare a lazy list of default error pages to serve up
+        // 1. Declare a stable list of default error pages to serve up
         private static final List<StableValue<String>> ERROR_PAGES =
                 StableValue.ofList(SIZE);
 
-        // 2. Declare a memoized IntFunction backed by the lazy list
+        // 2. Declare a memoized IntFunction backed by the stable list
         private static final IntFunction<String> ERROR_FUNCTION =
                 i -> StableValue.computeIfUnset(ERROR_PAGES, i, ListDemo2::readFromFile);
 

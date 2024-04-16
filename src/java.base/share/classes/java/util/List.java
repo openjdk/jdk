@@ -25,10 +25,6 @@
 
 package java.util;
 
-import jdk.internal.javac.PreviewFeature;
-
-import java.io.Serializable;
-import java.util.function.IntFunction;
 import java.util.function.UnaryOperator;
 
 /**
@@ -1194,5 +1190,4 @@ public interface List<E> extends SequencedCollection<E> {
     static <E> List<E> copyOf(Collection<? extends E> coll) {
         return ImmutableCollections.listCopy(coll);
     }
-
 }

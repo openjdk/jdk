@@ -178,7 +178,7 @@ class Field extends AccessibleObject implements Member {
             if (StableValue.class.isAssignableFrom(type) && Modifier.isFinal(modifiers)) {
                 throw newInaccessibleObjectException(
                         "Unable to make field " + this + " accessable: " +
-                                "java.lang.LazyValue fields are trusted");
+                                "java.lang.StableValue fields are trusted");
             }
             checkCanSetAccessible(Reflection.getCallerClass());
         }

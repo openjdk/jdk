@@ -25,11 +25,6 @@
 
 package java.util;
 
-import jdk.internal.javac.PreviewFeature;
-
-import java.io.Serializable;
-import java.util.function.Predicate;
-
 /**
  * A collection that contains no duplicate elements.  More formally, sets
  * contain no pair of elements {@code e1} and {@code e2} such that
@@ -739,5 +734,4 @@ public interface Set<E> extends Collection<E> {
             return (Set<E>)Set.of(new HashSet<>(coll).toArray());
         }
     }
-
 }

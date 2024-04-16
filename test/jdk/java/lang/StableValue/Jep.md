@@ -1,9 +1,9 @@
-# Lazy Values & Collections (Preview)
+# Stable Values & Collections (Preview)
 
 ## Summary
 
-Introduce a _Lazy Values & Collections_ API, which provides immutable value holders where elements are initialized
-_at most once_. Lazy Values & Collections offer the performance and safety benefits of final fields, while offering
+Introduce a _Stable Values & Collections_ API, which provides immutable value holders where elements are initialized
+_at most once_. Stable Values & Collections offer the performance and safety benefits of final fields, while offering
 greater flexibility as to the timing of initialization. This is a [preview API](https://openjdk.org/jeps/12).
 
 ## Goals
@@ -200,109 +200,108 @@ _all_ client and 3rd-party Java code (and not the JDK alone).
 
 ### Preview feature
 
-Lazy Values & Collections is a [preview API](https://openjdk.org/jeps/12), disabled by default.
-To use the Lazy Value and Collections APIs, the JVM flag `--enable-preview` must be passed in, as follows:
+Stable Values & Collections is a [preview API](https://openjdk.org/jeps/12), disabled by default.
+To use the Stable Value and Collections APIs, the JVM flag `--enable-preview` must be passed in, as follows:
 
-- Compile the program with `javac --release 23 --enable-preview Main.java` and run it with `java --enable-preview Main`; or,
+- Compile the program with `javac --release 24 --enable-preview Main.java` and run it with `java --enable-preview Main`; or,
 
-- When using the source code launcher, run the program with `java --source 23 --enable-preview Main.java`; or,
+- When using the source code launcher, run the program with `java --source 24 --enable-preview Main.java`; or,
 
 - When using `jshell`, start it with `jshell --enable-preview`.
 
 ### Outline
 
-The Lazy Values & Collections API defines functions and an interface so that client code in libraries and applications can
+The Stable Values & Collections API defines functions and an interface so that client code in libraries and applications can
 
-- Define and use lazy (scalar) values: 
-  - [`LazyValue`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/LazyValue.html)
+- Define and use stable (scalar) values: 
+  - [`StableValue`](https://cr.openjdk.org/~pminborg/stable-values/api/java.base/java/lang/StableValue.html)
 - Define collections: 
-  - [`LazyValue.ofList(int size)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/LazyValue.html#ofList(int)), 
-  - [`LazyValue.ofMap(Set<K> keys)`](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/LazyValue.html#ofMap(java.util.Set))
+  - [`StableValue.ofList(int size)`](https://cr.openjdk.org/~pminborg/stable-values/api/java.base/java/lang/StableValue.html#ofList(int)), 
+  - [`StableValue.ofMap(Set<K> keys)`](https://cr.openjdk.org/~pminborg/stable-values/api/java.base/java/lang/StableValue.html#ofMap(java.util.Set))
 
-The Lazy Values & Collections API resides in the [java.lang](https://cr.openjdk.org/~pminborg/lazy/api/java.base/java/lang/package-summary.html) package of the [java.base](https://cr.openjdk.org/~pminborg/lazy/api/java.base/module-summary.html) module.
+The Stable Values & Collections API resides in the [java.lang](https://cr.openjdk.org/~pminborg/stable-values/api/java.base/java/lang/package-summary.html) package of the [java.base](https://cr.openjdk.org/~pminborg/stable-values/api/java.base/module-summary.html) module.
 
-### Lazy values
+### Stable values
 
-A _lazy value_ is a holder object that is set at most once whereby it
+A _stable value_ is a holder object that is set at most once whereby it
 goes from "unset" to "set". It is expressed as an object of type `java.lang.StableValue`,
 which, like `Future`, is a holder for some computation that may or may not have occurred yet.
-Fresh (unset) `LazyValue` instances are created via the factory method `LazyValue::of`:
+Fresh (unset) `StableValue` instances are created via the factory method `StableValue::of`:
 
 ```
 class Bar {
-    // 1. Declare a Lazy field
-    private static final LazyValue<Logger> LOGGER = LazyValue.of();
+    // 1. Declare a Stable field
+    private static final StableValue<Logger> LOGGER = StableValue.of();
 
     static Logger logger() {
 
         if (!LOGGER.isSet()) {
-            // 2. Set the lazy value _after_ the field was declared
+            // 2. Set the stable value _after_ the field was declared
             return LOGGER.setIfUnset(Logger.getLogger("com.foo.Bar"));
         }
         
-        // 3. Access the lazy value with as-declared-final performance
+        // 3. Access the stable value with as-declared-final performance
         return LOGGER.orThrow();
     }
 }
 ```
-Setting a lazy value is an atomic, thread-safe operation, i.e. `LazyValue::setIfUnset`,
-either results in successfully initializing the `LazyValue` to a value, or returns
-an already set value. This is true regardless of whether the lazy value is accessed by a single
+Setting a stable value is an atomic, thread-safe operation, i.e. `StableValue::setIfUnset`,
+either results in successfully initializing the `StableValue` to a value, or returns
+an already set value. This is true regardless of whether the stable value is accessed by a single
 thread, or concurrently, by multiple threads.
 
-A lazy value may be set to `null` which then will be considered its set value.
-Null-averse applications can also use `Lazy<Optional<V>>`.
+A stable value may be set to `null` which then will be considered its set value.
+Null-averse applications can also use `StableValue<Optional<V>>`.
 
 In many ways, this is similar to the holder-class idiom in the sense it offers the same
 performance and constant-folding characteristics. It also incurs a lower static footprint
 since no additional class is required. 
 
 However, there is _an important distinction_; several threads may invoke the `Logger::getLogger`
-method if they call the `logger()` method at about the same time. Even though `LazyValue` will guarantee, that only
+method simultaneously if they call the `logger()` method at about the same time. Even though `StableValue` will guarantee, that only
 one of these results will ever be exposed to the many competing threads, there might be applications where
 it is a requirement, that a supplying method is only called once. 
 
 In such cases, it is possible to compute and set an unset value on-demand as shown in this example in which case
-`LazyValue` will uphold the invoke-at-most-once invariant for the provided `Supplier`:
+`StableValue` will uphold the invoke-at-most-once invariant for the provided `Supplier`:
 
 ```
 class Bar {
-    // 1. Declare a Lazy field
-    private static final LazyValue<Logger> LOGGER = LazyValue.of();
+    // 1. Declare a stable field
+    private static final StableValue<Logger> LOGGER = StableValue.of();
     
     static Logger logger() {
-        // 2. Access the lazy value with as-declared-final performance
+        // 2. Access the stable value with as-declared-final performance
         //    (single evaluation made before the first access)
         return LOGGER.computeIfUnset( () -> Logger.getLogger("com.foo.Bar") );
     }
 }
 ```
 
-`LazyValue` instances holding reference values are faster to retrieve than reference values
-managed via double-checked-idiom constructs as lazy values rely on explicit memory barriers
-rather than performing volatile access on each retrieval operation. In addition, lazy values
-are eligible for constant folding optimizations.
+When retrieving values, `StableValue` instances holding reference values are faster 
+than reference values managed via double-checked-idiom constructs as stable values rely
+on explicit memory barriers rather than performing volatile access on each retrieval
+operation. In addition, stable values are eligible for constant folding optimizations.
 
-### Lazy collections
+### Stable collections
 
-While initializing a single field of type `LazyValue` is cheap (remember, creating a new `LazyValue`
+While initializing a single field of type `StableValue` is cheap (remember, creating a new `StableValue`
 object only creates the *holder* for the value), this (small) initialization cost has
-to be paid for each field of type `LazyValue` declared by the class. As a result, the class static
-and/or instance initializer will keep growing with the number of `LazyValue` fields, thus degrading performance.
+to be paid for each field of type `StableValue` declared by the class. As a result, the class static
+and/or instance initializer will keep growing with the number of `StableValue` fields, thus degrading performance.
 
-To handle these cases, the Lazy Values & Collections API provides constructs that allow the creation and handling of a
-*`List` of lazily computed elements*. Such a `List` is a list whose elements are created lazily on-demand
-before a particular element is first accessed. Lists of lazily computed values are objects of type `List<LazyValue<V>>`.
-Consequently, each element in the list enjoys the same properties as a `LazyValue` but may require fewer resources.
+To handle these cases, the Stable Values & Collections API provides constructs that allow the creation and handling of a
+*`List` of stable elements*. Such a `List` is a list whose stable-value elements are created lazily on-demand when a particular element is accessed. Lists of lazily computed values are objects of type `List<StableValue<V>>`.
+Consequently, each element in the list enjoys the same properties as a `StableValue` but may require fewer resources.
 
-Like a `LazyValue` object, a lazily computed `List` object is created via a factory method by providing the size
+Like a `StableValue` object, a `List` of stable value elements is created via a factory method by providing the size
 of the desired `List`:
 
 ```
-static <V> List<LazyValue<V>> LazyValue.ofList(int size) { ... }
+static <V> List<StableValue<V>> StableValue.ofList(int size) { ... }
 ```
 
-This allows for improving the handling of lists with lazily computed values and enables a much better
+This allows for improving the handling of lists with stable values and enables a much better
 implementation of the `ErrorMessages` class mentioned earlier. Here is an improved version
 of the class which is now using the newly proposed API:
 
@@ -311,8 +310,8 @@ class ErrorMessages {
 
     private static final int SIZE = 8;
 
-    // 1. Declare a lazy list of default error pages to serve up
-    private static final List<LazyValue<String>> MESSAGES = LazyValue.ofList(SIZE);
+    // 1. Declare a stable list of default error pages to serve up
+    private static final List<StableValue<String>> MESSAGES = StableValue.ofList(SIZE);
 
     // 2. Define a function that is to be called the first
     //    time a particular message number is referenced
@@ -325,9 +324,9 @@ class ErrorMessages {
     }
 
     static String errorPage(int messageNumber) {
-        // 3. Access the memoized list element with as-declared-final performance
+        // 3. Access the stable list element with as-declared-final performance
         //    (evaluation made before the first access)
-        return LazyValue.computeIfUnset(MESSAGES, messageNumber, ErrorMessages::readFromFile);
+        return StableValue.computeIfUnset(MESSAGES, messageNumber, ErrorMessages::readFromFile);
     }
     
 }
@@ -345,51 +344,52 @@ String errorPage = ErrorMessages.errorPage(2);
 // </html>
 ```
 
-Note how there's only one field of type `List<LazyValue<String>>` to initialize even though every computation is
+Note how there's only one field of type `List<StableValue<String>>` to initialize even though every computation is
 performed independently of the other element of the list when accessed (i.e. no blocking will occur across threads 
 computing distinct elements simultaneously). Also, the `IntSupplier` provided at computation is only invoked 
-at most once for each distinct index. The Lazy Values & Collections API allows modeling this cleanly, while
+at most once for each distinct index. The Stable Values & Collections API allows modeling this cleanly, while
 still preserving good constant-folding guarantees and integrity of updates in the case of multi-threaded access.
 
-It should be noted that even though a lazily computed list might mutate its internal state upon external access, it 
-is _still shallowly immutable_ because _no first-level change can ever be observed by an external entity_. This is
-similar to other immutable classes, such as `String` (which internally caches its `hash` value), where they might rely
-on mutable internal states that are carefully kept internally and that never shine through to the outside world.
+It should be noted that even though a lazily computed list of stable elements might mutate its internal state
+upon external access, it is _still shallowly immutable_ because _no first-level change can ever be observed by
+an external observer_. This is similar to other immutable classes, such as `String` (which internally caches its
+`hash` value), where they might rely on mutable internal states that are carefully kept internally and that never
+shine through to the outside world.
 
-Just as a `List` can be lazily computed, a `Map` of lazily computed values can also be defined and used similarly.
-In the example below, we lazily compute a map's values for an enumerated collection of pre-defined keys:
+Just as a `List` can be lazily computed, a `Map` of lazily computed stable values can also be defined and used similarly.
+In the example below, we lazily compute a map's stable values for an enumerated collection of pre-defined keys:
 
 ```
 class MapDemo {
 
-    // 1. Declare a lazy map of loggers with two allowable keys:
+    // 1. Declare a stable map of loggers with two allowable keys:
     //    "com.foo.Bar" and "com.foo.Baz"
-    static final Map<String, LazyValue<Logger>> LOGGERS =
-            LazyValue.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
+    static final Map<String, StableValue<Logger>> LOGGERS =
+            StableValue.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
 
     // 2. Access the memoized map with as-declared-final performance
     //    (evaluation made before the first access)
     static Logger logger(String name) {
-        return LazyValue.computeIfUnset(LOGGERS, name, Logger::getLogger);
+        return StableValue.computeIfUnset(LOGGERS, name, Logger::getLogger);
     }
 }
 ```
 
-This concept allows declaring a large number of lazy values which can be easily retrieved using arbitrarily, but
+This concept allows declaring a large number of stable values which can be easily retrieved using arbitrarily, but
 pre-specified, keys in a resource-efficient and performant way. For example, high-performance, non-evicting caches
 may now be easily and reliably realized.
 
-Providing an `EnumSet<K>` to the `LazyValue::ofMap` factory will unlock additional storage and performance
-optimizations for the returned lazy map.
+Providing an `EnumSet<K>` to the `StableValue::ofMap` factory will unlock additional storage and performance
+optimizations for the returned map with stable values.
 
-It is worth remembering, that the lazy collections all promise the function provided at computation
+It is worth remembering, that the stable collections all promise the function provided at computation
 (used to lazily compute elements or values) is invoked at most once per index or key; even
 though used from several threads.
 
 ### Memoized functions
 
-So far, we have talked about the fundamental features of Lazy Values & Collections as securely
-wrapped `@Stable` value holders. However, it has become apparent, lazy primitives are amenable
+So far, we have talked about the fundamental features of Stable Values & Collections as securely
+wrapped `@Stable` value holders. However, it has become apparent, stable primitives are amenable
 to composition with other constructs in order to create more high-level and powerful features.
 
 [Memoized functions](https://en.wikipedia.org/wiki/Memoization) are functions where the output for a particular 
@@ -401,13 +401,13 @@ in a multi-threaded environment:
 ```
 class Memoized {
 
-    // 1. Declare a lazily computed map
-    private static final Map<String, LazyValue<Logger>> MAP =
-            LazyValue.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
+    // 1. Declare a map with stable values
+    private static final Map<String, StableValue<Logger>> MAP =
+            StableValue.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
 
-    // 2. Declare a memoized (cached) function backed by the lazily computed map
+    // 2. Declare a memoized (cached) function backed by the stable map
     private static final Function<String, Logger> LOGGERS =
-            n -> LazyValue.computeIfUnset(MAP, n, Logger::getLogger);
+            n -> StableValue.computeIfUnset(MAP, n, Logger::getLogger);
 
     ...
 
@@ -428,16 +428,16 @@ It should be noted that the enumerated collection of keys given at creation time
 constitutes the only valid input keys for the memoized function.
 
 Similarly to how a `Function` can be memoized using a backing lazily computed map, the same pattern
-can be used for an `IntFunction` that will record its cached value in a backing _lazy list_:
+can be used for an `IntFunction` that will record its cached value in a backing _stable list_:
 
 ```
-// 1. Declare a lazy list of default error pages to serve up
-private static final List<LazyValue<String>> ERROR_PAGES = 
-        LazyValue.ofList(SIZE);
+// 1. Declare a stable list of default error pages to serve up
+private static final List<StableValue<String>> ERROR_PAGES = 
+        StableValue.ofList(SIZE);
 
-// 2. Declare a memoized IntFunction backed by the lazy list
+// 2. Declare a memoized IntFunction backed by the stable list
 private static final IntFunction<String> ERROR_FUNCTION =
-        i -> LazyValue.computeIfUnset(ERROR_PAGES, i, ListDemo2::readFromFile);
+        i -> StableValue.computeIfUnset(ERROR_PAGES, i, ListDemo::readFromFile);
 
 // 3. Define a function that is to be called the first
 //    time a particular message number is referenced
@@ -460,8 +460,8 @@ String msg =  ERROR_FUNCTION.apply(2);
 // </html>
 ```
 
-The same paradigm can be used for creating a memoized `Supplier` (backed by a single `LazyValue` instance) or 
-a memoized `Predicate`(backed by a lazily computed `Map<K, LazyValue<Boolean>>`). An astute reader will be able to
+The same paradigm can be used for creating a memoized `Supplier` (backed by a single `StableValue` instance) or 
+a memoized `Predicate`(backed by a lazily computed `Map<K, StableValue<Boolean>>`). An astute reader will be able to
 write such constructs in a few lines. 
 
 ## Alternatives
