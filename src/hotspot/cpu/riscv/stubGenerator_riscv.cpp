@@ -5083,7 +5083,7 @@ class StubGenerator: public StubCodeGenerator {
     assert(unroll_factor <= 8, "Not enough vector registers in unroll_regs");
     // Below is partial loop unrolling for updateBytesAdler32:
     // First, the unroll*16 bytes are processed, the results are in
-    // unroll_regs[i], unroll_regs[i + 8] and unroll_regs[i + 8]->successor()
+    // v4, v5, v6, ..., v25, v26, v27
     // Second, the final summation for unrolled part of the loop should be performed
 
     __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
@@ -5148,11 +5148,6 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister vbytes = v1;
     VectorRegister vtable = v2;
     VectorRegister vzero = v3;
-    VectorRegister work_regs[] = {
-      v4, v5, v6, v7, v8, v9, v10, v11,
-      v12, v13, v14, v15, v16, v17, v18, v19,
-      v20, v21, v22, v23, v24, v25, v26, v27
-    };
     VectorRegister unroll_regs[] = {
       v4, v5, v6, v7, v8, v9, v10, v11,
       v12, v14, v16, v18, v20, v22, v24, v26
@@ -5185,11 +5180,6 @@ class StubGenerator: public StubCodeGenerator {
 
     __ mv(base, BASE);
     __ mv(nmax, NMAX);
-
-    // Zeroing all work registers
-    for (int i = 0; i < 24; i++) {
-      __ vmv_v_i(work_regs[i], 0);
-    }
 
     __ srli(s2, adler, 16); // s2 = ((adler >> 16) & 0xffff)
     // s1 is initialized to the lower 16 bits of adler
