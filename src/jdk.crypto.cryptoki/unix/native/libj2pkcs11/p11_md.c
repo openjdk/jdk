@@ -210,9 +210,6 @@ setModuleData:
         }
     } else if (interface != NULL) {
         moduleData->ckFunctionListPtr = interface->pFunctionList;
-        if (((CK_VERSION *)moduleData->ckFunctionListPtr)->major == 3) {
-            moduleData->ckFunctionList30Ptr = interface->pFunctionList;
-        }
     } else {
         // should never happen
         p11ThrowIOException(env, "ERROR: No function list ptr found");
