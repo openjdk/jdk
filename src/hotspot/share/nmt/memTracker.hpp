@@ -27,8 +27,8 @@
 
 #include "nmt/mallocTracker.hpp"
 #include "nmt/nmtCommon.hpp"
-#include "nmt/threadStackTracker.hpp"
 #include "nmt/nmtMemoryFileTracker.hpp"
+#include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/threadCritical.hpp"
@@ -188,6 +188,7 @@ class MemTracker : AllStatic {
     MemoryFileTracker::Instance::Locker lock;
     MemoryFileTracker::Instance::allocate_memory(device, offset, size, flag, stack);
   }
+
   static inline void free_memory_in(MemoryFileTracker::MemoryFile* device,
                                         size_t offset, size_t size) {
     assert_post_init();

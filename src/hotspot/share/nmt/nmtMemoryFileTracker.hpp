@@ -41,11 +41,13 @@
 // A typical example of such a device is a memory mapped file.
 class MemoryFileTracker {
   friend class MemoryFileTrackerTest;
+
   // Provide caching of stacks.
   NativeCallStackStorage _stack_storage;
 
   // Each device has its own memory space.
   using DeviceSpace = VMATree;
+
 public:
   class MemoryFile : public CHeapObj<mtNMT> {
     friend MemoryFileTracker;
