@@ -32,7 +32,6 @@ extern "C" {
 #define STATUS_FAILED 2
 
 static jvmtiEnv *jvmti = nullptr;
-static jrawMonitorID event_lock = nullptr;
 static jint result = PASSED;
 static int check_idx = 0;
 static jobject tested_monitor = nullptr;
@@ -77,8 +76,6 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     LOG("Warning: Monitor events are not implemented\n");
     return JNI_ERR;
   }
-  event_lock = create_raw_monitor(jvmti, "Events Monitor");
-
   return JNI_OK;
 }
 
@@ -168,35 +165,20 @@ Java_ObjectMonitorUsage_check(JNIEnv *jni, jclass cls, jobject obj, jthread owne
 
 JNIEXPORT void JNICALL
 Java_ObjectMonitorUsage_setTestedMonitor(JNIEnv *jni, jclass cls, jobject monitor) {
-  jvmtiError err;
-  jvmtiEventMode event_mode = (monitor != nullptr) ? JVMTI_ENABLE : JVMTI_DISABLE;
-
-  RawMonitorLocker rml(jvmti, jni, event_lock);
-
   if (tested_monitor != nullptr) {
     jni->DeleteGlobalRef(tested_monitor);
   }
   tested_monitor = (monitor != nullptr) ? jni->NewGlobalRef(monitor) : nullptr;
 }
 
-static void wait_for_state(JNIEnv *jni, jthread thread, jint exp_state) {
-  RawMonitorLocker rml(jvmti, jni, event_lock);
-  while (true) {
-    if (get_thread_state(jvmti, jni, thread) & exp_state) {
-      break;
-    }
-    rml.wait(100);
-  }
-}
-
 JNIEXPORT void JNICALL
 Java_ObjectMonitorUsage_ensureBlockedOnEnter(JNIEnv *jni, jclass cls, jthread thread) {
-  wait_for_state(jni, thread, JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER);
+  wait_for_state(jvmti, jni, thread, JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER);
 }
 
 JNIEXPORT void JNICALL
 Java_ObjectMonitorUsage_ensureWaitsToBeNotified(JNIEnv *jni, jclass cls, jthread thread) {
-  wait_for_state(jni, thread, JVMTI_THREAD_STATE_WAITING_INDEFINITELY);
+  wait_for_state(jvmti, jni, thread, JVMTI_THREAD_STATE_WAITING_INDEFINITELY);
 }
 
 JNIEXPORT jint JNICALL

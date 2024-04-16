@@ -380,6 +380,24 @@ find_method(jvmtiEnv *jvmti, JNIEnv *jni, jclass klass, const char* mname) {
   return method;
 }
 
+// Wait for target thread to reach the required JVMTI thread state.
+// The state jint bitmask is returned by the JVMTI GetThreadState.
+// Some examples are:
+// - JVMTI_THREAD_STATE_WAITING
+// - JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER
+// - JVMTI_THREAD_STATE_SLEEPING
+static void
+wait_for_state(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jint exp_state) {
+  jrawMonitorID lock = create_raw_monitor(jvmti, "Waiting Monitor");
+  RawMonitorLocker rml(jvmti, jni, lock);
+  while (true) {
+    if (get_thread_state(jvmti, jni, thread) & exp_state) {
+      break;
+    }
+    rml.wait(100);
+  }
+}
+
 #define MAX_FRAME_COUNT_PRINT_STACK_TRACE 200
 
 static void
