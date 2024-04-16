@@ -2427,7 +2427,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       default:
         assert(n->Opcode() == Op_LoopLimit ||
                n->Opcode() == Op_Opaque3   ||
-               n->Opcode() == Op_Opaque4   ||
+               n->is_Opaque4()             ||
                n->Opcode() == Op_MaxL      ||
                n->Opcode() == Op_MinL      ||
                BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(n),
@@ -2502,7 +2502,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         _igvn.replace_node(n, repl);
         success = true;
 #endif
-      } else if (n->Opcode() == Op_Opaque4) {
+      } else if (n->is_Opaque4()) {
         // With Opaque4 nodes, the expectation is that the test of input 1
         // is always equal to the constant value of input 2. So we can
         // remove the Opaque4 and replace it by input 2. In debug builds,

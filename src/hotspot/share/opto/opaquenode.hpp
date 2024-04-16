@@ -132,6 +132,20 @@ class Opaque4Node : public Node {
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
+// This node is used for Initialized Assertion Predicate BoolNodes. Initialized Assertion Predicates must always evaluate
+// to true. Therefore, we get rid of them in product builds as they are useless. In debug builds we keep them as
+// additional verification code (i.e. removing this node and use the BoolNode input instead).
+class OpaqueInitializedAssertionPredicateNode : public Node {
+ public:
+  OpaqueInitializedAssertionPredicateNode(BoolNode* bol) : Node(nullptr, bol) {
+    init_class_id(Class_OpaqueInitializedAssertionPredicate);
+  }
+
+  virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual const Type* bottom_type() const { return TypeInt::BOOL; }
+};
 
 //------------------------------ProfileBooleanNode-------------------------------
 // A node represents value profile for a boolean during parsing.

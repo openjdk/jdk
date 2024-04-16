@@ -778,8 +778,10 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
     }
   }//for
   Node* bol = iff->in(1);
-  if (bol->Opcode() == Op_Opaque4) {
-    return nullptr; // Ignore loop predicate checks (the Opaque4 ensures they will go away)
+  assert(!bol->is_OpaqueInitializedAssertionPredicate(), "Initialized Assertion Predicates cannot form a diamond");
+  if (bol->is_Opaque4()) {
+    // Ignore Template Assertion Predicates with Opaque4 nodes.
+    return nullptr;
   }
   assert(bol->Opcode() == Op_Bool, "Unexpected node");
   int cmp_op = bol->in(1)->Opcode();
@@ -1662,7 +1664,8 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
       !n->is_Proj() &&
       !n->is_MergeMem() &&
       !n->is_CMove() &&
-      n->Opcode() != Op_Opaque4 &&
+      !n->is_Opaque4() &&
+      !n->is_OpaqueInitializedAssertionPredicate() &&
       !n->is_Type()) {
     Node *n_ctrl = get_ctrl(n);
     IdealLoopTree *n_loop = get_loop(n_ctrl);
@@ -1975,18 +1978,18 @@ Node* PhaseIdealLoop::clone_iff(PhiNode* phi) {
   // Convert this Phi into a Phi merging Bools
   uint i;
   for (i = 1; i < phi->req(); i++) {
-    Node *b = phi->in(i);
+    Node* b = phi->in(i);
     if (b->is_Phi()) {
       _igvn.replace_input_of(phi, i, clone_iff(b->as_Phi()));
     } else {
-      assert(b->is_Bool() || b->Opcode() == Op_Opaque4, "");
+      assert(b->is_Bool() || b->is_Opaque4() || b->is_OpaqueInitializedAssertionPredicate(),
+             "bool, non-null check with Opaque4 node or Initialized Assertion Predicate with its Opaque node");
     }
   }
-
   Node* n = phi->in(1);
   Node* sample_opaque = nullptr;
   Node *sample_bool = nullptr;
-  if (n->Opcode() == Op_Opaque4) {
+  if (n->is_Opaque4() || n->is_OpaqueInitializedAssertionPredicate()) {
     sample_opaque = n;
     sample_bool = n->in(1);
     assert(sample_bool->is_Bool(), "wrong type");
@@ -2159,7 +2162,7 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       // make sure the Bool/Cmp input is cloned down to avoid a Phi between
       // the AllocateArray node and its ValidLengthTest input that could cause
       // split if to break.
-      if (use->is_If() || use->is_CMove() || use->Opcode() == Op_Opaque4 ||
+      if (use->is_If() || use->is_CMove() || use->is_Opaque4() ||
           (use->Opcode() == Op_AllocateArray && use->in(AllocateNode::ValidLengthTest) == old)) {
         // Since this code is highly unlikely, we lazily build the worklist
         // of such Nodes to go split.
