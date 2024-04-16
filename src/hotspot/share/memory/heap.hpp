@@ -54,13 +54,12 @@ class HeapBlock {
   void initialize(size_t length)                 { set_length(length); set_used(); }
   // Merging/splitting
   void set_length(size_t length)                 {
-    LP64_ONLY( assert(((length >> 32) == 0), "sanity"); )
-    _header._length = (uint32_t)length;
+    _header._length = checked_cast<uint32_t>(length);
   }
 
   // Accessors
   void* allocated_space() const                  { return (void*)(this + 1); }
-  size_t length() const                          { return (size_t)_header._length; }
+  size_t length() const                          { return _header._length; }
 
   // Used/free
   void set_used()                                { _header._used = true; }

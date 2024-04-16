@@ -966,9 +966,11 @@ public:
 
   // JVMTI's GetLocalInstance() support
   ByteSize native_receiver_sp_offset() {
+    assert(is_native_method(), "sanity");
     return _native_receiver_sp_offset;
   }
   ByteSize native_basic_lock_sp_offset() {
+    assert(is_native_method(), "sanity");
     return _native_basic_lock_sp_offset;
   }
 

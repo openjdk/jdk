@@ -1230,25 +1230,21 @@ nmethod::nmethod(
     _unwind_handler_offset   = 0;
     _gc_epoch                = CodeCache::gc_epoch();
 
-    int skipped_insts_size   = code_buffer->total_skipped_instructions_size();
-#ifdef ASSERT
-    assert(((skipped_insts_size >> 16) == 0), "size is bigger than 64Kb: %d", skipped_insts_size);
-
     // SECT_CONSTS is first in code buffer so the offset should be 0.
     int consts_offset = code_buffer->total_offset_of(code_buffer->consts());
     assert(consts_offset == 0, "const_offset: %d", consts_offset);
-#endif
-    _skipped_instructions_size = (uint16_t)skipped_insts_size;
+
+    _skipped_instructions_size = checked_cast<uint16_t>(code_buffer->total_skipped_instructions_size());
 
     _stub_offset             = content_offset() + code_buffer->total_offset_of(code_buffer->stubs());
-
+#ifdef ASSERT
     int oops_size     = align_up(code_buffer->total_oop_size(), oopSize);
     int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
     int sum_size      = oops_size + metadata_size;
     assert((sum_size >> 16) == 0, "data size is bigger than 64Kb: %d", sum_size);
-
-    _metadata_offset         = (uint16_t)oops_size;
-    _dependencies_offset     = _metadata_offset + (uint16_t)metadata_size;
+#endif
+    _metadata_offset         = checked_cast<uint16_t>(align_up(code_buffer->total_oop_size(), oopSize));
+    _dependencies_offset     = _metadata_offset + checked_cast<uint16_t>(align_up(code_buffer->total_metadata_size(), wordSize));
     _scopes_pcs_offset       = _dependencies_offset;
     _scopes_data_offset      = _scopes_pcs_offset;
     _handler_table_offset    = _scopes_data_offset;
@@ -1264,8 +1260,8 @@ nmethod::nmethod(
 
     _compile_id              = compile_id;
     _compiler_type           = type;
-    _entry_offset            = (uint16_t)offsets->value(CodeOffsets::Entry);
-    _verified_entry_offset   = (uint16_t)offsets->value(CodeOffsets::Verified_Entry);
+    _entry_offset            = checked_cast<uint16_t>(offsets->value(CodeOffsets::Entry));
+    _verified_entry_offset   = checked_cast<uint16_t>(offsets->value(CodeOffsets::Verified_Entry));
     _osr_entry_point         = nullptr;
     _pc_desc_container.reset_to(nullptr);
 
@@ -1382,15 +1378,11 @@ nmethod::nmethod(
     _orig_pc_offset = orig_pc_offset;
     _gc_epoch       = CodeCache::gc_epoch();
 
-    int skipped_insts_size = code_buffer->total_skipped_instructions_size();
-#ifdef ASSERT
-    assert(((skipped_insts_size >> 16) == 0), "size is bigger than 64Kb: %d", skipped_insts_size);
-
     // SECT_CONSTS is first in code buffer so the offset should be 0.
     int consts_offset = code_buffer->total_offset_of(code_buffer->consts());
     assert(consts_offset == 0, "const_offset: %d", consts_offset);
-#endif
-    _skipped_instructions_size = (uint16_t)skipped_insts_size;
+
+    _skipped_instructions_size = checked_cast<uint16_t>(code_buffer->total_skipped_instructions_size());
 
     _stub_offset = content_offset() + code_buffer->total_offset_of(code_buffer->stubs());
     set_ctable_begin(header_begin() + content_offset());
@@ -1433,16 +1425,16 @@ nmethod::nmethod(
     } else {
       _unwind_handler_offset = -1;
     }
-
+#ifdef ASSERT
     int oops_size     = align_up(code_buffer->total_oop_size(), oopSize);
     int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
     int deps_size     = align_up((int)dependencies->size_in_bytes(), oopSize);
     int sum_size      = oops_size + metadata_size + deps_size;
     assert((sum_size >> 16) == 0, "data size is bigger than 64Kb: %d", sum_size);
-
-    _metadata_offset      = (uint16_t)oops_size;
-    _dependencies_offset  = _metadata_offset      + (uint16_t)metadata_size;
-    _scopes_pcs_offset    = _dependencies_offset  + (uint16_t)deps_size;
+#endif
+    _metadata_offset      = checked_cast<uint16_t>(align_up(code_buffer->total_oop_size(), oopSize));
+    _dependencies_offset  = _metadata_offset      + checked_cast<uint16_t>(align_up(code_buffer->total_metadata_size(), wordSize));
+    _scopes_pcs_offset    = _dependencies_offset  + checked_cast<uint16_t>(align_up((int)dependencies->size_in_bytes(), oopSize));
     _scopes_data_offset   = _scopes_pcs_offset    + adjust_pcs_size(debug_info->pcs_size());
     _handler_table_offset = _scopes_data_offset   + align_up(debug_info->data_size       (), oopSize);
     _nul_chk_table_offset = _handler_table_offset + align_up(handler_table->size_in_bytes(), oopSize);
@@ -1456,8 +1448,8 @@ nmethod::nmethod(
 #endif
     assert((data_offset() + data_end_offset) <= nmethod_size, "wrong nmethod's size: %d < %d", nmethod_size, (data_offset() + data_end_offset));
 
-    _entry_offset          = (uint16_t)offsets->value(CodeOffsets::Entry);
-    _verified_entry_offset = (uint16_t)offsets->value(CodeOffsets::Verified_Entry);
+    _entry_offset          = checked_cast<uint16_t>(offsets->value(CodeOffsets::Entry));
+    _verified_entry_offset = checked_cast<uint16_t>(offsets->value(CodeOffsets::Verified_Entry));
     _osr_entry_point       = code_begin()          + offsets->value(CodeOffsets::OSR_Entry);
 
     _pc_desc_container.reset_to(scopes_pcs_begin());
