@@ -526,7 +526,8 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         };
         try {
             if (file.getName().endsWith(".xml")) {
-                final Parser parser = new Parser(channel, monitor, document, loadContext ? OutlineTopComponent::loadContext : null);
+                ArrayList<GraphContext> contexts = new ArrayList<>();
+                final Parser parser = new Parser(channel, monitor, document, loadContext ? contexts::add : null);
                 parser.parse();
                 SwingUtilities.invokeLater(() -> {
                     for (Node child : manager.getRootContext().getChildren().getNodes(true)) {
@@ -535,6 +536,9 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
                         ((BeanTreeView) this.treeView).collapseNode(child);
                     }
                     requestActive();
+                    for (GraphContext ctx : contexts) {
+                        loadContext(ctx);
+                    }
                 });
             }
         } catch (IOException ex) {
