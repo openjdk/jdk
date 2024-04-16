@@ -161,6 +161,9 @@ Array<Klass*>* Universe::_the_empty_klass_array     = nullptr;
 Array<InstanceKlass*>* Universe::_the_empty_instance_klass_array  = nullptr;
 Array<Method*>* Universe::_the_empty_method_array   = nullptr;
 
+uintx Universe::_the_array_interfaces_bitmap = 0;
+uintx Universe::_the_empty_klass_bitmap      = 0;
+
 // These variables are guarded by FullGCALot_lock.
 debug_only(OopHandle Universe::_fullgc_alot_dummy_array;)
 debug_only(int Universe::_fullgc_alot_dummy_next = 0;)
@@ -435,6 +438,11 @@ void Universe::genesis(TRAPS) {
       // Set up shared interfaces array.  (Do this before supers are set up.)
       _the_array_interfaces_array->at_put(0, vmClasses::Cloneable_klass());
       _the_array_interfaces_array->at_put(1, vmClasses::Serializable_klass());
+    }
+
+    if (UseSecondarySupersTable) {
+      Universe::_the_array_interfaces_bitmap = Klass::compute_secondary_supers_bitmap(_the_array_interfaces_array);
+      Universe::_the_empty_klass_bitmap      = Klass::compute_secondary_supers_bitmap(_the_empty_klass_array);
     }
 
     initialize_basic_type_klass(_fillerArrayKlass, CHECK);
