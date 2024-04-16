@@ -46,7 +46,7 @@ abstract class AbstractWatchKey implements WatchKey {
     static final int MAX_EVENT_LIST_SIZE;
     static {
         String rawValue = GetPropertyAction.privilegedGetProperty(
-            "jdk.nio.file.maxWatchEvents",
+            "jdk.nio.file.WatchService.maxEventsPerPoll",
             String.valueOf(DEFAULT_MAX_EVENT_LIST_SIZE));
         int intValue;
         try {
@@ -54,7 +54,7 @@ abstract class AbstractWatchKey implements WatchKey {
             // before OOMing.
             intValue = Math.clamp(
                 Long.decode(rawValue),
-                DEFAULT_MAX_EVENT_LIST_SIZE,
+                1,
                 ArraysSupport.SOFT_MAX_ARRAY_LENGTH);
         } catch (NumberFormatException e) {
             intValue = DEFAULT_MAX_EVENT_LIST_SIZE;

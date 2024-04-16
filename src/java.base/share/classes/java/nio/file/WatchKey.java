@@ -99,6 +99,15 @@ public interface WatchKey {
      *
      * <p> Note that this method does not wait if there are no events pending.
      *
+     * @implNote
+     * In the reference implementation, the maximum size of the returned list of
+     * events is controlled by the system property
+     * {@code jdk.nio.file.WatchService.maxEventsPerPoll}. If the property is
+     * not set or is not an integer, the maximum size will be set to 512. The
+     * maximum size is always at least 1. If more events occur than the maximum
+     * size, the pending events are cleared and replaced with a single
+     * {@link StandardWatchEventKinds#OVERFLOW OVERFLOW} event.
+     *
      * @return  the list of the events retrieved; may be empty
      */
     List<WatchEvent<?>> pollEvents();
