@@ -63,54 +63,62 @@ size_t ShenandoahSimpleBitMap::count_trailing_ones(ssize_t last_idx) const {
 }
 
 bool ShenandoahSimpleBitMap::is_forward_consecutive_ones(ssize_t start_idx, ssize_t count) const {
-  assert((start_idx >= 0) && (start_idx < _num_bits), "precondition: start_idx: " SSIZE_FORMAT ", count: " SSIZE_FORMAT,
-         start_idx, count);
-  assert(start_idx + count <= (ssize_t) _num_bits, "precondition");
-  size_t array_idx = start_idx >> LogBitsPerWord;
-  uintx bit_number = start_idx & right_n_bits(LogBitsPerWord);
-  uintx element_bits = _bitmap[array_idx];
-  uintx bits_to_examine  = BitsPerWord - bit_number;
-  element_bits >>= bit_number;
-  uintx complement = ~element_bits;
-  uintx trailing_ones;
-  if (complement != 0) {
-    trailing_ones = count_trailing_zeros<uintx>(complement);
-  } else {
-    trailing_ones = bits_to_examine;
+  while (count > 0) {
+    assert((start_idx >= 0) && (start_idx < _num_bits), "precondition: start_idx: " SSIZE_FORMAT ", count: " SSIZE_FORMAT,
+           start_idx, count);
+    assert(start_idx + count <= (ssize_t) _num_bits, "precondition");
+    size_t array_idx = start_idx >> LogBitsPerWord;
+    uintx bit_number = start_idx & right_n_bits(LogBitsPerWord);
+    uintx element_bits = _bitmap[array_idx];
+    uintx bits_to_examine  = BitsPerWord - bit_number;
+    element_bits >>= bit_number;
+    uintx complement = ~element_bits;
+    uintx trailing_ones;
+    if (complement != 0) {
+      trailing_ones = count_trailing_zeros<uintx>(complement);
+    } else {
+      trailing_ones = bits_to_examine;
+    }
+    if (trailing_ones >= (uintx) count) {
+      return true;
+    } else if (trailing_ones == bits_to_examine) {
+      start_idx += bits_to_examine;
+      count -= bits_to_examine;
+      // Repeat search with smaller goal
+    } else {
+      return false;
+    }
   }
-  if (trailing_ones >= (uintx) count) {
-    return true;
-  } else if (trailing_ones == bits_to_examine) {
-     // Tail recursion
-    return is_forward_consecutive_ones(start_idx + bits_to_examine, count - bits_to_examine);
-  } else {
-    return false;
-  }
+  return true;
 }
 
 bool ShenandoahSimpleBitMap::is_backward_consecutive_ones(ssize_t last_idx, ssize_t count) const {
-  assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
-  assert(last_idx - count >= -1, "precondition");
-  size_t array_idx = last_idx >> LogBitsPerWord;
-  uintx bit_number = last_idx & right_n_bits(LogBitsPerWord);
-  uintx element_bits = _bitmap[array_idx];
-  uintx bits_to_examine = bit_number + 1;
-  element_bits <<= (BitsPerWord - bits_to_examine);
-  uintx complement = ~element_bits;
-  uintx leading_ones;
-  if (complement != 0) {
-    leading_ones = count_leading_zeros<uintx>(complement);
-  } else {
-    leading_ones = bits_to_examine;
+  while (count > 0) {
+    assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
+    assert(last_idx - count >= -1, "precondition");
+    size_t array_idx = last_idx >> LogBitsPerWord;
+    uintx bit_number = last_idx & right_n_bits(LogBitsPerWord);
+    uintx element_bits = _bitmap[array_idx];
+    uintx bits_to_examine = bit_number + 1;
+    element_bits <<= (BitsPerWord - bits_to_examine);
+    uintx complement = ~element_bits;
+    uintx leading_ones;
+    if (complement != 0) {
+      leading_ones = count_leading_zeros<uintx>(complement);
+    } else {
+      leading_ones = bits_to_examine;
+    }
+    if (leading_ones >= (uintx) count) {
+      return true;
+    } else if (leading_ones == bits_to_examine) {
+      last_idx -= leading_ones;
+      count -= leading_ones;
+      // Repeat search with smaller goal
+    } else {
+      return false;
+    }
   }
-  if (leading_ones >= (uintx) count) {
-    return true;
-  } else if (leading_ones == bits_to_examine) {
-    // Tail recursion
-    return is_backward_consecutive_ones(last_idx - leading_ones, count - leading_ones);
-  } else {
-    return false;
-  }
+  return true;
 }
 
 ssize_t ShenandoahSimpleBitMap::find_next_consecutive_bits(size_t num_bits, ssize_t start_idx, ssize_t boundary_idx) const {
