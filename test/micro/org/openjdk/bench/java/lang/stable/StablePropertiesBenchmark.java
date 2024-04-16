@@ -52,12 +52,6 @@ import java.util.stream.Collectors;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 2, jvmArgsAppend = {"--add-exports=java.base/jdk.internal.lang=ALL-UNNAMED", "--enable-preview"})
-/*
-Benchmark                     Mode  Cnt  Score   Error  Units
-LazyPropertiesBenchmark.chm   avgt   10  5.263 ? 1.105  ns/op
-LazyPropertiesBenchmark.lazy  avgt   10  3.697 ? 0.098  ns/op
-LazyPropertiesBenchmark.prop  avgt   10  6.438 ? 0.409  ns/op
- */
 public class StablePropertiesBenchmark {
 
     private static final Function<String, String> FUNCTION = s -> switch (s) {

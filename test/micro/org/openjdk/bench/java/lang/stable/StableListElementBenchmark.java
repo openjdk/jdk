@@ -41,28 +41,6 @@ import java.util.stream.Stream;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 2, jvmArgsAppend = {"--add-exports=java.base/jdk.internal.lang=ALL-UNNAMED", "--enable-preview"})
-/* 2024-04-02
-Benchmark                                 Mode  Cnt  Score   Error  Units
-MonotonicListBenchmark.instanceArrayList  avgt   10  1.033 ? 0.042  ns/op
-MonotonicListBenchmark.instanceLazyList   avgt   10  1.077 ? 0.042  ns/op
-MonotonicListBenchmark.instanceWrapped    avgt   10  1.325 ? 0.047  ns/op <- Stored
-MonotonicListBenchmark.staticArrayList    avgt   10  0.922 ? 0.058  ns/op
-MonotonicListBenchmark.staticLazyList     avgt   10  0.568 ? 0.046  ns/op
-
-2024-04-08
-Benchmark                            Mode  Cnt  Score   Error  Units
-LazyListBenchmark.instanceArrayList  avgt   10  1.130 ? 0.021  ns/op
-LazyListBenchmark.instanceDelegated  avgt   10  1.402 ? 0.012  ns/op
-LazyListBenchmark.instanceLazyList   avgt   10  1.227 ? 0.042  ns/op
-LazyListBenchmark.instanceStored     avgt   10  1.512 ? 0.014  ns/op
-
-LazyListBenchmark.staticArrayList    avgt   10  0.979 ? 0.007  ns/op
-LazyListBenchmark.staticDelegated    avgt   10  0.557 ? 0.001  ns/op
-LazyListBenchmark.staticLazyList     avgt   10  0.573 ? 0.079  ns/op
-LazyListBenchmark.staticStored       avgt   10  0.556 ? 0.001  ns/op
-
-
- */
 public class StableListElementBenchmark {
 
     private static final IntFunction<Integer> FUNCTION = i -> i;

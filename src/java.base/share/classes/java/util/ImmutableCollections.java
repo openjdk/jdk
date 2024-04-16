@@ -56,7 +56,6 @@ import jdk.internal.vm.annotation.Stable;
  */
 @SuppressWarnings("serial")
 class ImmutableCollections {
-
     /**
      * A "salt" value used for randomizing iteration order. This is initialized once
      * and stays constant for the lifetime of the JVM. It need not be truly random, but

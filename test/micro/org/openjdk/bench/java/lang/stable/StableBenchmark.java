@@ -39,26 +39,6 @@ import java.util.function.Supplier;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 2, jvmArgsAppend = {"--add-exports=java.base/jdk.internal.lang=ALL-UNNAMED", "--enable-preview"})
-/* 2024-04-02
-Nullable
-
-Benchmark                             Mode  Cnt  Score   Error  Units
-MonotonicBenchmark.instanceDCL        avgt   10  1.477 ? 0.124  ns/op
-MonotonicBenchmark.instanceMonotonic  avgt   10  0.930 ? 0.038  ns/op <- 40% faster than DCL
-MonotonicBenchmark.staticCHI          avgt   10  0.567 ? 0.015  ns/op
-MonotonicBenchmark.staticDCL          avgt   10  1.223 ? 0.002  ns/op
-MonotonicBenchmark.staticMonotonic    avgt   10  0.560 ? 0.004  ns/op <- 54% faster than DCL
-
-Non-nullable
-
-Benchmark                             Mode  Cnt  Score   Error  Units
-MonotonicBenchmark.instanceDCL        avgt   10  1.489 ? 0.096  ns/op
-MonotonicBenchmark.instanceMonotonic  avgt   10  0.901 ? 0.014  ns/op <- Only 3% improvement
-MonotonicBenchmark.staticCHI          avgt   10  0.577 ? 0.048  ns/op
-MonotonicBenchmark.staticDCL          avgt   10  1.238 ? 0.042  ns/op
-MonotonicBenchmark.staticMonotonic    avgt   10  0.576 ? 0.044  ns/op
-
- */
 public class StableBenchmark {
 
     private static final int VALUE = 42;

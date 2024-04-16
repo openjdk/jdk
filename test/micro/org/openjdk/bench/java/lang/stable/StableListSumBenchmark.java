@@ -42,21 +42,6 @@ import java.util.stream.Stream;
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 2, jvmArgsAppend = {"--add-exports=java.base/jdk.internal.lang=ALL-UNNAMED", "--enable-preview"})
 @OperationsPerInvocation(1000)
-
-/*
-2024-04-08
-Benchmark                                     Mode  Cnt  Score   Error  Units
-LazySmallListBenchmark.instanceArrayList      avgt   10  0.356 ? 0.002  ns/op
-LazySmallListBenchmark.instanceDelegatedList  avgt   10  0.374 ? 0.005  ns/op
-LazySmallListBenchmark.instanceLazy           avgt   10  1.512 ? 0.025  ns/op
-LazySmallListBenchmark.instanceStored         avgt   10  0.616 ? 0.018  ns/op
-
-LazySmallListBenchmark.staticArrayList        avgt   10  0.355 ? 0.002  ns/op
-LazySmallListBenchmark.staticLazy             avgt   10  0.825 ? 0.004  ns/op
-LazySmallListBenchmark.staticLazyDelegated    avgt   10  0.359 ? 0.003  ns/op
-LazySmallListBenchmark.staticStored           avgt   10  0.641 ? 0.003  ns/op
- */
-
 public class StableListSumBenchmark {
 
     private static final int SIZE = 1_000;
