@@ -5175,8 +5175,6 @@ class StubGenerator: public StubCodeGenerator {
     // vtable now contains { 0x10, 0xf, 0xe, ..., 0x3, 0x2, 0x1 }
 
     __ vmv_v_i(vzero, 0);
-    __ vmv_v_i(vtemp1, 0);
-    __ vmv_v_i(vtemp2, 0);
 
     __ mv(base, BASE);
     __ mv(nmax, NMAX);
