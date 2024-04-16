@@ -5043,7 +5043,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void generate_updateBytesAdler32_accum(Register buff, VectorRegister vzero, VectorRegister vbytes,
-                                         VectorRegister vs1acc, VectorRegister vs2acc, VectorRegister vtable) {
+    VectorRegister vs1acc, VectorRegister vs2acc, VectorRegister vtable) {
     // Below is a vectorized implementation of updating s1 and s2 for 16 bytes.
     // We use b1, b2, ..., b16 to denote the 16 bytes loaded in each iteration.
     // In non-vectorized code, we update s1 and s2 as:
@@ -5070,8 +5070,8 @@ class StubGenerator: public StubCodeGenerator {
     // vs1acc = b1 + b2 + b3 + ... + b16
     __ vwredsumu_vs(vs1acc, vbytes, vzero);
 
-    // vs2acc = { (b1 * 16) + (b2 * 15) + (b3 * 14) + ... + (b8 * 9) }
-    // vs2acc->successor() = { (b9 * 8) + (b10 * 7) + (b11 * 6) + ... + (b16 * 1) }
+    // vs2acc = { (b1 * 16), (b2 * 15), (b3 * 14), ..., (b8 * 9) }
+    // vs2acc->successor() = { (b9 * 8), (b10 * 7), (b11 * 6), ..., (b16 * 1) }
     __ vwmulu_vv(vs2acc, vtable, vbytes); // vs2acc->successor() now contains the second part of multiplication
     // The only thing that remains is to sum up the remembered result
   }
@@ -5154,7 +5154,6 @@ class StubGenerator: public StubCodeGenerator {
     };
     VectorRegister vtemp1 = v28;
     VectorRegister vtemp2 = v29;
-    VectorRegister vtemp3 = v30;
 
     // Max number of bytes we can process before having to take the mod
     // 0x15B0 is 5552 in decimal, the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
@@ -5208,7 +5207,6 @@ class StubGenerator: public StubCodeGenerator {
 
     // s1 = s1 % BASE
     __ remuw(s1, s1, base);
-
     // s2 = s2 % BASE
     __ remuw(s2, s2, base);
 
@@ -5237,7 +5235,6 @@ class StubGenerator: public StubCodeGenerator {
 
     // s1 = s1 % BASE
     __ remuw(s1, s1, base);
-
     // s2 = s2 % BASE
     __ remuw(s2, s2, base);
 
@@ -5271,7 +5268,6 @@ class StubGenerator: public StubCodeGenerator {
   __ bind(L_do_mod);
     // s1 = s1 % BASE
     __ remuw(s1, s1, base);
-
     // s2 = s2 % BASE
     __ remuw(s2, s2, base);
 
