@@ -77,6 +77,11 @@ void SerialBlockOffsetTable::resize(size_t new_word_size) {
   }
 }
 
+static void fill_range(uint8_t* start, uint8_t* end, uint8_t value) {
+  // + 1 for inclusive.
+  memset(start, value, pointer_delta(end, start, sizeof(uint8_t)) + 1);
+}
+
 // Write the backskip value for each logarithmic region (array slots containing the same entry value).
 //
 //    offset
@@ -115,7 +120,7 @@ void SerialBlockOffsetTable::update_for_block_work(HeapWord* blk_start,
   uint8_t* const offset_card = entry_for_addr(cur_card_boundary);
 
   // The first card holds the actual offset.
-  set_offset_array(offset_card, cur_card_boundary, blk_start);
+  *offset_card = checked_cast<uint8_t>(pointer_delta(cur_card_boundary, blk_start));
 
   // Check if this block spans over other cards.
   uint8_t* end_card = entry_for_addr(blk_end - 1);
@@ -130,7 +135,7 @@ void SerialBlockOffsetTable::update_for_block_work(HeapWord* blk_start,
       uint8_t* reach = offset_card + BOTConstants::power_to_cards_back(i + 1) - 1;
       uint8_t value = checked_cast<uint8_t>(CardTable::card_size_in_words() + i);
 
-      set_offset_array(start_card_for_region, MIN2(reach, end_card), value);
+      fill_range(start_card_for_region, MIN2(reach, end_card), value);
       start_card_for_region = reach + 1;
 
       if (reach >= end_card) {

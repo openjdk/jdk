@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "code/nmethod.hpp"
-#include "gc/g1/g1CodeBlobClosure.hpp"
+#include "gc/g1/g1NMethodClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
@@ -35,7 +35,7 @@
 #include "oops/oop.inline.hpp"
 
 template <typename T>
-void G1CodeBlobClosure::HeapRegionGatheringOopClosure::do_oop_work(T* p) {
+void G1NMethodClosure::HeapRegionGatheringOopClosure::do_oop_work(T* p) {
   _work->do_oop(p);
   T oop_or_narrowoop = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(oop_or_narrowoop)) {
@@ -46,16 +46,16 @@ void G1CodeBlobClosure::HeapRegionGatheringOopClosure::do_oop_work(T* p) {
   }
 }
 
-void G1CodeBlobClosure::HeapRegionGatheringOopClosure::do_oop(oop* o) {
+void G1NMethodClosure::HeapRegionGatheringOopClosure::do_oop(oop* o) {
   do_oop_work(o);
 }
 
-void G1CodeBlobClosure::HeapRegionGatheringOopClosure::do_oop(narrowOop* o) {
+void G1NMethodClosure::HeapRegionGatheringOopClosure::do_oop(narrowOop* o) {
   do_oop_work(o);
 }
 
 template<typename T>
-void G1CodeBlobClosure::MarkingOopClosure::do_oop_work(T* p) {
+void G1NMethodClosure::MarkingOopClosure::do_oop_work(T* p) {
   T oop_or_narrowoop = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(oop_or_narrowoop)) {
     oop o = CompressedOops::decode_not_null(oop_or_narrowoop);
@@ -63,18 +63,18 @@ void G1CodeBlobClosure::MarkingOopClosure::do_oop_work(T* p) {
   }
 }
 
-G1CodeBlobClosure::MarkingOopClosure::MarkingOopClosure(uint worker_id) :
+G1NMethodClosure::MarkingOopClosure::MarkingOopClosure(uint worker_id) :
   _cm(G1CollectedHeap::heap()->concurrent_mark()), _worker_id(worker_id) { }
 
-void G1CodeBlobClosure::MarkingOopClosure::do_oop(oop* o) {
+void G1NMethodClosure::MarkingOopClosure::do_oop(oop* o) {
   do_oop_work(o);
 }
 
-void G1CodeBlobClosure::MarkingOopClosure::do_oop(narrowOop* o) {
+void G1NMethodClosure::MarkingOopClosure::do_oop(narrowOop* o) {
   do_oop_work(o);
 }
 
-void G1CodeBlobClosure::do_evacuation_and_fixup(nmethod* nm) {
+void G1NMethodClosure::do_evacuation_and_fixup(nmethod* nm) {
   _oc.set_nm(nm);
 
   // Evacuate objects pointed to by the nmethod
@@ -93,7 +93,7 @@ void G1CodeBlobClosure::do_evacuation_and_fixup(nmethod* nm) {
   nm->fix_oop_relocations();
 }
 
-void G1CodeBlobClosure::do_marking(nmethod* nm) {
+void G1NMethodClosure::do_marking(nmethod* nm) {
   // Mark through oops in the nmethod
   nm->oops_do(&_marking_oc);
 
@@ -109,10 +109,10 @@ void G1CodeBlobClosure::do_marking(nmethod* nm) {
 }
 
 class G1NmethodProcessor : public nmethod::OopsDoProcessor {
-  G1CodeBlobClosure* _cl;
+  G1NMethodClosure* _cl;
 
 public:
-  G1NmethodProcessor(G1CodeBlobClosure* cl) : _cl(cl) { }
+  G1NmethodProcessor(G1NMethodClosure* cl) : _cl(cl) { }
 
   void do_regular_processing(nmethod* nm) {
     _cl->do_evacuation_and_fixup(nm);
@@ -123,11 +123,8 @@ public:
   }
 };
 
-void G1CodeBlobClosure::do_code_blob(CodeBlob* cb) {
-  nmethod* nm = cb->as_nmethod_or_null();
-  if (nm == nullptr) {
-    return;
-  }
+void G1NMethodClosure::do_nmethod(nmethod* nm) {
+  assert(nm != nullptr, "Sanity");
 
   G1NmethodProcessor cl(this);
 

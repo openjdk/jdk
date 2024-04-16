@@ -48,15 +48,13 @@ ifeq ($(call isTargetOs, windows), true)
         EXTRA_HEADER_DIRS := \
             include/bridge \
             java.desktop:include, \
-        JDK_LIBS_windows := $(SUPPORT_OUTPUTDIR)/native/java.desktop/libjawt/jawt.lib, \
+        JDK_LIBS := java.desktop:libjawt, \
         LIBS_windows := advapi32.lib comdlg32.lib gdi32.lib kernel32.lib \
             odbc32.lib odbccp32.lib ole32.lib oleaut32.lib shell32.lib \
             user32.lib uuid.lib winspool.lib, \
         VERSIONINFO_RESOURCE := \
             $(ACCESSIBILITY_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
     )
-
-    $$(BUILD_LIBJAVAACCESSBRIDGE$1): $(call FindStaticLib, java.desktop, jawt, /libjawt)
 
     TARGETS += $$(BUILD_LIBJAVAACCESSBRIDGE$1)
   endef

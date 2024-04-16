@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,12 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_UTILITIES_COMPILERWARNINGS_XLC_HPP
-#define SHARE_UTILITIES_COMPILERWARNINGS_XLC_HPP
+/*
+ * @test
+ * @bug 8307143
+ * @summary CredentialsCache.cacheName should not be static
+ * @modules java.security.jgss/sun.security.krb5
+ *          java.security.jgss/sun.security.krb5.internal.ccache
+ * @library /test/lib
+ */
 
-// Nothing here yet.
+import jdk.test.lib.Asserts;
+import sun.security.krb5.PrincipalName;
+import sun.security.krb5.internal.ccache.CredentialsCache;
 
-#endif // SHARE_UTILITIES_COMPILERWARNINGS_XLC_HPP
+public class TwoFiles {
+    public static void main(String[] args) throws Exception {
+        PrincipalName pn = new PrincipalName("me@HERE");
+        CredentialsCache cc1 = CredentialsCache.create(pn, "cc1");
+        CredentialsCache cc2 = CredentialsCache.create(pn, "cc2");
+        // name is canonicalized
+        Asserts.assertTrue(cc1.cacheName().endsWith("cc1"), cc1.cacheName());
+        Asserts.assertTrue(cc2.cacheName().endsWith("cc2"), cc2.cacheName());
+    }
+}

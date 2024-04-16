@@ -272,7 +272,7 @@ class nmethod : public CodeBlob {
   // used by jvmti to track if an event has been posted for this nmethod.
   bool _load_reported;
 
-  // Protected by CompiledMethod_lock
+  // Protected by NMethodState_lock
   volatile signed char _state;         // {not_installed, in_use, not_entrant}
 
   // set during construction
@@ -755,8 +755,6 @@ public:
   // implicit exceptions support
   address continuation_for_implicit_div0_exception(address pc) { return continuation_for_implicit_exception(pc, true); }
   address continuation_for_implicit_null_exception(address pc) { return continuation_for_implicit_exception(pc, false); }
-
-  static address get_deopt_original_pc(const frame* fr);
 
   // Inline cache support for class unloading and nmethod unloading
  private:

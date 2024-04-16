@@ -268,6 +268,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
   StackWatermarkSet::after_unwind(current);
 
   nm = CodeCache::find_nmethod(pc);
+  assert(nm != nullptr, "did not find nmethod");
   // Adjust the pc as needed/
   if (nm->is_deopt_pc(pc)) {
     RegisterMap map(current,
@@ -2225,7 +2226,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                         comp_level, method_name, nm->entry_point());
             }
             // Allow the code to be executed
-            MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+            MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
             if (nm->make_in_use()) {
               method->set_code(method, nm);
             } else {
@@ -2239,7 +2240,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
               lt.print("Installing osr method (%d) %s @ %d",
                         comp_level, method_name, entry_bci);
             }
-            MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+            MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
             if (nm->make_in_use()) {
               InstanceKlass::cast(method->method_holder())->add_osr_nmethod(nm);
             } else {
@@ -2248,7 +2249,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
           }
         } else {
           assert(!nmethod_mirror.is_hotspot() || data->get_nmethod_mirror(nm, /* phantom_ref */ false) == HotSpotJVMCI::resolve(nmethod_mirror), "must be");
-          MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+          MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
           if (!nm->make_in_use()) {
             result = JVMCI::nmethod_reclaimed;
           }
