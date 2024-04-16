@@ -56,7 +56,7 @@
 
 #define COMPLAIN LOG
 
-
+void sleep_ms(int millis);
 const char* TranslateState(jint flags);
 const char* TranslateError(jvmtiError err);
 
@@ -388,13 +388,11 @@ find_method(jvmtiEnv *jvmti, JNIEnv *jni, jclass klass, const char* mname) {
 // - JVMTI_THREAD_STATE_SLEEPING
 static void
 wait_for_state(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jint exp_state) {
-  jrawMonitorID lock = create_raw_monitor(jvmti, "Waiting Monitor");
-  RawMonitorLocker rml(jvmti, jni, lock);
   while (true) {
     if (get_thread_state(jvmti, jni, thread) & exp_state) {
       break;
     }
-    rml.wait(100);
+    sleep_ms(100);
   }
 }
 
