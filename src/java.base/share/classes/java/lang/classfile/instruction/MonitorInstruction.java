@@ -48,6 +48,8 @@ public sealed interface MonitorInstruction extends Instruction
      *
      * @param op the opcode for the specific type of monitor instruction,
      *           which must be of kind {@link Opcode.Kind#MONITOR}
+     * @throws IllegalArgumentException if the opcode kind is not
+     *         {@link Opcode.Kind#MONITOR}.
      */
     static MonitorInstruction of(Opcode op) {
         Util.checkKind(op, Opcode.Kind.MONITOR);
