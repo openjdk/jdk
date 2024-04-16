@@ -546,7 +546,7 @@ Node* VPointer::sort_sum(Node* sum) {
   for (int i = 0; i < traversal.length(); i++) {
     Node* n = traversal.at(i);
     int opc = n->Opcode();
-    if (opc == Op_AddL) {
+    if (opc == Op_AddL || opc == Op_AddI) {
       traversal.append(n->in(1));
       traversal.append(n->in(2));
     } else if (opc == Op_CastLL || opc == Op_ConvI2L || opc == Op_CastII) {
@@ -569,10 +569,12 @@ Node* VPointer::sort_sum(Node* sum) {
     new_sum = register_if_new(new AddLNode(new_sum, n));
   }
 
-//  for (int i = 0; i < summands.length(); i++) {
-//    Node* n = summands.at(i);
-//    tty->print(" %d: ", i); n->dump();
-//  }
+  sum->dump();
+  for (int i = 0; i < summands.length(); i++) {
+    Node* n = summands.at(i);
+    tty->print(" %d: ", i); n->dump();
+  }
+  new_sum->dump();
 
   return new_sum;
 }

@@ -88,6 +88,9 @@ public class TestEquivalentInvariants {
         tests.put("testArrayBB", () -> {
           return testArrayBB(aB.clone(), bB.clone());
         });
+        tests.put("testArrayBBInvar3", () -> {
+          return testArrayBBInvar3(aB.clone(), bB.clone(), 0, 0, 0);
+        });
         tests.put("testMemorySegmentB", () -> {
           MemorySegment data = MemorySegment.ofArray(aB.clone());
           return testMemorySegmentB(data);
@@ -119,6 +122,7 @@ public class TestEquivalentInvariants {
     }
 
     @Run(test = {"testArrayBB",
+                 "testArrayBBInvar3",
                  "testMemorySegmentB",
                  "testMemorySegmentBInvarI",
                  "testMemorySegmentBInvarL",
@@ -253,6 +257,21 @@ public class TestEquivalentInvariants {
     static Object[] testArrayBB(byte[] a, byte[] b) {
         for (int i = 0; i < a.length; i++) {
             b[i+0] = (byte)(a[i] + 1);
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Same int invariant summands, but added in a different order.
+    static Object[] testArrayBBInvar3(byte[] a, byte[] b, int invar1, int invar2, int invar3) {
+        int i1 = invar1 + invar2 + invar3;
+        int i2 = invar2 + invar3 + invar1;
+        for (int i = 0; i < a.length; i++) {
+            b[i + i1] = (byte)(a[i + i2] + 1);
         }
         return new Object[]{ a, b };
     }
