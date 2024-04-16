@@ -1597,7 +1597,7 @@ char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_p
   tty->print_cr("Rw map");
   size_t removed_rw_zeros = remove_bitmap_leading_zeros(rw_ptrmap);
   tty->print_cr("Ro map");
-  size_t removed_ro_zeros = remove_bitmap_leading_zeros(rw_ptrmap);
+  size_t removed_ro_zeros = remove_bitmap_leading_zeros(ro_ptrmap);
   header()->set_rw_ptrmap_start_pos(removed_rw_zeros);
   header()->set_ro_ptrmap_start_pos(removed_ro_zeros);
   size_in_bytes = rw_ptrmap->size_in_bytes() + ro_ptrmap->size_in_bytes();
@@ -1946,9 +1946,9 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
     address valid_new_base = (address)header()->mapped_base_address();
     address valid_new_end  = (address)mapped_end();
 
-    SharedDataRelocator rw_patcher((address*)rw_patch_base, (address*)rw_patch_end, valid_old_base, valid_old_end,
+    SharedDataRelocator rw_patcher((address*)rw_patch_base + header()->rw_ptrmap_start_pos(), (address*)rw_patch_end, valid_old_base, valid_old_end,
                                 valid_new_base, valid_new_end, addr_delta);
-    SharedDataRelocator ro_patcher((address*)ro_patch_base, (address*)ro_patch_end, valid_old_base, valid_old_end,
+    SharedDataRelocator ro_patcher((address*)ro_patch_base + header()->ro_ptrmap_start_pos(), (address*)ro_patch_end, valid_old_base, valid_old_end,
                                 valid_new_base, valid_new_end, addr_delta);
     rw_ptrmap.iterate(&rw_patcher);
     ro_ptrmap.iterate(&ro_patcher);

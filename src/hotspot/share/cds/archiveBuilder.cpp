@@ -1286,7 +1286,7 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_i
 
   // Split pointer map into read-write and read-only bitmaps
   //_rw_src_objs->_ptrmap _ro_src_objs->_ptrmap are the updated ptrmaps
-  ArchivePtrMarker::initialize_rw_ro_maps(&_rw_ptrmap, &_ro_ptrmap, &_rw_src_objs._ptrmap, &_ro_src_objs._ptrmap);
+  ArchivePtrMarker::initialize_rw_ro_maps(&_rw_ptrmap, &_ro_ptrmap);
 
   size_t bitmap_size_in_bytes;
   char* bitmap = mapinfo->write_bitmap_region(ArchivePtrMarker::rw_ptrmap(), ArchivePtrMarker::ro_ptrmap(), heap_info,

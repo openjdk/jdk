@@ -270,8 +270,10 @@ public:
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
   size_t heap_roots_offset()               const { return _heap_roots_offset; }
-  size_t heap_oopmap_start_pos()           const { return _heap_oopmap_start_pos;}
-  size_t heap_ptrmap_start_pos()           const { return _heap_ptrmap_start_pos;}
+  size_t heap_oopmap_start_pos()           const { return _heap_oopmap_start_pos; }
+  size_t heap_ptrmap_start_pos()           const { return _heap_ptrmap_start_pos; }
+  size_t rw_ptrmap_start_pos()             const { return _rw_ptrmap_start_pos; }
+  size_t ro_ptrmap_start_pos()             const { return _ro_ptrmap_start_pos; }
   // FIXME: These should really return int
   jshort max_used_path_index()             const { return _max_used_path_index; }
   jshort app_module_paths_start_index()    const { return _app_module_paths_start_index; }
