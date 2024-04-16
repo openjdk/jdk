@@ -427,10 +427,10 @@ invokeStaticMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
  */
 int
 invokeInstanceMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
-    jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
-    CHECK_EXCEPTION_CONTINUE_OR_FAIL();
     jmethodID mainID = (*env)->GetMethodID(env, mainClass, "main",
                                  "([Ljava/lang/String;)V");
+    CHECK_EXCEPTION_CONTINUE_OR_FAIL();
+    jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
     CHECK_EXCEPTION_CONTINUE_OR_FAIL();
     jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
     if (mainObject == NULL) {
@@ -464,10 +464,10 @@ invokeStaticMainWithoutArgs(JNIEnv *env, jclass mainClass) {
  */
 int
 invokeInstanceMainWithoutArgs(JNIEnv *env, jclass mainClass) {
-    jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
-    CHECK_EXCEPTION_CONTINUE_OR_FAIL();
     jmethodID mainID = (*env)->GetMethodID(env, mainClass, "main",
                                  "()V");
+    CHECK_EXCEPTION_CONTINUE_OR_FAIL();
+    jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
     CHECK_EXCEPTION_CONTINUE_OR_FAIL();
     jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
     if (mainObject == NULL) {
