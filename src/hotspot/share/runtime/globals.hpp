@@ -1987,6 +1987,9 @@ const int ObjectAlignmentInBytes = 8;
           "(default) disables native heap trimming.")                       \
           range(0, UINT_MAX)                                                \
                                                                             \
+  product(bool, ProfileClassLinkage, false, DIAGNOSTIC,                     \
+          "Profile class loading, linking, and CP resolution")              \
+                                                                            \
   develop(bool, SimulateFullAddressSpace, false,                            \
           "Simulates a very populated, fragmented address space; no "       \
           "targeted reservations will succeed.")                            \

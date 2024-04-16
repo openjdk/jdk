@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/dynamicArchive.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
@@ -155,6 +156,12 @@ static void print_method_profiling_data() {
   }
 }
 
+void log_vm_init_stats() {
+  LogStreamHandle(Info, init) log;
+  if (log.is_enabled()) {
+    ClassLoader::print_counters();
+  }
+}
 
 #ifndef PRODUCT
 
@@ -234,7 +241,7 @@ static void print_bytecode_count() {
 
 #else
 
-static void print_method_invocation_histogram() {}
+void print_method_invocation_histogram() {}
 static void print_bytecode_count() {}
 
 #endif // PRODUCT
@@ -355,6 +362,8 @@ void print_statistics() {
   }
 
   ThreadsSMRSupport::log_statistics();
+
+  log_vm_init_stats();
 }
 
 // Note: before_exit() can be executed only once, if more than one threads

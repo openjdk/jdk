@@ -828,6 +828,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     MetaspaceShared::preload_and_dump();
   }
 
+  if (ProfileClassLinkage) {
+    log_info(init)("Before main:");
+    log_vm_init_stats();
+  }
+
   return JNI_OK;
 }
 

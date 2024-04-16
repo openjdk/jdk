@@ -417,6 +417,7 @@ class PerfLongVariant : public PerfLong {
     inline void inc() { (*(jlong*)_valuep)++; }
     inline void inc(jlong val) { (*(jlong*)_valuep) += val; }
     inline void dec(jlong val) { inc(-val); }
+    inline void reset() { (*(jlong*)_valuep) = 0; }
 };
 
 /*
@@ -830,12 +831,18 @@ class PerfTraceTime : public StackObj {
     PerfLongCounter* _timerp;
 
   public:
-    inline PerfTraceTime(PerfLongCounter* timerp) : _timerp(timerp) {
-      if (!UsePerfData) return;
+    inline PerfTraceTime(PerfLongCounter* timerp, bool is_on = true) : _timerp(timerp) {
+      if (!is_on || !UsePerfData) return;
       _t.start();
     }
 
-    ~PerfTraceTime();
+    const char* name() const { return _timerp->name(); }
+
+    ~PerfTraceTime() {
+      if (!UsePerfData || !_t.is_active()) return;
+      _t.stop();
+      _timerp->inc(_t.ticks());
+    }
 };
 
 /* The PerfTraceTimedEvent class is responsible for counting the
@@ -863,8 +870,8 @@ class PerfTraceTimedEvent : public PerfTraceTime {
     PerfLongCounter* _eventp;
 
   public:
-    inline PerfTraceTimedEvent(PerfLongCounter* timerp, PerfLongCounter* eventp): PerfTraceTime(timerp), _eventp(eventp) {
-      if (!UsePerfData) return;
+    inline PerfTraceTimedEvent(PerfLongCounter* timerp, PerfLongCounter* eventp, bool is_on = true): PerfTraceTime(timerp, is_on), _eventp(eventp) {
+      if (!is_on || !UsePerfData) return;
       _eventp->inc();
     }
 

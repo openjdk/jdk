@@ -296,7 +296,7 @@ void PerfDataManager::add_item(PerfData* p, bool sampled) {
     _has_PerfData = true;
   }
 
-  assert(!_all->contains(p->name()), "duplicate name added");
+  assert(!_all->contains(p->name()), "duplicate name added: %s", p->name());
 
   // add to the list of all perf data items
   _all->append(p);
@@ -527,8 +527,3 @@ PerfDataList* PerfDataList::clone() {
   return copy;
 }
 
-PerfTraceTime::~PerfTraceTime() {
-  if (!UsePerfData) return;
-  _t.stop();
-  _timerp->inc(_t.ticks());
-}

@@ -26,6 +26,7 @@
 #include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/symbolTable.hpp"
@@ -68,6 +69,7 @@
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/relocator.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -1214,6 +1216,10 @@ void Method::remove_unshareable_flags() {
 // Called when the method_holder is getting linked. Setup entrypoints so the method
 // is ready to be called from interpreter, compiler, and vtables.
 void Method::link_method(const methodHandle& h_method, TRAPS) {
+  if (ProfileClassLinkage) {
+    ClassLoader::perf_ik_link_methods_count()->inc();
+  }
+
   // If the code cache is full, we may reenter this function for the
   // leftover methods that weren't linked.
   if (adapter() != nullptr) {
@@ -1265,6 +1271,8 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
 }
 
 address Method::make_adapters(const methodHandle& mh, TRAPS) {
+  PerfTraceTime timer(ClassLoader::perf_method_adapters_time(), ProfileClassLinkage);
+
   // Adapters for compiled code are made eagerly here.  They are fairly
   // small (generally < 100 bytes) and quick to make (and cached and shared)
   // so making them eagerly shouldn't be too expensive.

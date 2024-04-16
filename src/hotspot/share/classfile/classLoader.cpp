@@ -118,7 +118,39 @@ PerfCounter*    ClassLoader::_perf_define_appclass_time = nullptr;
 PerfCounter*    ClassLoader::_perf_define_appclass_selftime = nullptr;
 PerfCounter*    ClassLoader::_perf_app_classfile_bytes_read = nullptr;
 PerfCounter*    ClassLoader::_perf_sys_classfile_bytes_read = nullptr;
+PerfCounter*    ClassLoader::_perf_ik_link_methods_time = nullptr;
+PerfCounter*    ClassLoader::_perf_method_adapters_time = nullptr;
+PerfCounter*    ClassLoader::_perf_ik_link_methods_count = nullptr;
+PerfCounter*    ClassLoader::_perf_method_adapters_count = nullptr;
 PerfCounter*    ClassLoader::_unsafe_defineClassCallCounter = nullptr;
+
+PerfCounter*    ClassLoader::_perf_resolve_indy_time = nullptr;
+PerfCounter*    ClassLoader::_perf_resolve_invokehandle_time = nullptr;
+PerfCounter*    ClassLoader::_perf_resolve_mh_time = nullptr;
+PerfCounter*    ClassLoader::_perf_resolve_mt_time = nullptr;
+
+PerfCounter*    ClassLoader::_perf_resolve_indy_count = nullptr;
+PerfCounter*    ClassLoader::_perf_resolve_invokehandle_count = nullptr;
+PerfCounter*    ClassLoader::_perf_resolve_mh_count = nullptr;
+PerfCounter*    ClassLoader::_perf_resolve_mt_count = nullptr;
+
+void ClassLoader::print_counters() {
+  if (ProfileClassLinkage) {
+    LogStreamHandle(Info, init) log;
+    if (log.is_enabled()) {
+      log.print_cr("ClassLoader:");
+      log.print_cr("  clinit:               %ldms / %ld events", ClassLoader::class_init_time_ms(), ClassLoader::class_init_count());
+      log.print_cr("  link methods:         %ldms / %ld events", Management::ticks_to_ms(_perf_ik_link_methods_time->get_value())   , _perf_ik_link_methods_count->get_value());
+      log.print_cr("  method adapters:      %ldms / %ld events", Management::ticks_to_ms(_perf_method_adapters_time->get_value())   , _perf_method_adapters_count->get_value());
+      log.print_cr("  resolve...");
+      log.print_cr("    invokedynamic:   %ldms / %ld events", Management::ticks_to_ms(_perf_resolve_indy_time->get_value())         , _perf_resolve_indy_count->get_value());
+      log.print_cr("    invokehandle:    %ldms / %ld events", Management::ticks_to_ms(_perf_resolve_invokehandle_time->get_value()) , _perf_resolve_invokehandle_count->get_value());
+      log.print_cr("    CP_MethodHandle: %ldms / %ld events", Management::ticks_to_ms(_perf_resolve_mh_time->get_value())           , _perf_resolve_mh_count->get_value());
+      log.print_cr("    CP_MethodType:   %ldms / %ld events", Management::ticks_to_ms(_perf_resolve_mt_time->get_value())           , _perf_resolve_mt_count->get_value());
+      log.cr();
+    }
+  }
+}
 
 GrowableArray<ModuleClassPathList*>* ClassLoader::_patch_mod_entries = nullptr;
 GrowableArray<ModuleClassPathList*>* ClassLoader::_exploded_entries = nullptr;
@@ -1335,8 +1367,23 @@ void ClassLoader::initialize(TRAPS) {
     NEWPERFTICKCOUNTER(_perf_define_appclass_selftime, SUN_CLS, "defineAppClassTime.self");
     NEWPERFBYTECOUNTER(_perf_app_classfile_bytes_read, SUN_CLS, "appClassBytes");
     NEWPERFBYTECOUNTER(_perf_sys_classfile_bytes_read, SUN_CLS, "sysClassBytes");
+  }
 
-    NEWPERFEVENTCOUNTER(_unsafe_defineClassCallCounter, SUN_CLS, "unsafeDefineClassCalls");
+  if (ProfileClassLinkage) {
+    NEWPERFTICKCOUNTER(_perf_ik_link_methods_time, SUN_CLS, "linkMethodsTime");
+    NEWPERFTICKCOUNTER(_perf_method_adapters_time, SUN_CLS, "makeAdaptersTime");
+    NEWPERFEVENTCOUNTER(_perf_ik_link_methods_count, SUN_CLS, "linkMethodsCount");
+    NEWPERFEVENTCOUNTER(_perf_method_adapters_count, SUN_CLS, "makeAdaptersCount");
+
+    NEWPERFTICKCOUNTER(_perf_resolve_indy_time, SUN_CLS, "resolve_invokedynamic_time");
+    NEWPERFTICKCOUNTER(_perf_resolve_invokehandle_time, SUN_CLS, "resolve_invokehandle_time");
+    NEWPERFTICKCOUNTER(_perf_resolve_mh_time, SUN_CLS, "resolve_MethodHandle_time");
+    NEWPERFTICKCOUNTER(_perf_resolve_mt_time, SUN_CLS, "resolve_MethodType_time");
+
+    NEWPERFEVENTCOUNTER(_perf_resolve_indy_count, SUN_CLS, "resolve_invokedynamic_count");
+    NEWPERFEVENTCOUNTER(_perf_resolve_invokehandle_count, SUN_CLS, "resolve_invokehandle_count");
+    NEWPERFEVENTCOUNTER(_perf_resolve_mh_count, SUN_CLS, "resolve_MethodHandle_count");
+    NEWPERFEVENTCOUNTER(_perf_resolve_mt_count, SUN_CLS, "resolve_MethodType_count");
   }
 
   // lookup java library entry points
@@ -1424,11 +1471,11 @@ jlong ClassLoader::classloader_time_ms() {
 }
 
 jlong ClassLoader::class_init_count() {
-  return UsePerfData ? _perf_classes_inited->get_value() : -1;
+  return (UsePerfData) ? _perf_classes_inited->get_value() : -1;
 }
 
 jlong ClassLoader::class_init_time_ms() {
-  return UsePerfData ?
+  return (UsePerfData) ?
     Management::ticks_to_ms(_perf_class_init_time->get_value()) : -1;
 }
 
