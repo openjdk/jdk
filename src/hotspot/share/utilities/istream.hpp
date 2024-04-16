@@ -211,15 +211,6 @@ class inputStream : public CHeapObjBase {
     }
   }
 
-  // Get extra space in the current line, store chars there (if not null).
-  // Return internal buffer offset insertion point, or (size_t)-1 on error.
-  size_t prepare_to_push_back(size_t length,
-                              const char* chars = nullptr,
-                              bool overwrite_current_line = false);
-
-  // Expand the current line, without storing anything in the opened space.
-  char* prepare_to_expand_current_line(size_t increase, bool at_start);
-
   // How much content is buffered (if any) after the current line?
   size_t buffered_content_length(bool include_current) const {
     return (include_current       ? _content_end - _beg :
@@ -269,22 +260,6 @@ class inputStream : public CHeapObjBase {
     set_input(input);
   }
 
-  // For reading lines directly from strings or other shared memory.
-  // This constructor inhales the whole string into its buffer, as if
-  // by push_back_input.  The first current_line_position will be zero.
-  //
-  // If you have large shared memory, and don't want to make a large
-  // private copy, consider using MemoryInput instead.
-  inputStream(const char* chars, size_t length)
-    : inputStream()
-  {
-    push_back_input(chars, length);
-  }
-
-  inputStream(const char* chars)
-    : inputStream(chars, strlen(chars))
-  { }
-
   virtual ~inputStream() {
     if (_must_free)         handle_free();
     if (_input != nullptr)  set_input(nullptr);
@@ -292,17 +267,6 @@ class inputStream : public CHeapObjBase {
 
   // Discards any previous input and sets the given input source.
   void set_input(Input* input);
-
-  // Forces the given data into the buffer, before the current line.
-  // If overwrite_current_line is true, the current line is removed.
-  // Normally, an input stream tries not to do a "big inhale", but
-  // this will cause all of the given data into my buffer.
-  void push_back_input(const char* chars, size_t length,
-                       bool overwrite_current_line = false);
-
-  void push_back_input(const char* chars) {
-    push_back_input(chars, strlen(chars));
-  }
 
   // Returns a pointer to a null terminated mutable copy of the current line.
   // Note that embedded nulls may make the line appear shorter than it really is.
@@ -330,73 +294,6 @@ class inputStream : public CHeapObjBase {
     preload();
     return _end - _beg;
   }
-
-  // These functions adjust the beginning and end of the storage of
-  // the current line.  They work by inserting or deleting characters
-  // at the left or right boundary of the line.  Underflow causes the
-  // line to become empty; there is no overflow per se but allocation
-  // failure will put the stream into an error state.  If new
-  // characters are added, to either the beginning or the end, they
-  // are initialized to space ' '.
-  //
-  // You can use these functions to trim or add leading or trailing
-  // spaces from a line, or to remove other decorations from either
-  // end, or to expand the line in place if some other post-processing
-  // is required.  If you need to edit the interior of the line, you
-  // are responsible for moving around the interior parts yourself,
-  // and also adjusting the length as appropriate.  The return value
-  // is a pointer into the line to the left of where the change
-  // happened, or else null if an expansion failed to allocate.
-  //
-  // The point of these functions is to enable light postprocessing
-  // without recopying the current line into a new buffer.  It is
-  // generally an O(1) operation to add or subtract a little space at
-  // either the start or the end of the line, except for a one-time
-  // line relocation in the buffer when space is added at the end.
-  char* reduce_current_line(size_t decrease, bool at_start = false);
-  void clear_current_line() { reduce_current_line(current_line_length()); }
-  char* expand_current_line(size_t increase, bool at_start = false) {
-    char* fillp = prepare_to_expand_current_line(increase, at_start);
-    if (fillp != nullptr && increase > 0) {
-      ::memset(fillp, ' ', increase);
-    }
-    return fillp;
-  }
-  // Expand the current line and copy the given chars in.
-  // The increase defaults to strlen(chars).
-  // Returns null if chars is null.
-  char* expand_current_line_with(const char* chars,
-                                 size_t increase = (size_t)-1,
-                                 bool at_start = false) {
-    if (chars == nullptr && increase != 0)  return nullptr;
-    if (increase == (size_t)-1)  increase = strlen(chars);
-    char* fillp = prepare_to_expand_current_line(increase, at_start);
-    if (fillp != nullptr && increase > 0) {
-      ::memcpy(fillp, chars, increase);
-    }
-    return fillp;
-  }
-
-  // Return the number of characters read from input to the beginning
-  // of the current line if any.  If the current line contains
-  // pushback characters, or if the current line length has been
-  // adjusted, the position is undefined and (size_t)-1 is returned.
-  size_t current_line_position() const;
-
-  // Attempt to seek to some line position relevant to the input source.
-  // This can fail in many ways; return (size_t)-1 on failure.
-  // Also set lineno, if it is given and not zero; otherwise, reads
-  // will continue to increment the current value of lineno.
-  // On success, advance to the indicated line and return its position.
-  size_t set_current_line_position(size_t position, julong lineno = 0);
-
-  // Returns a C string for exactly the line-ending sequence which was
-  // stripped from the current line.  This is the sequence, pulled
-  // from the underlying block input, that delimited the current line.
-  // If there are no more lines, or if we are at a partial final line,
-  // return an empty string.  Otherwise return "\n" or "\r\n" as the
-  // case may be.
-  const char* current_line_ending() const;
 
   // Reports my current input source, if any, else a null pointer.
   Input* input() const { return _input; }
@@ -433,24 +330,6 @@ class inputStream : public CHeapObjBase {
 
   // returns a count of the number of lines seen; it is not resettable
   size_t line_count() const      { return _line_count; }
-
-  // Copy to a resource or C-heap array as requested.
-  // Add a terminating null, and also keep any embedded nulls.
-  char* save_line(bool c_heap = false) const;
-
-  // Copy to a resource or C-heap array, doing the actual work with a
-  // copy-function which can perform arbitrary operations on this
-  // input stream, copying arbitrary data into a temporary
-  // string-stream that collects the output.  The copy function is
-  // called on two pointers, as if it by the expression
-  // `this->print_on(out)`.  Note that multiple lines can be saved, if
-  // desired, by calling `this->next()` inside the copy function.
-  template<typename WFN>
-  char* save_data(WFN copy_in_to_out, bool c_heap = false) {
-    stringStream out(current_line_length() + 10);
-    copy_in_to_out(this, &out);
-    return out.as_string(c_heap);
-  }
 
   // Copy the current line to the given output stream.
   void print_on(outputStream* out);

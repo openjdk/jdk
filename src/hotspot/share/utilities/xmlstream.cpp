@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,35 +36,6 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/vmError.hpp"
 #include "utilities/xmlstream.hpp"
-
-// The LogFile (default hotspot_%p.log) contains XML-flavored text.
-// It is a superset of whatever might be displayed on the tty.
-// You can get to it by calls of the form xtty->...
-// Normal calls to tty->... just embed plain text among any markup
-// produced via the xtty API.
-// The xtty has sub-streams called xtty->text() and xtty->log_long().
-// These are ordinary output streams for writing unstructured text.
-// The format of this log file is both unstructured and constrained.
-//
-// Apart from possible race conditions, every line in the log file
-// is either an XML element (<tag ...>, or </tag>, or <tag .../>)
-// or is unstructured text.  See xmlstream.hpp for more details.
-//
-// The net effect is that you may select a range of tools to process
-// the marked-up logs, including XML parsers and simple line-oriented
-// Java or Unix tools.  The main concession you have to make to XML
-// is to convert the above five XML entities to single ASCII chars,
-// as you process attribute strings or unstructured text.
-//
-// It would be wise to ignore any XML tags that you do not recognize.
-// This can be done with grep, if you choose, because the log file
-// is line-structured.
-//
-// The log file collects the output from many contributing threads.
-// You should expect that an element of the form <writer thread='NNN'>
-// could appear almost anywhere, as the lines interleave.
-// It is straightforward to write a script to tease the log file
-// into thread-specific substreams.
 
 // Do not assert this condition if there's already another error reported.
 #define assert_if_no_error(cond, msg) \
@@ -116,185 +87,41 @@ void xmlStream::write(const char* s, size_t len) {
 void xmlStream::write_text(const char* s, size_t len) {
   if (!is_open())  return;
 
-  const char* pass_these_through = "\n";
-  if (inside_attrs())  pass_these_through = nullptr;
-  write_escaped(s, len, out(), pass_these_through);
-
-}
-
-// ------------------------------------------------------------------
-// Means of escape
-
-// The chars ' and " are attribute delimiters, but we do them in all
-// contexts, for consistency.  The characters < & > should be escaped
-// everywhere.  Newlines need escaping inside attribute strings.
-#define XML_ESCAPES_DO(FN)                      \
-  FN('\'', "&apos;")                            \
-  FN('"' , "&quot;")                            \
-  FN('<' , "&lt;"  )                            \
-  FN('>' , "&gt;"  )                            \
-  FN('&' , "&amp;" )                            \
-  FN('\n', "&#10;" )                            \
-  /*END*/
-
-#define MAX_ESCAPE_LEN xmlStream::MAX_ESCAPE_LEN
-
-#define ESC_LEN_BIT(ch, esc)  | (1 << (sizeof(esc)-1))
-static_assert( ((0 XML_ESCAPES_DO(ESC_LEN_BIT)) | ((1 << MAX_ESCAPE_LEN) - 1))
-               == ((2 << MAX_ESCAPE_LEN) - 1),
-               "max strlen of escape sequence must be as indicated");
-#undef ESC_LEN_BIT
-
-template<typename FN>
-inline size_t scan_for_escaping(const char* s, size_t len, FN fn,
-                                const char* *first_esc = nullptr,
-                                const char* pass_these_through = nullptr) {
   size_t written = 0;
-  size_t extra = 0;
-  // All normally printed material uses XML escapes.
+  // All normally printed material goes inside XML quotes.
   // This leaves the output free to include markup also.
   // Scan the string looking for inadvertent "<&>" chars
   for (size_t i = 0; i < len; i++) {
     char ch = s[i];
-    // Escape the Special Six characters.
+    // Escape special chars.
     const char* esc = nullptr;
-    size_t esc_len = 0;
     switch (ch) {
-      #define DO_SWITCH_CASE(chr,str) \
-        case chr: esc_len = strlen(esc = str); break;
-      XML_ESCAPES_DO(DO_SWITCH_CASE)
-      #undef DO_SWITCH_CASE
-    }
-    if (esc != nullptr && pass_these_through && strchr(pass_these_through, ch)) {
-      esc = nullptr;
+      // These are important only in attrs, but we do them always:
+    case '\'': esc = "&apos;"; break;
+    case '"':  esc = "&quot;"; break;
+    case '<':  esc = "&lt;";   break;
+    case '&':  esc = "&amp;";  break;
+      // This is a freebie.
+    case '>':  esc = "&gt;";   break;
     }
     if (esc != nullptr) {
-      if (first_esc != nullptr) { *first_esc = esc; return i; }
       if (written < i) {
-        fn(&s[written], i - written);
+        out()->write(&s[written], i - written);
+        written = i;
       }
-      fn(esc, esc_len);
-      written = i + 1;   // amount of raw input processed so far
-      extra += esc_len - 1;
+      out()->print_raw(esc);
+      written++;
     }
   }
-
-  if (first_esc != nullptr)  return len;
 
   // Print the clean remainder.  Usually, it is all of s.
   if (written < len) {
-    fn(&s[written], len - written);
+    out()->write(&s[written], len - written);
   }
-
-  return written + extra;
-}
-
-size_t xmlStream::escaped_length(const char* s, size_t len) {
-  return scan_for_escaping(s, len, [](const char* ig1, size_t ig2) { });
-}
-
-// Return len if there is no escape sequence.
-size_t xmlStream::find_to_escape(const char* s, size_t len, const char* &esc) {
-  return scan_for_escaping(s, len, [](const char* ig1, size_t ig2) { }, &esc);
-}
-
-size_t xmlStream::write_escaped(const char* s, size_t len, outputStream* out,
-                                const char* pass_these_through) {
-  auto out_writer = [&](const char* c, size_t n) { out->write(c, n); };
-  return scan_for_escaping(s, len, out_writer, nullptr, pass_these_through);
-}
-
-static size_t find_next_escape(const char* s, size_t len,
-                               int& esc_len, char& unesc_char) {
-  for (size_t i = 0; i < len; i++) {
-    if (s[i] != '&')   continue;
-    int qlen = 0;
-    size_t jlimit = MAX_ESCAPE_LEN; //== strlen("&quot;")
-    if (jlimit > len - i)  jlimit = len - i;
-    // find terminating ';'
-    for (size_t j = 2; j < jlimit; j++) {
-      if (s[i+j] == ';') { qlen = (int)(j + 1); break; }
-      // (could do more pattern matching here, but not worth it)
-    }
-    if (qlen == 0)  continue;
-    int found = -1;
-    #define DO_CHECK_CASE(chr,str) \
-      { if (!strncmp(str, &s[i], qlen))  found = chr; }
-    XML_ESCAPES_DO(DO_CHECK_CASE);
-    #undef DO_CHECK_CASE
-    if (found >= 0) {
-      unesc_char = (char) found;
-      esc_len = qlen;  // caller should use esc_len to skip over next ';'
-      return i;
-    }
-  }
-  return len;
-}
-
-// Return len if there is no escape sequence.
-size_t xmlStream::find_escape(const char* s, size_t len,
-                              int &esc_len, char &unesc) {
-  return find_next_escape(s, len, esc_len, unesc);
-}
-
-size_t xmlStream::write_unescaped(const char* s, size_t len, outputStream* out) {
-  size_t processed = 0;
-  size_t removed = 0;
-  for (;;) {
-    int esc_len = 0;
-    char unesc_char = 0;
-    size_t i = find_next_escape(&s[processed], len - processed,
-                                esc_len, unesc_char);
-    if (i == len - processed)  break;
-    if (processed < i) {
-      out->write(&s[processed], i - processed);
-    }
-    out->write(&unesc_char, 1);
-    processed = i + esc_len;
-    removed += esc_len - 1;
-  }
-
-  // Print the clean remainder.  Usually, it is all of s.
-  if (processed < len) {
-    out->write(&s[processed], len - processed);
-  }
-
-  return len - removed;
-}
-
-// Return the new length, which will be shorter if there were escapes.
-size_t xmlStream::unescape_in_place(char* buf, size_t len) {
-  size_t processed = 0;  // in-place read pointer
-  size_t copied = 0;     // in-place write pointer, copied <= processed <= len
-  for (;;) {
-    int esc_len = 0;
-    char unesc_char = 0;
-    size_t i = find_next_escape(&buf[processed], len - processed,
-                                esc_len, unesc_char) + processed;
-    if (i == len) {
-      if (processed == 0)  return len;  // usual case, of no escapes found
-      break;
-    }
-    if (processed < i && copied != processed) {
-      memmove(&buf[copied], &buf[processed], i - processed);
-    }
-    copied += i - processed;
-    buf[copied++] = unesc_char;
-    processed = i + esc_len;
-  }
-
-  // Shift the clean remainder.
-  if (processed < len) {
-    memmove(&buf[copied], &buf[processed], len - processed);
-    copied += len - processed;
-  }
-
-  buf[copied] = '\0';  // if it shrinks, reset a null terminator as a courtesy
-  return copied;
 }
 
 // ------------------------------------------------------------------
-// Outputs XML text, with special characters escaped.
+// Outputs XML text, with special characters quoted.
 void xmlStream::text(const char* format, ...) {
   va_list ap;
   va_start(ap, format);
