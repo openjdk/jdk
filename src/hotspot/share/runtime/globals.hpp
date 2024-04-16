@@ -799,7 +799,7 @@ const int ObjectAlignmentInBytes = 8;
           "at this time")                                                   \
                                                                             \
   product(bool, PreserveAllAnnotations, false,                              \
-          "Preserve RuntimeInvisibleAnnotations as well "                   \
+          "(Deprecated) Preserve RuntimeInvisibleAnnotations as well "      \
           "as RuntimeVisibleAnnotations")                                   \
                                                                             \
   develop(uintx, PreallocatedOutOfMemoryErrorCount, 4,                      \
