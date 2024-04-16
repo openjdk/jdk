@@ -173,9 +173,9 @@ class ImmutableCollections {
                 public <K, V> V computeIfUnset(Map<K, StableValue<V>> map,
                                                K key,
                                                Function<? super K, ? extends V> mapper) {
-                    if (map instanceof UnsetComputable) {
+                    if (map instanceof HasComputeIfUnset) {
                         @SuppressWarnings("unchecked")
-                        UnsetComputable<K, V> uc = ((UnsetComputable<K, V>) map);
+                        HasComputeIfUnset<K, V> uc = ((HasComputeIfUnset<K, V>) map);
                         return uc.computeIfUnset(key, mapper);
                     } else {
                         StableValue<V> stable = map.get(key);
@@ -1497,14 +1497,14 @@ class ImmutableCollections {
     }
 
     // Internal interface used to indicate the presence of
-    // the computeIfUnset method that is unique to LazyMap and LazyEnumMap
-    interface UnsetComputable<K, V> {
+    // the computeIfUnset method that is unique to StableMap and StableEnumMap
+    interface HasComputeIfUnset<K, V> {
         V computeIfUnset(K key, Function<? super K, ? extends V> mapper);
     }
 
     static final class StableMap<K, V>
             extends AbstractImmutableMap<K, StableValue<V>>
-            implements Map<K, StableValue<V>>, UnsetComputable<K, V> {
+            implements Map<K, StableValue<V>>, HasComputeIfUnset<K, V> {
 
         @Stable
         private final int size;
@@ -1675,7 +1675,7 @@ class ImmutableCollections {
 
     static final class StableEnumMap<K extends Enum<K>, V>
             extends AbstractImmutableMap<K, StableValue<V>>
-            implements Map<K, StableValue<V>>, UnsetComputable<K, V> {
+            implements Map<K, StableValue<V>>, HasComputeIfUnset<K, V> {
 
         @Stable
         private int size;
