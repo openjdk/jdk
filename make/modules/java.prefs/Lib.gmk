@@ -38,16 +38,11 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBPREFS, \
     NAME := prefs, \
     EXCLUDE_SRC_PATTERNS := $(LIBPREFS_EXCLUDE_SRC_PATTERNS), \
     OPTIMIZATION := HIGH, \
-    JDK_LIBS_unix := -ljvm, \
-    JDK_LIBS_linux := -ljava, \
-    JDK_LIBS_aix := -ljava, \
-    JDK_LIBS_windows := $(WIN_JAVA_LIB) jvm.lib, \
+    JDK_LIBS := java.base:libjava java.base:libjvm, \
     LIBS_macosx := \
         -framework CoreFoundation \
         -framework Foundation, \
     LIBS_windows := advapi32.lib, \
 ))
-
-$(BUILD_LIBPREFS): $(call FindLib, java.base, java)
 
 TARGETS += $(BUILD_LIBPREFS)

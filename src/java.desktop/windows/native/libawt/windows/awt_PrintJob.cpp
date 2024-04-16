@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,11 +64,6 @@ jfieldID AwtPrintDialog::pageID;
  */
 
 extern "C" {
-
-/*** Private Constants ***/
-
-static const char *kJavaIntStr = "I";
-static const char *kJavaLongStr = "J";
 
 /* 2D printing uses 3 byte BGR pixels in Raster printing */
 static int J2DRasterBPP = 3;
@@ -308,18 +303,11 @@ static void matchPaperSize(HDC printDC, HGLOBAL hDevMode, HGLOBAL hDevNames,
 static jboolean jFontToWFontW(JNIEnv *env, HDC printDC, jstring fontName,
                         jfloat fontSize, jboolean isBold, jboolean isItalic,
                         jint rotation, jfloat awScale);
-static jboolean jFontToWFontA(JNIEnv *env, HDC printDC, jstring fontName,
-                        jfloat fontSize, jboolean isBold, jboolean isItalic,
-                        jint rotation, jfloat awScale);
 
 static int CALLBACK fontEnumProcW(ENUMLOGFONTEXW  *lpelfe,
                                  NEWTEXTMETRICEX *lpntme,
                                  int FontType,
                                  LPARAM lParam);
-static int CALLBACK fontEnumProcA(ENUMLOGFONTEXA  *logfont,
-                                  NEWTEXTMETRICEX  *lpntme,
-                                  int FontType,
-                                  LPARAM lParam);
 
 static int embolden(int currentWeight);
 static BOOL getPrintableArea(HDC pdc, HANDLE hDevMode, RectDouble *margin);
@@ -2319,131 +2307,6 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_windows_WPrinterJob_setFont
  * into 'printDC' and returns a 'true'. If there is no equivalent
  * font then 'false' is returned.
  */
-static jboolean jFontToWFontA(JNIEnv *env, HDC printDC, jstring fontName,
-                        jfloat fontSize, jboolean isBold, jboolean isItalic,
-                        jint rotation, jfloat awScale)
-{
-    LOGFONTA lf;
-    LOGFONTA matchedLogFont;
-    BOOL foundFont = false;     // Assume we didn't find a matching GDI font.
-
-    memset(&matchedLogFont, 0, sizeof(matchedLogFont));
-
-    LPCWSTR fontNameW = JNU_GetStringPlatformChars(env, fontName, NULL);
-
-
-    /* Some fontnames of Non-ASCII fonts like 'MS Minchou' are themselves
-     * Non-ASCII.  They are assumed to be written in Unicode.
-     * Hereby, they are converted into platform codeset.
-     */
-    int maxlen = static_cast<int>(sizeof(lf.lfFaceName)) - 1;
-    // maxlen is int due to cbMultiByte parameter is int
-    int destLen = WideCharToMultiByte(CP_ACP,        // convert to ASCII code page
-                                      0,             // flags
-                                      fontNameW,     // Unicode string
-                                      -1,            // Unicode length is calculated automatically
-                                      lf.lfFaceName, // Put ASCII string here
-                                      maxlen,        // max len
-                                      NULL,          // default handling of unmappables
-                                      NULL);         // do not care if def char is used
-
-    /* If WideCharToMultiByte succeeded then the number
-     * of bytes it copied into the face name buffer will
-     * be greater than zero and we just need to NULL terminate
-     * the string. If there was an error then the number of
-     * bytes copied is zero and we can not match the font.
-     */
-    if (destLen > 0) {
-
-        DASSERT(destLen < sizeof(lf.lfFaceName));
-        lf.lfFaceName[destLen] = '\0';
-        lf.lfCharSet = DEFAULT_CHARSET;
-        lf.lfPitchAndFamily = 0;
-
-        foundFont = !EnumFontFamiliesExA((HDC)printDC, &lf,
-                                        (FONTENUMPROCA) fontEnumProcA,
-                                        (LPARAM) &matchedLogFont, 0);
-    }
-
-
-    if (foundFont) {
-
-        /* Build a font of the requested size with no
-         * width modifications. A negative font height
-         * tells GDI that we want that values absolute
-         * value as the font's point size. If the font
-         * is successfully built then set it as the current
-         * GDI font.
-         */
-        matchedLogFont.lfHeight = -ROUND_TO_LONG(fontSize);
-        matchedLogFont.lfWidth = 0;
-        matchedLogFont.lfEscapement = rotation;
-        matchedLogFont.lfOrientation = rotation;
-        matchedLogFont.lfUnderline = 0;
-        matchedLogFont.lfStrikeOut = 0;
-
-        /* Force bold or italic if requested. The font name
-           such as Arial Bold may have already set a weight
-           so here we just try to increase it.
-        */
-        if (isBold) {
-            matchedLogFont.lfWeight = embolden(matchedLogFont.lfWeight);
-        } else {
-            matchedLogFont.lfWeight = FW_REGULAR;
-        }
-
-        if (isItalic) {
-            matchedLogFont.lfItalic = 0xff;     // TRUE
-        }  else {
-            matchedLogFont.lfItalic = FALSE;
-        }
-
-        HFONT font = CreateFontIndirectA(&matchedLogFont);
-        if (font) {
-            HFONT oldFont = (HFONT)::SelectObject(printDC, font);
-            if (oldFont != NULL) {
-                ::DeleteObject(oldFont);
-                if (awScale != 1.0) {
-                    TEXTMETRIC tm;
-                    DWORD avgWidth;
-                    GetTextMetrics(printDC, &tm);
-                    avgWidth = tm.tmAveCharWidth;
-                    matchedLogFont.lfWidth = (LONG)((fabs)(avgWidth*awScale));
-                    font = CreateFontIndirectA(&matchedLogFont);
-                    if (font) {
-                        oldFont = (HFONT)::SelectObject(printDC, font);
-                        if (oldFont != NULL) {
-                            ::DeleteObject(oldFont);
-                            GetTextMetrics(printDC, &tm);
-                        } else {
-                            foundFont = false;
-                        }
-                    } else {
-                        foundFont = false;
-                    }
-                }
-            } else {
-                foundFont = false;
-            }
-        } else {
-            foundFont = false;
-        }
-    }
-
-    JNU_ReleaseStringPlatformChars(env, fontName, fontNameW);
-
-    return foundFont ? JNI_TRUE : JNI_FALSE;
-}
-
-/**
- * Try to convert a java font to a GDI font. On entry, 'printDC',
- * is the device context we want to draw into. 'fontName' is
- * the name of the font to be matched and 'fontSize' is the
- * size of the font in device coordinates. If there is an
- * equivalent GDI font then this function sets that font
- * into 'printDC' and returns a 'true'. If there is no equivalent
- * font then 'false' is returned.
- */
 static jboolean jFontToWFontW(JNIEnv *env, HDC printDC, jstring fontName,
                         jfloat fontSize, jboolean isBold, jboolean isItalic,
                         jint rotation, jfloat awScale)
@@ -2567,29 +2430,6 @@ static int CALLBACK fontEnumProcW(ENUMLOGFONTEXW *logfont,// logical-font data
                     LPARAM lParam)
 {
     LOGFONTW *matchedLogFont = (LOGFONTW *) lParam;
-    int stop = 0;          // Take the first style found.
-
-    if (matchedLogFont != NULL) {
-        *matchedLogFont = logfont->elfLogFont;
-    }
-
-    return stop;
-}
-
-/**
- * Invoked by GDI as a result of the EnumFontFamiliesExA
- * call this routine choses a GDI font that matches
- * a Java font. When a match is found then function
- * returns a zero result to terminate the EnumFontFamiliesExA
- * call. The information about the chosen font is copied into
- * the LOGFONTA structure pointed to by 'lParam'.
- */
-static int CALLBACK fontEnumProcA(ENUMLOGFONTEXA *logfont,// logical-font data
-                    NEWTEXTMETRICEX *lpntme,              // physical-font data
-                    int FontType,                         // type of font
-                    LPARAM lParam)
-{
-    LOGFONTA *matchedLogFont = (LOGFONTA *) lParam;
     int stop = 0;          // Take the first style found.
 
     if (matchedLogFont != NULL) {

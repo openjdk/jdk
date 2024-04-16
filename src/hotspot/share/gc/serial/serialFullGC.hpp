@@ -22,11 +22,11 @@
  *
  */
 
-#ifndef SHARE_GC_SERIAL_MARKSWEEP_HPP
-#define SHARE_GC_SERIAL_MARKSWEEP_HPP
+#ifndef SHARE_GC_SERIAL_SERIALFULLGC_HPP
+#define SHARE_GC_SERIAL_SERIALFULLGC_HPP
 
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -37,11 +37,10 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/stack.hpp"
 
-class DataLayout;
 class SerialOldTracer;
 class STWGCTimer;
 
-// MarkSweep takes care of global mark-compact garbage collection for a
+// Serial full GC takes care of global mark-compact garbage collection for a
 // SerialHeap using a four-phase pointer forwarding algorithm.  All
 // generations are assumed to support marking; those that can also support
 // compaction.
@@ -49,11 +48,10 @@ class STWGCTimer;
 // Class unloading will only occur when a full gc is invoked.
 
 // declared at end
-class PreservedMark;
 class MarkAndPushClosure;
 class AdjustPointerClosure;
 
-class MarkSweep : AllStatic {
+class SerialFullGC : AllStatic {
   //
   // Inline closure decls
   //
@@ -82,17 +80,8 @@ class MarkSweep : AllStatic {
     virtual void do_oop(narrowOop* p);
   };
 
-  //
-  // Friend decls
-  //
-  friend class AdjustPointerClosure;
-  friend class KeepAliveClosure;
-
-  //
-  // Vars
-  //
  protected:
-  // Total invocations of a MarkSweep collection
+  // Total invocations of serial full GC
   static uint _total_invocations;
 
   // Traversal stacks used during phase1
@@ -144,11 +133,9 @@ class MarkSweep : AllStatic {
   static void adjust_marks();   // Adjust the pointers in the preserved marks table
   static void restore_marks();  // Restore the marks that we saved in preserve_mark
 
-  static size_t adjust_pointers(oop obj);
-
   static void follow_stack();   // Empty marking stack.
 
-  template <class T> static inline void adjust_pointer(T* p);
+  template <class T> static void adjust_pointer(T* p);
 
   // Check mark and maybe push on marking stack
   template <class T> static void mark_and_push(T* p);
@@ -196,4 +183,4 @@ class AdjustPointerClosure: public BasicOopIterateClosure {
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
 };
 
-#endif // SHARE_GC_SERIAL_MARKSWEEP_HPP
+#endif // SHARE_GC_SERIAL_SERIALFULLGC_HPP

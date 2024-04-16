@@ -61,6 +61,7 @@ class CastDDNode;
 class CastVVNode;
 class CastIINode;
 class CastLLNode;
+class CastPPNode;
 class CatchNode;
 class CatchProjNode;
 class CheckCastPPNode;
@@ -193,6 +194,7 @@ class CompressMNode;
 class ScopedValueGetLoadFromCacheNode;
 class ScopedValueGetHitsInCacheNode;
 class ScopedValueGetResultNode;
+class C2_MacroAssembler;
 
 
 #ifndef OPTO_DU_ITERATOR_ASSERT
@@ -720,6 +722,7 @@ public:
         DEFINE_CLASS_ID(CastFF, ConstraintCast, 3)
         DEFINE_CLASS_ID(CastDD, ConstraintCast, 4)
         DEFINE_CLASS_ID(CastVV, ConstraintCast, 5)
+        DEFINE_CLASS_ID(CastPP, ConstraintCast, 6)
       DEFINE_CLASS_ID(CMove, Type, 3)
       DEFINE_CLASS_ID(SafePointScalarObject, Type, 4)
       DEFINE_CLASS_ID(DecodeNarrowPtr, Type, 5)
@@ -903,6 +906,7 @@ public:
   DEFINE_CLASS_QUERY(CastII)
   DEFINE_CLASS_QUERY(CastLL)
   DEFINE_CLASS_QUERY(ConI)
+  DEFINE_CLASS_QUERY(CastPP)
   DEFINE_CLASS_QUERY(ConstraintCast)
   DEFINE_CLASS_QUERY(ClearArray)
   DEFINE_CLASS_QUERY(CMove)
@@ -1188,9 +1192,8 @@ public:
 
   // Print as assembly
   virtual void format( PhaseRegAlloc *, outputStream* st = tty ) const;
-  // Emit bytes starting at parameter 'ptr'
-  // Bump 'ptr' by the number of output bytes
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
+  // Emit bytes using C2_MacroAssembler
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   // Size of instruction in bytes
   virtual uint size(PhaseRegAlloc *ra_) const;
 

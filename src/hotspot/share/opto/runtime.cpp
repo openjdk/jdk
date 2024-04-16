@@ -83,7 +83,7 @@
 //  To force FullGCALot inside a runtime function, add the following two lines
 //
 //  Universe::release_fullgc_alot_dummy();
-//  MarkSweep::invoke(0, "Debugging");
+//  Universe::heap()->collect();
 //
 // At command line specify the parameters: -XX:+FullGCALot -XX:FullGCALotStart=100000000
 

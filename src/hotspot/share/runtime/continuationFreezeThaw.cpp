@@ -2534,7 +2534,7 @@ static bool do_verify_after_thaw(JavaThread* thread, stackChunkOop chunk, output
 
   ResourceMark rm;
   ThawVerifyOopsClosure cl(st);
-  CodeBlobToOopClosure cf(&cl, false);
+  NMethodToOopClosure cf(&cl, false);
 
   StackFrameStream fst(thread, true, false);
   fst.register_map()->set_include_argument_oops(false);

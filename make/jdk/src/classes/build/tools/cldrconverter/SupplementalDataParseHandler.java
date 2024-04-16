@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,11 +38,11 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
- * Handles parsing of files in Locale Data Markup Language for SupplementData.xml
+ * Handles parsing of files in Locale Data Markup Language for supplementalData.xml
  * and produces a map that uses the keys and values of JRE locale data.
  */
 
-class SupplementDataParseHandler extends AbstractLDMLHandler<Object> {
+class SupplementalDataParseHandler extends AbstractLDMLHandler<Object> {
     //UNM49 region and composition code used in supplementalData.xml
     private static final String WORLD = "001";
 
@@ -73,7 +73,7 @@ class SupplementDataParseHandler extends AbstractLDMLHandler<Object> {
     // "component" specific to this parent locale chain
     private String currentParentLocaleComponent;
 
-    SupplementDataParseHandler() {
+    SupplementalDataParseHandler() {
         firstDayMap = new HashMap<>();
         minDaysMap = new HashMap<>();
         parentLocalesMap = new HashMap<>();
@@ -132,32 +132,15 @@ class SupplementDataParseHandler extends AbstractLDMLHandler<Object> {
         switch (qName) {
         case "firstDay":
             if (!isIgnored(attributes)) {
-                String fd;
-
-                switch (attributes.getValue("day")) {
-                    case "sun":
-                        fd = "1";
-                        break;
-                    default:
-                    case "mon":
-                        fd = "2";
-                        break;
-                    case "tue":
-                        fd = "3";
-                        break;
-                    case "wed":
-                        fd = "4";
-                        break;
-                    case "thu":
-                        fd = "5";
-                        break;
-                    case "fri":
-                        fd = "6";
-                        break;
-                    case "sat":
-                        fd = "7";
-                        break;
-                }
+                String fd = switch (attributes.getValue("day")) {
+                    case "sun" -> "1";
+                    case "tue" -> "3";
+                    case "wed" -> "4";
+                    case "thu" -> "5";
+                    case "fri" -> "6";
+                    case "sat" -> "7";
+                    default -> "2"; // Mon
+                };
                 firstDayMap.put(attributes.getValue("territories"), fd);
             }
             break;

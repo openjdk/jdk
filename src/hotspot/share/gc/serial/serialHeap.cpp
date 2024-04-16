@@ -31,8 +31,8 @@
 #include "compiler/oopMap.hpp"
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/defNewGeneration.inline.hpp"
-#include "gc/serial/markSweep.hpp"
-#include "gc/serial/serialHeap.hpp"
+#include "gc/serial/serialFullGC.hpp"
+#include "gc/serial/serialHeap.inline.hpp"
 #include "gc/serial/serialMemoryPools.hpp"
 #include "gc/serial/serialVMOperations.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
@@ -249,7 +249,7 @@ void SerialHeap::post_initialize() {
 
   def_new_gen->ref_processor_init();
 
-  MarkSweep::initialize();
+  SerialFullGC::initialize();
 
   ScavengableNMethods::initialize(&_is_scavengable);
 }
@@ -560,7 +560,7 @@ void SerialHeap::do_collection(bool full,
 
   if (do_full_collection) {
     GCIdMark gc_id_mark;
-    GCTraceCPUTime tcpu(MarkSweep::gc_tracer());
+    GCTraceCPUTime tcpu(SerialFullGC::gc_tracer());
     GCTraceTime(Info, gc) t("Pause Full", nullptr, gc_cause(), true);
 
     print_heap_before_gc();
@@ -585,7 +585,7 @@ void SerialHeap::do_collection(bool full,
 
     ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
                               false /* unregister_nmethods_during_purge */,
-                              false /* lock_codeblob_free_separately */);
+                              false /* lock_nmethod_free_separately */);
 
     collect_generation(_old_gen,
                        full,
@@ -729,14 +729,14 @@ void SerialHeap::process_roots(ScanningOption so,
                                OopClosure* strong_roots,
                                CLDClosure* strong_cld_closure,
                                CLDClosure* weak_cld_closure,
-                               CodeBlobToOopClosure* code_roots) {
+                               NMethodToOopClosure* code_roots) {
   // General roots.
   assert(code_roots != nullptr, "code root closure should always be set");
 
   ClassLoaderDataGraph::roots_cld_do(strong_cld_closure, weak_cld_closure);
 
   // Only process code roots from thread stacks if we aren't visiting the entire CodeCache anyway
-  CodeBlobToOopClosure* roots_from_code_p = (so & SO_AllCodeCache) ? nullptr : code_roots;
+  NMethodToOopClosure* roots_from_code_p = (so & SO_AllCodeCache) ? nullptr : code_roots;
 
   Threads::oops_do(strong_roots, roots_from_code_p);
 
@@ -753,13 +753,22 @@ void SerialHeap::process_roots(ScanningOption so,
 
     // CMSCollector uses this to do intermediate-strength collections.
     // We scan the entire code cache, since CodeCache::do_unloading is not called.
-    CodeCache::blobs_do(code_roots);
+    CodeCache::nmethods_do(code_roots);
   }
 }
 
 bool SerialHeap::no_allocs_since_save_marks() {
   return _young_gen->no_allocs_since_save_marks() &&
          _old_gen->no_allocs_since_save_marks();
+}
+
+void SerialHeap::scan_evacuated_objs(YoungGenScanClosure* young_cl,
+                                     OldGenScanClosure* old_cl) {
+  do {
+    young_gen()->oop_since_save_marks_iterate(young_cl);
+    old_gen()->oop_since_save_marks_iterate(old_cl);
+  } while (!no_allocs_since_save_marks());
+  guarantee(young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
 }
 
 // public collection interfaces
