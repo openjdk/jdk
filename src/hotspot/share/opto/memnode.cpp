@@ -2885,17 +2885,18 @@ public:
 //       - RangeCheck smearing: the earlier RangeChecks are adjusted such that they cover later RangeChecks,
 //                              and those later RangeChecks can be removed. Example:
 //
-//                              RangeCheck[i+0]                         RangeCheck[i+0]
-//                              StoreB[i+0]                             StoreB[i+0]
-//                              RangeCheck[i+1]     --> smeared -->     RangeCheck[i+3]
-//                              StoreB[i+0]                             StoreB[i+1]
+//                              RangeCheck[i+0]                         RangeCheck[i+0] <- before first store
+//                              StoreB[i+0]                             StoreB[i+0]     <- first store
+//                              RangeCheck[i+1]     --> smeared -->     RangeCheck[i+3] <- only RC between first and last store
+//                              StoreB[i+0]                             StoreB[i+1]     <- second store
 //                              RangeCheck[i+2]     --> removed
 //                              StoreB[i+0]                             StoreB[i+2]
 //                              RangeCheck[i+3]     --> removed
-//                              StoreB[i+0]                             StoreB[i+3]
+//                              StoreB[i+0]                             StoreB[i+3]     <- last store
 //
-//                              Thus, it is a common pattern that in a long chain of adjacent stores there
-//                              remains exactly one RangeCheck, between the first and the second store.
+//                              Thus, it is a common pattern that between the first and last store in a chain
+//                              of adjacent stores there remains exactly one RangeCheck, located between the
+//                              first and the second store (e.g. RangeCheck[i+3]).
 //
 class MergePrimitiveArrayStores : public StackObj {
 private:
