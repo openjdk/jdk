@@ -476,9 +476,11 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
                         } else {
                             etc.getModel().showOnly(visibleNodes);
                         }
+                        int firstGraphIdx = firstGraph.getIndex();
                         if (difference > 0) {
-                            int firstGraphIdx = firstGraph.getIndex();
                             etc.getModel().setPositions(firstGraphIdx, firstGraphIdx + difference);
+                        } else if (difference < 0) {
+                            etc.getModel().setPositions(firstGraphIdx + difference, firstGraphIdx);
                         }
                     }
                 }
