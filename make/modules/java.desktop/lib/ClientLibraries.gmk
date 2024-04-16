@@ -24,6 +24,12 @@
 #
 
 ################################################################################
+# This file will build all AWT/2D native libraries that does not have "awt" in
+# the name. Note that this does not imply anything about the logical ownership
+# of the code they compile.
+# This split is purely made to keep the size of the Makefiles reasonable.
+
+################################################################################
 ## Build libmlib_image
 ################################################################################
 
@@ -391,3 +397,57 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
 ))
 
 TARGETS += $(BUILD_LIBFONTMANAGER)
+
+ifeq ($(call isTargetOs, macosx), true)
+  ##############################################################################
+  ## Build libosxui
+  ##############################################################################
+
+  SHADERS_SRC := \
+      $(TOPDIR)/src/java.desktop/macosx/native/libawt_lwawt/java2d/metal/shaders.metal
+  SHADERS_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/native/java.desktop/libosxui
+  SHADERS_AIR := $(SHADERS_SUPPORT_DIR)/shaders.air
+  SHADERS_LIB := $(call FindLibDirForModule, $(MODULE))/shaders.metallib
+
+  $(eval $(call SetupExecute, metal_shaders, \
+      INFO := Running metal on $(notdir $(SHADERS_SRC)) (for libosxui.dylib), \
+      DEPS := $(SHADERS_SRC), \
+      OUTPUT_FILE := $(SHADERS_AIR), \
+      SUPPORT_DIR := $(SHADERS_SUPPORT_DIR), \
+      COMMAND := $(METAL) -c -std=osx-metal2.0 \
+          -mmacosx-version-min=$(MACOSX_VERSION_MIN) \
+          -o $(SHADERS_AIR) $(SHADERS_SRC), \
+  ))
+
+  $(eval $(call SetupExecute, metallib_shaders, \
+      INFO := Running metallib on $(notdir $(SHADERS_AIR)) (for libosxui.dylib), \
+      DEPS := $(SHADERS_AIR), \
+      OUTPUT_FILE := $(SHADERS_LIB), \
+      SUPPORT_DIR := $(SHADERS_SUPPORT_DIR), \
+      COMMAND := $(METALLIB) -o $(SHADERS_LIB) $(SHADERS_AIR), \
+  ))
+
+  TARGETS += $(SHADERS_LIB)
+
+  $(eval $(call SetupJdkLibrary, BUILD_LIBOSXUI, \
+      NAME := osxui, \
+      OPTIMIZATION := LOW, \
+      EXTRA_HEADER_DIRS := \
+          libawt_lwawt/awt, \
+      DISABLED_WARNINGS_clang_AquaFileView.m := deprecated-declarations \
+          sign-compare, \
+      DISABLED_WARNINGS_clang_ScreenMenu.m := deprecated-declarations, \
+      APPEND_LDFLAGS := -Wl$(COMMA)-rpath$(COMMA)@loader_path, \
+      JDK_LIBS := java.base:libjava libosxapp, \
+      LIBS_macosx := \
+          -framework ApplicationServices \
+          -framework Carbon \
+          -framework Cocoa \
+          -framework JavaRuntimeSupport \
+          -framework Metal, \
+  ))
+
+  TARGETS += $(BUILD_LIBOSXUI)
+
+  $(BUILD_LIBOSXUI): $(SHADERS_LIB)
+endif
