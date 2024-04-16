@@ -434,9 +434,9 @@ invokeInstanceMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs)
     CHECK_EXCEPTION_CONTINUE_OR_FAIL();
     jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
     if (mainObject == NULL) {
-        //new instance construction failed, don't call the main method,
-        //and don't continue with the next variant;
-        //leave any exception pending, so that it is visible to the caller:
+        // new instance construction failed, don't call the main method,
+        // and don't continue with the next variant;
+        // leave any exception pending, so that it is visible to the caller:
         return 0;
     }
     (*env)->CallVoidMethod(env, mainObject, mainID, mainArgs);
@@ -471,9 +471,9 @@ invokeInstanceMainWithoutArgs(JNIEnv *env, jclass mainClass) {
     CHECK_EXCEPTION_CONTINUE_OR_FAIL();
     jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
     if (mainObject == NULL) {
-        //new instance construction failed, don't call the main method,
-        //and don't continue with the next variant;
-        //leave any exception pending, so that it is visible to the caller:
+        // new instance construction failed, don't call the main method,
+        // and don't continue with the next variant;
+        // leave any exception pending, so that it is visible to the caller:
         return 1;
     }
     (*env)->CallVoidMethod(env, mainObject, mainID);
