@@ -744,9 +744,8 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(int, MonitorUsedDeflationThreshold, 90, DIAGNOSTIC,               \
           "Percentage of used monitors before triggering deflation (0 is "  \
-          "off). The check is performed on GuaranteedSafepointInterval, "   \
-          "AsyncDeflationInterval or GuaranteedAsyncDeflationInterval, "    \
-          "whichever is lower.")                                            \
+          "off). The check is performed on AsyncDeflationInterval or "      \
+          "GuaranteedAsyncDeflationInterval, whichever is lower.")          \
           range(0, 100)                                                     \
                                                                             \
   product(uintx, NoAsyncDeflationProgressMax, 3, DIAGNOSTIC,                \
@@ -1277,7 +1276,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   /* notice: the max range value here is max_jint, not max_intx  */         \
   /* because of overflow issue                                   */         \
-  product(intx, GuaranteedSafepointInterval, 1000, DIAGNOSTIC,              \
+  product(intx, GuaranteedSafepointInterval, 0, DIAGNOSTIC,                 \
           "Guarantee a safepoint (at least) every so many milliseconds "    \
           "(0 means none)")                                                 \
           range(0, max_jint)                                                \
