@@ -73,7 +73,7 @@ bool ShenandoahSimpleBitMap::is_forward_consecutive_ones(ssize_t start_idx, ssiz
   element_bits >>= bit_number;
   uintx complement = ~element_bits;
   uintx trailing_ones;
-  if (complement) {
+  if (complement != 0) {
     trailing_ones = count_trailing_zeros<uintx>(complement);
   } else {
     trailing_ones = bits_to_examine;
@@ -98,7 +98,7 @@ bool ShenandoahSimpleBitMap::is_backward_consecutive_ones(ssize_t last_idx, ssiz
   element_bits <<= (BitsPerWord - bits_to_examine);
   uintx complement = ~element_bits;
   uintx leading_ones;
-  if (complement) {
+  if (complement != 0) {
     leading_ones = count_leading_zeros<uintx>(complement);
   } else {
     leading_ones = bits_to_examine;
@@ -129,7 +129,7 @@ ssize_t ShenandoahSimpleBitMap::find_next_consecutive_bits(size_t num_bits, ssiz
     element_bits &= ~mask_out;
   }
   while (true) {
-    if (!element_bits) {
+    if (element_bits == 0) {
       // move to the next element
       start_idx += BitsPerWord - bit_number;
       if (start_idx > start_boundary) {
@@ -184,7 +184,7 @@ ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(
     element_bits &= mask_in;
   }
   while (true) {
-    if (!element_bits) {
+    if (element_bits == 0) {
       // move to the previous element
       last_idx -= bit_number + 1;
       if (last_idx < last_boundary) {
