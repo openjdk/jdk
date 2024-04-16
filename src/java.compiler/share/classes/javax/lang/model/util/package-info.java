@@ -80,7 +80,7 @@
  *  }
  * </pre>
  * A new element kind would also be introduce to model such a feature:
- * 
+ *
  * <pre>
  *  //  Sample diff of ElementKind.java
  *  +    /**
@@ -243,7 +243,7 @@
  *        ...
  *           case BINDING_VARIABLE:
  *               return visitVariableAsBindingVariable(e, p);
- *   
+ *
  *  +        case PREVIEW_FEATURE_2:
  *  +            return visitVariableAsPreviewFeature2(e, p);
  *  +
@@ -265,7 +265,7 @@
  *  +        return visitUnknown(e, p);
  *  +    }
  * </pre>
- * 
+ *
  * The preview element kind visitor in turn overrides {@code
  * visitVariableAsPreviewFeature2}:
  * <pre>
