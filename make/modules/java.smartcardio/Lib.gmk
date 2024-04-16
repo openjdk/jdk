@@ -32,7 +32,9 @@ include LibCommon.gmk
 $(eval $(call SetupJdkLibrary, BUILD_LIBJ2PCSC, \
     NAME := j2pcsc, \
     CFLAGS_unix := -D__sun_jdk, \
-    EXTRA_HEADER_DIRS := libj2pcsc/MUSCLE, \
+    EXTRA_HEADER_DIRS := \
+        libj2pcsc/MUSCLE \
+        java.base:libjava, \
     OPTIMIZATION := LOW, \
     LIBS_unix := $(LIBDL), \
     LIBS_windows := winscard.lib, \
