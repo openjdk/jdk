@@ -566,7 +566,7 @@ public class TestModulePackages extends JavadocTester {
             String classes, String exportedTo, String openedTo, String desc) {
         StringBuilder sb = new StringBuilder();
         String color = (index % 2 == 1 ? "odd-row-color" : "even-row-color");
-        sb.append("<div class=\"col-first " + color + " " + classes + "\" role=\"tablist\" tabindex=\"0\"><a href=\""
+        sb.append("<div class=\"col-first " + color + " " + classes + "\"><a href=\""
                 + packageName.replace('.', '/') + "/package-summary.html\">"
                 + packageName + "</a></div>\n");
         if (exportedTo != null) {
