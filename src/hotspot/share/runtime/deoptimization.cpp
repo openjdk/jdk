@@ -440,7 +440,7 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
     }
   }
 #ifdef ASSERT
-  if (LockingMode == LM_LIGHTWEIGHT && !realloc_failures && lock_order.is_nonempty()) {
+  if (lock_order.is_nonempty()) {
     const int bci = chunk->first()->bci();
     const Bytecodes::Code bc = chunk->first()->method()->code_at(bci);
     const bool is_syncronized_entry = chunk->first()->method()->is_synchronized() &&
