@@ -387,74 +387,88 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
         } \
     } while (JNI_FALSE)
 
-#define CHECK_EXCEPTION_FAIL() \
+#define CHECK_EXCEPTION_CONTINUE_OR_FAIL() \
     do { \
-        if ((*env)->ExceptionOccurred(env)) { \
+        jobject pendingException = (*env)->ExceptionOccurred(env); \
+        if (pendingException) { \
             (*env)->ExceptionClear(env); \
-            return 0; \
+            jclass pendingExceptionClass = \
+                (*env)->GetObjectClass(env, pendingException); \
+            jclass noSuchMethodErrorClass = \
+                FindBootStrapClass(env, "java/lang/NoSuchMethodError"); \
+            if ((*env)->IsSameObject(env, pendingExceptionClass, \
+                                     noSuchMethodErrorClass)) { \
+                return 1; \
+            } else { \
+                (*env)->Throw(env, pendingException); \
+                return 0; \
+            } \
         } \
     } while (JNI_FALSE)
 
-
 /*
- * Invoke a static main with arguments. Returns 1 (true) if successful otherwise
- * processes the pending exception from GetStaticMethodID and returns 0 (false).
+ * Invoke a static main with arguments. Returns 1 (true) if processing should
+ * continue with another main variant, returns 0 (false) otherwise. An exception
+ * may be pending in either case.
  */
 int
 invokeStaticMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
     jmethodID mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
                                   "([Ljava/lang/String;)V");
-    CHECK_EXCEPTION_FAIL();
+    CHECK_EXCEPTION_CONTINUE_OR_FAIL();
     (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
-    return 1;
+    return 0;
 }
 
 /*
- * Invoke an instance main with arguments. Returns 1 (true) if successful otherwise
- * processes the pending exception from GetMethodID and returns 0 (false).
+ * Invoke an instance main with arguments. Returns 1 (true) if processing should
+ * continue with another main variant, returns 0 (false) otherwise. An exception
+ * may be pending in either case.
  */
 int
 invokeInstanceMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
     jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
-    CHECK_EXCEPTION_FAIL();
+    CHECK_EXCEPTION_CONTINUE_OR_FAIL();
     jmethodID mainID = (*env)->GetMethodID(env, mainClass, "main",
                                  "([Ljava/lang/String;)V");
-    CHECK_EXCEPTION_FAIL();
+    CHECK_EXCEPTION_CONTINUE_OR_FAIL();
     jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
     if (mainObject == NULL) {
         //new instance construction failed, don't call the main method,
         //and don't continue with the next variant;
         //leave any exception pending, so that it is visible to the caller:
-        return 1;
+        return 0;
     }
     (*env)->CallVoidMethod(env, mainObject, mainID, mainArgs);
-    return 1;
+    return 0;
  }
 
 /*
- * Invoke a static main without arguments. Returns 1 (true) if successful otherwise
- * processes the pending exception from GetStaticMethodID and returns 0 (false).
+ * Invoke a static main without arguments.  Returns 1 (true) if processing should
+ * continue with another main variant, returns 0 (false) otherwise. An exception
+ * may be pending in either case.
  */
 int
 invokeStaticMainWithoutArgs(JNIEnv *env, jclass mainClass) {
     jmethodID mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
                                        "()V");
-    CHECK_EXCEPTION_FAIL();
+    CHECK_EXCEPTION_CONTINUE_OR_FAIL();
     (*env)->CallStaticVoidMethod(env, mainClass, mainID);
-    return 1;
+    return 0;
 }
 
 /*
- * Invoke an instance main without arguments. Returns 1 (true) if successful otherwise
- * processes the pending exception from GetMethodID and returns 0 (false).
+ * Invoke an instance main without arguments.  Returns 1 (true) if processing should
+ * continue with another main variant, returns 0 (false) otherwise. An exception
+ * may be pending in either case.
  */
 int
 invokeInstanceMainWithoutArgs(JNIEnv *env, jclass mainClass) {
     jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
-    CHECK_EXCEPTION_FAIL();
+    CHECK_EXCEPTION_CONTINUE_OR_FAIL();
     jmethodID mainID = (*env)->GetMethodID(env, mainClass, "main",
                                  "()V");
-    CHECK_EXCEPTION_FAIL();
+    CHECK_EXCEPTION_CONTINUE_OR_FAIL();
     jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
     if (mainObject == NULL) {
         //new instance construction failed, don't call the main method,
@@ -463,7 +477,7 @@ invokeInstanceMainWithoutArgs(JNIEnv *env, jclass mainClass) {
         return 1;
     }
     (*env)->CallVoidMethod(env, mainObject, mainID);
-    return 1;
+    return 0;
 }
 
 int
@@ -620,10 +634,10 @@ JavaMain(void* _args)
      * The main method is invoked here so that extraneous java stacks are not in
      * the application stack trace.
      */
-    if (!invokeStaticMainWithArgs(env, mainClass, mainArgs) &&
-        !invokeInstanceMainWithArgs(env, mainClass, mainArgs) &&
-        !invokeStaticMainWithoutArgs(env, mainClass) &&
-        !invokeInstanceMainWithoutArgs(env, mainClass)) {
+    if (invokeStaticMainWithArgs(env, mainClass, mainArgs) &&
+        invokeInstanceMainWithArgs(env, mainClass, mainArgs) &&
+        invokeStaticMainWithoutArgs(env, mainClass) &&
+        invokeInstanceMainWithoutArgs(env, mainClass)) {
         ret = 1;
         LEAVE();
     }
@@ -1561,6 +1575,7 @@ GetLauncherHelperClass(JNIEnv *env)
         NULL_CHECK0(helperClass = FindBootStrapClass(env,
                 "sun/launcher/LauncherHelper"));
     }
+
     return helperClass;
 }
 
