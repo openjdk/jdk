@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.FileDescriptor;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
+import jdk.internal.event.FileForceEvent;
 
 /**
  * Windows implementation of AsynchronousFileChannel using overlapped I/O.
