@@ -79,7 +79,7 @@ public:
     IntervalState(StateType type, Metadata data) {
       type_flag[0] = static_cast<uint8_t>(type);
       type_flag[1] = static_cast<uint8_t>(data.flag);
-      data.stack_idx = sidx;
+      sidx = data.stack_idx;
     }
 
     StateType type() const {
