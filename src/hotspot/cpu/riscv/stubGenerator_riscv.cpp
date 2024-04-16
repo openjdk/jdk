@@ -5073,6 +5073,42 @@ class StubGenerator: public StubCodeGenerator {
     // vs2acc = { (b1 * 16) + (b2 * 15) + (b3 * 14) + ... + (b8 * 9) }
     // vs2acc->successor() = { (b9 * 8) + (b10 * 7) + (b11 * 6) + ... + (b16 * 1) }
     __ vwmulu_vv(vs2acc, vtable, vbytes); // vs2acc->successor() now contains the second part of multiplication
+    // The only thing that remains is to sum up the remembered result
+  }
+
+  void generate_updateBytesAdler32_unroll(Register buff, Register s1, Register s2, int unroll_factor,
+    VectorRegister vtable, VectorRegister vbytes, VectorRegister vzero, VectorRegister *unroll_regs,
+    Register temp0, Register temp1, Register temp2, VectorRegister vtemp1, VectorRegister vtemp2) {
+
+    assert(unroll_factor <= 8, "Not enough vector registers in unroll_regs");
+    // Below is partial loop unrolling for updateBytesAdler32:
+    // First, the unroll*16 bytes are processed, the results are in
+    // unroll_regs[i], unroll_regs[i + 8] and unroll_regs[i + 8]->successor()
+    // Second, the final summation for unrolled part of the loop should be performed
+
+    __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
+    for (int i = 0; i < unroll_factor; i++)
+      generate_updateBytesAdler32_accum(buff, vzero, vbytes, unroll_regs[i], unroll_regs[i + 8], vtable);
+    // Summing up
+    __ vsetivli(temp0, 8, Assembler::e16, Assembler::m1);
+    for (int i = 0; i < unroll_factor; i++) {
+      // s2 = s2 + s1 * 16
+      __ slli(temp1, s1, 4);
+      __ add(s2, s2, temp1);
+
+      // 0xFF * 0x10 = 0xFF0, 0xFF0 * 8 = 7F80, so:
+      // 1. No need to do vector-widening reduction sum
+      // 2. It is safe to perform sign-extension during vmv.x.s
+      __ vredsum_vs(vtemp1, unroll_regs[i + 8], vzero);
+      __ vredsum_vs(vtemp2, unroll_regs[i + 8]->successor(), vzero);
+
+      __ vmv_x_s(temp0, unroll_regs[i]);
+      __ vmv_x_s(temp1, vtemp1);
+      __ vmv_x_s(temp2, vtemp2);
+      __ add(s1, s1, temp0);
+      __ add(s2, s2, temp1);
+      __ add(s2, s2, temp2);
+    }
   }
 
   /***
@@ -5202,57 +5238,15 @@ class StubGenerator: public StubCodeGenerator {
                                   // and bytes for one of them are already subtracted
 
   __ bind(L_nmax_loop);
-    __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
-    for (int i = 0; i < unroll; i++)
-      generate_updateBytesAdler32_accum(buff, vzero, vbytes, unroll_regs[i], unroll_regs[i + 8], vtable);
-    // Summing up
-    __ vsetivli(temp0, 8, Assembler::e16, Assembler::m1);
-    for (int i = 0; i < unroll; i++) {
-      // s2 = s2 + s1 * 16
-      __ slli(temp1, s1, 4);
-      __ add(s2, s2, temp1);
-
-      // 0xFF * 0x10 = 0xFF0, 0xFF0 * 8 = 7F80, so:
-      // 1. No need to do vector-widening reduction sum
-      // 2. It is safe to perform sign-extension during vmv.x.s
-      __ vredsum_vs(vtemp1, unroll_regs[i + 8], vzero);
-      __ vredsum_vs(vtemp2, unroll_regs[i + 8]->successor(), vzero);
-
-      __ vmv_x_s(temp0, unroll_regs[i]);
-      __ vmv_x_s(temp1, vtemp1);
-      __ vmv_x_s(temp2, vtemp2);
-      __ add(s1, s1, temp0);
-      __ add(s2, s2, temp1);
-      __ add(s2, s2, temp2);
-    }
+    generate_updateBytesAdler32_unroll(buff, s1, s2, unroll, vtable, vbytes,
+      vzero, unroll_regs, temp0, temp1, temp2, vtemp1, vtemp2);
     __ blt(buff, buf_end, L_nmax_loop);
 
     const int remainder = ((NMAX / 16) % unroll);
     assert(remainder < 8, "There are not enough vector registers in unroll_regs");
     // Do the calculations for remaining 16*remainder bytes
-    __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
-    for (int i = 0; i < remainder; i++)
-      generate_updateBytesAdler32_accum(buff, vzero, vbytes, unroll_regs[i], unroll_regs[i + 8], vtable);
-    // Summing up
-    __ vsetivli(temp0, 8, Assembler::e16, Assembler::m1);
-    for (int i = 0; i < remainder; i++) {
-      // s2 = s2 + s1 * 16
-      __ slli(temp1, s1, 4);
-      __ add(s2, s2, temp1);
-
-      // 0xFF * 0x10 = 0xFF0, 0xFF0 * 8 = 7F80, so:
-      // 1. No need to do vector-widening reduction sum
-      // 2. It is safe to perform sign-extension during vmv.x.s
-      __ vredsum_vs(vtemp1, unroll_regs[i + 8], vzero);
-      __ vredsum_vs(vtemp2, unroll_regs[i + 8]->successor(), vzero);
-
-      __ vmv_x_s(temp0, unroll_regs[i]);
-      __ vmv_x_s(temp1, vtemp1);
-      __ vmv_x_s(temp2, vtemp2);
-      __ add(s1, s1, temp0);
-      __ add(s2, s2, temp1);
-      __ add(s2, s2, temp2);
-    }
+    generate_updateBytesAdler32_unroll(buff, s1, s2, remainder, vtable, vbytes,
+      vzero, unroll_regs, temp0, temp1, temp2, vtemp1, vtemp2);
 
     // s1 = s1 % BASE
     __ remuw(s1, s1, base);
@@ -5269,26 +5263,8 @@ class StubGenerator: public StubCodeGenerator {
     __ bltz(len, L_by1);
 
   __ bind(L_by16_loop);
-    __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
-    generate_updateBytesAdler32_accum(buff, vzero, vbytes, unroll_regs[0], unroll_regs[8], vtable);
-    // s1 = s1 + unroll_regs[0], s2 = s2 + unroll_regs[8]
-    __ vsetivli(temp0, 8, Assembler::e16, Assembler::m1);
-    // s2 = s2 + s1 * 16
-    __ slli(temp1, s1, 4);
-    __ add(s2, s2, temp1);
-
-    // 0xFF * 0x10 = 0xFF0, 0xFF0 * 8 = 7F80, so:
-    // 1. No need to do vector-widening reduction sum
-    // 2. It is safe to perform sign-extension during vmv.x.s
-    __ vredsum_vs(vtemp1, unroll_regs[8], vzero);
-    __ vredsum_vs(vtemp2, unroll_regs[8]->successor(), vzero);
-
-    __ vmv_x_s(temp0, unroll_regs[0]);
-    __ vmv_x_s(temp1, vtemp1);
-    __ vmv_x_s(temp2, vtemp2);
-    __ add(s1, s1, temp0);
-    __ add(s2, s2, temp1);
-    __ add(s2, s2, temp2);
+    generate_updateBytesAdler32_unroll(buff, s1, s2, 1, vtable, vbytes,
+      vzero, unroll_regs, temp0, temp1, temp2, vtemp1, vtemp2);
 
     __ sub(len, len, 16);
     __ bgez(len, L_by16_loop);
