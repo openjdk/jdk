@@ -569,12 +569,12 @@ Node* VPointer::sort_sum(Node* sum) {
     new_sum = register_if_new(new AddLNode(new_sum, n));
   }
 
-  sum->dump();
-  for (int i = 0; i < summands.length(); i++) {
-    Node* n = summands.at(i);
-    tty->print(" %d: ", i); n->dump();
-  }
-  new_sum->dump();
+  // sum->dump();
+  // for (int i = 0; i < summands.length(); i++) {
+  //   Node* n = summands.at(i);
+  //   tty->print(" %d: ", i); n->dump();
+  // }
+  // new_sum->dump();
 
   return new_sum;
 }
