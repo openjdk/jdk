@@ -44,6 +44,7 @@
 #if defined(LINUX) || defined(__APPLE__)
 #include <pthread.h>
 #include <string.h>
+#include <sys/mman.h>
 #endif
 
 /*
@@ -127,7 +128,7 @@ When estimating the NMT impact, from memory overhead point of view, we have a ch
 
 #define MEMORY_LOG_FILE "hs_nmt_pid%p_memory_record.log"
 #define THREADS_LOG_FILE "hs_nmt_pid%p_threads_record.log"
-#define STATUS_LOG_FILE "hs_nmt_pid%p_status_record.log"
+#define INFO_LOG_FILE "hs_nmt_pid%p_info_record.log"
 
 volatile static bool _initiliazed = false;
 volatile static bool _done = false;
@@ -180,8 +181,8 @@ static void _write_and_check(int fd, const void *buf, size_t count) {
   errno = 0;
   ssize_t written = ::write(fd, buf, count);
   if ((long)written != (long)count) {
-    fprintf(stderr, "write_and_check(%d) ERROR\n", fd);
-    os::strerror(errno);
+    int e = errno;
+    fprintf(stderr, "write_and_check(%d) ERROR:[%s]\n", fd, os::strerror(e));
     //assert((long)written != (long)count, "written != count [%ld,%ld]", (long)written, (long)count);
   }
 }
@@ -195,7 +196,8 @@ static int _close_and_check(int fd) {
     errno = 0;
     int status = close(fd);
     if (status != 0) {
-      os::strerror(errno);
+      int e = errno;
+      fprintf(stderr, "ERROR:[%s]\n", os::strerror(e));
       assert(status != 0, "close(%d) returned %d", fd, status);
       return fd;
     } else {
@@ -207,7 +209,7 @@ static int _close_and_check(int fd) {
 }
 
 void NMT_MemoryLogRecorder::log(MEMFLAGS flags, size_t requested, address ptr, address old, const NativeCallStack *stack) {
-  //fprintf(stderr, "NMT_MemoryLogRecorder::log(%s, %ld, 0x%p, 0x%p)\n", NMTUtil::flag_to_name(flags), requested, ptr, old);
+  //fprintf(stderr, "NMT_MemoryLogRecorder::log(%10s, %6ld, %12p, %12p)\n", NMTUtil::flag_to_name(flags), requested, ptr, old);
   volatile static jlong _count = 0;
   jlong count = -1;
   if (_initiliazed && !_done) {
@@ -336,9 +338,114 @@ void NMT_MemoryLogRecorder::printActualSizesFor(const char* list) {
   }
 }
 
+#define IS_FREE(e) ((e->requested == 0) && (e->old == nullptr))
+#define IS_REALLOC(e) ((e->requested > 0) && (e->old != nullptr))
+#define IS_MALOC(e) ((e->requested > 0) && (e->old == nullptr))
+
+// /Volumes/Work/bugs/8317453/recordings/J2Ddemo/hs_nmt_pid44103_memory_record.log
+void NMT_MemoryLogRecorder::replay(const char* file) {
+  fprintf(stderr, "NMT_MemoryLogRecorder::replay(%p)\n", file);
+  if ((file != nullptr) && (strlen(file) > 0)) {
+#if defined(LINUX) || defined(__APPLE__)
+    pthread_mutex_lock(&_mutex);
+#elif defined(WINDOWS)
+    // ???
+#endif
+    int fd = os::open(file, O_RDONLY, 0);
+    {
+      if (fd == -1) {
+        int e = errno;
+        tty->print("Can't open memory recorder report [%s].", file);
+        tty->print_raw_cr(os::strerror(e));
+      } else {
+        struct stat file_info;
+        ::fstat(fd, &file_info);
+        off_t sizeFile = file_info.st_size;
+        off_t count = sizeFile/sizeof(Entry);
+        ::lseek(fd, 0, SEEK_SET);
+        off_t sizePointers = count*sizeof(address);
+        address *pointers = (address*)::mmap(NULL, sizePointers, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
+        assert(pointers != MAP_FAILED);
+        Entry *entries = (Entry*)::mmap(NULL, sizeFile, PROT_READ, MAP_PRIVATE, fd, 0);
+        assert(entries != MAP_FAILED);
+/*
+        struct Entry {
+          jlong time;
+          intx thread;
+          address ptr;
+          address old;
+          address stack[NMT_TrackingStackDepth];
+          size_t requested;
+          size_t actual;
+          jlong flags;
+        };
+ */
+        jlong total = 0;
+        for (off_t i = 0; i < count; i++) {
+          pointers[i] = nullptr;
+          Entry *e = &entries[i];
+          MEMFLAGS flags = NMTUtil::index_to_flag((int)e->flags);
+          int frameCount;
+          for (frameCount = 0; frameCount < NMT_TrackingStackDepth; frameCount++) {
+            if (e->stack[frameCount] == 0) {
+              break;
+            }
+          }
+          NativeCallStack stack = NativeCallStack(e->stack, frameCount);
+          jlong start = 0;
+          {
+            if (IS_MALOC(e)) {
+              start = os::javaTimeNanos();
+              pointers[i] = (address)os::malloc(e->requested, flags, stack);
+//#if defined(__APPLE__)
+//              size_t actual = 0;
+//              ALLOW_C_FUNCTION(::malloc_size, actual = ::malloc_size(pointers[i]);)
+//              assert(actual == e->actual); // TODO incorrect, remove after done prototyping!
+//#endif
+            } else if (IS_REALLOC(e)) {
+              for (off_t j = i; j >= 0; j--) {
+                Entry *p = &entries[j];
+                if (e->old == p->ptr) {
+                  start = os::javaTimeNanos();
+                  pointers[i] = (address)os::realloc(pointers[j], e->requested, flags, stack);
+                  pointers[j] = nullptr;
+                  break;
+                }
+              }
+            } else if (IS_FREE(e)) {
+              for (off_t j = i; j >= 0; j--) {
+                Entry *p = &entries[j];
+                if (e->ptr == p->ptr) {
+                  start = os::javaTimeNanos();
+                  os::free(pointers[j]);
+                  pointers[j] = nullptr;
+                  break;
+                }
+              }
+            }
+          }
+          jlong duration = (start > 0) ? os::javaTimeNanos() - start : 0;
+          fprintf(stderr, "duration: %ld %d:%d:%d\n", duration, IS_MALOC(e), IS_REALLOC(e), IS_FREE(e));
+          total += duration;
+        }
+        munmap((void*)pointers, sizePointers);
+        munmap((void*)entries, sizeFile);
+        _close_and_check(fd);
+        fprintf(stderr, "total: %ld\n", total);
+      }
+      os::exit(0);
+    }
+#if defined(LINUX) || defined(__APPLE__)
+    pthread_mutex_unlock(&_mutex);
+#elif defined(WINDOWS)
+    // ???
+#endif
+  }
+}
+
 void NMT_MemoryLogRecorder::initialize(intx limit) {
-  //fprintf(stderr, "NMT_MemoryLogRecorder::initialize(%ld)\n", limit);
-  if (strlen(NMTPrintMemoryAllocationsSizesFor) > 0) {
+  fprintf(stderr, "NMT_MemoryLogRecorder::initialize(%ld)\n", limit);
+  if ((NMTPrintMemoryAllocationsSizesFor != nullptr) && (strlen(NMTPrintMemoryAllocationsSizesFor) > 0)) {
     NMT_MemoryLogRecorder::printActualSizesFor((const char*)NMTPrintMemoryAllocationsSizesFor);
     os::exit(0);
   }
@@ -388,12 +495,14 @@ void NMT_MemoryLogRecorder::finish(void) {
         threads_fd = _close_and_check(threads_fd);
       }
       
-      int status_fd = _prepare_log_file(STATUS_LOG_FILE);
-      //fprintf(stderr, " status_fd:%d\n", status_fd);
-      if (status_fd != -1) {
-        NMT_TrackingLevel level = NMTUtil::parse_tracking_level(NativeMemoryTracking);
-        _write_and_check(status_fd, &level, sizeof(NMT_TrackingLevel));
-        status_fd = _close_and_check(status_fd);
+      int info_fd = _prepare_log_file(INFO_LOG_FILE);
+      //fprintf(stderr, " info_fd:%d\n", info_fd);
+      if (info_fd != -1) {
+        size_t level = NMTUtil::parse_tracking_level(NativeMemoryTracking);
+        _write_and_check(info_fd, &level, sizeof(level));
+        size_t overhead = MemTracker::overhead_per_malloc();
+        _write_and_check(info_fd, &overhead, sizeof(overhead));
+        info_fd = _close_and_check(info_fd);
       }
     }
     _done = true;

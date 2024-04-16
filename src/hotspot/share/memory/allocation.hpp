@@ -130,8 +130,8 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
   f(mtMetaspace,      "Metaspace")                                                   \
   f(mtStringDedup,    "String Deduplication")                                        \
   f(mtObjectMonitor,  "Object Monitors")                                             \
-  f(mtNone,           "Unknown")                                                     \
   f(mtPreInit,        "Pre Init")                                                    \
+  f(mtNone,           "Unknown")                                                     \
   //end
 
 #define MEMORY_TYPE_DECLARE_ENUM(type, human_readable) \

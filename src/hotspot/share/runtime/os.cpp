@@ -626,7 +626,7 @@ void* os::malloc(size_t size, MEMFLAGS flags) {
 }
 
 void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
-
+  //fprintf(stderr, "malloc(%ld)\n", size);
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
   if (NMTPreInit::handle_malloc(&rc, size)) {
@@ -677,6 +677,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS flags) {
 }
 
 void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
+  //fprintf(stderr, "realloc(%ld)\n", size);
 
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
@@ -780,7 +781,8 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
   return rc;
 }
 
-void  os::free(void *memblock) {
+void os::free(void *memblock) {
+  //fprintf(stderr, "free(%p)\n", memblock);
 
   // Special handling for NMT preinit phase before arguments are parsed
   if (NMTPreInit::handle_free(memblock)) {
@@ -804,7 +806,7 @@ void  os::free(void *memblock) {
   // When NMT is enabled this checks for heap overwrites, then deaccounts the old block.
   void* const old_outer_ptr = MemTracker::record_free(memblock);
 
-  NMT_MemoryLogRecorder::log(flags, 0, (address)old_outer_ptr);
+  NMT_MemoryLogRecorder::log(mtNone, 0, (address)old_outer_ptr);
 
   ALLOW_C_FUNCTION(::free, ::free(old_outer_ptr);)
 }

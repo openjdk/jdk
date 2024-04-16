@@ -584,7 +584,7 @@ const int ObjectAlignmentInBytes = 8;
   product(ccstr, NMTBenchmarkRecordedMemoryAllocations, nullptr, DIAGNOSTIC,\
           "Benchmark memory allocations using provided log file name")      \
                                                                             \
-  product(ccstrlist, NMTPrintMemoryAllocationsSizesFor, "", DIAGNOSTIC,     \
+  product(ccstrlist, NMTPrintMemoryAllocationsSizesFor, nullptr, DIAGNOSTIC,\
           "Print the actual allocated memory sizes for given "              \
           "comma separated list of malloc sizes")                           \
                                                                             \

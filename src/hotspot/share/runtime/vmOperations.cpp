@@ -550,6 +550,7 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
 }
 
 void VM_Exit::doit() {
+  NMT_MemoryLogRecorder::finish();
 
   if (VerifyBeforeExit) {
     HandleMark hm(VMThread::vm_thread());
@@ -585,8 +586,6 @@ void VM_Exit::doit() {
   exit_globals();
 
   LogConfiguration::finalize();
-
-  NMT_MemoryLogRecorder::finish();
 
   // Check for exit hook
   exit_hook_t exit_hook = Arguments::exit_hook();
