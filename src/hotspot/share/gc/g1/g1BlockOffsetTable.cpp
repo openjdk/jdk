@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,16 +31,12 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 
-//////////////////////////////////////////////////////////////////////
-// G1BlockOffsetTable
-//////////////////////////////////////////////////////////////////////
-
 G1BlockOffsetTable::G1BlockOffsetTable(MemRegion heap, G1RegionToSpaceMapper* storage) :
-  _reserved(heap), _offset_array(nullptr) {
+  _reserved(heap), _offset_base(nullptr) {
 
   MemRegion bot_reserved = storage->reserved();
 
-  _offset_array = (u_char*)bot_reserved.start();
+  _offset_base = ((uint8_t*)bot_reserved.start() - (uintptr_t(_reserved.start()) >> CardTable::card_shift()));
 
   log_trace(gc, bot)("G1BlockOffsetTable::G1BlockOffsetTable: ");
   log_trace(gc, bot)("    rs.base(): " PTR_FORMAT "  rs.size(): " SIZE_FORMAT "  rs end(): " PTR_FORMAT,
@@ -48,28 +44,19 @@ G1BlockOffsetTable::G1BlockOffsetTable(MemRegion heap, G1RegionToSpaceMapper* st
 }
 
 #ifdef ASSERT
-void G1BlockOffsetTable::check_index(size_t index, const char* msg) const {
-  assert((index) < (_reserved.word_size() >> BOTConstants::log_card_size_in_words()),
-         "%s - index: " SIZE_FORMAT ", _vs.committed_size: " SIZE_FORMAT,
-         msg, (index), (_reserved.word_size() >> BOTConstants::log_card_size_in_words()));
-  assert(G1CollectedHeap::heap()->is_in(address_for_index_raw(index)),
-         "Index " SIZE_FORMAT " corresponding to " PTR_FORMAT
+void G1BlockOffsetTable::check_address(uint8_t* addr, const char* msg) const {
+  uint8_t* start_addr = const_cast<uint8_t*>(_offset_base + (uintptr_t(_reserved.start()) >> CardTable::card_shift()));
+  uint8_t* end_addr = const_cast<uint8_t*>(_offset_base + (uintptr_t(_reserved.end()) >> CardTable::card_shift()));
+  assert(addr >= start_addr && addr <= end_addr,
+         "%s - offset address: " PTR_FORMAT ", start address: " PTR_FORMAT ", end address: " PTR_FORMAT,
+         msg, (p2i(addr)), (p2i(start_addr)), (p2i(end_addr)));
+  assert(G1CollectedHeap::heap()->is_in(addr_for_entry(addr)),
+         "Offset address " PTR_FORMAT " corresponding to " PTR_FORMAT
          " (%u) is not in committed area.",
-         (index),
-         p2i(address_for_index_raw(index)),
-         G1CollectedHeap::heap()->addr_to_region(address_for_index_raw(index)));
+         (p2i(addr)), p2i(addr_for_entry(addr)),
+         G1CollectedHeap::heap()->addr_to_region(addr_for_entry(addr)));
 }
 #endif // ASSERT
-
-//////////////////////////////////////////////////////////////////////
-// G1BlockOffsetTablePart
-//////////////////////////////////////////////////////////////////////
-
-G1BlockOffsetTablePart::G1BlockOffsetTablePart(G1BlockOffsetTable* array, HeapRegion* hr) :
-  _bot(array),
-  _hr(hr)
-{
-}
 
 // Write the backskip value for each region.
 //
@@ -96,7 +83,6 @@ G1BlockOffsetTablePart::G1BlockOffsetTablePart(G1BlockOffsetTable* array, HeapRe
 //    the index of the entry
 //
 //    Given an address,
-//      Find the index for the address
 //      Find the block offset table entry
 //      Convert the entry to a back slide
 //        (e.g., with today's, offset = 0x81 =>
@@ -104,25 +90,24 @@ G1BlockOffsetTablePart::G1BlockOffsetTablePart(G1BlockOffsetTable* array, HeapRe
 //      Move back N (e.g., 8) entries and repeat with the
 //        value of the new entry
 //
-void G1BlockOffsetTablePart::set_remainder_to_point_to_start_incl(size_t start_card, size_t end_card) {
+void G1BlockOffsetTable::set_remainder_to_point_to_start_incl(uint8_t* start_card, uint8_t* end_card) {
   assert(start_card <= end_card, "precondition");
-  assert(start_card > _bot->index_for(_hr->bottom()), "Cannot be first card");
-  assert(_bot->offset_array(start_card-1) < BOTConstants::card_size_in_words(),
+  assert(offset_array(start_card-1) < CardTable::card_size_in_words(),
          "Offset card has an unexpected value");
-  size_t start_card_for_region = start_card;
-  u_char offset = max_jubyte;
+  uint8_t* start_card_for_region = start_card;
+  uint8_t offset = UINT8_MAX;
   for (uint i = 0; i < BOTConstants::N_powers; i++) {
     // -1 so that the card with the actual offset is counted.  Another -1
     // so that the reach ends in this region and not at the start
     // of the next.
-    size_t reach = start_card - 1 + (BOTConstants::power_to_cards_back(i+1) - 1);
-    offset = BOTConstants::card_size_in_words() + i;
+    uint8_t* reach = start_card - 1 + (BOTConstants::power_to_cards_back(i+1) - 1);
+    offset = CardTable::card_size_in_words() + i;
     if (reach >= end_card) {
-      _bot->set_offset_array(start_card_for_region, end_card, offset);
+      set_offset_array(start_card_for_region, end_card, offset);
       start_card_for_region = reach + 1;
       break;
     }
-    _bot->set_offset_array(start_card_for_region, reach, offset);
+    set_offset_array(start_card_for_region, reach, offset);
     start_card_for_region = reach + 1;
   }
   assert(start_card_for_region > end_card, "Sanity check");
@@ -133,37 +118,36 @@ void G1BlockOffsetTablePart::set_remainder_to_point_to_start_incl(size_t start_c
 // The card-interval [start_card, end_card] is a closed interval; this
 // is an expensive check -- use with care and only under protection of
 // suitable flag.
-void G1BlockOffsetTablePart::check_all_cards(size_t start_card, size_t end_card) const {
-
+void G1BlockOffsetTable::check_all_cards(uint8_t* start_card, uint8_t* end_card) const {
   if (end_card < start_card) {
     return;
   }
-  guarantee(_bot->offset_array(start_card) == BOTConstants::card_size_in_words(), "Wrong value in second card");
-  for (size_t c = start_card + 1; c <= end_card; c++ /* yeah! */) {
-    u_char entry = _bot->offset_array(c);
-    if (c - start_card > BOTConstants::power_to_cards_back(1)) {
-      guarantee(entry > BOTConstants::card_size_in_words(),
+  guarantee(offset_array(start_card) == CardTable::card_size_in_words(), "Wrong value in second card");
+  for (uint8_t* c = start_card + 1; c <= end_card; c++ /* yeah! */) {
+    uint8_t entry = offset_array(c);
+    if ((unsigned)(c - start_card) > BOTConstants::power_to_cards_back(1)) {
+      guarantee(entry > CardTable::card_size_in_words(),
                 "Should be in logarithmic region - "
                 "entry: %u, "
                 "_array->offset_array(c): %u, "
                 "N_words: %u",
-                (uint)entry, (uint)_bot->offset_array(c), BOTConstants::card_size_in_words());
+                (uint)entry, (uint)offset_array(c), CardTable::card_size_in_words());
     }
     size_t backskip = BOTConstants::entry_to_cards_back(entry);
-    size_t landing_card = c - backskip;
+    uint8_t* landing_card = c - backskip;
     guarantee(landing_card >= (start_card - 1), "Inv");
     if (landing_card >= start_card) {
-      guarantee(_bot->offset_array(landing_card) <= entry,
+      guarantee(offset_array(landing_card) <= entry,
                 "Monotonicity - landing_card offset: %u, "
                 "entry: %u",
-                (uint)_bot->offset_array(landing_card), (uint)entry);
+                (uint)offset_array(landing_card), (uint)entry);
     } else {
       guarantee(landing_card == start_card - 1, "Tautology");
       // Note that N_words is the maximum offset value
-      guarantee(_bot->offset_array(landing_card) < BOTConstants::card_size_in_words(),
+      guarantee(offset_array(landing_card) < CardTable::card_size_in_words(),
                 "landing card offset: %u, "
                 "N_words: %u",
-                (uint)_bot->offset_array(landing_card), (uint)BOTConstants::card_size_in_words());
+                (uint)offset_array(landing_card), (uint)CardTable::card_size_in_words());
     }
   }
 }
@@ -179,88 +163,86 @@ void G1BlockOffsetTablePart::check_all_cards(size_t start_card, size_t end_card)
 //       ( ^    ]
 //         blk_start
 //
-void G1BlockOffsetTablePart::update_for_block_work(HeapWord* blk_start,
-                                                   HeapWord* blk_end) {
+void G1BlockOffsetTable::update_for_block_work(HeapWord* blk_start, HeapWord* blk_end) {
   HeapWord* const cur_card_boundary = align_up_by_card_size(blk_start);
-  size_t const index =  _bot->index_for_raw(cur_card_boundary);
+  uint8_t* const offset_card = entry_for_addr(cur_card_boundary);
 
   assert(blk_start != nullptr && blk_end > blk_start,
          "phantom block");
   assert(blk_end > cur_card_boundary, "should be past cur_card_boundary");
   assert(blk_start <= cur_card_boundary, "blk_start should be at or before cur_card_boundary");
-  assert(pointer_delta(cur_card_boundary, blk_start) < BOTConstants::card_size_in_words(),
-         "offset should be < BOTConstants::card_size_in_words()");
+  assert(pointer_delta(cur_card_boundary, blk_start) < CardTable::card_size_in_words(),
+         "offset should be < CardTable::card_size_in_words()");
   assert(G1CollectedHeap::heap()->is_in_reserved(blk_start),
          "reference must be into the heap");
   assert(G1CollectedHeap::heap()->is_in_reserved(blk_end - 1),
          "limit must be within the heap");
-  assert(cur_card_boundary == _bot->_reserved.start() + index*BOTConstants::card_size_in_words(),
-         "index must agree with cur_card_boundary");
+  assert(cur_card_boundary == addr_for_entry(offset_card),
+         "Block offset table entry must agree with cur_card_boundary");
 
   // Mark the card that holds the offset into the block.
-  _bot->set_offset_array(index, cur_card_boundary, blk_start);
+  set_offset_array(offset_card, cur_card_boundary, blk_start);
 
   // We need to now mark the subsequent cards that this block spans.
 
   // Index of card on which the block ends.
-  size_t end_index = _bot->index_for(blk_end - 1);
+  uint8_t* end_card = entry_for_addr(blk_end - 1);
 
   // Are there more cards left to be updated?
-  if (index + 1 <= end_index) {
-    set_remainder_to_point_to_start_incl(index + 1, end_index);
+  if (offset_card + 1 <= end_card) {
+    set_remainder_to_point_to_start_incl(offset_card + 1, end_card);
   }
 
 #ifdef ASSERT
   // Calculate new_card_boundary this way because end_index
   // may be the last valid index in the covered region.
-  HeapWord* new_card_boundary = _bot->address_for_index(end_index) + BOTConstants::card_size_in_words();
+  HeapWord* new_card_boundary = addr_for_entry(end_card) + CardTable::card_size_in_words();
   assert(new_card_boundary >= blk_end, "postcondition");
 
   // The offset can be 0 if the block starts on a boundary.  That
   // is checked by an assertion above.
-  size_t start_index = _bot->index_for(blk_start);
-  HeapWord* boundary = _bot->address_for_index(start_index);
-  assert((_bot->offset_array(index) == 0 && blk_start == boundary) ||
-         (_bot->offset_array(index) > 0 && _bot->offset_array(index) < BOTConstants::card_size_in_words()),
+  uint8_t* previous_card = entry_for_addr(blk_start);
+  HeapWord* boundary = addr_for_entry(previous_card);
+  assert((offset_array(offset_card) == 0 && blk_start == boundary) ||
+         (offset_array(offset_card) > 0 && offset_array(offset_card) < CardTable::card_size_in_words()),
          "offset array should have been set - "
          "index offset: %u, "
          "blk_start: " PTR_FORMAT ", "
          "boundary: " PTR_FORMAT,
-         (uint)_bot->offset_array(index),
+         (uint)offset_array(offset_card),
          p2i(blk_start), p2i(boundary));
-  for (size_t j = index + 1; j <= end_index; j++) {
-    assert(_bot->offset_array(j) > 0 &&
-           _bot->offset_array(j) <=
-             (u_char) (BOTConstants::card_size_in_words()+BOTConstants::N_powers-1),
+  for (uint8_t* j = offset_card + 1; j <= end_card; j++) {
+    assert(offset_array(j) > 0 &&
+           offset_array(j) <= (uint8_t) (CardTable::card_size_in_words() + BOTConstants::N_powers - 1),
            "offset array should have been set - "
            "%u not > 0 OR %u not <= %u",
-           (uint) _bot->offset_array(j),
-           (uint) _bot->offset_array(j),
-           (uint) (BOTConstants::card_size_in_words() + BOTConstants::N_powers - 1));
+           (uint) offset_array(j),
+           (uint) offset_array(j),
+           (uint) (CardTable::card_size_in_words() + BOTConstants::N_powers - 1));
   }
 #endif
 }
 
-void G1BlockOffsetTablePart::verify() const {
-  assert(_hr->bottom() < _hr->top(), "Only non-empty regions should be verified.");
-  size_t start_card = _bot->index_for(_hr->bottom());
-  size_t end_card = _bot->index_for(_hr->top() - 1);
+void G1BlockOffsetTable::verify(const HeapRegion* hr) const {
+  assert(hr->bottom() < hr->top(), "Only non-empty regions should be verified.");
+  uint8_t* start_card = entry_for_addr(hr->bottom());
+  uint8_t* end_card = entry_for_addr(hr->top() - 1);
 
-  for (size_t current_card = start_card; current_card < end_card; current_card++) {
-    u_char entry = _bot->offset_array(current_card);
-    if (entry < BOTConstants::card_size_in_words()) {
+  for (uint8_t* current_card = start_card; current_card < end_card; current_card++) {
+    uint8_t entry = offset_array(current_card);
+    if (entry < CardTable::card_size_in_words()) {
       // The entry should point to an object before the current card. Verify that
       // it is possible to walk from that object in to the current card by just
       // iterating over the objects following it.
-      HeapWord* card_address = _bot->address_for_index(current_card);
+      HeapWord* card_address = addr_for_entry(current_card);
       HeapWord* obj_end = card_address - entry;
       while (obj_end < card_address) {
         HeapWord* obj = obj_end;
-        size_t obj_size = _hr->block_size(obj);
+        size_t obj_size = hr->block_size(obj);
         obj_end = obj + obj_size;
-        guarantee(obj_end > obj && obj_end <= _hr->top(),
+        guarantee(obj_end > obj && obj_end <= hr->top(),
                   "Invalid object end. obj: " PTR_FORMAT " obj_size: " SIZE_FORMAT " obj_end: " PTR_FORMAT " top: " PTR_FORMAT,
-                  p2i(obj), obj_size, p2i(obj_end), p2i(_hr->top()));
+                  p2i(obj), obj_size, p2i(obj_end), p2i(hr->top()));
       }
     } else {
       // Because we refine the BOT based on which cards are dirty there is not much we can verify here.
@@ -272,34 +254,12 @@ void G1BlockOffsetTablePart::verify() const {
       size_t max_backskip = current_card - start_card;
       guarantee(backskip <= max_backskip,
                 "Going backwards beyond the start_card. start_card: " SIZE_FORMAT " current_card: " SIZE_FORMAT " backskip: " SIZE_FORMAT,
-                start_card, current_card, backskip);
+                p2i(start_card), p2i(current_card), backskip);
 
-      HeapWord* backskip_address = _bot->address_for_index(current_card - backskip);
-      guarantee(backskip_address >= _hr->bottom(),
+      HeapWord* backskip_address = addr_for_entry(current_card - backskip);
+      guarantee(backskip_address >= hr->bottom(),
                 "Going backwards beyond bottom of the region: bottom: " PTR_FORMAT ", backskip_address: " PTR_FORMAT,
-                p2i(_hr->bottom()), p2i(backskip_address));
+                p2i(hr->bottom()), p2i(backskip_address));
     }
-  }
-}
-
-#ifndef PRODUCT
-void G1BlockOffsetTablePart::print_on(outputStream* out) {
-  size_t from_index = _bot->index_for(_hr->bottom());
-  size_t to_index = _bot->index_for(_hr->end());
-  out->print_cr(">> BOT for area [" PTR_FORMAT "," PTR_FORMAT ") "
-                "cards [" SIZE_FORMAT "," SIZE_FORMAT ")",
-                p2i(_hr->bottom()), p2i(_hr->end()), from_index, to_index);
-  for (size_t i = from_index; i < to_index; ++i) {
-    out->print_cr("  entry " SIZE_FORMAT_W(8) " | " PTR_FORMAT " : %3u",
-                  i, p2i(_bot->address_for_index(i)),
-                  (uint) _bot->offset_array(i));
-  }
-}
-#endif // !PRODUCT
-
-void G1BlockOffsetTablePart::set_for_starts_humongous(HeapWord* obj_top, size_t fill_size) {
-  update_for_block(_hr->bottom(), obj_top);
-  if (fill_size > 0) {
-    update_for_block(obj_top, fill_size);
   }
 }

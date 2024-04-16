@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,10 +246,15 @@ size_t SymbolTable::table_size() {
   return ((size_t)1) << _local_table->get_size_log2(Thread::current());
 }
 
+bool SymbolTable::has_work() { return Atomic::load_acquire(&_has_work); }
+
 void SymbolTable::trigger_cleanup() {
-  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-  _has_work = true;
-  Service_lock->notify_all();
+  // Avoid churn on ServiceThread
+  if (!has_work()) {
+    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    _has_work = true;
+    Service_lock->notify_all();
+  }
 }
 
 class SymbolsDo : StackObj {
@@ -412,6 +417,13 @@ public:
     return _return;
   }
 };
+
+void SymbolTable::update_needs_rehash(bool rehash) {
+  if (rehash) {
+    _needs_rehashing = true;
+    trigger_cleanup();
+  }
+}
 
 Symbol* SymbolTable::do_lookup(const char* name, int len, uintx hash) {
   Thread* thread = Thread::current();
@@ -772,7 +784,7 @@ void SymbolTable::clean_dead_entries(JavaThread* jt) {
 }
 
 void SymbolTable::check_concurrent_work() {
-  if (_has_work) {
+  if (has_work()) {
     return;
   }
   // We should clean/resize if we have
@@ -785,98 +797,70 @@ void SymbolTable::check_concurrent_work() {
   }
 }
 
+bool SymbolTable::should_grow() {
+  return get_load_factor() > PREF_AVG_LIST_LEN && !_local_table->is_max_size_reached();
+}
+
 void SymbolTable::do_concurrent_work(JavaThread* jt) {
-  double load_factor = get_load_factor();
-  log_debug(symboltable, perf)("Concurrent work, live factor: %g", load_factor);
+  // Rehash if needed.  Rehashing goes to a safepoint but the rest of this
+  // work is concurrent.
+  if (needs_rehashing() && maybe_rehash_table()) {
+    Atomic::release_store(&_has_work, false);
+    return; // done, else grow
+  }
+  log_debug(symboltable, perf)("Concurrent work, live factor: %g", get_load_factor());
   // We prefer growing, since that also removes dead items
-  if (load_factor > PREF_AVG_LIST_LEN && !_local_table->is_max_size_reached()) {
+  if (should_grow()) {
     grow(jt);
   } else {
     clean_dead_entries(jt);
   }
-  _has_work = false;
+  Atomic::release_store(&_has_work, false);
 }
 
-// Rehash
-bool SymbolTable::do_rehash() {
-  if (!_local_table->is_safepoint_safe()) {
-    return false;
-  }
+// Called at VM_Operation safepoint
+void SymbolTable::rehash_table() {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be called at safepoint");
+  // The ServiceThread initiates the rehashing so it is not resizing.
+  assert (_local_table->is_safepoint_safe(), "Should not be resizing now");
+
+  _alt_hash_seed = AltHashing::compute_seed();
 
   // We use current size
   size_t new_size = _local_table->get_size_log2(Thread::current());
   SymbolTableHash* new_table = new SymbolTableHash(new_size, END_SIZE, REHASH_LEN, true);
   // Use alt hash from now on
   _alt_hash = true;
-  if (!_local_table->try_move_nodes_to(Thread::current(), new_table)) {
-    _alt_hash = false;
-    delete new_table;
-    return false;
-  }
+  _local_table->rehash_nodes_to(Thread::current(), new_table);
 
   // free old table
   delete _local_table;
   _local_table = new_table;
 
-  return true;
+  _rehashed = true;
+  _needs_rehashing = false;
 }
 
-bool SymbolTable::should_grow() {
-  return get_load_factor() > PREF_AVG_LIST_LEN && !_local_table->is_max_size_reached();
-}
-
-bool SymbolTable::rehash_table_expects_safepoint_rehashing() {
-  // No rehashing required
-  if (!needs_rehashing()) {
-    return false;
-  }
-
-  // Grow instead of rehash
-  if (should_grow()) {
-    return false;
-  }
-
-  // Already rehashed
-  if (_rehashed) {
-    return false;
-  }
-
-  // Resizing in progress
-  if (!_local_table->is_safepoint_safe()) {
-    return false;
-  }
-
-  return true;
-}
-
-void SymbolTable::rehash_table() {
+bool SymbolTable::maybe_rehash_table() {
   log_debug(symboltable)("Table imbalanced, rehashing called.");
 
   // Grow instead of rehash.
   if (should_grow()) {
     log_debug(symboltable)("Choosing growing over rehashing.");
-    trigger_cleanup();
     _needs_rehashing = false;
-    return;
+    return false;
   }
 
   // Already rehashed.
   if (_rehashed) {
     log_warning(symboltable)("Rehashing already done, still long lists.");
-    trigger_cleanup();
     _needs_rehashing = false;
-    return;
+    return false;
   }
 
-  _alt_hash_seed = AltHashing::compute_seed();
-
-  if (do_rehash()) {
-    _rehashed = true;
-  } else {
-    log_info(symboltable)("Resizes in progress rehashing skipped.");
-  }
-
-  _needs_rehashing = false;
+  VM_RehashSymbolTable op;
+  VMThread::execute(&op);
+  return true;
 }
 
 //---------------------------------------------------------------------------
