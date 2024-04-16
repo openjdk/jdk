@@ -32,6 +32,7 @@
  *          java.base/sun.security.x509
  * @run main/othervm GetAndPostTests
  * @run main/othervm -Dcom.sun.security.ocsp.useget=false GetAndPostTests
+ * @run main/othervm -Dcom.sun.security.ocsp.useget=foo GetAndPostTests
  */
 
 import java.io.ByteArrayInputStream;

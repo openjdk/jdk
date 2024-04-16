@@ -120,7 +120,7 @@ class JavaThread: public Thread {
   // Deopt support
   DeoptResourceMark*  _deopt_mark;               // Holds special ResourceMark for deoptimization
 
-  CompiledMethod*       _deopt_nmethod;         // CompiledMethod that is currently being deoptimized
+  nmethod*      _deopt_nmethod;                  // nmethod that is currently being deoptimized
   vframeArray*  _vframe_array_head;              // Holds the heap of the active vframeArrays
   vframeArray*  _vframe_array_last;              // Holds last vFrameArray we popped
   // Holds updates by JVMTI agents for compiled frames that cannot be performed immediately. They
@@ -158,8 +158,6 @@ class JavaThread: public Thread {
   JNIHandleBlock* _free_handle_block;
 
  public:
-  volatile intptr_t _Stalled;
-
   // For tracking the heavyweight monitor the thread is pending on.
   ObjectMonitor* current_pending_monitor() {
     // Use Atomic::load() to prevent data race between concurrent modification and
@@ -688,8 +686,8 @@ private:
   void set_deopt_mark(DeoptResourceMark* value)  { _deopt_mark = value; }
   DeoptResourceMark* deopt_mark(void)            { return _deopt_mark; }
 
-  void set_deopt_compiled_method(CompiledMethod* nm)  { _deopt_nmethod = nm; }
-  CompiledMethod* deopt_compiled_method()        { return _deopt_nmethod; }
+  void set_deopt_compiled_method(nmethod* nm)    { _deopt_nmethod = nm; }
+  nmethod* deopt_compiled_method()               { return _deopt_nmethod; }
 
   Method*    callee_target() const               { return _callee_target; }
   void set_callee_target  (Method* x)            { _callee_target   = x; }
@@ -893,11 +891,11 @@ private:
   void frames_do(void f(frame*, const RegisterMap*));
 
   // Memory operations
-  void oops_do_frames(OopClosure* f, CodeBlobClosure* cf);
-  void oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf);
+  void oops_do_frames(OopClosure* f, NMethodClosure* cf);
+  void oops_do_no_frames(OopClosure* f, NMethodClosure* cf);
 
   // GC operations
-  virtual void nmethods_do(CodeBlobClosure* cf);
+  virtual void nmethods_do(NMethodClosure* cf);
 
   // RedefineClasses Support
   void metadata_do(MetadataClosure* f);

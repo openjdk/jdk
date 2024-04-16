@@ -90,7 +90,7 @@ void ShenandoahEvacuationStats::print_on(outputStream* st) {
             byte_size_in_proper_unit(abandoned_size),   proper_unit_for_byte_size(abandoned_size),
             abandoned_count);
   if (_use_age_table) {
-    _age_table->print_on(st, ShenandoahHeap::heap()->age_census()->tenuring_threshold());
+    _age_table->print_on(st);
   }
 }
 
@@ -117,9 +117,8 @@ void ShenandoahEvacuationTracker::print_evacuations_on(outputStream* st,
         young_region_ages.add(r->age(), r->get_live_data_words());
       }
     }
-    uint tenuring_threshold = heap->age_census()->tenuring_threshold();
     st->print("Young regions: ");
-    young_region_ages.print_on(st, tenuring_threshold);
+    young_region_ages.print_on(st);
     st->cr();
   }
 }

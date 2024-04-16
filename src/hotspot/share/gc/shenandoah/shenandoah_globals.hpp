@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2021, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -31,7 +31,6 @@
                             develop_pd,                                     \
                             product,                                        \
                             product_pd,                                     \
-                            notproduct,                                     \
                             range,                                          \
                             constraint)                                     \
                                                                             \
@@ -590,10 +589,10 @@
           "With generational mode, increment the age of objects and"        \
           "regions each time this many young-gen GC cycles are completed.") \
                                                                             \
-  notproduct(bool, ShenandoahEnableCardStats, false,                        \
+  develop(bool, ShenandoahEnableCardStats, false,                           \
           "Enable statistics collection related to clean & dirty cards")    \
                                                                             \
-  notproduct(int, ShenandoahCardStatsLogInterval, 50,                       \
+  develop(int, ShenandoahCardStatsLogInterval, 50,                          \
           "Log cumulative card stats every so many remembered set or "      \
           "update refs scans")                                              \
                                                                             \
