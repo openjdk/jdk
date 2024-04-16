@@ -136,7 +136,7 @@ static void fill_pattern(bool VERBOSE,
   if (VERBOSE)  tty->print_cr("PATTERN=%d+%d[%s]",
                               full_lines, partial_line, pat);
   for (int i = 0; i < patlen; i++) {
-    assert(pat[i] != '%' || i+1 < patlen && pat[i+1] == '!', "");
+    assert(pat[i] != '%' || (i+1 < patlen && pat[i+1] == '!'), "");
     if (pat[i] == '!')  pat[i] = '\n';
     if (pat[i] == '%')  pat[i] = '\r';
   }
@@ -276,11 +276,11 @@ static void istream_test_driver(const bool VERBOSE,
           } else {
             bool oflag = overwrite;
             const char* cp;
-            for (cp = endl + strlen(endl); --cp >= endl; cp) {
+            for (cp = endl + strlen(endl); --cp >= endl; ) {
               in.push_back_input(cp, 1, oflag);
               oflag = false;
             }
-            for (cp = copy + strlen(copy); --cp >= copy; cp) {
+            for (cp = copy + strlen(copy); --cp >= copy; ) {
               in.push_back_input(cp, 1, oflag);
               oflag = false;
             }
@@ -349,7 +349,7 @@ static void istream_test_driver(const bool VERBOSE,
           if (xrlen > 0)  verify_lp = false;  // do not bother
         }
         if (verify_lp) {
-          int actual_lineno = in.lineno();
+          int actual_lineno = (int) in.lineno();
           if (VERBOSE)  in.dump("CL    ");
           EXPECT_EQ(actual_lineno, lineno)  <<LPEQ;
           int len = (int) in.current_line_length();

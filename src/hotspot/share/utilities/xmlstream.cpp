@@ -213,7 +213,7 @@ static size_t find_next_escape(const char* s, size_t len,
     if (jlimit > len - i)  jlimit = len - i;
     // find terminating ';'
     for (size_t j = 2; j < jlimit; j++) {
-      if (s[i+j] == ';') { qlen = j + 1; break; }
+      if (s[i+j] == ';') { qlen = (int)(j + 1); break; }
       // (could do more pattern matching here, but not worth it)
     }
     if (qlen == 0)  continue;

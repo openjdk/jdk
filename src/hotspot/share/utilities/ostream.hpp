@@ -248,11 +248,15 @@ class fileStream : public outputStream {
     if (_file == nullptr)  return 0;
     return ::fread(data, 1, size, _file);
   }
+  size_t read(void *data, size_t size, size_t count) {
+    return read(data, size * count);
+  }
   void close() {
     if (_file == nullptr || !_need_close)  return;
     fclose(_file);
     _need_close = false;
   }
+  long fileSize();
   void flush();
   size_t position();  // return NO_SIZE on failure
   size_t set_position(size_t position);  // return new position or NO_SIZE on failure

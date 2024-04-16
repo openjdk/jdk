@@ -107,7 +107,7 @@ const char* inputStream::next_content(size_t& next_content_length) const {
   return len == 0 ? "" : &_buffer[_next];
 }
 
-void inputStream::set_input(BlockInput* input) {
+void inputStream::set_input(inputStream::Input* input) {
   clear_buffer();
   if (_input != nullptr && _input != input) {
     _input->close();
@@ -129,7 +129,7 @@ bool inputStream::fill_buffer() {
     size_t fill_offset, fill_length;
     prepare_to_fill_buffer(fill_offset, fill_length);
     if (error())  return false;
-    assert(fill_offset >= 0 && fill_length > 0, "");
+    assert(fill_length > 0, "");
     assert(fill_offset < _buffer_size, "");
     assert(fill_offset + fill_length <= _buffer_size, "");
     size_t nr = 0;
@@ -229,7 +229,7 @@ void inputStream::prepare_to_fill_buffer(size_t& fill_offset,
 // Set _beg, _end, _next, and _content_end appropriately.
 void inputStream::set_buffer_content(size_t content_start,
                                      size_t content_end) {
-  assert(content_start >= 0 && content_end <= _buffer_size, "");
+  assert(content_end <= _buffer_size, "");
   assert(content_start <= content_end + NEXT_PHANTOM, "");
   if (content_start >= content_end) {   // empty content; clear buffer
     COV(SBC_C);

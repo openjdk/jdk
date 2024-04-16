@@ -30,7 +30,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 
-// Input streams for reading line-oriented textual data These streams
+// Input streams for reading line-oriented textual data. These streams
 // treat newline '\n' very differently from all other bytes.  Carriage
 // return '\r' is just another bit of whitespace, although it is
 // removed just before newline.
@@ -77,9 +77,10 @@
 //
 // Note: Input streams are never MT-safe.
 
-class BlockInput;
-
 class inputStream : public CHeapObjBase {
+ public:
+  class Input;
+
  private:
   NONCOPYABLE(inputStream);
 
@@ -95,7 +96,7 @@ class inputStream : public CHeapObjBase {
   // Named offset for _next relative to _content_end, of phantom '\n'.
   static const int NEXT_PHANTOM = 1;
 
-  BlockInput* _input;   // where the input comes from or else nullptr
+  Input* _input;   // where the input comes from or else nullptr
   IState _input_state;  // one of {NTR,EOF,ERR}_STATE
   char   _line_ending;  // one of {0,1,2} for "", "\n", "\r\n"
   char*  _buffer;       // scratch buffer holding at least the current line
@@ -146,8 +147,8 @@ class inputStream : public CHeapObjBase {
 
   bool is_sane() const {
     assert((_buffer == nullptr) == (_buffer_size == 0), "");
-    assert(_content_end >= 0 && _content_end <= _buffer_size, "");
-    assert(0 <= _beg && _beg <= _end && _end <= _content_end, "");
+    assert(_content_end <= _buffer_size, "");
+    assert(_beg <= _end && _end <= _content_end, "");
     assert(_end <= _next && _next <= _content_end + NEXT_PHANTOM, "");
     assert(_buffer_size == 0 || _next <= _buffer_size, "");
     return true;
@@ -262,7 +263,7 @@ class inputStream : public CHeapObjBase {
   }
 
   // Take input from the given source.  Buffer only a modest amount.
-  inputStream(BlockInput* input)
+  inputStream(Input* input)
     : inputStream()
   {
     set_input(input);
@@ -290,7 +291,7 @@ class inputStream : public CHeapObjBase {
   }
 
   // Discards any previous input and sets the given input source.
-  void set_input(BlockInput* input);
+  void set_input(Input* input);
 
   // Forces the given data into the buffer, before the current line.
   // If overwrite_current_line is true, the current line is removed.
@@ -398,7 +399,7 @@ class inputStream : public CHeapObjBase {
   const char* current_line_ending() const;
 
   // Reports my current input source, if any, else a null pointer.
-  BlockInput* input() const { return _input; }
+  Input* input() const { return _input; }
 
   // Discards the current line, gets ready to report the next line.
   // Returns true if there is one, which is always the opposite of done().
@@ -465,33 +466,34 @@ class inputStream : public CHeapObjBase {
 #else
   void dump(const char* what = nullptr) { }
 #endif
-};
 
-// Block-oriented input, which treats all bytes equally.
-class BlockInput : public CHeapObjBase {
- public:
-  // Read some characters from an external source into the line buffer.
-  // If there are no more, return zero, otherwise return non-zero.
-  // It must be OK to call read even after it returns zero.
-  virtual size_t read(char* buf, size_t size) = 0;
-  // Example: read(b,s) { return fread(b, 1, s, _my_fp); }
-  // Example: read(b,s) { return 0; } // never more than the initial buffer
 
-  // Give the current number of bytes already produced by the source.
-  // Give (size_t)-1 if this source does have a tracked position.
-  // A tracked position increments by the result of every call to read.
-  virtual size_t position() { return -1; }
+  // Block-oriented input, which treats all bytes equally.
+  class Input : public CHeapObjBase {
+  public:
+    // Read some characters from an external source into the line buffer.
+    // If there are no more, return zero, otherwise return non-zero.
+    // It must be OK to call read even after it returns zero.
+    virtual size_t read(char* buf, size_t size) = 0;
+    // Example: read(b,s) { return fread(b, 1, s, _my_fp); }
+    // Example: read(b,s) { return 0; } // never more than the initial buffer
 
-  // Give the remaining number of bytes which might be produced in the future.
-  // Give (size_t)-1 if this source does not keep track of that number.
-  virtual size_t remaining() { return -1; }
+    // Give the current number of bytes already produced by the source.
+    // Give (size_t)-1 if this source does have a tracked position.
+    // A tracked position increments by the result of every call to read.
+    virtual size_t position() { return -1; }
 
-  // Rewind so that the position appears to be the given one.
-  // Return the new position, or else (size_t)-1 if the request fails.
-  virtual size_t set_position(size_t position) { return -1; }
+    // Give the remaining number of bytes which might be produced in the future.
+    // Give (size_t)-1 if this source does not keep track of that number.
+    virtual size_t remaining() { return -1; }
 
-  // If it is backed by a resource that needs closing, do so.
-  virtual void close() { }
+    // Rewind so that the position appears to be the given one.
+    // Return the new position, or else (size_t)-1 if the request fails.
+    virtual size_t set_position(size_t position) { return -1; }
+
+    // If it is backed by a resource that needs closing, do so.
+    virtual void close() { }
+  };
 };
 
 template<typename BlockClass>
@@ -506,7 +508,7 @@ class BlockInputStream : public inputStream {
 };
 
 // for reading lines from files
-class FileInput : public BlockInput {
+class FileInput : public inputStream::Input {
   NONCOPYABLE(FileInput);
 
  protected:
@@ -550,7 +552,7 @@ class FileInput : public BlockInput {
   }
 };
 
-class MemoryInput : public BlockInput {
+class MemoryInput : public inputStream::Input {
   const void* _base;
   const size_t _limit;
   size_t      _offset;

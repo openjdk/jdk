@@ -577,10 +577,33 @@ void fileStream::write(const char* s, size_t len) {
   }
 }
 
+long fileStream::fileSize() {
+  long size = -1;
+  if (_file != nullptr) {
+    long pos = ::ftell(_file);
+    if (pos < 0) return pos;
+    if (::fseek(_file, 0, SEEK_END) == 0) {
+      size = ::ftell(_file);
+    }
+    ::fseek(_file, pos, SEEK_SET);
+  }
+  return size;
+}
+
+#ifdef _WINDOWS
+#define ftello _ftelli64
+#define fseeko _fseeki64
+#define OFF_T  __int64
+#endif
+
+#ifndef OFF_T
+#define OFF_T off_t
+#endif
+
 size_t fileStream::position() {
   if (_file == nullptr)  return NO_SIZE;
 #if _LP64
-  typedef off_t position_t;
+  typedef OFF_T position_t;
   position_t p = ::ftello(_file);
 #else
   typedef long position_t;
@@ -596,7 +619,7 @@ size_t fileStream::set_position(size_t position) {
   if (_file == nullptr)  return NO_SIZE;
   int res = -1;
 #if _LP64
-  res = ::fseeko(_file, (off_t) position, SEEK_SET);
+  res = ::fseeko(_file, (OFF_T) position, SEEK_SET);
 #else
   res = ::fseek(_file, (long) position, SEEK_SET);
 #endif

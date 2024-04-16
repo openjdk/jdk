@@ -1061,7 +1061,7 @@ bool CompilerOracle::parse_from_file() {
   return parse_from_input(&input, parse_from_line);
 }
 
-bool CompilerOracle::parse_from_input(BlockInput* input,
+bool CompilerOracle::parse_from_input(inputStream::Input* input,
                                       CompilerOracle::
                                       parse_from_line_fn_t* parse_from_line) {
   for (inputStream in(input); !in.done(); in.next()) {

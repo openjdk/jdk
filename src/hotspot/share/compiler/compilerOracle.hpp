@@ -27,8 +27,8 @@
 
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/istream.hpp"
 
-class BlockInput;
 class methodHandle;
 
 
@@ -130,7 +130,7 @@ class CompilerOracle : AllStatic {
   static void print_command(enum CompileCommand option, const char* name, enum OptionType type);
 
   // The core parser.
-  static bool parse_from_input(BlockInput* input,
+  static bool parse_from_input(inputStream::Input* input,
                                parse_from_line_fn_t* parse_from_line);
 
  public:
