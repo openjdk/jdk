@@ -23,9 +23,8 @@
  * questions.
  */
 
-package java.lang;
+package jdk.internal.lang;
 
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.lang.stable.StableValueElement;
 import jdk.internal.lang.stable.StableValueImpl;
 
@@ -40,8 +39,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
-
-import static jdk.internal.javac.PreviewFeature.*;
 
 /**
  * An atomic, thread-safe, stable value holder for which the value can be set at most once.
@@ -69,7 +66,7 @@ import static jdk.internal.javac.PreviewFeature.*;
  * @param <V> value type
  * @since 23
  */
-@PreviewFeature(feature = Feature.STABLE_VALUES_AND_COLLECTIONS)
+//@PreviewFeature(feature = Feature.STABLE_VALUES_AND_COLLECTIONS)
 public sealed interface StableValue<V>
         permits StableValueImpl,
         StableValueElement {

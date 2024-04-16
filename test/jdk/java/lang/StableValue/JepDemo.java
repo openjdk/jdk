@@ -23,10 +23,12 @@
 
 /* @test
  * @summary Demo of the JEP examples.
+ * @modules java.base/jdk.internal.lang
  * @compile --enable-preview -source ${jdk.version} JepDemo.java
  * @run junit/othervm --enable-preview JepDemo
  */
 
+import jdk.internal.lang.StableValue;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

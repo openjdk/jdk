@@ -1,5 +1,7 @@
 package jdk.internal.lang.stable;
 
+import jdk.internal.lang.StableValue;
+
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.function.IntFunction;

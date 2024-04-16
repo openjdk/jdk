@@ -23,10 +23,12 @@
 
 /* @test
  * @summary Basic tests for StableValue implementations
+ * @modules java.base/jdk.internal.lang
  * @compile --enable-preview -source ${jdk.version} BasicStableTest.java
  * @run junit/othervm --enable-preview BasicStableTest
  */
 
+import jdk.internal.lang.StableValue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

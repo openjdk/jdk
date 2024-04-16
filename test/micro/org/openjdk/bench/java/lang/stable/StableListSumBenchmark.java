@@ -23,6 +23,7 @@
 
 package org.openjdk.bench.java.lang.stable;
 
+import jdk.internal.lang.StableValue;
 import org.openjdk.jmh.annotations.*;
 
 import java.util.ArrayList;
@@ -39,7 +40,7 @@ import java.util.stream.Stream;
 @State(Scope.Thread)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
-@Fork(value = 2, jvmArgsAppend = "--enable-preview")
+@Fork(value = 2, jvmArgsAppend = {"--add-exports=java.base/jdk.internal.lang=ALL-UNNAMED", "--enable-preview"})
 @OperationsPerInvocation(1000)
 
 /*

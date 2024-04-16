@@ -41,6 +41,7 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.lang.StableValue;
 import jdk.internal.lang.stable.StableValueElement;
 import jdk.internal.lang.stable.StableUtil;
 import jdk.internal.misc.CDS;
@@ -63,7 +64,9 @@ class ImmutableCollections {
     /**
      * Used by collections of StableValues
      */
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    private static final class Holder {
+        private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    }
 
     /**
      * A "salt" value used for randomizing iteration order. This is initialized once
@@ -153,15 +156,15 @@ class ImmutableCollections {
                     if (list instanceof StableList<V> ll) {
                         return ll.computeIfUnset(index, mapper);
                     } else {
-                        StableValue<V> lazy = list.get(index);
-                        if (lazy.isSet()) {
-                            return lazy.orThrow();
+                        StableValue<V> stable = list.get(index);
+                        if (stable.isSet()) {
+                            return stable.orThrow();
                         }
                         // Captures
                         Supplier<V> supplier = new Supplier<>() {
                             @Override public V get() {return mapper.apply(index);}
                         };
-                        return lazy.computeIfUnset(supplier);
+                        return stable.computeIfUnset(supplier);
                     }
                 }
 
@@ -172,7 +175,7 @@ class ImmutableCollections {
                             .map(Objects::requireNonNull)
                             .toArray();
                     return keys instanceof EnumSet
-                            ? ImmutableCollections.LazyEnumMap.create(arr)
+                            ? StableEnumMap.create(arr)
                             : StableMap.create(arr);
                 }
 
@@ -186,18 +189,18 @@ class ImmutableCollections {
                         UnsetComputable<K, V> uc = ((UnsetComputable<K, V>) map);
                         return uc.computeIfUnset(key, mapper);
                     } else {
-                        StableValue<V> lazy = map.get(key);
-                        if (lazy == null) {
+                        StableValue<V> stable = map.get(key);
+                        if (stable == null) {
                             throw noKey(key);
                         }
-                        if (lazy.isSet()) {
-                            return lazy.orThrow();
+                        if (stable.isSet()) {
+                            return stable.orThrow();
                         }
                         // Captures
                         Supplier<V> supplier = new Supplier<>() {
                             @Override public V get() {return mapper.apply(key);}
                         };
-                        return lazy.computeIfUnset(supplier);
+                        return stable.computeIfUnset(supplier);
                     }
                 }
             });
@@ -1435,500 +1438,6 @@ class ImmutableCollections {
         }
     }
 
-
-    // Lazy collections
-
-    static <E> List<E> lazyList(int size, IntFunction<? extends E> mapper) {
-        if (size < 0) {
-            throw new IllegalArgumentException();
-        }
-        Objects.requireNonNull(mapper);
-        if (size == 0) {
-            return ImmutableCollections.LazyListEmpty.instance();
-        }
-        if (size == 1) {
-            return ImmutableCollections.LazyListSingleton.create(mapper);
-        }
-        return ImmutableCollections.LazyListN.create(size, mapper);
-    }
-
-    // We need a special non-serializable version of an empty list
-    @jdk.internal.ValueBased
-    static final class LazyListEmpty<E> extends ImmutableCollections.AbstractImmutableList<E>
-            /* implements Serializable */ {
-        private static final Object[] EMPTY_ARRAY = new Object[0];
-
-        private LazyListEmpty() {}
-
-        @Override
-        public boolean isEmpty() {
-            return true;
-        }
-
-        @Override
-        public int size() {
-            return 0;
-        }
-
-        @Override
-        public E get(int index) {
-            throw new IndexOutOfBoundsException();
-        }
-
-        @Override
-        public Object[] toArray() {
-            return new Object[0];
-        }
-
-        @Override
-        public <T> T[] toArray(T[] a) {
-            if (a.length > 0) {
-                a[0] = null; // null-terminate
-            }
-            return a;
-        }
-
-        @Override
-        public int indexOf(Object o) {
-            if (o == null) {
-                throw new NullPointerException();
-            }
-            return -1;
-        }
-
-        @Override
-        public int lastIndexOf(Object o) {
-            if (o == null) {
-                throw new NullPointerException();
-            }
-            return -1;
-        }
-
-        @SuppressWarnings("unchecked")
-        static <E> List<E> instance() {
-            class Holder {
-                static final LazyListEmpty<?> INSTANCE = new LazyListEmpty<>();
-            }
-            return (List<E>) Holder.INSTANCE;
-        }
-
-    }
-
-    // @jdk.internal.ValueBased (element is mutable)
-    static final class LazyListSingleton<E> extends ImmutableCollections.AbstractImmutableList<E>
-            /* implements Serializable */ {
-
-        @Stable
-        private E element;
-        @Stable
-        private final IntFunction<? extends E> mapper;
-
-        private Object mutex;
-
-        private LazyListSingleton(IntFunction<? extends E> mapper) {
-            this.mapper = mapper;
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return false;
-        }
-
-        @Override
-        public int size() {
-            return 1;
-        }
-
-        @Override
-        public E get(int index) {
-            Objects.checkIndex(index, 1);
-            // Optimistically try plain semantics first
-            E e = element;
-            if (e != null) {
-                // If we happen to see a non-null value under
-                // plain semantics, we know a value is present.
-                return e;
-            }
-            // Now, fall back to volatile semantics.
-            e = elementVolatile();
-            if (e != null) {
-                // If we see a non-null value, we know a value is present.
-                return e;
-            }
-            return getSlowPath(index);
-        }
-
-        private E getSlowPath(int index) {
-            Object mutex = mutexVolatile();
-            if (mutex == null) {
-                mutex = casMutex();
-            }
-            E witness;
-            synchronized (mutex) {
-                E e = elementVolatile();
-                if (e != null) {
-                    // Another thread has set the element
-                    return e;
-                }
-                // We are alone
-                E newElement = mapper.apply(index);
-                Objects.requireNonNull(newElement);
-                witness = caeElement(newElement);
-                clearMutex();
-            }
-            return witness;
-        }
-
-        @Override
-        public Object[] toArray() {
-            Object[] arr = new Object[1];
-            arr[0] = getFirst();
-            return arr;
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public <T> T[] toArray(T[] a) {
-            T element = (T) getFirst();
-            if (a.length < 1) {
-                // Make a new array of a's runtime type, but my contents:
-                T[] arr = (T[])Array.newInstance(a.getClass(), 1);
-                arr[0] = element;
-                return arr;
-            }
-            a[0] = element;
-            if (a.length > 1) {
-                a[1] = null; // null-terminate
-            }
-            return a;
-        }
-
-        @Override
-        public int indexOf(Object o) {
-            if (o == null) {
-                throw new NullPointerException();
-            }
-            if (Objects.equals(o, get(0))) {
-                return 0;
-            }
-            return -1;
-        }
-
-        @Override
-        public int lastIndexOf(Object o) {
-            return indexOf(o);
-        }
-
-        private static final long ELEMENT_OFFSET = UNSAFE.objectFieldOffset(LazyListSingleton.class, "element");
-        private static final long MUTEX_OFFSET = UNSAFE.objectFieldOffset(LazyListSingleton.class, "mutex");
-
-        @SuppressWarnings("unchecked")
-        private E elementVolatile() {
-            return (E) UNSAFE.getReferenceVolatile(this, ELEMENT_OFFSET);
-        }
-
-        @SuppressWarnings("unchecked")
-        private E caeElement(E created) {
-            // Make sure no reordering of store operations
-            freeze();
-            E witness = (E) UNSAFE.compareAndExchangeReference(this, ELEMENT_OFFSET, null, created);
-            return witness == null ? created : witness;
-        }
-
-        private Object mutexVolatile() {
-            return UNSAFE.getReferenceVolatile(this, MUTEX_OFFSET);
-        }
-
-        private Object casMutex() {
-            Object created = new Object();
-            Object mutex = UNSAFE.compareAndExchangeReference(this, MUTEX_OFFSET, null, created);
-            return mutex == null ? created : mutex;
-        }
-
-        private void clearMutex() {
-            UNSAFE.putReferenceVolatile(this, MUTEX_OFFSET, null);
-        }
-
-        static <E> List<E> create(IntFunction<? extends E> mapper) {
-            return new LazyListSingleton<>(mapper);
-        }
-
-    }
-
-    @jdk.internal.ValueBased
-    static final class LazyListN<E> extends ImmutableCollections.AbstractImmutableList<E>
-            /* implements Serializable */ {
-
-        @Stable
-        private final E[] elements;
-        private final Object[] mutexes;
-        @Stable
-        private final IntFunction<? extends E> mapper;
-
-        @SuppressWarnings("unchecked")
-        private LazyListN(int size, IntFunction<? extends E> mapper) {
-            this.elements = (E[]) new Object[size];
-            this.mutexes = new Object[size];
-            this.mapper = mapper;
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return false;
-        }
-
-        @Override
-        public int size() {
-            return elements.length;
-        }
-
-        @Override
-        public E get(int index) {
-            // Optimistically try plain semantics first
-            E e = elements[index];
-             if (e != null) {
-                // If we happen to see a non-null value under
-                // plain semantics, we know a value is present.
-                return e;
-            }
-            // Now, fall back to volatile semantics.
-            e = elementVolatile(index);
-            if (e != null) {
-                // If we see a non-null value, we know a value is present.
-                return e;
-            }
-            return getSlowPath(index);
-        }
-
-        private E getSlowPath(int index) {
-            Object mutex = mutexVolatile(index);
-            if (mutex == null) {
-                mutex = casMutex(index);
-            }
-            E witness;
-            synchronized (mutex) {
-                E e = elementVolatile(index);
-                if (e != null) {
-                    // Another thread has set the element
-                    return e;
-                }
-                // We are alone
-                E newElement = mapper.apply(index);
-                Objects.requireNonNull(newElement);
-                witness = caeElement(index, newElement);
-                clearMutex(index);
-            }
-            return witness;
-        }
-
-        @Override
-        public Object[] toArray() {
-            int size = elements.length;
-            Object[] arr = new Object[size];
-            for (int i = 0; i < size; i++) {
-                arr[i] = get(i);
-            }
-            return arr;
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public <T> T[] toArray(T[] a) {
-            int size = elements.length;
-            if (a.length < size) {
-                // Make a new array of a's runtime type, but my contents:
-                T[] arr = (T[])Array.newInstance(a.getClass(), size);
-                for (int i = 0; i < size; i++) {
-                    arr[i] = (T) get(i);
-                }
-                return arr;
-            }
-            for (int i = 0; i < size; i++) {
-                a[i] = (T) get(i);
-            }
-            if (a.length > size) {
-                a[size] = null; // null-terminate
-            }
-            return a;
-        }
-
-        @Override
-        public int indexOf(Object o) {
-            if (o == null) {
-                throw new NullPointerException();
-            }
-            int size = elements.length;
-            for (int i = 0; i < size; i++) {
-                if (Objects.equals(o, get(i))) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-
-        @Override
-        public int lastIndexOf(Object o) {
-            if (o == null) {
-                throw new NullPointerException();
-            }
-            for (int i = elements.length - 1; i >= 0; i--) {
-                if (Objects.equals(o, get(i))) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-
-        @SuppressWarnings("unchecked")
-        private E elementVolatile(int index) {
-            return (E) UNSAFE.getReferenceVolatile(elements, StableUtil.objectOffset(index));
-        }
-
-        @SuppressWarnings("unchecked")
-        private E caeElement(int index, E created) {
-            // Make sure no reordering of store operations
-            freeze();
-            E witness = (E) UNSAFE.compareAndExchangeReference(elements, objectOffset(index), null, created);
-            return witness == null ? created : witness;
-        }
-
-        private Object mutexVolatile(int index) {
-            return UNSAFE.getReferenceVolatile(mutexes, StableUtil.objectOffset(index));
-        }
-
-        private Object casMutex(int index) {
-            Object created = new Object();
-            Object mutex = UNSAFE.compareAndExchangeReference(mutexes, objectOffset(index), null, created);
-            return mutex == null ? created : mutex;
-        }
-
-        private void clearMutex(int index) {
-            UNSAFE.putReferenceVolatile(mutexes, objectOffset(index), null);
-        }
-
-        static <E> List<E> create(int size, IntFunction<? extends E> mapper) {
-            return new LazyListN<>(size, mapper);
-        }
-
-    }
-
-    // Settable lazy
-
-    // Todo: Remove SettableLazyListSingleton
-
-    // @jdk.internal.ValueBased (element is mutable)
-    static final class SettableLazyListSingleton<E> extends ImmutableCollections.AbstractImmutableList<E>
-            /* implements Serializable */ {
-
-        @Stable
-        private E element;
-
-        private SettableLazyListSingleton() {
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return false;
-        }
-
-        @Override
-        public int size() {
-            return 1;
-        }
-
-        @Override
-        public E get(int index) {
-            Objects.checkIndex(index, 1);
-            // Optimistically try plain semantics first
-            E e = element;
-            if (e != null) {
-                // If we happen to see a non-null value under
-                // plain semantics, we know a value is present.
-                return e;
-            }
-            // Now, fall back to volatile semantics.
-            e = elementVolatile();
-            if (e != null) {
-                // If we see a non-null value, we know a value is present.
-                return e;
-            }
-            // Todo: What exception type to throw
-            throw new NoSuchElementException();
-        }
-
-        @Override
-        public E set(int index, E element) {
-            Objects.checkIndex(index, 1);
-            E prev = caeElement(element);
-            if (element != prev) {
-                throw new IllegalStateException("Element " + index + " has already been set");
-            }
-            // Surprisingly, returns the same element
-            return prev;
-        }
-
-        @Override
-        public Object[] toArray() {
-            Object[] arr = new Object[1];
-            arr[0] = getFirst();
-            return arr;
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public <T> T[] toArray(T[] a) {
-            T element = (T) getFirst();
-            if (a.length < 1) {
-                // Make a new array of a's runtime type, but my contents:
-                T[] arr = (T[])Array.newInstance(a.getClass(), 1);
-                arr[0] = element;
-                return arr;
-            }
-            a[0] = element;
-            if (a.length > 1) {
-                a[1] = null; // null-terminate
-            }
-            return a;
-        }
-
-        @Override
-        public int indexOf(Object o) {
-            if (o == null) {
-                throw new NullPointerException();
-            }
-            if (Objects.equals(o, get(0))) {
-                return 0;
-            }
-            return -1;
-        }
-
-        @Override
-        public int lastIndexOf(Object o) {
-            return indexOf(o);
-        }
-
-        private static final long ELEMENT_OFFSET = UNSAFE.objectFieldOffset(LazyListSingleton.class, "element");
-
-        @SuppressWarnings("unchecked")
-        private E elementVolatile() {
-            return (E) UNSAFE.getReferenceVolatile(this, ELEMENT_OFFSET);
-        }
-
-        @SuppressWarnings("unchecked")
-        private E caeElement(E created) {
-            // Make sure no reordering of store operations
-            freeze();
-            E witness = (E) UNSAFE.compareAndExchangeReference(this, ELEMENT_OFFSET, null, created);
-            return witness == null ? created : witness;
-        }
-
-        static <E> List<E> create() {
-            return new SettableLazyListSingleton<>();
-        }
-
-    }
-
-
     // Stable collections
 
     @jdk.internal.ValueBased
@@ -2176,7 +1685,7 @@ class ImmutableCollections {
 
     }
 
-    public static final class LazyEnumMap<K extends Enum<K>, V>
+    public static final class StableEnumMap<K extends Enum<K>, V>
             extends AbstractImmutableMap<K, StableValue<V>>
             implements Map<K, StableValue<V>>, UnsetComputable<K, V> {
 
@@ -2195,7 +1704,7 @@ class ImmutableCollections {
         private final IntPredicate isPresent;
 
         @SuppressWarnings("unchecked")
-        private LazyEnumMap(Object[] keys) {
+        private StableEnumMap(Object[] keys) {
             assert keys.length > 0;
 
             // Establish the min and max value.
@@ -2320,7 +1829,7 @@ class ImmutableCollections {
             return new AbstractSet<>() {
                 @Override
                 public int size() {
-                    return LazyEnumMap.this.size;
+                    return StableEnumMap.this.size;
                 }
 
                 @Override
@@ -2341,7 +1850,7 @@ class ImmutableCollections {
 
         @SuppressWarnings("unchecked")
         static <K, KI extends Enum<KI>, V> Map<K, StableValue<V>> create(Object[] keys) {
-            Map<KI, StableValue<V>> map = new ImmutableCollections.LazyEnumMap<>(keys);
+            Map<KI, StableValue<V>> map = new StableEnumMap<>(keys);
             return (Map<K, StableValue<V>>) map;
         }
 

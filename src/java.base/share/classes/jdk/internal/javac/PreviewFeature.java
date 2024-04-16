@@ -81,8 +81,6 @@ public @interface PreviewFeature {
         CLASSFILE_API,
         @JEP(number=461, title="Stream Gatherers", status="Preview")
         STREAM_GATHERERS,
-        @JEP(number=8312611, title="Stable Values & Collections", status="Preview")
-        STABLE_VALUES_AND_COLLECTIONS,
 
         LANGUAGE_MODEL,
 

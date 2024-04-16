@@ -23,10 +23,12 @@
 
 /* @test
  * @summary Basic tests for stable enum Map implementations
+ * @modules java.base/jdk.internal.lang
  * @compile --enable-preview -source ${jdk.version} BasicStableEnumMapTest.java
  * @run junit/othervm --enable-preview BasicStableEnumMapTest
  */
 
+import jdk.internal.lang.StableValue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;

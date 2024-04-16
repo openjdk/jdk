@@ -224,7 +224,7 @@ The Stable Values & Collections API resides in the [java.lang](https://cr.openjd
 ### Stable values
 
 A _stable value_ is a holder object that is set at most once whereby it
-goes from "unset" to "set". It is expressed as an object of type `java.lang.StableValue`,
+goes from "unset" to "set". It is expressed as an object of type `jdk.internal.lang.StableValue`,
 which, like `Future`, is a holder for some computation that may or may not have occurred yet.
 Fresh (unset) `StableValue` instances are created via the factory method `StableValue::of`:
 

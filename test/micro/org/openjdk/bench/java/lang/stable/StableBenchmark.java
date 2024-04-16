@@ -23,6 +23,7 @@
 
 package org.openjdk.bench.java.lang.stable;
 
+import jdk.internal.lang.StableValue;
 import org.openjdk.jmh.annotations.*;
 
 import java.util.List;
@@ -37,7 +38,7 @@ import java.util.function.Supplier;
 @State(Scope.Thread)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
-@Fork(value = 2, jvmArgsAppend = "--enable-preview")
+@Fork(value = 2, jvmArgsAppend = {"--add-exports=java.base/jdk.internal.lang=ALL-UNNAMED", "--enable-preview"})
 /* 2024-04-02
 Nullable
 

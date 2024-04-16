@@ -31,6 +31,7 @@ import java.lang.ref.WeakReference;
 import java.security.AccessController;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.lang.StableValue;
 import jdk.internal.misc.VM;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;

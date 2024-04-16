@@ -23,10 +23,12 @@
 
 /* @test
  * @summary Basic tests for stable Map implementations
+ * @modules java.base/jdk.internal.lang
  * @compile --enable-preview -source ${jdk.version} BasicStableMapTest.java
  * @run junit/othervm --enable-preview BasicStableMapTest
  */
 
+import jdk.internal.lang.StableValue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;

@@ -25,9 +25,8 @@
 
 package jdk.internal.lang.stable;
 
+import jdk.internal.lang.StableValue;
 import jdk.internal.misc.Unsafe;
-
-import java.util.NoSuchElementException;
 
 import static jdk.internal.misc.Unsafe.*;
 

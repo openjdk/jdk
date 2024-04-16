@@ -26,6 +26,7 @@
 package java.lang.reflect;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.lang.StableValue;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.FieldAccessor;
 import jdk.internal.reflect.Reflection;
@@ -178,7 +179,7 @@ class Field extends AccessibleObject implements Member {
             if (StableValue.class.isAssignableFrom(type) && Modifier.isFinal(modifiers)) {
                 throw newInaccessibleObjectException(
                         "Unable to make field " + this + " accessable: " +
-                                "java.lang.StableValue fields are trusted");
+                                "jdk.internal.lang.StableValue fields are trusted");
             }
             checkCanSetAccessible(Reflection.getCallerClass());
         }

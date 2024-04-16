@@ -25,6 +25,8 @@
 
 package jdk.internal.access;
 
+import jdk.internal.lang.StableValue;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

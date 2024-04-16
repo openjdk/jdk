@@ -656,8 +656,8 @@ public final class Unsafe {
             throw new UnsupportedOperationException("can't get field offset on a record class: " + f);
         }
         // Todo: When StableValue is a public final feature: if (java.lang.Lazy.class.isAssignableFrom(f.getType()))
-        if (f.getType().getName().equals("java.lang.StableValue")) {
-            throw new UnsupportedOperationException("can't get field offset for a field of type java.lang.StableValue: " + f);
+        if (f.getType().getName().equals("jdk.internal.lang.StableValue")) {
+            throw new UnsupportedOperationException("can't get field offset for a field of type jdk.internal.lang.StableValue: " + f);
         }
         return theInternalUnsafe.objectFieldOffset(f);
     }
