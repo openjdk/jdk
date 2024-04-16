@@ -605,14 +605,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * {@return the <a href="#segment-alignment">maximum byte alignment</a>
      * associated with this memory segment}
      * <p>
-     * The returned alignment is always a power of two and is derived from:
-     * <ul>
-     *     <li>Heap segments:
-            derived from the segment {@linkplain #address() address()}
-            and the type of the <a href="#segment-alignment">backing heap storage</a>.
-     *     <li>Native segments:
-     *     the {@linkplain MemorySegment#address() address()} function.</li>
-     * </ul>
+     * The returned alignment is always a power of two and is derived from
+     * the segment {@linkplain #address() address()} and, if it is a heap segment,
+     * the type of the {@linkplain #heapBase() backing heap storage}.
      * <p>
      * This method can be used to ensure, a {@code segment} is sufficiently aligned
      * with a {@code layout}:
