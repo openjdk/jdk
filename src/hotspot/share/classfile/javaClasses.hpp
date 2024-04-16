@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1300,7 +1300,8 @@ class java_lang_invoke_MemberName: AllStatic {
     MN_NESTMATE_CLASS        = 0x00000001,
     MN_HIDDEN_CLASS          = 0x00000002,
     MN_STRONG_LOADER_LINK    = 0x00000004,
-    MN_ACCESS_VM_ANNOTATIONS = 0x00000008,
+    MN_ABSTRACT_CLASS        = 0x00000008,
+    MN_ACCESS_VM_ANNOTATIONS = 0x00000010,
     // Lookup modes
     MN_MODULE_MODE           = 0x00000010,
     MN_UNCONDITIONAL_MODE    = 0x00000020,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,11 @@ class Metadata : public MetaspaceObj {
   virtual MetaspaceObj::Type type()    const = 0;
   virtual const char* internal_name()  const = 0;
   virtual void metaspace_pointers_do(MetaspaceClosure* iter) {}
+  virtual bool is_in_klass_space() const { return false; }
 
   void print()       const;
   void print_value() const;
+
 
   static void print_value_on_maybe_null(outputStream* st, const Metadata* m) {
     if (nullptr == m)

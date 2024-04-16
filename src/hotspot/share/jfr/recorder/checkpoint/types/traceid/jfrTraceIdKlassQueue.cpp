@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,13 +75,14 @@ static size_t element_size(bool compressed) {
   return compressed ? NARROW_ELEMENT_SIZE : ELEMENT_SIZE;
 }
 
-static bool can_compress_element(traceid id) {
-  return Metaspace::using_class_space() && id < uncompressed_threshold;
+static bool can_compress_element(const Klass* klass) {
+  return Metaspace::using_class_space() && klass->is_in_klass_space() &&
+         JfrTraceId::load_raw(klass) < uncompressed_threshold;
 }
 
 static size_t element_size(const Klass* klass) {
   assert(klass != nullptr, "invariant");
-  return element_size(can_compress_element(JfrTraceId::load_raw(klass)));
+  return element_size(can_compress_element(klass));
 }
 
 static bool is_unloaded(traceid id, bool previous_epoch) {
@@ -137,7 +138,8 @@ static inline void store_traceid(JfrEpochQueueNarrowKlassElement* element, trace
 }
 
 static void store_compressed_element(traceid id, const Klass* klass, u1* pos) {
-  assert(can_compress_element(id), "invariant");
+  assert(can_compress_element(klass), "invariant");
+  assert(id == JfrTraceId::load_raw(klass), "invariant");
   JfrEpochQueueNarrowKlassElement* const element = new (pos) JfrEpochQueueNarrowKlassElement();
   store_traceid(element, id);
   element->compressed_klass = encode(klass);
@@ -153,7 +155,7 @@ static void store_element(const Klass* klass, u1* pos) {
   assert(pos != nullptr, "invariant");
   assert(klass != nullptr, "invariant");
   const traceid id = JfrTraceId::load_raw(klass);
-  if (can_compress_element(id)) {
+  if (can_compress_element(klass)) {
     store_compressed_element(id, klass, pos);
     return;
   }

@@ -83,7 +83,7 @@ class RecordComponent: public MetaspaceObj {
     static bool is_read_only_by_default() { return true; }
     DEBUG_ONLY(bool on_stack() { return false; })  // for template
 
-    bool is_klass() const { return false; }
+    bool is_in_klass_space() const { return false; }
 
 #ifndef PRODUCT
     void print_on(outputStream* st) const;
