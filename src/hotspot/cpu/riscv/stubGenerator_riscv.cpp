@@ -5042,9 +5042,8 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
-  void generate_updateBytesAdler32_accum(Register buff, Register temp0,
-          VectorRegister vtemp1, VectorRegister vtemp2, VectorRegister vtemp3, VectorRegister vzero,
-          VectorRegister vbytes, VectorRegister vs1acc, VectorRegister vs2acc, VectorRegister vtable) {
+  void generate_updateBytesAdler32_accum(Register buff, VectorRegister vzero,
+    VectorRegister vbytes, VectorRegister vs1acc, VectorRegister vs2acc, VectorRegister vtable) {
     // Below is a vectorized implementation of updating s1 and s2 for 16 bytes.
     // We use b1, b2, ..., b16 to denote the 16 bytes loaded in each iteration.
     // In non-vectorized code, we update s1 and s2 as:
@@ -5205,7 +5204,7 @@ class StubGenerator: public StubCodeGenerator {
   __ bind(L_nmax_loop);
     __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
     for (int i = 0; i < unroll; i++)
-      generate_updateBytesAdler32_accum(buff, temp0, vtemp1, vtemp2, vtemp3, vzero, vbytes, unroll_regs[i], unroll_regs[i + 8], vtable);
+      generate_updateBytesAdler32_accum(buff, vzero, vbytes, unroll_regs[i], unroll_regs[i + 8], vtable);
     // Summing up
     __ vsetivli(temp0, 8, Assembler::e16, Assembler::m1);
     for (int i = 0; i < unroll; i++) {
@@ -5233,7 +5232,7 @@ class StubGenerator: public StubCodeGenerator {
     // Do the calculations for remaining 16*remainder bytes
     __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
     for (int i = 0; i < remainder; i++)
-      generate_updateBytesAdler32_accum(buff, temp0, vtemp1, vtemp2, vtemp3, vzero, vbytes, unroll_regs[i], unroll_regs[i + 8], vtable);
+      generate_updateBytesAdler32_accum(buff, vzero, vbytes, unroll_regs[i], unroll_regs[i + 8], vtable);
     // Summing up
     __ vsetivli(temp0, 8, Assembler::e16, Assembler::m1);
     for (int i = 0; i < remainder; i++) {
@@ -5271,7 +5270,7 @@ class StubGenerator: public StubCodeGenerator {
 
   __ bind(L_by16_loop);
     __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
-    generate_updateBytesAdler32_accum(buff, temp0, vtemp1, vtemp2, vtemp3, vzero, vbytes, unroll_regs[0], unroll_regs[8], vtable);
+    generate_updateBytesAdler32_accum(buff, vzero, vbytes, unroll_regs[0], unroll_regs[8], vtable);
     // s1 = s1 + unroll_regs[0], s2 = s2 + unroll_regs[8]
     __ vsetivli(temp0, 8, Assembler::e16, Assembler::m1);
     // s2 = s2 + s1 * 16
