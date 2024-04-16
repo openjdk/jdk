@@ -1931,6 +1931,20 @@ JRT_LEAF(void, SharedRuntime::complete_monitor_unlocking_C(oopDesc* obj, BasicLo
   SharedRuntime::monitor_exit_helper(obj, lock, current);
 JRT_END
 
+// This is only called when CheckJNICalls is true, and only
+// for virtual thread termination.
+JRT_LEAF(void,  SharedRuntime::log_jni_monitor_still_held())
+  assert(CheckJNICalls, "Only call this when checking JNI usage");
+  if (log_is_enabled(Debug, jni)) {
+    JavaThread* current = JavaThread::current();
+    int64_t vthread_id = java_lang_Thread::thread_id(current->vthread());
+    int64_t carrier_id = java_lang_Thread::thread_id(current->threadObj());
+    log_debug(jni)("VirtualThread (tid: " INT64_FORMAT ", carrier id: " INT64_FORMAT
+                   ") exiting with Objects still locked by JNI MonitorEnter.",
+                   vthread_id, carrier_id);
+  }
+JRT_END
+
 #ifndef PRODUCT
 
 void SharedRuntime::print_statistics() {
