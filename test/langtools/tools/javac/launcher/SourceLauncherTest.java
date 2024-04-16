@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8192920 8204588 8246774 8248843 8268869 8235876
+ * @bug 8192920 8204588 8246774 8248843 8268869 8235876 8328339
  * @summary Test source launcher
  * @library /tools/lib
  * @enablePreview
@@ -107,6 +107,27 @@ public class SourceLauncherTest extends TestRunner {
             "        System.out.println(\"Hello World! \" + Arrays.toString(args));\n" +
             "    }\n" +
             "}");
+        testSuccess(base.resolve("hello").resolve("World.java"), "Hello World! [1, 2, 3]\n");
+    }
+
+    @Test
+    public void testHelloWorldInPackageWithStaticImport(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+                """
+                package hello;
+                import static hello.Helper.*;
+                import java.util.Arrays;
+                class World {
+                    public static void main(String... args) {
+                        m(args);
+                    }
+                }
+                class Helper {
+                    static void m(String... args) {
+                        System.out.println("Hello World! " + Arrays.toString(args));
+                    }
+                }
+                """);
         testSuccess(base.resolve("hello").resolve("World.java"), "Hello World! [1, 2, 3]\n");
     }
 
@@ -300,7 +321,7 @@ public class SourceLauncherTest extends TestRunner {
     public void testMismatchOfPathAndPackage(Path base) throws IOException {
         Files.createDirectories(base);
         Path file = base.resolve("MismatchOfPathAndPackage.java");
-        Files.write(file, List.of("package p;"));
+        Files.write(file, List.of("package p; class MismatchOfPathAndPackage {}"));
         testError(file, "", "error: end of path to source file does not match its package name p: " + file);
     }
 

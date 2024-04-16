@@ -158,6 +158,8 @@ ArchiveBuilder::ArchiveBuilder() :
   _rw_region("rw", MAX_SHARED_DELTA),
   _ro_region("ro", MAX_SHARED_DELTA),
   _ptrmap(mtClassShared),
+  _rw_ptrmap(mtClassShared),
+  _ro_ptrmap(mtClassShared),
   _rw_src_objs(),
   _ro_src_objs(),
   _src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
@@ -740,10 +742,6 @@ void ArchiveBuilder::make_klasses_shareable() {
       assert(k->is_instance_klass(), " must be");
       num_instance_klasses ++;
       InstanceKlass* ik = InstanceKlass::cast(k);
-      if (CDSConfig::is_dumping_dynamic_archive()) {
-        // For static dump, class loader type are already set.
-        ik->assign_class_loader_type();
-      }
       if (ik->is_shared_boot_class()) {
         type = "boot";
         num_boot_klasses ++;
@@ -1279,8 +1277,11 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_i
   write_region(mapinfo, MetaspaceShared::rw, &_rw_region, /*read_only=*/false,/*allow_exec=*/false);
   write_region(mapinfo, MetaspaceShared::ro, &_ro_region, /*read_only=*/true, /*allow_exec=*/false);
 
+  // Split pointer map into read-write and read-only bitmaps
+  ArchivePtrMarker::initialize_rw_ro_maps(&_rw_ptrmap, &_ro_ptrmap);
+
   size_t bitmap_size_in_bytes;
-  char* bitmap = mapinfo->write_bitmap_region(ArchivePtrMarker::ptrmap(), heap_info,
+  char* bitmap = mapinfo->write_bitmap_region(ArchivePtrMarker::rw_ptrmap(), ArchivePtrMarker::ro_ptrmap(), heap_info,
                                               bitmap_size_in_bytes);
 
   if (heap_info->is_used()) {

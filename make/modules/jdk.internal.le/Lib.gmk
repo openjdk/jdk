@@ -25,21 +25,21 @@
 
 include LibCommon.gmk
 
-################################################################################
-
-ifeq ($(call isTargetOs, linux macosx windows), true)
+ifeq ($(call isTargetOs, aix), false)
+  ##############################################################################
+  ## Build lible
+  ##############################################################################
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBLE, \
       NAME := le, \
       LINK_TYPE := C++, \
       OPTIMIZATION := LOW, \
+      EXTRA_HEADER_DIRS := \
+          java.base:libjava \
+          java.base:libjvm, \
       LD_SET_ORIGIN := false, \
-      LIBS_unix := $(JDKLIB_LIBS), \
-      LIBS_windows := $(JDKLIB_LIBS) user32.lib, \
+      LIBS_windows := user32.lib, \
   ))
 
   TARGETS += $(BUILD_LIBLE)
-
 endif
-
-################################################################################
