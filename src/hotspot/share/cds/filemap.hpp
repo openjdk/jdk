@@ -228,6 +228,8 @@ private:
                                         // of the archived heap objects, in bytes.
   size_t _heap_oopmap_start_pos;        // The first bit in the oopmap corresponds to this position in the heap.
   size_t _heap_ptrmap_start_pos;        // The first bit in the ptrmap corresponds to this position in the heap.
+  size_t _rw_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the rw region
+  size_t _ro_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the ro region
   char* from_mapped_offset(size_t offset) const {
     return mapped_base_address() + offset;
   }
@@ -283,6 +285,8 @@ public:
   void set_heap_roots_offset(size_t n)           { _heap_roots_offset = n; }
   void set_heap_oopmap_start_pos(size_t n)       { _heap_oopmap_start_pos = n; }
   void set_heap_ptrmap_start_pos(size_t n)       { _heap_ptrmap_start_pos = n; }
+  void set_rw_ptrmap_start_pos(size_t n)         { _rw_ptrmap_start_pos = n; }
+  void set_ro_ptrmap_start_pos(size_t n)         { _ro_ptrmap_start_pos = n; }
   void copy_base_archive_name(const char* name);
 
   void set_shared_path_table(SharedPathTable table) {
@@ -439,7 +443,7 @@ public:
   void  write_region(int region, char* base, size_t size,
                      bool read_only, bool allow_exec);
   size_t remove_bitmap_leading_zeros(CHeapBitMap* map);
-  char* write_bitmap_region(const CHeapBitMap* rw_ptrmap, const CHeapBitMap* ro_ptrmap, ArchiveHeapInfo* heap_info,
+  char* write_bitmap_region(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap, ArchiveHeapInfo* heap_info,
                             size_t &size_in_bytes);
   size_t write_heap_region(ArchiveHeapInfo* heap_info);
   void  write_bytes(const void* buffer, size_t count);

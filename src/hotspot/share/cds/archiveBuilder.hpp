@@ -126,6 +126,7 @@ private:
     uintx _ptrmap_start;     // The bit-offset of the start of this object (inclusive)
     uintx _ptrmap_end;       // The bit-offset of the end   of this object (exclusive)
     bool _read_only;
+    bool _has_embedded_pointer;
     FollowMode _follow_mode;
     int _size_in_bytes;
     MetaspaceObj::Type _msotype;
@@ -133,7 +134,7 @@ private:
     address _buffered_addr;  // The copy of this object insider the buffer.
   public:
     SourceObjInfo(MetaspaceClosure::Ref* ref, bool read_only, FollowMode follow_mode) :
-      _ptrmap_start(0), _ptrmap_end(0), _read_only(read_only), _follow_mode(follow_mode),
+      _ptrmap_start(0), _ptrmap_end(0), _read_only(read_only), _has_embedded_pointer(false), _follow_mode(follow_mode),
       _size_in_bytes(ref->size() * BytesPerWord), _msotype(ref->msotype()),
       _source_addr(ref->obj()) {
       if (follow_mode == point_to_it) {
@@ -164,6 +165,8 @@ private:
     uintx ptrmap_start()  const    { return _ptrmap_start; } // inclusive
     uintx ptrmap_end()    const    { return _ptrmap_end;   } // exclusive
     bool read_only()      const    { return _read_only;    }
+    bool has_embedded_pointer() const { return _has_embedded_pointer; }
+    void found_embedded_pointer()  { _has_embedded_pointer = true; }
     int size_in_bytes()   const    { return _size_in_bytes; }
     address source_addr() const    { return _source_addr; }
     address buffered_addr() const  {
@@ -178,9 +181,10 @@ private:
   class SourceObjList {
     uintx _total_bytes;
     GrowableArray<SourceObjInfo*>* _objs;     // Source objects to be archived
+
+  public:
     CHeapBitMap _ptrmap;                      // Marks the addresses of the pointer fields
                                               // in the source objects
-  public:
     SourceObjList();
     ~SourceObjList();
 
@@ -251,7 +255,7 @@ private:
   static int compare_symbols_by_address(Symbol** a, Symbol** b);
   static int compare_klass_by_name(Klass** a, Klass** b);
 
-  void make_shallow_copies(DumpRegion *dump_region, const SourceObjList* src_objs);
+  void make_shallow_copies(DumpRegion *dump_region, const SourceObjList* src_objs, bool needs_relocation);
   void make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* src_info);
 
   void relocate_embedded_pointers(SourceObjList* src_objs);

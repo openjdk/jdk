@@ -71,7 +71,7 @@ void ArchivePtrMarker::initialize(CHeapBitMap* ptrmap, VirtualSpace* vs) {
   _ptrmap->initialize(estimated_archive_size / sizeof(intptr_t));
 }
 
-void ArchivePtrMarker::initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap) {
+void ArchivePtrMarker::initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap, CHeapBitMap* orig_rw_ptrmap, CHeapBitMap* orig_ro_ptrmap) {
   address* rw_bottom = (address*)ArchiveBuilder::current()->rw_region()->base();
   address* ro_bottom = (address*)ArchiveBuilder::current()->ro_region()->base();
 
@@ -80,6 +80,9 @@ void ArchivePtrMarker::initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap
 
   size_t rw_size = ArchiveBuilder::current()->rw_region()->used() / sizeof(address);
   size_t ro_size = ArchiveBuilder::current()->ro_region()->used() / sizeof(address);
+
+  tty->print_cr("Orig rw: %ld, Orig ro: %ld, Full: %ld", orig_rw_ptrmap->size(), orig_ro_ptrmap->size(), _ptrmap->size());
+  tty->print_cr("Rw: %ld, Ro: %ld", rw_size, ro_size);
   // ro_start is the first bit in _ptrmap that covers the pointer that would sit at ro_bottom.
   // E.g., if rw_bottom = (address*)100
   //          ro_bottom = (address*)116

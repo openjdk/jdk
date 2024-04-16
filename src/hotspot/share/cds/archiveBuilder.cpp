@@ -93,6 +93,7 @@ void ArchiveBuilder::SourceObjList::append(SourceObjInfo* src_info) {
 void ArchiveBuilder::SourceObjList::remember_embedded_pointer(SourceObjInfo* src_info, MetaspaceClosure::Ref* ref) {
   // src_obj contains a pointer. Remember the location of this pointer in _ptrmap,
   // so that we can copy/relocate it later.
+  src_info->found_embedded_pointer();
   address src_obj = src_info->source_addr();
   address* field_addr = ref->addr();
   assert(src_info->ptrmap_start() < _total_bytes, "sanity");
@@ -581,7 +582,8 @@ char* ArchiveBuilder::ro_strdup(const char* s) {
 void ArchiveBuilder::dump_rw_metadata() {
   ResourceMark rm;
   log_info(cds)("Allocating RW objects ... ");
-  make_shallow_copies(&_rw_region, &_rw_src_objs);
+  make_shallow_copies(&_rw_region, &_rw_src_objs, false /*needs_relocation*/);
+  make_shallow_copies(&_rw_region, &_rw_src_objs, true /*needs_relocation*/);
 
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_full_module_graph()) {
@@ -598,7 +600,8 @@ void ArchiveBuilder::dump_ro_metadata() {
   log_info(cds)("Allocating RO objects ... ");
 
   start_dump_space(&_ro_region);
-  make_shallow_copies(&_ro_region, &_ro_src_objs);
+  make_shallow_copies(&_ro_region, &_ro_src_objs, false /*needs_relocation*/);
+  make_shallow_copies(&_ro_region, &_ro_src_objs, true /*needs_relocation*/);
 
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_full_module_graph()) {
@@ -611,10 +614,14 @@ void ArchiveBuilder::dump_ro_metadata() {
   RegeneratedClasses::record_regenerated_objects();
 }
 
+// If an object does not have embedded pointers, they should be copied first so the resulting bitmap can be truncated
 void ArchiveBuilder::make_shallow_copies(DumpRegion *dump_region,
-                                         const ArchiveBuilder::SourceObjList* src_objs) {
+                                         const ArchiveBuilder::SourceObjList* src_objs, bool needs_relocation) {
   for (int i = 0; i < src_objs->objs()->length(); i++) {
-    make_shallow_copy(dump_region, src_objs->objs()->at(i));
+    SourceObjInfo* src_obj = src_objs->objs()->at(i);
+    if (!(src_obj->has_embedded_pointer() ^ needs_relocation)) {
+      make_shallow_copy(dump_region, src_obj);
+    }
   }
   log_info(cds)("done (%d objects)", src_objs->objs()->length());
 }
@@ -1278,7 +1285,8 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_i
   write_region(mapinfo, MetaspaceShared::ro, &_ro_region, /*read_only=*/true, /*allow_exec=*/false);
 
   // Split pointer map into read-write and read-only bitmaps
-  ArchivePtrMarker::initialize_rw_ro_maps(&_rw_ptrmap, &_ro_ptrmap);
+  //_rw_src_objs->_ptrmap _ro_src_objs->_ptrmap are the updated ptrmaps
+  ArchivePtrMarker::initialize_rw_ro_maps(&_rw_ptrmap, &_ro_ptrmap, &_rw_src_objs._ptrmap, &_ro_src_objs._ptrmap);
 
   size_t bitmap_size_in_bytes;
   char* bitmap = mapinfo->write_bitmap_region(ArchivePtrMarker::rw_ptrmap(), ArchivePtrMarker::ro_ptrmap(), heap_info,
