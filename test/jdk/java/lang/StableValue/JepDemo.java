@@ -97,20 +97,6 @@ final class JepDemo {
         }
     }
 
-/*    static
-    class Bar4 {
-        // 1. Declare a memoized (cached) Supplier (backed by an
-        //    internal stable value) that is invoked at most once
-        private static final Supplier<Logger> LOGGER = StableValue.asSupplier(
-                        () -> Logger.getLogger("com.foo.Bar"));
-
-        static Logger logger() {
-            // 2. Access the memoized value with as-declared-final performance
-            //    (evaluation made before the first access)
-            return LOGGER.get();
-        }
-    }*/
-
     static
     class Fibonacci {
 
@@ -296,7 +282,6 @@ final class JepDemo {
 
     }
 
-
     @Test
     void fibDirect() {
         Fibonacci fibonacci = new Fibonacci(20);
@@ -306,19 +291,6 @@ final class JepDemo {
 
         assertArrayEquals(new int[]{ 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 }, fibs);
     }
-
-
-/*
-    @Test
-    void fib() {
-        Fibonacci2 fibonacci = new Fibonacci2(20);
-        int[] fibs = IntStream.range(0, 10)
-                .map(fibonacci::number)
-                .toArray(); // { 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 }
-
-        assertArrayEquals(new int[]{ 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 }, fibs);
-    }
-*/
 
     @Test
     void fib3() {
