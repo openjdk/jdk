@@ -182,8 +182,9 @@ public class TestEquivalentInvariants {
                                            " gold[" + i + "] == result[" + i + "]");
             }
 
-            MemorySegment mg;
-            MemorySegment mr;
+            // Wrap everything in MemorySegments, this allows simple value verification of Array as well as MemorySegment.
+            MemorySegment mg = null;
+            MemorySegment mr = null;
             if (g.getClass().isArray()) {
                 if (g.getClass() != r.getClass() || !g.getClass().isArray() || !r.getClass().isArray()) {
                     throw new RuntimeException("verify " + name + ": must both be array of same type:" +
@@ -191,19 +192,23 @@ public class TestEquivalentInvariants {
                                                " result[" + i + "].getClass() = " + r.getClass().getSimpleName());
                 }
                 if (Array.getLength(g) != Array.getLength(r)) {
-                        throw new RuntimeException("verify " + name + ": arrays must have same length:" +
-                                               " gold[" + i + "].length = " + Array.getLength(g) +
-                                               " result[" + i + "].length = " + Array.getLength(r));
+                    throw new RuntimeException("verify " + name + ": arrays must have same length:" +
+                                           " gold[" + i + "].length = " + Array.getLength(g) +
+                                           " result[" + i + "].length = " + Array.getLength(r));
                 }
                 Class c = g.getClass().getComponentType();
                 if (c == byte.class) {
-                    verifyB(name, i, (byte[])g, (byte[])r);
+                    mg = MemorySegment.ofArray((byte[])g);
+                    mr = MemorySegment.ofArray((byte[])r);
                 } else if (c == short.class) {
-                    verifyS(name, i, (short[])g, (short[])r);
+                    mg = MemorySegment.ofArray((short[])g);
+                    mr = MemorySegment.ofArray((short[])r);
                 } else if (c == int.class) {
-                    verifyI(name, i, (int[])g, (int[])r);
+                    mg = MemorySegment.ofArray((int[])g);
+                    mr = MemorySegment.ofArray((int[])r);
                 } else if (c == long.class) {
-                    verifyL(name, i, (long[])g, (long[])r);
+                    mg = MemorySegment.ofArray((long[])g);
+                    mr = MemorySegment.ofArray((long[])r);
                 } else {
                     throw new RuntimeException("verify " + name + ": array type not supported for verify:" +
                                            " gold[" + i + "].getClass() = " + g.getClass().getSimpleName() +
@@ -218,46 +223,24 @@ public class TestEquivalentInvariants {
                 }
                 mr = (MemorySegment)r;
             }
-            // TODO verify MemorySegment, size and content. Also do the same for the arrays?
-        }
-    }
 
-    static void verifyB(String name, int i, byte[] g, byte[] r) {
-        for (int j = 0; j < g.length; j++) {
-            if (g[j] != r[j]) {
-                throw new RuntimeException("verify " + name + ": arrays must have same content:" +
-                                           " gold[" + i + "][" + j + "] = " + g[j] +
-                                           " result[" + i + "][" + j + "] = " + r[j]);
+            if (mg.byteSize() != mr.byteSize()) {
+                throw new RuntimeException("verify " + name + ": memory segment must have same length:" +
+                                       " gold[" + i + "].length = " + mg.byteSize() +
+                                       " result[" + i + "].length = " + mr.byteSize());
             }
+            verifyMS(name, i, mg, mr);
         }
     }
 
-    static void verifyS(String name, int i, short[] g, short[] r) {
-        for (int j = 0; j < g.length; j++) {
-            if (g[j] != r[j]) {
+    static void verifyMS(String name, int i, MemorySegment g, MemorySegment r) {
+        for (long j = 0; j < g.byteSize(); j++) {
+            byte vg = g.get(ValueLayout.JAVA_BYTE, j);
+            byte vr = r.get(ValueLayout.JAVA_BYTE, j);
+            if (vg != vr) {
                 throw new RuntimeException("verify " + name + ": arrays must have same content:" +
-                                           " gold[" + i + "][" + j + "] = " + g[j] +
-                                           " result[" + i + "][" + j + "] = " + r[j]);
-            }
-        }
-    }
-
-    static void verifyI(String name, int i, int[] g, int[] r) {
-        for (int j = 0; j < g.length; j++) {
-            if (g[j] != r[j]) {
-                throw new RuntimeException("verify " + name + ": arrays must have same content:" +
-                                           " gold[" + i + "][" + j + "] = " + g[j] +
-                                           " result[" + i + "][" + j + "] = " + r[j]);
-            }
-        }
-    }
-
-    static void verifyL(String name, int i, long[] g, long[] r) {
-        for (int j = 0; j < g.length; j++) {
-            if (g[j] != r[j]) {
-                throw new RuntimeException("verify " + name + ": arrays must have same content:" +
-                                           " gold[" + i + "][" + j + "] = " + g[j] +
-                                           " result[" + i + "][" + j + "] = " + r[j]);
+                                           " gold[" + i + "][" + j + "] = " + vg +
+                                           " result[" + i + "][" + j + "] = " + vr);
             }
         }
     }
