@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,12 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package org.openjdk.bench.java.util.stream.ops;
 
-#ifndef SHARE_UTILITIES_COMPILERWARNINGS_XLC_HPP
-#define SHARE_UTILITIES_COMPILERWARNINGS_XLC_HPP
+public class DoubleAccumulator {
 
-// Nothing here yet.
+    double acc;
 
-#endif // SHARE_UTILITIES_COMPILERWARNINGS_XLC_HPP
+    public DoubleAccumulator() {
+        acc = 0;
+    }
+
+    public void add(double v) {
+        acc += v;
+    }
+
+    public void merge(DoubleAccumulator other) {
+        acc += other.acc;
+    }
+
+    public double get() {
+        return acc;
+    }
+
+}

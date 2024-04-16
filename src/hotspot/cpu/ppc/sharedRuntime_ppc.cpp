@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1637,7 +1637,7 @@ static void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj,
 //   None.
 //
 // Kills:
-//   R8_ARG6, R9_ARG7, R10_ARG8
+//   R8_ARG6, R9_ARG7, R10_ARG8, R15_esp
 //
 static void continuation_enter_cleanup(MacroAssembler* masm) {
   Register tmp1 = R8_ARG6;
@@ -1652,9 +1652,56 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
 #endif
 
   __ ld_ptr(tmp1, ContinuationEntry::parent_cont_fastpath_offset(), R1_SP);
+  __ st_ptr(tmp1, JavaThread::cont_fastpath_offset(), R16_thread);
+
+  if (CheckJNICalls) {
+    // Check if this is a virtual thread continuation
+    Label L_skip_vthread_code;
+    __ lwz(R0, in_bytes(ContinuationEntry::flags_offset()), R1_SP);
+    __ cmpwi(CCR0, R0, 0);
+    __ beq(CCR0, L_skip_vthread_code);
+
+    // If the held monitor count is > 0 and this vthread is terminating then
+    // it failed to release a JNI monitor. So we issue the same log message
+    // that JavaThread::exit does.
+    __ ld(R0, in_bytes(JavaThread::jni_monitor_count_offset()), R16_thread);
+    __ cmpdi(CCR0, R0, 0);
+    __ beq(CCR0, L_skip_vthread_code);
+
+    // Save return value potentially containing the exception oop
+    Register ex_oop = R15_esp;   // nonvolatile register
+    __ mr(ex_oop, R3_RET);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::log_jni_monitor_still_held));
+    // Restore potental return value
+    __ mr(R3_RET, ex_oop);
+
+    // For vthreads we have to explicitly zero the JNI monitor count of the carrier
+    // on termination. The held count is implicitly zeroed below when we restore from
+    // the parent held count (which has to be zero).
+    __ li(tmp1, 0);
+    __ std(tmp1, in_bytes(JavaThread::jni_monitor_count_offset()), R16_thread);
+
+    __ bind(L_skip_vthread_code);
+  }
+#ifdef ASSERT
+  else {
+    // Check if this is a virtual thread continuation
+    Label L_skip_vthread_code;
+    __ lwz(R0, in_bytes(ContinuationEntry::flags_offset()), R1_SP);
+    __ cmpwi(CCR0, R0, 0);
+    __ beq(CCR0, L_skip_vthread_code);
+
+    // See comment just above. If not checking JNI calls the JNI count is only
+    // needed for assertion checking.
+    __ li(tmp1, 0);
+    __ std(tmp1, in_bytes(JavaThread::jni_monitor_count_offset()), R16_thread);
+
+    __ bind(L_skip_vthread_code);
+  }
+#endif
+
   __ ld(tmp2, in_bytes(ContinuationEntry::parent_held_monitor_count_offset()), R1_SP);
   __ ld_ptr(tmp3, ContinuationEntry::parent_offset(), R1_SP);
-  __ st_ptr(tmp1, JavaThread::cont_fastpath_offset(), R16_thread);
   __ std(tmp2, in_bytes(JavaThread::held_monitor_count_offset()), R16_thread);
   __ st_ptr(tmp3, JavaThread::cont_entry_offset(), R16_thread);
   DEBUG_ONLY(__ block_comment("} clean"));
