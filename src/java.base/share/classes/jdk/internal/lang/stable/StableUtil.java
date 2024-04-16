@@ -36,6 +36,9 @@ public final class StableUtil {
     private StableUtil() {
     }
 
+    static final byte NOT_SET = 0;
+    static final byte SET = 1;
+
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     static IllegalStateException alreadySet(StableValue<?> stable) {

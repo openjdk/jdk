@@ -253,7 +253,7 @@ static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
   return TrustFinalNonStaticFields;
 }
 
-const char* monotonic_klass_name = "java/lang/Monotonic";
+const char* monotonic_klass_name = "java/lang/StableValue";
 
 static bool trust_final_non_static_fields_of_type(Symbol* signature) {
   if (signature->equals(monotonic_klass_name) == 0) {

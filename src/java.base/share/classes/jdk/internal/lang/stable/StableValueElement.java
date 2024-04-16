@@ -1,7 +1,5 @@
 package jdk.internal.lang.stable;
 
-import jdk.internal.ValueBased;
-
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -9,26 +7,7 @@ import java.util.function.Supplier;
 
 import static jdk.internal.lang.stable.StableUtil.*;
 
-/*
-@ValueBased
-Benchmark                            Mode  Cnt  Score   Error  Units
-LazyListBenchmark.instanceArrayList  avgt   10  1.045 ? 0.039  ns/op
-LazyListBenchmark.instanceDelegated  avgt   10  1.631 ? 0.007  ns/op <--
-LazyListBenchmark.instanceLazyList   avgt   10  1.035 ? 0.040  ns/op
-LazyListBenchmark.instanceWrapped    avgt   10  1.379 ? 0.006  ns/op
-LazyListBenchmark.staticArrayList    avgt   10  0.837 ? 0.029  ns/op
-LazyListBenchmark.staticLazyList     avgt   10  0.578 ? 0.079  ns/op
-
-record
-Benchmark                            Mode  Cnt  Score   Error  Units
-LazyListBenchmark.instanceArrayList  avgt   10  1.044 ? 0.032  ns/op
-LazyListBenchmark.instanceDelegated  avgt   10  1.421 ? 0.038  ns/op <-- 13% faster than @ValueBased
-LazyListBenchmark.instanceLazyList   avgt   10  1.015 ? 0.010  ns/op
-LazyListBenchmark.instanceWrapped    avgt   10  1.339 ? 0.043  ns/op <-- Delegated almost as fast as wrapped
-LazyListBenchmark.staticArrayList    avgt   10  0.830 ? 0.027  ns/op
-LazyListBenchmark.staticLazyList     avgt   10  0.563 ? 0.005  ns/op
- */
-@ValueBased
+// Records are ~10% faster than @ValueBased
 public record StableValueElement<V>(
         V[] elements,
         byte[] sets,
@@ -169,15 +148,15 @@ public record StableValueElement<V>(
     }
 
     boolean set() {
-        return sets[index] == 1;
+        return sets[index] == SET;
     }
 
     boolean setVolatile() {
-        return UNSAFE.getByteVolatile(sets, StableUtil.byteOffset(index)) == 1;
+        return UNSAFE.getByteVolatile(sets, StableUtil.byteOffset(index)) == SET;
     }
 
     private void casSet() {
-        if (!UNSAFE.compareAndSetByte(sets, StableUtil.byteOffset(index), (byte) 0, (byte) 1)) {
+        if (!UNSAFE.compareAndSetByte(sets, StableUtil.byteOffset(index), NOT_SET, SET)) {
             throw StableUtil.alreadySet(this);
         }
     }

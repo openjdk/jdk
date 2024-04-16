@@ -48,9 +48,6 @@ public final class StableValueImpl<V> implements StableValue<V> {
     private static final long SET_OFFSET =
             UNSAFE.objectFieldOffset(StableValueImpl.class, "set");
 
-    private static final byte NOT_SET = 0;
-    private static final byte SET = 1;
-
     /**
      * If null, may be unset or hold a set null value
      * If non-null, holds a set value.

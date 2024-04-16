@@ -25,8 +25,6 @@
 
 package java.util;
 
-import jdk.internal.javac.PreviewFeature;
-
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -1749,5 +1747,4 @@ public interface Map<K, V> {
             return (Map<K,V>)Map.ofEntries(map.entrySet().toArray(new Entry[0]));
         }
     }
-
 }
