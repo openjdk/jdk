@@ -36,11 +36,11 @@ import jdk.jfr.internal.Type;
 public class SelectorSelectEvent extends AbstractJDKEvent {
 
     @Label("SelectionKey Count")
-    @Description("The number of unique keys consumed, possibly zero")
+    @Description("The number of unique keys updated")
     public int selectionKeyCount;
 
-    @Label("Timeout Value")
-    @Description("time to block, or zero to block indefinitely")
+    @Label("Timeout")
+    @Description("Time to block, or zero to block indefinitely")
     @Timespan(Timespan.MILLISECONDS)
     public long timeout;
 
