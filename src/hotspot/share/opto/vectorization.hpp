@@ -723,6 +723,9 @@ class VPointer : public ArenaObj {
   VPointer(VPointer* p);
   NONCOPYABLE(VPointer);
 
+  Node* convI2L(Node* n);
+  Node* sort_sum(Node* sum);
+
  public:
   bool valid()             const { return _adr != nullptr; }
   bool has_iv()            const { return _scale != 0; }

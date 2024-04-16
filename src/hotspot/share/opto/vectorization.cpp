@@ -493,6 +493,14 @@ VPointer::VPointer(const MemNode* mem, const VLoop& vloop,
     return;
   }
 
+  // TODO
+  Node* new_invar = sort_sum(_invar);
+#ifdef ASSERT
+  // We are changing the invar, and the debug info may no longer be accurate.
+  if (new_invar != _invar) { _debug_invar = NodeSentinel; }
+#endif
+  _invar = new_invar;
+
   _base = base;
   _adr  = adr;
   assert(valid(), "Usable");
@@ -511,6 +519,63 @@ VPointer::VPointer(VPointer* p) :
   , _tracer(p->_tracer._is_trace_alignment)
 #endif
 {}
+
+int cmp_nodes_by_idx(Node** n1, Node** n2) {
+  return (**n1)._idx - (**n2)._idx;
+}
+
+// Take int/long node. If is int, convert to long.
+Node* VPointer::convI2L(Node* n) {
+  BasicType bt = n->bottom_type()->basic_type();
+
+  if (bt == T_LONG) { return n; }
+  assert(bt == T_INT, "must be int or long");
+
+  return register_if_new(new ConvI2LNode(n));
+}
+
+// TODO
+Node* VPointer::sort_sum(Node* sum) {
+  if (sum == nullptr) { return nullptr; }
+
+  ResourceMark rm;
+  GrowableArray<Node*> summands;
+  GrowableArray<Node*> traversal;
+
+  traversal.append(sum);
+  for (int i = 0; i < traversal.length(); i++) {
+    Node* n = traversal.at(i);
+    int opc = n->Opcode();
+    if (opc == Op_AddL) {
+      traversal.append(n->in(1));
+      traversal.append(n->in(2));
+    } else if (opc == Op_CastLL || opc == Op_ConvI2L || opc == Op_CastII) {
+      traversal.append(n->in(1));
+    } else {
+      summands.append(n);
+    }
+    if (traversal.length() > 20) {
+      // Since we traverse all paths, the number can explode
+      // exponentially. We return the unsorted input sum.
+      return sum;
+    }
+  }
+
+  summands.sort(cmp_nodes_by_idx);
+
+  Node* new_sum = convI2L(summands.at(0));
+  for (int i = 1; i < summands.length(); i++) {
+    Node* n = convI2L(summands.at(i));
+    new_sum = register_if_new(new AddLNode(new_sum, n));
+  }
+
+//  for (int i = 0; i < summands.length(); i++) {
+//    Node* n = summands.at(i);
+//    tty->print(" %d: ", i); n->dump();
+//  }
+
+  return new_sum;
+}
 
 // Biggest detectable factor of the invariant.
 int VPointer::invar_factor() const {
