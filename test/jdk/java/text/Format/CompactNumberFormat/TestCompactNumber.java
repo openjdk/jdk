@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8177552 8217721 8222756 8295372 8306116
+ * @bug 8177552 8217721 8222756 8295372 8306116 8319990
  * @summary Checks the functioning of compact number format
  * @modules jdk.localedata
  * @run testng/othervm TestCompactNumber
@@ -256,9 +256,9 @@ public class TestCompactNumber {
             // Boundary number
             {FORMAT_IT_SHORT, 1000, "1.000"},
             // Long path
-            {FORMAT_IT_SHORT, 3000000L, "3\u00a0Mio"},
+            {FORMAT_IT_SHORT, 3000000L, "3\u00a0Mln"},
             // Double path
-            {FORMAT_IT_SHORT, 3000000.0, "3\u00a0Mio"},
+            {FORMAT_IT_SHORT, 3000000.0, "3\u00a0Mln"},
             // BigInteger path
             {FORMAT_IT_SHORT, new BigInteger("12345678901234567890"),
                 "12345679\u00a0Bln"},
@@ -418,9 +418,9 @@ public class TestCompactNumber {
                 {FORMAT_JA_JP_SHORT, "12345679\u5146", 1.2345679E19, Double.class},
                 {FORMAT_JA_JP_SHORT, "-12345679\u5146", -1.2345679E19, Double.class},
                 {FORMAT_IT_SHORT, "-99", -99L, Long.class},
-                {FORMAT_IT_SHORT, "1\u00a0Mio", 1000000L, Long.class},
-                {FORMAT_IT_SHORT, "30\u00a0Mio", 30000000L, Long.class},
-                {FORMAT_IT_SHORT, "-30\u00a0Mio", -30000000L, Long.class},
+                {FORMAT_IT_SHORT, "1\u00a0Mln", 1000000L, Long.class},
+                {FORMAT_IT_SHORT, "30\u00a0Mln", 30000000L, Long.class},
+                {FORMAT_IT_SHORT, "-30\u00a0Mln", -30000000L, Long.class},
                 {FORMAT_IT_SHORT, "12345679\u00a0Bln", 1.2345679E19, Double.class},
                 {FORMAT_IT_SHORT, "-12345679\u00a0Bln", -1.2345679E19, Double.class},
                 {FORMAT_SW_LONG, "-0.0", -0.0, Double.class},
