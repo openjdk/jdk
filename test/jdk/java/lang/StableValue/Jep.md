@@ -224,7 +224,7 @@ The Lazy Values & Collections API resides in the [java.lang](https://cr.openjdk.
 ### Lazy values
 
 A _lazy value_ is a holder object that is set at most once whereby it
-goes from "unset" to "set". It is expressed as an object of type `java.lang.LazyValue`,
+goes from "unset" to "set". It is expressed as an object of type `java.lang.StableValue`,
 which, like `Future`, is a holder for some computation that may or may not have occurred yet.
 Fresh (unset) `LazyValue` instances are created via the factory method `LazyValue::of`:
 

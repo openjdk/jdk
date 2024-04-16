@@ -21,7 +21,7 @@
  * questions.
  */
 
-package org.openjdk.bench.java.lang.lazy;
+package org.openjdk.bench.java.lang.stable;
 
 import org.openjdk.jmh.annotations.*;
 
@@ -32,7 +32,7 @@ import java.util.function.IntFunction;
 import java.util.stream.Stream;
 
 /**
- * Benchmark measuring lazy list performance
+ * Benchmark measuring stable list performance
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -62,15 +62,15 @@ LazyListBenchmark.staticStored       avgt   10  0.556 ? 0.001  ns/op
 
 
  */
-public class LazyListElementBenchmark {
+public class StableListElementBenchmark {
 
     private static final IntFunction<Integer> FUNCTION = i -> i;
     private static final int SIZE = 100;
 
-    private static final List<LazyValue<Integer>> STORED = Stream.generate(LazyValue::<Integer>of)
+    private static final List<StableValue<Integer>> STORED = Stream.generate(StableValue::<Integer>of)
             .limit(SIZE)
             .toList();
-    private static final List<LazyValue<Integer>> LIST = LazyValue.ofList(SIZE);
+    private static final List<StableValue<Integer>> LIST = StableValue.ofList(SIZE);
 
     static {
         initLazy(STORED);
@@ -81,16 +81,16 @@ public class LazyListElementBenchmark {
 
     //private final List<Monotonic<Integer>> referenceList = initMono(Monotonic.ofList(SIZE));
     private final List<Integer> arrayList = initList(new ArrayList<>(SIZE));
-    private final List<LazyValue<Integer>> storedList;
-    private final List<LazyValue<Integer>> list;
+    private final List<StableValue<Integer>> storedList;
+    private final List<StableValue<Integer>> list;
 
 
-    public LazyListElementBenchmark() {
-        this.storedList = Stream.generate(LazyValue::<Integer>of)
+    public StableListElementBenchmark() {
+        this.storedList = Stream.generate(StableValue::<Integer>of)
                 .limit(SIZE)
                 .toList();
         initLazy(storedList);
-        list = LazyValue.ofList(SIZE);
+        list = StableValue.ofList(SIZE);
         initLazy(list);
     }
 
@@ -128,7 +128,7 @@ public class LazyListElementBenchmark {
         return STORED.get(8).orThrow();
     }
 
-    private static void initLazy(List<LazyValue<Integer>> list) {
+    private static void initLazy(List<StableValue<Integer>> list) {
         int index = 8;
         list.get(index).setOrThrow(FUNCTION.apply(index));
     }

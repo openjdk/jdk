@@ -21,7 +21,7 @@
  * questions.
  */
 
-package org.openjdk.bench.java.lang.lazy;
+package org.openjdk.bench.java.lang.stable;
 
 import org.openjdk.jmh.annotations.*;
 
@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 /**
- * Benchmark measuring lazy list performance
+ * Benchmark measuring stable list performance
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -56,24 +56,23 @@ LazySmallListBenchmark.staticLazyDelegated    avgt   10  0.359 ? 0.003  ns/op
 LazySmallListBenchmark.staticStored           avgt   10  0.641 ? 0.003  ns/op
  */
 
-public class LazyListSumBenchmark {
+public class StableListSumBenchmark {
 
     private static final int SIZE = 1_000;
 
-    private static final List<LazyValue<Integer>> STORED = randomLazy(Stream.generate(LazyValue::<Integer>of)
+    private static final List<StableValue<Integer>> STORED = randomStable(Stream.generate(StableValue::<Integer>of)
             .limit(SIZE)
             .toList());
 
     private static final List<Integer> ARRAY_LIST = random(new ArrayList<>(SIZE));
-    private static final List<LazyValue<Integer>> LIST = randomLazy(LazyValue.ofList(SIZE));
+    private static final List<StableValue<Integer>> LIST = randomStable(StableValue.ofList(SIZE));
 
 
-    //private final List<Monotonic<Integer>> monotonicLazy = randomMono(Monotonic.ofList(SIZE));
-    private final List<LazyValue<Integer>> stored = randomLazy(Stream.generate(LazyValue::<Integer>of)
+    private final List<StableValue<Integer>> stored = randomStable(Stream.generate(StableValue::<Integer>of)
             .limit(SIZE)
             .toList());
     private final List<Integer> arrayList = random(new ArrayList<>(SIZE));
-    private final List<LazyValue<Integer>> list = randomLazy(LazyValue.ofList(SIZE));
+    private final List<StableValue<Integer>> list = randomStable(StableValue.ofList(SIZE));
 
     @Setup
     public void setup() {
@@ -133,7 +132,7 @@ public class LazyListSumBenchmark {
         return sum;
     }
 
-    private static List<LazyValue<Integer>> randomLazy(List<LazyValue<Integer>> list) {
+    private static List<StableValue<Integer>> randomStable(List<StableValue<Integer>> list) {
         Random rnd = new Random();
         for (int i = 0; i < SIZE; i++) {
             list.get(i).setOrThrow(rnd.nextInt(0, SIZE));

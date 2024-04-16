@@ -41,13 +41,14 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.lang.lazy.LazyValueElement;
-import jdk.internal.lang.lazy.LazyUtil;
+import jdk.internal.lang.stable.StableValueElement;
+import jdk.internal.lang.stable.StableUtil;
 import jdk.internal.misc.CDS;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ImmutableBitSetPredicate;
 import jdk.internal.vm.annotation.Stable;
 
-import static jdk.internal.lang.lazy.LazyUtil.*;
+import static jdk.internal.lang.stable.StableUtil.*;
 
 /**
  * Container class for immutable collections. Not part of the public API.
@@ -58,6 +59,12 @@ import static jdk.internal.lang.lazy.LazyUtil.*;
  */
 @SuppressWarnings("serial")
 class ImmutableCollections {
+
+    /**
+     * Used by collections of StableValues
+     */
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
     /**
      * A "salt" value used for randomizing iteration order. This is initialized once
      * and stays constant for the lifetime of the JVM. It need not be truly random, but
@@ -135,18 +142,18 @@ class ImmutableCollections {
                     return ImmutableCollections.listFromTrustedArrayNullsAllowed(array);
                 }
                 @Override
-                public <V> List<LazyValue<V>> lazyList(int size) {
-                    return ImmutableCollections.LazyList.create(size);
+                public <V> List<StableValue<V>> stableList(int size) {
+                    return StableList.create(size);
                 }
 
                 @Override
-                public <V> V computeIfUnset(List<LazyValue<V>> list,
+                public <V> V computeIfUnset(List<StableValue<V>> list,
                                             int index,
                                             IntFunction<? extends V> mapper) {
-                    if (list instanceof LazyList<V> ll) {
+                    if (list instanceof StableList<V> ll) {
                         return ll.computeIfUnset(index, mapper);
                     } else {
-                        LazyValue<V> lazy = list.get(index);
+                        StableValue<V> lazy = list.get(index);
                         if (lazy.isSet()) {
                             return lazy.orThrow();
                         }
@@ -160,18 +167,18 @@ class ImmutableCollections {
 
                 @SuppressWarnings("unchecked")
                 @Override
-                public <K, V> Map<K, LazyValue<V>> lazyMap(Set<? extends K> keys) {
+                public <K, V> Map<K, StableValue<V>> stableMap(Set<? extends K> keys) {
                     K[] arr = (K[]) keys.stream()
                             .map(Objects::requireNonNull)
                             .toArray();
                     return keys instanceof EnumSet
                             ? ImmutableCollections.LazyEnumMap.create(arr)
-                            : ImmutableCollections.LazyMap.create(arr);
+                            : StableMap.create(arr);
                 }
 
 
                 @Override
-                public <K, V> V computeIfUnset(Map<K, LazyValue<V>> map,
+                public <K, V> V computeIfUnset(Map<K, StableValue<V>> map,
                                                K key,
                                                Function<? super K, ? extends V> mapper) {
                     if (map instanceof UnsetComputable) {
@@ -179,9 +186,9 @@ class ImmutableCollections {
                         UnsetComputable<K, V> uc = ((UnsetComputable<K, V>) map);
                         return uc.computeIfUnset(key, mapper);
                     } else {
-                        LazyValue<V> lazy = map.get(key);
+                        StableValue<V> lazy = map.get(key);
                         if (lazy == null) {
-                            throw LazyUtil.noKey(key);
+                            throw noKey(key);
                         }
                         if (lazy.isSet()) {
                             return lazy.orThrow();
@@ -1774,7 +1781,7 @@ class ImmutableCollections {
 
         @SuppressWarnings("unchecked")
         private E elementVolatile(int index) {
-            return (E) UNSAFE.getReferenceVolatile(elements, LazyUtil.objectOffset(index));
+            return (E) UNSAFE.getReferenceVolatile(elements, StableUtil.objectOffset(index));
         }
 
         @SuppressWarnings("unchecked")
@@ -1786,7 +1793,7 @@ class ImmutableCollections {
         }
 
         private Object mutexVolatile(int index) {
-            return UNSAFE.getReferenceVolatile(mutexes, LazyUtil.objectOffset(index));
+            return UNSAFE.getReferenceVolatile(mutexes, StableUtil.objectOffset(index));
         }
 
         private Object casMutex(int index) {
@@ -1922,12 +1929,12 @@ class ImmutableCollections {
     }
 
 
-    // Lazy collections
+    // Stable collections
 
     @jdk.internal.ValueBased
-    static final class LazyList<V>
-            extends AbstractImmutableList<LazyValue<V>>
-            implements List<LazyValue<V>> {
+    static final class StableList<V>
+            extends AbstractImmutableList<StableValue<V>>
+            implements List<StableValue<V>> {
 
         @Stable
         private int size;
@@ -1938,7 +1945,7 @@ class ImmutableCollections {
         private final Object[] mutexes;
 
         @SuppressWarnings("unchecked")
-        private LazyList(int size) {
+        private StableList(int size) {
             this.elements = (V[]) new Object[size];
             this.size = size;
             this.sets = new byte[size];
@@ -1946,9 +1953,9 @@ class ImmutableCollections {
         }
 
         @Override
-        public LazyValue<V> get(int index) {
+        public StableValue<V> get(int index) {
             Objects.checkIndex(index, size);
-            return new LazyValueElement<>(elements, sets, mutexes, index);
+            return new StableValueElement<>(elements, sets, mutexes, index);
         }
 
         @Override
@@ -1981,12 +1988,12 @@ class ImmutableCollections {
         }
 
         V computeIfUnset(int index, IntFunction<? extends V> mapper) {
-            LazyValueElement<V> element = new LazyValueElement<>(elements, sets, mutexes, index);
+            StableValueElement<V> element = new StableValueElement<>(elements, sets, mutexes, index);
             return element.computeIfUnset(mapper);
         }
 
-        static <V> List<LazyValue<V>> create(int size) {
-            return new ImmutableCollections.LazyList<>(size);
+        static <V> List<StableValue<V>> create(int size) {
+            return new StableList<>(size);
         }
 
     }
@@ -1997,9 +2004,9 @@ class ImmutableCollections {
         V computeIfUnset(K key, Function<? super K, ? extends V> mapper);
     }
 
-    public static final class LazyMap<K, V>
-            extends AbstractImmutableMap<K, LazyValue<V>>
-            implements Map<K, LazyValue<V>>, UnsetComputable<K, V> {
+    public static final class StableMap<K, V>
+            extends AbstractImmutableMap<K, StableValue<V>>
+            implements Map<K, StableValue<V>>, UnsetComputable<K, V> {
 
         @Stable
         private final int size;
@@ -2013,7 +2020,7 @@ class ImmutableCollections {
 
         // keys array not trusted
         @SuppressWarnings("unchecked")
-        LazyMap(Object[] inKeys) {
+        StableMap(Object[] inKeys) {
             assert inKeys.length > 0;
             this.size = inKeys.length;
 
@@ -2034,7 +2041,7 @@ class ImmutableCollections {
                     keys[dest] = k;
                 }
             }
-            LazyUtil.freeze(); // ensure keys are visible if table is visible
+            StableUtil.freeze(); // ensure keys are visible if table is visible
             this.keys = keys;
             this.values = (V[]) new Object[len];
             this.sets = new byte[len];
@@ -2064,8 +2071,8 @@ class ImmutableCollections {
             }
         }
 
-        private LazyValue<V> value(int keyIndex) {
-            return new LazyValueElement<>(values, sets, mutexes, keyIndex);
+        private StableValue<V> value(int keyIndex) {
+            return new StableValueElement<>(values, sets, mutexes, keyIndex);
         }
 
         @Override
@@ -2085,7 +2092,7 @@ class ImmutableCollections {
         }
 
         @Override
-        public LazyValue<V> get(Object key) {
+        public StableValue<V> get(Object key) {
             int i = probe(key);
             if (i >= 0) {
                 return value(i);
@@ -2094,12 +2101,12 @@ class ImmutableCollections {
             }
         }
 
-        final class LazyMapIterator implements Iterator<Map.Entry<K, LazyValue<V>>> {
+        final class StableMapIterator implements Iterator<Map.Entry<K, StableValue<V>>> {
 
             private int remaining;
             private int idx;
 
-            LazyMapIterator() {
+            StableMapIterator() {
                 remaining = size;
                 // pick an even starting index in the [0, keys.length)
                 // range randomly based on SALT32L
@@ -2126,11 +2133,11 @@ class ImmutableCollections {
             }
 
             @Override
-            public Map.Entry<K, LazyValue<V>> next() {
+            public Map.Entry<K, StableValue<V>> next() {
                 if (remaining > 0) {
                     int idx;
                     while (keys[idx = nextIndex()] == null) {}
-                    Map.Entry<K, LazyValue<V>> e = new KeyValueHolder<>(keys[idx], value(idx));
+                    Map.Entry<K, StableValue<V>> e = new KeyValueHolder<>(keys[idx], value(idx));
                     remaining--;
                     return e;
                 } else {
@@ -2140,38 +2147,38 @@ class ImmutableCollections {
         }
 
         @Override
-        public Set<Map.Entry<K, LazyValue<V>>> entrySet() {
+        public Set<Map.Entry<K, StableValue<V>>> entrySet() {
             return new AbstractSet<>() {
                 @Override
                 public int size() {
-                    return LazyMap.this.size;
+                    return StableMap.this.size;
                 }
 
                 @Override
-                public Iterator<Map.Entry<K, LazyValue<V>>> iterator() {
-                    return new LazyMap<K, V>.LazyMapIterator();
+                public Iterator<Map.Entry<K, StableValue<V>>> iterator() {
+                    return new StableMapIterator();
                 }
             };
         }
 
         @Override
         public V computeIfUnset(K key, Function<? super K, ? extends V> mapper) {
-           LazyValueElement<V> element = (LazyValueElement<V>) get(key);
+           StableValueElement<V> element = (StableValueElement<V>) get(key);
            if (element == null) {
-               throw LazyUtil.noKey(key);
+               throw noKey(key);
            }
             return element.computeIfUnset(key, mapper);
         }
 
-        static <K, V> Map<K, LazyValue<V>> create(K[] keys) {
-            return new ImmutableCollections.LazyMap<>(keys);
+        static <K, V> Map<K, StableValue<V>> create(K[] keys) {
+            return new StableMap<>(keys);
         }
 
     }
 
     public static final class LazyEnumMap<K extends Enum<K>, V>
-            extends AbstractImmutableMap<K, LazyValue<V>>
-            implements Map<K, LazyValue<V>>, UnsetComputable<K, V> {
+            extends AbstractImmutableMap<K, StableValue<V>>
+            implements Map<K, StableValue<V>>, UnsetComputable<K, V> {
 
         @Stable
         private int size;
@@ -2240,14 +2247,14 @@ class ImmutableCollections {
         }
 
         @Override
-        public LazyValue<V> get(Object key) {
+        public StableValue<V> get(Object key) {
             return containsKey(key)
                     ? value(arrayIndex(key))
                     : null;
         }
 
-        private LazyValue<V> value(int index) {
-            return new LazyValueElement<>(elements, sets, mutexes, index);
+        private StableValue<V> value(int index) {
+            return new StableValueElement<>(elements, sets, mutexes, index);
         }
 
         private K key(int arrayIndex) {
@@ -2263,12 +2270,12 @@ class ImmutableCollections {
             return arrayIndex + min;
         }
 
-        final class LazyEnumMapIterator implements Iterator<Map.Entry<K, LazyValue<V>>> {
+        final class StableEnumMapIterator implements Iterator<Map.Entry<K, StableValue<V>>> {
 
             private int remaining;
             private int idx;
 
-            LazyEnumMapIterator() {
+            StableEnumMapIterator() {
                 remaining = size;
                 // pick an even starting index in the [0, keys.length)
                 // range randomly based on SALT32L
@@ -2295,11 +2302,11 @@ class ImmutableCollections {
             }
 
             @Override
-            public Map.Entry<K, LazyValue<V>> next() {
+            public Map.Entry<K, StableValue<V>> next() {
                 if (remaining > 0) {
                     int idx;
                     while (!isPresent.test(idx = nextIndex())) {}
-                    Map.Entry<K, LazyValue<V>> e = new KeyValueHolder<>(key(idx), value(idx));
+                    Map.Entry<K, StableValue<V>> e = new KeyValueHolder<>(key(idx), value(idx));
                     remaining--;
                     return e;
                 } else {
@@ -2309,7 +2316,7 @@ class ImmutableCollections {
         }
 
         @Override
-        public Set<Map.Entry<K, LazyValue<V>>> entrySet() {
+        public Set<Map.Entry<K, StableValue<V>>> entrySet() {
             return new AbstractSet<>() {
                 @Override
                 public int size() {
@@ -2317,27 +2324,31 @@ class ImmutableCollections {
                 }
 
                 @Override
-                public Iterator<Map.Entry<K, LazyValue<V>>> iterator() {
-                    return new LazyEnumMap<K, V>.LazyEnumMapIterator();
+                public Iterator<Map.Entry<K, StableValue<V>>> iterator() {
+                    return new StableEnumMapIterator();
                 }
             };
         }
 
         @Override
         public V computeIfUnset(K key, Function<? super K, ? extends V> mapper) {
-            LazyValueElement<V> element = (LazyValueElement<V>) get(key);
+            StableValueElement<V> element = (StableValueElement<V>) get(key);
             if (element == null) {
-                throw LazyUtil.noKey(key);
+                throw noKey(key);
             }
             return element.computeIfUnset(key, mapper);
         }
 
         @SuppressWarnings("unchecked")
-        static <K, KI extends Enum<KI>, V> Map<K, LazyValue<V>> create(Object[] keys) {
-            Map<KI, LazyValue<V>> map = new ImmutableCollections.LazyEnumMap<>(keys);
-            return (Map<K, LazyValue<V>>) map;
+        static <K, KI extends Enum<KI>, V> Map<K, StableValue<V>> create(Object[] keys) {
+            Map<KI, StableValue<V>> map = new ImmutableCollections.LazyEnumMap<>(keys);
+            return (Map<K, StableValue<V>>) map;
         }
 
+    }
+
+    private static NoSuchElementException noKey(Object key) {
+        return new NoSuchElementException("No such key:" + key);
     }
 
 }

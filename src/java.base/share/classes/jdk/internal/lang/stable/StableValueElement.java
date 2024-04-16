@@ -1,4 +1,4 @@
-package jdk.internal.lang.lazy;
+package jdk.internal.lang.stable;
 
 import jdk.internal.ValueBased;
 
@@ -7,7 +7,7 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
-import static jdk.internal.lang.lazy.LazyUtil.*;
+import static jdk.internal.lang.stable.StableUtil.*;
 
 /*
 @ValueBased
@@ -29,12 +29,12 @@ LazyListBenchmark.staticArrayList    avgt   10  0.830 ? 0.027  ns/op
 LazyListBenchmark.staticLazyList     avgt   10  0.563 ? 0.005  ns/op
  */
 @ValueBased
-public record LazyValueElement<V>(
+public record StableValueElement<V>(
         V[] elements,
         byte[] sets,
         Object[] mutexes,
         int index
-) implements LazyValue<V> {
+) implements StableValue<V> {
 
     @Override
     public V orThrow() {
@@ -68,7 +68,7 @@ public record LazyValueElement<V>(
     @Override
     public void setOrThrow(V value) {
         if (isSet()) {
-            throw new IllegalStateException("A value is already bound: " + orThrow());
+            throw StableUtil.alreadySet(this);
         }
         Object mutex = mutexVolatile();
         if (mutex == null) {
@@ -98,7 +98,7 @@ public record LazyValueElement<V>(
 
     @Override
     public String toString() {
-        return LazyUtil.toString(this);
+        return StableUtil.toString(this);
     }
 
     @Override
@@ -160,12 +160,11 @@ public record LazyValueElement<V>(
         casSet();
     }
 
-    @SuppressWarnings("unchecked")
     private void casValue(V created) {
         // Make sure no reordering of store operations
         freeze();
         if (!UNSAFE.compareAndSetReference(elements, objectOffset(index), null, created)) {
-            throw new IllegalStateException("A value is already set: " + orThrow());
+            throw StableUtil.alreadySet(this);
         }
     }
 
@@ -174,17 +173,17 @@ public record LazyValueElement<V>(
     }
 
     boolean setVolatile() {
-        return UNSAFE.getByteVolatile(sets, LazyUtil.byteOffset(index)) == 1;
+        return UNSAFE.getByteVolatile(sets, StableUtil.byteOffset(index)) == 1;
     }
 
     private void casSet() {
-        if (!UNSAFE.compareAndSetByte(sets, LazyUtil.byteOffset(index), (byte) 0, (byte) 1)) {
-            throw new IllegalStateException("A value is already set: " + orThrow());
+        if (!UNSAFE.compareAndSetByte(sets, StableUtil.byteOffset(index), (byte) 0, (byte) 1)) {
+            throw StableUtil.alreadySet(this);
         }
     }
 
     private Object mutexVolatile() {
-        return UNSAFE.getReferenceVolatile(mutexes, LazyUtil.objectOffset(index));
+        return UNSAFE.getReferenceVolatile(mutexes, StableUtil.objectOffset(index));
     }
 
     private Object casMutex() {
@@ -195,12 +194,5 @@ public record LazyValueElement<V>(
 
     private void clearMutex() {
         UNSAFE.putReferenceVolatile(mutexes, objectOffset(index), null);
-    }
-
-    static <V> LazyValue<V> lazyListElement(V[] elements,
-                                            byte[] sets,
-                                            Object[] mutexes,
-                                            int index) {
-        return new LazyValueElement<>(elements, sets, mutexes, index);
     }
 }

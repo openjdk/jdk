@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.lang.lazy;
+package jdk.internal.lang.stable;
 
 import jdk.internal.misc.Unsafe;
 
@@ -31,25 +31,21 @@ import java.util.NoSuchElementException;
 
 import static jdk.internal.misc.Unsafe.*;
 
-public final class LazyUtil {
+public final class StableUtil {
 
-    private LazyUtil() {
+    private StableUtil() {
     }
 
-    public static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
-    static UnsupportedOperationException uoe() {
-        return new UnsupportedOperationException();
+    static IllegalStateException alreadySet(StableValue<?> stable) {
+        return new IllegalStateException("A value is already set: " + stable.orThrow());
     }
 
-    public static NoSuchElementException noKey(Object key) {
-        return new NoSuchElementException("No such key:" + key);
-    }
-
-    static String toString(LazyValue<?> lazy) {
-        return "LazyValue" +
-                (lazy.isSet()
-                        ? "[" + lazy.orThrow() + "]"
+    static String toString(StableValue<?> stable) {
+        return "StableValue" +
+                (stable.isSet()
+                        ? "[" + stable.orThrow() + "]"
                         : ".unset");
     }
 
@@ -71,7 +67,7 @@ public final class LazyUtil {
         return ARRAY_OBJECT_BASE_OFFSET + (long) index * ARRAY_OBJECT_INDEX_SCALE;
     }
 
-    public static long byteOffset(int index) {
+    static long byteOffset(int index) {
         return ARRAY_BYTE_BASE_OFFSET + (long) index * ARRAY_BYTE_INDEX_SCALE;
     }
 

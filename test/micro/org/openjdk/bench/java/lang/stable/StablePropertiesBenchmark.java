@@ -21,7 +21,7 @@
  * questions.
  */
 
-package org.openjdk.bench.java.lang.lazy;
+package org.openjdk.bench.java.lang.stable;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -43,7 +43,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Benchmark measuring Lazy performance
+ * Benchmark measuring StableValue performance
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -57,7 +57,7 @@ LazyPropertiesBenchmark.chm   avgt   10  5.263 ? 1.105  ns/op
 LazyPropertiesBenchmark.lazy  avgt   10  3.697 ? 0.098  ns/op
 LazyPropertiesBenchmark.prop  avgt   10  6.438 ? 0.409  ns/op
  */
-public class LazyPropertiesBenchmark {
+public class StablePropertiesBenchmark {
 
     private static final Function<String, String> FUNCTION = s -> switch (s) {
         case "int" -> "1";
@@ -70,7 +70,7 @@ public class LazyPropertiesBenchmark {
 
     private static final Set<String> PROPERTY_KEYS = Set.of("int", "long", "String");
 
-    private static final Map<String, LazyValue<String>> LAZY_MAP = LazyValue.ofMap(PROPERTY_KEYS);
+    private static final Map<String, StableValue<String>> STABLE_MAP = StableValue.ofMap(PROPERTY_KEYS);
     private static final Properties PROPERTIES;
     private static final Map<String, String> CHM;
     private static final Map<String, String> MAP;
@@ -100,8 +100,8 @@ public class LazyPropertiesBenchmark {
     }
 
     @Benchmark
-    public int lazy() {
-        return Integer.valueOf(LazyValue.computeIfUnset(LAZY_MAP, KEY, FUNCTION));
+    public int stable() {
+        return Integer.valueOf(StableValue.computeIfUnset(STABLE_MAP, KEY, FUNCTION));
     }
 
     @Benchmark
@@ -120,8 +120,8 @@ public class LazyPropertiesBenchmark {
     }
 
     @Benchmark
-    public void lazyRaw(Blackhole bh) {
-        bh.consume(LazyValue.computeIfUnset(LAZY_MAP, KEY, FUNCTION));
+    public void stableRaw(Blackhole bh) {
+        bh.consume(StableValue.computeIfUnset(STABLE_MAP, KEY, FUNCTION));
     }
 
 }

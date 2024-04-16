@@ -21,7 +21,7 @@
  * questions.
  */
 
-package org.openjdk.bench.java.lang.lazy;
+package org.openjdk.bench.java.lang.stable;
 
 import org.openjdk.jmh.annotations.*;
 
@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
- * Benchmark measuring Lazy performance
+ * Benchmark measuring StableValue performance
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -58,17 +58,17 @@ MonotonicBenchmark.staticDCL          avgt   10  1.238 ? 0.042  ns/op
 MonotonicBenchmark.staticMonotonic    avgt   10  0.576 ? 0.044  ns/op
 
  */
-public class LazyBenchmark {
+public class StableBenchmark {
 
     private static final int VALUE = 42;
 
-    private static final LazyValue<Integer> LAZY = init(LazyValue.of());
+    private static final StableValue<Integer> STABLE = init(StableValue.of());
     private static final Supplier<Integer> DCL = new Dcl<>(() -> VALUE);
-    private static final List<LazyValue<Integer>> LIST = LazyValue.ofList(1);
+    private static final List<StableValue<Integer>> LIST = StableValue.ofList(1);
 
-    private final LazyValue<Integer> lazy = init(LazyValue.of());
+    private final StableValue<Integer> stable = init(StableValue.of());
     private final Supplier<Integer> dcl = new Dcl<>(() -> VALUE);
-    private final List<LazyValue<Integer>> list = LazyValue.ofList(1);
+    private final List<StableValue<Integer>> list = StableValue.ofList(1);
 
     static {
         LIST.getFirst().setOrThrow(VALUE);
@@ -80,8 +80,8 @@ public class LazyBenchmark {
     }
 
     @Benchmark
-    public int staticLazy() {
-        return LAZY.orThrow();
+    public int staticStable() {
+        return STABLE.orThrow();
     }
 
     @Benchmark
@@ -104,8 +104,8 @@ public class LazyBenchmark {
 
 
     @Benchmark
-    public int instanceLazy() {
-        return lazy.orThrow();
+    public int instanceStable() {
+        return stable.orThrow();
     }
 
     @Benchmark
@@ -118,7 +118,7 @@ public class LazyBenchmark {
         return dcl.get();
     }
 
-    private static LazyValue<Integer> init(LazyValue<Integer> m) {
+    private static StableValue<Integer> init(StableValue<Integer> m) {
         m.setOrThrow(VALUE);
         return m;
     }

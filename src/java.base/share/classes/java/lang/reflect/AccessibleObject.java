@@ -189,7 +189,7 @@ public class AccessibleObject implements AnnotatedElement {
      * <li>static final fields declared in any class or interface</li>
      * <li>final fields declared in a {@linkplain Class#isHidden() hidden class}</li>
      * <li>final fields declared in a {@linkplain Class#isRecord() record}</li>
-     * <li>final fields of type {@linkplain LazyValue LazyValue}</li>
+     * <li>final fields of type {@linkplain StableValue LazyValue}</li>
      * </ul>
      * <p> The {@code accessible} flag when {@code true} suppresses Java language access
      * control checks to only enable {@linkplain Field#get <em>read</em>} access to

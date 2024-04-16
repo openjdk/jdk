@@ -22,9 +22,9 @@
  */
 
 /* @test
- * @summary Basic tests for Lazy Map implementations
- * @compile --enable-preview -source ${jdk.version} BasicLazyMapTest.java
- * @run junit/othervm --enable-preview BasicLazyMapTest
+ * @summary Basic tests for stable Map implementations
+ * @compile --enable-preview -source ${jdk.version} BasicStableMapTest.java
+ * @run junit/othervm --enable-preview BasicStableMapTest
  */
 
 import org.junit.jupiter.api.Test;
@@ -46,7 +46,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class BasicLazyMapTest {
+final class BasicStableMapTest {
 
     private static final String[] KEYS = "A,B,C,D,E,F,G".split(",");
     private static final String KEY = "C";
@@ -54,7 +54,7 @@ final class BasicLazyMapTest {
     @Test
     void basic() {
         for (var set : sets()) {
-            Map<String, LazyValue<Integer>> map = LazyValue.ofMap(set);
+            Map<String, StableValue<Integer>> map = StableValue.ofMap(set);
             assertEquals(set.isEmpty(), map.isEmpty());
 
             for (String key : set) {
@@ -78,7 +78,7 @@ final class BasicLazyMapTest {
     @Test
     void entrySet() {
         for (var set : sets()) {
-            Map<String, LazyValue<Integer>> map = LazyValue.ofMap(set);
+            Map<String, StableValue<Integer>> map = StableValue.ofMap(set);
             var es = map.entrySet();
             assertEquals(set.size(), es.size());
         }
@@ -87,7 +87,7 @@ final class BasicLazyMapTest {
     @Test
     void entrySetIterator() {
         for (var set : sets()) {
-            Map<String, LazyValue<Integer>> map = LazyValue.ofMap(set);
+            Map<String, StableValue<Integer>> map = StableValue.ofMap(set);
             var i = map.entrySet().iterator();
 
             Set<String> seen = new HashSet<>();
@@ -100,7 +100,7 @@ final class BasicLazyMapTest {
 
     @ParameterizedTest
     @MethodSource("unsupportedOperations")
-    void uoe(String name, Consumer<Map<String, LazyValue<Integer>>> op) {
+    void uoe(String name, Consumer<Map<String, StableValue<Integer>>> op) {
         for (var map:maps()) {
             assertThrows(UnsupportedOperationException.class, () -> op.accept(map), name);
         }
@@ -108,7 +108,7 @@ final class BasicLazyMapTest {
 
     @ParameterizedTest
     @MethodSource("nullOperations")
-    void npe(String name, Consumer<Map<String, LazyValue<Integer>>> op) {
+    void npe(String name, Consumer<Map<String, StableValue<Integer>>> op) {
         for (var map:maps()) {
             assertThrows(NullPointerException.class, () -> op.accept(map), name);
         }
@@ -121,27 +121,27 @@ final class BasicLazyMapTest {
                 .toList();
     }
 
-    private static List<Map<String, LazyValue<Integer>>> maps() {
+    private static List<Map<String, StableValue<Integer>>> maps() {
         return sets().stream()
-                .map(LazyValue::<String, Integer>ofMap)
+                .map(StableValue::<String, Integer>ofMap)
                 .toList();
     }
 
     private static Stream<Arguments> unsupportedOperations() {
         return Stream.of(
                 Arguments.of("clear",            asConsumer(Map::clear)),
-                Arguments.of("put",              asConsumer(m -> m.put(KEY, LazyValue.of()))),
+                Arguments.of("put",              asConsumer(m -> m.put(KEY, StableValue.of()))),
                 Arguments.of("remove(K)",        asConsumer(m -> m.remove(KEY))),
-                Arguments.of("remove(K, V)",     asConsumer(m -> m.remove(KEY, LazyValue.of()))),
+                Arguments.of("remove(K, V)",     asConsumer(m -> m.remove(KEY, StableValue.of()))),
                 Arguments.of("putAll(K, V)",     asConsumer(m -> m.putAll(new HashMap<>()))),
                 Arguments.of("replaceAll",       asConsumer(m -> m.replaceAll((_, _) -> null))),
-                Arguments.of("putIfAbsent",      asConsumer(m -> m.putIfAbsent(KEY, LazyValue.of()))),
-                Arguments.of("replace(K, V)",    asConsumer(m -> m.replace(KEY, LazyValue.of()))),
-                Arguments.of("replace(K, V, V)", asConsumer(m -> m.replace(KEY, LazyValue.of(), LazyValue.of()))),
-                Arguments.of("computeIfAbsent",  asConsumer(m -> m.computeIfAbsent(KEY, _ -> LazyValue.of()))),
-                Arguments.of("computeIfPresent", asConsumer(m -> m.computeIfPresent(KEY, (_, _) -> LazyValue.of()))),
-                Arguments.of("compute",          asConsumer(m -> m.compute(KEY, (_, _) -> LazyValue.of()))),
-                Arguments.of("merge",            asConsumer(m -> m.merge(KEY, LazyValue.of(), (_, _) -> LazyValue.of()))),
+                Arguments.of("putIfAbsent",      asConsumer(m -> m.putIfAbsent(KEY, StableValue.of()))),
+                Arguments.of("replace(K, V)",    asConsumer(m -> m.replace(KEY, StableValue.of()))),
+                Arguments.of("replace(K, V, V)", asConsumer(m -> m.replace(KEY, StableValue.of(), StableValue.of()))),
+                Arguments.of("computeIfAbsent",  asConsumer(m -> m.computeIfAbsent(KEY, _ -> StableValue.of()))),
+                Arguments.of("computeIfPresent", asConsumer(m -> m.computeIfPresent(KEY, (_, _) -> StableValue.of()))),
+                Arguments.of("compute",          asConsumer(m -> m.compute(KEY, (_, _) -> StableValue.of()))),
+                Arguments.of("merge",            asConsumer(m -> m.merge(KEY, StableValue.of(), (_, _) -> StableValue.of()))),
                 Arguments.of("es().it().remove", asConsumer(m -> m.entrySet().iterator().remove()))
         );
     }
@@ -152,11 +152,11 @@ final class BasicLazyMapTest {
         );
     }
 
-    private static Consumer<Map<String, LazyValue<Integer>>> asConsumer(Consumer<Map<String, LazyValue<Integer>>> consumer) {
+    private static Consumer<Map<String, StableValue<Integer>>> asConsumer(Consumer<Map<String, StableValue<Integer>>> consumer) {
         return consumer;
     }
 
-    static String expectedToString(Map<String, LazyValue<Integer>> map) {
+    static String expectedToString(Map<String, StableValue<Integer>> map) {
         return "{" + map.entrySet()
                 .stream().map(e -> e.getKey() + "=" + e.getValue())
                 .collect(Collectors.joining(", ")) + "}";

@@ -22,9 +22,9 @@
  */
 
 /* @test
- * @summary Basic tests for Lazy Enum Map implementations
- * @compile --enable-preview -source ${jdk.version} BasicLazyEnumMapTest.java
- * @run junit/othervm --enable-preview BasicLazyEnumMapTest
+ * @summary Basic tests for stable enum Map implementations
+ * @compile --enable-preview -source ${jdk.version} BasicStableEnumMapTest.java
+ * @run junit/othervm --enable-preview BasicStableEnumMapTest
  */
 
 import org.junit.jupiter.api.Test;
@@ -32,7 +32,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -47,7 +46,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class BasicLazyEnumMapTest {
+final class BasicStableEnumMapTest {
 
     enum TestEnum {
         A, B, C, D, E, F, G;
@@ -58,7 +57,7 @@ final class BasicLazyEnumMapTest {
     @Test
     void basic() {
         for (var set : sets()) {
-            Map<TestEnum, LazyValue<Integer>> map = LazyValue.ofMap(set);
+            Map<TestEnum, StableValue<Integer>> map = StableValue.ofMap(set);
             assertEquals(set.isEmpty(), map.isEmpty());
 
             for (TestEnum key : set) {
@@ -79,7 +78,7 @@ final class BasicLazyEnumMapTest {
     @Test
     void entrySet() {
         for (var set : sets()) {
-            Map<TestEnum, LazyValue<Integer>> map = LazyValue.ofMap(set);
+            Map<TestEnum, StableValue<Integer>> map = StableValue.ofMap(set);
             var es = map.entrySet();
             assertEquals(set.size(), es.size());
         }
@@ -88,7 +87,7 @@ final class BasicLazyEnumMapTest {
     @Test
     void entrySetIterator() {
         for (var set : sets()) {
-            Map<TestEnum, LazyValue<Integer>> map = LazyValue.ofMap(set);
+            Map<TestEnum, StableValue<Integer>> map = StableValue.ofMap(set);
             var i = map.entrySet().iterator();
 
             Set<TestEnum> seen = new HashSet<>();
@@ -101,7 +100,7 @@ final class BasicLazyEnumMapTest {
 
     @ParameterizedTest
     @MethodSource("unsupportedOperations")
-    void uoe(String name, Consumer<Map<TestEnum, LazyValue<Integer>>> op) {
+    void uoe(String name, Consumer<Map<TestEnum, StableValue<Integer>>> op) {
         for (var map:maps()) {
             assertThrows(UnsupportedOperationException.class, () -> op.accept(map), name);
         }
@@ -109,7 +108,7 @@ final class BasicLazyEnumMapTest {
 
     @ParameterizedTest
     @MethodSource("nullOperations")
-    void npe(String name, Consumer<Map<TestEnum, LazyValue<Integer>>> op) {
+    void npe(String name, Consumer<Map<TestEnum, StableValue<Integer>>> op) {
         for (var map:maps()) {
             assertThrows(NullPointerException.class, () -> op.accept(map), name);
         }
@@ -126,27 +125,27 @@ final class BasicLazyEnumMapTest {
                 .toList();
     }
 
-    private static List<Map<TestEnum, LazyValue<Integer>>> maps() {
+    private static List<Map<TestEnum, StableValue<Integer>>> maps() {
         return sets().stream()
-                .map(LazyValue::<TestEnum, Integer>ofMap)
+                .map(StableValue::<TestEnum, Integer>ofMap)
                 .toList();
     }
 
     private static Stream<Arguments> unsupportedOperations() {
         return Stream.of(
                 Arguments.of("clear",            asConsumer(Map::clear)),
-                Arguments.of("put",              asConsumer(m -> m.put(KEY, LazyValue.of()))),
+                Arguments.of("put",              asConsumer(m -> m.put(KEY, StableValue.of()))),
                 Arguments.of("remove(K)",        asConsumer(m -> m.remove(KEY))),
-                Arguments.of("remove(K, V)",     asConsumer(m -> m.remove(KEY, LazyValue.of()))),
+                Arguments.of("remove(K, V)",     asConsumer(m -> m.remove(KEY, StableValue.of()))),
                 Arguments.of("putAll(K, V)",     asConsumer(m -> m.putAll(new HashMap<>()))),
                 Arguments.of("replaceAll",       asConsumer(m -> m.replaceAll((_, _) -> null))),
-                Arguments.of("putIfAbsent",      asConsumer(m -> m.putIfAbsent(KEY, LazyValue.of()))),
-                Arguments.of("replace(K, V)",    asConsumer(m -> m.replace(KEY, LazyValue.of()))),
-                Arguments.of("replace(K, V, V)", asConsumer(m -> m.replace(KEY, LazyValue.of(), LazyValue.of()))),
-                Arguments.of("computeIfAbsent",  asConsumer(m -> m.computeIfAbsent(KEY, _ -> LazyValue.of()))),
-                Arguments.of("computeIfPresent", asConsumer(m -> m.computeIfPresent(KEY, (_, _) -> LazyValue.of()))),
-                Arguments.of("compute",          asConsumer(m -> m.compute(KEY, (_, _) -> LazyValue.of()))),
-                Arguments.of("merge",            asConsumer(m -> m.merge(KEY, LazyValue.of(), (_, _) -> LazyValue.of()))),
+                Arguments.of("putIfAbsent",      asConsumer(m -> m.putIfAbsent(KEY, StableValue.of()))),
+                Arguments.of("replace(K, V)",    asConsumer(m -> m.replace(KEY, StableValue.of()))),
+                Arguments.of("replace(K, V, V)", asConsumer(m -> m.replace(KEY, StableValue.of(), StableValue.of()))),
+                Arguments.of("computeIfAbsent",  asConsumer(m -> m.computeIfAbsent(KEY, _ -> StableValue.of()))),
+                Arguments.of("computeIfPresent", asConsumer(m -> m.computeIfPresent(KEY, (_, _) -> StableValue.of()))),
+                Arguments.of("compute",          asConsumer(m -> m.compute(KEY, (_, _) -> StableValue.of()))),
+                Arguments.of("merge",            asConsumer(m -> m.merge(KEY, StableValue.of(), (_, _) -> StableValue.of()))),
                 Arguments.of("es().it().remove", asConsumer(m -> m.entrySet().iterator().remove()))
         );
     }
@@ -157,11 +156,11 @@ final class BasicLazyEnumMapTest {
         );
     }
 
-    private static Consumer<Map<TestEnum, LazyValue<Integer>>> asConsumer(Consumer<Map<TestEnum, LazyValue<Integer>>> consumer) {
+    private static Consumer<Map<TestEnum, StableValue<Integer>>> asConsumer(Consumer<Map<TestEnum, StableValue<Integer>>> consumer) {
         return consumer;
     }
 
-    static String expectedToString(Map<TestEnum, LazyValue<Integer>> map) {
+    static String expectedToString(Map<TestEnum, StableValue<Integer>> map) {
         return "{" + map.entrySet()
                 .stream().map(e -> e.getKey() + "=" + e.getValue())
                 .collect(Collectors.joining(", ")) + "}";

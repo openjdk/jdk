@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.lang.lazy;
+package jdk.internal.lang.stable;
 
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
@@ -38,15 +38,15 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
-import static jdk.internal.lang.lazy.LazyUtil.*;
+import static jdk.internal.lang.stable.StableUtil.*;
 
-public final class LazyValueImpl<V> implements LazyValue<V> {
+public final class StableValueImpl<V> implements StableValue<V> {
 
     private static final long VALUE_OFFSET =
-            UNSAFE.objectFieldOffset(LazyValueImpl.class, "value");
+            UNSAFE.objectFieldOffset(StableValueImpl.class, "value");
 
     private static final long SET_OFFSET =
-            UNSAFE.objectFieldOffset(LazyValueImpl.class, "set");
+            UNSAFE.objectFieldOffset(StableValueImpl.class, "set");
 
     private static final byte NOT_SET = 0;
     private static final byte SET = 1;
@@ -65,7 +65,7 @@ public final class LazyValueImpl<V> implements LazyValue<V> {
     @Stable
     private byte set;
 
-    LazyValueImpl() {}
+    StableValueImpl() {}
 
     @ForceInline
     @Override
@@ -104,7 +104,7 @@ public final class LazyValueImpl<V> implements LazyValue<V> {
     @Override
     public synchronized void setOrThrow(V value) {
         if (isSet()) {
-            throw new IllegalStateException("A value is already bound: " + orThrow());
+            throw StableUtil.alreadySet(this);
         }
         setValue(value);
     }
@@ -161,7 +161,7 @@ public final class LazyValueImpl<V> implements LazyValue<V> {
 
     @Override
     public String toString() {
-        return LazyUtil.toString(this);
+        return StableUtil.toString(this);
     }
 
     @SuppressWarnings("unchecked")
@@ -182,7 +182,7 @@ public final class LazyValueImpl<V> implements LazyValue<V> {
         // under normal memory semantics.
         freeze();
         if (!UNSAFE.compareAndSetReference(this, VALUE_OFFSET, null, value)) {
-            throw new IllegalStateException("A value is already set: " + orThrow());
+            throw StableUtil.alreadySet(this);
         }
     }
 
@@ -196,25 +196,25 @@ public final class LazyValueImpl<V> implements LazyValue<V> {
 
     private void casSet() {
         if (!UNSAFE.compareAndSetByte(this, SET_OFFSET, NOT_SET, SET)) {
-            throw new IllegalStateException("A value is already set: " + orThrow());
+            throw StableUtil.alreadySet(this);
         }
     }
 
     // Factories
 
-    public static <V> LazyValue<V> of() {
-        return new LazyValueImpl<>();
+    public static <V> StableValue<V> of() {
+        return new StableValueImpl<>();
     }
 
-    public static <V> LazyValue<V> ofBackground(Supplier<? extends V> supplier) {
-        LazyValue<V> lazy = LazyValue.of();
+    public static <V> StableValue<V> ofBackground(Supplier<? extends V> supplier) {
+        StableValue<V> stable = StableValue.of();
         Thread.ofVirtual()
                 .start(() -> {
                     try {
-                        lazy.computeIfUnset(supplier);
+                        stable.computeIfUnset(supplier);
                     } catch (Throwable _) {}
                 });
-        return lazy;
+        return stable;
     }
 
     // Collections factories
@@ -222,28 +222,28 @@ public final class LazyValueImpl<V> implements LazyValue<V> {
     private static final JavaUtilCollectionAccess ACCESS =
             SharedSecrets.getJavaUtilCollectionAccess();
 
-    public static <V> List<LazyValue<V>> ofList(int size) {
+    public static <V> List<StableValue<V>> ofList(int size) {
         if (size < 0) {
             throw new IllegalArgumentException();
         }
-        return ACCESS.lazyList(size);
+        return ACCESS.stableList(size);
     }
 
-    public static <V> V computeIfUnset(List<LazyValue<V>> list,
+    public static <V> V computeIfUnset(List<StableValue<V>> list,
                                        int index,
                                        IntFunction<? extends V> mapper) {
         return ACCESS.computeIfUnset(list, index, mapper);
     }
 
-    public static <K, V> Map<K, LazyValue<V>> ofMap(Set<? extends K> keys) {
+    public static <K, V> Map<K, StableValue<V>> ofMap(Set<? extends K> keys) {
         if (keys.isEmpty()) {
             // Todo: Serializable...
             return Map.of();
         }
-        return ACCESS.lazyMap(keys);
+        return ACCESS.stableMap(keys);
     }
 
-    public static <K, V> V computeIfUnset(Map<K, LazyValue<V>> map,
+    public static <K, V> V computeIfUnset(Map<K, StableValue<V>> map,
                                           K key,
                                           Function<? super K, ? extends V> mapper) {
         return ACCESS.computeIfUnset(map, key, mapper);

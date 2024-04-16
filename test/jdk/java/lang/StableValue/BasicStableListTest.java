@@ -22,9 +22,9 @@
  */
 
 /* @test
- * @summary Basic tests for lazy lists
- * @compile --enable-preview -source ${jdk.version} BasicLazyListTest.java
- * @run junit/othervm --enable-preview BasicLazyListTest
+ * @summary Basic tests for stable lists
+ * @compile --enable-preview -source ${jdk.version} BasicStableListTest.java
+ * @run junit/othervm --enable-preview BasicStableListTest
  */
 
 import org.junit.jupiter.api.BeforeEach;
@@ -43,13 +43,13 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class BasicLazyListTest {
+final class BasicStableListTest {
 
     private static final int MAX_SIZE = 1_000;
     private static final int[] SIZES = new int[]{0, 1, 2, 7, MAX_SIZE};
     private static final IntFunction<Integer> FUNCTION = i -> i;
 
-    private List<LazyValue<Integer>> list;
+    private List<StableValue<Integer>> list;
 
     @BeforeEach
     void setup() {
@@ -94,9 +94,9 @@ final class BasicLazyListTest {
         String actual = list.toString();
         String expected = IntStream.range(0, size)
                 .mapToObj(i -> {
-                    LazyValue<Integer> lazy = LazyValue.of();
-                    lazy.setOrThrow(i);
-                    return lazy;
+                    StableValue<Integer> stable = StableValue.of();
+                    stable.setOrThrow(i);
+                    return stable;
                 })
                 .toList()
                 .toString();
@@ -105,7 +105,7 @@ final class BasicLazyListTest {
 
     @ParameterizedTest
     @MethodSource("unsupportedOperations")
-    void uoe(String name, Consumer<List<LazyValue<Integer>>> op) {
+    void uoe(String name, Consumer<List<StableValue<Integer>>> op) {
         for (int size : SIZES) {
             newList(size);
             assertThrows(UnsupportedOperationException.class, () -> op.accept(list), name);
@@ -114,7 +114,7 @@ final class BasicLazyListTest {
 
     @ParameterizedTest
     @MethodSource("nullOperations")
-    void npe(String name, Consumer<List<LazyValue<Integer>>> op) {
+    void npe(String name, Consumer<List<StableValue<Integer>>> op) {
         for (int size : SIZES) {
             newList(size);
             assertThrows(NullPointerException.class, () -> op.accept(list), name);
@@ -122,10 +122,10 @@ final class BasicLazyListTest {
     }
 
     private void newList(int size) {
-        list = LazyValue.ofList(size);
+        list = StableValue.ofList(size);
         for (int i = 0; i<size; i++) {
-            LazyValue<Integer> lazy = list.get(i);
-            lazy.setOrThrow(FUNCTION.apply(i));
+            StableValue<Integer> stable = list.get(i);
+            stable.setOrThrow(FUNCTION.apply(i));
         }
     }
 
@@ -136,21 +136,21 @@ final class BasicLazyListTest {
 
     private static Stream<Arguments> unsupportedOperations() {
         return Stream.of(
-                Arguments.of("add",          asConsumer(l -> l.add(LazyValue.of()))),
+                Arguments.of("add",          asConsumer(l -> l.add(StableValue.of()))),
                 Arguments.of("remove",       asConsumer(l -> l.remove(1))),
                 Arguments.of("addAll(C)",    asConsumer(l -> l.addAll(List.of()))),
                 Arguments.of("addAll(i, C)", asConsumer(l -> l.addAll(1, List.of()))),
-                Arguments.of("removeAll",    asConsumer(l -> l.removeAll(List.<LazyValue<Integer>>of()))),
-                Arguments.of("retainAll",    asConsumer(l -> l.retainAll(List.<LazyValue<Integer>>of()))),
-                Arguments.of("replaceAll",   asConsumer(l -> l.replaceAll(_ -> LazyValue.of()))),
+                Arguments.of("removeAll",    asConsumer(l -> l.removeAll(List.<StableValue<Integer>>of()))),
+                Arguments.of("retainAll",    asConsumer(l -> l.retainAll(List.<StableValue<Integer>>of()))),
+                Arguments.of("replaceAll",   asConsumer(l -> l.replaceAll(_ -> StableValue.of()))),
                 Arguments.of("sort",         asConsumer(l -> l.sort(null))),
                 Arguments.of("clear",        asConsumer(List::clear)),
-                Arguments.of("set(i, E)",    asConsumer(l -> l.set(1, LazyValue.of()))),
-                Arguments.of("add(i, E)",    asConsumer(l -> l.add(1, LazyValue.of()))),
+                Arguments.of("set(i, E)",    asConsumer(l -> l.set(1, StableValue.of()))),
+                Arguments.of("add(i, E)",    asConsumer(l -> l.add(1, StableValue.of()))),
                 Arguments.of("remove(i)",    asConsumer(l -> l.remove(1))),
                 Arguments.of("removeIf",     asConsumer(l -> l.removeIf(Objects::isNull))),
-                Arguments.of("addFirst",     asConsumer(l -> l.addFirst(LazyValue.of()))),
-                Arguments.of("addLast",      asConsumer(l -> l.addLast(LazyValue.of()))),
+                Arguments.of("addFirst",     asConsumer(l -> l.addFirst(StableValue.of()))),
+                Arguments.of("addLast",      asConsumer(l -> l.addLast(StableValue.of()))),
                 Arguments.of("removeFirst",  asConsumer(List::removeFirst)),
                 Arguments.of("removeLast",   asConsumer(List::removeLast))
         );
@@ -159,7 +159,7 @@ final class BasicLazyListTest {
     private static Stream<Arguments> nullOperations() {
         return Stream.of(
                 Arguments.of("toArray",     asConsumer(l -> l.toArray((Object[]) null))),
-                Arguments.of("toArray",     asConsumer(l -> l.toArray((IntFunction<LazyValue<Integer>[]>) null))),
+                Arguments.of("toArray",     asConsumer(l -> l.toArray((IntFunction<StableValue<Integer>[]>) null))),
                 Arguments.of("containsAll", asConsumer(l -> l.containsAll(null))),
                 Arguments.of("forEach",     asConsumer(l -> l.forEach(null))),
                 Arguments.of("indexOf",     asConsumer(l -> l.indexOf(null))),
@@ -167,7 +167,7 @@ final class BasicLazyListTest {
         );
     }
 
-    private static Consumer<List<LazyValue<Integer>>> asConsumer(Consumer<List<LazyValue<Integer>>> consumer) {
+    private static Consumer<List<StableValue<Integer>>> asConsumer(Consumer<List<StableValue<Integer>>> consumer) {
         return consumer;
     }
 
