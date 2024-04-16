@@ -717,9 +717,9 @@ public:
   // in the CDS archive.
   HeapWord* alloc_archive_region(size_t word_size, HeapWord* preferred_addr);
 
-  // Populate the G1BlockOffsetTablePart for archived regions with the given
+  // Populate the G1BlockOffsetTable for archived regions with the given
   // memory range.
-  void populate_archive_regions_bot_part(MemRegion range);
+  void populate_archive_regions_bot(MemRegion range);
 
   // For the specified range, uncommit the containing G1 regions
   // which had been allocated by alloc_archive_regions. This should be called

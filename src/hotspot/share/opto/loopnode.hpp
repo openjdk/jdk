@@ -28,6 +28,7 @@
 #include "opto/cfgnode.hpp"
 #include "opto/multnode.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/predicates.hpp"
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
 #include "utilities/checkedCast.hpp"
@@ -738,13 +739,15 @@ public:
   void reassociate_invariants(PhaseIdealLoop *phase);
   // Reassociate invariant binary expressions.
   Node* reassociate(Node* n1, PhaseIdealLoop *phase);
-  // Reassociate invariant add and subtract expressions.
-  Node* reassociate_add_sub(Node* n1, int inv1_idx, int inv2_idx, PhaseIdealLoop *phase);
+  // Reassociate invariant add, subtract, and compare expressions.
+  Node* reassociate_add_sub_cmp(Node* n1, int inv1_idx, int inv2_idx, PhaseIdealLoop* phase);
   // Return nonzero index of invariant operand if invariant and variant
   // are combined with an associative binary. Helper for reassociate_invariants.
   int find_invariant(Node* n, PhaseIdealLoop *phase);
   // Return TRUE if "n" is associative.
   bool is_associative(Node* n, Node* base=nullptr);
+  // Return TRUE if "n" is an associative cmp node.
+  bool is_associative_cmp(Node* n);
 
   // Return true if n is invariant
   bool is_invariant(Node* n) const;
@@ -949,8 +952,6 @@ private:
                                                  Node* input_proj);
   static void count_opaque_loop_nodes(Node* n, uint& init, uint& stride);
   static bool subgraph_has_opaque(Node* n);
-  Node* create_bool_from_template_assertion_predicate(Node* template_assertion_predicate, Node* new_init, Node* new_stride,
-                                                      Node* control);
   static bool assertion_predicate_has_loop_opaque_node(IfNode* iff);
   static void get_assertion_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_assertion_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
@@ -1659,7 +1660,7 @@ private:
                                                      Deoptimization::DeoptReason reason, IfProjNode* old_predicate_proj,
                                                      ParsePredicateSuccessProj* fast_loop_parse_predicate_proj,
                                                      ParsePredicateSuccessProj* slow_loop_parse_predicate_proj);
-  IfProjNode* clone_assertion_predicate_for_unswitched_loops(Node* iff, IfProjNode* predicate,
+  IfProjNode* clone_assertion_predicate_for_unswitched_loops(IfNode* template_assertion_predicate, IfProjNode* predicate,
                                                              Deoptimization::DeoptReason reason,
                                                              ParsePredicateSuccessProj* parse_predicate_proj);
   static void check_cloned_parse_predicate_for_unswitching(const Node* new_entry, bool is_fast_loop) PRODUCT_RETURN;
@@ -1672,6 +1673,15 @@ public:
   void set_created_loop_node() { _created_loop_node = true; }
   bool created_loop_node()     { return _created_loop_node; }
   void register_new_node(Node* n, Node* blk);
+  void register_new_node_with_ctrl_of(Node* new_node, Node* ctrl_of) {
+    register_new_node(new_node, get_ctrl(ctrl_of));
+  }
+
+  Node* clone_and_register(Node* n, Node* ctrl) {
+    n = n->clone();
+    register_new_node(n, ctrl);
+    return n;
+  }
 
 #ifdef ASSERT
   void dump_bad_graph(const char* msg, Node* n, Node* early, Node* LCA);
@@ -1906,7 +1916,10 @@ class DataNodeGraph : public StackObj {
  private:
   void clone(Node* node, Node* new_ctrl);
   void clone_data_nodes(Node* new_ctrl);
+  void clone_data_nodes_and_transform_opaque_loop_nodes(const TransformStrategyForOpaqueLoopNodes& transform_strategy,
+                                                        Node* new_ctrl);
   void rewire_clones_to_cloned_inputs();
+  void transform_opaque_node(const TransformStrategyForOpaqueLoopNodes& transform_strategy, Node* node);
 
  public:
   // Clone the provided data node collection and rewire the clones in such a way to create an identical graph copy.
@@ -1914,6 +1927,19 @@ class DataNodeGraph : public StackObj {
   const OrigToNewHashtable& clone(Node* new_ctrl) {
     assert(_orig_to_new.number_of_entries() == 0, "should not call this method twice in a row");
     clone_data_nodes(new_ctrl);
+    rewire_clones_to_cloned_inputs();
+    return _orig_to_new;
+  }
+
+  // Create a copy of the data nodes provided to the constructor by doing the following:
+  // Clone all non-OpaqueLoop* nodes and rewire them to create an identical subgraph copy. For the OpaqueLoop* nodes,
+  // apply the provided transformation strategy and include the transformed node into the subgraph copy to get a complete
+  // "cloned-and-transformed" graph copy. For all newly cloned nodes (which could also be new OpaqueLoop* nodes), set
+  // `new_ctrl` as ctrl.
+  const OrigToNewHashtable& clone_with_opaque_loop_transform_strategy(
+      const TransformStrategyForOpaqueLoopNodes& transform_strategy,
+      Node* new_ctrl) {
+    clone_data_nodes_and_transform_opaque_loop_nodes(transform_strategy, new_ctrl);
     rewire_clones_to_cloned_inputs();
     return _orig_to_new;
   }

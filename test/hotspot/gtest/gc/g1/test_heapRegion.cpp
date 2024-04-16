@@ -122,7 +122,7 @@ void VM_HeapRegionApplyToMarkedObjectsTest::doit() {
   region->set_top(old_top);
 }
 
-TEST_VM(HeapRegion, apply_to_marked_object) {
+TEST_OTHER_VM(HeapRegion, apply_to_marked_object) {
   if (!UseG1GC) {
     return;
   }

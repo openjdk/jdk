@@ -642,6 +642,38 @@ ParallelCompactData::summarize_split_space(size_t src_region,
   return source_next;
 }
 
+size_t ParallelCompactData::live_words_in_space(const MutableSpace* space,
+                                                HeapWord** full_region_prefix_end) {
+  size_t cur_region = addr_to_region_idx(space->bottom());
+  const size_t end_region = addr_to_region_idx(region_align_up(space->top()));
+  size_t live_words = 0;
+  if (full_region_prefix_end == nullptr) {
+    for (/* empty */; cur_region < end_region; ++cur_region) {
+      live_words += _region_data[cur_region].data_size();
+    }
+  } else {
+    bool first_set = false;
+    for (/* empty */; cur_region < end_region; ++cur_region) {
+      size_t live_words_in_region = _region_data[cur_region].data_size();
+      if (!first_set && live_words_in_region < RegionSize) {
+        *full_region_prefix_end = region_to_addr(cur_region);
+        first_set = true;
+      }
+      live_words += live_words_in_region;
+    }
+    if (!first_set) {
+      // All regions are full of live objs.
+      assert(is_region_aligned(space->top()), "inv");
+      *full_region_prefix_end = space->top();
+    }
+    assert(*full_region_prefix_end != nullptr, "postcondition");
+    assert(is_region_aligned(*full_region_prefix_end), "inv");
+    assert(*full_region_prefix_end >= space->bottom(), "in-range");
+    assert(*full_region_prefix_end <= space->top(), "in-range");
+  }
+  return live_words;
+}
+
 bool ParallelCompactData::summarize(SplitInfo& split_info,
                                     HeapWord* source_beg, HeapWord* source_end,
                                     HeapWord** source_next,
@@ -913,12 +945,6 @@ void PSParallelCompact::pre_compact()
     Universe::verify("Before GC");
   }
 
-  // Verify object start arrays
-  if (VerifyObjectStartArray &&
-      VerifyBeforeGC) {
-    heap->old_gen()->verify_object_start_array();
-  }
-
   DEBUG_ONLY(mark_bitmap()->verify_clear();)
   DEBUG_ONLY(summary_data().verify_clear();)
 
@@ -988,93 +1014,19 @@ void PSParallelCompact::post_compact()
   Universe::heap()->record_whole_heap_examined_timestamp();
 }
 
-ParallelCompactData::RegionData*
-PSParallelCompact::first_dead_space_region(const RegionData* beg,
-                                           const RegionData* end)
-{
-  const size_t region_size = ParallelCompactData::RegionSize;
-  ParallelCompactData& sd = summary_data();
-  size_t left = sd.region(beg);
-  size_t right = end > beg ? sd.region(end) - 1 : left;
-
-  // Binary search.
-  while (left < right) {
-    // Equivalent to (left + right) / 2, but does not overflow.
-    const size_t middle = left + (right - left) / 2;
-    RegionData* const middle_ptr = sd.region(middle);
-    HeapWord* const dest = middle_ptr->destination();
-    HeapWord* const addr = sd.region_to_addr(middle);
-    assert(dest != nullptr, "sanity");
-    assert(dest <= addr, "must move left");
-
-    if (middle > left && dest < addr) {
-      right = middle - 1;
-    } else if (middle < right && middle_ptr->data_size() == region_size) {
-      left = middle + 1;
-    } else {
-      return middle_ptr;
-    }
-  }
-  return sd.region(left);
-}
-
-// Return the address of the end of the dense prefix, a.k.a. the start of the
-// compacted region.  The address is always on a region boundary.
-//
-// Completely full regions at the left are skipped, since no compaction can
-// occur in those regions.  Then the maximum amount of dead wood to allow is
-// computed, based on the density (amount live / capacity) of the generation;
-// the region with approximately that amount of dead space to the left is
-// identified as the limit region.  Regions between the last completely full
-// region and the limit region are scanned and the one that has the best
-// (maximum) reclaimed_ratio() is selected.
-HeapWord*
-PSParallelCompact::compute_dense_prefix(const SpaceId id,
-                                        bool maximum_compaction)
-{
+HeapWord* PSParallelCompact::compute_dense_prefix_for_old_space(MutableSpace* old_space,
+                                                                HeapWord* full_region_prefix_end) {
   const size_t region_size = ParallelCompactData::RegionSize;
   const ParallelCompactData& sd = summary_data();
 
-  const MutableSpace* const space = _space_info[id].space();
-  HeapWord* const top = space->top();
-  HeapWord* const top_aligned_up = sd.region_align_up(top);
-  HeapWord* const new_top = _space_info[id].new_top();
-  HeapWord* const new_top_aligned_up = sd.region_align_up(new_top);
-  HeapWord* const bottom = space->bottom();
-  const RegionData* const beg_cp = sd.addr_to_region_ptr(bottom);
-  const RegionData* const top_cp = sd.addr_to_region_ptr(top_aligned_up);
-  const RegionData* const new_top_cp =
-    sd.addr_to_region_ptr(new_top_aligned_up);
-
-  // Skip full regions at the beginning of the space--they are necessarily part
-  // of the dense prefix.
-  const RegionData* const full_cp = first_dead_space_region(beg_cp, new_top_cp);
-  assert(full_cp->destination() == sd.region_to_addr(full_cp) ||
-         space->is_empty(), "no dead space allowed to the left");
-  assert(full_cp->data_size() < region_size || full_cp == new_top_cp - 1,
-         "region must have dead space");
-
-  // The gc number is saved whenever a maximum compaction is done, and used to
-  // determine when the maximum compaction interval has expired.  This avoids
-  // successive max compactions for different reasons.
-  const uint total_invocations = ParallelScavengeHeap::heap()->total_full_collections();
-  assert(total_invocations >= _maximum_compaction_gc_num, "sanity");
-  const size_t gcs_since_max = total_invocations - _maximum_compaction_gc_num;
-  const bool interval_ended = gcs_since_max > HeapMaximumCompactionInterval ||
-    total_invocations == HeapFirstMaximumCompactionCount;
-  if (maximum_compaction || full_cp == top_cp || interval_ended) {
-    _maximum_compaction_gc_num = total_invocations;
-    return sd.region_to_addr(full_cp);
-  }
-
   // Iteration starts with the region *after* the full-region-prefix-end.
-  const RegionData* const start_region = full_cp;
+  const RegionData* const start_region = sd.addr_to_region_ptr(full_region_prefix_end);
   // If final region is not full, iteration stops before that region,
   // because fill_dense_prefix_end assumes that prefix_end <= top.
-  const RegionData* const end_region = sd.addr_to_region_ptr(space->top());
+  const RegionData* const end_region = sd.addr_to_region_ptr(old_space->top());
   assert(start_region <= end_region, "inv");
 
-  size_t max_waste = space->capacity_in_words() * (MarkSweepDeadRatio / 100.0);
+  size_t max_waste = old_space->capacity_in_words() * (MarkSweepDeadRatio / 100.0);
   const RegionData* cur_region = start_region;
   for (/* empty */; cur_region < end_region; ++cur_region) {
     assert(region_size >= cur_region->data_size(), "inv");
@@ -1087,22 +1039,9 @@ PSParallelCompact::compute_dense_prefix(const SpaceId id,
 
   HeapWord* const prefix_end = sd.region_to_addr(cur_region);
   assert(sd.is_region_aligned(prefix_end), "postcondition");
-  assert(prefix_end >= sd.region_to_addr(full_cp), "in-range");
-  assert(prefix_end <= space->top(), "in-range");
+  assert(prefix_end >= full_region_prefix_end, "in-range");
+  assert(prefix_end <= old_space->top(), "in-range");
   return prefix_end;
-}
-
-void PSParallelCompact::summarize_spaces_quick()
-{
-  for (unsigned int i = 0; i < last_space_id; ++i) {
-    const MutableSpace* space = _space_info[i].space();
-    HeapWord** nta = _space_info[i].new_top_addr();
-    bool result = _summary_data.summarize(_space_info[i].split_info(),
-                                          space->bottom(), space->top(), nullptr,
-                                          space->bottom(), space->end(), nta);
-    assert(result, "space must fit into itself");
-    _space_info[i].set_dense_prefix(space->bottom());
-  }
 }
 
 void PSParallelCompact::fill_dense_prefix_end(SpaceId id) {
@@ -1129,6 +1068,12 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id) {
   }
   assert(CollectedHeap::min_fill_size() == 2, "inv");
   HeapWord* const dense_prefix_end = dense_prefix(id);
+  assert(_summary_data.is_region_aligned(dense_prefix_end), "precondition");
+  assert(dense_prefix_end <= space(id)->top(), "precondition");
+  if (dense_prefix_end == space(id)->top()) {
+    // Must not have single-word gap right before prefix-end/top.
+    return;
+  }
   RegionData* const region_after_dense_prefix = _summary_data.addr_to_region_ptr(dense_prefix_end);
   idx_t const dense_prefix_bit = _mark_bitmap.addr_to_bit(dense_prefix_end);
 
@@ -1147,58 +1092,9 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id) {
     _mark_bitmap.mark_obj(obj_beg, obj_len);
     _summary_data.addr_to_region_ptr(obj_beg)->add_live_obj(1);
     region_after_dense_prefix->set_partial_obj_size(1);
+    region_after_dense_prefix->set_partial_obj_addr(obj_beg);
     assert(start_array(id) != nullptr, "sanity");
     start_array(id)->update_for_block(obj_beg, obj_beg + obj_len);
-  }
-}
-
-void
-PSParallelCompact::summarize_space(SpaceId id, bool maximum_compaction)
-{
-  assert(id < last_space_id, "id out of range");
-  assert(_space_info[id].dense_prefix() == _space_info[id].space()->bottom(),
-         "should have been reset in summarize_spaces_quick()");
-
-  const MutableSpace* space = _space_info[id].space();
-  if (_space_info[id].new_top() != space->bottom()) {
-    HeapWord* dense_prefix_end = compute_dense_prefix(id, maximum_compaction);
-    _space_info[id].set_dense_prefix(dense_prefix_end);
-
-    // Recompute the summary data, taking into account the dense prefix.  If
-    // every last byte will be reclaimed, then the existing summary data which
-    // compacts everything can be left in place.
-    if (!maximum_compaction && dense_prefix_end != space->bottom()) {
-      // If dead space crosses the dense prefix boundary, it is (at least
-      // partially) filled with a dummy object, marked live and added to the
-      // summary data.  This simplifies the copy/update phase and must be done
-      // before the final locations of objects are determined, to prevent
-      // leaving a fragment of dead space that is too small to fill.
-      fill_dense_prefix_end(id);
-
-      // Compute the destination of each Region, and thus each object.
-      _summary_data.summarize_dense_prefix(space->bottom(), dense_prefix_end);
-      _summary_data.summarize(_space_info[id].split_info(),
-                              dense_prefix_end, space->top(), nullptr,
-                              dense_prefix_end, space->end(),
-                              _space_info[id].new_top_addr());
-    }
-  }
-
-  if (log_develop_is_enabled(Trace, gc, compaction)) {
-    const size_t region_size = ParallelCompactData::RegionSize;
-    HeapWord* const dense_prefix_end = _space_info[id].dense_prefix();
-    const size_t dp_region = _summary_data.addr_to_region_idx(dense_prefix_end);
-    const size_t dp_words = pointer_delta(dense_prefix_end, space->bottom());
-    HeapWord* const new_top = _space_info[id].new_top();
-    const HeapWord* nt_aligned_up = _summary_data.region_align_up(new_top);
-    const size_t cr_words = pointer_delta(nt_aligned_up, dense_prefix_end);
-    log_develop_trace(gc, compaction)(
-        "id=%d cap=" SIZE_FORMAT " dp=" PTR_FORMAT " "
-        "dp_region=" SIZE_FORMAT " " "dp_count=" SIZE_FORMAT " "
-        "cr_count=" SIZE_FORMAT " " "nt=" PTR_FORMAT,
-        id, space->capacity_in_words(), p2i(dense_prefix_end),
-        dp_region, dp_words / region_size,
-        cr_words / region_size, p2i(new_top));
   }
 }
 
@@ -1225,33 +1121,75 @@ void PSParallelCompact::summary_phase_msg(SpaceId dst_space_id,
 }
 #endif  // #ifndef PRODUCT
 
+bool PSParallelCompact::reassess_maximum_compaction(bool maximum_compaction,
+                                                    size_t total_live_words,
+                                                    MutableSpace* const old_space,
+                                                    HeapWord* full_region_prefix_end) {
+  // Check if all live objs are larger than old-gen.
+  const bool is_old_gen_overflowing = (total_live_words > old_space->capacity_in_words());
+
+  // JVM flags
+  const uint total_invocations = ParallelScavengeHeap::heap()->total_full_collections();
+  assert(total_invocations >= _maximum_compaction_gc_num, "sanity");
+  const size_t gcs_since_max = total_invocations - _maximum_compaction_gc_num;
+  const bool is_interval_ended = gcs_since_max > HeapMaximumCompactionInterval
+                              || total_invocations == HeapFirstMaximumCompactionCount;
+
+  // If all regions in old-gen are full
+  const bool is_region_full =
+    full_region_prefix_end >= _summary_data.region_align_down(old_space->top());
+
+  if (maximum_compaction || is_old_gen_overflowing || is_interval_ended || is_region_full) {
+    _maximum_compaction_gc_num = total_invocations;
+    return true;
+  }
+
+  return false;
+}
+
 void PSParallelCompact::summary_phase(bool maximum_compaction)
 {
   GCTraceTime(Info, gc, phases) tm("Summary Phase", &_gc_timer);
 
-  // Quick summarization of each space into itself, to see how much is live.
-  summarize_spaces_quick();
-
-  log_develop_trace(gc, compaction)("summary phase:  after summarizing each space to self");
-  NOT_PRODUCT(print_region_ranges());
-  NOT_PRODUCT(print_initial_summary_data(_summary_data, _space_info));
-
-  // The amount of live data that will end up in old space (assuming it fits).
-  size_t old_space_total_live = 0;
-  for (unsigned int id = old_space_id; id < last_space_id; ++id) {
-    old_space_total_live += pointer_delta(_space_info[id].new_top(),
-                                          _space_info[id].space()->bottom());
-  }
-
   MutableSpace* const old_space = _space_info[old_space_id].space();
-  const size_t old_capacity = old_space->capacity_in_words();
-  if (old_space_total_live > old_capacity) {
-    // XXX - should also try to expand
-    maximum_compaction = true;
-  }
+  {
+    size_t total_live_words = 0;
+    HeapWord* full_region_prefix_end = nullptr;
+    {
+      // old-gen
+      size_t live_words = _summary_data.live_words_in_space(old_space,
+                                                            &full_region_prefix_end);
+      total_live_words += live_words;
+    }
+    // young-gen
+    for (uint i = eden_space_id; i < last_space_id; ++i) {
+      const MutableSpace* space = _space_info[i].space();
+      size_t live_words = _summary_data.live_words_in_space(space);
+      total_live_words += live_words;
+      _space_info[i].set_new_top(space->bottom() + live_words);
+      _space_info[i].set_dense_prefix(space->bottom());
+    }
 
-  // Old generations.
-  summarize_space(old_space_id, maximum_compaction);
+    maximum_compaction = reassess_maximum_compaction(maximum_compaction,
+                                                     total_live_words,
+                                                     old_space,
+                                                     full_region_prefix_end);
+    HeapWord* dense_prefix_end =
+      maximum_compaction ? full_region_prefix_end
+                         : compute_dense_prefix_for_old_space(old_space,
+                                                              full_region_prefix_end);
+    SpaceId id = old_space_id;
+    _space_info[id].set_dense_prefix(dense_prefix_end);
+
+    if (dense_prefix_end != old_space->bottom()) {
+      fill_dense_prefix_end(id);
+      _summary_data.summarize_dense_prefix(old_space->bottom(), dense_prefix_end);
+    }
+    _summary_data.summarize(_space_info[id].split_info(),
+                            dense_prefix_end, old_space->top(), nullptr,
+                            dense_prefix_end, old_space->end(),
+                            _space_info[id].new_top_addr());
+  }
 
   // Summarize the remaining spaces in the young gen.  The initial target space
   // is the old gen.  If a space does not fit entirely into the target, then the
@@ -1413,7 +1351,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
     ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
                               false /* unregister_nmethods_during_purge */,
-                              false /* lock_codeblob_free_separately */);
+                              false /* lock_nmethod_free_separately */);
 
     marking_phase(&_gc_tracer);
 
@@ -1426,7 +1364,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     DerivedPointerTable::set_active(false);
 #endif
 
-    // adjust_roots() updates Universe::_intArrayKlassObj which is
+    // adjust_roots() updates Universe::_intArrayKlass which is
     // needed by the compaction for filling holes in the dense prefix.
     adjust_roots();
 
@@ -1534,12 +1472,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     Universe::verify("After GC");
   }
 
-  // Re-verify object start arrays
-  if (VerifyObjectStartArray &&
-      VerifyAfterGC) {
-    old_gen->verify_object_start_array();
-  }
-
   if (ZapUnusedHeapArea) {
     old_gen->object_space()->check_mangled_unused_area_complete();
   }
@@ -1571,7 +1503,7 @@ public:
     ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(_worker_id);
 
     PCMarkAndPushClosure mark_and_push_closure(cm);
-    MarkingCodeBlobClosure mark_and_push_in_blobs(&mark_and_push_closure, !CodeBlobToOopClosure::FixRelocations, true /* keepalive nmethods */);
+    MarkingNMethodClosure mark_and_push_in_blobs(&mark_and_push_closure, !NMethodToOopClosure::FixRelocations, true /* keepalive nmethods */);
 
     thread->oops_do(&mark_and_push_closure, &mark_and_push_in_blobs);
 
@@ -1742,7 +1674,7 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
     }
     {
       GCTraceTime(Debug, gc, phases) t("Free Code Blobs", gc_timer());
-      ctx->free_code_blobs();
+      ctx->free_nmethods();
     }
 
     // Prune dead klasses from subklass/sibling/implementor lists.
@@ -1808,8 +1740,8 @@ public:
       _weak_proc_task.work(worker_id, &always_alive, &adjust);
     }
     if (_sub_tasks.try_claim_task(PSAdjustSubTask_code_cache)) {
-      CodeBlobToOopClosure adjust_code(&adjust, CodeBlobToOopClosure::FixRelocations);
-      CodeCache::blobs_do(&adjust_code);
+      NMethodToOopClosure adjust_code(&adjust, NMethodToOopClosure::FixRelocations);
+      CodeCache::nmethods_do(&adjust_code);
     }
     _sub_tasks.all_tasks_claimed();
   }

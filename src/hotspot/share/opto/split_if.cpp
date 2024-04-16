@@ -30,6 +30,7 @@
 #include "opto/movenode.hpp"
 #include "opto/node.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/predicates.hpp"
 
 //------------------------------split_thru_region------------------------------
 // Split Node 'n' through merge point.
@@ -101,8 +102,9 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
       Node* m = wq.at(i);
       if (m->is_If()) {
         assert(assertion_predicate_has_loop_opaque_node(m->as_If()), "opaque node not reachable from if?");
-        Node* bol = create_bool_from_template_assertion_predicate(m, nullptr, nullptr, m->in(0));
-        _igvn.replace_input_of(m, 1, bol);
+        TemplateAssertionPredicateExpression template_assertion_predicate_expression(m->in(1)->as_Opaque4());
+        Opaque4Node* cloned_opaque4_node = template_assertion_predicate_expression.clone(m->in(0), this);
+        _igvn.replace_input_of(m, 1, cloned_opaque4_node);
       } else {
         assert(!m->is_CFG(), "not CFG expected");
         for (DUIterator_Fast jmax, j = m->fast_outs(jmax); j < jmax; j++) {
@@ -754,7 +756,7 @@ void PhaseIdealLoop::pin_array_access_nodes_dependent_on(Node* ctrl) {
     }
     Node* pinned_clone = use->pin_array_access_node();
     if (pinned_clone != nullptr) {
-      register_new_node(pinned_clone, get_ctrl(use));
+      register_new_node_with_ctrl_of(pinned_clone, use);
       _igvn.replace_node(use, pinned_clone);
       --i;
     }
