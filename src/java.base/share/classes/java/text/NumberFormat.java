@@ -65,7 +65,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * produce a number in a currency format according to the conventions of the desired
  * locale.
  *
- * <h2>Getting a NumberFormat</h2>
+ * <h2 id="factory_methods">Getting a NumberFormat</h2>
  * To get a {@code NumberFormat} for the default Locale, use one of the static
  * factory methods that return a concrete subclass of {@code NumberFormat}.
  * The following formats all provide an example of formatting the {@code Number}

@@ -64,44 +64,86 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <h2>Getting a DecimalFormat</h2>
  *
- * To get a {@code DecimalFormat} for the default Locale, use one of the {@code
- * NumberFormat} static factory methods listed below.
- * The following formats all provide an example of formatting the {@code Number}
- * "2000.50" with the {@link java.util.Locale#US US} locale as the default locale.
- *
- * <ul>
- * <li> Use {@link #getInstance()} or {@link #getNumberInstance()} to get
- * a decimal format. For example, {@code "2,000.5"}.
- * <li> Use {@link #getIntegerInstance()} to get an integer number format.
- * For example, {@code "2,000"}.
- * <li> Use {@link #getCurrencyInstance} to get a currency number format.
- * For example, {@code "$2,000.50"}.
- * <li> Use {@link #getPercentInstance} to get a format for displaying percentages.
- * For example, {@code "200,050%"}.
- * <li> Use one of the {@code DecimalFormat} constructors to obtain a {@code
- * DecimalFormat} with further customization.
- * </ul>
- *
- * <small>Note: It is recommended to use one of the NumberFormat factory methods
- * which is tailored to the conventions of the given locale to retrieve a
- * DecimalFormat.</small>
- * <p>
- * Alternatively, if a {@code DecimalFormat} for a different locale is required, use
- * one of the overloaded factory methods that take {@code Locale} as a parameter,
- * for example, {@link #getIntegerInstance(Locale)}. If the installed locale-sensitive
+ * To obtain a standard decimal format for a specific locale, including the default locale,
+ * it is recommended to call one of the {@code NumberFormat}
+ * {@link NumberFormat##factory_methods factory methods}, such as {@link NumberFormat#getInstance()}.
+ * These factory methods may not always return a {@code DecimalFormat}
+ * depending on the locale-service provider implementation
+ * installed. Thus, to use an instance method defined by {@code DecimalFormat},
+ * the {@code NumberFormat} returned by the factory method should first be type
+ * checked before cast to {@code DecimalFormat}. If the installed locale-sensitive
  * service implementation does not support the given locale, {@link Locale#ROOT}
  * will be used as a fallback.
  *
- * <h2>Using DecimalFormat</h2>
- * The following is an example of formatting and parsing in a customized localized fashion,
+ * <p>If the factory methods are not desired, use one of the constructors such
+ * as {@link #DecimalFormat(String) DecimalFormat(String pattern)}. See the {@link
+ * ##patterns Pattern} section for more information on the {@code pattern} parameter.
  *
+ * <h2>Using DecimalFormat</h2>
+ * The following is an example of formatting and parsing,
  * {@snippet lang=java :
- * DecimalFormat currencyFormat = (DecimalFormat) NumberFormat.getCurrencyInstance(Locale.US);
- * // The positive prefix is implicitly "$" for a US currency instance
- * currencyFormat.setPositiveSuffix(" dollars");
- * currencyFormat.format(100000); // returns "$100,000.00 dollars"
- * currencyFormat.parse("$100,000.00 dollars"); // returns 100000
+ * NumberFormat nFmt = NumberFormat.getCurrencyInstance(Locale.US);
+ * if (nFmt instanceof DecimalFormat dFmt) {
+ *     // cast to DecimalFormat to use setPositiveSuffix(String)
+ *     dFmt.setPositiveSuffix(" dollars");
+ *     dFmt.format(100000); // returns "$100,000.00 dollars"
+ *     dFmt.parse("$100,000.00 dollars"); // returns 100000
  * }
+ * }
+ *
+ *
+ * <h2 id="formatting">Formatting and Parsing</h2>
+ * <h3 id="rounding">Rounding</h3>
+ *
+ * When formatting, {@code DecimalFormat} can adjust its rounding using {@link
+ * #setRoundingMode(RoundingMode)}. By default, it uses
+ * {@link java.math.RoundingMode#HALF_EVEN RoundingMode.HALF_EVEN}.
+ *
+ * <h3>Digits</h3>
+ *
+ * When formatting, {@code DecimalFormat} uses the ten consecutive
+ * characters starting with the localized zero digit defined in the
+ * {@code DecimalFormatSymbols} object as digits.
+ * <p>When parsing, these digits as well as all Unicode decimal digits, as
+ * defined by {@link Character#digit Character.digit}, are recognized.
+ *
+ * <h3 id="digit_limits"> Integer and Fraction Digit Limits </h3>
+ * @implSpec
+ * When formatting a {@code Number} other than {@code BigInteger} and
+ * {@code BigDecimal}, {@code 309} is used as the upper limit for integer digits,
+ * and {@code 340} as the upper limit for fraction digits. This occurs, even if
+ * one of the {@code DecimalFormat} getter methods, for example, {@link #getMinimumFractionDigits()}
+ * returns a numerically greater value.
+ *
+ * <h3>Special Values</h3>
+ * <ul>
+ * <li><p><b>Not a Number</b> ({@code NaN}) is formatted as a string,
+ * which is typically given as "NaN". This string is determined by {@link
+ * DecimalFormatSymbols#getNaN()}. This is the only value for which the prefixes
+ * and suffixes are not attached.
+ *
+ * <li><p><b>Infinity</b> is formatted as a string, which is typically given as
+ * "&#8734;" ({@code U+221E}), with the positive or negative prefixes and suffixes
+ * attached. This string is determined by {@link DecimalFormatSymbols#getInfinity()}.
+ *
+ * <li><p><b>Negative zero</b> ({@code "-0"}) parses to
+ * <ul>
+ * <li>{@code BigDecimal(0)} if {@code isParseBigDecimal()} is
+ * true
+ * <li>{@code Long(0)} if {@code isParseBigDecimal()} is false
+ *     and {@code isParseIntegerOnly()} is true
+ * <li>{@code Double(-0.0)} if both {@code isParseBigDecimal()}
+ * and {@code isParseIntegerOnly()} are false
+ * </ul>
+ * </ul>
+ *
+ * <h2><a id="synchronization">Synchronization</a></h2>
+ *
+ * <p>
+ * Decimal formats are generally not synchronized.
+ * It is recommended to create separate format instances for each thread.
+ * If multiple threads access a format concurrently, it must be synchronized
+ * externally.
  *
  * <h2 id="patterns">DecimalFormat Pattern</h2>
  *
@@ -109,11 +151,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <em>symbols</em>. The pattern may be set directly using {@code applyPattern()},
  * or indirectly using the various API methods. The symbols are stored in a {@code
  * DecimalFormatSymbols} object. When using the {@code NumberFormat} factory
- * methods, the pattern and symbols are read from localized {@code ResourceBundle}s,
- * adhering to the given locale's conventions.
- * <p><b>For those planning to only use the factory methods, the pattern syntax may
- * not be relevant. If this is the case, continue reading at the {@link ##formatting Formatting and Parsing}
- * section.</b>
+ * methods, the pattern and symbols are created from the locale-sensitive service
+ * implementation installed.
  *
  * <p> {@code DecimalFormat} patterns have the following syntax:
  * <blockquote><pre>
@@ -156,17 +195,19 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <h3><a id="special_pattern_character">Special Pattern Characters</a></h3>
  *
- * <p>The special characters in the table below are interpreted syntatically when
+ * <p>The special characters in the table below are interpreted syntactically when
  * used in the DecimalFormat pattern.
  * They must be quoted, unless noted otherwise, if they are to appear in the
  * prefix or suffix as literals.
  *
- * <p>When calling {@link #applyPattern(String)}, use the default symbols in the
- * table. When calling {@link #applyLocalizedPattern(String)} use the corresponding
- * localized symbol.
- * When {@link #applyLocalizedPattern(String)} is called, the default symbols lose their
- * syntactical meaning, and vice versa with {@link #applyPattern(String)} with exception
- * to the non localized symbols.
+ * <p> The characters in the {@code Symbol} column are used in non-localized
+ * patterns. The corresponding characters in the {@code Localized Symbol} column are used
+ * in localized patterns, with the characters in {@code Symbol} losing their
+ * syntactical meaning. Two exceptions are the currency sign ({@code U+00A4}) and
+ * quote ({@code U+0027}), which are not localized.
+ * <p>
+ * Non-localized patterns should be used when calling {@link #applyPattern(String)}.
+ * Localized patterns should be used when calling {@link #applyLocalizedPattern(String)}.
  *
  * <blockquote>
  * <table class="striped">
@@ -195,7 +236,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *          <td>Number
  *          <td>Decimal separator or monetary decimal separator
  *     <tr>
- *          <th scope="row">{@code -}
+ *          <th scope="row">{@code - (U+002D)}
  *          <td>{@link DecimalFormatSymbols#getMinusSign()}
  *          <td>Number
  *          <td>Minus sign
@@ -234,7 +275,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *              If present in a pattern, the monetary decimal/grouping separators
  *              are used instead of the decimal/grouping separators.
  *     <tr>
- *          <th scope="row">{@code '}
+ *          <th scope="row">{@code ' (U+0027)}
  *          <td> n/a (not localized)
  *          <td>Prefix or suffix
  *          <td>Used to quote special characters in a prefix or suffix,
@@ -251,16 +292,16 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * derived from the pattern, and instead set to {@link Integer#MAX_VALUE}.
  * Otherwise, if the pattern is in scientific notation, the maximum number of
  * integer digits will be derived from the pattern. This derivation is detailed
- * in the {@link ##scientific_notation Scientific Notation} section. This behavior
- * is the typical end-user desire; {@link #setMaximumIntegerDigits(int)} can be
- * used to manually adjust the maximum integer digits.
+ * in the {@link ##scientific_notation Scientific Notation} section. {@link
+ * #setMaximumIntegerDigits(int)} can be used to manually adjust the maximum
+ * integer digits.
  *
  * <h3>Negative Subpatterns</h3>
  * A {@code DecimalFormat} pattern contains a positive and negative
  * subpattern, for example, {@code "#,##0.00;(#,##0.00)"}.  Each
  * subpattern has a prefix, numeric part, and suffix. The negative subpattern
  * is optional; if absent, then the positive subpattern prefixed with the
- * minus sign ({@code '-'}) is used as the
+ * minus sign {@code '-' (U+002D HYPHEN-MINUS)} is used as the
  * negative subpattern. That is, {@code "0.00"} alone is equivalent to
  * {@code "0.00;-0.00"}.  If there is an explicit negative subpattern, it
  * serves only to specify the negative prefix and suffix; the number of digits,
@@ -369,59 +410,6 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <li>Exponential patterns may not contain grouping separators.
  * </ul>
- *
- * <h2 id="formatting">Formatting and Parsing</h2>
- * <h3 id="rounding">Rounding</h3>
- *
- * When formatting, {@code DecimalFormat} can adjust its rounding using {@link
- * #setRoundingMode(RoundingMode)}. By default, it uses
- * {@link java.math.RoundingMode#HALF_EVEN RoundingMode.HALF_EVEN}.
- *
- * <h3>Digits</h3>
- *
- * When formatting, {@code DecimalFormat} uses the ten consecutive
- * characters starting with the localized zero digit defined in the
- * {@code DecimalFormatSymbols} object as digits.
- * <p>When parsing, these digits as well as all Unicode decimal digits, as
- * defined by {@link Character#digit Character.digit}, are recognized.
- *
- * <h3 id="digit_limits"> Integer and Fraction Digit Limits </h3>
- * @implSpec
- * When formatting a {@code Number} other than {@code BigInteger} and
- * {@code BigDecimal}, {@code 309} is used as the upper limit for integer digits,
- * and {@code 340} as the upper limit for fraction digits. This occurs, even if
- * one of the {@code DecimalFormat} getter methods, for example, {@link #getMinimumFractionDigits()}
- * returns a numerically greater value.
- *
- * <h3>Special Values</h3>
- * <ul>
- * <li><p><b>Not a Number</b> ({@code NaN}) is successfully formatted as a string,
- * which is typically given as "NaN". This string is determined by {@link
- * DecimalFormatSymbols#getNaN()}. This is the only value for which the prefixes
- * and suffixes are not attached.
- *
- * <li><p><b>Infinity</b> is formatted as a string, which is typically given as
- * "&#8734;" ({@code U+221E}), with the positive or negative prefixes and suffixes
- * attached. This string is determined by {@link DecimalFormatSymbols#getInfinity()}.
- *
- * <li><p><b>Negative zero</b> ({@code "-0"}) parses to
- * <ul>
- * <li>{@code BigDecimal(0)} if {@code isParseBigDecimal()} is
- * true
- * <li>{@code Long(0)} if {@code isParseBigDecimal()} is false
- *     and {@code isParseIntegerOnly()} is true
- * <li>{@code Double(-0.0)} if both {@code isParseBigDecimal()}
- * and {@code isParseIntegerOnly()} are false
- * </ul>
- * </ul>
- *
- * <h2><a id="synchronization">Synchronization</a></h2>
- *
- * <p>
- * Decimal formats are generally not synchronized.
- * It is recommended to create separate format instances for each thread.
- * If multiple threads access a format concurrently, it must be synchronized
- * externally.
  *
  * @spec         https://www.unicode.org/reports/tr35
  *               Unicode Locale Data Markup Language (LDML)
