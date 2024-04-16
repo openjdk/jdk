@@ -271,7 +271,6 @@ public:
   size_t ptrmap_size_in_bits()             const { return _ptrmap_size_in_bits; }
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
-  bool use_secondary_supers_table()        const { return _use_secondary_supers_table; }
   size_t heap_roots_offset()               const { return _heap_roots_offset; }
   size_t heap_oopmap_start_pos()           const { return _heap_oopmap_start_pos;}
   size_t heap_ptrmap_start_pos()           const { return _heap_ptrmap_start_pos;}

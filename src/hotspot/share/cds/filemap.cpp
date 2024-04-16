@@ -2422,7 +2422,7 @@ bool FileMapHeader::validate() {
     return false;
   }
 
-  if (!use_secondary_supers_table() && UseSecondarySupersTable) {
+  if (! _use_secondary_supers_table && UseSecondarySupersTable) {
     log_warning(cds)("The shared archive was created without UseSecondarySupersTable.");
     return false;
   }
