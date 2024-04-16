@@ -57,6 +57,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBSAPROC, \
     NAME := saproc, \
     LINK_TYPE := $(LIBSAPROC_LINK_TYPE), \
     OPTIMIZATION := HIGH, \
+    EXTRA_HEADER_DIRS := java.base:libjvm, \
     DISABLED_WARNINGS_gcc := sign-compare, \
     DISABLED_WARNINGS_gcc_ps_core.c := pointer-arith, \
     DISABLED_WARNINGS_clang_ps_core.c := pointer-arith, \
@@ -66,8 +67,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBSAPROC, \
     CFLAGS := $(LIBSAPROC_CFLAGS), \
     CXXFLAGS := $(LIBSAPROC_CFLAGS) $(LIBSAPROC_CXXFLAGS), \
     EXTRA_SRC := $(LIBSAPROC_EXTRA_SRC), \
-    JDK_LIBS_unix := -ljava, \
-    JDK_LIBS_windows := $(WIN_JAVA_LIB), \
+    JDK_LIBS := java.base:libjava, \
     LIBS_linux := $(LIBDL), \
     LIBS_macosx := \
         -framework CoreFoundation \

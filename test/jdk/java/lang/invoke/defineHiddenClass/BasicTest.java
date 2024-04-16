@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,8 @@ public class BasicTest {
 
     @BeforeTest
     static void setup() throws IOException {
-        compileSources(SRC_DIR, CLASSES_DIR, "--enable-preview", "--release", "23");
+        compileSources(SRC_DIR, CLASSES_DIR, "--enable-preview",
+                       "--release", Integer.toString(Runtime.version().feature()));
         hiddenClassBytes = Files.readAllBytes(CLASSES_DIR.resolve("HiddenClass.class"));
 
         // compile with --release 10 with no NestHost and NestMembers attribute

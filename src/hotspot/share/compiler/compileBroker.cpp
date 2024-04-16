@@ -1379,7 +1379,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
     nmethod* method_code = method->code();
     if (method_code != nullptr && (compile_reason != CompileTask::Reason_DirectivesChanged)) {
       if (compilation_is_complete(method, osr_bci, comp_level)) {
-        return (nmethod*) method_code;
+        return method_code;
       }
     }
     if (method->is_not_compilable(comp_level)) {
