@@ -97,7 +97,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * Every memory segment has a {@linkplain #maxByteAlignment() maximum byte alignment},
  * expressed as a {@code long} value. The maximum alignment is always a power of two,
  * derived from the segment address, and the segment type, as explained in more detail
- * (see <a href="#segment-alignment">below</a>).
+ * <a href="#segment-alignment">below</a>.
  * <p>
  * Every memory segment has a {@linkplain #byteSize() size}. The size of a heap segment
  * is derived from the Java array from which it is obtained. This size is predictable
