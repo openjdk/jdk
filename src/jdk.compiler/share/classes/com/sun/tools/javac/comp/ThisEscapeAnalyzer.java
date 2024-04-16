@@ -940,7 +940,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
         // Explicit 'this' reference? The expression references whatever 'this' references
         Type.ClassType currentClassType = (Type.ClassType)methodClass.sym.type;
-        if (isExplicitThisReference(types, currentClassType, tree)) {
+        if (TreeInfo.isExplicitThisReference(types, currentClassType, tree)) {
             refs.find(ThisRef.class)
               .map(ref -> new ExprRef(depth, ref))
               .forEach(refs::add);
@@ -1331,27 +1331,6 @@ class ThisEscapeAnalyzer extends TreeScanner {
         return sym != null &&
             sym.kind == VAR &&
             (sym.owner.kind == MTH || sym.owner.kind == VAR);
-    }
-
-    /** Check if the given tree is an explicit reference to the 'this' instance of the
-     *  class currently being compiled. This is true if tree is:
-     *  - An unqualified 'this' identifier
-     *  - A 'super' identifier qualified by a class name whose type is 'currentClass' or a supertype
-     *  - A 'this' identifier qualified by a class name whose type is 'currentClass' or a supertype
-     *    but also NOT an enclosing outer class of 'currentClass'.
-     */
-    private boolean isExplicitThisReference(Types types, Type.ClassType currentClass, JCFieldAccess select) {
-        Type selectedType = types.erasure(select.selected.type);
-        if (!selectedType.hasTag(CLASS))
-            return false;
-        ClassSymbol currentClassSym = (ClassSymbol)((Type.ClassType)types.erasure(currentClass)).tsym;
-        ClassSymbol selectedClassSym = (ClassSymbol)((Type.ClassType)selectedType).tsym;
-        Names names = select.name.table.names;
-        return currentClassSym.isSubClass(selectedClassSym, types) &&
-                (select.name == names._super ||
-                (select.name == names._this &&
-                    (currentClassSym == selectedClassSym ||
-                    !currentClassSym.isEnclosedBy(selectedClassSym))));
     }
 
     /** Check if the given tree is an explicit reference to the outer 'this' instance of the
