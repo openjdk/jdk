@@ -68,7 +68,6 @@ public abstract class AbstractQueuedLongSynchronizer
 
     /**
      * Constructor for subclasses to call.
-     * @since 14
      */
     public AbstractQueuedLongSynchronizer() {}
 
