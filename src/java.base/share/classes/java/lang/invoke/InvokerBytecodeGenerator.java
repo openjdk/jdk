@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,7 +276,7 @@ class InvokerBytecodeGenerator {
             return ClassFile.of().build(classDesc, new Consumer<>() {
                 @Override
                 public void accept(ClassBuilder clb) {
-                    clb.withFlags(ACC_FINAL | ACC_SUPER)
+                    clb.withFlags(ACC_ABSTRACT | ACC_SUPER)
                        .withSuperclass(INVOKER_SUPER_DESC)
                        .with(SourceFileAttribute.of(clb.constantPool().utf8Entry(SOURCE_PREFIX + name)));
                     config.accept(clb);
