@@ -73,8 +73,8 @@ unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size) {
   return size;
 }
 
-CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, int header_size,
-                   int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments) :
+CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size,
+                   int16_t frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments) :
   _oop_maps(nullptr), // will be set by set_oop_maps() call
   _name(name),
   _size(size),
@@ -84,12 +84,11 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
   _data_offset(_content_offset + align_up(cb->total_content_size(), oopSize)),
   _frame_size(frame_size),
   S390_ONLY(_ctable_offset(0) COMMA)
-  _header_size((uint16_t)header_size),
-  _frame_complete_offset((int16_t)frame_complete_offset),
+  _header_size(header_size),
+  _frame_complete_offset(frame_complete_offset),
   _kind(kind),
   _caller_must_gc_arguments(caller_must_gc_arguments)
 {
-  assert(((header_size     >> 16) == 0), "sanity");
   assert(is_aligned(_size,            oopSize), "unaligned size");
   assert(is_aligned(header_size,      oopSize), "unaligned size");
   assert(is_aligned(_relocation_size, oopSize), "unaligned size");
@@ -104,7 +103,7 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
 }
 
 // Simple CodeBlob used for simple BufferBlob.
-CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, int header_size) :
+CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size) :
   _oop_maps(nullptr),
   _name(name),
   _size(size),
@@ -116,14 +115,13 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, int header_siz
 
   S390_ONLY(_ctable_offset(0) COMMA)
 
-  _header_size((uint16_t)header_size),
-  _frame_complete_offset((int16_t)CodeOffsets::frame_never_safe),
+  _header_size(header_size),
+  _frame_complete_offset(CodeOffsets::frame_never_safe),
   _kind(kind),
   _caller_must_gc_arguments(false)
 {
   assert(is_aligned(size,            oopSize), "unaligned size");
   assert(is_aligned(header_size,     oopSize), "unaligned size");
-  assert(((header_size >> 16) == 0), "sanity");
 }
 
 void CodeBlob::purge() {
@@ -163,8 +161,8 @@ RuntimeBlob::RuntimeBlob(
   CodeBlobKind kind,
   CodeBuffer* cb,
   int         size,
-  int         header_size,
-  int         frame_complete,
+  uint16_t    header_size,
+  int16_t     frame_complete,
   int         frame_size,
   OopMapSet*  oop_maps,
   bool        caller_must_gc_arguments)
@@ -386,7 +384,7 @@ RuntimeStub::RuntimeStub(
   const char* name,
   CodeBuffer* cb,
   int         size,
-  int         frame_complete,
+  int16_t     frame_complete,
   int         frame_size,
   OopMapSet*  oop_maps,
   bool        caller_must_gc_arguments
@@ -398,7 +396,7 @@ RuntimeStub::RuntimeStub(
 
 RuntimeStub* RuntimeStub::new_runtime_stub(const char* stub_name,
                                            CodeBuffer* cb,
-                                           int frame_complete,
+                                           int16_t frame_complete,
                                            int frame_size,
                                            OopMapSet* oop_maps,
                                            bool caller_must_gc_arguments,

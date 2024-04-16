@@ -129,11 +129,11 @@ protected:
   DbgStrings _dbg_strings;
 #endif
 
-  CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, int header_size,
-           int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments);
+  CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size,
+           int16_t frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments);
 
   // Simple CodeBlob used for simple BufferBlob.
-  CodeBlob(const char* name, CodeBlobKind kind, int size, int header_size);
+  CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size);
 
   void operator delete(void* p) { }
 
@@ -268,7 +268,7 @@ class RuntimeBlob : public CodeBlob {
 
   // Creation
   // a) simple CodeBlob
-  RuntimeBlob(const char* name, CodeBlobKind kind, int size, int header_size)
+  RuntimeBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size)
     : CodeBlob(name, kind, size, header_size)
   {}
 
@@ -280,8 +280,8 @@ class RuntimeBlob : public CodeBlob {
     CodeBlobKind kind,
     CodeBuffer* cb,
     int         size,
-    int         header_size,
-    int         frame_complete,
+    uint16_t    header_size,
+    int16_t     frame_complete,
     int         frame_size,
     OopMapSet*  oop_maps,
     bool        caller_must_gc_arguments = false
@@ -375,7 +375,7 @@ class RuntimeStub: public RuntimeBlob {
     const char* name,
     CodeBuffer* cb,
     int         size,
-    int         frame_complete,
+    int16_t     frame_complete,
     int         frame_size,
     OopMapSet*  oop_maps,
     bool        caller_must_gc_arguments
@@ -388,7 +388,7 @@ class RuntimeStub: public RuntimeBlob {
   static RuntimeStub* new_runtime_stub(
     const char* stub_name,
     CodeBuffer* cb,
-    int         frame_complete,
+    int16_t     frame_complete,
     int         frame_size,
     OopMapSet*  oop_maps,
     bool        caller_must_gc_arguments,
@@ -422,7 +422,7 @@ class SingletonBlob: public RuntimeBlob {
      CodeBlobKind kind,
      CodeBuffer*  cb,
      int          size,
-     int          header_size,
+     uint16_t     header_size,
      int          frame_size,
      OopMapSet*   oop_maps
    )
