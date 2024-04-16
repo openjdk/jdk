@@ -520,9 +520,27 @@ VPointer::VPointer(VPointer* p) :
 #endif
 {}
 
-int cmp_nodes_by_idx(Node** n1, Node** n2) {
-  return (**n1)._idx - (**n2)._idx;
-}
+class Summand {
+private:
+  Node* _node;
+  bool _negate;
+
+public:
+  Summand(Node* node, bool negate) : _node(node), _negate(negate) {};
+  Summand() : Summand(nullptr, false) {};
+  static Summand positive(Node* node) { return Summand(node, false); }
+
+  Node* node() const { return _node; }
+  bool negate() const { return _negate; }
+
+  // Compare by negate, and by idx
+  static int cmp(Summand* s1, Summand* s2) {
+    if (s1->negate() != s2->negate()) {
+      return (s1->negate() ? 1 : 0) - (s2->negate() ? 1 : 0);
+    }
+    return s1->node()->_idx - s2->node()->_idx;
+  }
+};
 
 // Take int/long node. If is int, convert to long.
 Node* VPointer::convI2L(Node* n) {
@@ -534,32 +552,39 @@ Node* VPointer::convI2L(Node* n) {
   return register_if_new(new ConvI2LNode(n));
 }
 
-// TODO
+// Sometimes, nodes compute the same sum, except that they have different add/sub orders.
+// We decompose a sum into its summands, sort the summands and recombine the sum.
+// This allows us to convert different add/sub orders to a unique node.
 Node* VPointer::sort_sum(Node* sum) {
   if (sum == nullptr) { return nullptr; }
 
   BasicType bt = sum->bottom_type()->basic_type();
 
   ResourceMark rm;
-  GrowableArray<Node*> summands;
-  GrowableArray<Node*> traversal;
+  GrowableArray<Summand> summands;
+  GrowableArray<Summand> traversal;
 
-  traversal.append(sum);
+  traversal.append(Summand::positive(sum));
   for (int i = 0; i < traversal.length(); i++) {
-    Node* n = traversal.at(i);
+    Node* n           = traversal.at(i).node();
+    const bool negate = traversal.at(i).negate();
+
     int opc = n->Opcode();
     if ((opc == Op_AddL && bt == T_LONG) || (opc == Op_AddI && bt == T_INT)) {
-      traversal.append(n->in(1));
-      traversal.append(n->in(2));
+      traversal.append(Summand(n->in(1), negate));
+      traversal.append(Summand(n->in(2), negate));
+    } else if ((opc == Op_SubL && bt == T_LONG) || (opc == Op_SubI && bt == T_INT)) {
+      traversal.append(Summand(n->in(1), negate));
+      traversal.append(Summand(n->in(2), !negate));
     } else if (opc == Op_CastLL || opc == Op_CastII) {
-      traversal.append(n->in(1));
+      traversal.append(Summand(n->in(1), negate));
     } else if (opc == Op_ConvI2L) {
       // Sort the int-sum separately. We should not flatten int adds to long adds,
       // so that int-overflows inside the invariant are preserved.
       Node* int_sum = sort_sum(n->in(1));
-      summands.append(convI2L(int_sum));
+      summands.append(Summand(convI2L(int_sum), negate));
     } else {
-      summands.append(n);
+      summands.append(Summand(n, negate));
     }
     if (traversal.length() > 20) {
       // Since we traverse all paths, the number can explode
@@ -568,18 +593,32 @@ Node* VPointer::sort_sum(Node* sum) {
     }
   }
 
-  summands.sort(cmp_nodes_by_idx);
+  // Sort by negate and idx.
+  summands.sort(Summand::cmp);
 
-  Node* new_sum = summands.at(0);
-  for (int i = 1; i < summands.length(); i++) {
-    Node* n = summands.at(i);
-    new_sum = register_if_new(AddNode::make(new_sum, n, bt));
+  // Recombine the sum.
+  Node* new_sum = summands.at(0).node();
+  if (summands.at(0).negate()) {
+    Node* zero = phase()->igvn().zerocon(bt);
+    phase()->set_ctrl(zero, phase()->C->root());
+    new_sum = register_if_new(SubNode::make(zero, new_sum, bt));
   }
 
-  // sum->dump();
+  for (int i = 1; i < summands.length(); i++) {
+    Node* n           = summands.at(i).node();
+    const bool negate = summands.at(i).negate();
+    if (negate) {
+      new_sum = register_if_new(SubNode::make(new_sum, n, bt));
+    } else {
+      new_sum = register_if_new(AddNode::make(new_sum, n, bt));
+    }
+  }
+
+  // sum->dump_bfs(10,0,"#d");
   // for (int i = 0; i < summands.length(); i++) {
-  //   Node* n = summands.at(i);
-  //   tty->print(" %d: ", i); n->dump();
+  //   Node* n = summands.at(i).node();
+  //   const bool negate = summands.at(i).negate();
+  //   tty->print(" %d (neg: %d):", i, negate); n->dump();
   // }
   // new_sum->dump();
 

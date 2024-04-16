@@ -127,6 +127,22 @@ public class TestEquivalentInvariants {
           MemorySegment data = MemorySegment.ofArray(aB.clone());
           return testMemorySegmentBInvarI3d(data, 1, 2, 3, RANGE-200);
         });
+        tests.put("testMemorySegmentBInvarI3e", () -> {
+          MemorySegment data = MemorySegment.ofArray(aB.clone());
+          return testMemorySegmentBInvarI3e(data, 1, 2, 3, RANGE-200);
+        });
+        tests.put("testMemorySegmentBInvarI3f", () -> {
+          MemorySegment data = MemorySegment.ofArray(aB.clone());
+          return testMemorySegmentBInvarI3f(data, 1, 2, 3, RANGE-200);
+        });
+        tests.put("testMemorySegmentBInvarI3g", () -> {
+          MemorySegment data = MemorySegment.ofArray(aB.clone());
+          return testMemorySegmentBInvarI3g(data, 1, 2, 3, RANGE-200);
+        });
+        tests.put("testMemorySegmentBInvarI3h", () -> {
+          MemorySegment data = MemorySegment.ofArray(aB.clone());
+          return testMemorySegmentBInvarI3h(data, -1, -2, -3, RANGE-200);
+        });
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -147,7 +163,11 @@ public class TestEquivalentInvariants {
                  "testMemorySegmentBInvarI3a",
                  "testMemorySegmentBInvarI3b",
                  "testMemorySegmentBInvarI3c",
-                 "testMemorySegmentBInvarI3d"})
+                 "testMemorySegmentBInvarI3d",
+                 "testMemorySegmentBInvarI3e",
+                 "testMemorySegmentBInvarI3f",
+                 "testMemorySegmentBInvarI3g",
+                 "testMemorySegmentBInvarI3h"})
     public void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -432,6 +452,66 @@ public class TestEquivalentInvariants {
             byte v1 = m.get(ValueLayout.JAVA_BYTE, i + i2 + 1);
             m.set(ValueLayout.JAVA_BYTE, i + i1 + 0, (byte)(v0 + 1));
             m.set(ValueLayout.JAVA_BYTE, i + i2 + 1, (byte)(v1 + 1));
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static Object[] testMemorySegmentBInvarI3e(MemorySegment m, int invar1, int invar2, int invar3, int size) {
+        long i1 = (long)(invar1 + invar2 - invar3);
+        long i2 = (long)(invar2 - invar3 + invar1); // equivalent
+        for (int i = 0; i < size; i++) {
+            byte v = m.get(ValueLayout.JAVA_BYTE, i + i1);
+            m.set(ValueLayout.JAVA_BYTE, i + i2, (byte)(v + 1));
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static Object[] testMemorySegmentBInvarI3f(MemorySegment m, int invar1, int invar2, int invar3, int size) {
+        long i1 = (long)(invar1 - (invar2 - invar3));
+        long i2 = (long)(-invar2 + invar3 + invar1); // equivalent
+        for (int i = 0; i < size; i++) {
+            byte v = m.get(ValueLayout.JAVA_BYTE, i + i1);
+            m.set(ValueLayout.JAVA_BYTE, i + i2, (byte)(v + 1));
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static Object[] testMemorySegmentBInvarI3g(MemorySegment m, long invar1, long invar2, long invar3, int size) {
+        long i1 = invar1 - (invar2 - invar3);
+        long i2 = -invar2 + invar3 + invar1; // equivalent
+        for (int i = 0; i < size; i++) {
+            byte v = m.get(ValueLayout.JAVA_BYTE, i + i1);
+            m.set(ValueLayout.JAVA_BYTE, i + i2, (byte)(v + 1));
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static Object[] testMemorySegmentBInvarI3h(MemorySegment m, long invar1, long invar2, long invar3, int size) {
+        long i1 = -invar1 - invar2 - invar3;
+        long i2 = -invar2 - invar3 - invar1; // equivalent
+        for (int i = 0; i < size; i++) {
+            byte v = m.get(ValueLayout.JAVA_BYTE, i + i1);
+            m.set(ValueLayout.JAVA_BYTE, i + i2, (byte)(v + 1));
         }
         return new Object[]{ m };
     }
