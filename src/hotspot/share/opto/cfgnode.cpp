@@ -2724,10 +2724,10 @@ Node* PhiNode::merge_through_phi(Node* root_phi, PhaseIterGVN* igvn) {
           cached_vbox = vbox;
         } else if (vbox->vec_type() != cached_vbox->vec_type()) {
           // TODO: vector type mismatch can be handled with additional reinterpret casts
-          assert(!Type::cmp(vbox->vec_type(), cached_vbox->vec_type()), "inconsistent");
+          assert(!Type::equals(vbox->vec_type(), cached_vbox->vec_type()), "inconsistent");
           return nullptr; // not optimizable: vector type mismatch
         } else if (vbox->box_type() != cached_vbox->box_type()) {
-          assert(!Type::cmp(vbox->box_type(), cached_vbox->box_type()), "inconsistent");
+          assert(!Type::equals(vbox->box_type(), cached_vbox->box_type()), "inconsistent");
           return nullptr; // not optimizable: box type mismatch
         }
       } else {

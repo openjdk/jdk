@@ -2599,7 +2599,7 @@ bool LibraryCallKit::inline_vector_convert() {
         op = gvn().transform(VectorCastNode::make(cast_vopc, op, elem_bt_to, num_elem_to));
       }
     }
-  } else if (!Type::cmp(src_type, dst_type)) {
+  } else if (!Type::equals(src_type, dst_type)) {
     assert(!is_cast, "must be reinterpret");
     op = gvn().transform(new VectorReinterpretNode(op, src_type, dst_type));
   }
