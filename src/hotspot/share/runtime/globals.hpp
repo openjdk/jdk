@@ -170,9 +170,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, AlwaysSafeConstructors, false, EXPERIMENTAL,                \
           "Force safe construction, as if all fields are final.")           \
                                                                             \
-  product(bool, UnlockDiagnosticVMFeatures, trueInDebug,                    \
-          "Enable VM features relating to field diagnostics")               \
-                                                                            \
   product(bool, UnlockDiagnosticVMOptions, trueInDebug, DIAGNOSTIC,         \
           "Enable normal processing of flags relating to field diagnostics")\
                                                                             \
@@ -1779,6 +1776,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, EnableDynamicAgentLoading, true,                            \
           "Allow tools to load agents with the attach mechanism")           \
+                                                                            \
+  product(bool, EnableVMInspectCommand, trueInDebug,                        \
+          "Enable diagnostic command to inspect arbitrary objects.")        \
                                                                             \
   product(bool, PrintConcurrentLocks, false, MANAGEABLE,                    \
           "Print java.util.concurrent locks in thread dump")                \
