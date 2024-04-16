@@ -73,8 +73,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * installed. Thus, to use an instance method defined by {@code DecimalFormat},
  * the {@code NumberFormat} returned by the factory method should first be type
  * checked before cast to {@code DecimalFormat}. If the installed locale-sensitive
- * service implementation does not support the given locale, {@link Locale#ROOT}
- * will be used as a fallback.
+ * service implementation does not support the given {@code Locale}, the parent
+ * locale chain will be looked up, and a {@code Locale} used that is supported.
  *
  * <p>If the factory methods are not desired, use one of the constructors such
  * as {@link #DecimalFormat(String) DecimalFormat(String pattern)}. See the {@link
@@ -85,7 +85,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * {@snippet lang=java :
  * NumberFormat nFmt = NumberFormat.getCurrencyInstance(Locale.US);
  * if (nFmt instanceof DecimalFormat dFmt) {
- *     // cast to DecimalFormat to use setPositiveSuffix(String)
+ *     // pattern match to DecimalFormat to use setPositiveSuffix(String)
  *     dFmt.setPositiveSuffix(" dollars");
  *     dFmt.format(100000); // returns "$100,000.00 dollars"
  *     dFmt.parse("$100,000.00 dollars"); // returns 100000

@@ -76,8 +76,8 @@ import java.util.stream.Collectors;
  * installed. Thus, to use an instance method defined by {@code CompactNumberFormat},
  * the {@code NumberFormat} returned by the factory method should first be type
  * checked before cast to {@code CompactNumberFormat}. If the installed locale-sensitive
- * service implementation does not support the given locale, {@link Locale#ROOT}
- * will be used as a fallback.
+ * service implementation does not support the given {@code Locale}, the parent
+ * locale chain will be looked up, and a {@code Locale} used that is supported.
  *
  * <h2><a id="compact_number_style">Style</a></h2>
  * When using {@link NumberFormat#getCompactNumberInstance(Locale, Style)}, a

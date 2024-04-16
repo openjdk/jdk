@@ -87,8 +87,8 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * Alternatively, if a {@code NumberFormat} for a different locale is required, use
  * one of the overloaded factory methods that take {@code Locale} as a parameter,
  * for example, {@link #getIntegerInstance(Locale)}. If the installed locale-sensitive
- * service implementation does not support the given {@code Locale}, {@link Locale#ROOT}
- * will be used as the fallback {@code Locale}.
+ * service implementation does not support the given {@code Locale}, the parent
+ * locale chain will be looked up, and a {@code Locale} used that is supported.
  *
  * <h3>Locale Extensions</h3>
  * Formatting behavior can be changed when using a locale that contains any of the following
@@ -112,7 +112,9 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * in a Java Runtime Environment might not support any particular Unicode locale
  * attributes or key/type pairs.
  * <p>Below is an example of a "US" locale currency format with accounting style,
- * <blockquote>{@code NumberFormat.getInstance(Locale.forLanguageTag("en-US-u-cf-account"));}</blockquote>
+ * <blockquote>{@code NumberFormat.getCurrencyInstance(Locale.forLanguageTag("en-US-u-cf-account"));}</blockquote>
+ * With this style, a negative value is formatted enclosed in parentheses, instead
+ * of being prepended with a minus sign.
  *
  * <h2>Using NumberFormat</h2>
  * The following is an example of formatting and parsing in a localized fashion,
