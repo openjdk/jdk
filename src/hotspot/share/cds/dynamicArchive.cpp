@@ -119,7 +119,7 @@ public:
       return;
     }
 
-    log_info(cds,dynamic)("CDS dynamic dump: clinit = %ldms)",
+    log_info(cds,dynamic)("CDS dynamic dump: clinit = " INT64_FORMAT "ms)",
                           ClassLoader::class_init_time_ms());
 
     init_header();
