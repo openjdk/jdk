@@ -538,6 +538,8 @@ Node* VPointer::convI2L(Node* n) {
 Node* VPointer::sort_sum(Node* sum) {
   if (sum == nullptr) { return nullptr; }
 
+  BasicType bt = sum->bottom_type()->basic_type();
+
   ResourceMark rm;
   GrowableArray<Node*> summands;
   GrowableArray<Node*> traversal;
@@ -546,11 +548,16 @@ Node* VPointer::sort_sum(Node* sum) {
   for (int i = 0; i < traversal.length(); i++) {
     Node* n = traversal.at(i);
     int opc = n->Opcode();
-    if (opc == Op_AddL || opc == Op_AddI) {
+    if ((opc == Op_AddL && bt == T_LONG) || (opc == Op_AddI && bt == T_INT)) {
       traversal.append(n->in(1));
       traversal.append(n->in(2));
-    } else if (opc == Op_CastLL || opc == Op_ConvI2L || opc == Op_CastII) {
+    } else if (opc == Op_CastLL || opc == Op_CastII) {
       traversal.append(n->in(1));
+    } else if (opc == Op_ConvI2L) {
+      // Sort the int-sum separately. We should not flatten int adds to long adds,
+      // so that int-overflows inside the invariant are preserved.
+      Node* int_sum = sort_sum(n->in(1));
+      summands.append(convI2L(int_sum));
     } else {
       summands.append(n);
     }
@@ -563,10 +570,10 @@ Node* VPointer::sort_sum(Node* sum) {
 
   summands.sort(cmp_nodes_by_idx);
 
-  Node* new_sum = convI2L(summands.at(0));
+  Node* new_sum = summands.at(0);
   for (int i = 1; i < summands.length(); i++) {
-    Node* n = convI2L(summands.at(i));
-    new_sum = register_if_new(new AddLNode(new_sum, n));
+    Node* n = summands.at(i);
+    new_sum = register_if_new(AddNode::make(new_sum, n, bt));
   }
 
   // sum->dump();
