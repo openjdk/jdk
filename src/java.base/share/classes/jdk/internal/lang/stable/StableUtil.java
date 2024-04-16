@@ -30,10 +30,9 @@ import jdk.internal.misc.Unsafe;
 
 import static jdk.internal.misc.Unsafe.*;
 
-public final class StableUtil {
+final class StableUtil {
 
-    private StableUtil() {
-    }
+    private StableUtil() {}
 
     static final byte NOT_SET = 0;
     static final byte SET = 1;
@@ -58,14 +57,14 @@ public final class StableUtil {
      * This inserts a memory barrier, thereby establishing a happens-before constraint.
      * This prevents the reordering of store operations across the freeze boundary.
      */
-    public static void freeze() {
+    static void freeze() {
         // Issue a store fence, which is sufficient
         // to provide protection against store/store reordering.
         // See VarHandle::releaseFence
         UNSAFE.storeFence();
     }
 
-    public static long objectOffset(int index) {
+    static long objectOffset(int index) {
         return ARRAY_OBJECT_BASE_OFFSET + (long) index * ARRAY_OBJECT_INDEX_SCALE;
     }
 

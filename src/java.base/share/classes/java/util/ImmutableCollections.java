@@ -43,13 +43,9 @@ import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.lang.StableValue;
 import jdk.internal.lang.stable.StableValueElement;
-import jdk.internal.lang.stable.StableUtil;
 import jdk.internal.misc.CDS;
-import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ImmutableBitSetPredicate;
 import jdk.internal.vm.annotation.Stable;
-
-import static jdk.internal.lang.stable.StableUtil.*;
 
 /**
  * Container class for immutable collections. Not part of the public API.
@@ -60,13 +56,6 @@ import static jdk.internal.lang.stable.StableUtil.*;
  */
 @SuppressWarnings("serial")
 class ImmutableCollections {
-
-    /**
-     * Used by collections of StableValues
-     */
-    private static final class Holder {
-        private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-    }
 
     /**
      * A "salt" value used for randomizing iteration order. This is initialized once
@@ -874,7 +863,7 @@ class ImmutableCollections {
 
         Set12(E e0, E e1) {
             if (e0.equals(Objects.requireNonNull(e1))) { // implicit nullcheck of e0
-                throw new IllegalArgumentException("duplicate element: " + e0);
+                throw duplicate("element", e0);
             }
 
             this.e0 = e0;
@@ -1001,7 +990,7 @@ class ImmutableCollections {
                 E e = input[i];
                 int idx = probe(e); // implicit nullcheck of e
                 if (idx >= 0) {
-                    throw new IllegalArgumentException("duplicate element: " + e);
+                    throw duplicate("element", e);
                 } else {
                     elements[-(idx + 1)] = e;
                 }
@@ -1272,7 +1261,7 @@ class ImmutableCollections {
                     V v = Objects.requireNonNull((V)input[i+1]);
                 int idx = probe(k);
                 if (idx >= 0) {
-                    throw new IllegalArgumentException("duplicate key: " + k);
+                    throw duplicate("key", k);
                 } else {
                     int dest = -(idx + 1);
                     table[dest] = k;
@@ -1513,7 +1502,7 @@ class ImmutableCollections {
         V computeIfUnset(K key, Function<? super K, ? extends V> mapper);
     }
 
-    public static final class StableMap<K, V>
+    static final class StableMap<K, V>
             extends AbstractImmutableMap<K, StableValue<V>>
             implements Map<K, StableValue<V>>, UnsetComputable<K, V> {
 
@@ -1544,13 +1533,12 @@ class ImmutableCollections {
                 K k = Objects.requireNonNull((K) key);
                 int idx = probe(keys, k);
                 if (idx >= 0) {
-                    throw new IllegalArgumentException("duplicate key: " + k);
+                    throw duplicate("key", k);
                 } else {
                     int dest = -(idx + 1);
                     keys[dest] = k;
                 }
             }
-            StableUtil.freeze(); // ensure keys are visible if table is visible
             this.keys = keys;
             this.values = (V[]) new Object[len];
             this.sets = new byte[len];
@@ -1685,7 +1673,7 @@ class ImmutableCollections {
 
     }
 
-    public static final class StableEnumMap<K extends Enum<K>, V>
+    static final class StableEnumMap<K extends Enum<K>, V>
             extends AbstractImmutableMap<K, StableValue<V>>
             implements Map<K, StableValue<V>>, UnsetComputable<K, V> {
 
@@ -1858,6 +1846,10 @@ class ImmutableCollections {
 
     private static NoSuchElementException noKey(Object key) {
         return new NoSuchElementException("No such key:" + key);
+    }
+
+    private static IllegalArgumentException duplicate(String type, Object element) {
+        return new IllegalArgumentException("duplicate " + type + ": " + element);
     }
 
 }
