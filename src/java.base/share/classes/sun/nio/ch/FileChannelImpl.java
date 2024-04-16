@@ -301,7 +301,7 @@ public class FileChannelImpl
                 if (!isOpen())
                     return 0;
                 do {
-                    boolean attempted = Blocker.begin(sync | direct);
+                    boolean attempted = Blocker.begin(sync || direct);
                     try {
                         n = IOUtil.write(fd, src, -1, direct, alignment, nd);
                     } finally {
@@ -337,7 +337,7 @@ public class FileChannelImpl
                 if (!isOpen())
                     return 0;
                 do {
-                    boolean attempted = Blocker.begin(sync | direct);
+                    boolean attempted = Blocker.begin(sync || direct);
                     try {
                         n = IOUtil.write(fd, srcs, offset, length, direct, alignment, nd);
                     } finally {
@@ -1091,7 +1091,7 @@ public class FileChannelImpl
             if (!isOpen())
                 return -1;
             do {
-                boolean attempted = Blocker.begin(sync | direct);
+                boolean attempted = Blocker.begin(sync || direct);
                 try {
                     n = IOUtil.write(fd, src, position, direct, alignment, nd);
                 } finally {

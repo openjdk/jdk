@@ -2256,16 +2256,6 @@ public final class System {
                 Blocker.end(attempted);
             }
         }
-
-        @Override
-        public long transferTo(OutputStream out) throws IOException {
-            boolean attempted = Blocker.begin();
-            try {
-                return super.transferTo(out);
-            } finally {
-                Blocker.end(attempted);
-            }
-        }
     }
 
     /**

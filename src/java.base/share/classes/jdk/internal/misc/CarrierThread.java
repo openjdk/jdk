@@ -34,6 +34,7 @@ import java.util.concurrent.ForkJoinWorkerThread;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaUtilConcurrentFJPAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.Continuation;
 
 /**
  * A ForkJoinWorkerThread that can be used as a carrier thread.
@@ -55,7 +56,9 @@ public class CarrierThread extends ForkJoinWorkerThread {
     private static final int COMPENSATE_IN_PROGRESS = 1;
     private static final int COMPENSATING = 2;
     private int compensating;
-    private long compensateValue;   // FJP value to adjust release counts
+
+    // FJP value to adjust release counts
+    private long compensateValue;
 
     @SuppressWarnings("this-escape")
     public CarrierThread(ForkJoinPool pool) {
@@ -68,29 +71,29 @@ public class CarrierThread extends ForkJoinWorkerThread {
     /**
      * Mark the start of a blocking operation.
      */
-    public void beginBlocking() {
+    public boolean beginBlocking() {
         assert Thread.currentThread().isVirtual() && JLA.currentCarrierThread() == this;
+        assert compensating == NOT_COMPENSATING || compensating == COMPENSATING;
+
         if (compensating == NOT_COMPENSATING) {
-            compensating = COMPENSATE_IN_PROGRESS;
-
-            // FJP.tryCompensate to create or re-activate a spare thread
-            long value;
+            // don't preempt when attempting to compensate
+            Continuation.pin();
             try {
-                value = ForkJoinPools.beginCompensatedBlock(getPool());
-            } catch (Throwable e) {
-                if (compensating == COMPENSATE_IN_PROGRESS) {
-                    compensating = NOT_COMPENSATING;
-                }
-                throw e;
-            }
+                compensating = COMPENSATE_IN_PROGRESS;
 
-            if (compensating == COMPENSATE_IN_PROGRESS) {
-                compensateValue = value;
+                // Uses FJP.tryCompensate to start or re-activate a spare thread
+                compensateValue = ForkJoinPools.beginCompensatedBlock(getPool());
                 compensating = COMPENSATING;
-            } else {
-                // forced preemption or preempted when attempting to compensate
-                ForkJoinPools.endCompensatedBlock(getPool(), value);
+                return true;
+            } catch (Throwable e) {
+                // exception starting spare thread
+                compensating = NOT_COMPENSATING;
+                throw e;
+            } finally {
+                Continuation.unpin();
             }
+        } else {
+            return false;
         }
     }
 
@@ -102,6 +105,7 @@ public class CarrierThread extends ForkJoinWorkerThread {
         if (compensating == COMPENSATING) {
             ForkJoinPools.endCompensatedBlock(getPool(), compensateValue);
             compensating = NOT_COMPENSATING;
+            compensateValue = 0;
         }
     }
 
