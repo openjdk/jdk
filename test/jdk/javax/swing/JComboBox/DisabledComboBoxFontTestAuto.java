@@ -48,7 +48,6 @@ import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
 public class DisabledComboBoxFontTestAuto {
     private static JComboBox combo, combo2;
     private static BufferedImage enabledImage, disabledImage, enabledImage2, disabledImage2;
-    private static Path testDir;
     private static String lafName;
     private static StringBuffer failingLafs;
     private static int COMBO_HEIGHT, COMBO_WIDTH, COMBO2_HEIGHT, COMBO2_WIDTH;
@@ -94,6 +93,7 @@ public class DisabledComboBoxFontTestAuto {
 
     private static void testMethod() throws IOException {
         Color eColor1, eColor2, dColor1, dColor2;
+        Path testDir = Path.of(System.getProperty("test.classes", "."));
 
         // Use center line to compare RGB values
         int y = enabledImage.getHeight() / 2;
@@ -150,7 +150,6 @@ public class DisabledComboBoxFontTestAuto {
     public static void main(String[] args) throws Exception {
         lafName = "null";
         failingLafs = new StringBuffer();
-        testDir = Path.of(System.getProperty("test.classes", "."));
         for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
             // Change Motif LAF name to avoid using slash in saved image file path
             lafName = laf.getName().equals("CDE/Motif") ? "Motif" : laf.getName();
