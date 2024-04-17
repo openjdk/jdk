@@ -609,8 +609,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * the segment {@linkplain #address() address()} and, if it is a heap segment,
      * the type of the {@linkplain #heapBase() backing heap storage}.
      * <p>
-     * This method can be used to ensure, a {@code segment} is sufficiently aligned
-     * with a {@code layout}:
+     * This method can be used to ensure that a segment is sufficiently aligned
+     * with a layout:
      * {@snippet lang=java:
      * MemoryLayout layout = ...
      * MemorySegment segment = ...
