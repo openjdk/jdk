@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,27 @@
  * questions.
  */
 
- // key: compiler.note.preview.filename
- // key: compiler.note.preview.recompile
- // key: compiler.misc.unexpected.ret.val
- // key: compiler.err.prob.found.req
- // options: --enable-preview -source ${jdk.version}
+package jdk.jfr.startupargs;
 
-import java.lang.*;
-import java.lang.StringTemplate.Processor;
+import jdk.jfr.Recording;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
-class StringTemplateRawProcessor {
-    void m() {
-        Processor processor = ts -> ts.interpolate();
-        try {
-            int x = 10, y = 20;
-            return processor."\{x} + \{y} = \{x + y}";
-        } catch (Throwable x) {
-            throw new RuntimeException(x);
-        }
+/**
+ * @test
+ * @key jfr
+ * @requires vm.hasJFR
+ * @library /test/lib /test/jdk
+ * @run main jdk.jfr.startupargs.TestStartHelp
+ */
+public class TestStartHelp {
+
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-XX:StartFlightRecording:help");
+        OutputAnalyzer out = ProcessTools.executeProcess(pb);
+        out.shouldContain("Syntax : -XX:StartFlightRecording:[options]");
+        out.shouldContain("options are separated with a comma.");
+        out.shouldHaveExitValue(0);
     }
 }
-

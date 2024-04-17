@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,23 @@
 
 /*
  * @test
- * @bug 8313809
- * @summary String template fails with java.lang.StringIndexOutOfBoundsException if last fragment is UTF16
-.
- * @enablePreview true
+ * @bug 8329595
+ * @summary Verify spurious "might not have been initialized" error on static final field
+ * @run main StaticFinalNestedClass
  */
-
-import static java.util.FormatProcessor.FMT;
-
-public class T8313809 {
-    public static void main(final String[] args) throws Exception {
-        double sum = 12.34;
-        final String message = FMT."The sum is : %f\{sum} €"; // this fails
-        if (!message.equals("The sum is : 12.340000 €")) {
-            throw new RuntimeException("Incorrect result");
+public class StaticFinalNestedClass {
+    public class Inner {                    // note this inner class is NOT static
+        public static final String NAME;
+        static {
+            try {
+                NAME = "bob";
+            } catch (Exception e) {
+                throw new Error(e);
+            }
         }
     }
-}
 
+    public static void main(String[] args) {
+        new StaticFinalNestedClass().new Inner();
+    }
+}

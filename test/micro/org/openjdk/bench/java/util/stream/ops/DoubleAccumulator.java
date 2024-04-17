@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,20 +20,26 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package org.openjdk.bench.java.util.stream.ops;
 
-/*
- * @test T8312814
- * @summary Verify proper behavior of TransType w.r.t. templated Strings
- * @enablePreview
- * @compile T8312814.java
- */
+public class DoubleAccumulator {
 
+    double acc;
 
-import java.util.List;
-
-public class T8312814 {
-    void x(List<? extends StringTemplate.Processor<String, RuntimeException>> list) {
-        list.get(0)."";
+    public DoubleAccumulator() {
+        acc = 0;
     }
-}
 
+    public void add(double v) {
+        acc += v;
+    }
+
+    public void merge(DoubleAccumulator other) {
+        acc += other.acc;
+    }
+
+    public double get() {
+        return acc;
+    }
+
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -741,7 +741,7 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
     st->print("(invalid) ");
     goto cleanup;
   } else {
-    st->print("(base - 0x%X) ", PTRDIFF_BYTES(stack_base, cur_sp));
+    st->print("(base - 0x%lX) ", PTRDIFF_BYTES(stack_base, cur_sp));
   }
   st->cr();
 
@@ -797,7 +797,7 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
       st->print_cr("trying to recover and find backchain...");
       sp = try_find_backchain(sp_last, stack_base, stack_size);
       if (sp) {
-        st->print_cr("found something which looks like a backchain at " PTR_FORMAT ", after 0x%x bytes... ",
+        st->print_cr("found something which looks like a backchain at " PTR_FORMAT ", after 0x%lx bytes... ",
             p2i(sp), PTRDIFF_BYTES(sp, sp_last));
       } else {
         st->print_cr("did not find a backchain, giving up.");

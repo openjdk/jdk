@@ -30,6 +30,7 @@
 #include "os_posix.hpp"
 #include "services/attachListener.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/macros.hpp"
 
 #include <unistd.h>
 #include <signal.h>
@@ -38,14 +39,17 @@
 #include <sys/un.h>
 #include <sys/stat.h>
 
+#if INCLUDE_SERVICES
+#ifndef AIX
+
 #ifndef UNIX_PATH_MAX
 #define UNIX_PATH_MAX   sizeof(((struct sockaddr_un *)0)->sun_path)
 #endif
 
-// The attach mechanism on Linux uses a UNIX domain socket. An attach listener
-// thread is created at startup or is created on-demand via a signal from
-// the client tool. The attach listener creates a socket and binds it to a file
-// in the filesystem. The attach listener then acts as a simple (single-
+// The attach mechanism on Linux and BSD uses a UNIX domain socket. An attach
+// listener thread is created at startup or is created on-demand via a signal
+// from the client tool. The attach listener creates a socket and binds it to a
+// file in the filesystem. The attach listener then acts as a simple (single-
 // threaded) server - it waits for a client to connect, reads the request,
 // executes it, and returns the response to the client via the socket
 // connection.
@@ -59,9 +63,9 @@
 //    of the client matches this process.
 
 // forward reference
-class LinuxAttachOperation;
+class NixAttachOperation;
 
-class LinuxAttachListener: AllStatic {
+class NixAttachListener: AllStatic {
  private:
   // the path to which we bind the UNIX domain socket
   static char _path[UNIX_PATH_MAX];
@@ -73,7 +77,7 @@ class LinuxAttachListener: AllStatic {
   static bool _atexit_registered;
 
   // reads a request from the given connected socket
-  static LinuxAttachOperation* read_request(int s);
+  static NixAttachOperation* read_request(int s);
 
  public:
   enum {
@@ -106,10 +110,10 @@ class LinuxAttachListener: AllStatic {
   // write the given buffer to a socket
   static int write_fully(int s, char* buf, size_t len);
 
-  static LinuxAttachOperation* dequeue();
+  static NixAttachOperation* dequeue();
 };
 
-class LinuxAttachOperation: public AttachOperation {
+class NixAttachOperation: public AttachOperation {
  private:
   // the connection to the client
   int _socket;
@@ -120,16 +124,16 @@ class LinuxAttachOperation: public AttachOperation {
   void set_socket(int s)                                { _socket = s; }
   int socket() const                                    { return _socket; }
 
-  LinuxAttachOperation(char* name) : AttachOperation(name) {
+  NixAttachOperation(char* name) : AttachOperation(name) {
     set_socket(-1);
   }
 };
 
 // statics
-char LinuxAttachListener::_path[UNIX_PATH_MAX];
-bool LinuxAttachListener::_has_path;
-volatile int LinuxAttachListener::_listener = -1;
-bool LinuxAttachListener::_atexit_registered = false;
+char NixAttachListener::_path[UNIX_PATH_MAX];
+bool NixAttachListener::_has_path;
+volatile int NixAttachListener::_listener = -1;
+bool NixAttachListener::_atexit_registered = false;
 
 // Supporting class to help split a buffer into individual components
 class ArgumentIterator : public StackObj {
@@ -164,22 +168,22 @@ class ArgumentIterator : public StackObj {
 // bound too.
 extern "C" {
   static void listener_cleanup() {
-    int s = LinuxAttachListener::listener();
+    int s = NixAttachListener::listener();
     if (s != -1) {
-      LinuxAttachListener::set_listener(-1);
+      NixAttachListener::set_listener(-1);
       ::shutdown(s, SHUT_RDWR);
       ::close(s);
     }
-    if (LinuxAttachListener::has_path()) {
-      ::unlink(LinuxAttachListener::path());
-      LinuxAttachListener::set_path(nullptr);
+    if (NixAttachListener::has_path()) {
+      ::unlink(NixAttachListener::path());
+      NixAttachListener::set_path(nullptr);
     }
   }
 }
 
 // Initialization - create a listener socket and bind it to a file
 
-int LinuxAttachListener::init() {
+int NixAttachListener::init() {
   char path[UNIX_PATH_MAX];          // socket file
   char initial_path[UNIX_PATH_MAX];  // socket file during setup
   int listener;                      // listener socket (file descriptor)
@@ -225,7 +229,9 @@ int LinuxAttachListener::init() {
     RESTARTABLE(::chmod(initial_path, S_IREAD|S_IWRITE), res);
     if (res == 0) {
       // make sure the file is owned by the effective user and effective group
-      // e.g. the group could be inherited from the directory in case the s bit is set
+      // e.g. the group could be inherited from the directory in case the s bit
+      // is set. The default behavior on mac is that new files inherit the group
+      // of the directory that they are created in.
       RESTARTABLE(::chown(initial_path, geteuid(), getegid()), res);
       if (res == 0) {
         res = ::rename(initial_path, path);
@@ -249,7 +255,7 @@ int LinuxAttachListener::init() {
 // after the peer credentials have been checked and in the worst case it just
 // means that the attach listener thread is blocked.
 //
-LinuxAttachOperation* LinuxAttachListener::read_request(int s) {
+NixAttachOperation* NixAttachListener::read_request(int s) {
   char ver_str[8];
   os::snprintf_checked(ver_str, sizeof(ver_str), "%d", ATTACH_PROTOCOL_VER);
 
@@ -321,7 +327,7 @@ LinuxAttachOperation* LinuxAttachListener::read_request(int s) {
     return nullptr;
   }
 
-  LinuxAttachOperation* op = new LinuxAttachOperation(name);
+  NixAttachOperation* op = new NixAttachOperation(name);
 
   for (int i=0; i<AttachOperation::arg_count_max; i++) {
     char* arg = args.next();
@@ -340,13 +346,12 @@ LinuxAttachOperation* LinuxAttachListener::read_request(int s) {
   return op;
 }
 
-
 // Dequeue an operation
 //
-// In the Linux implementation there is only a single operation and clients
-// cannot queue commands (except at the socket level).
+// In the Linux and BSD implementations, there is only a single operation and
+// clients cannot queue commands (except at the socket level).
 //
-LinuxAttachOperation* LinuxAttachListener::dequeue() {
+NixAttachOperation* NixAttachListener::dequeue() {
   for (;;) {
     int s;
 
@@ -359,23 +364,43 @@ LinuxAttachOperation* LinuxAttachListener::dequeue() {
     }
 
     // get the credentials of the peer and check the effective uid/guid
+#ifdef LINUX
     struct ucred cred_info;
     socklen_t optlen = sizeof(cred_info);
-    if (::getsockopt(s, SOL_SOCKET, SO_PEERCRED, (void*)&cred_info, &optlen) == -1) {
+    if (::getsockopt(s, SOL_SOCKET, SO_PEERCRED, (void *)&cred_info, &optlen) ==
+        -1) {
       log_debug(attach)("Failed to get socket option SO_PEERCRED");
       ::close(s);
       continue;
     }
 
-    if (!os::Posix::matches_effective_uid_and_gid_or_root(cred_info.uid, cred_info.gid)) {
+    if (!os::Posix::matches_effective_uid_and_gid_or_root(cred_info.uid,
+                                                          cred_info.gid)) {
       log_debug(attach)("euid/egid check failed (%d/%d vs %d/%d)",
-              cred_info.uid, cred_info.gid, geteuid(), getegid());
+                        cred_info.uid, cred_info.gid, geteuid(), getegid());
+      ::close(s);
+      continue;
+    }
+#endif
+#ifdef BSD
+    uid_t puid;
+    gid_t pgid;
+    if (::getpeereid(s, &puid, &pgid) != 0) {
+      log_debug(attach)("Failed to get peer id");
       ::close(s);
       continue;
     }
 
+    if (!os::Posix::matches_effective_uid_and_gid_or_root(puid, pgid)) {
+      log_debug(attach)("euid/egid check failed (%d/%d vs %d/%d)", puid, pgid,
+                        geteuid(), getegid());
+      ::close(s);
+      continue;
+    }
+#endif
+
     // peer credential look okay so we read the request
-    LinuxAttachOperation* op = read_request(s);
+    NixAttachOperation* op = read_request(s);
     if (op == nullptr) {
       ::close(s);
       continue;
@@ -386,7 +411,7 @@ LinuxAttachOperation* LinuxAttachListener::dequeue() {
 }
 
 // write the given buffer to the socket
-int LinuxAttachListener::write_fully(int s, char* buf, size_t len) {
+int NixAttachListener::write_fully(int s, char* buf, size_t len) {
   do {
     ssize_t n = ::write(s, buf, len);
     if (n == -1) {
@@ -408,18 +433,18 @@ int LinuxAttachListener::write_fully(int s, char* buf, size_t len) {
 // if there are operations that involves a very big reply then it the
 // socket could be made non-blocking and a timeout could be used.
 
-void LinuxAttachOperation::complete(jint result, bufferedStream* st) {
+void NixAttachOperation::complete(jint result, bufferedStream* st) {
   JavaThread* thread = JavaThread::current();
   ThreadBlockInVM tbivm(thread);
 
   // write operation result
   char msg[32];
   os::snprintf_checked(msg, sizeof(msg), "%d\n", result);
-  int rc = LinuxAttachListener::write_fully(this->socket(), msg, strlen(msg));
+  int rc = NixAttachListener::write_fully(this->socket(), msg, strlen(msg));
 
   // write any result data
   if (rc == 0) {
-    LinuxAttachListener::write_fully(this->socket(), (char*) st->base(), st->size());
+    NixAttachListener::write_fully(this->socket(), (char*) st->base(), st->size());
     ::shutdown(this->socket(), 2);
   }
 
@@ -436,13 +461,13 @@ AttachOperation* AttachListener::dequeue() {
   JavaThread* thread = JavaThread::current();
   ThreadBlockInVM tbivm(thread);
 
-  AttachOperation* op = LinuxAttachListener::dequeue();
+  AttachOperation* op = NixAttachListener::dequeue();
 
   return op;
 }
 
 // Performs initialization at vm startup
-// For Linux we remove any stale .java_pid file which could cause
+// For Linux and BSD we remove any stale .java_pid file which could cause
 // an attaching process to think we are ready to receive on the
 // domain socket before we are properly initialized
 
@@ -468,7 +493,7 @@ int AttachListener::pd_init() {
   JavaThread* thread = JavaThread::current();
   ThreadBlockInVM tbivm(thread);
 
-  int ret_code = LinuxAttachListener::init();
+  int ret_code = NixAttachListener::init();
 
   return ret_code;
 }
@@ -476,10 +501,10 @@ int AttachListener::pd_init() {
 bool AttachListener::check_socket_file() {
   int ret;
   struct stat st;
-  ret = stat(LinuxAttachListener::path(), &st);
+  ret = stat(NixAttachListener::path(), &st);
   if (ret == -1) { // need to restart attach listener.
     log_debug(attach)("Socket file %s does not exist - Restart Attach Listener",
-                      LinuxAttachListener::path());
+                      NixAttachListener::path());
 
     listener_cleanup();
 
@@ -516,12 +541,13 @@ bool AttachListener::is_init_trigger() {
   char fn[PATH_MAX + 1];
   int ret;
   struct stat st;
-  os::snprintf_checked(fn, sizeof(fn), ".attach_pid%d", os::current_process_id());
+  os::snprintf_checked(fn, sizeof(fn), ".attach_pid%d",
+                       os::current_process_id());
   RESTARTABLE(::stat(fn, &st), ret);
   if (ret == -1) {
     log_trace(attach)("Failed to find attach file: %s, trying alternate", fn);
-    snprintf(fn, sizeof(fn), "%s/.attach_pid%d",
-             os::get_temp_directory(), os::current_process_id());
+    snprintf(fn, sizeof(fn), "%s/.attach_pid%d", os::get_temp_directory(),
+             os::current_process_id());
     RESTARTABLE(::stat(fn, &st), ret);
     if (ret == -1) {
       log_debug(attach)("Failed to find attach file: %s", fn);
@@ -553,3 +579,7 @@ void AttachListener::pd_data_dump() {
 void AttachListener::pd_detachall() {
   // do nothing for now
 }
+
+#endif // !AIX
+
+#endif // INCLUDE_SERVICES

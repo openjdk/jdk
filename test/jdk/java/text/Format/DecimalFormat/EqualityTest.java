@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,33 @@
  * questions.
  */
 
- // key: compiler.note.preview.filename
- // key: compiler.note.preview.recompile
- // key: compiler.err.unclosed.text.block
- // key: compiler.err.text.block.template.is.not.well.formed
- // key: compiler.err.premature.eof
- // options: --enable-preview -source ${jdk.version}
+/*
+ * @test
+ * @bug 8327640
+ * @summary Check parseStrict correctness for DecimalFormat.equals()
+ * @run junit EqualityTest
+ */
 
-import java.lang.*;
+import org.junit.jupiter.api.Test;
 
-class StringTemplateUnclosedTextBlock {
-    String m() {
-        int x = 10;
-        return STR."""
-                aaa
-                \{x
-                """
-        ;
+import java.text.DecimalFormat;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
+public class EqualityTest {
+
+    private static final DecimalFormat fmt1 = new DecimalFormat();
+    private static final DecimalFormat fmt2 = new DecimalFormat();
+
+    // Ensure that parseStrict is reflected correctly for DecimalFormat.equals()
+    @Test
+    public void checkStrictTest() {
+        // parseStrict is false by default
+        assertEquals(fmt1, fmt2);
+        fmt1.setStrict(true);
+        assertNotEquals(fmt1, fmt2);
+        fmt2.setStrict(true);
+        assertEquals(fmt1, fmt2);
     }
 }
