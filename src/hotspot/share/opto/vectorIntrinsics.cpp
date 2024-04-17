@@ -2696,7 +2696,7 @@ bool LibraryCallKit::inline_vector_insert() {
     default: fatal("%s", type2name(elem_bt)); break;
   }
 
-  Node* operation = gvn().transform(VectorInsertNode::make(opd, insert_val, idx->get_con()));
+  Node* operation = gvn().transform(VectorInsertNode::make(opd, insert_val, idx->get_con(), gvn()));
 
   Node* vbox = box_vector(operation, vbox_type, elem_bt, num_elem);
   set_result(vbox);

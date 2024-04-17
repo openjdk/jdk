@@ -32,9 +32,6 @@
 #include "memory/virtualspace.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-// Forward declarations
-class HeapRegion;
-
 // This implementation of "G1BlockOffsetTable" divides the covered region
 // into "N"-word subregions (where "N" = 2^"LogN".  An array with an entry
 // for each such subregion indicates how far back one must go to find the
@@ -112,7 +109,8 @@ public:
     return obj_end > cur_card_boundary;
   }
 
-  void verify(const HeapRegion* hr) const;
+  void verify_offset(uint8_t* card_index, uint8_t upper) const NOT_DEBUG_RETURN;
+  void verify_for_block(HeapWord* blk_start, HeapWord* blk_end) const NOT_DEBUG_RETURN;
 
   // Returns the address of the start of the block reaching into the card containing
   // "addr".
