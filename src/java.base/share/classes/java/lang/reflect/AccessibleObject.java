@@ -387,15 +387,11 @@ public class AccessibleObject implements AnnotatedElement {
         msg += " " + pn + "\"" ;
         if (caller != null)
             msg += " to " + caller.getModule();
-        throw newInaccessibleObjectException(msg);
-    }
-
-    InaccessibleObjectException newInaccessibleObjectException(String msg) {
         InaccessibleObjectException e = new InaccessibleObjectException(msg);
         if (printStackTraceWhenAccessFails()) {
             e.printStackTrace(System.err);
         }
-        return e;
+        throw e;
     }
 
     private boolean isSubclassOf(Class<?> queryClass, Class<?> ofClass) {
