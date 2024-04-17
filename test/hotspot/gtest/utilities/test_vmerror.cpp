@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,8 @@ TEST_VM_ASSERT_MSG(vmErrorTest, resourceMark,
 const char* const str = "hello";
 const size_t      num = 500;
 
-TEST_VM_ASSERT_MSG(vmErrorTest, assert1, "assert.str == NULL. failed: expected null") {
-  vmassert(str == NULL, "expected null");
+TEST_VM_ASSERT_MSG(vmErrorTest, assert1, "assert.str == nullptr. failed: expected null") {
+  vmassert(str == nullptr, "expected null");
 }
 
 TEST_VM_ASSERT_MSG(vmErrorTest, assert2, "assert.num == 1023 && .str == 'X'. failed: num=500 str=\"hello\"") {
@@ -52,8 +52,8 @@ TEST_VM_ASSERT_MSG(vmErrorTest, assert2, "assert.num == 1023 && .str == 'X'. fai
            "num=" SIZE_FORMAT " str=\"%s\"", num, str);
 }
 
-TEST_VM_ASSERT_MSG(vmErrorTest, guarantee1, "guarantee.str == NULL. failed: expected null") {
-  guarantee(str == NULL, "expected null");
+TEST_VM_ASSERT_MSG(vmErrorTest, guarantee1, "guarantee.str == nullptr. failed: expected null") {
+  guarantee(str == nullptr, "expected null");
 }
 
 TEST_VM_ASSERT_MSG(vmErrorTest, guarantee2, "guarantee.num == 1023 && .str == 'X'. failed: num=500 str=\"hello\"") {

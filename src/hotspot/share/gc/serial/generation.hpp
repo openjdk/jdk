@@ -27,12 +27,14 @@
 
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/referenceProcessor.hpp"
+#include "gc/shared/space.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/perfData.hpp"
+#include "runtime/prefetch.inline.hpp"
 
 // A Generation models a heap area for similarly-aged objects.
 // It will contain one ore more spaces holding the actual objects.
@@ -41,7 +43,7 @@
 //
 // Generation                      - abstract base class
 // - DefNewGeneration              - allocation area (copy collected)
-// - TenuredGeneration             - tenured (old object) space (markSweepCompact)
+// - TenuredGeneration             - tenured (old object) space (mark-compact)
 //
 // The system configuration currently allowed is:
 //
@@ -51,16 +53,11 @@
 class DefNewGeneration;
 class GCMemoryManager;
 class ContiguousSpace;
-
 class OopClosure;
-class GCStats;
 
 class Generation: public CHeapObj<mtGC> {
   friend class VMStructs;
  private:
-  MemRegion _prev_used_region; // for collectors that want to "remember" a value for
-                               // used region at some specific point during collection.
-
   GCMemoryManager* _gc_manager;
 
  protected:
@@ -75,9 +72,6 @@ class Generation: public CHeapObj<mtGC> {
 
   // Performance Counters
   CollectorCounters* _gc_counters;
-
-  // Statistics for garbage collection
-  GCStats* _gc_stats;
 
   // Initialize the generation.
   Generation(ReservedSpace rs, size_t initial_byte_size);
@@ -108,42 +102,12 @@ class Generation: public CHeapObj<mtGC> {
   // The largest number of contiguous free bytes in this or any higher generation.
   virtual size_t max_contiguous_available() const;
 
-  // Return an estimate of the maximum allocation that could be performed
-  // in the generation without triggering any collection or expansion
-  // activity.  It is "unsafe" because no locks are taken; the result
-  // should be treated as an approximation, not a guarantee, for use in
-  // heuristic resizing decisions.
-  virtual size_t unsafe_max_alloc_nogc() const = 0;
-
-  // Returns true if this generation cannot be expanded further
-  // without a GC. Override as appropriate.
-  virtual bool is_maximal_no_gc() const {
-    return _virtual_space.uncommitted_size() == 0;
-  }
-
   MemRegion reserved() const { return _reserved; }
-
-  // Returns a region guaranteed to contain all the objects in the
-  // generation.
-  virtual MemRegion used_region() const { return _reserved; }
-
-  MemRegion prev_used_region() const { return _prev_used_region; }
-  virtual void  save_used_region()   { _prev_used_region = used_region(); }
-
-  // Returns "TRUE" iff "p" points into the committed areas in the generation.
-  // For some kinds of generations, this may be an expensive operation.
-  // To avoid performance problems stemming from its inadvertent use in
-  // product jvm's, we restrict its use to assertion checking or
-  // verification only.
-  virtual bool is_in(const void* p) const;
 
   /* Returns "TRUE" iff "p" points into the reserved area of the generation. */
   bool is_in_reserved(const void* p) const {
     return _reserved.contains(p);
   }
-
-  // Iteration - do not use for time critical operations
-  virtual void space_iterate(SpaceClosure* blk, bool usedOnly = false) = 0;
 
   // Returns "true" iff this generation should be used to allocate an
   // object of the given size.  Young generations might
@@ -168,15 +132,6 @@ class Generation: public CHeapObj<mtGC> {
 
   // Thread-local allocation buffers
   virtual bool supports_tlab_allocation() const { return false; }
-
-  // "obj" is the address of an object in a younger generation.  Allocate space
-  // for "obj" in the current (or some higher) generation, and copy "obj" into
-  // the newly allocated space, if possible, returning the result (or null if
-  // the allocation failed).
-  //
-  // The "obj_size" argument is just obj->size(), passed along so the caller can
-  // avoid repeating the virtual call to retrieve it.
-  virtual oop promote(oop obj, size_t obj_size);
 
   // Returns "true" iff collect() should subsequently be called on this
   // this generation. See comment below.
@@ -210,29 +165,9 @@ class Generation: public CHeapObj<mtGC> {
   // still unsuccessful, return "null".
   virtual HeapWord* expand_and_allocate(size_t word_size, bool is_tlab) = 0;
 
-  // Save the high water marks for the used space in a generation.
-  virtual void record_spaces_top() {}
-
-  // Generations may keep statistics about collection. This method
-  // updates those statistics. current_generation is the generation
-  // that was most recently collected. This allows the generation to
-  // decide what statistics are valid to collect. For example, the
-  // generation can decide to gather the amount of promoted data if
-  // the collection of the young generation has completed.
-  GCStats* gc_stats() const { return _gc_stats; }
-  virtual void update_gc_stats(Generation* current_generation, bool full) {}
-
   // Printing
   virtual const char* name() const = 0;
   virtual const char* short_name() const = 0;
-
-  // Block abstraction.
-
-  // Returns the address of the start of the "block" that contains the
-  // address "addr".  We say "blocks" instead of "object" since some heaps
-  // may not pack objects densely; a chunk may either be an object or a
-  // non-object.
-  virtual HeapWord* block_start(const void* addr) const;
 
   virtual void print() const;
   virtual void print_on(outputStream* st) const;
@@ -266,6 +201,31 @@ public:
     _gc_manager = gc_manager;
   }
 
+  // Apply "blk->do_oop" to the addresses of all reference fields in objects
+  // starting with the _saved_mark_word, which was noted during a generation's
+  // save_marks and is required to denote the head of an object.
+  // Fields in objects allocated by applications of the closure
+  // *are* included in the iteration.
+  // Updates saved_mark_word to point to just after the last object iterated over.
+  template <typename OopClosureType>
+  void oop_since_save_marks_iterate_impl(OopClosureType* blk, ContiguousSpace* space, HeapWord* saved_mark_word);
 };
+
+template <typename OopClosureType>
+void Generation::oop_since_save_marks_iterate_impl(OopClosureType* blk, ContiguousSpace* space, HeapWord* saved_mark_word) {
+  HeapWord* t;
+  HeapWord* p = saved_mark_word;
+  assert(p != nullptr, "expected saved mark");
+
+  const intx interval = PrefetchScanIntervalInBytes;
+  do {
+    t = space->top();
+    while (p < t) {
+      Prefetch::write(p, interval);
+      oop m = cast_to_oop(p);
+      p += m->oop_iterate_size(blk);
+    }
+  } while (t < space->top());
+}
 
 #endif // SHARE_GC_SERIAL_GENERATION_HPP

@@ -54,13 +54,11 @@ Short description of files:
     text processing:
         Grep.java, Paragrep.java
     timeouts handling:
-        Terminator.java, TimeoutHandler.java
+        TimeoutHandler.java
     tree structures support:
         Denotation.java, TreeNodesDenotation.java
     RAS mode support:
         RASagent.java, JVMTIagent.c
-    JVMDI tests support:
-        JVMDITools.h, JVMDITools.c
 
 Short description of subdirectories:
 

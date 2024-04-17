@@ -139,6 +139,9 @@ class DefNewGeneration: public Generation {
   ContiguousSpace* _from_space;
   ContiguousSpace* _to_space;
 
+  // Saved mark word, for to-space
+  HeapWord* _saved_mark_word;
+
   STWGCTimer* _gc_timer;
 
   DefNewTracer* _gc_tracer;
@@ -168,13 +171,27 @@ class DefNewGeneration: public Generation {
   ContiguousSpace* from() const           { return _from_space; }
   ContiguousSpace* to()   const           { return _to_space;   }
 
+  HeapWord* saved_mark_word()   const    { return _saved_mark_word; }
+  void set_saved_mark_word()             { _saved_mark_word = to()->top(); }
+  bool saved_mark_at_top()               { return _saved_mark_word == _to_space->top(); }
+
   // Space enquiries
   size_t capacity() const;
   size_t used() const;
   size_t free() const;
   size_t max_capacity() const;
   size_t capacity_before_gc() const;
+
+  // Returns "TRUE" iff "p" points into the used areas in each space of young-gen.
+  bool is_in(const void* p) const;
+
+  // Return an estimate of the maximum allocation that could be performed
+  // in the generation without triggering any collection or expansion
+  // activity.  It is "unsafe" because no locks are taken; the result
+  // should be treated as an approximation, not a guarantee, for use in
+  // heuristic resizing decisions.
   size_t unsafe_max_alloc_nogc() const;
+
   size_t contiguous_available() const;
 
   size_t max_eden_size() const              { return _max_eden_size; }
@@ -191,14 +208,11 @@ class DefNewGeneration: public Generation {
   // Return true if the expansion was successful.
   bool expand(size_t bytes);
 
-  // DefNewGeneration cannot currently expand except at
-  // a GC.
-  virtual bool is_maximal_no_gc() const { return true; }
 
   // Iteration
   void object_iterate(ObjectClosure* blk);
 
-  void space_iterate(SpaceClosure* blk, bool usedOnly = false);
+  HeapWord* block_start(const void* p) const;
 
   // Allocation support
   virtual bool should_allocate(size_t word_size, bool is_tlab) {
@@ -227,7 +241,7 @@ class DefNewGeneration: public Generation {
   void gc_epilogue(bool full);
 
   // Save the tops for eden, from, and to
-  virtual void record_spaces_top();
+  void record_spaces_top();
 
   // Accessing marks
   void save_marks();

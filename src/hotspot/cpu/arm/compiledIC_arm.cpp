@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/compiledIC.hpp"
-#include "code/icBuffer.hpp"
 #include "code/nativeInst.hpp"
 #include "code/nmethod.hpp"
 #include "logging/log.hpp"
@@ -35,19 +34,17 @@
 
 // ----------------------------------------------------------------------------
 #if COMPILER2_OR_JVMCI
-#define __ _masm.
+#define __ masm->
 // emit call stub, compiled java to interpreter
-address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) {
+address CompiledDirectCall::emit_to_interp_stub(MacroAssembler *masm, address mark) {
   // Stub is fixed up when the corresponding call is converted from calling
   // compiled code to calling interpreted code.
   // set (empty), R9
   // b -1
 
   if (mark == nullptr) {
-    mark = cbuf.insts_mark();  // get mark within main instrs section
+    mark = __ inst_mark();  // get mark within main instrs section
   }
-
-  MacroAssembler _masm(&cbuf);
 
   address base = __ start_a_stub(to_interp_stub_size());
   if (base == nullptr) {
@@ -59,7 +56,7 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) 
 
   InlinedMetadata object_literal(nullptr);
   // single instruction, see NativeMovConstReg::next_instruction_address() in
-  // CompiledStaticCall::set_to_interpreted()
+  // CompiledDirectCall::set_to_interpreted()
   __ ldr_literal(Rmethod, object_literal);
 
   __ set_inst_mark(); // Who uses this?
@@ -87,31 +84,24 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) 
 #undef __
 
 // Relocation entries for call stub, compiled java to interpreter.
-int CompiledStaticCall::reloc_to_interp_stub() {
+int CompiledDirectCall::reloc_to_interp_stub() {
   return 10;  // 4 in emit_to_interp_stub + 1 in Java_Static_Call
 }
 #endif // COMPILER2_OR_JVMCI
 
-int CompiledStaticCall::to_trampoline_stub_size() {
+int CompiledDirectCall::to_trampoline_stub_size() {
   // ARM doesn't use trampolines.
   return 0;
 }
 
 // size of C2 call stub, compiled java to interpreter
-int CompiledStaticCall::to_interp_stub_size() {
+int CompiledDirectCall::to_interp_stub_size() {
   return 8 * NativeInstruction::instruction_size;
 }
 
-void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, address entry) {
+void CompiledDirectCall::set_to_interpreted(const methodHandle& callee, address entry) {
   address stub = find_stub();
   guarantee(stub != nullptr, "stub not found");
-
-  {
-    ResourceMark rm;
-    log_trace(inlinecache)("CompiledDirectStaticCall@" INTPTR_FORMAT ": set_to_interpreted %s",
-                  p2i(instruction_address()),
-                  callee->name_and_sig_as_C_string());
-  }
 
   // Creation also verifies the object.
   NativeMovConstReg* method_holder = nativeMovConstReg_at(stub);
@@ -128,7 +118,7 @@ void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, ad
   set_destination_mt_safe(stub);
 }
 
-void CompiledDirectStaticCall::set_stub_to_clean(static_stub_Relocation* static_stub) {
+void CompiledDirectCall::set_stub_to_clean(static_stub_Relocation* static_stub) {
   // Reset stub.
   address stub = static_stub->addr();
   assert(stub != nullptr, "stub not found");
@@ -144,7 +134,7 @@ void CompiledDirectStaticCall::set_stub_to_clean(static_stub_Relocation* static_
 // Non-product mode code
 #ifndef PRODUCT
 
-void CompiledDirectStaticCall::verify() {
+void CompiledDirectCall::verify() {
   // Verify call.
   _call->verify();
   _call->verify_alignment();

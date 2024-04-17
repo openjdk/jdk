@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -35,12 +35,13 @@ $(call FillFindCache, $(wildcard $(TOPDIR)/src/java.desktop/*/native))
 ################################################################################
 # Create the AWT/2D libraries
 
-include lib/Awt2dLibraries.gmk
-
-################################################################################
-# Create the libjsound library
+include lib/AwtLibraries.gmk
+include lib/ClientLibraries.gmk
 
 ifeq ($(call isTargetOs, aix), false)
+  ##############################################################################
+  # Build libjsound
+  ##############################################################################
 
   LIBJSOUND_CFLAGS := \
       $(ALSA_CFLAGS) \
@@ -51,91 +52,79 @@ ifeq ($(call isTargetOs, aix), false)
       -DUSE_PLATFORM_MIDI_IN=TRUE \
       #
 
+  LIBJSOUND_LINK_TYPE := C
   ifeq ($(call isTargetOs, macosx), true)
-    LIBJSOUND_TOOLCHAIN := TOOLCHAIN_LINK_CXX
+    LIBJSOUND_LINK_TYPE := C++
   endif
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBJSOUND, \
       NAME := jsound, \
-      TOOLCHAIN := $(LIBJSOUND_TOOLCHAIN), \
+      LINK_TYPE := $(LIBJSOUND_LINK_TYPE), \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) \
-          $(LIBJSOUND_CFLAGS), \
-      CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBJSOUND_CFLAGS), \
+      EXTRA_HEADER_DIRS := java.base:libjava, \
+      CFLAGS := $(LIBJSOUND_CFLAGS), \
+      CXXFLAGS := $(LIBJSOUND_CFLAGS), \
       DISABLED_WARNINGS_gcc := undef, \
       DISABLED_WARNINGS_clang := undef, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LIBS_unix := -ljava -ljvm, \
       LIBS_linux := $(ALSA_LIBS), \
-      LIBS_macosx := -framework CoreAudio -framework CoreFoundation \
-          -framework CoreServices -framework AudioUnit \
-          -framework CoreMIDI -framework AudioToolbox $(LIBCXX), \
-      LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib dsound.lib winmm.lib user32.lib ole32.lib, \
+      LIBS_macosx := \
+          -framework AudioToolbox \
+          -framework AudioUnit \
+          -framework CoreAudio \
+          -framework CoreFoundation \
+          -framework CoreMIDI \
+          -framework CoreServices, \
+      LIBS_windows := advapi32.lib dsound.lib ole32.lib user32.lib winmm.lib, \
   ))
 
-  $(BUILD_LIBJSOUND): $(call FindLib, java.base, java)
-
   TARGETS += $(BUILD_LIBJSOUND)
-
 endif
 
-################################################################################
-# Create the macosx specific osxapp and osx libraries
-
 ifeq ($(call isTargetOs, macosx), true)
+  ##############################################################################
+  # Build libosxapp
+  ##############################################################################
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBOSXAPP, \
       NAME := osxapp, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB), \
-      DISABLED_WARNINGS_clang_NSApplicationAWT.m := deprecated-declarations format-nonliteral, \
-      DISABLED_WARNINGS_clang_QueuingApplicationDelegate.m := objc-method-access, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LIBS := \
-          -ljava \
+      DISABLED_WARNINGS_clang_NSApplicationAWT.m := deprecated-declarations \
+          format-nonliteral, \
+      DISABLED_WARNINGS_clang_QueuingApplicationDelegate.m := \
+          objc-method-access, \
+      JDK_LIBS := java.base:libjava, \
+      LIBS_macosx := \
           -framework Accelerate \
           -framework ApplicationServices \
           -framework AudioToolbox \
           -framework Carbon \
           -framework Cocoa \
-          -framework Security \
           -framework ExceptionHandling \
+          -framework IOSurface \
           -framework JavaRuntimeSupport \
           -framework OpenGL \
-          -framework IOSurface \
-          -framework QuartzCore, \
+          -framework QuartzCore \
+          -framework Security, \
   ))
-
-  $(BUILD_LIBOSXAPP): $(call FindLib, java.base, java)
 
   TARGETS += $(BUILD_LIBOSXAPP)
 
+  ##############################################################################
+  # Build libosx
   ##############################################################################
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBOSX, \
       NAME := osx, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB), \
-      EXTRA_HEADER_DIRS := libosxapp, \
+      EXTRA_HEADER_DIRS := java.base:libjava, \
       DISABLED_WARNINGS_clang_CFileManager.m := deprecated-declarations, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.desktop \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LIBS := \
-          -losxapp \
-          -framework Cocoa \
+      JDK_LIBS := libosxapp, \
+      LIBS_macosx := \
           -framework ApplicationServices \
+          -framework Cocoa \
           -framework JavaRuntimeSupport \
-          -framework SystemConfiguration \
-          $(JDKLIB_LIBS), \
+          -framework SystemConfiguration, \
   ))
 
   TARGETS += $(BUILD_LIBOSX)
-
-  $(BUILD_LIBOSX): $(call FindLib, java.desktop, osxapp)
-
-  $(BUILD_LIBOSX): $(call FindLib, java.base, java)
-
 endif

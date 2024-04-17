@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -96,28 +97,40 @@ public class HtmlLinkFactory {
                 // handles primitives, no types and error types
                 @Override
                 protected Content defaultAction(TypeMirror type, HtmlLinkInfo linkInfo) {
-                    link.add(utils.getTypeName(type, false));
+                    link.add(getTypeAnnotationLinks(linkInfo));
+                    link.add(utils.getTypeSignature(type, false, false));
                     return link;
                 }
 
-                int currentDepth = 0;
                 @Override
                 public Content visitArray(ArrayType type, HtmlLinkInfo linkInfo) {
-                    // keep track of the dimension depth and replace the last dimension
-                    // specifier with varargs, when the stack is fully unwound.
-                    currentDepth++;
-                    var componentType = type.getComponentType();
-                    visit(componentType, linkInfo.forType(componentType));
-                    currentDepth--;
-                    if (utils.isAnnotated(type)) {
-                        link.add(" ");
-                        link.add(getTypeAnnotationLinks(linkInfo));
+                    // int @A [] @B [] has @A on int[][] and @B on int[],
+                    // encounter order is @A @B so print in FIFO order
+                    var deque = new ArrayDeque<ArrayType>(1);
+                    while (true) {
+                        deque.add(type);
+                        var component = type.getComponentType();
+                        if (component instanceof ArrayType arrayType) {
+                            type = arrayType;
+                        } else {
+                            visit(component, linkInfo.forType(component));
+                            break;
+                        }
                     }
-                    // use vararg if required
-                    if (linkInfo.isVarArg() && currentDepth == 0) {
-                        link.add("...");
-                    } else {
-                        link.add("[]");
+
+                    while (!deque.isEmpty()) {
+                        var currentType = deque.remove();
+                        if (utils.isAnnotated(currentType)) {
+                            link.add(" ");
+                            link.add(getTypeAnnotationLinks(linkInfo.forType(currentType)));
+                        }
+
+                        // use vararg if required
+                        if (linkInfo.isVarArg() && deque.isEmpty()) {
+                            link.add("...");
+                        } else {
+                            link.add("[]");
+                        }
                     }
                     return link;
                 }

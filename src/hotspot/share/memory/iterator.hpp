@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,6 @@ class OopIterateClosure : public OopClosure {
   // the below enum describes the different alternatives.
   enum ReferenceIterationMode {
     DO_DISCOVERY,                // Apply closure and discover references
-    DO_DISCOVERED_AND_DISCOVERY, // Apply closure to discovered field and do discovery
     DO_FIELDS,                   // Apply closure to all fields
     DO_FIELDS_EXCEPT_REFERENT    // Apply closure to all fields except the referent field
   };
@@ -233,66 +232,40 @@ public:
   ObjectToOopClosure(OopIterateClosure* cl) : _cl(cl) {}
 };
 
-// SpaceClosure is used for iterating over spaces
-
-class Space;
-
-class SpaceClosure : public StackObj {
- public:
-  // Called for each space
-  virtual void do_space(Space* s) = 0;
-};
-
-// CodeBlobClosure is used for iterating through code blobs
+// NMethodClosure is used for iterating through nmethods
 // in the code cache or on thread stacks
-
-class CodeBlobClosure : public Closure {
- public:
-  // Called for each code blob.
-  virtual void do_code_blob(CodeBlob* cb) = 0;
-};
-
-// Applies an oop closure to all ref fields in code blobs
-// iterated over in an object iteration.
-class CodeBlobToOopClosure : public CodeBlobClosure {
- protected:
-  OopClosure* _cl;
-  bool _fix_relocations;
-  void do_nmethod(nmethod* nm);
- public:
-  // If fix_relocations(), then cl must copy objects to their new location immediately to avoid
-  // patching nmethods with the old locations.
-  CodeBlobToOopClosure(OopClosure* cl, bool fix_relocations) : _cl(cl), _fix_relocations(fix_relocations) {}
-  virtual void do_code_blob(CodeBlob* cb);
-
-  bool fix_relocations() const { return _fix_relocations; }
-  const static bool FixRelocations = true;
-};
-
-class MarkingCodeBlobClosure : public CodeBlobToOopClosure {
-  bool _keepalive_nmethods;
-
- public:
-  MarkingCodeBlobClosure(OopClosure* cl, bool fix_relocations, bool keepalive_nmethods) :
-      CodeBlobToOopClosure(cl, fix_relocations),
-      _keepalive_nmethods(keepalive_nmethods) {}
-
-  // Called for each code blob, but at most once per unique blob.
-  virtual void do_code_blob(CodeBlob* cb);
-};
 
 class NMethodClosure : public Closure {
  public:
   virtual void do_nmethod(nmethod* n) = 0;
 };
 
-class CodeBlobToNMethodClosure : public CodeBlobClosure {
-  NMethodClosure* const _nm_cl;
+// Applies an oop closure to all ref fields in nmethods
+// iterated over in an object iteration.
+class NMethodToOopClosure : public NMethodClosure {
+ protected:
+  OopClosure* _cl;
+  bool _fix_relocations;
+ public:
+  // If fix_relocations(), then cl must copy objects to their new location immediately to avoid
+  // patching nmethods with the old locations.
+  NMethodToOopClosure(OopClosure* cl, bool fix_relocations) : _cl(cl), _fix_relocations(fix_relocations) {}
+  void do_nmethod(nmethod* nm) override;
+
+  bool fix_relocations() const { return _fix_relocations; }
+  const static bool FixRelocations = true;
+};
+
+class MarkingNMethodClosure : public NMethodToOopClosure {
+  bool _keepalive_nmethods;
 
  public:
-  CodeBlobToNMethodClosure(NMethodClosure* nm_cl) : _nm_cl(nm_cl) {}
+  MarkingNMethodClosure(OopClosure* cl, bool fix_relocations, bool keepalive_nmethods) :
+      NMethodToOopClosure(cl, fix_relocations),
+      _keepalive_nmethods(keepalive_nmethods) {}
 
-  virtual void do_code_blob(CodeBlob* cb);
+  // Called for each nmethod.
+  virtual void do_nmethod(nmethod* nm);
 };
 
 // MonitorClosure is used for iterating over monitors in the monitors cache
