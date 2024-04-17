@@ -353,6 +353,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         FolderNode.clearGraphNodeMap();
         root = new FolderNode(document);
         manager.setRootContext(root);
+        EditorTopComponent.closeAllInstances();
     }
 
     /**

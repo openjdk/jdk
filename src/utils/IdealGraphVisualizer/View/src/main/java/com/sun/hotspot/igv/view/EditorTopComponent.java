@@ -318,6 +318,18 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         return null;
     }
 
+    public static void closeAllInstances() {
+        WindowManager manager = WindowManager.getDefault();
+        for (Mode mode : manager.getModes()) {
+            TopComponent[] openedTopComponents = manager.getOpenedTopComponents(mode);
+            for (TopComponent tc : openedTopComponents) {
+                if (tc instanceof EditorTopComponent etc) {
+                    etc.close();
+                }
+            }
+        }
+    }
+
     @Override
     public int getPersistenceType() {
         return TopComponent.PERSISTENCE_NEVER;
