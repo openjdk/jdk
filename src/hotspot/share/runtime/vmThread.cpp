@@ -314,14 +314,15 @@ bool VMThread::handshake_or_safepoint_alot() {
   if (!HandshakeALot && !SafepointALot) {
     return false;
   }
-  static jlong last_halot_ms = 0;
+  static jlong last_alot_ms = 0;
   jlong now_ms = nanos_to_millis(os::javaTimeNanos());
-  // If only HandshakeALot is set, but GuaranteedSafepointInterval is 0,
-  // we emit a handshake if it's been more than a second since the last one.
+  // If HandshakeALot or SafepointALot are set, but GuaranteedSafepointInterval is explicitly
+  // set to 0 on the command line, we emit the operation if it's been more than a second
+  // since the last one.
   jlong interval = GuaranteedSafepointInterval != 0 ? GuaranteedSafepointInterval : 1000;
-  jlong deadline_ms = interval + last_halot_ms;
+  jlong deadline_ms = interval + last_alot_ms;
   if (now_ms > deadline_ms) {
-    last_halot_ms = now_ms;
+    last_alot_ms = now_ms;
     return true;
   }
   return false;
