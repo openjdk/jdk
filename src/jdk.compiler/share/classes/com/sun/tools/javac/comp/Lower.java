@@ -2974,10 +2974,10 @@ public class Lower extends TreeTranslator {
             // preserving the side effects of the value
             VarSymbol dollar_s = new VarSymbol(FINAL | SYNTHETIC,
                     names.fromString("tmp" + tree.pos + this.target.syntheticNameChar()),
-                    tree.expr.type,
+                    types.erasure(tree.expr.type),
                     currentMethodSym);
             JCStatement var = make.at(tree.pos())
-                    .VarDef(dollar_s, instanceOfExpr).setType(dollar_s.type);
+                    .VarDef(dollar_s, instanceOfExpr);
 
             if (types.isUnconditionallyExact(tree.expr.type, tree.pattern.type)) {
                 exactnessCheck = make.Literal(BOOLEAN, 1).setType(syms.booleanType.constType(1));

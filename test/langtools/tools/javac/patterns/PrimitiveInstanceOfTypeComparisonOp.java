@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8304487 8325257
+ * @bug 8304487 8325257 8327683 8330387
  * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Preview)
  * @enablePreview
  * @compile PrimitiveInstanceOfTypeComparisonOp.java
@@ -44,6 +44,7 @@ public class PrimitiveInstanceOfTypeComparisonOp {
         assertEquals(true,  unboxingWithObject());
         assertEquals(true,  wideningReferenceConversionUnboxing(42));
         assertEquals(true,  wideningReferenceConversionUnboxing2(Byte.valueOf((byte) 42)));
+        assertEquals(true,  wideningReferenceConversionUnboxing3(0x1000000));
         assertEquals(true,  wideningReferenceConversionUnboxingAndWideningPrimitive(42));
         assertEquals(true,  unboxingAndWideningPrimitiveExact());
         assertEquals(false, unboxingAndWideningPrimitiveNotExact());
@@ -119,6 +120,10 @@ public class PrimitiveInstanceOfTypeComparisonOp {
 
     public static <T extends Byte> boolean wideningReferenceConversionUnboxing2(T i) {
         return i instanceof byte;
+    }
+
+    public static <T extends Integer> boolean wideningReferenceConversionUnboxing3(T i) {
+        return i instanceof float;
     }
 
     public static <T extends Integer> boolean wideningReferenceConversionUnboxingAndWideningPrimitive(T i) {
