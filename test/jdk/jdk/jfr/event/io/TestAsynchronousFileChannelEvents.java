@@ -25,6 +25,7 @@ package jdk.jfr.event.io;
 
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
+import jdk.test.lib.Utils;
 import jdk.test.lib.jfr.Events;
 
 import java.io.File;
@@ -47,14 +48,13 @@ import static java.nio.file.StandardOpenOption.WRITE;
 public class TestAsynchronousFileChannelEvents {
 
     public static void main(String[] args) throws Throwable {
-        File blah = File.createTempFile("blah", null);
-        blah.deleteOnExit();
+        File tmp = Utils.createTempFile("TestAsynchronousFileChannelEvents", ".tmp").toFile();
         String s = "unremarkable data";
         ByteBuffer data = ByteBuffer.allocate(s.length());
         data.put(s.getBytes());
 
         try (Recording recording = new Recording();
-             AsynchronousFileChannel ch = AsynchronousFileChannel.open(blah.toPath(), READ, WRITE)) {
+             AsynchronousFileChannel ch = AsynchronousFileChannel.open(tmp.toPath(), READ, WRITE)) {
 
             List<IOEvent> expectedEvents = new ArrayList<>();
             recording.enable(IOEvent.EVENT_FILE_FORCE).withThreshold(Duration.ofMillis(0));
@@ -65,7 +65,7 @@ public class TestAsynchronousFileChannelEvents {
 
             // test force(boolean)
             ch.force(true);
-            expectedEvents.add(IOEvent.createFileForceEvent(blah));
+            expectedEvents.add(IOEvent.createFileForceEvent(tmp));
 
             recording.stop();
             List<RecordedEvent> events = Events.fromRecording(recording);
