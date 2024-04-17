@@ -9,7 +9,7 @@ import java.util.function.Supplier;
 
 import static jdk.internal.lang.stable.StableUtil.*;
 
-// Records are ~10% faster than @ValueBased
+// Records are ~10% faster than @ValueBased in JDK 23
 public record StableValueElement<V>(
         V[] elements,
         byte[] sets,
@@ -23,7 +23,7 @@ public record StableValueElement<V>(
         V e = elements[index];
         if (e != null) {
             // If we happen to see a non-null value under
-            // plain semantics, we know a value is present.
+            // plain semantics, we know a value is set.
             return e;
         }
         if (set()) {
@@ -32,7 +32,7 @@ public record StableValueElement<V>(
         // Now, fall back to volatile semantics.
         e = elementVolatile();
         if (e != null) {
-            // If we see a non-null value, we know a value is present.
+            // If we see a non-null value, we know a value is set.
             return e;
         }
         if (setVolatile()) {
@@ -101,7 +101,7 @@ public record StableValueElement<V>(
         V e = elements[index];
         if (e != null) {
             // If we happen to see a non-null value under
-            // plain semantics, we know a value is present.
+            // plain semantics, we know a value is set.
             return e;
         }
         if (set()) {
@@ -110,7 +110,7 @@ public record StableValueElement<V>(
         // Now, fall back to volatile semantics.
         e = elementVolatile();
         if (e != null) {
-            // If we see a non-null value, we know a value is present.
+            // If we see a non-null value, we know a value is set.
             return e;
         }
         if (setVolatile()) {
@@ -137,7 +137,7 @@ public record StableValueElement<V>(
         if (value != null) {
             casValue(value);
         }
-        // Crucially, indicate a value is present _after_ it has been set.
+        // Crucially, indicate a value is set _after_ it has actually been set.
         casSet();
     }
 

@@ -50,7 +50,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
             UNSAFE.objectFieldOffset(StableValueImpl.class, "set");
 
     /**
-     * If null, may be unset or hold a set null value
+     * If `null`, may be unset or hold a set `null` value
      * If non-null, holds a set value.
      */
     @Stable
@@ -78,17 +78,17 @@ public final class StableValueImpl<V> implements StableValue<V> {
         V v = value;
         if (v != null) {
             // If we happen to see a non-null value under
-            // plain semantics, we know a value is present.
+            // plain semantics, we know a value is set.
             return v;
         }
         if (set()) {
-            // The value is set to its default value (e.g. null)
+            // The value is set to its default value (e.g. `null`)
             return null;
         }
         // Now, fall back to volatile semantics.
         v = valueVolatile();
         if (v != null) {
-            // If we see a non-null value, we know a value is present.
+            // If we see a non-null value, we know a value is set.
             return v;
         }
         if (setVolatile()) {
@@ -129,17 +129,17 @@ public final class StableValueImpl<V> implements StableValue<V> {
         V v = value;
         if (v != null) {
             // If we happen to see a non-null value under
-            // plain semantics, we know a value is present.
+            // plain semantics, we know a value is set.
             return v;
         }
         if (set()) {
-            // The value is set to its default value (e.g. null)
+            // The value is set to its default value (e.g. `null`)
             return null;
         }
         // Now, fall back to volatile semantics.
         v = valueVolatile();
         if (v != null) {
-            // If we see a non-null value, we know a value is present.
+            // If we see a non-null value, we know a value is set.
             return v;
         }
         if (setVolatile()) {
@@ -150,7 +150,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
             if (set()) {
                 return orThrow();
             }
-            // A value is not present
+            // A value is not set
             V newValue = supplier.get();
             setValue(newValue);
             return newValue;
@@ -171,7 +171,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
         if (value != null) {
             casValue(value);
         }
-        // Crucially, indicate a value is present _after_ it has been set.
+        // Crucially, indicate a value is set _after_ it has actually been set.
         casSet();
     }
 
@@ -224,6 +224,9 @@ public final class StableValueImpl<V> implements StableValue<V> {
         if (size < 0) {
             throw new IllegalArgumentException();
         }
+        if (size == 0) {
+            return List.of();
+        }
         return ACCESS.stableList(size);
     }
 
@@ -235,7 +238,6 @@ public final class StableValueImpl<V> implements StableValue<V> {
 
     public static <K, V> Map<K, StableValue<V>> ofMap(Set<? extends K> keys) {
         if (keys.isEmpty()) {
-            // Todo: Serializable...
             return Map.of();
         }
         return ACCESS.stableMap(keys);

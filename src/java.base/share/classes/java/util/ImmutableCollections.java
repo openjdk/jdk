@@ -1443,6 +1443,7 @@ class ImmutableCollections {
 
         @SuppressWarnings("unchecked")
         private StableList(int size) {
+            assert size > 0;
             this.elements = (V[]) new Object[size];
             this.size = size;
             this.sets = new byte[size];

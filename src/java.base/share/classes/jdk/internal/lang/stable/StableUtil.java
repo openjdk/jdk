@@ -30,11 +30,16 @@ import jdk.internal.misc.Unsafe;
 
 import static jdk.internal.misc.Unsafe.*;
 
+/**
+ * Package private utility class for stable values & collections.
+ */
 final class StableUtil {
 
     private StableUtil() {}
 
+    // Indicates a value is not set
     static final byte NOT_SET = 0;
+    // Indicates a value is set
     static final byte SET = 1;
 
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
@@ -43,6 +48,10 @@ final class StableUtil {
         return new IllegalStateException("A value is already set: " + stable.orThrow());
     }
 
+    /**
+     * {@return a String representation of the provided {@code stable}}
+     * @param stable to extract a string representation from
+     */
     static String toString(StableValue<?> stable) {
         return "StableValue" +
                 (stable.isSet()
@@ -64,10 +73,18 @@ final class StableUtil {
         UNSAFE.storeFence();
     }
 
+    /**
+     * {@return the address offset for an Object element in an Object array}
+     * @param index for the object
+     */
     static long objectOffset(int index) {
         return ARRAY_OBJECT_BASE_OFFSET + (long) index * ARRAY_OBJECT_INDEX_SCALE;
     }
 
+    /**
+     * {@return the address offset for a byte element in an `int` array}
+     * @param index for the object
+     */
     static long byteOffset(int index) {
         return ARRAY_BYTE_BASE_OFFSET + (long) index * ARRAY_BYTE_INDEX_SCALE;
     }
