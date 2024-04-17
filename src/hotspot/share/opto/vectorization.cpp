@@ -493,7 +493,9 @@ VPointer::VPointer(const MemNode* mem, const VLoop& vloop,
     return;
   }
 
-  // TODO
+  // If two invariants have the same summands but in different orders, we end up with
+  // different _invar nodes. Canonicalize by sorting the summands and thus reordering
+  // the sum.
   Node* new_invar = sort_sum(_invar);
 #ifdef ASSERT
   // We are changing the invar, and the debug info may no longer be accurate.
@@ -520,6 +522,7 @@ VPointer::VPointer(VPointer* p) :
 #endif
 {}
 
+// Summand of a add/sub sum. Used to sort all summands.
 class Summand {
 private:
   Node* _node;
@@ -533,7 +536,7 @@ public:
   Node* node() const { return _node; }
   bool negate() const { return _negate; }
 
-  // Compare by negate, and by idx
+  // Compare by negate, and by idx. Used to sort summands.
   static int cmp(Summand* s1, Summand* s2) {
     if (s1->negate() != s2->negate()) {
       return (s1->negate() ? 1 : 0) - (s2->negate() ? 1 : 0);
