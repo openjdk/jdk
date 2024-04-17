@@ -524,16 +524,16 @@ bool ObjectMonitor::enter(JavaThread* current) {
 
 ObjectMonitor::TryLockResult ObjectMonitor::TryLock(JavaThread* current) {
   void* own = owner_raw();
-  if (own != nullptr) return HAS_OWNER;
+  if (own != nullptr) return TL_HAS_OWNER;
   if (try_set_owner_from(nullptr, current) == nullptr) {
     assert(_recursions == 0, "invariant");
-    return SUCCESS;
+    return TL_SUCCESS;
   }
   // The lock had been free momentarily, but we lost the race to the lock.
   // Interference -- the CAS failed.
   // We can either return -1 or retry.
   // Retry doesn't make as much sense because the lock was just acquired.
-  return CAS_FAILED;
+  return TL_CAS_FAILED;
 }
 
 // Deflate the specified ObjectMonitor if not in-use. Returns true if it
@@ -710,7 +710,7 @@ void ObjectMonitor::EnterI(JavaThread* current) {
   assert(current->thread_state() == _thread_blocked, "invariant");
 
   // Try the lock - TATAS
-  if (TryLock (current) == SUCCESS) {
+  if (TryLock(current) == TL_SUCCESS) {
     assert(_succ != current, "invariant");
     assert(owner_raw() == current, "invariant");
     assert(_Responsible != current, "invariant");
@@ -781,7 +781,7 @@ void ObjectMonitor::EnterI(JavaThread* current) {
 
     // Interference - the CAS failed because _cxq changed.  Just retry.
     // As an optional optimization we retry the lock.
-    if (TryLock (current) == SUCCESS) {
+    if (TryLock(current) == TL_SUCCESS) {
       assert(_succ != current, "invariant");
       assert(owner_raw() == current, "invariant");
       assert(_Responsible != current, "invariant");
@@ -834,7 +834,7 @@ void ObjectMonitor::EnterI(JavaThread* current) {
 
   for (;;) {
 
-    if (TryLock(current) == SUCCESS) break;
+    if (TryLock(current) == TL_SUCCESS) break;
     assert(owner_raw() != current, "invariant");
 
     // park self
@@ -849,7 +849,7 @@ void ObjectMonitor::EnterI(JavaThread* current) {
       current->_ParkEvent->park();
     }
 
-    if (TryLock(current) == SUCCESS) break;
+    if (TryLock(current) == TL_SUCCESS) break;
 
     if (try_set_owner_from(DEFLATER_MARKER, current) == DEFLATER_MARKER) {
       // Cancelled the in-progress async deflation by changing owner from
@@ -998,7 +998,7 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
     // Try again, but just so we distinguish between futile wakeups and
     // successful wakeups.  The following test isn't algorithmically
     // necessary, but it helps us maintain sensible statistics.
-    if (TryLock(current) == SUCCESS) break;
+    if (TryLock(current) == TL_SUCCESS) break;
 
     // The lock is still contested.
     // Keep a tally of the # of futile wakeups.
@@ -1846,12 +1846,14 @@ static int Knob_Bonus               = 100;     // spin success bonus
 static int Knob_Penalty             = 200;     // spin failure penalty
 static int Knob_Poverty             = 1000;
 static int Knob_FixedSpin           = 0;
-static int Knob_PreSpin             = 10;      // 20-100 likely better, but it's not
+static int Knob_PreSpin             = 10;      // 20-100 likely better, but it's not better in my testing.
 
 inline static int adjust_up(int spin_duration) {
   int x = spin_duration;
   if (x < ObjectMonitor::Knob_SpinLimit) {
-    if (x < Knob_Poverty) { x = Knob_Poverty; }
+    if (x < Knob_Poverty) {
+      x = Knob_Poverty;
+    }
     return x + Knob_Bonus;
   } else {
     return spin_duration;
@@ -1876,12 +1878,12 @@ inline static int adjust_down(int spin_duration) {
 bool ObjectMonitor::short_fixed_spin(JavaThread* current, int spin_count, bool adapt) {
   for (int ctr = 0; ctr < spin_count; ctr++) {
     int status = TryLock(current);
-    if (status == SUCCESS) {
+    if (status == TL_SUCCESS) {
       if (adapt) {
         _SpinDuration = adjust_up(_SpinDuration);
       }
       return true;
-    } else if (status == CAS_FAILED) {
+    } else if (status == TL_CAS_FAILED) {
       break;
     }
     SpinPause();
@@ -2018,7 +2020,7 @@ bool ObjectMonitor::TrySpin(JavaThread* current) {
     // in the normal usage of TrySpin(), but it's safest
     // to make TrySpin() as foolproof as possible.
     OrderAccess::fence();
-    if (TryLock(current) == SUCCESS) return true;
+    if (TryLock(current) == TL_SUCCESS) return true;
   }
 
   return false;
