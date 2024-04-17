@@ -2642,7 +2642,7 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
   }
 
   // generate the segmented heap dump into separate files
-  VM_HeapDumper dumper(&writer, _gc_before_heap_dump, _oome, (uint)num_dump_threads);
+  VM_HeapDumper dumper(&writer, _gc_before_heap_dump, _oome, num_dump_threads);
   VMThread::execute(&dumper);
 
   // record any error that the writer may have encountered
