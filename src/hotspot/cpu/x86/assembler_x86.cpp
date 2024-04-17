@@ -627,6 +627,7 @@ void Assembler::emit_operand_helper(int reg_enc, int base_enc, int index_enc,
       // [base + index*scale + disp]
       if (disp == 0 && no_relocation && ((base_enc & 0x7) != 5)) {
         // [base + index*scale]
+        // !(rbp | r13 | r21 | r29)
         // [00 reg 100][ss index base]
         emit_modrm_sib(0b00, reg_enc, 0b100,
                        scale, index_enc, base_enc);
@@ -644,6 +645,7 @@ void Assembler::emit_operand_helper(int reg_enc, int base_enc, int index_enc,
         emit_data(disp, rspec, disp32_operand);
       }
     } else if ((base_enc & 0x7) == 4) {
+      // rbp | r12 | r20 | r28
       // [rsp + disp]
       if (disp == 0 && no_relocation) {
         // [rsp]
@@ -665,9 +667,11 @@ void Assembler::emit_operand_helper(int reg_enc, int base_enc, int index_enc,
       }
     } else {
       // [base + disp]
+      // !(rbp | r12 | r20 | r28) were handled above
       assert(((base_enc & 0x7) != 4), "illegal addressing mode");
       if (disp == 0 && no_relocation &&  ((base_enc & 0x7) != 5)) {
         // [base]
+        // !(rbp | r13 | r21 | r29)
         // [00 reg base]
         emit_modrm(0, reg_enc, base_enc);
       } else if (emit_compressed_disp_byte(disp) && no_relocation) {

@@ -233,7 +233,7 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
              "Turn off JVM mitigations related to Intel micro code "        \
              "mitigations for the Intel JCC erratum")                       \
                                                                             \
-  product(bool, UseAPX, false, EXPERIMENTAL,                                              \
+  product(bool, UseAPX, false, EXPERIMENTAL,                                \
           "Use Advanced Performance Extensions on x86")                     \
 // end of ARCH_FLAGS
 
