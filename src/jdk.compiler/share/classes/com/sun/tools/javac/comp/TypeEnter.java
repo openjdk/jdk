@@ -145,19 +145,12 @@ public class TypeEnter implements Completer {
         preview = Preview.instance(context);
         Source source = Source.instance(context);
         allowDeprecationOnImport = Feature.DEPRECATION_ON_IMPORT.allowedInSource(source);
-        allowStringTemplates = Feature.STRING_TEMPLATES.allowedInSource(source) &&
-                (!preview.isPreview(Feature.STRING_TEMPLATES) || preview.isEnabled());
     }
 
     /**
      * Switch: should deprecation warnings be issued on import
      */
     boolean allowDeprecationOnImport;
-
-    /**
-     * Switch: should string templates be allowed
-     */
-    boolean allowStringTemplates;
 
     /** A flag to disable completion from time to time during member
      *  enter, as we only need to look up types.  This avoids
@@ -344,18 +337,6 @@ public class TypeEnter implements Completer {
             importAll(make.at(tree.pos()).Import(make.Select(make.QualIdent(javaLang.owner), javaLang), false),
                 javaLang, env);
 
-            boolean prevPreviewCheck = chk.disablePreviewCheck;
-
-            try {
-                chk.disablePreviewCheck = true;
-                if (allowStringTemplates &&
-                    peekTypeExists(env, syms.stringTemplateType.tsym)) {
-                    doImport(make.Import(make.Select(make.QualIdent(syms.stringTemplateType.tsym), names.STR), true));
-                }
-            } finally {
-                chk.disablePreviewCheck = prevPreviewCheck;
-            }
-
             List<JCTree> defs = tree.defs;
             boolean isImplicitClass = !defs.isEmpty() &&
                     defs.head instanceof JCClassDecl cls &&
@@ -496,7 +477,12 @@ public class TypeEnter implements Completer {
 
             if (module != null) {
                 if (!env.toplevel.modle.readModules.contains(module)) {
-                    log.error(tree.pos, Errors.ImportModuleDoesNotRead(module));
+                    if (env.toplevel.modle.isUnnamed()) {
+                        log.error(tree.pos, Errors.ImportModuleDoesNotReadUnnamed(module));
+                    } else {
+                        log.error(tree.pos, Errors.ImportModuleDoesNotRead(module,
+                                                                           env.toplevel.modle));
+                    }
                     //error recovery, make sure the module is completed:
                     module.getDirectives();
                 }
