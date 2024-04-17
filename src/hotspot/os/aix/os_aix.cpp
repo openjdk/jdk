@@ -23,10 +23,6 @@
  *
  */
 
-// According to the AIX OS doc #pragma alloca must be used
-// with C++ compiler before referencing the function alloca()
-#pragma alloca
-
 // no precompiled headers
 #include "classfile/vmSymbols.hpp"
 #include "code/vtableStubs.hpp"
@@ -291,46 +287,6 @@ julong os::physical_memory() {
   return Aix::physical_memory();
 }
 
-// Helper function, emulates disclaim64 using multiple 32bit disclaims
-// because we cannot use disclaim64() on old AIX releases.
-static bool my_disclaim64(char* addr, size_t size) {
-
-  if (size == 0) {
-    return true;
-  }
-
-  // Maximum size 32bit disclaim() accepts. (Theoretically 4GB, but I just do not trust that.)
-  const unsigned int maxDisclaimSize = 0x40000000;
-
-  const unsigned int numFullDisclaimsNeeded = (size / maxDisclaimSize);
-  const unsigned int lastDisclaimSize = (size % maxDisclaimSize);
-
-  char* p = addr;
-
-  for (unsigned int i = 0; i < numFullDisclaimsNeeded; i ++) {
-    if (::disclaim(p, maxDisclaimSize, DISCLAIM_ZEROMEM) != 0) {
-      ErrnoPreserver ep;
-      log_trace(os, map)("disclaim failed: " RANGEFMT " errno=(%s)",
-                         RANGEFMTARGS(p, maxDisclaimSize),
-                         os::strerror(ep.saved_errno()));
-      return false;
-    }
-    p += maxDisclaimSize;
-  }
-
-  if (lastDisclaimSize > 0) {
-    if (::disclaim(p, lastDisclaimSize, DISCLAIM_ZEROMEM) != 0) {
-      ErrnoPreserver ep;
-      log_trace(os, map)("disclaim failed: " RANGEFMT " errno=(%s)",
-                         RANGEFMTARGS(p, lastDisclaimSize),
-                         os::strerror(ep.saved_errno()));
-      return false;
-    }
-  }
-
-  return true;
-}
-
 // Cpu architecture string
 #if defined(PPC32)
 static char cpu_arch[] = "ppc";
@@ -347,7 +303,7 @@ size_t os::Aix::query_pagesize(void* addr) {
   if (::vmgetinfo(&pi, VM_PAGE_INFO, sizeof(pi)) == 0) {
     return pi.pagesize;
   } else {
-    trcVerbose("vmgetinfo(VM_PAGE_INFO) failed (errno: %d)", errno);
+    log_warning(pagesize)("vmgetinfo(VM_PAGE_INFO) failed (errno: %d)", errno);
     assert(false, "vmgetinfo failed to retrieve page size");
     return 4*K;
   }
@@ -442,14 +398,13 @@ static void query_multipage_support() {
     psize_t sizes[MAX_PAGE_SIZES];
     const int num_psizes = ::vmgetinfo(sizes, VMINFO_GETPSIZES, MAX_PAGE_SIZES);
     if (num_psizes == -1) {
-      trcVerbose("vmgetinfo(VMINFO_GETPSIZES) failed (errno: %d)", errno);
-      trcVerbose("disabling multipage support.");
+      log_warning(pagesize)("vmgetinfo(VMINFO_GETPSIZES) failed (errno: %d), disabling multipage support.", errno);
       g_multipage_support.error = ERROR_MP_VMGETINFO_FAILED;
       goto query_multipage_support_end;
     }
     guarantee(num_psizes > 0, "vmgetinfo(.., VMINFO_GETPSIZES, ...) failed.");
     assert(num_psizes <= MAX_PAGE_SIZES, "Surprise! more than 4 page sizes?");
-    trcVerbose("vmgetinfo(.., VMINFO_GETPSIZES, ...) returns %d supported page sizes: ", num_psizes);
+    log_info(pagesize)("vmgetinfo(.., VMINFO_GETPSIZES, ...) returns %d supported page sizes: ", num_psizes);
     for (int i = 0; i < num_psizes; i ++) {
       trcVerbose(" %s ", describe_pagesize(sizes[i]));
     }
@@ -471,7 +426,7 @@ static void query_multipage_support() {
       if (::shmctl(shmid, SHM_PAGESIZE, &shm_buf) != 0) {
         const int en = errno;
         ::shmctl(shmid, IPC_RMID, nullptr); // As early as possible!
-        trcVerbose("shmctl(SHM_PAGESIZE) failed with errno=%d", errno);
+        log_warning(pagesize)("shmctl(SHM_PAGESIZE) failed with errno=%d", errno);
       } else {
         // Attach and double check pageisze.
         void* p = ::shmat(shmid, nullptr, 0);
@@ -479,7 +434,7 @@ static void query_multipage_support() {
         guarantee0(p != (void*) -1); // Should always work.
         const size_t real_pagesize = os::Aix::query_pagesize(p);
         if (real_pagesize != pagesize) {
-          trcVerbose("real page size (" SIZE_FORMAT_X ") differs.", real_pagesize);
+          log_warning(pagesize)("real page size (" SIZE_FORMAT_X ") differs.", real_pagesize);
         } else {
           can_use = true;
         }
@@ -609,7 +564,7 @@ bool os::Aix::get_meminfo(meminfo_t* pmi) {
   memset (&psmt, '\0', sizeof(psmt));
   const int rc = libperfstat::perfstat_memory_total(nullptr, &psmt, sizeof(psmt), 1);
   if (rc == -1) {
-    trcVerbose("perfstat_memory_total() failed (errno=%d)", errno);
+    log_warning(os)("perfstat_memory_total() failed (errno=%d)", errno);
     assert(0, "perfstat_memory_total() failed");
     return false;
   }
@@ -647,8 +602,8 @@ static void *thread_native_entry(Thread *thread) {
     address low_address = thread->stack_end();
     address high_address = thread->stack_base();
     lt.print("Thread is alive (tid: " UINTX_FORMAT ", kernel thread id: " UINTX_FORMAT
-             ", stack [" PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k using %uk pages)).",
-             os::current_thread_id(), (uintx) kernel_thread_id, low_address, high_address,
+             ", stack [" PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k using %luk pages)).",
+             os::current_thread_id(), (uintx) kernel_thread_id, p2i(low_address), p2i(high_address),
              (high_address - low_address) / K, os::Aix::query_pagesize(low_address) / K);
   }
 
@@ -1395,8 +1350,8 @@ struct vmembk_t {
 
   void print_on(outputStream* os) const {
     os->print("[" PTR_FORMAT " - " PTR_FORMAT "] (" UINTX_FORMAT
-      " bytes, %d %s pages), %s",
-      addr, addr + size - 1, size, size / pagesize, describe_pagesize(pagesize),
+      " bytes, %ld %s pages), %s",
+      p2i(addr), p2i(addr) + size - 1, size, size / pagesize, describe_pagesize(pagesize),
       (type == VMEM_SHMATED ? "shmat" : "mmap")
     );
   }
@@ -1598,10 +1553,11 @@ static bool uncommit_shmated_memory(char* addr, size_t size) {
   trcVerbose("uncommit_shmated_memory [" PTR_FORMAT " - " PTR_FORMAT "].",
     p2i(addr), p2i(addr + size - 1));
 
-  const bool rc = my_disclaim64(addr, size);
+  const int rc = disclaim64(addr, size, DISCLAIM_ZEROMEM);
 
-  if (!rc) {
-    trcVerbose("my_disclaim64(" PTR_FORMAT ", " UINTX_FORMAT ") failed.\n", p2i(addr), size);
+  if (rc != 0) {
+    ErrnoPreserver ep;
+    log_warning(os)("disclaim64(" PTR_FORMAT ", " UINTX_FORMAT ") failed, %s\n", p2i(addr), size, os::strerror(ep.saved_errno()));
     return false;
   }
   return true;
@@ -1791,7 +1747,7 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
   guarantee0(vmi);
   vmi->assert_is_valid_subrange(addr, size);
 
-  trcVerbose("commit_memory [" PTR_FORMAT " - " PTR_FORMAT "].", p2i(addr), p2i(addr + size - 1));
+  log_info(os)("commit_memory [" PTR_FORMAT " - " PTR_FORMAT "].", p2i(addr), p2i(addr + size - 1));
 
   if (UseExplicitCommit) {
     // AIX commits memory on touch. So, touch all pages to be committed.
@@ -1974,12 +1930,12 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
   //
   // See http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.basetechref/doc/basetrf1/mprotect.htm
 
-  Events::log(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
+  Events::log_memprotect(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
   bool rc = ::mprotect(addr, size, prot) == 0 ? true : false;
 
   if (!rc) {
     const char* const s_errno = os::errno_name(errno);
-    warning("mprotect(" PTR_FORMAT "-" PTR_FORMAT ", 0x%X) failed (%s).", addr, addr + size, prot, s_errno);
+    warning("mprotect(" PTR_FORMAT "-" PTR_FORMAT ", 0x%X) failed (%s).", p2i(addr), p2i(addr) + size, prot, s_errno);
     return false;
   }
 
@@ -2171,7 +2127,7 @@ OSReturn os::set_native_priority(Thread* thread, int newpri) {
   int ret = pthread_setschedparam(thr, policy, &param);
 
   if (ret != 0) {
-    trcVerbose("Could not change priority for thread %d to %d (error %d, %s)",
+    log_warning(os)("Could not change priority for thread %d to %d (error %d, %s)",
         (int)thr, newpri, ret, os::errno_name(ret));
   }
   return (ret == 0) ? OS_OK : OS_ERR;
@@ -2396,7 +2352,7 @@ void os::set_native_thread_name(const char *name) {
 
 bool os::find(address addr, outputStream* st) {
 
-  st->print(PTR_FORMAT ": ", addr);
+  st->print(PTR_FORMAT ": ", p2i(addr));
 
   loaded_module_t lm;
   if (LoadedLibraries::find_for_text_address(addr, &lm) ||
@@ -2664,10 +2620,10 @@ void os::Aix::initialize_os_info() {
   memset(&uts, 0, sizeof(uts));
   strcpy(uts.sysname, "?");
   if (::uname(&uts) == -1) {
-    trcVerbose("uname failed (%d)", errno);
+    log_warning(os)("uname failed (%d)", errno);
     guarantee(0, "Could not determine uname information");
   } else {
-    trcVerbose("uname says: sysname \"%s\" version \"%s\" release \"%s\" "
+    log_info(os)("uname says: sysname \"%s\" version \"%s\" release \"%s\" "
                "node \"%s\" machine \"%s\"\n",
                uts.sysname, uts.version, uts.release, uts.nodename, uts.machine);
     const int major = atoi(uts.version);
@@ -2683,7 +2639,7 @@ void os::Aix::initialize_os_info() {
       // Determine detailed AIX version: Version, Release, Modification, Fix Level.
       odmWrapper::determine_os_kernel_version(&_os_version);
       if (os_version_short() < 0x0701) {
-        trcVerbose("AIX releases older than AIX 7.1 are not supported.");
+        log_warning(os)("AIX releases older than AIX 7.1 are not supported.");
         assert(false, "AIX release too old.");
       }
       name_str = "AIX";
@@ -2692,7 +2648,7 @@ void os::Aix::initialize_os_info() {
     } else {
       assert(false, "%s", name_str);
     }
-    trcVerbose("We run on %s %s", name_str, ver_str);
+    log_info(os)("We run on %s %s", name_str, ver_str);
   }
 
   guarantee(_os_version, "Could not determine AIX release");
@@ -2717,7 +2673,7 @@ void os::Aix::scan_environment() {
   trcVerbose("EXTSHM=%s.", p ? p : "<unset>");
   if (p && strcasecmp(p, "ON") == 0) {
     _extshm = 1;
-    trcVerbose("*** Unsupported mode! Please remove EXTSHM from your environment! ***");
+    log_warning(os)("*** Unsupported mode! Please remove EXTSHM from your environment! ***");
     if (!AllowExtshm) {
       // We allow under certain conditions the user to continue. However, we want this
       // to be a fatal error by default. On certain AIX systems, leaving EXTSHM=ON means
@@ -2741,7 +2697,7 @@ void os::Aix::scan_environment() {
   trcVerbose("XPG_SUS_ENV=%s.", p ? p : "<unset>");
   if (p && strcmp(p, "ON") == 0) {
     _xpg_sus_mode = 1;
-    trcVerbose("Unsupported setting: XPG_SUS_ENV=ON");
+    log_warning(os)("Unsupported setting: XPG_SUS_ENV=ON");
     // This is not supported. Worst of all, it changes behaviour of mmap MAP_FIXED to
     // clobber address ranges. If we ever want to support that, we have to do some
     // testing first.
@@ -2760,7 +2716,7 @@ void os::Aix::scan_environment() {
 
 void os::Aix::initialize_libperfstat() {
   if (!libperfstat::init()) {
-    trcVerbose("libperfstat initialization failed.");
+    log_warning(os)("libperfstat initialization failed.");
     assert(false, "libperfstat initialization failed");
   } else {
     trcVerbose("libperfstat initialized.");

@@ -32,6 +32,7 @@ import jdk.test.lib.Utils;
  * @test
  * @bug 8324655
  * @summary Test that if expressions are properly folded into min/max nodes
+ * @requires os.arch != "riscv64"
  * @library /test/lib /
  * @run main compiler.c2.irTests.TestIfMinMax
  */
