@@ -47,9 +47,9 @@
  *
  * <p>The remainder of this note will show two examples of the API
  * changes in the model and visitors that can be added to support a
- * language feature. The examples will uses additions to the
- * elements portion of the language model, but the updates to visitors
- * for types or annotation values would be analogous.
+ * language feature. The examples will use additions to the elements
+ * portion of the language model, but the updates to visitors for
+ * types or annotation values would be analogous.
  *
  * Two distinct cases are:
  * <ul>
@@ -79,7 +79,7 @@
  *  // Methods to retrieve information specific to the preview feature...
  *  }
  * </pre>
- * A new element kind would also be introduce to model such a feature:
+ * A new element kind would also be introduced to model such a feature:
  *
  * <pre>
  *  //  Sample diff of ElementKind.java
@@ -111,7 +111,7 @@
  *
  * Given the {@code default} method on the visitor interface, the
  * preview visitor classes need to override this method and take an
- * appropriate action for the visitor's semantics:
+ * action appropriate for the visitor's semantics:
  *
  * <pre>
  * //  Sample diff for AbstractElementVisitorPreview.java
@@ -186,10 +186,11 @@
  * </pre>
  *
  * When preview feature 1 exits preview in JDK (<i>N+k</i>), a set of
- * visitors for language level (<i>N+k</i>) would be added with the
- * methods operating over the feature pulled in from the preview
- * visitors. Each preview visitor would then have its direct
- * superclass changed to the new corresponding (<i>N+k</i>) visitor.
+ * visitors for language level (<i>N+k</i>) would be added. The
+ * methods operating over the feature would be moved from the preview
+ * visitors to the new language level (<i>N+k</i>) visitors. Each
+ * preview visitor would then have its direct superclass changed to
+ * the new corresponding (<i>N+k</i>) visitor.
  *
  * <h3><a id=newKindLangConstruct>Adding visitor support for a
  * language construct that is a new kind of an existing
@@ -288,11 +289,11 @@
  *
  * As in the case where a new interface is introduced, when preview
  * feature 2 exits preview in JDK (<i>N+k</i>), a set of visitors for
- * language level (<i>N+k</i>) would be added with the methods
- * operating over the new feature in the kind visitors pulled in from
- * the preview visitors. Each preview visitor would then have its
- * direct superclass changed to the new corresponding (<i>N+k</i>)
- * visitor.
+ * language level (<i>N+k</i>) would be added. The methods operating
+ * over the new feature in the kind visitors would be moved from the
+ * preview visitors to new language level (<i>N+k</i>) visitors. Each
+ * preview visitor would then have its direct superclass changed to
+ * the new corresponding (<i>N+k</i>) visitor.
  *
  * @since 1.6
  *
