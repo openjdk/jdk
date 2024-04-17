@@ -3921,11 +3921,18 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
 //      a = init2 + (i - init) * (stride2 / stride)
 //    }
 //
-// so that the loop can be eliminated. Notice that the above is equivalently expressed as
+// so that the loop can be eliminated. Notice that the above is equivalently
+// expressed as
 //
-//    (phi * stride_con2 / stride_con) + (init2 - (init * stride_con2 / stride_con))
+//     (phi * stride_con2 / stride_con) + (init2 - (init * stride_con2 / stride_con))
 //
 // which corresponds to the structure of transformed subgraph below.
+//
+// However, if there is a mismatch between types of the loop and the parallel
+// induction variable (e.g., a long-typed IV in an int-typed loop), type conversions
+// are required:
+//
+//     ((long) phi * stride_con2 / stride_con) + (init2 - ((long) init * stride_con2 / stride_con))
 //
 void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   assert(loop->_head->is_CountedLoop(), "");
