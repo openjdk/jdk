@@ -27,7 +27,9 @@ package jdk.jfr.internal;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.DateTimeException;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -80,7 +82,7 @@ public final class Repository {
     }
 
     synchronized RepositoryChunk newChunk() {
-        LocalDateTime timestamp = LocalDateTime.now();
+        LocalDateTime timestamp = timestamp();
         try {
             if (!SecuritySupport.existDirectory(repository)) {
                 this.repository = createRepository(baseLocation);
@@ -102,11 +104,20 @@ public final class Repository {
         }
     }
 
+    private static LocalDateTime timestamp() {
+        try {
+            return LocalDateTime.now();
+        } catch (DateTimeException d) {
+            Logger.log(LogTag.JFR, LogLevel.INFO, "Could not create LocalDateTime with the default time zone. Using UTC time zone for chunk filename.");
+            return LocalDateTime.ofEpochSecond(System.currentTimeMillis(), 0, ZoneOffset.UTC);
+        }
+    }
+
     private static SafePath createRepository(SafePath basePath) throws IOException {
         SafePath canonicalBaseRepositoryPath = createRealBasePath(basePath);
         SafePath f = null;
 
-        String basename = ValueFormatter.formatDateTime(LocalDateTime.now()) + "_" + JVM.getPid();
+        String basename = ValueFormatter.formatDateTime(timestamp()) + "_" + JVM.getPid();
         String name = basename;
 
         int i = 0;
