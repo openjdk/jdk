@@ -128,7 +128,7 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
   // outgoing state.
   { // Iterate over each node which is larger than A
     GrowableArrayCHeap<VTreap*, mtNMT> to_visit;
-    to_visit.push(tree.root);
+    to_visit.push(tree._root);
     VTreap* head = nullptr;
     while (!to_visit.is_empty()) {
       head = to_visit.pop();

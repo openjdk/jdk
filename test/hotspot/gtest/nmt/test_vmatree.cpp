@@ -31,7 +31,7 @@
 class VMATreeTest : public testing::Test {
 public:
   VMATree::VTreap* treap_of(VMATree& tree) {
-    return tree.tree.root;
+    return tree.tree._root;
   }
 
   NativeCallStack make_stack(size_t a, size_t b, size_t c, size_t d) {

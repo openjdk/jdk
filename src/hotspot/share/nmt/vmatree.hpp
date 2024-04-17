@@ -148,7 +148,7 @@ public:
     ResourceArea area(mtNMT);
     ResourceMark rm(&area);
     GrowableArray<VTreap*> to_visit(&area, 16, 0, nullptr);
-    to_visit.push(tree.root);
+    to_visit.push(tree._root);
     VTreap* head = nullptr;
     while (!to_visit.is_empty()) {
       head = to_visit.pop();
@@ -182,7 +182,7 @@ private:
 public:
   template<typename F>
   void in_order_traversal(F f) const {
-    in_order_traversal_doer(f, tree.root);
+    in_order_traversal_doer(f, tree._root);
   }
 };
 

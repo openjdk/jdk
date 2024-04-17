@@ -50,13 +50,13 @@ class TreapNode {
   uint64_t _priority;
   const K _key;
   V _value;
-  using Nd = TreapNode<K,V,CMP>;
-  Nd* _left;
-  Nd* _right;
+  using Node = TreapNode<K,V,CMP>;
+  Node* _left;
+  Node* _right;
 
-  struct nd_pair {
-    Nd* left;
-    Nd* right;
+  struct node_pair {
+    Node* left;
+    Node* right;
   };
 
   enum SplitMode {
@@ -66,24 +66,24 @@ class TreapNode {
 
   // Split tree at head into two trees, SplitMode decides where EQ values go.
   // We have SplitMode because it makes remove() trivial to implement.
-  static nd_pair split(Nd* head, const K& key, SplitMode mode = LEQ) {
+  static node_pair split(Node* head, const K& key, SplitMode mode = LEQ) {
     if (head == nullptr) {
       return {nullptr, nullptr};
     }
     if ( (CMP(head->_key, key) <= 0 && mode == LEQ) ||
          (CMP(head->_key, key) < 0  && mode == LT) ) {
-      nd_pair p = split(head->_right, key, mode);
+      node_pair p = split(head->_right, key, mode);
       head->_right = p.left;
-      return nd_pair{head, p.right};
+      return node_pair{head, p.right};
     } else {
-      nd_pair p = split(head->_left, key, mode);
+      node_pair p = split(head->_left, key, mode);
       head->_left = p.right;
-      return nd_pair{p.left, head};
+      return node_pair{p.left, head};
     }
   }
 
   // Invariant: left is a treap whose keys are LEQ to the keys in right.
-  static Nd* merge(Nd* left, Nd* right) {
+  static Node* merge(Node* left, Node* right) {
     if (left == nullptr) return right;
     if (right == nullptr) return left;
 
@@ -118,14 +118,14 @@ public:
     return _value;
   }
 
-  Nd* left() const {
+  Node* left() const {
     return _left;
   }
-  Nd* right() const {
+  Node* right() const {
     return _right;
   }
 
-  static Nd* find(Nd* node, const K& k) {
+  static Node* find(Node* node, const K& k) {
     if (node == nullptr) {
       return nullptr;
     }
@@ -141,27 +141,27 @@ public:
   }
 
   template<typename MakeNode>
-  static Nd* upsert(Nd* head, const K& k, const V& v, MakeNode make_node) {
+  static Node* upsert(Node* head, const K& k, const V& v, MakeNode make_node) {
     // (LEQ_k, GT_k)
-    nd_pair split = Nd::split(head, k);
-    Nd* found = find(split.left, k);
+    node_pair split = Node::split(head, k);
+    Node* found = find(split.left, k);
     if (found != nullptr) {
       // Already exists, update value.
       found->_value = v;
       return merge(split.left, split.right);
     }
     // Doesn't exist, make node
-    Nd* node = make_node(k, v);
+    Node* node = make_node(k, v);
     // merge(merge(LEQ_k, EQ_k), GT_k)
     return merge(merge(split.left, node), split.right);
   }
 
   template<typename Free>
-  static Nd* remove(Nd *head, const K& k, Free free) {
+  static Node* remove(Node *head, const K& k, Free free) {
     // (LEQ_k, GT_k)
-    nd_pair fst_split = split(head, k, LEQ);
+    node_pair fst_split = split(head, k, LEQ);
     // (LT_k, GEQ_k) == (LT_k, EQ_k) since it's from LEQ_k and keys are unique.
-    nd_pair snd_split = split(fst_split.left, k, LT);
+    node_pair snd_split = split(fst_split.left, k, LT);
 
     if (snd_split.right != nullptr) {
       // The key k existed, we delete it.
@@ -173,12 +173,12 @@ public:
 
   // Delete all nodes.
   template<typename Free>
-  static Nd* remove_all(Nd* tree, Free free) {
-    GrowableArrayCHeap<Nd*, mtNMT> to_delete;
+  static Node* remove_all(Node* tree, Free free) {
+    GrowableArrayCHeap<Node*, mtNMT> to_delete;
     to_delete.push(tree);
 
     while (!to_delete.is_empty()) {
-      Nd* head = to_delete.pop();
+      Node* head = to_delete.pop();
       if (head == nullptr) continue;
       to_delete.push(head->_left);
       to_delete.push(head->_right);
@@ -192,12 +192,12 @@ template<typename K, typename V, int(*CMP)(K,K)>
 class TreapCHeap {
   friend class VMATree;
   friend class VMATreeTest;
-  using CTreap = TreapNode<K, V, CMP>;
-  CTreap* root;
-  uint64_t prng_seed;
+  using Node = TreapNode<K, V, CMP>;
+  Node* _root;
+  uint64_t _prng_seed;
 
 public:
-  TreapCHeap(uint64_t seed = 1234) : root(nullptr), prng_seed(seed) {
+  TreapCHeap(uint64_t seed = 1234) : _root(nullptr), _prng_seed(seed) {
   }
   ~TreapCHeap() {
     this->remove_all();
@@ -209,39 +209,39 @@ public:
     static const uint64_t PrngAdd = 0xB;
     static const uint64_t PrngModPower = 48;
     static const uint64_t PrngModMask = (static_cast<uint64_t>(1) << PrngModPower) - 1;
-    prng_seed = (PrngMult * prng_seed + PrngAdd) & PrngModMask;
-    return prng_seed;
+    _prng_seed = (PrngMult * _prng_seed + PrngAdd) & PrngModMask;
+    return _prng_seed;
   }
 
   void upsert(const K& k, const V& v) {
-    root = CTreap::upsert(root, k, v, [&](const K& k, const V& v) {
+    _root = Node::upsert(_root, k, v, [&](const K& k, const V& v) {
       uint64_t rand = this->prng_next();
-      void* place = os::malloc(sizeof(CTreap), mtNMT);
-      new (place) CTreap(k, v, rand);
-      return (CTreap*)place;
+      void* place = os::malloc(sizeof(Node), mtNMT);
+      new (place) Node(k, v, rand);
+      return (Node*)place;
     });
   }
 
   void remove(const K& k) {
-    root = CTreap::remove(root, k, [](void* ptr) {
+    _root = Node::remove(_root, k, [](void* ptr) {
       os::free(ptr);
     });
   }
 
   void remove_all() {
-    root = CTreap::remove_all(root, [](void* ptr){
+    _root = Node::remove_all(_root, [](void* ptr){
       os::free(ptr);
     });
   }
 
-  CTreap* closest_geq(const K& key) {
+  Node* closest_geq(const K& key) {
     // Need to go "left-ward" for EQ node, so do a leq search first.
-    CTreap* leqB = closest_leq(key);
+    Node* leqB = closest_leq(key);
     if (leqB != nullptr && leqB->key() == key) {
       return leqB;
     }
-    CTreap* gtB = nullptr;
-    CTreap* head = root;
+    Node* gtB = nullptr;
+    Node* head = _root;
     while (head != nullptr) {
       int cmp_r = CMP(head->key(), key);
       if (cmp_r == 0) { // Exact match
@@ -258,9 +258,9 @@ public:
     }
     return gtB;
   }
-  CTreap* closest_leq(const K& key) {
-    CTreap* leqA_n = nullptr;
-    CTreap* head = root;
+  Node* closest_leq(const K& key) {
+    Node* leqA_n = nullptr;
+    Node* head = _root;
     while (head != nullptr) {
       int cmp_r = CMP(head->key(), key);
       if (cmp_r == 0) { // Exact match
