@@ -47,7 +47,7 @@ public class TestShenandoahBarrierExpansion {
 
     private static Object staticField;
     @Test
-    @IR(failOn = IRNode.IF, phase = CompilePhase.MACRO_EXPANSION)
+    @IR(failOn = IRNode.IF, phase = CompilePhase.AFTER_MACRO_EXPANSION_STEP)
     @IR(counts = { IRNode.IF, "2" }, phase = CompilePhase.BARRIER_EXPANSION)
     public Object testLoadFieldObject() {
         return staticField;
@@ -55,7 +55,7 @@ public class TestShenandoahBarrierExpansion {
 
     private static A staticField2 = new A();
     @Test
-    @IR(counts = { IRNode.IF, "1" }, phase = CompilePhase.MACRO_EXPANSION)
+    @IR(counts = { IRNode.IF, "1" }, phase = CompilePhase.AFTER_MACRO_EXPANSION_STEP)
     @IR(counts = { IRNode.IF, "3" }, phase = CompilePhase.BARRIER_EXPANSION)
     private static int testLoadObjectFieldWithNullCheck() {
         return staticField2.intField;
@@ -63,14 +63,14 @@ public class TestShenandoahBarrierExpansion {
 
     private static A staticField3 = new A();
     @Test
-    @IR(counts = { IRNode.IF, "2" }, phase = CompilePhase.MACRO_EXPANSION)
+    @IR(counts = { IRNode.IF, "2" }, phase = CompilePhase.AFTER_MACRO_EXPANSION_STEP)
     @IR(counts = { IRNode.IF, "6" }, phase = CompilePhase.BARRIER_EXPANSION)
     private static int testLoadTwoObjectFieldsWithNullCheck() {
         return staticField2.intField + staticField3.intField;
     }
 
     @Test
-    @IR(failOn = IRNode.IF, phase = CompilePhase.MACRO_EXPANSION)
+    @IR(failOn = IRNode.IF, phase = CompilePhase.AFTER_MACRO_EXPANSION_STEP)
     @IR(counts = { IRNode.IF, "3" }, phase = CompilePhase.BARRIER_EXPANSION)
     private static void testLoadTwoFieldObjectAndEscape() {
         final A field2 = staticField2;
