@@ -109,7 +109,11 @@ public final class Repository {
             return LocalDateTime.now();
         } catch (DateTimeException d) {
             Logger.log(LogTag.JFR, LogLevel.INFO, "Could not create LocalDateTime with the default time zone. Using UTC time zone for chunk filename.");
-            return LocalDateTime.ofEpochSecond(System.currentTimeMillis(), 0, ZoneOffset.UTC);
+            long epochMillis = System.currentTimeMillis();
+            long epochSeconds = epochMillis / 1000;
+            int millis = (int) (epochMillis % 1000);
+            int nanos = 1_000_000 * millis;
+            return LocalDateTime.ofEpochSecond(epochSeconds, nanos, ZoneOffset.UTC);
         }
     }
 
