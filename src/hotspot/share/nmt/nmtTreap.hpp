@@ -170,19 +170,19 @@ public:
 
   void upsert(const K& k, const V& v) {
     // (LEQ_k, GT_k)
-    node_pair split = split(this->_root, k);
-    Node* found = find(split.left, k);
+    node_pair split_up = split(this->_root, k);
+    Node* found = find(split_up.left, k);
     if (found != nullptr) {
       // Already exists, update value.
       found->_value = v;
-      this->_root = merge(split.left, split.right);
+      this->_root = merge(split_up.left, split_up.right);
     }
     // Doesn't exist, make node
     void* node_place = Allocator::allocate(sizeof(Node));
     uint64_t prio = prng_next();
     Node* node = new (node_place) Node(k, v, prio);
     // merge(merge(LEQ_k, EQ_k), GT_k)
-    this->_root = merge(merge(split.left, node), split.right);
+    this->_root = merge(merge(split_up.left, node), split_up.right);
   }
 
   void remove(const K& k) {
