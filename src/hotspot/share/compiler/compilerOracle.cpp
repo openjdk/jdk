@@ -1064,20 +1064,20 @@ bool CompilerOracle::parse_from_file() {
 bool CompilerOracle::parse_from_input(inputStream::Input* input,
                                       CompilerOracle::
                                       parse_from_line_fn_t* parse_from_line) {
+  bool success = true;
   for (inputStream in(input); !in.done(); in.next()) {
     if (!parse_from_line(in.current_line())) {
-      return false;
+      success = false;
     }
   }
-  return true;
+  return success;
 }
 
 bool CompilerOracle::parse_from_string(const char* str,
                                        CompilerOracle::
                                        parse_from_line_fn_t* parse_from_line) {
   MemoryInput input(str, strlen(str));
-  parse_from_input(&input, parse_from_line);
-  return true;
+  return parse_from_input(&input, parse_from_line);
 }
 
 bool compilerOracle_init() {

@@ -171,7 +171,8 @@ static void istream_test_driver(const bool VERBOSE,
   char pat2[sizeof(pat)];  // copy of pat to help detect scribbling
   memcpy(pat2, pat, sizeof(pat));
   // Make three kinds of stream and test them all.
-  inputStream sin(pat2, patlen);
+  MemoryInput _min(pat2, patlen);
+  inputStream sin(&_min);
   if (VERBOSE) {
     tty->print("at %llx ", (unsigned long long)(intptr_t)&sin);
     sin.dump("sin");
@@ -180,10 +181,7 @@ static void istream_test_driver(const bool VERBOSE,
     fileStream tfs(temp_file);
     guarantee(tfs.is_open(), "cannot open temp file");
     tfs.write(pat, patlen);
-    //tfs.print_cr("googly");  //this fault would get caught
   }
-  //FileInput fin_block(temp_file);
-  //inputStream fin(&fin_block);
   BlockInputStream<FileInput> fin(temp_file);
   if (VERBOSE) {
     tty->print("at %llx ", (unsigned long long)(intptr_t)&fin);
@@ -218,29 +216,7 @@ static void istream_test_driver(const bool VERBOSE,
     int pos_to_set = 0, line_to_set = 1;  // for TEST_SET_POSITION only
     for (int phase = 0; phase <= (TEST_SET_POSITION ? 1 : 0); phase++) {
       lineno = 1;
-      if (phase > 0 && (&in == &sin)) {
-        if (VERBOSE)  in.dump("push");
-        in.push_back_input(pat, patlen);
-        in.set_lineno(lineno);
-        if (VERBOSE)  in.dump("push");
-        EXPECT_EQ((int)in.current_line_position(), 0)  <<LPEQ;
-      }
-      if (TEST_SET_POSITION) {
-        if (VERBOSE) { tty->print("seek %d/%d ", (int)pos_to_set, line_to_set); in.dump("seek"); }
-        lineno = line_to_set;
-        size_t res = in.set_current_line_position(pos_to_set, line_to_set);
-        if (VERBOSE)  tty->print_cr("seek res = %d", (int)res);
-        EXPECT_EQ((int)in.current_line_position(), pos_to_set)  <<LPEQ;
-        if (VERBOSE) { tty->print("seek %d/%d ", (int)pos_to_set, line_to_set); in.dump("seek"); }
-      }
       for (; lineno <= full_lines + partial_line; lineno++) {
-        if (TEST_SET_POSITION &&
-            phase == 0 && lineno == (full_lines + partial_line)/2) {
-          pos_to_set = (int)in.current_line_position();
-          EXPECT_NE(pos_to_set, -1)  <<LPEQ;
-          line_to_set = lineno;
-          if (VERBOSE) { tty->print("tell %d/%d ", (int)pos_to_set, line_to_set); in.dump("tell"); }
-        }
         EXPECT_EQ(-1, firstdiff(pat, pat2, patlen + 1));
         if (VERBOSE)  in.dump("!done?");
         bool done = in.done();
@@ -249,105 +225,8 @@ static void istream_test_driver(const bool VERBOSE,
         lp = in.current_line();
         const char* expect_endl =
           (lineno <= full_lines) ? line_end : partial_line_end;
-        if (TEST_PUSH_BACK && (lineno ^ (lineno>>3)) % 3 > 0) {
-          // test additional state changes here
-          bool test_pushback_lineno = false;  //FIXME
-          const char* copy = in.save_line();
-          int oldcll = (int) in.current_line_length();
-          EXPECT_STREQ(lp, copy)  <<LPEQ;
-          const char* endl = in.current_line_ending();
-          EXPECT_STREQ(endl, expect_endl)  <<LPEQ;
-          const bool overwrite = (lineno % 7 > 3);
-          const bool charwise = (lineno % 14 < 7);
-          if (VERBOSE) {
-            tty->print("pushback %s%s %d: [%s]",
-                       overwrite ? "overwriting" : "before next",
-                       charwise ? "/charwise" : "",
-                       lineno, copy);
-            in.dump("");
-          }
-          if (!overwrite) {
-            bool saw_next = in.next();
-            if (VERBOSE)  in.dump(saw_next ? "PB-N" : "PB-D");
-          }
-          if (!charwise) {
-            in.push_back_input(endl, strlen(endl), overwrite);
-            in.push_back_input(copy);
-          } else {
-            bool oflag = overwrite;
-            const char* cp;
-            for (cp = endl + strlen(endl); --cp >= endl; ) {
-              in.push_back_input(cp, 1, oflag);
-              oflag = false;
-            }
-            for (cp = copy + strlen(copy); --cp >= copy; ) {
-              in.push_back_input(cp, 1, oflag);
-              oflag = false;
-            }
-          }
-          if (test_pushback_lineno) {
-            if (!overwrite || !*endl)  in.add_to_lineno(-1);
-          }
-          // paper over irregular lineno/pushback interactions:
-          if (!test_pushback_lineno)  in.set_lineno(lineno);
-          lp = in.current_line();
-          EXPECT_STREQ(lp, copy)  <<LPEQ;
-          int newcll = (int) in.current_line_length();
-          EXPECT_EQ(newcll, oldcll)  <<LPEQ << " newcll:" << newcll;
-        }
+
         bool verify_lp = true;
-        if (TEST_EXPAND_REDUCE && (lineno ^ (lineno>>3)) % 7 > 2) {
-          // test additional state changes here
-          const char* copy = in.save_line();
-          int oldcll = (int) in.current_line_length();
-          EXPECT_STREQ(lp, copy)  <<LPEQ;
-          const char* endl = in.current_line_ending();
-          EXPECT_STREQ(endl, expect_endl)  <<LPEQ;
-          const bool expand = (lineno % 7 > 3);
-          const bool start  = (lineno % 14 < 7);
-          const char* xrstr = "ASDF";
-          const int  xrlen_arg = (lineno % 5);
-          const int  xrlen = (!expand && xrlen_arg > oldcll) ? oldcll : xrlen_arg;
-          assert(xrlen >= 0, "");
-          const int expcll = oldcll + (expand ? xrlen : -xrlen);
-          assert(expcll >= 0, "");
-          if (VERBOSE) {
-            tty->print("%s%s/arg%d %d: [%s]",
-                       expand ? "expand" : "reduce",
-                       start ? "/start" : "/end",
-                       xrlen_arg,
-                       lineno, copy);
-            in.dump("");
-          }
-          if (expand) {
-            in.expand_current_line_with(xrstr, xrlen_arg, start);
-            if (VERBOSE)  in.dump("expand");
-          } else {
-            in.reduce_current_line(xrlen_arg, start);
-            if (VERBOSE)  in.dump("reduce");
-          }
-          lp = in.current_line();
-          int newcll = (int) in.current_line_length();
-          EXPECT_EQ(newcll, expcll)  <<LPEQ << " expcll:" << expcll;
-          if (expand) {
-            if (start) {
-              // lp = xrstr + oldcopy
-              EXPECT_MEMEQ(lp, xrstr, xrlen) <<LPEQ;
-              EXPECT_STREQ(lp+xrlen, copy) <<LPEQ;
-            } else {
-              // lp = oldcopy + xrstr
-              EXPECT_MEMEQ(lp, copy, oldcll) <<LPEQ;
-              EXPECT_MEMEQ(lp+oldcll, xrstr, xrlen) <<LPEQ;
-            }
-          } else {
-            if (start) {
-              EXPECT_STREQ(lp, copy+xrlen) <<LPEQ;
-            } else {
-              EXPECT_MEMEQ(lp, copy, expcll) <<LPEQ;
-            }
-          }
-          if (xrlen > 0)  verify_lp = false;  // do not bother
-        }
         if (verify_lp) {
           int actual_lineno = (int) in.lineno();
           if (VERBOSE)  in.dump("CL    ");
@@ -366,9 +245,6 @@ static void istream_test_driver(const bool VERBOSE,
             return;  // no error cascades please
           }
         }
-        const char* endl = in.current_line_ending();
-        EXPECT_EQ(strlen(expect_endl), strlen(endl))  <<LPEQ << " endl=" << endl;
-        EXPECT_STREQ(expect_endl, endl);
         if (VERBOSE)  in.dump("next  ");
         in.next();
       }
@@ -382,8 +258,6 @@ static void istream_test_driver(const bool VERBOSE,
         if (!in.done())  break;
         EXPECT_EQ((int)in.current_line_length(), 0)   <<LPEQ;
         EXPECT_EQ(strlen(lp), in.current_line_length())  <<LPEQ;
-        const char* endl = in.current_line_ending();
-        EXPECT_EQ(0, (int)strlen(endl))  <<LPEQ << " endl=" << endl;
         bool extra_next = in.next();
         EXPECT_TRUE(!extra_next)  <<LPEQ;
       }
@@ -424,26 +298,6 @@ static void istream_test_driver(const bool VERBOSE,
 TEST_VM(istream, basic) {
   const bool VERBOSE = false;
   istream_test_driver(VERBOSE, false, false, false);
-}
-
-TEST_VM(istream, push_back) {
-  const bool VERBOSE = false;
-  const bool TEST_PUSH_BACK = true;
-  istream_test_driver(VERBOSE, false, TEST_PUSH_BACK, false);
-}
-
-TEST_VM(istream, set_position) {
-  const bool VERBOSE = false;
-  const bool TEST_SET_POSITION = true;
-  istream_test_driver(VERBOSE, TEST_SET_POSITION, false, false);
-  istream_test_driver(VERBOSE, TEST_SET_POSITION, true, false);
-}
-
-TEST_VM(istream, expand_reduce) {
-  const bool VERBOSE = false;
-  const bool TEST_EXPAND_REDUCE = true;
-  istream_test_driver(VERBOSE, false, false, TEST_EXPAND_REDUCE);
-  istream_test_driver(VERBOSE, true, false, TEST_EXPAND_REDUCE);
 }
 
 TEST_VM(istream, coverage) {
