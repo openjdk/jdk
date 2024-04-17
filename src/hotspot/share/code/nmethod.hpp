@@ -294,6 +294,12 @@ class nmethod : public CodeBlob {
     return Atomic::load(&_deoptimization_status);
   }
 
+  // Initialize fields to their default values
+  void init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets);
+
+  // Post initialization
+  void post_init();
+
   // For native wrappers
   nmethod(Method* method,
           CompilerType type,
@@ -306,7 +312,7 @@ class nmethod : public CodeBlob {
           ByteSize basic_lock_sp_offset,       /* synchronized natives only */
           OopMapSet* oop_maps);
 
-  // Creation support
+  // For normal JIT compiled code
   nmethod(Method* method,
           CompilerType type,
           int nmethod_size,
@@ -349,9 +355,6 @@ class nmethod : public CodeBlob {
 
   // Inform external interfaces that a compiled method has been unloaded
   void post_compiled_method_unload();
-
-  // Initialize fields to their default values
-  void init_defaults();
 
   PcDesc* find_pc_desc(address pc, bool approximate) {
     return _pc_desc_container.find_pc_desc(pc, approximate, PcDescSearch(code_begin(), scopes_pcs_begin(), scopes_pcs_end()));

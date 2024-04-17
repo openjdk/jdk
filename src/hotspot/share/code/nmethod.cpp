@@ -996,31 +996,6 @@ const char* nmethod::compiler_name() const {
   return compilertype2name(_compiler_type);
 }
 
-// Fill in default values for various flag fields
-void nmethod::init_defaults() {
-  // avoid uninitialized fields, even for short time periods
-  _exception_cache            = nullptr;
-  _gc_data                    = nullptr;
-  _oops_do_mark_link          = nullptr;
-  _compiled_ic_data           = nullptr;
-
-#if INCLUDE_RTM_OPT
-  _rtm_state                  = NoRTM;
-#endif
-  _is_unloading_state         = 0;
-  _state                      = not_installed;
-
-  _has_unsafe_access          = 0;
-  _has_method_handle_invokes  = 0;
-  _has_wide_vectors           = 0;
-  _has_monitors               = 0;
-  _has_flushed_dependencies   = 0;
-  _is_unlinked                = 0;
-  _load_reported              = 0; // jvmti state
-
-  _deoptimization_status      = not_marked;
-}
-
 #ifdef ASSERT
 class CheckForOopsClosure : public OopClosure {
   bool _found_oop = false;
@@ -1195,6 +1170,53 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   return nm;
 }
 
+// Fill in default values for various fields
+void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
+  // avoid uninitialized fields, even for short time periods
+  _exception_cache            = nullptr;
+  _gc_data                    = nullptr;
+  _oops_do_mark_link          = nullptr;
+  _compiled_ic_data           = nullptr;
+
+#if INCLUDE_RTM_OPT
+  _rtm_state                  = NoRTM;
+#endif
+  _is_unloading_state         = 0;
+  _state                      = not_installed;
+
+  _has_unsafe_access          = 0;
+  _has_method_handle_invokes  = 0;
+  _has_wide_vectors           = 0;
+  _has_monitors               = 0;
+  _has_flushed_dependencies   = 0;
+  _is_unlinked                = 0;
+  _load_reported              = 0; // jvmti state
+
+  _deoptimization_status      = not_marked;
+
+  // SECT_CONSTS is first in code buffer so the offset should be 0.
+  int consts_offset = code_buffer->total_offset_of(code_buffer->consts());
+  assert(consts_offset == 0, "const_offset: %d", consts_offset);
+
+  _entry_offset          = checked_cast<uint16_t>(offsets->value(CodeOffsets::Entry));
+  _verified_entry_offset = checked_cast<uint16_t>(offsets->value(CodeOffsets::Verified_Entry));
+  _stub_offset           = content_offset() + code_buffer->total_offset_of(code_buffer->stubs());
+
+  _skipped_instructions_size = checked_cast<uint16_t>(code_buffer->total_skipped_instructions_size());
+}
+
+// Post initialization
+void nmethod::post_init() {
+  clear_unloading_state();
+
+  finalize_relocations();
+
+  Universe::heap()->register_nmethod(this);
+  debug_only(Universe::heap()->verify_nmethod(this));
+
+  CodeCache::commit(this);
+}
+
 // For native wrappers
 nmethod::nmethod(
   Method* method,
@@ -1210,6 +1232,7 @@ nmethod::nmethod(
   : CodeBlob("native nmethod", CodeBlobKind::Nmethod, code_buffer, nmethod_size, sizeof(nmethod),
              offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
   _deoptimization_generation(0),
+  _gc_epoch(CodeCache::gc_epoch()),
   _method(method),
   _native_receiver_sp_offset(basic_lock_owner_sp_offset),
   _native_basic_lock_sp_offset(basic_lock_sp_offset)
@@ -1218,25 +1241,27 @@ nmethod::nmethod(
     debug_only(NoSafepointVerifier nsv;)
     assert_locked_or_safepoint(CodeCache_lock);
 
-    init_defaults();
-    _comp_level              = CompLevel_none;
+    init_defaults(code_buffer, offsets);
+
+    _osr_entry_point         = nullptr;
     _entry_bci               = InvocationEntryBci;
-    // We have no exception handler or deopt handler make the
-    // values something that will never match a pc like the nmethod vtable entry
-    _exception_offset        = 0;
+    _compile_id              = compile_id;
+    _comp_level              = CompLevel_none;
+    _compiler_type           = type;
     _orig_pc_offset          = 0;
+   
+    if (offsets->value(CodeOffsets::Exceptions) != -1) {
+      // Continuation enter intrinsic
+      _exception_offset      = code_offset() + offsets->value(CodeOffsets::Exceptions);
+    } else {
+      _exception_offset      = 0;
+    }
+    // Native wrappers do not have deopt handlers. Make the values
+    // something that will never match a pc like the nmethod vtable entry
     _deopt_handler_offset    = 0;
     _deopt_mh_handler_offset = 0;
     _unwind_handler_offset   = 0;
-    _gc_epoch                = CodeCache::gc_epoch();
 
-    // SECT_CONSTS is first in code buffer so the offset should be 0.
-    int consts_offset = code_buffer->total_offset_of(code_buffer->consts());
-    assert(consts_offset == 0, "const_offset: %d", consts_offset);
-
-    _skipped_instructions_size = checked_cast<uint16_t>(code_buffer->total_skipped_instructions_size());
-
-    _stub_offset             = content_offset() + code_buffer->total_offset_of(code_buffer->stubs());
 #ifdef ASSERT
     int oops_size     = align_up(code_buffer->total_oop_size(), oopSize);
     int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
@@ -1258,27 +1283,12 @@ nmethod::nmethod(
 #endif
     assert((data_offset() + data_end_offset) <= nmethod_size, "wrong nmethod's size: %d < %d", nmethod_size, (data_offset() + data_end_offset));
 
-    _compile_id              = compile_id;
-    _compiler_type           = type;
-    _entry_offset            = checked_cast<uint16_t>(offsets->value(CodeOffsets::Entry));
-    _verified_entry_offset   = checked_cast<uint16_t>(offsets->value(CodeOffsets::Verified_Entry));
-    _osr_entry_point         = nullptr;
     _pc_desc_container.reset_to(nullptr);
 
-    if (offsets->value(CodeOffsets::Exceptions) != -1) {
-      _exception_offset      = code_offset() + offsets->value(CodeOffsets::Exceptions);
-    }
     code_buffer->copy_code_and_locs_to(this);
     code_buffer->copy_values_to(this);
 
-    clear_unloading_state();
-
-    finalize_relocations();
-
-    Universe::heap()->register_nmethod(this);
-    debug_only(Universe::heap()->verify_nmethod(this));
-
-    CodeCache::commit(this);
+    post_init();
   }
 
   if (PrintNativeNMethods || PrintDebugInfo || PrintRelocations || PrintDependencies) {
@@ -1336,6 +1346,7 @@ void* nmethod::operator new(size_t size, int nmethod_size, bool allow_NonNMethod
   return CodeCache::allocate(nmethod_size, CodeBlobType::NonNMethod);
 }
 
+// For normal JIT compiled code
 nmethod::nmethod(
   Method* method,
   CompilerType type,
@@ -1362,6 +1373,7 @@ nmethod::nmethod(
   : CodeBlob("nmethod", CodeBlobKind::Nmethod, code_buffer, nmethod_size, sizeof(nmethod),
              offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
   _deoptimization_generation(0),
+  _gc_epoch(CodeCache::gc_epoch()),
   _method(method),
   _osr_link(nullptr)
 {
@@ -1370,21 +1382,15 @@ nmethod::nmethod(
     debug_only(NoSafepointVerifier nsv;)
     assert_locked_or_safepoint(CodeCache_lock);
 
-    init_defaults();
-    _entry_bci      = entry_bci;
-    _compile_id     = compile_id;
-    _compiler_type  = type;
-    _comp_level     = comp_level;
-    _orig_pc_offset = orig_pc_offset;
-    _gc_epoch       = CodeCache::gc_epoch();
+    init_defaults(code_buffer, offsets);
 
-    // SECT_CONSTS is first in code buffer so the offset should be 0.
-    int consts_offset = code_buffer->total_offset_of(code_buffer->consts());
-    assert(consts_offset == 0, "const_offset: %d", consts_offset);
+    _osr_entry_point = code_begin() + offsets->value(CodeOffsets::OSR_Entry);
+    _entry_bci       = entry_bci;
+    _compile_id      = compile_id;
+    _comp_level      = comp_level;
+    _compiler_type   = type;
+    _orig_pc_offset  = orig_pc_offset;
 
-    _skipped_instructions_size = checked_cast<uint16_t>(code_buffer->total_skipped_instructions_size());
-
-    _stub_offset = content_offset() + code_buffer->total_offset_of(code_buffer->stubs());
     set_ctable_begin(header_begin() + content_offset());
 
 #if INCLUDE_JVMCI
@@ -1448,10 +1454,7 @@ nmethod::nmethod(
 #endif
     assert((data_offset() + data_end_offset) <= nmethod_size, "wrong nmethod's size: %d < %d", nmethod_size, (data_offset() + data_end_offset));
 
-    _entry_offset          = checked_cast<uint16_t>(offsets->value(CodeOffsets::Entry));
-    _verified_entry_offset = checked_cast<uint16_t>(offsets->value(CodeOffsets::Verified_Entry));
-    _osr_entry_point       = code_begin()          + offsets->value(CodeOffsets::OSR_Entry);
-
+    // after _scopes_pcs_offset is set
     _pc_desc_container.reset_to(scopes_pcs_begin());
 
     code_buffer->copy_code_and_locs_to(this);
@@ -1459,7 +1462,6 @@ nmethod::nmethod(
     code_buffer->copy_values_to(this);
     debug_info->copy_to(this);
     dependencies->copy_to(this);
-    clear_unloading_state();
 
 #if INCLUDE_JVMCI
     if (compiler->is_jvmci()) {
@@ -1467,13 +1469,6 @@ nmethod::nmethod(
       jvmci_nmethod_data()->copy(jvmci_data);
     }
 #endif
-
-    finalize_relocations();
-
-    Universe::heap()->register_nmethod(this);
-    debug_only(Universe::heap()->verify_nmethod(this));
-
-    CodeCache::commit(this);
 
     // Copy contents of ExceptionHandlerTable to nmethod
     handler_table->copy_to(this);
@@ -1485,6 +1480,8 @@ nmethod::nmethod(
       memcpy(speculations_begin(), speculations, speculations_len);
     }
 #endif
+
+    post_init();
 
     // we use the information of entry points to find out if a method is
     // static or non static
