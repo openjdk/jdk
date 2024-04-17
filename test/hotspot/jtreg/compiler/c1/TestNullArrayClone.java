@@ -35,31 +35,26 @@ package compiler.c1;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class TestNullArrayClone {
-    public static void main(String[] args)
-    {
+    public static void main(String[] args) {
         final int size = 10;
         final int[] ints = new int[size];
-        for (int i = 0; i < ints.length; i++)
-        {
+        for (int i = 0; i < ints.length; i++) {
             ints[i] = ThreadLocalRandom.current().nextInt();
         }
 
-        for (int i = 0; i < 1_000; i++)
-        {
+        for (int i = 0; i < 1_000; i++) {
             int[] result = test(ints);
             blackhole(result);
         }
 
         try {
             test(null);
-            System.out.println("Expected NullPointerException to be thrown");
-            System.exit(97);
+            throw new RuntimeException("Expected NullPointerException to be thrown");
         } catch (NullPointerException e) {
         }
     }
 
-    static int[] test(int[] ints)
-    {
+    static int[] test(int[] ints) {
         return ints.clone();
     }
 
