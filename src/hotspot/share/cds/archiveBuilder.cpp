@@ -579,11 +579,25 @@ char* ArchiveBuilder::ro_strdup(const char* s) {
   return archived_str;
 }
 
+int ArchiveBuilder::compare_src_objs(SourceObjInfo** a, SourceObjInfo** b) {
+  if ((*a)->has_embedded_pointer() && !(*b)->has_embedded_pointer()) {
+    return 1;
+  } else if (!(*a)->has_embedded_pointer() && (*b)->has_embedded_pointer()) {
+    return -1;
+  } else {
+    return 0;
+  }
+}
+
+void ArchiveBuilder::sort_metadata_objs() {
+  _rw_src_objs.objs()->sort(compare_src_objs);
+  _ro_src_objs.objs()->sort(compare_src_objs);
+}
+
 void ArchiveBuilder::dump_rw_metadata() {
   ResourceMark rm;
   log_info(cds)("Allocating RW objects ... ");
-  make_shallow_copies(&_rw_region, &_rw_src_objs, false /*needs_relocation*/);
-  make_shallow_copies(&_rw_region, &_rw_src_objs, true /*needs_relocation*/);
+  make_shallow_copies(&_rw_region, &_rw_src_objs);
 
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_full_module_graph()) {
@@ -600,8 +614,7 @@ void ArchiveBuilder::dump_ro_metadata() {
   log_info(cds)("Allocating RO objects ... ");
 
   start_dump_space(&_ro_region);
-  make_shallow_copies(&_ro_region, &_ro_src_objs, false /*needs_relocation*/);
-  make_shallow_copies(&_ro_region, &_ro_src_objs, true /*needs_relocation*/);
+  make_shallow_copies(&_ro_region, &_ro_src_objs);
 
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_full_module_graph()) {
@@ -616,12 +629,10 @@ void ArchiveBuilder::dump_ro_metadata() {
 
 // If an object does not have embedded pointers, they should be copied first so the resulting bitmap can be truncated
 void ArchiveBuilder::make_shallow_copies(DumpRegion *dump_region,
-                                         const ArchiveBuilder::SourceObjList* src_objs, bool needs_relocation) {
+                                         const ArchiveBuilder::SourceObjList* src_objs) {
   for (int i = 0; i < src_objs->objs()->length(); i++) {
     SourceObjInfo* src_obj = src_objs->objs()->at(i);
-    if (!(src_obj->has_embedded_pointer() ^ needs_relocation)) {
-      make_shallow_copy(dump_region, src_obj);
-    }
+    make_shallow_copy(dump_region, src_obj);
   }
   log_info(cds)("done (%d objects)", src_objs->objs()->length());
 }

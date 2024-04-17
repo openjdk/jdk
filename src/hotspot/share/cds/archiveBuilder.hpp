@@ -255,7 +255,7 @@ private:
   static int compare_symbols_by_address(Symbol** a, Symbol** b);
   static int compare_klass_by_name(Klass** a, Klass** b);
 
-  void make_shallow_copies(DumpRegion *dump_region, const SourceObjList* src_objs, bool needs_relocation);
+  void make_shallow_copies(DumpRegion *dump_region, const SourceObjList* src_objs);
   void make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* src_info);
 
   void relocate_embedded_pointers(SourceObjList* src_objs);
@@ -386,6 +386,8 @@ public:
 
   char* ro_strdup(const char* s);
 
+  static int compare_src_objs(SourceObjInfo** a, SourceObjInfo** b);
+  void sort_metadata_objs();
   void dump_rw_metadata();
   void dump_ro_metadata();
   void relocate_metaspaceobj_embedded_pointers();
