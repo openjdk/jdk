@@ -709,6 +709,10 @@ public class IPAddressUtil {
                 fieldValue = parseV4FieldBsd(radix, charBuffer, fieldNumber);
                 if (fieldValue >= 0) {
                     if (fieldValue < 256) {
+                        // Store the parsed field in the byte buffer.
+                        // If the field value is greater than 255, it can only be the last field.
+                        // If it is not the last one, parseV4FieldBsd enforces this limit
+                        // and returns TERMINAL_PARSE_ERROR.
                         res[fieldNumber] = (byte) fieldValue;
                     }
                     fieldNumber++;

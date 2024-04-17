@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 8272215 8315767
- * @summary Test for ofLiteral API in InetAddress classes
+ * @summary Test for ofLiteral, ofPosixLiteral APIs in InetAddress classes
  * @run junit/othervm -Djdk.net.hosts.file=nonExistingHostsFile.txt
  *                     OfLiteralTest
  * @run junit/othervm -Djdk.net.hosts.file=nonExistingHostsFile.txt

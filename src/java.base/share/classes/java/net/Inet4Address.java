@@ -252,7 +252,7 @@ class Inet4Address extends InetAddress {
      */
     public static Inet4Address ofPosixLiteral(String posixIPAddressLiteral) {
         Objects.requireNonNull(posixIPAddressLiteral);
-        return parseAddressStringPosix(posixIPAddressLiteral, true);
+        return parseAddressStringPosix(posixIPAddressLiteral);
     }
 
     /**
@@ -318,12 +318,12 @@ class Inet4Address extends InetAddress {
      * @throws IllegalArgumentException if the given {@code addressLiteral} string
      * cannot be parsed as an IPv4 address literal and {@code throwIAE} is {@code true}.
      */
-    static Inet4Address parseAddressStringPosix(String addressLiteral, boolean throwIAE) {
+    private static Inet4Address parseAddressStringPosix(String addressLiteral) {
         byte [] parsedBytes = IPAddressUtil.parseBsdLiteralV4(addressLiteral);
-        if (parsedBytes == null && throwIAE) {
+        if (parsedBytes == null) {
             throw IPAddressUtil.invalidIpAddressLiteral(addressLiteral);
         }
-        return (parsedBytes == null) ? null : new Inet4Address(null, parsedBytes);
+        return new Inet4Address(null, parsedBytes);
     }
 
     /**
