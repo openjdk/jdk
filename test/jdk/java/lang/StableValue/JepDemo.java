@@ -51,6 +51,35 @@ final class JepDemo {
 
     static class Foo {};
 
+
+
+    static
+    class BarBefore {
+        // ordinary static initialization
+        private static final Logger LOGGER = Logger.getLogger("com.foo.Bar");
+
+        public void handleRequest() {
+            LOGGER.log(Level.INFO, "Hello");
+        }
+
+    }
+
+    static
+    class BarBefore2 {
+        // Initialization-on-demand holder idiom
+        Logger logger() {
+            class Holder {
+                static final Logger LOGGER = Logger.getLogger("com.foo.Bar");
+            }
+            return Holder.LOGGER;
+        }
+
+        public void handleRequest() {
+            logger().log(Level.INFO, "Hello");
+        }
+
+    }
+
     static
     class Bar {
         // 1. Declare a stable value field
@@ -91,94 +120,58 @@ final class JepDemo {
                 .computeIfUnset( () -> Logger.getLogger("com.foo.Bar") );
 
         static Logger logger() {
-            // 2. Access the memoized suppler with as-declared-final performance
+            // 3. Access the memoized suppler with as-declared-final performance
             //    (evaluation made before the first access)
             return LOGGER.get();
         }
     }
 
     static
-    class Fibonacci {
+    class Bar4 {
 
-        private final List<StableValue<Integer>> numCache;
-        private final IntFunction<Integer> numFunction;
+        // 1. Declare a memoized (cached) Supplier backed by a stable value
+        private static final Supplier<Logger> LOGGER =
+                StableValue.ofSupplier( () -> Logger.getLogger("com.foo.Bar") );
 
-        public Fibonacci(int upperBound) {
-            numCache = StableValue.ofList(upperBound);
-            numFunction = i -> StableValue.computeIfUnset(numCache, i, this::number);
-        }
-
-        public int number(int n) {
-            return (n < 2)
-                    ? n
-                    : numFunction.apply(n - 1) + numFunction.apply(n - 2);
-        }
-
-    }
-
-
-    static
-    class MapDemo {
-
-        // 1. Declare a stable map of loggers with two allowable keys:
-        //    "com.foo.Bar" and "com.foo.Baz"
-        static final Map<String, StableValue<Logger>> LOGGERS =
-                StableValue.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
-
-        // 2. Access the memoized map with as-declared-final performance
-        //    (evaluation made before the first access)
-        static Logger logger(String name) {
-            return StableValue.computeIfUnset(LOGGERS, name, Logger::getLogger);
+        static Logger logger() {
+            // 2. Access the memoized suppler with as-declared-final performance
+            //    (evaluation made before the first access)
+            return LOGGER.get();
         }
     }
 
+    // In user-land and if we want constant folding when using
+    // the holder statically:
 
-    static
-    class SetDemo {
+    record LoggerHolder(StableValue<Logger> loggerHolder) {
 
-        static final Map<String, StableValue<Boolean>> INFO_LOGGABLE =
-                StableValue.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
-
-        static boolean isInfoLoggable(String name) {
-            return StableValue.computeIfUnset(INFO_LOGGABLE, name, n -> MapDemo.logger(n).isLoggable(Level.INFO));
+        public LoggerHolder() {
+            this(StableValue.of());
         }
 
-        private static final String NAME = "com.foo.Bar";
-
-        public static void main(String[] args) {
-            if (isInfoLoggable(NAME)) {
-                MapDemo.LOGGERS.get(NAME)
-                        .orThrow()
-                        .log(Level.INFO, "This is fast...");
-            }
+        Logger logger() {
+            // 1. Access the logger holder with as-declared-final performance
+            //    (evaluation made before the first access)
+            return loggerHolder.computeIfUnset(() -> Logger.getLogger("com.foo.Bar") );
         }
-
     }
 
     static
-    class Memo {
+    class LoggerHolder2 {
 
-        static
-        class Memoized {
+        // 1. Declare an instance field that holds the logger
+        //    This field gets special VM treatment as it is of type StableValue
+        //    The field is resistant to updates via reflection and sun.misc.Unsafe
+        private final StableValue<Logger> logger = StableValue.of();
 
-            // 1. Declare a lazily computed map
-            private static final Map<String, StableValue<Logger>> MAP =
-                    StableValue.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
-
-            // 2. Declare a memoized (cached) function backed by the lazily computed map
-            private static final Function<String, Logger> LOGGERS =
-                    n -> StableValue.computeIfUnset(MAP, n, Logger::getLogger);
-
-            private static final String NAME = "com.foo.Baz";
-
-            public static void main(String[] args) {
-                // 3. Access the memoized value via the function with as-declared-final
-                //    performance (evaluation made before the first access)
-                Logger logger = LOGGERS.apply(NAME);
-            }
-
+        Logger logger() {
+            // 2. Access the logger with as-declared-final performance
+            //    (evaluation made before the first access)
+            return logger.computeIfUnset(() -> Logger.getLogger("com.foo.Bar") );
         }
     }
+
+    // Lists and arrays
 
     static
     class ErrorMessages {
@@ -211,7 +204,7 @@ final class JepDemo {
 
     }
 
-    static class Holder {
+    static class Hide {
 
         static
         class ErrorMessages {
@@ -282,18 +275,174 @@ final class JepDemo {
 
     }
 
-    @Test
-    void fibDirect() {
-        Fibonacci fibonacci = new Fibonacci(20);
-        int[] fibs = IntStream.range(0, 10)
-                .map(fibonacci::number)
-                .toArray(); // { 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 }
+    static
+    class ListDemo3 {
 
-        assertArrayEquals(new int[]{ 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 }, fibs);
+        private static final int SIZE = 8;
+
+        // 1. Declare a memoized IntFunction backed by the stable list
+        private static final IntFunction<String> ERROR_FUNCTION =
+                StableValue.ofIntFunction(SIZE, ListDemo3::readFromFile);
+
+        // 2. Define a function that is to be called the first
+        //    time a particular message number is referenced
+        private static String readFromFile(int messageNumber) {
+            try {
+                return Files.readString(Path.of("message-" + messageNumber + ".html"));
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        public static void main(String[] args) {
+            // 3. Access the memoized list element with as-declared-final performance
+            //    (evaluation made before the first access)
+            String msg =  ERROR_FUNCTION.apply(2);
+        }
+
     }
 
+    // Instance fields
+
+    static
+    class Fibonacci {
+
+        private final IntFunction<Integer> numFunction;
+
+        public Fibonacci(int upperBound) {
+            numFunction = StableValue.ofIntFunction(upperBound, this::number);
+        }
+
+        public int number(int n) {
+            return (n < 2)
+                    ? n
+                    : numFunction.apply(n - 1) + numFunction.apply(n - 2);
+        }
+
+    }
+
+    /* Does not work as we cannot reference "this" before the constructor returns
+
+    record Fibonacci2(int upperBound,
+                      IntFunction<Integer> numFunction) {
+
+        public Fibonacci2(int upperBound) {
+            this(upperBound, StableValue.ofIntFunction(upperBound, this::number));
+        }
+
+        public int number(int n) {
+            return (n < 2)
+                    ? n
+                    : numFunction.apply(n - 1) + numFunction.apply(n - 2);
+        }
+
+    }
+    */
+
+    record Fibonacci2(int upperBound,
+                      StableValue<IntFunction<Integer>> numFunction) {
+
+        public Fibonacci2(int upperBound) {
+            this(upperBound, StableValue.of());
+            numFunction.setOrThrow(this::number);
+        }
+
+        public int number(int n) {
+            return (n < 2)
+                    ? n
+                    : numFunction.orThrow().apply(n - 1) +
+                      numFunction.orThrow().apply(n - 2);
+        }
+
+    }
+
+
+    static
+    class MapDemo {
+
+        // 1. Declare a stable map of loggers with two allowable keys:
+        //    "com.foo.Bar" and "com.foo.Baz"
+        static final Map<String, StableValue<Logger>> LOGGERS =
+                StableValue.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
+
+        // 2. Access the memoized map with as-declared-final performance
+        //    (evaluation made before the first access)
+        static Logger logger(String name) {
+            return StableValue.computeIfUnset(LOGGERS, name, Logger::getLogger);
+        }
+    }
+
+    static
+    class SetDemo {
+
+        static final Map<String, StableValue<Boolean>> INFO_LOGGABLE =
+                StableValue.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
+
+        static boolean isInfoLoggable(String name) {
+            return StableValue.computeIfUnset(INFO_LOGGABLE, name, n -> MapDemo.logger(n).isLoggable(Level.INFO));
+        }
+
+        private static final String NAME = "com.foo.Bar";
+
+        public static void main(String[] args) {
+            if (isInfoLoggable(NAME)) {
+                MapDemo.LOGGERS.get(NAME)
+                        .orThrow()
+                        .log(Level.INFO, "This is fast...");
+            }
+        }
+
+    }
+
+    static
+    class Memo {
+
+        static
+        class Memoized {
+
+            // 1. Declare a lazily computed map
+            private static final Map<String, StableValue<Logger>> MAP =
+                    StableValue.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
+
+            // 2. Declare a memoized (cached) function backed by the lazily computed map
+            private static final Function<String, Logger> LOGGERS =
+                    n -> StableValue.computeIfUnset(MAP, n, Logger::getLogger);
+
+            private static final String NAME = "com.foo.Baz";
+
+            public static void main(String[] args) {
+                // 3. Access the memoized value via the function with as-declared-final
+                //    performance (evaluation made before the first access)
+                Logger logger = LOGGERS.apply(NAME);
+            }
+
+        }
+
+
+        static
+        class Memoized2 {
+
+            // 1. Declare a memoized (cached) function backed by a lazily computed map
+            private static final Function<String, Logger> MAPPER =
+                    StableValue.ofFunction(
+                            Set.of("com.foo.Bar", "com.foo.Baz"),
+                            Logger::getLogger);
+
+            private static final String NAME = "com.foo.Baz";
+
+            public static void main(String[] args) {
+                // 2. Access the memoized value via the function with as-declared-final
+                //    performance (evaluation made before the first access)
+                Logger logger = MAPPER.apply(NAME);
+            }
+
+        }
+    }
+
+
+
     @Test
-    void fib3() {
+    void fibDirect() {
         Fibonacci fibonacci = new Fibonacci(20);
         int[] fibs = IntStream.range(0, 10)
                 .map(fibonacci::number)
