@@ -131,7 +131,7 @@ private:
       //      LEFT
       //         |
       //         RIGHT
-      // For the invariant re: priorities to hold.
+      // for the invariant re: priorities to hold.
       left->_right = merge(left->_right, right);
       return left;
     } else {
@@ -139,7 +139,7 @@ private:
       //         RIGHT
       //         |
       //      LEFT
-      // For the invariant re: priorities to hold.
+      // for the invariant re: priorities to hold.
       right->_left = merge(left, right->_left);
       return right;
     }
@@ -259,6 +259,7 @@ public:
 };
 
 class CHeapAllocator {
+public:
   static void* allocate(size_t sz) {
     return os::malloc(sz, mtNMT);
   }
