@@ -1249,7 +1249,7 @@ nmethod::nmethod(
     _comp_level              = CompLevel_none;
     _compiler_type           = type;
     _orig_pc_offset          = 0;
-   
+
     if (offsets->value(CodeOffsets::Exceptions) != -1) {
       // Continuation enter intrinsic
       _exception_offset      = code_offset() + offsets->value(CodeOffsets::Exceptions);
