@@ -25,9 +25,6 @@
 
 package java.lang.invoke;
 
-import java.lang.classfile.ClassFile;
-import java.lang.constant.ClassDesc;
-import java.lang.constant.MethodTypeDesc;
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.abi.NativeEntryPoint;
@@ -41,6 +38,9 @@ import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
 
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;

@@ -29,12 +29,8 @@ import java.lang.classfile.*;
 import java.lang.classfile.attribute.ExceptionsAttribute;
 import java.lang.classfile.attribute.SourceFileAttribute;
 import java.lang.constant.ClassDesc;
-import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
-import jdk.internal.loader.BootLoader;
-import jdk.internal.vm.annotation.Stable;
-import sun.invoke.util.BytecodeName;
-
+import java.lang.invoke.LambdaForm.BasicType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -45,12 +41,16 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-import static java.lang.invoke.LambdaForm.*;
+import jdk.internal.loader.BootLoader;
+import jdk.internal.vm.annotation.Stable;
+import sun.invoke.util.BytecodeName;
+
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.REF_getStatic;
 import static java.lang.invoke.MethodHandleNatives.Constants.REF_putStatic;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
-import static java.lang.classfile.ClassFile.*;
 
 /**
  * Class specialization code.
@@ -603,15 +603,14 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
             TRANSFORM_TYPES = List.of(tts.toArray(new MethodType[0]));
             TRANSFORM_MODS = List.of(tms.toArray(new Integer[0]));
         }
-        private static final MethodTypeDesc MTD_transformHelper = MethodTypeDesc.of(CD_MethodHandle, CD_int);
+        private static final MethodTypeDesc MTD_TRANFORM_HELPER = MethodTypeDesc.of(CD_MethodHandle, CD_int);
         private static final int ACC_PPP = ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED;
-        private static final ClassFile CC = ClassFile.of();
 
         /*non-public*/
         byte[] generateConcreteSpeciesCodeFile(String className0, ClassSpecializer<T,K,S>.SpeciesData speciesData) {
             final ClassDesc classDesc = ClassDesc.of(className0);
             final ClassDesc superClassDesc = classDesc(speciesData.deriveSuperClass());
-            return CC.build(classDesc, clb -> {
+            return ClassFile.of().build(classDesc, clb -> {
                 clb.withFlags(ACC_FINAL | ACC_SUPER)
                    .withSuperclass(superClassDesc)
                    .with(SourceFileAttribute.of(classDesc.displayName()))
@@ -773,7 +772,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                             //   MY_SPECIES.transformHelper(whichtm).invokeBasic(ctarg, ..., argL0, ..., xarg)
                             cob.getstatic(classDesc, sdFieldName, CD_SPECIES_DATA)
                                .constantInstruction(whichtm)
-                               .invokevirtual(CD_SPECIES_DATA, "transformHelper", MTD_transformHelper);
+                               .invokevirtual(CD_SPECIES_DATA, "transformHelper", MTD_TRANFORM_HELPER);
 
                             List<Var> targs = AFTER_THIS.fromTypes(TTYPE.parameterList());
                             List<Var> tfields = new ArrayList<>(fields);

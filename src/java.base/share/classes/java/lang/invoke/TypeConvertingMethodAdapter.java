@@ -31,16 +31,8 @@ import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.MethodRefEntry;
+
 import static java.lang.constant.ConstantDescs.*;
-import static sun.invoke.util.Wrapper.BOOLEAN;
-import static sun.invoke.util.Wrapper.BYTE;
-import static sun.invoke.util.Wrapper.CHAR;
-import static sun.invoke.util.Wrapper.DOUBLE;
-import static sun.invoke.util.Wrapper.FLOAT;
-import static sun.invoke.util.Wrapper.INT;
-import static sun.invoke.util.Wrapper.LONG;
-import static sun.invoke.util.Wrapper.SHORT;
-import static sun.invoke.util.Wrapper.VOID;
 
 class TypeConvertingMethodAdapter {
 
@@ -72,7 +64,7 @@ class TypeConvertingMethodAdapter {
                                         UNBOX_FLOAT   = unbox(CD_Number, "floatValue", CD_float),
                                         UNBOX_DOUBLE  = unbox(CD_Number, "doubleValue", CD_double);
 
-    static private TypeKind primitiveTypeKindFromClass(Class<?> type) {
+    private static TypeKind primitiveTypeKindFromClass(Class<?> type) {
         if (type == int.class)     return TypeKind.IntType;
         if (type == long.class)    return TypeKind.LongType;
         if (type == boolean.class) return TypeKind.BooleanType;

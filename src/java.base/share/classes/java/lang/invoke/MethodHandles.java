@@ -25,8 +25,6 @@
 
 package java.lang.invoke;
 
-import static java.lang.classfile.ClassFile.*;
-import java.lang.classfile.ClassModel;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
@@ -41,8 +39,10 @@ import sun.invoke.util.Wrapper;
 import sun.reflect.misc.ReflectUtil;
 import sun.security.util.SecurityConstants;
 
+import java.lang.classfile.ClassModel;
 import java.lang.constant.ConstantDescs;
 import java.lang.invoke.LambdaForm.BasicType;
+import java.lang.invoke.MethodHandleImpl.Intrinsic;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
@@ -61,8 +61,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
+import static java.lang.classfile.ClassFile.*;
 import static java.lang.invoke.LambdaForm.BasicType.V_TYPE;
-import static java.lang.invoke.MethodHandleImpl.Intrinsic;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
