@@ -123,6 +123,7 @@ PerfCounter*    ClassLoader::_perf_method_adapters_time = nullptr;
 PerfCounter*    ClassLoader::_perf_ik_link_methods_count = nullptr;
 PerfCounter*    ClassLoader::_perf_method_adapters_count = nullptr;
 PerfCounter*    ClassLoader::_unsafe_defineClassCallCounter = nullptr;
+PerfCounter*    ClassLoader::_perf_secondary_hash_time = nullptr;
 
 PerfCounter*    ClassLoader::_perf_resolve_indy_time = nullptr;
 PerfCounter*    ClassLoader::_perf_resolve_invokehandle_time = nullptr;
@@ -1367,6 +1368,8 @@ void ClassLoader::initialize(TRAPS) {
     NEWPERFTICKCOUNTER(_perf_define_appclass_selftime, SUN_CLS, "defineAppClassTime.self");
     NEWPERFBYTECOUNTER(_perf_app_classfile_bytes_read, SUN_CLS, "appClassBytes");
     NEWPERFBYTECOUNTER(_perf_sys_classfile_bytes_read, SUN_CLS, "sysClassBytes");
+    NEWPERFEVENTCOUNTER(_unsafe_defineClassCallCounter, SUN_CLS, "unsafeDefineClassCalls");
+    NEWPERFTICKCOUNTER(_perf_secondary_hash_time, SUN_CLS, "secondarySuperHashTime");
   }
 
   if (ProfileClassLinkage) {
