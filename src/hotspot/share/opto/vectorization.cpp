@@ -98,6 +98,7 @@ VStatus VLoop::check_preconditions_helper() {
       tty->print("  cl_exit->in(0) %d", _cl_exit->in(0)->_idx); _cl_exit->in(0)->dump();
       tty->print("  lpt->_head %d", _cl->_idx); _cl->dump();
       _lpt->dump_head();
+      _cl->dump_bfs(100, _cl_exit, "c-");
     }
 #endif
     return VStatus::make_failure(VLoop::FAILURE_CONTROL_FLOW);
