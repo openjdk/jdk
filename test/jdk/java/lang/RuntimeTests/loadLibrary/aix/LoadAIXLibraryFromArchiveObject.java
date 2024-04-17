@@ -40,7 +40,7 @@ public class LoadAIXLibraryFromArchiveObject {
     // creates a ".a" archive file in a test specific directory and then
     // launches a java application passing this directory through "-Djava.library.path".
     // the java application then attempts to load the library using System.loadLibrary()
-    public static void main(final String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
         final String javaHome = System.getProperty("java.home");
         final Path libj2pcscSo = Path.of(javaHome).resolve("lib", "libj2pcsc.so");
         if (!Files.exists(libj2pcscSo)) {
