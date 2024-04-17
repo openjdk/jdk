@@ -3907,6 +3907,26 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
 
 //---------------------------replace_parallel_iv-------------------------------
 // Replace parallel induction variable (parallel to trip counter)
+// This optimization looks for patterns similar to:
+//
+//    int a = init2;
+//    for (int i = init; i < limit; i += stride) {
+//      a += stride2;
+//    }
+//
+// and transforms it to:
+//
+//    int a = init2
+//    for (int i = init; i < limit; i += stride) {
+//      a = init2 + (i - init) * (stride2 / stride)
+//    }
+//
+// so that the loop can be eliminated. Notice that the above is equivalently expressed as
+//
+//    (phi * stride_con2 / stride_con) + (init2 - (init * stride_con2 / stride_con))
+//
+// which corresponds to the structure of transformed subgraph below.
+//
 void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   assert(loop->_head->is_CountedLoop(), "");
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
