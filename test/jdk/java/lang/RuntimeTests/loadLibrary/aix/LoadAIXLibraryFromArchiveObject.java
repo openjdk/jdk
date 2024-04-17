@@ -50,7 +50,7 @@ public class LoadAIXLibraryFromArchiveObject {
         // copy over libj2pcsc.so as an archive file to test specific scratch dir
         final Path testNativeLibDir = Path.of("native").toAbsolutePath();
         Files.createDirectories(testNativeLibDir);
-        final Path libDummyArchive = testNativeLibDir.resolve(archiveFileName);
+       Path libFooBarArchive = testNativeLibDir.resolve(archiveFileName);
         Files.copy(libj2pcscSo, libDummyArchive);
         // launch a java application which calls System.loadLibrary and is passed
         // the directory containing the native library archive file, through
