@@ -260,7 +260,7 @@ since no additional class is required.
 However, there is _an important distinction_; several threads may invoke the `Logger::getLogger`
 method simultaneously if they call the `logger()` method at about the same time. Even though `StableValue` will guarantee, that only
 one of these results will ever be exposed to the many competing threads, there might be applications where
-it is a requirement, that a supplying method is only called once. 
+it is a requirement, that a supplying method is only called once.
 
 In such cases, it is possible to compute and set an unset value on-demand as shown in this example in which case
 `StableValue` will uphold the invoke-at-most-once invariant for the provided `Supplier`:
