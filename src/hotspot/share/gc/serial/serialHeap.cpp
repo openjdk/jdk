@@ -499,7 +499,7 @@ void SerialHeap::do_collection(bool full,
   IsGCActiveMark active_gc_mark;
 
   bool complete = full && (max_generation == OldGen);
-  bool old_collects_young = complete && !ScavengeBeforeFullGC;
+  bool old_collects_young = complete;
   bool do_young_collection = !old_collects_young && _young_gen->should_collect(full, size, is_tlab);
 
   const PreGenGCValues pre_gc_values = get_pre_gc_values();
