@@ -1077,9 +1077,11 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
 
     // Inflate the monitor to set the hash.
 
-    // An async deflation can race after the inflate() call and before we
-    // can update the ObjectMonitor's header with the hash value below.
-    monitor = inflate(current, obj, inflate_cause_hash_code);
+    // There's no need to inflate if the mark has already got a monitor.
+    // NOTE: an async deflation can race after we get the monitor and
+    // before we can update the ObjectMonitor's header with the hash
+    // value below.
+    monitor = mark.has_monitor() ? mark.monitor() : inflate(current, obj, inflate_cause_hash_code);
     // Load ObjectMonitor's header/dmw field and see if it has a hash.
     mark = monitor->header();
     assert(mark.is_neutral(), "invariant: header=" INTPTR_FORMAT, mark.value());
