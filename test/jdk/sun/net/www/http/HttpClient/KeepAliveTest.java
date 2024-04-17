@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,171 +24,25 @@
 /*
  * @test
  * @library /test/lib
- * @bug 8291226 8291638
- * @modules java.base/sun.net:+open
- *          java.base/sun.net.www.http:+open
- *          java.base/sun.net.www:+open
+ * @bug 8291226 8291638 8330523
+ * @modules java.base/sun.net.www.http:+open
  *          java.base/sun.net.www.protocol.http:+open
- * @run main/othervm KeepAliveTest 0
- * @run main/othervm KeepAliveTest 1
- * @run main/othervm KeepAliveTest 2
- * @run main/othervm KeepAliveTest 3
- * @run main/othervm KeepAliveTest 4
- * @run main/othervm KeepAliveTest 5
- * @run main/othervm KeepAliveTest 6
- * @run main/othervm KeepAliveTest 7
- * @run main/othervm KeepAliveTest 8
- * @run main/othervm KeepAliveTest 9
- * @run main/othervm KeepAliveTest 10
- * @run main/othervm KeepAliveTest 11
- * @run main/othervm KeepAliveTest 12
- * @run main/othervm KeepAliveTest 13
- * @run main/othervm KeepAliveTest 14
- * @run main/othervm KeepAliveTest 15
- * @run main/othervm KeepAliveTest 16
- * @run main/othervm KeepAliveTest 17
- * @run main/othervm KeepAliveTest 18
- * @run main/othervm KeepAliveTest 19
- * @run main/othervm KeepAliveTest 20
- * @run main/othervm KeepAliveTest 21
- * @run main/othervm KeepAliveTest 22
- * @run main/othervm KeepAliveTest 23
- * @run main/othervm KeepAliveTest 24
- * @run main/othervm KeepAliveTest 25
- * @run main/othervm KeepAliveTest 26
- * @run main/othervm KeepAliveTest 27
- * @run main/othervm KeepAliveTest 28
- * @run main/othervm KeepAliveTest 29
- * @run main/othervm KeepAliveTest 30
- * @run main/othervm KeepAliveTest 31
- * @run main/othervm KeepAliveTest 32
- * @run main/othervm KeepAliveTest 33
- * @run main/othervm KeepAliveTest 34
- * @run main/othervm KeepAliveTest 35
- * @run main/othervm KeepAliveTest 36
- * @run main/othervm KeepAliveTest 37
- * @run main/othervm KeepAliveTest 38
- * @run main/othervm KeepAliveTest 39
- * @run main/othervm KeepAliveTest 40
- * @run main/othervm KeepAliveTest 41
- * @run main/othervm KeepAliveTest 42
- * @run main/othervm KeepAliveTest 43
- * @run main/othervm KeepAliveTest 44
- * @run main/othervm KeepAliveTest 45
- * @run main/othervm KeepAliveTest 46
- * @run main/othervm KeepAliveTest 47
- * @run main/othervm KeepAliveTest 48
- * @run main/othervm KeepAliveTest 49
- * @run main/othervm KeepAliveTest 50
- * @run main/othervm KeepAliveTest 51
- * @run main/othervm KeepAliveTest 52
- * @run main/othervm KeepAliveTest 53
- * @run main/othervm KeepAliveTest 54
- * @run main/othervm KeepAliveTest 55
- * @run main/othervm KeepAliveTest 56
- * @run main/othervm KeepAliveTest 57
- * @run main/othervm KeepAliveTest 58
- * @run main/othervm KeepAliveTest 59
- * @run main/othervm KeepAliveTest 60
- * @run main/othervm KeepAliveTest 61
- * @run main/othervm KeepAliveTest 62
- * @run main/othervm KeepAliveTest 63
- * @run main/othervm KeepAliveTest 64
- * @run main/othervm KeepAliveTest 65
- * @run main/othervm KeepAliveTest 66
- * @run main/othervm KeepAliveTest 67
- * @run main/othervm KeepAliveTest 68
- * @run main/othervm KeepAliveTest 69
- * @run main/othervm KeepAliveTest 70
- * @run main/othervm KeepAliveTest 71
- * @run main/othervm KeepAliveTest 72
- * @run main/othervm KeepAliveTest 73
- * @run main/othervm KeepAliveTest 74
- * @run main/othervm KeepAliveTest 75
- * @run main/othervm KeepAliveTest 76
- * @run main/othervm KeepAliveTest 77
- * @run main/othervm KeepAliveTest 78
- * @run main/othervm KeepAliveTest 79
- * @run main/othervm KeepAliveTest 80
- * @run main/othervm KeepAliveTest 81
- * @run main/othervm KeepAliveTest 82
- * @run main/othervm KeepAliveTest 83
- * @run main/othervm KeepAliveTest 84
- * @run main/othervm KeepAliveTest 85
- * @run main/othervm KeepAliveTest 86
- * @run main/othervm KeepAliveTest 87
- * @run main/othervm KeepAliveTest 88
- * @run main/othervm KeepAliveTest 89
- * @run main/othervm KeepAliveTest 90
- * @run main/othervm KeepAliveTest 91
- * @run main/othervm KeepAliveTest 92
- * @run main/othervm KeepAliveTest 93
- * @run main/othervm KeepAliveTest 94
- * @run main/othervm KeepAliveTest 95
- * @run main/othervm KeepAliveTest 96
- * @run main/othervm KeepAliveTest 97
- * @run main/othervm KeepAliveTest 98
- * @run main/othervm KeepAliveTest 99
- * @run main/othervm KeepAliveTest 100
- * @run main/othervm KeepAliveTest 101
- * @run main/othervm KeepAliveTest 102
- * @run main/othervm KeepAliveTest 103
- * @run main/othervm KeepAliveTest 104
- * @run main/othervm KeepAliveTest 105
- * @run main/othervm KeepAliveTest 106
- * @run main/othervm KeepAliveTest 107
- * @run main/othervm KeepAliveTest 108
- * @run main/othervm KeepAliveTest 109
- * @run main/othervm KeepAliveTest 110
- * @run main/othervm KeepAliveTest 111
- * @run main/othervm KeepAliveTest 112
- * @run main/othervm KeepAliveTest 113
- * @run main/othervm KeepAliveTest 114
- * @run main/othervm KeepAliveTest 115
- * @run main/othervm KeepAliveTest 116
- * @run main/othervm KeepAliveTest 117
- * @run main/othervm KeepAliveTest 118
- * @run main/othervm KeepAliveTest 119
- * @run main/othervm KeepAliveTest 120
- * @run main/othervm KeepAliveTest 121
- * @run main/othervm KeepAliveTest 122
- * @run main/othervm KeepAliveTest 123
- * @run main/othervm KeepAliveTest 124
- * @run main/othervm KeepAliveTest 125
- * @run main/othervm KeepAliveTest 126
- * @run main/othervm KeepAliveTest 127
- * @run main/othervm KeepAliveTest 128
- * @run main/othervm KeepAliveTest 129
- * @run main/othervm KeepAliveTest 130
- * @run main/othervm KeepAliveTest 131
- * @run main/othervm KeepAliveTest 132
- * @run main/othervm KeepAliveTest 133
- * @run main/othervm KeepAliveTest 134
- * @run main/othervm KeepAliveTest 135
- * @run main/othervm KeepAliveTest 136
- * @run main/othervm KeepAliveTest 137
- * @run main/othervm KeepAliveTest 138
- * @run main/othervm KeepAliveTest 139
- * @run main/othervm KeepAliveTest 140
- * @run main/othervm KeepAliveTest 141
- * @run main/othervm KeepAliveTest 142
- * @run main/othervm KeepAliveTest 143
- * @run main/othervm KeepAliveTest 144
- * @run main/othervm KeepAliveTest 145
- * @run main/othervm KeepAliveTest 146
- * @run main/othervm KeepAliveTest 147
- * @run main/othervm KeepAliveTest 148
- * @run main/othervm KeepAliveTest 149
- * @run main/othervm KeepAliveTest 150
- * @run main/othervm KeepAliveTest 151
- * @run main/othervm KeepAliveTest 152
- * @run main/othervm KeepAliveTest 153
- * @run main/othervm KeepAliveTest 154
- * @run main/othervm KeepAliveTest 155
- * @run main/othervm KeepAliveTest 156
- * @run main/othervm KeepAliveTest 157
- * @run main/othervm KeepAliveTest 158
- * @run main/othervm KeepAliveTest 159
+ * @run main/othervm KeepAliveTest c0
+ * @run main/othervm KeepAliveTest c1
+ * @run main/othervm KeepAliveTest c2
+ * @run main/othervm KeepAliveTest c3
+ * @run main/othervm KeepAliveTest c4
+ * @run main/othervm KeepAliveTest c5
+ * @run main/othervm KeepAliveTest c6
+ * @run main/othervm KeepAliveTest c7
+ * @run main/othervm KeepAliveTest c8
+ * @run main/othervm KeepAliveTest c9
+ * @run main/othervm KeepAliveTest c10
+ * @run main/othervm KeepAliveTest c11
+ * @run main/othervm KeepAliveTest c12
+ * @run main/othervm KeepAliveTest c13
+ * @run main/othervm KeepAliveTest c14
+ * @run main/othervm KeepAliveTest c15
  */
 
 import java.nio.charset.StandardCharsets;
@@ -206,6 +60,7 @@ import java.net.Proxy.Type;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
@@ -218,78 +73,22 @@ import sun.net.www.protocol.http.HttpURLConnection;
 import jdk.test.lib.net.URIBuilder;
 
 public class KeepAliveTest {
-    private static final Logger logger = Logger.getLogger("sun.net.www.protocol.http.HttpURLConnection");
-    private static final String NOT_CACHED = "NotCached";
-    private static final String CLIENT_SEPARATOR = ";";
-    private static final String NEW_LINE = "\r\n";
-    private volatile int SERVER_PORT = 0;
+
     /*
-     * isProxySet is shared variable between server thread and client thread(main) and it should be set and reset to false for each and
-     * every scenario.
-     * isProxySet variable should be set by server thread before proceeding to client thread(main).
+     * This test covers 160 scenarios.
+     * For every scenario there is mapping between serverScenarios[int], clientScenarios[int] and expectedValues[int]
+     *
+     * serverScenarios[0] clientScenarios[0] expectedValues[0]
+     * serverScenarios[1] clientScenarios[1] expectedValues[1]
+     * serverScenarios[2] clientScenarios[2] expectedValues[2]
+     *
+     * ...
+     *
+     * serverScenarios[159] cientScenarios[159] expectedValues[159]
      */
-    private volatile boolean isProxySet = false;
-    private static final String CONNECTION_KEEP_ALIVE_ONLY = "Connection: keep-alive";
-    private static final String PROXY_CONNECTION_KEEP_ALIVE_ONLY = "Proxy-Connection: keep-alive";
-    private static final String KEEP_ALIVE_TIMEOUT_NEG = "Keep-alive: timeout=-20";
-    private static final String KEEP_ALIVE_TIMEOUT_ZERO = "Keep-alive: timeout=0";
-    private static final String KEEP_ALIVE_TIMEOUT = "Keep-alive: timeout=20";
-    private static final String KEEP_ALIVE_PROXY_TIMEOUT = "Keep-alive: timeout=120";
-    private static final String CLIENT_HTTP_KEEP_ALIVE_TIME_SERVER_NEGATIVE = "http.keepAlive.time.server=-100";
-    private static final String CLIENT_HTTP_KEEP_ALIVE_TIME_PROXY_NEGATIVE = "http.keepAlive.time.proxy=-200";
-    private static final String CLIENT_HTTP_KEEP_ALIVE_TIME_SERVER_ZERO = "http.keepAlive.time.server=0";
-    private static final String CLIENT_HTTP_KEEP_ALIVE_TIME_PROXY_ZERO = "http.keepAlive.time.proxy=0";
-    private static final String CLIENT_HTTP_KEEP_ALIVE_TIME_SERVER_POSITIVE = "http.keepAlive.time.server=100";
-    private static final String CLIENT_HTTP_KEEP_ALIVE_TIME_PROXY_POSITIVE = "http.keepAlive.time.proxy=200";
-    private static final String CONNECTION_KEEP_ALIVE_WITH_TIMEOUT = CONNECTION_KEEP_ALIVE_ONLY + NEW_LINE
-        + KEEP_ALIVE_TIMEOUT;
-   /*
-    * Following Constants represents Client Side Properties and is used as reference in below table as
-    * CLIENT_INPUT_CONSTANT_NAMES
-    */
-    private static final String SERVER_100_NEGATIVE = CLIENT_HTTP_KEEP_ALIVE_TIME_SERVER_NEGATIVE;
-    private static final String PROXY_200_NEGATIVE = CLIENT_HTTP_KEEP_ALIVE_TIME_PROXY_NEGATIVE;
-    private static final String SERVER_ZERO = CLIENT_HTTP_KEEP_ALIVE_TIME_SERVER_ZERO;
-    private static final String PROXY_ZERO = CLIENT_HTTP_KEEP_ALIVE_TIME_PROXY_ZERO;
-    private static final String SERVER_100 = CLIENT_HTTP_KEEP_ALIVE_TIME_SERVER_POSITIVE;
-    private static final String PROXY_200 = CLIENT_HTTP_KEEP_ALIVE_TIME_PROXY_POSITIVE;
 
-   /*
-    * CONSTANTS A,B,C,D,E,NI,F,G,H,I represents ServerScenarios and is used as reference in below table
-    * as SERVER_RESPONSE_CONSTANT_NAME
-    */
-    private static final String A = CONNECTION_KEEP_ALIVE_ONLY;
-    private static final String B = CONNECTION_KEEP_ALIVE_WITH_TIMEOUT;
-    private static final String C = PROXY_CONNECTION_KEEP_ALIVE_ONLY;
-    private static final String D = PROXY_CONNECTION_KEEP_ALIVE_ONLY + NEW_LINE + CONNECTION_KEEP_ALIVE_ONLY;
-    private static final String E = C + NEW_LINE + KEEP_ALIVE_PROXY_TIMEOUT;
-    private static final String NI = "NO_INPUT";
-    private static final String F = A + NEW_LINE + KEEP_ALIVE_TIMEOUT_NEG;
-    private static final String G = A + NEW_LINE + KEEP_ALIVE_TIMEOUT_ZERO;
-    private static final String H = C + NEW_LINE + KEEP_ALIVE_TIMEOUT_NEG;
-    private static final String I = C + NEW_LINE + KEEP_ALIVE_TIMEOUT_ZERO;
-
-   /*
-    * There are 160 scenarios run by this program.
-    * For every scenario there is mapping between serverScenarios[int],clientScenarios[int] and expectedOutput[int]
-    *
-    * serverScenarios[0] clientScenarios[0] expectedOutput[0]
-    * serverScenarios[1] clientScenarios[1] expectedOutput[1]
-    * serverScenarios[2] clientScenarios[2] expectedOutput[2]
-    *
-    * ...
-    *
-    * serverScenarios[159] cientScenarios[159] expectedOutput[159]
-    *
-    * whereas serverScenarios[int] is retrieved using getServerScenario(int)
-    * whereas clientScenarios[int] is retrieved using clientScenario[getClientScenarioNumber[int]]
-    * and
-    * expectedOutput[int] is retrieved using expectedOuput[int] directly.
-    *
-    */
-
-   /* Here is the complete table of server_response, client system properties input and expected cached timeout at client side */
-   /* ScNo  |  SERVER RESPONSE (SERVER_RESPONSE_CONSTANT_NAME)| CLIENT SYSTEM PROPERTIES INPUT (CLIENT_INPUT_CONSTANT_NAMES) | EXPECTED CACHED TIMEOUT AT CLIENT SIDE
+   /* Here is the complete table of server response headers, client system properties input and expected cache timeout at client side */
+   /* ScNo  |  SERVER RESPONSE HEADERS                        | CLIENT SYSTEM PROPERTIES                     | EXPECTED CACHE TIMEOUT AT CLIENT SIDE
     *****************************************************************************************************************************************
     *    0  |  Connection: keep-alive (A)                     | No Input Provided (NI)                       | Default Timeout set to 5
     *---------------------------------------------------------------------------------------------------------------------------
@@ -851,63 +650,87 @@ public class KeepAliveTest {
     *--------------------------------------------------------------------------------------------------------------------------------------
     */
 
-   /* private static final String[] serverScenarios = {
-        A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A,
-        B, B, B, B, B, B, B, B, B, B,B, B, B, B, B, B,
-        C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C,
-        D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D,
-        E, E, E, E, E, E, E, E, E, E, E, E, E, E, E, E,
-        NI, NI, NI, NI, NI, NI, NI, NI, NI, NI, NI, NI, NI, NI, NI, NI,
-        F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F,
-        G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G,
-        H, H, H, H, H, H, H, H, H, H, H, H, H, H, H, H,
-        I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I
-    }; */
-    /*
-     * following are client scenarios which are repeated.
-     */
-    private static final String[] a = {
-        NI, SERVER_100,     PROXY_200, SERVER_100 + CLIENT_SEPARATOR + PROXY_200,    SERVER_100_NEGATIVE,
-        PROXY_200_NEGATIVE, SERVER_100_NEGATIVE + CLIENT_SEPARATOR + PROXY_200_NEGATIVE,
-        SERVER_ZERO,         PROXY_ZERO, SERVER_ZERO + CLIENT_SEPARATOR + PROXY_ZERO,
-        SERVER_ZERO + CLIENT_SEPARATOR + PROXY_200_NEGATIVE, SERVER_100_NEGATIVE + CLIENT_SEPARATOR + PROXY_ZERO,
-        SERVER_100 + CLIENT_SEPARATOR + PROXY_ZERO, SERVER_ZERO + CLIENT_SEPARATOR + PROXY_200,
-        SERVER_100 + CLIENT_SEPARATOR + PROXY_200_NEGATIVE, SERVER_100_NEGATIVE + CLIENT_SEPARATOR + PROXY_200
+    private static final String NOT_CACHED = "NotCached";
+    private static final String CLIENT_SEPARATOR = ";";
+    private static final String NEW_LINE = "\r\n";
+
+    private static final String NI = "NO_INPUT";
+
+    private static final String CONNECTION_KEEP_ALIVE_ONLY = "Connection: keep-alive";
+    private static final String PROXY_CONNECTION_KEEP_ALIVE_ONLY = "Proxy-Connection: keep-alive";
+    private static final String KEEP_ALIVE_TIMEOUT_NEG = "Keep-alive: timeout=-20";
+    private static final String KEEP_ALIVE_TIMEOUT_ZERO = "Keep-alive: timeout=0";
+    private static final String KEEP_ALIVE_TIMEOUT = "Keep-alive: timeout=20";
+    private static final String KEEP_ALIVE_PROXY_TIMEOUT = "Keep-alive: timeout=120";
+    private static final String CLIENT_HTTP_KEEP_ALIVE_TIME_SERVER_NEGATIVE = "http.keepAlive.time.server=-100";
+    private static final String CLIENT_HTTP_KEEP_ALIVE_TIME_PROXY_NEGATIVE = "http.keepAlive.time.proxy=-200";
+    private static final String CLIENT_HTTP_KEEP_ALIVE_TIME_SERVER_ZERO = "http.keepAlive.time.server=0";
+    private static final String CLIENT_HTTP_KEEP_ALIVE_TIME_PROXY_ZERO = "http.keepAlive.time.proxy=0";
+    private static final String CLIENT_HTTP_KEEP_ALIVE_TIME_SERVER_POSITIVE = "http.keepAlive.time.server=100";
+    private static final String CLIENT_HTTP_KEEP_ALIVE_TIME_PROXY_POSITIVE = "http.keepAlive.time.proxy=200";
+    private static final String CONNECTION_KEEP_ALIVE_WITH_TIMEOUT = CONNECTION_KEEP_ALIVE_ONLY + NEW_LINE + KEEP_ALIVE_TIMEOUT;
+
+    private static final String SERVER_100_NEGATIVE = CLIENT_HTTP_KEEP_ALIVE_TIME_SERVER_NEGATIVE;
+    private static final String PROXY_200_NEGATIVE = CLIENT_HTTP_KEEP_ALIVE_TIME_PROXY_NEGATIVE;
+    private static final String SERVER_ZERO = CLIENT_HTTP_KEEP_ALIVE_TIME_SERVER_ZERO;
+    private static final String PROXY_ZERO = CLIENT_HTTP_KEEP_ALIVE_TIME_PROXY_ZERO;
+    private static final String SERVER_100 = CLIENT_HTTP_KEEP_ALIVE_TIME_SERVER_POSITIVE;
+    private static final String PROXY_200 = CLIENT_HTTP_KEEP_ALIVE_TIME_PROXY_POSITIVE;
+
+    private static final String[] serverScenarios = {
+        CONNECTION_KEEP_ALIVE_ONLY,
+        CONNECTION_KEEP_ALIVE_WITH_TIMEOUT,
+        PROXY_CONNECTION_KEEP_ALIVE_ONLY,
+        PROXY_CONNECTION_KEEP_ALIVE_ONLY + NEW_LINE + CONNECTION_KEEP_ALIVE_ONLY,
+        PROXY_CONNECTION_KEEP_ALIVE_ONLY + NEW_LINE + KEEP_ALIVE_PROXY_TIMEOUT,
+        NI,
+        CONNECTION_KEEP_ALIVE_ONLY + NEW_LINE + KEEP_ALIVE_TIMEOUT_NEG,
+        CONNECTION_KEEP_ALIVE_ONLY + NEW_LINE + KEEP_ALIVE_TIMEOUT_ZERO,
+        PROXY_CONNECTION_KEEP_ALIVE_ONLY + NEW_LINE + KEEP_ALIVE_TIMEOUT_NEG,
+        PROXY_CONNECTION_KEEP_ALIVE_ONLY + NEW_LINE + KEEP_ALIVE_TIMEOUT_ZERO
     };
 
-   /* private String[] clientScenarios = {
-        a[0] , a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15],
-        a[0] , a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15],
-        a[0] , a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15],
-        a[0] , a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15],
-        a[0] , a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15],
-        a[0] , a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15],
-        a[0] , a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15],
-        a[0] , a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15],
-        a[0] , a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15],
-        a[0] , a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15],
-    }; */
-
     private static final String[] clientScenarios = {
-        a[0] , a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15]
+        NI,
+        SERVER_100,
+        PROXY_200,
+        SERVER_100 + CLIENT_SEPARATOR + PROXY_200,
+        SERVER_100_NEGATIVE,
+        PROXY_200_NEGATIVE,
+        SERVER_100_NEGATIVE + CLIENT_SEPARATOR + PROXY_200_NEGATIVE,
+        SERVER_ZERO,
+        PROXY_ZERO,
+        SERVER_ZERO + CLIENT_SEPARATOR + PROXY_ZERO,
+        SERVER_ZERO + CLIENT_SEPARATOR + PROXY_200_NEGATIVE,
+        SERVER_100_NEGATIVE + CLIENT_SEPARATOR + PROXY_ZERO,
+        SERVER_100 + CLIENT_SEPARATOR + PROXY_ZERO,
+        SERVER_ZERO + CLIENT_SEPARATOR + PROXY_200,
+        SERVER_100 + CLIENT_SEPARATOR + PROXY_200_NEGATIVE,
+        SERVER_100_NEGATIVE + CLIENT_SEPARATOR + PROXY_200
     };
 
     private static final int[] expectedValues = {
-        5,  100,    5, 100,  5,  5,  5,  0,  5,   0,   0,   5,  100,    0,   100,    5,
-        20,   20 ,  20,  20, 20, 20, 20, 20, 20,  20 , 20,  20,   20,   20,    20,   20,
-        60,   60,  200, 200, 60, 60, 60, 60,  0,   0,  60,   0,    0,  200,    60,  200,
-        60,   60,  200, 200, 60, 60, 60, 60,  0,   0,  60,   0,    0,  200,    60,  200,
-        120, 120,  120, 120,120,120,120,120,120, 120, 120, 120,  120,  120,   120,  120,
-        5,  100,    5, 100,  5,  5,  5,  0,  5,   0,   0,   5,  100,    0,   100,    5,
-        5,  100,    5, 100,  5,  5,  5,  0,  5,   0,   0,   5,  100,    0,   100,    5,
-        0,    0,    0,   0,  0,  0,  0,  0,  0,   0,   0,   0,    0,    0,     0,    0,
-        60,  60,  200, 200, 60, 60, 60, 60,  0,   0,  60,   0,    0,  200,    60,  200,
-        0,    0,    0,   0,  0,  0,  0,  0,  0,   0,   0,   0,    0,    0,     0,    0,
+          5, 100,   5, 100,   5,   5,   5,   0,   5,   0,   0,   5,  100,    0,   100,    5,
+         20,  20,  20,  20,  20,  20,  20,  20,  20,  20 , 20,  20,   20,   20,    20,   20,
+         60,  60, 200, 200,  60,  60,  60,  60,   0,   0,  60,   0,    0,  200,    60,  200,
+         60,  60, 200, 200,  60,  60,  60,  60,   0,   0,  60,   0,    0,  200,    60,  200,
+        120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120,  120,  120,   120,  120,
+          5, 100,   5, 100,   5,   5,   5,   0,   5,   0,   0,   5,  100,    0,   100,    5,
+          5, 100,   5, 100,   5,   5,   5,   0,   5,   0,   0,   5,  100,    0,   100,    5,
+          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,    0,     0,    0,
+         60,  60, 200, 200,  60,  60,  60,  60,   0,   0,  60,   0,    0,  200,    60,  200,
+          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,    0,     0,    0,
     };
 
-    private final CountDownLatch countDownLatch = new CountDownLatch(1);
+    private static KeepAliveCache keepAliveCache;
 
-    private final CountDownLatch serverCountDownLatch = new CountDownLatch(1);
+    private static Constructor<?> keepAliveKeyClassconstructor;
+
+    // variables set by server thread
+    private volatile int serverPort;
+    private volatile boolean isProxySet;
+
+    private CountDownLatch serverLatch = new CountDownLatch(1);
 
     /*
      * setting of client properties -Dhttp.keepAlive.time.server and -Dhttp.keepAlive.time.proxy is handled through this method.
@@ -921,8 +744,8 @@ public class KeepAliveTest {
      * ...
      * for serverscenario[15],serverscenario[31],serverscenario[47] ... serverscenario[159] is mapped to clientscenario[15]
      */
-    private int getClientScenarioNumber(int scenarioNumber) {
-        return scenarioNumber % 16 ;
+    private static String getClientScenario(int scenarioNumber) {
+        return clientScenarios[scenarioNumber % 16];
     }
 
     /*
@@ -937,109 +760,12 @@ public class KeepAliveTest {
      * for scenario numbers from 64 to 79 server response is: SERVER_RESPONSE=Proxy-connection:keep-alive\r\nKeep-alive:timeout=120
      * for scenario numbers from 80 to 95 server response is: SERVER_RESPONSE=No Input
      * for scenario numbers from 96 to 111 server response is: SERVER_RESPONSE=Connection: keep-alive\r\nKeep-alive: timeout=-20
-     * for scenario numbers from 112 to 127 server resonse is: Connection: keep-alive\r\nKeep-alive: timeout=0
+     * for scenario numbers from 112 to 127 server response is: Connection: keep-alive\r\nKeep-alive: timeout=0
      * for scenario numbers from 128 to 143 server response is: Proxy-connection:keep-alive\r\nKeep-alive:timeout=-20
      * for scenario numbers from 144 to 159 server response is: Proxy-connection:keep-alive\r\nKeep-alive:timeout=0
      */
-    private String getServerScenario(int scenarioNumber) {
-        /*
-         *  ServerResponse for scenarios from 0 to 15
-         *  SERVER_RESPONSE:Connection:keep-alive
-         */
-        if(scenarioNumber >= 0 && scenarioNumber <= 15) {
-            return A;
-        }
-        /*
-         * ServerResponse for scenarios from 16 to 31
-         * SERVER_RESPONSE=Connection: keep-alive\r\nKeep-alive: timeout=20
-         */
-        else if (scenarioNumber >= 16 && scenarioNumber <= 31){
-            return B;
-        }
-        /*
-         * ServerResponse for scenarios from 32 to 47
-         * SERVER_RESPONSE=Proxy-Connection: keep-alive
-         */
-        else if (scenarioNumber >= 32 && scenarioNumber <= 47){
-            return C;
-        }
-        /*
-         * ServerResponse for scenarios from 48 to 63
-         * SERVER_RESPONSE=Connection:keep-alive\r\nProxy-connection:keep-alive
-         */
-        else if (scenarioNumber >= 48 && scenarioNumber <= 63){
-            return D;
-        /*
-         * ServerResponse for scenarios from 64 to 79
-         * SERVER_RESPONSE=Proxy-connection:keep-alive\r\nKeep-alive:timeout=120
-         */
-        } else if (scenarioNumber >= 64 && scenarioNumber <= 79){
-            return E;
-        }
-        /*
-         * ServerResponse for scenarios from 80 to 95
-         * SERVER_RESPONSE=No Input
-         */
-        else if (scenarioNumber >= 80 && scenarioNumber <= 95){
-            return NI;
-        }
-        /*
-         * ServerResponse for scenarios from 96 to 111
-         * SERVER_RESPONSE=Connection: keep-alive\r\nKeep-alive: timeout=-20
-         */
-        else if (scenarioNumber >= 96 && scenarioNumber <= 111){
-            return F;
-        }
-        /*
-         * ServerResponse for scenarios from 112 to 127
-         * SERVER_RESPONSE=Connection: keep-alive\r\nKeep-alive: timeout=0
-         */
-        else if (scenarioNumber >= 112 && scenarioNumber <= 127){
-            return G;
-        }
-        /*
-         * ServerResponse for scenarios from 128 to 143
-         * SERVER_RESPONSE=Proxy-connection:keep-alive\r\nKeep-alive:timeout=-20
-         */
-        else if (scenarioNumber >= 128 && scenarioNumber <= 143){
-            return H;
-        }
-        /*
-         * ServerResponse for scenarios from 144 to 159
-         * SERVER_RESPONSE=Proxy-connection:keep-alive\r\nKeep-alive:timeout=0
-         */
-        else if (scenarioNumber >= 144 && scenarioNumber <= 159){
-            return I;
-        }
-        /*Invalid Case*/
-        return null;
-    }
-
-    private void startScenario(int scenarioNumber) throws Exception {
-        System.out.println("serverScenarios[" + scenarioNumber + "]=" + getServerScenario(scenarioNumber));
-        System.out.println("clientScenarios[" + scenarioNumber + "]=" + clientScenarios[getClientScenarioNumber(scenarioNumber)]);
-        if(expectedValues[scenarioNumber] == 0) {
-            System.out.println("ExpectedOutput=" + NOT_CACHED);
-        } else {
-            System.out.println("ExpectedOutput=" + expectedValues[scenarioNumber]);
-        }
-        System.out.println();
-        startServer(scenarioNumber);
-        runClient(scenarioNumber);
-    }
-
-    private void startServer(int scenarioNumber) {
-        Thread server = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                   executeServer(scenarioNumber);
-                } catch (IOException e) {
-                   e.printStackTrace();
-                }
-            }
-        }, "SERVER");
-        server.start();
+    private static String getServerScenario(int scenarioNumber) {
+        return serverScenarios[scenarioNumber >> 4];
     }
 
     private void readAll(Socket s) throws IOException {
@@ -1062,118 +788,99 @@ public class KeepAliveTest {
         String serverScenarioContent = null;
         if (!getServerScenario(scenarioNumber).equalsIgnoreCase(NI)) {
             serverScenarioContent = getServerScenario(scenarioNumber) + NEW_LINE;
-            /*
-             * isProxySet should be set before Server is moved to Listen State.
-             */
-            if (serverScenarioContent.contains("Proxy")) {
-                isProxySet = true;
-            } else {
-                isProxySet = false;
-            }
+            // isProxySet should be set before Server is moved to Listen State.
+            isProxySet = serverScenarioContent.contains("Proxy");
         }
-        ServerSocket serverSocket = null;
-        Socket socket = null;
-        OutputStreamWriter out = null;
-        InetAddress loopback = InetAddress.getLoopbackAddress();
-        try {
-            serverSocket = new ServerSocket();
-            serverSocket.bind(new InetSocketAddress(loopback, 0));
-            SERVER_PORT = serverSocket.getLocalPort();
-            //serverReady = true;
-            this.serverCountDownLatch.countDown();
-            System.out
-                .println("SERVER_PORT= " + SERVER_PORT +" isProxySet=" + isProxySet);
-            /*
-             * Server will be waiting for clients to connect.
-             */
-            socket = serverSocket.accept();
-            readAll(socket);
-            out = new OutputStreamWriter(socket.getOutputStream());
-            String BODY = "SERVER REPLY: Hello world";
-            String CLEN = "Content-Length: " + BODY.length() + NEW_LINE;
-            /* send the header */
-            out.write("HTTP/1.1 200 OK\r\n");
-            out.write("Content-Type: text/plain; charset=iso-8859-1\r\n");
-            /*
-             * append each scenario content from array.
-             */
-            if(serverScenarioContent != null) {
-                out.write(serverScenarioContent);
-            }
-            out.write(CLEN);
-            out.write(NEW_LINE);
-            out.write(BODY);
-            out.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (out != null) {
-                out.flush();
-                out.close();
-            }
-            if (socket != null) {
-                socket.close();
-            }
-            if (serverSocket != null) {
-                serverSocket.close();
+        try (ServerSocket serverSocket = new ServerSocket()) {
+            serverSocket.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+            serverPort = serverSocket.getLocalPort();
+            serverLatch.countDown();
+
+            // Server will be waiting for clients to connect.
+            try (Socket socket = serverSocket.accept()) {
+                readAll(socket);
+                try (OutputStreamWriter out = new OutputStreamWriter(socket.getOutputStream())) {
+                    String BODY = "SERVER REPLY: Hello world";
+                    String CLEN = "Content-Length: " + BODY.length() + NEW_LINE;
+
+                    // send the header
+                    out.write("HTTP/1.1 200 OK\r\n");
+                    out.write("Content-Type: text/plain; charset=iso-8859-1\r\n");
+
+                    // append each scenario content from array.
+                    if (serverScenarioContent != null) {
+                        out.write(serverScenarioContent);
+                    }
+                    out.write(CLEN);
+                    out.write(NEW_LINE);
+                    out.write(BODY);
+                }
             }
         }
     }
 
-    private void runClient(int scenarioNumber) throws Exception {
-        try {
-            connectToServerURL(scenarioNumber);
-        } finally {
-            System.out.println("client count down latch:" + scenarioNumber);
-            this.countDownLatch.countDown();
-            System.out.println();
-            System.out.println();
+    private Thread startServer(int scenarioNumber) {
+        Thread server = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                   executeServer(scenarioNumber);
+                } catch (IOException e) {
+                   e.printStackTrace();
+                }
+            }
+        }, "SERVER");
+        server.start();
+        return server;
+    }
+
+    private void fetchInfo(int scenarioNumber, HttpURLConnection httpUrlConnection) throws Exception {
+        Object expectedKeepAliveKey = keepAliveKeyClassconstructor.newInstance(httpUrlConnection.getURL(), null);
+        Object clientVectorObjectInMap = keepAliveCache.get(expectedKeepAliveKey);
+        System.out.println("ClientVector for KeepAliveKey:" + clientVectorObjectInMap);
+        HttpClient httpClientCached = keepAliveCache.get(httpUrlConnection.getURL(), null);
+        System.out.println("HttpClient in Cache:" + httpClientCached);
+
+        if (httpClientCached != null) {
+            System.out.println("KeepingAlive:" + httpClientCached.isKeepingAlive());
+            System.out.println("UsingProxy:" + httpClientCached.getUsingProxy());
+            System.out.println("ProxiedHost:" + httpClientCached.getProxyHostUsed());
+            System.out.println("ProxiedPort:" + httpClientCached.getProxyPortUsed());
+            Class<?> clientVectorClass = Class.forName("sun.net.www.http.KeepAliveCache$ClientVector");
+            Field napField = clientVectorClass.getDeclaredField("nap");
+            napField.setAccessible(true);
+            int napValue = (int) napField.get(clientVectorObjectInMap);
+            int actualValue = napValue / 1000;
+            if (expectedValues[scenarioNumber] == actualValue) {
+                System.out.printf("Cache time:%d\n", actualValue);
+            } else {
+                throw new RuntimeException("Sleep time of " + actualValue + " not expected (" + expectedValues[scenarioNumber] + ")");
+            }
+        } else {
+            if (expectedValues[scenarioNumber] == 0) {
+                System.out.println("Connection not cached.");
+            } else {
+                throw new RuntimeException("Connection was not cached although expected with sleep time of:" + expectedValues[scenarioNumber]);
+            }
         }
     }
 
     private void connectToServerURL(int scenarioNumber) throws Exception {
-        //    System.setProperty("java.net.useSystemProxies", "false");
-        //    System.setProperty("http.nonProxyHosts", "");
-        //    System.setProperty("http.proxyHost", "localhost");
-        //    System.setProperty("http.proxyPort", String.valueOf(SERVER_PORT));
-        System.out.println("Following are Existing System Properties if set any");
-        System.out.println("http.keepAlive.time.server:" + System.getProperty("http.keepAlive.time.server"));
-        System.out.println("http.keepAlive.time.proxy:" + System.getProperty("http.keepAlive.time.proxy"));
-        System.setProperty("java.net.useSystemProxies", "false");
-        System.out.println("http.proxyPort:"+System.getProperty("http.proxyPort"));
-        System.out.println("http.proxyHost:"+System.getProperty("http.proxyHost"));
-        System.clearProperty("http.keepAlive.time.server");
-        System.clearProperty("http.keepAlive.time.proxy");
-        // fetch clientScenearios for each scenarioNumber from array and set it to
-        // System property.
-        if (!clientScenarios[getClientScenarioNumber(scenarioNumber)].equalsIgnoreCase(NI)) {
-            System.out.println("Client Input Parsing");
-            for (String clientScenarioString : clientScenarios[getClientScenarioNumber(scenarioNumber)].split(CLIENT_SEPARATOR)) {
-                System.out.println(clientScenarioString);
-                String key = clientScenarioString.split("=")[0];
-                String value = clientScenarioString.split("=")[1];
-                System.setProperty(key, value);
-            }
-        }
         // wait until ServerSocket moves to listening state.
-        this.serverCountDownLatch.await();
-        System.out.println("client started");
-        URL url = URIBuilder.newBuilder().scheme("http").loopback().port(SERVER_PORT).toURL();
-        System.out.println("connecting from client to SERVER URL:" + url);
+        serverLatch.await();
+        URL url = URIBuilder.newBuilder().scheme("http").loopback().port(serverPort).toURL();
+        System.out.println("connecting client to server URL: " + url + ", isProxySet: " + isProxySet);
         HttpURLConnection httpUrlConnection = null;
-        /*
-         * isProxySet is set to true when Expected Server Response contains Proxy-Connection header.
-         */
+
+        // isProxySet is set to true when Expected Server Response contains Proxy-Connection header.
         if (isProxySet) {
-            httpUrlConnection = (sun.net.www.protocol.http.HttpURLConnection) url
-                .openConnection(new Proxy(Type.HTTP, new InetSocketAddress("localhost", SERVER_PORT)));
+            httpUrlConnection = (HttpURLConnection) url
+                .openConnection(new Proxy(Type.HTTP, new InetSocketAddress("localhost", serverPort)));
         } else {
-            httpUrlConnection = (sun.net.www.protocol.http.HttpURLConnection) url.openConnection();
+            httpUrlConnection = (HttpURLConnection) url.openConnection();
         }
         InputStreamReader inputStreamReader = new InputStreamReader(httpUrlConnection.getInputStream());
-        BufferedReader bufferedReader = null;
-        try {
-            bufferedReader = new BufferedReader(inputStreamReader);
+        try (BufferedReader bufferedReader = new BufferedReader(inputStreamReader)) {
             while (true) {
                 String eachLine = bufferedReader.readLine();
                 if (eachLine == null) {
@@ -1181,92 +888,92 @@ public class KeepAliveTest {
                 }
                 System.out.println(eachLine);
             }
-        } finally {
-            if (bufferedReader != null) {
-                bufferedReader.close();
-            }
         }
-        //    System.out.println("ResponseCode:" + httpUrlConnection.getResponseCode());
-        //    System.out.println("ResponseMessage:" + httpUrlConnection.getResponseMessage());
-        //    System.out.println("Content:" + httpUrlConnection.getContent());
-        //    Thread.sleep(2000);
         for (Entry<String, List<String>> header : httpUrlConnection.getHeaderFields().entrySet()) {
             System.out.println(header.getKey() + "=" + header.getValue());
         }
         fetchInfo(scenarioNumber, httpUrlConnection);
     }
 
-    private void fetchInfo(int scenarioNumber, sun.net.www.protocol.http.HttpURLConnection httpUrlConnection)
-        throws Exception {
-       Field field = Class.forName("sun.net.www.protocol.http.HttpURLConnection").getDeclaredField("http");
-       field.setAccessible(true);
-       HttpClient httpClient = (HttpClient) field.get(httpUrlConnection);
-       //    System.out.println("httpclient=" + httpClient);
-       Field keepAliveField = Class.forName("sun.net.www.http.HttpClient").getDeclaredField("kac");
-       keepAliveField.setAccessible(true);
-       KeepAliveCache keepAliveCache = (KeepAliveCache) keepAliveField.get(httpClient);
-       System.out.println("keepAliveCache" + keepAliveCache);
-       System.out.println("SERVER URL:" + httpUrlConnection.getURL());
-       /*
-        * create KeepAliveKey(URL,Object) object and compare created KeepAliveKey and
-        * existing using equals() method: KeepAliveKey.equals()
-        */
-       Class keepAliveKeyClass = Class.forName("sun.net.www.http.KeepAliveKey");
-       //    System.out.println("keepAliveKeyClass=" + keepAliveKeyClass);
-       Constructor keepAliveKeyClassconstructor = keepAliveKeyClass.getDeclaredConstructors()[0];
-       keepAliveKeyClassconstructor.setAccessible(true);
-       Object expectedKeepAliveKey = keepAliveKeyClassconstructor.newInstance(httpUrlConnection.getURL(), null);
-       System.out.println("ExpectedKeepAliveKey=" + expectedKeepAliveKey);
-       Object clientVectorObjectInMap = keepAliveCache.get(expectedKeepAliveKey);
-       System.out.println("ClientVector=" + clientVectorObjectInMap);
-       HttpClient httpClientCached = keepAliveCache.get(httpUrlConnection.getURL(), null);
-       System.out.println("HttpClient in Cache:" + httpClientCached);
-       if(httpClientCached != null) {
-            System.out.println("KeepingAlive:" + httpClientCached.isKeepingAlive());
-            System.out.println("UsingProxy:" + httpClientCached.getUsingProxy());
-            System.out.println("ProxiedHost:" + httpClientCached.getProxyHostUsed());
-            System.out.println("ProxiedPort:" + httpClientCached.getProxyPortUsed());
-            System.out.println("ProxyPortUsingSystemProperty:" + System.getProperty("http.proxyPort"));
-            System.out.println("ProxyHostUsingSystemProperty:" + System.getProperty("http.proxyHost"));
-            System.out.println("http.keepAlive.time.server=" + System.getProperty("http.keepAlive.time.server"));
-            System.out.println("http.keepAlive.time.proxy=" + System.getProperty("http.keepAlive.time.proxy"));
-            Class clientVectorClass = Class.forName("sun.net.www.http.KeepAliveCache$ClientVector");
-            //      System.out.println("clientVectorClass=" + clientVectorClass);
-            Field napField = clientVectorClass.getDeclaredField("nap");
-            napField.setAccessible(true);
-            int napValue = (int) napField.get(clientVectorObjectInMap);
-            int actualValue = napValue / 1000;
-            //      System.out.println("nap=" + napValue / 1000);
-            System.out.printf("ExpectedOutput:%d ActualOutput:%d ", expectedValues[scenarioNumber], actualValue);
-            System.out.println();
-            if (expectedValues[scenarioNumber] != actualValue) {
-                throw new RuntimeException(
-                            "ExpectedOutput:" + expectedValues[scenarioNumber] + " ActualOutput: " + actualValue);
+    private void runScenario(int scenarioNumber) throws Exception {
+        System.out.println("Testing scenario " + scenarioNumber);
+        System.out.println("Server: " + getServerScenario(scenarioNumber));
+        System.out.println("Client: " + getClientScenario(scenarioNumber));
+        System.out.println("Expected Cache Time: " + (expectedValues[scenarioNumber] == 0 ? NOT_CACHED : expectedValues[scenarioNumber]));
+        System.out.println();
+        Thread serverThread = startServer(scenarioNumber);
+        connectToServerURL(scenarioNumber);
+        serverThread.join();
+        System.out.println();
+    }
+
+    private static void collectPropertyValue(List<String> props, String prop) {
+        var val = System.getProperty(prop);
+        if (val != null) {
+            props.add(prop + "=" + val);
+        }
+    }
+
+    private static void initialize(int scenarioNumber) throws Exception {
+        List<String> props = new ArrayList<>();
+
+        collectPropertyValue(props, "http.keepAlive.time.server");
+        collectPropertyValue(props, "http.keepAlive.time.proxy");
+        collectPropertyValue(props, "http.proxyPort");
+        collectPropertyValue(props, "http.proxyHost");
+
+        if (props.size() > 0) {
+            System.out.println("Existing System Properties:");
+            for (String prop : props) {
+                System.out.println(prop);
             }
-        } else {
-            //executed when value is not cached.
-            String expected = expectedValues[scenarioNumber] == 0 ? NOT_CACHED
-                    : String.valueOf(expectedValues[scenarioNumber]);
-            System.out.println("ExpectedOutput:" + expected + " ActualOutput:" + NOT_CACHED);
-            if (!expected.equalsIgnoreCase(NOT_CACHED)) {
-                    throw new RuntimeException("ExpectedOutput:" + expected + " ActualOutput:" + NOT_CACHED);
+        }
+        System.setProperty("java.net.useSystemProxies", "false");
+        System.clearProperty("http.keepAlive.time.server");
+        System.clearProperty("http.keepAlive.time.proxy");
+
+        // fetch clientScenario and set system properties
+        if (!getClientScenario(scenarioNumber).equalsIgnoreCase(NI)) {
+            for (String clientScenarioString : getClientScenario(scenarioNumber).split(CLIENT_SEPARATOR)) {
+                String[] kv = clientScenarioString.split("=");
+                System.setProperty(kv[0], kv[1]);
             }
-       }
+        }
+
+        Field keepAliveField = Class.forName("sun.net.www.http.HttpClient").getDeclaredField("kac");
+        keepAliveField.setAccessible(true);
+        keepAliveCache = (KeepAliveCache) keepAliveField.get(null);
+        System.out.println("KeepAliveCache: " + keepAliveCache);
+        Class<?> keepAliveKeyClass = Class.forName("sun.net.www.http.KeepAliveKey");
+        keepAliveKeyClassconstructor = keepAliveKeyClass.getDeclaredConstructors()[0];
+        keepAliveKeyClassconstructor.setAccessible(true);
+
+        Logger logger = Logger.getLogger("sun.net.www.protocol.http.HttpURLConnection");
+        logger.setLevel(Level.FINEST);
+        ConsoleHandler h = new ConsoleHandler();
+        h.setLevel(Level.FINEST);
+        logger.addHandler(h);
     }
 
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
             throw new IllegalArgumentException("Usage:java KeepAliveTest.java <scenarioNumber>");
         }
-        logger.setLevel(Level.FINEST);
-        ConsoleHandler h = new ConsoleHandler();
-        h.setLevel(Level.FINEST);
-        logger.addHandler(h);
-        KeepAliveTest keepAliveTest = new KeepAliveTest();
-        if (args.length != 0) {
-            keepAliveTest.startScenario(Integer.valueOf(args[0]));
+        if (args[0].startsWith("c")) {
+            // all subtests of a specific client scenario
+            int clientScenarioNumber = Integer.valueOf(args[0].substring(1));
+            if (clientScenarioNumber < 0 || clientScenarioNumber > 15) {
+                throw new IllegalArgumentException("Client Scenario " + clientScenarioNumber + " does not exist");
+            }
+            initialize(clientScenarioNumber);
+            for (int i = clientScenarioNumber; i < 160; i += 16) {
+                new KeepAliveTest().runScenario(i);
+            }
+        } else {
+            // an individual test scenario
+            int scenarioNumber = Integer.valueOf(args[0]);
+            initialize(scenarioNumber);
+            new KeepAliveTest().runScenario(scenarioNumber);
         }
-        // make main thread wait until server and client is completed.
-        keepAliveTest.countDownLatch.await();
     }
 }
