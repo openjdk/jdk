@@ -123,7 +123,7 @@ private:
   bool parse_one_line();
   Klass* load_current_class(Symbol* class_name_symbol, TRAPS);
 
-  int lineno() { return _input_stream.lineno(); }
+  size_t lineno() { return _input_stream.lineno(); }
 
   ClassListParser(const char* file, ParseMode _parse_mode);
   ~ClassListParser();

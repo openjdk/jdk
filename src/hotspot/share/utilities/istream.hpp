@@ -73,8 +73,6 @@
 // potentially unusual names, consider wrapping them in XML-flavored
 // lines like <tag attr='pay load'/>.
 //
-// See xmlstream.hpp for the details of XML flavoring.
-//
 // Note: Input streams are never MT-safe.
 
 class inputStream : public CHeapObjBase {
@@ -107,9 +105,6 @@ class inputStream : public CHeapObjBase {
   size_t _next;         // offset to known start of next line (else =end)
   void*  _must_free;    // unless null, a malloc pointer which we must free
   size_t _line_count;   // increasing non-resettable count of lines read
-  jlong  _adjust_count; // adjustment to lineno accessor
-  size_t _clean_read_position;     // lowest position not dirtied by pushback
-  size_t _expected_read_position;  // where we expect the next read to happen
   char   _small_buffer[SMALL_SIZE];  // buffer for holding lines
 
   void handle_free();
@@ -217,20 +212,6 @@ class inputStream : public CHeapObjBase {
             _content_end >= _next ? _content_end - _next : 0);
   }
 
-  // If a line were to begin at the given point, does it fall on or
-  // after the _clean_read_position?  Setting _clean_read_position to
-  // a high value means that earlier positions in the buffer are not
-  // regarded as cleanly associated with an external position.
-  bool position_is_clean(size_t beg) const {
-    if (beg > _content_end)  return false;  // outside buffered content
-    size_t content_end_pos = _expected_read_position;
-    size_t clean_pos       = _clean_read_position;
-    size_t pending_len     = _content_end - beg;
-    return (pending_len == 0 ||
-            (clean_pos + pending_len > clean_pos &&   // no overflow please
-             clean_pos + pending_len <= content_end_pos));
-  }
-
   // Returns a pointer and count to characters buffered after the
   // current line, but not yet read from my input source.  Only useful
   // if you are trying to stack input streams on top of each other
@@ -246,8 +227,7 @@ class inputStream : public CHeapObjBase {
     _buffer = nullptr;
     _must_free = nullptr;
     _buffer_size = 0;
-    _adjust_count = _line_count = 0;
-    _clean_read_position = _expected_read_position = 0;
+    _line_count = 0;
     _beg = _end = _next = _content_end = 0;
     _line_ending = 0;
     _input_state = NTR_STATE;
@@ -277,15 +257,6 @@ class inputStream : public CHeapObjBase {
     if (definitely_done())
       return (char*)"";
     return &_buffer[_beg];
-  }
-
-  // Returns a pointer to a null terminated mutable copy of the current line.
-  // The size of the line (which may contain nulls) is reported via line_length.
-  // This may trigger input activity if there is not enough data buffered.
-  char* current_line(size_t& line_length) const {
-    char* line = current_line();
-    line_length = _end - _beg;
-    return line;
   }
 
   // Return the size of the current line, exclusive of any line terminator.
@@ -324,12 +295,7 @@ class inputStream : public CHeapObjBase {
   void set_error(bool error_condition = true);
 
   // lineno is the 1-based ordinal of the current line; it starts at one
-  size_t lineno() const         { preload(); return _line_count + _adjust_count; }
-  void set_lineno(size_t line)  { preload(); _adjust_count = line - _line_count; }
-  void add_to_lineno(jlong del) { preload(); _adjust_count += del; }
-
-  // returns a count of the number of lines seen; it is not resettable
-  size_t line_count() const      { return _line_count; }
+  size_t lineno() const         { preload(); return _line_count; }
 
   // Copy the current line to the given output stream.
   void print_on(outputStream* out);

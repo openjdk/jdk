@@ -95,7 +95,6 @@ void inputStream::set_error(bool error_condition) {
 void inputStream::clear_buffer() {
   _content_end = _beg = _end = _next = 0;
   _line_ending = 0;
-  _clean_read_position = _expected_read_position;
 }
 
 const char* inputStream::next_content(size_t& next_content_length) const {
@@ -112,13 +111,6 @@ void inputStream::set_input(inputStream::Input* input) {
   }
   _input = input;
   _input_state = NTR_STATE;
-  _clean_read_position = _expected_read_position = 0;
-  if (input != nullptr) {
-    size_t ip = input->position();
-    if (ip != (size_t)-1) {
-      _expected_read_position = ip;
-    }
-  }
 }
 
 bool inputStream::fill_buffer() {
@@ -134,9 +126,6 @@ bool inputStream::fill_buffer() {
     if (_input != nullptr && _input_state == NTR_STATE) {
       nr = _input->read(&_buffer[fill_offset], fill_length);
       if (nr == 0)  _input_state = EOF_STATE;  // do not get EOF twice
-      // do not expect _input to track its own position, but track mine
-      _expected_read_position += nr;
-      // _clean_read_position lags behind unless disturbed by edits
     }
     bool last_partial = false;
     if (nr > 0) {
@@ -325,7 +314,7 @@ void inputStream::dump(const char* what) {
        hcl = (_beg < _content_end && _end < _next),
        ddn = (_beg == _content_end && _next > _content_end);
   tty->print_cr("%s%sistream %s%s%s%s%s [%d<%.*s>%d/%d..%d] LE=%d,"
-                " B=%llx%s[%d], LN=%d%+d, C..ERP=%d..%d, MF=%llx",
+                " B=%llx%s[%d], LN=%d, MF=%llx",
                 what ? what : "", what ? ": " : "",
                 _buffer == nullptr ? "U" : "",
                 ntr ? "R" : "",
@@ -341,9 +330,7 @@ void inputStream::dump(const char* what) {
                 (unsigned long long)(intptr_t)_buffer,
                 _buffer == _small_buffer ? "(SB)" : "",
                 (int)_buffer_size,
-                (int)_line_count, (int)_adjust_count,
-                (int)_clean_read_position,
-                (int)_expected_read_position,
+                (int)_line_count,
                 (unsigned long long)(intptr_t)_must_free);
   assert(is_sane(), "");
 }

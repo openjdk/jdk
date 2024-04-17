@@ -269,7 +269,7 @@ int ClassListParser::split_at_tag_from_line() {
   _token = _line;
   char* ptr;
   if ((ptr = strchr(_line, ' ')) == nullptr) {
-    error("Too few items following the @ tag \"%s\" line #%d", _line, lineno());
+    error("Too few items following the @ tag \"%s\" line #%zu", _line, lineno());
     return 0;
   }
   *ptr++ = '\0';
@@ -287,7 +287,7 @@ bool ClassListParser::parse_at_tags() {
   if (strcmp(_token, LAMBDA_PROXY_TAG) == 0) {
     split_tokens_by_whitespace(offset);
     if (_indy_items->length() < 2) {
-      error("Line with @ tag has too few items \"%s\" line #%d", _token, lineno());
+      error("Line with @ tag has too few items \"%s\" line #%zu", _token, lineno());
       return false;
     }
     // set the class name
@@ -298,7 +298,7 @@ bool ClassListParser::parse_at_tags() {
     _lambda_form_line = true;
     return true;
   } else {
-    error("Invalid @ tag at the beginning of line \"%s\" line #%d", _token, lineno());
+    error("Invalid @ tag at the beginning of line \"%s\" line #%zu", _token, lineno());
     return false;
   }
 }
@@ -406,7 +406,7 @@ void ClassListParser::error(const char* msg, ...) {
   }
 
   jio_fprintf(defaultStream::error_stream(),
-              "An error has occurred while processing class list file %s %d:%d.\n",
+              "An error has occurred while processing class list file %s %zu:%d.\n",
               _classlist_file, lineno(), (error_index + 1));
   jio_vfprintf(defaultStream::error_stream(), msg, ap);
 
@@ -446,7 +446,7 @@ void ClassListParser::check_class_name(const char* class_name) {
   }
   if (err != nullptr) {
     jio_fprintf(defaultStream::error_stream(),
-              "An error has occurred while processing class list file %s:%d %s\n",
+              "An error has occurred while processing class list file %s:%zu %s\n",
               _classlist_file, lineno(), err);
     vm_exit_during_initialization("class list format error.", nullptr);
   }
