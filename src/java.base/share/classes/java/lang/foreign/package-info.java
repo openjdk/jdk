@@ -111,7 +111,7 @@
  *}
  *
  * Here, we obtain a {@linkplain java.lang.foreign.Linker#nativeLinker() native linker}
- * and we use it to {@linkplain java.lang.foreign.SymbolLookup#findOrThrow(java.lang.String)}
+ * and we use it to {@linkplain java.lang.foreign.SymbolLookup#findOrThrow(java.lang.String) look up}
  * the {@code strlen} function in the standard C library; a <em>downcall method handle</em>
  * targeting said function is subsequently
  * {@linkplain java.lang.foreign.Linker#downcallHandle(FunctionDescriptor, Linker.Option...) obtained}.
