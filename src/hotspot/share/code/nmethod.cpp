@@ -1230,6 +1230,7 @@ nmethod::nmethod(
     init_defaults();
     _comp_level              = CompLevel_none;
     _entry_bci               = InvocationEntryBci;
+    _num_stack_arg_slots     = _method->constMethod()->num_stack_arg_slots();
     // We have no exception handler or deopt handler make the
     // values something that will never match a pc like the nmethod vtable entry
     _exception_offset        = 0;
@@ -1374,12 +1375,13 @@ nmethod::nmethod(
     assert_locked_or_safepoint(CodeCache_lock);
 
     init_defaults();
-    _entry_bci      = entry_bci;
-    _compile_id     = compile_id;
-    _compiler_type  = type;
-    _comp_level     = comp_level;
-    _orig_pc_offset = orig_pc_offset;
-    _gc_epoch       = CodeCache::gc_epoch();
+    _entry_bci               = entry_bci;
+    _num_stack_arg_slots     = entry_bci != InvocationEntryBci ? 0 : _method->constMethod()->num_stack_arg_slots();
+    _compile_id              = compile_id;
+    _compiler_type           = type;
+    _comp_level              = comp_level;
+    _orig_pc_offset          = orig_pc_offset;
+    _gc_epoch                = CodeCache::gc_epoch();
 
     // Section offsets
     _consts_offset  = content_offset() + code_buffer->total_offset_of(code_buffer->consts());
