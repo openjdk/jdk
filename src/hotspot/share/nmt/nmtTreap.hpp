@@ -170,7 +170,7 @@ public:
 
   void upsert(const K& k, const V& v) {
     // (LEQ_k, GT_k)
-    node_pair split = Node::split(this->_root, k);
+    node_pair split = split(this->_root, k);
     Node* found = find(split.left, k);
     if (found != nullptr) {
       // Already exists, update value.
@@ -178,9 +178,9 @@ public:
       this->_root = merge(split.left, split.right);
     }
     // Doesn't exist, make node
-    Node* node = Allocator::allocate(sizeof(Node));
+    void* node_place = Allocator::allocate(sizeof(Node));
     uint64_t prio = prng_next();
-    new (node) Node(k, v, prio);
+    Node* node = new (node_place) Node(k, v, prio);
     // merge(merge(LEQ_k, EQ_k), GT_k)
     this->_root = merge(merge(split.left, node), split.right);
   }
