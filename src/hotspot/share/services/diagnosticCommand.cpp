@@ -493,7 +493,7 @@ HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
 
 void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
   jlong level = -1; // -1 means no compression.
-  jlong parallel = -1; // auto select.
+  jlong parallel = HeapDumper::default_num_of_dump_threads();
 
   if (_gzip.is_set()) {
     level = _gzip.value();
@@ -520,7 +520,7 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
   // This helps reduces the amount of unreachable objects in the dump
   // and makes it easier to browse.
   HeapDumper dumper(!_all.value() /* request GC if _all is false*/);
-  dumper.dump(_filename.value(), output(), (int)level, _overwrite.value(), (int)parallel);
+  dumper.dump(_filename.value(), output(), (int)level, _overwrite.value(), (uint)parallel);
 }
 
 ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :

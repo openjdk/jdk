@@ -2596,7 +2596,7 @@ void VM_HeapDumper::dump_vthread(oop vt, AbstractDumpWriter* segment_writer) {
 }
 
 // dump the heap to given path.
-int HeapDumper::dump(const char* path, outputStream* out, int compression, bool overwrite, int num_dump_threads) {
+int HeapDumper::dump(const char* path, outputStream* out, int compression, bool overwrite, uint num_dump_threads) {
   assert(path != nullptr && strlen(path) > 0, "path missing");
 
   // print message in interactive case
@@ -2605,17 +2605,14 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
     timer()->start();
   }
 
-  if (num_dump_threads < 0) {
-    num_dump_threads = default_num_of_dump_threads();
-    if (_oome) {
-      // Each additional parallel writer requires several MB of internal memory
-      // (DumpWriter buffer, DumperClassCacheTable, GZipCompressor buffers).
-      // For the OOM handling we may already be limited in memory.
-      // Lets ensure we have at least 20MB per thread.
-      julong max_threads = os::free_memory() / (20 * M);
-      if ((uint)num_dump_threads > max_threads) {
-        num_dump_threads = MAX2<int>(1, (int)max_threads);
-      }
+  if (_oome && num_dump_threads > 1) {
+    // Each additional parallel writer requires several MB of internal memory
+    // (DumpWriter buffer, DumperClassCacheTable, GZipCompressor buffers).
+    // For the OOM handling we may already be limited in memory.
+    // Lets ensure we have at least 20MB per thread.
+    julong max_threads = os::free_memory() / (20 * M);
+    if (num_dump_threads > max_threads) {
+      num_dump_threads = MAX2<uint>(1, (uint)max_threads);
     }
   }
 
