@@ -37,7 +37,7 @@
  *
  * @apiNote
  *
- * <h2><a id=expectedEvolution>Expected visitor evolution</a></h2>
+ * <h2 id=expectedEvolution>Expected visitor evolution</h2>
  *
  * As the Java programming language evolves, the visitor interfaces of
  * the language model also evolve as do the concrete visitors in this
@@ -70,8 +70,8 @@
  * API changes expected when a preview feature becomes a permanent
  * feature.
  *
- * <h3><a id=topLevelLangConstruct>Adding visitor support for a
- * top-level language construct</a></h3>
+ * <h3 id=topLevelLangConstruct>Adding visitor support for a
+ * top-level language construct</h3>
  *
  * Consider a new language feature, preview feature 1, in JDK <i>N</i>. This
  * feature has a top-level element interface to model it:
@@ -200,9 +200,8 @@
  * preview visitor would then have its direct superclass changed to
  * the new corresponding (<i>N+k</i>) visitor.
  *
- * <h3><a id=newKindLangConstruct>Adding visitor support for a
- * language construct that is a new kind of an existing
- * construct</a></h3>
+ * <h3 id=newKindLangConstruct>Adding visitor support for a language
+ * construct that is a new kind of an existing construct</h3>
  *
  * Consider a new language feature, preview feature 2, in JDK
  * <i>N</i>. This feature has a new element kind <em>without</em> a
