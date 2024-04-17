@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,32 @@
  */
 
 /*
- * @test T8312814
- * @summary Verify proper behavior of TransType w.r.t. templated Strings
- * @enablePreview
- * @compile T8312814.java
+ * @test
+ * @bug 8327640
+ * @summary Check parseStrict correctness for DecimalFormat.equals()
+ * @run junit EqualityTest
  */
 
+import org.junit.jupiter.api.Test;
 
-import java.util.List;
+import java.text.DecimalFormat;
 
-public class T8312814 {
-    void x(List<? extends StringTemplate.Processor<String, RuntimeException>> list) {
-        list.get(0)."";
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
+public class EqualityTest {
+
+    private static final DecimalFormat fmt1 = new DecimalFormat();
+    private static final DecimalFormat fmt2 = new DecimalFormat();
+
+    // Ensure that parseStrict is reflected correctly for DecimalFormat.equals()
+    @Test
+    public void checkStrictTest() {
+        // parseStrict is false by default
+        assertEquals(fmt1, fmt2);
+        fmt1.setStrict(true);
+        assertNotEquals(fmt1, fmt2);
+        fmt2.setStrict(true);
+        assertEquals(fmt1, fmt2);
     }
 }
-

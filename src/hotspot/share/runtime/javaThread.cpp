@@ -467,6 +467,7 @@ JavaThread::JavaThread() :
   _jvmci_reserved0(0),
   _jvmci_reserved1(0),
   _jvmci_reserved_oop0(nullptr),
+  _live_nmethod(nullptr),
 #endif // INCLUDE_JVMCI
 
   _exception_oop(oop()),
@@ -1429,6 +1430,10 @@ void JavaThread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
   f->do_oop((oop*) &_exception_oop);
 #if INCLUDE_JVMCI
   f->do_oop((oop*) &_jvmci_reserved_oop0);
+
+  if (_live_nmethod != nullptr && cf != nullptr) {
+    cf->do_nmethod(_live_nmethod);
+  }
 #endif
 
   if (jvmti_thread_state() != nullptr) {
@@ -1484,6 +1489,12 @@ void JavaThread::nmethods_do(NMethodClosure* cf) {
   if (jvmti_thread_state() != nullptr) {
     jvmti_thread_state()->nmethods_do(cf);
   }
+
+#if INCLUDE_JVMCI
+  if (_live_nmethod != nullptr) {
+    cf->do_nmethod(_live_nmethod);
+  }
+#endif
 }
 
 void JavaThread::metadata_do(MetadataClosure* f) {

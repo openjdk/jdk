@@ -1489,7 +1489,7 @@ JRT_END
 // return verified_code_entry if interp_only_mode is not set for the current thread;
 // otherwise return c2i entry.
 address SharedRuntime::get_resolved_entry(JavaThread* current, methodHandle callee_method) {
-  if (current->is_interp_only_mode()) {
+  if (current->is_interp_only_mode() && !callee_method->is_special_native_intrinsic()) {
     // In interp_only_mode we need to go to the interpreted entry
     // The c2i won't patch in this mode -- see fixup_callers_callsite
     return callee_method->get_c2i_entry();
