@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,13 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 
+include CopyFiles.gmk
+
 $(foreach v, $(JVM_VARIANTS), \
   $(eval $(call SetupCopyFiles, COPY_GTEST_$v, \
       SRC := $(HOTSPOT_OUTPUTDIR)/variant-$v/libjvm/gtest, \
       DEST := $(TEST_IMAGE_DIR)/hotspot/gtest/$v, \
-      FILES := $(call SHARED_LIBRARY,jvm) gtestLauncher$(EXECUTABLE_SUFFIX), \
+      FILES := $(LIBRARY_PREFIX)jvm$(SHARED_LIBRARY_SUFFIX) gtestLauncher$(EXECUTABLE_SUFFIX), \
   )) \
   $(eval TARGETS += $$(COPY_GTEST_$v)) \
 )

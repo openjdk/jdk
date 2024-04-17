@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #include "gc/serial/cardTableRS.hpp"
-#include "gc/serial/markSweep.hpp"
 #include "gc/serial/serialBlockOffsetTable.inline.hpp"
+#include "gc/serial/serialFullGC.hpp"
 #include "gc/serial/serialHeap.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
@@ -37,6 +37,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
+#include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 
 bool TenuredGeneration::grow_by(size_t bytes) {
@@ -263,12 +264,24 @@ void TenuredGeneration::compute_new_size_inner() {
   }
 }
 
-HeapWord* TenuredGeneration::block_start(const void* p) const {
-  return space()->block_start_const(p);
+HeapWord* TenuredGeneration::block_start(const void* addr) const {
+  HeapWord* cur_block = _bts->block_start_reaching_into_card(addr);
+
+  while (true) {
+    HeapWord* next_block = cur_block + cast_to_oop(cur_block)->size();
+    if (next_block > addr) {
+      assert(cur_block <= addr, "postcondition");
+      return cur_block;
+    }
+    cur_block = next_block;
+    // Because the BOT is precise, we should never step into the next card
+    // (i.e. crossing the card boundary).
+    assert(!SerialBlockOffsetTable::is_crossing_card_boundary(cur_block, (HeapWord*)addr), "must be");
+  }
 }
 
 void TenuredGeneration::scan_old_to_young_refs() {
-  _rs->scan_old_to_young_refs(space());
+  _rs->scan_old_to_young_refs(this, saved_mark_word());
 }
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
@@ -444,15 +457,15 @@ void TenuredGeneration::collect(bool   full,
                                 bool   is_tlab) {
   SerialHeap* gch = SerialHeap::heap();
 
-  STWGCTimer* gc_timer = MarkSweep::gc_timer();
+  STWGCTimer* gc_timer = SerialFullGC::gc_timer();
   gc_timer->register_gc_start();
 
-  SerialOldTracer* gc_tracer = MarkSweep::gc_tracer();
+  SerialOldTracer* gc_tracer = SerialFullGC::gc_tracer();
   gc_tracer->report_gc_start(gch->gc_cause(), gc_timer->gc_start());
 
   gch->pre_full_gc_dump(gc_timer);
 
-  MarkSweep::invoke_at_safepoint(clear_all_soft_refs);
+  SerialFullGC::invoke_at_safepoint(clear_all_soft_refs);
 
   gch->post_full_gc_dump(gc_timer);
 
@@ -492,11 +505,11 @@ void TenuredGeneration::complete_loaded_archive_space(MemRegion archive_space) {
 }
 
 void TenuredGeneration::save_marks() {
-  _the_space->set_saved_mark();
+  set_saved_mark_word();
 }
 
 bool TenuredGeneration::no_allocs_since_save_marks() {
-  return _the_space->saved_mark_at_top();
+  return saved_mark_at_top();
 }
 
 void TenuredGeneration::gc_epilogue() {
