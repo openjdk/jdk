@@ -4826,7 +4826,7 @@ jint os::init_2(void) {
 
   // Check the availability of MADV_POPULATE_WRITE.
   if (UseMadvPopulateWrite) {
-    // Some downstream kernels recognize MADV_POPULATE_WRITE_value as another
+    // Some downstream kernels recognize MADV_POPULATE_WRITE (23) as another
     // advice, so the check of versions is required here.
     // See https://github.com/oracle/linux-uek/issues/23
     long major, minor;
