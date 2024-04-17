@@ -290,6 +290,7 @@
  *  +     *
  *  +     * &commat;since N
  *  +     *&sol;
+ *  +    @Override
  *  +    public R visitVariableAsPreviewFeature2(VariableElement e, P p) {
  *  +        return defaultAction(e, p);
  *  +    }
