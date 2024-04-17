@@ -369,8 +369,8 @@ public final class ProviderList {
         int i;
 
         // Preferred provider list
-        if (preferredPropList != null &&
-                (pList = preferredPropList.getAll(type, name)) != null) {
+        if (preferredPropList != null) {
+            pList = preferredPropList.getAll(type, name);
             for (i = 0; i < pList.size(); i++) {
                 Provider p = getProvider(pList.get(i).provider);
                 if (p == null) {
