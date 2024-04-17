@@ -67,10 +67,10 @@ private:
   inline void set_offset_array(uint8_t* left, uint8_t* right, uint8_t offset);
 
   // Mapping from address to object start array entry
-  uint8_t* entry_for_addr(const void* const p) const;
+  inline uint8_t* entry_for_addr(const void* const p) const;
 
   // Mapping from object start array entry to address of first word
-  HeapWord* addr_for_entry(const uint8_t* const p) const;
+  inline HeapWord* addr_for_entry(const uint8_t* const p) const;
 
   void check_address(uint8_t* addr, const char* msg) const NOT_DEBUG_RETURN;
 
