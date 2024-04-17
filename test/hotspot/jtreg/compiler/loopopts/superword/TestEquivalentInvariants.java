@@ -207,6 +207,9 @@ public class TestEquivalentInvariants {
           MemorySegment data = MemorySegment.ofArray(aL.clone());
           return testMemorySegmentLInvarL3f(data, 1, 2, 3, RANGE-200);
         });
+        tests.put("testLargeInvariantSum", () -> {
+          return testLargeInvariantSum(aB.clone(), 0, 0, 0, RANGE-200);
+        });
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -249,7 +252,8 @@ public class TestEquivalentInvariants {
                  "testMemorySegmentLInvarL3d2",
                  "testMemorySegmentLInvarL3d3",
                  "testMemorySegmentLInvarL3e",
-                 "testMemorySegmentLInvarL3f"})
+                 "testMemorySegmentLInvarL3f",
+                 "testLargeInvariantSum"})
     public void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -414,6 +418,7 @@ public class TestEquivalentInvariants {
                   IRNode.STORE_VECTOR,  "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Does not vectorize: RangeChecks are not eliminated.
+    // Filed RFE: JDK-8327209
     static Object[] testMemorySegmentBInvarI(MemorySegment m, int invar, int size) {
         for (int i = 0; i < size; i++) {
             byte v = m.get(ValueLayout.JAVA_BYTE, i + invar);
@@ -445,6 +450,7 @@ public class TestEquivalentInvariants {
                   IRNode.STORE_VECTOR,  "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Does not vectorize: RangeChecks are not eliminated.
+    // Filed RFE: JDK-8327209
     static Object[] testMemorySegmentBInvarIAdr(MemorySegment m, int invar, int size) {
         for (int i = 0; i < size; i++) {
             long adr = i + invar;
@@ -503,6 +509,8 @@ public class TestEquivalentInvariants {
     }
 
     @Test
+    // Currently, we don't vectorize. But we may vectorize this, once we implement something like aliasing analysis,
+    // though in this particular case we know that the values at runtime will alias.
     static Object[] testMemorySegmentBInvarI3c(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(invar1 + invar2 + invar3);
         long i2 = (long)(invar2 + invar3) + (long)(invar1); // not equivalent!
@@ -875,5 +883,39 @@ public class TestEquivalentInvariants {
             m.set(ValueLayout.JAVA_LONG, 8 * (i + i2), v + 1);
         }
         return new Object[]{ m };
+    }
+
+    @Test
+    // Traversal through AddI would explode in exponentially many paths, exhausing the node limit.
+    // For this, we have a traversal size limit.
+    static Object[] testLargeInvariantSum(byte[] a, int invar1, int invar2, int invar3, int size) {
+        int e = invar1;
+        e = ((e + invar2) + (e + invar3));
+        e = ((e + invar2) + (e + invar3));
+        e = ((e + invar2) + (e + invar3));
+        e = ((e + invar2) + (e + invar3));
+        e = ((e + invar2) + (e + invar3));
+        e = ((e + invar2) + (e + invar3));
+        e = ((e + invar2) + (e + invar3));
+        e = ((e + invar2) + (e + invar3));
+        e = ((e + invar2) + (e + invar3));
+        e = ((e + invar2) + (e + invar3));
+        e = ((e + invar2) + (e + invar3));
+        e = ((e + invar2) + (e + invar3));
+        e = ((e + invar2) + (e + invar3));
+        e = ((e + invar2) + (e + invar3));
+        e = ((e + invar2) + (e + invar3));
+        e = ((e + invar2) + (e + invar3));
+        e = ((e + invar2) + (e + invar3));
+        e = ((e + invar2) + (e + invar3));
+        e = ((e + invar2) + (e + invar3));
+        e = ((e + invar2) + (e + invar3));
+        e = ((e + invar2) + (e + invar3));
+        e = ((e + invar2) + (e + invar3));
+        e = ((e + invar2) + (e + invar3));
+        for (int i = 0; i < size; i++) {
+            a[i + e] += 1;
+        }
+        return new Object[]{ a };
     }
 }

@@ -616,14 +616,6 @@ Node* VPointer::sort_sum(Node* sum) {
     }
   }
 
-  // sum->dump_bfs(10,0,"#d");
-  // for (int i = 0; i < summands.length(); i++) {
-  //   Node* n = summands.at(i).node();
-  //   const bool negate = summands.at(i).negate();
-  //   tty->print(" %d (neg: %d):", i, negate); n->dump();
-  // }
-  // new_sum->dump();
-
   return new_sum;
 }
 
