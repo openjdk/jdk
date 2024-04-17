@@ -3646,7 +3646,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   apply_debugger_ergo();
 
   // The VMThread needs to stop now and then to execute these debug options.
-  if (HandshakeALot && SafepointALot && FLAG_IS_DEFAULT(GuaranteedSafepointInterval)) {
+  if ((HandshakeALot || SafepointALot) && FLAG_IS_DEFAULT(GuaranteedSafepointInterval)) {
     FLAG_SET_DEFAULT(GuaranteedSafepointInterval, 1000);
   }
 
