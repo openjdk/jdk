@@ -246,47 +246,68 @@ class CachedMetric : public CHeapObj<mtInternal>{
     }
 };
 
+template <class T>
 class CachingCgroupController : public CHeapObj<mtInternal> {
   private:
-    CgroupController* _controller;
+    T _controller;
     CachedMetric* _metrics_cache;
 
   public:
-    CachingCgroupController(CgroupController* cont) {
+    CachingCgroupController(T cont) {
       _controller = cont;
       _metrics_cache = new CachedMetric();
     }
 
     CachedMetric* metrics_cache() { return _metrics_cache; }
-    CgroupController* controller() { return _controller; }
+    T controller() { return _controller; }
 };
+
+class CgroupCpuController: public CgroupController {
+  public:
+    virtual int cpu_quota() = 0;
+    virtual int cpu_period() = 0;
+    virtual int cpu_shares() = 0;
+    virtual char *subsystem_path() = 0;
+};
+
+class CgroupMemoryController: public CgroupController {
+  public:
+    virtual jlong read_memory_limit_in_bytes(julong upper_bound) = 0;
+    virtual jlong memory_usage_in_bytes() = 0;
+    virtual jlong memory_and_swap_limit_in_bytes(julong host_mem, julong host_swap) = 0;
+    virtual jlong memory_and_swap_usage_in_bytes(julong host_mem, julong host_swap) = 0;
+    virtual jlong memory_soft_limit_in_bytes(julong upper_bound) = 0;
+    virtual jlong memory_max_usage_in_bytes() = 0;
+    virtual jlong rss_usage_in_bytes() = 0;
+    virtual jlong cache_usage_in_bytes() = 0;
+    virtual char *subsystem_path() = 0;
+};
+
 
 class CgroupSubsystem: public CHeapObj<mtInternal> {
   public:
     jlong memory_limit_in_bytes();
     int active_processor_count();
-    jlong limit_from_str(char* limit_str);
 
-    virtual int cpu_quota() = 0;
-    virtual int cpu_period() = 0;
-    virtual int cpu_shares() = 0;
     virtual jlong pids_max() = 0;
     virtual jlong pids_current() = 0;
-    virtual jlong memory_usage_in_bytes() = 0;
-    virtual jlong memory_and_swap_limit_in_bytes() = 0;
-    virtual jlong memory_and_swap_usage_in_bytes() = 0;
-    virtual jlong memory_soft_limit_in_bytes() = 0;
-    virtual jlong memory_max_usage_in_bytes() = 0;
-    virtual jlong rss_usage_in_bytes() = 0;
-    virtual jlong cache_usage_in_bytes() = 0;
 
+    int cpu_quota();
+    int cpu_period();
+    int cpu_shares();
     virtual char * cpu_cpuset_cpus() = 0;
     virtual char * cpu_cpuset_memory_nodes() = 0;
-    virtual jlong read_memory_limit_in_bytes() = 0;
     virtual const char * container_type() = 0;
-    virtual CachingCgroupController* memory_controller() = 0;
-    virtual CachingCgroupController* cpu_controller() = 0;
+    virtual CachingCgroupController<CgroupMemoryController*>* memory_controller() = 0;
+    virtual CachingCgroupController<CgroupCpuController*>* cpu_controller() = 0;
 
+    jlong memory_usage_in_bytes();
+    jlong memory_and_swap_limit_in_bytes();
+    jlong memory_and_swap_usage_in_bytes();
+    jlong memory_soft_limit_in_bytes();
+    jlong memory_max_usage_in_bytes();
+    jlong rss_usage_in_bytes();
+    jlong cache_usage_in_bytes();
     virtual void print_version_specific_info(outputStream* st) = 0;
 };
 
