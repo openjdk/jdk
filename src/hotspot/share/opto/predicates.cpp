@@ -170,6 +170,49 @@ class CloneStrategy : public TransformStrategyForOpaqueLoopNodes {
   }
 };
 
+// This strategy replaces the OpaqueLoopInitNode with the provided init node and clones the OpaqueLoopStrideNode.
+class ReplaceInitAndCloneStrideStrategy : public TransformStrategyForOpaqueLoopNodes {
+  Node* const _new_init;
+  Node* const _new_ctrl;
+  PhaseIdealLoop* const _phase;
+
+ public:
+  ReplaceInitAndCloneStrideStrategy(Node* new_init, Node* new_ctrl, PhaseIdealLoop* phase)
+      : _new_init(new_init),
+        _new_ctrl(new_ctrl),
+        _phase(phase) {}
+  NONCOPYABLE(ReplaceInitAndCloneStrideStrategy);
+
+  Node* transform_opaque_init(OpaqueLoopInitNode* opaque_init) const override {
+    return _new_init;
+  }
+
+  Node* transform_opaque_stride(OpaqueLoopStrideNode* opaque_stride) const override {
+    return _phase->clone_and_register(opaque_stride, _new_ctrl)->as_OpaqueLoopStride();
+  }
+};
+
+// This strategy replaces the OpaqueLoopInit and OpaqueLoopStride nodes with the provided init and stride nodes,
+// respectively.
+class ReplaceInitAndStrideStrategy : public TransformStrategyForOpaqueLoopNodes {
+  Node* const _new_init;
+  Node* const _new_stride;
+
+ public:
+  ReplaceInitAndStrideStrategy(Node* new_init, Node* new_stride)
+      : _new_init(new_init),
+        _new_stride(new_stride) {}
+  NONCOPYABLE(ReplaceInitAndStrideStrategy);
+
+  Node* transform_opaque_init(OpaqueLoopInitNode* opaque_init) const override {
+    return _new_init;
+  }
+
+  Node* transform_opaque_stride(OpaqueLoopStrideNode* opaque_stride) const override {
+    return _new_stride;
+  }
+};
+
 // Creates an identical clone of this Template Assertion Predicate Expression (i.e.cloning all nodes from the Opaque4Node
 // to and including the OpaqueLoop* nodes). The cloned nodes are rewired to reflect the same graph structure as found for
 // this Template Assertion Predicate Expression. The cloned nodes get 'new_ctrl' as ctrl. There is no other update done
@@ -177,6 +220,22 @@ class CloneStrategy : public TransformStrategyForOpaqueLoopNodes {
 Opaque4Node* TemplateAssertionPredicateExpression::clone(Node* new_ctrl, PhaseIdealLoop* phase) {
   CloneStrategy clone_init_and_stride_strategy(phase, new_ctrl);
   return clone(clone_init_and_stride_strategy, new_ctrl, phase);
+}
+
+// Same as clone() but instead of cloning the OpaqueLoopInitNode, we replace it with the provided 'new_init' node.
+Opaque4Node* TemplateAssertionPredicateExpression::clone_and_replace_init(Node* new_init, Node* new_ctrl,
+                                                                          PhaseIdealLoop* phase) {
+  ReplaceInitAndCloneStrideStrategy replace_init_and_clone_stride_strategy(new_init, new_ctrl, phase);
+  return clone(replace_init_and_clone_stride_strategy, new_ctrl, phase);
+}
+
+// Same as clone() but instead of cloning the OpaqueLoopInit and OpaqueLoopStride node, we replace them with the provided
+// 'new_init' and 'new_stride' nodes, respectively.
+Opaque4Node* TemplateAssertionPredicateExpression::clone_and_replace_init_and_stride(Node* new_init, Node* new_stride,
+                                                                                     Node* new_ctrl,
+                                                                                     PhaseIdealLoop* phase) {
+  ReplaceInitAndStrideStrategy replace_init_and_stride_strategy(new_init, new_stride);
+  return clone(replace_init_and_stride_strategy, new_ctrl, phase);
 }
 
 // Class to collect data nodes from a source to target nodes by following the inputs of the source node recursively.

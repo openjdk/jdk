@@ -243,6 +243,8 @@ class nmethod : public CodeBlob {
 
   int _compile_id;                        // which compilation made this nmethod
 
+  int _num_stack_arg_slots;               // Number of arguments passed on the stack
+
   CompilerType _compiler_type;            // which compiler made this nmethod (u1)
 
   bool _is_unlinked;
@@ -272,7 +274,7 @@ class nmethod : public CodeBlob {
   // used by jvmti to track if an event has been posted for this nmethod.
   bool _load_reported;
 
-  // Protected by CompiledMethod_lock
+  // Protected by NMethodState_lock
   volatile signed char _state;         // {not_installed, in_use, not_entrant}
 
   // set during construction
@@ -756,8 +758,6 @@ public:
   address continuation_for_implicit_div0_exception(address pc) { return continuation_for_implicit_exception(pc, true); }
   address continuation_for_implicit_null_exception(address pc) { return continuation_for_implicit_exception(pc, false); }
 
-  static address get_deopt_original_pc(const frame* fr);
-
   // Inline cache support for class unloading and nmethod unloading
  private:
   void cleanup_inline_caches_impl(bool unloading_occurred, bool clean_all);
@@ -793,6 +793,10 @@ public:
   void  invalidate_osr_method();
   nmethod* osr_link() const                       { return _osr_link; }
   void     set_osr_link(nmethod *n)               { _osr_link = n; }
+
+  int num_stack_arg_slots(bool rounded = true) const {
+    return rounded ? align_up(_num_stack_arg_slots, 2) : _num_stack_arg_slots;
+  }
 
   // Verify calls to dead methods have been cleaned.
   void verify_clean_inline_caches();
