@@ -2076,6 +2076,7 @@ GetSingleStackTraceClosure::do_thread(Thread *target) {
 
 void
 GetSingleStackTraceClosure::do_vthread(Handle target_h) {
+  // use jvmti_vthread() as vthread() can be outdated
   assert(_target_jt == nullptr || _target_jt->jvmti_vthread() == target_h(), "sanity check");
   doit();
 }
