@@ -101,7 +101,7 @@ import java.util.Objects;
  * <i>RFC&nbsp;6943: Issues in Identifier Comparison for Security
  * Purposes</i></a>.
  * <p> For methods that return a textual representation as output
- * value, the first form, i.e. a dotted-quad string, is used.
+ * value, the first form, i.e. a dotted-quad string in strict decimal notation, is used.
  *
  * <h3> The Scope of a Multicast Address </h3>
  *

@@ -123,10 +123,10 @@ public class OfLiteralTest {
         // 0.0.0.34 address bytes
         byte[] ipv4_0_0_0_34 = new byte[]{0, 0, 0, 34};
 
-        // 127.0.1.1 address bytes
+        // 127.0.1.2 address bytes
         byte[] ipv4_127_0_1_2 = new byte[]{127, 0, 1, 2};
 
-        // 127.1.1.1 address bytes
+        // 127.1.2.3 address bytes
         byte[] ipv4_127_1_2_3 = new byte[]{127, 1, 2, 3};
 
         // 255.255.255.255 address bytes

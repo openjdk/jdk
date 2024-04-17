@@ -727,7 +727,7 @@ public class IPAddressUtil {
         if (fieldValue < 0) {
             return null;
         }
-        // If the last fieldValue is greater than 255 (fieldNumer < 4),
+        // If the last fieldValue is greater than 255 (fieldNumber < 4),
         // it is written to the last (4 - (fieldNumber - 1)) octets
         // in the network order
         if (fieldNumber < 4) {
