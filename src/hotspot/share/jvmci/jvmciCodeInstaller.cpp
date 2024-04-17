@@ -704,6 +704,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     JVMCIObject compiled_code,
     objArrayHandle object_pool,
     CodeBlob*& cb,
+    JVMCINMethodHandle& nmethod_handle,
     JVMCIObject installed_code,
     FailedSpeculation** failed_speculations,
     char* speculations,
@@ -805,6 +806,8 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
                                         speculations_len,
                                         _nmethod_entry_patch_offset);
     if (result == JVMCI::ok) {
+      guarantee(nm != nullptr, "successful compile must produce an nmethod");
+      nmethod_handle.set_nmethod(nm);
       cb = nm;
       if (compile_state == nullptr) {
         // This compile didn't come through the CompileBroker so perform the printing here
@@ -813,14 +816,13 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
         DirectivesStack::release(directive);
       }
 
-      if (nm != nullptr) {
-        if (_nmethod_entry_patch_offset != -1) {
-          err_msg msg("");
-          BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+      if (_nmethod_entry_patch_offset != -1) {
+        BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
 
-          if (!bs_nm->verify_barrier(nm, msg)) {
-            JVMCI_THROW_MSG_(IllegalArgumentException, err_msg("nmethod entry barrier is malformed: %s", msg.buffer()), JVMCI::ok);
-          }
+        // an empty error buffer for use by the verify_barrier code
+        err_msg msg("");
+        if (!bs_nm->verify_barrier(nm, msg)) {
+          JVMCI_THROW_MSG_(IllegalArgumentException, err_msg("nmethod entry barrier is malformed: %s", msg.buffer()), JVMCI::ok);
         }
       }
     }

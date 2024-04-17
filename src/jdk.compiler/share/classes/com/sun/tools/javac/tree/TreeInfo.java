@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -371,7 +371,6 @@ public class TreeInfo {
             case PLUS_ASG: case MINUS_ASG:
             case MUL_ASG: case DIV_ASG: case MOD_ASG:
             case APPLY: case NEWCLASS:
-            case STRING_TEMPLATE:
             case ERRONEOUS:
                 return true;
             default:
@@ -586,10 +585,6 @@ public class TreeInfo {
             case BINDINGPATTERN: {
                 JCBindingPattern node = (JCBindingPattern)tree;
                 return getStartPos(node.var);
-            }
-            case STRING_TEMPLATE: {
-                JCStringTemplate node = (JCStringTemplate) tree;
-                return node.processor == null ? node.pos : getStartPos(node.processor);
             }
             case ERRONEOUS: {
                 JCErroneous node = (JCErroneous)tree;
