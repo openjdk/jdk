@@ -454,6 +454,10 @@ bool SuperWord::SLP_extract() {
   // Ensure extra info is allocated.
   initialize_node_info();
 
+  // Find "seed" pairs.
+  find_adjacent_memop_pairs();
+  return false; // TODO
+
   // Attempt vectorization
   find_adjacent_refs();
 
@@ -487,6 +491,60 @@ bool SuperWord::SLP_extract() {
   schedule();
 
   return output();
+}
+
+void SuperWord::find_adjacent_memop_pairs() {
+  ResourceMark rm;
+  GrowableArray<const VPointer*> vpointers;
+
+  // Collect all valid VPointers.
+  for_each_mem([&] (const MemNode* mem, int bb_idx) {
+    const VPointer& p = vpointer(mem);
+    if (p.valid()) {
+      vpointers.append(&p);
+    }
+  });
+
+  // Sort VPointers into groups.
+  vpointers.sort(VPointer::cmp_for_sort);
+
+#ifndef PRODUCT
+  if (is_trace_superword_adjacent_memops()) {
+    tty->print_cr("\nSuperWord::find_adjacent_memop_pairs:");
+  }
+#endif
+
+  // For each group:
+  int group_start = 0;
+  while (group_start < vpointers.length()) {
+    int group_end = group_start + 1;
+    while (group_end < vpointers.length() &&
+           VPointer::cmp_for_sort_by_group(
+             vpointers.adr_at(group_start),
+             vpointers.adr_at(group_end)
+           ) == 0) {
+      group_end++;
+    }
+    find_adjacent_memop_pairs_in_group(vpointers, group_start, group_end);
+    group_start = group_end;
+  }
+
+  // TODO maybe trace?
+}
+
+void SuperWord::find_adjacent_memop_pairs_in_group(const GrowableArray<const VPointer*> &vpointers, const int group_start, int group_end) {
+#ifndef PRODUCT
+  if (is_trace_superword_adjacent_memops()) {
+    tty->print_cr(" group:");
+    for (int i = group_start; i < group_end; i++) {
+      const VPointer* p = vpointers.at(i);
+      tty->print("  ");
+      p->print();
+    }
+  }
+#endif
+
+  // TODO
 }
 
 //------------------------------find_adjacent_refs---------------------------

@@ -366,7 +366,10 @@ public:
   void for_each_mem(Callback callback) const {
     for (int i = 0; i < _body.length(); i++) {
       MemNode* mem = _body.at(i)->isa_Mem();
-      if (mem != nullptr && _vloop.in_bb(mem)) {
+      if (mem != nullptr &&
+          !mem->is_LoadStore() &&
+          _vloop.in_bb(mem) &&
+          is_java_primitive(mem->memory_type())) {
         callback(mem, i);
       }
     }
@@ -780,6 +783,11 @@ class VPointer : public ArenaObj {
   static bool not_equal(int cmp)  { return cmp <= NotEqual; }
   static bool equal(int cmp)      { return cmp == Equal; }
   static bool comparable(int cmp) { return cmp < NotComparable; }
+
+  // We need to be able to sort the VPointer to efficiently group the
+  // memops into groups, and to find adjacent memops.
+  static int cmp_for_sort_by_group(const VPointer** p1, const VPointer** p2);
+  static int cmp_for_sort(const VPointer** p1, const VPointer** p2);
 
   NOT_PRODUCT( void print() const; )
 

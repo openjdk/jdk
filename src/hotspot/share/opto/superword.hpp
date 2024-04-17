@@ -457,6 +457,11 @@ class SuperWord : public ResourceObj {
     return _vloop_analyzer.body().bb_idx(n);
   }
 
+  template<typename Callback>
+  void for_each_mem(Callback callback) const {
+    return _vloop_analyzer.body().for_each_mem(callback);
+  }
+
   // VLoopTypes accessors
   const Type* velt_type(Node* n) const {
     return _vloop_analyzer.types().velt_type(n);
@@ -586,6 +591,11 @@ class SuperWord : public ResourceObj {
 
 private:
   bool SLP_extract();
+
+  // Find the "seed" pairs. These are pairs that we strongly suspect would lead to vectorization.
+  void find_adjacent_memop_pairs();
+  void find_adjacent_memop_pairs_in_group(const GrowableArray<const VPointer*> &vpointers, const int group_start, int group_end);
+
   // Find the adjacent memory references and create pack pairs for them.
   void find_adjacent_refs();
   // Find a memory reference to align the loop induction variable to.
