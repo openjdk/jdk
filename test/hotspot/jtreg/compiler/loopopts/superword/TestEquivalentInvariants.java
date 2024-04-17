@@ -376,6 +376,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testArrayBB(byte[] a, byte[] b) {
         for (int i = 0; i < a.length; i++) {
@@ -388,6 +389,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Same int invariant summands, but added in a different order.
     static Object[] testArrayBBInvar3(byte[] a, byte[] b, int invar1, int invar2, int invar3) {
@@ -403,6 +405,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Just a simple pattern, without any (explicit) invariant.
     static Object[] testMemorySegmentB(MemorySegment m) {
@@ -416,6 +419,7 @@ public class TestEquivalentInvariants {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Does not vectorize: RangeChecks are not eliminated.
     // Filed RFE: JDK-8327209
@@ -431,6 +435,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Has different invariants, before sorting:
     //
@@ -448,6 +453,7 @@ public class TestEquivalentInvariants {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Does not vectorize: RangeChecks are not eliminated.
     // Filed RFE: JDK-8327209
@@ -464,6 +470,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Since we add "i + invar", the invariant is already equivalent without sorting.
     static Object[] testMemorySegmentBInvarLAdr(MemorySegment m, long invar, int size) {
@@ -479,6 +486,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testMemorySegmentBInvarI3a(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(invar1 + invar2 + invar3);
@@ -494,6 +502,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testMemorySegmentBInvarI3b(MemorySegment m, int invar1, int invar2, int invar3, int size) {
@@ -524,6 +533,7 @@ public class TestEquivalentInvariants {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Should never vectorize, because "adjacent" looking loads and stores might not be adjacent if there is an int-overflow!
     static Object[] testMemorySegmentBInvarI3d(MemorySegment m, int invar1, int invar2, int invar3, int size) {
@@ -546,6 +556,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testMemorySegmentBInvarI3e(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(invar1 + invar2 - invar3);
@@ -561,6 +572,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testMemorySegmentBInvarI3f(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(invar1 - (invar2 - invar3));
@@ -576,6 +588,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testMemorySegmentBInvarL3g(MemorySegment m, long invar1, long invar2, long invar3, int size) {
         long i1 = invar1 - (invar2 - invar3);
@@ -591,6 +604,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testMemorySegmentBInvarL3h(MemorySegment m, long invar1, long invar2, long invar3, int size) {
         long i1 = -invar1 - invar2 - invar3;
@@ -606,6 +620,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testMemorySegmentBInvarL3k(MemorySegment m, long invar1, long invar2, long invar3, int size) {
         long i1 = -invar1 + invar2 + invar3;
@@ -621,6 +636,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.ADD_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testMemorySegmentIInvarL3a(MemorySegment m, long invar1, long invar2, long invar3, int size) {
@@ -637,6 +653,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.ADD_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testMemorySegmentIInvarL3b(MemorySegment m, long invar1, long invar2, long invar3, int size) {
@@ -653,6 +670,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.ADD_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testMemorySegmentIInvarL3c(MemorySegment m, long invar1, long invar2, long invar3, int size) {
@@ -668,6 +686,7 @@ public class TestEquivalentInvariants {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Would be nice if it vectorized.
     // Fails because of control flow. Somehow the "offsetPlain" check (checks for alignment) is not folded away.
@@ -686,6 +705,7 @@ public class TestEquivalentInvariants {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Would be nice if it vectorized.
     // Fails because of control flow. Somehow the "offsetPlain" check (checks for alignment) is not folded away.
@@ -704,6 +724,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.ADD_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // But here the "offsetPlain" is folded away
@@ -720,6 +741,7 @@ public class TestEquivalentInvariants {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Should never vectorize, since i1 and i2 are not guaranteed to be adjacent
     static Object[] testMemorySegmentIInvarL3e(MemorySegment m, int invar1, int invar2, int invar3, int size) {
@@ -738,6 +760,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.ADD_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testMemorySegmentIInvarL3f(MemorySegment m, long invar1, long invar2, long invar3, int size) {
@@ -755,6 +778,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
                   IRNode.ADD_VL,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testMemorySegmentLInvarL3a(MemorySegment m, long invar1, long invar2, long invar3, int size) {
@@ -771,6 +795,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
                   IRNode.ADD_VL,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testMemorySegmentLInvarL3b(MemorySegment m, long invar1, long invar2, long invar3, int size) {
@@ -787,6 +812,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
                   IRNode.ADD_VL,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testMemorySegmentLInvarL3c(MemorySegment m, long invar1, long invar2, long invar3, int size) {
@@ -802,6 +828,7 @@ public class TestEquivalentInvariants {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_L, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Would be nice if it vectorized.
     // Fails because of control flow. Somehow the "offsetPlain" check (checks for alignment) is not folded away.
@@ -820,6 +847,7 @@ public class TestEquivalentInvariants {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_L, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Would be nice if it vectorized.
     // Fails because of control flow. Somehow the "offsetPlain" check (checks for alignment) is not folded away.
@@ -838,6 +866,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
                   IRNode.ADD_VL,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // But here the "offsetPlain" is folded away
@@ -854,6 +883,7 @@ public class TestEquivalentInvariants {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_L, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Should never vectorize, since i1 and i2 are not guaranteed to be adjacent
     static Object[] testMemorySegmentLInvarL3e(MemorySegment m, int invar1, int invar2, int invar3, int size) {
@@ -872,6 +902,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
                   IRNode.ADD_VL,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testMemorySegmentLInvarL3f(MemorySegment m, long invar1, long invar2, long invar3, int size) {
