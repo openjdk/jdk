@@ -457,7 +457,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     }
 
     /**
-     * Loads and opens the given a graph contexts (opened graphs and visible nodes).
+     * Loads and opens the given graph context (opened graphs and visible nodes).
      */
     private static void loadContext(GraphContext context) {
         final GraphViewer viewer = Lookup.getDefault().lookup(GraphViewer.class);
