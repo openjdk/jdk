@@ -300,7 +300,7 @@ GetJREPath(char *path, jint pathsize)
     char javadll[MAXPATHLEN];
     struct stat s;
 
-    JLI_TraceLauncher("GetJREPath - attempt to get JRE location from launcher executable path\n");
+    JLI_TraceLauncher("Attempt to get JRE location from launcher executable path\n");
 
     if (GetApplicationHome(path, pathsize)) {
         /* Is JRE co-located with the application? */
@@ -323,7 +323,7 @@ GetJREPath(char *path, jint pathsize)
         }
     }
 
-    JLI_TraceLauncher("GetJREPath - attempt to get JRE location from shared lib of the image\n");
+    JLI_TraceLauncher("Attempt to get JRE location from shared lib of the image\n");
 
     /* Try getting path to JRE from path to JLI.DLL */
     if (GetApplicationHomeFromDll(path, pathsize)) {
@@ -341,8 +341,6 @@ GetJREPath(char *path, jint pathsize)
         return JNI_TRUE;
     }
 #endif
-
-    JLI_TraceLauncher("GetJREPath - attempts to get JRE location did not succeed\n");
 
     JLI_ReportErrorMessage(JRE_ERROR8 JAVA_DLL);
     return JNI_FALSE;
@@ -436,7 +434,7 @@ jboolean
 GetApplicationHome(char *buf, jint bufsize)
 {
     GetModuleFileName(NULL, buf, bufsize);
-    JLI_TraceLauncher("GetApplicationHome - launcher executable path is %s\n", buf);
+    JLI_TraceLauncher("Launcher executable path is %s\n", buf);
     return TruncatePath(buf);
 }
 

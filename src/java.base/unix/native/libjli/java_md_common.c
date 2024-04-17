@@ -82,7 +82,7 @@ GetApplicationHome(char *buf, jint bufsize)
 {
     const char *execname = GetExecName();
     if (execname != NULL) {
-        JLI_TraceLauncher("GetApplicationHome - launcher executable path is %s\n", execname);
+        JLI_TraceLauncher("Launcher executable path is %s\n", execname);
 
         JLI_Snprintf(buf, bufsize, "%s", execname);
         buf[bufsize-1] = '\0';
