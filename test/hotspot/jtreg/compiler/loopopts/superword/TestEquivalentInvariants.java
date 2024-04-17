@@ -50,8 +50,6 @@ public class TestEquivalentInvariants {
     // Inputs
     byte[] aB;
     byte[] bB;
-    short[] aS;
-    short[] bS;
     int[] aI;
     int[] bI;
     long[] aL;
@@ -165,6 +163,10 @@ public class TestEquivalentInvariants {
           MemorySegment data = MemorySegment.ofArray(aI.clone());
           return testMemorySegmentIInvarL3d2(data, 1, 2, 3, RANGE-200);
         });
+        tests.put("testMemorySegmentIInvarL3d3", () -> {
+          MemorySegment data = MemorySegment.ofArray(aI.clone());
+          return testMemorySegmentIInvarL3d3(data, RANGE-200);
+        });
         tests.put("testMemorySegmentIInvarL3e", () -> {
           MemorySegment data = MemorySegment.ofArray(aI.clone());
           return testMemorySegmentIInvarL3e(data, 1, 2, 3, RANGE-200);
@@ -192,6 +194,10 @@ public class TestEquivalentInvariants {
         tests.put("testMemorySegmentLInvarL3d2", () -> {
           MemorySegment data = MemorySegment.ofArray(aL.clone());
           return testMemorySegmentLInvarL3d2(data, 1, 2, 3, RANGE-200);
+        });
+        tests.put("testMemorySegmentLInvarL3d3", () -> {
+          MemorySegment data = MemorySegment.ofArray(aL.clone());
+          return testMemorySegmentLInvarL3d3(data, RANGE-200);
         });
         tests.put("testMemorySegmentLInvarL3e", () -> {
           MemorySegment data = MemorySegment.ofArray(aL.clone());
@@ -233,6 +239,7 @@ public class TestEquivalentInvariants {
                  "testMemorySegmentIInvarL3c",
                  "testMemorySegmentIInvarL3d",
                  "testMemorySegmentIInvarL3d2",
+                 "testMemorySegmentIInvarL3d3",
                  "testMemorySegmentIInvarL3e",
                  "testMemorySegmentIInvarL3f",
                  "testMemorySegmentLInvarL3a",
@@ -240,6 +247,7 @@ public class TestEquivalentInvariants {
                  "testMemorySegmentLInvarL3c",
                  "testMemorySegmentLInvarL3d",
                  "testMemorySegmentLInvarL3d2",
+                 "testMemorySegmentLInvarL3d3",
                  "testMemorySegmentLInvarL3e",
                  "testMemorySegmentLInvarL3f"})
     public void runTests() {
@@ -685,6 +693,23 @@ public class TestEquivalentInvariants {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // But here the "offsetPlain" is folded away
+    static Object[] testMemorySegmentIInvarL3d3(MemorySegment m, int size) {
+        for (int i = 0; i < size; i+=2) {
+            int v0 = m.getAtIndex(ValueLayout.JAVA_INT, i + 0);
+            int v1 = m.getAtIndex(ValueLayout.JAVA_INT, i + 1);
+            m.setAtIndex(ValueLayout.JAVA_INT, i + 0, v0 + 1);
+            m.setAtIndex(ValueLayout.JAVA_INT, i + 1, v1 + 1);
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
@@ -797,6 +822,23 @@ public class TestEquivalentInvariants {
             long v1 = m.getAtIndex(ValueLayout.JAVA_LONG, i + i1 + 1);
             m.setAtIndex(ValueLayout.JAVA_LONG, i + i1 + 0, v0 + 1);
             m.setAtIndex(ValueLayout.JAVA_LONG, i + i1 + 1, v1 + 1);
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
+                  IRNode.ADD_VL,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // But here the "offsetPlain" is folded away
+    static Object[] testMemorySegmentLInvarL3d3(MemorySegment m, int size) {
+        for (int i = 0; i < size; i+=2) {
+            long v0 = m.getAtIndex(ValueLayout.JAVA_LONG, i + 0);
+            long v1 = m.getAtIndex(ValueLayout.JAVA_LONG, i + 1);
+            m.setAtIndex(ValueLayout.JAVA_LONG, i + 0, v0 + 1);
+            m.setAtIndex(ValueLayout.JAVA_LONG, i + 1, v1 + 1);
         }
         return new Object[]{ m };
     }
