@@ -253,7 +253,8 @@ static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
   return TrustFinalNonStaticFields;
 }
 
-const char* stable_value_klass_name = "java/lang/StableValue";
+// Todo: Change to 'java/lang/StableValue' once StableValue becomes a public API
+const char* stable_value_klass_name = "jdk/internal/lang/StableValue";
 
 static bool trust_final_non_static_fields_of_type(Symbol* signature) {
   if (signature->equals(stable_value_klass_name) == 0) {
