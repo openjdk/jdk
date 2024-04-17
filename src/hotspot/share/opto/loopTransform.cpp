@@ -456,7 +456,7 @@ Node* IdealLoopTree::reassociate(Node* n1, PhaseIdealLoop *phase) {
   }
 
   assert(result != nullptr, "");
-  phase->register_new_node(result, phase->get_ctrl(n1));
+  phase->register_new_node_with_ctrl_of(result, n1);
   phase->_igvn.replace_node(n1, result);
   assert(phase->get_loop(phase->get_ctrl(n1)) == this, "");
   _body.yank(n1);
@@ -2215,7 +2215,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
       // Limit is not constant. Int subtraction could lead to underflow.
       // (1) Convert to long.
       Node* limit_l = new ConvI2LNode(limit);
-      register_new_node(limit_l, get_ctrl(limit));
+      register_new_node_with_ctrl_of(limit_l, limit);
       Node* stride_l = _igvn.longcon(stride_con);
       set_ctrl(stride_l, C->root());
 

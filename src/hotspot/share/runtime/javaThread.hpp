@@ -379,6 +379,10 @@ class JavaThread: public Thread {
   jlong      _jvmci_reserved1;
   oop        _jvmci_reserved_oop0;
 
+  // This field is used to keep an nmethod visible to the GC so that it and its contained oops can
+  // be kept alive
+  nmethod*  _live_nmethod;
+
  public:
   static jlong* _jvmci_old_thread_counters;
   static void collect_counters(jlong* array, int length);
@@ -409,6 +413,15 @@ class JavaThread: public Thread {
 
   jlong get_jvmci_reserved1() {
     return _jvmci_reserved1;
+  }
+
+  void set_live_nmethod(nmethod* nm) {
+    assert(_live_nmethod == nullptr, "only one");
+    _live_nmethod = nm;
+  }
+
+  void clear_live_nmethod() {
+    _live_nmethod = nullptr;
   }
 
  private:
