@@ -43,7 +43,7 @@ public class TestDefault {
                                             "-Xlog:gc+init",
                                             Test.class.getName())
                     .shouldNotContain("Option ZGenerational was deprecated")
-                    .shouldNotContain("Using deprecated non-generational  mode")
+                    .shouldNotContain("Using deprecated non-generational mode")
                     .shouldContain("GC Workers for Old Generation")
                     .shouldContain("GC Workers for Young Generation")
                     .shouldHaveExitValue(0);

@@ -44,7 +44,7 @@ public class TestDeprecated {
                                             "-Xlog:gc+init",
                                             Test.class.getName())
                     .shouldContain("Option ZGenerational was deprecated")
-                    .shouldContain("Using deprecated non-generational  mode")
+                    .shouldContain("Using deprecated non-generational mode")
                     .shouldHaveExitValue(0);
     }
 }
