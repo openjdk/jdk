@@ -79,7 +79,7 @@ public final class SSLLogger {
             }
             isOn = true;
             // log almost everything for the "ssl" value.
-            sslOn = property.equals("ssl");
+            sslOn = property.equals("ssl") || property.endsWith(",ssl") || property.contains("ssl,");
         } else {
             property = null;
             logger = null;
@@ -90,26 +90,23 @@ public final class SSLLogger {
 
     private static void help() {
         System.err.println();
-        System.err.println("help           print the help messages");
-        System.err.println("expand         expand debugging information");
+        System.err.println("help           print this help message and exit");
         System.err.println();
         System.err.println("all            turn on all debugging");
         System.err.println("ssl            turn on ssl debugging");
         System.err.println();
         System.err.println("The following can be used with ssl:");
-        System.err.println("\trecord       enable per-record tracing");
-        System.err.println("\thandshake    print each handshake message");
-        System.err.println("\tkeygen       print key generation data");
-        System.err.println("\tsession      print session activity");
         System.err.println("\tdefaultctx   print default SSL initialization");
-        System.err.println("\tsslctx       print SSLContext tracing");
-        System.err.println("\tsessioncache print session cache tracing");
+        System.err.println("\thandshake    print each handshake message");
         System.err.println("\tkeymanager   print key manager tracing");
-        System.err.println("\ttrustmanager print trust manager tracing");
         System.err.println("\tpluggability print pluggability tracing");
+        System.err.println("\trecord       enable per-record tracing");
+        System.err.println("\trespmgr      print OCSP response tracing");
+        System.err.println("\tsession      print session activity");
+        System.err.println("\tsslctx       print SSLContext tracing");
+        System.err.println("\ttrustmanager print trust manager tracing");
         System.err.println();
         System.err.println("\thandshake debugging can be widened with:");
-        System.err.println("\tdata         hex dump of each handshake message");
         System.err.println("\tverbose      verbose handshake message printing");
         System.err.println();
         System.err.println("\trecord debugging can be widened with:");
@@ -156,8 +153,9 @@ public final class SSLLogger {
     }
 
     private static boolean containsWidenOption(String options) {
-        return options.contains("data") || options.contains("verbose") ||
-                options.contains("plaintext") || options.contains("packet");
+        return options.contains("verbose")
+                || options.contains("plaintext")
+                || options.contains("packet");
     }
 
     public static void severe(String msg, Object... params) {
