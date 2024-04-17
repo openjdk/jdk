@@ -47,7 +47,7 @@ public:
 };
 
 class ZVirtualMemoryManager {
-private:
+protected:
   static size_t calculate_min_range(size_t size);
 
   ZMemoryManager _manager;
@@ -60,6 +60,10 @@ private:
   bool pd_reserve(zaddress_unsafe addr, size_t size);
   void pd_unreserve(zaddress_unsafe addr, size_t size);
 
+  // To allow testing
+  ZVirtualMemoryManager();
+
+private:
   bool reserve_contiguous(zoffset start, size_t size);
   bool reserve_contiguous(size_t size);
   size_t reserve_discontiguous(zoffset start, size_t size, size_t min_range);
