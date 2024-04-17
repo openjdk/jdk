@@ -140,14 +140,14 @@ void ClassLoader::print_counters() {
     LogStreamHandle(Info, init) log;
     if (log.is_enabled()) {
       log.print_cr("ClassLoader:");
-      log.print_cr("  clinit:               " INT64_FORMAT "ms / " INT64_FORMAT " events", ClassLoader::class_init_time_ms(), ClassLoader::class_init_count());
-      log.print_cr("  link methods:         " INT64_FORMAT "ms / " INT64_FORMAT " events", Management::ticks_to_ms(_perf_ik_link_methods_time->get_value())   , _perf_ik_link_methods_count->get_value());
-      log.print_cr("  method adapters:      " INT64_FORMAT "ms / " INT64_FORMAT " events", Management::ticks_to_ms(_perf_method_adapters_time->get_value())   , _perf_method_adapters_count->get_value());
+      log.print_cr("  clinit:               " INT64_FORMAT "ms / " INT64_FORMAT " events", (int64_t)ClassLoader::class_init_time_ms(), (int64_t)ClassLoader::class_init_count());
+      log.print_cr("  link methods:         " INT64_FORMAT "ms / " INT64_FORMAT " events", (int64_t)Management::ticks_to_ms(_perf_ik_link_methods_time->get_value())   , (int64_t)_perf_ik_link_methods_count->get_value());
+      log.print_cr("  method adapters:      " INT64_FORMAT "ms / " INT64_FORMAT " events", (int64_t)Management::ticks_to_ms(_perf_method_adapters_time->get_value())   , (int64_t)_perf_method_adapters_count->get_value());
       log.print_cr("  resolve...");
-      log.print_cr("    invokedynamic:   " INT64_FORMAT "ms / " INT64_FORMAT " events", Management::ticks_to_ms(_perf_resolve_indy_time->get_value())         , _perf_resolve_indy_count->get_value());
-      log.print_cr("    invokehandle:    " INT64_FORMAT "ms / " INT64_FORMAT " events", Management::ticks_to_ms(_perf_resolve_invokehandle_time->get_value()) , _perf_resolve_invokehandle_count->get_value());
-      log.print_cr("    CP_MethodHandle: " INT64_FORMAT "ms / " INT64_FORMAT " events", Management::ticks_to_ms(_perf_resolve_mh_time->get_value())           , _perf_resolve_mh_count->get_value());
-      log.print_cr("    CP_MethodType:   " INT64_FORMAT "ms / " INT64_FORMAT " events", Management::ticks_to_ms(_perf_resolve_mt_time->get_value())           , _perf_resolve_mt_count->get_value());
+      log.print_cr("    invokedynamic:   " INT64_FORMAT "ms / " INT64_FORMAT " events", (int64_t)Management::ticks_to_ms(_perf_resolve_indy_time->get_value())         , (int64_t)_perf_resolve_indy_count->get_value());
+      log.print_cr("    invokehandle:    " INT64_FORMAT "ms / " INT64_FORMAT " events", (int64_t)Management::ticks_to_ms(_perf_resolve_invokehandle_time->get_value()) , (int64_t)_perf_resolve_invokehandle_count->get_value());
+      log.print_cr("    CP_MethodHandle: " INT64_FORMAT "ms / " INT64_FORMAT " events", (int64_t)Management::ticks_to_ms(_perf_resolve_mh_time->get_value())           , (int64_t)_perf_resolve_mh_count->get_value());
+      log.print_cr("    CP_MethodType:   " INT64_FORMAT "ms / " INT64_FORMAT " events", (int64_t)Management::ticks_to_ms(_perf_resolve_mt_time->get_value())           , (int64_t)_perf_resolve_mt_count->get_value());
       log.cr();
     }
   }
