@@ -1587,16 +1587,13 @@ size_t FileMapInfo::remove_bitmap_leading_zeros(CHeapBitMap* map) {
     size_t new_zeros = map->find_first_set_bit(0);
     assert(new_zeros == 0, "Should have removed leading zeros");
   )
-  tty->print_cr("Old zeros: %ld", old_zeros);
   assert(map->size() <= old_size, "Map size should have decreased %ld->%ld", old_size, map->size());
   return old_zeros;
 }
 
 char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap, ArchiveHeapInfo* heap_info,
                                        size_t &size_in_bytes) {
-  tty->print_cr("Rw map");
   size_t removed_rw_zeros = remove_bitmap_leading_zeros(rw_ptrmap);
-  tty->print_cr("Ro map");
   size_t removed_ro_zeros = remove_bitmap_leading_zeros(ro_ptrmap);
   header()->set_rw_ptrmap_start_pos(removed_rw_zeros);
   header()->set_ro_ptrmap_start_pos(removed_ro_zeros);

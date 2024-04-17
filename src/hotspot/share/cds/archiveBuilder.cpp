@@ -627,12 +627,10 @@ void ArchiveBuilder::dump_ro_metadata() {
   RegeneratedClasses::record_regenerated_objects();
 }
 
-// If an object does not have embedded pointers, they should be copied first so the resulting bitmap can be truncated
 void ArchiveBuilder::make_shallow_copies(DumpRegion *dump_region,
                                          const ArchiveBuilder::SourceObjList* src_objs) {
   for (int i = 0; i < src_objs->objs()->length(); i++) {
-    SourceObjInfo* src_obj = src_objs->objs()->at(i);
-    make_shallow_copy(dump_region, src_obj);
+    make_shallow_copy(dump_region, src_objs->objs()->at(i));
   }
   log_info(cds)("done (%d objects)", src_objs->objs()->length());
 }
@@ -1296,7 +1294,6 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_i
   write_region(mapinfo, MetaspaceShared::ro, &_ro_region, /*read_only=*/true, /*allow_exec=*/false);
 
   // Split pointer map into read-write and read-only bitmaps
-  //_rw_src_objs->_ptrmap _ro_src_objs->_ptrmap are the updated ptrmaps
   ArchivePtrMarker::initialize_rw_ro_maps(&_rw_ptrmap, &_ro_ptrmap);
 
   size_t bitmap_size_in_bytes;

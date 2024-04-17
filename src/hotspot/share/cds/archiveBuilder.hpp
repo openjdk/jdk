@@ -181,10 +181,9 @@ private:
   class SourceObjList {
     uintx _total_bytes;
     GrowableArray<SourceObjInfo*>* _objs;     // Source objects to be archived
-
-  public:
     CHeapBitMap _ptrmap;                      // Marks the addresses of the pointer fields
                                               // in the source objects
+  public:
     SourceObjList();
     ~SourceObjList();
 

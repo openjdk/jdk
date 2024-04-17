@@ -34,7 +34,7 @@ inline bool SharedDataRelocator::do_bit(size_t offset) {
   assert(_patch_base <= p && p < _patch_end, "must be");
 
   address old_ptr = *p;
-  assert(_valid_old_base <= old_ptr && old_ptr < _valid_old_end, "must be, %p <= %p < %p, Offset: %ld", _valid_old_base, old_ptr, _valid_old_end, offset);
+  assert(_valid_old_base <= old_ptr && old_ptr < _valid_old_end, "must be");
   assert(old_ptr != nullptr, "bits for null pointers should have been cleaned at dump time");
 
   address new_ptr = old_ptr + _delta;

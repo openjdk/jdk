@@ -80,7 +80,6 @@ void ArchivePtrMarker::initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap
 
   size_t rw_size = ArchiveBuilder::current()->rw_region()->used() / sizeof(address);
   size_t ro_size = ArchiveBuilder::current()->ro_region()->used() / sizeof(address);
-
   // ro_start is the first bit in _ptrmap that covers the pointer that would sit at ro_bottom.
   // E.g., if rw_bottom = (address*)100
   //          ro_bottom = (address*)116
