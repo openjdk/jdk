@@ -1263,14 +1263,8 @@ nmethod::nmethod(
     _deopt_mh_handler_offset = 0;
     _unwind_handler_offset   = 0;
 
-#ifdef ASSERT
-    int oops_size     = align_up(code_buffer->total_oop_size(), oopSize);
-    int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
-    int sum_size      = oops_size + metadata_size;
-    assert((sum_size >> 16) == 0, "data size is bigger than 64Kb: %d", sum_size);
-#endif
     _metadata_offset         = checked_cast<uint16_t>(align_up(code_buffer->total_oop_size(), oopSize));
-    _dependencies_offset     = _metadata_offset + checked_cast<uint16_t>(align_up(code_buffer->total_metadata_size(), wordSize));
+    _dependencies_offset     = checked_cast<uint16_t>(_metadata_offset + align_up(code_buffer->total_metadata_size(), wordSize));
     _scopes_pcs_offset       = _dependencies_offset;
     _scopes_data_offset      = _scopes_pcs_offset;
     _handler_table_offset    = _scopes_data_offset;
@@ -1434,16 +1428,9 @@ nmethod::nmethod(
     } else {
       _unwind_handler_offset = -1;
     }
-#ifdef ASSERT
-    int oops_size     = align_up(code_buffer->total_oop_size(), oopSize);
-    int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
-    int deps_size     = align_up((int)dependencies->size_in_bytes(), oopSize);
-    int sum_size      = oops_size + metadata_size + deps_size;
-    assert((sum_size >> 16) == 0, "data size is bigger than 64Kb: %d", sum_size);
-#endif
     _metadata_offset      = checked_cast<uint16_t>(align_up(code_buffer->total_oop_size(), oopSize));
-    _dependencies_offset  = _metadata_offset      + checked_cast<uint16_t>(align_up(code_buffer->total_metadata_size(), wordSize));
-    _scopes_pcs_offset    = _dependencies_offset  + checked_cast<uint16_t>(align_up((int)dependencies->size_in_bytes(), oopSize));
+    _dependencies_offset  = checked_cast<uint16_t>(_metadata_offset     + align_up(code_buffer->total_metadata_size(), wordSize));
+    _scopes_pcs_offset    = checked_cast<uint16_t>(_dependencies_offset + align_up((int)dependencies->size_in_bytes(), oopSize));
     _scopes_data_offset   = _scopes_pcs_offset    + adjust_pcs_size(debug_info->pcs_size());
     _handler_table_offset = _scopes_data_offset   + align_up(debug_info->data_size       (), oopSize);
     _nul_chk_table_offset = _handler_table_offset + align_up(handler_table->size_in_bytes(), oopSize);
