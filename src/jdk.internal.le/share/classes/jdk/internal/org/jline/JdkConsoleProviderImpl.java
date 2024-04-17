@@ -30,6 +30,7 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
+import java.util.Locale;
 
 import jdk.internal.io.JdkConsole;
 import jdk.internal.io.JdkConsoleProvider;
@@ -81,21 +82,21 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         }
 
         @Override
-        public JdkConsole format(String fmt, Object ... args) {
-            writer().format(fmt, args).flush();
+        public JdkConsole format(Locale locale, String format, Object ... args) {
+            writer().format(locale, format, args).flush();
             return this;
         }
 
         @Override
-        public JdkConsole printf(String format, Object ... args) {
-            return format(format, args);
+        public JdkConsole printf(Locale locale, String format, Object ... args) {
+            return format(locale, format, args);
         }
 
         @Override
-        public String readLine(String fmt, Object ... args) {
+        public String readLine(Locale locale, String format, Object ... args) {
             try {
                 initJLineIfNeeded();
-                return jline.readLine(fmt.formatted(args));
+                return jline.readLine(String.format(locale, format, args));
             } catch (EndOfFileException eofe) {
                 return null;
             }
@@ -103,14 +104,14 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
 
         @Override
         public String readLine() {
-            return readLine("");
+            return readLine(Locale.getDefault(Locale.Category.FORMAT), "");
         }
 
         @Override
-        public char[] readPassword(String fmt, Object ... args) {
+        public char[] readPassword(Locale locale, String format, Object ... args) {
             try {
                 initJLineIfNeeded();
-                return jline.readLine(fmt.formatted(args), '\0').toCharArray();
+                return jline.readLine(String.format(locale, format, args), '\0').toCharArray();
             } catch (EndOfFileException eofe) {
                 return null;
             } finally {
@@ -120,7 +121,7 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
 
         @Override
         public char[] readPassword() {
-            return readPassword("");
+            return readPassword(Locale.getDefault(Locale.Category.FORMAT), "");
         }
 
         @Override
