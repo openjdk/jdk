@@ -545,16 +545,6 @@ public:
   }
 };
 
-// Take int/long node. If is int, convert to long.
-Node* VPointer::convI2L(Node* n) {
-  BasicType bt = n->bottom_type()->basic_type();
-
-  if (bt == T_LONG) { return n; }
-  assert(bt == T_INT, "must be int or long");
-
-  return register_if_new(new ConvI2LNode(n));
-}
-
 // Sometimes, nodes compute the same sum, except that they have different add/sub orders.
 // We decompose a sum into its summands, sort the summands and recombine the sum.
 // This allows us to convert different add/sub orders to a unique node.
@@ -585,7 +575,15 @@ Node* VPointer::sort_sum(Node* sum) {
       // Sort the int-sum separately. We should not flatten int adds to long adds,
       // so that int-overflows inside the invariant are preserved.
       Node* int_sum = sort_sum(n->in(1));
-      summands.append(Summand(convI2L(int_sum), negate));
+      Node* convI2L_int_sum = register_if_new(new ConvI2LNode(int_sum));
+      summands.append(Summand(convI2L_int_sum, negate));
+    } else if (((opc == Op_LShiftL && bt == T_LONG) || (opc == Op_LShiftI && bt == T_INT)) &&
+               n->in(2)->is_ConI() &&
+               n->in(2)->as_ConI()->get_int() >= 0) {
+      // For index computations with types larger than byte, we often scale an inner sum by the type size.
+      Node* inner_sum = sort_sum(n->in(1));
+      Node* shifted_inner_sum = register_if_new(LShiftNode::make(inner_sum, n->in(2), bt));
+      summands.append(Summand(shifted_inner_sum, negate));
     } else {
       summands.append(Summand(n, negate));
     }
