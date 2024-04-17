@@ -163,6 +163,10 @@ public class TestEquivalentInvariants {
           MemorySegment data = MemorySegment.ofArray(aI.clone());
           return testMemorySegmentIInvarL3d(data, 1, 2, 3, RANGE-200);
         });
+        tests.put("testMemorySegmentIInvarL3d2", () -> {
+          MemorySegment data = MemorySegment.ofArray(aI.clone());
+          return testMemorySegmentIInvarL3d2(data, 1, 2, 3, RANGE-200);
+        });
         tests.put("testMemorySegmentIInvarL3e", () -> {
           MemorySegment data = MemorySegment.ofArray(aI.clone());
           return testMemorySegmentIInvarL3e(data, 1, 2, 3, RANGE-200);
@@ -201,6 +205,7 @@ public class TestEquivalentInvariants {
                  "testMemorySegmentIInvarL3b",
                  "testMemorySegmentIInvarL3c",
                  "testMemorySegmentIInvarL3d",
+                 "testMemorySegmentIInvarL3d2",
                  "testMemorySegmentIInvarL3e",
                  "testMemorySegmentIInvarL3f"})
     public void runTests() {
@@ -350,8 +355,6 @@ public class TestEquivalentInvariants {
         }
         return new Object[]{ a, b };
     }
-
-    // TODO: add some unsafe cases, and some other types than byte!
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
@@ -629,6 +632,23 @@ public class TestEquivalentInvariants {
             int v1 = m.getAtIndex(ValueLayout.JAVA_INT, i + i2 + 1);
             m.setAtIndex(ValueLayout.JAVA_INT, i + i1 + 0, v0 + 1);
             m.setAtIndex(ValueLayout.JAVA_INT, i + i2 + 1, v1 + 1);
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
+                  IRNode.STORE_VECTOR,  "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Would be nice if it vectorized.
+    // Fails because of control flow. Somehow the "offsetPlain" check (checks for alignment) is not folded away.
+    static Object[] testMemorySegmentIInvarL3d2(MemorySegment m, int invar1, int invar2, int invar3, int size) {
+        long i1 = (long)(-invar1 + invar2 + invar3);
+        for (int i = 0; i < size; i+=2) {
+            int v0 = m.getAtIndex(ValueLayout.JAVA_INT, i + i1 + 0);
+            int v1 = m.getAtIndex(ValueLayout.JAVA_INT, i + i1 + 1);
+            m.setAtIndex(ValueLayout.JAVA_INT, i + i1 + 0, v0 + 1);
+            m.setAtIndex(ValueLayout.JAVA_INT, i + i1 + 1, v1 + 1);
         }
         return new Object[]{ m };
     }
