@@ -1478,7 +1478,10 @@ public sealed interface ClassFile
     /** 67 */
     int JAVA_23_VERSION = 67;
 
-    /** 68 */
+    /**
+     * The class major version of JAVA_24.
+     * @since 24
+     */
     int JAVA_24_VERSION = 68;
 
     /**
