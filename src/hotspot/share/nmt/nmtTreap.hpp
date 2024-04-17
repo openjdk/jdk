@@ -44,7 +44,7 @@
 // TreapNode has LEQ nodes on the left, GT nodes on the right.
 template<typename K, typename V, int(*CMP)(K,K)>
 class TreapNode {
-  template<typename InnerK, typename InnerV, int(*CMPP)(InnerK,InnerK)>
+  template<typename InnerK, typename InnerV, int(*CMPP)(InnerK,InnerK), typename Allocator>
   friend class Treap;
   using Node = TreapNode<K,V,CMP>;
 
