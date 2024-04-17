@@ -46,7 +46,7 @@ public class TestMinMaxOpt {
 
     @Test
     @Arguments(values = {Argument.NUMBER_42})
-    @IR(counts = {IRNode.MIN_I, "0"})
+    @IR(failOn = {IRNode.MIN_I})
     private static int testIntMin(int v) {
         return Math.min(v, v);
     }
@@ -60,7 +60,7 @@ public class TestMinMaxOpt {
 
     @Test
     @Arguments(values = {Argument.NUMBER_42})
-    @IR(counts = {IRNode.MAX_I, "0"})
+    @IR(failOn = {IRNode.MAX_I})
     private static int testIntMax(int v) {
         return Math.max(v, v);
     }
@@ -74,7 +74,7 @@ public class TestMinMaxOpt {
 
     @Test
     @Arguments(values = {Argument.NUMBER_42})
-    @IR(counts = {IRNode.MIN_L, "0"})
+    @IR(failOn = {IRNode.MIN_L})
     private static long testLongMin(long v) {
         return Math.min(v, v);
     }
@@ -88,7 +88,7 @@ public class TestMinMaxOpt {
 
     @Test
     @Arguments(values = {Argument.NUMBER_42})
-    @IR(counts = {IRNode.MAX_L, "0"})
+    @IR(failOn = {IRNode.MAX_L})
     private static long testLongMax(long v) {
         return Math.max(v, v);
     }
@@ -102,7 +102,7 @@ public class TestMinMaxOpt {
 
     @Test
     @Arguments(values = {Argument.NUMBER_42})
-    @IR(counts = {IRNode.MIN_F, "0"})
+    @IR(failOn = {IRNode.MIN_F})
     private static float testFloatMin(float v) {
         return Math.min(v, v);
     }
@@ -116,7 +116,7 @@ public class TestMinMaxOpt {
 
     @Test
     @Arguments(values = {Argument.NUMBER_42})
-    @IR(counts = {IRNode.MAX_F, "0"})
+    @IR(failOn = {IRNode.MAX_F})
     private static float testFloatMax(float v) {
         return Math.max(v, v);
     }
@@ -130,7 +130,7 @@ public class TestMinMaxOpt {
 
     @Test
     @Arguments(values = {Argument.NUMBER_42})
-    @IR(counts = {IRNode.MIN_D, "0"})
+    @IR(failOn = {IRNode.MIN_D})
     private static double testDoubleMin(double v) {
         return Math.min(v, v);
     }
@@ -144,7 +144,7 @@ public class TestMinMaxOpt {
 
     @Test
     @Arguments(values = {Argument.NUMBER_42})
-    @IR(counts = {IRNode.MAX_D, "0"})
+    @IR(failOn = {IRNode.MAX_D})
     private static double testDoubleMax(double v) {
         return Math.max(v, v);
     }
