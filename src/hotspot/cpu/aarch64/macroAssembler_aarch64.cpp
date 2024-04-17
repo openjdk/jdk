@@ -3541,22 +3541,22 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
  * r2: y
  * r3: ylen
  * r4:  z
- * r10: tmp1
- * r11: tmp2
- * r12: tmp3
- * r13: tmp4
- * r14: tmp5
- * r15: tmp6
- * r16: tmp7
- * r17: tmp8
+ * r10: tmp0
+ * r11: tmp1
+ * r12: tmp2
+ * r13: tmp3
+ * r14: tmp4
+ * r15: tmp5
+ * r16: tmp6
+ * r17: tmp7
  *
  */
 void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Register ylen,
-                                     Register z,
+                                     Register z, Register tmp0,
                                      Register tmp1, Register tmp2, Register tmp3, Register tmp4,
-                                     Register tmp5, Register tmp6, Register product_hi, Register tmp8) {
+                                     Register tmp5, Register tmp6, Register product_hi) {
 
-  assert_different_registers(x, xlen, y, ylen, z, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, product_hi, tmp8);
+  assert_different_registers(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, product_hi);
 
   const Register idx = tmp1;
   const Register kdx = tmp2;
@@ -3565,7 +3565,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   const Register y_idx = tmp4;
   const Register carry = tmp5;
   const Register product  = xlen;
-  const Register x_xstart = tmp8;
+  const Register x_xstart = tmp0;
 
   // First Loop.
   //

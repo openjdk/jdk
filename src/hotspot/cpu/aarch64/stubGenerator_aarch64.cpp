@@ -4660,18 +4660,18 @@ class StubGenerator: public StubCodeGenerator {
     const Register ylen  = r3;
     const Register z     = r4;
 
-    const Register tmp1  = r10;
-    const Register tmp2  = r11;
-    const Register tmp3  = r12;
-    const Register tmp4  = r13;
-    const Register tmp5  = r14;
-    const Register tmp6  = r15;
-    const Register tmp7  = r16;
-    const Register tmp8  = r17;
+    const Register tmp0  = r10;
+    const Register tmp1  = r11;
+    const Register tmp2  = r12;
+    const Register tmp3  = r13;
+    const Register tmp4  = r14;
+    const Register tmp5  = r15;
+    const Register tmp6  = r16;
+    const Register tmp7  = r17;
 
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
-    __ multiply_to_len(x, xlen, y, ylen, z, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8);
+    __ multiply_to_len(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(lr);
 
@@ -4689,17 +4689,17 @@ class StubGenerator: public StubCodeGenerator {
     const Register x     = r0;
     const Register xlen  = r1;
     const Register z     = r2;
-    const Register zlen  = r3;
     const Register y     = r4; // == x
     const Register ylen  = r5; // == xlen
 
-    const Register tmp1  = r10;
-    const Register tmp2  = r11;
-    const Register tmp3  = r12;
-    const Register tmp4  = r13;
-    const Register tmp5  = r14;
-    const Register tmp6  = r15;
-    const Register tmp7  = r16;
+    const Register tmp0  = r10;
+    const Register tmp1  = r11;
+    const Register tmp2  = r12;
+    const Register tmp3  = r13;
+    const Register tmp4  = r14;
+    const Register tmp5  = r15;
+    const Register tmp6  = r16;
+    const Register tmp7  = r17;
 
     RegSet spilled_regs = RegSet::of(y, ylen);
     BLOCK_COMMENT("Entry:");
@@ -4707,7 +4707,7 @@ class StubGenerator: public StubCodeGenerator {
     __ push(spilled_regs, sp);
     __ mov(y, x);
     __ mov(ylen, xlen);
-    __ multiply_to_len(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
+    __ multiply_to_len(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
     __ pop(spilled_regs, sp);
     __ leave();
     __ ret(lr);

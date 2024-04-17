@@ -6639,7 +6639,7 @@ void MacroAssembler::multiply_128_x_128_bmi2_loop(Register y, Register z,
  * rsi: y
  * rcx: ylen
  * r8:  z
- * r11: zlen
+ * r11: tmp0
  * r12: tmp1
  * r13: tmp2
  * r14: tmp3
@@ -6649,6 +6649,7 @@ void MacroAssembler::multiply_128_x_128_bmi2_loop(Register y, Register z,
  */
 void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z, Register tmp0,
                                      Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5) {
+  ShortBranchVerifier sbv(this);
   assert_different_registers(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, rdx);
 
   push(tmp0);
@@ -6683,11 +6684,9 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   //  z[xstart] = (int)carry;
   //
 
-  movl(idx, ylen);      // idx = ylen;
-  // movl(kdx, xlen);
-  // addl(kdx, ylen);      // kdx = xlen+ylen;
-  lea(kdx, Address(xlen, ylen));
-  xorq(carry, carry);   // carry = 0;
+  movl(idx, ylen);               // idx = ylen;
+  lea(kdx, Address(xlen, ylen)); // kdx = xlen+ylen;
+  xorq(carry, carry);            // carry = 0;
 
   Label L_done;
 

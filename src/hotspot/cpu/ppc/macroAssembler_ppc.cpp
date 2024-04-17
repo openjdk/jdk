@@ -3901,7 +3901,7 @@ void MacroAssembler::muladd(Register out, Register in,
 
 void MacroAssembler::multiply_to_len(Register x, Register xlen,
                                      Register y, Register ylen,
-                                     Register z, Register zlen,
+                                     Register z,
                                      Register tmp1, Register tmp2,
                                      Register tmp3, Register tmp4,
                                      Register tmp5, Register tmp6,
@@ -3912,11 +3912,11 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen,
 
   ShortBranchVerifier sbv(this);
 
-  assert_different_registers(x, xlen, y, ylen, z, zlen,
+  assert_different_registers(x, xlen, y, ylen, z,
                              tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
-  assert_different_registers(x, xlen, y, ylen, z, zlen,
+  assert_different_registers(x, xlen, y, ylen, z,
                              tmp1, tmp2, tmp3, tmp4, tmp5, tmp7);
-  assert_different_registers(x, xlen, y, ylen, z, zlen,
+  assert_different_registers(x, xlen, y, ylen, z,
                              tmp1, tmp2, tmp3, tmp4, tmp5, tmp8);
 
   const Register idx = tmp1;
@@ -3944,7 +3944,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen,
   //  z[xstart] = (int)carry;
 
   mr_if_needed(idx, ylen);        // idx = ylen
-  mr_if_needed(kdx, zlen);        // kdx = xlen + ylen
+  add(kdx, xlen, ylen);           // kdx = xlen + ylen
   li(carry, 0);                   // carry = 0
 
   Label L_done;

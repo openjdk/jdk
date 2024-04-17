@@ -785,7 +785,7 @@ class MacroAssembler: public Assembler {
               Register tmp1, Register tmp2, Register carry);
   void multiply_to_len(Register x, Register xlen,
                        Register y, Register ylen,
-                       Register z, Register zlen,
+                       Register z,
                        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
                        Register tmp6, Register tmp7, Register tmp8, Register tmp9, Register tmp10,
                        Register tmp11, Register tmp12, Register tmp13);
