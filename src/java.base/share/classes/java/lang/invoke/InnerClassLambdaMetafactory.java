@@ -175,13 +175,15 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         lambdaClassName = lambdaClassName(targetClass);
         // If the target class invokes a protected method inherited from a
         // superclass in a different package, or does 'invokespecial', the
-        // lambda class has no access to the resolved method. Instead, we need
-        // to pass the live implementation method handle to the proxy class
-        // to invoke directly. (javac prefers to avoid this situation by
-        // generating bridges in the target class)
+        // lambda class has no access to the resolved method, or the
+        // target class is hidden and could not be referenced as constant.
+        // Instead, we need to pass the live implementation method handle
+        // to the proxy class to invoke directly. (javac prefers to avoid
+        // this situation by generating bridges in the target class)
         useImplMethodHandle = (Modifier.isProtected(implInfo.getModifiers()) &&
                                !VerifyAccess.isSamePackage(targetClass, implInfo.getDeclaringClass())) ||
-                               implKind == H_INVOKESPECIAL;
+                               implKind == H_INVOKESPECIAL ||
+                               implInfo.getDeclaringClass().isHidden();
         cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         int parameterCount = factoryType.parameterCount();
         if (parameterCount > 0) {

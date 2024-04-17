@@ -25,7 +25,7 @@ import java.util.function.Function;
 
 public class Lambda implements HiddenTest {
      public void test() {
-         Function<Object, String> f = Object::toString;
+         Function<Object, String> f = o -> o.toString();
          String s = f.apply(this);
          throw new Error("thrown by " + s);
      }
