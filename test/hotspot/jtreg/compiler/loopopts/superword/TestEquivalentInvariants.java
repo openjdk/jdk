@@ -446,6 +446,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testMemorySegmentBInvarI3b(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(invar1 + invar2 + invar3);
@@ -570,6 +571,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.ADD_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testMemorySegmentIInvarL3a(MemorySegment m, long invar1, long invar2, long invar3, int size) {
         long i1 = invar1 + invar2 + invar3;
@@ -585,6 +587,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.ADD_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testMemorySegmentIInvarL3b(MemorySegment m, long invar1, long invar2, long invar3, int size) {
         long i1 = -invar1 - invar2 - invar3;
@@ -600,6 +603,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.ADD_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testMemorySegmentIInvarL3c(MemorySegment m, long invar1, long invar2, long invar3, int size) {
         long i1 = -invar1 + invar2 + invar3;
@@ -650,6 +654,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.ADD_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
+        applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] testMemorySegmentIInvarL3f(MemorySegment m, long invar1, long invar2, long invar3, int size) {
         long i1 = -invar1 + invar2 + invar3;
