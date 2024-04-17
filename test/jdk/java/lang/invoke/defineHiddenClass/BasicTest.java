@@ -182,7 +182,7 @@ public class BasicTest {
         }
     }
 
-    // Define a hidden class that uses contains lambda implementation
+    // Define a hidden class that uses lambda and contains its implementation
     // This verifies LambdaMetaFactory supports the caller which is a hidden class
     @Test
     public void testHiddenLambda() throws Throwable {
