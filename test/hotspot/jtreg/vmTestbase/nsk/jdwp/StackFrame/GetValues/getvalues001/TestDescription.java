@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@
  * @comment debuggee should be compiled w/ debug info
  * @clean nsk.jdwp.StackFrame.GetValues.getvalues001a
  * @compile -g:lines,source,vars ../getvalues001a.java
- * @run main/othervm
+ * @run driver
  *      nsk.jdwp.StackFrame.GetValues.getvalues001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose
