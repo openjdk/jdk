@@ -13,7 +13,7 @@ import compiler.lib.ir_framework.TestFramework;
  * @summary Test that Shenandoah barriers are expanded correctly
  * @library /test/lib /
  * @requires vm.gc.Shenandoah
- * @run driver compiler.gcbarriers.TestShenandoahBarrierExpansion
+ * @run main compiler.gcbarriers.TestShenandoahBarrierExpansion
  */
 public class TestShenandoahBarrierExpansion {
     public static void main(String[] args) {
