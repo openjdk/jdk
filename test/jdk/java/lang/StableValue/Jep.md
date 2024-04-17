@@ -177,7 +177,7 @@ Unfortunately, this approach provides a plethora of challenges. First, retrievin
 from a static array is slow, as said values cannot be [constant-folded](https://en.wikipedia.org/wiki/Constant_folding). Even worse, access to
 the array is guarded by synchronization that is not only slow but will block access to the array for
 all elements whenever one of the elements is under computation. Furthermore, the class holder idiom (see above)
-is undoubtedly insufficient in this case, as the number of required holder classes is *statically unbounded* - it 
+is undoubtedly insufficient in this case, as the number of required holder classes is *statically unbounded* - it
 depends on the value of the parameter `SIZE` which may change in future variants of the code.
 
 What we are missing -- in all cases -- is a way to *promise* that a constant will be initialized
@@ -213,10 +213,10 @@ To use the Stable Value and Collections APIs, the JVM flag `--enable-preview` mu
 
 The Stable Values & Collections API defines functions and an interface so that client code in libraries and applications can
 
-- Define and use stable (scalar) values: 
+- Define and use stable (scalar) values:
   - [`StableValue`](https://cr.openjdk.org/~pminborg/stable-values/api/java.base/java/lang/StableValue.html)
-- Define collections: 
-  - [`StableValue.ofList(int size)`](https://cr.openjdk.org/~pminborg/stable-values/api/java.base/java/lang/StableValue.html#ofList(int)), 
+- Define collections:
+  - [`StableValue.ofList(int size)`](https://cr.openjdk.org/~pminborg/stable-values/api/java.base/java/lang/StableValue.html#ofList(int)),
   - [`StableValue.ofMap(Set<K> keys)`](https://cr.openjdk.org/~pminborg/stable-values/api/java.base/java/lang/StableValue.html#ofMap(java.util.Set))
 
 The Stable Values & Collections API resides in the [java.lang](https://cr.openjdk.org/~pminborg/stable-values/api/java.base/java/lang/package-summary.html) package of the [java.base](https://cr.openjdk.org/~pminborg/stable-values/api/java.base/module-summary.html) module.
@@ -239,7 +239,7 @@ class Bar {
             // 2. Set the stable value _after_ the field was declared
             return LOGGER.setIfUnset(Logger.getLogger("com.foo.Bar"));
         }
-        
+
         // 3. Access the stable value with as-declared-final performance
         return LOGGER.orThrow();
     }
@@ -255,7 +255,7 @@ Null-averse applications can also use `StableValue<Optional<V>>`.
 
 In many ways, this is similar to the holder-class idiom in the sense it offers the same
 performance and constant-folding characteristics. It also incurs a lower static footprint
-since no additional class is required. 
+since no additional class is required.
 
 However, there is _an important distinction_; several threads may invoke the `Logger::getLogger`
 method simultaneously if they call the `logger()` method at about the same time. Even though `StableValue` will guarantee, that only
@@ -269,7 +269,7 @@ In such cases, it is possible to compute and set an unset value on-demand as sho
 class Bar {
     // 1. Declare a stable field
     private static final StableValue<Logger> LOGGER = StableValue.of();
-    
+
     static Logger logger() {
         // 2. Access the stable value with as-declared-final performance
         //    (single evaluation made before the first access)
@@ -278,7 +278,7 @@ class Bar {
 }
 ```
 
-When retrieving values, `StableValue` instances holding reference values are faster 
+When retrieving values, `StableValue` instances holding reference values are faster
 than reference values managed via double-checked-idiom constructs as stable values rely
 on explicit memory barriers rather than performing volatile access on each retrieval
 operation. In addition, stable values are eligible for constant folding optimizations.
@@ -328,7 +328,7 @@ class ErrorMessages {
         //    (evaluation made before the first access)
         return StableValue.computeIfUnset(MESSAGES, messageNumber, ErrorMessages::readFromFile);
     }
-    
+
 }
 ```
 
@@ -345,8 +345,8 @@ String errorPage = ErrorMessages.errorPage(2);
 ```
 
 Note how there's only one field of type `List<StableValue<String>>` to initialize even though every computation is
-performed independently of the other element of the list when accessed (i.e. no blocking will occur across threads 
-computing distinct elements simultaneously). Also, the `IntSupplier` provided at computation is only invoked 
+performed independently of the other element of the list when accessed (i.e. no blocking will occur across threads
+computing distinct elements simultaneously). Also, the `IntSupplier` provided at computation is only invoked
 at most once for each distinct index. The Stable Values & Collections API allows modeling this cleanly, while
 still preserving good constant-folding guarantees and integrity of updates in the case of multi-threaded access.
 
@@ -392,7 +392,7 @@ So far, we have talked about the fundamental features of Stable Values & Collect
 wrapped `@Stable` value holders. However, it has become apparent, stable primitives are amenable
 to composition with other constructs in order to create more high-level and powerful features.
 
-[Memoized functions](https://en.wikipedia.org/wiki/Memoization) are functions where the output for a particular 
+[Memoized functions](https://en.wikipedia.org/wiki/Memoization) are functions where the output for a particular
 input value is computed only once and is remembered such that remembered outputs can be reused for subsequent
 calls with recurring input values. Here is how we could make sure `Logger.getLogger("com.foo.Bar")`
 in one of the first examples above is invoked at most once (provided it executes successfully)
@@ -432,7 +432,7 @@ can be used for an `IntFunction` that will record its cached value in a backing 
 
 ```
 // 1. Declare a stable list of default error pages to serve up
-private static final List<StableValue<String>> ERROR_PAGES = 
+private static final List<StableValue<String>> ERROR_PAGES =
         StableValue.ofList(SIZE);
 
 // 2. Declare a memoized IntFunction backed by the stable list
@@ -452,7 +452,7 @@ private static String readFromFile(int messageNumber) {
 // 4. Access the memoized list element with as-declared-final performance
 //    (evaluation made before the first access)
 String msg =  ERROR_FUNCTION.apply(2);
-       
+
 // <!DOCTYPE html>
 // <html lang="en">
 //   <head><meta charset="utf-8"></head>
@@ -460,9 +460,9 @@ String msg =  ERROR_FUNCTION.apply(2);
 // </html>
 ```
 
-The same paradigm can be used for creating a memoized `Supplier` (backed by a single `StableValue` instance) or 
+The same paradigm can be used for creating a memoized `Supplier` (backed by a single `StableValue` instance) or
 a memoized `Predicate`(backed by a lazily computed `Map<K, StableValue<Boolean>>`). An astute reader will be able to
-write such constructs in a few lines. 
+write such constructs in a few lines.
 
 ## Alternatives
 
