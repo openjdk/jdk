@@ -200,9 +200,9 @@ public:
   }
 
   // Delete all nodes.
-  void remove_all(Node* tree) {
+  void remove_all() {
     GrowableArrayCHeap<Node*, mtNMT> to_delete;
-    to_delete.push(tree);
+    to_delete.push(this->_root);
 
     while (!to_delete.is_empty()) {
       Node* head = to_delete.pop();
