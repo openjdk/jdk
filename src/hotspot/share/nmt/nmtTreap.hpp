@@ -259,10 +259,10 @@ public:
 };
 
 class CHeapAllocator {
-  void* allocate(size_t sz) {
+  static void* allocate(size_t sz) {
     return os::malloc(sz, mtNMT);
   }
-  void free(void* ptr) {
+  static void free(void* ptr) {
     os::free(ptr);
   }
 };
