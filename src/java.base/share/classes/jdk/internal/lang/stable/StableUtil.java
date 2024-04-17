@@ -28,6 +28,8 @@ package jdk.internal.lang.stable;
 import jdk.internal.lang.StableValue;
 import jdk.internal.misc.Unsafe;
 
+import java.util.function.Supplier;
+
 import static jdk.internal.misc.Unsafe.*;
 
 /**

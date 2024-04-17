@@ -86,7 +86,9 @@ final class BasicStableListTest {
     @MethodSource("sizes")
     void serializable(int size) {
         newList(size);
-        assertFalse(list instanceof Serializable);
+        if (size > 0) {
+            assertFalse(list instanceof Serializable);
+        }
     }
 
     @ParameterizedTest

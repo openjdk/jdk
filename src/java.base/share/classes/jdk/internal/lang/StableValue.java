@@ -25,6 +25,7 @@
 
 package jdk.internal.lang;
 
+import jdk.internal.lang.stable.StableAccess;
 import jdk.internal.lang.stable.StableValueElement;
 import jdk.internal.lang.stable.StableValueImpl;
 
@@ -66,7 +67,6 @@ import java.util.function.Supplier;
  * @param <V> value type
  * @since 23
  */
-//@PreviewFeature(feature = Feature.STABLE_VALUES_AND_COLLECTIONS)
 public sealed interface StableValue<V>
         permits StableValueImpl,
         StableValueElement {
@@ -168,6 +168,8 @@ public sealed interface StableValue<V>
         return StableValueImpl.ofBackground(supplier);
     }
 
+    // Collection factories
+
     /**
      * {@return an unmodifiable, shallowly immutable, thread-safe, stable,
      * {@linkplain List} containing {@code size} {@linkplain StableValue } elements}
@@ -205,7 +207,7 @@ public sealed interface StableValue<V>
         if (size < 0) {
             throw new IllegalArgumentException();
         }
-        return StableValueImpl.ofList(size);
+        return StableAccess.ofList(size);
     }
 
     /**
@@ -245,8 +247,10 @@ public sealed interface StableValue<V>
      */
     static <K, V> Map<K, StableValue<V>> ofMap(Set<? extends K> keys) {
         Objects.requireNonNull(keys);
-        return StableValueImpl.ofMap(keys);
+        return StableAccess.ofMap(keys);
     }
+
+    // Support functions for stable collections
 
     /**
      * If no value {@linkplain #isSet() is set} for the StableValue at the provided
@@ -280,7 +284,7 @@ public sealed interface StableValue<V>
         Objects.requireNonNull(list);
         Objects.checkIndex(index, list.size());
         Objects.requireNonNull(mapper);
-        return StableValueImpl.computeIfUnset(list, index, mapper);
+        return StableAccess.computeIfUnset(list, index, mapper);
     }
 
     /**
@@ -319,7 +323,60 @@ public sealed interface StableValue<V>
         Objects.requireNonNull(map);
         Objects.requireNonNull(key);
         Objects.requireNonNull(mapper);
-        return StableValueImpl.computeIfUnset(map, key, mapper);
+        return StableAccess.computeIfUnset(map, key, mapper);
+    }
+
+    // Memoized factories
+
+    /**
+     * {@return a new <em>memoized</em> {@linkplain Supplier} backed by an internal
+     * stable value where the provided {@code original} supplier will only be invoked
+     * at most once}
+     *
+     * @param original the original Suppler to convert to a memoized Supplier
+     * @param <T>      the memoized type
+     */
+    static <T> Supplier<T> ofSupplier(Supplier<? extends T> original) {
+        Objects.requireNonNull(original);
+        StableValue<T> stable = StableValue.of();
+        return new StableAccess.MemoizedSupplier<>(stable, original);
+    }
+
+    /**
+     * {@return a new <em>memoized</em> {@linkplain IntFunction } backed by an internal
+     * stable list of the provided {@code size} where the provided {@code original}
+     * IntFunction will only be invoked at most once per distinct {@code int} value.}
+     *
+     * @param size     the number of elements in the backing list
+     * @param original the original IntFunction to convert to a memoized IntFunction
+     * @param <R>      the return type of the IntFunction
+     */
+    static <R> IntFunction<R> ofIntFunction(int size,
+                                            IntFunction<? extends R> original) {
+        if (size < 0) {
+            throw new IllegalArgumentException();
+        }
+        Objects.requireNonNull(original);
+        List<StableValue<R>> stableList = StableValue.ofList(size);
+        return new StableAccess.MemoizedIntFunction<>(stableList, original);
+    }
+
+    /**
+     * {@return a new <em>memoized</em> {@linkplain Function } backed by an internal
+     * stable map with the provided {@code inputs} keys where the provided
+     * {@code original} Function will only be invoked at most once per distinct input}
+     *
+     * @param original the original Function to convert to a memoized Function
+     * @param inputs   the potential input values to the Function
+     * @param <T>      the type of input values
+     * @param <R>      the return type of the function
+     */
+    static <T, R> Function<T, R> ofFunction(Set<? extends T> inputs,
+                                            Function<? super T, ? extends R> original) {
+        Objects.requireNonNull(inputs);
+        Objects.requireNonNull(original);
+        Map<T, StableValue<R>> stableMap = StableValue.ofMap(inputs);
+        return new StableAccess.MemoizedFunction<>(stableMap, original);
     }
 
 }

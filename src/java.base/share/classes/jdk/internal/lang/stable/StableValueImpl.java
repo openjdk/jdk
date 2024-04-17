@@ -215,38 +215,4 @@ public final class StableValueImpl<V> implements StableValue<V> {
         return stable;
     }
 
-    // Collections factories
-
-    private static final JavaUtilCollectionAccess ACCESS =
-            SharedSecrets.getJavaUtilCollectionAccess();
-
-    public static <V> List<StableValue<V>> ofList(int size) {
-        if (size < 0) {
-            throw new IllegalArgumentException();
-        }
-        if (size == 0) {
-            return List.of();
-        }
-        return ACCESS.stableList(size);
-    }
-
-    public static <V> V computeIfUnset(List<StableValue<V>> list,
-                                       int index,
-                                       IntFunction<? extends V> mapper) {
-        return ACCESS.computeIfUnset(list, index, mapper);
-    }
-
-    public static <K, V> Map<K, StableValue<V>> ofMap(Set<? extends K> keys) {
-        if (keys.isEmpty()) {
-            return Map.of();
-        }
-        return ACCESS.stableMap(keys);
-    }
-
-    public static <K, V> V computeIfUnset(Map<K, StableValue<V>> map,
-                                          K key,
-                                          Function<? super K, ? extends V> mapper) {
-        return ACCESS.computeIfUnset(map, key, mapper);
-    }
-
 }
