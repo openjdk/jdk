@@ -44,6 +44,12 @@ ZMarkStripeSet::ZMarkStripeSet(uintptr_t base)
   }
 }
 
+ZMarkStripe &ZMarkStripe::operator=(const ZMarkStripe &other) {
+  _published = other._overflowed;
+  _overflowed = other._published;
+  return *this;
+}
+
 void ZMarkStripeSet::set_nstripes(size_t nstripes) {
   assert(is_power_of_2(nstripes), "Must be a power of two");
   assert(is_power_of_2(ZMarkStripesMax), "Must be a power of two");

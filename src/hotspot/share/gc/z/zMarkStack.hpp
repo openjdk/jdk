@@ -91,6 +91,7 @@ public:
 
   void publish_stack(ZMarkStack* stack, ZMarkTerminate* terminate, bool publish);
   ZMarkStack* steal_stack();
+  ZMarkStripe &operator=(const ZMarkStripe &other);
 };
 
 class ZMarkStripeSet {
