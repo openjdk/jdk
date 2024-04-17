@@ -43,7 +43,9 @@
  * the language model also evolve as do the concrete visitors in this
  * package. A preview language feature in JDK <i>N</i> may have API
  * elements added in the set of visitors for the preview language
- * level.
+ * level. Such new elements are marked as reflective preview API. Any
+ * existing methods whose specification is updated to support the
+ * preview feature are <em>not</em> marked as preview.
  *
  * <p>The remainder of this note will show two examples of the API
  * changes in the model and visitors that can be added to support a
@@ -61,6 +63,12 @@
  * of a new kind <em>without</em> a new modeling interface.
  *
  * </ul>
+ *
+ * If a preview language feature is withdrawn rather than evolving to
+ * a permanent platform feature, the API elements associated with the
+ * feature are expected to be removed. The examples below outline the
+ * API changes expected when a preview feature becomes a permanent
+ * feature.
  *
  * <h3><a id=topLevelLangConstruct>Adding visitor support for a
  * top-level language construct</a></h3>
