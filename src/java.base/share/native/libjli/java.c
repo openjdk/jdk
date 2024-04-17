@@ -474,7 +474,7 @@ invokeInstanceMainWithoutArgs(JNIEnv *env, jclass mainClass) {
         // new instance construction failed, don't call the main method,
         // and don't continue with the next variant;
         // leave any exception pending, so that it is visible to the caller:
-        return 1;
+        return 0;
     }
     (*env)->CallVoidMethod(env, mainObject, mainID);
     return 0;
