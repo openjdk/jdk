@@ -56,7 +56,7 @@ $(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
         $(TOPDIR)/src/jdk.jdeps/share/classes, \
     INCLUDES := build/tools/symbolgenerator com/sun/tools/classfile, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/create_symbols_javadoc, \
-    DISABLED_WARNINGS := options this-escape, \
+    DISABLED_WARNINGS := options, \
     JAVAC_FLAGS := \
         $(INTERIM_LANGTOOLS_ARGS) \
         $(COMPILECREATESYMBOLS_ADD_EXPORTS), \
