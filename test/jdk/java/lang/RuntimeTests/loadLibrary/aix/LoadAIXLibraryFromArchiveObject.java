@@ -41,21 +41,21 @@ public class LoadAIXLibraryFromArchiveObject {
     // launches a java application passing this directory through "-Djava.library.path".
     // the java application then attempts to load the library using System.loadLibrary()
     public static void main(String[] args) throws Exception {
-        final String javaHome = System.getProperty("java.home");
-        final Path libj2pcscSo = Path.of(javaHome).resolve("lib", "libj2pcsc.so");
+        String javaHome = System.getProperty("java.home");
+        Path libj2pcscSo = Path.of(javaHome).resolve("lib", "libj2pcsc.so");
         if (!Files.exists(libj2pcscSo)) {
             throw new AssertionError(libj2pcscSo + " is missing");
         }
-        final String archiveFileName = "lib" + TEST_LIBRARY_NAME + ".a";
+        String archiveFileName = "lib" + TEST_LIBRARY_NAME + ".a";
         // copy over libj2pcsc.so as an archive file to test specific scratch dir
-        final Path testNativeLibDir = Path.of("native").toAbsolutePath();
+        Path testNativeLibDir = Path.of("native").toAbsolutePath();
         Files.createDirectories(testNativeLibDir);
-       Path libFooBarArchive = testNativeLibDir.resolve(archiveFileName);
-        Files.copy(libj2pcscSo, libDummyArchive);
+        Path libFooBarArchive = testNativeLibDir.resolve(archiveFileName);
+        Files.copy(libj2pcscSo, libFooBarArchive);
         // launch a java application which calls System.loadLibrary and is passed
         // the directory containing the native library archive file, through
         // -Djava.library.path
-        final ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(
+        ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(
                 "-Djava.library.path=" + testNativeLibDir,
                 LoadAIXLibraryFromArchiveObject.LoadLibraryApp.class.getName());
         ProcessTools.executeCommand(processBuilder).shouldHaveExitValue(0);
