@@ -3040,9 +3040,6 @@ void TemplateTable::fast_storefield(TosState state) {
   // X11: field offset, X12: TOS, X13: flags
   load_resolved_field_entry(x12, x12, noreg, x11, x13);
 
-  // Must prevent reordering of the following cp cache loads with bytecode load
-  __ membar(MacroAssembler::LoadLoad);
-
   {
     Label notVolatile;
     __ test_bit(t0, x13, ResolvedFieldEntry::is_volatile_shift);
@@ -3131,9 +3128,6 @@ void TemplateTable::fast_accessfield(TosState state) {
 
   // access constant pool cache
   __ load_field_entry(x12, x11);
-
-  // Must prevent reordering of the following cp cache loads with bytecode load
-  __ membar(MacroAssembler::LoadLoad);
 
   __ load_sized_value(x11, Address(x12, in_bytes(ResolvedFieldEntry::field_offset_offset())), sizeof(int), true /*is_signed*/);
   __ load_unsigned_byte(x13, Address(x12, in_bytes(ResolvedFieldEntry::flags_offset())));

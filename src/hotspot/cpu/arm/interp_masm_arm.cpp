@@ -300,6 +300,8 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
     add(cache, cache, Array<ResolvedFieldEntry>::base_offset_in_bytes());
     add(cache, cache, index);
   }
+  // Must prevent reordering of the following cp cache loads with bytecode load
+  membar(MacroAssembler::LoadLoad);
 }
 
 void InterpreterMacroAssembler::load_method_entry(Register cache, Register index, int bcp_offset) {
