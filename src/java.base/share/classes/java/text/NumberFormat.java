@@ -142,7 +142,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *
  * <p>
  * To provide more control over formatting or parsing behavior, type checking can
- * be done to safely cast to an implementing subclass of {@code NumberFormat}; this
+ * be done to safely convert to an implementing subclass of {@code NumberFormat}; this
  * provides additional methods defined by the subclass.
  * For example,
  * {@snippet lang=java :

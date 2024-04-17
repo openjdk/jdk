@@ -71,13 +71,12 @@ import java.util.stream.Collectors;
  * </ul>
  * <p>If a standard compact format for a given locale and {@link
  * ##compact_number_style style} is desired, it is recommended to use one of the
- * NumberFormat factory methods listed above. These factory methods may not always return
- * a {@code CompactNumberFormat} depending on the locale-service provider implementation
- * installed. Thus, to use an instance method defined by {@code CompactNumberFormat},
- * the {@code NumberFormat} returned by the factory method should first be type
- * checked before cast to {@code CompactNumberFormat}. If the installed locale-sensitive
- * service implementation does not support the given {@code Locale}, the parent
- * locale chain will be looked up, and a {@code Locale} used that is supported.
+ * NumberFormat factory methods listed above. To use an instance method
+ * defined by {@code CompactNumberFormat}, the {@code NumberFormat} returned by
+ * these factory methods should be type checked before converted to {@code CompactNumberFormat}.
+ * If the installed locale-sensitive service implementation does not support
+ * the given {@code Locale}, the parent locale chain will be looked up, and
+ * a {@code Locale} used that is supported.
  *
  * <h2><a id="compact_number_style">Style</a></h2>
  * When using {@link NumberFormat#getCompactNumberInstance(Locale, Style)}, a

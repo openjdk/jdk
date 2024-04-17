@@ -71,8 +71,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * These factory methods may not always return a {@code DecimalFormat}
  * depending on the locale-service provider implementation
  * installed. Thus, to use an instance method defined by {@code DecimalFormat},
- * the {@code NumberFormat} returned by the factory method should first be type
- * checked before cast to {@code DecimalFormat}. If the installed locale-sensitive
+ * the {@code NumberFormat} returned by the factory method should be
+ * type checked before converted to {@code DecimalFormat}. If the installed locale-sensitive
  * service implementation does not support the given {@code Locale}, the parent
  * locale chain will be looked up, and a {@code Locale} used that is supported.
  *
