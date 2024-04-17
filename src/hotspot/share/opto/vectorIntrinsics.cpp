@@ -1737,6 +1737,7 @@ bool LibraryCallKit::inline_vector_reduction() {
   Node* init = ReductionNode::make_identity_con_scalar(gvn(), opc, elem_bt);
   Node* value = opd;
 
+  assert(mask != nullptr || !is_masked_op, "Masked op needs the mask value never null");
   if (mask != nullptr && !use_predicate) {
     Node* reduce_identity = gvn().transform(VectorNode::scalar2vector(init, num_elem, Type::get_const_basic_type(elem_bt)));
     value = gvn().transform(new VectorBlendNode(reduce_identity, value, mask));

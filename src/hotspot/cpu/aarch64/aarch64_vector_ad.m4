@@ -1748,7 +1748,8 @@ REDUCE_ADD_INT_NEON_SVE_PAIRWISE(I, iRegIorL2I)
 REDUCE_ADD_INT_NEON_SVE_PAIRWISE(L, iRegL)
 
 // reduction addF
-instruct reduce_add2F_neon(vRegF dst, vRegF fsrc, vReg vsrc) %{
+
+instruct reduce_non_strict_order_add2F_neon(vRegF dst, vRegF fsrc, vReg vsrc) %{
   // Non-strictly ordered floating-point add reduction for vector length of 64-bit. As an
   // example, this rule can be reached from the VectorAPI (which allows for non-strictly ordered
   // add reduction).
@@ -1763,7 +1764,7 @@ instruct reduce_add2F_neon(vRegF dst, vRegF fsrc, vReg vsrc) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_add4F_neon(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp) %{
+instruct reduce_non_strict_order_add4F_neon(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp) %{
   // Non-strictly ordered floating-point add reduction for vector length of 128-bit. As an
   // example, this rule can be reached from the VectorAPI (which allows for non-strictly ordered
   // add reduction).
@@ -1807,7 +1808,8 @@ dnl
 REDUCE_ADD_FP_SVE(F, S)
 
 // reduction addD
-instruct reduce_add2D_neon(vRegD dst, vRegD dsrc, vReg vsrc) %{
+
+instruct reduce_non_strict_order_add2D_neon(vRegD dst, vRegD dsrc, vReg vsrc) %{
   // Non-strictly ordered floating-point add reduction for doubles. As an
   // example, this rule can be reached from the VectorAPI (which allows for
   // non-strictly ordered add reduction).
