@@ -77,8 +77,6 @@ public class TestEquivalentInvariants {
         // Generate input once
         aB = generateB();
         bB = generateB();
-        aS = generateS();
-        bS = generateS();
         aI = generateI();
         bI = generateI();
         aL = generateL();
@@ -175,6 +173,34 @@ public class TestEquivalentInvariants {
           MemorySegment data = MemorySegment.ofArray(aI.clone());
           return testMemorySegmentIInvarL3f(data, 1, 2, 3, RANGE-200);
         });
+        tests.put("testMemorySegmentLInvarL3a", () -> {
+          MemorySegment data = MemorySegment.ofArray(aL.clone());
+          return testMemorySegmentLInvarL3a(data, 1, 2, 3, RANGE-200);
+        });
+        tests.put("testMemorySegmentLInvarL3b", () -> {
+          MemorySegment data = MemorySegment.ofArray(aL.clone());
+          return testMemorySegmentLInvarL3b(data, -1, -2, -3, RANGE-200);
+        });
+        tests.put("testMemorySegmentLInvarL3c", () -> {
+          MemorySegment data = MemorySegment.ofArray(aL.clone());
+          return testMemorySegmentLInvarL3c(data, 1, 2, 3, RANGE-200);
+        });
+        tests.put("testMemorySegmentLInvarL3d", () -> {
+          MemorySegment data = MemorySegment.ofArray(aL.clone());
+          return testMemorySegmentLInvarL3d(data, 1, 2, 3, RANGE-200);
+        });
+        tests.put("testMemorySegmentLInvarL3d2", () -> {
+          MemorySegment data = MemorySegment.ofArray(aL.clone());
+          return testMemorySegmentLInvarL3d2(data, 1, 2, 3, RANGE-200);
+        });
+        tests.put("testMemorySegmentLInvarL3e", () -> {
+          MemorySegment data = MemorySegment.ofArray(aL.clone());
+          return testMemorySegmentLInvarL3e(data, 1, 2, 3, RANGE-200);
+        });
+        tests.put("testMemorySegmentLInvarL3f", () -> {
+          MemorySegment data = MemorySegment.ofArray(aL.clone());
+          return testMemorySegmentLInvarL3f(data, 1, 2, 3, RANGE-200);
+        });
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -185,6 +211,7 @@ public class TestEquivalentInvariants {
         }
     }
 
+    @Warmup(100)
     @Run(test = {"testArrayBB",
                  "testArrayBBInvar3",
                  "testMemorySegmentB",
@@ -207,7 +234,14 @@ public class TestEquivalentInvariants {
                  "testMemorySegmentIInvarL3d",
                  "testMemorySegmentIInvarL3d2",
                  "testMemorySegmentIInvarL3e",
-                 "testMemorySegmentIInvarL3f"})
+                 "testMemorySegmentIInvarL3f",
+                 "testMemorySegmentLInvarL3a",
+                 "testMemorySegmentLInvarL3b",
+                 "testMemorySegmentLInvarL3c",
+                 "testMemorySegmentLInvarL3d",
+                 "testMemorySegmentLInvarL3d2",
+                 "testMemorySegmentLInvarL3e",
+                 "testMemorySegmentLInvarL3f"})
     public void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -284,9 +318,6 @@ public class TestEquivalentInvariants {
                 if (c == byte.class) {
                     mg = MemorySegment.ofArray((byte[])g);
                     mr = MemorySegment.ofArray((byte[])r);
-                } else if (c == short.class) {
-                    mg = MemorySegment.ofArray((short[])g);
-                    mr = MemorySegment.ofArray((short[])r);
                 } else if (c == int.class) {
                     mg = MemorySegment.ofArray((int[])g);
                     mr = MemorySegment.ofArray((int[])r);
@@ -683,6 +714,123 @@ public class TestEquivalentInvariants {
             // Scale the index manually
             int v = m.get(ValueLayout.JAVA_INT, 4 * (i + i1));
             m.set(ValueLayout.JAVA_INT, 4 * (i + i2), v + 1);
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
+                  IRNode.ADD_VL,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static Object[] testMemorySegmentLInvarL3a(MemorySegment m, long invar1, long invar2, long invar3, int size) {
+        long i1 = invar1 + invar2 + invar3;
+        long i2 = invar2 + invar3 + invar1; // equivalent
+        for (int i = 0; i < size; i++) {
+            long v = m.getAtIndex(ValueLayout.JAVA_LONG, i + i1);
+            m.setAtIndex(ValueLayout.JAVA_LONG, i + i2, v + 1);
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
+                  IRNode.ADD_VL,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static Object[] testMemorySegmentLInvarL3b(MemorySegment m, long invar1, long invar2, long invar3, int size) {
+        long i1 = -invar1 - invar2 - invar3;
+        long i2 = -invar2 - invar3 - invar1; // equivalent
+        for (int i = 0; i < size; i++) {
+            long v = m.getAtIndex(ValueLayout.JAVA_LONG, i + i1);
+            m.setAtIndex(ValueLayout.JAVA_LONG, i + i2, v + 1);
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
+                  IRNode.ADD_VL,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static Object[] testMemorySegmentLInvarL3c(MemorySegment m, long invar1, long invar2, long invar3, int size) {
+        long i1 = -invar1 + invar2 + invar3;
+        long i2 = invar2 + invar3 - invar1; // equivalent
+        for (int i = 0; i < size; i++) {
+            long v = m.getAtIndex(ValueLayout.JAVA_LONG, i + i1);
+            m.setAtIndex(ValueLayout.JAVA_LONG, i + i2, v + 1);
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "= 0",
+                  IRNode.STORE_VECTOR,  "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Would be nice if it vectorized.
+    // Fails because of control flow. Somehow the "offsetPlain" check (checks for alignment) is not folded away.
+    static Object[] testMemorySegmentLInvarL3d(MemorySegment m, int invar1, int invar2, int invar3, int size) {
+        long i1 = (long)(-invar1 + invar2 + invar3);
+        long i2 = (long)(invar2 + invar3 - invar1); // equivalent
+        for (int i = 0; i < size; i+=2) {
+            long v0 = m.getAtIndex(ValueLayout.JAVA_LONG, i + i1 + 0);
+            long v1 = m.getAtIndex(ValueLayout.JAVA_LONG, i + i2 + 1);
+            m.setAtIndex(ValueLayout.JAVA_LONG, i + i1 + 0, v0 + 1);
+            m.setAtIndex(ValueLayout.JAVA_LONG, i + i2 + 1, v1 + 1);
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "= 0",
+                  IRNode.STORE_VECTOR,  "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Would be nice if it vectorized.
+    // Fails because of control flow. Somehow the "offsetPlain" check (checks for alignment) is not folded away.
+    static Object[] testMemorySegmentLInvarL3d2(MemorySegment m, int invar1, int invar2, int invar3, int size) {
+        long i1 = (long)(-invar1 + invar2 + invar3);
+        for (int i = 0; i < size; i+=2) {
+            long v0 = m.getAtIndex(ValueLayout.JAVA_LONG, i + i1 + 0);
+            long v1 = m.getAtIndex(ValueLayout.JAVA_LONG, i + i1 + 1);
+            m.setAtIndex(ValueLayout.JAVA_LONG, i + i1 + 0, v0 + 1);
+            m.setAtIndex(ValueLayout.JAVA_LONG, i + i1 + 1, v1 + 1);
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "= 0",
+                  IRNode.STORE_VECTOR,  "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Should never vectorize, since i1 and i2 are not guaranteed to be adjacent
+    static Object[] testMemorySegmentLInvarL3e(MemorySegment m, int invar1, int invar2, int invar3, int size) {
+        long i1 = (long)(-invar1 + invar2 + invar3);
+        long i2 = (long)(invar2 + invar3) - (long)(invar1); // not equivalent
+        for (int i = 0; i < size; i+=2) {
+            long v0 = m.getAtIndex(ValueLayout.JAVA_LONG, i + i1 + 0);
+            long v1 = m.getAtIndex(ValueLayout.JAVA_LONG, i + i2 + 1);
+            m.setAtIndex(ValueLayout.JAVA_LONG, i + i1 + 0, v0 + 1);
+            m.setAtIndex(ValueLayout.JAVA_LONG, i + i2 + 1, v1 + 1);
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
+                  IRNode.ADD_VL,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static Object[] testMemorySegmentLInvarL3f(MemorySegment m, long invar1, long invar2, long invar3, int size) {
+        long i1 = -invar1 + invar2 + invar3;
+        long i2 = invar2 + invar3 - invar1; // equivalent
+        for (int i = 0; i < size; i++) {
+            // Scale the index manually
+            long v = m.get(ValueLayout.JAVA_LONG, 8 * (i + i1));
+            m.set(ValueLayout.JAVA_LONG, 8 * (i + i2), v + 1);
         }
         return new Object[]{ m };
     }
