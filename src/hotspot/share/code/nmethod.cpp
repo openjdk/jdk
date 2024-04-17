@@ -1249,6 +1249,7 @@ nmethod::nmethod(
     _comp_level              = CompLevel_none;
     _compiler_type           = type;
     _orig_pc_offset          = 0;
+    _num_stack_arg_slots     = _method->constMethod()->num_stack_arg_slots();
 
     if (offsets->value(CodeOffsets::Exceptions) != -1) {
       // Continuation enter intrinsic
@@ -1390,6 +1391,8 @@ nmethod::nmethod(
     _comp_level      = comp_level;
     _compiler_type   = type;
     _orig_pc_offset  = orig_pc_offset;
+
+    _num_stack_arg_slots = entry_bci != InvocationEntryBci ? 0 : _method->constMethod()->num_stack_arg_slots();
 
     set_ctable_begin(header_begin() + content_offset());
 

@@ -40,9 +40,6 @@
  *       argument map is the same with the one given for the previous
  *       ListeningConnector.startListening() invocation.
  *
- *     NOTE: this test is tagged "nonconcurrent" because it uses the default
- *     "javadebug" shmem file, as do some other tests.
- *
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.ListeningConnector.stopListening.stoplis001
