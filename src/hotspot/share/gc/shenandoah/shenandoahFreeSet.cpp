@@ -65,21 +65,21 @@ void ShenandoahRegionPartitions::dump_bitmap_all() const {
   dump_bitmap_range(0, _max-1);
 }
 
-void ShenandoahRegionPartitions::dump_bitmap_range(ssize_t start_idx, ssize_t end_idx) const {
-  assert((start_idx >= 0) && (start_idx < (ssize_t) _max), "precondition");
-  assert((end_idx >= 0) && (end_idx < (ssize_t) _max), "precondition");
-  ssize_t aligned_start = _membership[int(ShenandoahFreeSetPartitionId::Mutator)].aligned_index(start_idx);
-  ssize_t aligned_end = _membership[int(ShenandoahFreeSetPartitionId::Mutator)].aligned_index(end_idx);
-  ssize_t alignment = _membership[int(ShenandoahFreeSetPartitionId::Mutator)].alignment();
+void ShenandoahRegionPartitions::dump_bitmap_range(idx_t start_idx, idx_t end_idx) const {
+  assert((start_idx >= 0) && (start_idx < (idx_t) _max), "precondition");
+  assert((end_idx >= 0) && (end_idx < (idx_t) _max), "precondition");
+  idx_t aligned_start = _membership[int(ShenandoahFreeSetPartitionId::Mutator)].aligned_index(start_idx);
+  idx_t aligned_end = _membership[int(ShenandoahFreeSetPartitionId::Mutator)].aligned_index(end_idx);
+  idx_t alignment = _membership[int(ShenandoahFreeSetPartitionId::Mutator)].alignment();
   while (aligned_start <= aligned_end) {
     dump_bitmap_row(aligned_start);
     aligned_start += alignment;
   }
 }
 
-void ShenandoahRegionPartitions::dump_bitmap_row(ssize_t idx) const {
-  assert((idx >= 0) && (idx < (ssize_t) _max), "precondition");
-  ssize_t aligned_idx = _membership[int(ShenandoahFreeSetPartitionId::Mutator)].aligned_index(idx);
+void ShenandoahRegionPartitions::dump_bitmap_row(idx_t idx) const {
+  assert((idx >= 0) && (idx < (idx_t) _max), "precondition");
+  idx_t aligned_idx = _membership[int(ShenandoahFreeSetPartitionId::Mutator)].aligned_index(idx);
   uintx mutator_bits = _membership[int(ShenandoahFreeSetPartitionId::Mutator)].bits_at(aligned_idx);
   uintx collector_bits = _membership[int(ShenandoahFreeSetPartitionId::Collector)].bits_at(aligned_idx);
   uintx free_bits = mutator_bits | collector_bits;
@@ -127,9 +127,9 @@ inline bool ShenandoahFreeSet::has_alloc_capacity(ShenandoahHeapRegion *r) const
   return alloc_capacity(r) > 0;
 }
 
-inline ssize_t ShenandoahRegionPartitions:: leftmost(ShenandoahFreeSetPartitionId which_partition) const {
+inline idx_t ShenandoahRegionPartitions:: leftmost(ShenandoahFreeSetPartitionId which_partition) const {
   assert (int(which_partition) < NumPartitions, "selected free partition must be valid");
-  ssize_t idx = _leftmosts[int(which_partition)];
+  idx_t idx = _leftmosts[int(which_partition)];
   if (idx >= _max) {
     return _max;
   } else {
@@ -138,9 +138,9 @@ inline ssize_t ShenandoahRegionPartitions:: leftmost(ShenandoahFreeSetPartitionI
   }
 }
 
-inline ssize_t ShenandoahRegionPartitions::rightmost(ShenandoahFreeSetPartitionId which_partition) const {
+inline idx_t ShenandoahRegionPartitions::rightmost(ShenandoahFreeSetPartitionId which_partition) const {
   assert (int(which_partition) < NumPartitions, "selected free partition must be valid");
-  ssize_t idx = _rightmosts[int(which_partition)];
+  idx_t idx = _rightmosts[int(which_partition)];
   // _membership[which_partition].is_set(idx) may not be true if we are shrinking the interval
   return idx;
 }
@@ -158,8 +158,8 @@ void ShenandoahRegionPartitions::make_all_regions_unavailable() {
   _region_counts[int(ShenandoahFreeSetPartitionId::Mutator)] = _region_counts[int(ShenandoahFreeSetPartitionId::Collector)] = 0;
 }
 
-void ShenandoahRegionPartitions::establish_intervals(ssize_t mutator_leftmost, ssize_t mutator_rightmost,
-                                                     ssize_t mutator_leftmost_empty, ssize_t mutator_rightmost_empty,
+void ShenandoahRegionPartitions::establish_intervals(idx_t mutator_leftmost, idx_t mutator_rightmost,
+                                                     idx_t mutator_leftmost_empty, idx_t mutator_rightmost_empty,
                                                      size_t mutator_region_count, size_t mutator_used) {
   _region_counts[int(ShenandoahFreeSetPartitionId::Mutator)] = mutator_region_count;
   _leftmosts[int(ShenandoahFreeSetPartitionId::Mutator)] = mutator_leftmost;
@@ -190,7 +190,7 @@ void ShenandoahRegionPartitions::increase_used(ShenandoahFreeSetPartitionId whic
 }
 
 inline void ShenandoahRegionPartitions::shrink_interval_if_range_modifies_either_boundary(
-  ShenandoahFreeSetPartitionId partition, ssize_t low_idx, ssize_t high_idx) {
+  ShenandoahFreeSetPartitionId partition, idx_t low_idx, idx_t high_idx) {
   assert((low_idx <= high_idx) && (low_idx >= 0) && (high_idx < _max), "Range must span legal index values");
   if (low_idx == leftmost(partition)) {
     assert (!_membership[int(partition)].is_set(low_idx), "Do not shrink interval if region not removed");
@@ -224,7 +224,7 @@ inline void ShenandoahRegionPartitions::shrink_interval_if_range_modifies_either
   }
 }
 
-inline void ShenandoahRegionPartitions::shrink_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, ssize_t idx) {
+inline void ShenandoahRegionPartitions::shrink_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, idx_t idx) {
   assert((idx >= 0) && (idx < _max), "Range must span legal index values");
   if (idx == leftmost(partition)) {
     assert (!_membership[int(partition)].is_set(idx), "Do not shrink interval if region not removed");
@@ -259,7 +259,7 @@ inline void ShenandoahRegionPartitions::shrink_interval_if_boundary_modified(She
 }
 
 inline void ShenandoahRegionPartitions::expand_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition,
-                                                                             ssize_t idx, size_t region_available) {
+                                                                             idx_t idx, size_t region_available) {
   if (leftmost(partition) > idx) {
     _leftmosts[int(partition)] = idx;
   }
@@ -277,14 +277,14 @@ inline void ShenandoahRegionPartitions::expand_interval_if_boundary_modified(She
 }
 
 void ShenandoahRegionPartitions::retire_range_from_partition(
-  ShenandoahFreeSetPartitionId partition, ssize_t low_idx, ssize_t high_idx) {
+  ShenandoahFreeSetPartitionId partition, idx_t low_idx, idx_t high_idx) {
 
   // Note: we may remove from free partition even if region is not entirely full, such as when available < PLAB::min_size()
   assert ((low_idx < _max) && (high_idx < _max), "Both indices are sane: " SIZE_FORMAT " and " SIZE_FORMAT " < " SIZE_FORMAT,
           low_idx, high_idx, _max);
   assert (int(partition) < NumPartitions, "Cannot remove from free partitions if not already free");
 
-  for (ssize_t idx = low_idx; idx <= high_idx; idx++) {
+  for (idx_t idx = low_idx; idx <= high_idx; idx++) {
     assert (in_free_set(partition, idx), "Must be in partition to remove from partition");
     _membership[int(partition)].clear_bit(idx);
   }
@@ -292,7 +292,7 @@ void ShenandoahRegionPartitions::retire_range_from_partition(
   shrink_interval_if_range_modifies_either_boundary(partition, low_idx, high_idx);
 }
 
-void ShenandoahRegionPartitions::retire_from_partition(ShenandoahFreeSetPartitionId partition, ssize_t idx, size_t used_bytes) {
+void ShenandoahRegionPartitions::retire_from_partition(ShenandoahFreeSetPartitionId partition, idx_t idx, size_t used_bytes) {
 
   // Note: we may remove from free partition even if region is not entirely full, such as when available < PLAB::min_size()
   assert (idx < _max, "index is sane: " SIZE_FORMAT " < " SIZE_FORMAT, idx, _max);
@@ -308,7 +308,7 @@ void ShenandoahRegionPartitions::retire_from_partition(ShenandoahFreeSetPartitio
   _region_counts[int(partition)]--;
 }
 
-void ShenandoahRegionPartitions::make_free(ssize_t idx, ShenandoahFreeSetPartitionId which_partition, size_t available) {
+void ShenandoahRegionPartitions::make_free(idx_t idx, ShenandoahFreeSetPartitionId which_partition, size_t available) {
   assert (idx < _max, "index is sane: " SIZE_FORMAT " < " SIZE_FORMAT, idx, _max);
   assert (membership(idx) == ShenandoahFreeSetPartitionId::NotFree, "Cannot make free if already free");
   assert (int(which_partition) < NumPartitions, "selected free partition must be valid");
@@ -322,7 +322,7 @@ void ShenandoahRegionPartitions::make_free(ssize_t idx, ShenandoahFreeSetPartiti
   _region_counts[int(which_partition)]++;
 }
 
-void ShenandoahRegionPartitions::move_from_partition_to_partition(ssize_t idx, ShenandoahFreeSetPartitionId orig_partition,
+void ShenandoahRegionPartitions::move_from_partition_to_partition(idx_t idx, ShenandoahFreeSetPartitionId orig_partition,
                                                                   ShenandoahFreeSetPartitionId new_partition, size_t available) {
   assert (idx < _max, "index is sane: " SIZE_FORMAT " < " SIZE_FORMAT, idx, _max);
   assert (int(orig_partition) < NumPartitions, "Original partition must be valid");
@@ -359,7 +359,7 @@ void ShenandoahRegionPartitions::move_from_partition_to_partition(ssize_t idx, S
   _region_counts[int(new_partition)]++;
 }
 
-const char* ShenandoahRegionPartitions::partition_membership_name(ssize_t idx) const {
+const char* ShenandoahRegionPartitions::partition_membership_name(idx_t idx) const {
   assert (idx < _max, "index is sane: " SIZE_FORMAT " < " SIZE_FORMAT, idx, _max);
   ShenandoahFreeSetPartitionId result = ShenandoahFreeSetPartitionId::NotFree;
   for (uint partition_id = 0; partition_id < NumPartitions; partition_id++) {
@@ -373,7 +373,7 @@ const char* ShenandoahRegionPartitions::partition_membership_name(ssize_t idx) c
 
 
 #ifdef ASSERT
-inline ShenandoahFreeSetPartitionId ShenandoahRegionPartitions::membership(ssize_t idx) const {
+inline ShenandoahFreeSetPartitionId ShenandoahRegionPartitions::membership(idx_t idx) const {
   assert (idx < _max, "index is sane: " SIZE_FORMAT " < " SIZE_FORMAT, idx, _max);
   ShenandoahFreeSetPartitionId result = ShenandoahFreeSetPartitionId::NotFree;
   for (uint partition_id = 0; partition_id < NumPartitions; partition_id++) {
@@ -385,7 +385,7 @@ inline ShenandoahFreeSetPartitionId ShenandoahRegionPartitions::membership(ssize
   return result;
 }
 
-inline bool ShenandoahRegionPartitions::partition_id_matches(ssize_t idx, ShenandoahFreeSetPartitionId test_partition) const {
+inline bool ShenandoahRegionPartitions::partition_id_matches(idx_t idx, ShenandoahFreeSetPartitionId test_partition) const {
   assert (idx < _max, "index is sane: " SIZE_FORMAT " < " SIZE_FORMAT, idx, _max);
   assert (test_partition < ShenandoahFreeSetPartitionId::NotFree, "must be a valid partition");
 
@@ -398,58 +398,58 @@ inline bool ShenandoahRegionPartitions::is_empty(ShenandoahFreeSetPartitionId wh
   return (leftmost(which_partition) > rightmost(which_partition));
 }
 
-inline ssize_t ShenandoahRegionPartitions::find_index_of_next_available_region(
-  ShenandoahFreeSetPartitionId which_partition, ssize_t start_index) const {
-  ssize_t rightmost_idx = rightmost(which_partition);
-  ssize_t leftmost_idx = leftmost(which_partition);
+inline idx_t ShenandoahRegionPartitions::find_index_of_next_available_region(
+  ShenandoahFreeSetPartitionId which_partition, idx_t start_index) const {
+  idx_t rightmost_idx = rightmost(which_partition);
+  idx_t leftmost_idx = leftmost(which_partition);
   if ((rightmost_idx < leftmost_idx) || (start_index > rightmost_idx)) return _max;
   if (start_index < leftmost_idx) {
     start_index = leftmost_idx;
   }
-  ssize_t result = _membership[int(which_partition)].find_next_set_bit(start_index, rightmost_idx + 1);
+  idx_t result = _membership[int(which_partition)].find_first_set_bit(start_index, rightmost_idx + 1);
   return (result > rightmost_idx)? _max: result;
 }
 
-inline ssize_t ShenandoahRegionPartitions::find_index_of_previous_available_region(
-  ShenandoahFreeSetPartitionId which_partition, ssize_t last_index) const {
-  ssize_t rightmost_idx = rightmost(which_partition);
-  ssize_t leftmost_idx = leftmost(which_partition);
+inline idx_t ShenandoahRegionPartitions::find_index_of_previous_available_region(
+  ShenandoahFreeSetPartitionId which_partition, idx_t last_index) const {
+  idx_t rightmost_idx = rightmost(which_partition);
+  idx_t leftmost_idx = leftmost(which_partition);
   // if (leftmost_idx == max) then (last_index < leftmost_idx)
   if (last_index < leftmost_idx) return -1;
   if (last_index > rightmost_idx) {
     last_index = rightmost_idx;
   }
-  ssize_t result = _membership[int(which_partition)].find_prev_set_bit(last_index, -1);
+  idx_t result = _membership[int(which_partition)].find_last_set_bit(-1, last_index);
   return (result < leftmost_idx)? -1: result;
 }
 
-inline ssize_t ShenandoahRegionPartitions::find_index_of_next_available_cluster_of_regions(
-  ShenandoahFreeSetPartitionId which_partition, ssize_t start_index, size_t cluster_size) const {
-  ssize_t rightmost_idx = rightmost(which_partition);
-  ssize_t leftmost_idx = leftmost(which_partition);
+inline idx_t ShenandoahRegionPartitions::find_index_of_next_available_cluster_of_regions(
+  ShenandoahFreeSetPartitionId which_partition, idx_t start_index, size_t cluster_size) const {
+  idx_t rightmost_idx = rightmost(which_partition);
+  idx_t leftmost_idx = leftmost(which_partition);
   if ((rightmost_idx < leftmost_idx) || (start_index > rightmost_idx)) return _max;
-  ssize_t result = _membership[int(which_partition)].find_next_consecutive_bits(cluster_size, start_index, rightmost_idx + 1);
+  idx_t result = _membership[int(which_partition)].find_first_consecutive_set_bits(start_index, rightmost_idx + 1, cluster_size);
   return (result > rightmost_idx)? _max: result;
 }
 
-inline ssize_t ShenandoahRegionPartitions::find_index_of_previous_available_cluster_of_regions(
-  ShenandoahFreeSetPartitionId which_partition, ssize_t last_index, size_t cluster_size) const {
-  ssize_t leftmost_idx = leftmost(which_partition);
+inline idx_t ShenandoahRegionPartitions::find_index_of_previous_available_cluster_of_regions(
+  ShenandoahFreeSetPartitionId which_partition, idx_t last_index, size_t cluster_size) const {
+  idx_t leftmost_idx = leftmost(which_partition);
   // if (leftmost_idx == max) then (last_index < leftmost_idx)
   if (last_index < leftmost_idx) return -1;
-  ssize_t result = _membership[int(which_partition)].find_prev_consecutive_bits(cluster_size, last_index, leftmost_idx - 1);
+  idx_t result = _membership[int(which_partition)].find_last_consecutive_set_bits(leftmost_idx - 1, last_index, cluster_size);
   return (result <= leftmost_idx)? -1: result;
 }
 
-ssize_t ShenandoahRegionPartitions::leftmost_empty(ShenandoahFreeSetPartitionId which_partition) {
+idx_t ShenandoahRegionPartitions::leftmost_empty(ShenandoahFreeSetPartitionId which_partition) {
   assert (int(which_partition) < NumPartitions, "selected free partition must be valid");
-  ssize_t max_regions = _max;
+  idx_t max_regions = _max;
   if (_leftmosts_empty[int(which_partition)] == _max) {
     return _max;
   }
-  for (ssize_t idx = find_index_of_next_available_region(which_partition, _leftmosts_empty[int(which_partition)]);
+  for (idx_t idx = find_index_of_next_available_region(which_partition, _leftmosts_empty[int(which_partition)]);
        idx < max_regions; ) {
-    assert(in_free_set(which_partition, idx), "Boundaries or find_prev_set_bit failed: " SSIZE_FORMAT, idx);
+    assert(in_free_set(which_partition, idx), "Boundaries or find_last_set_bit failed: " SSIZE_FORMAT, idx);
     if (_free_set->alloc_capacity(idx) == _region_size_bytes) {
       _leftmosts_empty[int(which_partition)] = idx;
       return idx;
@@ -461,14 +461,14 @@ ssize_t ShenandoahRegionPartitions::leftmost_empty(ShenandoahFreeSetPartitionId 
   return _max;
 }
 
-ssize_t ShenandoahRegionPartitions::rightmost_empty(ShenandoahFreeSetPartitionId which_partition) {
+idx_t ShenandoahRegionPartitions::rightmost_empty(ShenandoahFreeSetPartitionId which_partition) {
   assert (int(which_partition) < NumPartitions, "selected free partition must be valid");
   if (_rightmosts_empty[int(which_partition)] < 0) {
     return -1;
   }
-  for (ssize_t idx = find_index_of_previous_available_region(which_partition, _rightmosts_empty[int(which_partition)]);
+  for (idx_t idx = find_index_of_previous_available_region(which_partition, _rightmosts_empty[int(which_partition)]);
        idx >= 0; ) {
-    assert(in_free_set(which_partition, idx), "Boundaries or find_prev_set_bit failed: " SSIZE_FORMAT, idx);
+    assert(in_free_set(which_partition, idx), "Boundaries or find_last_set_bit failed: " SSIZE_FORMAT, idx);
     if (_free_set->alloc_capacity(idx) == _region_size_bytes) {
       _rightmosts_empty[int(which_partition)] = idx;
       return idx;
@@ -484,10 +484,10 @@ ssize_t ShenandoahRegionPartitions::rightmost_empty(ShenandoahFreeSetPartitionId
 #ifdef ASSERT
 void ShenandoahRegionPartitions::assert_bounds() {
 
-  ssize_t leftmosts[NumPartitions];
-  ssize_t rightmosts[NumPartitions];
-  ssize_t empty_leftmosts[NumPartitions];
-  ssize_t empty_rightmosts[NumPartitions];
+  idx_t leftmosts[NumPartitions];
+  idx_t rightmosts[NumPartitions];
+  idx_t empty_leftmosts[NumPartitions];
+  idx_t empty_rightmosts[NumPartitions];
 
   for (int i = 0; i < NumPartitions; i++) {
     leftmosts[i] = _max;
@@ -496,7 +496,7 @@ void ShenandoahRegionPartitions::assert_bounds() {
     empty_rightmosts[i] = -1;
   }
 
-  for (ssize_t i = 0; i < _max; i++) {
+  for (idx_t i = 0; i < _max; i++) {
     ShenandoahFreeSetPartitionId partition = membership(i);
     switch (partition) {
       case ShenandoahFreeSetPartitionId::NotFree:
@@ -543,8 +543,8 @@ void ShenandoahRegionPartitions::assert_bounds() {
 
   // If Mutator partition is empty, leftmosts will both equal max, rightmosts will both equal zero.
   // Likewise for empty region partitions.
-  ssize_t beg_off = leftmosts[int(ShenandoahFreeSetPartitionId::Mutator)];
-  ssize_t end_off = rightmosts[int(ShenandoahFreeSetPartitionId::Mutator)];
+  idx_t beg_off = leftmosts[int(ShenandoahFreeSetPartitionId::Mutator)];
+  idx_t end_off = rightmosts[int(ShenandoahFreeSetPartitionId::Mutator)];
   assert (beg_off >= leftmost(ShenandoahFreeSetPartitionId::Mutator),
           "free regions before the leftmost: " SSIZE_FORMAT ", bound " SSIZE_FORMAT,
           beg_off, leftmost(ShenandoahFreeSetPartitionId::Mutator));
@@ -640,9 +640,9 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
         //  1. Eventual collection set has fewer regions because we have packed newly allocated objects into fewer regions
         //  2. We preserve the "empty" regions longer into the GC cycle, reducing likelihood of allocation failures
         //     late in the GC cycle.
-        ssize_t non_empty_on_left = (_partitions.leftmost_empty(ShenandoahFreeSetPartitionId::Mutator)
+        idx_t non_empty_on_left = (_partitions.leftmost_empty(ShenandoahFreeSetPartitionId::Mutator)
                                      - _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator));
-        ssize_t non_empty_on_right = (_partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator)
+        idx_t non_empty_on_right = (_partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator)
                                       - _partitions.rightmost_empty(ShenandoahFreeSetPartitionId::Mutator));
         _right_to_left_bias = (non_empty_on_right > non_empty_on_left);
         _alloc_bias_weight = _InitialAllocBiasWeight;
@@ -651,10 +651,10 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
         // Allocate within mutator free from high memory to low so as to preserve low memory for humongous allocations
         if (!_partitions.is_empty(ShenandoahFreeSetPartitionId::Mutator)) {
           // Use signed idx.  Otherwise, loop will never terminate.
-          ssize_t leftmost = _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator);
-          for (ssize_t idx = _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator); idx >= leftmost; ) {
+          idx_t leftmost = _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator);
+          for (idx_t idx = _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator); idx >= leftmost; ) {
             assert(_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, idx),
-                   "Boundaries or find_prev_set_bit failed: " SSIZE_FORMAT, idx);
+                   "Boundaries or find_last_set_bit failed: " SSIZE_FORMAT, idx);
             ShenandoahHeapRegion* r = _heap->get_region(idx);
             // try_allocate_in() increases used if the allocation is successful.
             HeapWord* result;
@@ -671,10 +671,10 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
         // tends to accumulate "fragmented" uncollected regions in high memory.
         if (!_partitions.is_empty(ShenandoahFreeSetPartitionId::Mutator)) {
           // Use signed idx.  Otherwise, loop will never terminate.
-          ssize_t rightmost = _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator);
-          for (ssize_t idx = _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator); idx <= rightmost; ) {
+          idx_t rightmost = _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator);
+          for (idx_t idx = _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator); idx <= rightmost; ) {
             assert(_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, idx),
-                   "Boundaries or find_prev_set_bit failed: " SSIZE_FORMAT, idx);
+                   "Boundaries or find_last_set_bit failed: " SSIZE_FORMAT, idx);
             ShenandoahHeapRegion* r = _heap->get_region(idx);
             // try_allocate_in() increases used if the allocation is successful.
             HeapWord* result;
@@ -694,10 +694,10 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
 
     case ShenandoahAllocRequest::_alloc_shared_gc: {
       // Fast-path: try to allocate in the collector view first
-      ssize_t leftmost_collector = _partitions.leftmost(ShenandoahFreeSetPartitionId::Collector);
-      for (ssize_t idx = _partitions.rightmost(ShenandoahFreeSetPartitionId::Collector); idx >= leftmost_collector; ) {
+      idx_t leftmost_collector = _partitions.leftmost(ShenandoahFreeSetPartitionId::Collector);
+      for (idx_t idx = _partitions.rightmost(ShenandoahFreeSetPartitionId::Collector); idx >= leftmost_collector; ) {
         assert(_partitions.in_free_set(ShenandoahFreeSetPartitionId::Collector, idx),
-               "Boundaries or find_prev_set_bit failed: " SSIZE_FORMAT, idx);
+               "Boundaries or find_prev_last_bit failed: " SSIZE_FORMAT, idx);
         HeapWord* result = try_allocate_in(_heap->get_region(idx), req, in_new_region);
         if (result != nullptr) {
           return result;
@@ -711,10 +711,10 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
       }
 
       // Try to steal an empty region from the mutator view.
-      ssize_t leftmost_mutator_empty = _partitions.leftmost_empty(ShenandoahFreeSetPartitionId::Mutator);
-      for (ssize_t idx = _partitions.rightmost_empty(ShenandoahFreeSetPartitionId::Mutator); idx >= leftmost_mutator_empty; ) {
+      idx_t leftmost_mutator_empty = _partitions.leftmost_empty(ShenandoahFreeSetPartitionId::Mutator);
+      for (idx_t idx = _partitions.rightmost_empty(ShenandoahFreeSetPartitionId::Mutator); idx >= leftmost_mutator_empty; ) {
         assert(_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, idx),
-               "Boundaries or find_prev_set_bit failed: " SSIZE_FORMAT, idx);
+               "Boundaries or find_prev_last_bit failed: " SSIZE_FORMAT, idx);
         ShenandoahHeapRegion* r = _heap->get_region(idx);
         if (can_allocate_from(r)) {
           flip_to_gc(r);
@@ -822,26 +822,26 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
   shenandoah_assert_heaplocked();
 
   size_t words_size = req.size();
-  ssize_t num = ShenandoahHeapRegion::required_regions(words_size * HeapWordSize);
+  idx_t num = ShenandoahHeapRegion::required_regions(words_size * HeapWordSize);
 
   // Check if there are enough regions left to satisfy allocation.
-  if (num > (ssize_t) _partitions.count(ShenandoahFreeSetPartitionId::Mutator)) {
+  if (num > (idx_t) _partitions.count(ShenandoahFreeSetPartitionId::Mutator)) {
     return nullptr;
   }
 
-  ssize_t start_range = _partitions.leftmost_empty(ShenandoahFreeSetPartitionId::Mutator);
-  ssize_t end_range = _partitions.rightmost_empty(ShenandoahFreeSetPartitionId::Mutator) + 1;
-  ssize_t last_possible_start = end_range - num;
+  idx_t start_range = _partitions.leftmost_empty(ShenandoahFreeSetPartitionId::Mutator);
+  idx_t end_range = _partitions.rightmost_empty(ShenandoahFreeSetPartitionId::Mutator) + 1;
+  idx_t last_possible_start = end_range - num;
 
   // Find the continuous interval of $num regions, starting from $beg and ending in $end,
   // inclusive. Contiguous allocations are biased to the beginning.
-  ssize_t beg = _partitions.find_index_of_next_available_cluster_of_regions(ShenandoahFreeSetPartitionId::Mutator,
+  idx_t beg = _partitions.find_index_of_next_available_cluster_of_regions(ShenandoahFreeSetPartitionId::Mutator,
                                                                             start_range, num);
   if (beg > last_possible_start) {
     // Hit the end, goodbye
     return nullptr;
   }
-  ssize_t end = beg;
+  idx_t end = beg;
 
   while (true) {
     // We've confirmed num contiguous regions belonging to Mutator partition, so no need to confirm membership.
@@ -849,12 +849,12 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
     // the existing range, we can exploit that certain regions are already known to be in the Mutator free set.
     while (!can_allocate_from(_heap->get_region(end))) {
       // region[end] is not empty, so we restart our search after region[end]
-      ssize_t slide_delta = end + 1 - beg;
+      idx_t slide_delta = end + 1 - beg;
       if (beg + slide_delta > last_possible_start) {
         // no room to slide
         return nullptr;
       }
-      for (ssize_t span_end = beg + num; slide_delta > 0; slide_delta--) {
+      for (idx_t span_end = beg + num; slide_delta > 0; slide_delta--) {
         if (!_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, span_end)) {
           beg = _partitions.find_index_of_next_available_cluster_of_regions(ShenandoahFreeSetPartitionId::Mutator,
                                                                             span_end + 1, num);
@@ -882,7 +882,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
 
   size_t remainder = words_size & ShenandoahHeapRegion::region_size_words_mask();
   // Initialize regions:
-  for (ssize_t i = beg; i <= end; i++) {
+  for (idx_t i = beg; i <= end; i++) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
     try_recycle_trashed(r);
 
@@ -1034,11 +1034,11 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
       (_partitions.leftmost_empty(ShenandoahFreeSetPartitionId::Collector)
        <= _partitions.rightmost_empty(ShenandoahFreeSetPartitionId::Collector))) {
     ShenandoahHeapLocker locker(_heap->lock());
-    ssize_t rightmost = _partitions.rightmost_empty(ShenandoahFreeSetPartitionId::Collector);
-    for (ssize_t idx = _partitions.leftmost_empty(ShenandoahFreeSetPartitionId::Collector);
+    idx_t rightmost = _partitions.rightmost_empty(ShenandoahFreeSetPartitionId::Collector);
+    for (idx_t idx = _partitions.leftmost_empty(ShenandoahFreeSetPartitionId::Collector);
          (max_xfer_regions > 0) && (idx <= rightmost); ) {
       assert(_partitions.in_free_set(ShenandoahFreeSetPartitionId::Collector, idx),
-             "Boundaries or find_next_set_bit failed: " SSIZE_FORMAT, idx);
+             "Boundaries or find_first_set_bit failed: " SSIZE_FORMAT, idx);
       // Note: can_allocate_from() denotes that region is entirely empty
       if (can_allocate_from(idx)) {
         _partitions.move_from_partition_to_partition(idx, ShenandoahFreeSetPartitionId::Collector,
@@ -1054,11 +1054,11 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
   if ((max_xfer_regions > 0) && (_partitions.leftmost(ShenandoahFreeSetPartitionId::Collector)
                                  <= _partitions.rightmost(ShenandoahFreeSetPartitionId::Collector))) {
     ShenandoahHeapLocker locker(_heap->lock());
-    ssize_t rightmost = _partitions.rightmost(ShenandoahFreeSetPartitionId::Collector);
-    for (ssize_t idx = _partitions.leftmost(ShenandoahFreeSetPartitionId::Collector);
+    idx_t rightmost = _partitions.rightmost(ShenandoahFreeSetPartitionId::Collector);
+    for (idx_t idx = _partitions.leftmost(ShenandoahFreeSetPartitionId::Collector);
          (max_xfer_regions > 0) && (idx <= rightmost); ) {
       assert(_partitions.in_free_set(ShenandoahFreeSetPartitionId::Collector, idx),
-             "Boundaries or find_next_set_bit failed: " SSIZE_FORMAT, idx);
+             "Boundaries or find_first_set_bit failed: " SSIZE_FORMAT, idx);
       size_t ac = alloc_capacity(idx);
       if (ac > 0) {
         _partitions.move_from_partition_to_partition(idx, ShenandoahFreeSetPartitionId::Collector,
@@ -1105,7 +1105,7 @@ void ShenandoahFreeSet::finish_rebuild(size_t cset_regions) {
   log_status();
 }
 
-void ShenandoahFreeSet::rebuild() {
+void ShenandoahFreeSet::rebuild()y {
   size_t cset_regions;
   prepare_to_rebuild(cset_regions);
   finish_rebuild(cset_regions);
@@ -1216,7 +1216,7 @@ void ShenandoahFreeSet::log_status() {
     LogStream ls(lt);
 
     {
-      ssize_t last_idx = 0;
+      idx_t last_idx = 0;
       size_t max = 0;
       size_t max_contig = 0;
       size_t empty_contig = 0;
@@ -1225,7 +1225,7 @@ void ShenandoahFreeSet::log_status() {
       size_t total_free = 0;
       size_t total_free_ext = 0;
 
-      for (ssize_t idx = _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator);
+      for (idx_t idx = _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator);
            idx <= _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator); idx++) {
         if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, idx)) {
           ShenandoahHeapRegion *r = _heap->get_region(idx);
@@ -1289,7 +1289,7 @@ void ShenandoahFreeSet::log_status() {
       size_t total_free = 0;
       size_t total_used = 0;
 
-      for (ssize_t idx = _partitions.leftmost(ShenandoahFreeSetPartitionId::Collector);
+      for (idx_t idx = _partitions.leftmost(ShenandoahFreeSetPartitionId::Collector);
            idx <= _partitions.rightmost(ShenandoahFreeSetPartitionId::Collector); idx++) {
         if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::Collector, idx)) {
           ShenandoahHeapRegion *r = _heap->get_region(idx);
@@ -1332,18 +1332,18 @@ HeapWord* ShenandoahFreeSet::allocate(ShenandoahAllocRequest& req, bool& in_new_
 
 void ShenandoahFreeSet::print_on(outputStream* out) const {
   out->print_cr("Mutator Free Set: " SIZE_FORMAT "", _partitions.count(ShenandoahFreeSetPartitionId::Mutator));
-  ssize_t rightmost = _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator);
-  for (ssize_t index = _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator); index <= rightmost; ) {
+  idx_t rightmost = _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator);
+  for (idx_t index = _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator); index <= rightmost; ) {
     assert(_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, index),
-           "Boundaries or find_next_set_bit failed: " SSIZE_FORMAT, index);
+           "Boundaries or find_first_set_bit failed: " SSIZE_FORMAT, index);
     _heap->get_region(index)->print_on(out);
     index = _partitions.find_index_of_next_available_region(ShenandoahFreeSetPartitionId::Mutator, index + 1);
   }
   out->print_cr("Collector Free Set: " SIZE_FORMAT "", _partitions.count(ShenandoahFreeSetPartitionId::Collector));
   rightmost = _partitions.rightmost(ShenandoahFreeSetPartitionId::Collector);
-  for (ssize_t index = _partitions.leftmost(ShenandoahFreeSetPartitionId::Collector); index <= rightmost; ) {
+  for (idx_t index = _partitions.leftmost(ShenandoahFreeSetPartitionId::Collector); index <= rightmost; ) {
     assert(_partitions.in_free_set(ShenandoahFreeSetPartitionId::Collector, index),
-           "Boundaries or find_next_set_bit failed: " SSIZE_FORMAT, index);
+           "Boundaries or find_first_set_bit failed: " SSIZE_FORMAT, index);
     _heap->get_region(index)->print_on(out);
     index = _partitions.find_index_of_next_available_region(ShenandoahFreeSetPartitionId::Collector, index + 1);
   }
@@ -1354,10 +1354,10 @@ double ShenandoahFreeSet::internal_fragmentation() {
   double linear = 0;
   int count = 0;
 
-  ssize_t rightmost = _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator);
-  for (ssize_t index = _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator); index <= rightmost; ) {
+  idx_t rightmost = _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator);
+  for (idx_t index = _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator); index <= rightmost; ) {
     assert(_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, index),
-           "Boundaries or find_next_set_bit failed: " SSIZE_FORMAT, index);
+           "Boundaries or find_first_set_bit failed: " SSIZE_FORMAT, index);
     ShenandoahHeapRegion* r = _heap->get_region(index);
     size_t used = r->used();
     squared += used * used;
@@ -1375,16 +1375,16 @@ double ShenandoahFreeSet::internal_fragmentation() {
 }
 
 double ShenandoahFreeSet::external_fragmentation() {
-  ssize_t last_idx = 0;
+  idx_t last_idx = 0;
   size_t max_contig = 0;
   size_t empty_contig = 0;
 
   size_t free = 0;
 
-  ssize_t rightmost = _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator);
-  for (ssize_t index = _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator); index <= rightmost; ) {
+  idx_t rightmost = _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator);
+  for (idx_t index = _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator); index <= rightmost; ) {
     assert(_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, index),
-           "Boundaries or find_next_set_bit failed: " SSIZE_FORMAT, index);
+           "Boundaries or find_first_set_bit failed: " SSIZE_FORMAT, index);
     ShenandoahHeapRegion* r = _heap->get_region(index);
     if (r->is_empty()) {
       free += ShenandoahHeapRegion::region_size_bytes();

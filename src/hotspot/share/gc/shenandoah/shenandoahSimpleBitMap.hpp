@@ -26,19 +26,30 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSIMPLEBITMAP_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSIMPLEBITMAP_HPP
 
-// The API and internal implementation of ShenandoahSimpleBitMap and ShenandoahRegionPartitions use ssize_t to
+// TODO: Merge the enhanced capabilities of ShenandoahSimpleBitMap into src/hotspot/share/utilities/bitMap.hpp
+//       and deprecate ShenandoahSimpleBitMap.  The key enhanced capabilities to be integrated include:
+//
+//   1. Allow searches from high to low memory (when biasing allocations towards the top of the heap)
+//   2. Allow searches for clusters of contiguous set bits (to expedite allocation for humongous objects)
+//
+// idx_t is defined here as ssize_t.  In src/hotspot/share/utiliities/bitMap.hpp, idx is defined as size_t.
+// This is a significant incompatibility.
+//
+// The API and internal implementation of ShenandoahSimpleBitMap and ShenandoahRegionPartitions use idx_t to
 // represent index, even though index is "inherently" unsigned.  There are two reasons for this choice:
 //  1. We use -1 as a sentinel value to represent empty partitions.  This same value may be used to represent
 //     failure to find a previous set bit or previous range of set bits.
 //  2. Certain loops are written most naturally if the iterator, which may hold the sentinel -1 value, can be
 //     declared as signed and the terminating condition can be < 0.
 
-// ShenandoahSimpleBitMap resembles CHeapBitMap but adds missing support for find_next_consecutive_bits() and
-// find_prev_contiguous_bits.  An alternative refactoring of code would subclass CHeapBitMap, but this might
+typedef ssize_t idx_t;
+
+// ShenandoahSimpleBitMap resembles CHeapBitMap but adds missing support for find_first_consecutive_set_bits() and
+// find_last_consecutive_set_bits.  An alternative refactoring of code would subclass CHeapBitMap, but this might
 // break abstraction rules, because efficient implementation requires assumptions about superclass internals that
 // might be violatee through future software maintenance.
 class ShenandoahSimpleBitMap {
-  const ssize_t _num_bits;
+  const idx_t _num_bits;
   const size_t _num_words;
   uintx* const _bitmap;
 
@@ -66,39 +77,40 @@ private:
 
   // Count consecutive ones in forward order, starting from start_idx.  Requires that there is at least one zero
   // between start_idx and index value (_num_bits - 1), inclusive.
-  size_t count_leading_ones(ssize_t start_idx) const;
+  size_t count_leading_ones(idx_t start_idx) const;
 
   // Count consecutive ones in reverse order, starting from last_idx.  Requires that there is at least one zero
   // between last_idx and index value zero, inclusive.
-  size_t count_trailing_ones(ssize_t last_idx) const;
+  size_t count_trailing_ones(idx_t last_idx) const;
 
-  bool is_forward_consecutive_ones(ssize_t start_idx, ssize_t count) const;
-  bool is_backward_consecutive_ones(ssize_t last_idx, ssize_t count) const;
+  bool is_forward_consecutive_ones(idx_t start_idx, idx_t count) const;
+  bool is_backward_consecutive_ones(idx_t last_idx, idx_t count) const;
 
 public:
 
-  inline ssize_t aligned_index(ssize_t idx) const {
+  inline idx_t aligned_index(idx_t idx) const {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
-    ssize_t array_idx = idx & ~right_n_bits(LogBitsPerWord);
+    idx_t array_idx = idx & ~right_n_bits(LogBitsPerWord);
     return array_idx;
   }
 
-  inline ssize_t alignment() const {
+  inline idx_t alignment() const {
     return BitsPerWord;
   }
 
   // For testing
-  inline ssize_t number_of_bits() const {
+  inline idx_t size() const {
     return _num_bits;
   }
 
-  inline uintx bits_at(ssize_t idx) const {
+  // Return the word that holds idx bit and its neighboring bits.
+  inline uintx bits_at(idx_t idx) const {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
-    ssize_t array_idx = idx >> LogBitsPerWord;
+    idx_t array_idx = idx >> LogBitsPerWord;
     return _bitmap[array_idx];
   }
 
-  inline void set_bit(ssize_t idx) {
+  inline void set_bit(idx_t idx) {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
     size_t array_idx = idx >> LogBitsPerWord;
     uintx bit_number = idx & right_n_bits(LogBitsPerWord);
@@ -106,7 +118,7 @@ public:
     _bitmap[array_idx] |= the_bit;
   }
 
-  inline void clear_bit(ssize_t idx) {
+  inline void clear_bit(idx_t idx) {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
     assert(idx >= 0, "precondition");
     size_t array_idx = idx >> LogBitsPerWord;
@@ -115,7 +127,7 @@ public:
     _bitmap[array_idx] &= ~the_bit;
   }
 
-  inline bool is_set(ssize_t idx) const {
+  inline bool is_set(idx_t idx) const {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
     assert(idx >= 0, "precondition");
     size_t array_idx = idx >> LogBitsPerWord;
@@ -124,36 +136,41 @@ public:
     return (_bitmap[array_idx] & the_bit)? true: false;
   }
 
-  // Return the index of the first set bit which is greater or equal to start_idx.  If not found, return _num_bits.
-  inline ssize_t find_next_set_bit(ssize_t start_idx) const;
+  // Return the index of the first set bit in the range [beg, size()), or size() if none found.
+  // precondition: beg and end form a valid range for the bitmap.
+  inline idx_t find_first_set_bit(idx_t beg) const;
 
-  // Return the index of the first set bit which is greater or equal to start_idx and less than boundary_idx.
-  // If not found, return boundary_idx
-  inline ssize_t find_next_set_bit(ssize_t start_idx, ssize_t boundary_idx) const;
+  // Return the index of the first set bit in the range [beg, end), or end if none found.
+  // precondition: beg and end form a valid range for the bitmap.
+  inline idx_t find_first_set_bit(idx_t beg, idx_t end) const;
 
-  // Return the index of the last set bit which is less or equal to start_idx.  If not found, return -1.
-  inline ssize_t find_prev_set_bit(ssize_t last_idx) const;
+  // Return the index of the last set bit in the range (-1, end], or -1 if none found.
+  // precondition: beg and end form a valid range for the bitmap.
+  inline idx_t find_last_set_bit(idx_t end) const;
 
-  // Return the index of the last set bit which is less or equal to start_idx and greater than boundary_idx.
-  // If not found, return boundary_idx.
-  inline ssize_t find_prev_set_bit(ssize_t last_idx, ssize_t boundary_idx) const;
+  // Return the index of the last set bit in the range (beg, end], or beg if none found.
+  // precondition: beg and end form a valid range for the bitmap.
+  inline idx_t find_last_set_bit(idx_t beg, idx_t end) const;
 
-  // Return the smallest index at which a run of num_bits consecutive ones is found, where return value is >= start_idx
-  // and return value < _num_bits.  If no run of num_bits consecutive ones is found within the target range, return _num_bits.
-  inline ssize_t find_next_consecutive_bits(size_t num_bits, ssize_t start_idx) const;
+  // Return the start index of the first run of <num_bits> consecutive set bits for which the first set bit is within
+  //   the range [beg, size()), or size() if the run of <num_bits> is not found within this range.
+  // precondition: beg is within the valid range for the bitmap.
+  inline idx_t find_first_consecutive_set_bits(idx_t beg, size_t num_bits) const;
 
-  // Return the smallest index at which a run of num_bits consecutive ones is found, where return value is >= start_idx
-  // and return value < boundary_idx.  If no run of num_bits consecutive ones is found within the target range,
-  // return boundary_idx.
-  ssize_t find_next_consecutive_bits(size_t num_bits, ssize_t start_idx, ssize_t boundary_idx) const;
+  // Return the start index of the first run of <num_bits> consecutive set bits for which the first set bit is within
+  //   the range [beg, end), or end if the run of <num_bits> is not found within this range.
+  // precondition: beg and end form a valid range for the bitmap.
+  idx_t find_first_consecutive_set_bits(idx_t beg, idx_t end, size_t num_bits) const;
 
-  // Return the largest index at which a run of num_bits consecutive ones is found, where return value is <= last_idx and > -1.
-  // If no run of num_bits consecutive ones is found within the target range, return -1.
-  inline ssize_t find_prev_consecutive_bits(size_t num_bits, ssize_t last_idx) const;
+  // Return the start index of the last run of <num_bits> consecutive set bits for which the entire run of set bits is within
+  // the range (-1, end], or -1 if the run of <num_bits> is not found within this range.
+  // precondition: end is within the valid range for the bitmap.
+  inline idx_t find_last_consecutive_set_bits(idx_t end, size_t num_bits) const;
 
-  // Return the largest index at which a run of num_bits consecutive ones is found, where return value is <= last_idx and > -1.
-  // If no run of num_bits consecutive ones is found within the target range, return -1.
-  ssize_t find_prev_consecutive_bits(size_t num_bits, ssize_t last_idx, ssize_t boundary_idx) const;
+  // Return the start index of the first run of <num_bits> consecutive set bits for which the entire run of set bits is within
+  // the range (beg, end], or beg if the run of <num_bits> is not found within this range.
+  // precondition: beg and end form a valid range for the bitmap.
+  idx_t find_last_consecutive_set_bits(idx_t beg, idx_t end, size_t num_bits) const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSIMPLEBITMAP_HPP
