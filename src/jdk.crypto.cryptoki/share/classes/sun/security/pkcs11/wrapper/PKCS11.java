@@ -794,7 +794,8 @@ public class PKCS11 {
             long hKey) throws PKCS11Exception;
 
     /**
-     * C_EncryptInitWithIvBitsMech initializes an encryption operation.
+     * C_GCMEncryptInitWithRetry initializes an GCM encryption operation and retry
+     * with alternative param structure for max compatibility.
      * (Encryption and decryption)
      *
      * @param hSession the session's handle
@@ -803,12 +804,13 @@ public class PKCS11 {
      *         (PKCS#11 param: CK_MECHANISM_PTR pMechanism)
      * @param hKey the handle of the encryption key
      *         (PKCS#11 param: CK_OBJECT_HANDLE hKey)
+     * @param useNormativeVerFirst which version of params to use first
      * @exception PKCS11Exception If function returns other value than CKR_OK.
      * @preconditions
      * @postconditions
      */
-    public native void C_EncryptInitWithIvBitsMech(long hSession, CK_MECHANISM pMechanism,
-            long hKey) throws PKCS11Exception;
+    public native void C_GCMEncryptInitWithRetry(long hSession, CK_MECHANISM pMechanism,
+            long hKey, boolean useNormativeVerFirst) throws PKCS11Exception;
 
     /**
      * C_Encrypt encrypts single-part data.
@@ -904,7 +906,8 @@ public class PKCS11 {
             long hKey) throws PKCS11Exception;
 
     /**
-     * C_DecryptInitWithIvBitsMech initializes a decryption operation.
+     * C_GCMDecryptInitWithRetry initializes a GCM decryption operation
+     * with alternative param structure for max compatibility.
      * (Encryption and decryption)
      *
      * @param hSession the session's handle
@@ -913,12 +916,13 @@ public class PKCS11 {
      *         (PKCS#11 param: CK_MECHANISM_PTR pMechanism)
      * @param hKey the handle of the decryption key
      *         (PKCS#11 param: CK_OBJECT_HANDLE hKey)
+     * @param useNormativeVerFirst which version of params to use first
      * @exception PKCS11Exception If function returns other value than CKR_OK.
      * @preconditions
      * @postconditions
      */
-    public native void C_DecryptInitWithIvBitsMech(long hSession, CK_MECHANISM pMechanism,
-            long hKey) throws PKCS11Exception;
+    public native void C_GCMDecryptInitWithRetry(long hSession, CK_MECHANISM pMechanism,
+            long hKey, boolean useNormativeVerFirst) throws PKCS11Exception;
 
     /**
      * C_Decrypt decrypts encrypted data in a single part.

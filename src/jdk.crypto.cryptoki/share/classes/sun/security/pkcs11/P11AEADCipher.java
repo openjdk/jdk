@@ -455,26 +455,20 @@ final class P11AEADCipher extends CipherSpi {
                 session = token.getOpSession();
             }
 
-            /*
-             * Check if PKCS11 spec version is 2.40 and above.
-             * If so, we need to send CK_GCM_PARAMS structure with IV bits for AES GCM.
-             * the call to C_EncryptInitWithIvBitsMech will update GCM structure, with
-             * additional field ulvIV bits and then invoke C_EncryptInit
-             */
-            CK_VERSION cryptokiVersion = token.p11.C_GetInfo().cryptokiVersion;
-            boolean useNormativeMech = cryptokiVersion.major > 2 ||
+            if (type == Transformation.AES_GCM) {
+                CK_VERSION cryptokiVersion = token.p11.C_GetInfo().cryptokiVersion;
+                boolean useNormativeMechFirst = cryptokiVersion.major > 2 ||
                     (cryptokiVersion.major == 2  && cryptokiVersion.minor >= 40);
-            if (encrypt) {
-                if(useNormativeMech && type == Transformation.AES_GCM) {
-                    token.p11.C_EncryptInitWithIvBitsMech(session.id(), mechWithParams,
-                        p11KeyID);
+                if (encrypt) {
+                    token.p11.C_GCMEncryptInitWithRetry(session.id(), mechWithParams,
+                        p11KeyID, useNormativeMechFirst);
                 } else {
-                    token.p11.C_EncryptInit(session.id(), mechWithParams,
-                        p11KeyID);
+                    token.p11.C_GCMDecryptInitWithRetry(session.id(), mechWithParams,
+                        p11KeyID, useNormativeMechFirst);
                 }
             } else {
-                if(useNormativeMech && type == Transformation.AES_GCM) {
-                    token.p11.C_DecryptInitWithIvBitsMech(session.id(), mechWithParams,
+                if (encrypt) {
+                    token.p11.C_EncryptInit(session.id(), mechWithParams,
                         p11KeyID);
                 } else {
                     token.p11.C_DecryptInit(session.id(), mechWithParams,
