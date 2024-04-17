@@ -506,7 +506,7 @@ public:
   }
   void do_vthread(Handle target_h) {
     assert(_target_jt != nullptr, "sanity check");
-    assert(_target_jt->vthread() == target_h(), "sanity check");
+    assert(_target_jt->jvmti_vthread() == target_h(), "sanity check");
     doit(_target_jt); // mounted virtual thread
   }
 };
@@ -526,7 +526,7 @@ public:
   }
   void do_vthread(Handle target_h) {
     assert(_target_jt != nullptr, "sanity check");
-    assert(_target_jt->vthread() == target_h(), "sanity check");
+    assert(_target_jt->jvmti_vthread() == target_h(), "sanity check");
     doit(_target_jt); // mounted virtual thread
   }
 };
