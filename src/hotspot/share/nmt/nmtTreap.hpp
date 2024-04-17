@@ -45,14 +45,54 @@
 template<typename K, typename V, int(*CMP)(K,K)>
 class TreapNode {
   template<typename InnerK, typename InnerV, int(*CMPP)(InnerK,InnerK)>
-  friend class TreapCHeap;
+  friend class Treap;
+  using Node = TreapNode<K,V,CMP>;
 
   uint64_t _priority;
   const K _key;
   V _value;
-  using Node = TreapNode<K,V,CMP>;
   Node* _left;
   Node* _right;
+
+public:
+  TreapNode(const K& k, const V& v, uint64_t p)
+  : _priority(p), _key(k), _value(v), _left(nullptr), _right(nullptr) {
+  }
+
+  const K& key() const {
+    return _key;
+  }
+
+  V& val() {
+    return _value;
+  }
+
+  Node* left() const {
+    return _left;
+  }
+
+  Node* right() const {
+    return _right;
+  }
+};
+
+template<typename K, typename V, int(*CMP)(K,K), typename Allocator>
+class Treap {
+  friend class VMATree;
+  friend class VMATreeTest;
+  using Node = TreapNode<K, V, CMP>;
+  Node* _root;
+  uint64_t _prng_seed;
+private:
+  uint64_t prng_next() {
+    // Taken directly off of JFRPrng
+    static const uint64_t PrngMult = 0x5DEECE66DLL;
+    static const uint64_t PrngAdd = 0xB;
+    static const uint64_t PrngModPower = 48;
+    static const uint64_t PrngModMask = (static_cast<uint64_t>(1) << PrngModPower) - 1;
+    _prng_seed = (PrngMult * _prng_seed + PrngAdd) & PrngModMask;
+    return _prng_seed;
+  }
 
   struct node_pair {
     Node* left;
@@ -70,8 +110,7 @@ class TreapNode {
     if (head == nullptr) {
       return {nullptr, nullptr};
     }
-    if ( (CMP(head->_key, key) <= 0 && mode == LEQ) ||
-         (CMP(head->_key, key) < 0  && mode == LT) ) {
+    if ((CMP(head->_key, key) <= 0 && mode == LEQ) || (CMP(head->_key, key) < 0 && mode == LT)) {
       node_pair p = split(head->_right, key, mode);
       head->_right = p.left;
       return node_pair{head, p.right};
@@ -106,25 +145,6 @@ class TreapNode {
     }
   }
 
-public:
-  TreapNode(const K& k, const V& v, uint64_t p)
-  : _priority(p), _key(k), _value(v), _left(nullptr), _right(nullptr) {
-  }
-
-  const K& key() const {
-    return _key;
-  }
-  V& val() {
-    return _value;
-  }
-
-  Node* left() const {
-    return _left;
-  }
-  Node* right() const {
-    return _right;
-  }
-
   static Node* find(Node* node, const K& k) {
     if (node == nullptr) {
       return nullptr;
@@ -139,41 +159,48 @@ public:
       return find(node->_right, k);
     }
   }
+public:
+  Treap(uint64_t seed = 1234)
+    : _root(nullptr),
+      _prng_seed(seed) {
+  }
+  ~Treap() {
+    this->remove_all();
+  }
 
-  template<typename MakeNode>
-  static Node* upsert(Node* head, const K& k, const V& v, MakeNode make_node) {
+  void upsert(const K& k, const V& v) {
     // (LEQ_k, GT_k)
-    node_pair split = Node::split(head, k);
+    node_pair split = Node::split(this->_root, k);
     Node* found = find(split.left, k);
     if (found != nullptr) {
       // Already exists, update value.
       found->_value = v;
-      return merge(split.left, split.right);
+      this->_root = merge(split.left, split.right);
     }
     // Doesn't exist, make node
-    Node* node = make_node(k, v);
+    Node* node = Allocator::allocate(sizeof(Node));
+    uint64_t prio = prng_next();
+    new (node) Node(k, v, prio);
     // merge(merge(LEQ_k, EQ_k), GT_k)
-    return merge(merge(split.left, node), split.right);
+    this->_root = merge(merge(split.left, node), split.right);
   }
 
-  template<typename Free>
-  static Node* remove(Node *head, const K& k, Free free) {
+  void remove(const K& k) {
     // (LEQ_k, GT_k)
-    node_pair fst_split = split(head, k, LEQ);
+    node_pair fst_split = split(this->_root, k, LEQ);
     // (LT_k, GEQ_k) == (LT_k, EQ_k) since it's from LEQ_k and keys are unique.
     node_pair snd_split = split(fst_split.left, k, LT);
 
     if (snd_split.right != nullptr) {
       // The key k existed, we delete it.
-      free(snd_split.right);
+      Allocator::free(snd_split.right);
     }
     // Merge together everything
-    return merge(snd_split.left, fst_split.right);
+    this->_root = merge(snd_split.left, fst_split.right);
   }
 
   // Delete all nodes.
-  template<typename Free>
-  static Node* remove_all(Node* tree, Free free) {
+  void remove_all(Node* tree) {
     GrowableArrayCHeap<Node*, mtNMT> to_delete;
     to_delete.push(tree);
 
@@ -182,56 +209,8 @@ public:
       if (head == nullptr) continue;
       to_delete.push(head->_left);
       to_delete.push(head->_right);
-      free(head);
+      Allocator::free(head);
     }
-    return nullptr;
-  }
-};
-
-template<typename K, typename V, int(*CMP)(K,K)>
-class TreapCHeap {
-  friend class VMATree;
-  friend class VMATreeTest;
-  using Node = TreapNode<K, V, CMP>;
-  Node* _root;
-  uint64_t _prng_seed;
-
-public:
-  TreapCHeap(uint64_t seed = 1234) : _root(nullptr), _prng_seed(seed) {
-  }
-  ~TreapCHeap() {
-    this->remove_all();
-  }
-
-  uint64_t prng_next() {
-    // Taken directly off of JFRPrng
-    static const uint64_t PrngMult = 0x5DEECE66DLL;
-    static const uint64_t PrngAdd = 0xB;
-    static const uint64_t PrngModPower = 48;
-    static const uint64_t PrngModMask = (static_cast<uint64_t>(1) << PrngModPower) - 1;
-    _prng_seed = (PrngMult * _prng_seed + PrngAdd) & PrngModMask;
-    return _prng_seed;
-  }
-
-  void upsert(const K& k, const V& v) {
-    _root = Node::upsert(_root, k, v, [&](const K& k, const V& v) {
-      uint64_t rand = this->prng_next();
-      void* place = os::malloc(sizeof(Node), mtNMT);
-      new (place) Node(k, v, rand);
-      return (Node*)place;
-    });
-  }
-
-  void remove(const K& k) {
-    _root = Node::remove(_root, k, [](void* ptr) {
-      os::free(ptr);
-    });
-  }
-
-  void remove_all() {
-    _root = Node::remove_all(_root, [](void* ptr){
-      os::free(ptr);
-    });
   }
 
   Node* closest_geq(const K& key) {
@@ -278,5 +257,17 @@ public:
     return leqA_n;
   }
 };
+
+class CHeapAllocator {
+  void* allocate(size_t sz) {
+    return os::malloc(sz, mtNMT);
+  }
+  void free(void* ptr) {
+    os::free(ptr);
+  }
+};
+
+template<typename K, typename V, int (*CMP)(K, K)>
+using TreapCHeap = Treap<K, V, CMP, CHeapAllocator>;
 
 #endif //SHARE_NMT_TREAP_HPP
