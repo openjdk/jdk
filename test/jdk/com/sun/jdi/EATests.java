@@ -299,6 +299,7 @@ class EATestsTarget {
         new EAGetOwnedMonitorsTarget()                                                      .run();
         new EAEntryCountTarget()                                                            .run();
         new EARelockingObjectCurrentlyWaitingOnTarget()                                     .run();
+        new EARelockingWhileTargetOnMonitorenterTarget()                                    .run();
         new EARelockingValueBasedTarget()                                                   .run();
 
         // Test cases that require deoptimization even though neither
@@ -423,6 +424,7 @@ public class EATests extends TestScaffold {
         new EAGetOwnedMonitors()                                                      .run(this);
         new EAEntryCount()                                                            .run(this);
         new EARelockingObjectCurrentlyWaitingOn()                                     .run(this);
+        new EARelockingWhileTargetOnMonitorenter()                                    .run(this);
         new EARelockingValueBased()                                                   .run(this);
 
         // Test cases that require deoptimization even though neither
@@ -2272,6 +2274,67 @@ class EARelockingObjectCurrentlyWaitingOnTarget extends EATestCaseBaseTarget {
     }
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
+class EARelockingWhileTargetOnMonitorenter extends EATestCaseBaseDebugger {
+
+    public void runTestCase() throws Exception {
+        Object lock = getField(testCase, "sharedLock");
+        boolean inMonitorEnter = false;
+        env.vm().resume();
+        do {
+            Thread.sleep(100);
+            env.targetMainThread.suspend();
+            printStack(env.targetMainThread);
+            inMonitorEnter = env.targetMainThread.currentContendedMonitor() == lock;
+            if (!inMonitorEnter) {
+                msg("Target not yet blocked in monitorenter");
+                env.targetMainThread.resume();
+            }
+        } while(!inMonitorEnter);
+        StackFrame testMethodFrame = env.targetMainThread.frame(1);
+        ObjectReference l1 = getLocalRef(testMethodFrame, XYVAL_NAME, "l1");
+        setField(testCase, "releaseLock", env.vm().mirrorOf(true));
+    }
+}
+
+class EARelockingWhileTargetOnMonitorenterTarget extends EATestCaseBaseTarget {
+
+    public Object sharedLock = new Object();
+    public volatile boolean releaseLock;
+    public int counter;
+
+    @Override
+    public void warmupDone() {
+        super.warmupDone();
+        Thread t = new Thread(() -> contendOnLock());
+        t.start();
+    }
+
+    public void contendOnLock() {
+        synchronized (sharedLock) {
+            while (!releaseLock) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) { /* ignored */ }
+            }
+        }
+    }
+
+    @Override
+    public void dontinline_testMethod() throws Exception {
+        XYVal l1 = new XYVal(1, 1);
+        synchronized (l1) {
+            testMethod_inlined(l1);
+        }
+    }
+
+    public void testMethod_inlined(XYVal l2) throws Exception {
+        synchronized (sharedLock) {
+            counter++;
+        }
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 
