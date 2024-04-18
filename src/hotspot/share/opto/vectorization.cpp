@@ -202,7 +202,7 @@ void VLoopVPointers::allocate_vpointers_array() {
 
 void VLoopVPointers::compute_and_cache_vpointers() {
   int pointers_idx = 0;
-  _body.for_each_mem([&] (const MemNode* mem, int bb_idx) {
+  _body.for_each_mem([&] (MemNode* const mem, int bb_idx) {
     // Placement new: construct directly into the array.
     ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop);
     _bb_idx_to_vpointer.at_put(bb_idx, pointers_idx);
@@ -410,7 +410,7 @@ void VLoopDependencyGraph::PredsIterator::next() {
 int VPointer::Tracer::_depth = 0;
 #endif
 
-VPointer::VPointer(const MemNode* mem, const VLoop& vloop,
+VPointer::VPointer(MemNode* const mem, const VLoop& vloop,
                    Node_Stack* nstack, bool analyze_only) :
   _mem(mem), _vloop(vloop),
   _base(nullptr), _adr(nullptr), _scale(0), _offset(0), _invar(nullptr),

@@ -603,8 +603,7 @@ private:
   // Calculate loop's iv adjustment for this memory ops.
   int get_iv_adjustment(MemNode* mem);
 
-  // Can s1 and s2 be in a pack with s1 immediately preceding s2 and  s1 aligned at "align"
-  bool stmts_can_pack(Node* s1, Node* s2, int align);
+  bool can_pack_into_pair(Node* s1, Node* s2);
   // Is s1 immediately before s2 in memory?
   bool are_adjacent_refs(Node* s1, Node* s2) const;
   // Are s1 and s2 similar?
