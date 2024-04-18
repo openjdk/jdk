@@ -43,8 +43,8 @@ import static java.lang.classfile.ClassFile.*;
  * <p>
  * Static private methods named MH_x and MT_x (where x is arbitrary)
  * must be stereotyped generators of MethodHandle and MethodType
- * constants.  All calls to them are transformed to {@code TAG_METHODHANDLE}
- * and {@code TAG_METHODTYPE} "ldc" instructions.
+ * constants.  All calls to them are transformed to {@code CONSTANT_MethodHandle}
+ * and {@code CONSTANT_MethodType} "ldc" instructions.
  * The stereotyped code must create method types by calls to {@code methodType} or
  * {@code fromMethodDescriptorString}.  The "lookup" argument must be created
  * by calls to {@code java.lang.invoke.MethodHandles#lookup MethodHandles.lookup}.
