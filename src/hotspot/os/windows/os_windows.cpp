@@ -5064,8 +5064,7 @@ void os::funlockfile(FILE* fp) {
 
 // Map a block of memory.
 char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
-                        char *addr, size_t bytes,
-                        bool read_only,
+                        char *addr, size_t bytes, bool read_only,
                         bool allow_exec) {
 
   errno_t err;

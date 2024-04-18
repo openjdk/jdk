@@ -42,7 +42,7 @@
 
 // Dummy constructor
 ReservedSpace::ReservedSpace() : _base(nullptr), _size(0), _noaccess_prefix(0),
-    _alignment(0), _special(false), _fd_for_heap(-1), _executable(false), _nmt_flag(mtNone) {
+    _alignment(0), _fd_for_heap(-1), _special(false), _executable(false), _nmt_flag(mtNone) {
 }
 
 ReservedSpace::ReservedSpace(size_t size, MEMFLAGS flag) : _fd_for_heap(-1), _nmt_flag(flag) {
@@ -715,7 +715,6 @@ bool VirtualSpace::initialize_with_granularity(ReservedSpace rs, size_t committe
 
   _special = rs.special();
   _executable = rs.executable();
-
   _nmt_flag = rs.nmt_flag();
 
   // When a VirtualSpace begins life at a large size, make all future expansion
@@ -775,6 +774,7 @@ void VirtualSpace::release() {
   _upper_alignment        = 0;
   _special                = false;
   _executable             = false;
+  _nmt_flag               = mtNone;
 }
 
 

@@ -513,11 +513,9 @@ class os: AllStatic {
   // Replace existing reserved memory with file mapping
   static char* replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd);
 
-  static char*  map_memory(int fd, const char* file_name, size_t file_offset,
-                           char *addr, size_t bytes,
-                           bool read_only,
-                           bool allow_exec,
-                           MEMFLAGS flag);
+  static char*  map_memory(int fd, const char* file_name, size_t file_offset, // file info
+                           char *addr, size_t bytes,                          // memory info
+                           bool read_only, bool allow_exec, MEMFLAGS flag);   // flags
   static bool   unmap_memory(char *addr, size_t bytes);
   static void   free_memory(char *addr, size_t bytes, size_t alignment_hint, MEMFLAGS flag);
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);

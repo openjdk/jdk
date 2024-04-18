@@ -40,8 +40,8 @@ class ReservedSpace {
   size_t   _noaccess_prefix;
   size_t   _alignment;
   size_t   _page_size;
-  bool     _special;
   int      _fd_for_heap;
+  bool     _special;
   bool     _executable;
   MEMFLAGS _nmt_flag;
  private:
@@ -177,6 +177,7 @@ class VirtualSpace {
   // Need to know if commit should be executable.
   bool   _executable;
 
+  MEMFLAGS _nmt_flag;
   // MPSS Support
   // Each virtualspace region has a lower, middle, and upper region.
   // Each region has an end boundary and a high pointer which is the
@@ -195,7 +196,6 @@ class VirtualSpace {
   size_t _middle_alignment;
   size_t _upper_alignment;
 
-  MEMFLAGS _nmt_flag;
 
   // MPSS Accessors
   char* lower_high() const { return _lower_high; }
