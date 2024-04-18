@@ -95,7 +95,7 @@ public class Parser implements GraphParser {
     private final Map<Group, InputGraph> lastParsedGraph = new HashMap<>();
     private final GraphDocument callbackDocument;
     private final GraphContextAction contextAction;
-    private final Set<GraphContext> contexts = new HashSet<>();
+    private final ArrayList<GraphContext> contexts = new ArrayList<>();
     private final HashMap<String, Integer> idCache = new HashMap<>();
     private final ArrayList<Pair<String, String>> blockConnections = new ArrayList<>();
     private final ParseMonitor monitor;

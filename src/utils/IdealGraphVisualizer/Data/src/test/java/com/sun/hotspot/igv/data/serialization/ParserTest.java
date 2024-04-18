@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.Channels;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import java.util.ArrayList;
 import java.util.HashSet;
 import org.junit.*;
 import static org.junit.Assert.assertTrue;
@@ -64,7 +65,7 @@ public class ParserTest {
 
     private void test(GraphDocument document) {
         final CharArrayWriter writer = new CharArrayWriter();
-        Printer.exportGraphDocument(writer, document, new HashSet<>());
+        Printer.exportGraphDocument(writer, document, new ArrayList<>());
         test(document, writer.toString());
     }
 

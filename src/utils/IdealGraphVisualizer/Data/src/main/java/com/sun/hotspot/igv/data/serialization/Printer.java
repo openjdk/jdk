@@ -27,6 +27,7 @@ import com.sun.hotspot.igv.data.*;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -38,7 +39,7 @@ import java.util.stream.Collectors;
  */
 public class Printer {
 
-    public static void exportGraphDocument(Writer writer, Folder folder, Set<GraphContext> contexts) {
+    public static void exportGraphDocument(Writer writer, Folder folder, List<GraphContext> contexts) {
         XMLWriter xmlWriter = new XMLWriter(writer);
         try {
             xmlWriter.startTag(Parser.ROOT_ELEMENT);
@@ -55,7 +56,7 @@ public class Printer {
         } catch (IOException ignored) {}
     }
 
-    private static void exportGroup(XMLWriter writer, Group g, Set<GraphContext> contexts) throws IOException {
+    private static void exportGroup(XMLWriter writer, Group g, List<GraphContext> contexts) throws IOException {
         Properties attributes = new Properties();
         attributes.setProperty("difference", Boolean.toString(true));
         writer.startTag(Parser.GROUP_ELEMENT, attributes);
@@ -78,7 +79,7 @@ public class Printer {
         writer.endTag();
     }
 
-    private static void exportInputGraph(XMLWriter writer, InputGraph graph, InputGraph previous, boolean difference, Set<GraphContext> contexts) throws IOException {
+    private static void exportInputGraph(XMLWriter writer, InputGraph graph, InputGraph previous, boolean difference, List<GraphContext> contexts) throws IOException {
         writer.startTag(Parser.GRAPH_ELEMENT);
         writer.writeProperties(graph.getProperties());
         writer.startTag(Parser.NODES_ELEMENT);
@@ -174,10 +175,10 @@ public class Printer {
         writer.endTag(); // Parser.GRAPH_ELEMENT
     }
 
-    private static void exportStates(XMLWriter writer, InputGraph exportingGraph, Set<GraphContext> contexts) throws IOException {
-        Set<GraphContext> contextsContainingGraph = contexts.stream()
+    private static void exportStates(XMLWriter writer, InputGraph exportingGraph, List<GraphContext> contexts) throws IOException {
+        List<GraphContext> contextsContainingGraph = contexts.stream()
                 .filter(context -> context.inputGraph().equals(exportingGraph))
-                .collect(Collectors.toSet());
+                .toList();
 
         if (contextsContainingGraph.isEmpty()) {
             return;

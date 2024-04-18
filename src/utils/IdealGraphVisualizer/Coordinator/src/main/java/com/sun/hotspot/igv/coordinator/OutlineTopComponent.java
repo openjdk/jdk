@@ -148,7 +148,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             return;
         }
 
-        Set<GraphContext> saveContexts = new HashSet<>();
+        List<GraphContext> saveContexts = new ArrayList<>();
         WindowManager manager = WindowManager.getDefault();
         for (Mode mode : manager.getModes()) {
             List<TopComponent> compList = new ArrayList<>(Arrays.asList(manager.getOpenedTopComponents(mode)));
@@ -539,10 +539,10 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
                         ((BeanTreeView) this.treeView).collapseNode(child);
                     }
                     requestActive();
-                    for (GraphContext ctx : contexts) {
-                        loadContext(ctx);
-                    }
                 });
+                for (GraphContext ctx : contexts) {
+                    loadContext(ctx);
+                }
             }
         } catch (IOException ex) {
             Exceptions.printStackTrace(ex);
