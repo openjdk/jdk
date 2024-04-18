@@ -28,7 +28,6 @@ package jdk.jfr.internal;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.DateTimeException;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.HashSet;
@@ -110,7 +109,7 @@ public final class Repository {
             return LocalDateTime.now();
         } catch (DateTimeException d) {
             Logger.log(LogTag.JFR, LogLevel.INFO, "Could not create LocalDateTime with the default time zone. Using UTC time zone for chunk filename.");
-            return LocalDateTime.ofInstant(Instant.now(), ZoneOffset.UTC);
+            return LocalDateTime.now(ZoneOffset.UTC);
         }
     }
 
