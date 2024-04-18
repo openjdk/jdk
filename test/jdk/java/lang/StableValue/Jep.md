@@ -52,7 +52,7 @@ is first referenced:
 // ordinary static initialization
 private static final Logger LOGGER = Logger.getLogger("com.foo.Bar");
 ...
-LOGGER.log(Level.DEBUG, ...);
+LOGGER.log(Level.INFO, ...);
 ```
 we can defer initialization until we actually need it:
 ```
@@ -64,7 +64,7 @@ Logger logger() {
     return Holder.LOGGER;
 }
 ...
-LOGGER.log(Level.DEBUG, ...);
+LOGGER.log(Level.INFO, ...);
 ```
 The code above ensures that the `Logger` object is created only when actually
 required. The (possibly expensive) initializer for the logger lives in the
@@ -80,7 +80,7 @@ It should be noted that even though eventually outputting a message is slow comp
 obtaining the `Logger` instance itself, the `LOGGER::log`method starts with checking if
 the selected `Level` is enabled or not. This latter check is a relatively fast operation
 and so, in the case of disabled loggers, the `Logger` instance retrieval performance is
-important. For example, logger output for `Level.DEBUG` is almost always disabled in production
+important. For example, logger output for `Level.INFO` is likely disabled in most production
 environments.
 
 Alternatively, the [_double-checked locking idiom_](https://en.wikipedia.org/wiki/Double-checked_locking), can also be used

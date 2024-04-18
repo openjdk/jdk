@@ -1,8 +1,10 @@
 package jdk.internal.lang.stable;
 
+import jdk.internal.ValueBased;
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.lang.StableValue;
+import jdk.internal.vm.annotation.Stable;
 
 import java.util.List;
 import java.util.Map;
@@ -47,31 +49,98 @@ public final class StableAccess {
         return ACCESS.computeIfUnset(map, key, mapper);
     }
 
-    // Records supports out-of-the-box trusted fields and so, we use them to implement
-    // memoized constructs.
+    public static <T> Supplier<T> ofSupplier(StableValue<T> stable,
+                                             Supplier<? extends T> original) {
+        return new MemoizedSupplier<>(stable, original);
+    }
 
-    public record MemoizedSupplier<T>(StableValue<T> stable,
-                                      Supplier<? extends T> original) implements Supplier<T> {
+    public static <R> IntFunction<R> ofIntFunction(List<StableValue<R>> stableList,
+                                                   IntFunction<? extends R> original) {
+        return new MemoizedIntFunction<>(stableList, original);
+    }
+
+    public static <T, R> Function<T, R> ofFunction(Map<T, StableValue<R>> stableMap,
+                                                   Function<? super T, ? extends R> original) {
+        return new MemoizedFunction<>(stableMap, original);
+    }
+
+    @ValueBased
+    private static final class MemoizedSupplier<T> implements Supplier<T> {
+
+        @Stable private final StableValue<T> stable;
+        @Stable private final Supplier<? extends T> original;
+
+        private MemoizedSupplier(StableValue<T> stable,
+                                 Supplier<? extends T> original) {
+            this.stable = stable;
+            this.original = original;
+        }
+
         @Override
         public T get() {
             return stable.computeIfUnset(original);
         }
-    }
 
-    public record MemoizedIntFunction<T>(List<StableValue<T>> stableList,
-                                         IntFunction<? extends T> original) implements IntFunction<T> {
         @Override
-        public T apply(int value) {
-            return StableValue.computeIfUnset(stableList, value, original);
+        public String toString() {
+            return "MemoizedSupplier[" +
+                    "stable=" + stable + ", " +
+                    "original=" + original + ']';
         }
+
+
     }
 
-    public record MemoizedFunction<T, R>(Map<T, StableValue<R>> stableMap,
-                                         Function<? super T, ? extends R> original) implements Function<T, R> {
+    @ValueBased
+    private static final class MemoizedIntFunction<R> implements IntFunction<R> {
+
+        @Stable private final List<StableValue<R>> stableList;
+        @Stable private final IntFunction<? extends R> original;
+
+        private MemoizedIntFunction(List<StableValue<R>> stableList,
+                                   IntFunction<? extends R> original) {
+            this.stableList = stableList;
+            this.original = original;
+        }
+
+        @Override
+            public R apply(int value) {
+                return StableValue.computeIfUnset(stableList, value, original);
+            }
+
+        @Override
+        public String toString() {
+            return "MemoizedIntFunction[" +
+                    "stableList=" + stableList + ", " +
+                    "original=" + original + ']';
+        }
+
+    }
+
+    @ValueBased
+    private static final class MemoizedFunction<T, R> implements Function<T, R> {
+
+        @Stable private final Map<T, StableValue<R>> stableMap;
+        @Stable private final Function<? super T, ? extends R> original;
+
+        private MemoizedFunction(Map<T, StableValue<R>> stableMap,
+                                 Function<? super T, ? extends R> original) {
+            this.stableMap = stableMap;
+            this.original = original;
+        }
+
         @Override
         public R apply(T t) {
             return StableValue.computeIfUnset(stableMap, t, original);
         }
+
+        @Override
+        public String toString() {
+            return "MemoizedFunction[" +
+                    "stableMap=" + stableMap + ", " +
+                    "original=" + original + ']';
+        }
+
     }
 
 }

@@ -339,7 +339,7 @@ public sealed interface StableValue<V>
     static <T> Supplier<T> ofSupplier(Supplier<? extends T> original) {
         Objects.requireNonNull(original);
         StableValue<T> stable = StableValue.of();
-        return new StableAccess.MemoizedSupplier<>(stable, original);
+        return StableAccess.ofSupplier(stable, original);
     }
 
     /**
@@ -358,7 +358,7 @@ public sealed interface StableValue<V>
         }
         Objects.requireNonNull(original);
         List<StableValue<R>> stableList = StableValue.ofList(size);
-        return new StableAccess.MemoizedIntFunction<>(stableList, original);
+        return StableAccess.ofIntFunction(stableList, original);
     }
 
     /**
@@ -376,7 +376,7 @@ public sealed interface StableValue<V>
         Objects.requireNonNull(inputs);
         Objects.requireNonNull(original);
         Map<T, StableValue<R>> stableMap = StableValue.ofMap(inputs);
-        return new StableAccess.MemoizedFunction<>(stableMap, original);
+        return StableAccess.ofFunction(stableMap, original);
     }
 
 }

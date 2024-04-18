@@ -116,11 +116,11 @@ final class BasicStableEnumMapTest {
         }
     }
 
-    private static List<Set<TestEnum>> sets() {
+    private static List<EnumSet<TestEnum>> sets() {
         return IntStream.range(0, TestEnum.values().length)
                 .mapToObj(i -> Arrays.copyOfRange(TestEnum.values(), 0, i))
                 .map(a -> {
-                    Set<TestEnum> s = EnumSet.noneOf(TestEnum.class);
+                    EnumSet<TestEnum> s = EnumSet.noneOf(TestEnum.class);
                     s.addAll(List.of(a));
                     return s;
                 })

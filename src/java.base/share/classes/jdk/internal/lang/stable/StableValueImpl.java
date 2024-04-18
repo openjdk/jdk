@@ -25,18 +25,11 @@
 
 package jdk.internal.lang.stable;
 
-import jdk.internal.access.JavaUtilCollectionAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.lang.StableValue;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
-import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 import static jdk.internal.lang.stable.StableUtil.*;
@@ -50,8 +43,8 @@ public final class StableValueImpl<V> implements StableValue<V> {
             UNSAFE.objectFieldOffset(StableValueImpl.class, "set");
 
     /**
+     * If non-null, holds a set value
      * If `null`, may be unset or hold a set `null` value
-     * If non-null, holds a set value.
      */
     @Stable
     private V value;

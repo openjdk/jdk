@@ -71,6 +71,9 @@ public record StableValueElement<V>(
             mutex = casMutex();
         }
         synchronized (mutex) {
+            if (isSet()) {
+                return orThrow();
+            }
             setValue(value);
         }
         clearMutex();
@@ -121,6 +124,9 @@ public record StableValueElement<V>(
             mutex = casMutex();
         }
         synchronized (mutex) {
+            if (isSet()) {
+                return orThrow();
+            }
             V newValue = extractor.apply(source);
             setValue(newValue);
         }

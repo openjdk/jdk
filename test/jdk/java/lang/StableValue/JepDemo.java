@@ -110,6 +110,8 @@ final class JepDemo {
         }
     }
 
+    // Option: "Type Escape Analysis"
+
     static
     class Bar3 {
         // 1. Declare a backing stable value
@@ -140,8 +142,24 @@ final class JepDemo {
         }
     }
 
+    // Instance context
+
     // In user-land and if we want constant folding when using
     // the holder statically:
+
+    static
+    class HolderUser {
+
+        private static final LoggerHolder HOLDER = new LoggerHolder();
+
+        public static void main(String[] args) {
+            HOLDER.logger().log(Level.INFO, "Hello Holder");
+        }
+
+    }
+
+    // A field must be trusted recursively on order to be eligible for CF
+    // Trick: Fields in a `record` class are trusted
 
     record LoggerHolder(StableValue<Logger> loggerHolder) {
 
@@ -156,11 +174,13 @@ final class JepDemo {
         }
     }
 
+    // StableValue has special VM treatment!
+
     static
     class LoggerHolder2 {
 
         // 1. Declare an instance field that holds the logger
-        //    This field gets special VM treatment as it is of type StableValue
+        //    This field gets special VM treatment as it is _of type_ StableValue
         //    The field is resistant to updates via reflection and sun.misc.Unsafe
         private final StableValue<Logger> logger = StableValue.of();
 
@@ -171,7 +191,9 @@ final class JepDemo {
         }
     }
 
-    // Lists and arrays
+    // This kind of special VM treatment is a new kid on the block.
+
+    // Stable Lists
 
     static
     class ErrorMessages {
@@ -304,58 +326,98 @@ final class JepDemo {
 
     // Instance fields
 
+    interface Fibonacci {
+        /**
+         * {@return the fibonacci number for the provided sequence number {@code n}}
+         * @param n the (non-negative) sequence number
+         */
+        int fib(int n); // 0, 1, 1, 2, 3, 5, 8, 13, 21, 34, ...
+    }
+
     static
-    class Fibonacci {
+    class FibonacciNaive implements Fibonacci {
 
-        private final IntFunction<Integer> numFunction;
-
-        public Fibonacci(int upperBound) {
-            numFunction = StableValue.ofIntFunction(upperBound, this::number);
-        }
-
-        public int number(int n) {
+        @Override
+        public int fib(int n) {
             return (n < 2)
                     ? n
-                    : numFunction.apply(n - 1) + numFunction.apply(n - 2);
+                    : fib(n - 1) + fib(n - 2);
         }
 
     }
 
-    /* Does not work as we cannot reference "this" before the constructor returns
+    static
+    class Fibonacci1 implements Fibonacci {
 
-    record Fibonacci2(int upperBound,
-                      IntFunction<Integer> numFunction) {
+        private final IntFunction<Integer> fibFunction;
+
+        public Fibonacci1(int upperBound) {
+            fibFunction = StableValue.ofIntFunction(upperBound, this::fib);
+        }
+
+        @Override
+        public int fib(int n) {
+            return (n < 2)
+                    ? n
+                    : fibFunction.apply(n - 1) + fibFunction.apply(n - 2);
+        }
+
+    }
+
+    // No Constant folding if Fibonacci is used in a static context :-(
+    // Let's do the `record` trick again!
+
+/*
+
+    record Fibonacci2(IntFunction<Integer> fibFunction) implements Fibonacci {
 
         public Fibonacci2(int upperBound) {
-            this(upperBound, StableValue.ofIntFunction(upperBound, this::number));
+            this(StableValue.ofIntFunction(upperBound, this::number));
         }
 
-        public int number(int n) {
+        @Override
+        public int fib(int n) {
             return (n < 2)
                     ? n
-                    : numFunction.apply(n - 1) + numFunction.apply(n - 2);
+                    : fibFunction.apply(n - 1) + fibFunction.apply(n - 2);
         }
 
     }
-    */
+*/
 
-    record Fibonacci2(int upperBound,
-                      StableValue<IntFunction<Integer>> numFunction) {
 
-        public Fibonacci2(int upperBound) {
-            this(upperBound, StableValue.of());
-            numFunction.setOrThrow(this::number);
+    // Does not work as we cannot reference "this" before the constructor returns.
+    // IF ONLY WE HAD "greater flexibility as to the timing of initialization" ;-)
+
+
+
+
+
+    record Fibonacci3(StableValue<IntFunction<Integer>> fibFunction) implements Fibonacci {
+
+        public Fibonacci3(int upperBound) {
+            this(StableValue.of());
+            fibFunction.setOrThrow(
+                    StableValue.ofIntFunction(upperBound, this::fib));
         }
 
-        public int number(int n) {
+        @Override
+        public int fib(int n) {
             return (n < 2)
                     ? n
-                    : numFunction.orThrow().apply(n - 1) +
-                      numFunction.orThrow().apply(n - 2);
+                    : fibFunction.orThrow().apply(n - 1) +
+                      fibFunction.orThrow().apply(n - 2);
         }
 
     }
 
+    // Option: Make StableIntFunction, StableList, StableMap a part of the type system
+    //         and grant special VM treatment for these too.
+    // Pro:    Some static helper functions (SV::computeIfUnset) can be moved to these types
+    // Con:    StableList<StableValue<T>> list =
+
+
+    // Stable Maps
 
     static
     class MapDemo {
@@ -372,8 +434,14 @@ final class JepDemo {
         }
     }
 
+    // It might be possible to provide:
+    // Map<K, StableValue<V>> map = StableValue.ofMap(capacity);
+    // But it would not be immutable and would be non-trivial to design.
+    // Even this is theoretically possible:
+    // Map<K, StableValue<V>> map = StableValue.ofMap(initialCapacity);
+
     static
-    class SetDemo {
+    class LoggableDemo {
 
         static final Map<String, StableValue<Boolean>> INFO_LOGGABLE =
                 StableValue.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
@@ -393,6 +461,9 @@ final class JepDemo {
         }
 
     }
+
+    // For stable Enum Maps, see BasicStableEnumMapTest
+    // Emerging property: faster and more dense as it is using a simple backing array
 
     static
     class Memo {
@@ -418,7 +489,6 @@ final class JepDemo {
 
         }
 
-
         static
         class Memoized2 {
 
@@ -439,13 +509,21 @@ final class JepDemo {
         }
     }
 
+    @Test
+    void fib() {
+        Fibonacci fibonacci = new Fibonacci1(20);
+        int[] fibs = IntStream.range(0, 10)
+                .map(fibonacci::fib)
+                .toArray(); // { 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 }
 
+        assertArrayEquals(new int[]{ 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 }, fibs);
+    }
 
     @Test
-    void fibDirect() {
-        Fibonacci fibonacci = new Fibonacci(20);
+    void fib3() {
+        Fibonacci fibonacci = new Fibonacci3(20);
         int[] fibs = IntStream.range(0, 10)
-                .map(fibonacci::number)
+                .map(fibonacci::fib)
                 .toArray(); // { 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 }
 
         assertArrayEquals(new int[]{ 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 }, fibs);
