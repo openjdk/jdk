@@ -717,18 +717,17 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
 
     @Override
     public JavaMethod lookupMethod(int rawIndex, int opcode, ResolvedJavaMethod caller) {
-        int which = rawIndex;
-        final HotSpotResolvedJavaMethod method = compilerToVM().lookupMethodInPool(this, which, (byte) opcode, (HotSpotResolvedJavaMethodImpl) caller);
+        final HotSpotResolvedJavaMethod method = compilerToVM().lookupMethodInPool(this, rawIndex, (byte) opcode, (HotSpotResolvedJavaMethodImpl) caller);
         if (method != null) {
             return method;
         } else {
             // Get the method's name and signature.
-            String name = compilerToVM().lookupNameInPool(this, which, opcode);
-            HotSpotSignature signature = new HotSpotSignature(runtime(), compilerToVM().lookupSignatureInPool(this, which, opcode));
+            String name = compilerToVM().lookupNameInPool(this, rawIndex, opcode);
+            HotSpotSignature signature = new HotSpotSignature(runtime(), compilerToVM().lookupSignatureInPool(this, rawIndex, opcode));
             if (opcode == Bytecodes.INVOKEDYNAMIC) {
                 return new UnresolvedJavaMethod(name, signature, runtime().getMethodHandleClass());
             } else {
-                final int klassIndex = getKlassRefIndexAt(which, opcode);
+                final int klassIndex = getKlassRefIndexAt(rawIndex, opcode);
                 final Object type = compilerToVM().lookupKlassInPool(this, klassIndex);
                 return new UnresolvedJavaMethod(name, signature, getJavaType(type));
             }
