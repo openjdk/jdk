@@ -507,6 +507,7 @@ class SuperWord : public ResourceObj {
 
 #ifndef PRODUCT
   // TraceAutoVectorization and TraceSuperWord
+  // TODO rm?
   bool is_trace_superword_alignment() const {
     // Too verbose for TraceSuperWord
     return _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT);
@@ -532,6 +533,7 @@ class SuperWord : public ResourceObj {
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_INFO);
   }
 
+  // TODO remove?
   bool is_trace_superword_verbose() const {
     // Too verbose for TraceSuperWord
     return _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
@@ -568,6 +570,8 @@ class SuperWord : public ResourceObj {
   Arena* arena()                   { return &_arena; }
 
   int get_vw_bytes_special(MemNode* s);
+
+  // TODO maybe rename?
   const MemNode* align_to_ref() const { return _align_to_ref; }
   void set_align_to_ref(const MemNode* m) { _align_to_ref = m; }
 
@@ -596,13 +600,7 @@ private:
   void find_adjacent_memop_pairs();
   void find_adjacent_memop_pairs_in_group(const GrowableArray<const VPointer*> &vpointers, const int group_start, int group_end);
 
-  // Find the adjacent memory references and create pack pairs for them.
-  void find_adjacent_refs();
-  // Find a memory reference to align the loop induction variable to.
-  MemNode* find_align_to_ref(Node_List &memops, int &idx);
-  // Calculate loop's iv adjustment for this memory ops.
-  int get_iv_adjustment(MemNode* mem);
-
+  // Various methods to check if we can pack two nodes.
   bool can_pack_into_pair(Node* s1, Node* s2);
   // Is s1 immediately before s2 in memory?
   bool are_adjacent_refs(Node* s1, Node* s2) const;
