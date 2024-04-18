@@ -678,6 +678,8 @@ private:
   int pop_v(unsigned int bitset, Register stack);
 #endif // COMPILER2
 
+  // The signed 20-bit upper imm can materialize at most negative 0xF...F80000000, two G.
+  // The following signed 12-bit imm can at max subtract 0x800, two K, from that previously loaded two G.
   bool is_valid_32bit_offset(int64_t x) {
     constexpr int64_t twoG = (2 * G);
     constexpr int64_t twoK = (2 * K);
