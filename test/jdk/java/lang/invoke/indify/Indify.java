@@ -29,6 +29,7 @@ import java.lang.reflect.Modifier;
 import java.util.regex.*;
 
 import static java.lang.classfile.ClassFile.*;
+import static java.lang.constant.DirectMethodHandleDesc.Kind.*;
 
 /**
  * Transform one or more class files to incorporate JSR 292 features,
@@ -388,7 +389,7 @@ public class Indify {
                 // Transform references.
                 int blab = 0;
                 for (Instruction i = m.instructions(); i != null; i = i.next()) {
-                    if (i.bc != opc_invokestatic)  continue;
+                    if (i.bc != INVOKESTATIC)  continue;
                     int methi = i.u2At(1);
                     if (poolMarks[methi] == 0)  continue;
                     Short[] ref = pool.getMemberRef((short)methi);
@@ -405,7 +406,7 @@ public class Indify {
                         Instruction i2 = findPop(i);
                         Short[] ref2 = null;
                         short ref2i = 0;
-                        if (i2 != null && i2.bc == opc_invokevirtual &&
+                        if (i2 != null && i2.bc == INVOKEVIRTUAL &&
                                 poolMarks[(char)(ref2i = (short) i2.u2At(1))] == 'D')
                             ref2 = pool.getMemberRef(ref2i);
                         if (ref2 == null || !"invokeExact".equals(pool.getString(ref2[1]))) {
@@ -423,15 +424,15 @@ public class Indify {
                         int start = i.pc + 3, end = i2.pc;
                         System.arraycopy(i.codeBase, start, i.codeBase, i.pc, end-start);
                         i.forceNext(0);  // force revisit of new instruction
-                        i2.u1AtPut(-3, opc_invokedynamic);
+                        i2.u1AtPut(-3, INVOKEDYNAMIC);
                         i2.u2AtPut(-2, con.index);
                         i2.u2AtPut(0, (short)0);
-                        i2.u1AtPut(2, opc_nop);
+                        i2.u1AtPut(2, NOP);
                         //System.out.println(new Instruction(i.codeBase, i2.pc-3));
                     } else {
                         if (!quiet)  System.err.println(i+" "+conm+" => ldc "+con);
                         assert(i.len == 3);
-                        i.u1AtPut(0, opc_ldc_w);
+                        i.u1AtPut(0, LDC_W);
                         i.u2AtPut(1, con.index);
                     }
                 }
@@ -457,10 +458,10 @@ public class Indify {
                     Short[] ref = pool.getMemberRef((short) i.u2At(1));
                     String type = simplifyType(pool.getString((byte) TAG_UTF8, ref[2]));
                     switch (i.bc) {
-                    case opc_getstatic:
-                    case opc_getfield:
-                    case opc_putstatic:
-                    case opc_putfield:
+                    case GETSTATIC:
+                    case GETFIELD:
+                    case PUTSTATIC:
+                    case PUTFIELD:
                         pops = pops.replace("Q", type);
                         break;
                     default:
@@ -637,12 +638,12 @@ public class Indify {
             }
             boolean stackMotion(int bc) {
                 switch (bc) {
-                case opc_pop:    pop();             break;
-                case opc_pop2:   pop(); pop();      break;
-                case opc_swap:   pushAt(-1, pop()); break;
-                case opc_dup:    push(top());       break;
-                case opc_dup_x1: pushAt(-2, top()); break;
-                case opc_dup_x2: pushAt(-3, top()); break;
+                case POP:    pop();             break;
+                case POP2:   pop(); pop();      break;
+                case SWAP:   pushAt(-1, pop()); break;
+                case DUP:    push(top());       break;
+                case DUP_X1: pushAt(-2, top()); break;
+                case DUP_X2: pushAt(-3, top()); break;
                 // ? also: dup2{,_x1,_x2}
                 default:  return false;
                 }
@@ -682,23 +683,23 @@ public class Indify {
                 //System.out.println(jvm.stack+" "+i);
                 int bc = i.bc;
                 switch (bc) {
-                case opc_ldc:           jvm.push(pool.get(i.u1At(1)));   break;
-                case opc_ldc_w:         jvm.push(pool.get(i.u2At(1)));   break;
-                case opc_ldc2_w:        jvm.push2(pool.get(i.u2At(1)));  break;
-                case opc_aconst_null:   jvm.push(null);                  break;
-                case opc_bipush:        jvm.push((int)(byte) i.u1At(1)); break;
-                case opc_sipush:        jvm.push((int)(short)i.u2At(1)); break;
+                case LDC:           jvm.push(pool.get(i.u1At(1)));   break;
+                case LDC_W:         jvm.push(pool.get(i.u2At(1)));   break;
+                case LDC2_W:        jvm.push2(pool.get(i.u2At(1)));  break;
+                case ACONST_NULL:   jvm.push(null);                   break;
+                case BIPUSH:        jvm.push((int)(byte) i.u1At(1)); break;
+                case SIPUSH:        jvm.push((int)(short)i.u2At(1)); break;
 
                 // these support creation of a restarg array
-                case opc_anewarray:
+                case ANEWARRAY:
                     arg = jvm.pop();
                     if (!(arg instanceof Integer))  break decode;
                     arg = Arrays.asList(new Object[(Integer)arg]);
                     jvm.push(arg);
                     break;
-                case opc_dup:
+                case DUP:
                     jvm.push(jvm.top()); break;
-                case opc_aastore:
+                case AASTORE:
                     args = jvm.args(3);  // array, index, value
                     if (args.get(0) instanceof List &&
                         args.get(1) instanceof Integer) {
@@ -709,7 +710,7 @@ public class Indify {
                     args.clear();
                     break;
 
-                case opc_new:
+                case NEW:
                 {
                     String type = pool.getString((byte) TAG_CLASS, (short)i.u2At(1));
                     //System.out.println("new "+type);
@@ -721,7 +722,7 @@ public class Indify {
                     break decode;  // bail out
                 }
 
-                case opc_getstatic:
+                case GETSTATIC:
                 {
                     // int.class compiles to getstatic Integer.TYPE
                     int fieldi = i.u2At(1);
@@ -747,7 +748,7 @@ public class Indify {
                     jvm.push(UNKNOWN_CON);
                     break;
                 }
-                case opc_putstatic:
+                case PUTSTATIC:
                 {
                     if (patternMark != 'I')  break decode;
                     jvm.pop();
@@ -755,11 +756,11 @@ public class Indify {
                     break;
                 }
 
-                case opc_invokestatic:
-                case opc_invokevirtual:
-                case opc_invokespecial:
+                case INVOKESTATIC:
+                case INVOKEVIRTUAL:
+                case INVOKESPECIAL:
                 {
-                    boolean hasRecv = (bc != opc_invokestatic);
+                    boolean hasRecv = (bc != INVOKESTATIC);
                     int methi = i.u2At(1);
                     char mark = poolMarks[methi];
                     Short[] ref = pool.getMemberRef((short)methi);
@@ -778,14 +779,14 @@ public class Indify {
                         //System.out.println("recognized intrinsic "+intrinsic);
                         byte refKind = -1;
                         switch (intrinsic) {
-                        case "findGetter":          refKind = REF_getField;         break;
-                        case "findStaticGetter":    refKind = REF_getStatic;        break;
-                        case "findSetter":          refKind = REF_putField;         break;
-                        case "findStaticSetter":    refKind = REF_putStatic;        break;
-                        case "findVirtual":         refKind = REF_invokeVirtual;    break;
-                        case "findStatic":          refKind = REF_invokeStatic;     break;
-                        case "findSpecial":         refKind = REF_invokeSpecial;    break;
-                        case "findConstructor":     refKind = REF_newInvokeSpecial; break;
+                        case "findGetter":          refKind = (byte) GETTER.refKind;            break;
+                        case "findStaticGetter":    refKind = (byte) STATIC_GETTER.refKind;     break;
+                        case "findSetter":          refKind = (byte) SETTER.refKind;            break;
+                        case "findStaticSetter":    refKind = (byte) STATIC_SETTER.refKind;     break;
+                        case "findVirtual":         refKind = (byte) VIRTUAL.refKind;           break;
+                        case "findStatic":          refKind = (byte) STATIC.refKind;            break;
+                        case "findSpecial":         refKind = (byte) SPECIAL.refKind;           break;
+                        case "findConstructor":     refKind = (byte) CONSTRUCTOR.refKind;       break;
                         }
                         if (refKind >= 0 && (con = parseMemberLookup(refKind, args)) != null) {
                             args.clear(); args.add(con);
@@ -910,7 +911,7 @@ public class Indify {
                     }
                     break decode;  // bail out for most calls
                 }
-                case opc_areturn:
+                case ARETURN:
                 {
                     ++branchCount;
                     if (bsmArgs != null) {
@@ -933,25 +934,25 @@ public class Indify {
                 }
                 default:
                     if (jvm.stackMotion(i.bc))  break;
-                    if (bc >= opc_nconst_MIN && bc <= opc_nconst_MAX)
-                        { jvm.push(INSTRUCTION_CONSTANTS[bc - opc_nconst_MIN]); break; }
+                    if (bc >= ICONST_M1 && bc <= DCONST_1)
+                        { jvm.push(INSTRUCTION_CONSTANTS[bc - ICONST_M1]); break; }
                     if (patternMark == 'I') {
                         // these support caching paths in INDY_x methods
-                        if (bc == opc_aload || bc >= opc_aload_0 && bc <= opc_aload_MAX)
+                        if (bc == ALOAD || bc >= ALOAD_0 && bc <= ALOAD_3)
                             { jvm.push(UNKNOWN_CON); break; }
-                        if (bc == opc_astore || bc >= opc_astore_0 && bc <= opc_astore_MAX)
+                        if (bc == ASTORE || bc >= ASTORE_0 && bc <= ASTORE_3)
                             { jvm.pop(); break; }
                         switch (bc) {
-                        case opc_getfield:
-                        case opc_aaload:
+                        case GETFIELD:
+                        case AALOAD:
                             jvm.push(UNKNOWN_CON); break;
-                        case opc_ifnull:
-                        case opc_ifnonnull:
+                        case IFNULL:
+                        case IFNONNULL:
                             // ignore branch target
                             if (++branchCount != 1)  break decode;
                             jvm.pop();
                             break;
-                        case opc_checkcast:
+                        case CHECKCAST:
                             arg = jvm.top();
                             if ("invokeWithArguments".equals(arg) ||
                                 "invokeGeneric".equals(arg))
@@ -1008,9 +1009,9 @@ public class Indify {
             ntindex = (short) cf.pool.addConstant((byte) TAG_NAMEANDTYPE,
                     new Short[]{ nindex, tindex }).index;
             byte reftag = TAG_METHODREF;
-            if (refKind <= REF_putStatic)
+            if (refKind <= (byte) STATIC_SETTER.refKind)
                 reftag = TAG_FIELDREF;
-            else if (refKind == REF_invokeInterface)
+            else if (refKind == (byte) INTERFACE_VIRTUAL.refKind)
                 reftag = TAG_INTERFACEMETHODREF;
             Constant ref = cf.pool.addConstant(reftag, new Short[]{ cindex, ntindex });
             return cf.pool.addConstant((byte) TAG_METHODHANDLE, new Object[]{ refKind, (short)ref.index });
@@ -1615,63 +1616,6 @@ public class Indify {
         }
     }
 
-    private static final byte
-        REF_getField               = 1,
-        REF_getStatic              = 2,
-        REF_putField               = 3,
-        REF_putStatic              = 4,
-        REF_invokeVirtual          = 5,
-        REF_invokeStatic           = 6,
-        REF_invokeSpecial          = 7,
-        REF_newInvokeSpecial       = 8,
-        REF_invokeInterface        = 9;
-
-    private static final int
-        opc_nop                    = 0,
-        opc_aconst_null            = 1,
-        opc_nconst_MIN             = 2,  // iconst_m1
-        opc_nconst_MAX             = 15, // dconst_1
-        opc_bipush                 = 16,
-        opc_sipush                 = 17,
-        opc_ldc                    = 18,
-        opc_ldc_w                  = 19,
-        opc_ldc2_w                 = 20,
-        opc_aload                  = 25,
-        opc_aload_0                = 42,
-        opc_aload_MAX              = 45,
-        opc_aaload                 = 50,
-        opc_astore                 = 58,
-        opc_astore_0               = 75,
-        opc_astore_MAX             = 78,
-        opc_aastore                = 83,
-        opc_pop                    = 87,
-        opc_pop2                   = 88,
-        opc_dup                    = 89,
-        opc_dup_x1                 = 90,
-        opc_dup_x2                 = 91,
-        opc_dup2                   = 92,
-        opc_dup2_x1                = 93,
-        opc_dup2_x2                = 94,
-        opc_swap                   = 95,
-        opc_tableswitch            = 170,
-        opc_lookupswitch           = 171,
-        opc_areturn                = 176,
-        opc_getstatic              = 178,
-        opc_putstatic              = 179,
-        opc_getfield               = 180,
-        opc_putfield               = 181,
-        opc_invokevirtual          = 182,
-        opc_invokespecial          = 183,
-        opc_invokestatic           = 184,
-        opc_invokeinterface        = 185,
-        opc_invokedynamic          = 186,
-        opc_new                    = 187,
-        opc_anewarray              = 189,
-        opc_checkcast              = 192,
-        opc_ifnull                 = 198,
-        opc_ifnonnull              = 199,
-        opc_wide                   = 196;
-
     private static final Object[] INSTRUCTION_CONSTANTS = {
         -1, 0, 1, 2, 3, 4, 5, 0L, 1L, 0.0F, 1.0F, 2.0F, 0.0D, 1.0D
     };
@@ -1726,10 +1670,10 @@ public class Indify {
     private static final int[] INSTRUCTION_INFO;
     static {
         String[] insns = INSTRUCTION_FORMATS.split(" ");
-        assert(insns[opc_lookupswitch].startsWith("lookupswitch"));
-        assert(insns[opc_tableswitch].startsWith("tableswitch"));
-        assert(insns[opc_wide].startsWith("wide"));
-        assert(insns[opc_invokedynamic].startsWith("invokedynamic"));
+        assert(insns[LOOKUPSWITCH].startsWith("lookupswitch"));
+        assert(insns[TABLESWITCH].startsWith("tableswitch"));
+        assert(insns[WIDE].startsWith("wide"));
+        assert(insns[INVOKEDYNAMIC].startsWith("invokedynamic"));
         int[] info = new int[256];
         String[] names = new String[256];
         String[] pops = new String[256];
@@ -1804,7 +1748,7 @@ public class Indify {
             return init(npc);
         }
         void forceNext(int newLen) {
-            bc = opc_nop;
+            bc = NOP;
             len = newLen;
         }
 
@@ -1823,19 +1767,19 @@ public class Indify {
         private void computeLength() {
             int cases;
             switch (bc) {
-            case opc_wide:
+            case WIDE:
                 bc = codeBase[pc + 1];
                 info = INSTRUCTION_INFO[bc];
                 len = ((info >> 4) & 0x0F);
                 if (len == 0)  throw new RuntimeException("misplaced wide bytecode: "+bc);
                 return;
 
-            case opc_tableswitch:
+            case TABLESWITCH:
                 cases = (u4At(alignedIntOffset(2)) - u4At(alignedIntOffset(1)) + 1);
                 len = alignedIntOffset(3 + cases*1);
                 return;
 
-            case opc_lookupswitch:
+            case LOOKUPSWITCH:
                 cases = u4At(alignedIntOffset(1));
                 len = alignedIntOffset(2 + cases*2);
                 return;
