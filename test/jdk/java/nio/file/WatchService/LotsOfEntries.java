@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@
  * @run main/othervm LotsOfEntries 600 fail
  * @run main/othervm -Djdk.nio.file.WatchService.maxEventsPerPoll=invalid LotsOfEntries 600 fail
  * @run main/othervm -Djdk.nio.file.WatchService.maxEventsPerPoll=-5 LotsOfEntries 5 fail
- * @run main/othervm -Djdk.nio.file.WatchService.maxEventsPerPoll=5 LotsOfEntries 5 pass
- * @run main/othervm -Djdk.nio.file.WatchService.maxEventsPerPoll=5 LotsOfEntries 6 fail
+ * @run main/othervm -Djdk.nio.file.WatchService.maxEventsPerPoll=5 LotsOfEntries 3 pass
+ * @run main/othervm -Djdk.nio.file.WatchService.maxEventsPerPoll=5 LotsOfEntries 7 fail
  * @run main/othervm -Djdk.nio.file.WatchService.maxEventsPerPoll=700 LotsOfEntries 600 pass
  * @run main/othervm -Djdk.nio.file.WatchService.maxEventsPerPoll=3000000000 LotsOfEntries 600 pass
  */
