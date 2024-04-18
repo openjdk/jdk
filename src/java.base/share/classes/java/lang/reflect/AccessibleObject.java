@@ -390,7 +390,7 @@ public class AccessibleObject implements AnnotatedElement {
         throw newInaccessibleObjectException(msg);
     }
 
-    InaccessibleObjectException newInaccessibleObjectException(String msg) {
+    static InaccessibleObjectException newInaccessibleObjectException(String msg) {
         InaccessibleObjectException e = new InaccessibleObjectException(msg);
         if (printStackTraceWhenAccessFails()) {
             e.printStackTrace(System.err);
