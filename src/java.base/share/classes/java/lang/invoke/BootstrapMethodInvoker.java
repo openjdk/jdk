@@ -145,6 +145,10 @@ final class BootstrapMethodInvoker {
                 } else if (isLambdaMetafactoryAltMetafactoryBSM(bsmType)) {
                     maybeReBoxElements(argv);
                     result = (CallSite)bootstrapMethod.invokeExact(caller, name, (MethodType)type, argv);
+                } else if (isObjectMethodsBootstrapBSM(bsmType)) {
+                    MethodHandle[] methodHandles = new MethodHandle[argv.length - 2];
+                    System.arraycopy(argv, 2, methodHandles, 0, argv.length - 2);
+                    result = bootstrapMethod.invokeExact(caller, name, (TypeDescriptor)type, (Class<?>) argv[0], (String) argv[1], methodHandles);
                 } else {
                     maybeReBoxElements(argv);
                     if (type instanceof Class<?> c) {
@@ -188,7 +192,6 @@ final class BootstrapMethodInvoker {
             throw new BootstrapMethodError("bootstrap method initialization exception", ex);
         }
     }
-
 
     /**
      * If resultType is a reference type, do Class::cast on the result through
@@ -247,6 +250,9 @@ final class BootstrapMethodInvoker {
     private static final MethodType LMF_ALT_MT = MethodType.methodType(CallSite.class,
             Lookup.class, String.class, MethodType.class, Object[].class);
 
+    private static final MethodType OBJECT_METHODS_MT = MethodType.methodType(Object.class,
+            Lookup.class, String.class, TypeDescriptor.class, Class.class, String.class, MethodHandle[].class);
+
     private static final MethodType LMF_CONDY_MT = MethodType.methodType(Object.class,
             Lookup.class, String.class, Class.class, MethodType.class, MethodHandle.class, MethodType.class);
 
@@ -287,6 +293,15 @@ final class BootstrapMethodInvoker {
      */
     private static boolean isLambdaMetafactoryAltMetafactoryBSM(MethodType bsmType) {
         return bsmType == LMF_ALT_MT;
+    }
+
+    /**
+     * @return true iff the BSM method type exactly matches
+     *         {@link java.lang.runtime.ObjectMethods#bootstrap(
+     *          MethodHandles.Lookup,String,TypeDescriptor,Class,String,MethodHandle[])}
+     */
+    private static boolean isObjectMethodsBootstrapBSM(MethodType bsmType) {
+        return bsmType == OBJECT_METHODS_MT;
     }
 
     /** The JVM produces java.lang.Integer values to box
