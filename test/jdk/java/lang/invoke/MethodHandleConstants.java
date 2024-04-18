@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 8022066
+ * @enablePreview
  * @summary smoke test for method handle constants
  * @build indify.Indify
  * @compile MethodHandleConstants.java

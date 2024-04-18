@@ -28,6 +28,8 @@ import java.io.*;
 import java.lang.reflect.Modifier;
 import java.util.regex.*;
 
+import static java.lang.classfile.ClassFile.*;
+
 /**
  * Transform one or more class files to incorporate JSR 292 features,
  * such as {@code invokedynamic}.
@@ -41,8 +43,8 @@ import java.util.regex.*;
  * <p>
  * Static private methods named MH_x and MT_x (where x is arbitrary)
  * must be stereotyped generators of MethodHandle and MethodType
- * constants.  All calls to them are transformed to {@code CONSTANT_MethodHandle}
- * and {@code CONSTANT_MethodType} "ldc" instructions.
+ * constants.  All calls to them are transformed to {@code TAG_METHODHANDLE}
+ * and {@code TAG_METHODTYPE} "ldc" instructions.
  * The stereotyped code must create method types by calls to {@code methodType} or
  * {@code fromMethodDescriptorString}.  The "lookup" argument must be created
  * by calls to {@code java.lang.invoke.MethodHandles#lookup MethodHandles.lookup}.
@@ -397,7 +399,7 @@ public class Indify {
                     if (blab++ == 0 && !quiet)
                         System.err.println("patching "+cf.nameString()+"."+m);
                     //if (blab == 1) { for (Instruction j = m.instructions(); j != null; j = j.next()) System.out.println("  |"+j); }
-                    if (con.tag == CONSTANT_InvokeDynamic) {
+                    if (con.tag == TAG_INVOKEDYNAMIC) {
                         // need to patch the following instruction too,
                         // but there are usually intervening argument pushes too
                         Instruction i2 = findPop(i);
@@ -453,7 +455,7 @@ public class Indify {
                 if (jvm.stackMotion(i.bc))  continue decode;
                 if (pops.indexOf('Q') >= 0) {
                     Short[] ref = pool.getMemberRef((short) i.u2At(1));
-                    String type = simplifyType(pool.getString(CONSTANT_Utf8, ref[2]));
+                    String type = simplifyType(pool.getString((byte) TAG_UTF8, ref[2]));
                     switch (i.bc) {
                     case opc_getstatic:
                     case opc_getfield:
@@ -543,19 +545,19 @@ public class Indify {
                     char mark = poolMarks[cpindex];
                     if (mark != 0)  continue;
                     switch (e.tag) {
-                    case CONSTANT_Utf8:
+                    case TAG_UTF8:
                         mark = nameMark(e.itemString()); break;
-                    case CONSTANT_NameAndType:
+                    case TAG_NAMEANDTYPE:
                         mark = nameAndTypeMark(e.itemIndexes()); break;
-                    case CONSTANT_Class: {
+                    case TAG_CLASS: {
                         int n1 = e.itemIndex();
                         char nmark = poolMarks[(char)n1];
                         if ("DJ".indexOf(nmark) >= 0)
                             mark = nmark;
                         break;
                     }
-                    case CONSTANT_Field:
-                    case CONSTANT_Method: {
+                    case TAG_FIELDREF:
+                    case TAG_METHODREF: {
                         Short[] n12 = e.itemIndexes();
                         short cl = n12[0];
                         short nt = n12[1];
@@ -564,7 +566,7 @@ public class Indify {
                             mark = cmark;  // it is a java.lang.invoke.* or java.lang.* method
                             break;
                         }
-                        String cls = cf.pool.getString(CONSTANT_Class, cl);
+                        String cls = cf.pool.getString((byte) TAG_CLASS, cl);
                         if (cls.equals(cf.nameString())) {
                             switch (poolMarks[(char)nt]) {
                             // it is a private MH/MT/INDY method
@@ -602,7 +604,7 @@ public class Indify {
         char nameAndTypeMark(short n1, short n2) {
             char mark = poolMarks[(char)n1];
             if (mark == 0)  return 0;
-            String descr = cf.pool.getString(CONSTANT_Utf8, n2);
+            String descr = cf.pool.getString((byte) TAG_UTF8, n2);
             String requiredType;
             switch (poolMarks[(char)n1]) {
             case 'H': requiredType = "()Ljava/lang/invoke/MethodHandle;";  break;
@@ -652,8 +654,8 @@ public class Indify {
             for (;;) {
                 int i = args.indexOf(EMPTY_SLOT);
                 if (i >= 0 && i+1 < args.size()
-                    && (isConstant(args.get(i+1), CONSTANT_Long) ||
-                        isConstant(args.get(i+1), CONSTANT_Double)))
+                    && (isConstant(args.get(i+1), TAG_LONG) ||
+                        isConstant(args.get(i+1), TAG_DOUBLE)))
                     args.remove(i);
                 else  break;
             }
@@ -663,9 +665,9 @@ public class Indify {
             if (verbose)  System.err.println("scan "+m+" for pattern="+patternMark);
             int wantTag;
             switch (patternMark) {
-            case 'T': wantTag = CONSTANT_MethodType; break;
-            case 'H': wantTag = CONSTANT_MethodHandle; break;
-            case 'I': wantTag = CONSTANT_InvokeDynamic; break;
+            case 'T': wantTag = TAG_METHODTYPE; break;
+            case 'H': wantTag = TAG_METHODHANDLE; break;
+            case 'I': wantTag = TAG_INVOKEDYNAMIC; break;
             default: throw new InternalError();
             }
             Instruction i = m.instructions();
@@ -709,7 +711,7 @@ public class Indify {
 
                 case opc_new:
                 {
-                    String type = pool.getString(CONSTANT_Class, (short)i.u2At(1));
+                    String type = pool.getString((byte) TAG_CLASS, (short)i.u2At(1));
                     //System.out.println("new "+type);
                     switch (type) {
                     case "java/lang/StringBuilder":
@@ -727,9 +729,9 @@ public class Indify {
                     //System.err.println("getstatic "+fieldi+Arrays.asList(pool.getStrings(pool.getMemberRef((short)fieldi)))+mark);
                     if (mark == 'J') {
                         Short[] ref = pool.getMemberRef((short) fieldi);
-                        String name = pool.getString(CONSTANT_Utf8, ref[1]);
+                        String name = pool.getString((byte) TAG_UTF8, ref[1]);
                         if ("TYPE".equals(name)) {
-                            String wrapperName = pool.getString(CONSTANT_Class, ref[0]).replace('/', '.');
+                            String wrapperName = pool.getString((byte) TAG_CLASS, ref[0]).replace('/', '.');
                             // a primitive type descriptor
                             Class<?> primClass;
                             try {
@@ -761,15 +763,15 @@ public class Indify {
                     int methi = i.u2At(1);
                     char mark = poolMarks[methi];
                     Short[] ref = pool.getMemberRef((short)methi);
-                    String type = pool.getString(CONSTANT_Utf8, ref[2]);
-                    //System.out.println("invoke "+pool.getString(CONSTANT_Utf8, ref[1])+" "+Arrays.asList(ref)+" : "+type);
+                    String type = pool.getString((byte) TAG_UTF8, ref[2]);
+                    //System.out.println("invoke "+pool.getString(TAG_UTF8, ref[1])+" "+Arrays.asList(ref)+" : "+type);
                     args = jvm.args(hasRecv, type);
                     String intrinsic = null;
                     Constant con;
                     if (mark == 'D' || mark == 'J') {
-                        intrinsic = pool.getString(CONSTANT_Utf8, ref[1]);
+                        intrinsic = pool.getString((byte) TAG_UTF8, ref[1]);
                         if (mark == 'J') {
-                            String cls = pool.getString(CONSTANT_Class, ref[0]);
+                            String cls = pool.getString((byte) TAG_CLASS, ref[0]);
                             cls = cls.substring(1+cls.lastIndexOf('/'));
                             intrinsic = cls+"."+intrinsic;
                         }
@@ -828,7 +830,7 @@ public class Indify {
                                 }
                             } else if (typeArg instanceof Constant) {
                                 Constant argCon = (Constant) typeArg;
-                                if (argCon.tag == CONSTANT_Class) {
+                                if (argCon.tag == TAG_CLASS) {
                                     String cn = pool.get(argCon.itemIndex()).itemString();
                                     if (cn.endsWith(";"))
                                         buf.append(cn);
@@ -879,8 +881,8 @@ public class Indify {
                         removeEmptyJVMSlots(args);
                         if (args.size() == 1) {
                             arg = args.remove(0);
-                            assert(3456 == (CONSTANT_Integer*1000 + CONSTANT_Float*100 + CONSTANT_Long*10 + CONSTANT_Double));
-                            if (isConstant(arg, CONSTANT_Integer + "IFLD".indexOf(intrinsic.charAt(0)))
+                            assert(3456 == (TAG_INTEGER*1000 + TAG_FLOAT*100 + TAG_LONG*10 + TAG_DOUBLE));
+                            if (isConstant(arg, TAG_INTEGER + "IFLD".indexOf(intrinsic.charAt(0)))
                                 || arg instanceof Number) {
                                 args.add(arg); continue;
                             }
@@ -982,11 +984,11 @@ public class Indify {
         private Constant makeMethodTypeCon(Object x) {
             short utfIndex;
             if (x instanceof String)
-                utfIndex = (short) cf.pool.addConstant(CONSTANT_Utf8, x).index;
-            else if (isConstant(x, CONSTANT_String))
+                utfIndex = (short) cf.pool.addConstant((byte) TAG_UTF8, x).index;
+            else if (isConstant(x, TAG_STRING))
                 utfIndex = ((Constant)x).itemIndex();
             else  return null;
-            return cf.pool.addConstant(CONSTANT_MethodType, utfIndex);
+            return cf.pool.addConstant((byte) TAG_METHODTYPE, utfIndex);
         }
         private Constant parseMemberLookup(byte refKind, List<Object> args) {
             // E.g.: lookup().findStatic(Foo.class, "name", MethodType)
@@ -995,23 +997,23 @@ public class Indify {
             if (!"lookup".equals(args.get(argi++)))  return null;
             short refindex, cindex, ntindex, nindex, tindex;
             Object con;
-            if (!isConstant(con = args.get(argi++), CONSTANT_Class))  return null;
+            if (!isConstant(con = args.get(argi++), TAG_CLASS))  return null;
             cindex = (short)((Constant)con).index;
-            if (!isConstant(con = args.get(argi++), CONSTANT_String))  return null;
+            if (!isConstant(con = args.get(argi++), TAG_STRING))  return null;
             nindex = ((Constant)con).itemIndex();
-            if (isConstant(con = args.get(argi++), CONSTANT_MethodType) ||
-                isConstant(con, CONSTANT_Class)) {
+            if (isConstant(con = args.get(argi++), TAG_METHODTYPE) ||
+                isConstant(con, TAG_CLASS)) {
                 tindex = ((Constant)con).itemIndex();
             } else return null;
-            ntindex = (short) cf.pool.addConstant(CONSTANT_NameAndType,
+            ntindex = (short) cf.pool.addConstant((byte) TAG_NAMEANDTYPE,
                     new Short[]{ nindex, tindex }).index;
-            byte reftag = CONSTANT_Method;
+            byte reftag = TAG_METHODREF;
             if (refKind <= REF_putStatic)
-                reftag = CONSTANT_Field;
+                reftag = TAG_FIELDREF;
             else if (refKind == REF_invokeInterface)
-                reftag = CONSTANT_InterfaceMethod;
+                reftag = TAG_INTERFACEMETHODREF;
             Constant ref = cf.pool.addConstant(reftag, new Short[]{ cindex, ntindex });
-            return cf.pool.addConstant(CONSTANT_MethodHandle, new Object[]{ refKind, (short)ref.index });
+            return cf.pool.addConstant((byte) TAG_METHODHANDLE, new Object[]{ refKind, (short)ref.index });
         }
         private Constant makeInvokeDynamicCon(List<Object> args) {
             // E.g.: MH_bsm.invokeGeneric(lookup(), "name", MethodType, "extraArg")
@@ -1020,14 +1022,14 @@ public class Indify {
             int argi = 0;
             short nindex, tindex, ntindex, bsmindex;
             Object con;
-            if (!isConstant(con = args.get(argi++), CONSTANT_MethodHandle))  return null;
+            if (!isConstant(con = args.get(argi++), TAG_METHODHANDLE))  return null;
             bsmindex = (short) ((Constant)con).index;
             if (!"lookup".equals(args.get(argi++)))  return null;
-            if (!isConstant(con = args.get(argi++), CONSTANT_String))  return null;
+            if (!isConstant(con = args.get(argi++), TAG_STRING))  return null;
             nindex = ((Constant)con).itemIndex();
-            if (!isConstant(con = args.get(argi++), CONSTANT_MethodType))  return null;
+            if (!isConstant(con = args.get(argi++), TAG_METHODTYPE))  return null;
             tindex = ((Constant)con).itemIndex();
-            ntindex = (short) cf.pool.addConstant(CONSTANT_NameAndType,
+            ntindex = (short) cf.pool.addConstant((byte) TAG_NAMEANDTYPE,
                                                   new Short[]{ nindex, tindex }).index;
             List<Object> extraArgs = new ArrayList<Object>();
             if (argi < args.size()) {
@@ -1046,10 +1048,10 @@ public class Indify {
             for (Object x : extraArgs) {
                 if (x instanceof Number) {
                     Object num = null; byte numTag = 0;
-                    if (x instanceof Integer) { num = x; numTag = CONSTANT_Integer; }
-                    if (x instanceof Float)   { num = Float.floatToRawIntBits((Float)x); numTag = CONSTANT_Float; }
-                    if (x instanceof Long)    { num = x; numTag = CONSTANT_Long; }
-                    if (x instanceof Double)  { num = Double.doubleToRawLongBits((Double)x); numTag = CONSTANT_Double; }
+                    if (x instanceof Integer) { num = x; numTag = TAG_INTEGER; }
+                    if (x instanceof Float)   { num = Float.floatToRawIntBits((Float)x); numTag = TAG_FLOAT; }
+                    if (x instanceof Long)    { num = x; numTag = TAG_LONG; }
+                    if (x instanceof Double)  { num = Double.doubleToRawLongBits((Double)x); numTag = TAG_DOUBLE; }
                     if (num != null)  x = cf.pool.addConstant(numTag, x);
                 }
                 if (!(x instanceof Constant)) {
@@ -1073,7 +1075,7 @@ public class Indify {
                 specs.add(spec);
                 if (verbose)  System.err.println("adding BSM specifier: "+spec[0]+spec[1]);
             }
-            return cf.pool.addConstant(CONSTANT_InvokeDynamic,
+            return cf.pool.addConstant((byte) TAG_INVOKEDYNAMIC,
                         new Short[]{ (short)specindex, ntindex });
         }
 
@@ -1289,8 +1291,8 @@ public class Indify {
         public int hashCode() { return (tag * 31) + this.itemAsComparable().hashCode(); }
         public Object itemAsComparable() {
             switch (tag) {
-            case CONSTANT_Double:   return Double.longBitsToDouble((Long)item);
-            case CONSTANT_Float:    return Float.intBitsToFloat((Integer)item);
+            case TAG_DOUBLE:   return Double.longBitsToDouble((Long)item);
+            case TAG_FLOAT:    return Float.intBitsToFloat((Integer)item);
             }
             return (item instanceof Object[] ? Arrays.asList((Object[])item) : item);
         }
@@ -1327,7 +1329,7 @@ public class Indify {
             int idx = indexOf(con);
             if (idx >= 0)  return get(idx);
             add(con);
-            if (tag == CONSTANT_Utf8)  strings.put((String)item, (short) con.index);
+            if (tag == TAG_UTF8)  strings.put((String)item, (short) con.index);
             return con;
         }
         private void readConstant(DataInputStream in) throws IOException {
@@ -1335,34 +1337,34 @@ public class Indify {
             int index = size();
             Object arg;
             switch (tag) {
-            case CONSTANT_Utf8:
+            case TAG_UTF8:
                 arg = in.readUTF();
                 strings.put((String) arg, (short) size());
                 break;
-            case CONSTANT_Integer:
-            case CONSTANT_Float:
+            case TAG_INTEGER:
+            case TAG_FLOAT:
                 arg = in.readInt(); break;
-            case CONSTANT_Long:
-            case CONSTANT_Double:
+            case TAG_LONG:
+            case TAG_DOUBLE:
                 add(new Constant<>(index, tag, in.readLong()));
                 add(null);
                 return;
-            case CONSTANT_Class:
-            case CONSTANT_String:
+            case TAG_CLASS:
+            case TAG_STRING:
                 arg = in.readShort(); break;
-            case CONSTANT_Field:
-            case CONSTANT_Method:
-            case CONSTANT_InterfaceMethod:
-            case CONSTANT_NameAndType:
-            case CONSTANT_InvokeDynamic:
+            case TAG_FIELDREF:
+            case TAG_METHODREF:
+            case TAG_INTERFACEMETHODREF:
+            case TAG_NAMEANDTYPE:
+            case TAG_INVOKEDYNAMIC:
                 // read an ordered pair
                 arg = new Short[] { in.readShort(), in.readShort() };
                 break;
-            case CONSTANT_MethodHandle:
+            case TAG_METHODHANDLE:
                 // read an ordered pair; first part is a u1 (not u2)
                 arg = new Object[] { in.readByte(), in.readShort() };
                 break;
-            case CONSTANT_MethodType:
+            case TAG_METHODTYPE:
                 arg = in.readShort(); break;
             default:
                 throw new InternalError("bad CP tag "+tag);
@@ -1382,7 +1384,7 @@ public class Indify {
         String getString(short index) {
             Object v = get(index).item;
             if (v instanceof Short)
-                v = get((Short)v).checkTag(CONSTANT_Utf8).item;
+                v = get((Short)v).checkTag((byte) TAG_UTF8).item;
             return (String) v;
         }
         String[] getStrings(Short[] indexes) {
@@ -1395,7 +1397,7 @@ public class Indify {
             Short x = strings.get(name);
             if (x != null)  return (char)(int) x;
             if (!createIfNotFound)  return 0;
-            return addConstant(CONSTANT_Utf8, name).index;
+            return addConstant((byte) TAG_UTF8, name).index;
         }
         Short[] getMemberRef(short index) {
             Short[] cls_nnt = get(index).itemIndexes();
@@ -1466,7 +1468,7 @@ public class Indify {
         public List<Attr> attrs() { return attrs; }
 
         // derived stuff:
-        public String nameString() { return pool.getString(CONSTANT_Class, thisc); }
+        public String nameString() { return pool.getString((byte) TAG_CLASS, thisc); }
         int Code_index;
     }
 
@@ -1491,8 +1493,8 @@ public class Indify {
         public List<Attr> inners() { return attrs; }
         public List<Attr> attrs() { return attrs; }
         public ClassFile outer() { return (ClassFile) outer; }
-        public String nameString() { return outer().pool.getString(CONSTANT_Utf8, name); }
-        public String typeString() { return outer().pool.getString(CONSTANT_Utf8, type); }
+        public String nameString() { return outer().pool.getString((byte) TAG_UTF8, name); }
+        public String typeString() { return outer().pool.getString((byte) TAG_UTF8, type); }
         public String toString() {
             if (outer == null)  return super.toString();
             return nameString() + (this instanceof Method ? "" : ":")
@@ -1614,21 +1616,21 @@ public class Indify {
     }
 
     // lots of constants
-    private static final byte
-        CONSTANT_Utf8              = 1,
-        CONSTANT_Integer           = 3,
-        CONSTANT_Float             = 4,
-        CONSTANT_Long              = 5,
-        CONSTANT_Double            = 6,
-        CONSTANT_Class             = 7,
-        CONSTANT_String            = 8,
-        CONSTANT_Field             = 9,
-        CONSTANT_Method            = 10,
-        CONSTANT_InterfaceMethod   = 11,
-        CONSTANT_NameAndType       = 12,
-        CONSTANT_MethodHandle      = 15,  // JSR 292
-        CONSTANT_MethodType        = 16,  // JSR 292
-        CONSTANT_InvokeDynamic     = 18;  // JSR 292
+//    private static final byte
+//        CONSTANT_Utf8              = 1,
+//        CONSTANT_Integer           = 3,
+//        CONSTANT_Float             = 4,
+//        CONSTANT_Long              = 5,
+//        CONSTANT_Double            = 6,
+//        CONSTANT_Class             = 7,
+//        CONSTANT_String            = 8,
+//        CONSTANT_Field             = 9,
+//        CONSTANT_Method            = 10,
+//        CONSTANT_InterfaceMethod   = 11,
+//        CONSTANT_NameAndType       = 12,
+//        CONSTANT_MethodHandle      = 15,  // JSR 292
+//        CONSTANT_MethodType        = 16,  // JSR 292
+//        CONSTANT_InvokeDynamic     = 18;  // JSR 292
     private static final byte
         REF_getField               = 1,
         REF_getStatic              = 2,

@@ -24,7 +24,9 @@
 /**
  * @test
  * @summary smoke tests for CallSite
+ * @enablePreview
  * @library /test/lib
+ *
  *
  * @build indify.Indify
  * @compile CallSiteTest.java

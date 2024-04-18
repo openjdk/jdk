@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 7050328 8007035
+ * @enablePreview
  * @summary smoke test for invokedynamic instructions
  * @build indify.Indify
  * @compile InvokeDynamicPrintArgs.java
