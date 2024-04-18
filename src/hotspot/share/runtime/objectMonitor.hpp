@@ -355,7 +355,7 @@ private:
   void      UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* current_node);
 
 
-  enum class TryLockResult { CasFailed = -1, HasOwner = 0, Success = 1};
+  enum class TryLockResult { Interference = -1, HasOwner = 0, Success = 1 };
 
   TryLockResult  TryLock(JavaThread* current);
 

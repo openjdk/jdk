@@ -533,7 +533,7 @@ ObjectMonitor::TryLockResult ObjectMonitor::TryLock(JavaThread* current) {
   // Interference -- the CAS failed.
   // We can either return -1 or retry.
   // Retry doesn't make as much sense because the lock was just acquired.
-  return TryLockResult::CasFailed;
+  return TryLockResult::Interference;
 }
 
 // Deflate the specified ObjectMonitor if not in-use. Returns true if it
@@ -1883,7 +1883,7 @@ bool ObjectMonitor::short_fixed_spin(JavaThread* current, int spin_count, bool a
         _SpinDuration = adjust_up(_SpinDuration);
       }
       return true;
-    } else if (status == TryLockResult::CasFailed) {
+    } else if (status == TryLockResult::Interference) {
       break;
     }
     SpinPause();
