@@ -160,6 +160,73 @@ public class TestAuthor extends JavadocTester {
                     <dl class="notes">
                     <dt>Author:</dt>
                     <dd>J. Duke</dd>""");
+    }
 
+    @Test
+    public void testAuthorDefault_Multiple(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                /**
+                 * Class C.
+                 * @author J. Duke
+                 * @author A. N. Other
+                 */
+                 public class C {
+                     /** Class Nested, with no explicit at-author. */
+                     public class Nested { }
+                 }""");
+        javadoc("-d", base.resolve("api").toString(),
+                "-author",
+                "-sourcepath", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("p/C.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Author:</dt>
+                    <dd>J. Duke, A. N. Other</dd>""");
+
+        checkOutput("p/C.Nested.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Author:</dt>
+                    <dd>J. Duke, A. N. Other</dd>""");
+    }
+
+    @Test
+    public void testAuthorDefault_Nested(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                /**
+                 * Class C.
+                 * @author J. Duke
+                 * @author A. N. Other
+                 */
+                 public class C {
+                     public class Nested1 {
+                         /** Class Nested, with no explicit at-author. */
+                         public class Nested { }
+                     }
+                 }""");
+        javadoc("-d", base.resolve("api").toString(),
+                "-author",
+                "-sourcepath", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("p/C.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Author:</dt>
+                    <dd>J. Duke, A. N. Other</dd>""");
+
+        checkOutput("p/C.Nested1.Nested.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Author:</dt>
+                    <dd>J. Duke, A. N. Other</dd>""");
     }
 }

@@ -112,4 +112,38 @@ public class TestSinceTag extends JavadocTester {
                     <dd>99</dd>""");
 
     }
+
+    @Test
+    public void testSinceDefault_Nested(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                /**
+                 * Class C.
+                 * @since 99
+                 */
+                 public class C {
+                     public class Nested1 {
+                         /** Class Nested, with no explicit at-since. */
+                         public class Nested { }
+                     }
+                 }""");
+        javadoc("-d", base.resolve("api").toString(),
+                "-sourcepath", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("p/C.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Since:</dt>
+                    <dd>99</dd>""");
+
+        checkOutput("p/C.Nested1.Nested.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Since:</dt>
+                    <dd>99</dd>""");
+
+    }
 }
