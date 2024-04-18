@@ -402,7 +402,7 @@ public class Parser implements GraphParser {
                     blockConnections.clear();
                 } else {
                     // Blocks and their nodes defined: add other nodes to an
-                    //  artificial "no block" block
+                    // artificial "no block" block
                     InputBlock noBlock = null;
                     for (InputNode n : graph.getNodes()) {
                         if (graph.getBlock(n) == null) {
