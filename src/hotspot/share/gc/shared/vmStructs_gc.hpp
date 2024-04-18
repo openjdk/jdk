@@ -40,8 +40,6 @@
 #include "gc/parallel/vmStructs_parallelgc.hpp"
 #endif
 #if INCLUDE_SERIALGC
-#include "gc/serial/defNewGeneration.hpp"
-#include "gc/serial/generation.hpp"
 #include "gc/serial/vmStructs_serial.hpp"
 #endif
 #if INCLUDE_SHENANDOAHGC
