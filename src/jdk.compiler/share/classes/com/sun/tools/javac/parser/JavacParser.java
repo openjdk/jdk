@@ -666,7 +666,10 @@ public class JavacParser implements Parser {
         }
     }
 
-    /** Ignores any recent documentation comments found by the scanner. */
+    /**
+     * Ignores any recent documentation comments found by the scanner,
+     * such as those that cannot be associated with a nearby declaration.
+     */
     private void ignoreDanglingComments() {
         S.getDocComments().clear();
     }
@@ -2807,6 +2810,7 @@ public class JavacParser implements Parser {
         List<JCExpression> args = arguments();
         JCClassDecl body = null;
         if (token.kind == LBRACE) {
+            ignoreDanglingComments(); // ignore any comments from before the '{'
             int pos = token.pos;
             List<JCTree> defs = classInterfaceOrRecordBody(names.empty, false, false);
             JCModifiers mods = F.at(Position.NOPOS).Modifiers(0);
@@ -2859,6 +2863,7 @@ public class JavacParser implements Parser {
      */
     JCBlock block(int pos, long flags) {
         accept(LBRACE);
+        ignoreDanglingComments();   // ignore any comments from before the '{'
         List<JCStatement> stats = blockStatements();
         JCBlock t = F.at(pos).Block(flags, stats);
         while (token.kind == CASE || token.kind == DEFAULT) {
@@ -2890,7 +2895,7 @@ public class JavacParser implements Parser {
         ListBuffer<JCStatement> stats = new ListBuffer<>();
         while (true) {
             List<JCStatement> stat = blockStatement();
-            ignoreDanglingComments();
+            ignoreDanglingComments();  // ignore comments not consumed by the statement
             if (stat.isEmpty()) {
                 return stats.toList();
             } else {
@@ -3105,6 +3110,7 @@ public class JavacParser implements Parser {
      *     | ";"
      */
     public JCStatement parseSimpleStatement() {
+        ignoreDanglingComments(); // ignore comments before statement
         int pos = token.pos;
         switch (token.kind) {
         case LBRACE:
@@ -4783,6 +4789,7 @@ public class JavacParser implements Parser {
                 } else if (isRecord && (mods.flags & Flags.STATIC) == 0) {
                     log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.InstanceInitializerNotAllowedInRecords);
                 }
+                ignoreDanglingComments();   // no declaration with which dangling comments can be associated
                 return List.of(block(pos, mods.flags));
             } else {
                 return constructorOrMethodOrFieldDeclaration(mods, className, isInterface, isRecord, dc);
