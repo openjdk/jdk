@@ -135,6 +135,8 @@ public sealed interface StableValue<V>
      * regardless if invoked by several threads. Also, the provided {@code supplier}
      * will only be invoked once even if invoked from several threads.
      *
+     * // Todo: Should we wrap supplier exceptions into a specific exception type?
+     *
      * @param supplier to be used for computing a value
      * @return the current (pre-existing or computed) value
      */

@@ -148,7 +148,7 @@ final class JepDemo {
     // the holder statically:
 
     static
-    class HolderUser {
+    class HolderImplementedByUser {
 
         private static final LoggerHolder HOLDER = new LoggerHolder();
 
@@ -383,8 +383,8 @@ final class JepDemo {
         }
 
     }
-
 */
+
 
     // Does not work as we cannot reference "this" before the constructor returns.
     // IF ONLY WE HAD "greater flexibility as to the timing of initialization" ;-)
@@ -438,10 +438,10 @@ final class JepDemo {
 
 
     // It might be possible to provide:
-    //     Map<K, StableValue<V>> map = StableValue.ofMap(capacity);
+    //     Map<K, StableValue<V>> map = StableValue.ofMap(capacity); // Fixed capacity
     // But it would not be immutable and would be non-trivial to design.
     // Even this is theoretically possible:
-    //     Map<K, StableValue<V>> map = StableValue.ofMap(initialCapacity);
+    //     Map<K, StableValue<V>> map = StableValue.ofMap(initialCapacity); // Variable capacity
 
     static
     class LoggableDemo {

@@ -12,6 +12,7 @@ import static jdk.internal.lang.stable.StableUtil.*;
 // Records are ~10% faster than @ValueBased in JDK 23
 public record StableValueElement<V>(
         V[] elements,
+        // Todo: Rename this variable
         byte[] sets,
         Object[] mutexes,
         int index
@@ -143,6 +144,9 @@ public record StableValueElement<V>(
         if (value != null) {
             casValue(value);
         }
+        // This prevents `this.element[index]` to be seen
+        // before `this.sets[index]` is seen
+        freeze();
         // Crucially, indicate a value is set _after_ it has actually been set.
         casSet();
     }

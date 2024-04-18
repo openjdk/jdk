@@ -44,15 +44,16 @@ public final class StableValueImpl<V> implements StableValue<V> {
 
     /**
      * If non-null, holds a set value
-     * If `null`, may be unset or hold a set `null` value
+     * If `null`  , may be unset or hold a set `null` value
      */
     @Stable
     private V value;
 
     /**
-     * If NOT_SET, a value is not set
-     * If SET, a value is set (value may be the default value (e.g. `null` or 0))
+     * If StableUtil.NOT_SET, a value is not set
+     * If StableUtil.SET    , a value is set (value may be the default value (e.g. `null` or 0))
      */
+    // Todo: Rename this variable
     @Stable
     private byte set;
 
@@ -164,6 +165,8 @@ public final class StableValueImpl<V> implements StableValue<V> {
         if (value != null) {
             casValue(value);
         }
+        // This prevents `this.value` to be seen before `this.set` is seen
+        freeze();
         // Crucially, indicate a value is set _after_ it has actually been set.
         casSet();
     }
