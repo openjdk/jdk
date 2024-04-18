@@ -1075,28 +1075,32 @@ public class Gen extends JCTree.Visitor {
 
     public void visitBlock(JCBlock tree) {
         if (tree.patternMatchingCatch != null) {
-            Set<JCMethodInvocation> prevInvocationsWithPatternMatchingCatch = invocationsWithPatternMatchingCatch;
-            ListBuffer<int[]> prevRanges = patternMatchingInvocationRanges;
-            State startState = code.state.dup();
-            try {
-                invocationsWithPatternMatchingCatch = tree.patternMatchingCatch.calls2Handle();
-                patternMatchingInvocationRanges = new ListBuffer<>();
-                doVisitBlock(tree);
-            } finally {
-                Chain skipCatch = code.branch(goto_);
-                JCCatch handler = tree.patternMatchingCatch.handler();
-                code.entryPoint(startState, handler.param.sym.type);
-                genPatternMatchingCatch(handler, env, patternMatchingInvocationRanges.toList());
-                code.resolve(skipCatch);
-                invocationsWithPatternMatchingCatch = prevInvocationsWithPatternMatchingCatch;
-                patternMatchingInvocationRanges = prevRanges;
-            }
+            visitBlockWithPatterns(tree);
         } else {
-            doVisitBlock(tree);
+            internalVisitBlock(tree);
         }
     }
 
-    private void doVisitBlock(JCBlock tree) {
+    private void visitBlockWithPatterns(JCBlock tree) {
+        Set<JCMethodInvocation> prevInvocationsWithPatternMatchingCatch = invocationsWithPatternMatchingCatch;
+        ListBuffer<int[]> prevRanges = patternMatchingInvocationRanges;
+        State startState = code.state.dup();
+        try {
+            invocationsWithPatternMatchingCatch = tree.patternMatchingCatch.calls2Handle();
+            patternMatchingInvocationRanges = new ListBuffer<>();
+            internalVisitBlock(tree);
+        } finally {
+            Chain skipCatch = code.branch(goto_);
+            JCCatch handler = tree.patternMatchingCatch.handler();
+            code.entryPoint(startState, handler.param.sym.type);
+            genPatternMatchingCatch(handler, env, patternMatchingInvocationRanges.toList());
+            code.resolve(skipCatch);
+            invocationsWithPatternMatchingCatch = prevInvocationsWithPatternMatchingCatch;
+            patternMatchingInvocationRanges = prevRanges;
+        }
+    }
+
+    private void internalVisitBlock(JCBlock tree) {
         int limit = code.nextreg;
         Env<GenContext> localEnv = env.dup(tree, new GenContext());
         genStats(tree.stats, localEnv);
