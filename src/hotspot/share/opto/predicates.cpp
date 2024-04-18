@@ -323,7 +323,7 @@ Opaque4Node* TemplateAssertionPredicateExpression::clone(const TransformStrategy
   auto is_opaque_loop_node = [](const Node* node) {
     return node->is_Opaque1();
   };
-  DataNodesOnPathsToTargets data_nodes_on_path_to_targets(TemplateAssertionPredicateExpressionNode::valid_opcode,
+  DataNodesOnPathsToTargets data_nodes_on_path_to_targets(TemplateAssertionPredicateExpressionNode::is_maybe_in_expression,
                                                           is_opaque_loop_node);
   const Unique_Node_List& collected_nodes = data_nodes_on_path_to_targets.collect(_opaque4_node);
   DataNodeGraph data_node_graph(collected_nodes, phase);
@@ -334,8 +334,8 @@ Opaque4Node* TemplateAssertionPredicateExpression::clone(const TransformStrategy
 }
 
 // Check if this node belongs a Template Assertion Predicate Expression (including OpaqueLoop* nodes).
-bool TemplateAssertionPredicateExpressionNode::find_opaque_loop_nodes(Node* node) {
-  if (valid_opcode(node)) {
+bool TemplateAssertionPredicateExpressionNode::is_in_expression(Node* node) {
+  if (is_maybe_in_expression(node)) {
     ResourceMark rm;
     Unique_Node_List list;
     list.push(node);
@@ -343,7 +343,7 @@ bool TemplateAssertionPredicateExpressionNode::find_opaque_loop_nodes(Node* node
       Node* next = list.at(i);
       if (next->is_OpaqueLoopInit() || next->is_OpaqueLoopStride()) {
         return true;
-      } else if (valid_opcode(next)) {
+      } else if (is_maybe_in_expression(next)) {
         push_non_null_inputs(list, next);
       }
     }

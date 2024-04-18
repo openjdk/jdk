@@ -415,7 +415,7 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
 // we completely clone the entire Template Assertion Predicate Expression "down". This ensures that we have an
 // untouched copy that is still recognized by the Template Assertion Predicate matching code.
 void PhaseIdealLoop::clone_template_assertion_predicate_expression_down(Node* node) {
-  if (!TemplateAssertionPredicateExpressionNode::is_valid(node)) {
+  if (!TemplateAssertionPredicateExpressionNode::is_in_expression(node)) {
     return;
   }
 

@@ -1437,7 +1437,7 @@ void PhaseIdealLoop::count_opaque_loop_nodes(Node* n, uint& init, uint& stride) 
   wq.push(n);
   for (uint i = 0; i < wq.size(); i++) {
     Node* n = wq.at(i);
-    if (TemplateAssertionPredicateExpressionNode::valid_opcode(n)) {
+    if (TemplateAssertionPredicateExpressionNode::is_maybe_in_expression(n)) {
       if (n->is_OpaqueLoopInit()) {
         init++;
       } else if (n->is_OpaqueLoopStride()) {

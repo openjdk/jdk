@@ -299,25 +299,22 @@ class TemplateAssertionPredicateExpressionNode : public StackObj {
 
  public:
   explicit TemplateAssertionPredicateExpressionNode(Node* node) : _node(node) {
-    assert(is_valid(node), "must be valid");
+    assert(is_in_expression(node), "must be valid");
   }
   NONCOPYABLE(TemplateAssertionPredicateExpressionNode);
 
  private:
-  static bool find_opaque_loop_nodes(Node* node);
   static void push_non_null_inputs(Unique_Node_List& list, const Node* node);
   static bool is_template_assertion_predicate(Node* node);
   static void push_outputs(Unique_Node_List& list, const Node* node);
 
  public:
   // Check whether the provided node is part of a Template Assertion Predicate Expression or not.
-  static bool is_valid(Node* node) {
-    return find_opaque_loop_nodes(node);
-  }
+  static bool is_in_expression(Node* node);
 
   // Check if the opcode of node could be found in a Template Assertion Predicate Expression.
   // This also provides a fast check whether a node is unrelated.
-  static bool valid_opcode(const Node* node) {
+  static bool is_maybe_in_expression(const Node* node) {
     const int opcode = node->Opcode();
     return (node->is_OpaqueLoopInit() ||
             node->is_OpaqueLoopStride() ||
@@ -340,8 +337,8 @@ class TemplateAssertionPredicateExpressionNode : public StackObj {
 
   // Apply the given function to all Template Assertion Predicates (if any) to which this Template Assertion Predicate
   // Expression Node belongs to.
-  template <class ApplyToTemplateFunction>
-  void for_each_template_assertion_predicate(ApplyToTemplateFunction apply_to_template_function) {
+  template <class Callback>
+  void for_each_template_assertion_predicate(Callback callback) {
     ResourceMark rm;
     Unique_Node_List list;
     list.push(_node);
@@ -349,13 +346,19 @@ class TemplateAssertionPredicateExpressionNode : public StackObj {
     for (uint i = 0; i < list.size(); i++) {
       Node* next = list.at(i);
       if (is_template_assertion_predicate(next)) {
-        apply_to_template_function(next->as_If());
+        callback(next->as_If());
         DEBUG_ONLY(template_counter++;)
       } else {
         assert(!next->is_CFG(), "no CFG expected in Template Assertion Predicate Expression");
         push_outputs(list, next);
       }
     }
+
+    // Each node inside a Template Assertion Predicate Expression is in between a Template Assertion Predicate and
+    // its OpaqueLoop* nodes (or an OpaqueLoop* node itself). The OpaqueLoop* nodes do not common up. Therefore, each
+    // Template Assertion Predicate Expression node belongs to a single expression - except for OpaqueLoopInitNodes.
+    // An OpaqueLoopInitNode is shared between the init and last value Template Assertion Predicate at creation.
+    // Later, when cloning the expressions, they are no longer shared.
     assert(template_counter <= 2, "a node cannot be part of more than two templates");
     assert(template_counter <= 1 || _node->is_OpaqueLoopInit(), "only OpaqueLoopInit nodes can be part of two templates");
   }
