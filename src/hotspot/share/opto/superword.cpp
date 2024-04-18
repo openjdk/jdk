@@ -674,6 +674,8 @@ bool SuperWord::can_pack_into_pair(Node* s1, Node* s2) {
   BasicType bt2 = velt_basic_type(s2);
   if(!is_java_primitive(bt1) || !is_java_primitive(bt2))
     return false;
+
+  // TODO consider just checking input and output types have vectors?
   BasicType longer_bt = longer_type_for_conversion(s1);
   if (Matcher::max_vector_size_auto_vectorization(bt1) < 2 ||
       (longer_bt != T_ILLEGAL && Matcher::max_vector_size_auto_vectorization(longer_bt) < 2)) {
@@ -1601,6 +1603,11 @@ uint SuperWord::max_implemented_size(const Node_List* pack) {
   }
 }
 
+// Java API for Long.bitCount/numberOfLeadingZeros/numberOfTrailingZeros
+// returns int type, but Vector API for them returns long type. To unify
+// the implementation in backend, superword splits the vector implementation
+// for Java API into an execution node with long type plus another node
+// converting long to int.
 bool SuperWord::requires_long_to_int_conversion(int opc) {
   switch(opc) {
     case Op_PopCountL:
@@ -2772,21 +2779,21 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
     return true;
   }
 
+  if (!is_velt_basic_type_compatible_use_def(use, u_idx)) {
+    return false;
+  }
+
   if (VectorNode::is_muladds2i(use)) {
     // MulAddS2I takes shorts and produces ints.
     if (u_pk->size() * 2 != d_pk->size()) {
       return false;
     }
-    // TODO: verify: input size must be smaller, factor 2
-    // TODO improve description above
     return true;
   }
 
   if (u_pk->size() != d_pk->size()) {
     return false;
   }
-
-  // TODO verify type size matches use-def
 
   for (uint i = 0; i < u_pk->size(); i++) {
     Node* ui = u_pk->at(i);
@@ -2796,6 +2803,38 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
     }
   }
   return true;
+}
+
+bool SuperWord::is_velt_basic_type_compatible_use_def(Node* use, int idx) const {
+  Node* def = use->in(idx);
+  assert(in_bb(def) && in_bb(use), "both use and def are in loop");
+
+  // Conversions are trivially compatible.
+  if (VectorNode::is_convert_opcode(use->Opcode())) {
+    return true;
+  }
+
+  BasicType use_bt = velt_basic_type(use);
+  BasicType def_bt = velt_basic_type(def);
+
+  assert(is_java_primitive(use_bt), "sanity %s", type2name(use_bt));
+  assert(is_java_primitive(def_bt), "sanity %s", type2name(def_bt));
+
+  // Nodes like Long.bitCount: expect long input, and int output.
+  if (requires_long_to_int_conversion(use->Opcode())) {
+    // TODO tests with other conversions / reinterpretations around
+    return type2aelembytes(def_bt) == 8 &&
+           type2aelembytes(use_bt) == 4;
+  }
+
+  // MulAddS2I: expect short input, and int output.
+  if (VectorNode::is_muladds2i(use)) {
+    // TODO test reinterpret output
+    return type2aelembytes(def_bt) == 2 &&
+           type2aelembytes(use_bt) == 4;
+  }
+
+  return type2aelembytes(use_bt) == type2aelembytes(def_bt);
 }
 
 // Return nullptr if success, else failure message

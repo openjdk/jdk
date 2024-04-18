@@ -546,10 +546,9 @@ class SuperWord : public ResourceObj {
   // should we align vector memory references on this platform?
   bool vectors_should_be_aligned() { return !Matcher::misaligned_vectors_ok() || AlignVector; }
 
-  // is pack good for converting into one vector node replacing bunches of Cmp, Bool, CMov nodes.
-  static bool requires_long_to_int_conversion(int opc);
   // For pack p, are all idx operands the same?
   bool same_inputs(const Node_List* p, int idx) const;
+
   // CloneMap utilities
   bool same_origin_idx(Node* a, Node* b) const;
   bool same_generation(Node* a, Node* b) const;
@@ -625,8 +624,19 @@ private:
   // Is use->in(u_idx) a vector use?
   bool is_vector_use(Node* use, int u_idx) const;
 
+
+
+  // TODO the whole type conversion stuff, input/output types maybe?
+
   // Return the longer type for vectorizable type-conversion node or illegal type for other nodes.
   BasicType longer_type_for_conversion(Node* n) const;
+
+  // TODO desc, or place somewhere better
+  static bool requires_long_to_int_conversion(int opc);
+
+  // TODO place?
+  bool is_velt_basic_type_compatible_use_def(Node* use, int idx) const;
+
 
   static LoadNode::ControlDependency control_dependency(Node_List* p);
 
