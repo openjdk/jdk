@@ -508,7 +508,7 @@ void os::Posix::print_rlimit_info(outputStream* st) {
 
 #if defined(AIX)
   st->print(", NPROC ");
-  st->print("%d", sysconf(_SC_CHILD_MAX));
+  st->print("%ld", sysconf(_SC_CHILD_MAX));
 
   print_rlimit(st, ", THREADS", RLIMIT_THREADS);
 #else

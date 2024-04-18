@@ -43,7 +43,6 @@
 ContiguousSpace::ContiguousSpace():
   _bottom(nullptr),
   _end(nullptr),
-  _next_compaction_space(nullptr),
   _top(nullptr) {
   _mangler = new GenSpaceMangler(this);
 }
@@ -64,7 +63,6 @@ void ContiguousSpace::initialize(MemRegion mr,
   if (clear_space) {
     clear(mangle_space);
   }
-  _next_compaction_space = nullptr;
 }
 
 void ContiguousSpace::clear(bool mangle_space) {
