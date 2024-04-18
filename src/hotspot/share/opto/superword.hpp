@@ -396,10 +396,12 @@ class SuperWord : public ResourceObj {
   Arena _arena;
 
   CloneMap&            _clone_map;       // map of nodes created in cloning
-  MemNode const* _align_to_ref;          // Memory reference that pre-loop will align to
 
   PairSet _pairset;
   PackSet _packset;
+
+  // Memory reference for which we align the main-loop, by adjusting the pre-loop limit.
+  MemNode const* _mem_ref_for_main_loop_alignment;
 
  public:
   SuperWord(const VLoopAnalyzer &vloop_analyzer);
@@ -553,10 +555,6 @@ class SuperWord : public ResourceObj {
 
   // Accessors
   Arena* arena()                   { return &_arena; }
-
-  // TODO maybe rename?
-  const MemNode* align_to_ref() const { return _align_to_ref; }
-  void set_align_to_ref(const MemNode* m) { _align_to_ref = m; }
 
   // should we align vector memory references on this platform?
   bool vectors_should_be_aligned() { return !Matcher::misaligned_vectors_ok() || AlignVector; }

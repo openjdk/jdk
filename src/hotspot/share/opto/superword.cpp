@@ -43,12 +43,12 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
   _vloop(vloop_analyzer.vloop()),
   _arena(mtCompiler),
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
-  _align_to_ref(nullptr),                                   // memory reference to align vectors to
   _pairset(&_arena, _vloop_analyzer),
   _packset(&_arena, _vloop_analyzer
            NOT_PRODUCT(COMMA is_trace_superword_packset())
            NOT_PRODUCT(COMMA is_trace_superword_rejections())
            ),
+  _mem_ref_for_main_loop_alignment(nullptr),
   _do_vector_loop(phase()->C->do_vector_loop()),            // whether to do vectorization/simd style
   _num_work_vecs(0),                                        // amount of vector work we have
   _num_reductions(0)                                        // amount of reduction work we have
@@ -1502,7 +1502,7 @@ void SuperWord::filter_packs_for_alignment() {
   if (current->is_constrained()) {
     // Solution is constrained (not trivial)
     // -> must change pre-limit to achieve alignment
-    set_align_to_ref(current->as_constrained()->mem_ref());
+    _mem_ref_for_main_loop_alignment = current->as_constrained()->mem_ref();
   }
 }
 
@@ -3113,12 +3113,29 @@ LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
 }                                       \
 
 // Ensure that the main loop vectors are aligned by adjusting the pre loop limit. We memory-align
-// the address of "align_to_ref" to the maximal possible vector width. We adjust the pre-loop
-// iteration count by adjusting the pre-loop limit.
+// the address of "mem_ref_for_main_loop_alignment" to the maximal possible vector width. We adjust
+// the pre-loop iteration count by adjusting the pre-loop limit.
 void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
-  // TODO find if not yet set
-  const MemNode* align_to_ref = _align_to_ref;
-  assert(align_to_ref != nullptr, "align_to_ref must be set");
+  MemNode const* align_to_ref = _mem_ref_for_main_loop_alignment;
+
+  // If the reference is not already determined via AlignVector and AlignmentSolution, then we must
+  // pick a reference now. We take the first reference of the pack with the largest vector width.
+  if (align_to_ref == nullptr) {
+    int max_vw = 0;
+    for (int i = 0; i < _packset.length(); i++) {
+      Node_List* pack = _packset.at(i);
+      MemNode* first = pack->at(0)->isa_Mem();
+      if (first == nullptr) { continue; }
+
+      int vw = data_size(first) * pack->size();
+      if (vw > max_vw) {
+        max_vw = vw;
+        align_to_ref = first;
+      }
+    }
+  }
+
+  assert(align_to_ref != nullptr, "must have align_to_ref");
   assert(cl()->is_main_loop(), "can only do alignment for main loop");
 
   // The opaque node for the limit, where we adjust the input
