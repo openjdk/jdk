@@ -344,29 +344,13 @@ bool TemplateAssertionPredicateExpressionNode::is_in_expression(Node* node) {
       if (next->is_OpaqueLoopInit() || next->is_OpaqueLoopStride()) {
         return true;
       } else if (is_maybe_in_expression(next)) {
-        push_non_null_inputs(list, next);
+        list.push_non_null_cfg_inputs_of(next);
       }
     }
   }
   return false;
 }
 
-void TemplateAssertionPredicateExpressionNode::push_non_null_inputs(Unique_Node_List& list, const Node* node) {
-  for (uint i = 1; i < node->req(); i++) {
-    Node* input = node->in(i);
-    if (input != nullptr) {
-      list.push(input);
-    }
-  }
-}
-
 bool TemplateAssertionPredicateExpressionNode::is_template_assertion_predicate(Node* node) {
   return node->is_If() && node->in(1)->is_Opaque4();
-}
-
-void TemplateAssertionPredicateExpressionNode::push_outputs(Unique_Node_List& list, const Node* node) {
-  for (DUIterator_Fast imax, i = node->fast_outs(imax); i < imax; i++) {
-    Node* out = node->fast_out(i);
-    list.push(out);
-  }
 }

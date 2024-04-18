@@ -304,9 +304,7 @@ class TemplateAssertionPredicateExpressionNode : public StackObj {
   NONCOPYABLE(TemplateAssertionPredicateExpressionNode);
 
  private:
-  static void push_non_null_inputs(Unique_Node_List& list, const Node* node);
   static bool is_template_assertion_predicate(Node* node);
-  static void push_outputs(Unique_Node_List& list, const Node* node);
 
  public:
   // Check whether the provided node is part of a Template Assertion Predicate Expression or not.
@@ -350,7 +348,7 @@ class TemplateAssertionPredicateExpressionNode : public StackObj {
         DEBUG_ONLY(template_counter++;)
       } else {
         assert(!next->is_CFG(), "no CFG expected in Template Assertion Predicate Expression");
-        push_outputs(list, next);
+        list.push_outputs_of(next);
       }
     }
 

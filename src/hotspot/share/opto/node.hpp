@@ -1637,7 +1637,25 @@ public:
   }
   void insert( uint i, Node *n ) { Node_Array::insert(i,n); _cnt++; }
   void remove( uint i ) { Node_Array::remove(i); _cnt--; }
-  void push( Node *b ) { map(_cnt++,b); }
+
+  void push(Node* n) { map(_cnt++, n); }
+
+  void push_non_null_cfg_inputs_of(const Node* node) {
+    for (uint i = 1; i < node->req(); i++) {
+      Node* input = node->in(i);
+      if (input != nullptr) {
+        push(input);
+      }
+    }
+  }
+
+  void push_outputs_of(const Node* node) {
+    for (DUIterator_Fast imax, i = node->fast_outs(imax); i < imax; i++) {
+      Node* output = node->fast_out(i);
+      push(output);
+    }
+  }
+
   void yank( Node *n );         // Find and remove
   Node *pop() { return _nodes[--_cnt]; }
   void clear() { _cnt = 0; Node_Array::clear(); } // retain storage
