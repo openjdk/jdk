@@ -45,6 +45,7 @@ import jdk.jfr.events.FileWriteEvent;
 import jdk.jfr.events.InitialSecurityPropertyEvent;
 
 import jdk.jfr.events.SocketReadEvent;
+import jdk.jfr.events.SocketWriteEvent;
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
@@ -60,7 +61,7 @@ public final class JDKEvents {
         FileReadEvent.class,
         FileWriteEvent.class,
         SocketReadEvent.class,
-        SocketReadEvent.class,
+        SocketWriteEvent.class,
         ActiveSettingEvent.class,
         ActiveRecordingEvent.class,
         // jdk.internal.event.* classes need their mirror
