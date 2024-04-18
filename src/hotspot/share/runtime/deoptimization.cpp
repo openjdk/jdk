@@ -446,7 +446,7 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
     const bool previous_bc_not_monitorenter = bci == 0 ? !chunk->first()->method()->is_synchronized()
                                                        : chunk->first()->method()->code_at(bci - 1) != Bytecodes::_monitorenter;
     const bool is_synchronized_entry = chunk->first()->method()->is_synchronized() &&
-                                      chunk->first()->raw_bci() == SynchronizationEntryBCI;
+                                       chunk->first()->raw_bci() == SynchronizationEntryBCI;
     // If deoptimizing from monitorenter bytecode we may be in a transitional state. Skip verification.
     // When reexecuting the current bc, the previous monitorenter bc may not have finished yet.
     if (!is_synchronized_entry && bc != Bytecodes::Code::_monitorenter &&
