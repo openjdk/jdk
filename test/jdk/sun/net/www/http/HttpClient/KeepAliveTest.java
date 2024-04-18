@@ -940,12 +940,11 @@ public class KeepAliveTest {
             }
         }
 
-        Field keepAliveField = Class.forName("sun.net.www.http.HttpClient").getDeclaredField("kac");
+        Field keepAliveField = sun.net.www.http.HttpClient.class.getDeclaredField("kac");
         keepAliveField.setAccessible(true);
         keepAliveCache = (KeepAliveCache) keepAliveField.get(null);
         System.out.println("KeepAliveCache: " + keepAliveCache);
-        Class<?> keepAliveKeyClass = Class.forName("sun.net.www.http.KeepAliveKey");
-        keepAliveKeyClassconstructor = keepAliveKeyClass.getDeclaredConstructors()[0];
+        keepAliveKeyClassconstructor = Class.forName("sun.net.www.http.KeepAliveKey").getDeclaredConstructors()[0];
         keepAliveKeyClassconstructor.setAccessible(true);
 
         Logger logger = Logger.getLogger("sun.net.www.protocol.http.HttpURLConnection");
