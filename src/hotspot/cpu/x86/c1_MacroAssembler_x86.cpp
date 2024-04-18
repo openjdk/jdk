@@ -301,11 +301,11 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
 
   // clear rest of allocated space
   if (zero_array) {
-      const Register len_zero = len;
-      // Align-up to word boundary, because we clear the 4 bytes potentially
-      // following the length field in initialize_header().
-      int base_offset = align_up(base_offset_in_bytes, BytesPerWord);
-      initialize_body(obj, arr_size, base_offset, len_zero);
+    const Register len_zero = len;
+    // Align-up to word boundary, because we clear the 4 bytes potentially
+    // following the length field in initialize_header().
+    int base_offset = align_up(base_offset_in_bytes, BytesPerWord);
+    initialize_body(obj, arr_size, base_offset, len_zero);
   }
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
