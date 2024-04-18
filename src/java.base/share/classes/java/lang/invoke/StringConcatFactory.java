@@ -37,6 +37,7 @@ import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.TypeKind;
 import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.AccessFlag;
@@ -1059,17 +1060,17 @@ public final class StringConcatFactory {
      */
     private static final class SimpleStringBuilderStrategy {
         static final String METHOD_NAME = "concat";
-        static final ClassDesc STRING_BUILDER = ClassDesc.of("java.lang.StringBuilder");
+        static final ClassDesc STRING_BUILDER = ClassDesc.ofDescriptor("Ljava/lang/StringBuilder;");
         static final ClassFileDumper DUMPER;
-        static final MethodTypeDesc APPEND_BOOLEAN_TYPE = MethodTypeDesc.ofDescriptor("(Z)Ljava/lang/StringBuilder;");
-        static final MethodTypeDesc APPEND_CHAR_TYPE = MethodTypeDesc.ofDescriptor("(C)Ljava/lang/StringBuilder;");
-        static final MethodTypeDesc APPEND_DOUBLE_TYPE = MethodTypeDesc.ofDescriptor("(D)Ljava/lang/StringBuilder;");
-        static final MethodTypeDesc APPEND_FLOAT_TYPE = MethodTypeDesc.ofDescriptor("(F)Ljava/lang/StringBuilder;");
-        static final MethodTypeDesc APPEND_INT_TYPE = MethodTypeDesc.ofDescriptor("(I)Ljava/lang/StringBuilder;");
-        static final MethodTypeDesc APPEND_LONG_TYPE = MethodTypeDesc.ofDescriptor("(J)Ljava/lang/StringBuilder;");
-        static final MethodTypeDesc APPEND_OBJECT_TYPE = MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;)Ljava/lang/StringBuilder;");
-        static final MethodTypeDesc APPEND_STRING_TYPE = MethodTypeDesc.ofDescriptor("(Ljava/lang/String;)Ljava/lang/StringBuilder;");
-        static final MethodTypeDesc INT_VOID_TYPE = MethodTypeDesc.ofDescriptor("(I)V");
+        static final MethodTypeDesc APPEND_BOOLEAN_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_boolean);
+        static final MethodTypeDesc APPEND_CHAR_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_char);
+        static final MethodTypeDesc APPEND_DOUBLE_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_double);
+        static final MethodTypeDesc APPEND_FLOAT_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_float);
+        static final MethodTypeDesc APPEND_INT_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_int);
+        static final MethodTypeDesc APPEND_LONG_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_long);
+        static final MethodTypeDesc APPEND_OBJECT_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_Object);
+        static final MethodTypeDesc APPEND_STRING_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_String);
+        static final MethodTypeDesc INT_VOID_TYPE = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_int);
 
         /**
          * Ensure a capacity in the initial StringBuilder to accommodate all constants plus this factor times the number
