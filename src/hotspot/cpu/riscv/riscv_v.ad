@@ -78,6 +78,9 @@ source %{
         return UseZvfh;
       case Op_VectorLoadShuffle:
       case Op_VectorRearrange:
+        // vlen >= 4 is required, because min vector size for byte is 4 on riscv,
+        // VectorLoadShuffle is from byte to X, so it requires vlen >= 4.
+        // VectorRearrange depends on VectorLoadShuffle, so it also requires vlen >= 4.
         if (vlen < 4) {
           return false;
         }
