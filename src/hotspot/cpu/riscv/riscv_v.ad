@@ -30,19 +30,19 @@ opclass vmemA(indirect);
 
 source %{
 
-  static void loadStore(C2_MacroAssembler masm, bool is_store,
+  static void loadStore(C2_MacroAssembler* masm, bool is_store,
                         VectorRegister reg, BasicType bt, Register base,
                         uint vector_length, Assembler::VectorMask vm = Assembler::unmasked) {
     Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
-    masm.vsetvli_helper(bt, vector_length);
+    __ vsetvli_helper(bt, vector_length);
 
     if (is_store) {
-      masm.vsex_v(reg, base, sew, vm);
+      __ vsex_v(reg, base, sew, vm);
     } else {
       if (vm == Assembler::v0_t) {
-        masm.vxor_vv(reg, reg, reg);
+        __ vxor_vv(reg, reg, reg);
       }
-      masm.vlex_v(reg, base, sew, vm);
+      __ vlex_v(reg, base, sew, vm);
     }
   }
 
@@ -108,7 +108,7 @@ instruct loadV(vReg dst, vmemA mem) %{
   format %{ "loadV $dst, $mem\t# vector (rvv)" %}
   ins_encode %{
     VectorRegister dst_reg = as_VectorRegister($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), false, dst_reg,
+    loadStore(masm, false, dst_reg,
               Matcher::vector_element_basic_type(this), as_Register($mem$$base), Matcher::vector_length(this));
   %}
   ins_pipe(pipe_slow);
@@ -120,7 +120,7 @@ instruct storeV(vReg src, vmemA mem) %{
   format %{ "storeV $mem, $src\t# vector (rvv)" %}
   ins_encode %{
     VectorRegister src_reg = as_VectorRegister($src$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), true, src_reg,
+    loadStore(masm, true, src_reg,
               Matcher::vector_element_basic_type(this, $src), as_Register($mem$$base), Matcher::vector_length(this, $src));
   %}
   ins_pipe(pipe_slow);
@@ -2986,7 +2986,6 @@ instruct vloadcon(vReg dst, immI0 src) %{
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vid_v(as_VectorRegister($dst$$reg));
     if (is_floating_point_type(bt)) {
-      __ csrwi(CSR_FRM, C2_MacroAssembler::rne);
       __ vfcvt_f_x_v(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
     }
   %}
@@ -3154,7 +3153,7 @@ instruct loadV_masked(vReg dst, vmemA mem, vRegMask_V0 v0) %{
   format %{ "loadV_masked $dst, $mem, $v0" %}
   ins_encode %{
     VectorRegister dst_reg = as_VectorRegister($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), false, dst_reg,
+    loadStore(masm, false, dst_reg,
               Matcher::vector_element_basic_type(this), as_Register($mem$$base),
               Matcher::vector_length(this), Assembler::v0_t);
   %}
@@ -3166,7 +3165,7 @@ instruct storeV_masked(vReg src, vmemA mem, vRegMask_V0 v0) %{
   format %{ "storeV_masked $mem, $src, $v0" %}
   ins_encode %{
     VectorRegister src_reg = as_VectorRegister($src$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), true, src_reg,
+    loadStore(masm, true, src_reg,
               Matcher::vector_element_basic_type(this, $src), as_Register($mem$$base),
               Matcher::vector_length(this, $src), Assembler::v0_t);
   %}
@@ -3201,7 +3200,6 @@ instruct vcvtBtoX(vReg dst, vReg src) %{
       __ integer_extend_v(as_VectorRegister($dst$$reg), bt == T_FLOAT ? T_INT : T_LONG,
                           Matcher::vector_length(this), as_VectorRegister($src$$reg), T_BYTE,
                           true /* is_signed */);
-      __ csrwi(CSR_FRM, C2_MacroAssembler::rne);
       __ vfcvt_f_x_v(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
     } else {
       __ integer_extend_v(as_VectorRegister($dst$$reg), bt,
@@ -3267,7 +3265,6 @@ instruct vcvtStoX_fp(vReg dst, vReg src) %{
                         Matcher::vector_length(this), as_VectorRegister($src$$reg), T_SHORT,
                         true /* is_signed */);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ csrwi(CSR_FRM, C2_MacroAssembler::rne);
     __ vfcvt_f_x_v(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
   %}
   ins_pipe(pipe_slow);
@@ -3335,7 +3332,6 @@ instruct vcvtItoF(vReg dst, vReg src) %{
   format %{ "vcvtItoF $dst, $src" %}
   ins_encode %{
     __ vsetvli_helper(T_FLOAT, Matcher::vector_length(this));
-    __ csrwi(CSR_FRM, C2_MacroAssembler::rne);
     __ vfcvt_f_x_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
@@ -3348,7 +3344,6 @@ instruct vcvtItoD(vReg dst, vReg src) %{
   format %{ "vcvtItoD $dst, $src" %}
   ins_encode %{
     __ vsetvli_helper(T_INT, Matcher::vector_length(this), Assembler::mf2);
-    __ csrwi(CSR_FRM, C2_MacroAssembler::rne);
     __ vfwcvt_f_x_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
@@ -3376,7 +3371,6 @@ instruct vcvtLtoF(vReg dst, vReg src) %{
   format %{ "vcvtLtoF $dst, $src" %}
   ins_encode %{
     __ vsetvli_helper(T_FLOAT, Matcher::vector_length(this), Assembler::mf2);
-    __ csrwi(CSR_FRM, C2_MacroAssembler::rne);
     __ vfncvt_f_x_w(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
@@ -3388,7 +3382,6 @@ instruct vcvtLtoD(vReg dst, vReg src) %{
   format %{ "vcvtLtoD $dst, $src" %}
   ins_encode %{
     __ vsetvli_helper(T_DOUBLE, Matcher::vector_length(this));
-    __ csrwi(CSR_FRM, C2_MacroAssembler::rne);
     __ vfcvt_f_x_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
@@ -3446,7 +3439,6 @@ instruct vcvtFtoD(vReg dst, vReg src) %{
   format %{ "vcvtFtoD $dst, $src" %}
   ins_encode %{
     __ vsetvli_helper(T_FLOAT, Matcher::vector_length(this), Assembler::mf2);
-    __ csrwi(CSR_FRM, C2_MacroAssembler::rne);
     __ vfwcvt_f_f_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
@@ -3494,7 +3486,6 @@ instruct vcvtDtoF(vReg dst, vReg src) %{
   format %{ "vcvtDtoF $dst, $src" %}
   ins_encode %{
     __ vsetvli_helper(T_FLOAT, Matcher::vector_length(this), Assembler::mf2);
-    __ csrwi(CSR_FRM, C2_MacroAssembler::rne);
     __ vfncvt_f_f_w(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);

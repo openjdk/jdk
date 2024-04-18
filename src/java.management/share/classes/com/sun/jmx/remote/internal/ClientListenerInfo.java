@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,6 @@ import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
 import javax.management.ObjectName;
 
-import javax.security.auth.Subject;
-
-
 /**
  * <p>An identified listener.  A listener has an Integer id that is
  * unique per connector server.  It selects notifications based on the
@@ -43,14 +40,12 @@ public class ClientListenerInfo {
                               ObjectName name,
                               NotificationListener listener,
                               NotificationFilter filter,
-                              Object handback,
-                              Subject delegationSubject) {
+                              Object handback) {
         this.listenerID = listenerID;
         this.name = name;
         this.listener = listener;
         this.filter = filter;
         this.handback = handback;
-        this.delegationSubject = delegationSubject;
     }
 
     public ObjectName getObjectName() {
@@ -72,11 +67,6 @@ public class ClientListenerInfo {
     public Object getHandback() {
         return handback;
     }
-
-    public Subject getDelegationSubject() {
-        return delegationSubject;
-    }
-
 
     public boolean sameAs(ObjectName name) {
         return (getObjectName().equals(name));
@@ -102,5 +92,4 @@ public class ClientListenerInfo {
 
     private final NotificationListener listener;
     private final Object handback;
-    private final Subject delegationSubject;
 }

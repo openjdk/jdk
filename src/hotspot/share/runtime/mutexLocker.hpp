@@ -32,7 +32,7 @@
 // Mutexes used in the VM.
 
 extern Mutex*   Patching_lock;                   // a lock used to guard code patching of compiled code
-extern Mutex*   CompiledMethod_lock;             // a lock used to guard a compiled method and OSR queues
+extern Mutex*   NMethodState_lock;               // a lock used to guard a compiled method state
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
 extern Mutex*   InvokeMethodTypeTable_lock;
 extern Monitor* InvokeMethodIntrinsicTable_lock;

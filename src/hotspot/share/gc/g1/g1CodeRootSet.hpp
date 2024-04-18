@@ -50,7 +50,7 @@ class G1CodeRootSet {
 
   // Prepare for MT iteration. Must be called before nmethods_do.
   void reset_table_scanner();
-  void nmethods_do(CodeBlobClosure* blk) const;
+  void nmethods_do(NMethodClosure* blk) const;
 
   // Remove all nmethods which no longer contain pointers into our "owner" region.
   void clean(HeapRegion* owner);
