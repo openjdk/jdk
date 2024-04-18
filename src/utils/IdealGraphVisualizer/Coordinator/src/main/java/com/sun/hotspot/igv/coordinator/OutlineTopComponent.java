@@ -323,9 +323,9 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     @Override
     public boolean canClose() {
         SwingUtilities.invokeLater(() -> {
-            this.clearWorkspace();
-            this.open(); // Reopen the OutlineTopComponent
-            this.requestActive();
+            clearWorkspace();
+            open(); // Reopen the OutlineTopComponent
+            requestActive();
         });
         return true;
     }
