@@ -2272,7 +2272,9 @@ void TemplateTable::load_resolved_field_entry(Register obj,
   __ load_unsigned_byte(flags, Address(cache, in_bytes(ResolvedFieldEntry::flags_offset())));
 
   // TOS state
-  __ load_unsigned_byte(tos_state, Address(cache, in_bytes(ResolvedFieldEntry::type_offset())));
+  if (tos_state != noreg) {
+    __ load_unsigned_byte(tos_state, Address(cache, in_bytes(ResolvedFieldEntry::type_offset())));
+  }
 
   // Klass overwrite register
   if (is_static) {
@@ -3037,7 +3039,7 @@ void TemplateTable::fast_storefield(TosState state) {
   // access constant pool cache
   __ load_field_entry(x12, x11);
 
-  // X11: field offset, X12: TOS, X13: flags
+  // X11: field offset, X12: field holder, X13: flags
   load_resolved_field_entry(x12, x12, noreg, x11, x13);
 
   {
