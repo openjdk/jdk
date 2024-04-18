@@ -789,9 +789,12 @@
   develop(bool, StressPrunedExceptionHandlers, false,                       \
           "Always prune exception handlers")                                \
                                                                             \
+  product(bool, InlineSecondarySupersTest, true, DIAGNOSTIC,                \
+          "Inline the secondary supers hash lookup.")                       \
+                                                                            \
   product(bool, UseStoreStoreForCtor, true, DIAGNOSTIC,                     \
-          "Use StoreStore barrier instead of Release barrier at the end of" \
-          "constructors")                                                   \
+          "Use StoreStore barrier instead of Release barrier at the end "   \
+          "of constructors")                                                \
 
 // end of C2_FLAGS
 

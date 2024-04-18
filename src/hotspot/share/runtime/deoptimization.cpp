@@ -108,7 +108,7 @@ bool     DeoptimizationScope::_committing_in_progress = false;
 DeoptimizationScope::DeoptimizationScope() : _required_gen(0) {
   DEBUG_ONLY(_deopted = false;)
 
-  MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
   // If there is nothing to deopt _required_gen is the same as comitted.
   _required_gen = DeoptimizationScope::_committed_deopt_gen;
 }
@@ -118,7 +118,7 @@ DeoptimizationScope::~DeoptimizationScope() {
 }
 
 void DeoptimizationScope::mark(nmethod* nm, bool inc_recompile_counts) {
-  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
 
   // If it's already marked but we still need it to be deopted.
   if (nm->is_marked_for_deoptimization()) {
@@ -139,7 +139,7 @@ void DeoptimizationScope::mark(nmethod* nm, bool inc_recompile_counts) {
 }
 
 void DeoptimizationScope::dependent(nmethod* nm) {
-  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
 
   // A method marked by someone else may have a _required_gen lower than what we marked with.
   // Therefore only store it if it's higher than _required_gen.
@@ -170,7 +170,7 @@ void DeoptimizationScope::deoptimize_marked() {
   bool wait = false;
   while (true) {
     {
-      ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+      ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
 
       // First we check if we or someone else already deopted the gen we want.
       if (DeoptimizationScope::_committed_deopt_gen >= _required_gen) {
@@ -198,7 +198,7 @@ void DeoptimizationScope::deoptimize_marked() {
       Deoptimization::deoptimize_all_marked(); // May safepoint and an additional deopt may have occurred.
       DEBUG_ONLY(_deopted = true;)
       {
-        ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+        ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
 
         // Make sure that committed doesn't go backwards.
         // Should only happen if we did a deopt during a safepoint above.
@@ -301,20 +301,20 @@ static void print_objects(JavaThread* deoptee_thread,
 
   for (int i = 0; i < objects->length(); i++) {
     ObjectValue* sv = (ObjectValue*) objects->at(i);
-    Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
     Handle obj = sv->value();
+
+    if (obj.is_null()) {
+      st.print_cr("     nullptr");
+      continue;
+    }
+
+    Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
 
     st.print("     object <" INTPTR_FORMAT "> of type ", p2i(sv->value()()));
     k->print_value_on(&st);
-    assert(obj.not_null() || realloc_failures, "reallocation was missed");
-    if (obj.is_null()) {
-      st.print(" allocation failed");
-    } else {
-      st.print(" allocated (" SIZE_FORMAT " bytes)", obj->size() * HeapWordSize);
-    }
-    st.cr();
+    st.print_cr(" allocated (" SIZE_FORMAT " bytes)", obj->size() * HeapWordSize);
 
-    if (Verbose && !obj.is_null()) {
+    if (Verbose && k != nullptr) {
       k->oop_print_on(obj(), &st);
     }
   }
@@ -391,6 +391,7 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
 #ifndef PRODUCT
   bool first = true;
 #endif // !PRODUCT
+  DEBUG_ONLY(GrowableArray<oop> lock_order{0};)
   // Start locking from outermost/oldest frame
   for (int i = (chunk->length() - 1); i >= 0; i--) {
     compiledVFrame* cvf = chunk->at(i);
@@ -400,6 +401,13 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
       bool relocked = Deoptimization::relock_objects(thread, monitors, deoptee_thread, deoptee,
                                                      exec_mode, realloc_failures);
       deoptimized_objects = deoptimized_objects || relocked;
+#ifdef ASSERT
+      if (LockingMode == LM_LIGHTWEIGHT && !realloc_failures) {
+        for (MonitorInfo* mi : *monitors) {
+          lock_order.push(mi->owner());
+        }
+      }
+#endif // ASSERT
 #ifndef PRODUCT
       if (PrintDeoptimizationDetails) {
         ResourceMark rm;
@@ -431,6 +439,11 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
 #endif // !PRODUCT
     }
   }
+#ifdef ASSERT
+  if (LockingMode == LM_LIGHTWEIGHT && !realloc_failures) {
+    deoptee_thread->lock_stack().verify_consistent_lock_order(lock_order, exec_mode != Deoptimization::Unpack_none);
+  }
+#endif // ASSERT
 }
 
 // Deoptimize objects, that is reallocate and relock them, just before they escape through JVMTI.
@@ -1642,7 +1655,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
             }
           }
         }
-        if (LockingMode == LM_LIGHTWEIGHT && exec_mode == Unpack_none) {
+        if (LockingMode == LM_LIGHTWEIGHT) {
           // We have lost information about the correct state of the lock stack.
           // Inflate the locks instead. Enter then inflate to avoid races with
           // deflation.

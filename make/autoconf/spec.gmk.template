@@ -555,7 +555,6 @@ SYSROOT := @SYSROOT@
 
 # LDFLAGS used to link the jdk native libraries (C-code)
 LDFLAGS_JDKLIB := @LDFLAGS_JDKLIB@
-JDKLIB_LIBS := @JDKLIB_LIBS@
 
 # LDFLAGS used to link the jdk native launchers (C-code)
 LDFLAGS_JDKEXE := @LDFLAGS_JDKEXE@
@@ -570,9 +569,6 @@ LDFLAGS_CXX_PARTIAL_LINKING := @LDFLAGS_CXX_PARTIAL_LINKING@
 LDCXX := @LDCXX@
 # The flags for linking libstdc++ linker.
 LIBCXX := @LIBCXX@
-
-# Compiler and linker flags used when building native tests
-LDFLAGS_TESTEXE := @LDFLAGS_TESTEXE@
 
 # BUILD_CC/BUILD_LD is a compiler/linker that generates code that is runnable on the
 # build platform.
@@ -629,13 +625,6 @@ SHARED_LIBRARY_FLAGS := @SHARED_LIBRARY_FLAGS@
 SET_SHARED_LIBRARY_ORIGIN = @SET_SHARED_LIBRARY_ORIGIN@
 SET_EXECUTABLE_ORIGIN = @SET_EXECUTABLE_ORIGIN@
 
-# Different OS:es have different ways of naming shared libraries.
-# The SHARED_LIBRARY and STATIC_LIBRARY macros takes "verify" as and argument and returns:
-#    "libverify.so" or "libverify.dylib" or "verify.dll" depending on platform.
-# (Note absence of := assignment, because we do not want to evaluate the macro body here)
-SHARED_LIBRARY = @SHARED_LIBRARY@
-STATIC_LIBRARY = @STATIC_LIBRARY@
-
 LIBRARY_PREFIX := @LIBRARY_PREFIX@
 SHARED_LIBRARY_SUFFIX := @SHARED_LIBRARY_SUFFIX@
 STATIC_LIBRARY_SUFFIX := @STATIC_LIBRARY_SUFFIX@
@@ -680,6 +669,10 @@ BUILD_JAVAC = @FIXPATH@ $(BUILD_JDK)/bin/javac
 BUILD_JAR = @FIXPATH@ $(BUILD_JDK)/bin/jar
 
 DOCS_REFERENCE_JAVADOC := @DOCS_REFERENCE_JAVADOC@
+
+# A file containing a way to uniquely identify the source code revision that
+# the build was created from
+SOURCE_REVISION_TRACKER := $(SUPPORT_OUTPUTDIR)/src-rev/source-revision-tracker
 
 # Interim langtools modules and arguments
 INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.javadoc
