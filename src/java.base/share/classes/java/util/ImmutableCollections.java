@@ -148,11 +148,19 @@ class ImmutableCollections {
                         if (stable.isSet()) {
                             return stable.orThrow();
                         }
-                        // Captures
-                        Supplier<V> supplier = new Supplier<>() {
-                            @Override public V get() {return mapper.apply(index);}
-                        };
-                        return stable.computeIfUnset(supplier);
+                        synchronized (stable) {
+                            if (stable.isSet()) {
+                                return stable.orThrow();
+                            }
+                            // Captures
+                            Supplier<V> supplier = new Supplier<>() {
+                                @Override
+                                public V get() {
+                                    return mapper.apply(index);
+                                }
+                            };
+                            return stable.computeIfUnset(supplier);
+                        }
                     }
                 }
 
@@ -184,11 +192,19 @@ class ImmutableCollections {
                         if (stable.isSet()) {
                             return stable.orThrow();
                         }
-                        // Captures
-                        Supplier<V> supplier = new Supplier<>() {
-                            @Override public V get() {return mapper.apply(key);}
-                        };
-                        return stable.computeIfUnset(supplier);
+                        synchronized (stable) {
+                            if (stable.isSet()) {
+                                return stable.orThrow();
+                            }
+                            // Captures
+                            Supplier<V> supplier = new Supplier<>() {
+                                @Override
+                                public V get() {
+                                    return mapper.apply(key);
+                                }
+                            };
+                            return stable.computeIfUnset(supplier);
+                        }
                     }
                 }
             });

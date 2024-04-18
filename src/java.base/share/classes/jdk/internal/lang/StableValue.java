@@ -267,7 +267,8 @@ public sealed interface StableValue<V>
      * Supplier<V> supplier = () -> mapper.apply(index);
      * return stable.computeIfUnset(supplier);
      *}
-     * Except it might be more resource efficient and performant.
+     * Except it guarantees that the provided mapper is invoked at most once per distinct
+     * index and might be more resource efficient and performant.
      *
      * @param list   from which to get a StableValue
      * @param index  for the StableValue
@@ -305,7 +306,8 @@ public sealed interface StableValue<V>
      * Supplier<V> supplier = () -> mapper.apply(key);
      * return stable.computeIfUnset(supplier);
      *}
-     * Except it might be more resource efficient and performant.
+     * Except it guarantees that the provided mapper is invoked at most once per distinct
+     * key and might be more resource efficient and performant.
      *
      * @param map    from which to get a Stab;eValue
      * @param key    associated with a StableValue
@@ -345,7 +347,7 @@ public sealed interface StableValue<V>
     /**
      * {@return a new <em>memoized</em> {@linkplain IntFunction } backed by an internal
      * stable list of the provided {@code size} where the provided {@code original}
-     * IntFunction will only be invoked at most once per distinct {@code int} value.}
+     * IntFunction will only be invoked at most once per distinct {@code int} value}
      *
      * @param size     the number of elements in the backing list
      * @param original the original IntFunction to convert to a memoized IntFunction

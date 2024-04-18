@@ -174,7 +174,7 @@ final class JepDemo {
         }
     }
 
-    // StableValue has special VM treatment!
+    // StableValue fields has special VM treatment!
 
     static
     class LoggerHolder2 {
@@ -383,8 +383,8 @@ final class JepDemo {
         }
 
     }
-*/
 
+*/
 
     // Does not work as we cannot reference "this" before the constructor returns.
     // IF ONLY WE HAD "greater flexibility as to the timing of initialization" ;-)
@@ -412,8 +412,9 @@ final class JepDemo {
     }
 
     // Option: Make StableIntFunction, StableList, StableMap a part of the type system
-    //         and grant special VM treatment for these too.
-    // Pro:    Some static helper functions (SV::computeIfUnset) can be moved to these types
+    //         and grant special VM treatment for these too, just like StableValue.
+    // Pro:    Some static helper functions (StableValue::computeIfUnset) can be moved
+    //         to these types
     // Con:    StableList<StableValue<T>> list =
 
 
@@ -434,11 +435,13 @@ final class JepDemo {
         }
     }
 
+
+
     // It might be possible to provide:
-    // Map<K, StableValue<V>> map = StableValue.ofMap(capacity);
+    //     Map<K, StableValue<V>> map = StableValue.ofMap(capacity);
     // But it would not be immutable and would be non-trivial to design.
     // Even this is theoretically possible:
-    // Map<K, StableValue<V>> map = StableValue.ofMap(initialCapacity);
+    //     Map<K, StableValue<V>> map = StableValue.ofMap(initialCapacity);
 
     static
     class LoggableDemo {
