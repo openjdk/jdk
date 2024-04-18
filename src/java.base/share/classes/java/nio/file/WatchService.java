@@ -100,13 +100,14 @@ import java.util.concurrent.TimeUnit;
  *
  * @implNote
  * In the reference implementation, the maximum size of the list of events
- * returned by a key's {@link WatchKey#pollEvents() pollEvents} method is
- * controlled by the system property {@code
- * jdk.nio.file.WatchService.maxEventsPerPoll}. If the property is not set or
- * is not an integer, the maximum size will be set to 512. The maximum size is
- * always at least 1. If more events occur than the maximum size, the pending
- * events are cleared and replaced with a single {@link
- * StandardWatchEventKinds#OVERFLOW OVERFLOW} event.
+ * returned by {@link WatchKey#pollEvents() WatchKey.pollEvents} is controlled
+ * by the system property {@code jdk.nio.file.WatchService.maxEventsPerPoll}.
+ * If this property is not set or cannot be parsed as an integer, then the
+ * maximum event list size will be set to 512; if the property is parsed as a
+ * non-positive integer, then the maximum event size will be {@code 1} (unity).
+ * If more events occur than the maximum size of the event list, the pending
+ * events are cleared and replaced with a single
+ * {@link StandardWatchEventKinds#OVERFLOW OVERFLOW} event.
  *
  * @since 1.7
  *
