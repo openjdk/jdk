@@ -1509,7 +1509,6 @@ instanceOop InstanceKlass::register_finalizer(instanceOop i, TRAPS) {
 }
 
 instanceOop InstanceKlass::allocate_instance(TRAPS) {
-  bool has_finalizer_flag = has_finalizer(); // Query before possible GC
   size_t size = size_helper();  // Query before forming handle.
   return (instanceOop)Universe::heap()->obj_allocate(this, size, CHECK_NULL);
 }
