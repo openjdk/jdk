@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,16 +19,18 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-package com.sun.hotspot.igv.data;
 
-public interface FolderElement extends Properties.Provider {
-    ChangedEvent<? extends FolderElement> getDisplayNameChangedEvent();
-    void setName(String name);
-    String getName();
-    String getDisplayName();
-    void setParent(Folder parent);
-    Folder getParent();
-    Properties getProperties();
+import java.util.function.Function;
+
+public class HiddenLambda implements HiddenTest {
+     public void test() {
+         Function<Object, String> f = o -> o.toString();
+         String s = f.apply(this);
+         throw new Error("thrown by " + s);
+     }
+
+     public String toString() {
+         return getClass().getName();
+     }
 }

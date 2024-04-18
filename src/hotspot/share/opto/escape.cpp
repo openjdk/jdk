@@ -697,10 +697,9 @@ Node* ConnectionGraph::specialize_cmp(Node* base, Node* curr_ctrl) {
 //
 Node* ConnectionGraph::specialize_castpp(Node* castpp, Node* base, Node* current_control) {
   Node* control_successor  = current_control->unique_ctrl_out();
-  Node* minus_one          = _igvn->transform(ConINode::make(-1));
   Node* cmp                = _igvn->transform(specialize_cmp(base, castpp->in(0)));
-  Node* boll               = _igvn->transform(new BoolNode(cmp, BoolTest::ne));
-  IfNode* if_ne            = _igvn->transform(new IfNode(current_control, boll, PROB_MIN, COUNT_UNKNOWN))->as_If();
+  Node* bol                = _igvn->transform(new BoolNode(cmp, BoolTest::ne));
+  IfNode* if_ne            = _igvn->transform(new IfNode(current_control, bol, PROB_MIN, COUNT_UNKNOWN))->as_If();
   Node* not_eq_control     = _igvn->transform(new IfTrueNode(if_ne));
   Node* yes_eq_control     = _igvn->transform(new IfFalseNode(if_ne));
   Node* end_region         = _igvn->transform(new RegionNode(3));
@@ -964,8 +963,8 @@ void ConnectionGraph::reduce_phi_on_cmp(Node* cmp) {
       Node* ncmp = _igvn->transform(cmp->clone());
       ncmp->set_req(1, ophi_input);
       ncmp->set_req(2, other);
-      Node* boll = _igvn->transform(new BoolNode(ncmp, mask));
-      res_phi_input = boll->as_Bool()->as_int_value(_igvn);
+      Node* bol = _igvn->transform(new BoolNode(ncmp, mask));
+      res_phi_input = bol->as_Bool()->as_int_value(_igvn);
     }
 
     res_phi->set_req(i, res_phi_input);

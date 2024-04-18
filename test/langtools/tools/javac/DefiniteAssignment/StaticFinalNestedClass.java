@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,15 +20,26 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.hotspot.igv.data.services;
 
-import com.sun.hotspot.igv.data.Group;
-
-/**
- *
- * @author Thomas Wuerthinger
+/*
+ * @test
+ * @bug 8329595
+ * @summary Verify spurious "might not have been initialized" error on static final field
+ * @run main StaticFinalNestedClass
  */
-public interface GroupCallback {
+public class StaticFinalNestedClass {
+    public class Inner {                    // note this inner class is NOT static
+        public static final String NAME;
+        static {
+            try {
+                NAME = "bob";
+            } catch (Exception e) {
+                throw new Error(e);
+            }
+        }
+    }
 
-    public void started(Group g);
+    public static void main(String[] args) {
+        new StaticFinalNestedClass().new Inner();
+    }
 }
