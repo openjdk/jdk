@@ -5168,7 +5168,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Generating accumulation coefficients for further calculations
     __ vid_v(vtemp1);
-    __ li(temp0, 16);
+    __ mv(temp0, 16);
     __ vmv_v_x(vtable, temp0);
     __ vsub_vv(vtable, vtable, vtemp1);
     // vtable now contains { 0x10, 0xf, 0xe, ..., 0x3, 0x2, 0x1 }
