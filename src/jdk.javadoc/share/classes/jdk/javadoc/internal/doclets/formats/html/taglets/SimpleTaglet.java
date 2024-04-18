@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,13 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.NestingKind;
+import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.BlockTagTree;
 import com.sun.source.doctree.DocTree;
@@ -100,6 +103,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * @param tagName   the name of this tag
      * @param header    the header to output
      * @param locations the possible locations that this tag can appear in
+     * @param enabled   whether this tag is enabled
      */
     private SimpleTaglet(HtmlConfiguration config, String tagName, String header, Set<Taglet.Location> locations, boolean enabled) {
         super(config, tagName, false, locations);
@@ -113,11 +117,43 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * @param tagKind   the kind of this tag
      * @param header    the header to output
      * @param locations the possible locations that this tag can appear in
+     * @param enabled   whether this tag is enabled
      */
     protected SimpleTaglet(HtmlConfiguration config, DocTree.Kind tagKind, String header, Set<Taglet.Location> locations, boolean enabled) {
         super(config, tagKind, false, locations);
         this.header = header;
         this.enabled = enabled;
+    }
+
+    /**
+     * Constructs a {@code SimpleTaglet} that will look for tags on enclosing type elements
+     * if there are no relevant tags on a nested (member) type element.
+     *
+     * @param tagKind   the kind of this tag
+     * @param header    the header to output
+     * @param locations the possible locations that this tag can appear in
+     * @param enabled   whether this tag is enabled
+     */
+    static SimpleTaglet createWithDefaultForNested(HtmlConfiguration config, DocTree.Kind tagKind, String header, Set<Taglet.Location> locations, boolean enabled) {
+        return new SimpleTaglet(config, tagKind, header, locations, enabled) {
+            @Override
+            protected List<? extends BlockTagTree> getDefaultBlockTags(Element e, Predicate<? super BlockTagTree> accepts) {
+                while (isNestedType(e)) {
+                    e = e.getEnclosingElement();
+                    var tags = utils.getBlockTags(e, accepts);
+                    if (!tags.isEmpty()) {
+                        return tags;
+                    }
+                }
+
+                return List.of();
+            }
+
+            private boolean isNestedType(Element e) {
+                return e.getKind().isDeclaredType()
+                        && ((TypeElement) e).getNestingKind() == NestingKind.MEMBER;
+            }
+        };
     }
 
     @Override
@@ -153,8 +189,8 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
 
     /**
      * Returns whether this taglet accepts a {@code BlockTagTree} node.
-     * The taglet accepts a tree node if it has the same kind, and
-     * if the kind is {@code UNKNOWN_BLOCK_TAG} the same tag name.
+     * The taglet accepts a tree node if it has the same kind, or
+     * if the kind is {@code UNKNOWN_BLOCK_TAG} with the same tag name.
      *
      * @param tree the tree node
      * @return {@code true} if this taglet accepts this tree node
@@ -168,7 +204,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
     record Documentation(DocTree tag, List<? extends DocTree> description, ExecutableElement method) { }
 
     private Optional<Documentation> extractFirst(ExecutableElement m) {
-        List<? extends DocTree> tags = utils.getBlockTags(m, this::accepts);
+        List<? extends DocTree> tags = getBlockTags(m);
         if (tags.isEmpty()) {
             return Optional.empty();
         }
@@ -179,11 +215,23 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
     @Override
     public Content getAllBlockTagOutput(Element holder, TagletWriter tagletWriter) {
         this.tagletWriter = tagletWriter;
-        List<? extends DocTree> tags = utils.getBlockTags(holder, this::accepts);
+        List<? extends DocTree> tags = getBlockTags(holder);
         if (header == null || tags.isEmpty()) {
             return null;
         }
         return simpleBlockTagOutput(holder, tags, header);
+    }
+
+    private List<? extends BlockTagTree> getBlockTags(Element e) {
+        var tags = utils.getBlockTags(e, this::accepts);
+        if (tags.isEmpty()) {
+            tags = getDefaultBlockTags(e, this::accepts);
+        }
+        return tags;
+    }
+
+    protected List<? extends BlockTagTree> getDefaultBlockTags(Element e, Predicate<? super BlockTagTree> accepts) {
+        return List.of();
     }
 
     /**
