@@ -146,7 +146,7 @@ jobs:
       apt-architecture: 'i386'
       # Some multilib libraries do not have proper inter-dependencies, so we have to
       # install their dependencies manually.
-      apt-extra-packages: 'libfreetype-dev:i386 libtiff-dev:i386 libcupsimage2-dev:i386 libc6-i386 libgcc-s1:i386 libstdc++6:i386 libffi-dev:i386'
+      apt-extra-packages: 'libfreetype-dev:i386 libtiff-dev:i386 libcupsimage2-dev:i386 libffi-dev:i386'
       extra-conf-options: '--with-target-bits=32 --enable-fallback-linker --enable-libffi-bundling'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
