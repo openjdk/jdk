@@ -117,7 +117,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
      * i.e. deserialization routines; otherwise you could get a non-deserialized instance.
      * To obtain the singleton instance, use {@link #findInstance()}.
      */
-    public static synchronized OutlineTopComponent getDefault() {
+    private static synchronized OutlineTopComponent getDefault() {
         if (instance == null) {
             instance = new OutlineTopComponent();
         }
@@ -380,12 +380,8 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         JFrame frame = new JFrame();
         String message = "Do you want to overwrite " + filename + "?";
         int result = JOptionPane.showConfirmDialog(frame, message, "Confirm Overwrite", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-        if (result == JOptionPane.YES_OPTION) {
-            frame.dispose();
-            return true;
-        }
         frame.dispose();
-        return false;
+        return result == JOptionPane.YES_OPTION;
     }
 
     /**
