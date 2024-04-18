@@ -60,7 +60,7 @@ class CardTableRS : public CardTable {
 public:
   CardTableRS(MemRegion whole_heap);
 
-  void scan_old_to_young_refs(TenuredGeneration* tg, HeapWord* saved_mark_word);
+  void scan_old_to_young_refs(TenuredGeneration* tg, HeapWord* saved_top);
 
   void inline_write_ref_field_gc(void* field) {
     CardValue* byte = byte_for(field);

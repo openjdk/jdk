@@ -756,45 +756,30 @@ void SerialHeap::process_roots(ScanningOption so,
   }
 }
 
-bool SerialHeap::no_allocs_since_save_marks() {
-  return _young_gen->no_allocs_since_save_marks() &&
-         _old_gen->no_allocs_since_save_marks();
-}
-
 template <typename OopClosureType>
-static void oop_iterate_from(OopClosureType* blk, ContiguousSpace* space, HeapWord* from) {
-  assert(from != nullptr, "precondition");
+static void oop_iterate_from(OopClosureType* blk, ContiguousSpace* space, HeapWord** from) {
+  assert(*from != nullptr, "precondition");
   HeapWord* t;
-  HeapWord* p = from;
+  HeapWord* p = *from;
 
   const intx interval = PrefetchScanIntervalInBytes;
   do {
     t = space->top();
     while (p < t) {
       Prefetch::write(p, interval);
-      oop m = cast_to_oop(p);
-      p += m->oop_iterate_size(blk);
+      p += cast_to_oop(p)->oop_iterate_size(blk);
     }
   } while (t < space->top());
+
+  *from = space->top();
 }
 
 void SerialHeap::scan_evacuated_objs(YoungGenScanClosure* young_cl,
                                      OldGenScanClosure* old_cl) {
   do {
-    {
-      HeapWord* saved_top = young_gen()->saved_mark_word();
-      oop_iterate_from(young_cl, young_gen()->to(), saved_top);
-      young_gen()->set_saved_mark_word();
-    }
-    {
-      HeapWord* saved_top = old_gen()->saved_mark_word();
-      oop_iterate_from(old_cl, old_gen()->space(), saved_top);
-      old_gen()->set_saved_mark_word();
-    }
-    if (young_gen()->no_allocs_since_save_marks()) {
-      break;
-    }
-  } while (true);
+    oop_iterate_from(young_cl, young_gen()->to(), &_young_gen_saved_top);
+    oop_iterate_from(old_cl, old_gen()->space(), &_old_gen_saved_top);
+  } while (_young_gen_saved_top != young_gen()->to()->top());
   guarantee(young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
 }
 
@@ -961,8 +946,8 @@ bool SerialHeap::is_maximal_no_gc() const {
 }
 
 void SerialHeap::save_marks() {
-  _young_gen->save_marks();
-  _old_gen->save_marks();
+  _young_gen_saved_top = _young_gen->to()->top();
+  _old_gen_saved_top = _old_gen->space()->top();
 }
 
 void SerialHeap::verify(VerifyOption option /* ignored */) {
