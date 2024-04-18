@@ -734,15 +734,15 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="col-first even-row-color package-summary-table package-summary-table\
                     -tab1"><a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
-                    <div class="col-last even-row-color package-summary-table package-summary-table-tab1">&nbsp;</div>""",
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab1" role="tablist" tabindex="0">&nbsp;</div>""",
                 """
                     <section class="packages-summary" id="packages-summary">
                     <!-- ============ PACKAGES SUMMARY =========== -->
                     <h2>Packages</h2>""",
                 """
-                    <div class="col-first even-row-color">transitive</div>
+                    <div class="col-first even-row-color" role="tablist" tabindex="0">transitive</div>
                     <div class="col-second even-row-color"><a href="../moduleB/module-summary.html">moduleB</a></div>
-                    <div class="col-last even-row-color">
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">
                     <div class="block">This is a test description for the moduleB module.</div>
                     </div>
                     """);
@@ -759,7 +759,7 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="col-first even-row-color package-summary-table package-summary-table\
                     -tab2"><a href="testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
-                    <div class="col-last even-row-color package-summary-table package-summary-table-tab2">&nbsp;</div>
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab2" role="tablist" tabindex="0">&nbsp;</div>
                     </div>""",
                 """
                     <!-- ============ PACKAGES SUMMARY =========== -->
@@ -770,7 +770,7 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="col-first even-row-color"><a href="testpkgmdlB/TestClassInModuleB.ht\
                     ml" title="class in testpkgmdlB">TestClassInModuleB</a></div>
-                    <div class="col-last even-row-color">
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">
                     <div class="block">With a test description for uses.</div>
                     </div>""",
                 """
@@ -801,14 +801,14 @@ public class TestModules extends JavadocTester {
                     ase <span id="searchphrase" class="search-tag-result">search phrase</span>. Make\
                      sure there are no exported packages.</div>""",
                 """
-                    <div class="col-first even-row-color">transitive</div>
+                    <div class="col-first even-row-color" role="tablist" tabindex="0">transitive</div>
                     <div class="col-second even-row-color"><a href="../moduleA/module-summary.html">moduleA</a></div>
-                    <div class="col-last even-row-color">
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">
                     <div class="block">This is a test description for the moduleA module with a Search phrase search phrase.</div>
                     </div>
-                    <div class="col-first odd-row-color">transitive</div>
+                    <div class="col-first odd-row-color" role="tablist" tabindex="0">transitive</div>
                     <div class="col-second odd-row-color"><a href="../moduleB/module-summary.html">moduleB</a></div>
-                    <div class="col-last odd-row-color">
+                    <div class="col-last odd-row-color" role="tablist" tabindex="0">
                     <div class="block">This is a test description for the moduleB module.</div>
                     </div>""");
     }
@@ -877,17 +877,17 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="col-first even-row-color all-modules-table all-modules-table-tab1"><\
                     a href="moduleA/module-summary.html">moduleA</a></div>
-                    <div class="col-last even-row-color all-modules-table all-modules-table-tab1">
+                    <div class="col-last even-row-color all-modules-table all-modules-table-tab1" role="tablist" tabindex="0">
                     <div class="block">This is a test description for the moduleA module with a Search phrase search phrase.</div>""",
                 """
                     <div class="col-first odd-row-color all-modules-table all-modules-table-tab1"><a\
                      href="moduleB/module-summary.html">moduleB</a></div>
-                    <div class="col-last odd-row-color all-modules-table all-modules-table-tab1">
+                    <div class="col-last odd-row-color all-modules-table all-modules-table-tab1" role="tablist" tabindex="0">
                     <div class="block">This is a test description for the moduleB module.</div>""",
                 """
                     <div class="col-first odd-row-color all-modules-table all-modules-table-tab1"><a\
                      href="moduletags/module-summary.html">moduletags</a></div>
-                    <div class="col-last odd-row-color all-modules-table all-modules-table-tab1">
+                    <div class="col-last odd-row-color all-modules-table all-modules-table-tab1" role="tablist" tabindex="0">
                     <div class="block">This is a test description for the moduletags module.<br>
                      Type Link: <a href="moduletags/testpkgmdltags/TestClassInModuleTags.html" title\
                     ="class in testpkgmdltags"><code>TestClassInModuleTags</code></a>.<br>
@@ -910,7 +910,7 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="col-first even-row-color package-summary-table package-summary-table\
                     -tab1"><a href="testpkgmdltags/package-summary.html">testpkgmdltags</a></div>
-                    <div class="col-last even-row-color package-summary-table package-summary-table-tab1">&nbsp;</div>""",
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab1" role="tablist" tabindex="0">&nbsp;</div>""",
                 """
                     <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
@@ -921,9 +921,9 @@ public class TestModules extends JavadocTester {
                     <div class="caption"><span>Indirect Requires</span></div>
                     <div class="details-table three-column-summary">""",
                 """
-                    <div class="col-first even-row-color">transitive</div>
+                    <div class="col-first even-row-color" role="tablist" tabindex="0">transitive</div>
                     <div class="col-second even-row-color"><a href="../moduleB/module-summary.html">moduleB</a></div>
-                    <div class="col-last even-row-color">
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">
                     <div class="block">This is a test description for the moduleB module.</div>
                     </div>""",
                 """
@@ -957,7 +957,7 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="col-first even-row-color package-summary-table package-summary-table\
                     -tab1"><a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
-                    <div class="col-last even-row-color package-summary-table package-summary-table-tab1">&nbsp;</div>""");
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab1" role="tablist" tabindex="0">&nbsp;</div>""");
         checkOutput("moduleB/module-summary.html", found,
                 """
                     <ol class="toc-list">
@@ -968,7 +968,7 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="col-first even-row-color package-summary-table package-summary-table\
                     -tab2"><a href="testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
-                    <div class="col-last even-row-color package-summary-table package-summary-table-tab2">&nbsp;</div>""",
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab2" role="tablist" tabindex="0">&nbsp;</div>""",
                 """
                     <div id="package-summary-table">
                     <div class="caption"><span>Opens</span></div>
@@ -977,33 +977,33 @@ public class TestModules extends JavadocTester {
                     <div class="table-header col-last">Description</div>
                     <div class="col-first even-row-color package-summary-table package-summary-table\
                     -tab2"><a href="testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
-                    <div class="col-last even-row-color package-summary-table package-summary-table-tab2">&nbsp;</div>
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab2" role="tablist" tabindex="0">&nbsp;</div>
                     </div>
                     </div>""",
                 """
                     <div class="col-first even-row-color"><a href="testpkgmdlB/TestClassInModuleB.ht\
                     ml" title="class in testpkgmdlB">TestClassInModuleB</a></div>
-                    <div class="col-last even-row-color">
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">
                     <div class="block">With a test description for uses.</div>
                     """);
         checkOutput("moduletags/module-summary.html", found,
                 """
-                    <div class="col-first even-row-color">transitive static</div>
+                    <div class="col-first even-row-color" role="tablist" tabindex="0">transitive static</div>
                     <div class="col-second even-row-color"><a href="../moduleA/module-summary.html">moduleA</a></div>
-                    <div class="col-last even-row-color">
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">
                     <div class="block">This is a test description for the moduleA module with a Search phrase search phrase.</div>""");
     }
 
     void checkModuleModeAll(boolean found) {
         checkOutput("moduleA/module-summary.html", found,
                 """
-                    <div class="col-first even-row-color"> </div>
-                    <div class="col-second even-row-color">java.base</div>
-                    <div class="col-last even-row-color">&nbsp;</div>""",
+                    <div class="col-first even-row-color" role="tablist" tabindex="0"> </div>
+                    <div class="col-second even-row-color" role="tablist" tabindex="0">java.base</div>
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>""",
                 """
-                    <div class="col-first even-row-color"> </div>
+                    <div class="col-first even-row-color" role="tablist" tabindex="0"> </div>
                     <div class="col-second even-row-color"><a href="../moduleC/module-summary.html">moduleC</a></div>
-                    <div class="col-last even-row-color">
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">
                     <div class="block">This is a test description for the moduleC module.</div>
                     </div>""",
                 """
@@ -1012,8 +1012,8 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="col-first odd-row-color package-summary-table package-summary-table-\
                     tab1"><a href="testpkgmdlA/package-summary.html">testpkgmdlA</a></div>
-                    <div class="col-second odd-row-color package-summary-table package-summary-table-tab1">All Modules</div>
-                    <div class="col-last odd-row-color package-summary-table package-summary-table-tab1">&nbsp;</div>""",
+                    <div class="col-second odd-row-color package-summary-table package-summary-table-tab1" role="tablist" tabindex="0">All Modules</div>
+                    <div class="col-last odd-row-color package-summary-table package-summary-table-tab1" role="tablist" tabindex="0">&nbsp;</div>""",
                 """
                     <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
                     <button id="package-summary-table-tab0" role="tab" aria-selected="true" aria-con\
@@ -1033,8 +1033,8 @@ public class TestModules extends JavadocTester {
                     <div class="col-first even-row-color package-summary-table package-summary-table\
                     -tab3"><a href="concealedpkgmdlA/package-summary.html">concealedpkgmdlA</a></div\
                     >
-                    <div class="col-second even-row-color package-summary-table package-summary-table-tab3">None</div>
-                    <div class="col-last even-row-color package-summary-table package-summary-table-tab3">&nbsp;</div>""");
+                    <div class="col-second even-row-color package-summary-table package-summary-table-tab3" role="tablist" tabindex="0">None</div>
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab3" role="tablist" tabindex="0">&nbsp;</div>""");
         checkOutput("moduleB/module-summary.html", found,
                 """
                     <ol class="toc-list">
@@ -1046,17 +1046,17 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="col-first even-row-color package-summary-table package-summary-table\
                     -tab2"><a href="testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
-                    <div class="col-second even-row-color package-summary-table package-summary-table-tab2">None</div>
-                    <div class="col-second even-row-color package-summary-table package-summary-table-tab2">All Modules</div>
-                    <div class="col-last even-row-color package-summary-table package-summary-table-tab2">&nbsp;</div>""",
+                    <div class="col-second even-row-color package-summary-table package-summary-table-tab2" role="tablist" tabindex="0">None</div>
+                    <div class="col-second even-row-color package-summary-table package-summary-table-tab2" role="tablist" tabindex="0">All Modules</div>
+                    <div class="col-last even-row-color package-summary-table package-summary-table-tab2" role="tablist" tabindex="0">&nbsp;</div>""",
                 """
-                    <div class="col-first even-row-color"> </div>
-                    <div class="col-second even-row-color">java.base</div>
-                    <div class="col-last even-row-color">&nbsp;</div>""",
+                    <div class="col-first even-row-color" role="tablist" tabindex="0"> </div>
+                    <div class="col-second even-row-color" role="tablist" tabindex="0">java.base</div>
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>""",
                 """
                     <div class="col-first even-row-color"><a href="testpkgmdlB/TestClass2InModuleB.html"\
                      title="class in testpkgmdlB">TestClass2InModuleB</a></div>
-                    <div class="col-last even-row-color">&nbsp;</div>""",
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">&nbsp;</div>""",
                 """
                     <div class="col-first even-row-color"><a href="testpkg2mdlB/TestInterface2InModuleB.h\
                     tml" title="interface in testpkg2mdlB">TestInterface2InModuleB</a></div>
@@ -1087,7 +1087,7 @@ public class TestModules extends JavadocTester {
                 """
                     <div class="col-first odd-row-color"><a href="testpkgmdlB/TestClassInModuleB.htm\
                     l" title="class in testpkgmdlB">TestClassInModuleB</a></div>
-                    <div class="col-last odd-row-color">
+                    <div class="col-last odd-row-color" role="tablist" tabindex="0">
                     <div class="block">With a test description for uses.</div>
                     """);
         checkOutput("moduleC/module-summary.html", found,
@@ -1099,9 +1099,9 @@ public class TestModules extends JavadocTester {
                     <div class="table-header col-last">Description</div>""");
         checkOutput("moduletags/module-summary.html", found,
                 """
-                    <div class="col-first odd-row-color">transitive static</div>
+                    <div class="col-first odd-row-color" role="tablist" tabindex="0">transitive static</div>
                     <div class="col-second odd-row-color"><a href="../moduleA/module-summary.html">moduleA</a></div>
-                    <div class="col-last odd-row-color">
+                    <div class="col-last odd-row-color" role="tablist" tabindex="0">
                     <div class="block">This is a test description for the moduleA module with a Search phrase search phrase.</div>""");
     }
 
@@ -1120,7 +1120,7 @@ public class TestModules extends JavadocTester {
                     </ul>""",
                 """
                     <div class="col-summary-item-name even-row-color"><a href="moduleA/module-summary.html">moduleA</a></div>
-                    <div class="col-last even-row-color">
+                    <div class="col-last even-row-color" role="tablist" tabindex="0">
                     <div class="block">This module is deprecated.</div>""");
         checkOutput("moduleB/module-summary.html", !found,
                 """
