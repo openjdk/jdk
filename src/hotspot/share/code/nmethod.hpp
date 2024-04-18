@@ -243,6 +243,8 @@ class nmethod : public CodeBlob {
 
   int _compile_id;                        // which compilation made this nmethod
 
+  int _num_stack_arg_slots;               // Number of arguments passed on the stack
+
   CompilerType _compiler_type;            // which compiler made this nmethod (u1)
 
   bool _is_unlinked;
@@ -791,6 +793,10 @@ public:
   void  invalidate_osr_method();
   nmethod* osr_link() const                       { return _osr_link; }
   void     set_osr_link(nmethod *n)               { _osr_link = n; }
+
+  int num_stack_arg_slots(bool rounded = true) const {
+    return rounded ? align_up(_num_stack_arg_slots, 2) : _num_stack_arg_slots;
+  }
 
   // Verify calls to dead methods have been cleaned.
   void verify_clean_inline_caches();
