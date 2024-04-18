@@ -389,7 +389,9 @@ find_method(jvmtiEnv *jvmti, JNIEnv *jni, jclass klass, const char* mname) {
 static void
 wait_for_state(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jint exp_state) {
   while (true) {
-    if (get_thread_state(jvmti, jni, thread) & exp_state) {
+    // Allow a bitmask to designate expected thread state. E.g., if two bits are expected
+    // than check they both are present in the state mask returned by JVMTI GetThreadState.
+    if ((get_thread_state(jvmti, jni, thread) & exp_state) == exp_state) {
       break;
     }
     sleep_ms(100);
