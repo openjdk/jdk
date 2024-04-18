@@ -3769,7 +3769,7 @@ bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
   // memory, not a big deal anyway, as bytes less or equal than 64K
   if (!is_committed) {
     commit_memory_or_exit(addr, bytes, prot == MEM_PROT_RWX,
-                          "cannot commit protection page", mtInternal);
+                          mtInternal, "cannot commit protection page");
   }
   // One cannot use os::guard_memory() here, as on Win32 guard page
   // have different (one-shot) semantics, from MSDN on PAGE_GUARD:
@@ -5065,7 +5065,6 @@ void os::funlockfile(FILE* fp) {
 // Map a block of memory.
 char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
                         char *addr, size_t bytes,
-                        MEMFLAGS flag,
                         bool read_only,
                         bool allow_exec) {
 
@@ -5105,9 +5104,6 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
       CloseHandle(hFile);
       return nullptr;
     }
-
-    // Record virtual memory allocation
-    MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, CALLER_PC, flag);
 
     DWORD bytes_read;
     OVERLAPPED overlapped;

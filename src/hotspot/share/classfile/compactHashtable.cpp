@@ -240,7 +240,7 @@ HashtableTextDump::HashtableTextDump(const char* filename) : _fd(-1) {
   if (_fd < 0) {
     quit("Unable to open hashtable dump file", filename);
   }
-  _base = os::map_memory(_fd, filename, 0, nullptr, _size, mtInternal, true, false);
+  _base = os::map_memory(_fd, filename, 0, nullptr, _size, true, false, mtClassShared);
   if (_base == nullptr) {
     quit("Unable to map hashtable dump file", filename);
   }

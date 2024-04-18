@@ -164,8 +164,8 @@ void CardTable::resize_covered_region(MemRegion new_region) {
                               delta.byte_size(),
                               _page_size,
                               !ExecMem,
-                              "card table expansion",
-                              mtGCCardSet);
+                              mtGCCardSet,
+                              "card table expansion");
 
     memset(delta.start(), clean_card, delta.byte_size());
   } else {

@@ -87,7 +87,7 @@ size_t ZMarkStackSpace::expand_space() {
                          old_size / M, new_size / M);
 
   // Expand
-  os::commit_memory_or_exit((char*)_end, expand_size, !ExecMem /* executable */, "Mark stack space", mtGC);
+  os::commit_memory_or_exit((char*)_end, expand_size, !ExecMem, mtGC, "Mark stack space");
 
   return expand_size;
 }

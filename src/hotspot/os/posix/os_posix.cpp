@@ -2052,7 +2052,6 @@ const char* os::path_separator() { return ":"; }
 // Returns address to mapped memory, nullptr on error
 char* os::pd_map_memory(int fd, const char* unused,
                         size_t file_offset, char *addr, size_t bytes,
-                        MEMFLAGS flag,
                         bool read_only, bool allow_exec) {
 
   assert(fd != -1, "Specify a valid file descriptor");

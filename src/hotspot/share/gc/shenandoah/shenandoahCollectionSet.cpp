@@ -64,12 +64,12 @@ ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedS
     char* bot_addr = align_down(_cset_map, page_size);
     char* top_addr = align_up(_cset_map + _map_size, page_size);
     os::commit_memory_or_exit(bot_addr, pointer_delta(top_addr, bot_addr, 1), !ExecMem,
-                              "Unable to commit collection set bitmap: heap", mtGC);
+                              mtGC, "Unable to commit collection set bitmap: heap");
 
     // Commit the zero page, if not yet covered by heap cset map.
     if (bot_addr != _biased_cset_map) {
       os::commit_memory_or_exit(_biased_cset_map, page_size, !ExecMem,
-                                "Unable to commit collection set bitmap: zero page", mtGC);
+                                mtGC, "Unable to commit collection set bitmap: zero page");
     }
   }
 

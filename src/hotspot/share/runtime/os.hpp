@@ -228,10 +228,8 @@ class os: AllStatic {
   static char*  pd_attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc, MEMFLAGS flag);
 
   static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset,
-                           char *addr, size_t bytes,
-                           MEMFLAGS flag,
-                           bool read_only = false,
-                           bool allow_exec = false);
+                              char *addr, size_t bytes,
+                              bool read_only = false, bool allow_exec = false);
   static bool   pd_unmap_memory(char *addr, size_t bytes);
   static void   pd_free_memory(char *addr, size_t bytes, size_t alignment_hint, MEMFLAGS flag);
   static void   pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint);
@@ -468,10 +466,10 @@ class os: AllStatic {
   // Same as commit_memory() that either succeeds or calls
   // vm_exit_out_of_memory() with the specified mesg.
   static void   commit_memory_or_exit(char* addr, size_t bytes,
-                                      bool executable, const char* mesg, MEMFLAGS flag);
+                                      bool executable, MEMFLAGS flag, const char* mesg);
   static void   commit_memory_or_exit(char* addr, size_t size,
                                       size_t alignment_hint,
-                                      bool executable, const char* mesg, MEMFLAGS flag);
+                                      bool executable, MEMFLAGS flag, const char* mesg);
   static bool   uncommit_memory(char* addr, size_t bytes, bool executable, MEMFLAGS flag);
   static bool   release_memory(char* addr, size_t bytes);
 
@@ -517,9 +515,9 @@ class os: AllStatic {
 
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes,
-                           MEMFLAGS flag,
-                           bool read_only = false,
-                           bool allow_exec = false);
+                           bool read_only,
+                           bool allow_exec,
+                           MEMFLAGS flag);
   static bool   unmap_memory(char *addr, size_t bytes);
   static void   free_memory(char *addr, size_t bytes, size_t alignment_hint, MEMFLAGS flag);
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);

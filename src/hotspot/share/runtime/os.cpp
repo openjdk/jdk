@@ -2069,14 +2069,14 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
 }
 
 void os::commit_memory_or_exit(char* addr, size_t bytes, bool executable,
-                               const char* mesg, MEMFLAGS flag) {
+                               MEMFLAGS flag, const char* mesg) {
   assert_nonempty_range(addr, bytes);
   pd_commit_memory_or_exit(addr, bytes, executable, mesg);
   MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC, flag);
 }
 
 void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
-                               bool executable, const char* mesg, MEMFLAGS flag) {
+                               bool executable, MEMFLAGS flag, const char* mesg) {
   assert_nonempty_range(addr, size);
   os::pd_commit_memory_or_exit(addr, size, alignment_hint, executable, mesg);
   MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC, flag);
@@ -2182,10 +2182,8 @@ char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc,
 
 char* os::map_memory(int fd, const char* file_name, size_t file_offset,
                      char *addr, size_t bytes,
-                     MEMFLAGS flags,
-                     bool read_only,
-                     bool allow_exec) {
-  char* result = pd_map_memory(fd, file_name, file_offset, addr, bytes, flags, read_only, allow_exec);
+                     bool read_only, bool allow_exec, MEMFLAGS flags) {
+  char* result = pd_map_memory(fd, file_name, file_offset, addr, bytes, read_only, allow_exec);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, flags);
   }

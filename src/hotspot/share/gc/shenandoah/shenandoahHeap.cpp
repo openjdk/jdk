@@ -273,7 +273,7 @@ jint ShenandoahHeap::initialize() {
                                             verify_bitmap.size(), verify_bitmap.page_size());
     if (!verify_bitmap.special()) {
       os::commit_memory_or_exit(verify_bitmap.base(), verify_bitmap.size(), bitmap_page_size, !ExecMem,
-                                "Cannot commit verification bitmap memory", mtGC);
+                                mtGC, "Cannot commit verification bitmap memory");
     }
     MemTracker::record_virtual_memory_type(verify_bitmap.base(), mtGC);
     MemRegion verify_bitmap_region = MemRegion((HeapWord *) verify_bitmap.base(), verify_bitmap.size() / HeapWordSize);
@@ -315,7 +315,7 @@ jint ShenandoahHeap::initialize() {
                                           region_storage.size(), region_storage.page_size());
   if (!region_storage.special()) {
     os::commit_memory_or_exit(region_storage.base(), region_storage_size, region_page_size, !ExecMem,
-                              "Cannot commit region memory", mtGC);
+                              mtGC, "Cannot commit region memory");
   }
 
   // Try to fit the collection set bitmap at lower addresses. This optimizes code generation for cset checks.
