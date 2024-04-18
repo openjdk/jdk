@@ -494,12 +494,6 @@ class SuperWord : public ResourceObj {
 
 #ifndef PRODUCT
   // TraceAutoVectorization and TraceSuperWord
-  // TODO rm?
-  bool is_trace_superword_alignment() const {
-    // Too verbose for TraceSuperWord
-    return _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT);
-  }
-
   bool is_trace_superword_adjacent_memops() const {
     return TraceSuperWord ||
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS);
@@ -520,16 +514,9 @@ class SuperWord : public ResourceObj {
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_INFO);
   }
 
-  // TODO remove?
-  bool is_trace_superword_verbose() const {
-    // Too verbose for TraceSuperWord
-    return _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
-  }
-
   bool is_trace_superword_any() const {
     return TraceSuperWord ||
            is_trace_align_vector() ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT) ||
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS) ||
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_REJECTIONS) ||
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_PACKSET) ||
@@ -539,7 +526,7 @@ class SuperWord : public ResourceObj {
 
   bool is_trace_align_vector() const {
     return _vloop.vtrace().is_trace(TraceAutoVectorizationTag::ALIGN_VECTOR) ||
-           is_trace_superword_verbose();
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
   }
 #endif
 
