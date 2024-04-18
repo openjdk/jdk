@@ -144,10 +144,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
      * Stores the provided graph document to the designated file path with associated contexts.
      */
     private static void saveGraphDocument(GraphDocument doc, String path) throws IOException {
-        if (path == null) {
-            return;
-        }
-
         List<GraphContext> saveContexts = new ArrayList<>();
         WindowManager manager = WindowManager.getDefault();
         for (Mode mode : manager.getModes()) {
@@ -490,7 +486,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
      * Parse the XML file, add the parsed document to the workspace, and load associated contexts if specified.
      */
     private void loadGraphDocument(String path, boolean loadContext) throws IOException {
-        if (path == null || Files.notExists(Path.of(path))) {
+        if (Files.notExists(Path.of(path))) {
             return;
         }
         File file = new File(path);
