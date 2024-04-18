@@ -193,13 +193,15 @@ import static java.lang.invoke.MethodType.methodType;
         lambdaClassDesc = ClassDesc.ofInternalName(lambdaClassName);
         // If the target class invokes a protected method inherited from a
         // superclass in a different package, or does 'invokespecial', the
-        // lambda class has no access to the resolved method. Instead, we need
-        // to pass the live implementation method handle to the proxy class
-        // to invoke directly. (javac prefers to avoid this situation by
-        // generating bridges in the target class)
+        // lambda class has no access to the resolved method, or does
+        // 'invokestatic' on a hidden class which cannot be resolved by name.
+        // Instead, we need to pass the live implementation method handle to
+        // the proxy class to invoke directly. (javac prefers to avoid this
+        // situation by generating bridges in the target class)
         useImplMethodHandle = (Modifier.isProtected(implInfo.getModifiers()) &&
                                !VerifyAccess.isSamePackage(targetClass, implInfo.getDeclaringClass())) ||
-                               implKind == MethodHandleInfo.REF_invokeSpecial;
+                               implKind == MethodHandleInfo.REF_invokeSpecial ||
+                               implKind == MethodHandleInfo.REF_invokeStatic && implClass.isHidden();
         int parameterCount = factoryType.parameterCount();
         if (parameterCount > 0) {
             argNames = new String[parameterCount];

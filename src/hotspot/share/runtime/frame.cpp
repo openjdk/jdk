@@ -1435,7 +1435,7 @@ void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_m
         assert(sig_index == sizeargs, "");
       }
       int stack_arg_slots = SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs);
-      assert(stack_arg_slots ==  m->num_stack_arg_slots(false /* rounded */), "");
+      assert(stack_arg_slots ==  nm->as_nmethod()->num_stack_arg_slots(false /* rounded */) || nm->is_osr_method(), "");
       int out_preserve = SharedRuntime::out_preserve_stack_slots();
       int sig_index = 0;
       int arg_index = (m->is_static() ? 0 : -1);

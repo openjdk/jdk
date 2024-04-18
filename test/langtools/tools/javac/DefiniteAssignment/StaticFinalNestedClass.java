@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,24 @@
  */
 
 /*
- * @test T8312814
- * @summary Verify proper behavior of TransType w.r.t. templated Strings
- * @enablePreview
- * @compile T8312814.java
+ * @test
+ * @bug 8329595
+ * @summary Verify spurious "might not have been initialized" error on static final field
+ * @run main StaticFinalNestedClass
  */
+public class StaticFinalNestedClass {
+    public class Inner {                    // note this inner class is NOT static
+        public static final String NAME;
+        static {
+            try {
+                NAME = "bob";
+            } catch (Exception e) {
+                throw new Error(e);
+            }
+        }
+    }
 
-
-import java.util.List;
-
-public class T8312814 {
-    void x(List<? extends StringTemplate.Processor<String, RuntimeException>> list) {
-        list.get(0)."";
+    public static void main(String[] args) {
+        new StaticFinalNestedClass().new Inner();
     }
 }
-
