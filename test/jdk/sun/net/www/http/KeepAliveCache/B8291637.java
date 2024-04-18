@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,21 @@
 /*
  * @test
  * @bug 8291637
- * @run main/othervm -Dhttp.keepAlive.time.server=20 -esa -ea B8291637 timeout
- * @run main/othervm -Dhttp.keepAlive.time.server=20 -esa -ea B8291637 max
+ * @library /test/lib
+ * @run main/othervm -Dhttp.keepAlive.time.server=20 -esa -ea B8291637
  */
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.*;
+import java.net.HttpURLConnection;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class B8291637 {
     static CompletableFuture<Boolean> passed = new CompletableFuture<>();
@@ -125,20 +130,26 @@ public class B8291637 {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        Server server = new Server(args[0]);
+    public static void runTest(String param) throws Exception {
+        Server server = new Server(param);
         int port = server.getPort();
         server.start();
-        URL url = new URL("http://127.0.0.1:" + Integer.toString(port) + "/");
+        URL url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(port)
+                .path("/firstCall")
+                .toURL();
         HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
-        InputStream i = urlc.getInputStream();
-        int c,count=0;
-        byte[] buf = new byte[256];
-        while ((c=i.read(buf)) != -1) {
-            count+=c;
+        int count=0;
+        try (InputStream i = urlc.getInputStream()) {
+            int c;
+            byte[] buf = new byte[256];
+            while ((c=i.read(buf)) != -1) {
+                count+=c;
+            }
         }
-        i.close();
-        System.out.println("Read " + count );
+        System.out.println("Read " + count);
         try {
             if (!passed.get()) {
                 throw new RuntimeException("Test failed");
@@ -148,5 +159,10 @@ public class B8291637 {
         } finally {
             server.close();
         }
+    }
+
+    public static void main(String[] args) throws Exception {
+        runTest("timeout");
+        runTest("max");
     }
 }
