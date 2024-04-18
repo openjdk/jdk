@@ -48,7 +48,7 @@ public class PEMDecoderTest {
 
     public static void main(String[] args) throws IOException {
         PEMCerts.entryList.stream().forEach(entry -> test(entry));
-        PEMCerts.entryList.stream().forEach(entry -> test(entry, SecurityObject.class));
+        PEMCerts.entryList.stream().forEach(entry -> test(entry, DEREncodable.class));
         PEMCerts.encryptedList.stream().forEach(entry -> testEncrypted(entry));
         testTwoKeys();
         test(PEMCerts.getEntry("privpem"), RSAKey.class);

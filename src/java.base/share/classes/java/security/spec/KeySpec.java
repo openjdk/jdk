@@ -25,8 +25,6 @@
 
 package java.security.spec;
 
-import java.security.SecurityObject;
-
 /**
  * A (transparent) specification of the key material
  * that constitutes a cryptographic key.
@@ -61,4 +59,4 @@ import java.security.SecurityObject;
  * @since 1.2
  */
 
-public non-sealed interface KeySpec extends SecurityObject { }
+public interface KeySpec { }

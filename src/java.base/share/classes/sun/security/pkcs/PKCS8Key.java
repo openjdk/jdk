@@ -193,7 +193,7 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
      * @param encoded the DER-encoded SubjectPublicKeyInfo value
      * @exception IOException on data format errors
      */
-    public static PrivateKey parseKey(byte[] encoded) throws IOException {
+    public static PrivateKey parseKey(byte[] encoded) throws InvalidKeyException {
         try {
             PKCS8Key rawKey = new PKCS8Key(encoded);
             byte[] internal = rawKey.generateEncoding();
@@ -214,8 +214,8 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
                         .clearEncodedKeySpec(pkcs8KeySpec);
             }
             return result;
-        } catch (InvalidKeyException e) {
-            throw new IOException("corrupt private key", e);
+        } catch (IOException e) {
+            throw new InvalidKeyException(e);
         }
     }
 

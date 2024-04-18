@@ -24,9 +24,7 @@
  */
 
 import javax.crypto.EncryptedPrivateKeyInfo;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SecurityObject;
+import java.security.DEREncodable;
 import java.security.cert.Certificate;
 import java.security.interfaces.*;
 import java.util.ArrayList;
@@ -411,8 +409,8 @@ class PEMCerts {
         privList.add(new Entry("privpemed25519", privpemed25519, EdECPrivateKey.class, null));
         privList.add(new Entry("encEdECKey-EPKI", encEdECKey, EncryptedPrivateKeyInfo.class, null));
         privList.add(new Entry("rsaOpenSSL", rsaOpenSSL, RSAPrivateKey.class, null));
-        oasList.add(new Entry("oasrfc8410", oasrfc8410, SecurityObject.class, null));
-        oasList.add(new Entry("oasbcpem", oasbcpem, SecurityObject.class, null));
+        oasList.add(new Entry("oasrfc8410", oasrfc8410, DEREncodable.class, null));
+        oasList.add(new Entry("oasbcpem", oasbcpem, DEREncodable.class, null));
 
         certList.add(new Entry("rsaCert", rsaCert, Certificate.class, null));
         certList.add(new Entry("ecCert", ecCert, Certificate.class, null));
@@ -428,7 +426,7 @@ class PEMCerts {
         passList.addAll(entryList);
         passList.addAll(encryptedList);
 
-        failureEntryList.add(new Entry("emptyPEM", "", SecurityObject.class, null));
-        failureEntryList.add(new Entry("nullPEM", null, SecurityObject.class, null));
+        failureEntryList.add(new Entry("emptyPEM", "", DEREncodable.class, null));
+        failureEntryList.add(new Entry("nullPEM", null, DEREncodable.class, null));
     }
 }

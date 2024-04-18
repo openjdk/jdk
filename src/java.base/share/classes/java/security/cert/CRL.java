@@ -25,8 +25,6 @@
 
 package java.security.cert;
 
-import java.security.SecurityObject;
-
 /**
  * This class is an abstraction of certificate revocation lists (CRLs) that
  * have different formats but important common uses. For example, all CRLs
@@ -45,7 +43,7 @@ import java.security.SecurityObject;
  * @since 1.2
  */
 
-public abstract non-sealed class CRL implements SecurityObject {
+public abstract class CRL {
 
     // the CRL type
     private final String type;

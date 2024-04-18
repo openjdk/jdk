@@ -29,6 +29,7 @@ import sun.security.x509.AlgorithmId;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.Base64;
@@ -119,40 +120,29 @@ public class Pem {
      * @return the decoded bytes
      * @throws java.io.IOException if input is invalid
      */
-    public static byte[] decode(String input) throws IOException {
+    public static byte[] decode(String input) {
         byte[] src = input.replaceAll("\\s+", "")
             .getBytes(StandardCharsets.UTF_8);
-        try {
             return Base64.getDecoder().decode(src);
-        } catch (IllegalArgumentException e) {
-            throw new IOException(e);
-        }
     }
 
 
     // Sorta hack to get the right OID for PBEKS2
-    public static ObjectIdentifier getPBEID(String algorithm) throws IOException {
+    public static ObjectIdentifier getPBEID(String algorithm) {
         try {
             if (algorithm.contains("AES")) {
                 return AlgorithmId.get("PBES2").getOID();
+                //return KnownOIDs.PBES2.value();
             } else {
                 return AlgorithmId.get(algorithm).getOID();
             }
-        } catch (Exception e) {
-            throw new IOException(e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalArgumentException(e);
         }
     }
 
     public static Pem readPEM(InputStream is) throws IOException {
         return readPEM(is, false);
-    }
-
-    public static Pem readPEM(Reader reader, boolean shortHeader) throws IOException {
-        return readPEM(new ReaderInputStream(reader), shortHeader);
-    }
-
-    public static Pem readPEM(Reader reader) throws IOException {
-        return readPEM(new ReaderInputStream(reader), false);
     }
 
     /**
@@ -164,7 +154,7 @@ public class Pem {
      * @return A new Pem object containing the three components
      * @throws IOException on read errors
      */
-    public static Pem readPEM(InputStream is, boolean shortHeader) throws IOException {
+    public static Pem readPEM(InputStream is, boolean shortHeader) throws IOException{
         Objects.requireNonNull(is);
 
         int hyphen = (shortHeader ? 1 : 0);
@@ -190,8 +180,8 @@ public class Pem {
         do {
             switch (c = is.read()) {
                 case '-' -> hyphen++;
-                case -1 -> throw new IOException("Input ended prematurely");
-                case '\n', '\r' -> throw new IOException("Incomplete header");
+                case -1 -> throw new IllegalArgumentException("Input ended prematurely");
+                case '\n', '\r' -> throw new IllegalArgumentException("Incomplete header");
                 default -> sb.append((char) c);
             }
         } while (hyphen == 0);
@@ -200,7 +190,7 @@ public class Pem {
         do {
             switch (is.read()) {
                 case '-' -> hyphen++;
-                default -> throw new IOException("Incomplete header");
+                default -> throw new IllegalArgumentException("Incomplete header");
             }
         } while (hyphen < 5);
 
@@ -208,7 +198,7 @@ public class Pem {
         String header = sb.toString();
         if (header.length() < 16 || !header.startsWith("-----BEGIN ") ||
             !header.endsWith("-----")) {
-            throw new IOException("Illegal header: " + header);
+            throw new IllegalArgumentException("Illegal header: " + header);
         }
 
         hyphen = 0;
@@ -216,27 +206,29 @@ public class Pem {
 
         // Determine the line break using the char after the last hyphen
         switch (c = is.read()) {
-            case 32 -> {}
+            case 32 -> {
+            }
             case '\r' -> {
                 c = is.read();
                 if (c == '\n') {
                     endchar = '\n';
                 } else {
                     endchar = '\r';
-                    sb.append((char)c);
+                    sb.append((char) c);
                 }
             }
             case '\n' -> endchar = '\n';
-            default -> sb.append((char)c);
+            default -> sb.append((char) c);
         }
 
         // Read data until we find the first footer hyphen.
         do {
             switch (c = is.read()) {
-                case -1 -> throw new IOException("Incomplete header");
+                case -1 -> throw new IllegalArgumentException("Incomplete header");
                 case '-' -> hyphen++;
-                case 9, '\n', '\r', 32 -> {} // skip for data reading
-                default -> sb.append((char)c);
+                case 9, '\n', '\r', 32 -> {
+                } // skip for data reading
+                default -> sb.append((char) c);
             }
         } while (hyphen == 0);
 
@@ -246,8 +238,8 @@ public class Pem {
         do {
             switch (is.read()) {
                 case '-' -> hyphen++;
-                case -1 -> throw new IOException("Input ended prematurely");
-                default -> throw new IOException("Incomplete footer");
+                case -1 -> throw new IllegalArgumentException("Input ended prematurely");
+                default -> throw new IllegalArgumentException("Incomplete footer");
             }
         } while (hyphen < 5);
 
@@ -257,10 +249,10 @@ public class Pem {
 
         // Look for Complete header by looking for the end of the hyphens
         do {
-            switch(c = is.read()) {
+            switch (c = is.read()) {
                 case '-' -> hyphen++;
-                case -1 -> throw new IOException("Input ended prematurely");
-                default -> sb.append((char)c);
+                case -1 -> throw new IllegalArgumentException("Input ended prematurely");
+                default -> sb.append((char) c);
             }
         } while (hyphen == 0);
 
@@ -268,17 +260,17 @@ public class Pem {
         do {
             switch (is.read()) {
                 case '-' -> hyphen++;
-                case -1 -> throw new IOException("Input ended prematurely");
-                default -> throw new IOException("Incomplete footer");
+                case -1 -> throw new IllegalArgumentException("Input ended prematurely");
+                default -> throw new IllegalArgumentException("Incomplete footer");
             }
         } while (hyphen < 5);
 
         if (endchar != 0) {
             while ((c = is.read()) != endchar && c != -1 && c != '\r' &&
                 c != 32) {
-                throw new IOException("Invalid PEM format:  " +
+                throw new IllegalArgumentException("Invalid PEM format:  " +
                     "No end of line char found in footer:  0x" +
-                    HexFormat.of().toHexDigits((byte)c));
+                    HexFormat.of().toHexDigits((byte) c));
             }
         }
 
@@ -315,18 +307,5 @@ public class Pem {
 
     public void clean() {
         Arrays.fill(data, (byte)0);
-    }
-
-    static class ReaderInputStream extends InputStream {
-
-        Reader r;
-        ReaderInputStream(Reader r) {
-            this.r = r;
-        }
-
-        @Override
-        public int read() throws IOException {
-            return r.read();
-        }
     }
 }

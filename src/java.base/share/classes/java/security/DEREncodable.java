@@ -26,25 +26,24 @@
 package java.security;
 
 import javax.crypto.EncryptedPrivateKeyInfo;
-import java.security.cert.CRL;
-import java.security.cert.Certificate;
-import java.security.spec.KeySpec;
+import java.security.cert.X509CRL;
+import java.security.cert.X509Certificate;
+import java.security.spec.EncodedKeySpec;
 
 /**
  * This is a top-level interface for security classes that contain cryptographic
  * data which may not be related or have a common class hierarchy.  These
  * security objects provide standard binary encoding, like ASN.1, and type
  * formats, like X.509 and PKCS#8.  These encodings are used in some form with
- * {@link KeyFactory}, {@link java.security.cert.CertificateFactory},
- * {@link Encoder}, and {@link Decoder}
+ * {@link KeyFactory} and {@link java.security.cert.CertificateFactory},
  *
  * @see Key
  * @see KeyPair
- * @see KeySpec
+ * @see EncodedKeySpec
  * @see EncryptedPrivateKeyInfo
- * @see Certificate
- * @see CRL
+ * @see X509Certificate
+ * @see X509CRL
  */
-public sealed interface SecurityObject permits Key, KeyPair, KeySpec,
-    EncryptedPrivateKeyInfo, Certificate, CRL {
+public sealed interface DEREncodable permits AsymmetricKey, KeyPair,
+    EncodedKeySpec, EncryptedPrivateKeyInfo, X509Certificate, X509CRL {
 }

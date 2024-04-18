@@ -202,7 +202,6 @@ public class AlgorithmId implements Serializable, DerEncoder {
         out.write(DerValue.tag_Sequence, bytes);
     }
 
-
     /**
      * Returns the DER-encoded X.509 AlgorithmId as a byte array.
      */

@@ -29,6 +29,7 @@ import jdk.internal.access.SharedSecrets;
 import sun.security.util.KeyUtil;
 
 import java.io.IOException;
+import java.security.DEREncodable;
 import java.util.Arrays;
 
 /**
@@ -46,7 +47,8 @@ import java.util.Arrays;
  * @since 1.2
  */
 
-public abstract class EncodedKeySpec implements KeySpec {
+public abstract non-sealed class EncodedKeySpec implements KeySpec,
+    DEREncodable {
 
     private final byte[] encodedKey;
     private String algorithmName;

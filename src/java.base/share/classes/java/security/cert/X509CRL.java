@@ -104,7 +104,7 @@ import java.util.Set;
  * @see X509Extension
  */
 
-public abstract class X509CRL extends CRL implements X509Extension {
+public abstract non-sealed class X509CRL extends CRL implements X509Extension, DEREncodable {
 
     private transient X500Principal issuerPrincipal;
 

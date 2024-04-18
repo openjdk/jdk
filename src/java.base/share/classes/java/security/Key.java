@@ -98,7 +98,7 @@ package java.security;
  * @since 1.1
  */
 
-public non-sealed interface Key extends java.io.Serializable, SecurityObject {
+public interface Key extends java.io.Serializable {
 
     // Declare serialVersionUID to be compatible with JDK1.1
 

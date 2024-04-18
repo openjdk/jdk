@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
 
 public class PEMEncoderTest {
 
-    static Map<String, SecurityObject> keymap;
+    static Map<String, DEREncodable> keymap;
     final static Pattern CRLF = Pattern.compile("\r\n");
     final static Pattern CR = Pattern.compile("\r");
     final static Pattern LF = Pattern.compile("\n");
@@ -67,7 +67,7 @@ public class PEMEncoderTest {
     }
 
     static Map generateObjKeyMap(List<PEMCerts.Entry> list) {
-        Map<String, SecurityObject> keymap = new HashMap<>();
+        Map<String, DEREncodable> keymap = new HashMap<>();
         PEMDecoder pemd = PEMDecoder.of();
         for (PEMCerts.Entry entry : list) {
             try {

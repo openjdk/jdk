@@ -33,6 +33,7 @@ import javax.crypto.spec.PBEKeySpec;
 import java.io.IOException;
 import java.security.*;
 import java.security.spec.*;
+import java.util.Objects;
 
 /**
  * This class implements the {@code EncryptedPrivateKeyInfo} type
@@ -56,7 +57,7 @@ import java.security.spec.*;
  * @since 1.4
  */
 
-public final class EncryptedPrivateKeyInfo implements SecurityObject {
+public final class EncryptedPrivateKeyInfo implements DEREncodable {
 
     // The "encryptionAlgorithm" is stored in either the algid or
     // the params field. Precisely, if this object is created by
@@ -84,10 +85,7 @@ public final class EncryptedPrivateKeyInfo implements SecurityObject {
      * @throws IOException if error occurs when parsing the ASN.1 encoding.
      */
     public EncryptedPrivateKeyInfo(byte[] encoded) throws IOException {
-        if (encoded == null) {
-            throw new NullPointerException("the encoded parameter " +
-                "must be non-null");
-        }
+        Objects.requireNonNull(encoded);
 
         this.encoded = encoded.clone();
         DerValue val = DerValue.wrap(this.encoded);
@@ -330,7 +328,7 @@ public final class EncryptedPrivateKeyInfo implements SecurityObject {
      */
     public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key,
         char[] password, String pbeAlgo, AlgorithmParameterSpec aps,
-        Provider p) throws IOException {
+        Provider p) {
 
         AlgorithmId algid;
         byte[] encryptedData;
@@ -338,9 +336,10 @@ public final class EncryptedPrivateKeyInfo implements SecurityObject {
 
         DerOutputStream out = new DerOutputStream();
 
+        var spec = new PBEKeySpec(password);
+        SecretKey skey;
+        SecretKeyFactory factory;
         try {
-            var spec = new PBEKeySpec(password);
-            SecretKeyFactory factory;
             if (p == null) {
                 factory = SecretKeyFactory.getInstance(pbeAlgo);
                 cipher = Cipher.getInstance(pbeAlgo);
@@ -348,24 +347,31 @@ public final class EncryptedPrivateKeyInfo implements SecurityObject {
                 factory = SecretKeyFactory.getInstance(pbeAlgo, p);
                 cipher = Cipher.getInstance(pbeAlgo, p);
             }
-            var skey = factory.generateSecret(spec);
+            skey = factory.generateSecret(spec);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException |
+                 InvalidKeySpecException e) {
+            throw new IllegalArgumentException(e);
+        }
+        try {
             cipher.init(Cipher.ENCRYPT_MODE, skey, aps);
             encryptedData = cipher.doFinal(key.getEncoded());
             algid = new AlgorithmId(Pem.getPBEID(pbeAlgo), cipher.getParameters());
             algid.encode(out);
             out.putOctetString(encryptedData);
-            return new EncryptedPrivateKeyInfo(
-                DerValue.wrap(DerValue.tag_Sequence, out).toByteArray(),
-                encryptedData, algid, cipher.getParameters());
-        } catch (Exception e) {
-            throw new IOException(e);
+        } catch (InvalidAlgorithmParameterException | IOException |
+                 IllegalBlockSizeException | BadPaddingException |
+                 InvalidKeyException e) {
+            throw new IllegalStateException(e);
         }
+        return new EncryptedPrivateKeyInfo(
+            DerValue.wrap(DerValue.tag_Sequence, out).toByteArray(),
+            encryptedData, algid, cipher.getParameters());
     }
 
     /**
      * Creates and encrypts an `EncryptedPrivateKeyInfo` from a given PrivateKey
      * and password.
-     * The encryption uses the algorithm set by `jdk.epk8.defaultAlgorithm`
+     * The encryption uses the algorithm set by `jdk.epkcs8.defaultAlgorithm`
      * Security Property by the default provider and default the
      * AlgorithmParameterSpec of that provider.
      *
@@ -377,17 +383,8 @@ public final class EncryptedPrivateKeyInfo implements SecurityObject {
      * @since 23
      */
     public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key,
-        char[] password) throws IOException {
-        try {
-            return encryptKey(key, password, Pem.DEFAULT_ALGO, null, null);
-        } catch (IOException e) {
-            if (e.getCause() instanceof NoSuchAlgorithmException) {
-                throw new IOException("Security property " +
-                    "\"jdk.epkcs8.defaultAlgorithm\" may not specify a " +
-                    "valid algorithm.", e.getCause());
-            }
-            throw e;
-        }
+        char[] password) {
+        return encryptKey(key, password, Pem.DEFAULT_ALGO, null, null);
     }
 
     /**
@@ -400,7 +397,7 @@ public final class EncryptedPrivateKeyInfo implements SecurityObject {
      *
      * @since 23
      */
-    public PrivateKey getKey(char[] password) throws IOException {
+    public PrivateKey getKey(char[] password) throws InvalidKeyException {
         return getKey(password, null);
     }
     /**
@@ -410,13 +407,12 @@ public final class EncryptedPrivateKeyInfo implements SecurityObject {
      * @param password the password
      * @param provider the KeyFactory provider used to generate the key.
      * @return a PrivateKey
-     * @throws IOException if an error occurs during parsing of the encrypted
+     * @throws IllegalArgumentException if an error occurs during parsing of the encrypted
      * data or creation of the key object.
      *
      * @since 23
      */
-    public PrivateKey getKey(char[] password, Provider provider)
-        throws IOException {
+    public PrivateKey getKey(char[] password, Provider provider) throws InvalidKeyException {
         try {
             PBEKeySpec pks = new PBEKeySpec(password);
             SecretKeyFactory skf;
@@ -429,9 +425,8 @@ public final class EncryptedPrivateKeyInfo implements SecurityObject {
                 keySpec = getKeySpec(skf.generateSecret(pks), provider);
             }
             return PKCS8Key.parseKey(keySpec.getEncoded());
-
-        } catch (Exception e) {
-            throw new IOException(e);
+        } catch (GeneralSecurityException e) {
+            throw new InvalidKeyException(e);
         }
     }
 
