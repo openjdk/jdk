@@ -24,6 +24,7 @@
 /**
  * @test
  * @summary static initializer invocation order
+ * @enablePreview
  *
  * @build indify.Indify
  * @compile CallStaticInitOrder.java
