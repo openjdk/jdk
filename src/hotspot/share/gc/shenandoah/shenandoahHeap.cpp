@@ -214,7 +214,7 @@ jint ShenandoahHeap::initialize() {
   ReservedSpace sh_rs = heap_rs.first_part(max_byte_size);
   if (!_heap_region_special) {
     os::commit_memory_or_exit(sh_rs.base(), _initial_size, heap_alignment, !ExecMem,
-                              "Cannot commit heap memory", mtGC);
+                              mtGC, "Cannot commit heap memory");
   }
 
   //
@@ -260,7 +260,7 @@ jint ShenandoahHeap::initialize() {
   bitmap_init_commit = MIN2(_bitmap_size, bitmap_init_commit);
   if (!_bitmap_region_special) {
     os::commit_memory_or_exit((char *) _bitmap_region.start(), bitmap_init_commit, bitmap_page_size, !ExecMem,
-                              "Cannot commit bitmap memory", mtGC);
+                              mtGC, "Cannot commit bitmap memory");
   }
 
   _marking_context = new ShenandoahMarkingContext(_heap_region, _bitmap_region, _num_regions, _max_workers);
