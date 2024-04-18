@@ -39,6 +39,7 @@ import jdk.internal.reflect.Reflection;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -156,13 +157,13 @@ public interface SymbolLookup {
      * {@snippet lang= java :
      *    String name = ...
      *    MemorySegment address = lookup.find(name)
-     *        .orElseThrow(() -> new IllegalArgumentException("Symbol not found: " + name));
+     *        .orElseThrow(() -> new NoSuchElementException("Symbol not found: " + name));
      * }
      *
      * @param name the symbol name
      * @return a zero-length memory segment whose address indicates the address of
      *         the symbol
-     * @throws IllegalArgumentException if no symbol address can be found for the
+     * @throws NoSuchElementException if no symbol address can be found for the
      *         given name
      * @see #find(String)
      *
@@ -175,7 +176,7 @@ public interface SymbolLookup {
         if (address.isPresent()) {
             return address.get();
         }
-        throw new IllegalArgumentException("Symbol not found: " + name);
+        throw new NoSuchElementException("Symbol not found: " + name);
     }
 
     /**
