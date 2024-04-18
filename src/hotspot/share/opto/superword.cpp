@@ -529,8 +529,6 @@ void SuperWord::find_adjacent_memop_pairs() {
     group_start = group_end;
   }
 
-  // TODO align_to_mem_ref
-
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
     tty->print_cr("\nAfter Superword::find_adjacent_memop_pairs");
@@ -596,7 +594,6 @@ void SuperWord::find_adjacent_memop_pairs_in_group(const GrowableArray<const VPo
         _pairset.add_pair(mem1, mem2);
       }
     }
-    // TODO
   }
 }
 
@@ -3522,6 +3519,7 @@ LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
 // the address of "align_to_ref" to the maximal possible vector width. We adjust the pre-loop
 // iteration count by adjusting the pre-loop limit.
 void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
+  // TODO find if not yet set
   const MemNode* align_to_ref = _align_to_ref;
   assert(align_to_ref != nullptr, "align_to_ref must be set");
   assert(cl()->is_main_loop(), "can only do alignment for main loop");
