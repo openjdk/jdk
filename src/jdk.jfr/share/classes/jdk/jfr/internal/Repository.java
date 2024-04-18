@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,9 @@ package jdk.jfr.internal;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.DateTimeException;
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
+import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -81,7 +82,7 @@ public final class Repository {
     }
 
     synchronized RepositoryChunk newChunk() {
-        ZonedDateTime timestamp = ZonedDateTime.now();
+        LocalDateTime timestamp = timestamp();
         try {
             if (!SecuritySupport.existDirectory(repository)) {
                 this.repository = createRepository(baseLocation);
@@ -93,7 +94,7 @@ public final class Repository {
             if (chunkFilename == null) {
                 chunkFilename = ChunkFilename.newPriviliged(repository.toPath());
             }
-            String filename = chunkFilename.next(timestamp.toLocalDateTime());
+            String filename = chunkFilename.next(timestamp);
             return new RepositoryChunk(new SafePath(filename));
         } catch (Exception e) {
             String errorMsg = String.format("Could not create chunk in repository %s, %s: %s", repository, e.getClass(), e.getMessage());
@@ -103,11 +104,20 @@ public final class Repository {
         }
     }
 
+    private static LocalDateTime timestamp() {
+        try {
+            return LocalDateTime.now();
+        } catch (DateTimeException d) {
+            Logger.log(LogTag.JFR, LogLevel.INFO, "Could not create LocalDateTime with the default time zone. Using UTC time zone for chunk filename.");
+            return LocalDateTime.now(ZoneOffset.UTC);
+        }
+    }
+
     private static SafePath createRepository(SafePath basePath) throws IOException {
         SafePath canonicalBaseRepositoryPath = createRealBasePath(basePath);
         SafePath f = null;
 
-        String basename = ValueFormatter.formatDateTime(LocalDateTime.now()) + "_" + JVM.getPid();
+        String basename = ValueFormatter.formatDateTime(timestamp()) + "_" + JVM.getPid();
         String name = basename;
 
         int i = 0;

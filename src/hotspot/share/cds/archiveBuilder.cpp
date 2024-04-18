@@ -39,6 +39,7 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/abstractInterpreter.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allStatic.hpp"
@@ -170,7 +171,7 @@ ArchiveBuilder::ArchiveBuilder() :
 {
   _klasses = new (mtClassShared) GrowableArray<Klass*>(4 * K, mtClassShared);
   _symbols = new (mtClassShared) GrowableArray<Symbol*>(256 * K, mtClassShared);
-
+  _entropy_seed = 0x12345678;
   assert(_current == nullptr, "must be");
   _current = this;
 }
@@ -188,6 +189,16 @@ ArchiveBuilder::~ArchiveBuilder() {
   if (_shared_rs.is_reserved()) {
     _shared_rs.release();
   }
+}
+
+// Returns a deterministic sequence of pseudo random numbers. The main purpose is NOT
+// for randomness but to get good entropy for the identity_hash() of archived Symbols,
+// while keeping the contents of static CDS archives deterministic to ensure
+// reproducibility of JDK builds.
+int ArchiveBuilder::entropy() {
+  assert(SafepointSynchronize::is_at_safepoint(), "needed to ensure deterministic sequence");
+  _entropy_seed = os::next_random(_entropy_seed);
+  return static_cast<int>(_entropy_seed);
 }
 
 class GatherKlassesAndSymbols : public UniqueMetaspaceClosure {

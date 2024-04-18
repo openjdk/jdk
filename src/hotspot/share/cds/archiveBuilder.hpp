@@ -219,6 +219,7 @@ private:
   ResizeableResourceHashtable<address, address, AnyObj::C_HEAP, mtClassShared> _buffered_to_src_table;
   GrowableArray<Klass*>* _klasses;
   GrowableArray<Symbol*>* _symbols;
+  unsigned int _entropy_seed;
 
   // statistics
   DumpAllocStats _alloc_stats;
@@ -341,6 +342,7 @@ public:
   ArchiveBuilder();
   ~ArchiveBuilder();
 
+  int entropy();
   void gather_klasses_and_symbols();
   void gather_source_objs();
   bool gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool read_only);
