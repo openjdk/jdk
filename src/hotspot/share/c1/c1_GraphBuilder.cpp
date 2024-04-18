@@ -3653,7 +3653,7 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
   case vmIntrinsics::_getAndSetReference     : append_unsafe_get_and_set(callee, false); return;
   case vmIntrinsics::_getCharStringU         : append_char_access(callee, false); return;
   case vmIntrinsics::_putCharStringU         : append_char_access(callee, true); return;
-  case vmIntrinsicID::_clone                 : append_alloc_array_copy(callee); return;
+  case vmIntrinsics::_clone                  : append_alloc_array_copy(callee); return;
   default:
     break;
   }
