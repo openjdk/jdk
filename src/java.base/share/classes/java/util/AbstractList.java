@@ -84,6 +84,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      * Appends the specified element to the end of this list (optional
      * operation).
      *
+     *
      * <p>Lists that support this operation may place limitations on what
      * elements may be added to this list.  In particular, some
      * lists will refuse to add null elements, and others will impose
