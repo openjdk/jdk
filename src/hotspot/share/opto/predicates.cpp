@@ -344,7 +344,7 @@ bool TemplateAssertionPredicateExpressionNode::is_in_expression(Node* node) {
       if (next->is_OpaqueLoopInit() || next->is_OpaqueLoopStride()) {
         return true;
       } else if (is_maybe_in_expression(next)) {
-        list.push_non_null_cfg_inputs_of(next);
+        list.push_non_cfg_inputs_of(next);
       }
     }
   }
