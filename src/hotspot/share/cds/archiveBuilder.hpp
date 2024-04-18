@@ -129,13 +129,14 @@ private:
     bool _has_embedded_pointer;
     FollowMode _follow_mode;
     int _size_in_bytes;
+    int _index;              // The location of this object in _source_objs
     MetaspaceObj::Type _msotype;
     address _source_addr;    // The source object to be copied.
     address _buffered_addr;  // The copy of this object insider the buffer.
   public:
     SourceObjInfo(MetaspaceClosure::Ref* ref, bool read_only, FollowMode follow_mode) :
       _ptrmap_start(0), _ptrmap_end(0), _read_only(read_only), _has_embedded_pointer(false), _follow_mode(follow_mode),
-      _size_in_bytes(ref->size() * BytesPerWord), _msotype(ref->msotype()),
+      _size_in_bytes(ref->size() * BytesPerWord), _index(0), _msotype(ref->msotype()),
       _source_addr(ref->obj()) {
       if (follow_mode == point_to_it) {
         _buffered_addr = ref->obj();
@@ -168,6 +169,8 @@ private:
     bool has_embedded_pointer() const { return _has_embedded_pointer; }
     void found_embedded_pointer()  { _has_embedded_pointer = true; }
     int size_in_bytes()   const    { return _size_in_bytes; }
+    int index()           const    { return _index; }
+    void set_index(int i)          { _index = i; }
     address source_addr() const    { return _source_addr; }
     address buffered_addr() const  {
       if (_follow_mode != set_to_null) {

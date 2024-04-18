@@ -78,6 +78,7 @@ ArchiveBuilder::SourceObjList::~SourceObjList() {
 void ArchiveBuilder::SourceObjList::append(SourceObjInfo* src_info) {
   // Save this source object for copying
   _objs->append(src_info);
+  src_info->set_index(_objs->length()-1);
 
   // Prepare for marking the pointers in this source object
   assert(is_aligned(_total_bytes, sizeof(address)), "must be");
@@ -596,7 +597,7 @@ int ArchiveBuilder::compare_src_objs(SourceObjInfo** a, SourceObjInfo** b) {
   } else if (!(*a)->has_embedded_pointer() && (*b)->has_embedded_pointer()) {
     return -1;
   } else {
-    return 0;
+    return (*a)->index() - (*b)->index();
   }
 }
 
