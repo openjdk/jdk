@@ -37,4 +37,10 @@ public /** Misplaced: after mods. */ class DanglingDocCommentsClass /** Misplace
 
     /** Good comment for m4b; no dangling comments. */
     public void m4b() { }
+
+    /** Comment ignored here: does not affect decls in block */
+    static {
+        /** Good comment. */
+        int i = 0;
+    }
 }
