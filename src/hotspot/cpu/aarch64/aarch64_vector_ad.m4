@@ -1756,7 +1756,7 @@ instruct reduce_non_strict_order_add2F_neon(vRegF dst, vRegF fsrc, vReg vsrc) %{
   predicate(Matcher::vector_length(n->in(2)) == 2 && !n->as_Reduction()->requires_strict_order());
   match(Set dst (AddReductionVF fsrc vsrc));
   effect(TEMP_DEF dst);
-  format %{ "reduce_add2F_neon $dst, $fsrc, $vsrc" %}
+  format %{ "reduce_non_strict_order_add2F_neon $dst, $fsrc, $vsrc" %}
   ins_encode %{
     __ faddp($dst$$FloatRegister, $vsrc$$FloatRegister, __ S);
     __ fadds($dst$$FloatRegister, $dst$$FloatRegister, $fsrc$$FloatRegister);
@@ -1771,7 +1771,7 @@ instruct reduce_non_strict_order_add4F_neon(vRegF dst, vRegF fsrc, vReg vsrc, vR
   predicate(Matcher::vector_length(n->in(2)) == 4 && !n->as_Reduction()->requires_strict_order());
   match(Set dst (AddReductionVF fsrc vsrc));
   effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "reduce_add4F_neon $dst, $fsrc, $vsrc\t# KILL $tmp" %}
+  format %{ "reduce_non_strict_order_add4F_neon $dst, $fsrc, $vsrc\t# KILL $tmp" %}
   ins_encode %{
     __ faddp($tmp$$FloatRegister, __ T4S, $vsrc$$FloatRegister, $vsrc$$FloatRegister);
     __ faddp($dst$$FloatRegister, $tmp$$FloatRegister, __ S);
@@ -1816,7 +1816,7 @@ instruct reduce_non_strict_order_add2D_neon(vRegD dst, vRegD dsrc, vReg vsrc) %{
   predicate(!n->as_Reduction()->requires_strict_order());
   match(Set dst (AddReductionVD dsrc vsrc));
   effect(TEMP_DEF dst);
-  format %{ "reduce_add2D_neon $dst, $dsrc, $vsrc\t# 2D" %}
+  format %{ "reduce_non_strict_order_add2D_neon $dst, $dsrc, $vsrc\t# 2D" %}
   ins_encode %{
     __ faddp($dst$$FloatRegister, $vsrc$$FloatRegister, __ D);
     __ faddd($dst$$FloatRegister, $dst$$FloatRegister, $dsrc$$FloatRegister);
