@@ -256,7 +256,7 @@ bool InstanceKlass::has_as_permitted_subclass(const InstanceKlass* k) const {
 // Any errors from nest-host resolution must be preserved so they can be queried
 // from higher-level access checking code, and reported as part of access checking
 // exceptions.
-// VirtualMachineErrors are propagated with a null return.
+// VirtualMachineErrors (subclasses) are propagated with a null return.
 // Under any conditions where the _nest_host can be set to non-null the resulting
 // value of it and, if applicable, the nest host resolution/validation error,
 // are idempotent.
@@ -1509,6 +1509,8 @@ instanceOop InstanceKlass::register_finalizer(instanceOop i, TRAPS) {
 }
 
 instanceOop InstanceKlass::allocate_instance(TRAPS) {
+  assert(!is_abstract() && !is_interface(), "Should not create this object");
+
   bool has_finalizer_flag = has_finalizer(); // Query before possible GC
   size_t size = size_helper();  // Query before forming handle.
 

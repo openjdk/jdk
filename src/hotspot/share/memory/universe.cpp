@@ -229,7 +229,6 @@ public:
 
 static BuiltinException _null_ptr_exception;
 static BuiltinException _arithmetic_exception;
-static BuiltinException _virtual_machine_error;
 
 objArrayOop Universe::the_empty_class_array ()  {
   return (objArrayOop)_the_empty_class_array.resolve();
@@ -246,7 +245,6 @@ oop Universe::the_min_jint_string()               { return _the_min_jint_string.
 
 oop Universe::null_ptr_exception_instance()       { return _null_ptr_exception.instance(); }
 oop Universe::arithmetic_exception_instance()     { return _arithmetic_exception.instance(); }
-oop Universe::virtual_machine_error_instance()    { return _virtual_machine_error.instance(); }
 
 oop Universe::the_null_sentinel()                 { return _the_null_sentinel.resolve(); }
 
@@ -302,7 +300,6 @@ void Universe::set_archived_basic_type_mirror_index(BasicType t, int index) {
 void Universe::archive_exception_instances() {
   _null_ptr_exception.store_in_cds();
   _arithmetic_exception.store_in_cds();
-  _virtual_machine_error.store_in_cds();
 }
 
 void Universe::load_archived_object_instances() {
@@ -318,7 +315,6 @@ void Universe::load_archived_object_instances() {
 
     _null_ptr_exception.load_from_cds();
     _arithmetic_exception.load_from_cds();
-    _virtual_machine_error.load_from_cds();
   }
 }
 #endif
@@ -334,7 +330,6 @@ void Universe::serialize(SerializeClosure* f) {
   }
   _null_ptr_exception.serialize(f);
   _arithmetic_exception.serialize(f);
-  _virtual_machine_error.serialize(f);
 #endif
 
   f->do_ptr(&_fillerArrayKlass);
@@ -1098,7 +1093,6 @@ bool universe_post_init() {
      tty->print_cr("Unable to link/verify VirtualMachineError class");
      return false; // initialization failed
   }
-  _virtual_machine_error.init_if_empty(vmSymbols::java_lang_VirtualMachineError(), CHECK_false);
 
   Handle msg = java_lang_String::create_from_str("/ by zero", CHECK_false);
   java_lang_Throwable::set_message(Universe::arithmetic_exception_instance(), msg());

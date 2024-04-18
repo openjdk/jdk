@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,6 +153,7 @@ void Verifier::log_end_verification(outputStream* st, const char* klassName, Sym
   st->print_cr("End class verification for: %s", klassName);
 }
 
+
 bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
   HandleMark hm(THREAD);
   ResourceMark rm(THREAD);
@@ -255,7 +256,7 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
         // or one of it's superclasses, we're in trouble and are going
         // to infinitely recurse when we try to initialize the exception.
         // So bail out here by throwing the preallocated VM error.
-        THROW_OOP_(Universe::virtual_machine_error_instance(), false);
+        THROW_MSG_(vmSymbols::java_lang_StackOverflowError(), "Verification error while loading VerifyError", false);
       }
       kls = kls->super();
     }

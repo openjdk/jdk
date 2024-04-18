@@ -2014,7 +2014,7 @@ JVM_ENTRY(jobjectArray, JVM_GetNestMembers(JNIEnv* env, jclass current))
         Klass* k = host->constants()->klass_at(cp_index, THREAD);
         if (HAS_PENDING_EXCEPTION) {
           if (PENDING_EXCEPTION->is_a(vmClasses::VirtualMachineError_klass())) {
-            return nullptr; // propagate VMEs
+            return nullptr; // propagate VME subclasses
           }
           if (log_is_enabled(Trace, class, nestmates)) {
             stringStream ss;
@@ -2090,7 +2090,7 @@ JVM_ENTRY(jobjectArray, JVM_GetPermittedSubclasses(JNIEnv* env, jclass current))
       Klass* k = ik->constants()->klass_at(cp_index, THREAD);
       if (HAS_PENDING_EXCEPTION) {
         if (PENDING_EXCEPTION->is_a(vmClasses::VirtualMachineError_klass())) {
-          return nullptr; // propagate VMEs
+          return nullptr; // propagate VME subclasses
         }
         if (log_is_enabled(Trace, class, sealed)) {
           stringStream ss;
