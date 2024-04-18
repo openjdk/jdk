@@ -42,7 +42,6 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
   _vloop_analyzer(vloop_analyzer),
   _vloop(vloop_analyzer.vloop()),
   _arena(mtCompiler),
-  _node_info(arena(), _vloop.estimated_body_length(), 0, SWNodeInfo::initial), // info needed per node
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
   _pairset(&_arena, _vloop_analyzer),
@@ -451,9 +450,6 @@ bool SuperWord::transform_loop() {
 bool SuperWord::SLP_extract() {
   assert(cl()->is_main_loop(), "SLP should only work on main loops");
 
-  // Ensure extra info is allocated.
-  initialize_node_info();
-
   // Find "seed" pairs.
   find_adjacent_memop_pairs();
 
@@ -591,35 +587,6 @@ void SuperWord::find_adjacent_memop_pairs_in_group(const GrowableArray<const VPo
       }
     }
   }
-}
-
-//---------------------------get_vw_bytes_special------------------------
-int SuperWord::get_vw_bytes_special(MemNode* s) {
-  // Get the vector width in bytes.
-  int vw = vector_width_in_bytes(s);
-
-  // Check for special case where there is an MulAddS2I usage where short vectors are going to need combined.
-  BasicType btype = velt_basic_type(s);
-  if (type2aelembytes(btype) == 2) {
-    bool should_combine_adjacent = true;
-    for (DUIterator_Fast imax, i = s->fast_outs(imax); i < imax; i++) {
-      Node* user = s->fast_out(i);
-      if (!VectorNode::is_muladds2i(user)) {
-        should_combine_adjacent = false;
-      }
-    }
-    if (should_combine_adjacent) {
-      vw = MIN2(Matcher::max_vector_size_auto_vectorization(btype)*type2aelembytes(btype), vw * 2);
-    }
-  }
-
-  // Check for special case where there is a type conversion between different data size.
-  int vectsize = max_vector_size_in_def_use_chain(s);
-  if (vectsize < Matcher::max_vector_size_auto_vectorization(btype)) {
-    vw = MIN2(vectsize * type2aelembytes(btype), vw);
-  }
-
-  return vw;
 }
 
 void VLoopMemorySlices::find_memory_slices() {
@@ -895,16 +862,6 @@ bool VLoopReductions::is_marked_reduction_pair(const Node* s1, const Node* s2) c
   return false;
 }
 
-//------------------------------set_alignment---------------------------
-void SuperWord::set_alignment(Node* s1, Node* s2, int align) {
-  set_alignment(s1, align);
-  if (align == top_align || align == bottom_align) {
-    set_alignment(s2, align);
-  } else {
-    set_alignment(s2, align + data_size(s1));
-  }
-}
-
 // Extend pairset by following use->def and def->use links from pair members.
 void SuperWord::extend_pairset_with_more_pairs_by_following_use_and_def() {
   bool changed;
@@ -940,57 +897,26 @@ void SuperWord::extend_pairset_with_more_pairs_by_following_use_and_def() {
 #endif
 }
 
-//------------------------------adjust_alignment_for_type_conversion---------------------------------
-// Adjust the target alignment if conversion between different data size exists in def-use nodes.
-int SuperWord::adjust_alignment_for_type_conversion(Node* s, Node* t, int align) {
-  // Do not use superword for non-primitives
-  BasicType bt1 = velt_basic_type(s);
-  BasicType bt2 = velt_basic_type(t);
-  if (!is_java_primitive(bt1) || !is_java_primitive(bt2)) {
-    return align;
-  }
-  if (longer_type_for_conversion(s) != T_ILLEGAL ||
-      longer_type_for_conversion(t) != T_ILLEGAL) {
-    align = align / data_size(s) * data_size(t);
-  }
-  return align;
-}
-
 bool SuperWord::extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* s2) {
   assert(_pairset.is_pair(s1, s2), "(s1, s2) must be a pair");
   assert(s1->req() == s2->req(), "just checking");
-  assert(alignment(s1) + data_size(s1) == alignment(s2), "just checking");
 
   if (s1->is_Load()) return false;
 
-#ifndef PRODUCT
-  if (is_trace_superword_alignment()) {
-    tty->print_cr("SuperWord::extend_pairset_with_more_pairs_by_following_def: s1 %d, align %d",
-                  s1->_idx, alignment(s1));
-  }
-#endif
   bool changed = false;
   int start = s1->is_Store() ? MemNode::ValueIn   : 1;
   int end   = s1->is_Store() ? MemNode::ValueIn+1 : s1->req();
   for (int j = start; j < end; j++) {
-    int align = alignment(s1);
     Node* t1 = s1->in(j);
     Node* t2 = s2->in(j);
     if (!in_bb(t1) || !in_bb(t2) || t1->is_Mem() || t2->is_Mem())  {
       // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
       continue;
     }
-    align = adjust_alignment_for_type_conversion(s1, t1, align);
+    // TODO: align = adjust_alignment_for_type_conversion(s1, t1, align);
     if (can_pack_into_pair(t1, t2)) {
       if (estimate_cost_savings_when_packing_as_pair(t1, t2) >= 0) {
         _pairset.add_pair(t1, t2);
-#ifndef PRODUCT
-        if (is_trace_superword_alignment()) {
-          tty->print_cr("SuperWord::extend_pairset_with_more_pairs_by_following_def: set_alignment(%d, %d, %d)",
-                        t1->_idx, t2->_idx, align);
-        }
-#endif
-        set_alignment(t1, t2, align);
         changed = true;
       }
     }
@@ -1004,17 +930,9 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* 
 bool SuperWord::extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* s2) {
   assert(_pairset.is_pair(s1, s2), "(s1, s2) must be a pair");
   assert(s1->req() == s2->req(), "just checking");
-  assert(alignment(s1) + data_size(s1) == alignment(s2), "just checking");
 
   if (s1->is_Store()) return false;
 
-  int align = alignment(s1);
-#ifndef PRODUCT
-  if (is_trace_superword_alignment()) {
-    tty->print_cr("SuperWord::extend_pairset_with_more_pairs_by_following_use: s1 %d, align %d",
-                  s1->_idx, align);
-  }
-#endif
   int savings = -1;
   Node* u1 = nullptr;
   Node* u2 = nullptr;
@@ -1032,28 +950,19 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* 
       }
       if (t2->Opcode() == Op_AddI && t2 == cl()->incr()) continue; // don't mess with the iv
       if (order_inputs_of_uses_to_match_def_pair(s1, s2, t1, t2) != PairOrderStatus::Ordered) { continue; }
-      int adjusted_align = alignment(s1);
-      adjusted_align = adjust_alignment_for_type_conversion(s1, t1, adjusted_align);
+      // TODO: adjusted_align = adjust_alignment_for_type_conversion(s1, t1, adjusted_align);
       if (can_pack_into_pair(t1, t2)) {
         int my_savings = estimate_cost_savings_when_packing_as_pair(t1, t2);
         if (my_savings > savings) {
           savings = my_savings;
           u1 = t1;
           u2 = t2;
-          align = adjusted_align;
         }
       }
     }
   }
   if (savings >= 0) {
     _pairset.add_pair(u1, u2);
-#ifndef PRODUCT
-    if (is_trace_superword_alignment()) {
-      tty->print_cr("SuperWord::extend_pairset_with_more_pairs_by_following_use: set_alignment(%d, %d, %d)",
-                    u1->_idx, u2->_idx, align);
-    }
-#endif
-    set_alignment(u1, u2, align);
     return true; // changed
   }
   return false; // no change
@@ -2864,46 +2773,27 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
   }
 
   if (VectorNode::is_muladds2i(use)) {
-    // MulAddS2I takes shorts and produces ints - hence the special checks
-    // on alignment and size.
+    // MulAddS2I takes shorts and produces ints.
     if (u_pk->size() * 2 != d_pk->size()) {
       return false;
     }
-    for (uint i = 0; i < MIN2(d_pk->size(), u_pk->size()); i++) {
-      Node* ui = u_pk->at(i);
-      Node* di = d_pk->at(i);
-      if (alignment(ui) != alignment(di) * 2) {
-        return false;
-      }
-    }
+    // TODO: verify: input size must be smaller, factor 2
+    // TODO improve description above
     return true;
   }
 
-  if (u_pk->size() != d_pk->size())
+  if (u_pk->size() != d_pk->size()) {
     return false;
-
-  if (longer_type_for_conversion(use) != T_ILLEGAL) {
-    // These opcodes take a type of a kind of size and produce a type of
-    // another size - hence the special checks on alignment and size.
-    for (uint i = 0; i < u_pk->size(); i++) {
-      Node* ui = u_pk->at(i);
-      Node* di = d_pk->at(i);
-      if (ui->in(u_idx) != di) {
-        return false;
-      }
-      if (alignment(ui) / type2aelembytes(velt_basic_type(ui)) !=
-          alignment(di) / type2aelembytes(velt_basic_type(di))) {
-        return false;
-      }
-    }
-    return true;
   }
+
+  // TODO verify type size matches use-def
 
   for (uint i = 0; i < u_pk->size(); i++) {
     Node* ui = u_pk->at(i);
     Node* di = d_pk->at(i);
-    if (ui->in(u_idx) != di || alignment(ui) != alignment(di))
+    if (ui->in(u_idx) != di) {
       return false;
+    }
   }
   return true;
 }
@@ -3038,12 +2928,6 @@ VStatus VLoopBody::construct() {
   return VStatus::make_success();
 }
 
-// Initialize per node info
-void SuperWord::initialize_node_info() {
-  Node* last = body().at(body().length() - 1);
-  grow_node_info(bb_idx(last));
-}
-
 BasicType SuperWord::longer_type_for_conversion(Node* n) const {
   if (!(VectorNode::is_convert_opcode(n->Opcode()) ||
         requires_long_to_int_conversion(n->Opcode())) ||
@@ -3063,34 +2947,6 @@ BasicType SuperWord::longer_type_for_conversion(Node* n) const {
   int dst_size = type2aelembytes(dst_t);
   return src_size == dst_size ? T_ILLEGAL
                               : (src_size > dst_size ? src_t : dst_t);
-}
-
-int SuperWord::max_vector_size_in_def_use_chain(Node* n) {
-  BasicType bt = velt_basic_type(n);
-  BasicType vt = bt;
-
-  // find the longest type among def nodes.
-  uint start, end;
-  VectorNode::vector_operands(n, &start, &end);
-  for (uint i = start; i < end; ++i) {
-    Node* input = n->in(i);
-    if (!in_bb(input)) continue;
-    BasicType newt = longer_type_for_conversion(input);
-    vt = (newt == T_ILLEGAL) ? vt : newt;
-  }
-
-  // find the longest type among use nodes.
-  for (uint i = 0; i < n->outcnt(); ++i) {
-    Node* output = n->raw_out(i);
-    if (!in_bb(output)) continue;
-    BasicType newt = longer_type_for_conversion(output);
-    vt = (newt == T_ILLEGAL) ? vt : newt;
-  }
-
-  int max = Matcher::max_vector_size_auto_vectorization(vt);
-  // If now there is no vectors for the longest type, the nodes with the longest
-  // type in the def-use chain are not packed in SuperWord::can_pack_into_pair.
-  return max < 2 ? Matcher::max_vector_size_auto_vectorization(bt) : max;
 }
 
 void VLoopTypes::compute_vector_element_type() {
@@ -3194,36 +3050,6 @@ void VLoopTypes::compute_vector_element_type() {
     }
   }
 #endif
-}
-
-//------------------------------memory_alignment---------------------------
-// Alignment within a vector memory reference
-int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
-#ifndef PRODUCT
-  if (is_trace_superword_alignment()) {
-    tty->print("SuperWord::memory_alignment within a vector memory reference for %d:  ", s->_idx); s->dump();
-  }
-#endif
-  const VPointer& p = vpointer(s);
-  if (!p.valid()) {
-    NOT_PRODUCT(if(is_trace_superword_alignment()) tty->print_cr("SuperWord::memory_alignment: VPointer p invalid, return bottom_align");)
-    return bottom_align;
-  }
-  int vw = get_vw_bytes_special(s);
-  if (vw < 2) {
-    NOT_PRODUCT(if(is_trace_superword_alignment()) tty->print_cr("SuperWord::memory_alignment: vector_width_in_bytes < 2, return bottom_align");)
-    return bottom_align; // No vectors for this type
-  }
-  int offset  = p.offset_in_bytes();
-  offset     += iv_adjust*p.memory_size();
-  int off_rem = offset % vw;
-  int off_mod = off_rem >= 0 ? off_rem : off_rem + vw;
-#ifndef PRODUCT
-  if (is_trace_superword_alignment()) {
-    tty->print_cr("SuperWord::memory_alignment: off_rem = %d, off_mod = %d (offset = %d)", off_rem, off_mod, offset);
-  }
-#endif
-  return off_mod;
 }
 
 // Smallest type containing range of values
@@ -3663,10 +3489,6 @@ void VLoopBody::print() const {
   }
 }
 #endif
-
-// ========================= SWNodeInfo =====================
-
-const SWNodeInfo SWNodeInfo::initial;
 
 //
 // --------------------------------- vectorization/simd -----------------------------------
