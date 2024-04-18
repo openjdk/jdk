@@ -81,7 +81,7 @@ public @interface PreviewFeature {
         CLASSFILE_API,
         @JEP(number=461, title="Stream Gatherers", status="Preview")
         STREAM_GATHERERS,
-        @JEP(number=0, title="Module Imports", status="Preview")
+        @JEP(number=476, title="Module Import Declarations", status="Preview")
         MODULE_IMPORTS,
         LANGUAGE_MODEL,
         /**
