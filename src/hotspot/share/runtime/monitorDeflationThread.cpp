@@ -50,11 +50,7 @@ void MonitorDeflationThread::initialize() {
 
 void MonitorDeflationThread::monitor_deflation_thread_entry(JavaThread* jt, TRAPS) {
 
-  // We wait for the lowest of these three intervals:
-  //  - GuaranteedSafepointInterval
-  //      While deflation is not related to safepoint anymore, this keeps compatibility with
-  //      the old behavior when deflation also happened at safepoints. Users who set this
-  //      option to get more/less frequent deflations would be served with this option.
+  // We wait for the lowest of these two intervals:
   //  - AsyncDeflationInterval
   //      Normal threshold-based deflation heuristic checks the conditions at this interval.
   //      See is_async_deflation_needed().
@@ -63,9 +59,6 @@ void MonitorDeflationThread::monitor_deflation_thread_entry(JavaThread* jt, TRAP
   //      See is_async_deflation_needed().
   //
   intx wait_time = max_intx;
-  if (GuaranteedSafepointInterval > 0) {
-    wait_time = MIN2(wait_time, GuaranteedSafepointInterval);
-  }
   if (AsyncDeflationInterval > 0) {
     wait_time = MIN2(wait_time, AsyncDeflationInterval);
   }

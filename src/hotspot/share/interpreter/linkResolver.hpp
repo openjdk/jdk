@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,8 +92,8 @@ class CallInfo : public StackObj {
   CallInfo(Method* resolved_method, Klass* resolved_klass, TRAPS);
 
   Klass*  resolved_klass() const                 { return _resolved_klass; }
-  Method* resolved_method() const                { return _resolved_method(); }
-  Method* selected_method() const                { return _selected_method(); }
+  Method* resolved_method() const;
+  Method* selected_method() const;
   Handle       resolved_appendix() const         { return _resolved_appendix; }
   Handle       resolved_method_name() const      { return _resolved_method_name; }
   // Materialize a java.lang.invoke.ResolvedMethodName for this resolved_method

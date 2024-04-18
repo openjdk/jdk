@@ -1280,7 +1280,15 @@ void  os::dll_unload(void *lib) {
 }
 
 void* os::dll_lookup(void *lib, const char *name) {
-  return (void*)::GetProcAddress((HMODULE)lib, name);
+  ::SetLastError(0); // Clear old pending errors
+  void* ret = ::GetProcAddress((HMODULE)lib, name);
+  if (ret == nullptr) {
+    char buf[512];
+    if (os::lasterror(buf, sizeof(buf)) > 0) {
+      log_debug(os)("Symbol %s not found in dll: %s", name, buf);
+    }
+  }
+  return ret;
 }
 
 // Directory routines copied from src/win32/native/java/io/dirent_md.c
@@ -2781,10 +2789,10 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     if (exception_code == EXCEPTION_IN_PAGE_ERROR) {
-      CompiledMethod* nm = nullptr;
+      nmethod* nm = nullptr;
       if (in_java) {
         CodeBlob* cb = CodeCache::find_blob(pc);
-        nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
+        nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
       }
 
       bool is_unsafe_arraycopy = (in_native || in_java) && UnsafeCopyMemory::contains_pc(pc);
@@ -2833,14 +2841,14 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       // If it is, patch return address to be deopt handler.
       if (NativeDeoptInstruction::is_deopt_at(pc)) {
         CodeBlob* cb = CodeCache::find_blob(pc);
-        if (cb != nullptr && cb->is_compiled()) {
-          CompiledMethod* cm = cb->as_compiled_method();
+        if (cb != nullptr && cb->is_nmethod()) {
+          nmethod* nm = cb->as_nmethod();
           frame fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
-          address deopt = cm->is_method_handle_return(pc) ?
-            cm->deopt_mh_handler_begin() :
-            cm->deopt_handler_begin();
-          assert(cm->insts_contains_inclusive(pc), "");
-          cm->set_original_pc(&fr, pc);
+          address deopt = nm->is_method_handle_return(pc) ?
+            nm->deopt_mh_handler_begin() :
+            nm->deopt_handler_begin();
+          assert(nm->insts_contains_inclusive(pc), "");
+          nm->set_original_pc(&fr, pc);
           // Set pc to handler
           exceptionInfo->ContextRecord->PC_NAME = (DWORD64)deopt;
           return EXCEPTION_CONTINUE_EXECUTION;
