@@ -104,7 +104,7 @@ public class TestJTabbedPaneOpaqueColor {
     }
 
     private static JFrame createAndShowUI() {
-        int NUM_TABS = 5;
+        int NUM_TABS = 15;
         frame = new JFrame("Test JTabbedPane Opaque Color");
         JTabbedPane tabPane = new JTabbedPane();
         tabPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
