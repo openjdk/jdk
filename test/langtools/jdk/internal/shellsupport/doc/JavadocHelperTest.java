@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,19 +30,17 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/jdk.internal.shellsupport.doc
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
- * @run testng/timeout=900/othervm -Xmx1024m JavadocHelperTest
+ * @run testng JavadocHelperTest
  */
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -51,8 +49,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ModuleElement;
-import javax.lang.model.element.ModuleElement.ExportsDirective;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic.Kind;
@@ -68,6 +65,7 @@ import com.sun.source.util.JavacTask;
 import jdk.internal.shellsupport.doc.JavadocHelper;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
 @Test
@@ -383,7 +381,11 @@ public class JavadocHelperTest {
 
     }
 
-    public void testAllDocs() throws IOException {
+    /*
+     * This retrieves the doc comments of java.lang.StringBuilder members, which is where
+     * the crash in JDK-8189778 occurred. Full test moved to FullJavaDocHelperTest.java.
+     */
+    public void testStringBuilderDocs() throws IOException {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         DiagnosticListener<? super JavaFileObject> noErrors = d -> {
             if (d.getKind() == Kind.ERROR) {
@@ -391,39 +393,24 @@ public class JavadocHelperTest {
             }
         };
 
-        List<Path> sources = new ArrayList<>();
         Path home = Paths.get(System.getProperty("java.home"));
         Path srcZip = home.resolve("lib").resolve("src.zip");
         if (Files.isReadable(srcZip)) {
             URI uri = URI.create("jar:" + srcZip.toUri());
             try (FileSystem zipFO = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
                 Path root = zipFO.getRootDirectories().iterator().next();
+                List<Path> sources = List.of(root.resolve("java.base"));
 
-                //modular format:
-                try (DirectoryStream<Path> ds = Files.newDirectoryStream(root)) {
-                    for (Path p : ds) {
-                        if (Files.isDirectory(p)) {
-                            sources.add(p);
-                        }
-                    }
-                }
                 try (StandardJavaFileManager fm =
                         compiler.getStandardFileManager(null, null, null)) {
                     JavacTask task =
                             (JavacTask) compiler.getTask(null, fm, noErrors, null, null, null);
-                    task.getElements().getTypeElement("java.lang.Object");
-                    for (ModuleElement me : task.getElements().getAllModuleElements()) {
-                        List<ExportsDirective> exports =
-                                ElementFilter.exportsIn(me.getDirectives());
-                        for (ExportsDirective ed : exports) {
-                            try (JavadocHelper helper = JavadocHelper.create(task, sources)) {
-                                List<? extends Element> content =
-                                        ed.getPackage().getEnclosedElements();
-                                for (TypeElement clazz : ElementFilter.typesIn(content)) {
-                                    for (Element el : clazz.getEnclosedElements()) {
-                                        helper.getResolvedDocComment(el);
-                                    }
-                                }
+                    TypeElement clazz = task.getElements().getTypeElement("java.lang.StringBuilder");
+                    try (JavadocHelper helper = JavadocHelper.create(task, sources)) {
+                        for (Element el : clazz.getEnclosedElements()) {
+                            // All StringBuilder members are currently documented, but exclude private to be safe
+                            if (!el.getModifiers().contains(Modifier.PRIVATE)) {
+                                assertNotNull(helper.getResolvedDocComment(el));
                             }
                         }
                     }
