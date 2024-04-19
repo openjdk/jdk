@@ -28,6 +28,7 @@ package jdk.internal.net.http;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.net.URI;
@@ -1724,9 +1725,10 @@ class Stream<T> extends ExchangeImpl<T> {
     private static final VarHandle DEREGISTERED;
     static {
         try {
-            STREAM_STATE = MethodHandles.lookup()
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            STREAM_STATE = lookup
                     .findVarHandle(Stream.class, "streamState", int.class);
-            DEREGISTERED = MethodHandles.lookup()
+            DEREGISTERED = lookup
                     .findVarHandle(Stream.class, "deRegistered", boolean.class);
         } catch (Exception x) {
             throw new ExceptionInInitializerError(x);
