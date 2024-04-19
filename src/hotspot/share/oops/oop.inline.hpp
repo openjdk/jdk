@@ -262,12 +262,7 @@ bool oopDesc::is_gc_marked() const {
 
 // Used by scavengers
 bool oopDesc::is_forwarded() const {
-  return is_forwarded(mark());
-}
-
-// Non-racy version.
-bool oopDesc::is_forwarded(markWord m) const {
-  return m.is_forwarded();
+  return mark().is_forwarded();
 }
 
 // Used by scavengers
@@ -292,12 +287,7 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
 // The forwardee is used when copying during scavenge and mark-sweep.
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee() const {
-  return forwardee(mark());
-}
-
-oop oopDesc::forwardee(markWord m) const {
-  assert(is_forwarded(m), "only decode when actually forwarded");
-  return cast_to_oop(m.decode_pointer());
+  return mark().forwardee();
 }
 
 // The following method needs to be MT safe.
