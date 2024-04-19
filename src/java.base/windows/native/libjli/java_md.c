@@ -422,7 +422,6 @@ jboolean
 GetApplicationHome(char *buf, jint bufsize)
 {
     GetModuleFileName(NULL, buf, bufsize);
-    JLI_TraceLauncher("Launcher executable path is %s\n", buf);
     return TruncatePath(buf);
 }
 

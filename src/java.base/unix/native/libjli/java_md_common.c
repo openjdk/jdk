@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,8 +82,6 @@ GetApplicationHome(char *buf, jint bufsize)
 {
     const char *execname = GetExecName();
     if (execname != NULL) {
-        JLI_TraceLauncher("Launcher executable path is %s\n", execname);
-
         JLI_Snprintf(buf, bufsize, "%s", execname);
         buf[bufsize-1] = '\0';
     } else {
