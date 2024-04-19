@@ -626,17 +626,21 @@ public:
   DumpWriter(const char* path, bool overwrite, AbstractCompressor* compressor);
   ~DumpWriter();
   julong bytes_written() const override        { return (julong) _bytes_written; }
-  void set_bytes_written(julong bytes_written) { _bytes_written = bytes_written; }
   char const* error() const override           { return _error; }
   void set_error(const char* error)            { _error = (char*)error; }
   bool has_error() const                       { return _error != nullptr; }
   const char* get_file_path() const            { return _writer->get_file_path(); }
   AbstractCompressor* compressor()             { return _compressor; }
-  void set_compressor(AbstractCompressor* p)   { _compressor = p; }
   bool is_overwrite() const                    { return _writer->is_overwrite(); }
-  int get_fd() const                           { return _writer->get_fd(); }
 
   void flush() override;
+
+private:
+  // internals for DumpMerger
+  friend class DumpMerger;
+  void set_bytes_written(julong bytes_written) { _bytes_written = bytes_written; }
+  int get_fd() const                           { return _writer->get_fd(); }
+  void set_compressor(AbstractCompressor* p)   { _compressor = p; }
 };
 
 DumpWriter::DumpWriter(const char* path, bool overwrite, AbstractCompressor* compressor) :
@@ -2126,13 +2130,14 @@ void DumpMerger::merge_file(const char* path) {
 
   jlong total = 0;
   size_t cnt = 0;
-  char read_buf[4096];
-  while ((cnt = segment_fs.read(read_buf, 1, 4096)) != 0) {
-    _writer->write_raw(read_buf, cnt);
+
+  // Use _writer buffer for reading.
+  while ((cnt = segment_fs.read(_writer->buffer(), 1, _writer->buffer_size())) != 0) {
+    _writer->set_position(cnt);
+    _writer->flush();
     total += cnt;
   }
 
-  _writer->flush();
   if (segment_fs.fileSize() != total) {
     set_error("Merged heap dump is incomplete");
   }
