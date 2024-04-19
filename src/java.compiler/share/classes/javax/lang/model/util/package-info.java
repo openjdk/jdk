@@ -57,10 +57,11 @@
  * <ul>
  *
  * <li>the preview language construct has a corresponding new modeling
- * interface
+ * interface and a concomitant new kind constant, such as a new {@link
+ * javax.lang.model.element.ElementKind} constant
  *
  * <li>the preview language construct only triggers the introduction
- * of a new kind <em>without</em> a new modeling interface.
+ * of a new kind <em>without</em> a new modeling interface
  *
  * </ul>
  *
@@ -239,7 +240,7 @@
  *        * the specific {&commat;linkplain ElementKind kind} of variable, {&commat;code
  *        * ENUM_CONSTANT}, {&commat;code EXCEPTION_PARAMETER}, {&commat;code FIELD},
  *  -     * {&commat;code LOCAL_VARIABLE}, {&commat;code PARAMETER}, or {&commat;code RESOURCE_VARIABLE}.
- *  +     * {&commat;code LOCAL_VARIABLE}, {&commat;code PARAMETER}, or {&commat;code RESOURCE_VARIABLE},
+ *  +     * {&commat;code LOCAL_VARIABLE}, {&commat;code PARAMETER}, {&commat;code RESOURCE_VARIABLE},
  *  +     * or {&commat;code PREVIEW_FEATURE_2}.
  *        *
  *        * &commat;param e {&commat;inheritDoc ElementVisitor}
