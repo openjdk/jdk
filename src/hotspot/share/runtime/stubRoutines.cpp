@@ -40,10 +40,10 @@
 #include "opto/runtime.hpp"
 #endif
 
-UnsafeMemoryAccess* UnsafeMemoryAccess::_table                      = nullptr;
-int UnsafeMemoryAccess::_table_length                             = 0;
-int UnsafeMemoryAccess::_table_max_length                         = 0;
-address UnsafeMemoryAccess::_common_exit_stub_pc                  = nullptr;
+UnsafeCopyMemory* UnsafeCopyMemory::_table                      = nullptr;
+int UnsafeCopyMemory::_table_length                             = 0;
+int UnsafeCopyMemory::_table_max_length                         = 0;
+address UnsafeCopyMemory::_common_exit_stub_pc                  = nullptr;
 
 // Implementation of StubRoutines - for a description
 // of how to extend it, see the header file.
@@ -201,14 +201,14 @@ address StubRoutines::_upcall_stub_exception_handler = nullptr;
 
 extern void StubGenerator_generate(CodeBuffer* code, StubCodeGenerator::StubsKind kind); // only interface to generators
 
-void UnsafeMemoryAccess::create_table(int max_size) {
-  UnsafeMemoryAccess::_table = new UnsafeMemoryAccess[max_size];
-  UnsafeMemoryAccess::_table_max_length = max_size;
+void UnsafeCopyMemory::create_table(int max_size) {
+  UnsafeCopyMemory::_table = new UnsafeCopyMemory[max_size];
+  UnsafeCopyMemory::_table_max_length = max_size;
 }
 
-bool UnsafeMemoryAccess::contains_pc(address pc) {
-  for (int i = 0; i < UnsafeMemoryAccess::_table_length; i++) {
-    UnsafeMemoryAccess* entry = &UnsafeMemoryAccess::_table[i];
+bool UnsafeCopyMemory::contains_pc(address pc) {
+  for (int i = 0; i < UnsafeCopyMemory::_table_length; i++) {
+    UnsafeCopyMemory* entry = &UnsafeCopyMemory::_table[i];
     if (pc >= entry->start_pc() && pc < entry->end_pc()) {
       return true;
     }
@@ -216,9 +216,9 @@ bool UnsafeMemoryAccess::contains_pc(address pc) {
   return false;
 }
 
-address UnsafeMemoryAccess::page_error_continue_pc(address pc) {
-  for (int i = 0; i < UnsafeMemoryAccess::_table_length; i++) {
-    UnsafeMemoryAccess* entry = &UnsafeMemoryAccess::_table[i];
+address UnsafeCopyMemory::page_error_continue_pc(address pc) {
+  for (int i = 0; i < UnsafeCopyMemory::_table_length; i++) {
+    UnsafeCopyMemory* entry = &UnsafeCopyMemory::_table[i];
     if (pc >= entry->start_pc() && pc < entry->end_pc()) {
       return entry->error_exit_pc();
     }
@@ -518,20 +518,20 @@ StubRoutines::select_arraycopy_function(BasicType t, bool aligned, bool disjoint
 #undef RETURN_STUB_PARM
 }
 
-UnsafeMemoryMark::UnsafeMemoryMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc) {
+UnsafeCopyMemoryMark::UnsafeCopyMemoryMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc) {
   _cgen = cgen;
   _ucm_entry = nullptr;
   if (add_entry) {
     address err_exit_pc = nullptr;
     if (!continue_at_scope_end) {
-      err_exit_pc = error_exit_pc != nullptr ? error_exit_pc : UnsafeMemoryAccess::common_exit_stub_pc();
+      err_exit_pc = error_exit_pc != nullptr ? error_exit_pc : UnsafeCopyMemory::common_exit_stub_pc();
     }
     assert(err_exit_pc != nullptr || continue_at_scope_end, "error exit not set");
-    _ucm_entry = UnsafeMemoryAccess::add_to_table(_cgen->assembler()->pc(), nullptr, err_exit_pc);
+    _ucm_entry = UnsafeCopyMemory::add_to_table(_cgen->assembler()->pc(), nullptr, err_exit_pc);
   }
 }
 
-UnsafeMemoryMark::~UnsafeMemoryMark() {
+UnsafeCopyMemoryMark::~UnsafeCopyMemoryMark() {
   if (_ucm_entry != nullptr) {
     _ucm_entry->set_end_pc(_cgen->assembler()->pc());
     if (_ucm_entry->error_exit_pc() == nullptr) {

@@ -777,14 +777,13 @@ const TypeFunc* OptoRuntime::void_void_Type() {
 // uchar byte
 const TypeFunc* OptoRuntime::make_setmemory_Type() {
   // create input type (domain)
-  int num_args      = 4;
-  int argcnt = num_args;
+  int argcnt = NOT_LP64(3) LP64_ONLY(4);
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
-  fields[argp++] = TypePtr::NOTNULL;    // dest
-  fields[argp++] = TypeLong::LONG;      // size
-  fields[argp++] = Type::HALF;          // size
-  fields[argp++] = TypeInt::UBYTE;      // bytevalue
+  fields[argp++] = TypePtr::NOTNULL;        // dest
+  fields[argp++] = TypeX_X;                 // size
+  LP64_ONLY(fields[argp++] = Type::HALF);  // size
+  fields[argp++] = TypeInt::UBYTE;          // bytevalue
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 

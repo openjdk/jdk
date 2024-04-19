@@ -1115,9 +1115,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     {
-      // UnsafeMemoryAccess page error: continue after ucm
+      // UnsafeCopyMemory page error: continue after ucm
       bool add_entry = !is_oop && (!aligned || sizeof(jlong) == size);
-      UnsafeMemoryMark ucmm(this, add_entry, true);
+      UnsafeCopyMemoryMark ucmm(this, add_entry, true);
       copy_memory(decorators, is_oop ? T_OBJECT : T_BYTE, aligned, s, d, count, size);
     }
 
@@ -1191,9 +1191,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     {
-      // UnsafeMemoryAccess page error: continue after ucm
+      // UnsafeCopyMemory page error: continue after ucm
       bool add_entry = !is_oop && (!aligned || sizeof(jlong) == size);
-      UnsafeMemoryMark ucmm(this, add_entry, true);
+      UnsafeCopyMemoryMark ucmm(this, add_entry, true);
       copy_memory(decorators, is_oop ? T_OBJECT : T_BYTE, aligned, s, d, count, -size);
     }
 
@@ -5479,8 +5479,8 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     StubRoutines::_forward_exception_entry = generate_forward_exception();
 
-    if (UnsafeMemoryAccess::_table == nullptr) {
-      UnsafeMemoryAccess::create_table(18);
+    if (UnsafeCopyMemory::_table == nullptr) {
+      UnsafeCopyMemory::create_table(8 + 4); // 8 for copyMemory; 4 for setMemory
     }
 
     StubRoutines::_call_stub_entry =
