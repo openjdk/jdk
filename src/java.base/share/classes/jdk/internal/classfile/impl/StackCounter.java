@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,26 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.constant.ClassDesc;
-import java.lang.constant.MethodTypeDesc;
-import java.nio.ByteBuffer;
-import java.util.BitSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.stream.Collectors;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.constantpool.ConstantDynamicEntry;
 import java.lang.classfile.constantpool.DynamicConstantPoolEntry;
 import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.constant.MethodTypeDesc;
+import java.nio.ByteBuffer;
+import java.util.ArrayDeque;
+import java.util.BitSet;
+import java.util.List;
+import java.util.Queue;
+
 import static java.lang.classfile.ClassFile.*;
 
-
 public final class StackCounter {
+
+    private record Target(int bci, int stack) {}
 
     static StackCounter of(DirectCodeBuilder dcb, BufWriterImpl buf) {
         return new StackCounter(
                 dcb,
-                buf.thisClass().asSymbol(),
                 dcb.methodInfo.methodName().stringValue(),
                 dcb.methodInfo.methodTypeSymbol(),
                 (dcb.methodInfo.methodFlags() & ACC_STATIC) != 0,
@@ -59,12 +59,12 @@ public final class StackCounter {
     private final String methodName;
     private final MethodTypeDesc methodDesc;
     private final SplitConstantPool cp;
-    private final LinkedHashMap<Integer, Integer> map;
+    private final Queue<Target> targets;
     private final BitSet visited;
 
     private void jump(int targetBci) {
         if (!visited.get(targetBci)) {
-            map.put(targetBci, stack);
+            targets.add(new Target(targetBci, stack));
         }
     }
 
@@ -78,13 +78,11 @@ public final class StackCounter {
     }
 
     private boolean next() {
-        var it = map.entrySet().iterator();
-        while (it.hasNext()) {
-            var en = it.next();
-            it.remove();
-            if (!visited.get(en.getKey())) {
-                bcs.nextBci = en.getKey();
-                stack = en.getValue();
+        Target en;
+        while ((en = targets.poll()) != null) {
+            if (!visited.get(en.bci)) {
+                bcs.nextBci = en.bci;
+                stack = en.stack;
                 return true;
             }
         }
@@ -93,7 +91,6 @@ public final class StackCounter {
     }
 
     public StackCounter(LabelContext labelContext,
-                     ClassDesc thisClass,
                      String methodName,
                      MethodTypeDesc methodDesc,
                      boolean isStatic,
@@ -103,16 +100,14 @@ public final class StackCounter {
         this.methodName = methodName;
         this.methodDesc = methodDesc;
         this.cp = cp;
-        map = new LinkedHashMap<>();
+        targets = new ArrayDeque<>();
         maxStack = stack = rets = 0;
-        for (var h : handlers) map.put(labelContext.labelToBci(h.handler), 1);
+        for (var h : handlers) targets.add(new Target(labelContext.labelToBci(h.handler), 1));
         maxLocals = isStatic ? 0 : 1;
-        for (var cd : methodDesc.parameterList()) {
-            maxLocals += Util.slotSize(cd);
-        }
+        maxLocals += Util.parameterSlots(methodDesc);
         bcs = new RawBytecodeHelper(bytecode);
         visited = new BitSet(bcs.endBci);
-        map.put(0, 0);
+        targets.add(new Target(0, 0));
         while (next()) {
             while (!bcs.isLastBytecode()) {
                 bcs.rawNext();
@@ -307,14 +302,11 @@ public final class StackCounter {
                     case INVOKEVIRTUAL, INVOKESPECIAL, INVOKESTATIC, INVOKEINTERFACE, INVOKEDYNAMIC -> {
                         var cpe = cp.entryByIndex(bcs.getIndexU2());
                         var nameAndType = opcode == INVOKEDYNAMIC ? ((DynamicConstantPoolEntry)cpe).nameAndType() : ((MemberRefEntry)cpe).nameAndType();
-                        var mDesc = MethodTypeDesc.ofDescriptor(nameAndType.type().stringValue());
-                        for (var arg : mDesc.parameterList()) {
-                            addStackSlot(-TypeKind.from(arg).slotSize());
-                        }
+                        var mtd = Util.methodTypeSymbol(nameAndType);
+                        addStackSlot(Util.slotSize(mtd.returnType()) - Util.parameterSlots(mtd));
                         if (opcode != INVOKESTATIC && opcode != INVOKEDYNAMIC) {
                             addStackSlot(-1);
                         }
-                        addStackSlot(TypeKind.from(mDesc.returnType()).slotSize());
                     }
                     case MULTIANEWARRAY ->
                         addStackSlot (1 - bcs.getU1(bcs.bci + 3));

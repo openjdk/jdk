@@ -356,7 +356,7 @@ static void emit_store_fast_path_check_c2(MacroAssembler* masm, Address ref_addr
   // This is a JCC erratum mitigation wrapper for calling the inner check
   int size = store_fast_path_check_size(masm, ref_addr, is_atomic, medium_path);
   // Emit JCC erratum mitigation nops with the right size
-  IntelJccErratumAlignment intel_alignment(*masm, size);
+  IntelJccErratumAlignment intel_alignment(masm, size);
   // Emit the JCC erratum mitigation guarded code
   emit_store_fast_path_check(masm, ref_addr, is_atomic, medium_path);
 #endif
@@ -1184,7 +1184,7 @@ OptoReg::Name ZBarrierSetAssembler::refine_register(const Node* node, OptoReg::N
 }
 
 // We use the vec_spill_helper from the x86.ad file to avoid reinventing this wheel
-extern void vec_spill_helper(CodeBuffer *cbuf, bool is_load,
+extern void vec_spill_helper(C2_MacroAssembler *masm, bool is_load,
                             int stack_offset, int reg, uint ireg, outputStream* st);
 
 #undef __
@@ -1246,13 +1246,15 @@ private:
     const OptoReg::Name opto_reg = OptoReg::as_OptoReg(reg_data._reg->as_VMReg());
     const uint ideal_reg = xmm_ideal_reg_for_size(reg_data._size);
     _spill_offset -= reg_data._size;
-    vec_spill_helper(__ code(), false /* is_load */, _spill_offset, opto_reg, ideal_reg, tty);
+    C2_MacroAssembler c2_masm(__ code());
+    vec_spill_helper(&c2_masm, false /* is_load */, _spill_offset, opto_reg, ideal_reg, tty);
   }
 
   void xmm_register_restore(const XMMRegisterData& reg_data) {
     const OptoReg::Name opto_reg = OptoReg::as_OptoReg(reg_data._reg->as_VMReg());
     const uint ideal_reg = xmm_ideal_reg_for_size(reg_data._size);
-    vec_spill_helper(__ code(), true /* is_load */, _spill_offset, opto_reg, ideal_reg, tty);
+    C2_MacroAssembler c2_masm(__ code());
+    vec_spill_helper(&c2_masm, true /* is_load */, _spill_offset, opto_reg, ideal_reg, tty);
     _spill_offset += reg_data._size;
   }
 

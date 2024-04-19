@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,69 +26,71 @@
 include LibCommon.gmk
 
 ################################################################################
+## Build libj2gss
+################################################################################
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJ2GSS, \
     NAME := j2gss, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB), \
+    EXTRA_HEADER_DIRS := java.base:libjava, \
     DISABLED_WARNINGS_gcc := undef, \
-    DISABLED_WARNINGS_clang_aix := undef, \
     DISABLED_WARNINGS_clang := undef, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LIBS := $(LIBDL), \
+    LIBS_unix := $(LIBDL), \
 ))
 
 TARGETS += $(BUILD_LIBJ2GSS)
 
 ifeq ($(call isTargetOs, windows), true)
+  ##############################################################################
+  ## Build libsspi_bridge
+  ##############################################################################
+
   $(eval $(call SetupJdkLibrary, BUILD_LIBSSPI_BRIDGE, \
       NAME := sspi_bridge, \
       OPTIMIZATION := LOW, \
-      EXTRA_HEADER_DIRS := libj2gss, \
-      CFLAGS := $(CFLAGS_JDKLIB), \
-      CXXFLAGS := $(CXXFLAGS_JDKLIB), \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LIBS := Secur32.lib, \
+      EXTRA_HEADER_DIRS := \
+          libj2gss \
+          java.base:libjava, \
+      LIBS_windows := secur32.lib, \
   ))
 
   TARGETS += $(BUILD_LIBSSPI_BRIDGE)
 endif
 
-################################################################################
-
 ifneq ($(BUILD_CRYPTO), false)
-
   ifeq ($(call isTargetOs, windows), true)
+    ############################################################################
+    ## Build libw2k_lsa_auth
+    ############################################################################
+
     $(eval $(call SetupJdkLibrary, BUILD_LIBW2K_LSA_AUTH, \
         NAME := w2k_lsa_auth, \
         OPTIMIZATION := LOW, \
-        CFLAGS := $(CFLAGS_JDKLIB), \
-        LDFLAGS := $(LDFLAGS_JDKLIB) \
-            $(call SET_SHARED_LIBRARY_ORIGIN), \
-        LIBS := advapi32.lib Secur32.lib kernel32.lib ws2_32.lib, \
+        EXTRA_HEADER_DIRS := java.base:libjava, \
+        LIBS_windows := advapi32.lib kernel32.lib secur32.lib ws2_32.lib, \
     ))
 
     TARGETS += $(BUILD_LIBW2K_LSA_AUTH)
   endif
 
   ifeq ($(call isTargetOs, macosx), true)
+    ############################################################################
+    ## Build libosxkrb5
+    ############################################################################
+
     # libosxkrb5 needs to call deprecated krb5 APIs so that java
     # can use the native credentials cache.
     $(eval $(call SetupJdkLibrary, BUILD_LIBOSXKRB5, \
         NAME := osxkrb5, \
         OPTIMIZATION := LOW, \
-        CFLAGS := $(CFLAGS_JDKLIB), \
+        EXTRA_HEADER_DIRS := java.base:libjava, \
         DISABLED_WARNINGS_clang_nativeccache.c := deprecated-declarations, \
-        LDFLAGS := $(LDFLAGS_JDKLIB) \
-            $(call SET_SHARED_LIBRARY_ORIGIN), \
-        LIBS := -framework Cocoa -framework SystemConfiguration \
-            -framework Kerberos, \
+        LIBS_macosx := \
+            -framework Cocoa \
+            -framework Kerberos \
+            -framework SystemConfiguration, \
     ))
 
     TARGETS += $(BUILD_LIBOSXKRB5)
   endif
 endif
-
-################################################################################

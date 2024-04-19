@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,18 @@
 
 include LibCommon.gmk
 
-################################################################################
-
 ifeq ($(call isTargetOs, windows), true)
+  ##############################################################################
+  ## Build libdt_shmem
+  ##############################################################################
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBDT_SHMEM, \
       NAME := dt_shmem, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB), \
       EXTRA_HEADER_DIRS := \
           jdk.jdwp.agent:include \
           jdk.jdwp.agent:libjdwp/export, \
-      LDFLAGS := $(LDFLAGS_JDKLIB), \
-      LIBS := $(JDKLIB_LIBS), \
   ))
 
   TARGETS += $(BUILD_LIBDT_SHMEM)
-
 endif
-
-################################################################################

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -271,7 +271,7 @@ void C1_MacroAssembler::allocate_array(
   Register len,                        // array length
   Register t1,                         // temp register
   Register t2,                         // temp register
-  int      hdr_size,                   // object header size in words
+  int      base_offset_in_bytes,       // elements offset in bytes
   int      elt_size,                   // element size in bytes
   Register klass,                      // object klass
   Label&   slow_case                   // Continuation point if fast allocation fails.
@@ -297,8 +297,8 @@ void C1_MacroAssembler::allocate_array(
     case  8: z_sllg(arr_size, len, 3); break;
     default: ShouldNotReachHere();
   }
-  add2reg(arr_size, hdr_size * wordSize + MinObjAlignmentInBytesMask); // Add space for header & alignment.
-  z_nill(arr_size, (~MinObjAlignmentInBytesMask) & 0xffff);            // Align array size.
+  add2reg(arr_size, base_offset_in_bytes + MinObjAlignmentInBytesMask); // Add space for header & alignment.
+  z_nill(arr_size, (~MinObjAlignmentInBytesMask) & 0xffff);             // Align array size.
 
   try_allocate(obj, arr_size, 0, t1, slow_case);
 
@@ -308,9 +308,9 @@ void C1_MacroAssembler::allocate_array(
   Label done;
   Register object_fields = t1;
   Register Rzero = Z_R1_scratch;
-  z_aghi(arr_size, -(hdr_size * BytesPerWord));
+  z_aghi(arr_size, -base_offset_in_bytes);
   z_bre(done); // Jump if size of fields is zero.
-  z_la(object_fields, hdr_size * BytesPerWord, obj);
+  z_la(object_fields, base_offset_in_bytes, obj);
   z_xgr(Rzero, Rzero);
   initialize_body(object_fields, arr_size, Rzero);
   bind(done);
