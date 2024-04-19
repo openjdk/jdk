@@ -437,7 +437,7 @@ public class Vector<E>
      */
     public synchronized int findIndex(Predicate<? super E> filter, int index) {
         for (int i = index; i < elementCount; i++) {
-            if (filter.test(elementData[i])) {
+            if (filter.test(elementData(i))) {
                 return i;
             }
         }
