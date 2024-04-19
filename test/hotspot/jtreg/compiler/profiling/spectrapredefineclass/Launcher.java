@@ -61,11 +61,10 @@ public class Launcher {
                 .addToolArg(Agent.AGENT_JAR)
                 .addToolArg(Agent.class.getName().replace('.', File.separatorChar) + ".class");
 
-        ProcessBuilder pb = new ProcessBuilder(jar.getCommand());
         try {
-            OutputAnalyzer output = ProcessTools.executeProcess(pb);
+            OutputAnalyzer output = ProcessTools.executeProcess(jar.getCommand());
             output.shouldHaveExitValue(0);
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             throw new Error("TESTBUG: jar failed.", ex);
         }
     }

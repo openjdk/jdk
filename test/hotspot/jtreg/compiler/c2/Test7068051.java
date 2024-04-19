@@ -134,9 +134,8 @@ public class Test7068051 {
         for (String p : params) {
             jar.addToolArg(p);
         }
-        ProcessBuilder pb = new ProcessBuilder(jar.getCommand());
         try {
-            OutputAnalyzer output = ProcessTools.executeProcess(pb);
+            OutputAnalyzer output = ProcessTools.executeProcess(jar.getCommand());
             output.shouldHaveExitValue(0);
         } catch (Exception ex) {
             throw new AssertionError("TESTBUG: jar failed.", ex);
