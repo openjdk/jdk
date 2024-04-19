@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,7 +19,9 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
+
 package com.sun.hotspot.igv.coordinator.actions;
 
 import com.sun.hotspot.igv.coordinator.OutlineTopComponent;
@@ -29,27 +29,26 @@ import javax.swing.Action;
 import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle;
+import org.openide.util.Utilities;
 import org.openide.util.actions.CallableSystemAction;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public final class RemoveAllAction extends CallableSystemAction {
+public final class OpenAction extends CallableSystemAction {
 
-    @Override
-    public String getName() {
-        return NbBundle.getMessage(RemoveAllAction.class, "CTL_RemoveAllAction");
-    }
-
-    public RemoveAllAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Clear workspace");
+    public OpenAction() {
+        putValue(Action.SHORT_DESCRIPTION, "Open...");
+        // D is the Control key on most platforms, the Command (meta) key on Macintosh
+        putValue(Action.ACCELERATOR_KEY, Utilities.stringToKey("D-O"));
         putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
     }
 
     @Override
-    protected String iconResource() {
-        return "com/sun/hotspot/igv/coordinator/images/removeall.png";
+    public void performAction() {
+        OutlineTopComponent.findInstance().openFile();
+    }
+
+    @Override
+    public String getName() {
+        return NbBundle.getMessage(OpenAction.class, "CTL_OpenAction");
     }
 
     @Override
@@ -63,7 +62,7 @@ public final class RemoveAllAction extends CallableSystemAction {
     }
 
     @Override
-    public void performAction() {
-        OutlineTopComponent.findInstance().clearWorkspace();
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/coordinator/images/open.png";
     }
 }
