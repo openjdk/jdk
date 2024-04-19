@@ -834,7 +834,9 @@ void ObjectMonitor::EnterI(JavaThread* current) {
 
   for (;;) {
 
-    if (TryLock(current) == TryLockResult::Success) break;
+    if (TryLock(current) == TryLockResult::Success) {
+      break;
+    }
     assert(owner_raw() != current, "invariant");
 
     // park self
@@ -849,7 +851,9 @@ void ObjectMonitor::EnterI(JavaThread* current) {
       current->_ParkEvent->park();
     }
 
-    if (TryLock(current) == TryLockResult::Success) break;
+    if (TryLock(current) == TryLockResult::Success) {
+      break;
+    }
 
     if (try_set_owner_from(DEFLATER_MARKER, current) == DEFLATER_MARKER) {
       // Cancelled the in-progress async deflation by changing owner from
@@ -882,7 +886,9 @@ void ObjectMonitor::EnterI(JavaThread* current) {
     // We can defer clearing _succ until after the spin completes
     // TrySpin() must tolerate being called with _succ == current.
     // Try yet another round of adaptive spinning.
-    if (TrySpin(current)) break;
+    if (TrySpin(current)) {
+      break;
+    }
 
     // We can find that we were unpark()ed and redesignated _succ while
     // we were spinning.  That's harmless.  If we iterate and call park(),
@@ -981,7 +987,9 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
     guarantee(v == ObjectWaiter::TS_ENTER || v == ObjectWaiter::TS_CXQ, "invariant");
     assert(owner_raw() != current, "invariant");
 
-    if (TrySpin(current)) break;
+    if (TrySpin(current)) {
+        break;
+    }
 
     {
       OSThreadContendState osts(current->osthread());
@@ -998,7 +1006,9 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
     // Try again, but just so we distinguish between futile wakeups and
     // successful wakeups.  The following test isn't algorithmically
     // necessary, but it helps us maintain sensible statistics.
-    if (TryLock(current) == TryLockResult::Success) break;
+    if (TryLock(current) == TryLockResult::Success) {
+      break;
+    }
 
     // The lock is still contested.
     // Keep a tally of the # of futile wakeups.
@@ -2020,7 +2030,9 @@ bool ObjectMonitor::TrySpin(JavaThread* current) {
     // in the normal usage of TrySpin(), but it's safest
     // to make TrySpin() as foolproof as possible.
     OrderAccess::fence();
-    if (TryLock(current) == TryLockResult::Success) return true;
+    if (TryLock(current) == TryLockResult::Success) {
+      return true;
+    }
   }
 
   return false;
