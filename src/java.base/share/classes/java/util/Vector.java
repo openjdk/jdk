@@ -25,14 +25,14 @@
 
 package java.util;
 
-import jdk.internal.util.ArraysSupport;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.StreamCorruptedException;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+
+import jdk.internal.util.ArraysSupport;
 
 /**
  * The {@code Vector} class implements a growable array of
