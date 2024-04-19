@@ -85,6 +85,7 @@ import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import java.util.function.Predicate;
 
 public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper {
 

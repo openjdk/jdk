@@ -207,8 +207,8 @@ public class CopyOnWriteArrayList<E>
      *
      * @param filter the predicate to search matching element for
      * @param es     the array
-     * @param from   index of first element of range, last element to search
-     * @param to     one past last element of range, first element to search
+     * @param from   index of first element of range, first element to search
+     * @param to     one past last element of range, last element to search
      * @return index of element, or -1 if absent
      */
     private static <E> int findIndexInRange(Predicate<E> filter, E[] es, int from, int to) {
@@ -1443,7 +1443,7 @@ public class CopyOnWriteArrayList<E>
                 offset = this.offset;
                 size = this.size;
             }
-            int i = indexOfRange(filter, es, offset, offset + size);
+            int i = findIndexInRange(filter, es, offset, offset + size);
             return (i == -1) ? -1 : i - offset;
         }
 
@@ -1457,7 +1457,7 @@ public class CopyOnWriteArrayList<E>
                 offset = this.offset;
                 size = this.size;
             }
-            int i = lastIndexOfRange(filter, es, offset, offset + size);
+            int i = findLastIndexInRange(filter, es, offset, offset + size);
             return (i == -1) ? -1 : i - offset;
         }
 

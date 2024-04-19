@@ -346,8 +346,18 @@ class ReverseOrderListView<E> implements List<E> {
         return i == -1 ? -1 : base.size() - i - 1;
     }
 
+    public int findIndex(Predicate<? super E> filter) {
+        int i = base.findLastIndex(filter);
+        return i == -1 ? -1 : base.size() - i - 1;
+    }
+
     public int lastIndexOf(Object o) {
         int i = base.indexOf(o);
+        return i == -1 ? -1 : base.size() - i - 1;
+    }
+
+    public int findLastIndex(Predicate<? super E> filter) {
+        int i = base.findIndex(filter);
         return i == -1 ? -1 : base.size() - i - 1;
     }
 
