@@ -1,0 +1,426 @@
+#
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include CopyFiles.gmk
+
+################################################################################
+# This file will build all AWT/2D native libraries with "awt" in the name.
+# Note that this does not imply that the code they bring in belong to AWT.
+# This split is purely made to keep the size of the Makefiles reasonable.
+
+LIBAWT_DEFAULT_HEADER_DIRS := \
+    common/awt/utility \
+    libawt/awt/image \
+    libawt/awt/image/cvutils \
+    libawt/java2d \
+    libawt/java2d/loops \
+    libawt/java2d/pipe \
+    #
+
+################################################################################
+## Build libawt
+################################################################################
+
+LIBAWT_EXTRA_SRC := \
+    common/awt/debug \
+    $(TOPDIR)/src/$(MODULE)/$(OPENJDK_TARGET_OS_TYPE)/native/common/awt \
+    #
+
+ifeq ($(call isTargetOs, windows), true)
+  LIBAWT_EXTRA_SRC += \
+      $(TOPDIR)/src/$(MODULE)/share/native/common/awt/utility \
+      $(TOPDIR)/src/$(MODULE)/share/native/common/font \
+      $(TOPDIR)/src/$(MODULE)/share/native/common/java2d/opengl \
+      $(TOPDIR)/src/$(MODULE)/$(OPENJDK_TARGET_OS_TYPE)/native/common/awt/systemscale \
+      #
+endif
+
+ifeq ($(call isTargetOs, linux macosx aix), true)
+  LIBAWT_EXCLUDE_FILES += awt_Font.c CUPSfuncs.c fontpath.c X11Color.c
+endif
+
+ifeq ($(call isTargetOs, macosx), true)
+  LIBAWT_EXCLUDE_FILES += initIDs.c img_colors.c
+endif
+
+ifeq ($(call isTargetOs, windows), true)
+  LIBAWT_EXCLUDE_FILES += D3DShaderGen.c img_colors.c
+endif
+
+LIBAWT_EXTRA_HEADER_DIRS := \
+    $(LIBAWT_DEFAULT_HEADER_DIRS) \
+    $(call GetJavaHeaderDir, java.base) \
+    libawt/awt/medialib \
+    libawt/java2d/d3d \
+    libawt/java2d/opengl \
+    libawt/java2d/windows \
+    libawt/windows \
+    common/awt/medialib \
+    libmlib_image \
+    include \
+    #
+
+LIBAWT_CFLAGS := -D__MEDIALIB_OLD_NAMES -D__USE_J2D_NAMES -DMLIB_NO_LIBSUNMATH
+
+ifeq ($(call isTargetOs, windows), true)
+  LIBAWT_CFLAGS += -EHsc -DUNICODE -D_UNICODE
+  ifeq ($(call isTargetCpuBits, 64), true)
+    LIBAWT_CFLAGS += -DMLIB_OS64BIT
+  endif
+
+  LIBAWT_RCFLAGS ?= -I$(TOPDIR)/src/java.base/windows/native/launcher/icons
+  LIBAWT_VERSIONINFO_RESOURCE := \
+      $(TOPDIR)/src/$(MODULE)/windows/native/libawt/windows/awt.rc
+endif
+
+# -fgcse-after-reload improves performance of MaskFill in Java2D by 20% for
+# some gcc
+$(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
+    NAME := awt, \
+    EXTRA_SRC := $(LIBAWT_EXTRA_SRC), \
+    EXCLUDE_FILES := $(LIBAWT_EXCLUDE_FILES), \
+    OPTIMIZATION := HIGHEST, \
+    CFLAGS := $(LIBAWT_CFLAGS) $(X_CFLAGS), \
+    CXXFLAGS := $(LIBAWT_CFLAGS) $(X_CFLAGS), \
+    CFLAGS_gcc := -fgcse-after-reload, \
+    EXTRA_HEADER_DIRS := $(LIBAWT_EXTRA_HEADER_DIRS), \
+    DISABLED_WARNINGS_gcc_awt_LoadLibrary.c := unused-result, \
+    DISABLED_WARNINGS_gcc_debug_mem.c := format-nonliteral, \
+    DISABLED_WARNINGS_gcc_ProcessPath.c := maybe-uninitialized, \
+    DISABLED_WARNINGS_gcc_Region.c := maybe-uninitialized, \
+    DISABLED_WARNINGS_gcc_SurfaceData.c := unused-value, \
+    DISABLED_WARNINGS_gcc_TransformHelper.c := sign-compare, \
+    DISABLED_WARNINGS_clang_awt_ImagingLib.c := deprecated-non-prototype, \
+    DISABLED_WARNINGS_clang_debug_trace.c := format-nonliteral, \
+    DISABLED_WARNINGS_clang_Trace.c := format-nonliteral, \
+    DISABLED_WARNINGS_clang_TransformHelper.c := sign-compare, \
+    DISABLED_WARNINGS_microsoft := 4244 4996, \
+    DISABLED_WARNINGS_microsoft_awt_Toolkit.cpp := 4267, \
+    LDFLAGS_windows := -delayload:comctl32.dll -delayload:comdlg32.dll \
+        -delayload:gdi32.dll -delayload:imm32.dll -delayload:ole32.dll \
+        -delayload:shell32.dll -delayload:shlwapi.dll -delayload:user32.dll \
+        -delayload:winmm.dll -delayload:winspool.drv, \
+    JDK_LIBS := java.base:libjava java.base:libjvm, \
+    LIBS_unix := $(LIBM), \
+    LIBS_linux := $(LIBDL), \
+    LIBS_aix := $(LIBDL),\
+    LIBS_macosx := \
+        -framework ApplicationServices \
+        -framework AudioToolbox \
+        -framework Cocoa \
+        -framework JavaRuntimeSupport \
+        -framework Metal \
+        -framework OpenGL, \
+    LIBS_windows := advapi32.lib comctl32.lib comdlg32.lib delayimp.lib \
+        gdi32.lib imm32.lib kernel32.lib ole32.lib shell32.lib shlwapi.lib \
+        user32.lib uuid.lib winmm.lib winspool.lib, \
+    VERSIONINFO_RESOURCE := $(LIBAWT_VERSIONINFO_RESOURCE), \
+    EXTRA_RCFLAGS := $(LIBAWT_RCFLAGS), \
+))
+
+TARGETS += $(BUILD_LIBAWT)
+
+# Mac and Windows only use the native AWT lib, do not build libawt_headless
+ifeq ($(call isTargetOs, windows macosx), false)
+  ##############################################################################
+  ## Build libawt_headless
+  ##############################################################################
+
+  LIBAWT_HEADLESS_EXTRA_SRC := \
+      common/font \
+      common/java2d \
+      $(TOPDIR)/src/$(MODULE)/$(OPENJDK_TARGET_OS_TYPE)/native/common/awt \
+      #
+
+  LIBAWT_HEADLESS_EXTRA_HEADER_DIRS := \
+      $(LIBAWT_DEFAULT_HEADER_DIRS) \
+      common/awt/debug \
+      common/font \
+      common/java2d/opengl \
+      java.base:libjvm \
+      #
+
+  # These are the object files provided by the awt native
+  # library. Do not include these external (non-awt_headless library)
+  # objects in the static library. When statically linking the java
+  # launcher with all JDK and VM static libraries, we use the
+  # --whole-archive linker option. The duplicate objects in different
+  # static libraries cause linking errors due to duplicate symbols.
+  LIBAWT_HEADLESS_STATIC_EXCLUDE_OBJS := systemScale.o
+
+  $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_HEADLESS, \
+      NAME := awt_headless, \
+      EXTRA_SRC := $(LIBAWT_HEADLESS_EXTRA_SRC), \
+      EXCLUDES := medialib, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := -DHEADLESS=true $(CUPS_CFLAGS) $(FONTCONFIG_CFLAGS) \
+          $(X_CFLAGS), \
+      EXTRA_HEADER_DIRS := $(LIBAWT_HEADLESS_EXTRA_HEADER_DIRS), \
+      DISABLED_WARNINGS_gcc_X11Renderer.c := unused-function, \
+      DISABLED_WARNINGS_gcc_X11SurfaceData.c := unused-function, \
+      JDK_LIBS := libawt java.base:libjava, \
+      LIBS_linux := $(LIBDL) $(LIBM), \
+      STATIC_LIB_EXCLUDE_OBJS := $(LIBAWT_HEADLESS_STATIC_EXCLUDE_OBJS), \
+  ))
+
+  TARGETS += $(BUILD_LIBAWT_HEADLESS)
+endif
+
+ifeq ($(call isTargetOs, windows macosx)+$(ENABLE_HEADLESS_ONLY), false+false)
+  ##############################################################################
+  ## Build libawt_xawt
+  ##############################################################################
+
+  LIBAWT_XAWT_EXTRA_SRC := \
+      common/awt \
+      common/java2d \
+      common/font \
+      #
+
+  LIBAWT_XAWT_EXTRA_HEADER_DIRS := \
+      $(LIBAWT_DEFAULT_HEADER_DIRS) \
+      libawt_xawt/awt \
+      include \
+      common/awt/debug \
+      common/awt/systemscale \
+      common/font \
+      common/java2d/opengl \
+      common/java2d/x11 \
+      libpipewire/include \
+      java.base:libjvm \
+      #
+
+  ifeq ($(call isTargetOs, linux), true)
+    ifeq ($(DISABLE_XRENDER), true)
+      LIBAWT_XAWT_CFLAGS += -DDISABLE_XRENDER_BY_DEFAULT=true
+    endif
+  endif
+
+  # These are the object files provided by the awt native
+  # library. Do not include these external (non-awt_xawt library)
+  # objects in the static library. When statically linking the java
+  # launcher with all JDK and VM static libraries, we use the
+  # --whole-archive linker option. The duplicate objects in different
+  # static libraries cause linking errors due to duplicate symbols.
+  LIBAWT_XAWT_STATIC_EXCLUDE_OBJS := systemScale.o
+
+  $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_XAWT, \
+      NAME := awt_xawt, \
+      EXTRA_SRC := $(LIBAWT_XAWT_EXTRA_SRC), \
+      EXTRA_HEADER_DIRS := $(LIBAWT_XAWT_EXTRA_HEADER_DIRS), \
+      EXCLUDES := medialib debug, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := -DXAWT -DXAWT_HACK $(LIBAWT_XAWT_CFLAGS) \
+          $(FONTCONFIG_CFLAGS) $(CUPS_CFLAGS) $(X_CFLAGS), \
+      DISABLED_WARNINGS_gcc := int-to-pointer-cast, \
+      DISABLED_WARNINGS_gcc_awt_Taskbar.c := parentheses, \
+      DISABLED_WARNINGS_gcc_GLXSurfaceData.c := unused-function, \
+      DISABLED_WARNINGS_gcc_gtk2_interface.c := parentheses type-limits, \
+      DISABLED_WARNINGS_gcc_gtk3_interface.c := parentheses type-limits \
+          unused-function, \
+      DISABLED_WARNINGS_gcc_OGLBufImgOps.c := format-nonliteral, \
+      DISABLED_WARNINGS_gcc_OGLPaints.c := format-nonliteral, \
+      DISABLED_WARNINGS_gcc_screencast_pipewire.c := undef, \
+      DISABLED_WARNINGS_gcc_screencast_portal.c := undef, \
+      DISABLED_WARNINGS_gcc_sun_awt_X11_GtkFileDialogPeer.c := parentheses, \
+      DISABLED_WARNINGS_gcc_X11SurfaceData.c := implicit-fallthrough \
+          pointer-to-int-cast, \
+      DISABLED_WARNINGS_gcc_XlibWrapper.c := type-limits pointer-to-int-cast, \
+      DISABLED_WARNINGS_gcc_XRBackendNative.c := maybe-uninitialized, \
+      DISABLED_WARNINGS_gcc_XToolkit.c := unused-result, \
+      DISABLED_WARNINGS_gcc_XWindow.c := unused-function, \
+      DISABLED_WARNINGS_clang_awt_Taskbar.c := parentheses, \
+      DISABLED_WARNINGS_clang_gtk2_interface.c := parentheses, \
+      DISABLED_WARNINGS_clang_gtk3_interface.c := parentheses, \
+      DISABLED_WARNINGS_clang_OGLBufImgOps.c := format-nonliteral, \
+      DISABLED_WARNINGS_clang_OGLPaints.c := format-nonliteral, \
+      DISABLED_WARNINGS_clang_screencast_pipewire.c := format-nonliteral, \
+      DISABLED_WARNINGS_clang_sun_awt_X11_GtkFileDialogPeer.c := parentheses, \
+      DISABLED_WARNINGS_clang_aix := deprecated-non-prototype, \
+      DISABLED_WARNINGS_clang_aix_awt_Taskbar.c := parentheses, \
+      DISABLED_WARNINGS_clang_aix_OGLPaints.c := format-nonliteral, \
+      DISABLED_WARNINGS_clang_aix_OGLBufImgOps.c := format-nonliteral, \
+      DISABLED_WARNINGS_clang_aix_gtk2_interface.c := parentheses \
+          logical-op-parentheses, \
+      DISABLED_WARNINGS_clang_aix_gtk3_interface.c := parentheses \
+          logical-op-parentheses, \
+      DISABLED_WARNINGS_clang_aix_sun_awt_X11_GtkFileDialogPeer.c := \
+          parentheses, \
+      DISABLED_WARNINGS_clang_aix_awt_InputMethod.c := sign-compare, \
+      JDK_LIBS := libawt java.base:libjava, \
+      LIBS_unix := $(LIBDL) $(LIBM) $(X_LIBS) -lX11 -lXext -lXi -lXrender \
+          -lXtst, \
+      LIBS_linux := -lpthread, \
+      STATIC_LIB_EXCLUDE_OBJS := $(LIBAWT_XAWT_STATIC_EXCLUDE_OBJS), \
+  ))
+
+  TARGETS += $(BUILD_LIBAWT_XAWT)
+endif
+
+ifeq ($(call isTargetOs, macosx), true)
+  ##############################################################################
+  ## Build libawt_lwawt
+  ##############################################################################
+
+  LIBAWT_LWAWT_EXTRA_SRC := \
+      $(TOPDIR)/src/$(MODULE)/unix/native/common/awt \
+      $(TOPDIR)/src/$(MODULE)/share/native/common/font \
+      $(TOPDIR)/src/$(MODULE)/share/native/common/java2d \
+      #
+
+  LIBAWT_LWAWT_EXTRA_HEADER_DIRS := \
+      $(LIBAWT_DEFAULT_HEADER_DIRS) \
+      libawt_lwawt/awt \
+      libawt_lwawt/font \
+      libawt_lwawt/java2d/opengl \
+      libawt_lwawt/java2d/metal \
+      include \
+      common/awt/debug \
+      common/java2d/opengl \
+      java.base:libjvm \
+      #
+
+  LIBAWT_LWAWT_EXCLUDE_FILES := fontpath.c awt_Font.c X11Color.c
+  LIBAWT_LWAWT_EXCLUDES := $(TOPDIR)/src/$(MODULE)/unix/native/common/awt/medialib
+
+  $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_LWAWT, \
+      NAME := awt_lwawt, \
+      EXTRA_SRC := $(LIBAWT_LWAWT_EXTRA_SRC), \
+      EXCLUDE_FILES := $(LIBAWT_LWAWT_EXCLUDE_FILES), \
+      EXCLUDES := $(LIBAWT_LWAWT_EXCLUDES), \
+      OPTIMIZATION := LOW, \
+      EXTRA_HEADER_DIRS := $(LIBAWT_LWAWT_EXTRA_HEADER_DIRS), \
+      DISABLED_WARNINGS_clang := incomplete-implementation \
+          deprecated-declarations objc-method-access \
+          incompatible-pointer-types extra-tokens sign-compare undef, \
+      DISABLED_WARNINGS_clang_AWTWindow.m := bitwise-op-parentheses, \
+      DISABLED_WARNINGS_clang_CFileDialog.m := semicolon-before-method-body, \
+      DISABLED_WARNINGS_clang_CGGlyphImages.m := pointer-arith, \
+      DISABLED_WARNINGS_clang_CGLLayer.m := semicolon-before-method-body, \
+      DISABLED_WARNINGS_clang_ImageSurfaceData.m := enum-conversion \
+          parentheses-equality, \
+      DISABLED_WARNINGS_clang_MTLBlitLoops.m := pointer-arith, \
+      DISABLED_WARNINGS_clang_MTLPipelineStatesStorage.m := \
+          semicolon-before-method-body, \
+      DISABLED_WARNINGS_clang_MTLRenderer.m := gnu-folding-constant, \
+      DISABLED_WARNINGS_clang_MTLVertexCache.m := pointer-arith, \
+      DISABLED_WARNINGS_clang_OGLBufImgOps.c := format-nonliteral, \
+      DISABLED_WARNINGS_clang_OGLPaints.c := format-nonliteral, \
+      DISABLED_WARNINGS_clang_PrinterView.m := enum-conversion, \
+      JDK_LIBS := libawt java.base:libjava libosxapp, \
+      LIBS_macosx := $(LIBM) \
+          -framework Accelerate \
+          -framework ApplicationServices \
+          -framework AudioToolbox \
+          -framework Carbon \
+          -framework Cocoa \
+          -framework ExceptionHandling \
+          -framework JavaRuntimeSupport \
+          -framework Metal \
+          -framework OpenGL \
+          -framework QuartzCore \
+          -framework Security, \
+  ))
+
+  TARGETS += $(BUILD_LIBAWT_LWAWT)
+endif
+
+################################################################################
+## Build libjawt
+################################################################################
+
+LIBJAWT_EXTRA_HEADER_DIRS := \
+    include \
+    java.base:libjava \
+    #
+
+ifeq ($(call isTargetOs, windows), true)
+  LIBJAWT_EXTRA_HEADER_DIRS += \
+      common/awt/debug \
+      common/awt/utility \
+      libawt/awt/image/cvutils \
+      libawt/java2d \
+      libawt/java2d/windows \
+      libawt/windows \
+      java.base:libjvm \
+      #
+else
+  LIBJAWT_EXTRA_HEADER_DIRS += \
+      common/awt \
+      #
+endif
+
+ifeq ($(call isTargetOs, macosx), true)
+  # libjawt on macosx does not use the unix code
+  LIBJAWT_EXCLUDE_SRC_PATTERNS := /unix/
+endif
+
+ifeq ($(call isTargetOs, linux)+$(ENABLE_HEADLESS_ONLY), true+true)
+  LIBJAWT_CFLAGS += -DHEADLESS
+endif
+
+ifeq ($(call isTargetOs, windows)+$(call isTargetCpu, x86), true+true)
+  LIBJAWT_LIBS_windows := kernel32.lib
+endif
+
+ifeq ($(call isTargetOsType, unix)+$(call isTargetOs, macosx), true+false)
+  LIBJAWT_JDK_LIBS_unix := libawt
+  ifeq ($(ENABLE_HEADLESS_ONLY), false)
+    LIBJAWT_JDK_LIBS_unix += libawt_xawt
+  else
+    LIBJAWT_JDK_LIBS_unix += libawt_headless
+  endif
+endif
+
+$(eval $(call SetupJdkLibrary, BUILD_LIBJAWT, \
+    NAME := jawt, \
+    EXCLUDE_SRC_PATTERNS := $(LIBJAWT_EXCLUDE_SRC_PATTERNS), \
+    OPTIMIZATION := LOW, \
+    CFLAGS := $(LIBJAWT_CFLAGS), \
+    CFLAGS_windows := -EHsc -DUNICODE -D_UNICODE, \
+    CXXFLAGS_windows := -EHsc -DUNICODE -D_UNICODE, \
+    DISABLED_WARNINGS_clang_jawt.m := sign-compare, \
+    EXTRA_HEADER_DIRS := $(LIBJAWT_EXTRA_HEADER_DIRS), \
+    LDFLAGS_windows := $(LDFLAGS_CXX_JDK), \
+    LDFLAGS_macosx := -Wl$(COMMA)-rpath$(COMMA)@loader_path, \
+    JDK_LIBS_unix := $(LIBJAWT_JDK_LIBS_unix), \
+    JDK_LIBS_windows := libawt, \
+    JDK_LIBS_macosx := libawt_lwawt, \
+    LIBS_macosx := -framework Cocoa, \
+    LIBS_windows := advapi32.lib $(LIBJAWT_LIBS_windows), \
+))
+
+TARGETS += $(BUILD_LIBJAWT)
+
+ifeq ($(call isTargetOs, windows), true)
+  $(eval $(call SetupCopyFiles, COPY_JAWT_LIB, \
+      FILES := $(BUILD_LIBJAWT_IMPORT_LIBRARY), \
+      DEST := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
+  ))
+
+  $(COPY_JAWT_LIB): $(BUILD_LIBJAWT)
+
+  TARGETS += $(COPY_JAWT_LIB)
+endif
