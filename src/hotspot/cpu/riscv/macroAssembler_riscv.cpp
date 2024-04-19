@@ -1167,6 +1167,19 @@ void MacroAssembler::fsflagsi(Register Rd, unsigned imm) {
 
 #undef INSN
 
+void MacroAssembler::restore_cpu_control_state_after_jni(Register tmp) {
+  if (RestoreMXCSROnJNICalls) {
+    Label skip_fsrmi;
+    frrm(tmp);
+    // Set FRM to the state we need. We do want Round to Nearest.
+    // We don't want non-IEEE rounding modes.
+    guarantee(RoundingMode::rne == 0, "must be");
+    beqz(tmp, skip_fsrmi);        // Only reset FRM if it's wrong
+    fsrmi(RoundingMode::rne);
+    bind(skip_fsrmi);
+  }
+}
+
 void MacroAssembler::push_reg(Register Rs)
 {
   addi(esp, esp, 0 - wordSize);
