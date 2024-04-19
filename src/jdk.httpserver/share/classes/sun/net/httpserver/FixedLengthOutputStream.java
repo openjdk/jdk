@@ -92,12 +92,12 @@ class FixedLengthOutputStream extends FilterOutputStream
         if (closed) {
             return;
         }
+        flush();
         closed = true;
         if (remaining > 0) {
             t.close();
             throw new IOException ("insufficient bytes written to stream");
         }
-        flush();
         LeftOverInputStream is = t.getOriginalInputStream();
         if (!is.isClosed()) {
             try {
