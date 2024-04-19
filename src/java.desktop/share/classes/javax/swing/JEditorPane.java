@@ -473,20 +473,17 @@ public class JEditorPane extends JTextComponent {
             throw new IOException("invalid url");
         }
         URL loaded = getPage();
+        Object postData = getPostData();
 
         // reset scrollbar
         if (!page.equals(loaded) && page.getRef() == null) {
             scrollRectToVisible(new Rectangle(0, 0, 1, 1));
         }
-        if ((loaded != null) && loaded.sameFile(page)) {
+
+        if ((postData == null) && (page.sameFile(loaded))) {
             if (page.getRef() != null) {
                 scrollToReference(page.getRef());
             }
-            return;
-        }
-
-        Object postData = getPostData();
-        if ((postData == null) && (kit == null)) {
             return;
         }
 
@@ -495,6 +492,7 @@ public class JEditorPane extends JTextComponent {
             // we need to cancel background loading
             if (pageLoader != null) {
                 pageLoader.cancel(true);
+                pageLoader = null;
             }
         }
 
@@ -512,6 +510,10 @@ public class JEditorPane extends JTextComponent {
         // open stream synchronously
         InputStream in = getStream(page);
 
+        if ((kit == null)) {
+            return;
+        }
+
         Document doc = initializeModel(kit, page);
 
         // At this point, one could either load up the model with no
@@ -528,6 +530,7 @@ public class JEditorPane extends JTextComponent {
             }
             return;
         }
+
         read(in, doc);
         setDocument(doc);
 
