@@ -237,6 +237,7 @@ public:
     }
     return gtB;
   }
+
   Node* closest_leq(const K& key) {
     Node* leqA_n = nullptr;
     Node* head = _root;
@@ -258,7 +259,7 @@ public:
   }
 };
 
-class CHeapAllocator {
+class TreapCHeapAllocator {
 public:
   static void* allocate(size_t sz) {
     return os::malloc(sz, mtNMT);
@@ -269,6 +270,6 @@ public:
 };
 
 template<typename K, typename V, int (*CMP)(K, K)>
-using TreapCHeap = Treap<K, V, CMP, CHeapAllocator>;
+using TreapCHeap = Treap<K, V, CMP, TreapCHeapAllocator>;
 
 #endif //SHARE_NMT_TREAP_HPP
