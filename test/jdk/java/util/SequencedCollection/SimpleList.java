@@ -135,7 +135,9 @@ public class SimpleList<E> implements List<E> {
         return list.lastIndexOf(o);
     }
 
-    public int lastIndexOf(Predicate<? super E> filter) { return list.lastIndexOf(filter); }
+    public int lastIndexOf(Predicate<? super E> filter) {
+    return list.lastIndexOf(filter);
+    }
 
     public ListIterator<E> listIterator() {
         return list.listIterator();

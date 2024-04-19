@@ -2733,17 +2733,18 @@ public class Collections {
         public E remove(int index) {
             synchronized (mutex) {return list.remove(index);}
         }
+
         public int indexOf(Object o) {
             synchronized (mutex) {return list.indexOf(o);}
         }
         public int findIndex(Predicate<? super E> filter) {
-            synchronized (mutex) {return list.indexOf(filter);}
+            synchronized (mutex) {return list.findIndex(filter);}
         }
         public int lastIndexOf(Object o) {
             synchronized (mutex) {return list.lastIndexOf(o);}
         }
         public int findLastIndex(Predicate<? super E> filter) {
-            synchronized (mutex) {return list.lastIndexOf(filter);}
+            synchronized (mutex) {return list.findLastIndex(filter);}
         }
 
         public boolean addAll(int index, Collection<? extends E> c) {
@@ -3776,8 +3777,8 @@ public class Collections {
         public E remove(int index)       { return list.remove(index); }
         public int indexOf(Object o)     { return list.indexOf(o); }
         public int lastIndexOf(Object o) { return list.lastIndexOf(o); }
-        public int findIndex(Predicate<? super E> filter) { return list.indexOf(filter); }
-        public int findLastIndex(Predicate<? super E> filter) { return list.lastIndexOf(filter); }
+        public int findIndex(Predicate<? super E> filter) { return list.findIndex(filter); }
+        public int findLastIndex(Predicate<? super E> filter) { return list.findLastIndex(filter); }
 
         public E set(int index, E element) {
             return list.set(index, typeCheck(element));
