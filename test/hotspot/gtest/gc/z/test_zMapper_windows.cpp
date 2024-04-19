@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,77 +25,86 @@
 
 #ifdef _WIN64
 
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zSyscall_windows.hpp"
 #include "gc/z/zVirtualMemory.hpp"
+#include "runtime/os.hpp"
 #include "unittest.hpp"
 
-class TestZVirtualMemoryManager : public ZVirtualMemoryManager {
+using namespace testing;
+
+class ZMapperTest : public Test {
 private:
-  bool reserve_for_test(size_t size) {
+  static constexpr size_t reservation_size = 32 * M;
+public:
+  ZVirtualMemoryManager* _vmm;
+  static ZMemoryManager* _va;
+
+  bool reserve_for_test() {
     const zaddress_unsafe addr = ZOffset::address_unsafe(zoffset(0));
 
+    // Initialize platform specific parts before reserving address space
+    _vmm->pd_initialize_before_reserve();
+
     // Reserve address space
-    if (!pd_reserve(addr, size)) {
+    if (!_vmm->pd_reserve(addr, reservation_size)) {
       return false;
     }
 
-    // Make the address range free
-    _manager.free(zoffset(0), size);
+    // Make the address range free before setting up callbacks below
+    _va->free(zoffset(0), reservation_size);
+
+    // Initialize platform specific parts after reserving address space
+    _vmm->pd_initialize_after_reserve();
 
     return true;
   }
 
-public:
-  TestZVirtualMemoryManager(size_t size) : ZVirtualMemoryManager() {
-    // Initialize platform specific parts before reserving address space
-    pd_initialize_before_reserve();
+  virtual void SetUp() {
+    ZSyscall::initialize();
+    ZGlobalsPointers::initialize();
 
-    // Reserve address space
-    if (!reserve_for_test(size)) {
-      return;
-    }
+    // Fake a ZVirtualMemoryManager
+    _vmm = (ZVirtualMemoryManager*)os::malloc(sizeof(ZVirtualMemoryManager), mtTest);
+    // And construct its internal ZMemoryManager
+    _va = new (&_vmm->_manager) ZMemoryManager();
 
-    // Initialize platform specific parts after reserving address space
-    pd_initialize_after_reserve();
+    reserve_for_test();
   }
 
-  ~TestZVirtualMemoryManager() {
-    // Empty the manager to avoid ZList assesrtion
-    for (zoffset offset = _manager.alloc_low_address(2*M);
-         offset != zoffset(UINTPTR_MAX);
-         offset = _manager.alloc_low_address(2*M)) {
-
-    }
+  virtual void TearDown() {
+    const zaddress_unsafe addr = ZOffset::address_unsafe(zoffset(0));
+    _vmm->pd_unreserve(addr, 0);
+    os::free(_vmm);
   }
 
-  void test_alloc_patterns() {
+  static void test_memory_manager_callbacks() {
     // Verify that we get placeholder for last granule
-    zoffset highest2m = _manager.alloc_high_address(2*M);
-    zoffset high2m = _manager.alloc_high_address(2*M);
-    _manager.free(highest2m, 2 * M);
-    _manager.free(high2m, 2 * M);
+    zoffset highest2m = _va->alloc_high_address(2*M);
+    zoffset high2m = _va->alloc_high_address(2*M);
+    _va->free(highest2m, 2 * M);
+    _va->free(high2m, 2 * M);
 
     // Verify that we get placeholder for first granule
-    zoffset lowest2m = _manager.alloc_low_address(2*M);
-    zoffset low2m = _manager.alloc_low_address(2*M);
-    _manager.free(lowest2m, 2 * M);
-    _manager.free(low2m, 2 * M);
+    zoffset lowest2m = _va->alloc_low_address(2*M);
+    zoffset low2m = _va->alloc_low_address(2*M);
+    _va->free(lowest2m, 2 * M);
+    _va->free(low2m, 2 * M);
 
     // Destroy a 2M granule
-    highest2m = _manager.alloc_high_address(2*M);
-    high2m = _manager.alloc_high_address(2*M);
-    _manager.free(highest2m, 2 * M);
-    highest2m = _manager.alloc_high_address(2*M);
-    _manager.free(highest2m, 2 * M);
-    _manager.free(high2m, 2 * M);
+    highest2m = _va->alloc_high_address(2*M);
+    high2m = _va->alloc_high_address(2*M);
+    _va->free(highest2m, 2 * M);
+    highest2m = _va->alloc_high_address(2*M);
+    _va->free(highest2m, 2 * M);
+    _va->free(high2m, 2 * M);
   }
 };
 
-TEST(ZMapper, alloc_from_back) {
-  ZSyscall::initialize();
-  ZGlobalsPointers::initialize();
-  TestZVirtualMemoryManager manager(32 * M);
-  manager.test_alloc_patterns();
+ZMemoryManager* ZMapperTest::_va = nullptr;
+
+TEST_F(ZMapperTest, test_memory_manager_callbacks) {
+  test_memory_manager_callbacks();
 }
 #endif

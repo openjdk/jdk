@@ -32,11 +32,6 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
-ZVirtualMemoryManager::ZVirtualMemoryManager()
-  : _manager(),
-    _reserved(0),
-    _initialized(false) { }
-
 ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity)
   : _manager(),
     _reserved(0),
