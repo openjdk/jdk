@@ -313,7 +313,7 @@ public class ArrayList<E> extends AbstractList<E>
      * or -1 if there is no such index.
      *
      * @param filter a predicate to search matching element for
-     * @return the index of the last occurrence of the specified element in
+     * @return the index of the first occurrence of the specified element in
      *         this list, or -1 if this list does not contain the element
      */
     public int findIndex(Predicate<? super E> filter) {
