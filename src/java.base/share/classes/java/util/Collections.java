@@ -2727,6 +2727,7 @@ public class Collections {
         public E set(int index, E element) {
             synchronized (mutex) {return list.set(index, element);}
         }
+            
         public void add(int index, E element) {
             synchronized (mutex) {list.add(index, element);}
         }
