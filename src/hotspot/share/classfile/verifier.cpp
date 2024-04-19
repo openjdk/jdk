@@ -255,7 +255,7 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
         // or one of it's superclasses, we're in trouble and are going
         // to infinitely recurse when we try to initialize the exception.
         // So bail out here by throwing the preallocated VM error.
-        THROW_MSG_(vmSymbols::java_lang_StackOverflowError(), "Verification error while loading VerifyError", false);
+        THROW_OOP_(Universe::class_init_stack_overflow_error(), false);
       }
       kls = kls->super();
     }
