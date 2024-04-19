@@ -56,7 +56,7 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import jdk.internal.access.SharedSecrets; 
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ArraysSupport;
 
 /**
