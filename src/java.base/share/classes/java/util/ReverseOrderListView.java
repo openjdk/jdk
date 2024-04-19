@@ -342,7 +342,7 @@ class ReverseOrderListView<E> implements List<E> {
     }
 
     public int indexOf(Object o) {
-        int i = base.indexOf(o);
+        int i = base.lastIndexOf(o);
         return i == -1 ? -1 : base.size() - i - 1;
     }
 
@@ -352,7 +352,7 @@ class ReverseOrderListView<E> implements List<E> {
     }
 
     public int lastIndexOf(Object o) {
-        int i = base.lastIndexOf(o);
+        int i = base.indexOf(o);
         return i == -1 ? -1 : base.size() - i - 1;
     }
 
