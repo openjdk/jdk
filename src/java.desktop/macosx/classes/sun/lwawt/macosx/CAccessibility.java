@@ -760,18 +760,7 @@ class CAccessibility implements PropertyChangeListener {
     }
 
     private static Accessible createAccessibleTreeNode(JTree t, TreePath p) {
-        Accessible a = null;
-
-        try {
-            Class<?> accessibleJTreeNodeClass = Class.forName("javax.swing.JTree$AccessibleJTree$AccessibleJTreeNode");
-            Constructor<?> constructor = accessibleJTreeNodeClass.getConstructor(t.getAccessibleContext().getClass(), JTree.class, TreePath.class, Accessible.class);
-            constructor.setAccessible(true);
-            a = ((Accessible) constructor.newInstance(t.getAccessibleContext(), t, p, null));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return a;
+        return SwingAccessor.getAccessibleJTreeNodeCreateAccessor().createAccessibleJTreeNode(t, p, null);
     }
 
     // This method is called from the native

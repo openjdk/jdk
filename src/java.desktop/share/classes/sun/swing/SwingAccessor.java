@@ -33,6 +33,7 @@ import javax.accessibility.AccessibleContext;
 
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
+import javax.swing.tree.TreePath;
 
 /**
  * The SwingAccessor utility class.
@@ -56,6 +57,13 @@ public final class SwingAccessor {
      */
     public interface AccessibleComponentAccessor {
         Accessible getCurrentAccessible(AccessibleContext ac);
+    }
+
+    /**
+     * This interface allows to create an accessible tree node
+     */
+    public interface AccessibleJTreeNodeCreateAccessor {
+        Accessible createAccessibleJTreeNode(JTree tree, TreePath path, Accessible ap);
     }
 
     /**
@@ -302,6 +310,7 @@ public final class SwingAccessor {
     }
 
     private static AccessibleComponentAccessor accessibleComponentAccessor = null;
+    private static AccessibleJTreeNodeCreateAccessor accessibleJTreeNodeCreateAccessor = null;
 
     public static AccessibleComponentAccessor getAccessibleComponentAccessor() {
         var access = accessibleComponentAccessor;
@@ -314,6 +323,19 @@ public final class SwingAccessor {
 
     public static void setAccessibleComponentAccessor(final AccessibleComponentAccessor accessibleAccessor) {
         accessibleComponentAccessor = accessibleAccessor;
+    }
+
+    public static AccessibleJTreeNodeCreateAccessor getAccessibleJTreeNodeCreateAccessor() {
+        var access = accessibleJTreeNodeCreateAccessor;
+        if (access == null) {
+            ensureClassInitialized(JTree.class);
+            access = accessibleJTreeNodeCreateAccessor;
+        }
+        return access;
+    }
+
+    public static void setAccessibleJTreeNodeCreateAccessor(final AccessibleJTreeNodeCreateAccessor accessibleAccessor) {
+        accessibleJTreeNodeCreateAccessor = accessibleAccessor;
     }
 
     private static void ensureClassInitialized(Class<?> c) {

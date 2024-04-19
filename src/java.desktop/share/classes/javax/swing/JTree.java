@@ -4272,6 +4272,10 @@ public class JTree extends JComponent implements Scrollable, Accessible
         TreePath   leadSelectionPath;
         Accessible leadSelectionAccessible;
 
+        static {
+            SwingAccessor.setAccessibleJTreeNodeCreateAccessor(new AccessibleTreNodeACreateccessor());
+        }
+
         /**
          * Constructs {@code AccessibleJTree}
          */
@@ -4729,6 +4733,31 @@ public class JTree extends JComponent implements Scrollable, Accessible
 
                 TreePath path = new TreePath(objPath);
                 JTree.this.addSelectionPath(path);
+            }
+        }
+
+        /**
+         * This method creates an accessible tree node
+         *
+         * @param tree Tree? for whose nodes an accessible
+         * @param path path to node
+         * @param ap accessible parent
+         * @return AccessibleJTreeNode
+         */
+        protected Accessible createAccessibleTreeNode(JTree tree, TreePath path, Accessible ap) {
+            return new AccessibleJTreeNode(tree, path, ap);
+        }
+
+        private static class AccessibleTreNodeACreateccessor implements SwingAccessor.AccessibleJTreeNodeCreateAccessor {
+            private AccessibleTreNodeACreateccessor() {}
+
+            @Override
+            public Accessible createAccessibleJTreeNode(JTree tree, TreePath path, Accessible ap) {
+                AccessibleContext ac = tree.getAccessibleContext();
+                if (ac instanceof AccessibleJTree) {
+                    return ((AccessibleJTree) ac).createAccessibleTreeNode(tree, path, ap);
+                }
+                return null;
             }
         }
 
