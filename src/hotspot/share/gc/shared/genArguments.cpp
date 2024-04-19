@@ -306,10 +306,10 @@ void GenArguments::initialize_size_info() {
                             ", -XX:OldSize flag is being ignored",
                             MaxHeapSize);
       initial_old_size = MaxOldSize;
+    } else if (initial_old_size < MinOldSize) {
+      log_warning(gc, ergo)("Inconsistency between initial old size and minimum old size");
+      MinOldSize = initial_old_size;
     }
-
-    // Make sure MinOldSize <= OldSize
-    MinOldSize = MIN2(MinOldSize, initial_old_size);
   }
 
   // The initial generation sizes should match the initial heap size,
