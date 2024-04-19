@@ -62,7 +62,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
     @ForceInline
     @Override
     public boolean isSet() {
-        return set() || setVolatile();
+        return set() != UNSET || setVolatile() != UNSET;
     }
 
     @ForceInline
@@ -75,21 +75,28 @@ public final class StableValueImpl<V> implements StableValue<V> {
             // plain semantics, we know a value is set.
             return v;
         }
-        if (set()) {
-            // The value is set to its default value (e.g. `null`)
+        if (set() == NULL) {
+            // If we happen to see a status value of NULL under
+            // plain semantics, we know a value is set to `null`.
             return null;
         }
         // Now, fall back to volatile semantics.
-        v = valueVolatile();
+        return orThrowVolatile();
+    }
+
+    @ForceInline
+    private V orThrowVolatile() {
+        V v = valueVolatile();
         if (v != null) {
             // If we see a non-null value, we know a value is set.
             return v;
         }
-        if (setVolatile()) {
-            // The value is set
-            return null;
-        }
-        throw new NoSuchElementException();
+        return switch (setVolatile()) {
+            case UNSET    -> throw new NoSuchElementException(); // No value was set
+            case NON_NULL -> orThrowVolatile(); // Race: another thread has set a value
+            case NULL     -> null;              // A value of `null` was set
+            default       -> throw shouldNotReachHere();
+        };
     }
 
     @ForceInline
@@ -126,29 +133,40 @@ public final class StableValueImpl<V> implements StableValue<V> {
             // plain semantics, we know a value is set.
             return v;
         }
-        if (set()) {
-            // The value is set to its default value (e.g. `null`)
+        if (set() == NULL) {
+            // If we happen to see a status value of NULL under
+            // plain semantics, we know a value is set to `null`.
             return null;
         }
         // Now, fall back to volatile semantics.
-        v = valueVolatile();
+        return computeIfUnsetVolatile(supplier);
+    }
+
+    @ForceInline
+    private V computeIfUnsetVolatile(Supplier<? extends V> supplier) {
+        // Now, fall back to volatile semantics.
+        V v = valueVolatile();
         if (v != null) {
             // If we see a non-null value, we know a value is set.
             return v;
         }
-        if (setVolatile()) {
-            // The value is set
-            return null;
+        return switch (setVolatile()) {
+            case UNSET    -> computeIfUnsetVolatile0(supplier);
+            case NON_NULL -> orThrow(); // Race
+            case NULL     -> null;
+            default       -> throw shouldNotReachHere();
+        };
+    }
+
+    private synchronized V computeIfUnsetVolatile0(Supplier<? extends V> supplier) {
+        // A value is already set
+        if (set() != UNSET) {
+            return orThrow();
         }
-        synchronized (this) {
-            if (set()) {
-                return orThrow();
-            }
-            // A value is not set
-            V newValue = supplier.get();
-            setValue(newValue);
-            return newValue;
-        }
+        // A value is not set
+        V newValue = supplier.get();
+        setValue(newValue);
+        return newValue;
     }
 
     @Override
@@ -168,7 +186,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
         // This prevents `this.value` to be seen before `this.set` is seen
         freeze();
         // Crucially, indicate a value is set _after_ it has actually been set.
-        casSet();
+        casSet(value == null ? NULL : NON_NULL);
     }
 
     private void casValue(V value) {
@@ -180,16 +198,17 @@ public final class StableValueImpl<V> implements StableValue<V> {
         }
     }
 
-    private boolean set() {
-        return set == SET;
+    private byte set() {
+        return set;
     }
 
-    private boolean setVolatile() {
-        return UNSAFE.getByteVolatile(this, SET_OFFSET) == SET;
+    private byte setVolatile() {
+        return UNSAFE.getByteVolatile(this, SET_OFFSET);
     }
 
-    private void casSet() {
-        if (!UNSAFE.compareAndSetByte(this, SET_OFFSET, NOT_SET, SET)) {
+    private void casSet(byte newValue) {
+        // Todo: GetAndSetByte
+        if (!UNSAFE.compareAndSetByte(this, SET_OFFSET, UNSET, newValue)) {
             throw StableUtil.alreadySet(this);
         }
     }

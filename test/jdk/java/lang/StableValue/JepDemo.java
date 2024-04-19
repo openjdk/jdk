@@ -513,6 +513,29 @@ final class JepDemo {
     }
 
     @Test
+    void fibDelta() {
+        {
+            long begin = System.nanoTime();
+            Fibonacci fibonacci = new FibonacciNaive();
+            int[] fibs = IntStream.range(0, 30)
+                    .map(fibonacci::fib)
+                    .toArray(); // { 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 }
+            long duration = System.nanoTime() - begin;
+            System.out.println("Naive = " + duration / 1000);
+        }
+        {
+            long begin = System.nanoTime();
+            Fibonacci fibonacci = new Fibonacci1(31);
+            int[] fibs = IntStream.range(0, 30)
+                    .map(fibonacci::fib)
+                    .toArray(); // { 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 }
+            long duration = System.nanoTime() - begin;
+            System.out.println("Stable = " + duration / 1000);
+        }
+
+    }
+
+    @Test
     void fib() {
         Fibonacci fibonacci = new Fibonacci1(20);
         int[] fibs = IntStream.range(0, 10)

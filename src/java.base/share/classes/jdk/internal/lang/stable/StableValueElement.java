@@ -1,6 +1,7 @@
 package jdk.internal.lang.stable;
 
 import jdk.internal.lang.StableValue;
+import jdk.internal.vm.annotation.ForceInline;
 
 import java.util.NoSuchElementException;
 import java.util.function.Function;
@@ -19,6 +20,11 @@ public record StableValueElement<V>(
 ) implements StableValue<V> {
 
     @Override
+    public boolean isSet() {
+        return set() != UNSET || setVolatile() != UNSET;
+    }
+
+    @Override
     public V orThrow() {
         // Optimistically try plain semantics first
         V e = elements[index];
@@ -27,24 +33,28 @@ public record StableValueElement<V>(
             // plain semantics, we know a value is set.
             return e;
         }
-        if (set()) {
+        if (set() == NULL) {
+            // If we happen to see a status value of NULL under
+            // plain semantics, we know a value is set to `null`.
             return null;
         }
         // Now, fall back to volatile semantics.
-        e = elementVolatile();
-        if (e != null) {
-            // If we see a non-null value, we know a value is set.
-            return e;
-        }
-        if (setVolatile()) {
-            return null;
-        }
-        throw new NoSuchElementException();
+        return orThrowVolatile();
     }
 
-    @Override
-    public boolean isSet() {
-        return set() || setVolatile();
+    @ForceInline
+    private V orThrowVolatile() {
+        V v = elementVolatile();
+        if (v != null) {
+            // If we see a non-null value, we know a value is set.
+            return v;
+        }
+        return switch (setVolatile()) {
+            case UNSET    -> throw new NoSuchElementException(); // No value was set
+            case NON_NULL -> orThrowVolatile(); // Race: another thread has set a value
+            case NULL     -> null;              // A value of `null` was set
+            default       -> throw shouldNotReachHere();
+        };
     }
 
     @Override
@@ -86,21 +96,38 @@ public record StableValueElement<V>(
         return StableUtil.toString(this);
     }
 
+    // Avoid creating lambdas
+    private static final Function<Supplier<?>, ?> SUPPLIER_EXTRACTOR =
+            new Function<Supplier<?>, Object>() {
+                @Override
+                public Object apply(Supplier<?> supplier) {
+                    return supplier.get();
+                }
+            };
+
+    @SuppressWarnings("unchecked")
+    private static <K, V> Function<? super K, ? extends V> supplierExtractor() {
+        return (Function<? super K, ? extends V>) SUPPLIER_EXTRACTOR;
+    }
+
     @Override
     public V computeIfUnset(Supplier<? extends V> supplier) {
-        return computeIfUnset0(supplier, Supplier::get);
+        // Todo: This creates a lambda
+        return computeIfUnsetShared(supplier, Supplier::get);
     }
 
     public V computeIfUnset(IntFunction<? extends V> mapper) {
-        return computeIfUnset0(mapper, m -> m.apply(index));
+        // Todo: This creates a lambda that captures
+        return computeIfUnsetShared(mapper, m -> m.apply(index));
     }
 
     public <K> V computeIfUnset(K key, Function<? super K, ? extends V> mapper) {
-        return computeIfUnset0(mapper, m -> m.apply(key));
+        // Todo: This creates a lambda that captures
+        return computeIfUnsetShared(mapper, m -> m.apply(key));
     }
 
-    private <S> V computeIfUnset0(S source,
-                                  Function<S, V> extractor) {
+    private <S> V computeIfUnsetShared(S source,
+                                       Function<S, V> extractor) {
         // Optimistically try plain semantics first
         V e = elements[index];
         if (e != null) {
@@ -108,18 +135,30 @@ public record StableValueElement<V>(
             // plain semantics, we know a value is set.
             return e;
         }
-        if (set()) {
+        if (set() == NULL) {
             return null;
         }
         // Now, fall back to volatile semantics.
-        e = elementVolatile();
+        return computeIfUnsetVolatile(source, extractor);
+    }
+
+    private <S> V computeIfUnsetVolatile(S source,
+                                         Function<S, V> extractor) {
+        V e = elementVolatile();
         if (e != null) {
             // If we see a non-null value, we know a value is set.
             return e;
         }
-        if (setVolatile()) {
-            return null;
-        }
+        return switch (setVolatile()) {
+            case UNSET    -> computeIfUnsetVolatile0(source, extractor);
+            case NON_NULL -> orThrow(); // Race
+            case NULL     -> null;
+            default       -> throw shouldNotReachHere();
+        };
+    }
+
+    private synchronized <S> V computeIfUnsetVolatile0(S source,
+                                                       Function<S, V> extractor) {
         Object mutex = mutexVolatile();
         if (mutex == null) {
             mutex = casMutex();
@@ -148,7 +187,7 @@ public record StableValueElement<V>(
         // before `this.sets[index]` is seen
         freeze();
         // Crucially, indicate a value is set _after_ it has actually been set.
-        casSet();
+        casSet(value == null ? NULL : NON_NULL);
     }
 
     private void casValue(V created) {
@@ -159,16 +198,16 @@ public record StableValueElement<V>(
         }
     }
 
-    boolean set() {
-        return sets[index] == SET;
+    byte set() {
+        return sets[index];
     }
 
-    boolean setVolatile() {
-        return UNSAFE.getByteVolatile(sets, StableUtil.byteOffset(index)) == SET;
+    byte setVolatile() {
+        return UNSAFE.getByteVolatile(sets, StableUtil.byteOffset(index));
     }
 
-    private void casSet() {
-        if (!UNSAFE.compareAndSetByte(sets, StableUtil.byteOffset(index), NOT_SET, SET)) {
+    private void casSet(byte newValue) {
+        if (!UNSAFE.compareAndSetByte(sets, StableUtil.byteOffset(index), UNSET, newValue)) {
             throw StableUtil.alreadySet(this);
         }
     }

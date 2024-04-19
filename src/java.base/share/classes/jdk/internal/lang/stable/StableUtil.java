@@ -28,8 +28,6 @@ package jdk.internal.lang.stable;
 import jdk.internal.lang.StableValue;
 import jdk.internal.misc.Unsafe;
 
-import java.util.function.Supplier;
-
 import static jdk.internal.misc.Unsafe.*;
 
 /**
@@ -40,9 +38,11 @@ final class StableUtil {
     private StableUtil() {}
 
     // Indicates a value is not set
-    static final byte NOT_SET = 0;
-    // Indicates a value is set
-    static final byte SET = 1;
+    static final byte UNSET = 0;
+    // Indicates a value is set to a non-null value
+    static final byte NON_NULL = 1;
+    // Indicates a value is set to a `null` value
+    static final byte NULL = 2;
 
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
@@ -89,6 +89,10 @@ final class StableUtil {
      */
     static long byteOffset(int index) {
         return ARRAY_BYTE_BASE_OFFSET + (long) index * ARRAY_BYTE_INDEX_SCALE;
+    }
+
+    static InternalError shouldNotReachHere() {
+        return new InternalError("Should not reach here");
     }
 
 }
