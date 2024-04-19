@@ -64,6 +64,9 @@ class FixedLengthOutputStream extends FilterOutputStream
         }
         out.write(b);
         remaining --;
+        if(remaining==0) {
+            close();
+        }
     }
 
     public void write (byte[]b, int off, int len) throws IOException {
@@ -80,6 +83,9 @@ class FixedLengthOutputStream extends FilterOutputStream
         }
         out.write(b, off, len);
         remaining -= len;
+        if(remaining==0) {
+            close();
+        }
     }
 
     public void close () throws IOException {
