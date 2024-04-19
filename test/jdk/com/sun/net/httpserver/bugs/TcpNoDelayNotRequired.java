@@ -44,7 +44,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.*;
 
-public class B6968351 {
+public class TcpNoDelayNotRequired {
 
     public static final Logger LOGGER = Logger.getLogger("sun.net.www.protocol.http");
 
