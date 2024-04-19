@@ -46,11 +46,13 @@ template<typename K, typename V, int(*CMP)(K,K)>
 class TreapNode {
   template<typename InnerK, typename InnerV, int(*CMPP)(InnerK,InnerK), typename Allocator>
   friend class Treap;
+
   using Node = TreapNode<K,V,CMP>;
 
   uint64_t _priority;
   const K _key;
   V _value;
+
   Node* _left;
   Node* _right;
 
@@ -76,13 +78,16 @@ public:
   }
 };
 
-template<typename K, typename V, int(*CMP)(K,K), typename Allocator>
+template<typename K, typename V, int(*CMP)(K,K), typename ALLOCATOR>
 class Treap {
   friend class VMATree;
   friend class VMATreeTest;
+
   using Node = TreapNode<K, V, CMP>;
+
   Node* _root;
   uint64_t _prng_seed;
+
 private:
   uint64_t prng_next() {
     // Taken directly off of JFRPrng
@@ -178,7 +183,7 @@ public:
       this->_root = merge(split_up.left, split_up.right);
     }
     // Doesn't exist, make node
-    void* node_place = Allocator::allocate(sizeof(Node));
+    void* node_place = ALLOCATOR::allocate(sizeof(Node));
     uint64_t prio = prng_next();
     Node* node = new (node_place) Node(k, v, prio);
     // merge(merge(LEQ_k, EQ_k), GT_k)
@@ -193,7 +198,7 @@ public:
 
     if (snd_split.right != nullptr) {
       // The key k existed, we delete it.
-      Allocator::free(snd_split.right);
+      ALLOCATOR::free(snd_split.right);
     }
     // Merge together everything
     this->_root = merge(snd_split.left, fst_split.right);
@@ -209,7 +214,7 @@ public:
       if (head == nullptr) continue;
       to_delete.push(head->_left);
       to_delete.push(head->_right);
-      Allocator::free(head);
+      ALLOCATOR::free(head);
     }
   }
 
@@ -264,6 +269,7 @@ public:
   static void* allocate(size_t sz) {
     return os::malloc(sz, mtNMT);
   }
+
   static void free(void* ptr) {
     os::free(ptr);
   }
