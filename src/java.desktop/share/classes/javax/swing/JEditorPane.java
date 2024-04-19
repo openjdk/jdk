@@ -472,24 +472,29 @@ public class JEditorPane extends JTextComponent {
         if (page == null) {
             throw new IOException("invalid url");
         }
-        URL loaded = getPage();
-        Object postData = getPostData();
 
-        // reset scrollbar
-        if (!page.equals(loaded) && page.getRef() == null) {
-            scrollRectToVisible(new Rectangle(0, 0, 1, 1));
-        }
+        final URL loaded = getPage();
+        final Object postData = getPostData();
+        final String reference = page.getRef();
 
-        if ((postData == null) && (page.sameFile(loaded))) {
-            if (page.getRef() != null) {
-                scrollToReference(page.getRef());
+        if ((postData == null) && page.sameFile(loaded)) {
+            // The same page with different reference
+            if (reference != null) {
+                scrollToReference(reference);
+            } else {
+                // Scroll to the top of the page
+                scrollRectToVisible(new Rectangle(0, 0, 1, 1));
             }
             return;
         }
 
         // different url or POST method, load the new content
+
+        // reset scrollbar
+        scrollRectToVisible(new Rectangle(0, 0, 1, 1));
+
         synchronized (this) {
-            // we need to cancel background loading
+            // Cancel background loading
             if (pageLoader != null) {
                 pageLoader.cancel(true);
                 pageLoader = null;
@@ -510,7 +515,8 @@ public class JEditorPane extends JTextComponent {
         // open stream synchronously
         InputStream in = getStream(page);
 
-        if ((kit == null)) {
+        // getStream instantiates a new kit
+        if (kit == null) {
             return;
         }
 
@@ -534,7 +540,6 @@ public class JEditorPane extends JTextComponent {
         read(in, doc);
         setDocument(doc);
 
-        final String reference = page.getRef();
         if (reference != null) {
             // Have to scroll after painted.
             SwingUtilities.invokeLater(new Runnable() {
