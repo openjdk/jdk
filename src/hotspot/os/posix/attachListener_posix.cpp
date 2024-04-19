@@ -79,7 +79,10 @@ class PosixAttachListener: AllStatic {
   // reads a request from the given connected socket
   static PosixAttachOperation* read_request(int s);
 
- public:
+  // returns true if the credential check succeeds
+  static bool pd_credentials_check(int s);
+
+public:
   enum {
     ATTACH_PROTOCOL_VER = 1                     // protocol version
   };
@@ -364,40 +367,10 @@ PosixAttachOperation* PosixAttachListener::dequeue() {
     }
 
     // get the credentials of the peer and check the effective uid/guid
-#ifdef LINUX
-    struct ucred cred_info;
-    socklen_t optlen = sizeof(cred_info);
-    if (::getsockopt(s, SOL_SOCKET, SO_PEERCRED, (void *)&cred_info, &optlen) ==
-        -1) {
-      log_debug(attach)("Failed to get socket option SO_PEERCRED");
+    if (!PosixAttachListener::pd_credentials_check(s)) {
       ::close(s);
       continue;
     }
-
-    if (!os::Posix::matches_effective_uid_and_gid_or_root(cred_info.uid,
-                                                          cred_info.gid)) {
-      log_debug(attach)("euid/egid check failed (%d/%d vs %d/%d)",
-                        cred_info.uid, cred_info.gid, geteuid(), getegid());
-      ::close(s);
-      continue;
-    }
-#endif
-#ifdef BSD
-    uid_t puid;
-    gid_t pgid;
-    if (::getpeereid(s, &puid, &pgid) != 0) {
-      log_debug(attach)("Failed to get peer id");
-      ::close(s);
-      continue;
-    }
-
-    if (!os::Posix::matches_effective_uid_and_gid_or_root(puid, pgid)) {
-      log_debug(attach)("euid/egid check failed (%d/%d vs %d/%d)", puid, pgid,
-                        geteuid(), getegid());
-      ::close(s);
-      continue;
-    }
-#endif
 
     // peer credential look okay so we read the request
     PosixAttachOperation* op = read_request(s);
@@ -579,6 +552,40 @@ void AttachListener::pd_data_dump() {
 void AttachListener::pd_detachall() {
   // do nothing for now
 }
+
+#ifdef LINUX
+bool PosixAttachListener::pd_credentials_check(int s) {
+  struct ucred cred_info;
+  socklen_t optlen = sizeof(cred_info);
+  if (::getsockopt(s, SOL_SOCKET, SO_PEERCRED, (void*)&cred_info, &optlen) == -1) {
+    log_debug(attach)("Failed to get socket option SO_PEERCRED");
+    return false;
+  }
+
+  if (!os::Posix::matches_effective_uid_and_gid_or_root(cred_info.uid, cred_info.gid)) {
+    log_debug(attach)("euid/egid check failed (%d/%d vs %d/%d)", cred_info.uid, cred_info.gid,
+                      geteuid(), getegid());
+    return false;
+  }
+  return true;
+}
+#endif // LINUX
+#ifdef BSD
+bool PosixAttachListener::pd_credentials_check(int s) {
+  uid_t puid;
+  gid_t pgid;
+  if (::getpeereid(s, &puid, &pgid) != 0) {
+    log_debug(attach)("Failed to get peer id");
+    return false
+  }
+
+  if (!os::Posix::matches_effective_uid_and_gid_or_root(puid, pgid)) {
+    log_debug(attach)("euid/egid check failed (%d/%d vs %d/%d)", puid, pgid, geteuid(), getegid());
+    return false;
+  }
+  return true;
+}
+#endif // BSD
 
 #endif // !AIX
 
