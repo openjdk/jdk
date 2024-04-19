@@ -98,6 +98,7 @@ public class B6968351 {
             rmap.add("content-type","text/plain");
             t.sendResponseHeaders(200,5);
             t.getResponseBody().write("hello".getBytes(StandardCharsets.ISO_8859_1));
+            t.getResponseBody().close();
         }
     }
     static class ChunkedHandler implements HttpHandler {
@@ -112,7 +113,7 @@ public class B6968351 {
             rmap.add("content-type","text/plain");
             t.sendResponseHeaders(200,0);
             t.getResponseBody().write("hello".getBytes(StandardCharsets.ISO_8859_1));
-            t.getRequestBody().close();
+            t.getResponseBody().close();
         }
     }
 }
