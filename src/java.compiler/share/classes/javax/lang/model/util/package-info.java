@@ -41,11 +41,12 @@
  *
  * As the Java programming language evolves, the visitor interfaces of
  * the language model also evolve as do the concrete visitors in this
- * package. A preview language feature in JDK <i>N</i> may have API
- * elements added in the set of visitors for the preview language
- * level. Such new elements are marked as reflective preview API. Any
- * existing methods whose specification is updated to support the
- * preview feature are <em>not</em> marked as preview.
+ * package. A <a href="https://openjdk.org/jeps/12">preview language
+ * feature</a> in JDK <i>N</i> may have API elements added in the set
+ * of visitors for the preview language level. Such new elements are
+ * marked as reflective preview API. Any existing methods whose
+ * specification is updated to support the preview feature are
+ * <em>not</em> marked as preview.
  *
  * <p>The remainder of this note will show two examples of the API
  * changes in the model and visitors that can be added to support a
@@ -226,7 +227,7 @@
  *           case ENUM_CONSTANT, FIELD, PARAMETER,
  *                LOCAL_VARIABLE, EXCEPTION_PARAMETER, RESOURCE_VARIABLE,
  *  -             BINDING_VARIABLE -> true;
- *  +            BINDING_VARIABLE, PREVIEW_FEATURE_2 -> true;
+ *  +             BINDING_VARIABLE, PREVIEW_FEATURE_2 -> true;
  *           default -> false;
  *           };
  *       }
