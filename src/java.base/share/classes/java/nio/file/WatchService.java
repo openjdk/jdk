@@ -102,7 +102,7 @@ import java.util.concurrent.TimeUnit;
  * The JDK's {@code WatchService} implementations buffer up to 512 pending
  * events for each registered watchable object. If this limit is exceeded,
  * pending events are discarded and the special
- * {@link StandardWatchEventKind#OVERFLOW OVERFLOW} event is queued. This
+ * {@link StandardWatchEventKinds#OVERFLOW OVERFLOW} event is queued. This
  * special event is the trigger to re-examine the state of the object, e.g.
  * scan a watched directory to get an updated list of the files in the
  * directory. The limit for the pending events can be changed from its default
