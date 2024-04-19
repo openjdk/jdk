@@ -260,7 +260,7 @@ int PosixAttachListener::init() {
 //
 PosixAttachOperation* PosixAttachListener::read_request(int s) {
   char ver_str[8];
-  os::snprintf_checked(ver_str, sizeof(ver_str), "%d", ATTACH_PROTOCOL_VER);
+  int ver_str_len = os::snprintf_checked(ver_str, sizeof(ver_str), "%d", ATTACH_PROTOCOL_VER);
 
   // The request is a sequence of strings so we first figure out the
   // expected count and the maximum possible length of the request.
@@ -270,7 +270,7 @@ PosixAttachOperation* PosixAttachListener::read_request(int s) {
   // name ("load", "datadump", ...), and <arg> is an argument
   int expected_str_count = 2 + AttachOperation::arg_count_max;
   const size_t max_len = (sizeof(ver_str) + 1) + (AttachOperation::name_length_max + 1) +
-    AttachOperation::arg_count_max*(AttachOperation::arg_length_max + 1);
+                         AttachOperation::arg_count_max*(AttachOperation::arg_length_max + 1);
 
   char buf[max_len];
   int str_count = 0;
@@ -292,21 +292,20 @@ PosixAttachOperation* PosixAttachListener::read_request(int s) {
     if (n == 0) {
       break;
     }
-    for (ssize_t i=0; i<n; i++) {
-      if (buf[off+i] == 0) {
-        // EOS found
-        str_count++;
+    ssize_t len = ::strnlen(&buf[off], n);
+    if (len < n) {
+      // EOS found
+      str_count++;
 
-        // The first string is <ver> so check it now to
-        // check for protocol mismatch
-        if (str_count == 1) {
-          if ((strlen(buf) != strlen(ver_str)) ||
-              (atoi(buf) != ATTACH_PROTOCOL_VER)) {
-            char msg[32];
-            os::snprintf_checked(msg, sizeof(msg), "%d\n", ATTACH_ERROR_BADVERSION);
-            write_fully(s, msg, strlen(msg));
-            return nullptr;
-          }
+      // The first string is <ver> so check it now to
+      // check for protocol mismatch
+      if (str_count == 1) {
+        int found_ver_str_len = ::strlen(buf);
+        if ((found_ver_str_len != ver_str_len) || (atoi(buf) != ATTACH_PROTOCOL_VER)) {
+          char msg[32];
+          os::snprintf_checked(msg, sizeof(msg), "%d\n", ATTACH_ERROR_BADVERSION);
+          write_fully(s, msg, strlen(msg));
+          return nullptr;
         }
       }
     }
