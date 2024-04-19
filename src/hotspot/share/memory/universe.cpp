@@ -1086,19 +1086,11 @@ bool universe_post_init() {
   _null_ptr_exception.init_if_empty(vmSymbols::java_lang_NullPointerException(), CHECK_false);
   _arithmetic_exception.init_if_empty(vmSymbols::java_lang_ArithmeticException(), CHECK_false);
 
-  // Virtual Machine Error for when we get into a situation we can't resolve
-  Klass* k = vmClasses::VirtualMachineError_klass();
-  bool linked = InstanceKlass::cast(k)->link_class_or_fail(CHECK_false);
-  if (!linked) {
-     tty->print_cr("Unable to link/verify VirtualMachineError class");
-     return false; // initialization failed
-  }
-
   Handle msg = java_lang_String::create_from_str("/ by zero", CHECK_false);
   java_lang_Throwable::set_message(Universe::arithmetic_exception_instance(), msg());
 
   // Setup preallocated StackOverflowError for use with class initialization failure
-  k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_StackOverflowError(), true, CHECK_false);
+  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_StackOverflowError(), true, CHECK_false);
   instance = InstanceKlass::cast(k)->allocate_instance(CHECK_false);
   Universe::_class_init_stack_overflow_error = OopHandle(Universe::vm_global(), instance);
 
