@@ -382,7 +382,7 @@ public class Vector<E>
      * {@code (filter.test(get(i))},
      * or -1 if there is no such index.
      *
-     * @param filter a predicate to apply to each element to determine if it
+     * @param filter a predicate to search mathcing element for
      * @return the index of the first occurrence of a matching element in
      * this vector or -1 if no matching element is found
      */
@@ -428,17 +428,16 @@ public class Vector<E>
      * {@code (filter.test(get(i))},
      * or -1 if there is no such index.
      *
-     * @param filter a predicate to apply to each element to determine if it
+     * @param filter a predicate to search mathcing element for
      * @param index index to start searching from
      * @return the index of the first occurrence of the element in
      * this vector at position {@code index} or later in the vector;
      * {@code -1} if the element is not found.
      * @throws IndexOutOfBoundsException if the specified index is negative
-     * @see Object#equals(Object)
      */
     public synchronized int findIndex(Predicate<? super E> filter, int index) {
         for (int i = index; i < elementCount; i++) {
-            if (filter.test(elementData(i))) {
+            if (filter.test(elementData[i])) {
                 return i;
             }
         }
@@ -465,10 +464,10 @@ public class Vector<E>
      * this vector, searching backwards from {@code index}, or returns -1 if
      * no matching element is found.
      * More formally, returns the highest index {@code i} such that
-     * {@code (filter.test(get(i))},
+     * {@code i >= index && filter.test(get(i))},
      * or -1 if there is no such index.
      *
-     * @param filter a predicate to apply to each element to determine if it
+     * @param filter a predicate to search mathcing element for
      * @return the index of the last occurrence of a matching element in
      * this vector or -1 if no matching element is found
      */
@@ -513,10 +512,10 @@ public class Vector<E>
      * this vector, searching backwards from {@code index}, or returns -1 if
      * no matching element is found.
      * More formally, returns the highest index {@code i} such that
-     * {@code (filter.test(get(i))},
+     * {@code i <= index && filter.test(get(i))},
      * or -1 if there is no such index.
      *
-     * @param filter a predicate to apply to each element to determine if it
+     * @param filter a predicate to search mathcing element for
      * @param index index to start searching backwards from
      * @return the index of the last occurrence of the element at position
      * less than or equal to {@code index} in this vector;
