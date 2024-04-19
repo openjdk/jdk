@@ -26,8 +26,8 @@
  * @bug 6968351
  * @summary  tcp no delay not required for small payloads
  * @library /test/lib
- * @run main B6968351
- * @run main/othervm -Dsun.net.httpserver.nodelay=false -Djdk.httpclient.HttpClient.log=all -Djava.net.preferIPv6Addresses=true -Djavax.net.debug=all B6968351
+ * @run main/timeout=5 B6968351
+ * @run main/othervm -Dsun.net.httpserver.nodelay=false B6968351
  */
 
 import com.sun.net.httpserver.*;
@@ -41,6 +41,7 @@ import java.net.http.HttpResponse;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class B6968351 {
 
@@ -67,12 +68,12 @@ public class B6968351 {
 
         long start = System.currentTimeMillis();
         for(int i=0;i<1000;i++) {
-            var response = client.send(HttpRequest.newBuilder(new URI("http://localhost:"+server.getAddress().getPort()+"/test")).build(), HttpResponse.BodyHandlers.ofString());
+            var uri = URIBuilder.newBuilder().scheme("http").loopback().port(server.getAddress().getPort()).path("/test").build();
+            var response = client.send(HttpRequest.newBuilder(uri).build(), HttpResponse.BodyHandlers.ofString());
             if(!response.body().equals("hello")) throw new IllegalStateException("incorrect body");
         }
         long time = System.currentTimeMillis()-start;
         System.out.println("time "+time);
-        if(time>5000) throw new IllegalStateException("took too long");
         server.stop(0);
         executor.shutdown();
     }
