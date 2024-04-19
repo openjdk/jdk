@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -165,8 +165,10 @@ LIR_Address* LIRGenerator::generate_address(LIR_Opr base, LIR_Opr index,
   if (index->is_register()) {
     // Apply the shift and accumulate the displacement.
     if (shift > 0) {
-      LIR_Opr tmp = new_pointer_register();
-      __ shift_left(index, shift, tmp);
+      // Use long register to avoid overflow when shifting large index values left.
+      LIR_Opr tmp = new_register(T_LONG);
+      __ convert(Bytecodes::_i2l, index, tmp);
+      __ shift_left(tmp, shift, tmp);
       index = tmp;
     }
     if (large_disp != 0) {

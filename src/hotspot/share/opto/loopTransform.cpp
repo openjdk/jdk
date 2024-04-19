@@ -1977,6 +1977,12 @@ bool IdealLoopTree::is_invariant(Node* n) const {
 // to the new stride.
 void PhaseIdealLoop::update_main_loop_assertion_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init,
                                                            const int stride_con) {
+  if (init->is_CastII()) {
+    // skip over the cast added by PhaseIdealLoop::cast_incr_before_loop() when pre/post/main loops are created because
+    // it can get in the way of type propagation
+    assert(init->as_CastII()->carry_dependency() && loop_head->skip_assertion_predicates_with_halt() == init->in(0), "casted iv phi from pre loop expected");
+    init = init->in(1);
+  }
   Node* entry = ctrl;
   Node* prev_proj = ctrl;
   LoopNode* outer_loop_head = loop_head->skip_strip_mined();
