@@ -256,6 +256,7 @@ class oopDesc {
 
   // Forward pointer operations for scavenge
   inline bool is_forwarded() const;
+  inline bool is_forwarded(markWord m) const;
 
   inline void forward_to(oop p);
 
@@ -266,6 +267,7 @@ class oopDesc {
   inline oop forward_to_atomic(oop p, markWord compare, atomic_memory_order order = memory_order_conservative);
 
   inline oop forwardee() const;
+  inline oop forwardee(markWord m) const;
 
   // Age of object during scavenge
   inline uint age() const;

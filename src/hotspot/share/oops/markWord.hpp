@@ -143,6 +143,9 @@ class markWord {
   bool is_marked()   const {
     return (mask_bits(value(), lock_mask_in_place) == marked_value);
   }
+  bool is_forwarded()   const {
+    return (mask_bits(value(), lock_mask_in_place) == marked_value);
+  }
   bool is_neutral()  const {  // Not locked, or marked - a "clean" neutral state
     return (mask_bits(value(), lock_mask_in_place) == unlocked_value);
   }
