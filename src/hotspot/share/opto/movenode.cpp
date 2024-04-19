@@ -202,7 +202,7 @@ CMoveNode *CMoveNode::make(Node *c, Node *bol, Node *left, Node *right, const Ty
 Node* CMoveNode::Ideal_minmax(PhaseGVN* phase, CMoveNode* cmove) {
   // If we began macro expansion then don't attempt to match the min/max pattern, as this node might have been a
   // MinL or MaxL that was already expanded during macro expansion.
-  if (phase->C->began_macro_expansion()) {
+  if (!phase->C->allow_macro_nodes()) {
     return nullptr;
   }
 

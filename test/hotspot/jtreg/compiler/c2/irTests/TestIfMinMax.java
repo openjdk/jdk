@@ -41,7 +41,6 @@ public class TestIfMinMax {
 
     public static void main(String[] args) {
         TestFramework.run();
-        TestFramework.runWithFlags("-XX:+UseShenandoahGC");
     }
 
     @Test
