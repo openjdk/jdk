@@ -845,14 +845,6 @@ public class TransTypes extends TreeTranslator {
         }
     }
 
-    public void visitStringTemplate(JCStringTemplate tree) {
-        tree.processor = translate(tree.processor, erasure(tree.processor.type));
-        tree.expressions = tree.expressions.stream()
-                .map(e -> translate(e, erasure(e.type))).collect(List.collector());
-        tree.type = erasure(tree.type);
-        result = tree;
-    }
-
     public void visitSelect(JCFieldAccess tree) {
         Type t = types.skipTypeVars(tree.selected.type, false);
         if (t.isCompound()) {

@@ -1037,7 +1037,7 @@ public abstract class HtmlDocletWriter {
 
         if (utils.isExecutableElement(element)) {
             ExecutableElement ee = (ExecutableElement)element;
-            HtmlId id = isProperty ? htmlIds.forProperty(ee) : htmlIds.forMember(ee);
+            HtmlId id = isProperty ? htmlIds.forProperty(ee) : htmlIds.forMember(ee).getFirst();
             return getLink(new HtmlLinkInfo(configuration, context, typeElement)
                 .label(label)
                 .fragment(id.name())

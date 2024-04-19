@@ -450,7 +450,7 @@ const char* nmethod::state() const {
 }
 
 void nmethod::set_deoptimized_done() {
-  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   if (_deoptimization_status != deoptimize_done) { // can't go backwards
     Atomic::store(&_deoptimization_status, deoptimize_done);
   }
@@ -1230,6 +1230,7 @@ nmethod::nmethod(
     init_defaults();
     _comp_level              = CompLevel_none;
     _entry_bci               = InvocationEntryBci;
+    _num_stack_arg_slots     = _method->constMethod()->num_stack_arg_slots();
     // We have no exception handler or deopt handler make the
     // values something that will never match a pc like the nmethod vtable entry
     _exception_offset        = 0;
@@ -1374,12 +1375,13 @@ nmethod::nmethod(
     assert_locked_or_safepoint(CodeCache_lock);
 
     init_defaults();
-    _entry_bci      = entry_bci;
-    _compile_id     = compile_id;
-    _compiler_type  = type;
-    _comp_level     = comp_level;
-    _orig_pc_offset = orig_pc_offset;
-    _gc_epoch       = CodeCache::gc_epoch();
+    _entry_bci               = entry_bci;
+    _num_stack_arg_slots     = entry_bci != InvocationEntryBci ? 0 : _method->constMethod()->num_stack_arg_slots();
+    _compile_id              = compile_id;
+    _compiler_type           = type;
+    _comp_level              = comp_level;
+    _orig_pc_offset          = orig_pc_offset;
+    _gc_epoch                = CodeCache::gc_epoch();
 
     // Section offsets
     _consts_offset  = content_offset() + code_buffer->total_offset_of(code_buffer->consts());
@@ -1868,7 +1870,7 @@ void nmethod::inc_decompile_count() {
 
 bool nmethod::try_transition(signed char new_state_int) {
   signed char new_state = new_state_int;
-  assert_lock_strong(CompiledMethod_lock);
+  assert_lock_strong(NMethodState_lock);
   signed char old_state = _state;
   if (old_state >= new_state) {
     // Ensure monotonicity of transitions.
@@ -1931,7 +1933,7 @@ bool nmethod::make_not_entrant() {
 
   {
     // Enter critical section.  Does not block for safepoint.
-    ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+    ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
 
     if (Atomic::load(&_state) == not_entrant) {
       // another thread already performed this transition so nothing
@@ -1974,7 +1976,7 @@ bool nmethod::make_not_entrant() {
     // Remove nmethod from method.
     unlink_from_method();
 
-  } // leave critical region under CompiledMethod_lock
+  } // leave critical region under NMethodState_lock
 
 #if INCLUDE_JVMCI
   // Invalidate can't occur while holding the Patching lock
@@ -2004,7 +2006,7 @@ void nmethod::unlink() {
 
   flush_dependencies();
 
-  // unlink_from_method will take the CompiledMethod_lock.
+  // unlink_from_method will take the NMethodState_lock.
   // In this case we don't strictly need it when unlinking nmethods from
   // the Method, because it is only concurrently unlinked by
   // the entry barrier, which acquires the per nmethod lock.
@@ -2037,7 +2039,7 @@ void nmethod::purge(bool free_code_cache_data, bool unregister_nmethod) {
   MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   // completely deallocate this method
-  Events::log(Thread::current(), "flushing nmethod " INTPTR_FORMAT, p2i(this));
+  Events::log_nmethod_flush(Thread::current(), "flushing %s nmethod " INTPTR_FORMAT, is_osr_method() ? "osr" : "", p2i(this));
   log_debug(codecache)("*flushing %s nmethod %3d/" INTPTR_FORMAT ". Live blobs:" UINT32_FORMAT
                        "/Free CodeCache:" SIZE_FORMAT "Kb",
                        is_osr_method() ? "osr" : "",_compile_id, p2i(this), CodeCache::blob_count(),
@@ -2817,7 +2819,7 @@ void nmethod::verify() {
 
   nmethod* nm = CodeCache::find_nmethod(verified_entry_point());
   if (nm != this) {
-    fatal("findNMethod did not find this nmethod (" INTPTR_FORMAT ")", p2i(this));
+    fatal("find_nmethod did not find this nmethod (" INTPTR_FORMAT ")", p2i(this));
   }
 
   for (PcDesc* p = scopes_pcs_begin(); p < scopes_pcs_end(); p++) {
@@ -2900,7 +2902,7 @@ void nmethod::verify_scopes() {
   if (method()->is_native()) return; // Ignore stub methods.
   // iterate through all interrupt point
   // and verify the debug information is valid.
-  RelocIterator iter((nmethod*)this);
+  RelocIterator iter(this);
   while (iter.next()) {
     address stub = nullptr;
     switch (iter.type()) {
