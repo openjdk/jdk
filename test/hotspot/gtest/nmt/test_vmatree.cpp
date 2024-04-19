@@ -43,10 +43,10 @@ public:
     return stack;
   }
 
-  NativeCallStack stack1 = make_stack(size_t{0x7bece59b89ac},
-                                      size_t{0x7bece59b1fdd},
-                                      size_t{0x7bece59b2997},
-                                      size_t{0x7bece59b2add});
+  NativeCallStack stack1 = make_stack(size_t{0x89ac},
+                                      size_t{0x1fdd},
+                                      size_t{0x2997},
+                                      size_t{0x2add});
   NativeCallStack stack2 = make_stack(0x123, 0x456,0x789, 0xAAAA);
 };
 
