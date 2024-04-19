@@ -12922,7 +12922,7 @@ void Assembler::prefix(Address adr, bool is_map1) {
 
 void Assembler::prefix_rex2(Address adr, bool is_map1) {
   int bits = is_map1 ? REX2BIT_M0 : 0;
-  bits |= get_base_prefix_bits(adr.base()->encoding());
+  bits |= get_base_prefix_bits(adr.base());
   bits |= get_index_prefix_bits(adr.index());
   prefix16(WREX2 | bits);
 }
