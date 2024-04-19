@@ -108,5 +108,8 @@ class FixedLengthOutputStream extends FilterOutputStream
         t.getHttpContext().getServerImpl().addEvent (e);
     }
 
-    // flush is a pass-through
+    public void flush() throws IOException {
+        if(closed) return;
+        super.flush();
+    }
 }
