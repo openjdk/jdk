@@ -706,7 +706,6 @@ bool VirtualSpace::initialize_with_granularity(ReservedSpace rs, size_t committe
   assert(_low_boundary == nullptr, "VirtualSpace already initialized");
   assert(max_commit_granularity > 0, "Granularity must be non-zero.");
 
-
   _low_boundary  = rs.base();
   _high_boundary = low_boundary() + rs.size();
 
