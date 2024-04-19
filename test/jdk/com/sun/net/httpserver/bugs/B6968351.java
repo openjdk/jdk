@@ -26,10 +26,12 @@
  * @bug 6968351
  * @summary  tcp no delay not required for small payloads
  * @library /test/lib
- * @run main/othervm/timeout=5 -Dsun.net.httpserver.nodelay=false B6968351
+ * @run main B6968351
+ * @run main/othervm -Dsun.net.httpserver.nodelay=false -Djdk.httpclient.HttpClient.log=all -Djava.net.preferIPv6Addresses=true -Djavax.net.debug=all B6968351
  */
 
 import com.sun.net.httpserver.*;
+import jdk.test.lib.net.URIBuilder;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,7 +43,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.*;
-import jdk.test.lib.net.URIBuilder;
 
 public class B6968351 {
 
@@ -60,6 +61,7 @@ public class B6968351 {
         HttpServer server = HttpServer.create (addr, 0);
         HttpHandler handler = new Handler();
         HttpContext ctx = server.createContext ("/test", handler);
+        HttpContext ctx2 = server.createContext ("/chunked", handler);
         ExecutorService executor = Executors.newCachedThreadPool();
         server.setExecutor (executor);
         server.start ();
@@ -68,12 +70,18 @@ public class B6968351 {
 
         long start = System.currentTimeMillis();
         for(int i=0;i<1000;i++) {
-            var uri = URIBuilder.newBuilder().scheme("http").loopback().port(server.getAddress().getPort()).path("/test").build();
+            var uri = URIBuilder.newBuilder().scheme("http").port(server.getAddress().getPort()).path("/test").build();
+            var response = client.send(HttpRequest.newBuilder(uri).build(), HttpResponse.BodyHandlers.ofString());
+            if(!response.body().equals("hello")) throw new IllegalStateException("incorrect body");
+        }
+        for(int i=0;i<1000;i++) {
+            var uri = URIBuilder.newBuilder().scheme("http").port(server.getAddress().getPort()).path("/chunked").build();
             var response = client.send(HttpRequest.newBuilder(uri).build(), HttpResponse.BodyHandlers.ofString());
             if(!response.body().equals("hello")) throw new IllegalStateException("incorrect body");
         }
         long time = System.currentTimeMillis()-start;
         System.out.println("time "+time);
+        if(time>5000) throw new IllegalStateException("took too long");
         server.stop(0);
         executor.shutdown();
     }
@@ -90,6 +98,21 @@ public class B6968351 {
             rmap.add("content-type","text/plain");
             t.sendResponseHeaders(200,5);
             t.getResponseBody().write("hello".getBytes(StandardCharsets.ISO_8859_1));
+        }
+    }
+    static class ChunkedHandler implements HttpHandler {
+        public void handle (HttpExchange t)
+                throws IOException
+        {
+            InputStream is = t.getRequestBody();
+            Headers map = t.getRequestHeaders();
+            Headers rmap = t.getResponseHeaders();
+            while (is.read () != -1) ;
+            is.close();
+            rmap.add("content-type","text/plain");
+            t.sendResponseHeaders(200,0);
+            t.getResponseBody().write("hello".getBytes(StandardCharsets.ISO_8859_1));
+            t.getRequestBody().close();
         }
     }
 }
