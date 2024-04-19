@@ -167,7 +167,7 @@ private:
     uintx ptrmap_end()    const    { return _ptrmap_end;   } // exclusive
     bool read_only()      const    { return _read_only;    }
     bool has_embedded_pointer() const { return _has_embedded_pointer; }
-    void found_embedded_pointer()  { _has_embedded_pointer = true; }
+    void set_has_embedded_pointer()  { _has_embedded_pointer = true; }
     int size_in_bytes()   const    { return _size_in_bytes; }
     int index()           const    { return _index; }
     void set_index(int i)          { _index = i; }
