@@ -43,6 +43,8 @@ import static javax.lang.model.SourceVersion.*;
  *            methods.  Use {@code Void} for visitors that do not need an
  *            additional parameter.
  *
+ * @see <a href="package-summary.html#expectedEvolution">
+ * <strong>Expected visitor evolution</strong></a>
  * @see <a href="AbstractTypeVisitor6.html#note_for_subclasses">
  * <strong>Compatibility note for subclasses</strong></a>
  * @see AbstractTypeVisitor6
