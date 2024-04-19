@@ -99,15 +99,17 @@ import java.util.concurrent.TimeUnit;
  * detected.
  *
  * @implNote
- * In the reference implementation, the maximum size of the list of events
- * returned by {@link WatchKey#pollEvents() WatchKey.pollEvents} is controlled
- * by the system property {@code jdk.nio.file.WatchService.maxEventsPerPoll}.
- * If this property is not set or cannot be parsed as an integer, then the
- * maximum event list size will be set to 512; if the property is parsed as a
- * non-positive integer, then the maximum event size will be {@code 1} (unity).
- * If more events occur than the maximum size of the event list, the pending
- * events are cleared and replaced with a single
- * {@link StandardWatchEventKinds#OVERFLOW OVERFLOW} event.
+ * The JDK's {@code WatchService} implementations buffer up to 512 pending
+ * events for each registered watchable object. If this limit is exceeded,
+ * pending events are discarded and the special
+ * {@link StandardWatchEventKind#OVERFLOW OVERFLOW} event is queued. This
+ * special event is the trigger to re-examine the state of the object, e.g.
+ * scan a watched directory to get an updated list of the files in the
+ * directory. The limit for the pending events can be changed from its default
+ * with the system property {@code jdk.nio.file.WatchService.maxEventsPerPoll}
+ * set to a value that parses as a positive integer. This may be useful in
+ * environments where there is a high volume of changes and where the impact
+ * of discarded events is high.
  *
  * @since 1.7
  *

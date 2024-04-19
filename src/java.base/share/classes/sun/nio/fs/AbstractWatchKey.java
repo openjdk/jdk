@@ -42,7 +42,6 @@ abstract class AbstractWatchKey implements WatchKey {
     /**
      * Maximum size of event list before dropping events and signalling OVERFLOW
      */
-    @SuppressWarnings("removal")
     static final int MAX_EVENT_LIST_SIZE;
     static {
         String rawValue = GetPropertyAction.privilegedGetProperty(
