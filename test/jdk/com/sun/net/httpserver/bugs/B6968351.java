@@ -70,12 +70,12 @@ public class B6968351 {
 
         long start = System.currentTimeMillis();
         for(int i=0;i<1000;i++) {
-            var uri = URIBuilder.newBuilder().scheme("http").port(server.getAddress().getPort()).path("/test").build();
+            var uri = URIBuilder.newBuilder().scheme("http").loopback().port(server.getAddress().getPort()).path("/test").build();
             var response = client.send(HttpRequest.newBuilder(uri).build(), HttpResponse.BodyHandlers.ofString());
             if(!response.body().equals("hello")) throw new IllegalStateException("incorrect body");
         }
         for(int i=0;i<1000;i++) {
-            var uri = URIBuilder.newBuilder().scheme("http").port(server.getAddress().getPort()).path("/chunked").build();
+            var uri = URIBuilder.newBuilder().scheme("http").loopback().port(server.getAddress().getPort()).path("/chunked").build();
             var response = client.send(HttpRequest.newBuilder(uri).build(), HttpResponse.BodyHandlers.ofString());
             if(!response.body().equals("hello")) throw new IllegalStateException("incorrect body");
         }
