@@ -35,7 +35,7 @@ import java.util.*;
 import java.text.SimpleDateFormat;
 
 /**
- * Open an file input stream given a URL.
+ * Open a file input stream given a URL.
  * @author      James Gosling
  * @author      Steven B. Byrne
  */
