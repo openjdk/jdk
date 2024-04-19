@@ -620,15 +620,15 @@ JavaMain(void* _args)
 
     if (isStatic) {
         if (noArgs) {
-          ret = invokeStaticMainWithoutArgs(env, mainClass, vm, ret);
+            ret = invokeStaticMainWithoutArgs(env, mainClass, vm, ret);
         } else {
-          ret = invokeStaticMainWithArgs(env, mainClass, mainArgs, vm, ret);
+            ret = invokeStaticMainWithArgs(env, mainClass, mainArgs, vm, ret);
         }
     } else {
        if (noArgs) {
-         ret = invokeInstanceMainWithoutArgs(env, mainClass, vm, ret);
+            ret = invokeInstanceMainWithoutArgs(env, mainClass, vm, ret);
        } else {
-         ret = invokeInstanceMainWithArgs(env, mainClass, mainArgs, vm, ret);
+            ret = invokeInstanceMainWithArgs(env, mainClass, mainArgs, vm, ret);
        }
     }
 
