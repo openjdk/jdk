@@ -5290,7 +5290,7 @@ bool PhaseIdealLoop::get_result_replaced_by_dominating_hits_in_cache(Node* n, No
     // This ScopedValueGetResult is dominated by the success projection of ScopedValueGetHitsInCache for the same
     // ScopedValue object: either the ScopedValueGetResult and ScopedValueGetHitsInCache are from the same
     // ScopedValue.get() and we remove the ScopedValueGetResult because it's only useful to optimize
-    // ScopedValue.get() where the slow path is taken. Or They are from difference ScopedValue.get() and we
+    // ScopedValue.get() where the slow path is taken. Or they are from different ScopedValue.get() and we
     // remove the ScopedValueGetResult. Its companion ScopedValueGetHitsInCache should be removed as well as part
     // of this round of optimizations.
     return true;
