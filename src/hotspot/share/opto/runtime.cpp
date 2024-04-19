@@ -782,7 +782,7 @@ const TypeFunc* OptoRuntime::make_setmemory_Type() {
   int argp = TypeFunc::Parms;
   fields[argp++] = TypePtr::NOTNULL;        // dest
   fields[argp++] = TypeX_X;                 // size
-  LP64_ONLY(fields[argp++] = Type::HALF);  // size
+  LP64_ONLY(fields[argp++] = Type::HALF);   // size
   fields[argp++] = TypeInt::UBYTE;          // bytevalue
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
