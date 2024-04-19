@@ -789,7 +789,7 @@ private:
   void reset_post_loop_opts_phase() { _post_loop_opts_phase = false; }
 
   bool       allow_macro_nodes() { return _allow_macro_nodes;  }
-  void  dont_allow_macro_nodes() { _allow_macro_nodes = false;  }
+  void reset_allow_macro_nodes() { _allow_macro_nodes = false;  }
 
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);
