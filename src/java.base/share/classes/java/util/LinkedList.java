@@ -622,14 +622,14 @@ public class LinkedList<E>
     }
 
     /**
-     * Returns the index of the last occurrence of a matching element in this
+     * Returns the index of the first occurrence of a matching element in this
      * list, or -1 if this list does not contain the element.  More formally,
-     * returns the highest index {@code i} such that
+     * returns the lowest index {@code i} such that
      * {@code filter.test(get(i))},
      * or -1 if there is no such index.
      *
-     * @param filter a predicate that returns true for the desired element
-     * @return the index of the last occurrence of a matching element in
+     * @param filter a predicate to search mathcing element for
+     * @return the index of the first occurrence of a matching element in
      * this list, or -1 if this list does not contain the element
      */
     public int findIndex(Predicate<? super E> filter) {
@@ -649,7 +649,7 @@ public class LinkedList<E>
      * {@code filter.test(get(i))},
      * or -1 if there is no such index.
      *
-     * @param filter a predicate that returns true for the desired element
+     * @param filter a predicate to search mathcing element for
      * @return the index of the last occurrence of a matching element in
      * this list, or -1 if this list does not contain the element
      */
