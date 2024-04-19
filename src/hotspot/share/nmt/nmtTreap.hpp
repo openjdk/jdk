@@ -25,9 +25,9 @@
 #ifndef SHARE_NMT_TREAP_HPP
 #define SHARE_NMT_TREAP_HPP
 
-#include "utilities/globalDefinitions.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include <stdint.h>
 
@@ -111,23 +111,27 @@ private:
 
   // Split tree at head into two trees, SplitMode decides where EQ values go.
   // We have SplitMode because it makes remove() trivial to implement.
-  static node_pair split(Node* head, const K& key, SplitMode mode = LEQ) {
+  static node_pair split(Node* head, const K& key, SplitMode mode = LEQ DEBUG_ONLY(COMMA int recur_count = 0)) {
+    assert(recur_count < 200, "Call-stack depth should never exceed 200");
+
     if (head == nullptr) {
       return {nullptr, nullptr};
     }
     if ((CMP(head->_key, key) <= 0 && mode == LEQ) || (CMP(head->_key, key) < 0 && mode == LT)) {
-      node_pair p = split(head->_right, key, mode);
+      node_pair p = split(head->_right, key, mode DEBUG_ONLY(COMMA recur_count + 1));
       head->_right = p.left;
       return node_pair{head, p.right};
     } else {
-      node_pair p = split(head->_left, key, mode);
+      node_pair p = split(head->_left, key, mode DEBUG_ONLY(COMMA recur_count + 1));
       head->_left = p.right;
       return node_pair{p.left, head};
     }
   }
 
   // Invariant: left is a treap whose keys are LEQ to the keys in right.
-  static Node* merge(Node* left, Node* right) {
+  static Node* merge(Node* left, Node* right DEBUG_ONLY(COMMA int recur_count = 0)) {
+    assert(recur_count < 200, "Call-stack depth should never exceed 200");
+
     if (left == nullptr) return right;
     if (right == nullptr) return left;
 
@@ -137,7 +141,7 @@ private:
       //         |
       //         RIGHT
       // for the invariant re: priorities to hold.
-      left->_right = merge(left->_right, right);
+      left->_right = merge(left->_right, right DEBUG_ONLY(COMMA recur_count + 1));
       return left;
     } else {
       // We need
@@ -145,12 +149,12 @@ private:
       //         |
       //      LEFT
       // for the invariant re: priorities to hold.
-      right->_left = merge(left, right->_left);
+      right->_left = merge(left, right->_left DEBUG_ONLY(COMMA recur_count + 1));
       return right;
     }
   }
 
-  static Node* find(Node* node, const K& k) {
+  static Node* find(Node* node, const K& k DEBUG_ONLY(COMMA int recur_count = 0)) {
     if (node == nullptr) {
       return nullptr;
     }
@@ -159,9 +163,9 @@ private:
     }
 
     if (CMP(node->_key, k) <= 0) { // LEQ
-      return find(node->_left, k);
+      return find(node->_left, k DEBUG_ONLY(COMMA recur_count + 1));
     } else {
-      return find(node->_right, k);
+      return find(node->_right, k DEBUG_ONLY(COMMA recur_count + 1));
     }
   }
 public:
