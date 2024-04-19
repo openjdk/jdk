@@ -87,6 +87,7 @@ public class TestCompatibleUseDefTypeSize {
         // Add all tests to list
         tests.put("test0",       () -> { return test0(aB.clone(), bC.clone()); });
         tests.put("test1",       () -> { return test1(aB.clone(), bC.clone()); });
+        tests.put("test2",       () -> { return test2(aB.clone(), bC.clone()); });
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -99,7 +100,8 @@ public class TestCompatibleUseDefTypeSize {
 
     @Warmup(100)
     @Run(test = {"test0",
-                 "test1"})
+                 "test1",
+                 "test2"})
     public void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -268,6 +270,20 @@ public class TestCompatibleUseDefTypeSize {
     static Object[] test1(byte[] src, char[] dst) {
         for (int i = 0; i < src.length; i++) {
             dst[i] = (char)(src[i]);
+        }
+        return new Object[]{ src, dst };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_VECTOR, "= 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // "deflate"  method: 2 byte -> 1 byte.
+    // Java scalar code has no explicit conversion.
+    // Vector code would need a conversion. We may add this in the future.
+    static Object[] test2(byte[] src, char[] dst) {
+        for (int i = 0; i < src.length; i++) {
+            src[i] = (byte)(dst[i]);
         }
         return new Object[]{ src, dst };
     }
