@@ -281,6 +281,8 @@ bool ProjNode::is_multi_uncommon_trap_proj() {
         Node* u = n->fast_out(j);
         if (u->is_CFG()) {
           if (wq.size() >= path_limit) {
+            // conservatively return false. Worst case, we won't apply an optimization that we could have applied but
+            // correctness can't be affected.
             return false;
           }
           wq.push(u);

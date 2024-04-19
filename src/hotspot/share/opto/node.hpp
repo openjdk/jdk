@@ -502,8 +502,7 @@ protected:
   }
 
   // Find out of current node that matches opcode.
-  Node* find_out_with(int opcode);
-  Node* find_unique_out_with(int opcode) const;
+  Node* find_out_with(int opcode, bool want_unique = false) const;
   // Return true if the current node has an out that matches opcode.
   bool has_out_with(int opcode);
   // Return true if the current node has an out that matches any of the opcodes.
@@ -1739,6 +1738,9 @@ public:
     _in_worklist.remove(b->_idx);
     map(i,Node_List::pop());
     return b;
+  }
+  void delete_at(uint i) {
+    Unimplemented();
   }
   void yank(Node *n) {
     _in_worklist.remove(n->_idx);

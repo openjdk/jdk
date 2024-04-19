@@ -1558,7 +1558,7 @@ bool PhaseIdealLoop::loop_predication_for_scoped_value_get(IdealLoopTree* loop, 
                                                            Invariance& invar, Deoptimization::DeoptReason reason,
                                                            IfNode* iff, IfProjNode*& new_predicate_proj) {
   BoolNode* bol = iff->in(1)->as_Bool();
-  if (bol->in(1)->Opcode() != Op_ScopedValueGetHitsInCache){
+  if (bol->in(1)->Opcode() != Op_ScopedValueGetHitsInCache) {
     return false;
   }
   ScopedValueGetHitsInCacheNode* hits_in_the_cache = bol->in(1)->as_ScopedValueGetHitsInCache();
@@ -1567,7 +1567,7 @@ bool PhaseIdealLoop::loop_predication_for_scoped_value_get(IdealLoopTree* loop, 
       !invar.is_invariant(hits_in_the_cache->index2())) {
     return false;
   }
-  Node* load_from_cache = if_success_proj->find_unique_out_with(Op_ScopedValueGetLoadFromCache);
+  Node* load_from_cache = if_success_proj->find_out_with(Op_ScopedValueGetLoadFromCache, true);
   assert(load_from_cache->in(1) == hits_in_the_cache, "unexpected ScopedValueGetHitsInCache/ScopedValueGetLoadFromCache shape");
   assert(if_success_proj->is_IfTrue(), "unexpected ScopedValueGetHitsInCache/ScopedValueGetLoadFromCache shape");
   new_predicate_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr,
@@ -1590,7 +1590,7 @@ bool PhaseIdealLoop::loop_predication_for_scoped_value_get(IdealLoopTree* loop, 
   // The scoped value cache may be loop variant because it depends on raw memory which may keep the
   // ScopedValueGetHitsInCache in the loop. It's legal to hoist it out of loop though but we need to update the scoped
   // value cache to be out of loop as well.
-  Node* scoped_value_cache_load = scoped_value_cache_node(raw_mem);
+  Node* scoped_value_cache_load = make_scoped_value_cache_node(raw_mem);
 
   _igvn.replace_input_of(new_hits_in_the_cache, 1, scoped_value_cache_load);
   Node* oop_mem = mm != nullptr ? mm->memory_at(C->get_alias_index(TypeAryPtr::OOPS)) : all_mem;
@@ -1624,7 +1624,7 @@ bool PhaseIdealLoop::loop_predication_for_scoped_value_get(IdealLoopTree* loop, 
 
 // It is easier to re-create the cache load subgraph rather than trying to change the inputs of the existing one to move
 // it out of loops
-Node* PhaseIdealLoop::scoped_value_cache_node(Node* raw_mem) {
+Node* PhaseIdealLoop::make_scoped_value_cache_node(Node* raw_mem) {
   Node* thread = new ThreadLocalNode();
   register_new_node(thread, C->root());
   Node* scoped_value_cache_offset = _igvn.MakeConX(in_bytes(JavaThread::scopedValueCache_offset()));

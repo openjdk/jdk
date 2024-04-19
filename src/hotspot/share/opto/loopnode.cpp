@@ -5017,9 +5017,9 @@ bool PhaseIdealLoop::expand_scoped_value_get_nodes() {
 // the right bci in the java method is marked as having trapped.
 void PhaseIdealLoop::expand_sv_get_hits_in_cache_and_load_from_cache(ScopedValueGetHitsInCacheNode* hits_in_cache) {
   hits_in_cache->verify();
-  BoolNode* bol = hits_in_cache->find_unique_out_with(Op_Bool)->as_Bool();
+  BoolNode* bol = hits_in_cache->find_out_with(Op_Bool, true)->as_Bool();
   assert(bol->_test._test == BoolTest::ne, "unexpected ScopedValueGetHitsInCache shape");
-  IfNode* iff = bol->find_unique_out_with(Op_If)->as_If();
+  IfNode* iff = bol->find_out_with(Op_If, true)->as_If();
   ProjNode* success = iff->proj_out(1);
   ProjNode* failure = iff->proj_out(0);
 

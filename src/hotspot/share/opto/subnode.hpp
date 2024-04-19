@@ -332,13 +332,13 @@ public:
           _second_cache_probe_fails({cnt_second_cache_probe_fails, prob_second_cache_probe_fails }) {
     init_class_id(Class_ScopedValueGetHitsInCache);
     init_req(0, c);
-    assert(req() == ScopedValue, "wrong of inputs for ScopedValueGetHitsInCacheNode");
+    assert(req() == ScopedValue, "wrong number of inputs for ScopedValueGetHitsInCacheNode");
     add_req(sv);
-    assert(req() == Memory, "wrong of inputs for ScopedValueGetHitsInCacheNode");
+    assert(req() == Memory, "wrong number of inputs for ScopedValueGetHitsInCacheNode");
     add_req(mem);
-    assert(req() == Index1, "wrong of inputs for ScopedValueGetHitsInCacheNode");
+    assert(req() == Index1, "wrong number of inputs for ScopedValueGetHitsInCacheNode");
     add_req(index1);
-    assert(req() == Index2, "wrong of inputs for ScopedValueGetHitsInCacheNode");
+    assert(req() == Index2, "wrong number of inputs for ScopedValueGetHitsInCacheNode");
     add_req(index2);
   }
 
@@ -359,7 +359,7 @@ public:
   }
 
   ScopedValueGetLoadFromCacheNode* load_from_cache() const {
-    return (ScopedValueGetLoadFromCacheNode*)find_unique_out_with(Op_ScopedValueGetLoadFromCache);
+    return (ScopedValueGetLoadFromCacheNode*)find_out_with(Op_ScopedValueGetLoadFromCache, true);
   }
 
   virtual int Opcode() const;

@@ -110,7 +110,7 @@ public class TestScopedValue {
         ScopedValue<MyDouble> scopedValue = sv;
         MyDouble sv1 = scopedValue.get();
         notInlined();
-        MyDouble sv2 = scopedValue.get(); // Should optimize out
+        MyDouble sv2 = scopedValue.get(); // Should optimize out: sv field is loaded in local before notInlined call
         return sv1.getValue() + sv2.getValue();
     }
 
@@ -134,7 +134,7 @@ public class TestScopedValue {
     public static double testFastPath3() {
         MyDouble sv1 = sv.get();
         notInlined();
-        MyDouble sv2 = sv.get(); // Doesn't optimize out (load of sv cannot common)
+        MyDouble sv2 = sv.get(); // Doesn't optimize out: second load of sv cannot common with first one
         return sv1.getValue() + sv2.getValue();
     }
 
@@ -182,7 +182,7 @@ public class TestScopedValue {
     @IR(counts = {IRNode.IF, ">= 3", IRNode.LOAD_P_OR_N, ">= 4" })
     @IR(counts = {IRNode.IF, "<= 4", IRNode.LOAD_P_OR_N, "<= 5" })
     public static void testFastPath5() {
-        Object unused = svObject.get(); // cannot be removed if result not used
+        Object unused = svObject.get(); // cannot be removed if result not used (get() can throw)
     }
 
     @Run(test = "testFastPath5", mode = RunMode.STANDALONE)
@@ -234,6 +234,7 @@ public class TestScopedValue {
     @IR(counts = {IRNode.LOAD_D, "1" })
     public static double testFastPath7(boolean[] flags) {
         double res = 0;
+         // hoisted here before the loop, and commoned.
         for (int i = 0; i < 10_000; i++) {
             if (flags[i]) {
                 res = sv.get().getValue(); // Should be hoisted by predication
@@ -475,9 +476,12 @@ public class TestScopedValue {
         // Profile data will report a single of the 2 cache locations as a hit
         runAndCompile15();
         // Force a cache miss
-        ScopedValue.where(svObject, new Object()).run(
+        Object o = new Object();
+        ScopedValue.where(svObject, o).run(
                 () -> {
-                    testFastPath15();
+                    if (testFastPath15() != o) {
+                        throw new RuntimeException("incorrect returned value for get()");
+                    }
                 });
         Method m = TestScopedValue.class.getDeclaredMethod("testFastPath15");
         TestFramework.assertDeoptimizedByC2(m);
@@ -486,11 +490,14 @@ public class TestScopedValue {
     }
 
     private static void runAndCompile15() throws NoSuchMethodException {
-        ScopedValue.where(svObject, new Object()).run(
+        Object o = new Object();
+        ScopedValue.where(svObject, o).run(
                 () -> {
                     Object unused = svObject.get();
                     for (int i = 0; i < 20_000; i++) {
-                        testFastPath15();
+                        if (testFastPath15() != o) {
+                            throw new RuntimeException("incorrect returned value for get()");
+                        }
                     }
                 });
         forceCompilation("testFastPath15");
@@ -521,7 +528,7 @@ public class TestScopedValue {
         ScopedValue<MyDouble> localSV = sv;
         MyDouble sv1 = localSV.get();
         notInlined();
-        MyDouble sv2 = localSV.get(); // should optimize out
+        MyDouble sv2 = localSV.get(); // should optimize out: sv field is loaded in local before notInlined call
         return sv1.getValue() + sv2.getValue();
     }
 

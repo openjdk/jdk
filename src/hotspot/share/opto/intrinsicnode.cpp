@@ -377,14 +377,13 @@ Node* ScopedValueGetLoadFromCacheNode::scoped_value() const {
 }
 
 IfNode* ScopedValueGetLoadFromCacheNode::iff() const {
-  return in(0)->in(0)->as_If();
+  return in(0)->as_IfTrue()->in(0)->as_If();
 }
 
 #ifdef ASSERT
 void ScopedValueGetLoadFromCacheNode::verify() const {
   // check a ScopedValueGetHitsInCache guards this ScopedValueGetLoadFromCache
-  assert(in(0)->Opcode() == Op_IfTrue, "unexpected ScopedValueGetLoadFromCache shape");
-  IfNode* iff = in(0)->in(0)->as_If();
+  IfNode* iff = this->iff();
   assert(iff->in(1)->is_Bool(), "unexpected ScopedValueGetLoadFromCache shape");
   assert(iff->in(1)->in(1)->Opcode() == Op_ScopedValueGetHitsInCache, "unexpected ScopedValueGetLoadFromCache shape");
   assert(iff->in(1)->in(1) == in(1), "unexpected ScopedValueGetLoadFromCache shape");

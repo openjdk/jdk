@@ -1977,9 +1977,9 @@ Node* ReverseLNode::Identity(PhaseGVN* phase) {
 
 IfProjNode* ScopedValueGetHitsInCacheNode::success_proj() const {
   ScopedValueGetLoadFromCacheNode* load_from_cache = this->load_from_cache();
-  BoolNode* bol = find_unique_out_with(Op_Bool)->as_Bool();
+  BoolNode* bol = find_out_with(Op_Bool, true)->as_Bool();
   assert(bol->_test._test == BoolTest::ne, "unexpected ScopedValueGetHitsInCache shape");
-  IfNode* iff = bol->find_unique_out_with(Op_If)->as_If();
+  IfNode* iff = bol->find_out_with(Op_If, true)->as_If();
   assert(load_from_cache == nullptr || load_from_cache->iff() == iff, "unexpected ScopedValueGetHitsInCache/ScopedValueGetLoadFromCache shape");
   IfProjNode* dom = iff->proj_out(1)->as_IfProj();
   assert(load_from_cache == nullptr || dom == load_from_cache->in(0), "unexpected ScopedValueGetHitsInCache/ScopedValueGetLoadFromCache shape");

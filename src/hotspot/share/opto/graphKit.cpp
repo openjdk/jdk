@@ -4272,7 +4272,7 @@ Node* GraphKit::make_constant_from_field(ciField* field, Node* obj) {
   return nullptr;
 }
 
-const Type* GraphKit::scopedValueCache_type() {
+const Type* GraphKit::make_scopedValueCache_type() {
   ciKlass* objects_klass = ciObjArrayKlass::make(env()->Object_klass());
   const TypeOopPtr* etype = TypeOopPtr::make_from_klass(env()->Object_klass());
   const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
@@ -4284,7 +4284,7 @@ const Type* GraphKit::scopedValueCache_type() {
   return objects_type;
 }
 
-Node* GraphKit::scopedValueCache_handle() {
+Node* GraphKit::make_scopedValueCache_handle() {
   Node* thread = _gvn.transform(new ThreadLocalNode());
   Node* p = basic_plus_adr(top()/*!oop*/, thread, in_bytes(JavaThread::scopedValueCache_offset()));
   // We cannot use immutable_memory() because we might flip onto a
@@ -4295,8 +4295,8 @@ Node* GraphKit::scopedValueCache_handle() {
   return make_load(nullptr, p, p->bottom_type()->is_ptr(), T_ADDRESS, MemNode::unordered);
 }
 
-Node* GraphKit::scopedValueCache() {
-  Node* cache_obj_handle = scopedValueCache_handle();
-  const Type* objects_type = scopedValueCache_type();
+Node* GraphKit::make_scopedValueCache() {
+  Node* cache_obj_handle = make_scopedValueCache_handle();
+  const Type* objects_type = make_scopedValueCache_type();
   return access_load(cache_obj_handle, objects_type, T_OBJECT, IN_NATIVE);
 }

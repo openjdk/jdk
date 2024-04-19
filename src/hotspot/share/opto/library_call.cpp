@@ -3643,15 +3643,15 @@ bool LibraryCallKit::inline_native_setCurrentThread() {
 
 //------------------------inline_native_scopedValueCache------------------
 bool LibraryCallKit::inline_native_scopedValueCache() {
-  set_result(scopedValueCache());
+  set_result(make_scopedValueCache());
   return true;
 }
 
 //------------------------inline_native_setScopedValueCache------------------
 bool LibraryCallKit::inline_native_setScopedValueCache() {
   Node* arr = argument(0);
-  Node* cache_obj_handle = scopedValueCache_handle();
-  const Type* objects_type = scopedValueCache_type();
+  Node* cache_obj_handle = make_scopedValueCache_handle();
+  const Type* objects_type = make_scopedValueCache_type();
 
   const TypePtr *adr_type = _gvn.type(cache_obj_handle)->isa_ptr();
   access_store_at(nullptr, cache_obj_handle, adr_type, arr, objects_type, T_OBJECT, IN_NATIVE | MO_UNORDERED);

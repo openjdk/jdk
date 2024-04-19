@@ -1171,55 +1171,38 @@ class LateInlineScopedValueCallGenerator : public LateInlineCallGenerator {
     Node* _scoped_value_object;
     const ScopedValueGetPatternMatcher& _pattern_matcher;
 
-    // Before the transformation of the subgraph we have (some branches may not be present depending on profile data),
-    // in pseudo code:
+    // (1) is the subgraph before transformation (some branches may
+    // not be present depending on profile data), in pseudo code. (4)
+    // is the subgraph after transformation. (2) and (3) are
+    // intermediate steps referenced in the code below.
     //
-    // cache = scopedValueCache();
-    // if (cache == null) {
-    //   goto slow_call;
-    // }
-    // if (first_entry_hits) {
-    //   result = first_entry;
-    // } else {
-    //   if (second_entry_hits) {
-    //     result = second_entry;
-    //   } else {
-    //     goto slow_call;
-    //   }
-    // }
-    // continue:
-    // ...
-    // return;
+    //            (1)                          (2)                               (3)                                      (4)
+    // cache = scopedValueCache();  cache = scopedValueCache()  cache = currentThread.scopedValueCache;  cache = currentThread.scopedValueCache;
+    // if (cache == null) {         if (cache == null) {        if (hits_in_cache(cache)) {              if (hits_in_cache(cache)) {            
+    //   goto slow_call;              goto slow_call;             result = load_from_cache;                result = load_from_cache;            
+    // }                            }                             goto region_fast_slow;                 } else {                               
+    // if (first_entry_hits) {      if (first_entry_hits) {     } else {                                   if (cache == null) {                 
+    //   result = first_entry;        result = first_entry;       if (cache == null) {                       goto slow_call;                    
+    // } else {                     } else {                        goto slow_call;                        }                                    
+    //   if (second_entry_hits) {     if (second_entry_hits) {    }                                        if (first_entry_hits) {              
+    //     result = second_entry;       result = second_entry;    if (first_entry_hits) {                    halt;                              
+    //   } else {                     } else {                      result = first_entry;                  } else {                             
+    //     goto slow_call;              goto slow_call;           } else {                                   if (second_entry_hits) {           
+    //   }                            }                             if (second_entry_hits) {                    halt;                           
+    // }                            }                                 result = second_entry;                  } else {                          
+    // continue:                    continue:                       } else {                                    goto slow_call;                 
+    // ...                          halt;                             goto slow_call;                        }                                  
+    // return;                                                      }                                      }                                    
+    //                              slow_call:                    }                                      }                                      
+    // slow_call:                   result = slowGet();         }                                        continue:                              
+    // result = slowGet();          goto continue;              continue:                                ...                                    
+    // goto continue;                                           halt;                                    return;                                
+    //                                                          region_fast_slow;                                                               
+    //                                                                                                   slow_call:                             
+    //                                                          slow_call:                               result = slowGet();                    
+    //                                                          result = slowGet();                      goto continue;                         
+    //                                                          goto continue;                         
     //
-    // slow_call:
-    // result = slowGet();
-    // goto continue;
-    //
-    // After transformation:
-    // cache = currentThread.scopedValueCache;
-    // if (hits_in_cache(cache)) {
-    //   result = load_from_cache;
-    // } else {
-    //   if (cache == null) {
-    //     goto slow_call;
-    //   }
-    //   if (first_entry_hits) {
-    //     halt;
-    //   } else {
-    //     if (second_entry_hits) {
-    //        halt;
-    //      } else {
-    //        goto slow_call;
-    //     }
-    //   }
-    // }
-    // continue:
-    // ...
-    // return;
-    //
-    // slow_call:
-    // result = slowGet();
-    // goto continue;
     //
     // the transformed graph includes 2 copies of the cache probing logic. One represented by the
     // ScopedValueGetHitsInCache/ScopedValueGetLoadFromCache pair that is amenable to optimizations. The other from
@@ -1231,26 +1214,7 @@ class LateInlineScopedValueCallGenerator : public LateInlineCallGenerator {
       Compile* C = _kit.C;
       replace_current_exit_of_get_with_halt();
 
-      // Graph now is:
-      // cache = scopedValueCache();
-      // if (cache == null) {
-      //   goto slow_call;
-      // }
-      // if (first_entry_hits) {
-      //   result = first_entry;
-      // } else {
-      //   if (second_entry_hits) {
-      //     result = second_entry;
-      //   } else {
-      //     goto slow_call;
-      //   }
-      // }
-      // continue:
-      // halt;
-      //
-      // slow_call:
-      // result = slowGet();
-      // goto continue;
+      // Graph now is (2)
 
       // Move right above the scopedValueCache() call
       CallNode* scoped_value_cache = _pattern_matcher.scoped_value_cache();
@@ -1263,7 +1227,7 @@ class LateInlineScopedValueCallGenerator : public LateInlineCallGenerator {
       _kit.set_i_o(input_io);
 
       // replace it with its intrinsic code:
-      Node* scoped_value_cache_load = _kit.scopedValueCache();
+      Node* scoped_value_cache_load = _kit.make_scopedValueCache();
       // A single ScopedValueGetHitsInCache node represents all checks that are needed to probe the cache (cache not null,
       // cache_miss_prob with first hash, cache_miss_prob with second hash)
       // It will later be expanded back to all the checks so record profile data
@@ -1326,33 +1290,7 @@ class LateInlineScopedValueCallGenerator : public LateInlineCallGenerator {
       phi_mem->init_req(1, _kit.reset_memory());
       phi_io->init_req(1, _kit.i_o());
 
-      // Graph now is:
-      //
-      // cache = currentThread.scopedValueCache;
-      // if (hits_in_cache(cache)) {
-      //   result = load_from_cache;
-      //   goto region_fast_slow;
-      // } else {
-      //   if (cache == null) {
-      //     goto slow_call;
-      //   }
-      //   if (first_entry_hits) {
-      //     result = first_entry;
-      //   } else {
-      //     if (second_entry_hits) {
-      //       result = second_entry;
-      //     } else {
-      //       goto slow_call;
-      //     }
-      //   }
-      // }
-      // continue:
-      // halt;
-      // region_fast_slow;
-      //
-      // slow_call:
-      // result = slowGet();
-      // goto continue;
+      // Graph now is (3)
 
       if (slow_call != nullptr) {
         // At this point, return from slowGet() falls through to a Halt node. Connect it to the new normal exit (region_fast_slow)

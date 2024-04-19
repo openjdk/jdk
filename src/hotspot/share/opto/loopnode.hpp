@@ -698,9 +698,10 @@ public:
 
   // Return TRUE or FALSE if the loop should be peeled or not. Peel if we can
   // move some loop-invariant test (usually a null-check) before the loop.
-  bool policy_peeling(PhaseIdealLoop* phase, bool scoped_value_only);
+  bool policy_peeling(PhaseIdealLoop* phase);
+  bool policy_peeling_for_scoped_value(PhaseIdealLoop* phase);
 
-  uint estimate_peeling(PhaseIdealLoop* phase, bool peel_only_if_has_scoped_value);
+  uint estimate_peeling(PhaseIdealLoop* phase);
 
   // Return TRUE or FALSE if the loop should be maximally unrolled. Stash any
   // known trip count in the counted loop node.
@@ -814,6 +815,8 @@ public:
   bool empty_loop_candidate(PhaseIdealLoop* phase) const;
 
   bool empty_loop_with_extra_nodes_candidate(PhaseIdealLoop* phase) const;
+
+  uint estimate_if_peeling_possible(PhaseIdealLoop* phase) const;
 };
 
 // -----------------------------PhaseIdealLoop---------------------------------
@@ -1790,15 +1793,15 @@ public:
                                              Invariance& invar, Deoptimization::DeoptReason reason,
                                              IfNode* iff, IfProjNode*& new_predicate_proj);
 
-  void move_scoped_value_nodes_to_not_peel(VectorSet &peel, VectorSet &not_peel, Node_List &peel_list,
-                                           Node_List &sink_list, uint i) const;
+  void move_scoped_value_nodes_to_avoid_peeling_it(VectorSet& peel, VectorSet& not_peel, Node_List& peel_list,
+                                                   Node_List& sink_list, uint i);
 
-  Node* scoped_value_cache_node(Node* raw_mem);
+  Node* make_scoped_value_cache_node(Node* raw_mem);
 
-  void find_most_likely_cache_index(const ScopedValueGetHitsInCacheNode* hits_in_cache, Node*&first_index,
-                                    Node*&second_index,
-                                    float &prob_cache_miss_at_first_if, float &first_if_cnt,
-                                    float &prob_cache_miss_at_second_if, float &second_if_cnt) const;
+  void find_most_likely_cache_index(const ScopedValueGetHitsInCacheNode* hits_in_cache, Node*& first_index,
+                                    Node*& second_index,
+                                    float& prob_cache_miss_at_first_if, float& first_if_cnt,
+                                    float& prob_cache_miss_at_second_if, float& second_if_cnt) const;
 
   bool replace_scoped_value_result_by_dominator(ScopedValueGetResultNode* get_result, Node* scoped_value_object, Node* dom_ctrl);
 
@@ -1811,6 +1814,8 @@ public:
   bool get_result_replaced_by_dominating_hits_in_cache(Node* n, Node* m);
 
   bool get_result_replaced_by_dominating_get_result(Node* n, Node* m);
+
+  void sink_to_not_peel(VectorSet& peel, VectorSet& not_peel, Node_List& peel_list, Node_List& sink_list, uint i);
 };
 
 
