@@ -26,8 +26,7 @@
  * @bug 6968351
  * @summary  tcp no delay not required for small payloads
  * @library /test/lib
- * @run main/timeout=5 B6968351
- * @run main/othervm -Dsun.net.httpserver.nodelay=false B6968351
+ * @run main/timeout=5 -Dsun.net.httpserver.nodelay=false B6968351
  */
 
 import com.sun.net.httpserver.*;
@@ -38,6 +37,7 @@ import java.net.*;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.*;
@@ -89,8 +89,7 @@ public class B6968351 {
             is.close();
             rmap.add("content-type","text/plain");
             t.sendResponseHeaders(200,5);
-            t.getResponseBody().write("hello".getBytes());
-            t.close();
+            t.getResponseBody().write("hello".getBytes(StandardCharsets.ISO_8859_1));
         }
     }
 }
