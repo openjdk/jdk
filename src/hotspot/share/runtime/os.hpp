@@ -228,8 +228,8 @@ class os: AllStatic {
   static char*  pd_attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc, MEMFLAGS flag);
 
   static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset,
-                              char *addr, size_t bytes,
-                              bool read_only = false, bool allow_exec = false);
+                              char *addr, size_t bytes, bool read_only = false,
+                              bool allow_exec = false);
   static bool   pd_unmap_memory(char *addr, size_t bytes);
   static void   pd_free_memory(char *addr, size_t bytes, size_t alignment_hint, MEMFLAGS flag);
   static void   pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint);
@@ -513,9 +513,9 @@ class os: AllStatic {
   // Replace existing reserved memory with file mapping
   static char* replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd);
 
-  static char*  map_memory(int fd, const char* file_name, size_t file_offset, // file info
-                           char *addr, size_t bytes,                          // memory info
-                           bool read_only, bool allow_exec, MEMFLAGS flag);   // flags
+  static char*  map_memory(int fd, const char* file_name, size_t file_offset,
+                           char *addr, size_t bytes, bool read_only,
+                           bool allow_exec, MEMFLAGS flag);
   static bool   unmap_memory(char *addr, size_t bytes);
   static void   free_memory(char *addr, size_t bytes, size_t alignment_hint, MEMFLAGS flag);
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);

@@ -1721,9 +1721,9 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
   // This path should not be reached for Windows; see JDK-8222379.
   assert(WINDOWS_ONLY(false) NOT_WINDOWS(true), "Don't call on Windows");
   // Replace old mapping with new one that is writable.
-  char *base = os::map_memory(_fd, _full_path, r->file_offset(),                      //file info
-                              addr, size,                                             //memory info
-                              false /* !read_only */, r->allow_exec(), mtClassShared); // flags
+  char *base = os::map_memory(_fd, _full_path, r->file_offset(),
+                              addr, size, false /* !read_only */,
+                              r->allow_exec(), mtClassShared);
   close();
   // These have to be errors because the shared region is now unmapped.
   if (base == nullptr) {

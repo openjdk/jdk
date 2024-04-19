@@ -3398,7 +3398,7 @@ char* os::pd_reserve_memory(size_t bytes, bool exec, MEMFLAGS flag) {
 
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
-char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec, MEMFLAGS nmt_flag) {
+char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec, MEMFLAGS flag) {
   assert((size_t)addr % os::vm_allocation_granularity() == 0,
          "reserve alignment");
   assert(bytes % os::vm_page_size() == 0, "reserve page size");
@@ -3413,7 +3413,7 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec, MEMF
     if (Verbose && PrintMiscellaneous) reserveTimer.start();
     // in numa interleaving, we have to allocate pages individually
     // (well really chunks of NUMAInterleaveGranularity size)
-    res = allocate_pages_individually(bytes, addr, MEM_RESERVE, PAGE_READWRITE, nmt_flag);
+    res = allocate_pages_individually(bytes, addr, MEM_RESERVE, PAGE_READWRITE, flag);
     if (res == nullptr) {
       warning("NUMA page allocation failed");
     }

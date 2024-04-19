@@ -178,6 +178,7 @@ class VirtualSpace {
   bool   _executable;
 
   MEMFLAGS _nmt_flag;
+
   // MPSS Support
   // Each virtualspace region has a lower, middle, and upper region.
   // Each region has an end boundary and a high pointer which is the
@@ -195,7 +196,6 @@ class VirtualSpace {
   size_t _lower_alignment;
   size_t _middle_alignment;
   size_t _upper_alignment;
-
 
   // MPSS Accessors
   char* lower_high() const { return _lower_high; }
