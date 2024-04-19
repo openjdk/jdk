@@ -917,7 +917,6 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* 
       // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
       continue;
     }
-    // TODO: align = adjust_alignment_for_type_conversion(s1, t1, align);
     if (can_pack_into_pair(t1, t2)) {
       if (estimate_cost_savings_when_packing_as_pair(t1, t2) >= 0) {
         _pairset.add_pair(t1, t2);
@@ -954,7 +953,6 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* 
       }
       if (t2->Opcode() == Op_AddI && t2 == cl()->incr()) continue; // don't mess with the iv
       if (order_inputs_of_uses_to_match_def_pair(s1, s2, t1, t2) != PairOrderStatus::Ordered) { continue; }
-      // TODO: adjusted_align = adjust_alignment_for_type_conversion(s1, t1, adjusted_align);
       if (can_pack_into_pair(t1, t2)) {
         int my_savings = estimate_cost_savings_when_packing_as_pair(t1, t2);
         if (my_savings > savings) {
