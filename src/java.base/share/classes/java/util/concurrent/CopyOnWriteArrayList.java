@@ -34,9 +34,6 @@
 
 package java.util.concurrent;
 
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.util.ArraysSupport;
-
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
