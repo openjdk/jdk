@@ -492,7 +492,9 @@ void SuperWord::find_adjacent_memop_pairs() {
   // Collect all valid VPointers.
   for_each_mem([&] (const MemNode* mem, int bb_idx) {
     const VPointer& p = vpointer(mem);
-    if (p.valid()) {
+    if (p.valid() &&
+        !mem->is_LoadStore() &&
+        is_java_primitive(mem->memory_type())) {
       vpointers.append(&p);
     }
   });

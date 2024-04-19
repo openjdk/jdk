@@ -366,10 +366,7 @@ public:
   void for_each_mem(Callback callback) const {
     for (int i = 0; i < _body.length(); i++) {
       MemNode* mem = _body.at(i)->isa_Mem();
-      if (mem != nullptr &&
-          !mem->is_LoadStore() &&
-          _vloop.in_bb(mem) &&
-          is_java_primitive(mem->memory_type())) {
+      if (mem != nullptr && _vloop.in_bb(mem)) {
         callback(mem, i);
       }
     }
