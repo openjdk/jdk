@@ -606,28 +606,30 @@ JavaMain(void* _args)
      * the application stack trace.
      */
 
-#define MAIN_WITH_ARGS 0
-#define MAIN_WITHOUT_ARGS 1
-#define MAIN_NONSTATIC 2
 
     jclass helperClass = GetLauncherHelperClass(env);
-    jmethodID getMainType =
-        (*env)->GetStaticMethodID(env, helperClass, "getMainType", "()I");
+    jfieldID isStaticField =
+        (*env)->GetStaticFieldID(env, helperClass, "isStatic", "Z");
+    jboolean isStatic =
+        (*env)->GetStaticBooleanField(env, helperClass, isStaticField);
 
-    int mainType = (*env)->CallStaticIntMethod(env, helperClass, getMainType);
-    switch (mainType) {
-    case MAIN_WITH_ARGS:
-        ret = invokeStaticMainWithArgs(env, mainClass, mainArgs, vm, ret);
-        break;
-    case MAIN_WITHOUT_ARGS:
-        ret = invokeStaticMainWithoutArgs(env, mainClass, vm, ret);
-        break;
-    case MAIN_NONSTATIC:
-        ret = invokeInstanceMainWithArgs(env, mainClass, mainArgs, vm, ret);
-        break;
-    case MAIN_NONSTATIC | MAIN_WITHOUT_ARGS:
-        ret = invokeInstanceMainWithoutArgs(env, mainClass, vm, ret);
-        break;
+    jfieldID noArgsField =
+        (*env)->GetStaticFieldID(env, helperClass, "noArgs", "Z");
+    jboolean noArgs =
+        (*env)->GetStaticBooleanField(env, helperClass, noArgsField);
+
+    if (isStatic) {
+        if (noArgs) {
+          ret = invokeStaticMainWithoutArgs(env, mainClass, vm, ret);
+        } else {
+          ret = invokeStaticMainWithArgs(env, mainClass, mainArgs, vm, ret);
+        }
+    } else {
+       if (noArgs) {
+         ret = invokeInstanceMainWithoutArgs(env, mainClass, vm, ret);
+       } else {
+         ret = invokeInstanceMainWithArgs(env, mainClass, mainArgs, vm, ret);
+       }
     }
 
     if (ret) {

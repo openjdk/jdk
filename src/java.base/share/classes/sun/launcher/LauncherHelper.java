@@ -904,27 +904,8 @@ public final class LauncherHelper {
         return false;
     }
 
-    /*
-     * main type flags
-     */
-    private static final int MAIN_WITHOUT_ARGS = 1;
-    private static final int MAIN_NONSTATIC = 2;
-    private static int mainType = 0;
-
-    /*
-     * Return type so that launcher invokes the correct main
-     */
-    public static int getMainType() {
-        return mainType;
-    }
-
-    private static void setMainType(Method mainMethod) {
-        int mods = mainMethod.getModifiers();
-        boolean isStatic = Modifier.isStatic(mods);
-        boolean noArgs = mainMethod.getParameterCount() == 0;
-        mainType = (isStatic ? 0 : MAIN_NONSTATIC) | (noArgs ? MAIN_WITHOUT_ARGS : 0);
-    }
-
+    private static boolean isStatic = false;
+    private static boolean noArgs = false;
 
     // Check the existence and signature of main and abort if incorrect.
     private static void validateMainMethod(Class<?> mainClass) {
@@ -948,12 +929,10 @@ public final class LauncherHelper {
             }
         }
 
-        setMainType(mainMethod);
-
         int mods = mainMethod.getModifiers();
-        boolean isStatic = Modifier.isStatic(mods);
+        isStatic = Modifier.isStatic(mods);
         boolean isPublic = Modifier.isPublic(mods);
-        boolean noArgs = mainMethod.getParameterCount() == 0;
+        noArgs = mainMethod.getParameterCount() == 0;
 
         if (!PreviewFeatures.isEnabled()) {
             if (!isStatic || !isPublic || noArgs) {
