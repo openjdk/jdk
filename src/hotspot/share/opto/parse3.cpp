@@ -226,32 +226,9 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
   }
   access_store_at(obj, adr, adr_type, val, field_type, bt, decorators);
 
-  if (is_field) {
-    // Remember we wrote a volatile field.
-    // For not multiple copy atomic cpu (ppc64) a barrier should be issued
-    // in constructors which have such stores. See do_exits() in parse1.cpp.
-    if (is_vol) {
-      set_wrote_volatile(true);
-    }
-    set_wrote_fields(true);
-
-    // If the field is final, the rules of Java say we are in <init> or <clinit>.
-    // Note the presence of writes to final non-static fields, so that we
-    // can insert a memory barrier later on to keep the writes from floating
-    // out of the constructor.
-    // Any method can write a @Stable field; insert memory barriers after those also.
-    if (field->is_final()) {
-      set_wrote_final(true);
-      if (AllocateNode::Ideal_allocation(obj) != nullptr) {
-        // Preserve allocation ptr to create precedent edge to it in membar
-        // generated on exit from constructor.
-        // Can't bind stable with its allocation, only record allocation for final field.
-        set_alloc_with_final(obj);
-      }
-    }
-    if (field->is_stable()) {
-      set_wrote_stable(true);
-    }
+  if (is_field && field->is_stable()) {
+    // Insert a release barrier after methods that can write a @Stable field.
+    set_wrote_stable(true);
   }
 }
 

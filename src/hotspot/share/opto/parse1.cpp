@@ -408,11 +408,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   _method = parse_method;
   _expected_uses = expected_uses;
   _depth = 1 + (caller->has_method() ? caller->depth() : 0);
-  _wrote_final = false;
-  _wrote_volatile = false;
   _wrote_stable = false;
-  _wrote_fields = false;
-  _alloc_with_final = nullptr;
   _block = nullptr;
   _first_return = true;
   _replaced_nodes_for_exceptions = false;
@@ -983,54 +979,6 @@ void Parse::do_exits() {
 
   Node* iophi = _exits.i_o();
   _exits.set_i_o(gvn().transform(iophi));
-
-  // Figure out if we need to emit the trailing barrier. The barrier is only
-  // needed in the constructors, and only in three cases:
-  //
-  // 1. The constructor wrote a final. The effects of all initializations
-  //    must be committed to memory before any code after the constructor
-  //    publishes the reference to the newly constructed object. Rather
-  //    than wait for the publication, we simply block the writes here.
-  //    Rather than put a barrier on only those writes which are required
-  //    to complete, we force all writes to complete.
-  //
-  // 2. Experimental VM option is used to force the barrier if any field
-  //    was written out in the constructor.
-  //
-  // 3. On processors which are not CPU_MULTI_COPY_ATOMIC (e.g. PPC64),
-  //    support_IRIW_for_not_multiple_copy_atomic_cpu selects that
-  //    MemBarVolatile is used before volatile load instead of after volatile
-  //    store, so there's no barrier after the store.
-  //    We want to guarantee the same behavior as on platforms with total store
-  //    order, although this is not required by the Java memory model.
-  //    In this case, we want to enforce visibility of volatile field
-  //    initializations which are performed in constructors.
-  //    So as with finals, we add a barrier here.
-  //
-  // "All bets are off" unless the first publication occurs after a
-  // normal return from the constructor.  We do not attempt to detect
-  // such unusual early publications.  But no barrier is needed on
-  // exceptional returns, since they cannot publish normally.
-  //
-  if (method()->is_initializer() &&
-       (wrote_final() ||
-         (AlwaysSafeConstructors && wrote_fields()) ||
-         (support_IRIW_for_not_multiple_copy_atomic_cpu && wrote_volatile()))) {
-    _exits.insert_mem_bar(UseStoreStoreForCtor ? Op_MemBarStoreStore : Op_MemBarRelease,
-                          alloc_with_final());
-
-    // If Memory barrier is created for final fields write
-    // and allocation node does not escape the initialize method,
-    // then barrier introduced by allocation node can be removed.
-    if (DoEscapeAnalysis && alloc_with_final()) {
-      AllocateNode* alloc = AllocateNode::Ideal_allocation(alloc_with_final());
-      alloc->compute_MemBar_redundancy(method());
-    }
-    if (PrintOpto && (Verbose || WizardMode)) {
-      method()->print_name();
-      tty->print_cr(" writes finals and needs a memory barrier");
-    }
-  }
 
   // Any method can write a @Stable field; insert memory barriers
   // after those also. Can't bind predecessor allocation node (if any)

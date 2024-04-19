@@ -1604,7 +1604,6 @@ void PhaseMacroExpand::expand_initialize_membar(AllocateNode* alloc, InitializeN
   // so it's safe to skip storestore barrier when allocation does
   // not escape.
   if (!alloc->does_not_escape_thread() &&
-    !alloc->is_allocation_MemBar_redundant() &&
     (init == nullptr || !init->is_complete_with_arraycopy())) {
     if (init == nullptr || init->req() < InitializeNode::RawStores) {
       // No InitializeNode or no stores captured by zeroing
