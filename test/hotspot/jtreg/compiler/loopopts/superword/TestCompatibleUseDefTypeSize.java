@@ -88,6 +88,8 @@ public class TestCompatibleUseDefTypeSize {
         tests.put("test0",       () -> { return test0(aB.clone(), bC.clone()); });
         tests.put("test1",       () -> { return test1(aB.clone(), bC.clone()); });
         tests.put("test2",       () -> { return test2(aB.clone(), bC.clone()); });
+        tests.put("test3",       () -> { return test3(aI.clone(), bI.clone()); });
+        tests.put("test3",       () -> { return test4(aI.clone(), bI.clone()); });
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -101,7 +103,9 @@ public class TestCompatibleUseDefTypeSize {
     @Warmup(100)
     @Run(test = {"test0",
                  "test1",
-                 "test2"})
+                 "test2",
+                 "test3",
+                 "test4"})
     public void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -288,4 +292,35 @@ public class TestCompatibleUseDefTypeSize {
         return new Object[]{ src, dst };
     }
 
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Used to not vectorize because of "alignment boundaries".
+    // Assume 64 byte vector width:
+    // a[i+0:i+15] and a[i+1:i+16], each are 4 * 16 = 64 byte.
+    // The alignment boundary is every 64 byte, so one of the two vectors gets cut up.
+    static Object[] test3(int[] a, int[] b) {
+        for (int i = 0; i < a.length-1; i++) {
+            a[i] = (int)(b[i] + a[i+1]);
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // same as test3, but hand-unrolled
+    static Object[] test4(int[] a, int[] b) {
+        for (int i = 0; i < a.length-2; i+=2) {
+            a[i+0] = (int)(b[i+0] + a[i+1]);
+            a[i+1] = (int)(b[i+1] + a[i+2]);
+        }
+        return new Object[]{ a, b };
+    }
 }
