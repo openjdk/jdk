@@ -691,6 +691,17 @@ public class SwitchBootstraps {
             return new TypePairs(from, to);
         }
 
+        public int hashCode() {
+            return Objects.hash(from, to);
+        }
+
+        public boolean equals(Object other) {
+            if (other instanceof TypePairs otherPair) {
+                return otherPair.from == from && otherPair.to == to;
+            }
+            return false;
+        }
+
         public static Map<TypePairs, String> initialize() {
             Map<TypePairs, String> typePairToName = new HashMap<>();
             typePairToName.put(new TypePairs(byte.class,   char.class),   "isIntToCharExact");      // redirected
