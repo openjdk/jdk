@@ -39,13 +39,28 @@ import jdk.internal.util.ArraysSupport;
 
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.RandomAccess;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import jdk.internal.access.SharedSecrets; 
+import jdk.internal.util.ArraysSupport;
 
 /**
  * A thread-safe variant of {@link java.util.ArrayList} in which all mutative
