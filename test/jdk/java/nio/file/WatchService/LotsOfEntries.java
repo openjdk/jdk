@@ -29,8 +29,8 @@
  * @run main/othervm LotsOfEntries 600 fail
  * @run main/othervm -Djdk.nio.file.WatchService.maxEventsPerPoll=invalid LotsOfEntries 600 fail
  * @run main/othervm -Djdk.nio.file.WatchService.maxEventsPerPoll=-5 LotsOfEntries 5 fail
- * @run main/othervm -Djdk.nio.file.WatchService.maxEventsPerPoll=5 LotsOfEntries 3 pass
- * @run main/othervm -Djdk.nio.file.WatchService.maxEventsPerPoll=5 LotsOfEntries 7 fail
+ * @run main/othervm -Djdk.nio.file.WatchService.maxEventsPerPoll=5 LotsOfEntries 5 pass
+ * @run main/othervm -Djdk.nio.file.WatchService.maxEventsPerPoll=5 LotsOfEntries 6 fail
  * @run main/othervm -Djdk.nio.file.WatchService.maxEventsPerPoll=700 LotsOfEntries 600 pass
  * @run main/othervm -Djdk.nio.file.WatchService.maxEventsPerPoll=3000000000 LotsOfEntries 600 pass
  */
@@ -75,17 +75,25 @@ public class LotsOfEntries {
                 }
             } else {
                 System.out.println("poll not expecting overflow...");
-                Set<Path> contexts = key.pollEvents().stream()
+                List<WatchEvent<?>> events = key.pollEvents();
+                Set<Path> contexts = events.stream()
                     .map(WatchEvent::context)
                     .map(Path.class::cast)
                     .map(entry -> dir.resolve(entry))
                     .collect(Collectors.toSet());
                 if (!entries.equals(contexts)) {
                     throw new RuntimeException(
-                        "Expected events on: " + entries + ", got: " + contexts);
+                        "Expected events on: " + entries + ", got: " +
+                            events.stream()
+                                .map(LotsOfEntries::toString)
+                                .collect(Collectors.toList()));
                 }
             }
         }
+    }
+
+    static String toString(WatchEvent event) {
+        return String.format("%s(%d): %s", event.kind(), event.count(), event.context());
     }
 
     public static void main(String[] args) throws Exception {
