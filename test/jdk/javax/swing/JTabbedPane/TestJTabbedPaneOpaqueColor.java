@@ -63,30 +63,40 @@ public class TestJTabbedPaneOpaqueColor {
               - the tabs area is opaque (it must be red, except the selected tab which must be gray).
               - the content area is opaque (it must be gray).
 
-            Test Case 1 (Test TabPane Opaque behaviour):
+            Test Case 1 - Test TabPane Opacity:
 
-            Click to the check box 'opaque'. And be sure that
+            Verify the following with 'opaque' option:
+            when checked:
               - the area behind tabs is opaque (it must be red).
+              - the tabs area is opaque (it must be red, except the selected tab which must be gray).
+              - the content area is opaque (it must be gray).
+            when unchecked:
+              - the area behind tabs is transparent (it must be green).
               - the tabs area is opaque (it must be red, except the selected tab which must be gray).
               - the content area is opaque (it must be gray).
 
             Check this behaviour for other LAFs and tab layout.
             NOTE: For Nimbus LAF, tabs color are specific to nimbus style.
 
-            Test Case 2 (Test Content Opaque UI property):
-            To enable Content Opaque checkbox, make Sure "Opaque checkbox" is not selected.
+            Test Case 2 - Test Content pane opacity:
+            To test Content pane opacity, make sure "Opaque checkbox" is UNCHECKED.
 
-            Click to the check box 'content opaque' and be sure that
-              - the content area is transparent (it must be green).
-              - Select the 'content opaque' and check that content area is opaque
-                (it must be gray).
-            Check this behaviour for other LAFs and tab layout.
+            Verify the following with 'content opaque' option:
+            when checked:
+              - the content area should be opaque (it must be gray).
+            when unchecked:
+              - the content area should be transparent (it must be green).
 
-            Test Case 3 (Test Tabs Opaque UI property):
-            Click to the check box 'tabs opaque' and be sure that
-              - the tabs are transparent (it must be green).
-              - Check the 'tabs opaque' and check that tabs are opaque,
-                (it must be red, except the selected tab which must be gray).
+            Check this behavior for other LAFs and tab layout.
+
+            Test Case 3 - Test Tabs opacity:
+            To test Tabs opacity, make sure "Opaque checkbox" is UNCHECKED.
+
+            Verify the following with 'tabs opaque' option:
+            when checked:
+              - the tabs are opaque (it must be red, except the selected tab which must be gray).
+            when unchecked:
+              - the tabs are transparent (it must be gree).
 
             Check this behaviour for other LAFs and tab layout.
             NOTE: For Nimbus LAF, tabs color are specific to nimbus style.""";
