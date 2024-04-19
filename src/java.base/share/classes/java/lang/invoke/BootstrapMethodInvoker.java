@@ -146,8 +146,7 @@ final class BootstrapMethodInvoker {
                     maybeReBoxElements(argv);
                     result = (CallSite)bootstrapMethod.invokeExact(caller, name, (MethodType)type, argv);
                 } else if (isObjectMethodsBootstrapBSM(bsmType)) {
-                    MethodHandle[] methodHandles = new MethodHandle[argv.length - 2];
-                    System.arraycopy(argv, 2, methodHandles, 0, argv.length - 2);
+                    MethodHandle[] methodHandles = Arrays.copyOfRange(argv, 2, argv.length, MethodHandle[].class);
                     result = bootstrapMethod.invokeExact(caller, name, (TypeDescriptor)type, (Class<?>) argv[0], (String) argv[1], methodHandles);
                 } else {
                     maybeReBoxElements(argv);
