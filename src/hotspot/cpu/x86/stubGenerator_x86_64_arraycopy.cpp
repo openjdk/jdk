@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2608,7 +2608,7 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
 
     // Propagate byte to full Register
     __ movzbl(rScratch1, byteVal);
-    __ mov64(wide_value, 0x0101010101010101);
+    __ mov64(wide_value, 0x0101010101010101ULL);
     __ imulq(wide_value, rScratch1);
 
     // Check for pointer & size alignment
