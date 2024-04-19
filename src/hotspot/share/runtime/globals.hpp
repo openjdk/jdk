@@ -671,10 +671,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, PrintWarnings, true,                                        \
           "Print JVM warnings to output stream")                            \
                                                                             \
-  product(bool, RegisterFinalizersAtInit, true,                             \
-          "(Deprecated) Register finalizable objects at end of "            \
-          "Object.<init> or after allocation")                              \
-                                                                            \
   develop(bool, RegisterReferences, true,                                   \
           "Tell whether the VM should register soft/weak/final/phantom "    \
           "references")                                                     \

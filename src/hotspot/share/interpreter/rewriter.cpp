@@ -531,7 +531,7 @@ void Rewriter::rewrite_bytecodes(TRAPS) {
   // determine index maps for Method* rewriting
   compute_index_maps();
 
-  if (RegisterFinalizersAtInit && _klass->name() == vmSymbols::java_lang_Object()) {
+  if (_klass->name() == vmSymbols::java_lang_Object()) {
     bool did_rewrite = false;
     int i = _methods->length();
     while (i-- > 0) {
