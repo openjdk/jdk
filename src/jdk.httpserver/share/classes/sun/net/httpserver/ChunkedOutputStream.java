@@ -139,7 +139,9 @@ class ChunkedOutputStream extends FilterOutputStream
         }
         try {
             /* write any pending chunk data */
-            writeChunk();
+            if(count>0) {
+                writeChunk();
+            }
             /* write an empty chunk */
             writeChunk();
             out.flush();
