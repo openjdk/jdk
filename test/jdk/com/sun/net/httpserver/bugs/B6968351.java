@@ -26,7 +26,7 @@
  * @bug 6968351
  * @summary  tcp no delay not required for small payloads
  * @library /test/lib
- * @run main/timeout=5 -Dsun.net.httpserver.nodelay=false B6968351
+ * @run main/othervm/timeout=5 -Dsun.net.httpserver.nodelay=false B6968351
  */
 
 import com.sun.net.httpserver.*;
