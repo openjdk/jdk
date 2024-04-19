@@ -153,7 +153,6 @@ void Verifier::log_end_verification(outputStream* st, const char* klassName, Sym
   st->print_cr("End class verification for: %s", klassName);
 }
 
-
 bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
   HandleMark hm(THREAD);
   ResourceMark rm(THREAD);
