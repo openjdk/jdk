@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,16 +67,15 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
 
   verify_oop(Roop, FILE_AND_LINE);
 
-  // Load object header.
-  z_lg(Rmark, Address(Roop, hdr_offset));
-
   // Save object being locked into the BasicObjectLock...
   z_stg(Roop, Address(Rbox, BasicObjectLock::obj_offset()));
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp, Roop);
-    testbit(Address(tmp, Klass::access_flags_offset()), exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
-    branch_optimized(Assembler::bcondAllOne, slow_case);
+    z_l(tmp, Address(tmp, Klass::access_flags_offset()));
+    assert((JVM_ACC_IS_VALUE_BASED_CLASS & 0xFFFF) == 0, "or change following instruction");
+    z_nilh(tmp, JVM_ACC_IS_VALUE_BASED_CLASS >> 16);
+    z_brne(slow_case);
   }
 
   assert(LockingMode != LM_MONITOR, "LM_MONITOR is already handled, by emit_lock()");
@@ -85,6 +84,10 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
     lightweight_lock(Roop, Rmark, tmp, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     NearLabel done;
+
+    // Load object header.
+    z_lg(Rmark, Address(Roop, hdr_offset));
+
     // and mark it as unlocked.
     z_oill(Rmark, markWord::unlocked_value);
     // Save unlocked object header into the displaced header location on the stack.
@@ -141,12 +144,7 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
   verify_oop(Roop, FILE_AND_LINE);
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    const Register tmp = Z_R1_scratch;
-    z_lg(Rmark, Address(Roop, hdr_offset));
-    z_lgr(tmp, Rmark);
-    z_nill(tmp, markWord::monitor_value);
-    branch_optimized(Assembler::bcondNotZero, slow_case);
-    lightweight_unlock(Roop, Rmark, tmp, slow_case);
+    lightweight_unlock(Roop, Rmark, Z_R1_scratch, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     // Test if object header is pointing to the displaced header, and if so, restore
     // the displaced header in the object. If the object header is not pointing to
