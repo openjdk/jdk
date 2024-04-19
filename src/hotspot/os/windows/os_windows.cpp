@@ -3109,9 +3109,9 @@ static bool numa_interleaving_init() {
 // Reasons for doing this:
 //  * UseLargePagesIndividualAllocation was set (normally only needed on WS2003 but possible to be set otherwise)
 //  * UseNUMAInterleaving requires a separate node for each piece
-static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
+static char* allocate_pages_individually(size_t bytes, char* addr, DWORD alloc_type,
                                          DWORD prot,
-                                         MEMFLAGS nmt_flag,
+                                         MEMFLAGS flag,
                                          bool should_inject_error = false) {
   char * p_buf;
   // note: at setup time we guaranteed that NUMAInterleaveGranularity was aligned up to a page size
@@ -3135,7 +3135,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
                                 PAGE_READWRITE);
   // If reservation failed, return null
   if (p_buf == nullptr) return nullptr;
-  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC, nmt_flag);
+  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC, flag);
   os::release_memory(p_buf, bytes + chunk_size);
 
   // we still need to round up to a page boundary (in case we are using large pages)
@@ -3177,13 +3177,13 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
       if (!UseNUMAInterleaving) {
         p_new = (char *) virtualAlloc(next_alloc_addr,
                                       bytes_to_rq,
-                                      flags,
+                                      alloc_type,
                                       prot);
       } else {
         // get the next node to use from the used_node_list
         assert(numa_node_list_holder.get_count() > 0, "Multiple NUMA nodes expected");
         DWORD node = numa_node_list_holder.get_node_list_entry(count % numa_node_list_holder.get_count());
-        p_new = (char *)virtualAllocExNuma(hProc, next_alloc_addr, bytes_to_rq, flags, prot, node);
+        p_new = (char *)virtualAllocExNuma(hProc, next_alloc_addr, bytes_to_rq, alloc_type, prot, node);
       }
     }
 
@@ -3196,7 +3196,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
         // need to create a dummy 'reserve' record to match
         // the release.
         MemTracker::record_virtual_memory_reserve((address)p_buf,
-                                                  bytes_to_release, CALLER_PC, nmt_flag);
+                                                  bytes_to_release, CALLER_PC, flag);
         os::release_memory(p_buf, bytes_to_release);
       }
 #ifdef ASSERT
@@ -3213,10 +3213,10 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
   }
   // Although the memory is allocated individually, it is returned as one.
   // NMT records it as one block.
-  if ((flags & MEM_COMMIT) != 0) {
-    MemTracker::record_virtual_memory_reserve_and_commit((address)p_buf, bytes, CALLER_PC, nmt_flag);
+  if ((alloc_type & MEM_COMMIT) != 0) {
+    MemTracker::record_virtual_memory_reserve_and_commit((address)p_buf, bytes, CALLER_PC, flag);
   } else {
-    MemTracker::record_virtual_memory_reserve((address)p_buf, bytes, CALLER_PC, nmt_flag);
+    MemTracker::record_virtual_memory_reserve((address)p_buf, bytes, CALLER_PC, flag);
   }
 
   // made it this far, success
@@ -3450,13 +3450,13 @@ bool os::can_commit_large_page_memory() {
   return false;
 }
 
-static char* reserve_large_pages_individually(size_t size, char* req_addr, bool exec, MEMFLAGS nmt_flag) {
+static char* reserve_large_pages_individually(size_t size, char* req_addr, bool exec, MEMFLAGS flag) {
   log_debug(pagesize)("Reserving large pages individually.");
 
   const DWORD prot = exec ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE;
-  const DWORD flags = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
+  const DWORD alloc_type = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
 
-  char * p_buf = allocate_pages_individually(size, req_addr, flags, prot, nmt_flag, LargePagesIndividualAllocationInjectError);
+  char * p_buf = allocate_pages_individually(size, req_addr, alloc_type, prot, flag, LargePagesIndividualAllocationInjectError);
   if (p_buf == nullptr) {
     // give an appropriate warning message
     if (UseNUMAInterleaving) {
