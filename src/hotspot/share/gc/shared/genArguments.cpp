@@ -307,6 +307,9 @@ void GenArguments::initialize_size_info() {
                             MaxHeapSize);
       initial_old_size = MaxOldSize;
     }
+
+    // Make sure MinOldSize <= OldSize
+    MinOldSize = MIN2(MinOldSize, initial_old_size);
   }
 
   // The initial generation sizes should match the initial heap size,
