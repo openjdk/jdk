@@ -87,7 +87,7 @@ void ArchiveHeapWriter::init() {
     _source_objs = new GrowableArrayCHeap<oop, mtClassShared>(10000);
 
     guarantee(UseG1GC, "implementation limitation");
-    guarantee(MIN_GC_REGION_ALIGNMENT <= /*G1*/G1HeapRegion::min_region_size_in_words() * HeapWordSize, "must be");
+    guarantee(MIN_GC_REGION_ALIGNMENT <= G1HeapRegion::min_region_size_in_words() * HeapWordSize, "must be");
   }
 }
 

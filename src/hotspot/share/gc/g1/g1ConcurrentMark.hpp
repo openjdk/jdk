@@ -758,7 +758,7 @@ private:
   G1CMOopClosure*             _cm_oop_closure;
 
   // Region this task is scanning, null if we're not scanning any
-  G1HeapRegion*                 _curr_region;
+  G1HeapRegion*               _curr_region;
   // Local finger of this task, null if we're not scanning a region
   HeapWord*                   _finger;
   // Limit of the region this task is scanning, null if we're not scanning one

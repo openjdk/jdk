@@ -37,7 +37,7 @@ class PreservedMarks;
 class G1FullGCCompactionPoint : public CHeapObj<mtGC> {
   G1FullCollector* _collector;
   G1HeapRegion* _current_region;
-  HeapWord*   _compaction_top;
+  HeapWord* _compaction_top;
   PreservedMarks* _preserved_stack;
   GrowableArray<G1HeapRegion*>* _compaction_regions;
   GrowableArrayIterator<G1HeapRegion*> _compaction_region_iterator;
