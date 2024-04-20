@@ -1624,7 +1624,7 @@ address StubGenerator::generate_fill(BasicType t, bool aligned, const char *name
 
   {
     // Add set memory mark to protect against unsafe accesses faulting
-    UnsafeCopyMemoryMark(this, ((t == T_BYTE) && !aligned), true);
+    UnsafeCopyMemoryMark usmm(this, ((t == T_BYTE) && !aligned), true);
     __ generate_fill(t, aligned, to, value, r11, rax, xmm0);
   }
 
