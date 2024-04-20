@@ -61,7 +61,7 @@ inline G1CollectionSetCandidatesIterator& G1CollectionSetCandidatesIterator::ope
   return *this;
 }
 
-inline HeapRegion* G1CollectionSetCandidatesIterator::operator*() {
+inline G1HeapRegion* G1CollectionSetCandidatesIterator::operator*() {
   uint length = _which->marking_regions_length();
   if (_position < length) {
     return _which->_marking_regions.at(_position)._r;

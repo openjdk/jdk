@@ -35,7 +35,7 @@ inline bool HeapRegionManager::is_available(uint region) const {
   return _committed_map.active(region);
 }
 
-inline HeapRegion* HeapRegionManager::addr_to_region(HeapWord* addr) const {
+inline G1HeapRegion* HeapRegionManager::addr_to_region(HeapWord* addr) const {
   assert(addr < heap_end(),
         "addr: " PTR_FORMAT " end: " PTR_FORMAT, p2i(addr), p2i(heap_end()));
   assert(addr >= heap_bottom(),
@@ -43,25 +43,25 @@ inline HeapRegion* HeapRegionManager::addr_to_region(HeapWord* addr) const {
   return _regions.get_by_address(addr);
 }
 
-inline HeapRegion* HeapRegionManager::at(uint index) const {
+inline G1HeapRegion* HeapRegionManager::at(uint index) const {
   assert(is_available(index), "pre-condition");
-  HeapRegion* hr = _regions.get_by_index(index);
+  G1HeapRegion* hr = _regions.get_by_index(index);
   assert(hr != nullptr, "sanity");
   assert(hr->hrm_index() == index, "sanity");
   return hr;
 }
 
-inline HeapRegion* HeapRegionManager::at_or_null(uint index) const {
+inline G1HeapRegion* HeapRegionManager::at_or_null(uint index) const {
   if (!is_available(index)) {
     return nullptr;
   }
-  HeapRegion* hr = _regions.get_by_index(index);
-  assert(hr != nullptr, "All available regions must have a HeapRegion but index %u has not.", index);
+  G1HeapRegion* hr = _regions.get_by_index(index);
+  assert(hr != nullptr, "All available regions must have a G1HeapRegion but index %u has not.", index);
   assert(hr->hrm_index() == index, "sanity");
   return hr;
 }
 
-inline HeapRegion* HeapRegionManager::next_region_in_humongous(HeapRegion* hr) const {
+inline G1HeapRegion* HeapRegionManager::next_region_in_humongous(G1HeapRegion* hr) const {
   uint index = hr->hrm_index();
   assert(is_available(index), "pre-condition");
   assert(hr->is_humongous(), "next_region_in_humongous should only be called for a humongous region.");
@@ -73,12 +73,12 @@ inline HeapRegion* HeapRegionManager::next_region_in_humongous(HeapRegion* hr) c
   }
 }
 
-inline void HeapRegionManager::insert_into_free_list(HeapRegion* hr) {
+inline void HeapRegionManager::insert_into_free_list(G1HeapRegion* hr) {
   _free_list.add_ordered(hr);
 }
 
-inline HeapRegion* HeapRegionManager::allocate_free_regions_starting_at(uint first, uint num_regions) {
-  HeapRegion* start = at(first);
+inline G1HeapRegion* HeapRegionManager::allocate_free_regions_starting_at(uint first, uint num_regions) {
+  G1HeapRegion* start = at(first);
   _free_list.remove_starting_at(start, num_regions);
   return start;
 }

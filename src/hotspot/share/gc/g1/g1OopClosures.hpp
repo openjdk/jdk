@@ -30,7 +30,7 @@
 #include "memory/iterator.hpp"
 #include "oops/markWord.hpp"
 
-class HeapRegion;
+class G1HeapRegion;
 class G1CollectedHeap;
 class G1RemSet;
 class G1ConcurrentMark;

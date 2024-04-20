@@ -207,7 +207,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
   // Does store cross heap regions?
 
   __ eor(tmp1, store_addr, new_val);
-  __ movs(tmp1, AsmOperand(tmp1, lsr, HeapRegion::LogOfHRGrainBytes));
+  __ movs(tmp1, AsmOperand(tmp1, lsr, G1HeapRegion::LogOfHRGrainBytes));
   __ b(done, eq);
 
   // crosses regions, storing null?

@@ -71,7 +71,7 @@ inline bool G1ConcurrentMark::mark_in_bitmap(uint const worker_id, oop const obj
 
   // Some callers may have stale objects to mark above TAMS after humongous reclaim.
   // Can't assert that this is a valid object at this point, since it might be in the process of being copied by another thread.
-  DEBUG_ONLY(HeapRegion* const hr = _g1h->heap_region_containing(obj);)
+  DEBUG_ONLY(G1HeapRegion* const hr = _g1h->heap_region_containing(obj);)
   assert(!hr->is_continues_humongous(),
          "Should not try to mark object " PTR_FORMAT " in Humongous continues region %u above TAMS " PTR_FORMAT,
          p2i(obj), hr->hrm_index(), p2i(top_at_mark_start(hr)));
@@ -184,17 +184,17 @@ inline size_t G1CMTask::scan_objArray(objArrayOop obj, MemRegion mr) {
   return mr.word_size();
 }
 
-inline void G1ConcurrentMark::update_top_at_mark_start(HeapRegion* r) {
+inline void G1ConcurrentMark::update_top_at_mark_start(G1HeapRegion* r) {
   uint const region = r->hrm_index();
   assert(region < _g1h->max_reserved_regions(), "Tried to access TAMS for region %u out of bounds", region);
   _top_at_mark_starts[region] = r->top();
 }
 
-inline void G1ConcurrentMark::reset_top_at_mark_start(HeapRegion* r) {
+inline void G1ConcurrentMark::reset_top_at_mark_start(G1HeapRegion* r) {
   _top_at_mark_starts[r->hrm_index()] = r->bottom();
 }
 
-inline HeapWord* G1ConcurrentMark::top_at_mark_start(const HeapRegion* r) const {
+inline HeapWord* G1ConcurrentMark::top_at_mark_start(const G1HeapRegion* r) const {
   return top_at_mark_start(r->hrm_index());
 }
 
@@ -209,11 +209,11 @@ inline bool G1ConcurrentMark::obj_allocated_since_mark_start(oop obj) const {
   return cast_from_oop<HeapWord*>(obj) >= top_at_mark_start(region);
 }
 
-inline HeapWord* G1ConcurrentMark::top_at_rebuild_start(HeapRegion* r) const {
+inline HeapWord* G1ConcurrentMark::top_at_rebuild_start(G1HeapRegion* r) const {
   return _top_at_rebuild_starts[r->hrm_index()];
 }
 
-inline void G1ConcurrentMark::update_top_at_rebuild_start(HeapRegion* r) {
+inline void G1ConcurrentMark::update_top_at_rebuild_start(G1HeapRegion* r) {
   uint const region = r->hrm_index();
   assert(region < _g1h->max_reserved_regions(), "Tried to access TARS for region %u out of bounds", region);
   assert(_top_at_rebuild_starts[region] == nullptr,

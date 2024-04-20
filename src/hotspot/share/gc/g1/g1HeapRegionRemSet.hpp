@@ -49,7 +49,7 @@ class HeapRegionRemSet : public CHeapObj<mtGC> {
   // The set of cards in the Java heap
   G1CardSet _card_set;
 
-  HeapRegion* _hr;
+  G1HeapRegion* _hr;
 
   // Cached value of heap base address.
   static HeapWord* _heap_base_address;
@@ -57,7 +57,7 @@ class HeapRegionRemSet : public CHeapObj<mtGC> {
   void clear_fcc();
 
 public:
-  HeapRegionRemSet(HeapRegion* hr, G1CardSetConfiguration* config);
+  HeapRegionRemSet(G1HeapRegion* hr, G1CardSetConfiguration* config);
 
   bool cardset_is_empty() const {
     return _card_set.is_empty();
@@ -155,7 +155,7 @@ public:
   // Applies blk->do_nmethod() to each of the entries in _code_roots
   void code_roots_do(NMethodClosure* blk) const;
   // Clean out code roots not having an oop pointing into this region any more.
-  void clean_code_roots(HeapRegion* hr);
+  void clean_code_roots(G1HeapRegion* hr);
 
   // Returns the number of elements in _code_roots
   size_t code_roots_list_length() const {

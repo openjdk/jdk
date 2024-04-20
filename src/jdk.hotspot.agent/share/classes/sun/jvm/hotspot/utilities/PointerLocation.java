@@ -59,7 +59,7 @@ public class PointerLocation {
 
   CollectedHeap heap;
   Generation gen;  // Serial heap generation
-  HeapRegion hr;   // G1 heap region
+  G1HeapRegion hr;   // G1 heap region
 
   // If UseTLAB was enabled and the pointer was found in a
   // currently-active TLAB, these will be set
@@ -128,7 +128,7 @@ public class PointerLocation {
     return gen; // SerialHeap generation
   }
 
-  public HeapRegion getHeapRegion() {
+  public G1HeapRegion getHeapRegion() {
     return hr; // G1 heap region
   }
 

@@ -37,7 +37,7 @@ class G1HRPrinter {
 private:
 
   // Print an action event.
-  static void print(const char* action, HeapRegion* hr) {
+  static void print(const char* action, G1HeapRegion* hr) {
     log_trace(gc, region)("G1HR %s(%s) [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT "]",
                           action, hr->get_type_str(), p2i(hr->bottom()), p2i(hr->top()), p2i(hr->end()));
   }
@@ -50,13 +50,13 @@ public:
 
   // The methods below are convenient wrappers for the print() method.
 
-  void alloc(HeapRegion* hr, bool force = false) {
+  void alloc(G1HeapRegion* hr, bool force = false) {
     if (is_active()) {
       print((force) ? "ALLOC-FORCE" : "ALLOC", hr);
     }
   }
 
-  void retire(HeapRegion* hr) {
+  void retire(G1HeapRegion* hr) {
     if (is_active()) {
       if (!SKIP_RETIRED_FULL_REGIONS || hr->top() < hr->end()) {
         print("RETIRE", hr);
@@ -64,25 +64,25 @@ public:
     }
   }
 
-  void reuse(HeapRegion* hr) {
+  void reuse(G1HeapRegion* hr) {
     if (is_active()) {
       print("REUSE", hr);
     }
   }
 
-  void cset(HeapRegion* hr) {
+  void cset(G1HeapRegion* hr) {
     if (is_active()) {
       print("CSET", hr);
     }
   }
 
-  void evac_failure(HeapRegion* hr) {
+  void evac_failure(G1HeapRegion* hr) {
     if (is_active()) {
       print("EVAC-FAILURE", hr);
     }
   }
 
-  void cleanup(HeapRegion* hr) {
+  void cleanup(G1HeapRegion* hr) {
     if (is_active()) {
       print("CLEANUP", hr);
     }
@@ -90,31 +90,31 @@ public:
 
   void cleanup(FreeRegionList* free_list);
 
-  void post_compaction(HeapRegion* hr) {
+  void post_compaction(G1HeapRegion* hr) {
     if (is_active()) {
       print("POST-COMPACTION", hr);
     }
   }
 
-  void commit(HeapRegion* hr) {
+  void commit(G1HeapRegion* hr) {
     if (is_active()) {
       print("COMMIT", hr);
     }
   }
 
-  void active(HeapRegion* hr) {
+  void active(G1HeapRegion* hr) {
     if (is_active()) {
       print("ACTIVE", hr);
     }
   }
 
-  void inactive(HeapRegion* hr) {
+  void inactive(G1HeapRegion* hr) {
     if (is_active()) {
       print("INACTIVE", hr);
     }
   }
 
-  void uncommit(HeapRegion* hr) {
+  void uncommit(G1HeapRegion* hr) {
     if (is_active()) {
       print("UNCOMMIT", hr);
     }

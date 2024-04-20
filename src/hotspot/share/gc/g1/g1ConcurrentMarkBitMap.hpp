@@ -36,7 +36,7 @@
 class G1CMBitMap;
 class G1CMTask;
 class G1ConcurrentMark;
-class HeapRegion;
+class G1HeapRegion;
 
 // Closure for iteration over bitmaps
 class G1CMBitMapClosure {

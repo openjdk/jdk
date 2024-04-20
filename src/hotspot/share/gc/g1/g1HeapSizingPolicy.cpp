@@ -123,7 +123,7 @@ size_t G1HeapSizingPolicy::young_collection_expansion_amount() {
   bool filled_history_buffer = _pauses_since_start == _num_prev_pauses_for_heuristics;
   if ((_ratio_over_threshold_count == MinOverThresholdForGrowth) ||
       (filled_history_buffer && (long_term_pause_time_ratio > threshold))) {
-    size_t min_expand_bytes = HeapRegion::GrainBytes;
+    size_t min_expand_bytes = G1HeapRegion::GrainBytes;
     size_t reserved_bytes = _g1h->max_capacity();
     size_t committed_bytes = _g1h->capacity();
     size_t uncommitted_bytes = reserved_bytes - committed_bytes;
@@ -224,7 +224,7 @@ size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand) {
                                // GC where eden is empty. During Remark there can be an
                                // arbitrary number of eden regions which would skew the
                                // results.
-                               _g1h->eden_regions_count() * HeapRegion::GrainBytes;
+                               _g1h->eden_regions_count() * G1HeapRegion::GrainBytes;
 
   size_t minimum_desired_capacity = target_heap_capacity(used_after_gc, MinHeapFreeRatio);
   size_t maximum_desired_capacity = target_heap_capacity(used_after_gc, MaxHeapFreeRatio);

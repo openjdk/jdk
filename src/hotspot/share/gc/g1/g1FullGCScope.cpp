@@ -52,8 +52,8 @@ G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
     _monitoring_scope(monitoring_support),
     _heap_printer(_g1h),
     _region_compaction_threshold(do_maximal_compaction ?
-                                 HeapRegion::GrainWords :
-                                 (1 - MarkSweepDeadRatio / 100.0) * HeapRegion::GrainWords) { }
+                                 G1HeapRegion::GrainWords :
+                                 (1 - MarkSweepDeadRatio / 100.0) * G1HeapRegion::GrainWords) { }
 
 bool G1FullGCScope::should_clear_soft_refs() {
   return _soft_refs.should_clear();
