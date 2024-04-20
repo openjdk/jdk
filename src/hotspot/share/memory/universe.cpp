@@ -61,6 +61,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/klassIdArray.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -396,6 +397,10 @@ void Universe::genesis(TRAPS) {
     compute_base_vtable_size();
 
     if (!UseSharedSpaces) {
+
+      // Must create array before creating these arrays.
+      KlassIdArray::initialize();
+
       // Initialization of the fillerArrayKlass must come before regular
       // int-TypeArrayKlass so that the int-Array mirror points to the
       // int-TypeArrayKlass.

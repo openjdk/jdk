@@ -251,7 +251,7 @@ void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word
   return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, THREAD);
 }
 
-Klass::Klass() : _kind(UnknownKlassKind) {
+Klass::Klass() : _compressed_id(0), _kind(UnknownKlassKind) {
   assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for cds");
 }
 
@@ -259,8 +259,9 @@ Klass::Klass() : _kind(UnknownKlassKind) {
 // which zeros out memory - calloc equivalent.
 // The constructor is also used from CppVtableCloner,
 // which doesn't zero out the memory before calling the constructor.
-Klass::Klass(KlassKind kind) : _kind(kind),
-                           _shared_class_path_index(-1) {
+Klass::Klass(KlassKind kind) : _compressed_id(0),
+                               _kind(kind),
+                               _shared_class_path_index(-1) {
   CDS_ONLY(_shared_class_flags = 0;)
   CDS_JAVA_HEAP_ONLY(_archived_mirror_index = -1;)
   _primary_supers[0] = this;

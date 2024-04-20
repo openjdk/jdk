@@ -184,6 +184,17 @@ void ArchiveHeapWriter::ensure_buffer_space(size_t min_bytes) {
   _buffer->at_grow(to_array_index(min_bytes));
 }
 
+static void set_compressed_id_index(oop buffered_oop, Klass* src_klass) {
+  int compressed_id_index = ArchiveBuilder::current()->compressed_id_index(src_klass);
+  if (log_is_enabled(Info, cds, logging)) {
+    ResourceMark rm;
+    assert(compressed_id_index >= 0, "must be");
+    log_info(cds, logging)("Setting coleen's index of archived heap object %p to %4d %s",
+                           cast_from_oop<address>(buffered_oop), compressed_id_index, src_klass->external_name());
+  }
+  buffered_oop->set_narrow_klass(compressed_id_index);
+}
+
 void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots) {
   Klass* k = Universe::objectArrayKlass(); // already relocated to point to archived klass
   int length = roots->length();
@@ -204,7 +215,11 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
   {
     // This is copied from MemAllocator::finish
     oopDesc::set_mark(mem, markWord::prototype());
-    oopDesc::release_set_klass(mem, k);
+    if (UseIndirectKlassPointers) {
+      set_compressed_id_index(cast_to_oop(mem), k);
+    } else {
+      oopDesc::release_set_klass(mem, k);
+    }
   }
   {
     // This is copied from ObjArrayAllocator::initialize
@@ -326,8 +341,12 @@ HeapWord* ArchiveHeapWriter::init_filler_array_at_buffer_top(int array_length, s
   HeapWord* mem = offset_to_buffered_address<HeapWord*>(_buffer_used);
   memset(mem, 0, fill_bytes);
   oopDesc::set_mark(mem, markWord::prototype());
-  narrowKlass nk = ArchiveBuilder::current()->get_requested_narrow_klass(oak);
-  cast_to_oop(mem)->set_narrow_klass(nk);
+  if (UseIndirectKlassPointers) {
+    set_compressed_id_index(cast_to_oop(mem), oak);
+  } else {
+    narrowKlass nk = ArchiveBuilder::current()->get_requested_narrow_klass(oak);
+    cast_to_oop(mem)->set_narrow_klass(nk);
+  }
   arrayOopDesc::set_length(mem, array_length);
   return mem;
 }
@@ -523,11 +542,15 @@ template <typename T> void ArchiveHeapWriter::mark_oop_pointer(T* buffered_addr,
 
 void ArchiveHeapWriter::update_header_for_requested_obj(oop requested_obj, oop src_obj,  Klass* src_klass) {
   assert(UseCompressedClassPointers, "Archived heap only supported for compressed klasses");
-  narrowKlass nk = ArchiveBuilder::current()->get_requested_narrow_klass(src_klass);
   address buffered_addr = requested_addr_to_buffered_addr(cast_from_oop<address>(requested_obj));
 
   oop fake_oop = cast_to_oop(buffered_addr);
-  fake_oop->set_narrow_klass(nk);
+  if (UseIndirectKlassPointers) {
+    set_compressed_id_index(fake_oop, src_klass);
+  } else {
+    narrowKlass nk = ArchiveBuilder::current()->get_requested_narrow_klass(src_klass);
+    fake_oop->set_narrow_klass(nk);
+  }
 
   // We need to retain the identity_hash, because it may have been used by some hashtables
   // in the shared heap. This also has the side effect of pre-initializing the

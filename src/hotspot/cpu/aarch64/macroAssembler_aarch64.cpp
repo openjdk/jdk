@@ -5076,35 +5076,39 @@ MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
 }
 
 void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
-  switch (klass_decode_mode()) {
-  case KlassDecodeZero:
-    if (CompressedKlassPointers::shift() != 0) {
-      lsr(dst, src, LogKlassAlignmentInBytes);
-    } else {
-      if (dst != src) mov(dst, src);
-    }
-    break;
+  if (UseIndirectKlassPointers) {
+    ldr(dst, Address(src, in_bytes(Klass::compressed_id_offset())));
+  } else {
+    switch (klass_decode_mode()) {
+    case KlassDecodeZero:
+      if (CompressedKlassPointers::shift() != 0) {
+        lsr(dst, src, LogKlassAlignmentInBytes);
+      } else {
+        if (dst != src) mov(dst, src);
+      }
+      break;
 
-  case KlassDecodeXor:
-    if (CompressedKlassPointers::shift() != 0) {
-      eor(dst, src, (uint64_t)CompressedKlassPointers::base());
-      lsr(dst, dst, LogKlassAlignmentInBytes);
-    } else {
-      eor(dst, src, (uint64_t)CompressedKlassPointers::base());
-    }
-    break;
+    case KlassDecodeXor:
+      if (CompressedKlassPointers::shift() != 0) {
+        eor(dst, src, (uint64_t)CompressedKlassPointers::base());
+        lsr(dst, dst, LogKlassAlignmentInBytes);
+      } else {
+        eor(dst, src, (uint64_t)CompressedKlassPointers::base());
+      }
+      break;
 
-  case KlassDecodeMovk:
-    if (CompressedKlassPointers::shift() != 0) {
-      ubfx(dst, src, LogKlassAlignmentInBytes, 32);
-    } else {
-      movw(dst, src);
-    }
-    break;
+    case KlassDecodeMovk:
+      if (CompressedKlassPointers::shift() != 0) {
+        ubfx(dst, src, LogKlassAlignmentInBytes, 32);
+      } else {
+        movw(dst, src);
+      }
+      break;
 
-  case KlassDecodeNone:
-    ShouldNotReachHere();
-    break;
+    case KlassDecodeNone:
+      ShouldNotReachHere();
+      break;
+    }
   }
 }
 
@@ -5115,41 +5119,49 @@ void MacroAssembler::encode_klass_not_null(Register r) {
 void  MacroAssembler::decode_klass_not_null(Register dst, Register src) {
   assert (UseCompressedClassPointers, "should only be used for compressed headers");
 
-  switch (klass_decode_mode()) {
-  case KlassDecodeZero:
-    if (CompressedKlassPointers::shift() != 0) {
-      lsl(dst, src, LogKlassAlignmentInBytes);
-    } else {
-      if (dst != src) mov(dst, src);
+  if (UseIndirectKlassPointers) {
+    assert(KlassIdArray::base() != nullptr, "must be initialized first");
+    // return KlassIdArray[src] where src is an index
+    lsl(src, src, LogKlassAlignmentInBytes);  // scale index by 8
+    add(src, src, (uint64_t)KlassIdArray::base());
+    lea(dst, src);  // extra load
+  } else {
+    switch (klass_decode_mode()) {
+    case KlassDecodeZero:
+      if (CompressedKlassPointers::shift() != 0) {
+        lsl(dst, src, LogKlassAlignmentInBytes);
+      } else {
+        if (dst != src) mov(dst, src);
+      }
+      break;
+
+    case KlassDecodeXor:
+      if (CompressedKlassPointers::shift() != 0) {
+        lsl(dst, src, LogKlassAlignmentInBytes);
+        eor(dst, dst, (uint64_t)CompressedKlassPointers::base());
+      } else {
+        eor(dst, src, (uint64_t)CompressedKlassPointers::base());
+      }
+      break;
+
+    case KlassDecodeMovk: {
+      const uint64_t shifted_base =
+        (uint64_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift();
+
+      if (dst != src) movw(dst, src);
+      movk(dst, shifted_base >> 32, 32);
+
+      if (CompressedKlassPointers::shift() != 0) {
+        lsl(dst, dst, LogKlassAlignmentInBytes);
+      }
+
+      break;
     }
-    break;
 
-  case KlassDecodeXor:
-    if (CompressedKlassPointers::shift() != 0) {
-      lsl(dst, src, LogKlassAlignmentInBytes);
-      eor(dst, dst, (uint64_t)CompressedKlassPointers::base());
-    } else {
-      eor(dst, src, (uint64_t)CompressedKlassPointers::base());
+    case KlassDecodeNone:
+      ShouldNotReachHere();
+      break;
     }
-    break;
-
-  case KlassDecodeMovk: {
-    const uint64_t shifted_base =
-      (uint64_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift();
-
-    if (dst != src) movw(dst, src);
-    movk(dst, shifted_base >> 32, 32);
-
-    if (CompressedKlassPointers::shift() != 0) {
-      lsl(dst, dst, LogKlassAlignmentInBytes);
-    }
-
-    break;
-  }
-
-  case KlassDecodeNone:
-    ShouldNotReachHere();
-    break;
   }
 }
 

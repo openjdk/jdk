@@ -38,6 +38,7 @@
 #include "oops/arrayOop.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/klassIdArray.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -111,6 +112,9 @@ ArrayKlass::ArrayKlass(Symbol* name, KlassKind kind) :
 void ArrayKlass::complete_create_array_klass(ArrayKlass* k, Klass* super_klass, ModuleEntry* module_entry, TRAPS) {
   k->initialize_supers(super_klass, nullptr, CHECK);
   k->vtable().initialize_vtable();
+
+  // Eagerly create a compressed_id for array classes. The compiler doesn't go slowpath for these on allocation.
+  KlassIdArray::set_next_compressed_id(k);
 
   // During bootstrapping, before java.base is defined, the module_entry may not be present yet.
   // These classes will be put on a fixup list and their module fields will be patched once
@@ -235,6 +239,9 @@ void ArrayKlass::remove_java_mirror() {
 void ArrayKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
   Klass::restore_unshareable_info(loader_data, protection_domain, CHECK);
   // Klass recreates the component mirror also
+
+  // Eagerly create a compressed_id for array classes. The compiler doesn't go slowpath for these on allocation.
+  KlassIdArray::set_next_compressed_id(this);
 
   if (_higher_dimension != nullptr) {
     ArrayKlass *ak = higher_dimension();

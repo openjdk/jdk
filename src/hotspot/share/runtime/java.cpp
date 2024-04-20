@@ -51,6 +51,7 @@
 #include "oops/generateOopMap.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceOop.hpp"
+#include "oops/klassIdArray.hpp"
 #include "oops/klassVtable.hpp"
 #include "oops/method.hpp"
 #include "oops/objArrayOop.hpp"
@@ -334,6 +335,13 @@ void print_statistics() {
     ResourceMark rm;
     MutexLocker mcld(ClassLoaderDataGraph_lock);
     SystemDictionary::print();
+  }
+
+  Log(class, bot, exit) log;
+  if (log.is_info()) {
+    ResourceMark rm;
+    LogStream ls_info(log.info());
+    KlassIdArray::print_on(&ls_info);
   }
 
   if (PrintClassLoaderDataGraphAtExit) {

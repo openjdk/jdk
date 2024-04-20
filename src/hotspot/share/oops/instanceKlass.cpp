@@ -523,8 +523,9 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, Refe
   set_vtable_length(parser.vtable_size());
   set_access_flags(parser.access_flags());
   if (parser.is_hidden()) set_is_hidden();
+  // First time allocate using slow path to get the header bits right.
   set_layout_helper(Klass::instance_layout_helper(parser.layout_size(),
-                                                    false));
+                                                  true));
 
   assert(nullptr == _methods, "underlying memory not zeroed?");
   assert(is_instance_klass(), "is layout incorrect?");
@@ -1510,8 +1511,21 @@ instanceOop InstanceKlass::register_finalizer(instanceOop i, TRAPS) {
 
 instanceOop InstanceKlass::allocate_instance(TRAPS) {
   assert(!is_abstract() && !is_interface(), "Should not create this object");
-  size_t size = size_helper();  // Query before forming handle.
-  return (instanceOop)Universe::heap()->obj_allocate(this, size, CHECK_NULL);
+  int size = size_helper();  // Query before forming handle.
+  instanceOop i = (instanceOop)Universe::heap()->obj_allocate(this, size, CHECK_NULL);
+
+  // InstanceKlasses are initialized as not being able to be fastpath allocated.
+  // If it can be fastpath allocated, reset a bit in the layout helper, for next time.
+  if (!can_be_fastpath_allocated()) {
+    if (this != vmClasses::Class_klass() ||
+       (this != vmClasses::StackChunk_klass() && class_loader() == nullptr) || // null classloader?
+       size < FastAllocateSizeLimit) {
+      // Allow fast-path allocation if not above.
+      const int lh = Klass::instance_layout_helper(size, false);
+      set_layout_helper(lh);
+    }
+  }
+  return i;
 }
 
 instanceOop InstanceKlass::allocate_instance(oop java_class, TRAPS) {

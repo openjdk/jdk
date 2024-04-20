@@ -178,6 +178,14 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
     movptr(t1, klass);
     encode_klass_not_null(t1, rscratch1);
     movl(Address(obj, oopDesc::klass_offset_in_bytes()), t1);
+#ifdef ASSERT
+    Label not_null;
+    testl(t1, t1);
+    jcc(Assembler::notZero, not_null);
+    movl(Address(t1, 0), t1);
+    // stop("klass not compressed yet");
+    bind(not_null);
+#endif
   } else
 #endif
   {

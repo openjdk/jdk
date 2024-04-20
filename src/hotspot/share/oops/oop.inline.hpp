@@ -34,6 +34,7 @@
 #include "oops/arrayOop.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klassIdArray.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
@@ -120,7 +121,8 @@ Klass* oopDesc::klass_without_asserts() const {
 }
 
 void oopDesc::set_klass(Klass* k) {
-  assert(Universe::is_bootstrapping() || (k != nullptr && k->is_klass()), "incorrect Klass");
+  KlassIdArray::set_next_compressed_id(k);
+  assert(k != nullptr && k->is_klass(), "incorrect Klass");
   if (UseCompressedClassPointers) {
     _metadata._compressed_klass = CompressedKlassPointers::encode_not_null(k);
   } else {
@@ -129,7 +131,8 @@ void oopDesc::set_klass(Klass* k) {
 }
 
 void oopDesc::release_set_klass(HeapWord* mem, Klass* k) {
-  assert(Universe::is_bootstrapping() || (k != nullptr && k->is_klass()), "incorrect Klass");
+  KlassIdArray::set_next_compressed_id(k);
+  assert(k != nullptr && k->is_klass(), "incorrect Klass");
   char* raw_mem = ((char*)mem + klass_offset_in_bytes());
   if (UseCompressedClassPointers) {
     Atomic::release_store((narrowKlass*)raw_mem,

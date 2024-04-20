@@ -4184,17 +4184,6 @@ void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
     assert(v == ik->has_vanilla_constructor(), "inconsistent has_vanilla_constructor");
 #endif
   }
-
-  // If it cannot be fast-path allocated, set a bit in the layout helper.
-  // See documentation of InstanceKlass::can_be_fastpath_allocated().
-  assert(ik->size_helper() > 0, "layout_helper is initialized");
-  if (ik->is_abstract() || ik->is_interface()
-      || (ik->name() == vmSymbols::java_lang_Class() && ik->class_loader() == nullptr)
-      || ik->size_helper() >= FastAllocateSizeLimit) {
-    // Forbid fast-path allocation.
-    const jint lh = Klass::instance_layout_helper(ik->size_helper(), true);
-    ik->set_layout_helper(lh);
-  }
 }
 
 // utility methods for appending an array with check for duplicates

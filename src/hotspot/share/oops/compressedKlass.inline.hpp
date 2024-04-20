@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
 #include "oops/compressedKlass.hpp"
 
 #include "memory/universe.hpp"
+#include "oops/klass.hpp"
+#include "oops/klassIdArray.hpp"
 #include "oops/oop.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -37,6 +39,7 @@ static inline bool check_alignment(Klass* v) {
 }
 
 inline Klass* CompressedKlassPointers::decode_not_null_without_asserts(narrowKlass v, address narrow_base, int shift) {
+  assert(!UseIndirectKlassPointers, "");
   return (Klass*)((uintptr_t)narrow_base +((uintptr_t)v << shift));
 }
 
@@ -48,6 +51,7 @@ inline Klass* CompressedKlassPointers::decode_not_null(narrowKlass v, address na
 }
 
 inline narrowKlass CompressedKlassPointers::encode_not_null(Klass* v, address narrow_base, int shift) {
+  assert(!UseIndirectKlassPointers, "");
   assert(!is_null(v), "klass value can never be zero");
   assert(check_alignment(v), "Address not aligned");
   uint64_t pd = (uint64_t)(pointer_delta(v, narrow_base, 1));
@@ -59,7 +63,11 @@ inline narrowKlass CompressedKlassPointers::encode_not_null(Klass* v, address na
 }
 
 inline Klass* CompressedKlassPointers::decode_not_null_without_asserts(narrowKlass v) {
-  return decode_not_null_without_asserts(v, base(), shift());
+  if (UseIndirectKlassPointers) {
+    return KlassIdArray::at(v);
+  } else {
+    return decode_not_null_without_asserts(v, base(), shift());
+  }
 }
 
 inline Klass* CompressedKlassPointers::decode_without_asserts(narrowKlass v) {
@@ -67,7 +75,7 @@ inline Klass* CompressedKlassPointers::decode_without_asserts(narrowKlass v) {
 }
 
 inline Klass* CompressedKlassPointers::decode_not_null(narrowKlass v) {
-  return decode_not_null(v, base(), shift());
+  return decode_not_null_without_asserts(v);
 }
 
 inline Klass* CompressedKlassPointers::decode(narrowKlass v) {
@@ -75,7 +83,11 @@ inline Klass* CompressedKlassPointers::decode(narrowKlass v) {
 }
 
 inline narrowKlass CompressedKlassPointers::encode_not_null(Klass* v) {
-  return encode_not_null(v, base(), shift());
+  if (UseIndirectKlassPointers) {
+    return (narrowKlass)v->compressed_id();
+  } else {
+    return encode_not_null(v, base(), shift());
+  }
 }
 
 inline narrowKlass CompressedKlassPointers::encode(Klass* v) {

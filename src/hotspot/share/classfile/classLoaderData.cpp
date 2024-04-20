@@ -67,6 +67,7 @@
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/klassIdArray.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
@@ -714,6 +715,9 @@ ClassLoaderData::~ClassLoaderData() {
 
   ClassLoaderDataGraph::dec_array_classes(cl.array_class_released());
   ClassLoaderDataGraph::dec_instance_classes(cl.instance_class_released());
+
+  // There are no more instances of this class.  Release their indirect pointers.
+  KlassIdArray::release_unloaded_klasses(this);
 
   // Release the WeakHandle
   _holder.release(Universe::vm_weak());

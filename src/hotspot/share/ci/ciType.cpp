@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "ci/ciUtilities.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/klassIdArray.hpp"
 #include "oops/oop.inline.hpp"
 
 ciType* ciType::_basic_types[T_CONFLICT+1];
@@ -46,6 +47,12 @@ ciType::ciType(BasicType basic_type) : ciMetadata() {
 
 ciType::ciType(Klass* k) : ciMetadata(k) {
   _basic_type = k->is_array_klass() ? T_ARRAY : T_OBJECT;
+
+  // Make sure klasses that can be allocated have a compressed_id
+  // Don't know why the compilers ignore can_be_fastpath_allocated
+  if (k->can_have_instance()) {
+    KlassIdArray::set_next_compressed_id(k);
+  }
 }
 
 

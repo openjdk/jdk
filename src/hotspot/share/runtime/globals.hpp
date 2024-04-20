@@ -1997,6 +1997,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, StressSecondarySupers, false, DIAGNOSTIC,                   \
           "Use a terrible hash function in order to generate many collisions.") \
+                                                                            \
+  product(bool, UseIndirectKlassPointers, true, EXPERIMENTAL,               \
+          "Objects point indirectly to Klass pointers.")                    \
 
 // end of RUNTIME_FLAGS
 

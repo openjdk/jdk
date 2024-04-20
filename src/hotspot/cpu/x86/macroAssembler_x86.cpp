@@ -5899,27 +5899,35 @@ void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
 
 void MacroAssembler::encode_klass_not_null(Register r, Register tmp) {
   assert_different_registers(r, tmp);
-  if (CompressedKlassPointers::base() != nullptr) {
-    mov64(tmp, (int64_t)CompressedKlassPointers::base());
-    subq(r, tmp);
-  }
-  if (CompressedKlassPointers::shift() != 0) {
-    assert (LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-    shrq(r, LogKlassAlignmentInBytes);
+  if (UseIndirectKlassPointers) {
+    movl(r, Address(r, Klass::compressed_id_offset()));
+  } else {
+    if (CompressedKlassPointers::base() != nullptr) {
+      mov64(tmp, (int64_t)CompressedKlassPointers::base());
+      subq(r, tmp);
+    }
+    if (CompressedKlassPointers::shift() != 0) {
+      assert (LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
+      shrq(r, LogKlassAlignmentInBytes);
+    }
   }
 }
 
 void MacroAssembler::encode_and_move_klass_not_null(Register dst, Register src) {
   assert_different_registers(src, dst);
-  if (CompressedKlassPointers::base() != nullptr) {
-    mov64(dst, -(int64_t)CompressedKlassPointers::base());
-    addq(dst, src);
+  if (UseIndirectKlassPointers) {
+    movl(dst, Address(src, Klass::compressed_id_offset()));
   } else {
-    movptr(dst, src);
-  }
-  if (CompressedKlassPointers::shift() != 0) {
-    assert (LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-    shrq(dst, LogKlassAlignmentInBytes);
+    if (CompressedKlassPointers::base() != nullptr) {
+      mov64(dst, -(int64_t)CompressedKlassPointers::base());
+      addq(dst, src);
+    } else {
+      movptr(dst, src);
+    }
+    if (CompressedKlassPointers::shift() != 0) {
+      assert (LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
+      shrq(dst, LogKlassAlignmentInBytes);
+    }
   }
 }
 
@@ -5930,13 +5938,20 @@ void  MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
   // Cannot assert, unverified entry point counts instructions (see .ad file)
   // vtableStubs also counts instructions in pd_code_size_limit.
   // Also do not verify_oop as this is called by verify_oop.
-  if (CompressedKlassPointers::shift() != 0) {
-    assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-    shlq(r, LogKlassAlignmentInBytes);
-  }
-  if (CompressedKlassPointers::base() != nullptr) {
-    mov64(tmp, (int64_t)CompressedKlassPointers::base());
-    addq(r, tmp);
+  if (UseIndirectKlassPointers) {
+    // load Klass* k = KlassIdArray[r]
+    assert(KlassIdArray::base() != nullptr, "must be initialized first");
+    mov64(tmp, (int64_t)KlassIdArray::base());
+    movptr(r, Address(tmp, r, Address::times_8, 0));
+  } else {
+    if (CompressedKlassPointers::shift() != 0) {
+      assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
+      shlq(r, LogKlassAlignmentInBytes);
+    }
+    if (CompressedKlassPointers::base() != nullptr) {
+      mov64(tmp, (int64_t)CompressedKlassPointers::base());
+      addq(r, tmp);
+    }
   }
 }
 
@@ -5948,23 +5963,28 @@ void  MacroAssembler::decode_and_move_klass_not_null(Register dst, Register src)
   // vtableStubs also counts instructions in pd_code_size_limit.
   // Also do not verify_oop as this is called by verify_oop.
 
-  if (CompressedKlassPointers::base() == nullptr &&
-      CompressedKlassPointers::shift() == 0) {
-    // The best case scenario is that there is no base or shift. Then it is already
-    // a pointer that needs nothing but a register rename.
-    movl(dst, src);
+  if (UseIndirectKlassPointers) {
+    mov64(dst, (int64_t)KlassIdArray::base());
+    movptr(dst, Address(dst, src, Address::times_8, 0));
   } else {
-    if (CompressedKlassPointers::base() != nullptr) {
-      mov64(dst, (int64_t)CompressedKlassPointers::base());
+    if (CompressedKlassPointers::base() == nullptr &&
+        CompressedKlassPointers::shift() == 0) {
+      // The best case scenario is that there is no base or shift. Then it is already
+      // a pointer that needs nothing but a register rename.
+      movl(dst, src);
     } else {
-      xorq(dst, dst);
-    }
-    if (CompressedKlassPointers::shift() != 0) {
-      assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-      assert(LogKlassAlignmentInBytes == Address::times_8, "klass not aligned on 64bits?");
-      leaq(dst, Address(dst, src, Address::times_8, 0));
-    } else {
-      addq(dst, src);
+      if (CompressedKlassPointers::base() != nullptr) {
+        mov64(dst, (int64_t)CompressedKlassPointers::base());
+      } else {
+        xorq(dst, dst);
+      }
+      if (CompressedKlassPointers::shift() != 0) {
+        assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
+        assert(LogKlassAlignmentInBytes == Address::times_8, "klass not aligned on 64bits?");
+        leaq(dst, Address(dst, src, Address::times_8, 0));
+      } else {
+        addq(dst, src);
+      }
     }
   }
 }

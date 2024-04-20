@@ -31,6 +31,7 @@
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"
 #include "oops/oopHandle.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
@@ -116,6 +117,9 @@ class Klass : public Metadata {
   // Final note:  This comes first, immediately after C++ vtable,
   // because it is frequently queried.
   jint        _layout_helper;
+
+  // Save id of klass in idtable.
+  int         _compressed_id;
 
   // Klass kind used to resolve the runtime type of the instance.
   //  - Used to implement devirtualized oop closure dispatching.
@@ -295,6 +299,9 @@ protected:
   int layout_helper() const            { return _layout_helper; }
   void set_layout_helper(int lh)       { _layout_helper = lh; }
 
+  int compressed_id() const                 { return Atomic::load_acquire(&_compressed_id); }
+  void set_compressed_id(int id)            { Atomic::release_store(&_compressed_id, id); }
+
   // Note: for instances layout_helper() may include padding.
   // Use InstanceKlass::contains_field_offset to classify field offsets.
 
@@ -423,6 +430,7 @@ protected:
   static ByteSize modifier_flags_offset()        { return byte_offset_of(Klass, _modifier_flags); }
   static ByteSize layout_helper_offset()         { return byte_offset_of(Klass, _layout_helper); }
   static ByteSize access_flags_offset()          { return byte_offset_of(Klass, _access_flags); }
+  static ByteSize compressed_id_offset()         { return byte_offset_of(Klass, _compressed_id); }
 #if INCLUDE_JVMCI
   static ByteSize subklass_offset()              { return byte_offset_of(Klass, _subklass); }
   static ByteSize next_sibling_offset()          { return byte_offset_of(Klass, _next_sibling); }
@@ -698,6 +706,8 @@ protected:
   void set_is_hidden()                  { _access_flags.set_is_hidden_class(); }
   bool is_value_based()                 { return _access_flags.is_value_based_class(); }
   void set_is_value_based()             { _access_flags.set_is_value_based_class(); }
+
+  inline bool can_have_instance() const { return !is_abstract() && !is_interface(); }
 
   inline bool is_non_strong_hidden() const;
 

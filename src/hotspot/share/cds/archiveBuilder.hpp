@@ -134,11 +134,13 @@ private:
     MetaspaceObj::Type _msotype;
     address _source_addr;    // The source object to be copied.
     address _buffered_addr;  // The copy of this object insider the buffer.
+    int _compressed_id_index;
+    bool _needs_compressed_id_index;
   public:
     SourceObjInfo(MetaspaceClosure::Ref* ref, bool read_only, FollowMode follow_mode) :
       _ptrmap_start(0), _ptrmap_end(0), _read_only(read_only), _has_embedded_pointer(false), _follow_mode(follow_mode),
       _size_in_bytes(ref->size() * BytesPerWord), _id(0), _msotype(ref->msotype()),
-      _source_addr(ref->obj()) {
+      _source_addr(ref->obj()), _compressed_id_index(-1), _needs_compressed_id_index(false) {
       if (follow_mode == point_to_it) {
         _buffered_addr = ref->obj();
       } else {
@@ -180,6 +182,19 @@ private:
       return _buffered_addr;
     }
     MetaspaceObj::Type msotype() const { return _msotype; }
+    void set_compressed_id_index(int i) {
+      _compressed_id_index = i;
+    }
+    int compressed_id_index() const {
+      return _compressed_id_index;
+    }
+    void set_needs_compressed_id_index(bool b) {
+      _needs_compressed_id_index = b;
+    }
+    bool needs_compressed_id_index() const {
+      return _needs_compressed_id_index;
+    }
+
   };
 
   class SourceObjList {
@@ -282,6 +297,12 @@ protected:
   void verify_estimate_size(size_t estimate, const char* which);
 
 public:
+  void set_compressed_id_index(Klass* src_klass, int index);
+  int compressed_id_index(Klass* src_klass) const;
+
+  void set_needs_compressed_id_index(Klass* src_klass);
+  bool needs_compressed_id_index(Klass* src_klass) const;
+
   address reserve_buffer();
 
   address buffer_bottom()                    const { return _buffer_bottom;                       }

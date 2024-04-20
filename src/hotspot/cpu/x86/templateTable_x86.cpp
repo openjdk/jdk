@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4047,6 +4047,10 @@ void TemplateTable::_new() {
   // get InstanceKlass
   __ load_resolved_klass_at_index(rcx, rcx, rdx);
   __ push(rcx);  // save the contexts of klass for initializing the header
+
+  //__ movl(rdx, Address(rcx, Klass::klass_id_offset()));
+  //__ testl(rdx, rdx);
+  //__ jcc(Assembler::negative, slow_case);
 
   // make sure klass is initialized
 #ifdef _LP64

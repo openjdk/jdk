@@ -50,6 +50,7 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
+#include "oops/klassIdArray.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
@@ -287,6 +288,7 @@ bool HeapShared::archive_object(oop obj) {
     CachedOopInfo info = make_cached_oop_info(obj);
     archived_object_cache()->put_when_absent(obj, info);
     archived_object_cache()->maybe_grow();
+    ArchiveBuilder::current()->set_needs_compressed_id_index(obj->klass());
     mark_native_pointers(obj);
 
     if (log_is_enabled(Debug, cds, heap)) {
@@ -546,6 +548,8 @@ bool HeapShared::initialize_enum_klass(InstanceKlass* k, TRAPS) {
   return true;
 }
 
+static Array<Klass*>* _compressed_id_klasses = nullptr;
+
 void HeapShared::archive_objects(ArchiveHeapInfo *heap_info) {
   {
     NoSafepointVerifier nsv;
@@ -564,6 +568,46 @@ void HeapShared::archive_objects(ArchiveHeapInfo *heap_info) {
 
     CDSHeapVerifier::verify();
     check_default_subgraph_classes();
+  }
+
+  {
+    ArchiveBuilder::OtherROAllocMark mark;
+    ArchiveBuilder* builder = ArchiveBuilder::current();
+
+    int len = 0;
+    for (int i = 0; i < builder->klasses()->length(); i++) {
+      if (builder->needs_compressed_id_index(builder->klasses()->at(i))) {
+        len++;
+      }
+    }
+
+    // Indices start at one.
+    _compressed_id_klasses = builder->new_ro_array<Klass*>(len + 1);
+
+    for (int i = 0, j = 1; i < builder->klasses()->length(); i++) {
+      Klass* src_klass = builder->klasses()->at(i);
+      Klass* buffered_klass = builder->get_buffered_addr(src_klass);
+      if (builder->needs_compressed_id_index(src_klass)) {
+        _compressed_id_klasses->at_put(j, buffered_klass);
+        ArchivePtrMarker::mark_pointer((address**)_compressed_id_klasses->adr_at(j));
+        builder->set_compressed_id_index(src_klass, j);
+        buffered_klass->set_compressed_id(j);
+
+        if (log_is_enabled(Info, cds, logging)) {
+          ResourceMark rm;
+          log_info(cds, logging)("class ID = %4d for %s", j, src_klass->external_name());
+        }
+        j++;
+      } else {
+        buffered_klass->set_compressed_id(0);  // restore unshareable info hasn't been called yet?
+        // Reset the class so that it is not fastpath allocated.
+        if (src_klass->is_instance_klass()) {
+          InstanceKlass* ik = InstanceKlass::cast(src_klass);
+          const int lh = Klass::instance_layout_helper(ik->size_helper(), true);
+          buffered_klass->set_layout_helper(lh);
+        }
+      }
+    }
   }
 
   ArchiveHeapWriter::write(_pending_roots, heap_info);
@@ -876,6 +920,12 @@ void HeapShared::serialize_tables(SerializeClosure* soc) {
 #endif
 
   _run_time_subgraph_info_table.serialize_header(soc);
+
+  soc->do_ptr(&_compressed_id_klasses);
+  if (soc->reading()) {
+    // Set up the runtime table using _compressed_id_klasses
+    KlassIdArray::initialize(_compressed_id_klasses);
+  }
 }
 
 static void verify_the_heap(Klass* k, const char* which) {
