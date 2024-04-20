@@ -1489,7 +1489,7 @@ JRT_END
 // return verified_code_entry if interp_only_mode is not set for the current thread;
 // otherwise return c2i entry.
 address SharedRuntime::get_resolved_entry(JavaThread* current, methodHandle callee_method) {
-  if (current->is_interp_only_mode()) {
+  if (current->is_interp_only_mode() && !callee_method->is_special_native_intrinsic()) {
     // In interp_only_mode we need to go to the interpreted entry
     // The c2i won't patch in this mode -- see fixup_callers_callsite
     return callee_method->get_c2i_entry();
@@ -1929,6 +1929,20 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
 JRT_LEAF(void, SharedRuntime::complete_monitor_unlocking_C(oopDesc* obj, BasicLock* lock, JavaThread* current))
   assert(current == JavaThread::current(), "pre-condition");
   SharedRuntime::monitor_exit_helper(obj, lock, current);
+JRT_END
+
+// This is only called when CheckJNICalls is true, and only
+// for virtual thread termination.
+JRT_LEAF(void,  SharedRuntime::log_jni_monitor_still_held())
+  assert(CheckJNICalls, "Only call this when checking JNI usage");
+  if (log_is_enabled(Debug, jni)) {
+    JavaThread* current = JavaThread::current();
+    int64_t vthread_id = java_lang_Thread::thread_id(current->vthread());
+    int64_t carrier_id = java_lang_Thread::thread_id(current->threadObj());
+    log_debug(jni)("VirtualThread (tid: " INT64_FORMAT ", carrier id: " INT64_FORMAT
+                   ") exiting with Objects still locked by JNI MonitorEnter.",
+                   vthread_id, carrier_id);
+  }
 JRT_END
 
 #ifndef PRODUCT

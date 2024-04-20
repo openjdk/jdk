@@ -253,17 +253,13 @@ inline void HeapRegion::update_bot() {
   assert(next_addr == top(), "Should stop the scan at the limit.");
 }
 
-inline void HeapRegion::update_bot_for_obj(HeapWord* obj_start, size_t obj_size) {
-  assert(is_old(), "should only do BOT updates for old regions");
-
-  HeapWord* obj_end = obj_start + obj_size;
-
-  assert(is_in(obj_start), "obj_start must be in this region: " HR_FORMAT
-         " obj_start " PTR_FORMAT " obj_end " PTR_FORMAT,
+inline void HeapRegion::update_bot_for_block(HeapWord* start, HeapWord* end) {
+  assert(is_in(start), "The start address must be in this region: " HR_FORMAT
+         " start " PTR_FORMAT " end " PTR_FORMAT,
          HR_FORMAT_PARAMS(this),
-         p2i(obj_start), p2i(obj_end));
+         p2i(start), p2i(end));
 
-  _bot->update_for_block(obj_start, obj_end);
+  _bot->update_for_block(start, end);
 }
 
 inline HeapWord* HeapRegion::parsable_bottom() const {

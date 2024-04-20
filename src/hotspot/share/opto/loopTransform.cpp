@@ -456,7 +456,7 @@ Node* IdealLoopTree::reassociate(Node* n1, PhaseIdealLoop *phase) {
   }
 
   assert(result != nullptr, "");
-  phase->register_new_node(result, phase->get_ctrl(n1));
+  phase->register_new_node_with_ctrl_of(result, n1);
   phase->_igvn.replace_node(n1, result);
   assert(phase->get_loop(phase->get_ctrl(n1)) == this, "");
   _body.yank(n1);
@@ -1977,6 +1977,12 @@ bool IdealLoopTree::is_invariant(Node* n) const {
 // to the new stride.
 void PhaseIdealLoop::update_main_loop_assertion_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init,
                                                            const int stride_con) {
+  if (init->is_CastII()) {
+    // skip over the cast added by PhaseIdealLoop::cast_incr_before_loop() when pre/post/main loops are created because
+    // it can get in the way of type propagation
+    assert(init->as_CastII()->carry_dependency() && loop_head->skip_assertion_predicates_with_halt() == init->in(0), "casted iv phi from pre loop expected");
+    init = init->in(1);
+  }
   Node* entry = ctrl;
   Node* prev_proj = ctrl;
   LoopNode* outer_loop_head = loop_head->skip_strip_mined();
@@ -2215,7 +2221,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
       // Limit is not constant. Int subtraction could lead to underflow.
       // (1) Convert to long.
       Node* limit_l = new ConvI2LNode(limit);
-      register_new_node(limit_l, get_ctrl(limit));
+      register_new_node_with_ctrl_of(limit_l, limit);
       Node* stride_l = _igvn.longcon(stride_con);
       set_ctrl(stride_l, C->root());
 

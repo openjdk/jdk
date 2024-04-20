@@ -53,7 +53,7 @@ $(eval $(call SetupJavaCompilation, BUILD_JIGSAW_TOOLS, \
                 build/tools/jigsaw, \
     COPY := .properties .html, \
     BIN := $(TOOLS_CLASSES_DIR), \
-    DISABLED_WARNINGS := fallthrough this-escape, \
+    DISABLED_WARNINGS := fallthrough, \
     JAVAC_FLAGS := \
         --add-modules jdk.jdeps \
         --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
