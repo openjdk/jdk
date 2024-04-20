@@ -2738,12 +2738,14 @@ public class Collections {
             synchronized (mutex) {return list.indexOf(o);}
         }
         public int findIndex(Predicate<? super E> filter) {
+            Objects.requireNonNull(filter);
             synchronized (mutex) {return list.findIndex(filter);}
         }
         public int lastIndexOf(Object o) {
             synchronized (mutex) {return list.lastIndexOf(o);}
         }
         public int findLastIndex(Predicate<? super E> filter) {
+            Objects.requireNonNull(filter);
             synchronized (mutex) {return list.findLastIndex(filter);}
         }
 
@@ -5417,6 +5419,7 @@ public class Collections {
         }
 
         public int findLastIndex(Predicate<? super E> filter) {
+            Objects.requireNonNull(filter);
             return filter.test(element) ? n - 1 : -1;
         }
 

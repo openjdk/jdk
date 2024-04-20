@@ -26,13 +26,7 @@
 package com.sun.tools.javac.util;
 
 import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.AbstractCollection;
-import java.util.ListIterator;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
@@ -506,6 +500,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
     }
 
     public int findIndex(Predicate<? super A> filter) {
+        Objects.requireNonNull(filter);
         int i = 0;
         for (List<A> l = this; l.tail != null; l = l.tail, i++) {
             if (filter.test(l.head))
@@ -525,6 +520,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
     }
 
     public int findLastIndex(Predicate<? super A> filter) {
+        Objects.requireNonNull(filter);
         int last = -1;
         int i = 0;
         for (List<A> l = this; l.tail != null; l = l.tail, i++) {

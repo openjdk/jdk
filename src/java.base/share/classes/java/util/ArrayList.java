@@ -315,12 +315,14 @@ public class ArrayList<E> extends AbstractList<E>
      * @param filter a predicate to search matching element for
      * @return the index of the first occurrence of the specified element in
      *         this list, or -1 if this list does not contain the element
+     * @throws NullPointerException if passed filter is null
      */
     public int findIndex(Predicate<? super E> filter) {
         return findIndexInRange(filter, 0, size);
     }
 
     int findIndexInRange(Predicate<? super E> filter, int start, int end) {
+        Objects.requireNonNull(filter);
         Object[] es = elementData;
         for (int i = start; i < end; i++) {
             if (filter.test(elementAt(es, i))) {
@@ -369,12 +371,14 @@ public class ArrayList<E> extends AbstractList<E>
      * @param filter a predicate to search matching element for
      * @return the index of the last occurrence of the specified element in
      *         this list, or -1 if this list does not contain the element
+     * @throws NullPointerException if passed filter is null
      */
     public int findLastIndex(Predicate<? super E> filter) {
         return findLastIndexInRange(filter, 0, size);
     }
 
     int findLastIndexInRange(Predicate<? super E> filter, int start, int end) {
+        Objects.requireNonNull(filter);
         Object[] es = elementData;
         for (int i = end - 1; i >= start; i--) {
             if (filter.test(elementAt(es, i))) {
@@ -1400,7 +1404,7 @@ public class ArrayList<E> extends AbstractList<E>
         }
 
         public int findIndex(Predicate<? super E> filter) {
-            int index = root.indexOfRange(filter, offset, offset + size);
+            int index = root.findIndexInRange(filter, offset, offset + size);
             checkForComodification();
             return index >= 0 ? index - offset : -1;
         }
@@ -1412,7 +1416,7 @@ public class ArrayList<E> extends AbstractList<E>
         }
 
         public int findLastIndex(Predicate<? super E> filter) {
-            int index = root.lastIndexOfRange(filter, offset, offset + size);
+            int index = root.findLastIndexInRange(filter, offset, offset + size);
             checkForComodification();
             return index >= 0 ? index - offset : -1;
         }

@@ -512,6 +512,7 @@ class ImmutableCollections {
         }
 
         public int findIndex(Predicate<? super E> filter) {
+            Objects.requireNonNull(filter);
             for (int i = 0, s = size(); i < s; i++) {
                 if (filter.test(get(i))) {
                     return i;
@@ -534,6 +535,7 @@ class ImmutableCollections {
         }
 
         public int findLastIndex(Predicate<? super E> filter) {
+            Objects.requireNonNull(filter);
             for (int i = size() - 1; i >= 0; i--) {
                 if (filter.test(get(i))) {
                     return i;
@@ -624,6 +626,7 @@ class ImmutableCollections {
 
         @SuppressWarnings("unchecked")
         public int findIndex(Predicate<? super E> filter) {
+            Objects.requireNonNull(filter);
             if (filter.test(e0)) {
                 return 0;
             } else if (e1 != EMPTY && filter.test((E)e1)) {
@@ -647,6 +650,7 @@ class ImmutableCollections {
 
         @SuppressWarnings("unchecked")
         public int findLastIndex(Predicate<? super E> filter) {
+            Objects.requireNonNull(filter);
             if (e1 != EMPTY && filter.test((E)e1)) {
                 return 1;
             } else if (filter.test(e0)) {
@@ -772,6 +776,7 @@ class ImmutableCollections {
         }
 
         public int findIndex(Predicate<? super E> filter) {
+            Objects.requireNonNull(filter);
             E[] es = elements;
             for (int i = 0; i < es.length; i++) {
                 if (filter.test(es[i])) {
@@ -796,6 +801,7 @@ class ImmutableCollections {
         }
 
         public int findLastIndex(Predicate<? super E> filter) {
+            Objects.requireNonNull(filter);
             E[] es = elements;
             for (int i = es.length - 1; i >= 0; i--) {
                 if (filter.test(es[i])) {

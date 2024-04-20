@@ -4251,6 +4251,7 @@ public final class Arrays {
         }
 
         public int findIndex(Predicate<? super E> filter) {
+            Objects.requireNonNull(filter);
             E[] a = this.a;
             for (int i = 0; i < a.length; i++)
                 if (filter.test(a[i]))

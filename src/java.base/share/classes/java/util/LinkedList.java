@@ -632,8 +632,10 @@ public class LinkedList<E>
      * @param filter a predicate to search matching element for
      * @return the index of the first occurrence of a matching element in
      * this list, or -1 if this list does not contain the element
+     * @throws NullPointerException if passed filter is null
      */
     public int findIndex(Predicate<? super E> filter) {
+        Objects.requireNonNull(filter);
         int index = 0;
         for (Node<E> x = first; x != null; x = x.next) {
             if (filter.test(x.item))
@@ -653,8 +655,10 @@ public class LinkedList<E>
      * @param filter a predicate to search matching element for
      * @return the index of the last occurrence of a matching element in
      * this list, or -1 if this list does not contain the element
+     * @throws NullPointerException if passed filter is null
      */
     public int findLastIndex(Predicate<? super E> filter) {
+        Objects.requireNonNull(filter);
         int index = size;
         for (Node<E> x = last; x != null; x = x.prev) {
             index--;

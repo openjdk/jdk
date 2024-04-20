@@ -212,6 +212,7 @@ public class CopyOnWriteArrayList<E>
      * @return index of element, or -1 if absent
      */
     private static <E> int findIndexInRange(Predicate<E> filter, E[] es, int from, int to) {
+        Objects.requireNonNull(filter);
         for (int i = from; i < to; i++)
             if (filter.test(es[i]))
                 return i;
@@ -1435,6 +1436,7 @@ public class CopyOnWriteArrayList<E>
 
         @SuppressWarnings("unchecked")
         public int findIndex(Predicate<? super E> filter) {
+            Objects.requireNonNull(filter);
             final E[] es;
             final int offset;
             final int size;
@@ -1449,6 +1451,7 @@ public class CopyOnWriteArrayList<E>
 
         @SuppressWarnings("unchecked")
         public int findLastIndex(Predicate<? super E> filter) {
+            Objects.requireNonNull(filter);
             final E[] es;
             final int offset;
             final int size;
@@ -2122,6 +2125,7 @@ public class CopyOnWriteArrayList<E>
         }
 
         public int findLastIndex(Predicate<? super  E> filter) {
+            Objects.requireNonNull(filter);
             synchronized (lock) {
                 int i = base.findIndex(filter);
                 return i == -1 ? -1 : base.size() - i - 1;

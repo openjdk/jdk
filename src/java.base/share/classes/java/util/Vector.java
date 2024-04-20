@@ -437,6 +437,7 @@ public class Vector<E>
      * @see Object#equals(Object)
      */
     public synchronized int findIndex(Predicate<? super E> filter, int index) {
+        Objects.requireNonNull(filter);
         for (int i = index; i < elementCount; i++) {
             if (filter.test(elementData(i))) {
                 return i;
@@ -524,6 +525,7 @@ public class Vector<E>
      *                                   than or equal to the current size of this vector
      */
     public synchronized int findLastIndex(Predicate<? super E> filter, int index) {
+        Objects.requireNonNull(filter);
         if (index >= elementCount)
             throw new IndexOutOfBoundsException(index + " >= " + elementCount);
 
