@@ -71,7 +71,6 @@ public class SwitchBootstraps {
     private SwitchBootstraps() {}
 
     private static final Object SENTINEL = new Object();
-    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private static final boolean previewEnabled = PreviewFeatures.isEnabled();
 
     private static final MethodHandle NULL_CHECK;
@@ -85,14 +84,15 @@ public class SwitchBootstraps {
     private static final Map<TypePairs, String> typePairToName;
 
     static {
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
         try {
-            NULL_CHECK = LOOKUP.findStatic(Objects.class, "isNull",
+            NULL_CHECK = lookup.findStatic(Objects.class, "isNull",
                                            MethodType.methodType(boolean.class, Object.class));
-            IS_ZERO = LOOKUP.findStatic(SwitchBootstraps.class, "isZero",
+            IS_ZERO = lookup.findStatic(SwitchBootstraps.class, "isZero",
                                            MethodType.methodType(boolean.class, int.class));
-            CHECK_INDEX = LOOKUP.findStatic(Objects.class, "checkIndex",
+            CHECK_INDEX = lookup.findStatic(Objects.class, "checkIndex",
                                            MethodType.methodType(int.class, int.class, int.class));
-            MAPPED_ENUM_LOOKUP = LOOKUP.findStatic(SwitchBootstraps.class, "mappedEnumLookup",
+            MAPPED_ENUM_LOOKUP = lookup.findStatic(SwitchBootstraps.class, "mappedEnumLookup",
                                                    MethodType.methodType(int.class, Enum.class, MethodHandles.Lookup.class,
                                                                          Class.class, EnumDesc[].class, EnumMap.class));
         }
