@@ -36,6 +36,7 @@
 #include "compiler/compileLog.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "compiler/directivesParser.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.inline.hpp"
@@ -1605,15 +1606,15 @@ void nmethod::print_nmethod(bool printmethod) {
 #if defined(SUPPORT_DATA_STRUCTS)
   if (AbstractDisassembler::show_structs()) {
     methodHandle mh(Thread::current(), _method);
-    if (printmethod || PrintDebugInfo || CompilerOracle::has_option(mh, CompileCommand::PrintDebugInfo)) {
+    if (printmethod || PrintDebugInfo || CompilerOracle::has_option(mh, CompileCommandEnum::PrintDebugInfo)) {
       print_scopes();
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
-    if (printmethod || PrintRelocations || CompilerOracle::has_option(mh, CompileCommand::PrintRelocations)) {
+    if (printmethod || PrintRelocations || CompilerOracle::has_option(mh, CompileCommandEnum::PrintRelocations)) {
       print_relocations();
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
-    if (printmethod || PrintDependencies || CompilerOracle::has_option(mh, CompileCommand::PrintDependencies)) {
+    if (printmethod || PrintDependencies || CompilerOracle::has_option(mh, CompileCommandEnum::PrintDependencies)) {
       print_dependencies_on(tty);
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
