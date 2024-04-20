@@ -1748,6 +1748,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   intptr_t return_pc = (intptr_t) __ pc();
   oop_maps->add_gc_map(return_pc - start, map);
 
+  // Verify or restore cpu control state after JNI call
+  __ restore_cpu_control_state_after_jni(t0);
+
   // Unpack native results.
   if (ret_type != T_OBJECT && ret_type != T_ARRAY) {
     __ cast_primitive_type(ret_type, x10);

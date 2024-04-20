@@ -31,6 +31,7 @@
 #include "code/scopeDesc.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
 #include "interpreter/bytecodeStream.hpp"

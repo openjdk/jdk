@@ -182,6 +182,41 @@ public class TreeInfo {
         }
     }
 
+    /** Check if the given tree is an explicit reference to the 'this' instance of the
+     *  class currently being compiled. This is true if tree is:
+     *  - An unqualified 'this' identifier
+     *  - A 'super' identifier qualified by a class name whose type is 'currentClass' or a supertype
+     *  - A 'this' identifier qualified by a class name whose type is 'currentClass' or a supertype
+     *    but also NOT an enclosing outer class of 'currentClass'.
+     */
+    public static boolean isExplicitThisReference(Types types, Type.ClassType currentClass, JCTree tree) {
+        switch (tree.getTag()) {
+            case PARENS:
+                return isExplicitThisReference(types, currentClass, skipParens(tree));
+            case IDENT: {
+                JCIdent ident = (JCIdent)tree;
+                Names names = ident.name.table.names;
+                return ident.name == names._this || ident.name == names._super;
+            }
+            case SELECT: {
+                JCFieldAccess select = (JCFieldAccess)tree;
+                Type selectedType = types.erasure(select.selected.type);
+                if (!selectedType.hasTag(TypeTag.CLASS))
+                    return false;
+                Symbol.ClassSymbol currentClassSym = (Symbol.ClassSymbol)((Type.ClassType)types.erasure(currentClass)).tsym;
+                Symbol.ClassSymbol selectedClassSym = (Symbol.ClassSymbol)((Type.ClassType)selectedType).tsym;
+                Names names = select.name.table.names;
+                return currentClassSym.isSubClass(selectedClassSym, types) &&
+                        (select.name == names._super ||
+                        (select.name == names._this &&
+                            (currentClassSym == selectedClassSym ||
+                            !currentClassSym.isEnclosedBy(selectedClassSym))));
+            }
+            default:
+                return false;
+        }
+    }
+
     /** Is this a call to super?
      */
     public static boolean isSuperCall(JCTree tree) {

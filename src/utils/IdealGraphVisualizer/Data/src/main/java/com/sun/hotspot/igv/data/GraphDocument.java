@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class GraphDocument extends Properties.Entity implements ChangedEventProv
 
     public void addGraphDocument(GraphDocument document) {
         if (document != this) {
-            for (FolderElement e : document.elements) {
+            for (FolderElement e : document.getElements()) {
                 e.setParent(this);
                 this.addElement(e);
             }
