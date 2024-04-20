@@ -971,7 +971,7 @@ public abstract class CipherSpi {
      *
      * @param context a byte array representing additional data or context
      *          information that influences the key derivation process.
-     *          The exported key material should be unique to the given context.
+     *          The derived key should be unique to the given context.
      * @param algorithm the algorithm of the derived key
      * @param length the desired length of the derived key in bytes
      *
