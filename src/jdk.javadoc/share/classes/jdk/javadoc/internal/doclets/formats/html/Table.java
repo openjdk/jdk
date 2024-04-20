@@ -33,7 +33,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
@@ -333,33 +332,26 @@ public class Table<T> extends Content {
             }
         }
         int colIndex = 0;
+        String regex = "<(?:a|area|button|input|object|select|textarea)\\b";
+        Pattern pattern = Pattern.compile(regex);
         for (Content c : contents) {
             HtmlStyle cellStyle = columnStyles.get(colIndex);
 
             // Add tab order to only plain text to avoid widget_tabbable_single(potential violation)
-            String regex = "<(?:a|area|button|input|object|select|textarea)\\b";
-            Pattern pattern = Pattern.compile(regex);
-            Matcher matcher = pattern.matcher(c.toString());
-            boolean matchFound = false;
-            while(matcher.find()) {
-                matchFound = true;
-            }
+            boolean matchFound = c.isValid() && pattern.matcher(c.toString()).find();
+    
             // Always add content to make sure the cell isn't dropped
             var cell = HtmlTree.DIV(cellStyle).addUnchecked(c.isEmpty() ? Text.EMPTY : c);
-            if(matchFound) {
-                cell.addStyle(rowStyle);
-            } else {
-                cell.addStyle(rowStyle)
-                    .put(HtmlAttr.ROLE, "tablist")
+            cell.addStyle(rowStyle);
+            if (!matchFound) {
+                cell.put(HtmlAttr.ROLE, "tablist")
                     .put(HtmlAttr.TABINDEX, "0");
             }
             
             for (String tabClass : tabClasses) {
-                if(matchFound) {
-                    cell.addStyle(tabClass);
-                } else {
-                    cell.addStyle(tabClass)
-                        .put(HtmlAttr.ROLE, "tablist")
+                cell.addStyle(tabClass);
+                if (!matchFound) {
+                    cell.put(HtmlAttr.ROLE, "tablist")
                         .put(HtmlAttr.TABINDEX, "0");
                 }
             }
