@@ -63,10 +63,11 @@ public final class FallbackLinker extends AbstractLinker {
     private static final MethodHandle MH_DO_UPCALL;
 
     static {
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
         try {
-            MH_DO_DOWNCALL = MethodHandles.lookup().findStatic(FallbackLinker.class, "doDowncall",
+            MH_DO_DOWNCALL = lookup.findStatic(FallbackLinker.class, "doDowncall",
                     MethodType.methodType(Object.class, SegmentAllocator.class, Object[].class, FallbackLinker.DowncallData.class));
-            MH_DO_UPCALL = MethodHandles.lookup().findStatic(FallbackLinker.class, "doUpcall",
+            MH_DO_UPCALL = lookup.findStatic(FallbackLinker.class, "doUpcall",
                     MethodType.methodType(void.class, MethodHandle.class, MemorySegment.class, MemorySegment.class, UpcallData.class));
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
