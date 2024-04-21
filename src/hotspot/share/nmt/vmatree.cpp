@@ -134,8 +134,8 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
       head = to_visit.pop();
       if (head == nullptr) continue;
 
-      int cmp_A = addr_cmp(head->key(), A);
-      int cmp_B = addr_cmp(head->key(), B);
+      int cmp_A = AddressComparator::cmp(head->key(), A);
+      int cmp_B = AddressComparator::cmp(head->key(), B);
       if (cmp_B > 0) {
         // head > B
         to_visit.push(head->left());
