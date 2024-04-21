@@ -26,8 +26,7 @@
  * @bug 6968351
  * @summary  tcp no delay not required for small payloads
  * @library /test/lib
- * @run main B6968351
- * @run main/othervm -Dsun.net.httpserver.nodelay=false -Djdk.httpclient.HttpClient.log=all -Djava.net.preferIPv6Addresses=true -Djavax.net.debug=all B6968351
+ * @run main/othervm/timeout=5 -Dsun.net.httpserver.nodelay=false  TcpNoDelayNotRequired
  */
 
 import com.sun.net.httpserver.*;
