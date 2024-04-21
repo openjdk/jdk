@@ -42,12 +42,12 @@
 // the tree which is O(log n) so we are safe from stack overflow.
 
 // TreapNode has LEQ nodes on the left, GT nodes on the right.
-template<typename K, typename V, int(*CMP)(K,K)>
+template<typename K, typename V, typename COMPARATOR>
 class TreapNode {
-  template<typename InnerK, typename InnerV, int(*CMPP)(InnerK,InnerK), typename Allocator>
+  template<typename InnerK, typename InnerV, typename InnerCOMPARATOR, typename Allocator>
   friend class Treap;
 
-  using Node = TreapNode<K,V,CMP>;
+  using Node = TreapNode<K,V,COMPARATOR>;
 
   uint64_t _priority;
   const K _key;
@@ -78,12 +78,12 @@ public:
   }
 };
 
-template<typename K, typename V, int(*CMP)(K,K), typename ALLOCATOR>
+template<typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 class Treap {
   friend class VMATree;
   friend class VMATreeTest;
 
-  using Node = TreapNode<K, V, CMP>;
+  using Node = TreapNode<K, V, COMPARATOR>;
 
   Node* _root;
   uint64_t _prng_seed;
@@ -117,7 +117,7 @@ private:
     if (head == nullptr) {
       return {nullptr, nullptr};
     }
-    if ((CMP(head->_key, key) <= 0 && mode == LEQ) || (CMP(head->_key, key) < 0 && mode == LT)) {
+    if ((COMPARATOR::cmp(head->_key, key) <= 0 && mode == LEQ) || (COMPARATOR::cmp(head->_key, key) < 0 && mode == LT)) {
       node_pair p = split(head->_right, key, mode DEBUG_ONLY(COMMA recur_count + 1));
       head->_right = p.left;
       return node_pair{head, p.right};
@@ -158,11 +158,11 @@ private:
     if (node == nullptr) {
       return nullptr;
     }
-    if (CMP(node->_key, k) == 0) { // EQ
+    if (COMPARATOR::cmp(node->_key, k) == 0) { // EQ
       return node;
     }
 
-    if (CMP(node->_key, k) <= 0) { // LEQ
+    if (COMPARATOR::cmp(node->_key, k) <= 0) { // LEQ
       return find(node->_left, k DEBUG_ONLY(COMMA recur_count + 1));
     } else {
       return find(node->_right, k DEBUG_ONLY(COMMA recur_count + 1));
@@ -231,7 +231,7 @@ public:
     Node* gtB = nullptr;
     Node* head = _root;
     while (head != nullptr) {
-      int cmp_r = CMP(head->key(), key);
+      int cmp_r = COMPARATOR::cmp(head->key(), key);
       if (cmp_r == 0) { // Exact match
         gtB = head;
         break; // Can't become better than that.
@@ -251,7 +251,7 @@ public:
     Node* leqA_n = nullptr;
     Node* head = _root;
     while (head != nullptr) {
-      int cmp_r = CMP(head->key(), key);
+      int cmp_r = COMPARATOR(head->key(), key);
       if (cmp_r == 0) { // Exact match
         leqA_n = head;
         break; // Can't become better than that.
@@ -279,7 +279,7 @@ public:
   }
 };
 
-template<typename K, typename V, int (*CMP)(K, K)>
-using TreapCHeap = Treap<K, V, CMP, TreapCHeapAllocator>;
+template<typename K, typename V, typename COMPARATOR>
+using TreapCHeap = Treap<K, V, COMPARATOR, TreapCHeapAllocator>;
 
 #endif //SHARE_NMT_TREAP_HPP

@@ -39,12 +39,15 @@
 // or from committed memory of a certain MEMFLAGS to committed memory of a different MEMFLAGS.
 // The set of points is stored in a balanced binary tree for efficient querying and updating.
 class VMATree {
-  static int addr_cmp(size_t a, size_t b) {
-    if (a < b) return -1;
-    if (a == b) return 0;
-    if (a > b) return 1;
-    ShouldNotReachHere();
-  }
+  class AddressComparison {
+  public:
+    static int cmp(size_t a, size_t b) {
+      if (a < b) return -1;
+      if (a == b) return 0;
+      if (a > b) return 1;
+      ShouldNotReachHere();
+    }
+  };
 
 public:
   enum class StateType : uint8_t { Reserved, Committed, Released };
@@ -107,8 +110,8 @@ public:
     }
   };
 
-  using VTreap = TreapNode<size_t, IntervalChange, addr_cmp>;
-  TreapCHeap<size_t, IntervalChange, addr_cmp> tree;
+  using VTreap = TreapNode<size_t, IntervalChange, AddressComparison>;
+  TreapCHeap<size_t, IntervalChange, AddressComparison> tree;
 
   VMATree()
     : tree() {
@@ -154,8 +157,8 @@ public:
       head = to_visit.pop();
       if (head == nullptr) continue;
 
-      int cmp_from = addr_cmp(head->key(), from);
-      int cmp_to = addr_cmp(head->key(), to);
+      int cmp_from = AddressComparison::cmp(head->key(), from);
+      int cmp_to = AddressComparison::cmp(head->key(), to);
       if (cmp_from >= 0 && cmp_to < 0) {
         f(head);
       }
