@@ -251,7 +251,7 @@ public:
     Node* leqA_n = nullptr;
     Node* head = _root;
     while (head != nullptr) {
-      int cmp_r = COMPARATOR(head->key(), key);
+      int cmp_r = COMPARATOR::cmp(head->key(), key);
       if (cmp_r == 0) { // Exact match
         leqA_n = head;
         break; // Can't become better than that.
