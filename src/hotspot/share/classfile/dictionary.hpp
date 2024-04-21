@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,14 +73,16 @@ public:
   void all_entries_do(KlassClosure* closure);
   void classes_do(MetaspaceClosure* it);
 
-  void clean_cached_protection_domains(GrowableArray<ProtectionDomainEntry*>* delete_list);
+  void remove_from_package_access_cache(GrowableArray<ProtectionDomainEntry*>* delete_list);
 
-  // Protection domains
   InstanceKlass* find(Thread* current, Symbol* name, Handle protection_domain);
-  void validate_protection_domain(InstanceKlass* klass,
-                                  Handle class_loader,
-                                  Handle protection_domain,
-                                  TRAPS);
+
+  // May make Java upcalls to ClassLoader.checkPackageAccess() when a SecurityManager
+  // is installed.
+  void check_package_access(InstanceKlass* klass,
+                            Handle class_loader,
+                            Handle protection_domain,
+                            TRAPS);
 
   void print_table_statistics(outputStream* st, const char* table_name);
 
@@ -89,51 +91,37 @@ public:
   void verify();
 
  private:
-  bool is_valid_protection_domain(JavaThread* current, Symbol* name,
+  bool is_in_package_access_cache(JavaThread* current, Symbol* name,
                                   Handle protection_domain);
-  void add_protection_domain(JavaThread* current, InstanceKlass* klass,
-                             Handle protection_domain);
+  void add_to_package_access_cache(JavaThread* current, InstanceKlass* klass,
+                                   Handle protection_domain);
 };
-
-// An entry in the class loader data dictionaries, this describes a class as
-// { InstanceKlass*, protection_domain_set }.
 
 class DictionaryEntry : public CHeapObj<mtClass> {
  private:
-  // Contains the set of approved protection domains that can access
-  // this dictionary entry.
+  InstanceKlass* _instance_klass;
+
+  // A cache of the ProtectionDomains that have been granted
+  // access to the package of _instance_klass by Java up-calls to
+  // ClassLoader.checkPackageAccess(). See Dictionary::check_package_access().
   //
-  // [Note that C.protection_domain(), which is stored in the java.lang.Class
-  // mirror of C, is NOT the same as PD]
-  //
-  // If an entry for PD exists in the list, it means that
-  // it is okay for a caller class to reference the class in this dictionary entry.
-  //
-  // The usage of the PD set can be seen in SystemDictionary::validate_protection_domain()
-  // It is essentially a cache to avoid repeated Java up-calls to
-  // ClassLoader.checkPackageAccess().
-  //
-  InstanceKlass*                  _instance_klass;
-  ProtectionDomainEntry* volatile _pd_set;
+  // We use a cache to avoid repeat Java up-calls that can be expensive.
+  ProtectionDomainEntry* volatile _package_access_cache;
 
  public:
   DictionaryEntry(InstanceKlass* instance_klass);
   ~DictionaryEntry();
 
-  // Tells whether a protection is in the approved set.
-  bool contains_protection_domain(oop protection_domain) const;
-  // Adds a protection domain to the approved set.
-  void add_protection_domain(ClassLoaderData* loader_data, Handle protection_domain);
+  bool is_in_package_access_cache(oop protection_domain) const;
+  void add_to_package_access_cache(ClassLoaderData* loader_data, Handle protection_domain);
+  inline bool has_package_access_been_granted(Handle protection_domain);
+  void verify_package_access_cache();
 
   InstanceKlass* instance_klass() const { return _instance_klass; }
   InstanceKlass** instance_klass_addr() { return &_instance_klass; }
 
-  ProtectionDomainEntry* pd_set_acquire() const            { return Atomic::load_acquire(&_pd_set); }
-  void release_set_pd_set(ProtectionDomainEntry* entry)    { Atomic::release_store(&_pd_set, entry); }
-
-  // Tells whether the initiating class' protection domain can access the klass in this entry
-  inline bool is_valid_protection_domain(Handle protection_domain);
-  void verify_protection_domain_set();
+  ProtectionDomainEntry* package_access_cache_acquire() const            { return Atomic::load_acquire(&_package_access_cache); }
+  void release_set_package_access_cache(ProtectionDomainEntry* entry)    { Atomic::release_store(&_package_access_cache, entry); }
 
   void print_count(outputStream *st);
   void verify();

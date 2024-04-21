@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,60 +70,6 @@ void operator delete(void *ptr) throw() {
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-static void DumpRegion(HRGN rgn) {
-    DWORD size = ::GetRegionData(rgn, 0, NULL);
-    char* buffer = (char *)safe_Malloc(size);
-    memset(buffer, 0, size);
-    LPRGNDATA rgndata = (LPRGNDATA)buffer;
-    rgndata->rdh.dwSize = sizeof(RGNDATAHEADER);
-    rgndata->rdh.iType = RDH_RECTANGLES;
-    VERIFY(::GetRegionData(rgn, size, rgndata));
-
-    RECT* r = (RECT*)(buffer + rgndata->rdh.dwSize);
-    for (DWORD i=0; i<rgndata->rdh.nCount; i++) {
-        if ( !::IsRectEmpty(r) ) {
-            DTrace_PrintImpl("\trect %d %d %d %d\n", r->left, r->top, r->right, r->bottom);
-        }
-        r++;
-    }
-
-    free(buffer);
-}
-
-/*
- * DTRACE print callback to dump HDC clip region bounding rectangle
- */
-void DumpClipRectangle(const char * file, int line, int argc, const char * fmt, va_list arglist) {
-    const char *msg = va_arg(arglist, const char *);
-    HDC         hdc = va_arg(arglist, HDC);
-    RECT        r;
-
-    DASSERT(argc == 2 && hdc != NULL);
-    DASSERT(msg != NULL);
-
-    ::GetClipBox(hdc, &r);
-    DTrace_PrintImpl("%s: hdc=%x, %d %d %d %d\n", msg, hdc, r.left, r.top, r.right, r.bottom);
-}
-
-/*
- * DTRACE print callback to dump window's update region bounding rectangle
- */
-void DumpUpdateRectangle(const char * file, int line, int argc, const char * fmt, va_list arglist) {
-    const char *msg = va_arg(arglist, const char *);
-    HWND        hwnd = va_arg(arglist, HWND);
-    RECT        r;
-
-    DASSERT(argc == 2 && ::IsWindow(hwnd));
-    DASSERT(msg != NULL);
-
-    ::GetUpdateRect(hwnd, &r, FALSE);
-    HRGN rgn = ::CreateRectRgn(0,0,1,1);
-    int updated = ::GetUpdateRgn(hwnd, rgn, FALSE);
-    DTrace_PrintImpl("%s: hwnd=%x, %d %d %d %d\n", msg, hwnd, r.left, r.top, r.right, r.bottom);
-    DumpRegion(rgn);
-    DeleteObject(rgn);
-}
-
 //
 // Declare a static object to init/fini the debug code
 //
@@ -153,20 +99,19 @@ AwtDebugSupport::~AwtDebugSupport() {
 static jboolean isHeadless() {
     jmethodID headlessFn;
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-    jclass graphicsEnvClass = env->FindClass(
-        "java/awt/GraphicsEnvironment");
+    // be on the safe side and avoid JNI warnings by calling ExceptionCheck
+    // an accumulated exception is not cleared
+    env->ExceptionCheck();
+    jclass graphicsEnvClass = env->FindClass("java/awt/GraphicsEnvironment");
 
     if (graphicsEnvClass != NULL) {
-        headlessFn = env->GetStaticMethodID(
-            graphicsEnvClass, "isHeadless", "()Z");
+        headlessFn = env->GetStaticMethodID(graphicsEnvClass, "isHeadless", "()Z");
         if (headlessFn != NULL) {
-            return env->CallStaticBooleanMethod(graphicsEnvClass,
-                                                headlessFn);
+            return env->CallStaticBooleanMethod(graphicsEnvClass, headlessFn);
         }
     }
     return true;
 }
-
 
 void AwtDebugSupport::AssertCallback(const char * expr, const char * file, int line) {
     static const int ASSERT_MSG_SIZE = 1024;
@@ -177,9 +122,9 @@ void AwtDebugSupport::AssertCallback(const char * expr, const char * file, int l
             "Do you want to break into the debugger?";
 
     static char assertMsg[ASSERT_MSG_SIZE+1];
-    DWORD   lastError = GetLastError();
-    LPSTR       msgBuffer = NULL;
-    int     ret = IDNO;
+    DWORD lastError = GetLastError();
+    LPSTR msgBuffer = NULL;
+    int ret = IDNO;
     static jboolean headless = isHeadless();
 
     DWORD fret= FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |

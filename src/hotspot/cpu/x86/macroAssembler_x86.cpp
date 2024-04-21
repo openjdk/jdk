@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "code/compiledIC.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
 #include "crc32c.h"
@@ -1341,11 +1342,43 @@ void MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
 #ifdef _LP64
   // Needs full 64-bit immediate for later patching.
-  mov64(rax, (intptr_t)Universe::non_oop_word());
+  mov64(rax, (int64_t)Universe::non_oop_word());
 #else
   movptr(rax, (intptr_t)Universe::non_oop_word());
 #endif
   call(AddressLiteral(entry, rh));
+}
+
+int MacroAssembler::ic_check_size() {
+  return LP64_ONLY(14) NOT_LP64(12);
+}
+
+int MacroAssembler::ic_check(int end_alignment) {
+  Register receiver = LP64_ONLY(j_rarg0) NOT_LP64(rcx);
+  Register data = rax;
+  Register temp = LP64_ONLY(rscratch1) NOT_LP64(rbx);
+
+  // The UEP of a code blob ensures that the VEP is padded. However, the padding of the UEP is placed
+  // before the inline cache check, so we don't have to execute any nop instructions when dispatching
+  // through the UEP, yet we can ensure that the VEP is aligned appropriately. That's why we align
+  // before the inline cache check here, and not after
+  align(end_alignment, offset() + ic_check_size());
+
+  int uep_offset = offset();
+
+  if (UseCompressedClassPointers) {
+    movl(temp, Address(receiver, oopDesc::klass_offset_in_bytes()));
+    cmpl(temp, Address(data, CompiledICData::speculated_klass_offset()));
+  } else {
+    movptr(temp, Address(receiver, oopDesc::klass_offset_in_bytes()));
+    cmpptr(temp, Address(data, CompiledICData::speculated_klass_offset()));
+  }
+
+  // if inline cache check fails, then jump to runtime routine
+  jump_cc(Assembler::notEqual, RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
+  assert((offset() % end_alignment) == 0, "Misaligned verified entry point");
+
+  return uep_offset;
 }
 
 void MacroAssembler::emit_static_call_stub() {
@@ -4087,8 +4120,9 @@ static void restore_xmm_register(MacroAssembler* masm, int offset, XMMRegister r
   }
 }
 
-int register_section_sizes(RegSet gp_registers, XMMRegSet xmm_registers, bool save_fpu,
-                           int& gp_area_size, int& fp_area_size, int& xmm_area_size) {
+static int register_section_sizes(RegSet gp_registers, XMMRegSet xmm_registers,
+                                  bool save_fpu, int& gp_area_size,
+                                  int& fp_area_size, int& xmm_area_size) {
 
   gp_area_size = align_up(gp_registers.size() * Register::max_slots_per_register * VMRegImpl::stack_slot_size,
                          StackAlignmentInBytes);
@@ -4305,7 +4339,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   movl(scan_temp, Address(recv_klass, Klass::vtable_length_offset()));
 
-  // %%% Could store the aligned, prescaled offset in the klassoop.
+  // Could store the aligned, prescaled offset in the klass.
   lea(scan_temp, Address(recv_klass, scan_temp, times_vte_scale, vtable_base));
 
   if (return_method) {
@@ -4354,7 +4388,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 }
 
 // Look up the method for a megamorphic invokeinterface call in a single pass over itable:
-// - check recv_klass (actual object class) is a subtype of resolved_klass from CompiledICHolder
+// - check recv_klass (actual object class) is a subtype of resolved_klass from CompiledICData
 // - find a holder_klass (class that implements the method) vtable offset and get the method from vtable by index
 // The target method is determined by <holder_klass, itable_index>.
 // The receiver klass is in recv_klass.
@@ -4691,6 +4725,340 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 
   bind(L_fallthrough);
 }
+
+#ifdef _LP64
+
+// population_count variant for running without the POPCNT
+// instruction, which was introduced with SSE4.2 in 2008.
+void MacroAssembler::population_count(Register dst, Register src,
+                                      Register scratch1, Register scratch2) {
+  assert_different_registers(src, scratch1, scratch2);
+  if (UsePopCountInstruction) {
+    Assembler::popcntq(dst, src);
+  } else {
+    assert_different_registers(src, scratch1, scratch2);
+    assert_different_registers(dst, scratch1, scratch2);
+    Label loop, done;
+
+    mov(scratch1, src);
+    // dst = 0;
+    // while(scratch1 != 0) {
+    //   dst++;
+    //   scratch1 &= (scratch1 - 1);
+    // }
+    xorl(dst, dst);
+    testq(scratch1, scratch1);
+    jccb(Assembler::equal, done);
+    {
+      bind(loop);
+      incq(dst);
+      movq(scratch2, scratch1);
+      decq(scratch2);
+      andq(scratch1, scratch2);
+      jccb(Assembler::notEqual, loop);
+    }
+    bind(done);
+  }
+}
+
+// Ensure that the inline code and the stub are using the same registers.
+#define LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS                      \
+do {                                                                 \
+  assert(r_super_klass  == rax, "mismatch");                         \
+  assert(r_array_base   == rbx, "mismatch");                         \
+  assert(r_array_length == rcx, "mismatch");                         \
+  assert(r_array_index  == rdx, "mismatch");                         \
+  assert(r_sub_klass    == rsi || r_sub_klass == noreg, "mismatch"); \
+  assert(r_bitmap       == r11 || r_bitmap    == noreg, "mismatch"); \
+  assert(result         == rdi || result      == noreg, "mismatch"); \
+} while(0)
+
+void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
+                                                   Register r_super_klass,
+                                                   Register temp1,
+                                                   Register temp2,
+                                                   Register temp3,
+                                                   Register temp4,
+                                                   Register result,
+                                                   u1 super_klass_slot) {
+  assert_different_registers(r_sub_klass, r_super_klass, temp1, temp2, temp3, temp4, result);
+
+  Label L_fallthrough, L_success, L_failure;
+
+  BLOCK_COMMENT("lookup_secondary_supers_table {");
+
+  const Register
+    r_array_index  = temp1,
+    r_array_length = temp2,
+    r_array_base   = temp3,
+    r_bitmap       = temp4;
+
+  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
+
+  xorq(result, result); // = 0
+
+  movq(r_bitmap, Address(r_sub_klass, Klass::bitmap_offset()));
+  movq(r_array_index, r_bitmap);
+
+  // First check the bitmap to see if super_klass might be present. If
+  // the bit is zero, we are certain that super_klass is not one of
+  // the secondary supers.
+  u1 bit = super_klass_slot;
+  {
+    // NB: If the count in a x86 shift instruction is 0, the flags are
+    // not affected, so we do a testq instead.
+    int shift_count = Klass::SECONDARY_SUPERS_TABLE_MASK - bit;
+    if (shift_count != 0) {
+      salq(r_array_index, shift_count);
+    } else {
+      testq(r_array_index, r_array_index);
+    }
+  }
+  // We test the MSB of r_array_index, i.e. its sign bit
+  jcc(Assembler::positive, L_failure);
+
+  // Get the first array index that can contain super_klass into r_array_index.
+  if (bit != 0) {
+    population_count(r_array_index, r_array_index, temp2, temp3);
+  } else {
+    movl(r_array_index, 1);
+  }
+  // NB! r_array_index is off by 1. It is compensated by keeping r_array_base off by 1 word.
+
+  // We will consult the secondary-super array.
+  movptr(r_array_base, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
+
+  // We're asserting that the first word in an Array<Klass*> is the
+  // length, and the second word is the first word of the data. If
+  // that ever changes, r_array_base will have to be adjusted here.
+  assert(Array<Klass*>::base_offset_in_bytes() == wordSize, "Adjust this code");
+  assert(Array<Klass*>::length_offset_in_bytes() == 0, "Adjust this code");
+
+  cmpq(r_super_klass, Address(r_array_base, r_array_index, Address::times_8));
+  jccb(Assembler::equal, L_success);
+
+  // Is there another entry to check? Consult the bitmap.
+  btq(r_bitmap, (bit + 1) & Klass::SECONDARY_SUPERS_TABLE_MASK);
+  jccb(Assembler::carryClear, L_failure);
+
+  // Linear probe. Rotate the bitmap so that the next bit to test is
+  // in Bit 1.
+  if (bit != 0) {
+    rorq(r_bitmap, bit);
+  }
+
+  // Calls into the stub generated by lookup_secondary_supers_table_slow_path.
+  // Arguments: r_super_klass, r_array_base, r_array_index, r_bitmap.
+  // Kills: r_array_length.
+  // Returns: result.
+  call(RuntimeAddress(StubRoutines::lookup_secondary_supers_table_slow_path_stub()));
+  // Result (0/1) is in rdi
+  jmpb(L_fallthrough);
+
+  bind(L_failure);
+  incq(result); // 0 => 1
+
+  bind(L_success);
+  // result = 0;
+
+  bind(L_fallthrough);
+  BLOCK_COMMENT("} lookup_secondary_supers_table");
+
+  if (VerifySecondarySupers) {
+    verify_secondary_supers_table(r_sub_klass, r_super_klass, result,
+                                  temp1, temp2, temp3);
+  }
+}
+
+void MacroAssembler::repne_scanq(Register addr, Register value, Register count, Register limit,
+                                 Label* L_success, Label* L_failure) {
+  Label L_loop, L_fallthrough;
+  {
+    int label_nulls = 0;
+    if (L_success == nullptr) { L_success = &L_fallthrough; label_nulls++; }
+    if (L_failure == nullptr) { L_failure = &L_fallthrough; label_nulls++; }
+    assert(label_nulls <= 1, "at most one null in the batch");
+  }
+  bind(L_loop);
+  cmpq(value, Address(addr, count, Address::times_8));
+  jcc(Assembler::equal, *L_success);
+  addl(count, 1);
+  cmpl(count, limit);
+  jcc(Assembler::less, L_loop);
+
+  if (&L_fallthrough != L_failure) {
+    jmp(*L_failure);
+  }
+  bind(L_fallthrough);
+}
+
+// Called by code generated by check_klass_subtype_slow_path
+// above. This is called when there is a collision in the hashed
+// lookup in the secondary supers array.
+void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_klass,
+                                                             Register r_array_base,
+                                                             Register r_array_index,
+                                                             Register r_bitmap,
+                                                             Register temp1,
+                                                             Register temp2,
+                                                             Label* L_success,
+                                                             Label* L_failure) {
+  assert_different_registers(r_super_klass, r_array_base, r_array_index, r_bitmap, temp1, temp2);
+
+  const Register
+    r_array_length = temp1,
+    r_sub_klass    = noreg,
+    result         = noreg;
+
+  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
+
+  Label L_fallthrough;
+  int label_nulls = 0;
+  if (L_success == nullptr)   { L_success   = &L_fallthrough; label_nulls++; }
+  if (L_failure == nullptr)   { L_failure   = &L_fallthrough; label_nulls++; }
+  assert(label_nulls <= 1, "at most one null in the batch");
+
+  // Load the array length.
+  movl(r_array_length, Address(r_array_base, Array<Klass*>::length_offset_in_bytes()));
+  // And adjust the array base to point to the data.
+  // NB! Effectively increments current slot index by 1.
+  assert(Array<Klass*>::base_offset_in_bytes() == wordSize, "");
+  addptr(r_array_base, Array<Klass*>::base_offset_in_bytes());
+
+  // Linear probe
+  Label L_huge;
+
+  // The bitmap is full to bursting.
+  // Implicit invariant: BITMAP_FULL implies (length > 0)
+  assert(Klass::SECONDARY_SUPERS_BITMAP_FULL == ~uintx(0), "");
+  cmpq(r_bitmap, (int32_t)-1); // sign-extends immediate to 64-bit value
+  jcc(Assembler::equal, L_huge);
+
+  // NB! Our caller has checked bits 0 and 1 in the bitmap. The
+  // current slot (at secondary_supers[r_array_index]) has not yet
+  // been inspected, and r_array_index may be out of bounds if we
+  // wrapped around the end of the array.
+
+  { // This is conventional linear probing, but instead of terminating
+    // when a null entry is found in the table, we maintain a bitmap
+    // in which a 0 indicates missing entries.
+    // The check above guarantees there are 0s in the bitmap, so the loop
+    // eventually terminates.
+
+    xorl(temp2, temp2); // = 0;
+
+    Label L_again;
+    bind(L_again);
+
+    // Check for array wraparound.
+    cmpl(r_array_index, r_array_length);
+    cmovl(Assembler::greaterEqual, r_array_index, temp2);
+
+    cmpq(r_super_klass, Address(r_array_base, r_array_index, Address::times_8));
+    jcc(Assembler::equal, *L_success);
+
+    // If the next bit in bitmap is zero, we're done.
+    btq(r_bitmap, 2); // look-ahead check (Bit 2); Bits 0 and 1 are tested by now
+    jcc(Assembler::carryClear, *L_failure);
+
+    rorq(r_bitmap, 1); // Bits 1/2 => 0/1
+    addl(r_array_index, 1);
+
+    jmp(L_again);
+  }
+
+  { // Degenerate case: more than 64 secondary supers.
+    // FIXME: We could do something smarter here, maybe a vectorized
+    // comparison or a binary search, but is that worth any added
+    // complexity?
+    bind(L_huge);
+    xorl(r_array_index, r_array_index); // = 0
+    repne_scanq(r_array_base, r_super_klass, r_array_index, r_array_length,
+                L_success,
+                (&L_fallthrough != L_failure ? L_failure : nullptr));
+
+    bind(L_fallthrough);
+  }
+}
+
+struct VerifyHelperArguments {
+  Klass* _super;
+  Klass* _sub;
+  intptr_t _linear_result;
+  intptr_t _table_result;
+};
+
+static void verify_secondary_supers_table_helper(const char* msg, VerifyHelperArguments* args) {
+  Klass::on_secondary_supers_verification_failure(args->_super,
+                                                  args->_sub,
+                                                  args->_linear_result,
+                                                  args->_table_result,
+                                                  msg);
+}
+
+// Make sure that the hashed lookup and a linear scan agree.
+void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
+                                                   Register r_super_klass,
+                                                   Register result,
+                                                   Register temp1,
+                                                   Register temp2,
+                                                   Register temp3) {
+  const Register
+      r_array_index  = temp1,
+      r_array_length = temp2,
+      r_array_base   = temp3,
+      r_bitmap       = noreg;
+
+  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
+
+  BLOCK_COMMENT("verify_secondary_supers_table {");
+
+  Label L_success, L_failure, L_check, L_done;
+
+  movptr(r_array_base, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
+  movl(r_array_length, Address(r_array_base, Array<Klass*>::length_offset_in_bytes()));
+  // And adjust the array base to point to the data.
+  addptr(r_array_base, Array<Klass*>::base_offset_in_bytes());
+
+  testl(r_array_length, r_array_length); // array_length == 0?
+  jcc(Assembler::zero, L_failure);
+
+  movl(r_array_index, 0);
+  repne_scanq(r_array_base, r_super_klass, r_array_index, r_array_length, &L_success);
+  // fall through to L_failure
+
+  const Register linear_result = r_array_index; // reuse temp1
+
+  bind(L_failure); // not present
+  movl(linear_result, 1);
+  jmp(L_check);
+
+  bind(L_success); // present
+  movl(linear_result, 0);
+
+  bind(L_check);
+  cmpl(linear_result, result);
+  jcc(Assembler::equal, L_done);
+
+  { // To avoid calling convention issues, build a record on the stack
+    // and pass the pointer to that instead.
+    push(result);
+    push(linear_result);
+    push(r_sub_klass);
+    push(r_super_klass);
+    movptr(c_rarg1, rsp);
+    movptr(c_rarg0, (uintptr_t) "mismatch");
+    call(RuntimeAddress(CAST_FROM_FN_PTR(address, verify_secondary_supers_table_helper)));
+    should_not_reach_here();
+  }
+  bind(L_done);
+
+  BLOCK_COMMENT("} verify_secondary_supers_table");
+}
+
+#undef LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS
+
+#endif // LP64
 
 void MacroAssembler::clinit_barrier(Register klass, Register thread, Label* L_fast_path, Label* L_slow_path) {
   assert(L_fast_path != nullptr || L_slow_path != nullptr, "at least one is required");
@@ -5745,7 +6113,7 @@ void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register rtmp, X
 
 // Clearing constant sized memory using YMM/ZMM registers.
 void MacroAssembler::clear_mem(Register base, int cnt, Register rtmp, XMMRegister xtmp, KRegister mask) {
-  assert(UseAVX > 2 && VM_Version::supports_avx512vlbw(), "");
+  assert(UseAVX > 2 && VM_Version::supports_avx512vl(), "");
   bool use64byteVector = (MaxVectorSize > 32) && (VM_Version::avx3_threshold() == 0);
 
   int vector64_count = (cnt & (~0x7)) >> 3;
@@ -9367,6 +9735,17 @@ void MacroAssembler::vpshufb(XMMRegister dst, XMMRegister nds, AddressLiteral sr
   }
 }
 
+void MacroAssembler::vpor(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    Assembler::vpor(dst, nds, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::vpor(dst, nds, Address(rscratch, 0), vector_len);
+  }
+}
+
 void MacroAssembler::vpternlogq(XMMRegister dst, int imm8, XMMRegister src2, AddressLiteral src3, int vector_len, Register rscratch) {
   assert(rscratch != noreg || always_reachable(src3), "missing");
 
@@ -9877,68 +10256,116 @@ void MacroAssembler::check_stack_alignment(Register sp, const char* msg, unsigne
 }
 
 // Implements lightweight-locking.
-// Branches to slow upon failure to lock the object, with ZF cleared.
-// Falls through upon success with unspecified ZF.
 //
 // obj: the object to be locked
-// hdr: the (pre-loaded) header of the object, must be rax
+// reg_rax: rax
 // thread: the thread which attempts to lock obj
 // tmp: a temporary register
-void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register thread, Register tmp, Label& slow) {
-  assert(hdr == rax, "header must be in rax for cmpxchg");
-  assert_different_registers(obj, hdr, thread, tmp);
+void MacroAssembler::lightweight_lock(Register obj, Register reg_rax, Register thread, Register tmp, Label& slow) {
+  assert(reg_rax == rax, "");
+  assert_different_registers(obj, reg_rax, thread, tmp);
 
-  // First we need to check if the lock-stack has room for pushing the object reference.
-  // Note: we subtract 1 from the end-offset so that we can do a 'greater' comparison, instead
-  // of 'greaterEqual' below, which readily clears the ZF. This makes C2 code a little simpler and
-  // avoids one branch.
-  cmpl(Address(thread, JavaThread::lock_stack_top_offset()), LockStack::end_offset() - 1);
-  jcc(Assembler::greater, slow);
+  Label push;
+  const Register top = tmp;
 
-  // Now we attempt to take the fast-lock.
-  // Clear lock_mask bits (locked state).
-  andptr(hdr, ~(int32_t)markWord::lock_mask_in_place);
-  movptr(tmp, hdr);
-  // Set unlocked_value bit.
-  orptr(hdr, markWord::unlocked_value);
-  lock();
-  cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
+  // Preload the markWord. It is important that this is the first
+  // instruction emitted as it is part of C1's null check semantics.
+  movptr(reg_rax, Address(obj, oopDesc::mark_offset_in_bytes()));
+
+  // Load top.
+  movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
+
+  // Check if the lock-stack is full.
+  cmpl(top, LockStack::end_offset());
+  jcc(Assembler::greaterEqual, slow);
+
+  // Check for recursion.
+  cmpptr(obj, Address(thread, top, Address::times_1, -oopSize));
+  jcc(Assembler::equal, push);
+
+  // Check header for monitor (0b10).
+  testptr(reg_rax, markWord::monitor_value);
+  jcc(Assembler::notZero, slow);
+
+  // Try to lock. Transition lock bits 0b01 => 0b00
+  movptr(tmp, reg_rax);
+  andptr(tmp, ~(int32_t)markWord::unlocked_value);
+  orptr(reg_rax, markWord::unlocked_value);
+  lock(); cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
   jcc(Assembler::notEqual, slow);
 
-  // If successful, push object to lock-stack.
-  movl(tmp, Address(thread, JavaThread::lock_stack_top_offset()));
-  movptr(Address(thread, tmp), obj);
-  incrementl(tmp, oopSize);
-  movl(Address(thread, JavaThread::lock_stack_top_offset()), tmp);
+  // Restore top, CAS clobbers register.
+  movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
+
+  bind(push);
+  // After successful lock, push object on lock-stack.
+  movptr(Address(thread, top), obj);
+  incrementl(top, oopSize);
+  movl(Address(thread, JavaThread::lock_stack_top_offset()), top);
 }
 
 // Implements lightweight-unlocking.
-// Branches to slow upon failure, with ZF cleared.
-// Falls through upon success, with unspecified ZF.
 //
 // obj: the object to be unlocked
-// hdr: the (pre-loaded) header of the object, must be rax
+// reg_rax: rax
+// thread: the thread
 // tmp: a temporary register
-void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register tmp, Label& slow) {
-  assert(hdr == rax, "header must be in rax for cmpxchg");
-  assert_different_registers(obj, hdr, tmp);
+//
+// x86_32 Note: reg_rax and thread may alias each other due to limited register
+//              availiability.
+void MacroAssembler::lightweight_unlock(Register obj, Register reg_rax, Register thread, Register tmp, Label& slow) {
+  assert(reg_rax == rax, "");
+  assert_different_registers(obj, reg_rax, tmp);
+  LP64_ONLY(assert_different_registers(obj, reg_rax, thread, tmp);)
 
-  // Mark-word must be lock_mask now, try to swing it back to unlocked_value.
-  movptr(tmp, hdr); // The expected old value
-  orptr(tmp, markWord::unlocked_value);
-  lock();
-  cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
+  Label unlocked, push_and_slow;
+  const Register top = tmp;
+
+  // Check if obj is top of lock-stack.
+  movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
+  cmpptr(obj, Address(thread, top, Address::times_1, -oopSize));
   jcc(Assembler::notEqual, slow);
-  // Pop the lock object from the lock-stack.
-#ifdef _LP64
-  const Register thread = r15_thread;
-#else
-  const Register thread = rax;
-  get_thread(thread);
-#endif
+
+  // Pop lock-stack.
+  DEBUG_ONLY(movptr(Address(thread, top, Address::times_1, -oopSize), 0);)
   subl(Address(thread, JavaThread::lock_stack_top_offset()), oopSize);
+
+  // Check if recursive.
+  cmpptr(obj, Address(thread, top, Address::times_1, -2 * oopSize));
+  jcc(Assembler::equal, unlocked);
+
+  // Not recursive. Check header for monitor (0b10).
+  movptr(reg_rax, Address(obj, oopDesc::mark_offset_in_bytes()));
+  testptr(reg_rax, markWord::monitor_value);
+  jcc(Assembler::notZero, push_and_slow);
+
 #ifdef ASSERT
-  movl(tmp, Address(thread, JavaThread::lock_stack_top_offset()));
-  movptr(Address(thread, tmp), 0);
+  // Check header not unlocked (0b01).
+  Label not_unlocked;
+  testptr(reg_rax, markWord::unlocked_value);
+  jcc(Assembler::zero, not_unlocked);
+  stop("lightweight_unlock already unlocked");
+  bind(not_unlocked);
 #endif
+
+  // Try to unlock. Transition lock bits 0b00 => 0b01
+  movptr(tmp, reg_rax);
+  orptr(tmp, markWord::unlocked_value);
+  lock(); cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
+  jcc(Assembler::equal, unlocked);
+
+  bind(push_and_slow);
+  // Restore lock-stack and handle the unlock in runtime.
+  if (thread == reg_rax) {
+    // On x86_32 we may lose the thread.
+    get_thread(thread);
+  }
+#ifdef ASSERT
+  movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
+  movptr(Address(thread, top), obj);
+#endif
+  addl(Address(thread, JavaThread::lock_stack_top_offset()), oopSize);
+  jmp(slow);
+
+  bind(unlocked);
 }

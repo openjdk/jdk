@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,9 +140,10 @@ public class ServerSocket implements java.io.Closeable {
      * request to connect) is set to {@code 50}. If a connection
      * indication arrives when the queue is full, the connection is refused.
      * <p>
-     * If the application has specified a server socket implementation
-     * factory, that factory's {@code createSocketImpl} method is called to
-     * create the actual socket implementation. Otherwise a system-default
+     * If the application has specified a {@linkplain SocketImplFactory server
+     * socket implementation factory}, that factory's
+     * {@linkplain SocketImplFactory#createSocketImpl() createSocketImpl} method
+     * is called to create the actual socket implementation. Otherwise a system-default
      * socket implementation is created.
      * <p>
      * If there is a security manager,
@@ -163,7 +164,6 @@ public class ServerSocket implements java.io.Closeable {
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
      *
-     * @see        java.net.SocketImpl
      * @see        SecurityManager#checkListen
      */
     public ServerSocket(int port) throws IOException {
@@ -183,9 +183,10 @@ public class ServerSocket implements java.io.Closeable {
      * a connection indication arrives when the queue is full, the
      * connection is refused.
      * <p>
-     * If the application has specified a server socket implementation
-     * factory, that factory's {@code createSocketImpl} method is called to
-     * create the actual socket implementation. Otherwise a system-default
+     * If the application has specified a {@linkplain SocketImplFactory server
+     * socket implementation factory}, that factory's
+     * {@linkplain SocketImplFactory#createSocketImpl() createSocketImpl} method
+     * is called to create the actual socket implementation. Otherwise a system-default
      * socket implementation is created.
      * <p>
      * If there is a security manager,
@@ -214,7 +215,6 @@ public class ServerSocket implements java.io.Closeable {
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
      *
-     * @see        java.net.SocketImpl
      * @see        SecurityManager#checkListen
      */
     public ServerSocket(int port, int backlog) throws IOException {
@@ -261,11 +261,10 @@ public class ServerSocket implements java.io.Closeable {
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
      *
-     * @see SocketOptions
-     * @see SocketImpl
      * @see SecurityManager#checkListen
      * @since   1.1
      */
+    @SuppressWarnings("this-escape")
     public ServerSocket(int port, int backlog, InetAddress bindAddr) throws IOException {
         if (port < 0 || port > 0xFFFF)
             throw new IllegalArgumentException("Port value out of range: " + port);
@@ -800,7 +799,7 @@ public class ServerSocket implements java.io.Closeable {
      * specified timeout, in milliseconds.  With this option set to a positive
      * timeout value, a call to accept() for this ServerSocket
      * will block for only this amount of time.  If the timeout expires,
-     * a <B>java.net.SocketTimeoutException</B> is raised, though the
+     * a {@link java.net.SocketTimeoutException} is raised, though the
      * ServerSocket is still valid. A timeout of zero is interpreted as an
      * infinite timeout.
      * The option <B>must</B> be enabled prior to entering the blocking
@@ -842,7 +841,7 @@ public class ServerSocket implements java.io.Closeable {
     }
 
     /**
-     * Enable/disable the {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR}
+     * Enable/disable the {@link StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR}
      * socket option.
      * <p>
      * When a TCP connection is closed the connection may remain
@@ -854,22 +853,22 @@ public class ServerSocket implements java.io.Closeable {
      * {@code SocketAddress} if there is a connection in the
      * timeout state involving the socket address or port.
      * <p>
-     * Enabling {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR} prior to
-     * binding the socket using {@link #bind(SocketAddress)} allows the socket
-     * to be bound even though a previous connection is in a timeout state.
+     * Enabling {@code SO_REUSEADDR} prior to binding the socket using
+     * {@link #bind(SocketAddress)} allows the socket to be bound even
+     * though a previous connection is in a timeout state.
      * <p>
      * When a {@code ServerSocket} is created the initial setting
-     * of {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR} is not defined.
-     * Applications can use {@link #getReuseAddress()} to determine the initial
-     * setting of {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR}.
+     * of {@code SO_REUSEADDR} is not defined. Applications can use
+     * {@link #getReuseAddress()} to determine the initial
+     * setting of {@code SO_REUSEADDR}.
      * <p>
-     * The behaviour when {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR} is
-     * enabled or disabled after a socket is bound (See {@link #isBound()})
+     * The behaviour when {@code SO_REUSEADDR} is enabled or disabled
+     * after a socket is bound (See {@link #isBound()})
      * is not defined.
      *
      * @param on  whether to enable or disable the socket option
      * @throws    SocketException if an error occurs enabling or
-     *            disabling the {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR}
+     *            disabling the {@code SO_REUSEADDR}
      *            socket option, or the socket is closed.
      * @since 1.4
      * @see #getReuseAddress()
@@ -884,10 +883,10 @@ public class ServerSocket implements java.io.Closeable {
     }
 
     /**
-     * Tests if {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR} is enabled.
+     * Tests if {@link StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} is enabled.
      *
      * @return a {@code boolean} indicating whether or not
-     *         {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR} is enabled.
+     *         {@code SO_REUSEADDR} is enabled.
      * @throws    SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
      * @since   1.4
@@ -980,14 +979,14 @@ public class ServerSocket implements java.io.Closeable {
 
     /**
      * Sets a default proposed value for the
-     * {@link SocketOptions#SO_RCVBUF SO_RCVBUF} option for sockets
+     * {@link StandardSocketOptions#SO_RCVBUF SO_RCVBUF} option for sockets
      * accepted from this {@code ServerSocket}. The value actually set
      * in the accepted socket must be determined by calling
      * {@link Socket#getReceiveBufferSize()} after the socket
      * is returned by {@link #accept()}.
      * <p>
-     * The value of {@link SocketOptions#SO_RCVBUF SO_RCVBUF} is used both to
-     * set the size of the internal socket receive buffer, and to set the size
+     * The value of {@code SO_RCVBUF} is used both to set the size of
+     * the internal socket receive buffer, and to set the size
      * of the TCP receive window that is advertised to the remote peer.
      * <p>
      * It is possible to change the value subsequently, by calling
@@ -1023,14 +1022,13 @@ public class ServerSocket implements java.io.Closeable {
     }
 
     /**
-     * Gets the value of the {@link SocketOptions#SO_RCVBUF SO_RCVBUF} option
+     * Gets the value of the {@link StandardSocketOptions#SO_RCVBUF SO_RCVBUF} option
      * for this {@code ServerSocket}, that is the proposed buffer size that
      * will be used for Sockets accepted from this {@code ServerSocket}.
      *
      * <p>Note, the value actually set in the accepted socket is determined by
      * calling {@link Socket#getReceiveBufferSize()}.
-     * @return the value of the {@link SocketOptions#SO_RCVBUF SO_RCVBUF}
-     *         option for this {@code Socket}.
+     * @return the value of the {@code SO_RCVBUF} option for this {@code Socket}.
      * @throws    SocketException if there is an error
      *            in the underlying protocol, such as a TCP error.
      * @see #setReceiveBufferSize(int)

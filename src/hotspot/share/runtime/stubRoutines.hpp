@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "runtime/frame.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/stubCodeGenerator.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/macros.hpp"
 
 // StubRoutines provides entry points to assembly routines used by
@@ -273,6 +274,9 @@ class StubRoutines: AllStatic {
 
   static address _upcall_stub_exception_handler;
 
+  static address _lookup_secondary_supers_table_stubs[];
+  static address _lookup_secondary_supers_table_slow_path_stub;
+
  public:
   // Initialization/Testing
   static void    initialize_initial_stubs();               // must happen before universe::genesis
@@ -453,11 +457,13 @@ class StubRoutines: AllStatic {
 
   static jshort f2hf(jfloat x) {
     assert(_f2hf != nullptr, "stub is not implemented on this platform");
+    MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current());) // About to call into code cache
     typedef jshort (*f2hf_stub_t)(jfloat x);
     return ((f2hf_stub_t)_f2hf)(x);
   }
   static jfloat hf2f(jshort x) {
     assert(_hf2f != nullptr, "stub is not implemented on this platform");
+    MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current());) // About to call into code cache
     typedef jfloat (*hf2f_stub_t)(jshort x);
     return ((hf2f_stub_t)_hf2f)(x);
   }
@@ -474,6 +480,17 @@ class StubRoutines: AllStatic {
   static address upcall_stub_exception_handler() {
     assert(_upcall_stub_exception_handler != nullptr, "not implemented");
     return _upcall_stub_exception_handler;
+  }
+
+  static address lookup_secondary_supers_table_stub(u1 slot) {
+    assert(slot < Klass::SECONDARY_SUPERS_TABLE_SIZE, "out of bounds");
+    assert(_lookup_secondary_supers_table_stubs[slot] != nullptr, "not implemented");
+    return _lookup_secondary_supers_table_stubs[slot];
+  }
+
+  static address lookup_secondary_supers_table_slow_path_stub() {
+    assert(_lookup_secondary_supers_table_slow_path_stub != nullptr, "not implemented");
+    return _lookup_secondary_supers_table_slow_path_stub;
   }
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -573,6 +573,7 @@ class DatagramChannelImpl
             throw new IllegalArgumentException("Read-only buffer");
         readLock.lock();
         try {
+            ensureOpen();
             boolean blocking = isBlocking();
             SocketAddress sender = null;
             try {
@@ -851,6 +852,7 @@ class DatagramChannelImpl
 
         writeLock.lock();
         try {
+            ensureOpen();
             boolean blocking = isBlocking();
             int n;
             boolean completed = false;
@@ -1039,6 +1041,7 @@ class DatagramChannelImpl
 
         readLock.lock();
         try {
+            ensureOpen();
             boolean blocking = isBlocking();
             int n = 0;
             try {
@@ -1069,6 +1072,7 @@ class DatagramChannelImpl
 
         readLock.lock();
         try {
+            ensureOpen();
             boolean blocking = isBlocking();
             long n = 0;
             try {
@@ -1152,6 +1156,7 @@ class DatagramChannelImpl
 
         writeLock.lock();
         try {
+            ensureOpen();
             boolean blocking = isBlocking();
             int n = 0;
             try {
@@ -1182,6 +1187,7 @@ class DatagramChannelImpl
 
         writeLock.lock();
         try {
+            ensureOpen();
             boolean blocking = isBlocking();
             long n = 0;
             try {

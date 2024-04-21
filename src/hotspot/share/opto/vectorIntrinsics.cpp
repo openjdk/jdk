@@ -161,8 +161,8 @@ Node* GraphKit::box_vector(Node* vector, const TypeInstPtr* vbox_type, BasicType
 
 Node* GraphKit::unbox_vector(Node* v, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool shuffle_to_vector) {
   assert(EnableVectorSupport, "");
-  const TypeInstPtr* vbox_type_v = gvn().type(v)->is_instptr();
-  if (vbox_type->instance_klass() != vbox_type_v->instance_klass()) {
+  const TypeInstPtr* vbox_type_v = gvn().type(v)->isa_instptr();
+  if (vbox_type_v == nullptr || vbox_type->instance_klass() != vbox_type_v->instance_klass()) {
     return nullptr; // arguments don't agree on vector shapes
   }
   if (vbox_type_v->maybe_null()) {
@@ -2714,7 +2714,7 @@ bool LibraryCallKit::inline_vector_insert() {
     default: fatal("%s", type2name(elem_bt)); break;
   }
 
-  Node* operation = gvn().transform(VectorInsertNode::make(opd, insert_val, idx->get_con()));
+  Node* operation = gvn().transform(VectorInsertNode::make(opd, insert_val, idx->get_con(), gvn()));
 
   Node* vbox = box_vector(operation, vbox_type, elem_bt, num_elem);
   set_result(vbox);

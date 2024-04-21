@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8304487
+ * @bug 8304487 8325257
  * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Preview)
  * @build KullaTesting TestingInputStream
  * @run testng PrimitiveInstanceOfTest
@@ -47,6 +47,17 @@ public class PrimitiveInstanceOfTest extends KullaTesting {
         assertEval("Integer i = 42;");
         assertEval("i instanceof Integer");
         assertEval("i instanceof Number");
+    }
+
+    public void testInstanceOfObjectToPrimitive() {
+        assertEval("Object o = 1L;");
+        assertEval("o instanceof long");
+        assertEval("o instanceof Long");
+    }
+
+    public void testInstanceOfPrimitiveToPrimitiveInvokingExactnessMethod() {
+        assertEval("int b = 1024;");
+        assertEval("b instanceof byte");
     }
 
     @org.testng.annotations.BeforeMethod

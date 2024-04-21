@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "nsk_list.h"
-#include "nsk_tools.h"
+#include "nsk_list.hpp"
+#include "nsk_tools.hpp"
 
 extern "C" {
 

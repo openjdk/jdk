@@ -27,7 +27,7 @@
 #include "D3DTextRenderer.h"
 #include "D3DRenderQueue.h"
 
-void D3DGlyphCache_FlushGlyphVertexCache();
+static void D3DGlyphCache_FlushGlyphVertexCache();
 
 // static
 HRESULT

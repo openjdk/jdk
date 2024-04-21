@@ -421,7 +421,7 @@ public class TestSearch extends JavadocTester {
                     <link rel="stylesheet" type="text/css" href="resource-files/jquery-ui.min.css" title="Style">
                     """,
                 """
-                    <script type="text/javascript" src="script-files/jquery-3.6.1.min.js"></script>
+                    <script type="text/javascript" src="script-files/jquery-3.7.1.min.js"></script>
                     """,
                 """
                     <script type="text/javascript" src="script-files/jquery-ui.min.js"></script>""",
@@ -434,7 +434,7 @@ public class TestSearch extends JavadocTester {
                 """
                     <div class="nav-list-search">
                     <input type="text" id="search-input" disabled placeholder="Search" aria-label="S\
-                    earch in documentation" autocomplete="off" autocapitalize="off">
+                    earch in documentation" autocomplete="off">
                     <input type="reset" id="reset-search" disabled value="Reset">
                     </div>""");
     }
@@ -672,7 +672,7 @@ public class TestSearch extends JavadocTester {
     void checkJqueryAndImageFiles(boolean expectedOutput) {
         checkFiles(expectedOutput,
                 "script-files/search.js",
-                "script-files/jquery-3.6.1.min.js",
+                "script-files/jquery-3.7.1.min.js",
                 "script-files/jquery-ui.min.js",
                 "resource-files/jquery-ui.min.css",
                 "resource-files/x.png",
@@ -784,8 +784,8 @@ public class TestSearch extends JavadocTester {
                     ck="show('all-classes-table', 'all-classes-table-tab6', 2)" class="table-tab">An\
                     notation Interfaces</button>\
                     </div>
-                    <div id="all-classes-table.tabpanel" role="tabpanel">
-                    <div class="summary-table two-column-summary" aria-labelledby="all-classes-table-tab0">
+                    <div id="all-classes-table.tabpanel" role="tabpanel" aria-labelledby="all-classes-table-tab0">
+                    <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Class</div>
                     <div class="table-header col-last">Description</div>""");
         checkOutput("allpackages-index.html", true,

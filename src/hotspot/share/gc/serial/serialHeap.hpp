@@ -66,7 +66,7 @@ class SerialHeap : public CollectedHeap {
   friend class Generation;
   friend class DefNewGeneration;
   friend class TenuredGeneration;
-  friend class GenMarkSweep;
+  friend class SerialFullGC;
   friend class VM_GenCollectForAllocation;
   friend class VM_GenCollectFull;
   friend class VM_GC_HeapInspection;
@@ -89,8 +89,6 @@ private:
 private:
   // The singleton CardTable Remembered Set.
   CardTableRS* _rem_set;
-
-  SoftRefPolicy _soft_ref_policy;
 
   GCPolicyCounters* _gc_policy_counters;
 
@@ -143,7 +141,6 @@ private:
 public:
   // Returns JNI_OK on success
   jint initialize() override;
-  virtual CardTableRS* create_rem_set(const MemRegion& reserved_region);
 
   // Does operations required after initialization has been done.
   void post_initialize() override;
@@ -153,8 +150,6 @@ public:
 
   MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
-
-  SoftRefPolicy* soft_ref_policy() override { return &_soft_ref_policy; }
 
   // Performance Counter support
   GCPolicyCounters* counters()     { return _gc_policy_counters; }
@@ -182,10 +177,6 @@ public:
   bool is_in_young(const void* p) const;
 
   bool requires_barriers(stackChunkOop obj) const override;
-
-#ifdef ASSERT
-  bool is_in_partial_collection(const void* p);
-#endif
 
   // Optimized nmethod scanning support routines
   void register_nmethod(nmethod* nm) override;
@@ -253,10 +244,6 @@ public:
     virtual void do_generation(Generation* gen) = 0;
   };
 
-  // Apply "cl.do_generation" to all generations in the heap
-  // If "old_to_young" determines the order.
-  void generation_iterate(GenClosure* cl, bool old_to_young);
-
   // Return "true" if all generations have reached the
   // maximal committed limit that they can reach, without a garbage
   // collection.
@@ -285,7 +272,7 @@ public:
                      OopClosure* strong_roots,
                      CLDClosure* strong_cld_closure,
                      CLDClosure* weak_cld_closure,
-                     CodeBlobToOopClosure* code_roots);
+                     NMethodToOopClosure* code_roots);
 
   // Set the saved marks of generations, if that makes sense.
   // In particular, if any generation might iterate over the oops
@@ -368,17 +355,8 @@ public:
     return _old_gen;
   }
 
-  // Apply "cur->do_oop" or "older->do_oop" to all the oops in objects
-  // allocated since the last call to save_marks in the young generation.
-  // The "cur" closure is applied to references in the younger generation
-  // at "level", and the "older" closure to older generations.
-  template <typename OopClosureType1, typename OopClosureType2>
-  void oop_since_save_marks_iterate(OopClosureType1* cur,
-                                    OopClosureType2* older);
-
-  void young_process_roots(OopClosure* root_closure,
-                           OopIterateClosure* old_gen_closure,
-                           CLDClosure* cld_closure);
+  void scan_evacuated_objs(YoungGenScanClosure* young_cl,
+                           OldGenScanClosure* old_cl);
 
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;

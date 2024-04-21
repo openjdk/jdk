@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 4651568 8008577
+ * @bug 4651568 8008577 8174269
  * @modules jdk.localedata
  * @summary Verifies the currency pattern for pt_BR locale
- * @run main/othervm -Djava.locale.providers=JRE,SPI Bug4651568
+ * @run main Bug4651568
  */
 
 import java.text.DecimalFormat;
@@ -38,7 +38,7 @@ public class Bug4651568 {
     public static void main (String argv[] )  {
         Locale reservedLocale = Locale.getDefault();
         try {
-            String expectedCurrencyPattern = "\u00A4 #.##0,00";
+            String expectedCurrencyPattern = "\u00a4\u00a0#.##0,00";
 
             Locale locale = new Locale ("pt", "BR");
             Locale.setDefault(locale);
