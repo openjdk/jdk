@@ -1050,6 +1050,8 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
       } break;
       case Op_CountTrailingZerosV:
       case Op_CountLeadingZerosV:
+      case Op_LoadVectorGather:
+      case Op_LoadVectorGatherMasked:
       case Op_ReverseV:
       case Op_RoundVF:
       case Op_RoundVD:
