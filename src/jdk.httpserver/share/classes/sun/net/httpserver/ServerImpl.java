@@ -848,6 +848,7 @@ class ServerImpl {
                 } else {
                     uc.doFilter (new HttpExchangeImpl (tx));
                 }
+                tx.getResponseBody().flush();
 
             } catch (Exception e) {
                 logger.log (Level.TRACE, "ServerImpl.Exchange", e);
