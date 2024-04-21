@@ -74,6 +74,5 @@ jdk/jfr/startupargs/TestDumpOnExit.java 0000000 generic-all
 java/lang/SecurityManager/modules/CustomSecurityManagerTest.java 0000000 generic-all
 java/util/PluggableLocale/PermissionTest.java 0000000 generic-all
 java/util/Properties/StoreReproducibilityTest.java 0000000 generic-all
-java/util/Properties/StoreReproducibilityTest.java 0000000 generic-all
 javax/management/ImplementationVersion/ImplVersionTest.java 0000000 generic-all
 javax/management/remote/mandatory/version/ImplVersionTest.java 0000000 generic-all
