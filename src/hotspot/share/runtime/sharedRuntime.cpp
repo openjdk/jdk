@@ -176,6 +176,7 @@ uint SharedRuntime::_generic_array_copy_ctr=0;
 uint SharedRuntime::_slow_array_copy_ctr=0;
 uint SharedRuntime::_find_handler_ctr=0;
 uint SharedRuntime::_rethrow_ctr=0;
+uint SharedRuntime::_unsafe_set_memory_ctr=0;
 
 int     SharedRuntime::_ICmiss_index                    = 0;
 int     SharedRuntime::_ICmiss_count[SharedRuntime::maxICmiss_count];
@@ -541,7 +542,6 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
     tty->print_cr("b) other problem");
   }
 #endif // PRODUCT
-
   ShouldNotReachHere();
   return nullptr;
 }
@@ -1983,6 +1983,7 @@ void SharedRuntime::print_statistics() {
   if (_slow_array_copy_ctr) tty->print_cr("%5u slow array copies", _slow_array_copy_ctr);
   if (_find_handler_ctr) tty->print_cr("%5u find exception handler", _find_handler_ctr);
   if (_rethrow_ctr) tty->print_cr("%5u rethrow handler", _rethrow_ctr);
+  if (_unsafe_set_memory_ctr) tty->print_cr("%5u unsafe set memorys", _unsafe_set_memory_ctr);
 
   AdapterHandlerLibrary::print_statistics();
 

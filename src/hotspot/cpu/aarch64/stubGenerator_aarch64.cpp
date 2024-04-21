@@ -8379,7 +8379,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Initialize table for copy memory (arraycopy) check.
     if (UnsafeCopyMemory::_table == nullptr) {
-      UnsafeCopyMemory::create_table(8);
+      UnsafeCopyMemory::create_table(8 + 4); // 8 for copyMemory; 4 for setMemory
     }
 
     if (UseCRC32Intrinsics) {
