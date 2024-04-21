@@ -428,11 +428,7 @@ void CompilationMemoryStatistic::on_end_compilation() {
                     arena_stat->live_nodes_at_peak(),
                     result);
   }
-
-  // We also print a log line for every finished compilation. Note: by doing this after
-  // storing the result data in the compilation cost history, we prevent tearing of
-  // the final report at the end of a VM run (since we wait on the NMTCompilationCostHistory_lock
-  // above that guards the final printout).
+  
   if (print) {
     char buf[1024];
     fmn.as_C_string(buf, sizeof(buf));
