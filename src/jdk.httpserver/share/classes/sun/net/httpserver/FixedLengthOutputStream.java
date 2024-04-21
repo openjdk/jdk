@@ -64,9 +64,6 @@ class FixedLengthOutputStream extends FilterOutputStream
         }
         out.write(b);
         remaining --;
-        if(remaining==0) {
-            close();
-        }
     }
 
     public void write (byte[]b, int off, int len) throws IOException {
@@ -83,21 +80,18 @@ class FixedLengthOutputStream extends FilterOutputStream
         }
         out.write(b, off, len);
         remaining -= len;
-        if(remaining==0) {
-            close();
-        }
     }
 
     public void close () throws IOException {
         if (closed) {
             return;
         }
-        flush();
         closed = true;
         if (remaining > 0) {
             t.close();
             throw new IOException ("insufficient bytes written to stream");
         }
+        flush();
         LeftOverInputStream is = t.getOriginalInputStream();
         if (!is.isClosed()) {
             try {
@@ -108,8 +102,5 @@ class FixedLengthOutputStream extends FilterOutputStream
         t.getHttpContext().getServerImpl().addEvent (e);
     }
 
-    public void flush() throws IOException {
-        if(closed) return;
-        super.flush();
-    }
+    // flush is a pass-through
 }
