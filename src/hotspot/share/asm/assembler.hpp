@@ -368,10 +368,10 @@ class AbstractAssembler : public ResourceObj  {
   int           sect()         const   { return code_section()->index(); }
   virtual int   pending_size() const   { return 0; }
   virtual void  flush_pending()        { }
-  address       pc()           const   { return code_section()->end() + pending_size();   }
+  address       pc()           const   { return code_section()->end() + pending_size(); }
   address       begin()        const   { return code_section()->start(); }
-  int           offset()               { flush_pending(); return code_section()->size();  }
-  int           locator()              { return CodeBuffer::locator(offset(), sect()); }
+  int           offset()       const   { return code_section()->size();  }
+  int           locator()      const   { return CodeBuffer::locator(offset(), sect()); }
 
   OopRecorder*  oop_recorder() const   { return _oop_recorder; }
   void      set_oop_recorder(OopRecorder* r) { _oop_recorder = r; }
