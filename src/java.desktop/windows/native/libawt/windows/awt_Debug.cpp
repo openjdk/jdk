@@ -70,60 +70,6 @@ void operator delete(void *ptr) throw() {
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-static void DumpRegion(HRGN rgn) {
-    DWORD size = ::GetRegionData(rgn, 0, NULL);
-    char* buffer = (char *)safe_Malloc(size);
-    memset(buffer, 0, size);
-    LPRGNDATA rgndata = (LPRGNDATA)buffer;
-    rgndata->rdh.dwSize = sizeof(RGNDATAHEADER);
-    rgndata->rdh.iType = RDH_RECTANGLES;
-    VERIFY(::GetRegionData(rgn, size, rgndata));
-
-    RECT* r = (RECT*)(buffer + rgndata->rdh.dwSize);
-    for (DWORD i=0; i<rgndata->rdh.nCount; i++) {
-        if ( !::IsRectEmpty(r) ) {
-            DTrace_PrintImpl("\trect %d %d %d %d\n", r->left, r->top, r->right, r->bottom);
-        }
-        r++;
-    }
-
-    free(buffer);
-}
-
-/*
- * DTRACE print callback to dump HDC clip region bounding rectangle
- */
-void DumpClipRectangle(const char * file, int line, int argc, const char * fmt, va_list arglist) {
-    const char *msg = va_arg(arglist, const char *);
-    HDC         hdc = va_arg(arglist, HDC);
-    RECT        r;
-
-    DASSERT(argc == 2 && hdc != NULL);
-    DASSERT(msg != NULL);
-
-    ::GetClipBox(hdc, &r);
-    DTrace_PrintImpl("%s: hdc=%x, %d %d %d %d\n", msg, hdc, r.left, r.top, r.right, r.bottom);
-}
-
-/*
- * DTRACE print callback to dump window's update region bounding rectangle
- */
-void DumpUpdateRectangle(const char * file, int line, int argc, const char * fmt, va_list arglist) {
-    const char *msg = va_arg(arglist, const char *);
-    HWND        hwnd = va_arg(arglist, HWND);
-    RECT        r;
-
-    DASSERT(argc == 2 && ::IsWindow(hwnd));
-    DASSERT(msg != NULL);
-
-    ::GetUpdateRect(hwnd, &r, FALSE);
-    HRGN rgn = ::CreateRectRgn(0,0,1,1);
-    int updated = ::GetUpdateRgn(hwnd, rgn, FALSE);
-    DTrace_PrintImpl("%s: hwnd=%x, %d %d %d %d\n", msg, hwnd, r.left, r.top, r.right, r.bottom);
-    DumpRegion(rgn);
-    DeleteObject(rgn);
-}
-
 //
 // Declare a static object to init/fini the debug code
 //

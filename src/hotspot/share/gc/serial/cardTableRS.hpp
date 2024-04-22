@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ class CardTableRS : public CardTable {
 public:
   CardTableRS(MemRegion whole_heap);
 
-  void scan_old_to_young_refs(TenuredSpace* sp);
+  void scan_old_to_young_refs(TenuredGeneration* tg, HeapWord* saved_mark_word);
 
   void inline_write_ref_field_gc(void* field) {
     CardValue* byte = byte_for(field);
@@ -83,7 +83,7 @@ public:
   // Iterate over the portion of the card-table which covers the given
   // region mr in the given space and apply cl to any dirty sub-regions
   // of mr. Clears the dirty cards as they are processed.
-  void non_clean_card_iterate(TenuredSpace* sp,
+  void non_clean_card_iterate(TenuredGeneration* tg,
                               MemRegion mr,
                               OldGenScanClosure* cl);
 

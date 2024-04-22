@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,10 @@
  * UnsupportedOperationException} for their {@link
  * CompletableFuture#obtrudeValue(Object) obtrudeValue}
  * and {@link CompletableFuture#obtrudeException(Throwable)
- * obtrudeException} methods. Invoking the {@link CompletableFuture#cancel
- * cancel} method on a {@code CompletableFuture} returned by this API may not
+ * obtrudeException} methods. Unless {@linkplain
+ * HttpClient##cancel otherwise specified}, invoking
+ * the {@link CompletableFuture#cancel cancel} method on a
+ * {@code CompletableFuture} returned by this API may not
  * interrupt the underlying operation, but may be useful to complete,
  * exceptionally, dependent stages that have not already completed.
  *
