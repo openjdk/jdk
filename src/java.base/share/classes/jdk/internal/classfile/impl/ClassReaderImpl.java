@@ -150,7 +150,7 @@ public final class ClassReaderImpl
     @Override
     public ClassEntry thisClassEntry() {
         if (thisClass == null) {
-            thisClass = readEntry(thisClassPos, ClassEntry.class);
+            thisClass = readClassEntry(thisClassPos);
         }
         return thisClass;
     }
@@ -356,23 +356,18 @@ public final class ClassReaderImpl
                 case TAG_FLOAT -> new AbstractPoolEntry.FloatEntryImpl(this, index, readFloat(q));
                 case TAG_LONG -> new AbstractPoolEntry.LongEntryImpl(this, index, readLong(q));
                 case TAG_DOUBLE -> new AbstractPoolEntry.DoubleEntryImpl(this, index, readDouble(q));
-                case TAG_CLASS -> new AbstractPoolEntry.ClassEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q));
-                case TAG_STRING -> new AbstractPoolEntry.StringEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q));
-                case TAG_FIELDREF -> new AbstractPoolEntry.FieldRefEntryImpl(this, index, (AbstractPoolEntry.ClassEntryImpl) readClassEntry(q),
-                                                                             (AbstractPoolEntry.NameAndTypeEntryImpl) readNameAndTypeEntry(q + 2));
-                case TAG_METHODREF -> new AbstractPoolEntry.MethodRefEntryImpl(this, index, (AbstractPoolEntry.ClassEntryImpl) readClassEntry(q),
-                                                                               (AbstractPoolEntry.NameAndTypeEntryImpl) readNameAndTypeEntry(q + 2));
-                case TAG_INTERFACEMETHODREF -> new AbstractPoolEntry.InterfaceMethodRefEntryImpl(this, index, (AbstractPoolEntry.ClassEntryImpl) readClassEntry(q),
-                                                                                                 (AbstractPoolEntry.NameAndTypeEntryImpl) readNameAndTypeEntry(q + 2));
-                case TAG_NAMEANDTYPE -> new AbstractPoolEntry.NameAndTypeEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q),
-                                                                                   (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q + 2));
-                case TAG_METHODHANDLE -> new AbstractPoolEntry.MethodHandleEntryImpl(this, index, readU1(q),
-                                                                                     (AbstractPoolEntry.AbstractMemberRefEntry) readEntry(q + 1));
-                case TAG_METHODTYPE -> new AbstractPoolEntry.MethodTypeEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q));
-                case TAG_CONSTANTDYNAMIC -> new AbstractPoolEntry.ConstantDynamicEntryImpl(this, index, readU2(q), (AbstractPoolEntry.NameAndTypeEntryImpl) readNameAndTypeEntry(q + 2));
-                case TAG_INVOKEDYNAMIC -> new AbstractPoolEntry.InvokeDynamicEntryImpl(this, index, readU2(q), (AbstractPoolEntry.NameAndTypeEntryImpl) readNameAndTypeEntry(q + 2));
-                case TAG_MODULE -> new AbstractPoolEntry.ModuleEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q));
-                case TAG_PACKAGE -> new AbstractPoolEntry.PackageEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q));
+                case TAG_CLASS -> new AbstractPoolEntry.ClassEntryImpl(this, index, readUtf8Entry(q));
+                case TAG_STRING -> new AbstractPoolEntry.StringEntryImpl(this, index, readUtf8Entry(q));
+                case TAG_FIELDREF -> new AbstractPoolEntry.FieldRefEntryImpl(this, index, readClassEntry(q), readNameAndTypeEntry(q + 2));
+                case TAG_METHODREF -> new AbstractPoolEntry.MethodRefEntryImpl(this, index, readClassEntry(q), readNameAndTypeEntry(q + 2));
+                case TAG_INTERFACEMETHODREF -> new AbstractPoolEntry.InterfaceMethodRefEntryImpl(this, index, readClassEntry(q), readNameAndTypeEntry(q + 2));
+                case TAG_NAMEANDTYPE -> new AbstractPoolEntry.NameAndTypeEntryImpl(this, index, readUtf8Entry(q), readUtf8Entry(q + 2));
+                case TAG_METHODHANDLE -> new AbstractPoolEntry.MethodHandleEntryImpl(this, index, readU1(q), readAbstractMemberRefEntry(q + 1));
+                case TAG_METHODTYPE -> new AbstractPoolEntry.MethodTypeEntryImpl(this, index, readUtf8Entry(q));
+                case TAG_CONSTANTDYNAMIC -> new AbstractPoolEntry.ConstantDynamicEntryImpl(this, index, readU2(q), readNameAndTypeEntry(q + 2));
+                case TAG_INVOKEDYNAMIC -> new AbstractPoolEntry.InvokeDynamicEntryImpl(this, index, readU2(q), readNameAndTypeEntry(q + 2));
+                case TAG_MODULE -> new AbstractPoolEntry.ModuleEntryImpl(this, index, readUtf8Entry(q));
+                case TAG_PACKAGE -> new AbstractPoolEntry.PackageEntryImpl(this, index, readUtf8Entry(q));
                 default -> throw new ConstantPoolException(
                         "Bad tag (" + tag + ") at index (" + index + ") position (" + offset + ")");
             };
@@ -438,7 +433,7 @@ public final class ClassReaderImpl
     }
 
     @Override
-    public Utf8Entry readUtf8Entry(int pos) {
+    public AbstractPoolEntry.Utf8EntryImpl readUtf8Entry(int pos) {
         int index = readU2(pos);
         return utf8EntryByIndex(index);
     }
@@ -462,14 +457,67 @@ public final class ClassReaderImpl
         return readEntry(pos, PackageEntry.class);
     }
 
-    @Override
-    public ClassEntry readClassEntry(int pos) {
-        return readEntry(pos, ClassEntry.class);
+    private int readIndex(int pos) {
+        int index = readU2(pos);
+        if (index <= 0 || index >= constantPoolCount) {
+            throw new ConstantPoolException("Bad CP index: " + index);
+        }
+        return index;
+    }
+
+    private int getOffset(int index) {
+        int offset = cpOffset[index];
+        if (offset == 0) {
+            throw new ConstantPoolException("Unusable CP index: " + index);
+        }
+        return offset;
     }
 
     @Override
-    public NameAndTypeEntry readNameAndTypeEntry(int pos) {
-        return readEntry(pos, NameAndTypeEntry.class);
+    public AbstractPoolEntry.ClassEntryImpl readClassEntry(int pos) {
+        int index = readIndex(pos);
+        PoolEntry info = cp[index];
+        if (info == null) {
+            int offset = getOffset(index);
+            if (readU1(offset) == TAG_CLASS) {
+                info = new AbstractPoolEntry.ClassEntryImpl(this, index, readUtf8Entry(offset + 1));
+                cp[index] = info;
+            }
+        }
+        if (info instanceof AbstractPoolEntry.ClassEntryImpl ce) return ce;
+        throw new ConstantPoolException("Not a ClassEntry at index: " + index);
+    }
+
+    @Override
+    public AbstractPoolEntry.NameAndTypeEntryImpl readNameAndTypeEntry(int pos) {
+        int index = readIndex(pos);
+        PoolEntry info = cp[index];
+        if (info == null) {
+            int offset = getOffset(index);
+            if (readU1(offset) == TAG_NAMEANDTYPE) {
+                info = new AbstractPoolEntry.NameAndTypeEntryImpl(this, index, readUtf8Entry(offset + 1), readUtf8Entry(offset + 3));
+                cp[index] = info;
+            }
+        }
+        if (info instanceof AbstractPoolEntry.NameAndTypeEntryImpl nte) return nte;
+        throw new ConstantPoolException("Not a NameAndTypeEntry at index: " + index);
+    }
+
+    private AbstractPoolEntry.AbstractMemberRefEntry readAbstractMemberRefEntry(int pos) {
+        int index = readIndex(pos);
+        PoolEntry info = cp[index];
+        if (info == null) {
+            int offset = getOffset(index);
+            info = switch (readU1(offset)) {
+                case TAG_FIELDREF -> new AbstractPoolEntry.FieldRefEntryImpl(this, index, readClassEntry(offset + 1), readNameAndTypeEntry(offset + 3));
+                case TAG_METHODREF -> new AbstractPoolEntry.MethodRefEntryImpl(this, index, readClassEntry(offset + 1), readNameAndTypeEntry(offset + 3));
+                case TAG_INTERFACEMETHODREF -> new AbstractPoolEntry.InterfaceMethodRefEntryImpl(this, index, readClassEntry(offset + 1), readNameAndTypeEntry(offset + 3));
+                default -> null;
+            };
+            cp[index] = info;
+        }
+        if (info instanceof AbstractPoolEntry.AbstractMemberRefEntry amre) return amre;
+        throw new ConstantPoolException("Not a MemberRefEntry at index: " + index);
     }
 
     @Override
