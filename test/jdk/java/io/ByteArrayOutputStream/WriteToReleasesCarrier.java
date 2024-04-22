@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 1234566
+ * @bug 8330748
  * @summary Test ByteArrayOutputStream.writeTo releases carrier thread
  * @requires vm.continuations
  * @modules java.base/java.lang:+open
