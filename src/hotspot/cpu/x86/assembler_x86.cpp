@@ -934,6 +934,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     case 0x6F: // movdq
     case 0x7F: // movdq
     case 0xAE: // ldmxcsr, stmxcsr, fxrstor, fxsave, clflush
+    case 0xD6: // movq
     case 0xFE: // paddd
       debug_only(has_disp32 = true);
       break;
@@ -13652,9 +13653,13 @@ void Assembler::notq(Register dst) {
   emit_int16((unsigned char)0xF7, (0xD0 | encode));
 }
 
+void Assembler::btq(Register dst, Register src) {
+  int encode = prefixq_and_encode(src->encoding(), dst->encoding());
+  emit_int24(0x0F, (unsigned char)0xA3, (encode | 0xC0));
+}
+
 void Assembler::btq(Register src, int imm8) {
   assert(isByte(imm8), "not a byte");
-  InstructionMark im(this);
   int encode = prefixq_and_encode(src->encoding());
   emit_int16(0x0f, 0xba);
   emit_int8(0xe0|encode);

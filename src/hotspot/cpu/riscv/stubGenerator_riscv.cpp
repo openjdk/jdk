@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -5501,7 +5501,7 @@ static const int64_t right_3_bits = right_n_bits(3);
     StubRoutines::_forward_exception_entry = generate_forward_exception();
 
     if (UnsafeCopyMemory::_table == nullptr) {
-      UnsafeCopyMemory::create_table(8);
+      UnsafeCopyMemory::create_table(8 + 4); // 8 for copyMemory; 4 for setMemory
     }
 
     StubRoutines::_call_stub_entry =

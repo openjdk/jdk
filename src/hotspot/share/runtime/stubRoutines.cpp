@@ -110,6 +110,8 @@ address StubRoutines::_checkcast_arraycopy_uninit        = nullptr;
 address StubRoutines::_unsafe_arraycopy                  = nullptr;
 address StubRoutines::_generic_arraycopy                 = nullptr;
 
+address StubRoutines::_unsafe_setmemory                  = nullptr;
+
 address StubRoutines::_jbyte_fill;
 address StubRoutines::_jshort_fill;
 address StubRoutines::_jint_fill;
