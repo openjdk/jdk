@@ -193,6 +193,8 @@ class StubRoutines: AllStatic {
   static address _unsafe_arraycopy;
   static address _generic_arraycopy;
 
+  static address _unsafe_setmemory;
+
   static address _jbyte_fill;
   static address _jshort_fill;
   static address _jint_fill;
@@ -383,6 +385,11 @@ class StubRoutines: AllStatic {
 
   typedef void (*UnsafeArrayCopyStub)(const void* src, void* dst, size_t count);
   static UnsafeArrayCopyStub UnsafeArrayCopy_stub()         { return CAST_TO_FN_PTR(UnsafeArrayCopyStub,  _unsafe_arraycopy); }
+
+  static address unsafe_setmemory()     { return _unsafe_setmemory; }
+
+  typedef void (*UnsafeSetMemoryStub)(const void* src, size_t count, char byte);
+  static UnsafeSetMemoryStub UnsafeSetMemory_stub()         { return CAST_TO_FN_PTR(UnsafeSetMemoryStub,  _unsafe_setmemory); }
 
   static address generic_arraycopy()   { return _generic_arraycopy; }
   static address select_arraysort_function() { return _array_sort; }
