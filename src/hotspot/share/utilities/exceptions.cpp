@@ -122,7 +122,8 @@ bool Exceptions::special_exception(JavaThread* thread, const char* file, int lin
                         exc_value, message ? ": " : "", message ? message : "",
                         p2i(h_exception()), file, line, p2i(thread),
                         Universe::vm_exception()->print_value_string());
-    // We do not care what kind of exception we get for a thread which is compiling.
+    // We do not care what kind of exception we get for a thread which
+    // is compiling.  We just install a dummy exception object
     thread->set_pending_exception(Universe::vm_exception(), file, line);
     return true;
   }
