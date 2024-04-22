@@ -101,45 +101,34 @@ class PcDescCache {
   volatile PcDescPtr _pc_descs[cache_size]; // last cache_size pc_descs found
  public:
   PcDescCache() { debug_only(_pc_descs[0] = nullptr); }
-  void    reset_to(PcDesc* initial_pc_desc);
+  void    init_to(PcDesc* initial_pc_desc);
   PcDesc* find_pc_desc(int pc_offset, bool approximate);
   void    add_pc_desc(PcDesc* pc_desc);
   PcDesc* last_pc_desc() { return _pc_descs[0]; }
 };
 
-class PcDescSearch {
-private:
-  address _code_begin;
-  PcDesc* _lower;
-  PcDesc* _upper;
-public:
-  PcDescSearch(address code, PcDesc* lower, PcDesc* upper) :
-    _code_begin(code), _lower(lower), _upper(upper)
-  {
-  }
-
-  address code_begin() const { return _code_begin; }
-  PcDesc* scopes_pcs_begin() const { return _lower; }
-  PcDesc* scopes_pcs_end() const { return _upper; }
-};
-
-class PcDescContainer {
+class PcDescContainer : public CHeapObj<mtCode> {
 private:
   PcDescCache _pc_desc_cache;
 public:
-  PcDescContainer() {}
+  PcDescContainer(PcDesc* initial_pc_desc) { _pc_desc_cache.init_to(initial_pc_desc); }
 
-  PcDesc* find_pc_desc_internal(address pc, bool approximate, const PcDescSearch& search);
-  void    reset_to(PcDesc* initial_pc_desc) { _pc_desc_cache.reset_to(initial_pc_desc); }
+  PcDesc* find_pc_desc_internal(address pc, bool approximate, address code_begin,
+                                PcDesc* lower, PcDesc* upper);
 
-  PcDesc* find_pc_desc(address pc, bool approximate, const PcDescSearch& search) {
-    address base_address = search.code_begin();
+  PcDesc* find_pc_desc(address pc, bool approximate, address code_begin, PcDesc* lower, PcDesc* upper)
+#ifdef PRODUCT
+  {
     PcDesc* desc = _pc_desc_cache.last_pc_desc();
-    if (desc != nullptr && desc->pc_offset() == pc - base_address) {
+    assert(desc != nullptr, "PcDesc cache should be initialized already");
+    if (desc->pc_offset() == (pc - code_begin)) {
+      // Cached value matched
       return desc;
     }
-    return find_pc_desc_internal(pc, approximate, search);
+    return find_pc_desc_internal(pc, approximate, code_begin, lower, upper);
   }
+#endif
+  ;
 };
 
 // nmethods (native methods) are the compiled code versions of Java methods.
@@ -206,7 +195,7 @@ class nmethod : public CodeBlob {
     };
   };
 
-  PcDescContainer _pc_desc_container;
+  PcDescContainer* _pc_desc_container;
   ExceptionCache* volatile _exception_cache;
 
   void* _gc_data;
@@ -359,7 +348,8 @@ class nmethod : public CodeBlob {
   void post_compiled_method_unload();
 
   PcDesc* find_pc_desc(address pc, bool approximate) {
-    return _pc_desc_container.find_pc_desc(pc, approximate, PcDescSearch(code_begin(), scopes_pcs_begin(), scopes_pcs_end()));
+    if (_pc_desc_container == nullptr) return nullptr; // native method
+    return _pc_desc_container->find_pc_desc(pc, approximate, code_begin(), scopes_pcs_begin(), scopes_pcs_end());
   }
 
   // STW two-phase nmethod root processing helpers.
