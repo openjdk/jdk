@@ -31,19 +31,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-/*
-Benchmark                       Mode  Cnt  Score   Error  Units
-StableBenchmark.instanceAtomic  avgt   10  2.135 ? 0.238  ns/op
-StableBenchmark.instanceDCL     avgt   10  1.833 ? 0.057  ns/op
-StableBenchmark.instanceList    avgt   10  1.629 ? 0.040  ns/op
-StableBenchmark.instanceStable  avgt   10  1.201 ? 0.097  ns/op
-StableBenchmark.staticAtomic    avgt   10  1.612 ? 0.210  ns/op
-StableBenchmark.staticCHI       avgt   10  0.762 ? 0.116  ns/op
-StableBenchmark.staticDCL       avgt   10  1.538 ? 0.081  ns/op
-StableBenchmark.staticList      avgt   10  0.716 ? 0.069  ns/op
-StableBenchmark.staticStable    avgt   10  0.722 ? 0.051  ns/op
- */
-
 /**
  * Benchmark measuring StableValue performance
  */
