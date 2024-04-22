@@ -185,28 +185,65 @@ public class ConfigFileTest {
     }
 
     static void specialCharsIncludes(Executor ex, FilesManager filesMgr,
-            char specialChar) throws Exception {
+            char specialChar, Executor.ExtraMode extraMode,
+            boolean useRelativeIncludes) throws Exception {
         String suffix = specialChar + ".properties";
         ExtraPropsFile extraFile = filesMgr.newExtraFile("extra" + suffix);
         PropsFile file0 = filesMgr.newFile("file0" + suffix);
         PropsFile file1 = filesMgr.newFile("file1" + suffix);
 
-        extraFile.addRelativeInclude(file0);
+        if (useRelativeIncludes) {
+            extraFile.addRelativeInclude(file0);
+        } else {
+            extraFile.addAbsoluteInclude(file0);
+        }
         extraFile.addAbsoluteInclude(file1);
 
         ex.setMasterFile(filesMgr.newMasterFile());
-        ex.setExtraFile(extraFile, Executor.ExtraMode.PATH_ABS, false);
+        ex.setExtraFile(extraFile, extraMode, false);
         ex.assertSuccess();
     }
 
-    static void testUnicodeIncludes(Executor ex, FilesManager filesMgr)
+    static void testUnicodeIncludes1(Executor ex, FilesManager filesMgr)
             throws Exception {
-        specialCharsIncludes(ex, filesMgr, '\u2022');
+        specialCharsIncludes(ex, filesMgr, '\u2022',
+                Executor.ExtraMode.PATH_ABS, true);
     }
 
-    static void testSpaceIncludes(Executor ex, FilesManager filesMgr)
+    static void testUnicodeIncludes2(Executor ex, FilesManager filesMgr)
             throws Exception {
-        specialCharsIncludes(ex, filesMgr, ' ');
+        specialCharsIncludes(ex, filesMgr, '\u2022',
+                Executor.ExtraMode.FILE_URI, true);
+    }
+
+    static void testUnicodeIncludes3(Executor ex, FilesManager filesMgr)
+            throws Exception {
+        // Backward compatibility check. Malformed URLs such as
+        // file:///tmp/extra•.properties are supported for the extra file.
+        // However, relative includes are not allowed in these cases.
+        specialCharsIncludes(ex, filesMgr, '\u2022',
+                Executor.ExtraMode.RAW_FILE_URI, false);
+    }
+
+    static void testSpaceIncludes1(Executor ex, FilesManager filesMgr)
+            throws Exception {
+        specialCharsIncludes(ex, filesMgr, ' ',
+                Executor.ExtraMode.PATH_ABS, true);
+    }
+
+    static void testSpaceIncludes2(Executor ex, FilesManager filesMgr)
+            throws Exception {
+        specialCharsIncludes(ex, filesMgr, ' ',
+                Executor.ExtraMode.FILE_URI, true);
+    }
+
+    static void testSpaceIncludes3(Executor ex, FilesManager filesMgr)
+            throws Exception {
+        // Backward compatibility check. Malformed URLs such as
+        // file:///tmp/extra .properties are supported for the extra file.
+        // However, relative includes are not allowed in these cases.
+        specialCharsIncludes(ex, filesMgr, ' ',
+                Executor.ExtraMode.RAW_FILE_URI, false);
     }
 
     static void notOverrideOnFailureHelper(Executor ex, FilesManager filesMgr,
@@ -244,14 +281,7 @@ public class ConfigFileTest {
         ex.getOutputAnalyzer().shouldContain("Is a directory");
     }
 
-    static void testNotOverrideOnBadFileURLFailure1(Executor ex,
-            FilesManager filesMgr) throws Exception {
-        PropsFile extraFile = filesMgr.newFile("extra .properties");
-
-        notOverrideOnFailureHelper(ex, filesMgr, "file://" + extraFile.path);
-    }
-
-    static void testNotOverrideOnBadFileURLFailure2(Executor ex,
+    static void testNotOverrideOnBadFileURLFailure(Executor ex,
             FilesManager filesMgr) throws Exception {
         notOverrideOnFailureHelper(ex, filesMgr, "file:///%00");
     }
@@ -661,7 +691,7 @@ final class FilesManager implements Closeable {
 }
 
 final class Executor {
-    enum ExtraMode { HTTP_SERVED, FILE_URI, PATH_ABS, PATH_REL }
+    enum ExtraMode { HTTP_SERVED, FILE_URI, RAW_FILE_URI, PATH_ABS, PATH_REL }
     static final String RUNNER_ARG = "runner";
     static final String INITIAL_PROP_LOG_MSG = "Initial security property: ";
     private static final String OVERRIDING_LOG_MSG =
@@ -717,6 +747,7 @@ final class Executor {
         setRawExtraFile(switch (mode) {
             case HTTP_SERVED -> extraPropsFile.url.toString();
             case FILE_URI -> extraPropsFile.path.toUri().toString();
+            case RAW_FILE_URI -> "file:" + extraPropsFile.path;
             case PATH_ABS -> extraPropsFile.path.toString();
             case PATH_REL -> CWD.relativize(extraPropsFile.path).toString();
         }, overrideAll);

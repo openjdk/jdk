@@ -28,6 +28,7 @@ package java.security;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
@@ -155,8 +156,11 @@ public final class Security {
             }
 
             // Try to interpret propFile as a file URL
-            URI uri = new URI(propFile);
-            if ("file".equalsIgnoreCase(uri.getScheme()) &&
+            URI uri = null;
+            try {
+                uri = new URI(propFile);
+            } catch (Exception ignore) {}
+            if (uri != null && "file".equalsIgnoreCase(uri.getScheme()) &&
                     (error = loadExtraFromFileUrl(uri, mode)) == null) {
                 return;
             }
@@ -164,8 +168,8 @@ public final class Security {
             // Try to interpret propFile as a URL
             URL url;
             try {
-                url = uri.toURL();
-            } catch (IllegalArgumentException ignore) {
+                url = newURL(propFile);
+            } catch (MalformedURLException ignore) {
                 // URL has no scheme: previous error is more accurate
                 throw error;
             }
@@ -1131,5 +1135,10 @@ public final class Security {
             }
         }
         return Collections.unmodifiableSet(result);
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(String spec) throws MalformedURLException {
+        return new URL(spec);
     }
 }
