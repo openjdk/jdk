@@ -3570,8 +3570,17 @@ void MacroAssembler::vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src,
   Assembler::vpcmpeqb(dst, nds, src, vector_len);
 }
 
+void MacroAssembler::vpcmpeqb(XMMRegister dst, XMMRegister src1, Address src2, int vector_len) {
+  Assembler::vpcmpeqb(dst, src1, src2, vector_len);
+}
+
 void MacroAssembler::vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
   assert(((dst->encoding() < 16 && src->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpcmpeqw(dst, nds, src, vector_len);
+}
+
+void MacroAssembler::vpcmpeqw(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
+  assert(((dst->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
   Assembler::vpcmpeqw(dst, nds, src, vector_len);
 }
 
@@ -10368,4 +10377,280 @@ void MacroAssembler::lightweight_unlock(Register obj, Register reg_rax, Register
   jmp(slow);
 
   bind(unlocked);
+}
+
+// Compare char[] or byte[] arrays aligned to 4 bytes or substrings.
+void MacroAssembler::arrays_equals(bool is_array_equ, Register ary1,
+                                   Register ary2, Register limit,
+                                   Register result, Register chr,
+                                   XMMRegister vec1, XMMRegister vec2,
+                                   bool is_char, KRegister mask,
+                                   bool expand_ary2) {
+  // for expand_ary2, limit is the (smaller) size of the second array.
+  ShortBranchVerifier sbv(this);
+  Label TRUE_LABEL, FALSE_LABEL, DONE, COMPARE_VECTORS, COMPARE_CHAR, COMPARE_BYTE;
+
+  assert((!expand_ary2) || ((expand_ary2) && (UseAVX == 2)),
+         "Expansion only implemented for AVX2");
+
+  int length_offset  = arrayOopDesc::length_offset_in_bytes();
+  int base_offset    = arrayOopDesc::base_offset_in_bytes(is_char ? T_CHAR : T_BYTE);
+
+  if (is_array_equ) {
+    // Check the input args
+    cmpoop(ary1, ary2);
+    jcc(Assembler::equal, TRUE_LABEL);
+
+    // Need additional checks for arrays_equals.
+    testptr(ary1, ary1);
+    jcc(Assembler::zero, FALSE_LABEL);
+    testptr(ary2, ary2);
+    jcc(Assembler::zero, FALSE_LABEL);
+
+    // Check the lengths
+    movl(limit, Address(ary1, length_offset));
+    cmpl(limit, Address(ary2, length_offset));
+    jcc(Assembler::notEqual, FALSE_LABEL);
+  }
+
+  // count == 0
+  testl(limit, limit);
+  jcc(Assembler::zero, TRUE_LABEL);
+
+  if (is_array_equ) {
+    // Load array address
+    lea(ary1, Address(ary1, base_offset));
+    lea(ary2, Address(ary2, base_offset));
+  }
+
+  if (is_array_equ && is_char) {
+    // arrays_equals when used for char[].
+    shll(limit, 1);      // byte count != 0
+  }
+  movl(result, limit); // copy
+
+  if (UseAVX >= 2) {
+    // With AVX2, use 32-byte vector compare
+    Label COMPARE_WIDE_VECTORS, COMPARE_WIDE_VECTORS_16, COMPARE_TAIL, COMPARE_TAIL_16;
+
+    // Compare 32-byte vectors
+    andl(result, 0x0000001f);  //   tail count (in bytes)
+    andl(limit, 0xffffffe0);   // vector count (in bytes)
+    jcc(Assembler::zero, COMPARE_TAIL_16);
+
+    lea(ary1, Address(ary1, limit,
+                      expand_ary2 ? Address::times_2 : Address::times_1));
+    lea(ary2, Address(ary2, limit, Address::times_1));
+    negptr(limit);
+
+#ifdef _LP64
+    if ((AVX3Threshold == 0) && VM_Version::supports_avx512vlbw()) { // trying 64 bytes fast loop
+      Label COMPARE_WIDE_VECTORS_LOOP_AVX2, COMPARE_WIDE_VECTORS_LOOP_AVX3;
+
+      cmpl(limit, -64);
+      jcc(Assembler::greater, COMPARE_WIDE_VECTORS_LOOP_AVX2);
+
+      bind(COMPARE_WIDE_VECTORS_LOOP_AVX3); // the hottest loop
+
+      evmovdquq(vec1, Address(ary1, limit, Address::times_1), Assembler::AVX_512bit);
+      evpcmpeqb(mask, vec1, Address(ary2, limit, Address::times_1), Assembler::AVX_512bit);
+      kortestql(mask, mask);
+      jcc(Assembler::aboveEqual, FALSE_LABEL);     // miscompare
+      addptr(limit, 64);  // update since we already compared at this addr
+      cmpl(limit, -64);
+      jccb(Assembler::lessEqual, COMPARE_WIDE_VECTORS_LOOP_AVX3);
+
+      // At this point we may still need to compare -limit+result bytes.
+      // We could execute the next two instruction and just continue via non-wide path:
+      //  cmpl(limit, 0);
+      //  jcc(Assembler::equal, COMPARE_TAIL);  // true
+      // But since we stopped at the points ary{1,2}+limit which are
+      // not farther than 64 bytes from the ends of arrays ary{1,2}+result
+      // (|limit| <= 32 and result < 32),
+      // we may just compare the last 64 bytes.
+      //
+      addptr(result, -64);   // it is safe, bc we just came from this area
+      evmovdquq(vec1, Address(ary1, result, Address::times_1), Assembler::AVX_512bit);
+      evpcmpeqb(mask, vec1, Address(ary2, result, Address::times_1), Assembler::AVX_512bit);
+      kortestql(mask, mask);
+      jcc(Assembler::aboveEqual, FALSE_LABEL);     // miscompare
+
+      jmp(TRUE_LABEL);
+
+      bind(COMPARE_WIDE_VECTORS_LOOP_AVX2);
+
+    }//if (VM_Version::supports_avx512vlbw())
+#endif //_LP64
+    bind(COMPARE_WIDE_VECTORS);
+    vmovdqu(vec1, Address(ary1, limit,
+                          expand_ary2 ? Address::times_2 : Address::times_1));
+    if (expand_ary2) {
+      vpmovzxbw(vec2, Address(ary2, limit, Address::times_1),
+                Assembler::AVX_256bit);
+    } else {
+      vmovdqu(vec2, Address(ary2, limit, Address::times_1));
+    }
+    vpxor(vec1, vec2);
+
+    vptest(vec1, vec1);
+    jcc(Assembler::notZero, FALSE_LABEL);
+    addptr(limit, expand_ary2 ? 16 : 32);
+    jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
+
+    testl(result, result);
+    jcc(Assembler::zero, TRUE_LABEL);
+
+    vmovdqu(vec1,
+            Address(ary1, result,
+                    expand_ary2 ? Address::times_2 : Address::times_1, -32));
+    if (expand_ary2) {
+      vpmovzxbw(vec2, Address(ary2, result, Address::times_1, -16),
+                Assembler::AVX_256bit);
+    } else {
+      vmovdqu(vec2, Address(ary2, result, Address::times_1, -32));
+    }
+    vpxor(vec1, vec2);
+
+    vptest(vec1, vec1);
+    jcc(Assembler::notZero, FALSE_LABEL);
+    jmp(TRUE_LABEL);
+
+    bind(COMPARE_TAIL_16); // limit is zero
+    movl(limit, result);
+
+    // Compare 16-byte chunks
+    andl(result, 0x0000000f);  //   tail count (in bytes)
+    andl(limit, 0xfffffff0);   // vector count (in bytes)
+    jcc(Assembler::zero, COMPARE_TAIL);
+
+    lea(ary1, Address(ary1, limit, expand_ary2 ? Address::times_2 : Address::times_1));
+    lea(ary2, Address(ary2, limit, Address::times_1));
+    negptr(limit);
+
+    bind(COMPARE_WIDE_VECTORS_16);
+    movdqu(vec1, Address(ary1, limit,
+                         expand_ary2 ? Address::times_2 : Address::times_1));
+    if (expand_ary2) {
+      vpmovzxbw(vec2, Address(ary2, limit, Address::times_1),
+                Assembler::AVX_128bit);
+    } else {
+      movdqu(vec2, Address(ary2, limit, Address::times_1));
+    }
+    vpxor(vec1, vec2);
+
+    vptest(vec1, vec1);
+    jcc(Assembler::notZero, FALSE_LABEL);
+    addptr(limit, expand_ary2 ? 8 : 16);
+    jcc(Assembler::notZero, COMPARE_WIDE_VECTORS_16);
+
+    bind(COMPARE_TAIL); // limit is zero
+    movl(limit, result);
+    // Fallthru to tail compare
+  } else if (UseSSE42Intrinsics) {
+    // With SSE4.2, use double quad vector compare
+    Label COMPARE_WIDE_VECTORS, COMPARE_TAIL;
+
+    // Compare 16-byte vectors
+    andl(result, 0x0000000f);  //   tail count (in bytes)
+    andl(limit, 0xfffffff0);   // vector count (in bytes)
+    jcc(Assembler::zero, COMPARE_TAIL);
+
+    lea(ary1, Address(ary1, limit, Address::times_1));
+    lea(ary2, Address(ary2, limit, Address::times_1));
+    negptr(limit);
+
+    bind(COMPARE_WIDE_VECTORS);
+    movdqu(vec1, Address(ary1, limit, Address::times_1));
+    movdqu(vec2, Address(ary2, limit, Address::times_1));
+    pxor(vec1, vec2);
+
+    ptest(vec1, vec1);
+    jcc(Assembler::notZero, FALSE_LABEL);
+    addptr(limit, 16);
+    jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
+
+    testl(result, result);
+    jcc(Assembler::zero, TRUE_LABEL);
+
+    movdqu(vec1, Address(ary1, result, Address::times_1, -16));
+    movdqu(vec2, Address(ary2, result, Address::times_1, -16));
+    pxor(vec1, vec2);
+
+    ptest(vec1, vec1);
+    jccb(Assembler::notZero, FALSE_LABEL);
+    jmpb(TRUE_LABEL);
+
+    bind(COMPARE_TAIL); // limit is zero
+    movl(limit, result);
+    // Fallthru to tail compare
+  }
+
+  // Compare 4-byte vectors
+  if (expand_ary2) {
+    testl(result, result);
+    jccb(Assembler::zero, TRUE_LABEL);
+  } else {
+    andl(limit, 0xfffffffc); // vector count (in bytes)
+    jccb(Assembler::zero, COMPARE_CHAR);
+  }
+
+  lea(ary1, Address(ary1, limit, expand_ary2 ? Address::times_2 : Address::times_1));
+  lea(ary2, Address(ary2, limit, Address::times_1));
+  negptr(limit);
+
+  bind(COMPARE_VECTORS);
+  if (expand_ary2) {
+    // There are no "vector" operations for bytes to shorts
+    movzbl(chr, Address(ary2, limit, Address::times_1));
+    cmpw(Address(ary1, limit, Address::times_2), chr);
+    jccb(Assembler::notEqual, FALSE_LABEL);
+    addptr(limit, 1);
+    jcc(Assembler::notZero, COMPARE_VECTORS);
+    jmp(TRUE_LABEL);
+  } else {
+    movl(chr, Address(ary1, limit,
+                      expand_ary2 ? Address::times_2 : Address::times_1));
+    cmpl(chr, Address(ary2, limit, Address::times_1));
+    jccb(Assembler::notEqual, FALSE_LABEL);
+    addptr(limit, 4);
+    jcc(Assembler::notZero, COMPARE_VECTORS);
+  }
+
+  // Compare trailing char (final 2 bytes), if any
+  bind(COMPARE_CHAR);
+  testl(result, 0x2);   // tail  char
+  jccb(Assembler::zero, COMPARE_BYTE);
+  load_unsigned_short(chr, Address(ary1, 0));
+  load_unsigned_short(limit, Address(ary2, 0));
+  cmpl(chr, limit);
+  jccb(Assembler::notEqual, FALSE_LABEL);
+
+  if (is_array_equ && is_char) {
+    bind(COMPARE_BYTE);
+  } else {
+    lea(ary1, Address(ary1, expand_ary2 ? 4 : 2));
+    lea(ary2, Address(ary2, 2));
+
+    bind(COMPARE_BYTE);
+    testl(result, 0x1);   // tail  byte
+    jccb(Assembler::zero, TRUE_LABEL);
+    load_unsigned_byte(chr, Address(ary1, 0));
+    load_unsigned_byte(limit, Address(ary2, 0));
+    cmpl(chr, limit);
+    jccb(Assembler::notEqual, FALSE_LABEL);
+  }
+  bind(TRUE_LABEL);
+  movl(result, 1);   // return true
+  jmpb(DONE);
+
+  bind(FALSE_LABEL);
+  xorl(result, result); // return false
+
+  // That's it
+  bind(DONE);
+  if (UseAVX >= 2) {
+    // clean upper bits of YMM registers
+    vpxor(vec1, vec1);
+    vpxor(vec2, vec2);
+  }
 }
