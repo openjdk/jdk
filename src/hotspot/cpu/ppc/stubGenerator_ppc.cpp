@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -4746,7 +4746,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_catch_exception_entry            = generate_catch_exception();
 
     if (UnsafeCopyMemory::_table == nullptr) {
-      UnsafeCopyMemory::create_table(8);
+      UnsafeCopyMemory::create_table(8 + 4); // 8 for copyMemory; 4 for setMemory
     }
 
     // Build this early so it's available for the interpreter.

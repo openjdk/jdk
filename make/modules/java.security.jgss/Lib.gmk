@@ -32,6 +32,7 @@ include LibCommon.gmk
 $(eval $(call SetupJdkLibrary, BUILD_LIBJ2GSS, \
     NAME := j2gss, \
     OPTIMIZATION := LOW, \
+    EXTRA_HEADER_DIRS := java.base:libjava, \
     DISABLED_WARNINGS_gcc := undef, \
     DISABLED_WARNINGS_clang := undef, \
     LIBS_unix := $(LIBDL), \
@@ -47,7 +48,9 @@ ifeq ($(call isTargetOs, windows), true)
   $(eval $(call SetupJdkLibrary, BUILD_LIBSSPI_BRIDGE, \
       NAME := sspi_bridge, \
       OPTIMIZATION := LOW, \
-      EXTRA_HEADER_DIRS := libj2gss, \
+      EXTRA_HEADER_DIRS := \
+          libj2gss \
+          java.base:libjava, \
       LIBS_windows := secur32.lib, \
   ))
 
@@ -63,6 +66,7 @@ ifneq ($(BUILD_CRYPTO), false)
     $(eval $(call SetupJdkLibrary, BUILD_LIBW2K_LSA_AUTH, \
         NAME := w2k_lsa_auth, \
         OPTIMIZATION := LOW, \
+        EXTRA_HEADER_DIRS := java.base:libjava, \
         LIBS_windows := advapi32.lib kernel32.lib secur32.lib ws2_32.lib, \
     ))
 
@@ -79,6 +83,7 @@ ifneq ($(BUILD_CRYPTO), false)
     $(eval $(call SetupJdkLibrary, BUILD_LIBOSXKRB5, \
         NAME := osxkrb5, \
         OPTIMIZATION := LOW, \
+        EXTRA_HEADER_DIRS := java.base:libjava, \
         DISABLED_WARNINGS_clang_nativeccache.c := deprecated-declarations, \
         LIBS_macosx := \
             -framework Cocoa \
