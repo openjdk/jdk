@@ -70,6 +70,16 @@ TEST_VM_F(VMATreeTest, LowLevel) {
       found_nodes++;
     });
     EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
+
+    Tree tree2;
+    for (int i = 99; i >= 0; i--) {
+      tree.reserve_mapping(i * 100, 100, md);
+    }
+    found_nodes = 0;
+    tree.visit(0, 999999, [&](Node* x) {
+      found_nodes++;
+    });
+    EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
   };
 
   // After removing all ranges we should be left with an entirely empty tree
