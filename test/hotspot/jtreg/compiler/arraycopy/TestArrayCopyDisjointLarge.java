@@ -29,7 +29,7 @@ import java.util.Random;
  * @bug 8310159
  * @summary Test large arrayCopy.
  *
- * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch compiler.arraycopy.TestArrayCopyDisjointLarge
+ * @run main/timeout=600 compiler.arraycopy.TestArrayCopyDisjointLarge
  *
  */
 
@@ -70,15 +70,18 @@ public class TestArrayCopyDisjointLarge {
 
     public static void main(String [] args) {
         int base_size = 2621440;
+        Random r = new Random(1024);
         int [] lengths = {base_size - 1, base_size, base_size + 1, base_size + 63, base_size + 64,
-                                base_size + 65, base_size + 255, base_size + 256, base_size + 257};
+                                base_size + 65, base_size + 255, base_size + 256, base_size + 257,
+                                base_size + r.nextInt(2048)};
         setup();
 
-        for (int i = 0 ; i < 10 ; i++ ) {
+        for (int i = 0 ; i < 20 ; i++ ) {
             testByte(lengths[i % lengths.length], 0, 0);
             testByte(lengths[i % lengths.length], 0, 9);
             testByte(lengths[i % lengths.length], 9, 0);
             testByte(lengths[i % lengths.length], 9, 9);
+            testByte(lengths[i % lengths.length], r.nextInt(2048) , r.nextInt(2048));
         }
     }
 }
