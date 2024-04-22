@@ -56,22 +56,30 @@ public class LotsOfEntries {
                 Files.createFile(entry);
             }
 
-            // wait for key to be signalled - the timeout is long to allow for
-            // polling implementations
+            // Wait for all events to be signalled - the timeout is long to
+            // allow for polling implementations. Since we specifically want to
+            // test the maximum number of events buffered for a single
+            // WatchKey#pollEvents call, we need to poll on the WatchService
+            // repeatedly until all (not just some) events have been signalled.
             System.out.println("poll watcher...");
-            WatchKey signalledKey = watcher.poll(15, TimeUnit.SECONDS);
-            if (key != signalledKey) {
+            WatchKey signalledKey;
+            do {
+              signalledKey = watcher.poll(10, TimeUnit.SECONDS);
+              if (signalledKey != null && signalledKey != key) {
                 throw new RuntimeException("Unexpected key returned from poll");
-            }
+              }
+            } while (signalledKey != null);
 
             if (fail) {
                 System.out.println("poll expecting overflow...");
                 var events = key.pollEvents();
                 if (events.size() != 1) {
-                    throw new RuntimeException("Expected a single event");
+                    throw new RuntimeException(
+                        "Expected overflow event, got: " + toString(events));
                 }
                 if (!events.getFirst().kind().equals(OVERFLOW)) {
-                    throw new RuntimeException("Expected overflow event");
+                    throw new RuntimeException(
+                        "Expected overflow event, got: " + toString(events));
                 }
             } else {
                 System.out.println("poll not expecting overflow...");
@@ -83,13 +91,16 @@ public class LotsOfEntries {
                     .collect(Collectors.toSet());
                 if (!entries.equals(contexts)) {
                     throw new RuntimeException(
-                        "Expected events on: " + entries + ", got: " +
-                            events.stream()
-                                .map(LotsOfEntries::toString)
-                                .collect(Collectors.toList()));
+                        "Expected events on: " + entries + ", got: " + toString(events));
                 }
             }
         }
+    }
+
+    static String toString(List<WatchEvent<?>> events) {
+        return events.stream()
+            .map(LotsOfEntries::toString)
+            .collect(Collectors.joining(", "));
     }
 
     static String toString(WatchEvent event) {
