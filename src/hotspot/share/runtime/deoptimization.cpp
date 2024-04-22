@@ -448,8 +448,8 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
     // out on some cases where verification would have been valid and possible.
     // Similarly filter out breakpoint bytecode as it may have been a monitorenter.
     const bool previous_bc_not_monitorenter = bci == 0 ? !chunk->first()->method()->is_synchronized()
-                                                       : (*chunk->first()->method()->bcp_from(bci - 1) != Bytecodes::_monitorenter ||
-                                                          *chunk->first()->method()->bcp_from(bci - 1) != Bytecodes::_breakpoint);
+                                                       : !(*chunk->first()->method()->bcp_from(bci - 1) == Bytecodes::_monitorenter ||
+                                                           *chunk->first()->method()->bcp_from(bci - 1) == Bytecodes::_breakpoint);
     const bool is_synchronized_entry = chunk->first()->method()->is_synchronized() &&
                                        chunk->first()->raw_bci() == SynchronizationEntryBCI;
     // If deoptimizing from monitorenter bytecode we may be in a transitional state. Skip verification.
