@@ -54,11 +54,10 @@ public class TestRecursiveMonitorChurn {
                 m.doSomething();
             }
         } else {
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                     "-XX:+UnlockDiagnosticVMOptions",
-                    "-Xmx100M", "-XX:TieredStopAtLevel=1", "-XX:AsyncDeflationInterval=0",
+                    "-Xmx100M", "-XX:AsyncDeflationInterval=0",
                     "-XX:NativeMemoryTracking=summary", "-XX:+PrintNMTStatistics",
-                    "-XX:LockingMode=2",
                     "TestRecursiveMonitorChurn",
                     "test");
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
