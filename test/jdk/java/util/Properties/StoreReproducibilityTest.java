@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,9 @@ import java.util.TimeZone;
  * @test
  * @summary Tests that the Properties.store() APIs generate output that is reproducible
  * @bug 8231640 8282023 8316540
+ * @comment The test launches several processes and in the presence of -Xcomp it's too slow
+ *          and thus causes timeouts
+ * @requires vm.compMode != "Xcomp"
  * @library /test/lib
  * @run driver StoreReproducibilityTest
  */

@@ -2454,6 +2454,12 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
     }
   }
 
+  if (tkls != nullptr && !UseSecondarySupersCache
+      && tkls->offset() == in_bytes(Klass::secondary_super_cache_offset()))  {
+    // Treat Klass::_secondary_super_cache as a constant when the cache is disabled.
+    return TypePtr::NULL_PTR;
+  }
+
   // Bailout case
   return LoadNode::Value(phase);
 }

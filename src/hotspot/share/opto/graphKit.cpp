@@ -3268,8 +3268,9 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
 Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
                               Node* *failure_control) {
   kill_dead_locals();           // Benefit all the uncommon traps
-  const TypeKlassPtr *tk = _gvn.type(superklass)->is_klassptr()->try_improve();
-  const TypeOopPtr *toop = tk->cast_to_exactness(false)->as_instance_type();
+  const TypeKlassPtr* klass_ptr_type = _gvn.type(superklass)->is_klassptr();
+  const TypeKlassPtr* improved_klass_ptr_type = klass_ptr_type->try_improve();
+  const TypeOopPtr* toop = improved_klass_ptr_type->cast_to_exactness(false)->as_instance_type();
 
   // Fast cutout:  Check the case that the cast is vacuously true.
   // This detects the common cases where the test will short-circuit
@@ -3277,10 +3278,10 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
   // because if the test is going to turn into zero code, we don't
   // want a residual null check left around.  (Causes a slowdown,
   // for example, in some objArray manipulations, such as a[i]=a[j].)
-  if (tk->singleton()) {
+  if (improved_klass_ptr_type->singleton()) {
     const TypeOopPtr* objtp = _gvn.type(obj)->isa_oopptr();
     if (objtp != nullptr) {
-      switch (C->static_subtype_check(tk, objtp->as_klass_type())) {
+      switch (C->static_subtype_check(improved_klass_ptr_type, objtp->as_klass_type())) {
       case Compile::SSC_always_true:
         // If we know the type check always succeed then we don't use
         // the profiling data at this bytecode. Don't lose it, feed it
@@ -3346,7 +3347,7 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
   }
 
   Node* cast_obj = nullptr;
-  if (tk->klass_is_exact()) {
+  if (improved_klass_ptr_type->klass_is_exact()) {
     // The following optimization tries to statically cast the speculative type of the object
     // (for example obtained during profiling) to the type of the superklass and then do a
     // dynamic check that the type of the object is what we expect. To work correctly
@@ -3356,7 +3357,7 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
     // a speculative type use it to perform an exact cast.
     ciKlass* spec_obj_type = obj_type->speculative_type();
     if (spec_obj_type != nullptr || data != nullptr) {
-      cast_obj = maybe_cast_profiled_receiver(not_null_obj, tk, spec_obj_type, safe_for_replace);
+      cast_obj = maybe_cast_profiled_receiver(not_null_obj, improved_klass_ptr_type, spec_obj_type, safe_for_replace);
       if (cast_obj != nullptr) {
         if (failure_control != nullptr) // failure is now impossible
           (*failure_control) = top();
@@ -3368,7 +3369,11 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
 
   if (cast_obj == nullptr) {
     // Generate the subtype check
-    Node* not_subtype_ctrl = gen_subtype_check(not_null_obj, superklass );
+    Node* improved_superklass = superklass;
+    if (improved_klass_ptr_type != klass_ptr_type && improved_klass_ptr_type->singleton()) {
+      improved_superklass = makecon(improved_klass_ptr_type);
+    }
+    Node* not_subtype_ctrl = gen_subtype_check(not_null_obj, improved_superklass);
 
     // Plug in success path into the merge
     cast_obj = _gvn.transform(new CheckCastPPNode(control(), not_null_obj, toop));

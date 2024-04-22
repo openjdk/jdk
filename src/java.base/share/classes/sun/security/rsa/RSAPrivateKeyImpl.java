@@ -138,14 +138,6 @@ public final class RSAPrivateKeyImpl extends PKCS8Key implements RSAPrivateKey {
         return keyParams;
     }
 
-    // return a string representation of this key for debugging
-    @Override
-    public String toString() {
-        return "Sun " + type.keyAlgo + " private key, " + n.bitLength()
-               + " bits" + "\n  params: " + keyParams + "\n  modulus: " + n
-               + "\n  private exponent: " + d;
-    }
-
     /**
      * Restores the state of this object from the stream.
      * <p>
