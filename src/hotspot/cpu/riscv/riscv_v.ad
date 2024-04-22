@@ -3569,12 +3569,11 @@ instruct vmask_reinterpret_diff_esize(vRegMask dst, vRegMask_V0 src, vReg tmp) %
 instruct loadshuffleB(vReg dst) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE);
   match(Set dst (VectorLoadShuffle dst));
-  effect(TEMP_DEF dst);
   format %{ "loadshuffleB $dst, $dst" %}
   ins_encode %{
     // For T_BYTE, no need to do anything
   %}
-  ins_pipe(pipe_slow);
+  ins_pipe(pipe_class_empty);
 %}
 
 instruct loadshuffleX(vReg dst, vReg src) %{
@@ -3590,11 +3589,11 @@ instruct loadshuffleX(vReg dst, vReg src) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     if (bt == T_SHORT) {
-      __ vsext_vf2(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
+      __ vzext_vf2(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
     } else if (bt == T_FLOAT || bt == T_INT) {
-      __ vsext_vf4(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
+      __ vzext_vf4(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
     } else { // bt == T_DOUBLE || bt == T_LONG
-      __ vsext_vf8(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
+      __ vzext_vf8(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
     }
   %}
   ins_pipe(pipe_slow);
