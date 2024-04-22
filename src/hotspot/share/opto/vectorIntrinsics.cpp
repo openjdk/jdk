@@ -1036,6 +1036,10 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
 
   const bool needs_cpu_membar = is_mixed_access || is_mismatched_access;
 
+  // For non-masked mismatched memory segment vector read/write accesses, intrinsification can continue
+  // with unknown backing storage type and compiler can skip inserting explicit reinterpretation IR after
+  // loading from or before storing to backing storage which is mandatory for semantic correctness of
+  // big-endian memory layout.
   bool mismatched_ms = LITTLE_ENDIAN_ONLY(false)
       BIG_ENDIAN_ONLY(from_ms->get_con() && !is_mask && arr_type != nullptr &&
                       arr_type->elem()->array_element_basic_type() != elem_bt);
