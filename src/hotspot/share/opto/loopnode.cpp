@@ -4311,7 +4311,7 @@ void PhaseIdealLoop::mark_loop_associated_parse_predicates_useful() {
 }
 
 void PhaseIdealLoop::mark_useful_parse_predicates_for_loop(IdealLoopTree* loop) {
-  Node* entry = loop->_head->in(LoopNode::EntryControl);
+  Node* entry = loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
   const Predicates predicates(entry);
   ParsePredicateIterator iterator(predicates);
   while (iterator.has_next()) {
