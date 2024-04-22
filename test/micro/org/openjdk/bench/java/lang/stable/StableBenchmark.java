@@ -28,7 +28,21 @@ import org.openjdk.jmh.annotations.*;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+
+/*
+Benchmark                       Mode  Cnt  Score   Error  Units
+StableBenchmark.instanceAtomic  avgt   10  2.135 ? 0.238  ns/op
+StableBenchmark.instanceDCL     avgt   10  1.833 ? 0.057  ns/op
+StableBenchmark.instanceList    avgt   10  1.629 ? 0.040  ns/op
+StableBenchmark.instanceStable  avgt   10  1.201 ? 0.097  ns/op
+StableBenchmark.staticAtomic    avgt   10  1.612 ? 0.210  ns/op
+StableBenchmark.staticCHI       avgt   10  0.762 ? 0.116  ns/op
+StableBenchmark.staticDCL       avgt   10  1.538 ? 0.081  ns/op
+StableBenchmark.staticList      avgt   10  0.716 ? 0.069  ns/op
+StableBenchmark.staticStable    avgt   10  0.722 ? 0.051  ns/op
+ */
 
 /**
  * Benchmark measuring StableValue performance
@@ -39,6 +53,7 @@ import java.util.function.Supplier;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 2, jvmArgsAppend = {"--add-exports=java.base/jdk.internal.lang=ALL-UNNAMED", "--enable-preview"})
+@Threads(8)     // Some contention
 public class StableBenchmark {
 
     private static final int VALUE = 42;
@@ -46,10 +61,12 @@ public class StableBenchmark {
     private static final StableValue<Integer> STABLE = init(StableValue.of());
     private static final Supplier<Integer> DCL = new Dcl<>(() -> VALUE);
     private static final List<StableValue<Integer>> LIST = StableValue.ofList(1);
+    private static final AtomicReference<Integer> ATOMIC = new AtomicReference<>(VALUE);
 
     private final StableValue<Integer> stable = init(StableValue.of());
     private final Supplier<Integer> dcl = new Dcl<>(() -> VALUE);
     private final List<StableValue<Integer>> list = StableValue.ofList(1);
+    private final AtomicReference<Integer> atomic = new AtomicReference<>(VALUE);
 
     static {
         LIST.getFirst().setOrThrow(VALUE);
@@ -58,6 +75,11 @@ public class StableBenchmark {
     @Setup
     public void setup() {
         list.getFirst().setOrThrow(VALUE);
+    }
+
+    @Benchmark
+    public int staticAtomic() {
+        return ATOMIC.get();
     }
 
     @Benchmark
@@ -85,8 +107,13 @@ public class StableBenchmark {
 
 
     @Benchmark
-    public int instanceStable() {
-        return stable.orThrow();
+    public int instanceAtomic() {
+        return atomic.get();
+    }
+
+    @Benchmark
+    public Integer instanceDCL() {
+        return dcl.get();
     }
 
     @Benchmark
@@ -95,8 +122,8 @@ public class StableBenchmark {
     }
 
     @Benchmark
-    public Integer instanceDCL() {
-        return dcl.get();
+    public int instanceStable() {
+        return stable.orThrow();
     }
 
     private static StableValue<Integer> init(StableValue<Integer> m) {
