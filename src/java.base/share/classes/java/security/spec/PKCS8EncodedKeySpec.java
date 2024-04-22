@@ -25,6 +25,8 @@
 
 package java.security.spec;
 
+import java.security.DEREncodable;
+
 /**
  * This class represents the ASN.1 encoding of a private key,
  * encoded according to the ASN.1 type {@code PrivateKeyInfo}.
@@ -59,7 +61,7 @@ package java.security.spec;
  * @since 1.2
  */
 
-public class PKCS8EncodedKeySpec extends EncodedKeySpec {
+public final class PKCS8EncodedKeySpec extends EncodedKeySpec implements DEREncodable {
 
     /**
      * Creates a new {@code PKCS8EncodedKeySpec} with the given encoded key.

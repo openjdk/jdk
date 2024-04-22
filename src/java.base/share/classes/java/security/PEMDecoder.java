@@ -26,7 +26,7 @@
 package java.security;
 
 import sun.security.pkcs.PKCS8Key;
-import sun.security.rsa.RSAPrivateCrtKeyImpl
+import sun.security.rsa.RSAPrivateCrtKeyImpl;
 import sun.security.util.Pem;
 
 import javax.crypto.EncryptedPrivateKeyInfo;
@@ -68,6 +68,9 @@ import java.util.Objects;
  * exception. A decoder instance not configured with decryption will return an
  * {@link EncryptedPrivateKeyInfo} with encrypted PEM.  EncryptedPrivateKeyInfo
  * methods must be used to retrieve the {@link PrivateKey}.
+ *
+ * PEMDecoder supports the follow types:
+ *     PRIVATE KEY, PUBLIC KEY, CERTIFICATE, CRL, and ENCRYPTED PRIVATE KEY.
  *
  */
 

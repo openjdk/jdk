@@ -29,6 +29,8 @@ import javax.crypto.EncryptedPrivateKeyInfo;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.security.spec.EncodedKeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
 /**
  * This is a top-level interface for security classes that contain cryptographic
@@ -44,6 +46,7 @@ import java.security.spec.EncodedKeySpec;
  * @see X509Certificate
  * @see X509CRL
  */
-public sealed interface DEREncodable permits AsymmetricKey, KeyPair,
-    EncodedKeySpec, EncryptedPrivateKeyInfo, X509Certificate, X509CRL {
+public sealed interface DEREncodable permits AsymmetricKey, KeyPair, X509CRL,
+    X509Certificate, PKCS8EncodedKeySpec, X509EncodedKeySpec,
+    EncryptedPrivateKeyInfo {
 }

@@ -47,8 +47,7 @@ import java.util.Arrays;
  * @since 1.2
  */
 
-public abstract non-sealed class EncodedKeySpec implements KeySpec,
-    DEREncodable {
+public abstract class EncodedKeySpec implements KeySpec {
 
     private final byte[] encodedKey;
     private String algorithmName;
