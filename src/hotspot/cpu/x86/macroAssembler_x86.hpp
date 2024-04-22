@@ -247,12 +247,6 @@ class MacroAssembler: public Assembler {
                    int* receiver_offset);
 #endif // _LP64
 
-  // Compare char[] or byte[] arrays.
-  void arrays_equals(bool is_array_equ, Register ary1, Register ary2,
-                     Register limit, Register result, Register chr,
-                     XMMRegister vec1, XMMRegister vec2, bool is_char,
-                     KRegister mask = knoreg, bool expand_ary2 = false);
-
   // Support for VM calls
   //
   // It is imperative that all calls into the VM are handled via the call_VM macros.

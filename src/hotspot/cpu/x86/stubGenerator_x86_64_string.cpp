@@ -23,7 +23,10 @@
  *
  */
 
+#ifdef COMPILER2
+
 #include "macroAssembler_x86.hpp"
+#include "opto/c2_MacroAssembler.hpp"
 #include "precompiled.hpp"
 #include "stubGenerator_x86_64.hpp"
 
@@ -65,6 +68,7 @@
 /******************************************************************************/
 
 #define __ _masm->
+#define __C2 ((C2_MacroAssembler *) _masm)->
 
 // Register definitions for consistency
 #define XMM_BYTE_0 xmm0
@@ -1494,9 +1498,9 @@ void StubGenerator::generate_string_indexof_stubs(address *fnptrs, StrIntrinsicN
                       isU ? -(NUMBER_OF_NEEDLE_BYTES_TO_COMPARE * 2)
                           : -(NUMBER_OF_NEEDLE_BYTES_TO_COMPARE)));  // nlen - 2
                                                                      // elements
-      __ arrays_equals(false, haystackStart, firstNeedleCompare, compLen,
-                       retval, rScratch, xmm_tmp3, xmm_tmp4, false /* char */,
-                       knoreg);
+      __C2 arrays_equals(false, haystackStart, firstNeedleCompare, compLen,
+                         retval, rScratch, xmm_tmp3, xmm_tmp4, false /* char */,
+                         knoreg);
       __ testl(retval, retval);
       __ jne_b(L_found);
 
@@ -1612,7 +1616,7 @@ void StubGenerator::generate_string_indexof_stubs(address *fnptrs, StrIntrinsicN
                             isU ? (NUMBER_OF_NEEDLE_BYTES_TO_COMPARE - 1) * 2
                                 : NUMBER_OF_NEEDLE_BYTES_TO_COMPARE - 1));
 
-      __ arrays_equals(false, rTmp, firstNeedleCompare, compLen, rTmp3, rTmp2, xmm_tmp3, xmm_tmp4,
+      __C2 arrays_equals(false, rTmp, firstNeedleCompare, compLen, rTmp3, rTmp2, xmm_tmp3, xmm_tmp4,
                        false /* char */, knoreg);
       __ testl(rTmp3, rTmp3);
       __ jne_b(L_checkRangeAndReturn);
@@ -2087,7 +2091,7 @@ void StubGenerator::generate_string_indexof_stubs(address *fnptrs, StrIntrinsicN
         __ leaq(rTmp2, Address(haystackEnd, index, Address::times_1, 6));
 #endif
         __ addq(rTmp2, rTmp);
-        __ arrays_equals(false, rTmp2, firstNeedleCompare, compLen, rTmp,
+        __C2 arrays_equals(false, rTmp2, firstNeedleCompare, compLen, rTmp,
                          rScratch, xmm_tmp3, xmm_tmp4, false /* char */, knoreg,
                          true /* expand_ary2 */);
         __ testl(rTmp, rTmp);
@@ -2124,7 +2128,7 @@ void StubGenerator::generate_string_indexof_stubs(address *fnptrs, StrIntrinsicN
         __ leaq(r12, Address(needle, 0));
         __ movq(r13, origNeedleLen);
 
-        __ arrays_equals(false, r9, r12, r13, rax, rdx, xmm_tmp3, xmm_tmp4,
+        __C2 arrays_equals(false, r9, r12, r13, rax, rdx, xmm_tmp3, xmm_tmp4,
                          false /* char */, knoreg, true /* expand_ary2 */);
         __ testq(rax, rax);
         __ jz(topLoop);
@@ -2154,3 +2158,5 @@ void StubGenerator::generate_string_indexof_stubs(address *fnptrs, StrIntrinsicN
 }
 
 #undef __
+
+#endif // COMPILER2
