@@ -129,14 +129,15 @@ private:
     bool _has_embedded_pointer;
     FollowMode _follow_mode;
     int _size_in_bytes;
-    int _index;              // The location of this object in _source_objs
+    int _id; // Each object has a unique serial ID, starting from zero. The ID is assigned
+             // when the object is added into _source_objs.
     MetaspaceObj::Type _msotype;
     address _source_addr;    // The source object to be copied.
     address _buffered_addr;  // The copy of this object insider the buffer.
   public:
     SourceObjInfo(MetaspaceClosure::Ref* ref, bool read_only, FollowMode follow_mode) :
       _ptrmap_start(0), _ptrmap_end(0), _read_only(read_only), _has_embedded_pointer(false), _follow_mode(follow_mode),
-      _size_in_bytes(ref->size() * BytesPerWord), _index(0), _msotype(ref->msotype()),
+      _size_in_bytes(ref->size() * BytesPerWord), _id(0), _msotype(ref->msotype()),
       _source_addr(ref->obj()) {
       if (follow_mode == point_to_it) {
         _buffered_addr = ref->obj();
@@ -167,10 +168,10 @@ private:
     uintx ptrmap_end()    const    { return _ptrmap_end;   } // exclusive
     bool read_only()      const    { return _read_only;    }
     bool has_embedded_pointer() const { return _has_embedded_pointer; }
-    void set_has_embedded_pointer()  { _has_embedded_pointer = true; }
+    void set_has_embedded_pointer()   { _has_embedded_pointer = true; }
     int size_in_bytes()   const    { return _size_in_bytes; }
-    int index()           const    { return _index; }
-    void set_index(int i)          { _index = i; }
+    int id()              const    { return _id; }
+    void set_id(int i)             { _id = i; }
     address source_addr() const    { return _source_addr; }
     address buffered_addr() const  {
       if (_follow_mode != set_to_null) {

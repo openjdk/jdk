@@ -77,8 +77,8 @@ ArchiveBuilder::SourceObjList::~SourceObjList() {
 
 void ArchiveBuilder::SourceObjList::append(SourceObjInfo* src_info) {
   // Save this source object for copying
+  src_info->set_id(_objs->length());
   _objs->append(src_info);
-  src_info->set_index(_objs->length()-1);
 
   // Prepare for marking the pointers in this source object
   assert(is_aligned(_total_bytes, sizeof(address)), "must be");
@@ -591,13 +591,18 @@ char* ArchiveBuilder::ro_strdup(const char* s) {
   return archived_str;
 }
 
+// The objects that have embedded pointers will sink
+// towards the end of the list. This ensures we have a maximum
+// number of leading zero bits in the relocation bitmap.
 int ArchiveBuilder::compare_src_objs(SourceObjInfo** a, SourceObjInfo** b) {
   if ((*a)->has_embedded_pointer() && !(*b)->has_embedded_pointer()) {
     return 1;
   } else if (!(*a)->has_embedded_pointer() && (*b)->has_embedded_pointer()) {
     return -1;
   } else {
-    return (*a)->index() - (*b)->index();
+    // This is necessary to keep the sorting order stable. Otherwise the
+    // archive's contents may not be deterministic.
+    return (*a)->id() - (*b)->id();
   }
 }
 
