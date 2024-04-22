@@ -62,22 +62,30 @@
  *
  * A program may request to be notified of changes in an object's
  * reachability by <em>registering</em> an appropriate reference
- * object with a <em>reference queue</em> at the time the reference
- * object is created.  Some time after the garbage collector
+ * object with a <em>reference queue</em>.
+ * This is done by providing the reference queue as
+ * a constructor argument when creating the reference object.
+ * Some time after the garbage collector
  * determines that the reachability of the referent has changed to the
  * value corresponding to the type of the reference, it will clear the
  * reference and add it to the associated queue.  At this point, the
- * reference is considered to be <em>enqueued</em>.  The program may remove
+ * reference is considered to be <em>enqueued</em>.  The program learns of the
+ * object's change in reachability when the associated reference becomes
+ * available on the queue. The program may remove
  * references from a queue either by polling or by blocking until a
- * reference becomes available.  Reference queues are implemented by
- * the {@link java.lang.ref.ReferenceQueue} class.
+ * reference becomes available. Additional state needed to respond to a
+ * referent's change in reachability can be stored in the fields of a custom
+ * reference subclass, and accessed when the reference is returned from the
+ * queue.
+ * Reference queues are implemented by the {@link java.lang.ref.ReferenceQueue}
+ * class.
  *
  * <p> The relationship between a registered reference object and its
  * queue is one-sided.  That is, a queue does not keep track of the
  * references that are registered with it.  If a registered reference
  * becomes unreachable itself, then it will never be enqueued.  It is
- * the responsibility of the program using reference objects to ensure
- * that the objects remain reachable for as long as the program is
+ * the responsibility of the program to ensure
+ * that reference objects remain reachable for as long as the program is
  * interested in their referents.
  *
  * <p> While some programs will choose to dedicate a thread to
@@ -92,6 +100,39 @@
  * ReferenceQueue.poll} method simply checks an internal data
  * structure, this check will add little overhead to the hashtable
  * access methods.
+ *
+ * <a id="reachability"></a>
+ * <h3>Reachability</h3>
+ *
+ * A <em>reachable</em> object is any object that can be accessed in any potential
+ * continuing computation from any live thread (as stated in {@jls 12.6.1}).
+ *
+ * <p> Going from strongest to weakest, the different levels of
+ * reachability reflect the life cycle of an object.  They are
+ * operationally defined as follows:
+ *
+ * <ul>
+ *
+ * <li> An object is <em>strongly reachable</em> if it is reachable and if it
+ * can be accessed without traversing the referent of a Reference object.
+ *
+ * <li> An object is <em>softly reachable</em> if it is not strongly
+ * reachable but can be reached by traversing a soft reference.
+ *
+ * <li> An object is <em>weakly reachable</em> if it is neither
+ * strongly nor softly reachable but can be reached by traversing a
+ * weak reference.  When the weak references to a weakly-reachable
+ * object are cleared, the object becomes eligible for finalization.
+ *
+ * <li> An object is <em>phantom reachable</em> if it is neither
+ * strongly, softly, nor weakly reachable, it has been finalized, and
+ * some phantom reference refers to it.
+ *
+ * <li> Finally, an object is <em>unreachable</em>, and therefore
+ * eligible for reclamation, when it is not reachable in any of the
+ * above ways.
+ *
+ * </ul>
  *
  * <a id="MemoryConsistency"></a>
  * <h3>Memory Consistency Properties</h3>
@@ -128,39 +169,6 @@
  * {@code reachabilityFence(x)} will be visible to the cleanup code running on
  * the cleaner thread without additional synchronization.
  * See {@jls 17.4.5}.
- *
- * <a id="reachability"></a>
- * <h3>Reachability</h3>
- *
- * A <em>reachable</em> object is any object that can be accessed in any potential
- * continuing computation from any live thread (as stated in {@jls 12.6.1}).
- *
- * <p> Going from strongest to weakest, the different levels of
- * reachability reflect the life cycle of an object.  They are
- * operationally defined as follows:
- *
- * <ul>
- *
- * <li> An object is <em>strongly reachable</em> if it is reachable and if it
- * can be accessed without traversing the referent of a Reference object.
- *
- * <li> An object is <em>softly reachable</em> if it is not strongly
- * reachable but can be reached by traversing a soft reference.
- *
- * <li> An object is <em>weakly reachable</em> if it is neither
- * strongly nor softly reachable but can be reached by traversing a
- * weak reference.  When the weak references to a weakly-reachable
- * object are cleared, the object becomes eligible for finalization.
- *
- * <li> An object is <em>phantom reachable</em> if it is neither
- * strongly, softly, nor weakly reachable, it has been finalized, and
- * some phantom reference refers to it.
- *
- * <li> Finally, an object is <em>unreachable</em>, and therefore
- * eligible for reclamation, when it is not reachable in any of the
- * above ways.
- *
- * </ul>
  *
  * @author        Mark Reinhold
  * @since         1.2
