@@ -152,8 +152,14 @@ void LIR_Assembler::osr_entry() {
   int monitor_offset = (method()->max_locals() + 2 * (number_of_locks - 1)) * BytesPerWord;
   for (int i = 0; i < number_of_locks; i++) {
     int slot_offset = monitor_offset - (i * 2 * BytesPerWord);
-    __ ldr(R1, Address(OSR_buf, slot_offset + 0*BytesPerWord));
-    __ ldr(R2, Address(OSR_buf, slot_offset + 1*BytesPerWord));
+    if (slot_offset >= 4096 - BytesPerWord) {
+      __ add_slow(R2, OSR_buf, slot_offset);
+      __ ldr(R1, Address(R2, 0*BytesPerWord));
+      __ ldr(R2, Address(R2, 1*BytesPerWord));
+    } else {
+      __ ldr(R1, Address(OSR_buf, slot_offset + 0*BytesPerWord));
+      __ ldr(R2, Address(OSR_buf, slot_offset + 1*BytesPerWord));
+    }
     __ str(R1, frame_map()->address_for_monitor_lock(i));
     __ str(R2, frame_map()->address_for_monitor_object(i));
   }
