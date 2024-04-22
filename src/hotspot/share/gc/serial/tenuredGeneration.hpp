@@ -134,6 +134,7 @@ public:
   void object_iterate(ObjectClosure* blk);
 
   void complete_loaded_archive_space(MemRegion archive_space);
+  inline void update_for_block(HeapWord* start, HeapWord* end);
 
   virtual inline HeapWord* allocate(size_t word_size, bool is_tlab);
   virtual inline HeapWord* par_allocate(size_t word_size, bool is_tlab);

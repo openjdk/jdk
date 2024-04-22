@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,6 +151,8 @@ void StubGenerator::generate_arraycopy_stubs() {
   StubRoutines::_arrayof_jbyte_fill = generate_fill(T_BYTE, true, "arrayof_jbyte_fill");
   StubRoutines::_arrayof_jshort_fill = generate_fill(T_SHORT, true, "arrayof_jshort_fill");
   StubRoutines::_arrayof_jint_fill = generate_fill(T_INT, true, "arrayof_jint_fill");
+
+  StubRoutines::_unsafe_setmemory = generate_unsafe_setmemory("unsafe_setmemory", StubRoutines::_jbyte_fill);
 
   // We don't generate specialized code for HeapWord-aligned source
   // arrays, so just use the code we've already generated
@@ -1620,7 +1622,11 @@ address StubGenerator::generate_fill(BasicType t, bool aligned, const char *name
 
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-  __ generate_fill(t, aligned, to, value, r11, rax, xmm0);
+  {
+    // Add set memory mark to protect against unsafe accesses faulting
+    UnsafeCopyMemoryMark usmm(this, ((t == T_BYTE) && !aligned), true);
+    __ generate_fill(t, aligned, to, value, r11, rax, xmm0);
+  }
 
   __ vzeroupper();
   __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -2476,6 +2482,202 @@ address StubGenerator::generate_unsafe_copy(const char *name,
   return start;
 }
 
+
+// Static enum for helper
+enum USM_TYPE {USM_SHORT, USM_DWORD, USM_QUADWORD};
+// Helper for generate_unsafe_setmemory
+//
+// Atomically fill an array of memory using 2-, 4-, or 8-byte chunks
+static void do_setmemory_atomic_loop(USM_TYPE type, Register dest,
+                                     Register size, Register wide_value,
+                                     Register tmp, Label& L_exit,
+                                     MacroAssembler *_masm) {
+  Label L_Loop, L_Tail, L_TailLoop;
+
+  int shiftval = 0;
+  int incr = 0;
+
+  switch (type) {
+    case USM_SHORT:
+      shiftval = 1;
+      incr = 16;
+      break;
+    case USM_DWORD:
+      shiftval = 2;
+      incr = 32;
+      break;
+    case USM_QUADWORD:
+      shiftval = 3;
+      incr = 64;
+      break;
+  }
+
+  // At this point, we know the lower bits of size are zero
+  __ shrq(size, shiftval);
+  // size now has number of X-byte chunks (2, 4 or 8)
+
+  // Number of (8*X)-byte chunks into tmp
+  __ movq(tmp, size);
+  __ shrq(tmp, 3);
+  __ jccb(Assembler::zero, L_Tail);
+
+  __ BIND(L_Loop);
+
+  // Unroll 8 stores
+  for (int i = 0; i < 8; i++) {
+    switch (type) {
+      case USM_SHORT:
+        __ movw(Address(dest, (2 * i)), wide_value);
+        break;
+      case USM_DWORD:
+        __ movl(Address(dest, (4 * i)), wide_value);
+        break;
+      case USM_QUADWORD:
+        __ movq(Address(dest, (8 * i)), wide_value);
+        break;
+    }
+  }
+  __ addq(dest, incr);
+  __ decrementq(tmp);
+  __ jccb(Assembler::notZero, L_Loop);
+
+  __ BIND(L_Tail);
+
+  // Find number of remaining X-byte chunks
+  __ andq(size, 0x7);
+
+  // If zero, then we're done
+  __ jccb(Assembler::zero, L_exit);
+
+  __ BIND(L_TailLoop);
+
+    switch (type) {
+      case USM_SHORT:
+        __ movw(Address(dest, 0), wide_value);
+        break;
+      case USM_DWORD:
+        __ movl(Address(dest, 0), wide_value);
+        break;
+      case USM_QUADWORD:
+        __ movq(Address(dest, 0), wide_value);
+        break;
+    }
+  __ addq(dest, incr >> 3);
+  __ decrementq(size);
+  __ jccb(Assembler::notZero, L_TailLoop);
+}
+
+//  Generate 'unsafe' set memory stub
+//  Though just as safe as the other stubs, it takes an unscaled
+//  size_t (# bytes) argument instead of an element count.
+//
+//  Input:
+//    c_rarg0   - destination array address
+//    c_rarg1   - byte count (size_t)
+//    c_rarg2   - byte value
+//
+// Examines the alignment of the operands and dispatches
+// to an int, short, or byte fill loop.
+//
+address StubGenerator::generate_unsafe_setmemory(const char *name,
+                                                 address unsafe_byte_fill) {
+  __ align(CodeEntryAlignment);
+  StubCodeMark mark(this, "StubRoutines", name);
+  address start = __ pc();
+  __ enter();   // required for proper stackwalking of RuntimeStub frame
+
+  assert(unsafe_byte_fill != nullptr, "Invalid call");
+
+  // bump this on entry, not on exit:
+  INC_COUNTER_NP(SharedRuntime::_unsafe_set_memory_ctr, rscratch1);
+
+  {
+    Label L_exit, L_fillQuadwords, L_fillDwords, L_fillBytes;
+
+    const Register dest = c_rarg0;
+    const Register size = c_rarg1;
+    const Register byteVal = c_rarg2;
+    const Register wide_value = rax;
+    const Register rScratch1 = r10;
+
+    assert_different_registers(dest, size, byteVal, wide_value, rScratch1);
+
+    //     fill_to_memory_atomic(unsigned char*, unsigned long, unsigned char)
+
+    __ testq(size, size);
+    __ jcc(Assembler::zero, L_exit);
+
+    // Propagate byte to full Register
+    __ movzbl(rScratch1, byteVal);
+    __ mov64(wide_value, 0x0101010101010101ULL);
+    __ imulq(wide_value, rScratch1);
+
+    // Check for pointer & size alignment
+    __ movq(rScratch1, dest);
+    __ orq(rScratch1, size);
+
+    __ testb(rScratch1, 7);
+    __ jcc(Assembler::equal, L_fillQuadwords);
+
+    __ testb(rScratch1, 3);
+    __ jcc(Assembler::equal, L_fillDwords);
+
+    __ testb(rScratch1, 1);
+    __ jcc(Assembler::notEqual, L_fillBytes);
+
+    // Fill words
+    {
+      Label L_wordsTail, L_wordsLoop, L_wordsTailLoop;
+      UnsafeCopyMemoryMark usmm(this, true, true);
+
+      // At this point, we know the lower bit of size is zero and a
+      // multiple of 2
+      do_setmemory_atomic_loop(USM_SHORT, dest, size, wide_value, rScratch1,
+                               L_exit, _masm);
+    }
+    __ jmpb(L_exit);
+
+    __ BIND(L_fillQuadwords);
+
+    // Fill QUADWORDs
+    {
+      Label L_qwordLoop, L_qwordsTail, L_qwordsTailLoop;
+      UnsafeCopyMemoryMark usmm(this, true, true);
+
+      // At this point, we know the lower 3 bits of size are zero and a
+      // multiple of 8
+      do_setmemory_atomic_loop(USM_QUADWORD, dest, size, wide_value, rScratch1,
+                               L_exit, _masm);
+    }
+    __ BIND(L_exit);
+
+    __ leave();   // required for proper stackwalking of RuntimeStub frame
+    __ ret(0);
+
+    __ BIND(L_fillDwords);
+
+    // Fill DWORDs
+    {
+      Label L_dwordLoop, L_dwordsTail, L_dwordsTailLoop;
+      UnsafeCopyMemoryMark usmm(this, true, true);
+
+      // At this point, we know the lower 2 bits of size are zero and a
+      // multiple of 4
+      do_setmemory_atomic_loop(USM_DWORD, dest, size, wide_value, rScratch1,
+                               L_exit, _masm);
+    }
+    __ jmpb(L_exit);
+
+    __ BIND(L_fillBytes);
+    // Set up for tail call to previously generated byte fill routine
+    // Parameter order is (ptr, byteVal, size)
+    __ xchgq(c_rarg1, c_rarg2);
+    __ leave();    // Clear effect of enter()
+    __ jump(RuntimeAddress(unsafe_byte_fill));
+  }
+
+  return start;
+}
 
 // Perform range checks on the proposed arraycopy.
 // Kills temp, but nothing else.
