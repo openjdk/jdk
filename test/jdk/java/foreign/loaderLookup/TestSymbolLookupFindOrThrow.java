@@ -56,5 +56,11 @@ final class TestSymbolLookupFindOrThrow {
                 SymbolLookup.loaderLookup().findOrThrow("bar"));
     }
 
+    @Test
+    void findOrThrowNullArg() {
+        assertThrows(NullPointerException.class, () ->
+                SymbolLookup.loaderLookup().findOrThrow(null));
+    }
+
 
 }
