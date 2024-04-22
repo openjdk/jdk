@@ -60,17 +60,9 @@ final class P11Cipher extends CipherSpi {
 
     private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
-    // mode constant for ECB mode
-    private static final int MODE_ECB = 3;
-    // mode constant for CBC mode
-    private static final int MODE_CBC = 4;
-    // mode constant for CTR mode
-    private static final int MODE_CTR = 5;
-
-    // padding constant for NoPadding
-    private static final int PAD_NONE = 5;
-    // padding constant for PKCS5Padding
-    private static final int PAD_PKCS5 = 6;
+    // mode and padding constants
+    private enum Mode {ECB /* or stream ciphers */, CBC, CTR}
+    private enum Pad {NONE, PKCS5}
 
     private static interface Padding {
         // ENC: format the specified buffer with padding bytes and return the
@@ -146,14 +138,14 @@ final class P11Cipher extends CipherSpi {
     // flag indicating encrypt or decrypt mode
     private boolean encrypt;
 
-    // mode, one of MODE_* above (MODE_ECB for stream ciphers)
-    private int blockMode;
+    // mode, Mode.ECB for stream ciphers
+    private final Mode blockMode;
 
     // block size, 0 for stream ciphers
     private final int blockSize;
 
-    // padding type, on of PAD_* above (PAD_NONE for stream ciphers)
-    private int paddingType;
+    // padding type, Pad.NONE for stream ciphers
+    private Pad paddingType;
 
     // when the padding is requested but unsupported by the native mechanism,
     // we use the following to do padding and necessary data buffering.
@@ -163,7 +155,7 @@ final class P11Cipher extends CipherSpi {
     private byte[] padBuffer;
     private int padBufferLen;
 
-    // original IV, if in MODE_CBC or MODE_CTR
+    // original IV, if in Mode.CBC or Mode.CTR
     private byte[] iv;
 
     // number of bytes buffered internally by the native mechanism and padBuffer
@@ -208,8 +200,7 @@ final class P11Cipher extends CipherSpi {
                 blockSize = 8;
             }
         }
-        this.blockMode =
-            (algoParts.length > 1 ? parseMode(algoParts[1]) : MODE_ECB);
+        blockMode = algoParts.length > 1 ? parseMode(algoParts[1]) : Mode.ECB;
         String defPadding = (blockSize == 0 ? "NoPadding" : "PKCS5Padding");
         String paddingStr =
                 (algoParts.length > 2 ? algoParts[2] : defPadding);
@@ -227,20 +218,19 @@ final class P11Cipher extends CipherSpi {
         throw new NoSuchAlgorithmException("Unsupported mode " + mode);
     }
 
-    private int parseMode(String mode) throws NoSuchAlgorithmException {
+    private Mode parseMode(String mode) throws NoSuchAlgorithmException {
         mode = mode.toUpperCase(Locale.ENGLISH);
-        return switch (mode) {
-            case "ECB" -> MODE_ECB;
-            case "CBC" -> {
-                if (blockSize == 0) {
-                    throw new NoSuchAlgorithmException
-                            ("CBC mode not supported with stream ciphers");
-                }
-                yield MODE_CBC;
-            }
-            case "CTR" -> MODE_CTR;
-            default -> throw new NoSuchAlgorithmException("Unsupported mode " + mode);
-        };
+        Mode result;
+        try {
+            result = Mode.valueOf(mode);
+        } catch (IllegalArgumentException ignored) {
+            throw new NoSuchAlgorithmException("Unsupported mode " + mode);
+        }
+        if (blockSize == 0 && result != Mode.ECB) {
+            throw new NoSuchAlgorithmException(
+                    result + " mode not supported with stream ciphers");
+        }
+        return result;
     }
 
     // see JCE spec
@@ -250,13 +240,13 @@ final class P11Cipher extends CipherSpi {
         padBuffer = null;
         padding = padding.toUpperCase(Locale.ENGLISH);
         if (padding.equals("NOPADDING")) {
-            paddingType = PAD_NONE;
+            paddingType = Pad.NONE;
         } else if (padding.equals("PKCS5PADDING")) {
-            if (this.blockMode == MODE_CTR) {
+            if (blockMode == Mode.CTR) {
                 throw new NoSuchPaddingException
                     ("PKCS#5 padding not supported with CTR mode");
             }
-            paddingType = PAD_PKCS5;
+            paddingType = Pad.PKCS5;
             if (mechanism != CKM_DES_CBC_PAD && mechanism != CKM_DES3_CBC_PAD &&
                     mechanism != CKM_AES_CBC_PAD) {
                 // no native padding support; use our own padding impl
@@ -371,7 +361,7 @@ final class P11Cipher extends CipherSpi {
                 // should never happen; checked by Cipher.init()
                     throw new AssertionError("Unknown mode: " + opmode);
         };
-        if (blockMode == MODE_ECB) { // ECB or stream cipher
+        if (blockMode == Mode.ECB) { // ECB or stream cipher
             if (iv != null) {
                 if (blockSize == 0) {
                     throw new InvalidAlgorithmParameterException
@@ -381,14 +371,12 @@ final class P11Cipher extends CipherSpi {
                             ("IV not used in ECB mode");
                 }
             }
-        } else { // MODE_CBC or MODE_CTR
+        } else { // Mode.CBC or Mode.CTR
             if (iv == null) {
                 if (!encrypt) {
-                    String exMsg =
-                        (blockMode == MODE_CBC ?
-                         "IV must be specified for decryption in CBC mode" :
-                         "IV must be specified for decryption in CTR mode");
-                    throw new InvalidAlgorithmParameterException(exMsg);
+                    throw new InvalidAlgorithmParameterException(
+                            "IV must be specified for decryption in " +
+                            blockMode + " mode");
                 }
                 // generate random IV
                 if (random == null) {
@@ -487,7 +475,7 @@ final class P11Cipher extends CipherSpi {
             if (session == null) {
                 session = token.getOpSession();
             }
-            CK_MECHANISM mechParams = (blockMode == MODE_CTR ?
+            CK_MECHANISM mechParams = (blockMode == Mode.CTR ?
                     new CK_MECHANISM(mechanism, new CK_AES_CTR_PARAMS(iv)) :
                     new CK_MECHANISM(mechanism, iv));
             if (encrypt) {
@@ -512,7 +500,7 @@ final class P11Cipher extends CipherSpi {
         }
 
         int result = inLen + bytesBuffered;
-        if (blockSize != 0 && blockMode != MODE_CTR) {
+        if (blockSize != 0 && blockMode != Mode.CTR) {
             // minus the number of bytes in the last incomplete block.
             result -= (result & (blockSize - 1));
         }
@@ -526,7 +514,7 @@ final class P11Cipher extends CipherSpi {
         }
 
         int result = inLen + bytesBuffered;
-        if (blockSize != 0 && encrypt && paddingType != PAD_NONE) {
+        if (blockSize != 0 && encrypt && paddingType != Pad.NONE) {
             // add the number of bytes to make the last block complete.
             result += (blockSize - (result & (blockSize - 1)));
         }
