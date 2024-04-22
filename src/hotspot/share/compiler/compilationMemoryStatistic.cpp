@@ -428,7 +428,6 @@ void CompilationMemoryStatistic::on_end_compilation() {
                     arena_stat->live_nodes_at_peak(),
                     result);
   }
-  
   if (print) {
     char buf[1024];
     fmn.as_C_string(buf, sizeof(buf));
