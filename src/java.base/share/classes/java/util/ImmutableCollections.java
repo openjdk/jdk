@@ -1503,7 +1503,7 @@ class ImmutableCollections {
 
         V computeIfUnset(int index, IntFunction<? extends V> mapper) {
             StableValueElement<V> element = new StableValueElement<>(elements, sets, mutexes, index);
-            return element.computeIfUnset(mapper);
+            return element.computeIfUnset(index, mapper);
         }
 
         static <V> List<StableValue<V>> create(int size) {

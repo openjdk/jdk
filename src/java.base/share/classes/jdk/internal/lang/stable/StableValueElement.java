@@ -4,6 +4,7 @@ import jdk.internal.lang.StableValue;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.util.NoSuchElementException;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -97,37 +98,44 @@ public record StableValueElement<V>(
     }
 
     // Avoid creating lambdas
-    private static final Function<Supplier<?>, ?> SUPPLIER_EXTRACTOR =
-            new Function<Supplier<?>, Object>() {
+    private static final BiFunction<Supplier<?>, Void, ?> SUPPLIER_EXTRACTOR =
+            new BiFunction<Supplier<?>, Void, Object>() {
                 @Override
-                public Object apply(Supplier<?> supplier) {
+                public Object apply(Supplier<?> supplier, Void unused) {
                     return supplier.get();
                 }
             };
 
-    @SuppressWarnings("unchecked")
-    private static <K, V> Function<? super K, ? extends V> supplierExtractor() {
-        return (Function<? super K, ? extends V>) SUPPLIER_EXTRACTOR;
-    }
+    private static final BiFunction<IntFunction<?>, Integer, ?> INT_FUNCTION_EXTRACTOR =
+            new BiFunction<IntFunction<?>, Integer, Object>() {
+                @Override
+                public Object apply(IntFunction<?> function, Integer index) {
+                    return function.apply(index);
+                }
+            };
 
+    @SuppressWarnings("unchecked")
     @Override
     public V computeIfUnset(Supplier<? extends V> supplier) {
-        // Todo: This creates a lambda
-        return computeIfUnsetShared(supplier, Supplier::get);
+        return computeIfUnsetShared(supplier,
+                null,
+                (BiFunction<? super Supplier<? extends V>, ? extends Object, V>) SUPPLIER_EXTRACTOR);
     }
 
-    public V computeIfUnset(IntFunction<? extends V> mapper) {
-        // Todo: This creates a lambda that captures
-        return computeIfUnsetShared(mapper, m -> m.apply(index));
+    @SuppressWarnings("unchecked")
+    public V computeIfUnset(int index, IntFunction<? extends V> mapper) {
+        return computeIfUnsetShared(mapper,
+                index,
+                (BiFunction<IntFunction<?>, Integer, V>) INT_FUNCTION_EXTRACTOR);
     }
 
     public <K> V computeIfUnset(K key, Function<? super K, ? extends V> mapper) {
-        // Todo: This creates a lambda that captures
-        return computeIfUnsetShared(mapper, m -> m.apply(key));
+        return computeIfUnsetShared(mapper, key ,Function::apply);
     }
 
-    private <S> V computeIfUnsetShared(S source,
-                                       Function<S, V> extractor) {
+    private <S, K> V computeIfUnsetShared(S source,
+                                          K key,
+                                          BiFunction<S, K, V> extractor) {
         // Optimistically try plain semantics first
         V e = elements[index];
         if (e != null) {
@@ -139,26 +147,28 @@ public record StableValueElement<V>(
             return null;
         }
         // Now, fall back to volatile semantics.
-        return computeIfUnsetVolatile(source, extractor);
+        return computeIfUnsetVolatile(source, key, extractor);
     }
 
-    private <S> V computeIfUnsetVolatile(S source,
-                                         Function<S, V> extractor) {
+    private <S, K> V computeIfUnsetVolatile(S source,
+                                            K key,
+                                            BiFunction<S, K, V> extractor) {
         V e = elementVolatile();
         if (e != null) {
             // If we see a non-null value, we know a value is set.
             return e;
         }
         return switch (setVolatile()) {
-            case UNSET    -> computeIfUnsetVolatile0(source, extractor);
+            case UNSET    -> computeIfUnsetVolatile0(source, key, extractor);
             case NON_NULL -> orThrow(); // Race
             case NULL     -> null;
             default       -> throw shouldNotReachHere();
         };
     }
 
-    private synchronized <S> V computeIfUnsetVolatile0(S source,
-                                                       Function<S, V> extractor) {
+    private synchronized <S, K> V computeIfUnsetVolatile0(S source,
+                                                          K key,
+                                                          BiFunction<S, K, V> extractor) {
         Object mutex = mutexVolatile();
         if (mutex == null) {
             mutex = casMutex();
@@ -167,7 +177,7 @@ public record StableValueElement<V>(
             if (isSet()) {
                 return orThrow();
             }
-            V newValue = extractor.apply(source);
+            V newValue = extractor.apply(source, key);
             setValue(newValue);
         }
         clearMutex();

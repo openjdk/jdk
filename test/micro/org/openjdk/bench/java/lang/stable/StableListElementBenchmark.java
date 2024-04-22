@@ -41,6 +41,7 @@ import java.util.stream.Stream;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 2, jvmArgsAppend = {"--add-exports=java.base/jdk.internal.lang=ALL-UNNAMED", "--enable-preview"})
+@Threads(8)     // Some contention
 public class StableListElementBenchmark {
 
     private static final IntFunction<Integer> FUNCTION = i -> i;
