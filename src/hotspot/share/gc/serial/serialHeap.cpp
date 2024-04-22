@@ -776,10 +776,13 @@ static void oop_iterate_from(OopClosureType* blk, ContiguousSpace* space, HeapWo
 
 void SerialHeap::scan_evacuated_objs(YoungGenScanClosure* young_cl,
                                      OldGenScanClosure* old_cl) {
+  ContiguousSpace* to_space = young_gen()->to();
   do {
-    oop_iterate_from(young_cl, young_gen()->to(), &_young_gen_saved_top);
+    oop_iterate_from(young_cl, to_space, &_young_gen_saved_top);
     oop_iterate_from(old_cl, old_gen()->space(), &_old_gen_saved_top);
-  } while (_young_gen_saved_top != young_gen()->to()->top());
+    // Recheck to-space only, because postcondition of oop_iterate_from is no
+    // unscanned objs
+  } while (_young_gen_saved_top != to_space->top());
   guarantee(young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
 }
 
