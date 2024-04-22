@@ -61,12 +61,11 @@ public class TestWBDeflateIdleMonitors {
         static WhiteBox wb = WhiteBox.getWhiteBox();
         public static Object obj;
 
-        public static void main(String args[]) {
+        public static void main(String args[]) throws Exception {
             obj = new Object();
             synchronized (obj) {
-                // HotSpot implementation detail: asking for the hash code
-                // when the object is locked causes monitor inflation.
-                if (obj.hashCode() == 0xBAD) System.out.println("!");
+                // The current implementation of notify-wait requires inflation.
+                obj.wait(1);
                 Asserts.assertEQ(wb.isMonitorInflated(obj), true,
                                  "Monitor should be inflated.");
             }

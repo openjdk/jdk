@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,11 @@ import java.nio.charset.StandardCharsets;
  * @test
  * @bug 8077559 8321180
  * @summary Tests Compact String for maximum size strings
- * @requires os.maxMemory >= 7g & vm.bits == 64
- * @run junit/othervm -XX:+CompactStrings -Xmx7g MaxSizeUTF16String
- * @run junit/othervm -XX:-CompactStrings -Xmx7g MaxSizeUTF16String
+ * @requires os.maxMemory >= 8g & vm.bits == 64
+ * @requires vm.flagless
+ * @run junit/othervm -XX:+CompactStrings -Xmx8g MaxSizeUTF16String
+ * @run junit/othervm -XX:-CompactStrings -Xmx8g MaxSizeUTF16String
+ * @run junit/othervm -Xcomp -Xmx8g MaxSizeUTF16String
  */
 
 public class MaxSizeUTF16String {
@@ -40,6 +42,8 @@ public class MaxSizeUTF16String {
     private final static int MAX_UTF16_STRING_LENGTH = Integer.MAX_VALUE / 2;
 
     private final static String EXPECTED_OOME_MESSAGE = "UTF16 String size is";
+    private final static String EXPECTED_VM_LIMIT_MESSAGE = "Requested array size exceeds VM limit";
+    private final static String UNEXPECTED_JAVA_HEAP_SPACE = "Java heap space";
 
     // Create a large UTF-8 byte array with a single non-latin1 character
     private static byte[] generateUTF8Data(int byteSize) {
@@ -74,7 +78,12 @@ public class MaxSizeUTF16String {
                     fail("Expected OutOfMemoryError with message prefix: " + EXPECTED_OOME_MESSAGE);
                 }
             } catch (OutOfMemoryError ex) {
-                if (!ex.getMessage().startsWith(EXPECTED_OOME_MESSAGE)) {
+                if (ex.getMessage().equals(UNEXPECTED_JAVA_HEAP_SPACE)) {
+                    // Insufficient heap size
+                    throw ex;
+                }
+                if (!ex.getMessage().startsWith(EXPECTED_OOME_MESSAGE) &&
+                        !ex.getMessage().startsWith(EXPECTED_VM_LIMIT_MESSAGE)) {
                     fail("Failed: Not the OutOfMemoryError expected", ex);
                 }
             }
@@ -98,10 +107,44 @@ public class MaxSizeUTF16String {
                     fail("Expected OutOfMemoryError with message prefix: " + EXPECTED_OOME_MESSAGE);
                 }
             } catch (OutOfMemoryError ex) {
-                if (!ex.getMessage().startsWith(EXPECTED_OOME_MESSAGE)) {
+                if (ex.getMessage().equals(UNEXPECTED_JAVA_HEAP_SPACE)) {
+                    // Insufficient heap size
+                    throw ex;
+                }
+                if (!ex.getMessage().startsWith(EXPECTED_OOME_MESSAGE) &&
+                        !ex.getMessage().startsWith(EXPECTED_VM_LIMIT_MESSAGE)) {
                     throw new RuntimeException("Wrong exception message: " + ex.getMessage(), ex);
                 }
             }
         }
+    }
+
+    /*
+     * Test that UTF-8 of too large strings throws OOME, (not NegativeArraySizeException).
+     */
+    @Test
+    public void testMaxUTF8_UTF16Encode() {
+        String s = "\uFFFF";
+        final byte[] bytes1 = s.getBytes(StandardCharsets.UTF_8);
+        assertEquals(3, bytes1.length, "UTF_8 encoded length of 0xffff");
+
+        int min = Integer.MAX_VALUE / bytes1.length - 1;
+        int max = min + 3;
+
+        // String of size min can be UTF_8 encoded.
+        System.out.println("testing size: " + min);
+        String s1 = s.repeat(min);
+        byte[] bytes = s1.getBytes(StandardCharsets.UTF_8);
+        int remaining = Integer.MAX_VALUE - bytes.length;
+        assertTrue(remaining >= bytes1.length, "remainder too large: " + remaining);
+
+        // Strings of size min+1...min+2, throw OOME
+        // The resulting byte array would exceed implementation limits
+        for (int count = min + 1; count < max; count++) {
+            System.out.println("testing size: " + count);
+            final String s2 = s.repeat(count);
+            OutOfMemoryError ex = assertThrows(OutOfMemoryError.class, () -> s2.getBytes(StandardCharsets.UTF_8));
+            ex.printStackTrace();
+        };
     }
 }

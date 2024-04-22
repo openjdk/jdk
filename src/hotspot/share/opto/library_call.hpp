@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,6 +231,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_unsafe_writeback0();
   bool inline_unsafe_writebackSync0(bool is_pre);
   bool inline_unsafe_copyMemory();
+  bool inline_unsafe_setMemory();
 
   bool inline_native_currentCarrierThread();
   bool inline_native_currentThread();
@@ -245,6 +246,7 @@ class LibraryCallKit : public GraphKit {
 #if INCLUDE_JVMTI
   bool inline_native_notify_jvmti_funcs(address funcAddr, const char* funcName, bool is_start, bool is_end);
   bool inline_native_notify_jvmti_hide();
+  bool inline_native_notify_jvmti_sync();
 #endif
 
 #ifdef JFR_HAVE_INTRINSICS

@@ -184,7 +184,7 @@ public class JaasModularClientTest {
             }
             return !s.isEmpty();
         }).toArray(String[]::new);
-        OutputAnalyzer out = ProcessTools.executeTestJvm(safeArgs);
+        OutputAnalyzer out = ProcessTools.executeTestJava(safeArgs);
         // Handle response.
         if (out.getExitValue() != 0) {
             System.out.printf("OUTPUT: %s", out.getOutput());

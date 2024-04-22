@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -692,59 +692,6 @@ public class JavacParser implements Parser {
         return t;
     }
 
-    /**
-     * StringTemplate =
-     *    [STRINGFRAGMENT] [EmbeddedExpression]
-     *  | STRINGLITERAL
-     *
-     * EmbeddedExpression =
-     *  LBRACE term RBRACE
-     */
-    JCExpression stringTemplate(JCExpression processor) {
-        checkSourceLevel(Feature.STRING_TEMPLATES);
-        // Disable standalone string templates
-        if (processor == null) {
-            log.error(DiagnosticFlag.SYNTAX, token.pos,
-                    Errors.ProcessorMissingFromStringTemplateExpression);
-        }
-        int oldmode = mode;
-        selectExprMode();
-        Token stringToken = token;
-        int pos = stringToken.pos;
-        int endPos = stringToken.endPos;
-        TokenKind kind = stringToken.kind;
-        String string = token.stringVal();
-        List<String> fragments = List.of(string);
-        List<JCExpression> expressions = List.nil();
-        nextToken();
-        if (kind != STRINGLITERAL) {
-            while (token.kind == STRINGFRAGMENT) {
-                stringToken = token;
-                endPos = stringToken.endPos;
-                string = stringToken.stringVal();
-                fragments = fragments.append(string);
-                nextToken();
-             }
-            while (token.pos < endPos && token.kind != DEFAULT && token.kind != ERROR) {
-                accept(LBRACE);
-                JCExpression expression = token.kind == RBRACE ? F.at(pos).Literal(TypeTag.BOT, null)
-                                                               : term(EXPR);
-                expressions = expressions.append(expression);
-                if (token.kind != ERROR) {
-                    accept(RBRACE);
-                }
-            }
-            // clean up remaining expression tokens if error
-            while (token.pos < endPos && token.kind != DEFAULT) {
-                nextToken();
-            }
-            S.setPrevToken(stringToken);
-        }
-        JCExpression t = toP(F.at(pos).StringTemplate(processor, fragments, expressions));
-        setMode(oldmode);
-        return t;
-    }
-
     JCExpression literal(Name prefix) {
         return literal(prefix, token.pos);
     }
@@ -770,7 +717,7 @@ public class JavacParser implements Parser {
                     TypeTag.INT,
                     Convert.string2int(strval(prefix), token.radix()));
             } catch (NumberFormatException ex) {
-                log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.IntNumberTooLarge(strval(prefix)));
+                reportIntegralLiteralError(prefix, pos);
             }
             break;
         case LONGLITERAL:
@@ -779,7 +726,7 @@ public class JavacParser implements Parser {
                     TypeTag.LONG,
                     Long.valueOf(Convert.string2long(strval(prefix), token.radix())));
             } catch (NumberFormatException ex) {
-                log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.IntNumberTooLarge(strval(prefix)));
+                reportIntegralLiteralError(prefix, pos);
             }
             break;
         case FLOATLITERAL: {
@@ -861,6 +808,28 @@ public class JavacParser implements Parser {
         String strval(Name prefix) {
             String s = token.stringVal();
             return prefix.isEmpty() ? s : prefix + s;
+        }
+        void reportIntegralLiteralError(Name prefix, int pos) {
+            int radix = token.radix();
+            if (radix == 2 || radix == 8) {
+                //attempt to produce more user-friendly error message for
+                //binary and octal literals with wrong digits:
+                String value = strval(prefix);
+                char[] cs = value.toCharArray();
+                for (int i = 0; i < cs.length; i++) {
+                    char c = cs[i];
+                    int d = Character.digit(c, radix);
+                    if (d == (-1)) {
+                        Error err = radix == 2 ? Errors.IllegalDigitInBinaryLiteral
+                                               : Errors.IllegalDigitInOctalLiteral;
+                        log.error(DiagnosticFlag.SYNTAX,
+                                  token.pos + i,
+                                  err);
+                        return ;
+                    }
+                }
+            }
+            log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.IntNumberTooLarge(strval(prefix)));
         }
 
     /** terms can be either expressions or types.
@@ -965,6 +934,20 @@ public class JavacParser implements Parser {
         }
 
         return result;
+    }
+
+    protected JCExpression parseIntersectionType(int pos, JCExpression firstType) {
+        JCExpression t = firstType;
+        int pos1 = pos;
+        List<JCExpression> targets = List.of(t);
+        while (token.kind == AMP) {
+            accept(AMP);
+            targets = targets.prepend(parseType());
+        }
+        if (targets.length() > 1) {
+            t = toP(F.at(pos1).TypeIntersection(targets.reverse()));
+        }
+        return t;
     }
 
     public JCExpression unannotatedType(boolean allowVar) {
@@ -1337,15 +1320,7 @@ public class JavacParser implements Parser {
                     case CAST:
                        accept(LPAREN);
                        selectTypeMode();
-                       int pos1 = pos;
-                       List<JCExpression> targets = List.of(t = parseType());
-                       while (token.kind == AMP) {
-                           accept(AMP);
-                           targets = targets.prepend(parseType());
-                       }
-                       if (targets.length() > 1) {
-                           t = toP(F.at(pos1).TypeIntersection(targets.reverse()));
-                       }
+                       t = parseIntersectionType(pos, parseType());
                        accept(RPAREN);
                        selectExprMode();
                        JCExpression t1 = term3();
@@ -1394,14 +1369,6 @@ public class JavacParser implements Parser {
                 t = literal(names.empty);
             } else return illegal();
             break;
-         case STRINGFRAGMENT:
-             if (typeArgs == null && isMode(EXPR)) {
-                 selectExprMode();
-                 t = stringTemplate(null);
-             } else {
-                 return illegal();
-             }
-             break;
         case NEW:
             if (typeArgs != null) return illegal();
             if (isMode(EXPR)) {
@@ -1530,12 +1497,6 @@ public class JavacParser implements Parser {
                                 nextToken();
                                 if (token.kind == LT) typeArgs = typeArguments(false);
                                 t = innerCreator(pos1, typeArgs, t);
-                                typeArgs = null;
-                                break loop;
-                            case STRINGFRAGMENT:
-                            case STRINGLITERAL:
-                                if (typeArgs != null) return illegal();
-                                t = stringTemplate(t);
                                 typeArgs = null;
                                 break loop;
                             }
@@ -1761,12 +1722,6 @@ public class JavacParser implements Parser {
                     if (token.kind == LT) typeArgs = typeArguments(false);
                     t = innerCreator(pos2, typeArgs, t);
                     typeArgs = null;
-                } else if (token.kind == TokenKind.STRINGFRAGMENT ||
-                           token.kind == TokenKind.STRINGLITERAL) {
-                    if (typeArgs != null) {
-                        return illegal();
-                    }
-                    t = stringTemplate(t);
                 } else {
                     List<JCAnnotation> tyannos = null;
                     if (isMode(TYPE) && token.kind == MONKEYS_AT) {
@@ -2866,12 +2821,15 @@ public class JavacParser implements Parser {
                         int lookahead = 2;
                         int balance = 1;
                         boolean hasComma = false;
+                        boolean inTypeArgs = false;
                         Token l;
                         while ((l = S.token(lookahead)).kind != EOF && balance != 0) {
                             switch (l.kind) {
                                 case LPAREN: balance++; break;
                                 case RPAREN: balance--; break;
-                                case COMMA: if (balance == 1) hasComma = true; break;
+                                case COMMA: if (balance == 1 && !inTypeArgs) hasComma = true; break;
+                                case LT: inTypeArgs = true; break;
+                                case GT: inTypeArgs = false;
                             }
                             lookahead++;
                         }
@@ -3934,8 +3892,9 @@ public class JavacParser implements Parser {
             // comes after before deciding how best to handle them.
             ListBuffer<JCTree> semiList = new ListBuffer<>();
             while (firstTypeDecl && mods == null && token.kind == SEMI) {
-                semiList.append(toP(F.at(token.pos).Skip()));
+                int pos = token.pos;
                 nextToken();
+                semiList.append(toP(F.at(pos).Skip()));
                 if (token.kind == EOF)
                     break OUTER;
             }

@@ -95,6 +95,7 @@ public class PipedReader extends Reader {
      * @throws     IllegalArgumentException if {@code pipeSize <= 0}.
      * @since      1.6
      */
+    @SuppressWarnings("this-escape")
     public PipedReader(PipedWriter src, int pipeSize) throws IOException {
         initPipe(pipeSize);
         connect(src);

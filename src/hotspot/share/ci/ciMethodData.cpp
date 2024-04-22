@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/methodData.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "utilities/copy.hpp"
 
@@ -87,8 +88,18 @@ public:
       // Preparation finished iff all Methods* were already cached.
       return true;
     }
-    // Holding locks through safepoints is bad practice.
-    MutexUnlocker mu(_mdo->extra_data_lock());
+    // We are currently holding the extra_data_lock and ensuring
+    // no safepoint breaks the lock.
+    _mdo->check_extra_data_locked();
+
+    // We now want to cache some method data. This could cause a safepoint.
+    // We temporarily release the lock and allow safepoints, and revert that
+    // at the end of the scope. This is safe, since we currently do not hold
+    // any extra_method_data: finish is called only after clean_extra_data,
+    // and the outer scope that first aquired the lock should not hold any
+    // extra_method_data while cleaning is performed, as the offsets can change.
+    MutexUnlocker mu(_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
     for (int i = 0; i < _uncached_methods.length(); ++i) {
       if (has_safepointed()) {
         // The metadata in the growable array might contain stale
@@ -123,7 +134,10 @@ void ciMethodData::prepare_metadata() {
 
 void ciMethodData::load_remaining_extra_data() {
   MethodData* mdo = get_MethodData();
-  MutexLocker ml(mdo->extra_data_lock());
+
+  // Lock to read ProfileData, and ensure lock is not unintentionally broken by a safepoint
+  MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
   // Deferred metadata cleaning due to concurrent class unloading.
   prepare_metadata();
   // After metadata preparation, there is no stale metadata,
@@ -562,6 +576,9 @@ void ciMethodData::set_argument_type(int bci, int i, ciKlass* k) {
   VM_ENTRY_MARK;
   MethodData* mdo = get_MethodData();
   if (mdo != nullptr) {
+    // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+    MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
     ProfileData* data = mdo->bci_to_data(bci);
     if (data != nullptr) {
       if (data->is_CallTypeData()) {
@@ -586,6 +603,9 @@ void ciMethodData::set_return_type(int bci, ciKlass* k) {
   VM_ENTRY_MARK;
   MethodData* mdo = get_MethodData();
   if (mdo != nullptr) {
+    // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+    MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
     ProfileData* data = mdo->bci_to_data(bci);
     if (data != nullptr) {
       if (data->is_CallTypeData()) {

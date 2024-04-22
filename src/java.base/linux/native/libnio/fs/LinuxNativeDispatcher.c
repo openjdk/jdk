@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,12 +49,6 @@ static jfieldID entry_options;
 typedef ssize_t copy_file_range_func(int, loff_t*, int, loff_t*, size_t,
                                      unsigned int);
 static copy_file_range_func* my_copy_file_range_func = NULL;
-
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
 
 static void throwUnixException(JNIEnv* env, int errnum) {
     jobject x = JNU_NewObjectByName(env, "sun/nio/fs/UnixException",
@@ -165,7 +159,7 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_fs_LinuxNativeDispatcher_posix_1fadvise(JNIEnv* env, jclass this,
     jint fd, jlong offset, jlong len, jint advice)
 {
-    return posix_fadvise64((int)fd, (off64_t)offset, (off64_t)len, (int)advice);
+    return posix_fadvise((int)fd, (off_t)offset, (off_t)len, (int)advice);
 }
 
 // Copy all bytes from src to dst, within the kernel if possible,

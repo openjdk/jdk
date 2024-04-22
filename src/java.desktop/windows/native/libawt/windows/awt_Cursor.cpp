@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -519,7 +519,7 @@ static void GlobalSetCursor(void* pStruct) {
     }
 
     if (!blocked) {
-        ::SetCursor(hCursor); // don't need WM_AWT_SETCURSOR
+        ::SetCursor(hCursor);
     }
 
     env->DeleteGlobalRef(((GlobalSetCursorStruct*)pStruct)->cursor);

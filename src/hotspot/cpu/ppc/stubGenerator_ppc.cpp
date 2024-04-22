@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -3643,8 +3643,6 @@ class StubGenerator: public StubCodeGenerator {
 #define VALID_B64 0x80
 #define VB64(x) (VALID_B64 | x)
 
-#define VEC_ALIGN __attribute__ ((aligned(16)))
-
 #define BLK_OFFSETOF(x) (offsetof(constant_block, x))
 
 // In little-endian mode, the lxv instruction loads the element at EA into
@@ -3681,7 +3679,7 @@ class StubGenerator: public StubCodeGenerator {
       unsigned char pack_permute_val[16];
     } constant_block;
 
-    static const constant_block VEC_ALIGN const_block = {
+    alignas(16) static const constant_block const_block = {
 
       .offsetLUT_val = {
         ARRAY_TO_LXV_ORDER(
@@ -4263,7 +4261,7 @@ class StubGenerator: public StubCodeGenerator {
       unsigned char base64_48_63_URL_val[16];
     } constant_block;
 
-    static const constant_block VEC_ALIGN const_block = {
+    alignas(16) static const constant_block const_block = {
       .expand_permute_val = {
         ARRAY_TO_LXV_ORDER(
         0,  4,  5,  6,
@@ -4748,7 +4746,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_catch_exception_entry            = generate_catch_exception();
 
     if (UnsafeCopyMemory::_table == nullptr) {
-      UnsafeCopyMemory::create_table(8);
+      UnsafeCopyMemory::create_table(8 + 4); // 8 for copyMemory; 4 for setMemory
     }
 
     // Build this early so it's available for the interpreter.

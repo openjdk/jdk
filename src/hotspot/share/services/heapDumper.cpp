@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -680,7 +680,7 @@ DumpWriter::~DumpWriter(){
   if (_tmp_buffer != nullptr) {
     os::free(_tmp_buffer);
   }
-  if (_writer != NULL) {
+  if (_writer != nullptr) {
     delete _writer;
   }
   _bytes_written = -1;
@@ -1641,6 +1641,19 @@ public:
         && java_lang_VirtualThread::state(vt) != java_lang_VirtualThread::TERMINATED;
   }
 
+  static bool is_vthread_mounted(oop vt) {
+    // The code should be consistent with the "mounted virtual thread" case
+    // (VM_HeapDumper::dump_stack_traces(), ThreadDumper::get_top_frame()).
+    // I.e. virtual thread is mounted if its carrierThread is not null
+    // and is_vthread_mounted() for the carrier thread returns true.
+    oop carrier_thread = java_lang_VirtualThread::carrier_thread(vt);
+    if (carrier_thread == nullptr) {
+      return false;
+    }
+    JavaThread* java_thread = java_lang_Thread::thread(carrier_thread);
+    return java_thread->is_vthread_mounted();
+  }
+
   ThreadDumper(ThreadType thread_type, JavaThread* java_thread, oop thread_oop);
 
   // affects frame_count
@@ -1918,7 +1931,10 @@ void HeapObjectDumper::do_object(oop o) {
   if (o->is_instance()) {
     // create a HPROF_GC_INSTANCE record for each object
     DumperSupport::dump_instance(writer(), o, &_class_cache);
-    if (java_lang_VirtualThread::is_instance(o) && ThreadDumper::should_dump_vthread(o)) {
+    // If we encounter an unmounted virtual thread it needs to be dumped explicitly
+    // (mounted virtual threads are dumped with their carriers).
+    if (java_lang_VirtualThread::is_instance(o)
+        && ThreadDumper::should_dump_vthread(o) && !ThreadDumper::is_vthread_mounted(o)) {
       _vthread_dumper->dump_vthread(o, writer());
     }
   } else if (o->is_objArray()) {
@@ -2149,20 +2165,6 @@ void DumpMerger::do_merge() {
   _writer->set_compressor(saved_compressor);
   merge_done();
 }
-
-// The VM operation wraps DumpMerger so that it could be performed by VM thread
-class VM_HeapDumpMerge : public VM_Operation {
-private:
-  DumpMerger* _merger;
-public:
-  VM_HeapDumpMerge(DumpMerger* merger) : _merger(merger) {}
-  VMOp_Type type() const { return VMOp_HeapDumpMerge; }
-  // heap dump merge could happen outside safepoint
-  virtual bool evaluate_at_safepoint() const { return false; }
-  void doit() {
-    _merger->do_merge();
-  }
-};
 
 // The VM operation that performs the heap dump
 class VM_HeapDumper : public VM_GC_Operation, public WorkerTask, public UnmountedVThreadDumper {
@@ -2643,17 +2645,10 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
   //          This is done by DumpMerger, which is performed outside safepoint
 
   DumpMerger merger(path, &writer, dumper.dump_seq());
-  Thread* current_thread = Thread::current();
-  if (current_thread->is_AttachListener_thread()) {
-    // perform heapdump file merge operation in the current thread prevents us
-    // from occupying the VM Thread, which in turn affects the occurrence of
-    // GC and other VM operations.
-    merger.do_merge();
-  } else {
-    // otherwise, performs it by VM thread
-    VM_HeapDumpMerge op(&merger);
-    VMThread::execute(&op);
-  }
+  // Perform heapdump file merge operation in the current thread prevents us
+  // from occupying the VM Thread, which in turn affects the occurrence of
+  // GC and other VM operations.
+  merger.do_merge();
   if (writer.error() != nullptr) {
     set_error(writer.error());
   }

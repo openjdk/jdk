@@ -200,11 +200,8 @@ public final class Utils {
     }
 
     public static void checkAllocationSizeAndAlign(long byteSize, long byteAlignment) {
-        // size should be >= 0
-        if (byteSize < 0) {
-            throw new IllegalArgumentException("Invalid allocation size : " + byteSize);
-        }
-
+        // byteSize should be >= 0
+        Utils.checkNonNegativeArgument(byteSize, "allocation size");
         checkAlign(byteAlignment);
     }
 
@@ -213,6 +210,20 @@ public final class Utils {
         if (byteAlignment <= 0 ||
                 ((byteAlignment & (byteAlignment - 1)) != 0L)) {
             throw new IllegalArgumentException("Invalid alignment constraint : " + byteAlignment);
+        }
+    }
+
+    @ForceInline
+    public static void checkNonNegativeArgument(long value, String name) {
+        if (value < 0) {
+            throw new IllegalArgumentException("The provided " + name + " is negative: " + value);
+        }
+    }
+
+    @ForceInline
+    public static void checkNonNegativeIndex(long value, String name) {
+        if (value < 0) {
+            throw new IndexOutOfBoundsException("The provided " + name + " is negative: " + value);
         }
     }
 

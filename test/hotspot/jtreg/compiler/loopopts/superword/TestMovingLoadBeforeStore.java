@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 /**
  * @test
  * @requires vm.compiler2.enabled
- * @requires vm.cpu.features ~= ".*avx2.*"
  * @bug 8316679 8316594
  * @summary In SuperWord::output, LoadVector can be moved before StoreVector, but only if it is proven to be safe.
  * @key randomness

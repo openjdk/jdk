@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ final class ShutdownHook implements Runnable {
         try {
             WriteableUserPath dest = recording.getDestination();
             if (dest == null) {
-                dest = makeDumpOnExitPath(recording);
+                dest = recording.makeDumpPath();
                 recording.setDestination(dest);
             }
             if (dest != null) {
@@ -75,29 +75,6 @@ final class ShutdownHook implements Runnable {
             if (Logger.shouldLog(LogTag.JFR, LogLevel.DEBUG)) {
                 Logger.log(LogTag.JFR, LogLevel.DEBUG, "Could not dump recording " + recording.getName() + " on exit.");
             }
-        }
-    }
-
-    @SuppressWarnings("removal")
-    private WriteableUserPath makeDumpOnExitPath(PlatformRecording recording) {
-        try {
-            String name = JVMSupport.makeFilename(recording.getRecording());
-            AccessControlContext acc = recording.getNoDestinationDumpOnExitAccessControlContext();
-            return AccessController.doPrivileged(new PrivilegedExceptionAction<WriteableUserPath>() {
-                @Override
-                public WriteableUserPath run() throws Exception {
-                    return new WriteableUserPath(recording.getDumpOnExitDirectory().toPath().resolve(name));
-                }
-            }, acc);
-        } catch (PrivilegedActionException e) {
-            Throwable t = e.getCause();
-            if (t instanceof SecurityException) {
-                Logger.log(LogTag.JFR, LogLevel.WARN, "Not allowed to create dump path for recording " + recording.getId() + " on exit.");
-            }
-            if (t instanceof IOException) {
-                Logger.log(LogTag.JFR, LogLevel.WARN, "Could not dump " + recording.getId() + " on exit.");
-            }
-            return null;
         }
     }
 
