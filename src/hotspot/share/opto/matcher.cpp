@@ -1890,11 +1890,7 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
   }
 
   // Have mach nodes inherit GC barrier data
-  if (leaf->is_LoadStore()) {
-    mach->set_barrier_data(leaf->as_LoadStore()->barrier_data());
-  } else if (leaf->is_Mem()) {
-    mach->set_barrier_data(leaf->as_Mem()->barrier_data());
-  }
+  mach->set_barrier_data(MemNode::barrier_data(leaf));
 
   return ex;
 }
@@ -2498,6 +2494,14 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->set_req(1, new BinaryNode(n->in(1), n->in(2)));
       n->set_req(2, n->in(3));
       n->del_req(3);
+      break;
+    }
+    case Op_PartialSubtypeCheck: {
+      if (UseSecondarySupersTable && n->in(2)->is_Con()) {
+        // PartialSubtypeCheck uses both constant and register operands for superclass input.
+        n->set_req(2, new BinaryNode(n->in(2), n->in(2)));
+        break;
+      }
       break;
     }
     default:

@@ -33,6 +33,8 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+
+include CopyFiles.gmk
 include TestFilesCompilation.gmk
 
 $(eval $(call IncludeCustomExtension, test/JtregNativeLibTest.gmk))
@@ -48,11 +50,7 @@ BUILD_LIBTEST_JTREG_OUTPUT_DIR := $(OUTPUTDIR)/support/test/lib-test/jtreg/nativ
 
 BUILD_LIBTEST_JTREG_IMAGE_DIR := $(TEST_IMAGE_DIR)/lib-test/jtreg
 
-ifeq ($(call isTargetOs, windows), true)
-    BUILD_LIBTEST_JTREG_EXECUTABLES_LIBS_exejvm-test-launcher := jvm.lib
-else
-    BUILD_LIBTEST_JTREG_EXECUTABLES_LIBS_exejvm-test-launcher := -ljvm
-endif
+BUILD_LIBTEST_JTREG_EXECUTABLES_JDK_LIBS_exejvm-test-launcher := java.base:libjvm
 
 # This evaluation is expensive and should only be done if this target was
 # explicitly called.
