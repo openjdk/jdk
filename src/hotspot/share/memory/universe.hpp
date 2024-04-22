@@ -96,6 +96,9 @@ class Universe: AllStatic {
 
   static Array<Klass*>*  _the_array_interfaces_array;
 
+  static uintx _the_array_interfaces_bitmap;
+  static uintx _the_empty_klass_bitmap;
+
   // array of preallocated error objects with backtrace
   static OopHandle     _preallocated_out_of_memory_error_array;
 
@@ -229,7 +232,8 @@ class Universe: AllStatic {
   static oop          virtual_machine_error_instance();
   static oop          vm_exception()                  { return virtual_machine_error_instance(); }
 
-  static Array<Klass*>* the_array_interfaces_array()  { return _the_array_interfaces_array;   }
+  static Array<Klass*>* the_array_interfaces_array()  { return _the_array_interfaces_array; }
+  static uintx        the_array_interfaces_bitmap()   { return _the_array_interfaces_bitmap; }
 
   static Method*      finalizer_register_method();
   static Method*      loader_addClass_method();
@@ -261,6 +265,8 @@ class Universe: AllStatic {
   static Array<Method*>*         the_empty_method_array() { return _the_empty_method_array; }
   static Array<Klass*>*          the_empty_klass_array()  { return _the_empty_klass_array; }
   static Array<InstanceKlass*>*  the_empty_instance_klass_array() { return _the_empty_instance_klass_array; }
+
+  static uintx                   the_empty_klass_bitmap() { return _the_empty_klass_bitmap; }
 
   // OutOfMemoryError support. Returns an error with the required message. The returned error
   // may or may not have a backtrace. If error has a backtrace then the stack trace is already

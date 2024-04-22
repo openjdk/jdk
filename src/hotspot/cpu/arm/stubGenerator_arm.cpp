@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3135,7 +3135,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_throw_StackOverflowError_entry  = generate_throw_exception("StackOverflowError throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError));
 
     if (UnsafeCopyMemory::_table == nullptr) {
-      UnsafeCopyMemory::create_table(32);
+      UnsafeCopyMemory::create_table(32 + 4); // 32 for copyMemory; 4 for setMemory
     }
 
     // integer division used both by interpreter and compiler
