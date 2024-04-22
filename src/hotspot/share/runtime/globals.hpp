@@ -671,10 +671,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, PrintWarnings, true,                                        \
           "Print JVM warnings to output stream")                            \
                                                                             \
-  product(bool, RegisterFinalizersAtInit, true,                             \
-          "(Deprecated) Register finalizable objects at end of "            \
-          "Object.<init> or after allocation")                              \
-                                                                            \
   develop(bool, RegisterReferences, true,                                   \
           "Tell whether the VM should register soft/weak/final/phantom "    \
           "references")                                                     \
@@ -1962,7 +1958,8 @@ const int ObjectAlignmentInBytes = 8;
           "Use platform unstable time where supported for timestamps only") \
                                                                             \
   product(bool, UseEmptySlotsInSupers, true,                                \
-                "Allow allocating fields in empty slots of super-classes")  \
+          "(Deprecated) Allow allocating fields in empty slots of "         \
+          "super-classes")                                                  \
                                                                             \
   product(bool, DeoptimizeNMethodBarriersALot, false, DIAGNOSTIC,           \
                 "Make nmethod barriers deoptimise a lot.")                  \

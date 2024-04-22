@@ -546,6 +546,8 @@ class SharedRuntime: AllStatic {
   static uint _generic_array_copy_ctr;     // Slow-path includes type decoding
   static uint _slow_array_copy_ctr;        // Slow-path failed out to a method call
 
+  static uint _unsafe_set_memory_ctr;      // Slow-path includes alignment checks
+
   static uint _new_instance_ctr;           // 'new' object requires GC
   static uint _new_array_ctr;              // 'new' array requires GC
   static uint _multi2_ctr, _multi3_ctr, _multi4_ctr, _multi5_ctr;

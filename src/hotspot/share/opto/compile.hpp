@@ -29,7 +29,6 @@
 #include "ci/compilerInterface.hpp"
 #include "code/debugInfoRec.hpp"
 #include "compiler/compiler_globals.hpp"
-#include "compiler/compilerOracle.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "compiler/cHeapStringHolder.hpp"
@@ -46,6 +45,7 @@
 #include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/ticks.hpp"
+#include "utilities/vmEnums.hpp"
 
 class AbstractLockNode;
 class AddPNode;
@@ -678,7 +678,7 @@ private:
   void          set_has_monitors(bool v)         { _has_monitors = v; }
 
   // check the CompilerOracle for special behaviours for this compile
-  bool          method_has_option(enum CompileCommand option) {
+  bool          method_has_option(CompileCommandEnum option) {
     return method() != nullptr && method()->has_option(option);
   }
 
