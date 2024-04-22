@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4898461 6604496
+ * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
  * @library /test/lib ..
@@ -81,6 +81,7 @@ public class TestSymmCiphers extends PKCS11Test {
         new CI("AES", "AES", 128),
 
         new CI("AES/CTR/NoPadding", "AES", 3200),
+        new CI("AES/CTS/NoPadding", "AES", 3200),
 
     };
     private static final StringBuffer debugBuf = new StringBuffer();

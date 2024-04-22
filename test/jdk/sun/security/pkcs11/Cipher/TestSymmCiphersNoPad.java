@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4898484 6604496 8001284
+ * @bug 4898484 6604496 8001284 8330842
  * @summary basic test for symmetric ciphers with no padding
  * @author Valerie Peng
  * @library /test/lib ..
@@ -69,6 +69,8 @@ public class TestSymmCiphersNoPad extends PKCS11Test {
         new CI("Blowfish/CBC/NoPadding", "Blowfish", 24),
         new CI("AES/CTR/NoPadding", "AES", 1600),
         new CI("AES/CTR/NoPadding", "AES", 65),
+        new CI("AES/CTS/NoPadding", "AES", 1600),
+        new CI("AES/CTS/NoPadding", "AES", 65),
     };
 
     private static final StringBuffer debugBuf = new StringBuffer();
