@@ -71,12 +71,23 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     });
     EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
 
-    Tree tree2;
-    for (int i = 99; i >= 0; i--) {
+    // Reserving the exact same space again should result in still having only 2 nodes
+    for (int i = 0; i < 100; i++) {
       tree.reserve_mapping(i * 100, 100, md);
     }
     found_nodes = 0;
     tree.visit(0, 999999, [&](Node* x) {
+      found_nodes++;
+    });
+    EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
+
+    // Do it backwards instead.
+    Tree tree2;
+    for (int i = 99; i >= 0; i--) {
+      tree2.reserve_mapping(i * 100, 100, md);
+    }
+    found_nodes = 0;
+    tree2.visit(0, 999999, [&](Node* x) {
       found_nodes++;
     });
     EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
@@ -275,7 +286,7 @@ TEST_VM_F(VMATreeTest, SummaryAccounting) {
     EXPECT_EQ(100, diff.reserve);
   }
   { // Adjacent reserved mappings with different flags
-    Tree::Metadata md(NCS::StackIndex(), mtTest);
+  Tree::Metadata md(NCS::StackIndex(), mtTest);
     Tree::Metadata md2(NCS::StackIndex(), mtNMT);
     Tree tree;
     auto all_diff = tree.reserve_mapping(0, 100, md);
@@ -286,5 +297,16 @@ TEST_VM_F(VMATreeTest, SummaryAccounting) {
     EXPECT_EQ(0, diff.reserve);
     diff = all_diff.flag[NMTUtil::flag_to_index(mtNMT)];
     EXPECT_EQ(100, diff.reserve);
+  }
+
+  { // A commit with two previous commits inside of it should only register
+    // the new memory in the commit diff.
+    Tree tree;
+    Tree::Metadata md(NCS::StackIndex(), mtTest);
+    tree.commit_mapping(128, 128, md);
+    tree.commit_mapping(512, 128, md);
+    auto diff = tree.commit_mapping(0, 1024, md);
+    EXPECT_EQ(768, diff.flag[NMTUtil::flag_to_index(mtTest)].commit);
+    EXPECT_EQ(768, diff.flag[NMTUtil::flag_to_index(mtTest)].reserve);
   }
 }

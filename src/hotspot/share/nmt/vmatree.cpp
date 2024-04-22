@@ -144,7 +144,7 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
         to_visit.push(head->right());
       } else if (cmp_A > 0 && cmp_B <= 0) {
         // A < head <= B
-                to_visit.push(head->left());
+        to_visit.push(head->left());
         to_visit.push(head->right());
 
         stB.out = head->val().out;
@@ -193,13 +193,19 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
     }
   }
 
+  // Sort them in address order, lowest first.
+  to_be_deleted_inbetween_a_b.sort([](AddressState* a, AddressState* b) -> int {
+    return -AddressComparator::cmp(a->address, b->address);
+  });
+
   AddressState prev = {A, stA}; // stA is just filler
-  MEMFLAGS flag_in = LEQ_A.flag_out();
   while (to_be_deleted_inbetween_a_b.length() > 0) {
     const AddressState delete_me = to_be_deleted_inbetween_a_b.top();
     to_be_deleted_inbetween_a_b.pop();
+    // Delete node in (A, B]
     tree.remove(delete_me.address);
-    auto& rescom = diff.flag[NMTUtil::flag_to_index(flag_in)];
+    // Perform summary accounting
+    auto& rescom = diff.flag[NMTUtil::flag_to_index(delete_me.state.in.flag())];
     if (delete_me.state.in.type() == StateType::Reserved) {
       rescom.reserve -= delete_me.address - prev.address;
     } else if (delete_me.state.in.type() == StateType::Committed) {
@@ -207,7 +213,6 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
       rescom.reserve -= delete_me.address - prev.address;
     }
     prev = delete_me;
-    flag_in = delete_me.flag_out();
   }
   if (prev.address != A && prev.state.out.type() != StateType::Released &&
       GEQ_B.state.in.type() != StateType::Released) {
