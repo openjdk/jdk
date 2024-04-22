@@ -1075,9 +1075,9 @@ public class Gen extends JCTree.Visitor {
 
     public void visitBlock(JCBlock tree) {
         /* this method is heavily invoked, as expected, for deeply nested blocks, if blocks doesn't happen to have
-         * patterns there will be an unnecessary tax on memory consumption for these blocks, for this reason we have
-         * created helper methods and here at a higher level we just discriminate depending on the presence, or not,
-         * of patterns in a given block
+         * patterns there will be an unnecessary tax on memory consumption every time this method is executed, for this
+         * reason we have created helper methods and here at a higher level we just discriminate depending on the
+         * presence, or not, of patterns in a given block
          */
         if (tree.patternMatchingCatch != null) {
             visitBlockWithPatterns(tree);
