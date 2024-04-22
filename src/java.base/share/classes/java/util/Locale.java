@@ -997,11 +997,9 @@ public final class Locale implements Cloneable, Serializable {
     private static Locale createLocale(Object key) {
         if (key instanceof BaseLocale base) {
             return new Locale(base, null);
-        } else if (key instanceof LocaleKey lk) {
-            return new Locale(lk.base, lk.exts);
-        } else {
-            throw new InternalError("should not happen");
         }
+        LocaleKey lk = (LocaleKey)key;
+        return new Locale(lk.base, lk.exts);
     }
 
     private static final class LocaleKey {
