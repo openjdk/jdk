@@ -160,19 +160,20 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
             head->val() = stB;
           }
           B_needs_insert = false;
-        } else { /* Unreachable */
+        } else {
+          assert(false, "Cannot happen.");
         }
       } else {
         // Impossible.
-        assert(false, "cannot happen.");
+        assert(false, "Cannot happen.");
       }
     }
   }
+
   // Insert B node if needed
   if (B_needs_insert && // Was not already inserted
-      (!stB.is_noop() || // The operation is differing Or
-       !Metadata::equals(stB.out.metadata(), Metadata{})) // The metadata was changed from empty earlier
-  ) {
+      !stB.is_noop())   // The operation is differing
+    {
     tree.upsert(B, stB);
   }
 
@@ -180,8 +181,7 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
   // 1. Perform summary accounting.
   // 2. Delete all nodes between (A, B]. Including B in the case of a noop.
 
-  if (to_be_deleted_inbetween_a_b.length() == 0 && LEQ_A_found && GEQ_B_found &&
-      GEQ_B.address >= B) {
+  if (to_be_deleted_inbetween_a_b.length() == 0 && LEQ_A_found && GEQ_B_found) {
     // We have smashed a hole in an existing region (or replaced it entirely).
     // LEQ_A - A - B - GEQ_B
     auto& rescom = diff.flag[NMTUtil::flag_to_index(LEQ_A.flag_out())];
@@ -193,7 +193,7 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
     }
   }
 
-  // Sort them in address order, lowest first.
+  // Sort them in address order, lowest first. This is for accounting purposes only.
   to_be_deleted_inbetween_a_b.sort([](AddressState* a, AddressState* b) -> int {
     return -AddressComparator::cmp(a->address, b->address);
   });
@@ -214,6 +214,7 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
     }
     prev = delete_me;
   }
+
   if (prev.address != A && prev.state.out.type() != StateType::Released &&
       GEQ_B.state.in.type() != StateType::Released) {
     // There was some node inside of (A, B) and it is connected to GEQ_B
