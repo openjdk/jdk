@@ -93,6 +93,19 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
   };
 
+  { // Overlapping reservations should also only result in 2 nodes.
+    VMATree::Metadata md{si1, mtTest};
+    Tree tree2;
+    for (int i = 99; i >= 0; i--) {
+      tree2.reserve_mapping(i * 100, 101, md);
+    }
+    int found_nodes = 0;
+    tree2.visit(0, 999999, [&](Node* x) {
+      found_nodes++;
+    });
+    EXPECT_EQ(2, found_nodes) << "Adjacent reservations should result in exactly 2 nodes";
+  }
+
   // After removing all ranges we should be left with an entirely empty tree
   auto remove_all_leaves_empty_tree = [&](VMATree::Metadata& md) {
     Tree tree;
