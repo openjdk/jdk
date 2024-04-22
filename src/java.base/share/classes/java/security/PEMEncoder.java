@@ -51,18 +51,17 @@ import java.util.Objects;
  * lists (CRL). Defined in RFC 1421 and RFC 7468, PEM consists of a
  * Base64-formatted binary encoding surrounded by a type identifying header
  * and footer.
- *
- * <p> Encoding may be performed on objects that implement {@link DEREncodable}.
- *
- * <p> Encrypted private key PEM data can be built by calling the encode methods
+ * <p>
+ * Encoding may be performed on objects that implement {@link DEREncodable}.
+ * <p>
+ * Encrypted private key PEM data can be built by calling the encode methods
  * on a PEMEncoder instance returned by {@link #withEncryption(char[])} or
  * by passing an {@link EncryptedPrivateKeyInfo} object into the encode methods.
- *
- * <p> PKCS8 v2.0 allows OneAsymmetric encoding, which is a private and public
+ * <p>
+ * PKCS8 v2.0 allows OneAsymmetric encoding, which is a private and public
  * key in the same PEM.  This is supported by using the {@link KeyPair} class
  * with the encode methods.
- *
- * <br>
+ * <p>
  * @apiNote
  * Here is an example of encoding a PrivateKey object:
  * <pre>{@code
@@ -171,7 +170,7 @@ final public class PEMEncoder {
      * @throws NullPointerException when object passed is null.
      * @see #withEncryption(char[])
      */
-    public String encodeToString(DEREncodable so) { //throws NoSuchPaddingException, IllegalBlockSizeException, CertificateEncodingException, IOException, NoSuchAlgorithmException, InvalidKeySpecException, BadPaddingException, InvalidKeyException, CRLException {
+    public String encodeToString(DEREncodable so) {
         return new String(encode(so), StandardCharsets.UTF_8);
     }
 
@@ -187,7 +186,7 @@ final public class PEMEncoder {
      * @throws NullPointerException when object passed is null.
      * @see #withEncryption(char[])
      */
-    public byte[] encode(DEREncodable so) { //throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeySpecException, CertificateEncodingException, CRLException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+    public byte[] encode(DEREncodable so) {
         Objects.requireNonNull(so);
         return switch (so) {
             case PublicKey pu -> build(null, pu.getEncoded());
@@ -281,7 +280,7 @@ final public class PEMEncoder {
     /**
      * Build PEM encoding.
      */
-    private byte[] build(byte[] privateBytes, byte[] publicBytes) { //throws GeneralSecurityException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException {
+    private byte[] build(byte[] privateBytes, byte[] publicBytes) {
         DerOutputStream out = new DerOutputStream();
 
         // Encrypted PKCS8

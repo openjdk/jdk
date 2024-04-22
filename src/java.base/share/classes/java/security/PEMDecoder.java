@@ -45,30 +45,30 @@ import java.util.Objects;
  * lists (CRL). Defined in RFC 1421 and RFC 7468, PEM consists of a
  * Base64-formatted binary encoding surrounded by a type identifying header
  * and footer.
- *
- * <p>PEMDecoder is an immutable Privacy-Enhanced Mail (PEM) decoding class.
+ * <p>
+ * PEMDecoder is an immutable Privacy-Enhanced Mail (PEM) decoding class.
  * Decoding will return a {@link DEREncodable} or class that implements
  * {@link DEREncodable} depending on the decode method used.
- *
- * <p>There are four methods to complete the decoding process. They each return
+ * <p>
+ * There are four methods to complete the decoding process. They each return
  * a {@link DEREncodable} for which the caller can use instanceof or switch
  * when processing the result. If the developer knows the class type being
  * decoded, the two {@code decode} methods that take a {@code Class<S>}
  * argument, can be used to specify the returned object class. If the class
  * does not match the PEM type, an IOException is thrown.
- *
+ * <p>
  * When passing input data into {@code decode}, the application is responsible
  * for processing input data ahead of the PEM text. All data before the PEM
  * header will be ignored.
- *
- * <p>A new immutable PEMDecoder instance is returned by
+ * <p>
+ * A new immutable PEMDecoder instance is returned by
  * {@linkplain #withFactory} and/or {@linkplain #withDecryption}.  Configuring
  * an instance for decryption does not prevent decoding with unencrypted PEM.
  * Any encrypted PEM that does not use the configured password will cause an
  * exception. A decoder instance not configured with decryption will return an
  * {@link EncryptedPrivateKeyInfo} with encrypted PEM.  EncryptedPrivateKeyInfo
  * methods must be used to retrieve the {@link PrivateKey}.
- *
+ * <p>
  * PEMDecoder supports the follow types:
  *     PRIVATE KEY, PUBLIC KEY, CERTIFICATE, CRL, and ENCRYPTED PRIVATE KEY.
  *
@@ -110,7 +110,6 @@ final public class PEMDecoder {
      */
     private DEREncodable decode(byte[] data, byte[] header, byte[] footer)
         throws IOException {
-        //throws IOException, InvalidKeySpecException, InvalidKeyException, CertificateException, CRLException, NoSuchAlgorithmException {
         Pem.KeyType keyType;
 
         if (Arrays.mismatch(header, Pem.PUBHEADER) == -1 &&
@@ -213,7 +212,6 @@ final public class PEMDecoder {
      * @throws IOException on an error in decoding or if the PEM is unsupported.
      */
     public DEREncodable decode(String str) {
-        //throws CertificateException, IOException, InvalidKeySpecException, InvalidKeyException, CRLException, NoSuchAlgorithmException {
         Objects.requireNonNull(str);
         try {
             return decode(new ByteArrayInputStream(str.getBytes()));
@@ -235,7 +233,6 @@ final public class PEMDecoder {
      * @throws IOException on an error in decoding or if the PEM is unsupported.
      */
     public DEREncodable decode(InputStream is) throws IOException {
-        //throws IOException, CertificateException, InvalidKeySpecException, InvalidKeyException, CRLException, NoSuchAlgorithmException {
         Objects.requireNonNull(is);
         Pem pem;
         try {
@@ -273,7 +270,6 @@ final public class PEMDecoder {
      * error casting to tClass.
      */
     public <S extends DEREncodable> S decode(String string, Class<S> tClass) {
-        //throws CertificateException, IOException, InvalidKeySpecException, InvalidKeyException, CRLException, NoSuchAlgorithmException {
         Objects.requireNonNull(string);
 
         try {
@@ -303,7 +299,6 @@ final public class PEMDecoder {
     @SuppressWarnings("unchecked")  // (Class<KeySpec>) tClass
     public <S extends DEREncodable> S decode(InputStream is, Class<S> tClass)
         throws IOException {
-        //throws IOException, CertificateException, InvalidKeySpecException, InvalidKeyException, CRLException, NoSuchAlgorithmException {
         Objects.requireNonNull(is);
         Objects.requireNonNull(tClass);
         Pem pem;
@@ -367,7 +362,6 @@ final public class PEMDecoder {
 
     // Convenience method to avoid provider getInstance checks clutter
     private Object getFactory(Pem.KeyType type, String algorithm) {
-        //throws NoSuchAlgorithmException, CertificateException {
         try {
             if (factory == null) {
                 return switch (type) {
