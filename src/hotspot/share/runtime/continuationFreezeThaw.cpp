@@ -621,13 +621,13 @@ void FreezeBase::freeze_fast_existing_chunk() {
 
     freeze_fast_copy(chunk, chunk_start_sp CONT_JFR_ONLY(COMMA false));
   } else { // the chunk is empty
-    const int chunk_start_sp = chunk->stack_size() - frame::metadata_words_at_top;
+    const int chunk_start_sp = chunk->stack_size();
 
     DEBUG_ONLY(_empty = true;)
     DEBUG_ONLY(_orig_chunk_sp = chunk->start_address() + chunk_start_sp;)
 
     chunk->set_max_thawing_size(cont_size());
-    chunk->set_bottom(chunk_start_sp - _cont.argsize());
+    chunk->set_bottom(chunk_start_sp - _cont.argsize() - frame::metadata_words_at_top);
     chunk->set_sp(chunk->bottom());
 
     freeze_fast_copy(chunk, chunk_start_sp CONT_JFR_ONLY(COMMA false));
