@@ -704,11 +704,6 @@ public class SwitchBootstraps {
 
         public static Map<TypePairs, String> initialize() {
             Map<TypePairs, String> typePairToName = new HashMap<>();
-            typePairToName.put(new TypePairs(byte.class,   char.class),   "isIntToCharExact");      // redirected
-            typePairToName.put(new TypePairs(short.class,  byte.class),   "isIntToByteExact");      // redirected
-            typePairToName.put(new TypePairs(short.class,  char.class),   "isIntToCharExact");      // redirected
-            typePairToName.put(new TypePairs(char.class,   byte.class),   "isIntToByteExact");      // redirected
-            typePairToName.put(new TypePairs(char.class,   short.class),  "isIntToShortExact");     // redirected
             typePairToName.put(new TypePairs(int.class,    byte.class),   "isIntToByteExact");
             typePairToName.put(new TypePairs(int.class,    short.class),  "isIntToShortExact");
             typePairToName.put(new TypePairs(int.class,    char.class),   "isIntToCharExact");
@@ -730,7 +725,7 @@ public class SwitchBootstraps {
             typePairToName.put(new TypePairs(double.class, int.class),    "isDoubleToIntExact");
             typePairToName.put(new TypePairs(double.class, long.class),   "isDoubleToLongExact");
             typePairToName.put(new TypePairs(double.class, float.class),  "isDoubleToFloatExact");
-            return typePairToName;
+            return Map.copyOf(typePairToName);
         }
     }
 }
