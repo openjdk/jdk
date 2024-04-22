@@ -38,7 +38,7 @@ fi
 export LC_ALL=C
 
 if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
-    FULLDUMP_CMD="$OTOOL -v -V -h -X -d"
+    FULLDUMP_CMD="$OTOOL -a -C -d -f -G -h -H -I -j -l -L -m -M -o -P -r -R -S -t -T -v -V -X -dyld_info -dyld_opcodes"
     LDD_CMD="$OTOOL -L"
     DIS_CMD="$OTOOL -v -V -t"
     STAT_PRINT_SIZE="-f %z"
@@ -117,7 +117,7 @@ diff_text() {
     SUFFIX="${THIS_FILE##*.}"
     NAME="${THIS_FILE##*/}"
 
-    TMP=$($DIFF $THIS_FILE $OTHER_FILE)
+    TMP=$($DIFF -u $THIS_FILE $OTHER_FILE)
 
 
     if test -n "$TMP"; then
@@ -438,7 +438,7 @@ compare_zip_file() {
 
         $RM -f $WORK_DIR/$ZIP_FILE.diffs
         for file in $DIFFING_TEXT_FILES; do
-            if [[ "$ACCEPTED_JARZIP_CONTENTS $EXCEPTIONS" != *"$file"* ]]; then
+            if [[ "$ACCEPTED_JARZIP_CONTENTS" != *"$file"* ]]; then
                 diff_text $OTHER_UNZIPDIR/$file $THIS_UNZIPDIR/$file >> $WORK_DIR/$ZIP_FILE.diffs
             fi
         done
@@ -454,11 +454,11 @@ compare_zip_file() {
             if [ -n "$SHOW_DIFFS" ]; then
                 for i in $(cat $WORK_DIR/$ZIP_FILE.difflist) ; do
                     if [ -f "${OTHER_UNZIPDIR}/$i.javap" ]; then
-                        $DIFF ${OTHER_UNZIPDIR}/$i.javap ${THIS_UNZIPDIR}/$i.javap
+                        $DIFF -u ${OTHER_UNZIPDIR}/$i.javap ${THIS_UNZIPDIR}/$i.javap
                     elif [ -f "${OTHER_UNZIPDIR}/$i.cleaned" ]; then
-                        $DIFF ${OTHER_UNZIPDIR}/$i.cleaned ${THIS_UNZIPDIR}/$i
+                        $DIFF -u ${OTHER_UNZIPDIR}/$i.cleaned ${THIS_UNZIPDIR}/$i
                     else
-                        $DIFF ${OTHER_UNZIPDIR}/$i ${THIS_UNZIPDIR}/$i
+                        $DIFF -u ${OTHER_UNZIPDIR}/$i ${THIS_UNZIPDIR}/$i
                     fi
                 done
             fi
@@ -788,7 +788,7 @@ compare_bin_file() {
             > $WORK_FILE_BASE.symbols.this
     fi
 
-    $DIFF $WORK_FILE_BASE.symbols.other $WORK_FILE_BASE.symbols.this > $WORK_FILE_BASE.symbols.diff
+    $DIFF -u $WORK_FILE_BASE.symbols.other $WORK_FILE_BASE.symbols.this > $WORK_FILE_BASE.symbols.diff
     if [ -s $WORK_FILE_BASE.symbols.diff ]; then
         SYM_MSG=" diff  "
         if [[ "$ACCEPTED_SYM_DIFF" != *"$BIN_FILE"* ]]; then
@@ -828,9 +828,9 @@ compare_bin_file() {
                     | $UNIQ > $WORK_FILE_BASE.deps.this.uniq)
         (cd $FILE_WORK_DIR && $RM -f $NAME)
 
-        $DIFF $WORK_FILE_BASE.deps.other $WORK_FILE_BASE.deps.this \
+        $DIFF -u $WORK_FILE_BASE.deps.other $WORK_FILE_BASE.deps.this \
               > $WORK_FILE_BASE.deps.diff
-        $DIFF $WORK_FILE_BASE.deps.other.uniq $WORK_FILE_BASE.deps.this.uniq \
+        $DIFF -u $WORK_FILE_BASE.deps.other.uniq $WORK_FILE_BASE.deps.this.uniq \
               > $WORK_FILE_BASE.deps.diff.uniq
 
         if [ -s $WORK_FILE_BASE.deps.diff ]; then
@@ -880,7 +880,7 @@ compare_bin_file() {
             > $WORK_FILE_BASE.fulldump.this  2>&1 &
         wait
 
-        $DIFF $WORK_FILE_BASE.fulldump.other $WORK_FILE_BASE.fulldump.this \
+        $DIFF -u $WORK_FILE_BASE.fulldump.other $WORK_FILE_BASE.fulldump.this \
             > $WORK_FILE_BASE.fulldump.diff
 
         if [ -s $WORK_FILE_BASE.fulldump.diff ]; then
@@ -927,7 +927,7 @@ compare_bin_file() {
             | eval "$this_DIS_DIFF_FILTER" > $WORK_FILE_BASE.dis.this  2>&1 &
         wait
 
-        $DIFF $WORK_FILE_BASE.dis.other $WORK_FILE_BASE.dis.this > $WORK_FILE_BASE.dis.diff
+        $DIFF -u $WORK_FILE_BASE.dis.other $WORK_FILE_BASE.dis.this > $WORK_FILE_BASE.dis.diff
 
         if [ -s $WORK_FILE_BASE.dis.diff ]; then
             DIS_DIFF_SIZE=$(ls -n $WORK_FILE_BASE.dis.diff | awk '{print $5}')
@@ -968,20 +968,20 @@ compare_bin_file() {
         echo " $BIN_FILE"
         if [ "$SHOW_DIFFS" = "true" ]; then
             if [ -s "$WORK_FILE_BASE.symbols.diff" ]; then
-                echo "Symbols diff:"
-                $CAT $WORK_FILE_BASE.symbols.diff
+                echo "Symbols diff $SHOW_DIFF_INFO:"
+                $SHOW_DIFF_CMD $WORK_FILE_BASE.symbols.diff
             fi
             if [ -s "$WORK_FILE_BASE.deps.diff" ]; then
-                echo "Deps diff:"
-                $CAT $WORK_FILE_BASE.deps.diff
+                echo "Deps diff $SHOW_DIFF_INFO:"
+                $SHOW_DIFF_CMD $WORK_FILE_BASE.deps.diff
             fi
             if [ -s "$WORK_FILE_BASE.fulldump.diff" ]; then
-                echo "Fulldump diff:"
-                $CAT $WORK_FILE_BASE.fulldump.diff
+                echo "Fulldump diff $SHOW_DIFF_INFO:"
+                $SHOW_DIFF_CMD $WORK_FILE_BASE.fulldump.diff
             fi
             if [ -s "$WORK_FILE_BASE.dis.diff" ]; then
-                echo "Disassembly diff:"
-                $CAT $WORK_FILE_BASE.dis.diff
+                echo "Disassembly diff $SHOW_DIFF_INFO:"
+                $SHOW_DIFF_CMD $WORK_FILE_BASE.dis.diff
             fi
         fi
         return 1
@@ -1077,7 +1077,7 @@ compare_all_debug_files() {
             else
               OTHER_FILE=$OTHER_DIR/$f
               THIS_FILE=$THIS_DIR/$f
-              DIFF_OUT=$($DIFF $OTHER_FILE $THIS_FILE 2>&1)
+              DIFF_OUT=$($DIFF -u $OTHER_FILE $THIS_FILE 2>&1)
             fi
 
             if [ -n "$DIFF_OUT" ]; then
@@ -1108,6 +1108,16 @@ compare_all_other_files() {
         if [[ "$f" == */native/* ]]; then
             continue
         fi
+
+        NAME=$(basename $f)
+        WORK_FILE_BASE=$WORK_DIR/$f
+        FILE_WORK_DIR=$(dirname $WORK_FILE_BASE)
+        $MKDIR -p $FILE_WORK_DIR
+
+        # Make soft links to original files from work dir to facilitate debugging
+        $LN -f -s $THIS_FILE $WORK_FILE_BASE.this
+        $LN -f -s $OTHER_FILE $WORK_FILE_BASE.other
+
         if [ -e $OTHER_DIR/$f ]; then
             SUFFIX="${f##*.}"
             if [ "$(basename $f)" = "release" ]; then
@@ -1133,12 +1143,14 @@ compare_all_other_files() {
                 OTHER_FILE=$OTHER_DIR/$f
                 THIS_FILE=$THIS_DIR/$f
             fi
-            DIFF_OUT=$($DIFF $OTHER_FILE $THIS_FILE 2>&1)
-            if [ -n "$DIFF_OUT" ]; then
-                echo $f
+
+            $DIFF -u $OTHER_FILE $THIS_FILE > $WORK_FILE_BASE.diff 2>&1
+            if [ -s $WORK_FILE_BASE.diff ]; then
+                echo "$f (diff size $(ls -n $WORK_FILE_BASE.diff | awk '{print $5}'))"
                 REGRESSIONS=true
                 if [ "$SHOW_DIFFS" = "true" ]; then
-                    echo "$DIFF_OUT"
+                echo SHOW DIFF $SHOW_DIFF_INFO: $WORK_FILE_BASE.diff
+                    $SHOW_DIFF_CMD "$WORK_FILE_BASE.diff"
                 fi
             fi
         fi
@@ -1166,8 +1178,10 @@ if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "-?" ] || [ "$1" = "/h" ] || [ "$1
     echo "-jmods              Compare the listings of all jmod files"
     echo "-libs               Compare all native libraries"
     echo "-execs              Compare all executables"
+    echo "--diffs             Shows abridged diff output of all comparisons"
+    echo "--diffs=full        Shows full diff output of all comparisons (Warning! Log can be huge)"
     echo "-v                  Verbose output, does not hide known differences"
-    echo "-vv                 More verbose output, shows diff output of all comparisons"
+    echo "-vv                 Alias for -v --diffs"
     echo "-o [OTHER]          Compare with build in other directory. Will default to the old build directory"
     echo ""
     echo "--sort-symbols      Sort all symbols before comparing"
@@ -1204,6 +1218,13 @@ while [ -n "$1" ]; do
         -vv)
             VERBOSE=true
             SHOW_DIFFS=true
+            ;;
+        --diffs)
+            SHOW_DIFFS=true
+            ;;
+        --diffs=full)
+            SHOW_DIFFS=true
+            SHOW_FULL_DIFFS=true
             ;;
         -o)
             OTHER="$2"
@@ -1364,6 +1385,14 @@ if [ "$CMP_NAMES" = "false" ] \
     CMP_JMODS=true
     CMP_LIBS=true
     CMP_EXECS=true
+fi
+
+if [ "$SHOW_FULL_DIFFS" = "true" ]; then
+  SHOW_DIFF_CMD="$CAT"
+  SHOW_DIFF_INFO="(full diff)"
+else
+  SHOW_DIFF_CMD="$HEAD -n 500"
+  SHOW_DIFF_INFO="(first 500 lines)"
 fi
 
 if [ -z "$FILTER" ]; then

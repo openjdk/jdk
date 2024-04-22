@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_dsqrt_strict:      return java_lang_math_sqrt_strict;
       case vmIntrinsics::_Reference_get:     return java_lang_ref_reference_get;
       case vmIntrinsics::_Object_init:
-        if (RegisterFinalizersAtInit && m->code_size() == 1) {
+        if (m->code_size() == 1) {
           // We need to execute the special return bytecode to check for
           // finalizer registration so create a normal frame.
           return zerolocals;

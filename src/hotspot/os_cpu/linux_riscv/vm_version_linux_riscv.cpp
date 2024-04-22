@@ -115,6 +115,15 @@ void VM_Version::setup_cpu_available_features() {
   int i = 0;
   while (_feature_list[i] != nullptr) {
     if (_feature_list[i]->enabled()) {
+      // Change flag default
+      _feature_list[i]->update_flag();
+
+      // Feature will be disabled by update_flag() if flag
+      // is set to false by the user on the command line.
+      if (!_feature_list[i]->enabled()) {
+        continue;
+      }
+
       log_debug(os, cpu)("Enabled RV64 feature \"%s\" (%ld)",
              _feature_list[i]->pretty(),
              _feature_list[i]->value());
@@ -139,8 +148,6 @@ void VM_Version::setup_cpu_available_features() {
       if (_feature_list[i]->feature_bit() != 0) {
         _features |= _feature_list[i]->feature_bit();
       }
-      // Change flag default
-      _feature_list[i]->update_flag();
     }
     i++;
   }
@@ -244,17 +251,21 @@ void VM_Version::rivos_features() {
 
   ext_Zfh.enable_feature();
 
-  ext_Zacas.enable_feature();
   ext_Zicboz.enable_feature();
   ext_Zicsr.enable_feature();
   ext_Zifencei.enable_feature();
   ext_Zic64b.enable_feature();
   ext_Ztso.enable_feature();
-  ext_Zihintpause.enable_feature();
+
+  ext_Zvfh.enable_feature();
 
   unaligned_access.enable_feature(MISALIGNED_FAST);
   satp_mode.enable_feature(VM_SV48);
 
   // Features dependent on march/mimpid.
   // I.e. march.value() and mimplid.value()
+  if (mimpid.value() > 0x100) {
+    ext_Zacas.enable_feature();
+    ext_Zihintpause.enable_feature();
+  }
 }

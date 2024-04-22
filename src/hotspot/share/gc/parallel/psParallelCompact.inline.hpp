@@ -40,12 +40,6 @@ inline bool PSParallelCompact::is_marked(oop obj) {
   return mark_bitmap()->is_marked(obj);
 }
 
-inline double PSParallelCompact::normal_distribution(double density) {
-  assert(_dwl_initialized, "uninitialized");
-  const double squared_term = (density - _dwl_mean) / _dwl_std_dev;
-  return _dwl_first_term * exp(-0.5 * squared_term * squared_term);
-}
-
 inline bool PSParallelCompact::is_in(HeapWord* p, HeapWord* beg_addr, HeapWord* end_addr) {
   return p >= beg_addr && p < end_addr;
 }
