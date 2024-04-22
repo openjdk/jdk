@@ -1105,7 +1105,7 @@ void ShenandoahFreeSet::finish_rebuild(size_t cset_regions) {
   log_status();
 }
 
-void ShenandoahFreeSet::rebuild()y {
+void ShenandoahFreeSet::rebuild() {
   size_t cset_regions;
   prepare_to_rebuild(cset_regions);
   finish_rebuild(cset_regions);
