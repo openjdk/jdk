@@ -1430,40 +1430,6 @@ void PhaseIdealLoop::copy_assertion_predicates_to_main_loop_helper(const Predica
   }
 }
 
-// Is 'n' a node that can be found on the input chain of a Template Assertion Predicate bool (i.e. between a Template
-// Assertion Predicate If node and the OpaqueLoop* nodes)?
-static bool is_part_of_template_assertion_predicate_bool(Node* n) {
-  int op = n->Opcode();
-  return (n->is_Bool() ||
-          n->is_Cmp() ||
-          op == Op_AndL ||
-          op == Op_OrL ||
-          op == Op_RShiftL ||
-          op == Op_LShiftL ||
-          op == Op_LShiftI ||
-          op == Op_AddL ||
-          op == Op_AddI ||
-          op == Op_MulL ||
-          op == Op_MulI ||
-          op == Op_SubL ||
-          op == Op_SubI ||
-          op == Op_ConvI2L ||
-          op == Op_CastII);
-}
-
-bool PhaseIdealLoop::subgraph_has_opaque(Node* n) {
-  if (n->Opcode() == Op_OpaqueLoopInit || n->Opcode() == Op_OpaqueLoopStride) {
-    return true;
-  }
-  if (!is_part_of_template_assertion_predicate_bool(n)) {
-    return false;
-  }
-  uint init;
-  uint stride;
-  count_opaque_loop_nodes(n, init, stride);
-  return init != 0 || stride != 0;
-}
-
 bool PhaseIdealLoop::assertion_predicate_has_loop_opaque_node(IfNode* iff) {
   uint init;
   uint stride;
@@ -1507,19 +1473,19 @@ void PhaseIdealLoop::count_opaque_loop_nodes(Node* n, uint& init, uint& stride) 
   wq.push(n);
   for (uint i = 0; i < wq.size(); i++) {
     Node* n = wq.at(i);
-    if (is_part_of_template_assertion_predicate_bool(n)) {
-      for (uint j = 1; j < n->req(); j++) {
-        Node* m = n->in(j);
-        if (m != nullptr) {
-          wq.push(m);
+    if (TemplateAssertionPredicateExpressionNode::is_maybe_in_expression(n)) {
+      if (n->is_OpaqueLoopInit()) {
+        init++;
+      } else if (n->is_OpaqueLoopStride()) {
+        stride++;
+      } else {
+        for (uint j = 1; j < n->req(); j++) {
+          Node* m = n->in(j);
+          if (m != nullptr) {
+            wq.push(m);
+          }
         }
       }
-      continue;
-    }
-    if (n->Opcode() == Op_OpaqueLoopInit) {
-      init++;
-    } else if (n->Opcode() == Op_OpaqueLoopStride) {
-      stride++;
     }
   }
 }
