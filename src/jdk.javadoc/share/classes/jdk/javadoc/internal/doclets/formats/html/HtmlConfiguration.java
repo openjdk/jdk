@@ -335,18 +335,20 @@ public class HtmlConfiguration extends BaseConfiguration {
         }
         additionalScripts = options.additionalScripts().stream().map(sf -> {
             DocFile file = DocFile.createFileForInput(this, sf);
-            boolean isModule = false;
-            // Regex to detect JavaScript modules
-            Pattern modulePattern = Pattern.compile("""
-                    (?:^|[;}])\\s*(?:\
-                    import\\s*["']|\
-                    import[\\s{*][^()]*from\\s*["']|\
-                    export(?:\\s+(?:let|const|function|class|var|default)|\\s*[{*]))""");
-            try (InputStream in = file.openInputStream();
-                 BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
-                isModule = reader.lines().anyMatch(s -> modulePattern.matcher(s).find());
-            } catch (DocFileIOException | IOException e) {
-                // Errors are handled when copying resources
+            boolean isModule = sf.toLowerCase(Locale.ROOT).endsWith(".mjs");
+            if (!isModule) {
+                // Regex to detect JavaScript modules
+                Pattern modulePattern = Pattern.compile("""
+                        (?:^|[;}])\\s*(?:\
+                        import\\s*["']|\
+                        import[\\s{*][^()]*from\\s*["']|\
+                        export(?:\\s+(?:let|const|function|class|var|default|async)|\\s*[{*]))""");
+                try (InputStream in = file.openInputStream();
+                     BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+                    isModule = reader.lines().anyMatch(s -> modulePattern.matcher(s).find());
+                } catch (DocFileIOException | IOException e) {
+                    // Errors are handled when copying resources
+                }
             }
             return new JavaScriptFile(DocPath.create(file.getName()), isModule);
         }).collect(Collectors.toCollection(ArrayList::new));
