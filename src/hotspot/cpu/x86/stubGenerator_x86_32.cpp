@@ -1131,8 +1131,8 @@ class StubGenerator: public StubCodeGenerator {
     bs->arraycopy_prologue(_masm, decorators, t, from, to, count);
     {
       bool add_entry = (t != T_OBJECT && (!aligned || t == T_INT));
-      // UnsafeMemoryAccess page error: continue after ucm
-      UnsafeMemoryAccessMark ucmm(this, add_entry, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, add_entry, true);
       __ subptr(to, from); // to --> to_from
       __ cmpl(count, 2<<shift); // Short arrays (< 8 bytes) copy by element
       __ jcc(Assembler::below, L_copy_4_bytes); // use unsigned cmp
@@ -1321,8 +1321,8 @@ class StubGenerator: public StubCodeGenerator {
 
     {
       bool add_entry = (t != T_OBJECT && (!aligned || t == T_INT));
-      // UnsafeMemoryAccess page error: continue after ucm
-      UnsafeMemoryAccessMark ucmm(this, add_entry, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, add_entry, true);
       // copy from high to low
       __ cmpl(count, 2<<shift); // Short arrays (< 8 bytes) copy by element
       __ jcc(Assembler::below, L_copy_4_bytes); // use unsigned cmp
@@ -1450,8 +1450,8 @@ class StubGenerator: public StubCodeGenerator {
     BLOCK_COMMENT("Entry:");
 
     {
-      // UnsafeMemoryAccess page error: continue after ucm
-      UnsafeMemoryAccessMark ucmm(this, true, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, true, true);
       __ subptr(to, from); // to --> to_from
       if (UseXMMForArrayCopy) {
         xmm_copy_forward(from, to_from, count);
@@ -1505,8 +1505,8 @@ class StubGenerator: public StubCodeGenerator {
     __ jump_cc(Assembler::aboveEqual, nooverlap);
 
     {
-      // UnsafeMemoryAccess page error: continue after ucm
-      UnsafeMemoryAccessMark ucmm(this, true, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, true, true);
 
       __ jmpb(L_copy_8_bytes);
 

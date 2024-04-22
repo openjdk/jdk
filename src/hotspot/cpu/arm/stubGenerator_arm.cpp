@@ -956,8 +956,8 @@ class StubGenerator: public StubCodeGenerator {
     Label L_skip_pld;
 
     {
-      // UnsafeMemoryAccess page error: continue after ucm
-      UnsafeMemoryAccessMark ucmm(this, unsafe_copy, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, unsafe_copy, true);
       // predecrease to exit when there is less than count_per_loop
       __ sub_32(count, count, count_per_loop);
 
@@ -1105,8 +1105,8 @@ class StubGenerator: public StubCodeGenerator {
     __ push(RegisterSet(R4,R10));
 
     {
-      // UnsafeMemoryAccess page error: continue after ucm
-      UnsafeMemoryAccessMark ucmm(this, unsafe_copy, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, unsafe_copy, true);
       __ sub_32(count, count, count_per_loop);
 
       const bool prefetch_before = pld_offset < 0;
@@ -1761,8 +1761,8 @@ class StubGenerator: public StubCodeGenerator {
     assert_different_registers(from, to, count, tmp);
 
     {
-      // UnsafeMemoryAccess page error: continue after ucm
-      UnsafeMemoryAccessMark ucmm(this, unsafe_copy, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, unsafe_copy, true);
       __ align(OptoLoopAlignment);
       Label L_small_loop;
       __ BIND(L_small_loop);
@@ -1900,8 +1900,8 @@ class StubGenerator: public StubCodeGenerator {
     __ push(RegisterSet(R4,R10));
 
     {
-      // UnsafeMemoryAccess page error: continue after ucm
-      UnsafeMemoryAccessMark ucmm(this, unsafe_copy, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, unsafe_copy, true);
       load_one(Rval, from, wordSize, forward);
 
       switch (bytes_per_count) {
@@ -2059,7 +2059,7 @@ class StubGenerator: public StubCodeGenerator {
     int count_required_to_align = 0;
     {
       // UnsafeMemoryAccessMark page error: continue at UnsafeMemoryAccess common_error_exit
-      UnsafeMemoryAccessMark ucmm(this, !aligned, false);
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       count_required_to_align = from_is_aligned ? 0 : align_src(from, to, count, tmp1, bytes_per_count, forward);
       assert (small_copy_limit >= count_required_to_align, "alignment could exhaust count");
     }

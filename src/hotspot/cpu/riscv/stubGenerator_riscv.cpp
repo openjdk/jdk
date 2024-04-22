@@ -1136,9 +1136,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     {
-      // UnsafeMemoryAccess page error: continue after ucm
+      // UnsafeMemoryAccess page error: continue after unsafe access
       bool add_entry = !is_oop && (!aligned || sizeof(jlong) == size);
-      UnsafeMemoryAccessMark ucmm(this, add_entry, true);
+      UnsafeMemoryAccessMark umam(this, add_entry, true);
       copy_memory(decorators, is_oop ? T_OBJECT : T_BYTE, aligned, s, d, count, size);
     }
 
@@ -1212,9 +1212,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     {
-      // UnsafeMemoryAccess page error: continue after ucm
+      // UnsafeMemoryAccess page error: continue after unsafe access
       bool add_entry = !is_oop && (!aligned || sizeof(jlong) == size);
-      UnsafeMemoryAccessMark ucmm(this, add_entry, true);
+      UnsafeMemoryAccessMark umam(this, add_entry, true);
       copy_memory(decorators, is_oop ? T_OBJECT : T_BYTE, aligned, s, d, count, -size);
     }
 

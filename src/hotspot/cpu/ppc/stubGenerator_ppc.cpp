@@ -1014,7 +1014,7 @@ class StubGenerator: public StubCodeGenerator {
     Label l_1, l_2, l_3, l_4, l_5, l_6, l_7, l_8, l_9, l_10;
     {
       // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
-      UnsafeMemoryAccessMark ucmm(this, !aligned, false);
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
 
       // Don't try anything fancy if arrays don't have many elements.
       __ li(tmp3, 0);
@@ -1196,7 +1196,7 @@ class StubGenerator: public StubCodeGenerator {
     Label l_1, l_2;
     {
       // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
-      UnsafeMemoryAccessMark ucmm(this, !aligned, false);
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       __ b(l_2);
       __ bind(l_1);
       __ stbx(tmp1, R4_ARG2, R5_ARG3);
@@ -1283,7 +1283,7 @@ class StubGenerator: public StubCodeGenerator {
     Label l_1, l_2, l_3, l_4, l_5, l_6, l_7, l_8, l_9;
     {
       // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
-      UnsafeMemoryAccessMark ucmm(this, !aligned, false);
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       // don't try anything fancy if arrays don't have many elements
       __ li(tmp3, 0);
       __ cmpwi(CCR0, R5_ARG3, 9);
@@ -1467,7 +1467,7 @@ class StubGenerator: public StubCodeGenerator {
     Label l_1, l_2;
     {
       // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
-      UnsafeMemoryAccessMark ucmm(this, !aligned, false);
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       __ sldi(tmp1, R5_ARG3, 1);
       __ b(l_2);
       __ bind(l_1);
@@ -1626,7 +1626,7 @@ class StubGenerator: public StubCodeGenerator {
     assert_positive_int(R5_ARG3);
     {
       // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
-      UnsafeMemoryAccessMark ucmm(this, !aligned, false);
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       generate_disjoint_int_copy_core(aligned);
     }
     __ li(R3_RET, 0); // return 0
@@ -1778,7 +1778,7 @@ class StubGenerator: public StubCodeGenerator {
     array_overlap_test(nooverlap_target, 2);
     {
       // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
-      UnsafeMemoryAccessMark ucmm(this, !aligned, false);
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       generate_conjoint_int_copy_core(aligned);
     }
 
@@ -1904,7 +1904,7 @@ class StubGenerator: public StubCodeGenerator {
     assert_positive_int(R5_ARG3);
     {
       // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
-      UnsafeMemoryAccessMark ucmm(this, !aligned, false);
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       generate_disjoint_long_copy_core(aligned);
     }
     __ li(R3_RET, 0); // return 0
@@ -2035,7 +2035,7 @@ class StubGenerator: public StubCodeGenerator {
     array_overlap_test(nooverlap_target, 3);
     {
       // UnsafeMemoryAccess page error: continue at UnsafeMemoryAccess common_error_exit
-      UnsafeMemoryAccessMark ucmm(this, !aligned, false);
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       generate_conjoint_long_copy_core(aligned);
     }
     __ li(R3_RET, 0); // return 0
