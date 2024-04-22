@@ -40,42 +40,41 @@ public:
 };
 
 // Implements small pages (paged) support using placeholder reservation.
+//
 // When a memory area is free (kept by the virtual memory manager) a
 // single placeholder is covering that memory area. When memory is
 // allocated from the manager the placeholder is split into granule
-// sized placeholders to allow mapping operations on that granulairty.
+// sized placeholders to allow mapping operations on that granularity.
 class ZVirtualMemoryManagerSmallPages : public ZVirtualMemoryManagerImpl {
 private:
   class PlaceholderCallbacks : public AllStatic {
   public:
-    // Split an existing placeholder to create a new placeholder
-    // for the requested memory area.
     static void split_placeholder(zoffset start, size_t size) {
       ZMapper::split_placeholder(ZOffset::address_unsafe(start), size);
     }
 
-    // Coalesce all placeholders covering the given memory area.
     static void coalesce_placeholders(zoffset start, size_t size) {
       ZMapper::coalesce_placeholders(ZOffset::address_unsafe(start), size);
     }
 
-    // Turn the single placeholder covering a memroy area into granule
-    // sized placeholders. This is done by splitting granule sized placeholders
-    // from the covering placeholder until the whole area is handled.
-    static void create_granule_sized_placeholders(zoffset start, size_t size) {
-      size_t current_placeholder_size = size;
-      zoffset current_placeholder_offset = start;
-      // Split the current placeholder as long as it is larger than a granule
-      while (current_placeholder_size > ZGranuleSize) {
-        split_placeholder(current_placeholder_offset, ZGranuleSize);
-        current_placeholder_offset += ZGranuleSize;
-        current_placeholder_size -= ZGranuleSize;
+    // Turn the single placeholder covering the memory area into granule
+    // sized placeholders.
+    static void split_into_granule_sized_placeholders(zoffset start, size_t size) {
+      assert(size >= ZGranuleSize, "Must be at least one granule");
+      assert(is_aligned(size, ZGranuleSize), "Must be granule aligned");
+
+      // Don't call split_placeholder on the last granule, since it is already
+      // a placeholder and the system call would therefore fail.
+      const size_t limit = size - ZGranuleSize;
+      for (size_t offset = 0; offset < limit; offset += ZGranuleSize) {
+        split_placeholder(start + offset, ZGranuleSize);
       }
     }
 
     static void coalesce_into_one_placeholder(zoffset start, size_t size) {
       assert(is_aligned(size, ZGranuleSize), "Must be granule aligned");
 
+      // Granule sized areas are already covered by a single placeholder
       if (size > ZGranuleSize) {
         coalesce_placeholders(start, size);
       }
@@ -86,14 +85,16 @@ private:
     // by a single placeholder.
     static void create_callback(const ZMemory* area) {
       assert(is_aligned(area->size(), ZGranuleSize), "Must be granule aligned");
+
       coalesce_into_one_placeholder(area->start(), area->size());
     }
 
     // Called when a complete memory area in the memory manager is allocated.
-    // Create granule sized placeholder for the entier area.
+    // Create granule sized placeholders for the entire area.
     static void destroy_callback(const ZMemory* area) {
       assert(is_aligned(area->size(), ZGranuleSize), "Must be granule aligned");
-      create_granule_sized_placeholders(area->start(), area->size());
+
+      split_into_granule_sized_placeholders(area->start(), area->size());
     }
 
     // Called when a memory area is allocated at the front of an exising memory area.
@@ -102,11 +103,11 @@ private:
       assert(area->size() > size, "Must be larger than what we try to split out");
       assert(is_aligned(size, ZGranuleSize), "Must be granule aligned");
 
-      // Before creating the granule sized placeholders we need to make sure
-      // there is a placeholder covering that exact area. Otherwise splitting
-      // of a single granule sized won't work.
+      // Split the area into two placeholders
       split_placeholder(area->start(), size);
-      create_granule_sized_placeholders(area->start(), size);
+
+      // Split the first part into granule sized placeholders
+      split_into_granule_sized_placeholders(area->start(), size);
     }
 
     // Called when a memory area is allocated at the end of an existing memory area.
@@ -115,13 +116,12 @@ private:
       assert(area->size() > size, "Must be larger than what we try to split out");
       assert(is_aligned(size, ZGranuleSize), "Must be granule aligned");
 
-      // Before creating the granule sized placeholders we need to make sure
-      // there is a placeholder covering that exact area. Otherwise splitting
-      // of a single granule sized won't work.
-      zoffset placeholder_start = to_zoffset(untype(area->end()) - size);
+      // Split the area into two placeholders
+      const zoffset start = to_zoffset(area->end() - size);
+      split_placeholder(start, size);
 
-      split_placeholder(placeholder_start, size);
-      create_granule_sized_placeholders(placeholder_start, size);
+      // Split the second part into granule sized placeholders
+      split_into_granule_sized_placeholders(start, size);
     }
 
     // Called when freeing a memory area and it can be merged at the start of an
@@ -129,9 +129,8 @@ private:
     static void grow_from_front_callback(const ZMemory* area, size_t size) {
       assert(is_aligned(area->size(), ZGranuleSize), "Must be granule aligned");
 
-      size_t placeholder_size = area->size() + size;
-      zoffset placeholder_start = to_zoffset(untype(area->start()) - size);
-      coalesce_into_one_placeholder(placeholder_start, placeholder_size);
+      const zoffset start = area->start() - size;
+      coalesce_into_one_placeholder(start, area->size() + size);
     }
 
     // Called when freeing a memory area and it can be merged at the end of an
@@ -139,8 +138,7 @@ private:
     static void grow_from_back_callback(const ZMemory* area, size_t size) {
       assert(is_aligned(area->size(), ZGranuleSize), "Must be granule aligned");
 
-      size_t placeholder_size = area->size() + size;
-      coalesce_into_one_placeholder(area->start(), placeholder_size);
+      coalesce_into_one_placeholder(area->start(), area->size() + size);
     }
 
     static void register_with(ZMemoryManager* manager) {
