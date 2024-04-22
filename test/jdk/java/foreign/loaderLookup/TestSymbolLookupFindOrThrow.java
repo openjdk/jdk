@@ -23,8 +23,6 @@
 
 /*
  * @test
- * @compile lookup/Lookup.java
- * @compile invoker/Invoker.java
  * @run junit/othervm --enable-native-access=ALL-UNNAMED TestSymbolLookupFindOrThrow
  */
 
@@ -46,7 +44,6 @@ final class TestSymbolLookupFindOrThrow {
     @Test
     void findOrThrow() {
         MemorySegment symbol = SymbolLookup.loaderLookup().findOrThrow("foo");
-        Assertions.assertNotNull(symbol);
         Assertions.assertNotEquals(0, symbol.address());
     }
 
