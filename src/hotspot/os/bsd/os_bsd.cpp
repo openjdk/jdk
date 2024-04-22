@@ -2133,7 +2133,7 @@ jint os::init_2(void) {
   FLAG_SET_ERGO(UseNUMAInterleaving, false);
 
   if (MaxFDLimit) {
-    // Set the number of file descriptors to max. print out error
+    // set the number of file descriptors to max. print out error
     // if getrlimit/setrlimit fails but continue regardless.
     struct rlimit nbr_files;
     int status = getrlimit(RLIMIT_NOFILE, &nbr_files);
