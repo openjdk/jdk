@@ -167,14 +167,6 @@
           "frequency")                                                      \
           range(0, 30)                                                      \
                                                                             \
-  product(intx, Tier2CompileThreshold, 0,                                   \
-          "threshold at which tier 2 compilation is invoked")               \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(intx, Tier2BackEdgeThreshold, 0,                                  \
-          "Back edge threshold at which tier 2 compilation is invoked")     \
-          range(0, max_jint)                                                \
-                                                                            \
   product(intx, Tier3InvocationThreshold, 200,                              \
           "Compile if number of method invocations crosses this "           \
           "threshold")                                                      \
