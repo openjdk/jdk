@@ -123,7 +123,8 @@ bool Exceptions::special_exception(JavaThread* thread, const char* file, int lin
                         p2i(h_exception()), file, line, p2i(thread),
                         Universe::null_ptr_exception_instance()->print_value_string());
     // We do not care what kind of exception we get for a thread which
-    // is compiling.  We just install a dummy exception object
+    // is compiling.  We just install a dummy exception object of NPE, since that object has
+    // been preallocated.
     thread->set_pending_exception(Universe::null_ptr_exception_instance(), file, line);
     return true;
   }
