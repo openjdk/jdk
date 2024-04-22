@@ -4489,18 +4489,11 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
 }
 
 // Compare char[] or byte[] arrays aligned to 4 bytes or substrings.
-void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1,
-                                      Register ary2, Register limit,
-                                      Register result, Register chr,
-                                      XMMRegister vec1, XMMRegister vec2,
-                                      bool is_char, KRegister mask,
-                                      bool expand_ary2) {
-  // for expand_ary2, limit is the (smaller) size of the second array.
+void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register ary2,
+                                      Register limit, Register result, Register chr,
+                                      XMMRegister vec1, XMMRegister vec2, bool is_char, KRegister mask) {
   ShortBranchVerifier sbv(this);
   Label TRUE_LABEL, FALSE_LABEL, DONE, COMPARE_VECTORS, COMPARE_CHAR, COMPARE_BYTE;
-
-  assert((!expand_ary2) || ((expand_ary2) && (UseAVX == 2)),
-         "Expansion only implemented for AVX2");
 
   int length_offset  = arrayOopDesc::length_offset_in_bytes();
   int base_offset    = arrayOopDesc::base_offset_in_bytes(is_char ? T_CHAR : T_BYTE);
@@ -4540,15 +4533,14 @@ void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1,
 
   if (UseAVX >= 2) {
     // With AVX2, use 32-byte vector compare
-    Label COMPARE_WIDE_VECTORS, COMPARE_WIDE_VECTORS_16, COMPARE_TAIL, COMPARE_TAIL_16;
+    Label COMPARE_WIDE_VECTORS, COMPARE_TAIL;
 
     // Compare 32-byte vectors
     andl(result, 0x0000001f);  //   tail count (in bytes)
     andl(limit, 0xffffffe0);   // vector count (in bytes)
-    jcc(Assembler::zero, COMPARE_TAIL_16);
+    jcc(Assembler::zero, COMPARE_TAIL);
 
-    lea(ary1, Address(ary1, limit,
-                      expand_ary2 ? Address::times_2 : Address::times_1));
+    lea(ary1, Address(ary1, limit, Address::times_1));
     lea(ary2, Address(ary2, limit, Address::times_1));
     negptr(limit);
 
@@ -4591,66 +4583,25 @@ void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1,
     }//if (VM_Version::supports_avx512vlbw())
 #endif //_LP64
     bind(COMPARE_WIDE_VECTORS);
-    vmovdqu(vec1, Address(ary1, limit,
-                          expand_ary2 ? Address::times_2 : Address::times_1));
-    if (expand_ary2) {
-      vpmovzxbw(vec2, Address(ary2, limit, Address::times_1),
-                Assembler::AVX_256bit);
-    } else {
-      vmovdqu(vec2, Address(ary2, limit, Address::times_1));
-    }
+    vmovdqu(vec1, Address(ary1, limit, Address::times_1));
+    vmovdqu(vec2, Address(ary2, limit, Address::times_1));
     vpxor(vec1, vec2);
 
     vptest(vec1, vec1);
     jcc(Assembler::notZero, FALSE_LABEL);
-    addptr(limit, expand_ary2 ? 16 : 32);
+    addptr(limit, 32);
     jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
 
     testl(result, result);
     jcc(Assembler::zero, TRUE_LABEL);
 
-    vmovdqu(vec1,
-            Address(ary1, result,
-                    expand_ary2 ? Address::times_2 : Address::times_1, -32));
-    if (expand_ary2) {
-      vpmovzxbw(vec2, Address(ary2, result, Address::times_1, -16),
-                Assembler::AVX_256bit);
-    } else {
-      vmovdqu(vec2, Address(ary2, result, Address::times_1, -32));
-    }
+    vmovdqu(vec1, Address(ary1, result, Address::times_1, -32));
+    vmovdqu(vec2, Address(ary2, result, Address::times_1, -32));
     vpxor(vec1, vec2);
 
     vptest(vec1, vec1);
-    jcc(Assembler::notZero, FALSE_LABEL);
-    jmp(TRUE_LABEL);
-
-    bind(COMPARE_TAIL_16); // limit is zero
-    movl(limit, result);
-
-    // Compare 16-byte chunks
-    andl(result, 0x0000000f);  //   tail count (in bytes)
-    andl(limit, 0xfffffff0);   // vector count (in bytes)
-    jcc(Assembler::zero, COMPARE_TAIL);
-
-    lea(ary1, Address(ary1, limit, expand_ary2 ? Address::times_2 : Address::times_1));
-    lea(ary2, Address(ary2, limit, Address::times_1));
-    negptr(limit);
-
-    bind(COMPARE_WIDE_VECTORS_16);
-    movdqu(vec1, Address(ary1, limit,
-                         expand_ary2 ? Address::times_2 : Address::times_1));
-    if (expand_ary2) {
-      vpmovzxbw(vec2, Address(ary2, limit, Address::times_1),
-                Assembler::AVX_128bit);
-    } else {
-      movdqu(vec2, Address(ary2, limit, Address::times_1));
-    }
-    vpxor(vec1, vec2);
-
-    vptest(vec1, vec1);
-    jcc(Assembler::notZero, FALSE_LABEL);
-    addptr(limit, expand_ary2 ? 8 : 16);
-    jcc(Assembler::notZero, COMPARE_WIDE_VECTORS_16);
+    jccb(Assembler::notZero, FALSE_LABEL);
+    jmpb(TRUE_LABEL);
 
     bind(COMPARE_TAIL); // limit is zero
     movl(limit, result);
@@ -4695,35 +4646,19 @@ void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1,
   }
 
   // Compare 4-byte vectors
-  if (expand_ary2) {
-    testl(result, result);
-    jccb(Assembler::zero, TRUE_LABEL);
-  } else {
-    andl(limit, 0xfffffffc); // vector count (in bytes)
-    jccb(Assembler::zero, COMPARE_CHAR);
-  }
+  andl(limit, 0xfffffffc); // vector count (in bytes)
+  jccb(Assembler::zero, COMPARE_CHAR);
 
-  lea(ary1, Address(ary1, limit, expand_ary2 ? Address::times_2 : Address::times_1));
+  lea(ary1, Address(ary1, limit, Address::times_1));
   lea(ary2, Address(ary2, limit, Address::times_1));
   negptr(limit);
 
   bind(COMPARE_VECTORS);
-  if (expand_ary2) {
-    // There are no "vector" operations for bytes to shorts
-    movzbl(chr, Address(ary2, limit, Address::times_1));
-    cmpw(Address(ary1, limit, Address::times_2), chr);
-    jccb(Assembler::notEqual, FALSE_LABEL);
-    addptr(limit, 1);
-    jcc(Assembler::notZero, COMPARE_VECTORS);
-    jmp(TRUE_LABEL);
-  } else {
-    movl(chr, Address(ary1, limit,
-                      expand_ary2 ? Address::times_2 : Address::times_1));
-    cmpl(chr, Address(ary2, limit, Address::times_1));
-    jccb(Assembler::notEqual, FALSE_LABEL);
-    addptr(limit, 4);
-    jcc(Assembler::notZero, COMPARE_VECTORS);
-  }
+  movl(chr, Address(ary1, limit, Address::times_1));
+  cmpl(chr, Address(ary2, limit, Address::times_1));
+  jccb(Assembler::notEqual, FALSE_LABEL);
+  addptr(limit, 4);
+  jcc(Assembler::notZero, COMPARE_VECTORS);
 
   // Compare trailing char (final 2 bytes), if any
   bind(COMPARE_CHAR);
@@ -4737,7 +4672,7 @@ void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1,
   if (is_array_equ && is_char) {
     bind(COMPARE_BYTE);
   } else {
-    lea(ary1, Address(ary1, expand_ary2 ? 4 : 2));
+    lea(ary1, Address(ary1, 2));
     lea(ary2, Address(ary2, 2));
 
     bind(COMPARE_BYTE);
