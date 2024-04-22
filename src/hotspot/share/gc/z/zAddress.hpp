@@ -34,6 +34,9 @@ extern uintptr_t  ZAddressHeapBase;
 extern uintptr_t  ZAddressHeapBaseShift;
 
 // Describes the maximal offset inside the heap.
+// Default maximum value of addressable offset bits is set to 44 based on the
+// maximum address space requirement of 16 TB.
+const size_t     ZMaxAddressOffsetBits  = 44;
 extern size_t    ZAddressOffsetBits;
 const  size_t    ZAddressOffsetShift = 0;
 extern uintptr_t ZAddressOffsetMask;

@@ -102,13 +102,18 @@ extern uint32_t*  XAddressBadMaskHighOrderBitsAddr;
 const int         XAddressBadMaskHighOrderBitsOffset = LITTLE_ENDIAN_ONLY(4) BIG_ENDIAN_ONLY(0);
 
 // Pointer part of address
+// Maximum value of addressable offset bits is set to 44 based on the
+// maximum address space requirement of 16 TB.
+const size_t      XMaxAddressOffsetBits  = 44;
 extern size_t     XAddressOffsetBits;
 const  size_t     XAddressOffsetShift           = 0;
 extern uintptr_t  XAddressOffsetMask;
 extern size_t     XAddressOffsetMax;
 
 // Metadata part of address
+// Finalizable bit doesn't need to be addressable
 const size_t      XAddressMetadataBits          = 4;
+const size_t      XAddressableMetadataBits      = XAddressMetadataBits - 1;
 extern size_t     XAddressMetadataShift;
 extern uintptr_t  XAddressMetadataMask;
 
@@ -145,8 +150,9 @@ const size_t      XMarkStripesMax               = 16; // Must be a power of two
 const size_t      XMarkCacheSize                = 1024; // Must be a power of two
 
 // Partial array minimum size
-const size_t      XMarkPartialArrayMinSizeShift = 12; // 4K
-const size_t      XMarkPartialArrayMinSize      = (size_t)1 << XMarkPartialArrayMinSizeShift;
+const size_t      XMarkPartialArrayDefaultMinSizeShift = 12;
+extern size_t     XMarkPartialArrayMinSizeShift;
+extern size_t     XMarkPartialArrayMinSize;
 
 // Max number of proactive/terminate flush attempts
 const size_t      XMarkProactiveFlushMax        = 10;

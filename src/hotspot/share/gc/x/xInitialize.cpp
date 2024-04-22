@@ -29,6 +29,7 @@
 #include "gc/x/xHeuristics.hpp"
 #include "gc/x/xInitialize.hpp"
 #include "gc/x/xLargePages.hpp"
+#include "gc/x/xMarkStackEntry.hpp"
 #include "gc/x/xNUMA.hpp"
 #include "gc/x/xStat.hpp"
 #include "gc/x/xThreadLocalAllocBuffer.hpp"
@@ -45,6 +46,7 @@ XInitialize::XInitialize(XBarrierSet* barrier_set) {
 
   // Early initialization
   XAddress::initialize();
+  XMarkStackEntry::initialize();
   XNUMA::initialize();
   XCPU::initialize();
   XStatValue::initialize();

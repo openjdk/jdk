@@ -62,6 +62,9 @@ uintptr_t  XAddressMetadataMarked1;
 uintptr_t  XAddressMetadataRemapped;
 uintptr_t  XAddressMetadataFinalizable;
 
+size_t     XMarkPartialArrayMinSizeShift;
+size_t     XMarkPartialArrayMinSize;
+
 const char* XGlobalPhaseToString() {
   switch (XGlobalPhase) {
   case XPhaseMark:

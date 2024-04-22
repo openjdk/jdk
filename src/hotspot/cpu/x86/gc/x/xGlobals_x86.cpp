@@ -137,8 +137,11 @@
 //
 
 size_t XPlatformAddressOffsetBits() {
+  const size_t max_address_offset_bits = XMaxAddressOffsetBits;
   const size_t min_address_offset_bits = 42; // 4TB
-  const size_t max_address_offset_bits = 44; // 16TB
+  assert(max_address_offset_bits >= min_address_offset_bits,
+         "max_address_offset_bits %zu cannot be less than min_address_offset_bits %zu",
+         max_address_offset_bits, min_address_offset_bits);
   const size_t address_offset = round_up_power_of_2(MaxHeapSize * XVirtualToPhysicalRatio);
   const size_t address_offset_bits = log2i_exact(address_offset);
   return clamp(address_offset_bits, min_address_offset_bits, max_address_offset_bits);

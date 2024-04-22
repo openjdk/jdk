@@ -24,7 +24,9 @@
 #ifndef SHARE_GC_Z_ZMARKSTACKENTRY_HPP
 #define SHARE_GC_Z_ZMARKSTACKENTRY_HPP
 
+#include "gc/z/zAddress.hpp"
 #include "gc/z/zBitField.hpp"
+#include "gc/z/zGlobals.hpp"
 #include "memory/allocation.hpp"
 
 //
@@ -73,14 +75,18 @@
 
 class ZMarkStackEntry  {
 private:
+  // Based on the layout of the mark stack entry
+  static const size_t _object_address_encoding_bits = 59;
+  static const size_t _partial_array_offset_encoding_bits = 32;
+
   typedef ZBitField<uint64_t, bool,      0,  1>  field_finalizable;
   typedef ZBitField<uint64_t, bool,      1,  1>  field_partial_array;
   typedef ZBitField<uint64_t, bool,      2,  1>  field_follow;
   typedef ZBitField<uint64_t, bool,      3,  1>  field_inc_live;
   typedef ZBitField<uint64_t, bool,      4,  1>  field_mark;
-  typedef ZBitField<uint64_t, uintptr_t, 5,  59> field_object_address;
+  typedef ZBitField<uint64_t, uintptr_t, 5,  _object_address_encoding_bits> field_object_address;
   typedef ZBitField<uint64_t, size_t,    2,  30> field_partial_array_length;
-  typedef ZBitField<uint64_t, size_t,    32, 32> field_partial_array_offset;
+  typedef ZBitField<uint64_t, size_t,    32, _partial_array_offset_encoding_bits> field_partial_array_offset;
 
   uint64_t _entry;
 
@@ -136,6 +142,15 @@ public:
 
   uintptr_t object_address() const {
     return field_object_address::decode(_entry);
+  }
+
+  static void initialize() {
+    if (ZAddressOffsetBits > _object_address_encoding_bits) {
+      fatal("Insufficient bits to encode object address in mark stack");
+    }
+    ZMarkPartialArrayMinSizeShift = MAX2(ZAddressOffsetBits - _partial_array_offset_encoding_bits, ZMarkPartialArrayDefaultMinSizeShift);
+    ZMarkPartialArrayMinSize = (size_t)1 << ZMarkPartialArrayMinSizeShift;
+    ZMarkPartialArrayMinLength = ZMarkPartialArrayMinSize / oopSize;
   }
 };
 

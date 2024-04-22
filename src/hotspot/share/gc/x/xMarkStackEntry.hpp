@@ -25,6 +25,7 @@
 #define SHARE_GC_X_XMARKSTACKENTRY_HPP
 
 #include "gc/x/xBitField.hpp"
+#include "gc/x/xGlobals.hpp"
 #include "memory/allocation.hpp"
 
 //
@@ -73,14 +74,18 @@
 
 class XMarkStackEntry  {
 private:
+  // Based on the layout of the mark stack entry
+  static const size_t _object_address_encoding_bits = 59;
+  static const size_t _partial_array_offset_encoding_bits = 32;
+
   typedef XBitField<uint64_t, bool,      0,  1>  field_finalizable;
   typedef XBitField<uint64_t, bool,      1,  1>  field_partial_array;
   typedef XBitField<uint64_t, bool,      2,  1>  field_follow;
   typedef XBitField<uint64_t, bool,      3,  1>  field_inc_live;
   typedef XBitField<uint64_t, bool,      4,  1>  field_mark;
-  typedef XBitField<uint64_t, uintptr_t, 5,  59> field_object_address;
+  typedef XBitField<uint64_t, uintptr_t, 5,  _object_address_encoding_bits> field_object_address;
   typedef XBitField<uint64_t, size_t,    2,  30> field_partial_array_length;
-  typedef XBitField<uint64_t, size_t,    32, 32> field_partial_array_offset;
+  typedef XBitField<uint64_t, size_t,    32, _partial_array_offset_encoding_bits> field_partial_array_offset;
 
   uint64_t _entry;
 
@@ -136,6 +141,14 @@ public:
 
   uintptr_t object_address() const {
     return field_object_address::decode(_entry);
+  }
+
+  static void initialize() {
+    if (XAddressOffsetBits > _object_address_encoding_bits) {
+      fatal("Insufficient bits to encode object address in mark stack");
+    }
+    XMarkPartialArrayMinSizeShift = MAX2(XAddressOffsetBits - _partial_array_offset_encoding_bits, XMarkPartialArrayDefaultMinSizeShift);
+    XMarkPartialArrayMinSize = (size_t)1 << XMarkPartialArrayMinSizeShift;
   }
 };
 
