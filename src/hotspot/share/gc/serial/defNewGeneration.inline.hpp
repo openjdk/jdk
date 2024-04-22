@@ -28,7 +28,7 @@
 #include "gc/serial/defNewGeneration.hpp"
 
 #include "gc/serial/cardTableRS.hpp"
-#include "gc/shared/space.inline.hpp"
+#include "gc/shared/space.hpp"
 #include "oops/access.inline.hpp"
 #include "utilities/devirtualizer.inline.hpp"
 
