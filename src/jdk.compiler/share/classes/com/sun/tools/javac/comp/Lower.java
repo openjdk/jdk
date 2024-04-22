@@ -345,7 +345,11 @@ public class Lower extends TreeTranslator {
             List<VarSymbol> fvs = freevarCache.get(c);
             if (fvs != null) {
                 for (List<VarSymbol> l = fvs; l.nonEmpty(); l = l.tail) {
-                    addFreeVar(l.head);
+                    VarSymbol sym = l.head;
+                    if (lambdaTranslationMap != null && sym != null) {
+                        sym = (VarSymbol) lambdaTranslationMap.getOrDefault(sym, sym);
+                    }
+                    addFreeVar(sym);
                 }
             }
         }
@@ -3136,7 +3140,7 @@ public class Lower extends TreeTranslator {
             // free variables after explicit constructor arguments.
             ClassSymbol c = (ClassSymbol)constructor.owner;
             if (c.isDirectlyOrIndirectlyLocal() && !c.isStatic()) {
-                tree.args = tree.args.appendList(loadFreevars(tree.pos(), freevars(c)));
+                tree.args = tree.args.appendList(loadFreevars(tree.pos(), freevars(c).map(v -> lambdaTranslationMap != null ? (VarSymbol) lambdaTranslationMap.getOrDefault(v, v) : v)));
             }
 
             // If we are calling a constructor of an enum class, pass

@@ -26,21 +26,32 @@
  * @bug 8305007
  * @summary Within-lambda subclass of local class using method param causes compiler crash
  * @compile CompilerCrashLambdaPlusLocalClass.java
+ * @run main CompilerCrashLambdaPlusLocalClass
  */
 
 public abstract class CompilerCrashLambdaPlusLocalClass {
     public abstract void consume(Runnable r);
 
-    public void doThing(String parameter) {
+    public void doThing(String parameter1, int parameter2) {
         class LocalClass {
             @Override
             public String toString() {
-                return parameter;
+                return "" + parameter2 + parameter1;
             }
         }
         consume(() -> {
             class LambdaLocalClass extends LocalClass {}
+            new LambdaLocalClass();
             new LocalClass();
         });
+    }
+
+    public static void main(String... args) {
+        new CompilerCrashLambdaPlusLocalClass() {
+            @Override
+            public void consume(Runnable r) {
+                r.run();
+            }
+        }.doThing("test", 0);
     }
 }
