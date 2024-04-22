@@ -860,6 +860,15 @@ public final class SunPKCS11 extends AuthProvider {
         dA(CIP, "AES_256/KWP/NoPadding",        P11KeyWrapCipher,
                 m(CKM_AES_KEY_WRAP_KWP));
 
+        d(CIP, "AES/CTS/NoPadding",             P11Cipher,
+                m(CKM_AES_CTS));
+        d(CIP, "AES_128/CTS/NoPadding",         P11Cipher,
+                m(CKM_AES_CTS));
+        d(CIP, "AES_192/CTS/NoPadding",         P11Cipher,
+                m(CKM_AES_CTS));
+        d(CIP, "AES_256/CTS/NoPadding",         P11Cipher,
+                m(CKM_AES_CTS));
+
         d(CIP, "AES/GCM/NoPadding",             P11AEADCipher,
                 m(CKM_AES_GCM));
         dA(CIP, "AES_128/GCM/NoPadding",        P11AEADCipher,

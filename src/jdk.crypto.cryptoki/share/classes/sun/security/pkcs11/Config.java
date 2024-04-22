@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import static sun.security.pkcs11.TemplateManager.*;
  * @since   1.5
  */
 final class Config {
+    public enum CTSVariant {CS1, CS2, CS3}
 
     static final int ERR_HALT       = 1;
     static final int ERR_IGNORE_ALL = 2;
@@ -160,6 +161,11 @@ final class Config {
     // This option primarily exists for the deprecated
     // Secmod.Module.getProvider() method.
     private String functionList = null;
+
+    // CTS mode variant used by the token, as described in Addendum to NIST
+    // Special Publication 800-38A, "Recommendation for Block Cipher Modes
+    // of Operation: Three Variants of Ciphertext Stealing for CBC Mode".
+    private CTSVariant ctsVariant = CTSVariant.CS1;
 
     // whether to use NSS secmod mode. Implicitly set if nssLibraryDirectory,
     // nssSecmodDirectory, or nssModule is specified.
@@ -314,6 +320,10 @@ final class Config {
         return functionList;
     }
 
+    CTSVariant getCTSVariant() {
+        return ctsVariant;
+    }
+
     boolean getNssUseSecmod() {
         return nssUseSecmod;
     }
@@ -463,6 +473,14 @@ final class Config {
                 allowSingleThreadedModules = parseBooleanEntry(st.sval);
             case "functionList"->
                 functionList = parseStringEntry(st.sval);
+            case "cipherTextStealingVariant" -> {
+                try {
+                    ctsVariant = CTSVariant.valueOf(parseStringEntry(st.sval));
+                } catch (IllegalArgumentException ignored) {
+                    throw excToken("cipherTextStealingVariant must be one of " +
+                            Arrays.toString(CTSVariant.values()) + " :");
+                }
+            }
             case "nssUseSecmod"->
                 nssUseSecmod = parseBooleanEntry(st.sval);
             case "nssLibraryDirectory"-> {
