@@ -25,7 +25,7 @@
  * @test
  * @key randomness
  * @bug 8321010
- * @summary Test vector intrinsic for Math.round(float) in full 32 bits range
+ * @summary Test vector intrinsic for Math.round(float) with random input in 32 bits range, verify IR at the same time.
  *
  * @library /test/lib /
  * @modules java.base/jdk.internal.math

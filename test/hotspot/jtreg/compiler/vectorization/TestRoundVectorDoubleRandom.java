@@ -25,7 +25,7 @@
  * @test
  * @key randomness
  * @bug 8321011
- * @summary Test vector intrinsic for Math.round(double) in full 64 bits range.
+ * @summary Test vector intrinsic for Math.round(double) with random input in 64 bits range, verify IR at the same time.
  *
  * @library /test/lib /
  * @modules java.base/jdk.internal.math
