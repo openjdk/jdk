@@ -25,6 +25,10 @@
 
 package java.math;
 
+import static java.math.BigDecimal.INFLATED;
+import static java.math.BigInteger.LONG_MASK;
+import java.util.Arrays;
+
 /**
  * A class used to represent multiprecision integers that makes efficient
  * use of allocated space by allowing a number to occupy only part of
@@ -41,10 +45,6 @@ package java.math;
  * @author  Timothy Buktu
  * @since   1.3
  */
-
-import static java.math.BigDecimal.INFLATED;
-import static java.math.BigInteger.LONG_MASK;
-import java.util.Arrays;
 
 class MutableBigInteger {
     /**
