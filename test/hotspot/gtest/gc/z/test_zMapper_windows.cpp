@@ -41,8 +41,10 @@ using namespace testing;
 class ZMapperTest : public Test {
 private:
   static constexpr size_t ZMapperTestReservationSize = 32 * M;
+
   static bool            _initialized;
   static ZMemoryManager* _va;
+
   ZVirtualMemoryManager* _vmm;
 
 public:
