@@ -177,7 +177,7 @@ Java_ObjectMonitorUsage_ensureBlockedOnEnter(JNIEnv *jni, jclass cls, jthread th
 }
 
 JNIEXPORT void JNICALL
-Java_ObjectMonitorUsage_ensureWaitsToBeNotified(JNIEnv *jni, jclass cls, jthread thread) {
+Java_ObjectMonitorUsage_ensureWaitingToBeNotified(JNIEnv *jni, jclass cls, jthread thread) {
   wait_for_state(jvmti, jni, thread, JVMTI_THREAD_STATE_WAITING_INDEFINITELY);
 }
 

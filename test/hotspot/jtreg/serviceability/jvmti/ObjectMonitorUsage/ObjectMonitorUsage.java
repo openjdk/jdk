@@ -55,7 +55,7 @@ public class ObjectMonitorUsage {
     native static int getRes();
     native static int setTestedMonitor(Object monitor);
     native static void ensureBlockedOnEnter(Thread thread);
-    native static void ensureWaitsToBeNotified(Thread thread);
+    native static void ensureWaitingToBeNotified(Thread thread);
     native static void check(Object obj, Thread owner,
                              int entryCount, int waiterCount, int notifyWaiterCount);
 
@@ -88,7 +88,7 @@ public class ObjectMonitorUsage {
         for (int i = 0; i < NUMBER_OF_WAITING_THREADS; i++) {
             // the WaitingTask has to wait to be notified in lockCheck.wait()
             Thread thread = startTask(i, new WaitingTask(), isVirtual, "Waiting");
-            ensureWaitsToBeNotified(thread);
+            ensureWaitingToBeNotified(thread);
             threads[i] = thread;
         }
         return threads;
