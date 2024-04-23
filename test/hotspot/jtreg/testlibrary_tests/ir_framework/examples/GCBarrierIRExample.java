@@ -33,6 +33,7 @@ import java.lang.invoke.MethodHandles;
  * @summary Example test that illustrates the use of the IR test framework for
  *          verification of late-expanded GC barriers.
  * @library /test/lib /
+ * @requires vm.gc.ZGenerational
  * @run driver ir_framework.examples.GCBarrierIRExample
  */
 
