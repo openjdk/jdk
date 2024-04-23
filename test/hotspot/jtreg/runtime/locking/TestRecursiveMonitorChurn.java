@@ -32,11 +32,11 @@ import java.util.regex.Pattern;
  * @test
  * @summary Tests that recursive locking doesn't cause excessive native memory usage
  * @library /test/lib
- * @run main TestRecursiveMonitorChurn
+ * @run driver TestRecursiveMonitorChurn
  */
 public class TestRecursiveMonitorChurn {
     static class Monitor {
-        volatile int i, j;
+        public static int i, j;
         synchronized void doSomething() {
             i++;
             doSomethingElse();
@@ -53,6 +53,7 @@ public class TestRecursiveMonitorChurn {
                 Monitor m = new Monitor();
                 m.doSomething();
             }
+            System.out.println("i + j = " + (Monitor.i + Monitor.j));
         } else {
             ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                     "-XX:+UnlockDiagnosticVMOptions",
@@ -75,7 +76,6 @@ public class TestRecursiveMonitorChurn {
             //                             (malloc=20800624 #100003) (at peak)
 
             Pattern pat = Pattern.compile("- *Object Monitors.*reserved=(\\d+), committed=(\\d+).*");
-            boolean foundLine = false;
             for (String line : output.asLines()) {
                 Matcher m = pat.matcher(line);
                 if (m.matches()) {
@@ -85,14 +85,10 @@ public class TestRecursiveMonitorChurn {
                     if (committed > 1000) {
                         throw new RuntimeException("Allocated too many monitors");
                     }
-                    foundLine = true;
-                    break;
+                    return;
                 }
             }
-            if (!foundLine) {
-                throw new RuntimeException("Did not find expected NMT output");
-            }
-
+            throw new RuntimeException("Did not find expected NMT output");
         }
     }
 }
