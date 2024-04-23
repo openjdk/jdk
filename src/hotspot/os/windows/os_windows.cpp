@@ -2795,12 +2795,12 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
       }
 
-      bool is_unsafe_memory_access = (in_native || in_java) && UnsafeCopyMemory::contains_pc(pc);
+      bool is_unsafe_memory_access = (in_native || in_java) && UnsafeMemoryAccess::contains_pc(pc);
       if (((in_vm || in_native || is_unsafe_memory_access) && thread->doing_unsafe_access()) ||
           (nm != nullptr && nm->has_unsafe_access())) {
         address next_pc =  Assembler::locate_next_instruction(pc);
         if (is_unsafe_memory_access) {
-          next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+          next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
         }
         return Handle_Exception(exceptionInfo, SharedRuntime::handle_unsafe_access(thread, next_pc));
       }

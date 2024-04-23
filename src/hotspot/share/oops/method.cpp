@@ -1276,7 +1276,7 @@ address Method::make_adapters(const methodHandle& mh, TRAPS) {
       // Java exception object.
       vm_exit_during_initialization("Out of space in CodeCache for adapters");
     } else {
-      THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(), "Out of space in CodeCache for adapters");
+      THROW_MSG_NULL(vmSymbols::java_lang_OutOfMemoryError(), "Out of space in CodeCache for adapters");
     }
   }
 

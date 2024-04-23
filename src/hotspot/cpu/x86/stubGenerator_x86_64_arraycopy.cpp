@@ -560,8 +560,8 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(address* entry, const 
     int loop_size[]        = { 192,     96,       48,      24};
     int threshold[]        = { 4096,    2048,     1024,    512};
 
-    // UnsafeCopyMemory page error: continue after ucm
-    UnsafeCopyMemoryMark ucmm(this, !is_oop && !aligned, true);
+    // UnsafeMemoryAccess page error: continue after unsafe access
+    UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, true);
     // 'from', 'to' and 'count' are now valid
 
     // temp1 holds remaining count and temp4 holds running count used to compute
@@ -730,7 +730,7 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(address* entry, const 
 
   if (MaxVectorSize == 64) {
     __ BIND(L_copy_large);
-      UnsafeCopyMemoryMark ucmm(this, !is_oop && !aligned, false, ucme_exit_pc);
+      UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, false, ucme_exit_pc);
       arraycopy_avx3_large(to, from, temp1, temp2, temp3, temp4, count, xmm1, xmm2, xmm3, xmm4, shift);
     __ jmp(L_finish);
   }
@@ -859,8 +859,8 @@ address StubGenerator::generate_conjoint_copy_avx3_masked(address* entry, const 
     int loop_size[]   = { 192,     96,       48,      24};
     int threshold[]   = { 4096,    2048,     1024,    512};
 
-    // UnsafeCopyMemory page error: continue after ucm
-    UnsafeCopyMemoryMark ucmm(this, !is_oop && !aligned, true);
+    // UnsafeMemoryAccess page error: continue after unsafe access
+    UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, true);
     // 'from', 'to' and 'count' are now valid
 
     // temp1 holds remaining count.
@@ -1318,8 +1318,8 @@ address StubGenerator::generate_disjoint_byte_copy(bool aligned, address* entry,
                     // r9 and r10 may be used to save non-volatile registers
 
   {
-    // UnsafeCopyMemory page error: continue after ucm
-    UnsafeCopyMemoryMark ucmm(this, !aligned, true);
+    // UnsafeMemoryAccess page error: continue after unsafe access
+    UnsafeMemoryAccessMark umam(this, !aligned, true);
     // 'from', 'to' and 'count' are now valid
     __ movptr(byte_count, count);
     __ shrptr(count, 3); // count => qword_count
@@ -1374,7 +1374,7 @@ __ BIND(L_exit);
   __ ret(0);
 
   {
-    UnsafeCopyMemoryMark ucmm(this, !aligned, false, ucme_exit_pc);
+    UnsafeMemoryAccessMark umam(this, !aligned, false, ucme_exit_pc);
     // Copy in multi-bytes chunks
     copy_bytes_forward(end_from, end_to, qword_count, rax, r10, L_copy_bytes, L_copy_8_bytes, decorators, T_BYTE);
     __ jmp(L_copy_4_bytes);
@@ -1432,8 +1432,8 @@ address StubGenerator::generate_conjoint_byte_copy(bool aligned, address nooverl
                     // r9 and r10 may be used to save non-volatile registers
 
   {
-    // UnsafeCopyMemory page error: continue after ucm
-    UnsafeCopyMemoryMark ucmm(this, !aligned, true);
+    // UnsafeMemoryAccess page error: continue after unsafe access
+    UnsafeMemoryAccessMark umam(this, !aligned, true);
     // 'from', 'to' and 'count' are now valid
     __ movptr(byte_count, count);
     __ shrptr(count, 3);   // count => qword_count
@@ -1477,8 +1477,8 @@ address StubGenerator::generate_conjoint_byte_copy(bool aligned, address nooverl
   __ ret(0);
 
   {
-    // UnsafeCopyMemory page error: continue after ucm
-    UnsafeCopyMemoryMark ucmm(this, !aligned, true);
+    // UnsafeMemoryAccess page error: continue after unsafe access
+    UnsafeMemoryAccessMark umam(this, !aligned, true);
     // Copy in multi-bytes chunks
     copy_bytes_backward(from, to, qword_count, rax, r10, L_copy_bytes, L_copy_8_bytes, decorators, T_BYTE);
   }
@@ -1549,8 +1549,8 @@ address StubGenerator::generate_disjoint_short_copy(bool aligned, address *entry
                     // r9 and r10 may be used to save non-volatile registers
 
   {
-    // UnsafeCopyMemory page error: continue after ucm
-    UnsafeCopyMemoryMark ucmm(this, !aligned, true);
+    // UnsafeMemoryAccess page error: continue after unsafe access
+    UnsafeMemoryAccessMark umam(this, !aligned, true);
     // 'from', 'to' and 'count' are now valid
     __ movptr(word_count, count);
     __ shrptr(count, 2); // count => qword_count
@@ -1598,7 +1598,7 @@ __ BIND(L_exit);
   __ ret(0);
 
   {
-    UnsafeCopyMemoryMark ucmm(this, !aligned, false, ucme_exit_pc);
+    UnsafeMemoryAccessMark umam(this, !aligned, false, ucme_exit_pc);
     // Copy in multi-bytes chunks
     copy_bytes_forward(end_from, end_to, qword_count, rax, r10, L_copy_bytes, L_copy_8_bytes, decorators, T_SHORT);
     __ jmp(L_copy_4_bytes);
@@ -1624,7 +1624,7 @@ address StubGenerator::generate_fill(BasicType t, bool aligned, const char *name
 
   {
     // Add set memory mark to protect against unsafe accesses faulting
-    UnsafeCopyMemoryMark usmm(this, ((t == T_BYTE) && !aligned), true);
+    UnsafeMemoryAccessMark umam(this, ((t == T_BYTE) && !aligned), true);
     __ generate_fill(t, aligned, to, value, r11, rax, xmm0);
   }
 
@@ -1685,8 +1685,8 @@ address StubGenerator::generate_conjoint_short_copy(bool aligned, address noover
                     // r9 and r10 may be used to save non-volatile registers
 
   {
-    // UnsafeCopyMemory page error: continue after ucm
-    UnsafeCopyMemoryMark ucmm(this, !aligned, true);
+    // UnsafeMemoryAccess page error: continue after unsafe access
+    UnsafeMemoryAccessMark umam(this, !aligned, true);
     // 'from', 'to' and 'count' are now valid
     __ movptr(word_count, count);
     __ shrptr(count, 2); // count => qword_count
@@ -1722,8 +1722,8 @@ address StubGenerator::generate_conjoint_short_copy(bool aligned, address noover
   __ ret(0);
 
   {
-    // UnsafeCopyMemory page error: continue after ucm
-    UnsafeCopyMemoryMark ucmm(this, !aligned, true);
+    // UnsafeMemoryAccess page error: continue after unsafe access
+    UnsafeMemoryAccessMark umam(this, !aligned, true);
     // Copy in multi-bytes chunks
     copy_bytes_backward(from, to, qword_count, rax, r10, L_copy_bytes, L_copy_8_bytes, decorators, T_SHORT);
   }
@@ -1806,8 +1806,8 @@ address StubGenerator::generate_disjoint_int_oop_copy(bool aligned, bool is_oop,
   bs->arraycopy_prologue(_masm, decorators, type, from, to, count);
 
   {
-    // UnsafeCopyMemory page error: continue after ucm
-    UnsafeCopyMemoryMark ucmm(this, !is_oop && !aligned, true);
+    // UnsafeMemoryAccess page error: continue after unsafe access
+    UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, true);
     // 'from', 'to' and 'count' are now valid
     __ movptr(dword_count, count);
     __ shrptr(count, 1); // count => qword_count
@@ -1843,7 +1843,7 @@ __ BIND(L_exit);
   __ ret(0);
 
   {
-    UnsafeCopyMemoryMark ucmm(this, !is_oop && !aligned, false, ucme_exit_pc);
+    UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, false, ucme_exit_pc);
     // Copy in multi-bytes chunks
     copy_bytes_forward(end_from, end_to, qword_count, rax, r10, L_copy_bytes, L_copy_8_bytes, decorators, is_oop ? T_OBJECT : T_INT);
     __ jmp(L_copy_4_bytes);
@@ -1916,8 +1916,8 @@ address StubGenerator::generate_conjoint_int_oop_copy(bool aligned, bool is_oop,
 
   assert_clean_int(count, rax); // Make sure 'count' is clean int.
   {
-    // UnsafeCopyMemory page error: continue after ucm
-    UnsafeCopyMemoryMark ucmm(this, !is_oop && !aligned, true);
+    // UnsafeMemoryAccess page error: continue after unsafe access
+    UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, true);
     // 'from', 'to' and 'count' are now valid
     __ movptr(dword_count, count);
     __ shrptr(count, 1); // count => qword_count
@@ -1949,8 +1949,8 @@ address StubGenerator::generate_conjoint_int_oop_copy(bool aligned, bool is_oop,
   __ ret(0);
 
   {
-    // UnsafeCopyMemory page error: continue after ucm
-    UnsafeCopyMemoryMark ucmm(this, !is_oop && !aligned, true);
+    // UnsafeMemoryAccess page error: continue after unsafe access
+    UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, true);
     // Copy in multi-bytes chunks
     copy_bytes_backward(from, to, qword_count, rax, r10, L_copy_bytes, L_copy_8_bytes, decorators, is_oop ? T_OBJECT : T_INT);
   }
@@ -2031,8 +2031,8 @@ address StubGenerator::generate_disjoint_long_oop_copy(bool aligned, bool is_oop
   BasicType type = is_oop ? T_OBJECT : T_LONG;
   bs->arraycopy_prologue(_masm, decorators, type, from, to, qword_count);
   {
-    // UnsafeCopyMemory page error: continue after ucm
-    UnsafeCopyMemoryMark ucmm(this, !is_oop && !aligned, true);
+    // UnsafeMemoryAccess page error: continue after unsafe access
+    UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, true);
 
     // Copy from low to high addresses.  Use 'to' as scratch.
     __ lea(end_from, Address(from, qword_count, Address::times_8, -8));
@@ -2063,8 +2063,8 @@ address StubGenerator::generate_disjoint_long_oop_copy(bool aligned, bool is_oop
   }
 
   {
-    // UnsafeCopyMemory page error: continue after ucm
-    UnsafeCopyMemoryMark ucmm(this, !is_oop && !aligned, true);
+    // UnsafeMemoryAccess page error: continue after unsafe access
+    UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, true);
     // Copy in multi-bytes chunks
     copy_bytes_forward(end_from, end_to, qword_count, rax, r10, L_copy_bytes, L_copy_8_bytes, decorators, is_oop ? T_OBJECT : T_LONG);
   }
@@ -2140,8 +2140,8 @@ address StubGenerator::generate_conjoint_long_oop_copy(bool aligned, bool is_oop
   BasicType type = is_oop ? T_OBJECT : T_LONG;
   bs->arraycopy_prologue(_masm, decorators, type, from, to, qword_count);
   {
-    // UnsafeCopyMemory page error: continue after ucm
-    UnsafeCopyMemoryMark ucmm(this, !is_oop && !aligned, true);
+    // UnsafeMemoryAccess page error: continue after unsafe access
+    UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, true);
 
     __ jmp(L_copy_bytes);
 
@@ -2167,8 +2167,8 @@ address StubGenerator::generate_conjoint_long_oop_copy(bool aligned, bool is_oop
     __ ret(0);
   }
   {
-    // UnsafeCopyMemory page error: continue after ucm
-    UnsafeCopyMemoryMark ucmm(this, !is_oop && !aligned, true);
+    // UnsafeMemoryAccess page error: continue after unsafe access
+    UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, true);
 
     // Copy in multi-bytes chunks
     copy_bytes_backward(from, to, qword_count, rax, r10, L_copy_bytes, L_copy_8_bytes, decorators, is_oop ? T_OBJECT : T_LONG);
@@ -2628,7 +2628,7 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
     // Fill words
     {
       Label L_wordsTail, L_wordsLoop, L_wordsTailLoop;
-      UnsafeCopyMemoryMark usmm(this, true, true);
+      UnsafeMemoryAccessMark umam(this, true, true);
 
       // At this point, we know the lower bit of size is zero and a
       // multiple of 2
@@ -2642,7 +2642,7 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
     // Fill QUADWORDs
     {
       Label L_qwordLoop, L_qwordsTail, L_qwordsTailLoop;
-      UnsafeCopyMemoryMark usmm(this, true, true);
+      UnsafeMemoryAccessMark umam(this, true, true);
 
       // At this point, we know the lower 3 bits of size are zero and a
       // multiple of 8
@@ -2659,7 +2659,7 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
     // Fill DWORDs
     {
       Label L_dwordLoop, L_dwordsTail, L_dwordsTailLoop;
-      UnsafeCopyMemoryMark usmm(this, true, true);
+      UnsafeMemoryAccessMark umam(this, true, true);
 
       // At this point, we know the lower 2 bits of size are zero and a
       // multiple of 4

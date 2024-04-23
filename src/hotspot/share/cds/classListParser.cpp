@@ -591,7 +591,7 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
           LinkResolver::resolve_invoke(info,
                                        recv,
                                        pool,
-                                       ConstantPool::encode_invokedynamic_index(indy_index),
+                                       indy_index,
                                        Bytecodes::_invokedynamic, CHECK);
           break;
         }

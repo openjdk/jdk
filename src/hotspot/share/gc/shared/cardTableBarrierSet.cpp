@@ -80,10 +80,6 @@ CardTableBarrierSet::~CardTableBarrierSet() {
   delete _card_table;
 }
 
-void CardTableBarrierSet::write_ref_array_work(MemRegion mr) {
-  _card_table->dirty_MemRegion(mr);
-}
-
 void CardTableBarrierSet::write_region(MemRegion mr) {
   _card_table->dirty_MemRegion(mr);
 }

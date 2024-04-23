@@ -200,32 +200,6 @@ public:
   void set_gc_manager(GCMemoryManager* gc_manager) {
     _gc_manager = gc_manager;
   }
-
-  // Apply "blk->do_oop" to the addresses of all reference fields in objects
-  // starting with the _saved_mark_word, which was noted during a generation's
-  // save_marks and is required to denote the head of an object.
-  // Fields in objects allocated by applications of the closure
-  // *are* included in the iteration.
-  // Updates saved_mark_word to point to just after the last object iterated over.
-  template <typename OopClosureType>
-  void oop_since_save_marks_iterate_impl(OopClosureType* blk, ContiguousSpace* space, HeapWord* saved_mark_word);
 };
-
-template <typename OopClosureType>
-void Generation::oop_since_save_marks_iterate_impl(OopClosureType* blk, ContiguousSpace* space, HeapWord* saved_mark_word) {
-  HeapWord* t;
-  HeapWord* p = saved_mark_word;
-  assert(p != nullptr, "expected saved mark");
-
-  const intx interval = PrefetchScanIntervalInBytes;
-  do {
-    t = space->top();
-    while (p < t) {
-      Prefetch::write(p, interval);
-      oop m = cast_to_oop(p);
-      p += m->oop_iterate_size(blk);
-    }
-  } while (t < space->top());
-}
 
 #endif // SHARE_GC_SERIAL_GENERATION_HPP

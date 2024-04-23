@@ -748,10 +748,6 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
 
   restore_marks();
 
-  // Set saved marks for allocation profiler (and other things? -- dld)
-  // (Should this be in general part?)
-  gch->save_marks();
-
   deallocate_stacks();
 
   SerialFullGC::_string_dedup_requests->flush();
