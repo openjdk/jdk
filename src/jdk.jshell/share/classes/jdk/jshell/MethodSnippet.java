@@ -85,7 +85,7 @@ public class MethodSnippet extends DeclarationSnippet {
         return sb.toString();
     }
 
-    /**** internal access ****/
+    //**** internal access ****
 
     @Override
     MethodKey key() {

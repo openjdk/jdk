@@ -107,7 +107,7 @@ class MaskCommentsAndModifiers {
         return openToken;
     }
 
-    /****** private implementation methods ******/
+    //****** private implementation methods ******
 
     /**
      * Read the next character
