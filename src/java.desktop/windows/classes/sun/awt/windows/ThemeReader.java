@@ -107,15 +107,21 @@ public final class ThemeReader {
            // We're using the syntax "subAppName::controlName" here, as used by msstyles.
            // See documentation for SetWindowTheme on MSDN.
            setWindowTheme(widget.substring(0, i));
-           theme = openTheme(widget.substring(i + 2), dpi);
+           theme = getOpenThemeValue(widget.substring(i + 2), dpi);
            setWindowTheme(null);
        } else {
-           theme = openTheme(widget, dpi);
-       }
-       if (theme == 0) {
-           theme = openTheme(widget, defaultDPI);
+           theme = getOpenThemeValue(widget, dpi);
        }
        return theme;
+    }
+
+    private static Long getOpenThemeValue(String widget, int dpi) {
+        Long theme;
+        theme = openTheme(widget, dpi);
+        if (theme == 0) {
+            theme = openTheme(widget, defaultDPI);
+        }
+        return theme;
     }
 
     // this should be called only with writeLock held
