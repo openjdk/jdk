@@ -986,10 +986,10 @@ public:
   void ALWAYSINLINE jpe(Label& L, bool maybe_short = true) { jcc(Assembler::parity, L, maybe_short); }
   void ALWAYSINLINE jnp(Label& L, bool maybe_short = true) { jcc(Assembler::noParity, L, maybe_short); }
   void ALWAYSINLINE jpo(Label& L, bool maybe_short = true) { jcc(Assembler::noParity, L, maybe_short); }
-// * No condition for this *  void ALWAYSINLINE jcxz(Label& L, bool maybe_short = true) { jcc(Assembler::cxz, L, maybe_short); }
-// * No condition for this *  void ALWAYSINLINE jecxz(Label& L, bool maybe_short = true) { jcc(Assembler::cxz, L, maybe_short); }
+  // * No condition for this *  void ALWAYSINLINE jcxz(Label& L, bool maybe_short = true) { jcc(Assembler::cxz, L, maybe_short); }
+  // * No condition for this *  void ALWAYSINLINE jecxz(Label& L, bool maybe_short = true) { jcc(Assembler::cxz, L, maybe_short); }
 
-// Short versions of the above
+  // Short versions of the above
   void ALWAYSINLINE jo_b(Label& L) { jccb(Assembler::overflow, L); }
   void ALWAYSINLINE jno_b(Label& L) { jccb(Assembler::noOverflow, L); }
   void ALWAYSINLINE js_b(Label& L) { jccb(Assembler::positive, L); }
@@ -1020,8 +1020,8 @@ public:
   void ALWAYSINLINE jpe_b(Label& L) { jccb(Assembler::parity, L); }
   void ALWAYSINLINE jnp_b(Label& L) { jccb(Assembler::noParity, L); }
   void ALWAYSINLINE jpo_b(Label& L) { jccb(Assembler::noParity, L); }
-// * No condition for this *  void ALWAYSINLINE jcxz_b(Label& L) { jccb(Assembler::cxz, L); }
-// * No condition for this *  void ALWAYSINLINE jecxz_b(Label& L) { jccb(Assembler::cxz, L); }
+  // * No condition for this *  void ALWAYSINLINE jcxz_b(Label& L) { jccb(Assembler::cxz, L); }
+  // * No condition for this *  void ALWAYSINLINE jecxz_b(Label& L) { jccb(Assembler::cxz, L); }
 
   // Floating
 
