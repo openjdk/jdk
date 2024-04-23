@@ -109,9 +109,6 @@ public final class LoaderThreadCount extends ThreadGroup {
                                   .filter(c -> c > 0)
                                   .toList();
 
-            System.out.println("Number of loader threads in snapshots:");
-            loaderCount.forEach(System.out::println);
-
             if (loaderCount.isEmpty()) {
                 throw new RuntimeException("Invalid results: no loader threads detected");
             }
