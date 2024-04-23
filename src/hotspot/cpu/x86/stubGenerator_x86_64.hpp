@@ -268,6 +268,14 @@ class StubGenerator: public StubCodeGenerator {
                                address byte_copy_entry, address short_copy_entry,
                                address int_copy_entry, address long_copy_entry);
 
+  // Generate 'unsafe' set memory stub
+  // Though just as safe as the other stubs, it takes an unscaled
+  // size_t argument instead of an element count.
+  //
+  // Examines the alignment of the operands and dispatches
+  // to an int, short, or byte copy loop.
+  address generate_unsafe_setmemory(const char *name, address byte_copy_entry);
+
   // Perform range checks on the proposed arraycopy.
   // Kills temp, but nothing else.
   // Also, clean the sign bits of src_pos and dst_pos.
@@ -604,6 +612,12 @@ class StubGenerator: public StubCodeGenerator {
 
   // shared exception handler for FFM upcall stubs
   address generate_upcall_stub_exception_handler();
+
+  // Specialized stub implementations for UseSecondarySupersTable.
+  address generate_lookup_secondary_supers_table_stub(u1 super_klass_index);
+
+  // Slow path implementation for UseSecondarySupersTable.
+  address generate_lookup_secondary_supers_table_slow_path_stub();
 
   void create_control_words();
 

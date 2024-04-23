@@ -82,8 +82,6 @@ public class SwitchBootstraps {
     private static final MethodTypeDesc TYPES_SWITCH_DESCRIPTOR =
             MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;ILjava/util/function/BiPredicate;Ljava/util/List;)I");
 
-    private static final Map<TypePairs, String> typePairToName;
-
     static {
         try {
             NULL_CHECK = LOOKUP.findStatic(Objects.class, "isNull",
@@ -99,7 +97,6 @@ public class SwitchBootstraps {
         catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
         }
-        typePairToName = TypePairs.initialize();
     }
 
     /**
@@ -507,7 +504,7 @@ public class SwitchBootstraps {
                             }
 
                             TypePairs typePair = TypePairs.of(Wrapper.asPrimitiveType(selectorType), classLabel);
-                            String methodName = typePairToName.get(typePair);
+                            String methodName = TypePairs.typePairToName.get(typePair);
                             cb.invokestatic(ExactConversionsSupport.class.describeConstable().orElseThrow(),
                                     methodName,
                                     MethodTypeDesc.of(ConstantDescs.CD_boolean, typePair.from.describeConstable().orElseThrow()));
@@ -684,11 +681,25 @@ public class SwitchBootstraps {
 
     // TypePairs should be in sync with the corresponding record in Lower
     record TypePairs(Class<?> from, Class<?> to) {
+
+        private static final Map<TypePairs, String> typePairToName = initialize();
+
         public static TypePairs of(Class<?> from,  Class<?> to) {
             if (from == byte.class || from == short.class || from == char.class) {
                 from = int.class;
             }
             return new TypePairs(from, to);
+        }
+
+        public int hashCode() {
+            return 31 * from.hashCode() + to.hashCode();
+        }
+
+        public boolean equals(Object other) {
+            if (other instanceof TypePairs otherPair) {
+                return otherPair.from == from && otherPair.to == to;
+            }
+            return false;
         }
 
         public static Map<TypePairs, String> initialize() {

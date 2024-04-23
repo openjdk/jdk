@@ -54,6 +54,8 @@ public sealed interface ArrayLoadInstruction extends Instruction
      *
      * @param op the opcode for the specific type of array load instruction,
      *           which must be of kind {@link Opcode.Kind#ARRAY_LOAD}
+     * @throws IllegalArgumentException if the opcode kind is not
+     *         {@link Opcode.Kind#ARRAY_LOAD}.
      */
     static ArrayLoadInstruction of(Opcode op) {
         Util.checkKind(op, Opcode.Kind.ARRAY_LOAD);

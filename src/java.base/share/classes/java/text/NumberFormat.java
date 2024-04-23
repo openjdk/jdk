@@ -38,8 +38,8 @@
 
 package java.text;
 
-import java.io.InvalidObjectException;
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
@@ -52,6 +52,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleServiceProviderPool;
 
@@ -147,7 +148,6 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * if false, 3456.00 &rarr; "3456"
  * This is independent of parsing.  If you want parsing to stop at the decimal
  * point, use setParseIntegerOnly.
- *
  * <p>
  * You can also use forms of the {@code parse} and {@code format}
  * methods with {@code ParsePosition} and {@code FieldPosition} to
@@ -175,9 +175,23 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *      numbers: "(12)" for -12.
  * </ol>
  *
- * <h2><a id="synchronization">Synchronization</a></h2>
- *
+ * <h2><a id="leniency">Leniency</a></h2>
+ * {@code NumberFormat} by default, parses leniently. Subclasses may consider
+ * implementing strict parsing and as such, overriding and providing
+ * implementations for the optional {@link #isStrict()} and {@link
+ * #setStrict(boolean)} methods.
  * <p>
+ * Lenient parsing should be used when attempting to parse a number
+ * out of a String that contains non-numerical or non-format related values.
+ * For example, using a {@link Locale#US} currency format to parse the number
+ * {@code 1000} out of the String "$1,000.00 was paid".
+ * <p>
+ * Strict parsing should be used when attempting to ensure a String adheres exactly
+ * to a locale's conventions, and can thus serve to validate input. For example, successfully
+ * parsing the number {@code 1000.55} out of the String "1.000,55" confirms the String
+ * exactly adhered to the {@link Locale#GERMANY} numerical conventions.
+ *
+ * <h2><a id="synchronization">Synchronization</a></h2>
  * Number formats are generally not synchronized.
  * It is recommended to create separate format instances for each thread.
  * If multiple threads access a format concurrently, it must be synchronized
@@ -285,23 +299,11 @@ public abstract class NumberFormat extends Format  {
     }
 
     /**
-     * Parses text from a string to produce a {@code Number}.
-     * <p>
-     * The method attempts to parse text starting at the index given by
-     * {@code pos}.
-     * If parsing succeeds, then the index of {@code pos} is updated
-     * to the index after the last character used (parsing does not necessarily
-     * use all characters up to the end of the string), and the parsed
-     * number is returned. The updated {@code pos} can be used to
-     * indicate the starting point for the next call to this method.
-     * If an error occurs, then the index of {@code pos} is not
-     * changed, the error index of {@code pos} is set to the index of
-     * the character where the error occurred, and null is returned.
-     * <p>
-     * See the {@link #parse(String, ParsePosition)} method for more information
-     * on number parsing.
+     * {@inheritDoc Format}
      *
-     * @param source A {@code String}, part of which should be parsed.
+     * @implSpec This implementation is equivalent to calling {@code parse(source,
+     *           pos)}.
+     * @param source the {@code String} to parse
      * @param pos A {@code ParsePosition} object with index and error
      *            index information as described above.
      * @return A {@code Number} parsed from the string. In case of
@@ -399,33 +401,44 @@ public abstract class NumberFormat extends Format  {
                                         FieldPosition pos);
 
     /**
-     * Returns a Long if possible (e.g., within the range [Long.MIN_VALUE,
+     * Parses text from the beginning of the given string to produce a {@code Number}.
+     * <p>
+     * This method attempts to parse text starting at the index given by the
+     * {@code ParsePosition}. If parsing succeeds, then the index of the {@code
+     * ParsePosition} is updated to the index after the last character used
+     * (parsing does not necessarily use all characters up to the end of the
+     * string), and the parsed number is returned. The updated {@code
+     * ParsePosition} can be used to indicate the starting
+     * point for the next call to this method. If an error occurs, then the
+     * index of the {@code ParsePosition} is not changed, the error index of the
+     * {@code ParsePosition} is set to the index of the character where the error
+     * occurred, and {@code null} is returned.
+     * <p>
+     * This method will return a Long if possible (e.g., within the range [Long.MIN_VALUE,
      * Long.MAX_VALUE] and with no decimals), otherwise a Double.
-     * If IntegerOnly is set, will stop at a decimal
-     * point (or equivalent; e.g., for rational numbers "1 2/3", will stop
-     * after the 1).
-     * Does not throw an exception; if no object can be parsed, index is
-     * unchanged!
      *
-     * @param source the String to parse
-     * @param parsePosition the parse position
-     * @return the parsed value
-     * @see java.text.NumberFormat#isParseIntegerOnly
-     * @see java.text.Format#parseObject
+     * @param source the {@code String} to parse
+     * @param parsePosition A {@code ParsePosition} object with index and error
+     *            index information as described above.
+     * @return A {@code Number} parsed from the string. In case of
+     *         failure, returns {@code null}.
+     * @throws NullPointerException if {@code source} or {@code ParsePosition}
+     *         is {@code null}.
+     * @see #isStrict()
      */
     public abstract Number parse(String source, ParsePosition parsePosition);
 
     /**
-     * Parses text from the beginning of the given string to produce a number.
-     * The method may not use the entire text of the given string.
+     * Parses text from the beginning of the given string to produce a {@code Number}.
      * <p>
-     * See the {@link #parse(String, ParsePosition)} method for more information
-     * on number parsing.
+     * This method will return a Long if possible (e.g., within the range [Long.MIN_VALUE,
+     * Long.MAX_VALUE] and with no decimals), otherwise a Double.
      *
-     * @param source A {@code String} whose beginning should be parsed.
+     * @param source A {@code String}, to be parsed from the beginning.
      * @return A {@code Number} parsed from the string.
-     * @throws    ParseException if the beginning of the specified string
-     *            cannot be parsed.
+     * @throws ParseException if parsing fails
+     * @throws NullPointerException if {@code source} is {@code null}.
+     * @see #isStrict()
      */
     public Number parse(String source) throws ParseException {
         ParsePosition parsePosition = new ParsePosition(0);
@@ -461,6 +474,44 @@ public abstract class NumberFormat extends Format  {
      */
     public void setParseIntegerOnly(boolean value) {
         parseIntegerOnly = value;
+    }
+
+    /**
+     * {@return {@code true} if this format will parse numbers strictly;
+     * {@code false} otherwise}
+     *
+     * @implSpec The default implementation always throws {@code
+     * UnsupportedOperationException}. Subclasses should override this method
+     * when implementing strict parsing.
+     * @throws    UnsupportedOperationException if the implementation of this
+     *            method does not support this operation
+     * @see ##leniency Leniency Section
+     * @see #setStrict(boolean)
+     * @since 23
+     */
+    public boolean isStrict() {
+        throw new UnsupportedOperationException("Subclasses should override this " +
+                "method when implementing strict parsing");
+    }
+
+    /**
+     * Change the leniency value for parsing. Parsing can either be strict or lenient,
+     * by default it is lenient.
+     *
+     * @implSpec The default implementation always throws {@code
+     * UnsupportedOperationException}. Subclasses should override this method
+     * when implementing strict parsing.
+     * @param strict {@code true} if parsing should be done strictly;
+     *               {@code false} otherwise
+     * @throws    UnsupportedOperationException if the implementation of this
+     *            method does not support this operation
+     * @see ##leniency Leniency Section
+     * @see #isStrict()
+     * @since 23
+     */
+    public void setStrict(boolean strict) {
+        throw new UnsupportedOperationException("Subclasses should override this " +
+                "method when implementing strict parsing");
     }
 
     //============== Locale Stuff =====================
@@ -759,12 +810,12 @@ public abstract class NumberFormat extends Format  {
             return false;
         }
         NumberFormat other = (NumberFormat) obj;
-        return (maximumIntegerDigits == other.maximumIntegerDigits
+        return maximumIntegerDigits == other.maximumIntegerDigits
             && minimumIntegerDigits == other.minimumIntegerDigits
             && maximumFractionDigits == other.maximumFractionDigits
             && minimumFractionDigits == other.minimumFractionDigits
             && groupingUsed == other.groupingUsed
-            && parseIntegerOnly == other.parseIntegerOnly);
+            && parseIntegerOnly == other.parseIntegerOnly;
     }
 
     /**

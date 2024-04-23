@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1131,8 +1131,8 @@ class StubGenerator: public StubCodeGenerator {
     bs->arraycopy_prologue(_masm, decorators, t, from, to, count);
     {
       bool add_entry = (t != T_OBJECT && (!aligned || t == T_INT));
-      // UnsafeCopyMemory page error: continue after ucm
-      UnsafeCopyMemoryMark ucmm(this, add_entry, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, add_entry, true);
       __ subptr(to, from); // to --> to_from
       __ cmpl(count, 2<<shift); // Short arrays (< 8 bytes) copy by element
       __ jcc(Assembler::below, L_copy_4_bytes); // use unsigned cmp
@@ -1321,8 +1321,8 @@ class StubGenerator: public StubCodeGenerator {
 
     {
       bool add_entry = (t != T_OBJECT && (!aligned || t == T_INT));
-      // UnsafeCopyMemory page error: continue after ucm
-      UnsafeCopyMemoryMark ucmm(this, add_entry, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, add_entry, true);
       // copy from high to low
       __ cmpl(count, 2<<shift); // Short arrays (< 8 bytes) copy by element
       __ jcc(Assembler::below, L_copy_4_bytes); // use unsigned cmp
@@ -1450,8 +1450,8 @@ class StubGenerator: public StubCodeGenerator {
     BLOCK_COMMENT("Entry:");
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
-      UnsafeCopyMemoryMark ucmm(this, true, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, true, true);
       __ subptr(to, from); // to --> to_from
       if (UseXMMForArrayCopy) {
         xmm_copy_forward(from, to_from, count);
@@ -1505,8 +1505,8 @@ class StubGenerator: public StubCodeGenerator {
     __ jump_cc(Assembler::aboveEqual, nooverlap);
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
-      UnsafeCopyMemoryMark ucmm(this, true, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, true, true);
 
       __ jmpb(L_copy_8_bytes);
 
@@ -4121,8 +4121,8 @@ class StubGenerator: public StubCodeGenerator {
     create_control_words();
 
     // Initialize table for copy memory (arraycopy) check.
-    if (UnsafeCopyMemory::_table == nullptr) {
-      UnsafeCopyMemory::create_table(16);
+    if (UnsafeMemoryAccess::_table == nullptr) {
+      UnsafeMemoryAccess::create_table(16 + 4); // 16 for copyMemory; 4 for setMemory
     }
 
     StubRoutines::x86::_verify_mxcsr_entry         = generate_verify_mxcsr();
