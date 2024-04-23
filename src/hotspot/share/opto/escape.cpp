@@ -490,6 +490,7 @@ bool ConnectionGraph::can_reduce_phi_check_inputs(PhiNode* ophi) const {
 // I require the 'other' input to be a constant so that I can move the Cmp
 // around safely.
 bool ConnectionGraph::can_reduce_cmp(Node* n, Node* cmp) const {
+  assert(cmp->Opcode() == Op_CmpP || cmp->Opcode() == Op_CmpN, "not expected node: %s", cmp->Name());
   Node* left = cmp->in(1);
   Node* right = cmp->in(2);
 
@@ -568,11 +569,14 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
         // CmpP/N used by the If controlling the cast.
         if (use->in(0)->is_IfTrue() || use->in(0)->is_IfFalse()) {
           Node* iff = use->in(0)->in(0);
-          Node* iff_cmp = iff->in(1)->in(1); // if->bool->cmp
-          if (!can_reduce_cmp(n, iff_cmp)) {
-            NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. CastPP %d doesn't have simple control.", n->_idx, _invocation, use->_idx);)
-            NOT_PRODUCT(n->dump(5);)
-            return false;
+          if (iff->Opcode() == Op_If && iff->in(1)->is_Bool() && iff->in(1)->in(1)->is_Cmp()) {
+            Node* iff_cmp = iff->in(1)->in(1);
+            int opc = iff_cmp->Opcode();
+            if ((opc == Op_CmpP || opc == Op_CmpN) && !can_reduce_cmp(n, iff_cmp)) {
+              NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. CastPP %d doesn't have simple control.", n->_idx, _invocation, use->_idx);)
+              NOT_PRODUCT(n->dump(5);)
+              return false;
+            }
           }
         }
       }
