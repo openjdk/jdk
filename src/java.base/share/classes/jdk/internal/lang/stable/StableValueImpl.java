@@ -42,6 +42,8 @@ public final class StableValueImpl<V> implements StableValue<V> {
     private static final long STATE_OFFSET =
             UNSAFE.objectFieldOffset(StableValueImpl.class, "state");
 
+    private final Object mutex = new Object();
+
     /**
      * If non-null, holds a set value
      * If `null`  , may be unset or hold a set `null` value
@@ -102,11 +104,13 @@ public final class StableValueImpl<V> implements StableValue<V> {
 
     @ForceInline
     @Override
-    public synchronized void setOrThrow(V value) {
-        if (isSet()) {
-            throw StableUtil.alreadySet(this);
+    public void setOrThrow(V value) {
+        synchronized (mutex) {
+            if (isSet()) {
+                throw StableUtil.alreadySet(this);
+            }
+            setValue(value);
         }
-        setValue(value);
     }
 
     @ForceInline
@@ -115,7 +119,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
         if (isSet()) {
            return orThrow();
         }
-        synchronized (this) {
+        synchronized (mutex) {
             if (isSet()) {
                 return orThrow();
             }
@@ -159,15 +163,17 @@ public final class StableValueImpl<V> implements StableValue<V> {
         };
     }
 
-    private synchronized V computeIfUnsetVolatile0(Supplier<? extends V> supplier) {
-        // A value is already set
-        if (state() != UNSET) {
-            return orThrow();
+    private V computeIfUnsetVolatile0(Supplier<? extends V> supplier) {
+        synchronized (mutex) {
+            // A value is already set
+            if (state() != UNSET) {
+                return orThrow();
+            }
+            // A value is not set
+            V newValue = supplier.get();
+            setValue(newValue);
+            return newValue;
         }
-        // A value is not set
-        V newValue = supplier.get();
-        setValue(newValue);
-        return newValue;
     }
 
     @Override

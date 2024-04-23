@@ -38,7 +38,6 @@ import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.InaccessibleObjectException;
 import java.util.NoSuchElementException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
