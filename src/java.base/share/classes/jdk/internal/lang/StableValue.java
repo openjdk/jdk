@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ThreadFactory;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -161,13 +162,16 @@ public sealed interface StableValue<V>
      * If the supplier throws an (unchecked) exception, the exception is ignored, and no
      * value is set.
      *
-     * @param <V>      the value type to set
-     * @param supplier to be used for computing a value
+     * @param <V>           the value type to set
+     * @param threadFactory to use when creating the background thread
+     * @param supplier      to be used for computing a value
      * @see StableValue#of
      */
-    static <V> StableValue<V> ofBackground(Supplier<? extends V> supplier) {
+    static <V> StableValue<V> ofBackground(ThreadFactory threadFactory,
+                                           Supplier<? extends V> supplier) {
+        Objects.requireNonNull(threadFactory);
         Objects.requireNonNull(supplier);
-        return StableValueImpl.ofBackground(supplier);
+        return StableValueImpl.ofBackground(threadFactory, supplier);
     }
 
     // Collection factories

@@ -30,6 +30,7 @@ import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.NoSuchElementException;
+import java.util.concurrent.ThreadFactory;
 import java.util.function.Supplier;
 
 import static jdk.internal.lang.stable.StableUtil.*;
@@ -224,14 +225,18 @@ public final class StableValueImpl<V> implements StableValue<V> {
         return new StableValueImpl<>();
     }
 
-    public static <V> StableValue<V> ofBackground(Supplier<? extends V> supplier) {
+    public static <V> StableValue<V> ofBackground(ThreadFactory threadFactory,
+                                                  Supplier<? extends V> supplier) {
         StableValue<V> stable = StableValue.of();
-        Thread.ofVirtual()
-                .start(() -> {
-                    try {
-                        stable.computeIfUnset(supplier);
-                    } catch (Throwable _) {}
-                });
+        Thread bgThread = threadFactory.newThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    stable.computeIfUnset(supplier);
+                } catch (Throwable _) {}
+            }
+        });
+        bgThread.start();
         return stable;
     }
 
