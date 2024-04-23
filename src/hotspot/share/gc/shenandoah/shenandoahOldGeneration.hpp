@@ -76,6 +76,9 @@ private:
   size_t _promotable_humongous_regions;
   size_t _promotable_regular_regions;
 
+  // True if old regions may be safely traversed by the remembered set scan.
+  bool _is_parseable;
+
   bool coalesce_and_fill();
 
 public:
@@ -126,6 +129,10 @@ public:
   void set_expected_regular_region_promotions(size_t region_count) { _promotable_regular_regions = region_count; }
   bool has_in_place_promotions() const { return (_promotable_humongous_regions + _promotable_regular_regions) > 0; }
 
+  // Class unloading may render the card table offsets unusable, if they refer to unmarked objects
+  bool is_parseable() const   { return _is_parseable; }
+  void set_parseable(bool parseable);
+
   // This will signal the heuristic to trigger an old generation collection
   void handle_failed_transfer();
 
@@ -142,6 +149,13 @@ public:
   bool clear_failed_evacuation() {
     return _failed_evacuation.try_unset();
   }
+
+  // Transition to the next state after mixed evacuations have completed
+  void complete_mixed_evacuations();
+
+  // Abandon any future mixed collections. This is invoked when all old regions eligible for
+  // inclusion in a mixed evacuation are pinned. This should be rare.
+  void abandon_mixed_evacuations();
 
   void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl) override;
 
@@ -186,11 +200,19 @@ public:
   bool has_unprocessed_collection_candidates();
 
   bool is_doing_mixed_evacuations() const {
-    return state() == EVACUATING;
+    return state() == EVACUATING || state() == EVACUATING_AFTER_GLOBAL;
   }
 
   bool is_preparing_for_mark() const {
     return state() == FILLING;
+  }
+
+  bool is_idle() const {
+    return state() == WAITING_FOR_BOOTSTRAP;
+  }
+
+  bool is_bootstrapping() const {
+    return state() == BOOTSTRAPPING;
   }
 
   // Amount of live memory (bytes) in regions waiting for mixed collections
@@ -202,7 +224,7 @@ public:
   void maybe_trigger_collection(size_t first_old_region, size_t last_old_region, size_t old_region_count);
 public:
   enum State {
-    FILLING, WAITING_FOR_BOOTSTRAP, BOOTSTRAPPING, MARKING, EVACUATING
+    FILLING, WAITING_FOR_BOOTSTRAP, BOOTSTRAPPING, MARKING, EVACUATING, EVACUATING_AFTER_GLOBAL
   };
 
 #ifdef ASSERT

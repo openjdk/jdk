@@ -66,7 +66,11 @@ ShenandoahOldHeuristics::ShenandoahOldHeuristics(ShenandoahOldGeneration* genera
   _old_generation(generation),
   _cannot_expand_trigger(false),
   _fragmentation_trigger(false),
-  _growth_trigger(false) {
+  _growth_trigger(false),
+  _fragmentation_density(0.0),
+  _fragmentation_first_old_region(0),
+  _fragmentation_last_old_region(0)
+{
 }
 
 bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* collection_set) {
@@ -203,11 +207,8 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
     // We have added the last of our collection candidates to a mixed collection.
     // Any triggers that occurred during mixed evacuations may no longer be valid.  They can retrigger if appropriate.
     clear_triggers();
-    if (has_coalesce_and_fill_candidates()) {
-      _old_generation->transition_to(ShenandoahOldGeneration::FILLING);
-    } else {
-      _old_generation->transition_to(ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP);
-    }
+
+    _old_generation->complete_mixed_evacuations();
   } else if (included_old_regions == 0) {
     // We have candidates, but none were included for evacuation - are they all pinned?
     // or did we just not have enough room for any of them in this collection set?
@@ -216,7 +217,7 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
     // (pinned) regions parsable.
     if (all_candidates_are_pinned()) {
       log_info(gc)("All candidate regions " UINT32_FORMAT " are pinned", unprocessed_old_collection_candidates());
-      _old_generation->transition_to(ShenandoahOldGeneration::FILLING);
+      _old_generation->abandon_mixed_evacuations();
     } else {
       log_info(gc)("No regions selected for mixed collection. "
                    "Old evacuation budget: " PROPERFMT ", Remaining evacuation budget: " PROPERFMT

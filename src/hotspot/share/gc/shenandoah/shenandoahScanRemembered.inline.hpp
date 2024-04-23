@@ -551,6 +551,7 @@ template <typename ClosureType>
 void ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, size_t count, HeapWord* end_of_range,
                                                                ClosureType* cl, bool use_write_table, uint worker_id) {
 
+  assert(ShenandoahHeap::heap()->old_generation()->is_parseable(), "Old generation regions must be parseable for remembered set scan");
   // If old-gen evacuation is active, then MarkingContext for old-gen heap regions is valid.  We use the MarkingContext
   // bits to determine which objects within a DIRTY card need to be scanned.  This is necessary because old-gen heap
   // regions that are in the candidate collection set have not been coalesced and filled.  Thus, these heap regions

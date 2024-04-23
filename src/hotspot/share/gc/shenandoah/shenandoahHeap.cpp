@@ -973,7 +973,7 @@ HeapWord* ShenandoahHeap::allocate_from_gclab_slow(Thread* thread, size_t size) 
 void ShenandoahHeap::cancel_old_gc() {
   shenandoah_assert_safepoint();
   assert(old_generation() != nullptr, "Should only have mixed collections in generation mode.");
-  if (old_generation()->state() == ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP) {
+  if (old_generation()->is_idle()) {
 #ifdef ASSERT
     old_generation()->validate_waiting_for_bootstrap();
 #endif
@@ -2095,6 +2095,9 @@ void ShenandoahHeap::recycle_trash() {
 
 void ShenandoahHeap::do_class_unloading() {
   _unloader.unload();
+  if (mode()->is_generational()) {
+    old_generation()->set_parseable(false);
+  }
 }
 
 void ShenandoahHeap::stw_weak_refs(bool full_gc) {
@@ -2174,7 +2177,7 @@ void ShenandoahHeap::set_concurrent_old_mark_in_progress(bool in_progress) {
 }
 
 bool ShenandoahHeap::is_prepare_for_old_mark_in_progress() const {
-  return old_generation()->state() == ShenandoahOldGeneration::FILLING;
+  return old_generation()->is_preparing_for_mark();
 }
 
 void ShenandoahHeap::set_aging_cycle(bool in_progress) {

@@ -91,6 +91,7 @@ public:
   // Transfers surplus old regions to young, or takes regions from young to satisfy old region deficit
   TransferResult balance_generations();
 
+  void coalesce_and_fill_old_regions(bool concurrent);
 
 private:
   void initialize_controller() override;

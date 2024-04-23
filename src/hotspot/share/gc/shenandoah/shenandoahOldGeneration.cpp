@@ -88,7 +88,7 @@ public:
     }
   }
 
-  size_t trashed_oops() {
+  size_t trashed_oops() const {
     return _trashed_oops;
   }
 };
@@ -145,6 +145,7 @@ public:
   }
 
   void work(uint worker_id) override {
+    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_coalesce_and_fill, ShenandoahPhaseTimings::ScanClusters, worker_id);
     for (uint region_idx = worker_id; region_idx < _coalesce_and_fill_region_count; region_idx += _nworkers) {
       ShenandoahHeapRegion* r = _coalesce_and_fill_region_array[region_idx];
       if (r->is_humongous()) {
@@ -153,7 +154,7 @@ public:
         continue;
       }
 
-      if (!r->oop_fill_and_coalesce()) {
+      if (!r->oop_coalesce_and_fill(true)) {
         // Coalesce and fill has been preempted
         Atomic::store(&_is_preempted, true);
         return;
@@ -178,6 +179,7 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues, size_t max_cap
     _pad_for_promote_in_place(0),
     _promotable_humongous_regions(0),
     _promotable_regular_regions(0),
+    _is_parseable(true),
     _state(WAITING_FOR_BOOTSTRAP),
     _growth_before_compaction(INITIAL_GROWTH_BEFORE_COMPACTION),
     _min_growth_before_compaction ((ShenandoahMinOldGenGrowthPercent * FRACTIONAL_DENOMINATOR) / 100)
@@ -284,9 +286,8 @@ bool ShenandoahOldGeneration::entry_coalesce_and_fill() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
 
   static const char* msg = "Coalescing and filling (OLD)";
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::coalesce_and_fill);
+  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_coalesce_and_fill);
 
-  // TODO: I don't think we're using these concurrent collection counters correctly.
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
   EventMark em("%s", msg);
   ShenandoahWorkerScope scope(heap->workers(),
@@ -299,22 +300,28 @@ bool ShenandoahOldGeneration::entry_coalesce_and_fill() {
 // Make the old generation regions parsable, so they can be safely
 // scanned when looking for objects in memory indicated by dirty cards.
 bool ShenandoahOldGeneration::coalesce_and_fill() {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
   transition_to(FILLING);
-
-  WorkerThreads* workers = heap->workers();
-  uint nworkers = workers->active_workers();
 
   // This code will see the same set of regions to fill on each resumption as it did
   // on the initial run. That's okay because each region keeps track of its own coalesce
   // and fill state. Regions that were filled on a prior attempt will not try to fill again.
   uint coalesce_and_fill_regions_count = heuristics()->get_coalesce_and_fill_candidates(_coalesce_and_fill_region_array);
-  assert(coalesce_and_fill_regions_count <= heap->num_regions(), "Sanity");
+  assert(coalesce_and_fill_regions_count <= ShenandoahHeap::heap()->num_regions(), "Sanity");
+  if (coalesce_and_fill_regions_count == 0) {
+    // No regions need to be filled.
+    abandon_collection_candidates();
+    return true;
+  }
+
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  WorkerThreads* workers = heap->workers();
+  uint nworkers = workers->active_workers();
   ShenandoahConcurrentCoalesceAndFillTask task(nworkers, _coalesce_and_fill_region_array, coalesce_and_fill_regions_count);
 
   log_info(gc)("Starting (or resuming) coalesce-and-fill of " UINT32_FORMAT " old heap regions", coalesce_and_fill_regions_count);
   workers->run_task(&task);
   if (task.is_completed()) {
+    // We no longer need to track regions that need to be coalesced and filled.
     abandon_collection_candidates();
     return true;
   } else {
@@ -384,11 +391,12 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
 
 const char* ShenandoahOldGeneration::state_name(State state) {
   switch (state) {
-    case WAITING_FOR_BOOTSTRAP: return "Waiting for Bootstrap";
-    case FILLING:               return "Coalescing";
-    case BOOTSTRAPPING:         return "Bootstrapping";
-    case MARKING:               return "Marking";
-    case EVACUATING:            return "Evacuating";
+    case WAITING_FOR_BOOTSTRAP:   return "Waiting for Bootstrap";
+    case FILLING:                 return "Coalescing";
+    case BOOTSTRAPPING:           return "Bootstrapping";
+    case MARKING:                 return "Marking";
+    case EVACUATING:              return "Evacuating";
+    case EVACUATING_AFTER_GLOBAL: return "Evacuating (G)";
     default:
       ShouldNotReachHere();
       return "Unknown";
@@ -432,38 +440,44 @@ void ShenandoahOldGeneration::transition_to(State new_state) {
 //               |   |            | Filling Complete    | <-> A global collection may
 //               |   |            v                     |     move the old generation
 //               |   |          +-----------------+     |     directly from waiting for
-//               |   +--------> |     WAITING     |     |     bootstrap to filling or
-//               |   |    +---- |  FOR BOOTSTRAP  | ----+     evacuating.
-//               |   |    |     +-----------------+
-//               |   |    |       |
-//               |   |    |       | Reset Bitmap
-//               |   |    |       v
-//               |   |    |     +-----------------+     +----------------------+
-//               |   |    |     |    BOOTSTRAP    | <-> |       YOUNG GC       |
-//               |   |    |     |                 |     | (RSet Parses Region) |
-//               |   |    |     +-----------------+     +----------------------+
-//               |   |    |       |
-//               |   |    |       | Old Marking
-//               |   |    |       v
-//               |   |    |     +-----------------+     +----------------------+
-//               |   |    |     |     MARKING     | <-> |       YOUNG GC       |
-//               |   +--------- |                 |     | (RSet Parses Region) |
-//               |        |     +-----------------+     +----------------------+
-//               |        |       |
-//               |        |       | Has Evacuation Candidates
-//               |        |       v
-//               |        |     +-----------------+     +--------------------+
-//               |        +---> |    EVACUATING   | <-> |      YOUNG GC      |
-//               +------------- |                 |     | (RSet Uses Bitmap) |
+//           +-- |-- |--------> |     WAITING     |     |     bootstrap to filling or
+//           |   |   |    +---- |  FOR BOOTSTRAP  | ----+     evacuating. It may also
+//           |   |   |    |     +-----------------+           move from filling to waiting
+//           |   |   |    |       |                           for bootstrap.
+//           |   |   |    |       | Reset Bitmap
+//           |   |   |    |       v
+//           |   |   |    |     +-----------------+     +----------------------+
+//           |   |   |    |     |    BOOTSTRAP    | <-> |       YOUNG GC       |
+//           |   |   |    |     |                 |     | (RSet Parses Region) |
+//           |   |   |    |     +-----------------+     +----------------------+
+//           |   |   |    |       |
+//           |   |   |    |       | Old Marking
+//           |   |   |    |       v
+//           |   |   |    |     +-----------------+     +----------------------+
+//           |   |   |    |     |     MARKING     | <-> |       YOUNG GC       |
+//           |   |   +--------- |                 |     | (RSet Parses Region) |
+//           |   |        |     +-----------------+     +----------------------+
+//           |   |        |       |
+//           |   |        |       | Has Evacuation Candidates
+//           |   |        |       v
+//           |   |        |     +-----------------+     +--------------------+
+//           |   |        +---> |    EVACUATING   | <-> |      YOUNG GC      |
+//           |   +------------- |                 |     | (RSet Uses Bitmap) |
+//           |                  +-----------------+     +--------------------+
+//           |                    |
+//           |                    | Global Cycle Coalesces and Fills Old Regions
+//           |                    v
+//           |                  +-----------------+     +--------------------+
+//           +----------------- |    EVACUATING   | <-> |      YOUNG GC      |
+//                              |   AFTER GLOBAL  |     | (RSet Uses Bitmap) |
 //                              +-----------------+     +--------------------+
-//
 //
 //
 void ShenandoahOldGeneration::validate_transition(State new_state) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   switch (new_state) {
     case FILLING:
-      assert(_state != BOOTSTRAPPING, "Cannot beging making old regions parsable after bootstrapping");
+      assert(_state != BOOTSTRAPPING, "Cannot begin making old regions parsable after bootstrapping");
       assert(is_mark_complete(), "Cannot begin filling without first completing marking, state is '%s'", state_name(_state));
       assert(_old_heuristics->has_coalesce_and_fill_candidates(), "Cannot begin filling without something to fill.");
       break;
@@ -480,6 +494,9 @@ void ShenandoahOldGeneration::validate_transition(State new_state) {
       assert(_state == BOOTSTRAPPING, "Must have finished bootstrapping before marking, state is '%s'", state_name(_state));
       assert(heap->young_generation()->old_gen_task_queues() != nullptr, "Young generation needs old mark queues.");
       assert(heap->is_concurrent_old_mark_in_progress(), "Should be marking old now.");
+      break;
+    case EVACUATING_AFTER_GLOBAL:
+      assert(_state == EVACUATING, "Must have been evacuating, state is '%s'", state_name(_state));
       break;
     case EVACUATING:
       assert(_state == WAITING_FOR_BOOTSTRAP || _state == MARKING, "Cannot have old collection candidates without first marking, state is '%s'", state_name(_state));
@@ -650,4 +667,74 @@ void ShenandoahOldGeneration::parallel_region_iterate_free(ShenandoahHeapRegionC
   // Iterate over old and free regions (exclude young).
   ShenandoahExcludeRegionClosure<YOUNG_GENERATION> exclude_cl(cl);
   ShenandoahGeneration::parallel_region_iterate_free(&exclude_cl);
+}
+
+void ShenandoahOldGeneration::set_parseable(bool parseable) {
+  _is_parseable = parseable;
+  if (_is_parseable) {
+    // The current state would have been chosen during final mark of the global
+    // collection, _before_ any decisions about class unloading have been made.
+    //
+    // After unloading classes, we have made the old generation regions parseable.
+    // We can skip filling or transition to a state that knows everything has
+    // already been filled.
+    switch (state()) {
+      case ShenandoahOldGeneration::EVACUATING:
+        transition_to(ShenandoahOldGeneration::EVACUATING_AFTER_GLOBAL);
+        break;
+      case ShenandoahOldGeneration::FILLING:
+        assert(_old_heuristics->unprocessed_old_collection_candidates() == 0, "Expected no mixed collection candidates");
+        assert(_old_heuristics->coalesce_and_fill_candidates_count() > 0, "Expected coalesce and fill candidates");
+        // When the heuristic put the old generation in this state, it didn't know
+        // that we would unload classes and make everything parseable. But, we know
+        // that now so we can override this state.
+        // TODO: It would be nicer if we didn't have to 'correct' this situation.
+        abandon_collection_candidates();
+        transition_to(ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP);
+        break;
+      default:
+        // We can get here during a full GC. The full GC will cancel anything
+        // happening in the old generation and return it to the waiting for bootstrap
+        // state. The full GC will then record that the old regions are parseable
+        // after rebuilding the remembered set.
+        assert(is_idle(), "Unexpected state %s at end of global GC", state_name());
+        break;
+    }
+  }
+}
+
+void ShenandoahOldGeneration::complete_mixed_evacuations() {
+  assert(is_doing_mixed_evacuations(), "Mixed evacuations should be in progress");
+  if (!_old_heuristics->has_coalesce_and_fill_candidates()) {
+    // No candidate regions to coalesce and fill
+    transition_to(ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP);
+    return;
+  }
+
+  if (state() == ShenandoahOldGeneration::EVACUATING) {
+    transition_to(ShenandoahOldGeneration::FILLING);
+    return;
+  }
+
+  // Here, we have no more candidates for mixed collections. The candidates for coalescing
+  // and filling have already been processed during the global cycle, so there is nothing
+  // more to do.
+  assert(state() == ShenandoahOldGeneration::EVACUATING_AFTER_GLOBAL, "Should be evacuating after a global cycle");
+  abandon_collection_candidates();
+  transition_to(ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP);
+}
+
+void ShenandoahOldGeneration::abandon_mixed_evacuations() {
+  switch(state()) {
+    case ShenandoahOldGeneration::EVACUATING:
+      transition_to(ShenandoahOldGeneration::FILLING);
+      break;
+    case ShenandoahOldGeneration::EVACUATING_AFTER_GLOBAL:
+      abandon_collection_candidates();
+      transition_to(ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP);
+      break;
+    default:
+      ShouldNotReachHere();
+      break;
+  }
 }

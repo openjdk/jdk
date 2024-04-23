@@ -110,11 +110,10 @@ private:
   static int compare_by_index(RegionData a, RegionData b);
 
  protected:
-  virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set, RegionData* data, size_t data_size,
-                                                     size_t free) override;
+  void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set, RegionData* data, size_t data_size, size_t free) override;
 
 public:
-  ShenandoahOldHeuristics(ShenandoahOldGeneration* generation);
+  explicit ShenandoahOldHeuristics(ShenandoahOldGeneration* generation);
 
   // Prepare for evacuation of old-gen regions by capturing the mark results of a recently completed concurrent mark pass.
   void prepare_for_old_collections();
@@ -193,7 +192,7 @@ public:
 
   bool is_experimental() override;
 
- private:
+private:
   void slide_pinned_regions_to_front();
   bool all_candidates_are_pinned();
 };

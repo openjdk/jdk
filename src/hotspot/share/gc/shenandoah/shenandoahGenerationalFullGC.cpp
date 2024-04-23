@@ -72,8 +72,7 @@ void ShenandoahGenerationalFullGC::handle_completion(ShenandoahHeap* heap) {
   heap->mmu_tracker()->record_full(GCId::current());
   heap->log_heap_status("At end of Full GC");
 
-  assert(old->state() == ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP,
-         "After full GC, old generation should be waiting for bootstrap.");
+  assert(old->is_idle(), "After full GC, old generation should be idle.");
 
   // Since we allow temporary violation of these constraints during Full GC, we want to enforce that the assertions are
   // made valid by the time Full GC completes.
@@ -91,6 +90,12 @@ void ShenandoahGenerationalFullGC::rebuild_remembered_set(ShenandoahHeap* heap) 
   ShenandoahRegionIterator regions;
   ShenandoahReconstructRememberedSetTask task(&regions);
   heap->workers()->run_task(&task);
+
+  // Rebuilding the remembered set recomputes all the card offsets for objects.
+  // The adjust pointers phase coalesces and fills all necessary regions. In case
+  // we came to the full GC from an incomplete global cycle, we need to indicate
+  // that the old regions are parseable.
+  heap->old_generation()->set_parseable(true);
 }
 
 void ShenandoahGenerationalFullGC::balance_generations_after_gc(ShenandoahHeap* heap) {
@@ -165,7 +170,7 @@ void ShenandoahGenerationalFullGC::account_for_region(ShenandoahHeapRegion* r, s
 void ShenandoahGenerationalFullGC::maybe_coalesce_and_fill_region(ShenandoahHeapRegion* r) {
   if (r->is_pinned() && r->is_old() && r->is_active() && !r->is_humongous()) {
     r->begin_preemptible_coalesce_and_fill();
-    r->oop_fill_and_coalesce_without_cancel();
+    r->oop_coalesce_and_fill(false);
   }
 }
 

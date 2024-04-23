@@ -58,7 +58,7 @@ bool ShenandoahDegenGC::collect(GCCause::Cause cause) {
   vmop_degenerated();
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->mode()->is_generational()) {
-    bool is_bootstrap_gc = heap->old_generation()->state() == ShenandoahOldGeneration::BOOTSTRAPPING;
+    bool is_bootstrap_gc = heap->old_generation()->is_bootstrapping();
     heap->mmu_tracker()->record_degenerated(GCId::current(), is_bootstrap_gc);
     const char* msg = is_bootstrap_gc? "At end of Degenerated Bootstrap Old GC": "At end of Degenerated Young GC";
     heap->log_heap_status(msg);
@@ -105,10 +105,9 @@ void ShenandoahDegenGC::op_degenerated() {
     if (_generation->is_global()) {
       // If we are in a global cycle, the old generation should not be marking. It is, however,
       // allowed to be holding regions for evacuation or coalescing.
-      ShenandoahOldGeneration::State state = old_generation->state();
-      assert(state == ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP
-             || state == ShenandoahOldGeneration::EVACUATING
-             || state == ShenandoahOldGeneration::FILLING,
+      assert(old_generation->is_idle()
+             || old_generation->is_doing_mixed_evacuations()
+             || old_generation->is_preparing_for_mark(),
              "Old generation cannot be in state: %s", old_generation->state_name());
     }
   }
@@ -307,6 +306,10 @@ void ShenandoahDegenGC::op_degenerated() {
     // In case degeneration interrupted concurrent evacuation or update references, we need to clean up transient state.
     // Otherwise, these actions have no effect.
     ShenandoahGenerationalHeap::heap()->reset_generation_reserves();
+
+    if (!ShenandoahGenerationalHeap::heap()->old_generation()->is_parseable()) {
+      op_global_coalesce_and_fill();
+    }
   }
 
   if (ShenandoahVerify) {
@@ -398,6 +401,11 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
 
 void ShenandoahDegenGC::op_cleanup_early() {
   ShenandoahHeap::heap()->recycle_trash();
+}
+
+void ShenandoahDegenGC::op_global_coalesce_and_fill() {
+  ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_coalesce_and_fill);
+  ShenandoahGenerationalHeap::heap()->coalesce_and_fill_old_regions(false);
 }
 
 void ShenandoahDegenGC::op_evacuate() {

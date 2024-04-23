@@ -102,8 +102,6 @@ class outputStream;
   f(conc_class_unload_purge_ec,                     "    Exception Caches")            \
   f(conc_strong_roots,                              "Concurrent Strong Roots")         \
   SHENANDOAH_PAR_PHASE_DO(conc_strong_roots_,       "  CSR: ", f)                      \
-  f(coalesce_and_fill,                              "Coalesce and Fill Old Dead")      \
-  SHENANDOAH_PAR_PHASE_DO(coalesce_and_fill_,       "  CFOD: ", f)                     \
   f(conc_evac,                                      "Concurrent Evacuation")           \
                                                                                        \
   f(final_roots_gross,                              "Pause Final Roots (G)")           \
@@ -124,6 +122,8 @@ class outputStream;
   f(final_update_refs_rebuild_freeset,              "  Rebuild Free Set")              \
                                                                                        \
   f(conc_cleanup_complete,                          "Concurrent Cleanup")              \
+  f(conc_coalesce_and_fill,                         "Concurrent Coalesce and Fill")    \
+  SHENANDOAH_PAR_PHASE_DO(conc_coalesce_,           "  CC&F: ", f)                     \
                                                                                        \
   f(degen_gc_gross,                                 "Pause Degenerated GC (G)")        \
   f(degen_gc,                                       "Pause Degenerated GC (N)")        \
@@ -153,6 +153,8 @@ class outputStream;
   f(degen_gc_update_roots,                          "  Degen Update Roots")            \
   SHENANDOAH_PAR_PHASE_DO(degen_gc_update_,         "    DU: ", f)                     \
   f(degen_gc_cleanup_complete,                      "  Cleanup")                       \
+  f(degen_gc_coalesce_and_fill,                     "  Degen Coalesce and Fill")       \
+  SHENANDOAH_PAR_PHASE_DO(degen_coalesce_,          "    DC&F", f)                     \
                                                                                        \
   f(full_gc_gross,                                  "Pause Full GC (G)")               \
   f(full_gc,                                        "Pause Full GC (N)")               \

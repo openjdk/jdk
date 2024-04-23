@@ -80,7 +80,6 @@ void ShenandoahGenerationalEvacuationTask::work(uint worker_id) {
 void ShenandoahGenerationalEvacuationTask::do_work() {
   ShenandoahConcurrentEvacuator cl(_heap);
   ShenandoahHeapRegion* r;
-  ShenandoahMarkingContext* const ctx = _heap->marking_context();
 
   while ((r = _regions->next()) != nullptr) {
     log_debug(gc)("GenerationalEvacuationTask do_work(), looking at %s region " SIZE_FORMAT ", (age: %d) [%s, %s, %s]",

@@ -402,10 +402,7 @@ public:
   // Coalesce contiguous spans of garbage objects by filling header and reregistering start locations with remembered set.
   // This is used by old-gen GC following concurrent marking to make old-gen HeapRegions parsable.  Return true iff
   // region is completely coalesced and filled.  Returns false if cancelled before task is complete.
-  bool oop_fill_and_coalesce();
-
-  // Like oop_fill_and_coalesce(), but without honoring cancellation requests.
-  bool oop_fill_and_coalesce_without_cancel();
+  bool oop_coalesce_and_fill(bool cancellable);
 
   // Invoke closure on every reference contained within the humongous object that spans this humongous
   // region if the reference is contained within a DIRTY card and the reference is no more than words following

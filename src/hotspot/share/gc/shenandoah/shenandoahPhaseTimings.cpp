@@ -110,6 +110,7 @@ bool ShenandoahPhaseTimings::is_worker_phase(Phase phase) {
     case full_gc_weakrefs:
     case full_gc_purge_class_unload:
     case full_gc_purge_weak_par:
+    case degen_gc_coalesce_and_fill:
     case degen_gc_weakrefs:
     case degen_gc_purge_class_unload:
     case degen_gc_purge_weak_par:
@@ -120,6 +121,7 @@ bool ShenandoahPhaseTimings::is_worker_phase(Phase phase) {
     case conc_weak_roots_work:
     case conc_weak_refs:
     case conc_strong_roots:
+    case conc_coalesce_and_fill:
       return true;
     default:
       return false;

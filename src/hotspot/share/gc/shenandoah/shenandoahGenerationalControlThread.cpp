@@ -709,7 +709,7 @@ void ShenandoahGenerationalControlThread::service_stw_degenerated_cycle(GCCause:
   } else {
     assert(_degen_generation->is_young(), "Expected degenerated young cycle, if not global.");
     ShenandoahOldGeneration* old = heap->old_generation();
-    if (old->state() == ShenandoahOldGeneration::BOOTSTRAPPING) {
+    if (old->is_bootstrapping()) {
       old->transition_to(ShenandoahOldGeneration::MARKING);
     }
   }

@@ -58,6 +58,9 @@ private:
   void op_update_roots();
   void op_cleanup_complete();
 
+  // This will rebuild card offsets, which is necessary if classes were unloaded
+  void op_global_coalesce_and_fill();
+
   // Fail handling
   void op_degenerated_futile();
   void op_degenerated_fail();

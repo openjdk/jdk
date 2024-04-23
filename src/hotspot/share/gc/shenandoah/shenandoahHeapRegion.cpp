@@ -452,51 +452,9 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
 #undef SHR_PTR_FORMAT
 }
 
-// oop_iterate without closure and without cancellation.  always return true.
-bool ShenandoahHeapRegion::oop_fill_and_coalesce_without_cancel() {
-  HeapWord* obj_addr = resume_coalesce_and_fill();
-
-  assert(!is_humongous(), "No need to fill or coalesce humongous regions");
-  if (!is_active()) {
-    end_preemptible_coalesce_and_fill();
-    return true;
-  }
-
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  ShenandoahMarkingContext* marking_context = heap->marking_context();
-  // All objects above TAMS are considered live even though their mark bits will not be set.  Note that young-
-  // gen evacuations that interrupt a long-running old-gen concurrent mark may promote objects into old-gen
-  // while the old-gen concurrent marking is ongoing.  These newly promoted objects will reside above TAMS
-  // and will be treated as live during the current old-gen marking pass, even though they will not be
-  // explicitly marked.
-  HeapWord* t = marking_context->top_at_mark_start(this);
-
-  // Expect marking to be completed before these threads invoke this service.
-  assert(heap->active_generation()->is_mark_complete(), "sanity");
-  while (obj_addr < t) {
-    oop obj = cast_to_oop(obj_addr);
-    if (marking_context->is_marked(obj)) {
-      assert(obj->klass() != nullptr, "klass should not be nullptr");
-      obj_addr += obj->size();
-    } else {
-      // Object is not marked.  Coalesce and fill dead object with dead neighbors.
-      HeapWord* next_marked_obj = marking_context->get_next_marked_addr(obj_addr, t);
-      assert(next_marked_obj <= t, "next marked object cannot exceed top");
-      size_t fill_size = next_marked_obj - obj_addr;
-      assert(fill_size >= ShenandoahHeap::min_fill_size(), "previously allocated objects known to be larger than min_size");
-      ShenandoahHeap::fill_with_object(obj_addr, fill_size);
-      heap->card_scan()->coalesce_objects(obj_addr, fill_size);
-      obj_addr = next_marked_obj;
-    }
-  }
-  // Mark that this region has been coalesced and filled
-  end_preemptible_coalesce_and_fill();
-  return true;
-}
-
 // oop_iterate without closure, return true if completed without cancellation
-bool ShenandoahHeapRegion::oop_fill_and_coalesce() {
-  HeapWord* obj_addr = resume_coalesce_and_fill();
+bool ShenandoahHeapRegion::oop_coalesce_and_fill(bool cancellable) {
+
   // Consider yielding to cancel/preemption request after this many coalesce operations (skip marked, or coalesce free).
   const size_t preemption_stride = 128;
 
@@ -508,6 +466,10 @@ bool ShenandoahHeapRegion::oop_fill_and_coalesce() {
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahMarkingContext* marking_context = heap->marking_context();
+
+  // Expect marking to be completed before these threads invoke this service.
+  assert(heap->active_generation()->is_mark_complete(), "sanity");
+
   // All objects above TAMS are considered live even though their mark bits will not be set.  Note that young-
   // gen evacuations that interrupt a long-running old-gen concurrent mark may promote objects into old-gen
   // while the old-gen concurrent marking is ongoing.  These newly promoted objects will reside above TAMS
@@ -515,8 +477,8 @@ bool ShenandoahHeapRegion::oop_fill_and_coalesce() {
   // explicitly marked.
   HeapWord* t = marking_context->top_at_mark_start(this);
 
-  // Expect marking to be completed before these threads invoke this service.
-  assert(heap->active_generation()->is_mark_complete(), "sanity");
+  // Resume coalesce and fill from this address
+  HeapWord* obj_addr = resume_coalesce_and_fill();
 
   size_t ops_before_preempt_check = preemption_stride;
   while (obj_addr < t) {
@@ -534,7 +496,7 @@ bool ShenandoahHeapRegion::oop_fill_and_coalesce() {
       heap->card_scan()->coalesce_objects(obj_addr, fill_size);
       obj_addr = next_marked_obj;
     }
-    if (ops_before_preempt_check-- == 0) {
+    if (cancellable && ops_before_preempt_check-- == 0) {
       if (heap->cancelled_gc()) {
         suspend_coalesce_and_fill(obj_addr);
         return false;

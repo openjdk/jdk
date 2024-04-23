@@ -34,6 +34,7 @@
 #include "gc/shenandoah/shenandoahInitLogger.hpp"
 #include "gc/shenandoah/shenandoahMemoryPool.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRegulatorThread.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
@@ -675,3 +676,43 @@ void ShenandoahGenerationalHeap::TransferResult::print_on(const char* when, outp
                      success? "successfully transferred": "failed to transfer", region_count, region_destination,
                      PROPERFMTARGS(old_available), PROPERFMTARGS(young_available));
 }
+
+void ShenandoahGenerationalHeap::coalesce_and_fill_old_regions(bool concurrent) {
+  class ShenandoahGlobalCoalesceAndFill : public WorkerTask {
+  private:
+      ShenandoahPhaseTimings::Phase _phase;
+      ShenandoahRegionIterator _regions;
+  public:
+    explicit ShenandoahGlobalCoalesceAndFill(ShenandoahPhaseTimings::Phase phase) :
+      WorkerTask("Shenandoah Global Coalesce"),
+      _phase(phase) {}
+
+    void work(uint worker_id) override {
+      ShenandoahWorkerTimingsTracker timer(_phase,
+                                           ShenandoahPhaseTimings::ScanClusters,
+                                           worker_id, true);
+      ShenandoahHeapRegion* region;
+      while ((region = _regions.next()) != nullptr) {
+        // old region is not in the collection set and was not immediately trashed
+        if (region->is_old() && region->is_active() && !region->is_humongous()) {
+          // Reset the coalesce and fill boundary because this is a global collect
+          // and cannot be preempted by young collects. We want to be sure the entire
+          // region is coalesced here and does not resume from a previously interrupted
+          // or completed coalescing.
+          region->begin_preemptible_coalesce_and_fill();
+          region->oop_coalesce_and_fill(false);
+        }
+      }
+    }
+  };
+
+  ShenandoahPhaseTimings::Phase phase = concurrent ?
+          ShenandoahPhaseTimings::conc_coalesce_and_fill :
+          ShenandoahPhaseTimings::degen_gc_coalesce_and_fill;
+
+  // This is not cancellable
+  ShenandoahGlobalCoalesceAndFill coalesce(phase);
+  workers()->run_task(&coalesce);
+  old_generation()->set_parseable(true);
+}
+

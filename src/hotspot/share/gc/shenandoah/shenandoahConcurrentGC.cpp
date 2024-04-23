@@ -231,6 +231,16 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // We defer generation resizing actions until after cset regions have been recycled.  We do this even following an
   // abbreviated cycle.
   if (heap->mode()->is_generational()) {
+    if (!heap->old_generation()->is_parseable()) {
+      // Class unloading may render the card offsets unusable, so we must rebuild them before
+      // the next remembered set scan. We _could_ let the control thread do this sometime after
+      // the global cycle has completed and before the next young collection, but under memory
+      // pressure the control thread may not have the time (that is, because it's running back
+      // to back GCs). In that scenario, we would have to make the old regions parsable before
+      // we could start a young collection. This could delay the start of the young cycle and
+      // throw off the heuristics.
+      entry_global_coalesce_and_fill();
+    }
 
     ShenandoahGenerationalHeap::TransferResult result;
     {
@@ -1271,6 +1281,25 @@ void ShenandoahConcurrentGC::op_final_roots() {
       }
     }
   }
+}
+
+void ShenandoahConcurrentGC::entry_global_coalesce_and_fill() {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+
+  const char* msg = "Coalescing and filling old regions in global collect";
+  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_coalesce_and_fill);
+
+  TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
+  EventMark em("%s", msg);
+  ShenandoahWorkerScope scope(heap->workers(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_marking(),
+                              "concurrent coalesce and fill");
+
+  op_global_coalesce_and_fill();
+}
+
+void ShenandoahConcurrentGC::op_global_coalesce_and_fill() {
+  ShenandoahGenerationalHeap::heap()->coalesce_and_fill_old_regions(true);
 }
 
 void ShenandoahConcurrentGC::op_cleanup_complete() {
