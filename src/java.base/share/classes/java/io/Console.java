@@ -181,7 +181,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      *
      * @return  This console
      */
-    public Console format(String format, Object ...args) {
+    public Console format(String format, Object ... args) {
         throw newUnsupportedOperationException();
     }
 
@@ -218,7 +218,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * @return  This console
      * @since   23
      */
-    public Console format(Locale locale, String format, Object ...args) {
+    public Console format(Locale locale, String format, Object ... args) {
         throw newUnsupportedOperationException();
     }
 
