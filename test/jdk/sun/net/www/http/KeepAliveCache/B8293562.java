@@ -244,6 +244,7 @@ public class B8293562 {
         public void handle(HttpExchange t) throws IOException {
             t.sendResponseHeaders(404, 3);
             t.getResponseBody().write("abc".getBytes(StandardCharsets.UTF_8));
+            t.getResponseBody().close();
         }
     }
 }
