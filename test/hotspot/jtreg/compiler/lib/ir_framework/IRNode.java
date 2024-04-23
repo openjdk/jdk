@@ -867,6 +867,11 @@ public class IRNode {
         vectorNode(MAX_VD, "MaxV", TYPE_DOUBLE);
     }
 
+    public static final String MAX_VL = VECTOR_PREFIX + "MAX_VL" + POSTFIX;
+    static {
+        vectorNode(MAX_VL, "MaxV", TYPE_LONG);
+    }
+
     public static final String MEMBAR = PREFIX + "MEMBAR" + POSTFIX;
     static {
         beforeMatchingNameRegex(MEMBAR, "MemBar");
@@ -925,6 +930,11 @@ public class IRNode {
     public static final String MIN_VD = VECTOR_PREFIX + "MIN_VD" + POSTFIX;
     static {
         vectorNode(MIN_VD, "MinV", TYPE_DOUBLE);
+    }
+
+    public static final String MIN_VL = VECTOR_PREFIX + "MIN_VL" + POSTFIX;
+    static {
+        vectorNode(MIN_VL, "MinV", TYPE_LONG);
     }
 
     public static final String MUL = PREFIX + "MUL" + POSTFIX;
@@ -2064,6 +2074,12 @@ public class IRNode {
     static {
         String regex = START + "zStoreP\\S*" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
         machOnly(Z_STORE_P_WITH_BARRIER_FLAG, regex);
+    }
+
+    public static final String Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG" + POSTFIX;
+    static {
+        String regex = START + "zCompareAndSwapP" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        machOnly(Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, regex);
     }
 
     public static final String Z_GET_AND_SET_P_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "Z_GET_AND_SET_P_WITH_BARRIER_FLAG" + POSTFIX;

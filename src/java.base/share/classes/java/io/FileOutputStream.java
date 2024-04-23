@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package java.io;
 import java.nio.channels.FileChannel;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
-import jdk.internal.misc.Blocker;
 import sun.nio.ch.FileChannelImpl;
 
 
@@ -286,12 +285,7 @@ public class FileOutputStream extends OutputStream
      * @param append whether the file is to be opened in append mode
      */
     private void open(String name, boolean append) throws FileNotFoundException {
-        long comp = Blocker.begin();
-        try {
-            open0(name, append);
-        } finally {
-            Blocker.end(comp);
-        }
+        open0(name, append);
     }
 
     /**
@@ -313,12 +307,7 @@ public class FileOutputStream extends OutputStream
     @Override
     public void write(int b) throws IOException {
         boolean append = FD_ACCESS.getAppend(fd);
-        long comp = Blocker.begin();
-        try {
-            write(b, append);
-        } finally {
-            Blocker.end(comp);
-        }
+        write(b, append);
     }
 
     /**
@@ -343,12 +332,7 @@ public class FileOutputStream extends OutputStream
     @Override
     public void write(byte[] b) throws IOException {
         boolean append = FD_ACCESS.getAppend(fd);
-        long comp = Blocker.begin();
-        try {
-            writeBytes(b, 0, b.length, append);
-        } finally {
-            Blocker.end(comp);
-        }
+        writeBytes(b, 0, b.length, append);
     }
 
     /**
@@ -364,12 +348,7 @@ public class FileOutputStream extends OutputStream
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
         boolean append = FD_ACCESS.getAppend(fd);
-        long comp = Blocker.begin();
-        try {
-            writeBytes(b, off, len, append);
-        } finally {
-            Blocker.end(comp);
-        }
+        writeBytes(b, off, len, append);
     }
 
     /**
@@ -460,8 +439,8 @@ public class FileOutputStream extends OutputStream
             synchronized (this) {
                 fc = this.channel;
                 if (fc == null) {
-                    this.channel = fc = FileChannelImpl.open(fd, path, false,
-                        true, false, this);
+                    fc = FileChannelImpl.open(fd, path, false, true, false, false, this);
+                    this.channel = fc;
                     if (closed) {
                         try {
                             // possible race with close(), benign since

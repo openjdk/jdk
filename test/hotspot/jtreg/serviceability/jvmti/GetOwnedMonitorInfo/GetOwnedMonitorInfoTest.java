@@ -73,14 +73,19 @@ public class GetOwnedMonitorInfoTest {
         runTest(false, false);
     }
 
+    static int t_num = 0;
     public static void runTest(boolean isVirtual, boolean jni) throws Exception {
         var threadFactory = isVirtual ? Thread.ofVirtual().factory() : Thread.ofPlatform().factory();
         final GetOwnedMonitorInfoTest lock = new GetOwnedMonitorInfoTest();
 
         Thread t1 = threadFactory.newThread(() -> {
-            Thread.currentThread().setName("Worker-Thread");
+            Thread.currentThread().setName((isVirtual ? "Virtual-" : "") + "Worker-Thread-" + t_num);
+            t_num++;
 
             if (jni) {
+                System.out.println("Thread doing JNI call: "
+                                   + Thread.currentThread().getName());
+
                 jniMonitorEnterAndLetObjectDie();
             }
 
@@ -92,7 +97,9 @@ public class GetOwnedMonitorInfoTest {
 
         // Make sure t1 contends on the monitor.
         synchronized (lock) {
-            System.out.println("Main starting worker thread.");
+            System.out.print("Main starting worker thread for ");
+            System.out.print(isVirtual ? "virtual " : "non-virtual ");
+            System.out.println(jni ? "JNI" : "non-JNI");
             t1.start();
 
             // Wait for the MonitorContendedEnter event

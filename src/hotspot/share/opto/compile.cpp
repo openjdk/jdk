@@ -33,6 +33,7 @@
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
@@ -1082,10 +1083,10 @@ void Compile::Init(bool aliasing) {
 #if INCLUDE_RTM_OPT
   if (UseRTMLocking && has_method() && (method()->method_data_or_null() != nullptr)) {
     int rtm_state = method()->method_data()->rtm_state();
-    if (method_has_option(CompileCommand::NoRTMLockEliding) || ((rtm_state & NoRTM) != 0)) {
+    if (method_has_option(CompileCommandEnum::NoRTMLockEliding) || ((rtm_state & NoRTM) != 0)) {
       // Don't generate RTM lock eliding code.
       set_rtm_state(NoRTM);
-    } else if (method_has_option(CompileCommand::UseRTMLockEliding) || ((rtm_state & UseRTM) != 0) || !UseRTMDeopt) {
+    } else if (method_has_option(CompileCommandEnum::UseRTMLockEliding) || ((rtm_state & UseRTM) != 0) || !UseRTMDeopt) {
       // Generate RTM lock eliding code without abort ratio calculation code.
       set_rtm_state(UseRTM);
     } else if (UseRTMDeopt) {
@@ -5014,16 +5015,7 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
         const Type* t_no_spec = t->remove_speculative();
         if (t_no_spec != t) {
           bool in_hash = igvn.hash_delete(n);
-#ifdef ASSERT
-          if (!in_hash) {
-            tty->print_cr("current graph:");
-            n->dump_bfs(MaxNodeLimit, nullptr, "S$");
-            tty->cr();
-            tty->print_cr("erroneous node:");
-            n->dump();
-            assert(false, "node should be in igvn hash table");
-          }
-#endif
+          assert(in_hash || n->hash() == Node::NO_HASH, "node should be in igvn hash table");
           tn->set_type(t_no_spec);
           igvn.hash_insert(n);
           igvn._worklist.push(n); // give it a chance to go away

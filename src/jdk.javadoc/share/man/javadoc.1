@@ -1,4 +1,4 @@
-.\" Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -110,8 +110,8 @@ also recommended to check the generated output with any appropriate
 conformance and other checking tools.
 .PP
 For more details on the conformance requirements for HTML5 documents,
-see \f[B]Conformance requirements\f[R]
-[https://www.w3.org/TR/html5/infrastructure.html#conformance-requirements]
+see \f[B]Conformance requirements for authors\f[R]
+[https://html.spec.whatwg.org/multipage/introduction.html#conformance-requirements-for-authors]
 in the HTML5 Specification.
 For more details on security issues related to web pages, see the
 \f[B]Open Web Application Security Project (OWASP)\f[R]
@@ -489,7 +489,8 @@ Allow JavaScript in documentation comments, and options whose value is
 \f[I]html-code\f[R].
 .TP
 \f[V]-author\f[R]
-Includes the \f[V]\[at]author\f[R] text in the generated docs.
+Includes the text of any \f[V]author\f[R] tags in the generated
+documentation.
 .TP
 \f[V]-bottom\f[R] \f[I]html-code\f[R]
 Specifies the text to be placed at the bottom of each generated page.
@@ -512,18 +513,16 @@ javadoc -charset \[dq]iso-8859-1\[dq] mypackage
 \f[R]
 .fi
 .PP
-This command inserts the following line in the head of every generated
-page:
+This command inserts the following line, containing a
+\f[B]\f[VB]meta\f[B] element\f[R]
+[https://html.spec.whatwg.org/multipage/semantics.html#the-meta-element]
+in the head of every generated page:
 .IP
 .nf
 \f[CB]
 <meta http-equiv=\[dq]Content-Type\[dq] content=\[dq]text/html; charset=ISO-8859-1\[dq]>
 \f[R]
 .fi
-.PP
-The \f[V]meta\f[R] tag is described in the \f[B]HTML standard (4197265
-and 4137321), HTML Document Representation\f[R]
-[http://www.w3.org/TR/REC-html40/charset.html#h-5.2.2].
 .RE
 .TP
 \f[V]-d\f[R] \f[I]directory\f[R]
@@ -723,8 +722,8 @@ documentation shares the same file system.
 In all cases, and on all operating systems, use a slash as the
 separator, whether the URL is absolute or relative, and
 \f[V]https:\f[R], \f[V]http:\f[R], or \f[V]file:\f[R] as specified in
-the \f[B]URL Memo: Uniform Resource Locators\f[R]
-[http://www.ietf.org/rfc/rfc1738.txt].
+the \f[B]RFC 1738: Uniform Resource Locators (URL)\f[R]
+[https://www.rfc-editor.org/info/rfc1738].
 .IP
 .nf
 \f[CB]
@@ -950,8 +949,8 @@ is used.
 .RE
 .TP
 \f[V]-nosince\f[R]
-Omits from the generated documents the \f[V]Since\f[R] sections
-associated with the \f[V]\[at]since\f[R] tags.
+Omits from the generated documentation the \f[V]Since\f[R] sections
+derived from any \f[V]since\f[R] tags.
 .TP
 \f[V]-notimestamp\f[R]
 Suppresses the time stamp, which is hidden in an HTML comment in the
@@ -1181,10 +1180,11 @@ To access the generated Use page, go to the class or package and click
 the \f[B]USE\f[R] link in the navigation bar.
 .TP
 \f[V]-version\f[R]
-Includes the version text in the generated docs.
+Includes the text of any \f[V]version\f[R] tags in the generated
+documentation.
 This text is omitted by default.
-To find out what version of the \f[V]javadoc\f[R] tool you are using,
-use the \f[V]--version\f[R] option (with two hyphens).
+Note: To find out what version of the \f[V]javadoc\f[R] tool you are
+using, use the \f[V]--version\f[R] option (with two hyphens).
 .TP
 \f[V]-windowtitle\f[R] \f[I]title\f[R]
 Specifies the title to be placed in the HTML \f[V]<title>\f[R] tag.

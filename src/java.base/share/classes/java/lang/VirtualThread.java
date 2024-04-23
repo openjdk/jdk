@@ -460,6 +460,11 @@ final class VirtualThread extends BaseVirtualThread {
     private void afterYield() {
         assert carrierThread == null;
 
+        // re-adjust parallelism if the virtual thread yielded when compensating
+        if (currentThread() instanceof CarrierThread ct) {
+            ct.endBlocking();
+        }
+
         int s = state();
 
         // LockSupport.park/parkNanos

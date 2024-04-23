@@ -100,12 +100,13 @@ inline HeapWord* HeapRegion::advance_to_block_containing_addr(const void* addr,
     cur_block = next_block;
     // Because the BOT is precise, we should never step into the next card
     // (i.e. crossing the card boundary).
-    assert(!G1BlockOffsetTablePart::is_crossing_card_boundary(cur_block, (HeapWord*)addr), "must be");
+    assert(!G1BlockOffsetTable::is_crossing_card_boundary(cur_block, (HeapWord*)addr), "must be");
   }
 }
 
 inline HeapWord* HeapRegion::block_start(const void* addr, HeapWord* const pb) const {
-  HeapWord* first_block = _bot_part.block_start_reaching_into_card(addr);
+  assert(addr >= bottom() && addr < top(), "invalid address");
+  HeapWord* first_block = _bot->block_start_reaching_into_card(addr);
   return advance_to_block_containing_addr(addr, pb, first_block);
 }
 
@@ -176,9 +177,6 @@ inline void HeapRegion::prepare_for_full_gc() {
 
 inline void HeapRegion::reset_compacted_after_full_gc(HeapWord* new_top) {
   set_top(new_top);
-  // After a compaction the mark bitmap in a movable region is invalid.
-  // But all objects are live, we get this by setting TAMS to bottom.
-  init_top_at_mark_start();
 
   reset_after_full_gc_common();
 }
@@ -186,16 +184,18 @@ inline void HeapRegion::reset_compacted_after_full_gc(HeapWord* new_top) {
 inline void HeapRegion::reset_skip_compacting_after_full_gc() {
   assert(!is_free(), "must be");
 
-  _garbage_bytes = 0;
-
-  reset_top_at_mark_start();
-
   reset_after_full_gc_common();
 }
 
 inline void HeapRegion::reset_after_full_gc_common() {
+  // After a full gc the mark information in a movable region is invalid. Reset marking
+  // information.
+  G1CollectedHeap::heap()->concurrent_mark()->reset_top_at_mark_start(this);
+
   // Everything above bottom() is parsable and live.
   reset_parsable_bottom();
+
+  _garbage_bytes = 0;
 
   // Clear unused heap memory in debug builds.
   if (ZapUnusedHeapArea) {
@@ -253,25 +253,13 @@ inline void HeapRegion::update_bot() {
   assert(next_addr == top(), "Should stop the scan at the limit.");
 }
 
-inline void HeapRegion::update_bot_for_obj(HeapWord* obj_start, size_t obj_size) {
-  assert(is_old(), "should only do BOT updates for old regions");
-
-  HeapWord* obj_end = obj_start + obj_size;
-
-  assert(is_in(obj_start), "obj_start must be in this region: " HR_FORMAT
-         " obj_start " PTR_FORMAT " obj_end " PTR_FORMAT,
+inline void HeapRegion::update_bot_for_block(HeapWord* start, HeapWord* end) {
+  assert(is_in(start), "The start address must be in this region: " HR_FORMAT
+         " start " PTR_FORMAT " end " PTR_FORMAT,
          HR_FORMAT_PARAMS(this),
-         p2i(obj_start), p2i(obj_end));
+         p2i(start), p2i(end));
 
-  _bot_part.update_for_block(obj_start, obj_end);
-}
-
-inline HeapWord* HeapRegion::top_at_mark_start() const {
-  return Atomic::load(&_top_at_mark_start);
-}
-
-inline void HeapRegion::set_top_at_mark_start(HeapWord* value) {
-  Atomic::store(&_top_at_mark_start, value);
+  _bot->update_for_block(start, end);
 }
 
 inline HeapWord* HeapRegion::parsable_bottom() const {
@@ -287,44 +275,20 @@ inline void HeapRegion::reset_parsable_bottom() {
   Atomic::release_store(&_parsable_bottom, bottom());
 }
 
-inline void HeapRegion::note_start_of_marking() {
-  assert(top_at_mark_start() == bottom(), "Region's TAMS must always be at bottom");
-  if (is_old_or_humongous() && !is_collection_set_candidate()) {
-    set_top_at_mark_start(top());
-  }
-}
-
-inline void HeapRegion::note_end_of_marking(size_t marked_bytes) {
+inline void HeapRegion::note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes) {
   assert_at_safepoint();
 
-  if (top_at_mark_start() != bottom()) {
-    _garbage_bytes = byte_size(bottom(), top_at_mark_start()) - marked_bytes;
+  if (top_at_mark_start != bottom()) {
+    _garbage_bytes = byte_size(bottom(), top_at_mark_start) - marked_bytes;
   }
 
   if (needs_scrubbing()) {
-    _parsable_bottom = top_at_mark_start();
+    _parsable_bottom = top_at_mark_start;
   }
 }
 
 inline void HeapRegion::note_end_of_scrubbing() {
   reset_parsable_bottom();
-}
-
-inline void HeapRegion::init_top_at_mark_start() {
-  reset_top_at_mark_start();
-  _parsable_bottom = bottom();
-  _garbage_bytes = 0;
-}
-
-inline void HeapRegion::reset_top_at_mark_start() {
-  // We do not need a release store here because
-  //
-  // - if this method is called during concurrent bitmap clearing, we do not read
-  // the bitmap any more for live/dead information (we do not read the bitmap at
-  // all at that point).
-  // - otherwise we reclaim regions only during GC and we do not read tams and the
-  // bitmap concurrently.
-  set_top_at_mark_start(bottom());
 }
 
 inline bool HeapRegion::needs_scrubbing() const {

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,23 +26,15 @@
 include LibCommon.gmk
 
 ################################################################################
-
-ifeq ($(call isTargetOs, linux macosx windows aix), true)
-
-  $(eval $(call SetupJdkLibrary, BUILD_LIBEXTNET, \
-      NAME := extnet, \
-      OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB), \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LIBS_unix := -ljava, \
-      LIBS_linux := -ljvm, \
-      LIBS_windows := jvm.lib ws2_32.lib $(WIN_JAVA_LIB), \
-  ))
-
-  $(BUILD_LIBEXTNET): $(call FindLib, java.base, java)
-
-  TARGETS += $(BUILD_LIBEXTNET)
-endif
-
+## Build libextnet
 ################################################################################
+
+$(eval $(call SetupJdkLibrary, BUILD_LIBEXTNET, \
+    NAME := extnet, \
+    OPTIMIZATION := LOW, \
+    EXTRA_HEADER_DIRS := java.base:libjvm, \
+    JDK_LIBS := java.base:libjava, \
+    LIBS_windows := ws2_32.lib, \
+))
+
+TARGETS += $(BUILD_LIBEXTNET)

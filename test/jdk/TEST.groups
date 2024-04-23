@@ -252,7 +252,7 @@ jdk_security = \
     :jdk_security4
 
 jdk_security_infra = \
-    security/infra/java/security/cert/CertPathValidator/certification
+    security/infra
 
 jdk_text = \
     java/text \

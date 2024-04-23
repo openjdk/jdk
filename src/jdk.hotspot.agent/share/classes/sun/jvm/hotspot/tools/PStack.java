@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,7 @@ public class PStack extends Tool {
                             CodeBlob cb = c.findBlobUnsafe(pc);
                             if (cb.isNMethod()) {
                                if (cb.isNativeMethod()) {
-                                  out.print(((CompiledMethod)cb).getMethod().externalNameAndSignature());
+                                  out.print(((NMethod)cb).getMethod().externalNameAndSignature());
                                   long diff = pc.minus(cb.codeBegin());
                                   if (diff != 0L) {
                                     out.print(" + 0x" + Long.toHexString(diff));
