@@ -112,7 +112,7 @@ public final class ThemeReader {
        } else {
            theme = openTheme(widget, dpi);
        }
-       if (theme == null || theme == 0) {
+       if (theme == 0) {
            theme = openTheme(widget, defaultDPI);
        }
        return theme;
