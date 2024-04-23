@@ -170,7 +170,7 @@ public sealed interface ClassDesc
                     ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS + " dimensions");
         }
         return (descriptor.length() == 1)
-               ? new PrimitiveClassDescImpl(descriptor)
+               ? Wrapper.forBasicType(descriptor.charAt(0)).primitiveClassDescriptor()
                : new ReferenceClassDescImpl(descriptor);
     }
 

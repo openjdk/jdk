@@ -25,11 +25,13 @@
 package java.lang.constant;
 
 import jdk.internal.vm.annotation.Stable;
+import sun.invoke.util.Wrapper;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -90,17 +92,42 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
     static MethodTypeDescImpl ofDescriptor(String descriptor) {
         requireNonNull(descriptor);
 
-        List<String> types = ConstantUtils.parseMethodDescriptor(descriptor);
+        int cur = 0, end = descriptor.length();
+        ArrayList<ClassDesc> ptypes = new ArrayList<>();
 
-        int paramCount = types.size() - 1;
-        var paramTypes = paramCount > 0 ? new ClassDesc[paramCount] : ConstantUtils.EMPTY_CLASSDESC;
-        for (int i = 0; i < paramCount; i++) {
-            paramTypes[i] = ClassDesc.ofDescriptor(types.get(i + 1));
+        if (cur >= end || descriptor.charAt(cur) != '(')
+            throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
+
+        ++cur;  // skip '('
+        while (cur < end && descriptor.charAt(cur) != ')') {
+            int len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end, false);
+            if (len == 0)
+                throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
+
+            ptypes.add(resolveClassDesc(descriptor, cur, len));
+            cur += len;
         }
+        if (cur >= end)
+            throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
+        ++cur;  // skip ')'
 
-        MethodTypeDescImpl result = ofTrusted(ClassDesc.ofDescriptor(types.getFirst()), paramTypes);
+        int rLen = ConstantUtils.skipOverFieldSignature(descriptor, cur, end, true);
+        if (rLen == 0 || cur + rLen != end)
+            throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
+        ClassDesc returnType = resolveClassDesc(descriptor, cur, rLen);
+
+        var paramTypes = !ptypes.isEmpty() ? ptypes.toArray(new ClassDesc[0]) : ConstantUtils.EMPTY_CLASSDESC;
+
+        MethodTypeDescImpl result = ofTrusted(returnType, paramTypes);
         result.cachedDescriptorString = descriptor;
         return result;
+    }
+
+    private static ClassDesc resolveClassDesc(String descriptor, int start, int len) {
+        if (len == 1) {
+            return Wrapper.forBasicType(descriptor.charAt(start)).primitiveClassDescriptor();
+        }
+        return ClassDesc.ofDescriptor(descriptor.substring(start, start + len));
     }
 
     @Override
