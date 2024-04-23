@@ -69,7 +69,7 @@ inline oop ConstantPool::appendix_if_resolved(int method_index) const {
 }
 
 inline u2 ConstantPool::invokedynamic_bootstrap_ref_index_at(int indy_index) const {
-  return cache()->resolved_indy_entry_at(decode_invokedynamic_index(indy_index))->constant_pool_index();
+  return cache()->resolved_indy_entry_at(indy_index)->constant_pool_index();
 }
 
 inline ResolvedIndyEntry* ConstantPool::resolved_indy_entry_at(int index) {
