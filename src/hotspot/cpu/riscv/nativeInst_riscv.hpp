@@ -65,6 +65,8 @@ class NativeInstruction {
 
   bool is_jal()                             const { return is_jal_at(addr_at(0));         }
   bool is_movptr()                          const { return is_movptr_at(addr_at(0));      }
+  bool is_auipc()                           const { return is_auipc_at(addr_at(0));       }
+  bool is_li48()                            const { return is_li48_at(addr_at(0));        }
   bool is_call()                            const { return is_call_at(addr_at(0));        }
   bool is_jump()                            const { return is_jump_at(addr_at(0));        }
 
@@ -76,9 +78,10 @@ class NativeInstruction {
   static bool is_float_load_at(address instr) { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0000111; }
   static bool is_auipc_at(address instr)      { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0010111; }
   static bool is_jump_at(address instr)       { assert_cond(instr != nullptr); return is_branch_at(instr) || is_jal_at(instr) || is_jalr_at(instr); }
+  static bool is_add_at(address instr)        { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0110011 && extract_funct3(instr) == 0b000; }
   static bool is_addi_at(address instr)       { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0010011 && extract_funct3(instr) == 0b000; }
   static bool is_addiw_at(address instr)      { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0011011 && extract_funct3(instr) == 0b000; }
-  static bool is_addiw_to_zr_at(address instr) { assert_cond(instr != nullptr); return is_addiw_at(instr) && extract_rd(instr) == zr; }
+  static bool is_addiw_to_zr_at(address instr){ assert_cond(instr != nullptr); return is_addiw_at(instr) && extract_rd(instr) == zr; }
   static bool is_lui_at(address instr)        { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0110111; }
   static bool is_lui_to_zr_at(address instr)  { assert_cond(instr != nullptr); return is_lui_at(instr) && extract_rd(instr) == zr; }
 
@@ -125,6 +128,26 @@ class NativeInstruction {
            extract_rs1(slli2) == extract_rd(addi2) &&
            extract_rs1(slli2) == extract_rd(slli2) &&
            extract_rs1(last_instr) == extract_rd(slli2);
+  }
+
+  // the instruction sequence of li48 is as below:
+  //     lui
+  //     lui
+  //     slli
+  //     add
+  //     addi/jalr/load
+  static bool check_li48_data_dependency(address instr) {
+    address lui1 = instr;
+    address lui2 = lui1 + instruction_size;
+    address slli = lui2 + instruction_size;
+    address add  = slli + instruction_size;
+    address last_instr = add + instruction_size;
+    return extract_rd(add) == extract_rd(lui2) &&
+           extract_rs1(add) == extract_rd(lui2) &&
+           extract_rs2(add) == extract_rd(slli) &&
+           extract_rs1(slli) == extract_rd(lui1) &&
+           extract_rd(slli) == extract_rd(lui1) &&
+           extract_rs1(last_instr) == extract_rd(add);
   }
 
   // the instruction sequence of li64 is as below:
@@ -205,6 +228,7 @@ class NativeInstruction {
   }
 
   static bool is_movptr_at(address instr);
+  static bool is_li48_at(address instr);
   static bool is_li16u_at(address instr);
   static bool is_li32_at(address instr);
   static bool is_li64_at(address instr);
@@ -352,6 +376,7 @@ class NativeMovConstReg: public NativeInstruction {
  public:
   enum RISCV_specific_constants {
     movptr_instruction_size             =    6 * NativeInstruction::instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr().
+    li48_instruction_size               =    5 * NativeInstruction::instruction_size, // lui, lui, slli, add, addi.  See li48_imp().
     load_pc_relative_instruction_size   =    2 * NativeInstruction::instruction_size, // auipc, ld
     instruction_offset                  =    0,
     displacement_offset                 =    0
@@ -375,6 +400,14 @@ class NativeMovConstReg: public NativeInstruction {
     } else if (is_load_pc_relative_at(instruction_address())) {
       // Assume: auipc, ld
       return addr_at(load_pc_relative_instruction_size);
+    } else if (nativeInstruction_at(instruction_address())->is_li48()) {
+      if (is_addi_at(addr_at(li48_instruction_size - NativeInstruction::instruction_size))) {
+        // Assume: lui, addi, slli, addi, slli, addi
+        return addr_at(li48_instruction_size);
+      } else {
+        // Assume: lui, addi, slli, addi, slli
+        return addr_at(li48_instruction_size - NativeInstruction::instruction_size);
+      }
     }
     guarantee(false, "Unknown instruction in NativeMovConstReg");
     return nullptr;
@@ -385,7 +418,7 @@ class NativeMovConstReg: public NativeInstruction {
 
   void flush() {
     if (!maybe_cpool_ref(instruction_address())) {
-      ICache::invalidate_range(instruction_address(), movptr_instruction_size);
+      ICache::invalidate_range(instruction_address(), movptr_instruction_size /* > li48_instruction_size */);
     }
   }
 
@@ -484,10 +517,7 @@ inline NativeJump* nativeJump_at(address addr) {
 class NativeGeneralJump: public NativeJump {
 public:
   enum RISCV_specific_constants {
-    instruction_size            =    6 * NativeInstruction::instruction_size, // lui, addi, slli, addi, slli, jalr
-    instruction_offset          =    0,
-    data_offset                 =    0,
-    next_instruction_offset     =    6 * NativeInstruction::instruction_size  // lui, addi, slli, addi, slli, jalr
+    instruction_size            =    5 * NativeInstruction::instruction_size, // lui, lui, slli, add, jalr
   };
 
   address jump_destination() const;

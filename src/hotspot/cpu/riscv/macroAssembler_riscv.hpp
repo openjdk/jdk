@@ -746,6 +746,12 @@ public:
   void la(Register Rd, const address addr, int32_t &offset);
   void la(Register Rd, const Address &adr);
 
+  void li48(Register Rd, Register tmp, address addr, int32_t &offset);
+  void li48(Register Rd, Register tmp, address addr);
+ private:
+  void li48_imp(Register Rd, Register tmp, uintptr_t addr, int32_t &offset);
+ public:
+
   void li16u(Register Rd, uint16_t imm);
   void li32(Register Rd, int32_t imm);
   void li64(Register Rd, int64_t imm);
