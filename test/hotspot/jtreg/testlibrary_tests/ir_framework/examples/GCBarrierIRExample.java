@@ -29,6 +29,7 @@ import java.lang.invoke.MethodHandles;
 
 /**
  * @test
+ * @bug 8330153
  * @summary Example test that illustrates the use of the IR test framework for
  *          verification of late-expanded GC barriers.
  * @library /test/lib /
