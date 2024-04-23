@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "nmt/vmatree.hpp"
+#include "utilities/growableArray.hpp"
 
 VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType state,
                                                Metadata& metadata) {
