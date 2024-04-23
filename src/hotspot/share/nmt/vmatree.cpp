@@ -92,7 +92,6 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
       if (stA.is_noop()) {
         // invalidates leqA_n
         tree.remove(leqA_n->key());
-        // Summary accounting: Not needed, we are only expanding
       } else {
         // If the state is not matching then we have different operations, such as:
         // reserve [x1, A); ... commit [A, x2); or
