@@ -44,7 +44,7 @@ import java.util.function.Supplier;
 /**
  * An atomic, thread-safe, stable value holder for which the value can be set at most once.
  * <p>
- * Stable values are eligible for constant folding and other optimizations by the JVM.
+ * Stable values are eligible for certain optimizations by the JVM.
  * <p>
  * A stable value is said to be monotonic because the state of a stable value can only go
  * from <em>unset</em> to <em>set</em> and consequently, a value can only be set
