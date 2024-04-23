@@ -116,7 +116,7 @@ public record StableValueElement<V>(
         return computeIfUnsetShared(mapper, key);
     }
 
-    private <S, K> V computeIfUnsetShared(S source, K key) {
+    private <K> V computeIfUnsetShared(Object provider, K key) {
         // Optimistically try plain semantics first
         V e = elements[index];
         if (e != null) {
@@ -128,24 +128,24 @@ public record StableValueElement<V>(
             return null;
         }
         // Now, fall back to volatile semantics.
-        return computeIfUnsetVolatile(source, key);
+        return computeIfUnsetVolatile(provider, key);
     }
 
-    private <S, K> V computeIfUnsetVolatile(S source, K key) {
+    private <K> V computeIfUnsetVolatile(Object provider, K key) {
         V e = elementVolatile();
         if (e != null) {
             // If we see a non-null value, we know a value is set.
             return e;
         }
         return switch (stateVolatile()) {
-            case UNSET    -> computeIfUnsetVolatile0(source, key);
+            case UNSET    -> computeIfUnsetVolatile0(provider, key);
             case NON_NULL -> orThrow(); // Race
             case NULL     -> null;
             default       -> throw shouldNotReachHere();
         };
     }
 
-    private synchronized <S, K> V computeIfUnsetVolatile0(S source, K key) {
+    private synchronized <K> V computeIfUnsetVolatile0(Object provider, K key) {
         synchronized (acquireMutex()) {
             if (isSet()) {
                 clearMutex();
@@ -153,7 +153,7 @@ public record StableValueElement<V>(
             }
 
             @SuppressWarnings("unchecked")
-            V newValue = switch (source) {
+            V newValue = switch (provider) {
                 case Supplier<?>    sup  -> (V) sup.get();
                 case IntFunction<?> iFun -> (V) iFun.apply((int) key);
                 case Function<?, ?> func -> ((Function<K, V>) func).apply(key);
