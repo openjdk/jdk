@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,30 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         @Override
         public Reader reader() {
             return terminal.reader();
+        }
+
+        @Override
+        public JdkConsole println(Object obj) {
+            writer().println(obj);
+            writer().flush();
+            return this;
+        }
+
+        @Override
+        public JdkConsole print(Object obj) {
+            writer().print(obj);
+            writer().flush();
+            return this;
+        }
+
+        @Override
+        public String input(String prompt) {
+            try {
+                initJLineIfNeeded();
+                return jline.readLine(prompt);
+            } catch (EndOfFileException eofe) {
+                return null;
+            }
         }
 
         @Override

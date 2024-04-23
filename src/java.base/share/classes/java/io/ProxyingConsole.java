@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,42 @@ final class ProxyingConsole extends Console {
             }
         }
         return reader;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Console println(Object obj) {
+        synchronized (writeLock) {
+            delegate.println(obj);
+        }
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Console print(Object obj) {
+        synchronized (writeLock) {
+            delegate.print(obj);
+        }
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IOError {@inheritDoc}
+     */
+    @Override
+    public String input(String prompt) {
+        synchronized (writeLock) {
+            synchronized (readLock) {
+                return delegate.input(prompt);
+            }
+        }
     }
 
     /**

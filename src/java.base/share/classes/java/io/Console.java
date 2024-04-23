@@ -33,6 +33,7 @@ import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.io.JdkConsoleImpl;
 import jdk.internal.io.JdkConsoleProvider;
+import jdk.internal.javac.PreviewFeature;
 import jdk.internal.util.StaticProperty;
 import sun.security.action.GetPropertyAction;
 
@@ -143,6 +144,124 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      */
     public Reader reader() {
         throw newUnsupportedOperationException();
+    }
+
+    /**
+     * Writes a string representation of the specified object to this console's
+     * output stream, terminates the line and then flushes the console.
+     *
+     * <p> The effects of {@code con.println(obj)} are as if by calling
+     * {@snippet lang = java:
+     *     con.format("%s%n", obj)
+     * }
+     *
+     * @param  obj
+     *         An object whose string representation is to write.
+     *
+     * @return  This console
+     *
+     * @since 23
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
+    public Console println(Object obj) {
+        throw newUnsupportedOperationException();
+    }
+
+    /**
+     * Writes a string representation of the specified object to this console's
+     * output stream and then flushes the console.
+     *
+     * <p> The effects of {@code con.print(obj)} are as if by calling
+     * {@snippet lang = java:
+     *     con.format("%s", obj)
+     * }
+     *
+     * @param  obj
+     *         An object whose string representation is to write.
+     *
+     * @return  This console
+     *
+     * @since 23
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
+    public Console print(Object obj) {
+        throw newUnsupportedOperationException();
+    }
+
+    /**
+     * Provides a prompt, then reads a single line of text from the console.
+     *
+     * @param  prompt
+     *         A prompt string.
+     *
+     * @throws IOError
+     *         If an I/O error occurs.
+     *
+     * @return  A string containing the line read from the console, not
+     *          including any line-termination characters, or {@code null}
+     *          if an end of stream has been reached without having read
+     *          any characters.
+     *
+     * @since 23
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
+    public String input(String prompt) {
+        throw newUnsupportedOperationException();
+    }
+
+    /**
+     * Provides access to console for Implicitly Declared Classes.
+     *
+     * @since 23
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
+    public static class Basic {
+
+        private Basic() {
+            throw new Error("no instances");
+        }
+
+        /**
+         * Calls {@link Console#println(Object)} on {@link System#console()},
+         * or throws {@link IOError} if {@code System.console()} returns
+         * {@code null}.
+         *
+         * @param obj the obj to print
+         */
+        public static void println(Object obj) {
+            con().println(obj);
+        }
+
+        /**
+         * Calls {@link Console#print(Object)} on {@link System#console()},
+         * or throws {@link IOError} if {@code System.console()} returns
+         * {@code null}.
+         *
+         * @param obj the obj to print
+         */
+        public static void print(Object obj) {
+            con().print(obj);
+        }
+
+        /**
+         * {@return the result of a call to {@link Console#input(String)} on
+         * {@link System#console()}, or throws {@link IOError} if
+         * {@code System.console()} returns {@code null}}
+         *
+         * @param prompt the prompt string
+         */
+        public static String input(String prompt) {
+            return con().input(prompt);
+        }
+
+        private static Console con() {
+            var con = System.console();
+            if (con != null) {
+                return con;
+            } else {
+                throw new IOError(null);
+            }
+        }
     }
 
     /**

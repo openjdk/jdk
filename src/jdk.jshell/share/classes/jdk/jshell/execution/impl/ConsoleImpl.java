@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,6 +187,46 @@ public class ConsoleImpl {
                     }
                 };
             } return reader;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public JdkConsole println(Object obj) {
+            writer().println(obj);
+            writer().flush();
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public JdkConsole print(Object obj) {
+            writer().print(obj);
+            writer().flush();
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * @throws IOError {@inheritDoc}
+         */
+        @Override
+        public String input(String prompt) {
+            try {
+                return sendAndReceive(() -> {
+                    remoteInput.write(Task.READ_LINE.ordinal());
+                    char[] chars = prompt.toCharArray();
+                    sendChars(chars, 0, chars.length);
+                    char[] line = readChars();
+                    return new String(line);
+                });
+            } catch (IOException ex) {
+                throw new IOError(ex);
+            }
         }
 
         /**
