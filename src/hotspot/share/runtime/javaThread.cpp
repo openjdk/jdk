@@ -455,11 +455,11 @@ JavaThread::JavaThread() :
 #endif
 #endif
   _jni_attach_state(_not_attaching_via_jni),
+  _sandboxed_oome_mark(nullptr),
 #if INCLUDE_JVMCI
   _pending_deoptimization(-1),
   _pending_monitorenter(false),
   _pending_transfer_to_interpreter(false),
-  _in_retryable_allocation(false),
   _pending_failed_speculation(0),
   _jvmci{nullptr},
   _libjvmci_runtime(nullptr),

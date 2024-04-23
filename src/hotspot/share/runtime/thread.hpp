@@ -210,14 +210,6 @@ class Thread: public ThreadShadow {
   DEBUG_ONLY(bool _indirectly_safepoint_thread;)
 
  public:
-  // Determines if a heap allocation failure will be retried
-  // (e.g., by deoptimizing and re-executing in the interpreter).
-  // In this case, the failed allocation must raise
-  // Universe::out_of_memory_error_retry() and omit side effects
-  // such as JVMTI events and handling -XX:+HeapDumpOnOutOfMemoryError
-  // and -XX:OnOutOfMemoryError.
-  virtual bool in_retryable_allocation() const { return false; }
-
 #ifdef ASSERT
   void set_suspendible_thread()   { _suspendible_thread = true; }
   void clear_suspendible_thread() { _suspendible_thread = false; }

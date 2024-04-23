@@ -135,7 +135,6 @@ enum OutOfMemoryInstance { _oom_java_heap,
                            _oom_array_size,
                            _oom_gc_overhead_limit,
                            _oom_realloc_objects,
-                           _oom_retry,
                            _oom_count };
 
 OopHandle Universe::_out_of_memory_errors;
@@ -651,8 +650,12 @@ objArrayOop Universe::preallocated_out_of_memory_errors() {
 
 objArrayOop Universe::out_of_memory_errors() { return (objArrayOop)_out_of_memory_errors.resolve(); }
 
-oop Universe::out_of_memory_error_java_heap() {
-  return gen_out_of_memory_error(out_of_memory_errors()->obj_at(_oom_java_heap));
+oop Universe::out_of_memory_error_java_heap(bool omit_backtrace) {
+  oop oome = out_of_memory_errors()->obj_at(_oom_java_heap);
+  if (!omit_backtrace) {
+    oome = gen_out_of_memory_error(oome);
+  }
+  return oome;
 }
 
 oop Universe::out_of_memory_error_c_heap() {
@@ -678,9 +681,6 @@ oop Universe::out_of_memory_error_gc_overhead_limit() {
 oop Universe::out_of_memory_error_realloc_objects() {
   return gen_out_of_memory_error(out_of_memory_errors()->obj_at(_oom_realloc_objects));
 }
-
-// Throw default _out_of_memory_error_retry object as it will never propagate out of the VM
-oop Universe::out_of_memory_error_retry()              { return out_of_memory_errors()->obj_at(_oom_retry);  }
 
 oop Universe::class_init_out_of_memory_error()         { return out_of_memory_errors()->obj_at(_oom_java_heap); }
 oop Universe::class_init_stack_overflow_error()        { return _class_init_stack_overflow_error.resolve(); }
@@ -784,9 +784,6 @@ void Universe::create_preallocated_out_of_memory_errors(TRAPS) {
 
   msg = java_lang_String::create_from_str("Java heap space: failed reallocation of scalar replaced objects", CHECK);
   java_lang_Throwable::set_message(oom_array->obj_at(_oom_realloc_objects), msg());
-
-  msg = java_lang_String::create_from_str("Java heap space: failed retryable allocation", CHECK);
-  java_lang_Throwable::set_message(oom_array->obj_at(_oom_retry), msg());
 
   // Setup the array of errors that have preallocated backtrace
   int len = (StackTraceInThrowable) ? (int)PreallocatedOutOfMemoryErrorCount : 0;
