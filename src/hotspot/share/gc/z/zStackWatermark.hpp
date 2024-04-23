@@ -38,14 +38,14 @@
 class frame;
 class JavaThread;
 
-class ZOnStackCodeBlobClosure : public CodeBlobClosure {
+class ZOnStackNMethodClosure : public NMethodClosure {
 private:
   BarrierSetNMethod* _bs_nm;
 
-  virtual void do_code_blob(CodeBlob* cb);
+  virtual void do_nmethod(nmethod* nm);
 
 public:
-  ZOnStackCodeBlobClosure();
+  ZOnStackNMethodClosure();
 };
 
 struct ZColorWatermark {

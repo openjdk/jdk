@@ -226,4 +226,10 @@ public enum Target {
     public boolean optimizeOuterThis() {
         return compareTo(JDK1_18) >= 0;
     }
+
+    /** Releases prior to JDK 23 expect a less precise SwitchBootstraps.typeSwitch signature on the selectorType
+     */
+    public boolean usesReferenceOnlySelectorTypes() {
+        return compareTo(Target.JDK1_23) < 0;
+    }
 }

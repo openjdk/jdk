@@ -55,7 +55,6 @@ import jdk.internal.util.ReferencedKeyMap;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
 
-import sun.security.action.GetPropertyAction;
 import sun.util.locale.BaseLocale;
 import sun.util.locale.InternalLocaleBuilder;
 import sun.util.locale.LanguageTag;
@@ -996,11 +995,11 @@ public final class Locale implements Cloneable, Serializable {
 
     private static final ReferencedKeyMap<Object, Locale> LOCALE_CACHE = ReferencedKeyMap.create(true, ConcurrentHashMap::new);
     private static Locale createLocale(Object key) {
-        return switch (key) {
-            case BaseLocale base -> new Locale(base, null);
-            case LocaleKey lk -> new Locale(lk.base, lk.exts);
-            default -> throw new InternalError("should not happen");
-        };
+        if (key instanceof BaseLocale base) {
+            return new Locale(base, null);
+        }
+        LocaleKey lk = (LocaleKey)key;
+        return new Locale(lk.base, lk.exts);
     }
 
     private static final class LocaleKey {

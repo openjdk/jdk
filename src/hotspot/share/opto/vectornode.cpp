@@ -426,7 +426,7 @@ bool VectorNode::is_type_transition_to_int(Node* n) {
   return is_type_transition_short_to_int(n);
 }
 
-bool VectorNode::is_muladds2i(Node* n) {
+bool VectorNode::is_muladds2i(const Node* n) {
   if (n->Opcode() == Op_MulAddS2I) {
     return true;
   }
@@ -1676,9 +1676,9 @@ Node* VectorReinterpretNode::Identity(PhaseGVN *phase) {
   return this;
 }
 
-Node* VectorInsertNode::make(Node* vec, Node* new_val, int position) {
+Node* VectorInsertNode::make(Node* vec, Node* new_val, int position, PhaseGVN& gvn) {
   assert(position < (int)vec->bottom_type()->is_vect()->length(), "pos in range");
-  ConINode* pos = ConINode::make(position);
+  ConINode* pos = gvn.intcon(position);
   return new VectorInsertNode(vec, new_val, pos, vec->bottom_type()->is_vect());
 }
 

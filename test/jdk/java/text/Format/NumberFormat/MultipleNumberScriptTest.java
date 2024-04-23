@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 7073852 8008577
+ * @bug 7073852 8008577 8174269
  * @summary Support multiple scripts for digits and decimal symbols per locale
- * @run main/othervm -Djava.locale.providers=JRE,SPI MultipleNumberScriptTest
+ * @run main MultipleNumberScriptTest
  */
 
 import java.text.*;
@@ -52,8 +52,8 @@ public class MultipleNumberScriptTest {
 
     // expected numbering system for each locale
     static String[] expectedNumSystem = {
-        "latn", // ar
-        "latn", // ar-EG
+        "arab", // ar
+        "arab", // ar-EG
         "latn", // ar-DZ
         "arab", // ar-EG-u-nu-arab
         "latn", // ar-EG-u-nu-latn

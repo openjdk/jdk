@@ -33,6 +33,8 @@
 // Code in this file and the vectorization.cpp contains shared logics and
 // utilities for C2's loop auto-vectorization.
 
+class VPointer;
+
 class VStatus : public StackObj {
 private:
   const char* _failure_reason;
@@ -99,7 +101,8 @@ public:
     _allow_cfg (allow_cfg),
     _cl        (nullptr),
     _cl_exit   (nullptr),
-    _iv        (nullptr) {}
+    _iv        (nullptr),
+    _pre_loop_end (nullptr) {}
   NONCOPYABLE(VLoop);
 
   IdealLoopTree* lpt()        const { return _lpt; };
@@ -147,6 +150,14 @@ public:
 
   bool is_trace_vector_element_type() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::TYPES);
+  }
+
+  bool is_trace_dependency_graph() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::DEPENDENCY_GRAPH);
+  }
+
+  bool is_trace_vpointers() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::POINTERS);
   }
 
   bool is_trace_pointer_analysis() const {
@@ -270,7 +281,7 @@ public:
   bool is_marked_reduction_loop() const { return !_loop_reductions.is_empty(); }
 
   // Are s1 and s2 reductions with a data path between them?
-  bool is_marked_reduction_pair(Node* s1, Node* s2) const;
+  bool is_marked_reduction_pair(const Node* s1, const Node* s2) const;
 
 private:
   // Whether n is a standard reduction operator.
@@ -307,7 +318,7 @@ public:
   const GrowableArray<MemNode*>& tails() const { return _tails; }
 
   // Get all memory nodes of a slice, in reverse order
-  void get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<Node*>& slice) const;
+  void get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<MemNode*>& slice) const;
 
   bool same_memory_slice(MemNode* m1, MemNode* m2) const;
 
@@ -323,6 +334,7 @@ public:
 class VLoopBody : public StackObj {
 private:
   static constexpr char const* FAILURE_NODE_NOT_ALLOWED = "encontered unhandled node";
+  static constexpr char const* FAILURE_UNEXPECTED_CTRL  = "data node in loop has no input in loop";
 
   const VLoop& _vloop;
 
@@ -348,6 +360,16 @@ public:
   int bb_idx(const Node* n) const {
     assert(_vloop.in_bb(n), "must be in basic block");
     return _body_idx.at(n->_idx);
+  }
+
+  template<typename Callback>
+  void for_each_mem(Callback callback) const {
+    for (int i = 0; i < _body.length(); i++) {
+      MemNode* mem = _body.at(i)->isa_Mem();
+      if (mem != nullptr && _vloop.in_bb(mem)) {
+        callback(mem, i);
+      }
+    }
   }
 
 private:
@@ -439,6 +461,152 @@ private:
   const Type* container_type(Node* n) const;
 };
 
+// Submodule of VLoopAnalyzer.
+// We compute and cache the VPointer for every load and store.
+class VLoopVPointers : public StackObj {
+private:
+  Arena*                   _arena;
+  const VLoop&             _vloop;
+  const VLoopBody&         _body;
+
+  // Array of cached pointers
+  VPointer* _vpointers;
+  int _vpointers_length;
+
+  // Map bb_idx -> index in _vpointers. -1 if not mapped.
+  GrowableArray<int> _bb_idx_to_vpointer;
+
+public:
+  VLoopVPointers(Arena* arena,
+                 const VLoop& vloop,
+                 const VLoopBody& body) :
+    _arena(arena),
+    _vloop(vloop),
+    _body(body),
+    _vpointers(nullptr),
+    _bb_idx_to_vpointer(arena,
+                        vloop.estimated_body_length(),
+                        vloop.estimated_body_length(),
+                        -1) {}
+  NONCOPYABLE(VLoopVPointers);
+
+  void compute_vpointers();
+  const VPointer& vpointer(const MemNode* mem) const;
+  NOT_PRODUCT( void print() const; )
+
+private:
+  void count_vpointers();
+  void allocate_vpointers_array();
+  void compute_and_cache_vpointers();
+};
+
+// Submodule of VLoopAnalyzer.
+// The dependency graph is used to determine if nodes are independent, and can thus potentially
+// be executed in parallel. That is a prerequisite for packing nodes into vector operations.
+// The dependency graph is a combination:
+//  - Data-dependencies: they can directly be taken from the C2 node inputs.
+//  - Memory-dependencies: the edges in the C2 memory-slice are too restrictive: for example all
+//                         stores are serialized, even if their memory does not overlap. Thus,
+//                         we refine the memory-dependencies (see construct method).
+class VLoopDependencyGraph : public StackObj {
+private:
+  class DependencyNode;
+
+  Arena*                   _arena;
+  const VLoop&             _vloop;
+  const VLoopBody&         _body;
+  const VLoopMemorySlices& _memory_slices;
+  const VLoopVPointers&    _vpointers;
+
+  // bb_idx -> DependenceNode*
+  GrowableArray<DependencyNode*> _dependency_nodes;
+
+  // Node depth in DAG: bb_idx -> depth
+  GrowableArray<int> _depths;
+
+public:
+  VLoopDependencyGraph(Arena* arena,
+                       const VLoop& vloop,
+                       const VLoopBody& body,
+                       const VLoopMemorySlices& memory_slices,
+                       const VLoopVPointers& pointers) :
+    _arena(arena),
+    _vloop(vloop),
+    _body(body),
+    _memory_slices(memory_slices),
+    _vpointers(pointers),
+    _dependency_nodes(arena,
+                      vloop.estimated_body_length(),
+                      vloop.estimated_body_length(),
+                      nullptr),
+    _depths(arena,
+            vloop.estimated_body_length(),
+            vloop.estimated_body_length(),
+            0) {}
+  NONCOPYABLE(VLoopDependencyGraph);
+
+  void construct();
+  bool independent(Node* s1, Node* s2) const;
+  bool mutually_independent(const Node_List* nodes) const;
+
+private:
+  void add_node(MemNode* n, GrowableArray<int>& memory_pred_edges);
+  int depth(const Node* n) const { return _depths.at(_body.bb_idx(n)); }
+  void set_depth(const Node* n, int d) { _depths.at_put(_body.bb_idx(n), d); }
+  int find_max_pred_depth(const Node* n) const;
+  void compute_depth();
+  NOT_PRODUCT( void print() const; )
+
+  const DependencyNode* dependency_node(const Node* n) const {
+    return _dependency_nodes.at(_body.bb_idx(n));
+  }
+
+  class DependencyNode : public ArenaObj {
+  private:
+    MemNode* _node; // Corresponding ideal node
+    const uint _memory_pred_edges_length;
+    int* _memory_pred_edges; // memory pred-edges, mapping to bb_idx
+  public:
+    DependencyNode(MemNode* n, GrowableArray<int>& memory_pred_edges, Arena* arena);
+    NONCOPYABLE(DependencyNode);
+    uint memory_pred_edges_length() const { return _memory_pred_edges_length; }
+
+    int memory_pred_edge(uint i) const {
+      assert(i < _memory_pred_edges_length, "bounds check");
+      return _memory_pred_edges[i];
+    }
+  };
+
+public:
+  // Iterator for dependency graph predecessors of a node.
+  class PredsIterator : public StackObj {
+  private:
+    const VLoopDependencyGraph& _dependency_graph;
+
+    const Node* _node;
+    const DependencyNode* _dependency_node;
+
+    Node* _current;
+
+    // Iterate in node->in(i)
+    int _next_pred;
+    int _end_pred;
+
+    // Iterate in dependency_node->memory_pred_edge(i)
+    int _next_memory_pred;
+    int _end_memory_pred;
+  public:
+    PredsIterator(const VLoopDependencyGraph& dependency_graph, const Node* node);
+    NONCOPYABLE(PredsIterator);
+    void next();
+    bool done() const { return _current == nullptr; }
+    Node* current() const {
+      assert(!done(), "not done yet");
+      return _current;
+    }
+  };
+};
+
 // Analyze the loop in preparation for auto-vectorization. This class is
 // deliberately structured into many submodules, which are as independent
 // as possible, though some submodules do require other submodules.
@@ -461,6 +629,8 @@ private:
   VLoopMemorySlices    _memory_slices;
   VLoopBody            _body;
   VLoopTypes           _types;
+  VLoopVPointers       _vpointers;
+  VLoopDependencyGraph _dependency_graph;
 
 public:
   VLoopAnalyzer(const VLoop& vloop, VSharedData& vshared) :
@@ -470,7 +640,9 @@ public:
     _reductions      (&_arena, vloop),
     _memory_slices   (&_arena, vloop),
     _body            (&_arena, vloop, vshared),
-    _types           (&_arena, vloop, _body)
+    _types           (&_arena, vloop, _body),
+    _vpointers       (&_arena, vloop, _body),
+    _dependency_graph(&_arena, vloop, _body, _memory_slices, _vpointers)
   {
     _success = setup_submodules();
   }
@@ -484,6 +656,8 @@ public:
   const VLoopMemorySlices& memory_slices()       const { return _memory_slices; }
   const VLoopBody& body()                        const { return _body; }
   const VLoopTypes& types()                      const { return _types; }
+  const VLoopVPointers& vpointers()              const { return _vpointers; }
+  const VLoopDependencyGraph& dependency_graph() const { return _dependency_graph; }
 
 private:
   bool setup_submodules();
@@ -566,7 +740,7 @@ class VPointer : public ArenaObj {
   int   invar_factor() const;
 
   // Comparable?
-  bool invar_equals(VPointer& q) {
+  bool invar_equals(const VPointer& q) const {
     assert(_debug_invar == NodeSentinel || q._debug_invar == NodeSentinel ||
            (_invar == q._invar) == (_debug_invar == q._debug_invar &&
                                     _debug_invar_scale == q._debug_invar_scale &&
@@ -574,7 +748,7 @@ class VPointer : public ArenaObj {
     return _invar == q._invar;
   }
 
-  int cmp(VPointer& q) {
+  int cmp(const VPointer& q) const {
     if (valid() && q.valid() &&
         (_adr == q._adr || (_base == _adr && q._base == q._adr)) &&
         _scale == q._scale   && invar_equals(q)) {
@@ -586,7 +760,7 @@ class VPointer : public ArenaObj {
     }
   }
 
-  bool overlap_possible_with_any_in(Node_List* p) {
+  bool overlap_possible_with_any_in(const Node_List* p) const {
     for (uint k = 0; k < p->size(); k++) {
       MemNode* mem = p->at(k)->as_Mem();
       VPointer p_mem(mem, _vloop);
@@ -600,14 +774,14 @@ class VPointer : public ArenaObj {
     return false;
   }
 
-  bool not_equal(VPointer& q)     { return not_equal(cmp(q)); }
-  bool equal(VPointer& q)         { return equal(cmp(q)); }
-  bool comparable(VPointer& q)    { return comparable(cmp(q)); }
+  bool not_equal(const VPointer& q)  const { return not_equal(cmp(q)); }
+  bool equal(const VPointer& q)      const { return equal(cmp(q)); }
+  bool comparable(const VPointer& q) const { return comparable(cmp(q)); }
   static bool not_equal(int cmp)  { return cmp <= NotEqual; }
   static bool equal(int cmp)      { return cmp == Equal; }
   static bool comparable(int cmp) { return cmp < NotComparable; }
 
-  void print();
+  NOT_PRODUCT( void print() const; )
 
 #ifndef PRODUCT
   class Tracer {

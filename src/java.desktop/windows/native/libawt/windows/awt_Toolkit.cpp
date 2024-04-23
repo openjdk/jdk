@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -911,20 +911,6 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
      * the main thread, a widget can always be properly disposed.
      */
     switch (message) {
-      case WM_AWT_EXECUTE_SYNC: {
-          jobject peerObject = (jobject)wParam;
-          AwtObject* object = (AwtObject *)JNI_GET_PDATA(peerObject);
-          DASSERT( !IsBadReadPtr(object, sizeof(AwtObject)));
-          AwtObject::ExecuteArgs *args = (AwtObject::ExecuteArgs *)lParam;
-          DASSERT(!IsBadReadPtr(args, sizeof(AwtObject::ExecuteArgs)));
-          LRESULT result = 0;
-          if (object != NULL)
-          {
-              result = object->WinThreadExecProc(args);
-          }
-          env->DeleteGlobalRef(peerObject);
-          return result;
-      }
       case WM_AWT_COMPONENT_CREATE: {
           ComponentCreatePacket* ccp = (ComponentCreatePacket*)lParam;
           DASSERT(ccp->factory != NULL);
@@ -1279,10 +1265,6 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
 
           ::PostMessage(HWND_BROADCAST, WM_PALETTEISCHANGING, NULL, NULL);
           break;
-      }
-      case WM_AWT_SETCURSOR: {
-          ::SetCursor((HCURSOR)wParam);
-          return TRUE;
       }
       /* Session management */
       case WM_QUERYENDSESSION: {
@@ -1967,12 +1949,6 @@ HICON AwtToolkit::GetSecurityWarningIcon(UINT index, UINT w, UINT h)
     }
 
     return securityWarningIcon[index];
-}
-
-void AwtToolkit::SetHeapCheck(long flag) {
-    if (flag) {
-        printf("heap checking not supported with this build\n");
-    }
 }
 
 void throw_if_shutdown(void)
