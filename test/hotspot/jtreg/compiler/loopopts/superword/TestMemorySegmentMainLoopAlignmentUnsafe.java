@@ -36,6 +36,7 @@ import jdk.internal.util.Preconditions;
  * @modules java.base/jdk.internal.util
  * @library /test/lib /
  * @run main/othervm -Xbatch compiler.loopopts.superword.TestMemorySegmentMainLoopAlignmentUnsafe
+ * @run main                 compiler.loopopts.superword.TestMemorySegmentMainLoopAlignmentUnsafe
  */
 
 public class TestMemorySegmentMainLoopAlignmentUnsafe {

@@ -33,6 +33,7 @@ import java.lang.foreign.*;
  *          pre-loop limit for main-loop adjustment.
  * @library /test/lib /
  * @run main/othervm -Xbatch compiler.loopopts.superword.TestMemorySegmentMainLoopAlignment
+ * @run main                 compiler.loopopts.superword.TestMemorySegmentMainLoopAlignment
  */
 
 public class TestMemorySegmentMainLoopAlignment {
