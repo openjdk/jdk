@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 8302850
- *
+ * @summary Tests that an array clone call that has been compiled with C1
+ *          handles null values correctly.
  * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:TieredStopAtLevel=1
  *                   -XX:CompileOnly=compiler.c1.TestNullArrayClone::test -XX:+UnlockExperimentalVMOptions
  *                   -XX:CompileCommand=blackhole,compiler.c1.TestNullArrayClone::blackhole
