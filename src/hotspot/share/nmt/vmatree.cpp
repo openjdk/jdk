@@ -177,9 +177,9 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
     tree.upsert(B, stB);
   }
 
-  // Finally, we need to:
-  // 1. Perform summary accounting.
-  // 2. Delete all nodes between (A, B]. Including B in the case of a noop.
+  // We now need to:
+  // 1. Delete all nodes between (A, B]. Including B in the case of a noop.
+  // 2. Perform summary accounting
 
   if (to_be_deleted_inbetween_a_b.length() == 0 && LEQ_A_found && GEQ_B_found) {
     // We have smashed a hole in an existing region (or replaced it entirely).
@@ -193,12 +193,13 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
     }
   }
 
-  // Sort them in address order, lowest first. This is for accounting purposes only.
+  // Sort the found nodes in ascending order by address. This is for summary accounting purposes.
   to_be_deleted_inbetween_a_b.sort([](AddressState* a, AddressState* b) -> int {
     return -AddressComparator::cmp(a->address, b->address);
   });
 
-  AddressState prev = {A, stA}; // stA is just filler
+  // Track the previous node.
+  AddressState prev = {A, stA};
   while (to_be_deleted_inbetween_a_b.length() > 0) {
     const AddressState delete_me = to_be_deleted_inbetween_a_b.top();
     to_be_deleted_inbetween_a_b.pop();
