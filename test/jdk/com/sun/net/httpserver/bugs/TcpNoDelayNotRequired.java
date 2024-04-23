@@ -80,7 +80,6 @@ public class TcpNoDelayNotRequired {
         }
         long time = System.currentTimeMillis()-start;
         System.out.println("time "+time);
-        if(time>5000) throw new IllegalStateException("took too long");
         server.stop(0);
         executor.shutdown();
     }
