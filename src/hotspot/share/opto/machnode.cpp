@@ -548,6 +548,11 @@ void MachNode::dump_spec(outputStream *st) const {
     if( C->alias_type(t)->is_volatile() )
       st->print(" Volatile!");
   }
+  if (barrier_data() != 0) {
+    st->print(" barrier(");
+    BarrierSet::barrier_set()->barrier_set_c2()->dump_barrier_data(this, st);
+    st->print(") ");
+  }
 }
 
 //------------------------------dump_format------------------------------------
@@ -560,15 +565,11 @@ void MachNode::dump_format(PhaseRegAlloc *ra, outputStream *st) const {
 //=============================================================================
 #ifndef PRODUCT
 void MachTypeNode::dump_spec(outputStream *st) const {
+  MachNode::dump_spec(st);
   if (_bottom_type != nullptr) {
     _bottom_type->dump_on(st);
   } else {
     st->print(" null");
-  }
-  if (barrier_data() != 0) {
-    st->print(" barrier(");
-    BarrierSet::barrier_set()->barrier_set_c2()->dump_barrier_data(this, st);
-    st->print(")");
   }
 }
 #endif
