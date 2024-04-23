@@ -4438,17 +4438,15 @@ void GraphBuilder::append_char_access(ciMethod* callee, bool is_store) {
 }
 
 void GraphBuilder::append_alloc_array_copy(ciMethod* callee) {
-  {
-    // Peek at receiver
-    Value recv = state()->stack_at(state()->stack_size() - callee->arg_size());
-    ciType* receiver_type = recv->exact_type();
-    if (receiver_type == nullptr || // clone target is phi
-        !receiver_type->is_type_array_klass()) // not primtive array
-    {
-      // not primitive array
-      inline_bailout("clone array not primitive");
-      return;
-    }
+  const int args_base = state()->stack_size() - callee->arg_size();
+  ciType* receiver_type = state()->stack_at(args_base)->exact_type();
+  if (receiver_type == nullptr) {
+    inline_bailout("must have a receiver");
+    return;    
+  }
+  if (!receiver_type->is_type_array_klass()) {
+    inline_bailout("clone array not primitive");
+    return;
   }
 
   ValueStack* state_before = copy_state_before();
