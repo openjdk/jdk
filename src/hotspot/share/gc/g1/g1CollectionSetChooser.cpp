@@ -151,7 +151,6 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
         return false;
       }
 
-      // TODO: Fix Comment
       // Can not add a region without a remembered set to the candidates.
       if (!r->rem_set()->is_tracked()) {
         return false;
@@ -269,6 +268,5 @@ void G1CollectionSetChooser::build(WorkerThreads* workers, uint max_num_regions,
   workers->run_task(&cl, num_workers);
 
   cl.sort_and_prune_into(candidates);
-
   candidates->verify();
 }
