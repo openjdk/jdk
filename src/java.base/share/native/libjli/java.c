@@ -388,67 +388,64 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     } while (JNI_FALSE)
 
 /*
- * Invoke a static main with arguments. Returns 0 if successful otherwise
- * processes the pending exception from GetStaticMethodID and returns 1.
+ * Invoke a static main with arguments. Returns 1 (true) if successful otherwise
+ * processes the pending exception from GetStaticMethodID and returns 0 (false).
  */
 int
-invokeStaticMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs,
-        JavaVM *vm, int ret) {
+invokeStaticMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
     jmethodID mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
                                   "([Ljava/lang/String;)V");
-    CHECK_EXCEPTION_LEAVE(1);
+    NULL_CHECK0(mainID);
     (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
-    return 0;
+    return 1;
 }
 
 /*
- * Invoke an instance main with arguments. Returns 0 if successful otherwise
- * processes the pending exception from GetMethodID and returns 1.
+ * Invoke an instance main with arguments. Returns 1 (true) if successful otherwise
+ * processes the pending exception from GetMethodID and returns 0 (false).
  */
 int
-invokeInstanceMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs,
-        JavaVM *vm, int ret) {
+invokeInstanceMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
+    jmethodID mainID =
+        (*env)->GetMethodID(env, mainClass, "main", "([Ljava/lang/String;)V");
+    NULL_CHECK0(mainID);
     jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
-    CHECK_EXCEPTION_LEAVE(1);
+    NULL_CHECK0(constructor);
     jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
-    CHECK_EXCEPTION_NULL_LEAVE(mainObject);
-    jmethodID mainID = (*env)->GetMethodID(env, mainClass, "main",
-                                 "([Ljava/lang/String;)V");
-    CHECK_EXCEPTION_LEAVE(1);
+    CHECK_EXCEPTION_RETURN_VALUE(0);
+    NULL_CHECK0(mainObject);
     (*env)->CallVoidMethod(env, mainObject, mainID, mainArgs);
-    return 0;
+    return 1;
 }
 
 /*
- * Invoke a static main without arguments. Returns 0 if successful otherwise
- * processes the pending exception from GetStaticMethodID and returns 1.
+ * Invoke a static main without arguments. Returns 1 (true) if successful otherwise
+ * processes the pending exception from GetStaticMethodID and returns 0 (false).
  */
 int
-invokeStaticMainWithoutArgs(JNIEnv *env, jclass mainClass,
-        JavaVM *vm, int ret) {
+invokeStaticMainWithoutArgs(JNIEnv *env, jclass mainClass) {
     jmethodID mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
                                        "()V");
-    CHECK_EXCEPTION_LEAVE(1);
+    NULL_CHECK0(mainID);
     (*env)->CallStaticVoidMethod(env, mainClass, mainID);
-    return 0;
+    return 1;
 }
 
 /*
- * Invoke an instance main without arguments. Returns 0 if successful otherwise
- * processes the pending exception from GetMethodID and returns 1.
+ * Invoke an instance main without arguments. Returns 1 (true) if successful otherwise
+ * processes the pending exception from GetMethodID and returns 0 (false).
  */
 int
-invokeInstanceMainWithoutArgs(JNIEnv *env, jclass mainClass,
-        JavaVM *vm, int ret) {
+invokeInstanceMainWithoutArgs(JNIEnv *env, jclass mainClass) {
     jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
-    CHECK_EXCEPTION_LEAVE(1);
+    NULL_CHECK0(constructor);
     jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
-    CHECK_EXCEPTION_NULL_LEAVE(mainObject);
-    jmethodID mainID = (*env)->GetMethodID(env, mainClass, "main",
-                                 "()V");
-    CHECK_EXCEPTION_LEAVE(1);
+    CHECK_EXCEPTION_RETURN_VALUE(0);
+    NULL_CHECK0(mainObject);
+    jmethodID mainID = (*env)->GetMethodID(env, mainClass, "main", "()V");
+    NULL_CHECK0(mainID);
     (*env)->CallVoidMethod(env, mainObject, mainID);
-    return 0;
+    return 1;
 }
 
 int
@@ -468,6 +465,11 @@ JavaMain(void* _args)
     jobjectArray mainArgs;
     int ret = 0;
     jlong start = 0, end = 0;
+    jclass helperClass;
+    jfieldID isStaticMainField;
+    jboolean isStaticMain;
+    jfieldID noArgMainField;
+    jboolean noArgMain;
 
     RegisterThread();
 
@@ -607,34 +609,33 @@ JavaMain(void* _args)
      */
 
 
-    jclass helperClass = GetLauncherHelperClass(env);
-    jfieldID isStaticField =
-        (*env)->GetStaticFieldID(env, helperClass, "isStatic", "Z");
-    jboolean isStatic =
-        (*env)->GetStaticBooleanField(env, helperClass, isStaticField);
+    helperClass = GetLauncherHelperClass(env);
+    isStaticMainField =
+        (*env)->GetStaticFieldID(env, helperClass, "isStaticMain", "Z");
+    CHECK_EXCEPTION_NULL_LEAVE(isStaticMainField);
+    isStaticMain =
+        (*env)->GetStaticBooleanField(env, helperClass, isStaticMainField);
 
-    jfieldID noArgsField =
-        (*env)->GetStaticFieldID(env, helperClass, "noArgs", "Z");
-    jboolean noArgs =
-        (*env)->GetStaticBooleanField(env, helperClass, noArgsField);
+    noArgMainField =
+        (*env)->GetStaticFieldID(env, helperClass, "noArgMain", "Z");
+    CHECK_EXCEPTION_NULL_LEAVE(noArgMainField);
+    noArgMain = (*env)->GetStaticBooleanField(env, helperClass, noArgMainField);
 
-    if (isStatic) {
-        if (noArgs) {
-            ret = invokeStaticMainWithoutArgs(env, mainClass, vm, ret);
+    if (isStaticMain) {
+        if (noArgMain) {
+            ret = invokeStaticMainWithoutArgs(env, mainClass);
         } else {
-            ret = invokeStaticMainWithArgs(env, mainClass, mainArgs, vm, ret);
+            ret = invokeStaticMainWithArgs(env, mainClass, mainArgs);
         }
     } else {
-       if (noArgs) {
-            ret = invokeInstanceMainWithoutArgs(env, mainClass, vm, ret);
+       if (noArgMain) {
+            ret = invokeInstanceMainWithoutArgs(env, mainClass);
        } else {
-            ret = invokeInstanceMainWithArgs(env, mainClass, mainArgs, vm, ret);
+            ret = invokeInstanceMainWithArgs(env, mainClass, mainArgs);
        }
     }
 
-    if (ret) {
-        return ret;
-    }
+    CHECK_EXCEPTION_LEAVE(1);
 
     /*
      * The launcher's exit code (in the absence of calls to
