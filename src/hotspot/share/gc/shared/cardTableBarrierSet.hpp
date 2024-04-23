@@ -67,7 +67,7 @@ public:
   void initialize();
 
   void write_region(JavaThread* thread, MemRegion mr) {
-    invalidate(mr);
+    write_region(mr);
   }
 
   void write_ref_array_work(MemRegion mr);
@@ -80,7 +80,7 @@ public:
   template <DecoratorSet decorators, typename T>
   void write_ref_field_post(T* field);
 
-  virtual void invalidate(MemRegion mr);
+  virtual void write_region(MemRegion mr);
 
   // ReduceInitialCardMarks
   void initialize_deferred_card_mark_barriers();

@@ -45,6 +45,10 @@ inline bool TenuredGeneration::is_in(const void* p) const {
   return space()->is_in(p);
 }
 
+inline void TenuredGeneration::update_for_block(HeapWord* start, HeapWord* end) {
+  _bts->update_for_block(start, end);
+}
+
 HeapWord* TenuredGeneration::allocate(size_t word_size,
                                                  bool is_tlab) {
   assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");

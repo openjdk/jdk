@@ -39,6 +39,7 @@
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/serial/serialHeap.hpp"
 #include "gc/serial/serialStringDedup.hpp"
+#include "gc/serial/tenuredGeneration.inline.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
@@ -171,6 +172,9 @@ class Compacter {
 
   uint _index;
 
+  // Used for BOT update
+  TenuredGeneration* _old_gen;
+
   HeapWord* get_compaction_top(uint index) const {
     return _spaces[index]._compaction_top;
   }
@@ -196,7 +200,7 @@ class Compacter {
         _spaces[_index]._compaction_top += words;
         if (_index == 0) {
           // old-gen requires BOT update
-          static_cast<TenuredSpace*>(_spaces[0]._space)->update_for_block(result, result + words);
+          _old_gen->update_for_block(result, result + words);
         }
         return result;
       }
@@ -280,6 +284,7 @@ public:
       _num_spaces = 3;
     }
     _index = 0;
+    _old_gen = heap->old_gen();
   }
 
   void phase2_calculate_new_addr() {

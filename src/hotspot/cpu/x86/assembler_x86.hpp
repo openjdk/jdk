@@ -1736,6 +1736,7 @@ private:
   void btrq(Address dst, int imm8);
   void btq(Register src, int imm8);
 #endif
+  void btq(Register dst, Register src);
 
   void orw(Register dst, Register src);
 

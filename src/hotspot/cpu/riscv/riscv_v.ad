@@ -73,6 +73,11 @@ source %{
           return false;
         }
         break;
+      case Op_LoadVectorGatherMasked:
+        if (is_subword_type(bt)) {
+          return false;
+        }
+        break;
       case Op_VectorCastHF2F:
       case Op_VectorCastF2HF:
         return UseZvfh;
