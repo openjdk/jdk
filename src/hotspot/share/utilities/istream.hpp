@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ class inputStream : public CHeapObjBase {
   // Values for _input_state, to distinguish some phases of history:
   // Do we need to read more input (NTR)?  Did we see EOF already?
   // Was there an error getting input or allocating buffer space?
-  enum IState { NTR_STATE, EOF_STATE, ERR_STATE };
+  enum class IState : int { NTR_STATE, EOF_STATE, ERR_STATE };
 
   // Named offset for _next relative to _content_end, of phantom '\n'.
   static const int NEXT_PHANTOM = 1;
@@ -105,7 +105,8 @@ class inputStream : public CHeapObjBase {
   size_t _next;         // offset to known start of next line (else =end)
   void*  _must_free;    // unless null, a malloc pointer which we must free
   size_t _line_count;   // increasing non-resettable count of lines read
-  char   _small_buffer[SMALL_SIZE];  // buffer for holding lines
+  char   _small_buffer[SMALL_SIZE];  // stack-allocated buffer for holding lines;
+                                     // will switch to C_HEAP allocation when necessary.
 
   void handle_free();
 
@@ -222,16 +223,18 @@ class inputStream : public CHeapObjBase {
  public:
   // Create an empty input stream.
   // Call push_back_input or set_input to configure.
-  inputStream() {
-    _input = nullptr;
-    _buffer = nullptr;
-    _must_free = nullptr;
-    _buffer_size = 0;
-    _line_count = 0;
-    _beg = _end = _next = _content_end = 0;
-    _line_ending = 0;
-    _input_state = NTR_STATE;
-  }
+  inputStream() :
+    _input(nullptr),
+    _input_state(IState::NTR_STATE),
+    _line_ending(0),
+    _buffer(nullptr),
+    _buffer_size(0),
+    _content_end(0),
+    _beg(0),
+    _end(0),
+    _next(0),
+    _must_free(nullptr),
+    _line_count(0) {}
 
   // Take input from the given source.  Buffer only a modest amount.
   inputStream(Input* input)
@@ -286,7 +289,7 @@ class inputStream : public CHeapObjBase {
 
   // Reports if this stream has had an error was reported on it.
   bool error() const {
-    return _input_state == ERR_STATE;
+    return _input_state == IState::ERR_STATE;
   }
 
   // Set this stream done with an error, if the argument is true.
@@ -370,8 +373,7 @@ class FileInput : public inputStream::Input {
   template<typename... Arg>
   FileInput(Arg... arg)
     : _fs(_private_fs), _private_fs(arg...)
-  {
-  }
+  { }
 
   FileInput(const char* file_name)
     : FileInput(file_name, "rt")

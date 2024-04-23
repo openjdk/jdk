@@ -287,7 +287,6 @@ static void istream_test_driver(const bool VERBOSE,
       if (ncols > patlen - COLS)  ncols = (patlen - COLS);
     }
     for (int lelen = 1; lelen <= 2; lelen++) {  // try both kinds of newline
-      //if (ncols > 0) ncols = (ncols == 1) ? (2*patlen)/3 : patlen;
       istream_test_driver(VERBOSE,
                           patlen, ncols, lelen,
                           TEST_SET_POSITION, TEST_PUSH_BACK, TEST_EXPAND_REDUCE);

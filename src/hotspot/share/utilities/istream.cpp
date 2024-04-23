@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,10 +85,10 @@ void inputStream::set_done() {
 void inputStream::set_error(bool error_condition) {
   if (error_condition) {
     set_done();
-    _input_state = ERR_STATE;
+    _input_state = IState::ERR_STATE;
     assert(error(), "");
   } else if (error()) {
-    _input_state = definitely_done() ? EOF_STATE : NTR_STATE;
+    _input_state = definitely_done() ? IState::EOF_STATE : IState::NTR_STATE;
   }
 }
 
@@ -110,7 +110,7 @@ void inputStream::set_input(inputStream::Input* input) {
     _input->close();
   }
   _input = input;
-  _input_state = NTR_STATE;
+  _input_state = IState::NTR_STATE;
 }
 
 bool inputStream::fill_buffer() {
@@ -123,9 +123,9 @@ bool inputStream::fill_buffer() {
     assert(fill_offset < _buffer_size, "");
     assert(fill_offset + fill_length <= _buffer_size, "");
     size_t nr = 0;
-    if (_input != nullptr && _input_state == NTR_STATE) {
+    if (_input != nullptr && _input_state == IState::NTR_STATE) {
       nr = _input->read(&_buffer[fill_offset], fill_length);
-      if (nr == 0)  _input_state = EOF_STATE;  // do not get EOF twice
+      if (nr == 0)  _input_state = IState::EOF_STATE;  // do not get EOF twice
     }
     bool last_partial = false;
     if (nr > 0) {
