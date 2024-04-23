@@ -53,8 +53,7 @@ langtools_jshell_unstable = \
     jdk/jshell/ToolLocaleMessageTest.java \
     jdk/jshell/ToolReloadTest.java \
     jdk/jshell/UserInputTest.java \
-    jdk/jshell/UserJdiUserRemoteTest.java \
-    jdk/internal/shellsupport/doc/FullJavadocHelperTest.java
+    jdk/jshell/UserJdiUserRemoteTest.java
 
 langtools_jdeprscan = \
     tools/all \
@@ -63,6 +62,9 @@ langtools_jdeprscan = \
 langtools_jdeps = \
     tools/all \
     tools/jdeps
+
+langtools_slow = \
+    jdk/internal/shellsupport/doc/FullJavadocHelperTest.java
 
 # All tests
 
@@ -79,11 +81,13 @@ tier1 = \
     :langtools_all \
     lib \
     tools \
-    -:langtools_jshell_unstable
+    -:langtools_jshell_unstable \
+    -:langtools_slow
 
 # (Almost) no langtools tests are tier 2.
 tier2 = \
-    :langtools_jshell_unstable
+    :langtools_jshell_unstable \
+    :langtools_slow
 
 # No langtools tests are tier 3 either.
 tier3 =
