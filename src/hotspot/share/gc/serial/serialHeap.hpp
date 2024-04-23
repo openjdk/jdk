@@ -240,11 +240,6 @@ public:
   // "CollectedHeap" can use in the implementation of its virtual
   // functions.
 
-  class GenClosure : public StackObj {
-   public:
-    virtual void do_generation(Generation* gen) = 0;
-  };
-
   // Return "true" if all generations have reached the
   // maximal committed limit that they can reach, without a garbage
   // collection.
