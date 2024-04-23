@@ -68,9 +68,6 @@ public:
   // at the address "start", which may not necessarily be HeapWord-aligned
   inline void write_ref_array(HeapWord* start, size_t count);
 
- protected:
-  virtual void write_ref_array_work(MemRegion mr) = 0;
-
  public:
   // The ModRef abstraction introduces pre and post barriers
   template <DecoratorSet decorators, typename BarrierSetT>
