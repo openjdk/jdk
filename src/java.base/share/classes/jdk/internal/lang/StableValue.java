@@ -54,7 +54,7 @@ import java.util.function.Supplier;
  * factory.
  * <p>
  * To create collections of <em>wrapped stable elements</em>, that, in turn, are also
- * eligible for constant folding optimizations, the following factories can be used:
+ * eligible for certain JVM optimizations, the following factories can be used:
  * <ul>
  *     <li>{@linkplain StableValue#ofList(int)}</li>
  *     <li>{@linkplain StableValue#ofMap(Set)}</li>
@@ -178,8 +178,8 @@ public sealed interface StableValue<V>
      * <p>
      * If non-empty, neither the returned list nor its elements are {@linkplain Serializable}.
      * <p>
-     * The returned list and its elements are eligible for constant folding and other
-     * optimizations by the JVM and is equivalent to:
+     * The returned list and its elements are eligible for certain optimizations by
+     * the JVM and is equivalent to:
      * {@snippet lang = java:
      * List<StableValue<V>> list = Stream.generate(StableValue::<V>of)
      *         .limit(size)
@@ -221,8 +221,8 @@ public sealed interface StableValue<V>
      * <p>
      * If non-empty, neither the returned map nor its values are {@linkplain Serializable}.
      * <p>
-     * The returned map and its values are eligible for constant folding and other
-     * optimizations by the JVM and is equivalent to:
+     * The returned map and its values are eligible for certain optimizations by
+     * the JVM and is equivalent to:
      * {@snippet lang = java:
      * Map<K, StableValue<V>> map = Map.copyOf(keys.stream()
      *         .distinct()
