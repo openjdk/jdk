@@ -1832,7 +1832,7 @@ void Assembler::cmpw(Address dst, Register reg) {
   emit_int8(0x66);
   prefix(dst, reg);
   emit_int8((unsigned char)0x39);
-  emit_operand(reg, dst, 1);
+  emit_operand(reg, dst, 0);
 }
 
 // The 32-bit cmpxchg compares the value at adr with the contents of rax,
@@ -4459,6 +4459,7 @@ void Assembler::vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int 
 void Assembler::vpcmpeqb(XMMRegister dst, XMMRegister src1, Address src2, int vector_len) {
   assert(vector_len == AVX_128bit ? VM_Version::supports_avx() : VM_Version::supports_avx2(), "");
   assert(vector_len <= AVX_256bit, "evex encoding is different - has k register as dest");
+  InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
   vex_prefix(src2, src1->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
   emit_int8(0x74);
@@ -4575,6 +4576,7 @@ void Assembler::vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int 
 void Assembler::vpcmpeqw(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
   assert(vector_len == AVX_128bit ? VM_Version::supports_avx() : VM_Version::supports_avx2(), "");
   assert(vector_len <= AVX_256bit, "evex encoding is different - has k register as dest");
+  InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
   vex_prefix(src, nds->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
   emit_int8(0x75);
