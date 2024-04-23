@@ -458,6 +458,36 @@ public final class SunJCE extends Provider {
                 attrs);
 
         /*
+         * Key Derivation engines
+         */
+        ps("KDF", "HKDF/HmacSHA224",
+                "com.sun.crypto.provider.HkdfKeyDerivation$HkdfSHA224");
+        ps("KDF", "HKDF/HmacSHA256",
+                "com.sun.crypto.provider.HkdfKeyDerivation$HkdfSHA256");
+        ps("KDF", "HKDF/HmacSHA384",
+                "com.sun.crypto.provider.HkdfKeyDerivation$HkdfSHA384");
+        ps("KDF", "HKDF/HmacSHA512",
+                "com.sun.crypto.provider.HkdfKeyDerivation$HkdfSHA512");
+
+        ps("KDF", "HKDF-Extract/HmacSHA224",
+                "com.sun.crypto.provider.HkdfKeyDerivation$HkdfExtractSHA224");
+        ps("KDF", "HKDF-Extract/HmacSHA256",
+                "com.sun.crypto.provider.HkdfKeyDerivation$HkdfExtractSHA256");
+        ps("KDF", "HKDF-Extract/HmacSHA384",
+                "com.sun.crypto.provider.HkdfKeyDerivation$HkdfExtractSHA384");
+        ps("KDF", "HKDF-Extract/HmacSHA512",
+                "com.sun.crypto.provider.HkdfKeyDerivation$HkdfExtractSHA512");
+
+        ps("KDF", "HKDF-Expand/HmacSHA224",
+                "com.sun.crypto.provider.HkdfKeyDerivation$HkdfExpandSHA224");
+        ps("KDF", "HKDF-Expand/HmacSHA256",
+                "com.sun.crypto.provider.HkdfKeyDerivation$HkdfExpandSHA256");
+        ps("KDF", "HKDF-Expand/HmacSHA384",
+                "com.sun.crypto.provider.HkdfKeyDerivation$HkdfExpandSHA384");
+        ps("KDF", "HKDF-Expand/HmacSHA512",
+                "com.sun.crypto.provider.HkdfKeyDerivation$HkdfExpandSHA512");
+
+        /*
          * Algorithm Parameter engines
          */
         psA("AlgorithmParameters", "DiffieHellman",

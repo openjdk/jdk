@@ -1604,6 +1604,8 @@ public abstract class Provider extends Properties {
         addEngine("KeyGenerator",                       false, null);
         addEngine("SecretKeyFactory",                   false, null);
         addEngine("KEM",                                true,  null);
+        addEngine("KDF",                                true,
+                            java.security.spec.AlgorithmParameterSpec.class);
         // JSSE
         addEngine("KeyManagerFactory",                  false, null);
         addEngine("SSLContext",                         false, null);
