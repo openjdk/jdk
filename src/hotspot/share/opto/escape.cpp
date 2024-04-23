@@ -494,8 +494,7 @@ bool ConnectionGraph::can_reduce_cmp(Node* n, Node* cmp) const {
   Node* left = cmp->in(1);
   Node* right = cmp->in(2);
 
-  return (cmp->Opcode() == Op_CmpP || cmp->Opcode() == Op_CmpN) &&
-         (left == n || right == n) &&
+  return (left == n || right == n) &&
          (left->is_Con() || right->is_Con()) &&
          cmp->outcnt() == 1;
 }
