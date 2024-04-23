@@ -147,12 +147,17 @@ public final class LoaderThreadCount extends ThreadGroup {
     private static Thread[] getThreadSnapshot() {
         try {
             start.await();
+            // Allow for the scanner threads to initiate re-scanning
             Thread.sleep(10);
+
             Thread[] array = new Thread[Thread.activeCount()];
             Thread.currentThread()
                   .getThreadGroup()
                   .enumerate(array, false);
+
+            // Additional delay between captures
             Thread.sleep(500);
+
             return array;
         } catch (InterruptedException | BrokenBarrierException e) {
             handleException(e);
