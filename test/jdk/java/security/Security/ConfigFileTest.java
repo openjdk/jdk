@@ -219,10 +219,19 @@ public class ConfigFileTest {
     static void testUnicodeIncludes3(Executor ex, FilesManager filesMgr)
             throws Exception {
         // Backward compatibility check. Malformed URLs such as
+        // file:/tmp/extra•.properties are supported for the extra file.
+        // However, relative includes are not allowed in these cases.
+        specialCharsIncludes(ex, filesMgr, '\u2022',
+                Executor.ExtraMode.RAW_FILE_URI1, false);
+    }
+
+    static void testUnicodeIncludes4(Executor ex, FilesManager filesMgr)
+            throws Exception {
+        // Backward compatibility check. Malformed URLs such as
         // file:///tmp/extra•.properties are supported for the extra file.
         // However, relative includes are not allowed in these cases.
         specialCharsIncludes(ex, filesMgr, '\u2022',
-                Executor.ExtraMode.RAW_FILE_URI, false);
+                Executor.ExtraMode.RAW_FILE_URI2, false);
     }
 
     static void testSpaceIncludes1(Executor ex, FilesManager filesMgr)
@@ -240,10 +249,19 @@ public class ConfigFileTest {
     static void testSpaceIncludes3(Executor ex, FilesManager filesMgr)
             throws Exception {
         // Backward compatibility check. Malformed URLs such as
+        // file:/tmp/extra .properties are supported for the extra file.
+        // However, relative includes are not allowed in these cases.
+        specialCharsIncludes(ex, filesMgr, ' ',
+                Executor.ExtraMode.RAW_FILE_URI1, false);
+    }
+
+    static void testSpaceIncludes4(Executor ex, FilesManager filesMgr)
+            throws Exception {
+        // Backward compatibility check. Malformed URLs such as
         // file:///tmp/extra .properties are supported for the extra file.
         // However, relative includes are not allowed in these cases.
         specialCharsIncludes(ex, filesMgr, ' ',
-                Executor.ExtraMode.RAW_FILE_URI, false);
+                Executor.ExtraMode.RAW_FILE_URI2, false);
     }
 
     static void notOverrideOnFailureHelper(Executor ex, FilesManager filesMgr,
@@ -691,7 +709,9 @@ final class FilesManager implements Closeable {
 }
 
 final class Executor {
-    enum ExtraMode { HTTP_SERVED, FILE_URI, RAW_FILE_URI, PATH_ABS, PATH_REL }
+    enum ExtraMode {
+        HTTP_SERVED, FILE_URI, RAW_FILE_URI1, RAW_FILE_URI2, PATH_ABS, PATH_REL
+    }
     static final String RUNNER_ARG = "runner";
     static final String INITIAL_PROP_LOG_MSG = "Initial security property: ";
     private static final String OVERRIDING_LOG_MSG =
@@ -747,7 +767,10 @@ final class Executor {
         setRawExtraFile(switch (mode) {
             case HTTP_SERVED -> extraPropsFile.url.toString();
             case FILE_URI -> extraPropsFile.path.toUri().toString();
-            case RAW_FILE_URI -> "file:" + extraPropsFile.path;
+            case RAW_FILE_URI1 -> "file:" + extraPropsFile.path;
+            case RAW_FILE_URI2 -> "file://" +
+                    (extraPropsFile.path.startsWith("/") ? "" : "/") +
+                    extraPropsFile.path;
             case PATH_ABS -> extraPropsFile.path.toString();
             case PATH_REL -> CWD.relativize(extraPropsFile.path).toString();
         }, overrideAll);
