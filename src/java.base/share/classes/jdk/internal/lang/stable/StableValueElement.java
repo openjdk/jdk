@@ -103,58 +103,20 @@ public record StableValueElement<V>(
         return StableUtil.toString(this);
     }
 
-    // Avoid creating lambdas by creating
-    private static final BiFunction<Supplier<?>, Void, ?> SUPPLIER_EXTRACTOR =
-            new BiFunction<Supplier<?>, Void, Object>() {
-                @Override
-                public Object apply(Supplier<?> supplier, Void unused) {
-                    return supplier.get();
-                }
-            };
-
-    private static final BiFunction<IntFunction<?>, Integer, ?> INT_FUNCTION_EXTRACTOR =
-            new BiFunction<IntFunction<?>, Integer, Object>() {
-                @Override
-                public Object apply(IntFunction<?> function, Integer index) {
-                    return function.apply(index);
-                }
-            };
-
-    private static final BiFunction<Function<Object, Object>, Object, Object> FUNCTION_EXTRACTOR =
-            new BiFunction<Function<Object, Object>, Object, Object>() {
-                @Override
-                public Object apply(Function<Object, Object> function, Object o) {
-                    return function.apply(o);
-                }
-            };
-
-    @SuppressWarnings("unchecked")
-    private static <S, K, V> BiFunction<S, K, V> functionExtractor() {
-        return (BiFunction<S, K, V>) FUNCTION_EXTRACTOR;
-    }
-
-    @SuppressWarnings("unchecked")
     @Override
     public V computeIfUnset(Supplier<? extends V> supplier) {
-        return computeIfUnsetShared(supplier,
-                null,
-                (BiFunction<? super Supplier<? extends V>, ?, V>) SUPPLIER_EXTRACTOR);
+        return computeIfUnsetShared(supplier, null);
     }
 
-    @SuppressWarnings("unchecked")
     public V computeIfUnset(int index, IntFunction<? extends V> mapper) {
-        return computeIfUnsetShared(mapper,
-                index,
-                (BiFunction<IntFunction<?>, Integer, V>) INT_FUNCTION_EXTRACTOR);
+        return computeIfUnsetShared(mapper, index);
     }
 
     public <K> V computeIfUnset(K key, Function<? super K, ? extends V> mapper) {
-        return computeIfUnsetShared(mapper, key, functionExtractor());
+        return computeIfUnsetShared(mapper, key);
     }
 
-    private <S, K> V computeIfUnsetShared(S source,
-                                          K key,
-                                          BiFunction<S, K, V> extractor) {
+    private <S, K> V computeIfUnsetShared(S source, K key) {
         // Optimistically try plain semantics first
         V e = elements[index];
         if (e != null) {
@@ -166,35 +128,37 @@ public record StableValueElement<V>(
             return null;
         }
         // Now, fall back to volatile semantics.
-        return computeIfUnsetVolatile(source, key, extractor);
+        return computeIfUnsetVolatile(source, key);
     }
 
-    private <S, K> V computeIfUnsetVolatile(S source,
-                                            K key,
-                                            BiFunction<S, K, V> extractor) {
+    private <S, K> V computeIfUnsetVolatile(S source, K key) {
         V e = elementVolatile();
         if (e != null) {
             // If we see a non-null value, we know a value is set.
             return e;
         }
         return switch (stateVolatile()) {
-            case UNSET    -> computeIfUnsetVolatile0(source, key, extractor);
+            case UNSET    -> computeIfUnsetVolatile0(source, key);
             case NON_NULL -> orThrow(); // Race
             case NULL     -> null;
             default       -> throw shouldNotReachHere();
         };
     }
 
-    private synchronized <S, K> V computeIfUnsetVolatile0(S source,
-                                                          K key,
-                                                          BiFunction<S, K, V> extractor) {
+    private synchronized <S, K> V computeIfUnsetVolatile0(S source, K key) {
         synchronized (acquireMutex()) {
             if (isSet()) {
                 clearMutex();
                 return orThrow();
             }
 
-            V newValue = extractor.apply(source, key);
+            @SuppressWarnings("unchecked")
+            V newValue = switch (source) {
+                case Supplier<?>    sup  -> (V) sup.get();
+                case IntFunction<?> iFun -> (V) iFun.apply((int) key);
+                case Function<?, ?> func -> ((Function<K, V>) func).apply(key);
+                default                  -> throw shouldNotReachHere();
+            };
             // If the extractor throws an exception
             // the mutex is retained
 
