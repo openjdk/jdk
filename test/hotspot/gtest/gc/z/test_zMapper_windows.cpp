@@ -23,10 +23,12 @@
 
 #include "precompiled.hpp"
 
-#ifdef _WIN64
+#ifdef _WINDOWS
 
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGlobals.hpp"
+#include "gc/z/zList.inline.hpp"
+#include "gc/z/zMemory.inline.hpp"
 #include "gc/z/zSyscall_windows.hpp"
 #include "gc/z/zVirtualMemory.hpp"
 #include "runtime/os.hpp"
@@ -34,26 +36,27 @@
 
 using namespace testing;
 
+#define EXPECT_ALLOC_OK(offset) EXPECT_NE(offset, zoffset(UINTPTR_MAX))
+
 class ZMapperTest : public Test {
 private:
-  static constexpr size_t reservation_size = 32 * M;
-public:
-  ZVirtualMemoryManager* _vmm;
+  static constexpr size_t ZMapperTestReservationSize = 32 * M;
+  static bool            _initialized;
   static ZMemoryManager* _va;
+  ZVirtualMemoryManager* _vmm;
 
+public:
   bool reserve_for_test() {
-    const zaddress_unsafe addr = ZOffset::address_unsafe(zoffset(0));
-
     // Initialize platform specific parts before reserving address space
     _vmm->pd_initialize_before_reserve();
 
     // Reserve address space
-    if (!_vmm->pd_reserve(addr, reservation_size)) {
+    if (!_vmm->pd_reserve(ZOffset::address_unsafe(zoffset(0)), ZMapperTestReservationSize)) {
       return false;
     }
 
     // Make the address range free before setting up callbacks below
-    _va->free(zoffset(0), reservation_size);
+    _va->free(zoffset(0), ZMapperTestReservationSize);
 
     // Initialize platform specific parts after reserving address space
     _vmm->pd_initialize_after_reserve();
@@ -67,44 +70,113 @@ public:
 
     // Fake a ZVirtualMemoryManager
     _vmm = (ZVirtualMemoryManager*)os::malloc(sizeof(ZVirtualMemoryManager), mtTest);
-    // And construct its internal ZMemoryManager
+
+    // Construct its internal ZMemoryManager
     _va = new (&_vmm->_manager) ZMemoryManager();
 
-    reserve_for_test();
+    // Reserve address space for the test
+    _initialized = reserve_for_test();
   }
 
   virtual void TearDown() {
-    const zaddress_unsafe addr = ZOffset::address_unsafe(zoffset(0));
-    _vmm->pd_unreserve(addr, 0);
+    if (_initialized) {
+      _vmm->pd_unreserve(ZOffset::address_unsafe(zoffset(0)), 0);
+    }
     os::free(_vmm);
   }
 
-  static void test_memory_manager_callbacks() {
-    // Verify that we get placeholder for last granule
-    zoffset highest2m = _va->alloc_high_address(2*M);
-    zoffset high2m = _va->alloc_high_address(2*M);
-    _va->free(highest2m, 2 * M);
-    _va->free(high2m, 2 * M);
+  static void test_alloc_low_address() {
+    if (!_initialized) {
+      GTEST_SKIP();
+    }
 
     // Verify that we get placeholder for first granule
-    zoffset lowest2m = _va->alloc_low_address(2*M);
-    zoffset low2m = _va->alloc_low_address(2*M);
-    _va->free(lowest2m, 2 * M);
-    _va->free(low2m, 2 * M);
+    zoffset bottom = _va->alloc_low_address(ZGranuleSize);
+    EXPECT_ALLOC_OK(bottom);
 
-    // Destroy a 2M granule
-    highest2m = _va->alloc_high_address(2*M);
-    high2m = _va->alloc_high_address(2*M);
-    _va->free(highest2m, 2 * M);
-    highest2m = _va->alloc_high_address(2*M);
-    _va->free(highest2m, 2 * M);
-    _va->free(high2m, 2 * M);
+    _va->free(bottom, ZGranuleSize);
+
+    // Alloc something larger than a granule and free it
+    bottom = _va->alloc_low_address(ZGranuleSize * 3);
+    EXPECT_ALLOC_OK(bottom);
+
+    _va->free(bottom, ZGranuleSize * 3);
+
+    // Free with more memory allocated
+    bottom = _va->alloc_low_address(ZGranuleSize);
+    EXPECT_ALLOC_OK(bottom);
+
+    zoffset next = _va->alloc_low_address(ZGranuleSize);
+    EXPECT_ALLOC_OK(next);
+
+    _va->free(bottom, ZGranuleSize);
+    _va->free(next, ZGranuleSize);
+  }
+
+  static void test_alloc_high_address() {
+    if (!_initialized) {
+      GTEST_SKIP();
+    }
+
+    // Verify that we get placeholder for last granule
+    zoffset high = _va->alloc_high_address(ZGranuleSize);
+    EXPECT_ALLOC_OK(high);
+
+    zoffset prev = _va->alloc_high_address(ZGranuleSize);
+    EXPECT_ALLOC_OK(prev);
+
+    _va->free(high, ZGranuleSize);
+    _va->free(prev, ZGranuleSize);
+
+    // Alloc something larger than a granule and return it
+    high = _va->alloc_high_address(ZGranuleSize * 2);
+    EXPECT_ALLOC_OK(high);
+
+    _va->free(high, ZGranuleSize * 2);
+  }
+
+  static void test_alloc_whole_area() {
+    if (!_initialized) {
+      GTEST_SKIP();
+    }
+
+    // Alloc the whole reservation
+    zoffset bottom = _va->alloc_low_address(ZMapperTestReservationSize);
+    EXPECT_ALLOC_OK(bottom);
+
+    // Free two chunks and then allocate them again
+    _va->free(bottom, ZGranuleSize * 4);
+    _va->free(bottom + ZGranuleSize * 6, ZGranuleSize * 6);
+
+    zoffset offset = _va->alloc_low_address(ZGranuleSize * 4);
+    EXPECT_ALLOC_OK(offset);
+
+    offset = _va->alloc_low_address(ZGranuleSize * 6);
+    EXPECT_ALLOC_OK(offset);
+
+    // Now free it all, and verify it can be re-allocated
+    _va->free(bottom, ZMapperTestReservationSize);
+
+    bottom = _va->alloc_low_address(ZMapperTestReservationSize);
+    EXPECT_ALLOC_OK(bottom);
+
+    _va->free(bottom, ZMapperTestReservationSize);
   }
 };
 
+bool ZMapperTest::_initialized   = false;
 ZMemoryManager* ZMapperTest::_va = nullptr;
 
-TEST_F(ZMapperTest, test_memory_manager_callbacks) {
-  test_memory_manager_callbacks();
+TEST_VM_F(ZMapperTest, test_alloc_low_address) {
+  test_alloc_low_address();
 }
-#endif
+
+TEST_VM_F(ZMapperTest, test_alloc_high_address) {
+  test_alloc_high_address();
+}
+
+TEST_VM_F(ZMapperTest, test_alloc_whole_area) {
+  test_alloc_whole_area();
+}
+
+#endif // _WINDOWS
