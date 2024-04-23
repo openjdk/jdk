@@ -25,6 +25,7 @@
  * @summary Basic tests for StableValue implementations
  * @modules java.base/jdk.internal.lang
  * @compile --enable-preview -source ${jdk.version} BasicStableTest.java
+ * @compile Util.java
  * @run junit/othervm --enable-preview BasicStableTest
  */
 
@@ -111,7 +112,7 @@ final class BasicStableTest {
 
     @Test
     void computeIfUnsetNull() {
-        CountingSupplier<Integer> c = new CountingSupplier<>(() -> null);
+        Util.CountingSupplier<Integer> c = new Util.CountingSupplier<>(() -> null);
         stable.computeIfUnset(c);
         assertNull(stable.orThrow());
         assertEquals(1, c.cnt());
@@ -121,7 +122,7 @@ final class BasicStableTest {
 
     @Test
     void memoized() {
-        CountingSupplier<Integer> cSup = new CountingSupplier<>(() -> FIRST);
+        Util.CountingSupplier<Integer> cSup = new Util.CountingSupplier<>(() -> FIRST);
         StableValue<Integer> m3 = StableValue.of();
         Supplier<Integer> memoized = () -> m3.computeIfUnset(cSup);
         assertEquals(FIRST, memoized.get());
@@ -194,28 +195,4 @@ final class BasicStableTest {
 
     }
 
-    static final class CountingSupplier<T> implements Supplier<T> {
-
-        private final AtomicInteger cnt = new AtomicInteger();
-        private final Supplier<T> delegate;
-
-        public CountingSupplier(Supplier<T> delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public T get() {
-            cnt.incrementAndGet();
-            return delegate.get();
-        }
-
-        public int cnt() {
-            return cnt.get();
-        }
-
-        @Override
-        public String toString() {
-            return cnt.toString();
-        }
-    }
 }
