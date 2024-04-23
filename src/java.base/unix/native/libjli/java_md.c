@@ -495,7 +495,7 @@ GetJREPath(char *path, jint pathsize, jboolean speculative)
     char libjava[MAXPATHLEN];
     struct stat s;
 
-    JLI_TraceLauncher("Attempt to get JRE location from launcher executable path\n");
+    JLI_TraceLauncher("Attempt to get JRE path from launcher executable path\n");
 
     if (GetApplicationHome(path, pathsize)) {
         /* Is JRE co-located with the application? */
@@ -518,7 +518,7 @@ GetJREPath(char *path, jint pathsize, jboolean speculative)
         }
     }
 
-    JLI_TraceLauncher("Attempt to get JRE location from shared lib of the image\n");
+    JLI_TraceLauncher("Attempt to get JRE path from shared lib of the image\n");
 
     if (GetApplicationHomeFromDll(path, pathsize)) {
         JLI_Snprintf(libjava, sizeof(libjava), "%s/lib/" JAVA_DLL, path);
