@@ -110,8 +110,9 @@ public:
     }
   };
 
-  using VTreap = TreapNode<size_t, IntervalChange, AddressComparator>;
-  TreapCHeap<size_t, IntervalChange, AddressComparator> tree;
+  using VTreapTree = TreapCHeap<size_t, IntervalChange, AddressComparator>;
+  using VTreap = VTreapTree::TreapNode;
+  VTreapTree tree;
 
   VMATree()
     : tree() {

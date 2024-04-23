@@ -40,52 +40,48 @@
 // split(treap, key) => (left_treap, right_treap)  where left_treap <= right_treap
 // Recursion is used in these, but the depth of the call stack is the depth of
 // the tree which is O(log n) so we are safe from stack overflow.
-
 // TreapNode has LEQ nodes on the left, GT nodes on the right.
-template<typename K, typename V, typename COMPARATOR>
-class TreapNode {
-  template<typename InnerK, typename InnerV, typename InnerCOMPARATOR, typename Allocator>
-  friend class Treap;
-
-  using Node = TreapNode<K,V,COMPARATOR>;
-
-  uint64_t _priority;
-  const K _key;
-  V _value;
-
-  Node* _left;
-  Node* _right;
-
-public:
-  TreapNode(const K& k, const V& v, uint64_t p)
-  : _priority(p), _key(k), _value(v), _left(nullptr), _right(nullptr) {
-  }
-
-  const K& key() const {
-    return _key;
-  }
-
-  V& val() {
-    return _value;
-  }
-
-  Node* left() const {
-    return _left;
-  }
-
-  Node* right() const {
-    return _right;
-  }
-};
-
 template<typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 class Treap {
   friend class VMATree;
   friend class VMATreeTest;
 
-  using Node = TreapNode<K, V, COMPARATOR>;
+  class TreapNode {
+    friend Treap;
+    uint64_t _priority;
+    const K _key;
+    V _value;
 
-  Node* _root;
+    TreapNode* _left;
+    TreapNode* _right;
+
+  public:
+    TreapNode(const K& k, const V& v, uint64_t p)
+      : _priority(p),
+        _key(k),
+        _value(v),
+        _left(nullptr),
+        _right(nullptr) {
+    }
+
+    const K& key() const {
+      return _key;
+    }
+
+    V& val() {
+      return _value;
+    }
+
+    TreapNode* left() const {
+      return _left;
+    }
+
+    TreapNode* right() const {
+      return _right;
+    }
+  };
+
+  TreapNode* _root;
   uint64_t _prng_seed;
 
 private:
@@ -100,8 +96,8 @@ private:
   }
 
   struct node_pair {
-    Node* left;
-    Node* right;
+    TreapNode* left;
+    TreapNode* right;
   };
 
   enum SplitMode {
@@ -111,7 +107,7 @@ private:
 
   // Split tree at head into two trees, SplitMode decides where EQ values go.
   // We have SplitMode because it makes remove() trivial to implement.
-  static node_pair split(Node* head, const K& key, SplitMode mode = LEQ DEBUG_ONLY(COMMA int recur_count = 0)) {
+  static node_pair split(TreapNode* head, const K& key, SplitMode mode = LEQ DEBUG_ONLY(COMMA int recur_count = 0)) {
     assert(recur_count < 200, "Call-stack depth should never exceed 200");
 
     if (head == nullptr) {
@@ -129,7 +125,7 @@ private:
   }
 
   // Invariant: left is a treap whose keys are LEQ to the keys in right.
-  static Node* merge(Node* left, Node* right DEBUG_ONLY(COMMA int recur_count = 0)) {
+  static TreapNode* merge(TreapNode* left, TreapNode* right DEBUG_ONLY(COMMA int recur_count = 0)) {
     assert(recur_count < 200, "Call-stack depth should never exceed 200");
 
     if (left == nullptr) return right;
@@ -154,7 +150,7 @@ private:
     }
   }
 
-  static Node* find(Node* node, const K& k DEBUG_ONLY(COMMA int recur_count = 0)) {
+  static TreapNode* find(TreapNode* node, const K& k DEBUG_ONLY(COMMA int recur_count = 0)) {
     if (node == nullptr) {
       return nullptr;
     }
@@ -180,16 +176,16 @@ public:
   void upsert(const K& k, const V& v) {
     // (LEQ_k, GT_k)
     node_pair split_up = split(this->_root, k);
-    Node* found = find(split_up.left, k);
+    TreapNode* found = find(split_up.left, k);
     if (found != nullptr) {
       // Already exists, update value.
       found->_value = v;
       this->_root = merge(split_up.left, split_up.right);
     }
     // Doesn't exist, make node
-    void* node_place = ALLOCATOR::allocate(sizeof(Node));
+    void* node_place = ALLOCATOR::allocate(sizeof(TreapNode));
     uint64_t prio = prng_next();
-    Node* node = new (node_place) Node(k, v, prio);
+    TreapNode* node = new (node_place) TreapNode(k, v, prio);
     // merge(merge(LEQ_k, EQ_k), GT_k)
     this->_root = merge(merge(split_up.left, node), split_up.right);
   }
@@ -210,11 +206,11 @@ public:
 
   // Delete all nodes.
   void remove_all() {
-    GrowableArrayCHeap<Node*, mtNMT> to_delete;
+    GrowableArrayCHeap<TreapNode*, mtNMT> to_delete;
     to_delete.push(this->_root);
 
     while (!to_delete.is_empty()) {
-      Node* head = to_delete.pop();
+      TreapNode* head = to_delete.pop();
       if (head == nullptr) continue;
       to_delete.push(head->_left);
       to_delete.push(head->_right);
@@ -222,14 +218,14 @@ public:
     }
   }
 
-  Node* closest_geq(const K& key) {
+  TreapNode* closest_geq(const K& key) {
     // Need to go "left-ward" for EQ node, so do a leq search first.
-    Node* leqB = closest_leq(key);
+    TreapNode* leqB = closest_leq(key);
     if (leqB != nullptr && leqB->key() == key) {
       return leqB;
     }
-    Node* gtB = nullptr;
-    Node* head = _root;
+    TreapNode* gtB = nullptr;
+    TreapNode* head = _root;
     while (head != nullptr) {
       int cmp_r = COMPARATOR::cmp(head->key(), key);
       if (cmp_r == 0) { // Exact match
@@ -247,9 +243,9 @@ public:
     return gtB;
   }
 
-  Node* closest_leq(const K& key) {
-    Node* leqA_n = nullptr;
-    Node* head = _root;
+  TreapNode* closest_leq(const K& key) {
+    TreapNode* leqA_n = nullptr;
+    TreapNode* head = _root;
     while (head != nullptr) {
       int cmp_r = COMPARATOR::cmp(head->key(), key);
       if (cmp_r == 0) { // Exact match
