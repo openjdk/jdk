@@ -46,12 +46,13 @@ public class TestRecursiveMonitorChurn {
         }
     }
 
+    public static Monitor monitor;
     public static void main(String[] args) throws IOException {
         if (args.length == 1 && args[0].equals("test")) {
             // The actual test, in a forked JVM.
             for (int i = 0; i < 100000; i++) {
-                Monitor m = new Monitor();
-                m.doSomething();
+                monitor = new Monitor();
+                monitor.doSomething();
             }
             System.out.println("i + j = " + (Monitor.i + Monitor.j));
         } else {
