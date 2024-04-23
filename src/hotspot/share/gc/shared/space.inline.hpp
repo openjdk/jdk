@@ -51,9 +51,6 @@ inline HeapWord* TenuredSpace::par_allocate(size_t size) {
   return res;
 }
 
-inline void TenuredSpace::update_for_block(HeapWord* start, HeapWord* end) {
-  _offsets->update_for_block(start, end);
-}
 #endif // INCLUDE_SERIALGC
 
 #endif // SHARE_GC_SHARED_SPACE_INLINE_HPP

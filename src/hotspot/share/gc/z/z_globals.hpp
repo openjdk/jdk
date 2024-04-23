@@ -36,6 +36,7 @@
                                                                             \
   product(double, ZYoungCompactionLimit, 25.0,                              \
           "Maximum allowed garbage in young pages")                         \
+          range(0, 100)                                                     \
                                                                             \
   product(double, ZCollectionIntervalMinor, -1,                             \
           "Force Minor GC at a fixed time interval (in seconds)")           \

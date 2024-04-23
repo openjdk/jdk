@@ -721,7 +721,7 @@ void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0, Reg
 
 void MacroAssembler::la(Register Rd, const address addr) {
   int64_t offset = addr - pc();
-  if (is_simm32(offset)) {
+  if (is_valid_32bit_offset(offset)) {
     auipc(Rd, (int32_t)offset + 0x800);  //0x800, Note:the 11th sign bit
     addi(Rd, Rd, ((int64_t)offset << 52) >> 52);
   } else {
@@ -1166,6 +1166,19 @@ void MacroAssembler::fsflagsi(Register Rd, unsigned imm) {
   INSN(fsflagsi);
 
 #undef INSN
+
+void MacroAssembler::restore_cpu_control_state_after_jni(Register tmp) {
+  if (RestoreMXCSROnJNICalls) {
+    Label skip_fsrmi;
+    frrm(tmp);
+    // Set FRM to the state we need. We do want Round to Nearest.
+    // We don't want non-IEEE rounding modes.
+    guarantee(RoundingMode::rne == 0, "must be");
+    beqz(tmp, skip_fsrmi);        // Only reset FRM if it's wrong
+    fsrmi(RoundingMode::rne);
+    bind(skip_fsrmi);
+  }
+}
 
 void MacroAssembler::push_reg(Register Rs)
 {

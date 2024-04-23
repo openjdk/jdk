@@ -31,6 +31,7 @@
 #include "code/scopeDesc.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
 #include "interpreter/bytecodeStream.hpp"
@@ -61,6 +62,7 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/timerTrace.hpp"
@@ -1106,6 +1108,7 @@ C2V_VMENTRY_0(jint, installCode0, (JNIEnv *env, jobject,
   TraceTime install_time("installCode", timer);
 
   CodeInstaller installer(JVMCIENV);
+  JVMCINMethodHandle nmethod_handle(THREAD);
 
   JVMCI::CodeInstallResult result = installer.install(compiler,
       compiled_code_buffer,
@@ -1113,6 +1116,7 @@ C2V_VMENTRY_0(jint, installCode0, (JNIEnv *env, jobject,
       compiled_code_handle,
       object_pool_handle,
       cb,
+      nmethod_handle,
       installed_code_handle,
       (FailedSpeculation**)(address) failed_speculations_address,
       speculations,
@@ -1204,7 +1208,8 @@ C2V_VMENTRY_NULL(jobject, executeHotSpotNmethod, (JNIEnv* env, jobject, jobject 
   HandleMark hm(THREAD);
 
   JVMCIObject nmethod_mirror = JVMCIENV->wrap(hs_nmethod);
-  nmethod* nm = JVMCIENV->get_nmethod(nmethod_mirror);
+  JVMCINMethodHandle nmethod_handle(THREAD);
+  nmethod* nm = JVMCIENV->get_nmethod(nmethod_mirror, nmethod_handle);
   if (nm == nullptr || !nm->is_in_use()) {
     JVMCI_THROW_NULL(InvalidInstalledCodeException);
   }
@@ -1478,6 +1483,7 @@ C2V_VMENTRY_NULL(jobject, iterateFrames, (JNIEnv* env, jobject compilerToVM, job
     return nullptr;
   }
   Handle visitor(THREAD, JNIHandles::resolve_non_null(visitor_handle));
+  KeepStackGCProcessedMark keep_stack(THREAD);
 
   requireInHotSpot("iterateFrames", JVMCI_CHECK_NULL);
 
@@ -2762,7 +2768,8 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
     result = PEER_JVMCIENV->get_object_constant(constant());
   } else if (thisEnv->isa_HotSpotNmethod(obj)) {
     if (PEER_JVMCIENV->is_hotspot()) {
-      nmethod* nm = JVMCIENV->get_nmethod(obj);
+      JVMCINMethodHandle nmethod_handle(THREAD);
+      nmethod* nm = JVMCIENV->get_nmethod(obj, nmethod_handle);
       if (nm != nullptr) {
         JVMCINMethodData* data = nm->jvmci_nmethod_data();
         if (data != nullptr) {
@@ -2785,7 +2792,8 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
       const char* cstring = name_string.is_null() ? nullptr : thisEnv->as_utf8_string(name_string);
       // Create a new HotSpotNmethod instance in the peer runtime
       result = PEER_JVMCIENV->new_HotSpotNmethod(mh, cstring, isDefault, compileIdSnapshot, JVMCI_CHECK_0);
-      nmethod* nm = JVMCIENV->get_nmethod(obj);
+      JVMCINMethodHandle nmethod_handle(THREAD);
+      nmethod* nm = JVMCIENV->get_nmethod(obj, nmethod_handle);
       if (result.is_null()) {
         // exception occurred (e.g. OOME) creating a new HotSpotNmethod
       } else if (nm == nullptr) {
@@ -2837,7 +2845,8 @@ C2V_END
 C2V_VMENTRY(void, updateHotSpotNmethod, (JNIEnv* env, jobject, jobject code_handle))
   JVMCIObject code = JVMCIENV->wrap(code_handle);
   // Execute this operation for the side effect of updating the InstalledCode state
-  JVMCIENV->get_nmethod(code);
+  JVMCINMethodHandle nmethod_handle(THREAD);
+  JVMCIENV->get_nmethod(code, nmethod_handle);
 C2V_END
 
 C2V_VMENTRY_NULL(jbyteArray, getCode, (JNIEnv* env, jobject, jobject code_handle))
