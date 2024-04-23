@@ -389,13 +389,13 @@ class KeepAliveKey {
      */
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof KeepAliveKey kae) {
-            return host.equals(kae.host)
-                && (port == kae.port)
-                && protocol.equals(kae.protocol)
-                && this.obj == kae.obj;
-        }
-        return false;
+        if (!(obj instanceof KeepAliveKey kae))
+            return false;
+
+        return host.equals(kae.host)
+            && (port == kae.port)
+            && protocol.equals(kae.protocol)
+            && this.obj == kae.obj;
     }
 
     /**
