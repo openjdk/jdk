@@ -6598,6 +6598,26 @@ instruct negL_reg(iRegLNoSp dst, iRegL src, immL0 zero) %{
   ins_pipe(ialu_reg);
 %}
 
+// Combined Multiply-Add Shorts into Integer (dst = src1 * src2 + src3 * src4)
+// It's not necessary to have this one, as there is no instructions on riscv to do a
+// scalar muladd. But to enable MulAddVS2VI instrinsic, we need the scalar version first.
+
+instruct muladdS2I(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2, iRegIorL2I src3, iRegIorL2I src4) %{
+  match(Set dst (MulAddS2I (Binary src1 src2) (Binary src3 src4)));
+
+  ins_cost(IMUL_COST * 2);
+  format %{ "mulw  rscratch1, $src1, $src2\n\t"
+            "maddw $dst, $src3, $src4, rscratch1" %}
+
+  ins_encode %{
+    __ mul(t0, as_Register($src1$$reg), as_Register($src2$$reg));
+    __ mul(t1, as_Register($src3$$reg), as_Register($src4$$reg));
+    __ add(as_Register($dst$$reg), t0, t1);
+  %}
+
+  ins_pipe(imul_reg_reg);
+%}
+
 // Integer Multiply
 
 instruct mulI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{

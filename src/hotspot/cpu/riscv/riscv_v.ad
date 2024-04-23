@@ -874,6 +874,32 @@ instruct vfmsub_masked(vReg dst_src1, vReg src2, vReg src3, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
+// MulAddVS2VI
+// Vector Multiply-Add Shorts into Integer
+// s1[0]*s2[0] + s1[1]*s2[1] => int[0]
+
+instruct vmuladdS2I(vReg dst, vReg src1, vReg src2, vReg tmp1, vReg tmp2, vReg tmp3) %{
+  predicate(Matcher::vector_element_basic_type(n->in(1)) == T_SHORT);
+  match(Set dst (MulAddVS2VI src1 src2));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3);
+  format %{ "vmuladdS2I $dst, $src1, $src2\t" %}
+  ins_encode %{
+    __ vsetvli_helper(T_INT, Matcher::vector_length(this));
+
+    __ vsll_vi(as_VectorRegister($dst$$reg), as_VectorRegister($src1$$reg), 16);
+    __ vsra_vi(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), 16);
+    __ vsra_vi(as_VectorRegister($tmp1$$reg), as_VectorRegister($src1$$reg), 16);
+
+    __ vsll_vi(as_VectorRegister($tmp2$$reg), as_VectorRegister($src2$$reg), 16);
+    __ vsra_vi(as_VectorRegister($tmp2$$reg), as_VectorRegister($tmp2$$reg), 16);
+    __ vsra_vi(as_VectorRegister($tmp3$$reg), as_VectorRegister($src2$$reg), 16);
+
+    __ vmul_vv(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), as_VectorRegister($tmp2$$reg));
+    __ vmacc_vv(as_VectorRegister($dst$$reg), as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp3$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // vector mla
 
 // dst_src1 = dst_src1 + src2 * src3

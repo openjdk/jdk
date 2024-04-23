@@ -104,6 +104,9 @@ public class TestMulAddS2I {
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {" v ", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     public static int[] testa() {
         int[] out = new int[ITER];
         int[] out2 = new int[ITER];
@@ -123,6 +126,9 @@ public class TestMulAddS2I {
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {" v ", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     public static int[] testb() {
         int[] out = new int[ITER];
         int[] out2 = new int[ITER];
@@ -142,6 +148,9 @@ public class TestMulAddS2I {
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {" v ", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     public static int[] testc() {
         int[] out = new int[ITER];
         for (int i = 0; i < ITER; i++) {
@@ -159,6 +168,9 @@ public class TestMulAddS2I {
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {" v ", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     public static int[] testd() {
         int[] out = ioutArr;
         for (int i = 0; i < ITER-2; i+=2) {
@@ -178,6 +190,9 @@ public class TestMulAddS2I {
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {" v ", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     public static int[] teste() {
         int[] out = ioutArr;
         for (int i = 0; i < ITER-2; i+=2) {
@@ -197,6 +212,9 @@ public class TestMulAddS2I {
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {" v ", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     public static int[] testf() {
         int[] out = ioutArr;
         for (int i = 0; i < ITER-2; i+=2) {
@@ -216,6 +234,9 @@ public class TestMulAddS2I {
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {" v ", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     public static int[] testg() {
         int[] out = ioutArr;
         for (int i = 0; i < ITER-2; i+=2) {
@@ -235,6 +256,9 @@ public class TestMulAddS2I {
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {" v ", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     public static int[] testh() {
         int[] out = ioutArr;
         for (int i = 0; i < ITER-2; i+=2) {
