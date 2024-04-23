@@ -25,10 +25,13 @@
 
 package com.sun.crypto.provider;
 
-import java.security.*;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
-import javax.crypto.*;
+import java.util.List;
+import javax.crypto.KDFSpi;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.KDFParameterSpec;
 
 /**
@@ -41,13 +44,26 @@ import javax.crypto.spec.KDFParameterSpec;
 abstract class HkdfKeyDerivation extends KDFSpi {
 
     protected String hmacAlgName;
+    protected List<SecretKey> ikms;
+    protected List<SecretKey> salts;
+    protected SecretKey prk;
+    protected byte[] info;
+    protected int length;
+
+    protected enum HKDFTYPES {
+        EXTRACT, EXPAND, EXTRACTEXPAND
+    }
+
+    protected HKDFTYPES HKDFTYPE;
 
     /**
      * The sole constructor.
      *
-     * @param algParameterSpec the initialization parameters (may be {@code null})
-     * @throws InvalidAlgorithmParameterException if the initialization parameters are inappropriate
-     * for this {@code KDFSpi}
+     * @param algParameterSpec
+     *     the initialization parameters (may be {@code null})
+     *
+     * @throws InvalidAlgorithmParameterException
+     *     if the initialization parameters are inappropriate for this {@code KDFSpi}
      */
     protected HkdfKeyDerivation(AlgorithmParameterSpec algParameterSpec)
         throws InvalidAlgorithmParameterException {
@@ -55,49 +71,77 @@ abstract class HkdfKeyDerivation extends KDFSpi {
     }
 
     /**
-     * Consume key stream data produced by the KDF and return it as a {@code Key} object.
-     * <p>
-     * This method may be called multiple times, depending on if the algorithm and provider supports
-     * it.  Generally HKDF extract-then-expand and expand-only functions will allow multiple calls
-     * if the key stream is long enough to support multiple key objects, while the HKDF extract-only
-     * function is designed for a single key output.
-     * <p>
-     * Each call will build a {@code Key} object in accordance with the
-     * {@code DerivationParameterSpec}.
+     * TODO: description
      *
-     * @return a {@code SecretKey} object composed from the available bytes in the key stream.
-     * @throws InvalidParameterSpecException if the information contained within the current
-     * {@code DerivationParameterSpec} is invalid or incorrect for the type of key to be derived, or
-     * specifies a type of output that is not a key (e.g. raw data)
-     * @throws IllegalStateException if the key derivation implementation cannot support additional
-     * calls to {@code deriveKey} or if all {@code DerivationParameterSpec} objects provided at
-     * initialization have been processed.
+     * @return a derived {@code SecretKey} object of the specified algorithm
+     *
+     * @throws InvalidParameterSpecException
+     *     if the information contained within the current {@code KDFParameterSpec} is invalid or
+     *     incorrect for the type of key to be derived
+     * @throws IllegalStateException
+     *     if the key derivation implementation cannot support additional calls to
+     *     {@code deriveKey}
      */
     @Override
     protected SecretKey engineDeriveKey(String alg, KDFParameterSpec kdfParameterSpec)
         throws InvalidParameterSpecException {
+
+        // inspect KDFParameterSpec object
+        inspectKDFParameterSpec(kdfParameterSpec);
+
         return null;
     }
 
     /**
-     * Consume key stream data produced by the KDF and return it as a {@code byte[]}.
-     * <p>
-     * This method may be called multiple times, depending on if the algorithm and provider supports
-     * it.  Generally HKDF extract-then-expand and expand-only functions will allow multiple calls
-     * if the key stream is long enough to support multiple key objects, while the HKDF extract-only
-     * function is designed for a single key output.
-     * <p>
-     * Each call will build a {@code byte[]} in accordance with the next {@code length} parameter.
+     * TODO: description
      *
-     * @return a {@code byte[]} composed from the available bytes in the key stream.
-     * @throws InvalidParameterException if value of {@code length} is invalid or incorrect
-     * @throws IllegalStateException if the key derivation implementation cannot support additional
-     * calls to {@code deriveData}
+     * @return a derived {@code byte[]}
+     *
+     * @throws InvalidParameterSpecException
+     *     if the information contained within the current {@code KDFParameterSpec} is invalid or
+     *     incorrect
+     * @throws IllegalStateException
+     *     if the key derivation implementation cannot support additional calls to
+     *     {@code deriveData}
      */
     @Override
     protected byte[] engineDeriveData(KDFParameterSpec kdfParameterSpec)
-        throws InvalidParameterException {
+        throws InvalidParameterSpecException {
+
+        // inspect KDFParameterSpec object
+        inspectKDFParameterSpec(kdfParameterSpec);
+
         return new byte[0];
+    }
+
+    protected void inspectKDFParameterSpec(KDFParameterSpec kdfParameterSpec)
+        throws InvalidParameterSpecException {
+        // A switch would be nicer, but we may need to backport this before JDK 17
+        // Also, JEP 305 came out in JDK 14, so we can't declare a variable in instanceof either
+
+        if (kdfParameterSpec instanceof HKDFParameterSpec.Extract) {
+            HKDFParameterSpec.Extract anExtract = (HKDFParameterSpec.Extract) kdfParameterSpec;
+            ikms = anExtract.ikms();
+            salts = anExtract.salts();
+            HKDFTYPE = HKDFTYPES.EXTRACT;
+        } else if (kdfParameterSpec instanceof HKDFParameterSpec.Expand) {
+            HKDFParameterSpec.Expand anExpand = (HKDFParameterSpec.Expand) kdfParameterSpec;
+            prk = anExpand.prk();
+            info = anExpand.info();
+            length = anExpand.length();
+            HKDFTYPE = HKDFTYPES.EXPAND;
+        } else if (kdfParameterSpec instanceof HKDFParameterSpec.ExtractExpand) {
+            HKDFParameterSpec.ExtractExpand anExtractExpand =
+                (HKDFParameterSpec.ExtractExpand) kdfParameterSpec;
+            ikms = anExtractExpand.ikms();
+            salts = anExtractExpand.salts();
+            info = anExtractExpand.info();
+            length = anExtractExpand.length();
+            HKDFTYPE = HKDFTYPES.EXTRACTEXPAND;
+        } else {
+            throw new InvalidParameterSpecException(
+                "The KDFParameterSpec object was not of a recognized type");
+        }
     }
 
     private static class HkdfExtExpBase extends HkdfKeyDerivation {
@@ -112,22 +156,6 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             super(algParameterSpec);
         }
 
-    }
-
-    public static final class HkdfMD5 extends HkdfExtExpBase {
-        public HkdfMD5(AlgorithmParameterSpec algParameterSpec)
-            throws InvalidAlgorithmParameterException {
-            super(algParameterSpec);
-            hmacAlgName = "HmacMD5";
-        }
-    }
-
-    public static final class HkdfSHA1 extends HkdfExtExpBase {
-        public HkdfSHA1(AlgorithmParameterSpec algParameterSpec)
-            throws InvalidAlgorithmParameterException {
-            super(algParameterSpec);
-            hmacAlgName = "HmacSHA1";
-        }
     }
 
     public static final class HkdfSHA224 extends HkdfExtExpBase {
@@ -175,22 +203,6 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         }
     }
 
-    public static final class HkdfExtractMD5 extends HkdfExtractBase {
-        public HkdfExtractMD5(AlgorithmParameterSpec algParameterSpec)
-            throws InvalidAlgorithmParameterException {
-            super(algParameterSpec);
-            hmacAlgName = "HmacMD5";
-        }
-    }
-
-    public static final class HkdfExtractSHA1 extends HkdfExtractBase {
-        public HkdfExtractSHA1(AlgorithmParameterSpec algParameterSpec)
-            throws InvalidAlgorithmParameterException {
-            super(algParameterSpec);
-            hmacAlgName = "HmacSHA1";
-        }
-    }
-
     public static final class HkdfExtractSHA224 extends HkdfExtractBase {
         public HkdfExtractSHA224(AlgorithmParameterSpec algParameterSpec)
             throws InvalidAlgorithmParameterException {
@@ -233,22 +245,6 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         public HkdfExpandBase(AlgorithmParameterSpec algParameterSpec)
             throws InvalidAlgorithmParameterException {
             super(algParameterSpec);
-        }
-    }
-
-    public static final class HkdfExpandMD5 extends HkdfExpandBase {
-        public HkdfExpandMD5(AlgorithmParameterSpec algParameterSpec)
-            throws InvalidAlgorithmParameterException {
-            super(algParameterSpec);
-            hmacAlgName = "HmacMD5";
-        }
-    }
-
-    public static final class HkdfExpandSHA1 extends HkdfExpandBase {
-        public HkdfExpandSHA1(AlgorithmParameterSpec algParameterSpec)
-            throws InvalidAlgorithmParameterException {
-            super(algParameterSpec);
-            hmacAlgName = "HmacSHA1";
         }
     }
 
