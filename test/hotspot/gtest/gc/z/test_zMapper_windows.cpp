@@ -77,7 +77,13 @@ public:
     _va = new (&_vmm->_manager) ZMemoryManager();
 
     // Reserve address space for the test
-    _initialized = reserve_for_test();
+    if (!reserve_for_test()) {
+      // Failed to reserve address space
+      GTEST_SKIP();
+      return;
+    }
+
+    _initialized = true;
   }
 
   virtual void TearDown() {
@@ -88,10 +94,6 @@ public:
   }
 
   static void test_alloc_low_address() {
-    if (!_initialized) {
-      GTEST_SKIP();
-    }
-
     // Verify that we get placeholder for first granule
     zoffset bottom = _va->alloc_low_address(ZGranuleSize);
     EXPECT_ALLOC_OK(bottom);
@@ -116,10 +118,6 @@ public:
   }
 
   static void test_alloc_high_address() {
-    if (!_initialized) {
-      GTEST_SKIP();
-    }
-
     // Verify that we get placeholder for last granule
     zoffset high = _va->alloc_high_address(ZGranuleSize);
     EXPECT_ALLOC_OK(high);
@@ -138,10 +136,6 @@ public:
   }
 
   static void test_alloc_whole_area() {
-    if (!_initialized) {
-      GTEST_SKIP();
-    }
-
     // Alloc the whole reservation
     zoffset bottom = _va->alloc_low_address(ZMapperTestReservationSize);
     EXPECT_ALLOC_OK(bottom);
