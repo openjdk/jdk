@@ -802,13 +802,16 @@ void ConstantPool::resolve_string_constants_impl(const constantPoolHandle& this_
   }
 }
 
-static Symbol* exception_message(const constantPoolHandle& this_cp, int which, constantTag tag, oop pending_exception) {
+static const char* exception_message(const constantPoolHandle& this_cp, int which, constantTag tag, oop pending_exception) {
+  // Note: caller needs ResourceMark
+
   // Dig out the detailed message to reuse if possible
-  Symbol* message = java_lang_Throwable::detail_message(pending_exception);
-  if (message != nullptr) {
-    return message;
+  const char* msg = java_lang_Throwable::message_as_utf8(pending_exception);
+  if (msg != nullptr) {
+    return msg;
   }
 
+  Symbol* message = nullptr;
   // Return specific message for the tag
   switch (tag.value()) {
   case JVM_CONSTANT_UnresolvedClass:
@@ -831,49 +834,48 @@ static Symbol* exception_message(const constantPoolHandle& this_cp, int which, c
     ShouldNotReachHere();
   }
 
-  return message;
+  return message != nullptr ? message->as_C_string() : nullptr;
 }
 
-static void add_resolution_error(const constantPoolHandle& this_cp, int which,
+static void add_resolution_error(JavaThread* current, const constantPoolHandle& this_cp, int which,
                                  constantTag tag, oop pending_exception) {
 
+  ResourceMark rm(current);
   Symbol* error = pending_exception->klass()->name();
   oop cause = java_lang_Throwable::cause(pending_exception);
 
   // Also dig out the exception cause, if present.
   Symbol* cause_sym = nullptr;
-  Symbol* cause_msg = nullptr;
+  const char* cause_msg = nullptr;
   if (cause != nullptr && cause != pending_exception) {
     cause_sym = cause->klass()->name();
-    cause_msg = java_lang_Throwable::detail_message(cause);
+    cause_msg = java_lang_Throwable::message_as_utf8(cause);
   }
 
-  Symbol* message = exception_message(this_cp, which, tag, pending_exception);
+  const char* message = exception_message(this_cp, which, tag, pending_exception);
   SystemDictionary::add_resolution_error(this_cp, which, error, message, cause_sym, cause_msg);
 }
 
 
 void ConstantPool::throw_resolution_error(const constantPoolHandle& this_cp, int which, TRAPS) {
   ResourceMark rm(THREAD);
-  Symbol* message = nullptr;
+  const char* message = nullptr;
   Symbol* cause = nullptr;
-  Symbol* cause_msg = nullptr;
+  const char* cause_msg = nullptr;
   Symbol* error = SystemDictionary::find_resolution_error(this_cp, which, &message, &cause, &cause_msg);
   assert(error != nullptr, "checking");
-  const char* cause_str = cause_msg != nullptr ? cause_msg->as_C_string() : nullptr;
 
   CLEAR_PENDING_EXCEPTION;
   if (message != nullptr) {
-    char* msg = message->as_C_string();
     if (cause != nullptr) {
-      Handle h_cause = Exceptions::new_exception(THREAD, cause, cause_str);
-      THROW_MSG_CAUSE(error, msg, h_cause);
+      Handle h_cause = Exceptions::new_exception(THREAD, cause, cause_msg);
+      THROW_MSG_CAUSE(error, message, h_cause);
     } else {
-      THROW_MSG(error, msg);
+      THROW_MSG(error, message);
     }
   } else {
     if (cause != nullptr) {
-      Handle h_cause = Exceptions::new_exception(THREAD, cause, cause_str);
+      Handle h_cause = Exceptions::new_exception(THREAD, cause, cause_msg);
       THROW_CAUSE(error, h_cause);
     } else {
       THROW(error);
@@ -895,7 +897,7 @@ void ConstantPool::save_and_throw_exception(const constantPoolHandle& this_cp, i
     // and OutOfMemoryError, etc, or if the thread was hit by stop()
     // Needs clarification to section 5.4.3 of the VM spec (see 6308271)
   } else if (this_cp->tag_at(cp_index).value() != error_tag) {
-    add_resolution_error(this_cp, cp_index, tag, PENDING_EXCEPTION);
+    add_resolution_error(THREAD, this_cp, cp_index, tag, PENDING_EXCEPTION);
     // CAS in the tag.  If a thread beat us to registering this error that's fine.
     // If another thread resolved the reference, this is a race condition. This
     // thread may have had a security manager or something temporary.

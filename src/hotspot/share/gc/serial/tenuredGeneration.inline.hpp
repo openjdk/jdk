@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,10 @@ inline bool TenuredGeneration::is_in(const void* p) const {
   return space()->is_in(p);
 }
 
+inline void TenuredGeneration::update_for_block(HeapWord* start, HeapWord* end) {
+  _bts->update_for_block(start, end);
+}
+
 HeapWord* TenuredGeneration::allocate(size_t word_size,
                                                  bool is_tlab) {
   assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
@@ -59,7 +63,8 @@ HeapWord* TenuredGeneration::par_allocate(size_t word_size,
 
 template <typename OopClosureType>
 void TenuredGeneration::oop_since_save_marks_iterate(OopClosureType* blk) {
-  _the_space->oop_since_save_marks_iterate(blk);
+  Generation::oop_since_save_marks_iterate_impl(blk, _the_space, _saved_mark_word);
+  set_saved_mark_word();
 }
 
 #endif // SHARE_GC_SERIAL_TENUREDGENERATION_INLINE_HPP

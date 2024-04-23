@@ -136,11 +136,17 @@ ifeq ($(HSDIS_BACKEND), binutils)
   endif
 endif
 
+################################################################################
+## Build libhsdis
+################################################################################
+
 $(eval $(call SetupJdkLibrary, BUILD_HSDIS, \
     NAME := hsdis, \
     LINK_TYPE := $(HSDIS_LINK_TYPE), \
     SRC := $(TOPDIR)/src/utils/hsdis/$(HSDIS_BACKEND), \
-    EXTRA_HEADER_DIRS := $(TOPDIR)/src/utils/hsdis, \
+    EXTRA_HEADER_DIRS := \
+          java.base:include \
+          $(TOPDIR)/src/utils/hsdis, \
     OUTPUT_DIR := $(HSDIS_OUTPUT_DIR), \
     OBJECT_DIR := $(HSDIS_OUTPUT_DIR), \
     DISABLED_WARNINGS_gcc := undef format-nonliteral sign-compare, \

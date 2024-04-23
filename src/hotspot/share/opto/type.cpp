@@ -6344,7 +6344,8 @@ const Type    *TypeAryKlassPtr::xmeet( const Type *t ) const {
       // For instances when a subclass meets a superclass we fall
       // below the centerline when the superclass is exact. We need to
       // do the same here.
-      if (tp->klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces->intersection_with(tp_interfaces)->eq(tp_interfaces) && !tp->klass_is_exact()) {
+      if (tp->klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces->contains(tp_interfaces) &&
+          !tp->klass_is_exact()) {
         return TypeAryKlassPtr::make(ptr, _elem, _klass, offset);
       } else {
         // cannot subclass, so the meet has to fall badly below the centerline
@@ -6362,7 +6363,8 @@ const Type    *TypeAryKlassPtr::xmeet( const Type *t ) const {
         // For instances when a subclass meets a superclass we fall
         // below the centerline when the superclass is exact. We need
         // to do the same here.
-        if (tp->klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces->intersection_with(tp_interfaces)->eq(tp_interfaces) && !tp->klass_is_exact()) {
+        if (tp->klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces->contains(tp_interfaces) &&
+            !tp->klass_is_exact()) {
           // that is, my array type is a subtype of 'tp' klass
           return make(ptr, _elem, _klass, offset);
         }
@@ -6396,7 +6398,8 @@ template <class T1, class T2> bool TypePtr::is_java_subtype_of_helper_for_array(
   }
 
   if (this_one->is_instance_type(other)) {
-    return other->klass() == ciEnv::current()->Object_klass() && other->_interfaces->intersection_with(this_one->_interfaces)->eq(other->_interfaces) && other_exact;
+    return other->klass() == ciEnv::current()->Object_klass() && this_one->_interfaces->contains(other->_interfaces) &&
+           other_exact;
   }
 
   assert(this_one->is_array_type(other), "");
@@ -6462,7 +6465,8 @@ template <class T1, class T2> bool TypePtr::maybe_java_subtype_of_helper_for_arr
     return true;
   }
   if (this_one->is_instance_type(other)) {
-    return other->klass()->equals(ciEnv::current()->Object_klass()) && other->_interfaces->intersection_with(this_one->_interfaces)->eq(other->_interfaces);
+    return other->klass()->equals(ciEnv::current()->Object_klass()) &&
+           this_one->_interfaces->contains(other->_interfaces);
   }
 
   int dummy;
