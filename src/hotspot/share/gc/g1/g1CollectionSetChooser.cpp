@@ -206,7 +206,6 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
 
     if (min_old_cset_length >= num_candidates) {
       // We take all of the candidate regions to provide some forward progress.
-      // TODO: set all candidates on a single remset.
       return;
     }
 
@@ -271,6 +270,5 @@ void G1CollectionSetChooser::build(WorkerThreads* workers, uint max_num_regions,
 
   cl.sort_and_prune_into(candidates);
 
-    // TODO: Group regions into candidate remset groups
   candidates->verify();
 }
