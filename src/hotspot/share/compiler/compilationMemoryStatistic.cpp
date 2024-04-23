@@ -541,6 +541,7 @@ void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool human_
 
   MutexLocker ml(NMTCompilationCostHistory_lock, Mutex::_no_safepoint_check_flag);
 
+  st->cr();
   st->print_cr("Compilation memory statistics");
 
   if (!enabled()) {
@@ -581,6 +582,7 @@ void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool human_
   } else {
     st->print_cr("Not initialized.");
   }
+  st->cr();
 
   FREE_C_HEAP_ARRAY(Entry, filtered);
 }
