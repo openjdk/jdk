@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8320360
+ * @bug 8320360 8330684
  * @summary Testing ClassFile limits.
  * @run junit LimitsTest
  */
