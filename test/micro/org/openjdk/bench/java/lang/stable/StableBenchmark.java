@@ -25,6 +25,7 @@ package org.openjdk.bench.java.lang.stable;
 
 import jdk.internal.lang.StableValue;
 import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -65,52 +66,51 @@ public class StableBenchmark {
     }
 
     @Benchmark
-    public int staticAtomic() {
-        return ATOMIC.get();
+    public void staticAtomic(Blackhole bh) {
+        bh.consume((int)ATOMIC.get());
     }
 
     @Benchmark
-    public int staticStable() {
-        return STABLE.orThrow();
+    public void staticStable(Blackhole bh) {
+        bh.consume((int)STABLE.orThrow());
     }
 
     @Benchmark
-    public int staticList() {
-        return LIST.get(0).orThrow();
+    public void staticList(Blackhole bh) {
+        bh.consume((int)LIST.get(0).orThrow());
     }
 
     @Benchmark
-    public int staticCHI() {
+    public void staticCHI(Blackhole bh) {
         class Holder {
             static final int VALUE = 42;
         }
-        return Holder.VALUE;
+        bh.consume((int)Holder.VALUE);
     }
 
     @Benchmark
-    public int staticDCL() {
-        return DCL.get();
-    }
-
-
-    @Benchmark
-    public int instanceAtomic() {
-        return atomic.get();
+    public void staticDCL(Blackhole bh) {
+        bh.consume((int)DCL.get());
     }
 
     @Benchmark
-    public Integer instanceDCL() {
-        return dcl.get();
+    public void instanceAtomic(Blackhole bh) {
+        bh.consume((int)atomic.get());
     }
 
     @Benchmark
-    public int instanceList() {
-        return list.get(0).orThrow();
+    public void instanceDCL(Blackhole bh) {
+        bh.consume((int)dcl.get());
     }
 
     @Benchmark
-    public int instanceStable() {
-        return stable.orThrow();
+    public void instanceList(Blackhole bh) {
+        bh.consume((int)list.get(0).orThrow());
+    }
+
+    @Benchmark
+    public void instanceStable(Blackhole bh) {
+        bh.consume((int)stable.orThrow());
     }
 
     private static StableValue<Integer> init(StableValue<Integer> m) {
