@@ -26,6 +26,7 @@
 package jdk.internal.lang.stable;
 
 import jdk.internal.lang.StableValue;
+import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
@@ -78,7 +79,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
             // plain semantics, we know a value is set.
             return v;
         }
-        if (state() == NULL) {
+        if (state == NULL) {
             // If we happen to see a state value of NULL under
             // plain semantics, we know a value is set to `null`.
             return null;
@@ -87,7 +88,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
         return orThrowVolatile();
     }
 
-    //@ForceInline
+    @DontInline
     private V orThrowVolatile() {
         V v = valueVolatile();
         if (v != null) {

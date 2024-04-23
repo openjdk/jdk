@@ -37,11 +37,11 @@ import java.util.stream.Stream;
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@State(Scope.Thread)
+@State(Scope.Benchmark) // Share the same state instance (for contention)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 2, jvmArgsAppend = {"--add-exports=java.base/jdk.internal.lang=ALL-UNNAMED", "--enable-preview"})
-@Threads(8)     // Some contention
+@Threads(Threads.MAX)   // Benchmark under contention
 public class StableListElementBenchmark {
 
     private static final IntFunction<Integer> FUNCTION = i -> i;
