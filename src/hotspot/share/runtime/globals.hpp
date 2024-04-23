@@ -952,7 +952,7 @@ const int ObjectAlignmentInBytes = 8;
              "Enable Thread SMR Statistics")                                \
                                                                             \
   product(bool, UseNotificationThread, true,                                \
-          "Use Notification Thread")                                        \
+          "(Deprecated) Use Notification Thread")                           \
                                                                             \
   product(bool, Inline, true,                                               \
           "Enable inlining")                                                \
