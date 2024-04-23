@@ -29,7 +29,10 @@ public final class LoaderThreadCount extends ThreadGroup {
      */
     private static final int NUMBER_OF_THREADS = 5;
 
-    /** The barrier to start all the scanner threads simultaneously. */
+    /** Number of snapshots with live threads. */
+    private static final int SNAPSHOTS = 20;
+
+    /** The barrier to synchronise scanner threads and capturing live threads. */
     private static final CyclicBarrier start = new CyclicBarrier(NUMBER_OF_THREADS + 1);
 
     /** List of scanner threads. */
@@ -88,10 +91,10 @@ public final class LoaderThreadCount extends ThreadGroup {
                                  .toList());
             threads.forEach(Thread::start);
 
-            int snapshots = 20;
+            // Create snapshots of live threads
             List<Thread[]> threadsCapture =
                     Stream.generate(LoaderThreadCount::getThreadSnapshot)
-                          .limit(snapshots)
+                          .limit(SNAPSHOTS)
                           .toList();
 
             threads.forEach(Thread::interrupt);
@@ -106,6 +109,7 @@ public final class LoaderThreadCount extends ThreadGroup {
                                   .filter(c -> c > 0)
                                   .toList();
 
+            System.out.println("Number of loader threads in snapshots:");
             loaderCount.forEach(System.out::println);
 
             if (loaderCount.isEmpty()) {
@@ -114,9 +118,19 @@ public final class LoaderThreadCount extends ThreadGroup {
 
             System.out.println("Number of snapshots: " + loaderCount.size());
 
+            long ones = loaderCount.stream()
+                                   .filter(n -> n == 1)
+                                   .count();
+            long twos = loaderCount.stream()
+                                   .filter(n -> n == 2)
+                                   .count();
             long count = loaderCount.stream()
-                                    .filter(n -> n > 1)
+                                    .filter(n -> n > 2)
                                     .count();
+            System.out.println("Number of snapshots where number of loader threads:");
+            System.out.println("  = 1: " + ones);
+            System.out.println("  = 2: " + twos);
+            System.out.println("  > 2: " + count);
             if (count > 0) {
                 throw new RuntimeException("Detected " + count + " snapshots "
                                            + "with several loading threads");
