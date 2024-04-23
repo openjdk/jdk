@@ -27,7 +27,7 @@
 # new warning is added to javac, it can be temporarily added to the
 # disabled warnings list.
 #
-DISABLED_WARNINGS_java += dangling-doc-comments
+# DISABLED_WARNINGS_java +=
 
 DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:java.*,javax.*'

@@ -27,8 +27,6 @@
 # -Werror and all lint warnings enabled. In particular,
 # DISABLED_WARNINGS_java should not be augmented.
 
-DISABLED_WARNINGS_java += dangling-doc-comments
-
 DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:-com.sun.tools.*,-jdk.internal.*,sun.tools.serialver.resources.*'
 JAVAC_FLAGS += -XDstringConcat=inline
