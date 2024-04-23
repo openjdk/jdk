@@ -437,7 +437,7 @@ hash(const char *s)
 static unsigned int
 hashN(const char *s, int length)
 {
-    int h = 0;
+    unsigned int h = 0;
     while (length-- > 0)
         h = 31*h + *s++;
     return h;
