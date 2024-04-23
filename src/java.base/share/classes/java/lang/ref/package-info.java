@@ -32,7 +32,7 @@
  * after the collector has determined that the reachability of a given
  * object has changed.
  *
- *<h2>Package Specification</h2>
+ * <h2>Reference Objects</h2>
  *
  * A <em>reference object</em> encapsulates a reference to some other
  * object so that the reference itself may be examined and manipulated
@@ -57,6 +57,39 @@
  * provided.  A program may further subclass these subclasses, adding
  * whatever fields and methods are required for its purposes, or it
  * may use these subclasses without change.
+ *
+ * <a id="reachability"></a>
+ * <h3>Reachability</h3>
+ *
+ * A <em>reachable</em> object is any object that can be accessed in any potential
+ * continuing computation from any live thread (as stated in {@jls 12.6.1}).
+ *
+ * <p> Going from strongest to weakest, the different levels of
+ * reachability reflect the life cycle of an object.  They are
+ * operationally defined as follows:
+ *
+ * <ul>
+ *
+ * <li> An object is <em>strongly reachable</em> if it is reachable and if it
+ * can be accessed without traversing the referent of a Reference object.
+ *
+ * <li> An object is <em>softly reachable</em> if it is not strongly
+ * reachable but can be reached by traversing a soft reference.
+ *
+ * <li> An object is <em>weakly reachable</em> if it is neither
+ * strongly nor softly reachable but can be reached by traversing a
+ * weak reference.  When the weak references to a weakly-reachable
+ * object are cleared, the object becomes eligible for finalization.
+ *
+ * <li> An object is <em>phantom reachable</em> if it is neither
+ * strongly, softly, nor weakly reachable, it has been finalized, and
+ * some phantom reference refers to it.
+ *
+ * <li> Finally, an object is <em>unreachable</em>, and therefore
+ * eligible for reclamation, when it is not reachable in any of the
+ * above ways.
+ *
+ * </ul>
  *
  * <h3>Notification</h3>
  *
@@ -100,39 +133,6 @@
  * ReferenceQueue.poll} method simply checks an internal data
  * structure, this check will add little overhead to the hashtable
  * access methods.
- *
- * <a id="reachability"></a>
- * <h3>Reachability</h3>
- *
- * A <em>reachable</em> object is any object that can be accessed in any potential
- * continuing computation from any live thread (as stated in {@jls 12.6.1}).
- *
- * <p> Going from strongest to weakest, the different levels of
- * reachability reflect the life cycle of an object.  They are
- * operationally defined as follows:
- *
- * <ul>
- *
- * <li> An object is <em>strongly reachable</em> if it is reachable and if it
- * can be accessed without traversing the referent of a Reference object.
- *
- * <li> An object is <em>softly reachable</em> if it is not strongly
- * reachable but can be reached by traversing a soft reference.
- *
- * <li> An object is <em>weakly reachable</em> if it is neither
- * strongly nor softly reachable but can be reached by traversing a
- * weak reference.  When the weak references to a weakly-reachable
- * object are cleared, the object becomes eligible for finalization.
- *
- * <li> An object is <em>phantom reachable</em> if it is neither
- * strongly, softly, nor weakly reachable, it has been finalized, and
- * some phantom reference refers to it.
- *
- * <li> Finally, an object is <em>unreachable</em>, and therefore
- * eligible for reclamation, when it is not reachable in any of the
- * above ways.
- *
- * </ul>
  *
  * <a id="MemoryConsistency"></a>
  * <h3>Memory Consistency Properties</h3>
