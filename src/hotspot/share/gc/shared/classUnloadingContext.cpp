@@ -34,12 +34,12 @@ ClassUnloadingContext* ClassUnloadingContext::_context = nullptr;
 
 ClassUnloadingContext::ClassUnloadingContext(uint num_workers,
                                              bool unregister_nmethods_during_purge,
-                                             bool lock_codeblob_free_separately) :
+                                             bool lock_nmethod_free_separately) :
   _cld_head(nullptr),
   _num_nmethod_unlink_workers(num_workers),
   _unlinked_nmethods(nullptr),
   _unregister_nmethods_during_purge(unregister_nmethods_during_purge),
-  _lock_codeblob_free_separately(lock_codeblob_free_separately) {
+  _lock_nmethod_free_separately(lock_nmethod_free_separately) {
 
   assert(_context == nullptr, "context already set");
   _context = this;
@@ -123,7 +123,7 @@ void ClassUnloadingContext::purge_nmethods() {
   CodeCache::maybe_restart_compiler(freed_memory);
 }
 
-void ClassUnloadingContext::free_code_blobs() {
+void ClassUnloadingContext::free_nmethods() {
   assert(_context != nullptr, "no context set");
 
   // Sort nmethods before freeing to benefit from optimizations. If Nmethods were
@@ -159,7 +159,7 @@ void ClassUnloadingContext::free_code_blobs() {
   nmethod_set->sort(sort_nmethods);
 
   // And free. Duplicate loop for clarity depending on where we want the locking.
-  if (_lock_codeblob_free_separately) {
+  if (_lock_nmethod_free_separately) {
     for (nmethod* nm : *nmethod_set) {
       MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       CodeCache::free(nm);

@@ -1607,10 +1607,10 @@ run:
           ARRAY_INTRO(-3);
           int item = STACK_INT(-1);
           // if it is a T_BOOLEAN array, mask the stored value to 0/1
-          if (arrObj->klass() == Universe::boolArrayKlassObj()) {
+          if (arrObj->klass() == Universe::boolArrayKlass()) {
             item &= 1;
           } else {
-            assert(arrObj->klass() == Universe::byteArrayKlassObj(),
+            assert(arrObj->klass() == Universe::byteArrayKlass(),
                    "should be byte array otherwise");
           }
           ((typeArrayOop)arrObj)->byte_at_put(index, item);

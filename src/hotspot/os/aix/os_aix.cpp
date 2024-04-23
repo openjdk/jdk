@@ -23,10 +23,6 @@
  *
  */
 
-// According to the AIX OS doc #pragma alloca must be used
-// with C++ compiler before referencing the function alloca()
-#pragma alloca
-
 // no precompiled headers
 #include "classfile/vmSymbols.hpp"
 #include "code/vtableStubs.hpp"
@@ -289,46 +285,6 @@ jlong os::free_swap_space() {
 
 julong os::physical_memory() {
   return Aix::physical_memory();
-}
-
-// Helper function, emulates disclaim64 using multiple 32bit disclaims
-// because we cannot use disclaim64() on old AIX releases.
-static bool my_disclaim64(char* addr, size_t size) {
-
-  if (size == 0) {
-    return true;
-  }
-
-  // Maximum size 32bit disclaim() accepts. (Theoretically 4GB, but I just do not trust that.)
-  const unsigned int maxDisclaimSize = 0x40000000;
-
-  const unsigned int numFullDisclaimsNeeded = (size / maxDisclaimSize);
-  const unsigned int lastDisclaimSize = (size % maxDisclaimSize);
-
-  char* p = addr;
-
-  for (unsigned int i = 0; i < numFullDisclaimsNeeded; i ++) {
-    if (::disclaim(p, maxDisclaimSize, DISCLAIM_ZEROMEM) != 0) {
-      ErrnoPreserver ep;
-      log_trace(os, map)("disclaim failed: " RANGEFMT " errno=(%s)",
-                         RANGEFMTARGS(p, maxDisclaimSize),
-                         os::strerror(ep.saved_errno()));
-      return false;
-    }
-    p += maxDisclaimSize;
-  }
-
-  if (lastDisclaimSize > 0) {
-    if (::disclaim(p, lastDisclaimSize, DISCLAIM_ZEROMEM) != 0) {
-      ErrnoPreserver ep;
-      log_trace(os, map)("disclaim failed: " RANGEFMT " errno=(%s)",
-                         RANGEFMTARGS(p, lastDisclaimSize),
-                         os::strerror(ep.saved_errno()));
-      return false;
-    }
-  }
-
-  return true;
 }
 
 // Cpu architecture string
@@ -646,8 +602,8 @@ static void *thread_native_entry(Thread *thread) {
     address low_address = thread->stack_end();
     address high_address = thread->stack_base();
     lt.print("Thread is alive (tid: " UINTX_FORMAT ", kernel thread id: " UINTX_FORMAT
-             ", stack [" PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k using %uk pages)).",
-             os::current_thread_id(), (uintx) kernel_thread_id, low_address, high_address,
+             ", stack [" PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k using %luk pages)).",
+             os::current_thread_id(), (uintx) kernel_thread_id, p2i(low_address), p2i(high_address),
              (high_address - low_address) / K, os::Aix::query_pagesize(low_address) / K);
   }
 
@@ -1394,8 +1350,8 @@ struct vmembk_t {
 
   void print_on(outputStream* os) const {
     os->print("[" PTR_FORMAT " - " PTR_FORMAT "] (" UINTX_FORMAT
-      " bytes, %d %s pages), %s",
-      addr, addr + size - 1, size, size / pagesize, describe_pagesize(pagesize),
+      " bytes, %ld %s pages), %s",
+      p2i(addr), p2i(addr) + size - 1, size, size / pagesize, describe_pagesize(pagesize),
       (type == VMEM_SHMATED ? "shmat" : "mmap")
     );
   }
@@ -1597,10 +1553,11 @@ static bool uncommit_shmated_memory(char* addr, size_t size) {
   trcVerbose("uncommit_shmated_memory [" PTR_FORMAT " - " PTR_FORMAT "].",
     p2i(addr), p2i(addr + size - 1));
 
-  const bool rc = my_disclaim64(addr, size);
+  const int rc = disclaim64(addr, size, DISCLAIM_ZEROMEM);
 
-  if (!rc) {
-    log_warning(os)("my_disclaim64(" PTR_FORMAT ", " UINTX_FORMAT ") failed.\n", p2i(addr), size);
+  if (rc != 0) {
+    ErrnoPreserver ep;
+    log_warning(os)("disclaim64(" PTR_FORMAT ", " UINTX_FORMAT ") failed, %s\n", p2i(addr), size, os::strerror(ep.saved_errno()));
     return false;
   }
   return true;
@@ -1973,12 +1930,12 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
   //
   // See http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.basetechref/doc/basetrf1/mprotect.htm
 
-  Events::log(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
+  Events::log_memprotect(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
   bool rc = ::mprotect(addr, size, prot) == 0 ? true : false;
 
   if (!rc) {
     const char* const s_errno = os::errno_name(errno);
-    warning("mprotect(" PTR_FORMAT "-" PTR_FORMAT ", 0x%X) failed (%s).", addr, addr + size, prot, s_errno);
+    warning("mprotect(" PTR_FORMAT "-" PTR_FORMAT ", 0x%X) failed (%s).", p2i(addr), p2i(addr) + size, prot, s_errno);
     return false;
   }
 
@@ -2395,7 +2352,7 @@ void os::set_native_thread_name(const char *name) {
 
 bool os::find(address addr, outputStream* st) {
 
-  st->print(PTR_FORMAT ": ", addr);
+  st->print(PTR_FORMAT ": ", p2i(addr));
 
   loaded_module_t lm;
   if (LoadedLibraries::find_for_text_address(addr, &lm) ||

@@ -61,6 +61,7 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/timerTrace.hpp"
@@ -636,7 +637,7 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGU
           resolved_klass = resolved_klass->array_klass(ndim, CHECK_NULL);
         }
       } else {
-        resolved_klass = TypeArrayKlass::cast(Universe::typeArrayKlassObj(ss.type()))->array_klass(ndim, CHECK_NULL);
+        resolved_klass = Universe::typeArrayKlass(ss.type())->array_klass(ndim, CHECK_NULL);
       }
     } else {
       resolved_klass = SystemDictionary::find_instance_klass(THREAD, class_name,
@@ -656,7 +657,7 @@ C2V_VMENTRY_NULL(jobject, getArrayType, (JNIEnv* env, jobject, jchar type_char, 
     if (type == T_VOID) {
       return nullptr;
     }
-    array_klass = Universe::typeArrayKlassObj(type);
+    array_klass = Universe::typeArrayKlass(type);
     if (array_klass == nullptr) {
       JVMCI_THROW_MSG_NULL(InternalError, err_msg("No array klass for primitive type %s", type2name(type)));
     }
@@ -1106,6 +1107,7 @@ C2V_VMENTRY_0(jint, installCode0, (JNIEnv *env, jobject,
   TraceTime install_time("installCode", timer);
 
   CodeInstaller installer(JVMCIENV);
+  JVMCINMethodHandle nmethod_handle(THREAD);
 
   JVMCI::CodeInstallResult result = installer.install(compiler,
       compiled_code_buffer,
@@ -1113,6 +1115,7 @@ C2V_VMENTRY_0(jint, installCode0, (JNIEnv *env, jobject,
       compiled_code_handle,
       object_pool_handle,
       cb,
+      nmethod_handle,
       installed_code_handle,
       (FailedSpeculation**)(address) failed_speculations_address,
       speculations,
@@ -1204,7 +1207,8 @@ C2V_VMENTRY_NULL(jobject, executeHotSpotNmethod, (JNIEnv* env, jobject, jobject 
   HandleMark hm(THREAD);
 
   JVMCIObject nmethod_mirror = JVMCIENV->wrap(hs_nmethod);
-  nmethod* nm = JVMCIENV->get_nmethod(nmethod_mirror);
+  JVMCINMethodHandle nmethod_handle(THREAD);
+  nmethod* nm = JVMCIENV->get_nmethod(nmethod_mirror, nmethod_handle);
   if (nm == nullptr || !nm->is_in_use()) {
     JVMCI_THROW_NULL(InvalidInstalledCodeException);
   }
@@ -1305,7 +1309,7 @@ C2V_VMENTRY(void, reprofile, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
   }
   NOT_PRODUCT(method->set_compiled_invocation_count(0));
 
-  CompiledMethod* code = method->code();
+  nmethod* code = method->code();
   if (code != nullptr) {
     code->make_not_entrant();
   }
@@ -1478,6 +1482,7 @@ C2V_VMENTRY_NULL(jobject, iterateFrames, (JNIEnv* env, jobject compilerToVM, job
     return nullptr;
   }
   Handle visitor(THREAD, JNIHandles::resolve_non_null(visitor_handle));
+  KeepStackGCProcessedMark keep_stack(THREAD);
 
   requireInHotSpot("iterateFrames", JVMCI_CHECK_NULL);
 
@@ -1750,8 +1755,7 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
     if (!fst.current()->is_compiled_frame()) {
       JVMCI_THROW_MSG(IllegalStateException, "compiled stack frame expected");
     }
-    assert(fst.current()->cb()->is_nmethod(), "nmethod expected");
-    ((nmethod*) fst.current()->cb())->make_not_entrant();
+    fst.current()->cb()->as_nmethod()->make_not_entrant();
   }
   Deoptimization::deoptimize(thread, *fst.current(), Deoptimization::Reason_none);
   // look for the frame again as it has been updated by deopt (pc, deopt state...)
@@ -2763,7 +2767,8 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
     result = PEER_JVMCIENV->get_object_constant(constant());
   } else if (thisEnv->isa_HotSpotNmethod(obj)) {
     if (PEER_JVMCIENV->is_hotspot()) {
-      nmethod* nm = JVMCIENV->get_nmethod(obj);
+      JVMCINMethodHandle nmethod_handle(THREAD);
+      nmethod* nm = JVMCIENV->get_nmethod(obj, nmethod_handle);
       if (nm != nullptr) {
         JVMCINMethodData* data = nm->jvmci_nmethod_data();
         if (data != nullptr) {
@@ -2786,7 +2791,8 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
       const char* cstring = name_string.is_null() ? nullptr : thisEnv->as_utf8_string(name_string);
       // Create a new HotSpotNmethod instance in the peer runtime
       result = PEER_JVMCIENV->new_HotSpotNmethod(mh, cstring, isDefault, compileIdSnapshot, JVMCI_CHECK_0);
-      nmethod* nm = JVMCIENV->get_nmethod(obj);
+      JVMCINMethodHandle nmethod_handle(THREAD);
+      nmethod* nm = JVMCIENV->get_nmethod(obj, nmethod_handle);
       if (result.is_null()) {
         // exception occurred (e.g. OOME) creating a new HotSpotNmethod
       } else if (nm == nullptr) {
@@ -2838,7 +2844,8 @@ C2V_END
 C2V_VMENTRY(void, updateHotSpotNmethod, (JNIEnv* env, jobject, jobject code_handle))
   JVMCIObject code = JVMCIENV->wrap(code_handle);
   // Execute this operation for the side effect of updating the InstalledCode state
-  JVMCIENV->get_nmethod(code);
+  JVMCINMethodHandle nmethod_handle(THREAD);
+  JVMCIENV->get_nmethod(code, nmethod_handle);
 C2V_END
 
 C2V_VMENTRY_NULL(jbyteArray, getCode, (JNIEnv* env, jobject, jobject code_handle))

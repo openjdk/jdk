@@ -566,11 +566,11 @@ void Exceptions::debug_check_abort_helper(Handle exception, const char* message)
 // for logging exceptions
 void Exceptions::log_exception(Handle exception, const char* message) {
   ResourceMark rm;
-  Symbol* detail_message = java_lang_Throwable::detail_message(exception());
+  const char* detail_message = java_lang_Throwable::message_as_utf8(exception());
   if (detail_message != nullptr) {
     log_info(exceptions)("Exception <%s: %s>\n thrown in %s",
                          exception->print_value_string(),
-                         detail_message->as_C_string(),
+                         detail_message,
                          message);
   } else {
     log_info(exceptions)("Exception <%s>\n thrown in %s",

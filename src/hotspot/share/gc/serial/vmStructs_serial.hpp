@@ -26,6 +26,8 @@
 #define SHARE_GC_SERIAL_VMSTRUCTS_SERIAL_HPP
 
 #include "gc/serial/cardTableRS.hpp"
+#include "gc/serial/defNewGeneration.hpp"
+#include "gc/serial/generation.hpp"
 #include "gc/serial/serialHeap.hpp"
 #include "gc/serial/tenuredGeneration.hpp"
 
