@@ -29,7 +29,6 @@
  *          pre-loop limit for main-loop adjustment.
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.util
- * @library /test/lib /
  * @run main/othervm -Xbatch compiler.loopopts.superword.TestMemorySegmentMainLoopAlignment
  */
 
