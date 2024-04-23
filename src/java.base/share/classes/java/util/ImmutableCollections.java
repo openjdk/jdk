@@ -1454,7 +1454,7 @@ class ImmutableCollections {
         @Stable
         private final V[] elements;
         @Stable
-        private final byte[] sets;
+        private final int[] states;
         private final Object[] mutexes;
 
         @SuppressWarnings("unchecked")
@@ -1462,14 +1462,14 @@ class ImmutableCollections {
             assert size > 0;
             this.elements = (V[]) new Object[size];
             this.size = size;
-            this.sets = new byte[size];
+            this.states = new int[size];
             this.mutexes = new Object[size];
         }
 
         @Override
         public StableValue<V> get(int index) {
             Objects.checkIndex(index, size);
-            return new StableValueElement<>(elements, sets, mutexes, index);
+            return new StableValueElement<>(elements, states, mutexes, index);
         }
 
         @Override
@@ -1502,7 +1502,7 @@ class ImmutableCollections {
         }
 
         V computeIfUnset(int index, IntFunction<? extends V> mapper) {
-            StableValueElement<V> element = new StableValueElement<>(elements, sets, mutexes, index);
+            StableValueElement<V> element = new StableValueElement<>(elements, states, mutexes, index);
             return element.computeIfUnset(index, mapper);
         }
 
@@ -1529,7 +1529,7 @@ class ImmutableCollections {
         @Stable
         private final V[] values;
         @Stable
-        private final byte[] sets;
+        private final int[] states;
         private final Object[] mutexes;
 
         // keys array not trusted
@@ -1557,7 +1557,7 @@ class ImmutableCollections {
             }
             this.keys = keys;
             this.values = (V[]) new Object[len];
-            this.sets = new byte[len];
+            this.states = new int[len];
             this.mutexes = new Object[len];
         }
 
@@ -1585,7 +1585,7 @@ class ImmutableCollections {
         }
 
         private StableValue<V> value(int keyIndex) {
-            return new StableValueElement<>(values, sets, mutexes, keyIndex);
+            return new StableValueElement<>(values, states, mutexes, keyIndex);
         }
 
         @Override
@@ -1698,7 +1698,7 @@ class ImmutableCollections {
         @Stable
         private final V[] elements;
         @Stable
-        private final byte[] sets;
+        private final int[] states;
         private final Object[] mutexes;
         @Stable
         private final Class<K> enumType;
@@ -1735,7 +1735,7 @@ class ImmutableCollections {
 
             this.elements = (V[]) new Object[elementCount];
             this.size = keys.length;
-            this.sets = new byte[elementCount];
+            this.states = new int[elementCount];
             this.mutexes = new Object[elementCount];
             this.enumType = (Class<K>) keys[0].getClass();
         }
@@ -1767,7 +1767,7 @@ class ImmutableCollections {
         }
 
         private StableValue<V> value(int index) {
-            return new StableValueElement<>(elements, sets, mutexes, index);
+            return new StableValueElement<>(elements, states, mutexes, index);
         }
 
         private K key(int arrayIndex) {

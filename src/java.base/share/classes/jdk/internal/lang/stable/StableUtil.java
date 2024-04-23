@@ -38,11 +38,11 @@ final class StableUtil {
     private StableUtil() {}
 
     // Indicates a value is not set
-    static final byte UNSET = 0;
+    static final int UNSET = 0;
     // Indicates a value is set to a non-null value
-    static final byte NON_NULL = 1;
+    static final int NON_NULL = 1;
     // Indicates a value is set to a `null` value
-    static final byte NULL = 2;
+    static final int NULL = 2;
 
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
@@ -84,11 +84,11 @@ final class StableUtil {
     }
 
     /**
-     * {@return the address offset for a byte element in an `int` array}
+     * {@return the address offset for an int element in an `int` array}
      * @param index for the object
      */
-    static long byteOffset(int index) {
-        return ARRAY_BYTE_BASE_OFFSET + (long) index * ARRAY_BYTE_INDEX_SCALE;
+    static long intOffset(int index) {
+        return ARRAY_INT_BASE_OFFSET + (long) index * ARRAY_INT_INDEX_SCALE;
     }
 
     static InternalError shouldNotReachHere() {

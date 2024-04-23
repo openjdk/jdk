@@ -39,8 +39,8 @@ public final class StableValueImpl<V> implements StableValue<V> {
     private static final long VALUE_OFFSET =
             UNSAFE.objectFieldOffset(StableValueImpl.class, "value");
 
-    private static final long SET_OFFSET =
-            UNSAFE.objectFieldOffset(StableValueImpl.class, "set");
+    private static final long STATE_OFFSET =
+            UNSAFE.objectFieldOffset(StableValueImpl.class, "state");
 
     /**
      * If non-null, holds a set value
@@ -50,19 +50,19 @@ public final class StableValueImpl<V> implements StableValue<V> {
     private V value;
 
     /**
-     * If StableUtil.NOT_SET, a value is not set
-     * If StableUtil.SET    , a value is set (value may be the default value (e.g. `null` or 0))
+     * If StableUtil.NOT_SET  , a value is not set
+     * If StableUtil.NON_NULL , a non-null value is set
+     * If StableUtil.NULL     , a `null` value is set
      */
-    // Todo: Rename this variable
     @Stable
-    private byte set;
+    private int state;
 
     StableValueImpl() {}
 
     @ForceInline
     @Override
     public boolean isSet() {
-        return set() != UNSET || setVolatile() != UNSET;
+        return state() != UNSET || stateVolatile() != UNSET;
     }
 
     @ForceInline
@@ -75,8 +75,8 @@ public final class StableValueImpl<V> implements StableValue<V> {
             // plain semantics, we know a value is set.
             return v;
         }
-        if (set() == NULL) {
-            // If we happen to see a status value of NULL under
+        if (state() == NULL) {
+            // If we happen to see a state value of NULL under
             // plain semantics, we know a value is set to `null`.
             return null;
         }
@@ -84,14 +84,15 @@ public final class StableValueImpl<V> implements StableValue<V> {
         return orThrowVolatile();
     }
 
-    @ForceInline
+    //@ForceInline
     private V orThrowVolatile() {
         V v = valueVolatile();
         if (v != null) {
             // If we see a non-null value, we know a value is set.
             return v;
         }
-        return switch (setVolatile()) {
+        // Desugar?
+        return switch (stateVolatile()) {
             case UNSET    -> throw new NoSuchElementException(); // No value was set
             case NON_NULL -> orThrowVolatile(); // Race: another thread has set a value
             case NULL     -> null;              // A value of `null` was set
@@ -133,8 +134,8 @@ public final class StableValueImpl<V> implements StableValue<V> {
             // plain semantics, we know a value is set.
             return v;
         }
-        if (set() == NULL) {
-            // If we happen to see a status value of NULL under
+        if (state() == NULL) {
+            // If we happen to see a state value of NULL under
             // plain semantics, we know a value is set to `null`.
             return null;
         }
@@ -142,7 +143,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
         return computeIfUnsetVolatile(supplier);
     }
 
-    @ForceInline
+    //@ForceInline
     private V computeIfUnsetVolatile(Supplier<? extends V> supplier) {
         // Now, fall back to volatile semantics.
         V v = valueVolatile();
@@ -150,7 +151,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
             // If we see a non-null value, we know a value is set.
             return v;
         }
-        return switch (setVolatile()) {
+        return switch (stateVolatile()) {
             case UNSET    -> computeIfUnsetVolatile0(supplier);
             case NON_NULL -> orThrow(); // Race
             case NULL     -> null;
@@ -160,7 +161,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
 
     private synchronized V computeIfUnsetVolatile0(Supplier<? extends V> supplier) {
         // A value is already set
-        if (set() != UNSET) {
+        if (state() != UNSET) {
             return orThrow();
         }
         // A value is not set
@@ -180,37 +181,35 @@ public final class StableValueImpl<V> implements StableValue<V> {
     }
 
     private void setValue(V value) {
-        if (value != null) {
-            casValue(value);
+        if (state() != UNSET) {
+            throw StableUtil.alreadySet(this);
         }
-        // This prevents `this.value` to be seen before `this.set` is seen
-        freeze();
+        if (value != null) {
+            putValue(value);
+        }
         // Crucially, indicate a value is set _after_ it has actually been set.
-        casSet(value == null ? NULL : NON_NULL);
+        putState(value == null ? NULL : NON_NULL);
     }
 
-    private void casValue(V value) {
+    private void putValue(V value) {
         // This prevents partially initialized objects to be observed
         // under normal memory semantics.
         freeze();
-        if (!UNSAFE.compareAndSetReference(this, VALUE_OFFSET, null, value)) {
-            throw StableUtil.alreadySet(this);
-        }
+        UNSAFE.putReferenceVolatile(this, VALUE_OFFSET, value);
     }
 
-    private byte set() {
-        return set;
+    private int state() {
+        return state;
     }
 
-    private byte setVolatile() {
-        return UNSAFE.getByteVolatile(this, SET_OFFSET);
+    private int stateVolatile() {
+        return UNSAFE.getIntVolatile(this, STATE_OFFSET);
     }
 
-    private void casSet(byte newValue) {
-        // Todo: GetAndSetByte
-        if (!UNSAFE.compareAndSetByte(this, SET_OFFSET, UNSET, newValue)) {
-            throw StableUtil.alreadySet(this);
-        }
+    private void putState(int newValue) {
+        // This prevents `this.value` to be seen before `this.state` is seen
+        freeze();
+        UNSAFE.putIntVolatile(this, STATE_OFFSET, newValue);
     }
 
     // Factories

@@ -14,15 +14,14 @@ import static jdk.internal.lang.stable.StableUtil.*;
 // Records are ~10% faster than @ValueBased in JDK 23
 public record StableValueElement<V>(
         V[] elements,
-        // Todo: Rename this variable
-        byte[] sets,
+        int[] states,
         Object[] mutexes,
         int index
 ) implements StableValue<V> {
 
     @Override
     public boolean isSet() {
-        return set() != UNSET || setVolatile() != UNSET;
+        return state() != UNSET || stateVolatile() != UNSET;
     }
 
     @Override
@@ -34,7 +33,7 @@ public record StableValueElement<V>(
             // plain semantics, we know a value is set.
             return e;
         }
-        if (set() == NULL) {
+        if (state() == NULL) {
             // If we happen to see a status value of NULL under
             // plain semantics, we know a value is set to `null`.
             return null;
@@ -50,7 +49,7 @@ public record StableValueElement<V>(
             // If we see a non-null value, we know a value is set.
             return v;
         }
-        return switch (setVolatile()) {
+        return switch (stateVolatile()) {
             case UNSET    -> throw new NoSuchElementException(); // No value was set
             case NON_NULL -> orThrowVolatile(); // Race: another thread has set a value
             case NULL     -> null;              // A value of `null` was set
@@ -63,14 +62,19 @@ public record StableValueElement<V>(
         if (isSet()) {
             throw StableUtil.alreadySet(this);
         }
-        Object mutex = mutexVolatile();
-        if (mutex == null) {
-            mutex = casMutex();
+        synchronized (acquireMutex()) {
+            try {
+                if (isSet()) {
+                    throw StableUtil.alreadySet(this);
+                }
+                setValue(value);
+            } finally {
+                // There might be a new mutex created even though
+                // the value was previously set so, we need to always
+                // clear the mutex.
+                clearMutex();
+            }
         }
-        synchronized (mutex) {
-            setValue(value);
-        }
-        clearMutex();
     }
 
     @Override
@@ -78,17 +82,19 @@ public record StableValueElement<V>(
         if (isSet()) {
             return orThrow();
         }
-        Object mutex = mutexVolatile();
-        if (mutex == null) {
-            mutex = casMutex();
-        }
-        synchronized (mutex) {
-            if (isSet()) {
-                return orThrow();
+        synchronized (acquireMutex()) {
+            try {
+                if (isSet()) {
+                    return orThrow();
+                }
+                setValue(value);
+            } finally {
+                // There might be a new mutex created even though
+                // the value was previously set so, we need to always
+                // clear the mutex.
+                clearMutex();
             }
-            setValue(value);
         }
-        clearMutex();
         return orThrow();
     }
 
@@ -97,7 +103,7 @@ public record StableValueElement<V>(
         return StableUtil.toString(this);
     }
 
-    // Avoid creating lambdas
+    // Avoid creating lambdas by creating
     private static final BiFunction<Supplier<?>, Void, ?> SUPPLIER_EXTRACTOR =
             new BiFunction<Supplier<?>, Void, Object>() {
                 @Override
@@ -114,12 +120,25 @@ public record StableValueElement<V>(
                 }
             };
 
+    private static final BiFunction<Function<Object, Object>, Object, Object> FUNCTION_EXTRACTOR =
+            new BiFunction<Function<Object, Object>, Object, Object>() {
+                @Override
+                public Object apply(Function<Object, Object> function, Object o) {
+                    return function.apply(o);
+                }
+            };
+
+    @SuppressWarnings("unchecked")
+    private static <S, K, V> BiFunction<S, K, V> functionExtractor() {
+        return (BiFunction<S, K, V>) FUNCTION_EXTRACTOR;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public V computeIfUnset(Supplier<? extends V> supplier) {
         return computeIfUnsetShared(supplier,
                 null,
-                (BiFunction<? super Supplier<? extends V>, ? extends Object, V>) SUPPLIER_EXTRACTOR);
+                (BiFunction<? super Supplier<? extends V>, ?, V>) SUPPLIER_EXTRACTOR);
     }
 
     @SuppressWarnings("unchecked")
@@ -130,7 +149,7 @@ public record StableValueElement<V>(
     }
 
     public <K> V computeIfUnset(K key, Function<? super K, ? extends V> mapper) {
-        return computeIfUnsetShared(mapper, key ,Function::apply);
+        return computeIfUnsetShared(mapper, key, functionExtractor());
     }
 
     private <S, K> V computeIfUnsetShared(S source,
@@ -143,7 +162,7 @@ public record StableValueElement<V>(
             // plain semantics, we know a value is set.
             return e;
         }
-        if (set() == NULL) {
+        if (state() == NULL) {
             return null;
         }
         // Now, fall back to volatile semantics.
@@ -158,7 +177,7 @@ public record StableValueElement<V>(
             // If we see a non-null value, we know a value is set.
             return e;
         }
-        return switch (setVolatile()) {
+        return switch (stateVolatile()) {
             case UNSET    -> computeIfUnsetVolatile0(source, key, extractor);
             case NON_NULL -> orThrow(); // Race
             case NULL     -> null;
@@ -169,18 +188,22 @@ public record StableValueElement<V>(
     private synchronized <S, K> V computeIfUnsetVolatile0(S source,
                                                           K key,
                                                           BiFunction<S, K, V> extractor) {
-        Object mutex = mutexVolatile();
-        if (mutex == null) {
-            mutex = casMutex();
-        }
-        synchronized (mutex) {
+        synchronized (acquireMutex()) {
             if (isSet()) {
+                clearMutex();
                 return orThrow();
             }
+
             V newValue = extractor.apply(source, key);
-            setValue(newValue);
+            // If the extractor throws an exception
+            // the mutex is retained
+
+            try {
+                setValue(newValue);
+            } finally {
+                clearMutex();
+            }
         }
-        clearMutex();
         return orThrow();
     }
 
@@ -190,40 +213,43 @@ public record StableValueElement<V>(
     }
 
     private void setValue(V value) {
-        if (value != null) {
-            casValue(value);
+        if (state() != UNSET) {
+            throw StableUtil.alreadySet(this);
         }
-        // This prevents `this.element[index]` to be seen
-        // before `this.sets[index]` is seen
-        freeze();
+        if (value != null) {
+            putValue(value);
+        }
         // Crucially, indicate a value is set _after_ it has actually been set.
-        casSet(value == null ? NULL : NON_NULL);
+        putState(value == null ? NULL : NON_NULL);
     }
 
-    private void casValue(V created) {
+    private void putValue(V created) {
         // Make sure no reordering of store operations
         freeze();
-        if (!UNSAFE.compareAndSetReference(elements, objectOffset(index), null, created)) {
-            throw StableUtil.alreadySet(this);
+        UNSAFE.putReferenceVolatile(elements, objectOffset(index), created);
+    }
+
+    int state() {
+        return states[index];
+    }
+
+    byte stateVolatile() {
+        return UNSAFE.getByteVolatile(states, StableUtil.intOffset(index));
+    }
+
+    private void putState(int newValue) {
+        // This prevents `this.element[index]` to be seen
+        // before `this.status[index]` is seen
+        freeze();
+        UNSAFE.putIntVolatile(states, StableUtil.intOffset(index), newValue);
+    }
+
+    private Object acquireMutex() {
+        Object mutex = UNSAFE.getReferenceVolatile(mutexes, StableUtil.objectOffset(index));
+        if (mutex == null) {
+            mutex = casMutex();
         }
-    }
-
-    byte set() {
-        return sets[index];
-    }
-
-    byte setVolatile() {
-        return UNSAFE.getByteVolatile(sets, StableUtil.byteOffset(index));
-    }
-
-    private void casSet(byte newValue) {
-        if (!UNSAFE.compareAndSetByte(sets, StableUtil.byteOffset(index), UNSET, newValue)) {
-            throw StableUtil.alreadySet(this);
-        }
-    }
-
-    private Object mutexVolatile() {
-        return UNSAFE.getReferenceVolatile(mutexes, StableUtil.objectOffset(index));
+        return mutex;
     }
 
     private Object casMutex() {
