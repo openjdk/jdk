@@ -175,12 +175,13 @@ class Field extends AccessibleObject implements Member {
     @CallerSensitive
     public void setAccessible(boolean flag) {
         AccessibleObject.checkPermission();
+        // Always check if the field is a final StableValue
+        if (StableValue.class.isAssignableFrom(type) && Modifier.isFinal(modifiers)) {
+            throw newInaccessibleObjectException(
+                    "Unable to make field " + this + " accessible: " +
+                            "jdk.internal.lang.StableValue fields are trusted");
+        }
         if (flag) {
-            if (StableValue.class.isAssignableFrom(type) && Modifier.isFinal(modifiers)) {
-                throw newInaccessibleObjectException(
-                        "Unable to make field " + this + " accessible: " +
-                                "jdk.internal.lang.StableValue fields are trusted");
-            }
             checkCanSetAccessible(Reflection.getCallerClass());
         }
         setAccessible0(flag);
