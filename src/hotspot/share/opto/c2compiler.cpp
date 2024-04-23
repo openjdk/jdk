@@ -257,6 +257,9 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_copyMemory:
     if (StubRoutines::unsafe_arraycopy() == nullptr) return false;
     break;
+  case vmIntrinsics::_setMemory:
+    if (StubRoutines::unsafe_setmemory() == nullptr) return false;
+    break;
   case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
     if (StubRoutines::electronicCodeBook_encryptAESCrypt() == nullptr) return false;
     break;

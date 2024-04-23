@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ inline bool is_compile(int comp_level) {
 
 
 // States of Restricted Transactional Memory usage.
-enum RTMState {
+enum RTMState: u1 {
   NoRTM      = 0x2, // Don't use RTM
   UseRTM     = 0x1, // Use RTM
   ProfileRTM = 0x0  // Use RTM with abort ratio calculation

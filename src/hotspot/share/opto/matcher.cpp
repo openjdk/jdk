@@ -2474,7 +2474,22 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(3);
       break;
     }
+    case Op_LoadVectorGather:
+      if (is_subword_type(n->bottom_type()->is_vect()->element_basic_type())) {
+        Node* pair = new BinaryNode(n->in(MemNode::ValueIn), n->in(MemNode::ValueIn+1));
+        n->set_req(MemNode::ValueIn, pair);
+        n->del_req(MemNode::ValueIn+1);
+      }
+      break;
     case Op_LoadVectorGatherMasked:
+      if (is_subword_type(n->bottom_type()->is_vect()->element_basic_type())) {
+        Node* pair2 = new BinaryNode(n->in(MemNode::ValueIn + 1), n->in(MemNode::ValueIn + 2));
+        Node* pair1 = new BinaryNode(n->in(MemNode::ValueIn), pair2);
+        n->set_req(MemNode::ValueIn, pair1);
+        n->del_req(MemNode::ValueIn+2);
+        n->del_req(MemNode::ValueIn+1);
+        break;
+      } // fall-through
     case Op_StoreVectorScatter: {
       Node* pair = new BinaryNode(n->in(MemNode::ValueIn), n->in(MemNode::ValueIn+1));
       n->set_req(MemNode::ValueIn, pair);

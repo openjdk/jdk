@@ -229,8 +229,8 @@ class Universe: AllStatic {
 
   static oop          null_ptr_exception_instance();
   static oop          arithmetic_exception_instance();
-  static oop          virtual_machine_error_instance();
-  static oop          vm_exception()                  { return virtual_machine_error_instance(); }
+  static oop          internal_error_instance();
+  static oop          vm_exception()                  { return internal_error_instance(); }
 
   static Array<Klass*>* the_array_interfaces_array()  { return _the_array_interfaces_array; }
   static uintx        the_array_interfaces_bitmap()   { return _the_array_interfaces_bitmap; }
