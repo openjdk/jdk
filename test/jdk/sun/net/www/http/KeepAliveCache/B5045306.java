@@ -140,7 +140,7 @@ public class B5045306 {
             long[] threads = threadMXBean.getAllThreadIds();
             ThreadInfo[] threadInfo = threadMXBean.getThreadInfo(threads);
             for (int i=0; i<threadInfo.length; i++) {
-                if (threadInfo[i].getThreadName().equals("Keep-Alive-SocketCleaner"))  {
+                if (threadInfo[i].getThreadName().equals("Keep-Alive-SocketCleaner")) {
                     System.out.println("Found Keep-Alive-SocketCleaner thread");
                     long threadID = threadInfo[i].getThreadId();
                     long before = threadMXBean.getThreadCpuTime(threadID);
