@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "gc/serial/cardTableRS.hpp"
-#include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/serial/serialHeap.inline.hpp"
 #include "gc/serial/serialStringDedup.inline.hpp"
@@ -678,18 +677,12 @@ void DefNewGeneration::collect(bool   full,
   // The preserved marks should be empty at the start of the GC.
   _preserved_marks_set.init(1);
 
-  assert(heap->no_allocs_since_save_marks(),
-         "save marks have not been newly set.");
-
   YoungGenScanClosure young_gen_cl(this);
   OldGenScanClosure   old_gen_cl(this);
 
   FastEvacuateFollowersClosure evacuate_followers(heap,
                                                   &young_gen_cl,
                                                   &old_gen_cl);
-
-  assert(heap->no_allocs_since_save_marks(),
-         "save marks have not been newly set.");
 
   {
     StrongRootsScope srs(0);
@@ -700,13 +693,14 @@ void DefNewGeneration::collect(bool   full,
                                   NMethodToOopClosure::FixRelocations,
                                   false /* keepalive_nmethods */);
 
+    HeapWord* saved_top_in_old_gen = _old_gen->space()->top();
     heap->process_roots(SerialHeap::SO_ScavengeCodeCache,
                         &root_cl,
                         &cld_cl,
                         &cld_cl,
                         &code_cl);
 
-    _old_gen->scan_old_to_young_refs();
+    _old_gen->scan_old_to_young_refs(saved_top_in_old_gen);
   }
 
   // "evacuate followers".
@@ -723,15 +717,11 @@ void DefNewGeneration::collect(bool   full,
     _gc_tracer->report_tenuring_threshold(tenuring_threshold());
     pt.print_all_references();
   }
-  assert(heap->no_allocs_since_save_marks(), "save marks have not been newly set.");
 
   {
     AdjustWeakRootClosure cl{this};
     WeakProcessor::weak_oops_do(&is_alive, &cl);
   }
-
-  // Verify that the usage of keep_alive didn't copy any objects.
-  assert(heap->no_allocs_since_save_marks(), "save marks have not been newly set.");
 
   _string_dedup_requests.flush();
 
@@ -890,15 +880,6 @@ void DefNewGeneration::drain_promo_failure_scan_stack() {
      oop obj = _promo_failure_scan_stack.pop();
      obj->oop_iterate(&cl);
   }
-}
-
-void DefNewGeneration::save_marks() {
-  set_saved_mark_word();
-}
-
-
-bool DefNewGeneration::no_allocs_since_save_marks() {
-  return saved_mark_at_top();
 }
 
 void DefNewGeneration::contribute_scratch(void*& scratch, size_t& num_words) {

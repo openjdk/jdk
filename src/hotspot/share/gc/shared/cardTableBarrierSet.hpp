@@ -70,8 +70,6 @@ public:
     write_region(mr);
   }
 
-  void write_ref_array_work(MemRegion mr);
-
  public:
   // Record a reference update. Note that these versions are precise!
   // The scanning code has to handle the fact that the write barrier may be
