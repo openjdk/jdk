@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,12 +41,26 @@
 // The FOCUS_LOST/FOCUS_GAINED events order in the original frame is tracked and should be:
 // b0 -> b1 -> b2 -> b3.
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.AWTEvent;
+import java.awt.AWTException;
+import java.awt.Button;
+import java.awt.Component;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.event.AWTEventListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.swing.*;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+
 import test.java.awt.regtesthelpers.Util;
 
 public class Test1 {
@@ -81,6 +95,7 @@ public class Test1 {
 
         try {
             robot = new Robot();
+            robot.setAutoDelay(50);
         } catch (AWTException ex) {
             throw new RuntimeException("Error: can't create Robot");
         }
@@ -90,13 +105,13 @@ public class Test1 {
         f0.add(f0b2);
         f0.add(f0b3);
         f0.setLayout(new FlowLayout());
-        f0.setBounds(0, 100, 400, 200);
+        f0.setBounds(100, 100, 400, 200);
 
         f1.add(f1b0);
-        f1.setBounds(0, 400, 400, 200);
+        f1.setBounds(100, 400, 400, 200);
 
         f2.add(f2b0);
-        f2.setBounds(0, 400, 400, 200);
+        f2.setBounds(100, 400, 400, 200);
 
         f0b0.addFocusListener(new FocusAdapter() {
             @Override
@@ -115,6 +130,7 @@ public class Test1 {
         f0.setVisible(true);
 
         Util.waitForIdle(robot);
+        robot.delay(500);
 
         if (!f0b0.isFocusOwner()) {
             Util.clickOnComp(f0b0, robot);
@@ -156,24 +172,21 @@ public class Test1 {
         tracking = true;
 
         robot.keyPress(KeyEvent.VK_TAB);
-        robot.delay(50);
         robot.keyRelease(KeyEvent.VK_TAB);
-        robot.delay(50);
 
         robot.keyPress(KeyEvent.VK_TAB);
-        robot.delay(50);
         robot.keyRelease(KeyEvent.VK_TAB);
-        robot.delay(50);
 
         robot.keyPress(KeyEvent.VK_TAB);
-        robot.delay(50);
         robot.keyRelease(KeyEvent.VK_TAB);
 
-        robot.delay(50);
         Util.clickOnComp(compToClick, robot);
 
-        robot.delay(50);
-        Util.clickOnTitle(f0, robot);
+        if (Util.isOnWayland()) {
+            Util.clickOnComp(f0, robot);
+        } else {
+            Util.clickOnTitle(f0, robot);
+        }
 
         Util.waitForIdle(robot);
 
