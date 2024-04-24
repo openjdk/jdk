@@ -172,7 +172,7 @@ public class RecordReflectionTest {
         // now let's check constructors
         var constructor = recordClass.getDeclaredConstructors()[0];
         i = 0;
-        for(var p: constructor.getParameters()) {
+        for (var p: constructor.getParameters()) {
             assertEquals(p.getParameterizedType().toString(), signatures[i],
                     String.format("signature of method \"%s\" different from expected signature \"%s\"",
                             p.getType().toString(), signatures[i]));
