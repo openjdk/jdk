@@ -985,13 +985,6 @@ char * os::native_path(char *path) {
   return path;
 }
 
-// create binary file, rewriting existing file if required
-int os::create_binary_file(const char* path, bool rewrite_existing) {
-  int oflags = O_WRONLY | O_CREAT;
-  oflags |= rewrite_existing ? O_TRUNC : O_EXCL;
-  return ::open(path, oflags, S_IREAD | S_IWRITE);
-}
-
 bool os::same_files(const char* file1, const char* file2) {
   if (file1 == nullptr && file2 == nullptr) {
     return true;
