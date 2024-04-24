@@ -506,7 +506,8 @@ public:
   }
   void do_vthread(Handle target_h) {
     assert(_target_jt != nullptr, "sanity check");
-    // use jvmti_vthread() as vthread() can be outdated
+    // Use jvmti_vthread() instead of vthread() as target could have temporary changed
+    // identity to carrier thread (see VirtualThread.switchToCarrierThread).
     assert(_target_jt->jvmti_vthread() == target_h(), "sanity check");
     doit(_target_jt); // mounted virtual thread
   }
@@ -527,7 +528,8 @@ public:
   }
   void do_vthread(Handle target_h) {
     assert(_target_jt != nullptr, "sanity check");
-    // use jvmti_vthread() as vthread() can be outdated
+    // Use jvmti_vthread() instead of vthread() as target could have temporary changed
+    // identity to carrier thread (see VirtualThread.switchToCarrierThread).
     assert(_target_jt->jvmti_vthread() == target_h(), "sanity check");
     doit(_target_jt); // mounted virtual thread
   }
