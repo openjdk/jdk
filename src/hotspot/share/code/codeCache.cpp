@@ -197,7 +197,6 @@ static void set_size_of_unset_code_heap(CodeHeapInfo* heap, size_t available_siz
 }
 
 void CodeCache::initialize_heaps() {
-
   CodeHeapInfo non_nmethod = {NonNMethodCodeHeapSize, FLAG_IS_CMDLINE(NonNMethodCodeHeapSize), true};
   CodeHeapInfo profiled = {ProfiledCodeHeapSize, FLAG_IS_CMDLINE(ProfiledCodeHeapSize), true};
   CodeHeapInfo non_profiled = {NonProfiledCodeHeapSize, FLAG_IS_CMDLINE(NonProfiledCodeHeapSize), true};

@@ -227,7 +227,7 @@ BufferBlob::BufferBlob(const char* name, CodeBlobKind kind, int size)
 : RuntimeBlob(name, kind, size, sizeof(BufferBlob))
 {}
 
-BufferBlob* BufferBlob::create(const char* name, uint buffer_size) {
+BufferBlob* BufferBlob::create(const char* name, uint buffer_size, bool alloc_in_codecache) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
   BufferBlob* blob = nullptr;
@@ -238,7 +238,7 @@ BufferBlob* BufferBlob::create(const char* name, uint buffer_size) {
   assert(name != nullptr, "must provide a name");
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) BufferBlob(name, CodeBlobKind::Buffer, size);
+    blob = new (size, alloc_in_codecache) BufferBlob(name, CodeBlobKind::Buffer, size);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
@@ -268,11 +268,22 @@ BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
   return blob;
 }
 
-void* BufferBlob::operator new(size_t s, unsigned size) throw() {
+void* BufferBlob::operator new(size_t s, unsigned size, bool alloc_in_codecache) throw() {
+  if (!alloc_in_codecache) {
+    char* ptr = (char*)aligned_alloc(K, size);
+    // this is to avoid "copy must preserve alignment" assert in CodeBuffer::compute_final_layout:
+    // usual BufferBlob start position is ~ segment alignment + 16 due to HeapBlock header size
+    BufferBlob* blob = (BufferBlob*) ((char*)ptr + 16);
+    return blob;
+  }
   return CodeCache::allocate(size, CodeBlobType::NonNMethod);
 }
 
 void BufferBlob::free(BufferBlob *blob) {
+  if (!CodeCache::contains((void*)blob)) { // see alloc_in_codecache
+    std::free((char*)blob - 16);
+    return;
+  }
   RuntimeBlob::free(blob);
 }
 

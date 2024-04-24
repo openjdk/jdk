@@ -3299,7 +3299,7 @@ void PhaseOutput::init_scratch_buffer_blob(int const_size) {
     ResourceMark rm;
     _scratch_const_size = const_size;
     int size = C2Compiler::initial_code_buffer_size(const_size);
-    blob = BufferBlob::create("Compile::scratch_buffer", size);
+    blob = BufferBlob::create("Compile::scratch_buffer", size, CompilerScratchBuffersCodeHeapAllocation);
     // Record the buffer blob for next time.
     set_scratch_buffer_blob(blob);
     // Have we run out of code space?

@@ -1552,6 +1552,9 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, ExitOnFullCodeCache, false,                                 \
           "Exit the VM if we fill the code cache")                          \
                                                                             \
+  product(bool, CompilerScratchBuffersCodeHeapAllocation, false,            \
+          "Use CodeHeap allocator for C1/C2 scratch buffers")               \
+                                                                            \
   product(bool, UseCodeCacheFlushing, true,                                 \
           "Remove cold/old nmethods from the code cache")                   \
                                                                             \
