@@ -819,7 +819,12 @@ public class IRNode {
 
     public static final String MAX = PREFIX + "MAX" + POSTFIX;
     static {
-        beforeMatchingNameRegex(MAX, "Max(I|L)");
+        beforeMatchingNameRegex(MAX, "Max(I|L|F|D)");
+    }
+
+    public static final String MAX_D = PREFIX + "MAX_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MAX_D, "MaxD");
     }
 
     public static final String MAX_D_REDUCTION_REG = PREFIX + "MAX_D_REDUCTION_REG" + POSTFIX;
@@ -830,6 +835,11 @@ public class IRNode {
     public static final String MAX_D_REG = PREFIX + "MAX_D_REG" + POSTFIX;
     static {
         machOnlyNameRegex(MAX_D_REG, "maxD_reg");
+    }
+
+    public static final String MAX_F = PREFIX + "MAX_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MAX_F, "MaxF");
     }
 
     public static final String MAX_F_REDUCTION_REG = PREFIX + "MAX_F_REDUCTION_REG" + POSTFIX;
@@ -887,6 +897,11 @@ public class IRNode {
         beforeMatchingNameRegex(MIN, "Min(I|L)");
     }
 
+    public static final String MIN_D = PREFIX + "MIN_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MIN_D, "MinD");
+    }
+
     public static final String MIN_D_REDUCTION_REG = PREFIX + "MIN_D_REDUCTION_REG" + POSTFIX;
     static {
         machOnlyNameRegex(MIN_D_REDUCTION_REG, "minD_reduction_reg");
@@ -895,6 +910,11 @@ public class IRNode {
     public static final String MIN_D_REG = PREFIX + "MIN_D_REG" + POSTFIX;
     static {
         machOnlyNameRegex(MIN_D_REG, "minD_reg");
+    }
+
+    public static final String MIN_F = PREFIX + "MIN_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MIN_F, "MinF");
     }
 
     public static final String MIN_F_REDUCTION_REG = PREFIX + "MIN_F_REDUCTION_REG" + POSTFIX;
