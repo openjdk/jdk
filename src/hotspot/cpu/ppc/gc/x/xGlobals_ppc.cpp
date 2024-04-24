@@ -82,6 +82,8 @@
 // Maximum value as per spec (Power ISA v2.07): 2 ^ 60 bytes, i.e. 1 EiB (exbibyte)
 static const unsigned int MAXIMUM_MAX_ADDRESS_BIT = 60;
 
+static const unsigned int MAX_ADDRESS_BIT_LIMIT = XMaxAddressOffsetBits + XAddressableMetadataBits - 1;
+
 // Most modern power processors provide an address space with not more than 45 bit addressable bit,
 // that is an address space of 32 TiB in size.
 static const unsigned int DEFAULT_MAX_ADDRESS_BIT = 45;
@@ -169,7 +171,7 @@ static unsigned int probe_valid_max_address_bit(size_t init_bit, size_t min_bit)
     return DEFAULT_MAX_ADDRESS_BIT;
 #endif // ASSERT
   } else {
-    if (max_valid_address_bit == init_bit) {
+    if ((max_valid_address_bit == init_bit) && (max_valid_address_bit < MAX_ADDRESS_BIT_LIMIT)) {
       // An usable address bit has been found immediately.
       // To ensure that the entire virtual address space is exploited, the next highest bit will be tested as well.
       log_info_p(gc, init)("Hit valid address '%u' on first try, retrying with next higher bit", max_valid_address_bit);
@@ -190,7 +192,7 @@ size_t XPlatformAddressOffsetBits() {
   assert(valid_max_address_offset_bits >= MINIMUM_MAX_ADDRESS_BIT,
          "Highest addressable bit is outside the assumed address space range");
 
-  const size_t max_address_offset_bits = valid_max_address_offset_bits - 3;
+  const size_t max_address_offset_bits = valid_max_address_offset_bits - XAddressableMetadataBits;
   const size_t min_address_offset_bits = max_address_offset_bits - 2;
   const size_t address_offset = round_up_power_of_2(MaxHeapSize * XVirtualToPhysicalRatio);
   const size_t address_offset_bits = log2i_exact(address_offset);
