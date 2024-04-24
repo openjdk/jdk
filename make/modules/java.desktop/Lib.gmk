@@ -36,7 +36,7 @@ $(call FillFindCache, $(wildcard $(TOPDIR)/src/java.desktop/*/native))
 # Create the AWT/2D libraries
 
 include lib/AwtLibraries.gmk
-include lib/ClientLibraries.gmk
+include lib/2dLibraries.gmk
 
 ifeq ($(call isTargetOs, aix), false)
   ##############################################################################
