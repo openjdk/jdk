@@ -4125,7 +4125,7 @@ Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           eliminate = true;
         }
       }
-    } else if (opc == Op_MemBarRelease) {
+    } else if (opc == Op_MemBarRelease || (UseStoreStoreForCtor && opc == Op_MemBarStoreStore)) {
       // Final field stores.
       Node* alloc = AllocateNode::Ideal_allocation(in(MemBarNode::Precedent));
       if ((alloc != nullptr) && alloc->is_Allocate() &&
