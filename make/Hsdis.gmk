@@ -38,7 +38,7 @@ HSDIS_OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/hsdis
 REAL_HSDIS_NAME := hsdis-$(OPENJDK_TARGET_CPU_LEGACY_LIB)$(SHARED_LIBRARY_SUFFIX)
 BUILT_HSDIS_LIB := $(HSDIS_OUTPUT_DIR)/$(REAL_HSDIS_NAME)
 
-HSDIS_LINK_TYPE := C
+HSDIS_LANG := C
 
 ifeq ($(HSDIS_BACKEND), capstone)
   ifeq ($(call isTargetCpuArch, x86), true)
@@ -57,7 +57,7 @@ endif
 
 ifeq ($(HSDIS_BACKEND), llvm)
   # Use C++ instead of C
-  HSDIS_LINK_TYPE := C++
+  HSDIS_LANG := C++
 
   ifeq ($(call isTargetOs, linux), true)
     LLVM_OS := pc-linux-gnu
@@ -142,7 +142,7 @@ endif
 
 $(eval $(call SetupJdkLibrary, BUILD_HSDIS, \
     NAME := hsdis, \
-    LINK_TYPE := $(HSDIS_LINK_TYPE), \
+    LANG := $(HSDIS_LANG), \
     SRC := $(TOPDIR)/src/utils/hsdis/$(HSDIS_BACKEND), \
     EXTRA_HEADER_DIRS := \
           java.base:include \
