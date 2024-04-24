@@ -181,7 +181,7 @@ public:
 
   // Collect the AddP offset values into the elements array, giving up
   // if there are more than length.
-  int unpack_offsets(Node* elements[], int length);
+  int unpack_offsets(Node* elements[], int length) const;
 
   // Do not match base-ptr edge
   virtual uint match_edge(uint idx) const;
