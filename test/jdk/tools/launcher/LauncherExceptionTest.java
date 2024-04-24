@@ -77,11 +77,8 @@ public class LauncherExceptionTest extends TestHelper {
         }
 
         // Delete dependency
-        trExecution = doExec("rm", "classes/Test$SomeDependency.class");
-        if (!trExecution.isOK()) {
-            System.err.println(trExecution);
-            throw new RuntimeException("Error: deleting dependency");
-        }
+        File dependency = new File("classes/Test$SomeDependency.class");
+        recursiveDelete(dependency);
 
         // Executing Test should report exception description
         trExecution = doExec(javaCmd, "-cp", "classes", "Test");
