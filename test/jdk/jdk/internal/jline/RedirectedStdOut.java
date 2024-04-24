@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * For manual test, create file `/tmp/ConsoleTest.java` with the following content:
 public class ConsoleTest {
-     public static void main() {
+     public static void main(String... args) {
          System.console().printf("Hello!");
      }
 }
