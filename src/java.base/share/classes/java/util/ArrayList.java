@@ -377,7 +377,7 @@ public class ArrayList<E> extends AbstractList<E>
         return findLastIndexInRange(filter, 0, size);
     }
 
-    int findLastIndexInRange(Predicate<? super E> filter, int start, int end) {
+    private int findLastIndexInRange(Predicate<? super E> filter, int start, int end) {
         Objects.requireNonNull(filter);
         Object[] es = elementData;
         for (int i = end - 1; i >= start; i--) {
