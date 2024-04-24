@@ -369,7 +369,7 @@ LIBFONTMANAGER_CFLAGS += $(X_CFLAGS) -DLE_STANDALONE -DHEADLESS
 #   libawt_xawt). See JDK-8196516 for details.
 $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
     NAME := fontmanager, \
-    LINK_TYPE := C++, \
+    LANG := C++, \
     EXCLUDE_FILES := $(LIBFONTMANAGER_EXCLUDE_FILES) \
         AccelGlyphCache.c, \
     CFLAGS := $(LIBFONTMANAGER_CFLAGS), \
