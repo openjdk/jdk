@@ -87,7 +87,8 @@ public:
 
 ShenandoahConcurrentGC::ShenandoahConcurrentGC() :
   _mark(),
-  _degen_point(ShenandoahDegenPoint::_degenerated_unset) {
+  _degen_point(ShenandoahDegenPoint::_degenerated_unset),
+  _abbreviated(false) {
 }
 
 ShenandoahGC::ShenandoahDegenPoint ShenandoahConcurrentGC::degen_point() const {
@@ -188,6 +189,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     entry_cleanup_complete();
   } else {
     vmop_entry_final_roots();
+    _abbreviated = true;
   }
 
   return true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,9 +99,9 @@ Java_sun_security_jgss_wrapper_GSSLibStub_init(JNIEnv *env,
                     MAX_MSG_SIZE,
                     NULL);
             if (0 == dwRes) {
-                printf("GSS-API: Unknown failure %d\n", dwError);
+                TRACE1("GSS-API: Unknown failure %d", dwError);
             } else {
-                printf("GSS-API: %s\n",szMsgBuf);
+                TRACE1("GSS-API: %s",szMsgBuf);
             }
 #else
             char* error = dlerror();
@@ -196,7 +196,10 @@ gss_channel_bindings_t newGSSCB(JNIEnv *env, jobject jcb) {
     return GSS_C_NO_CHANNEL_BINDINGS;
   }
 
-  cb = malloc(sizeof(struct gss_channel_bindings_struct));
+  // initialize cb as zeroes to avoid uninitialized pointer being
+  // freed when deleteGSSCB is called at cleanup.
+  cb = calloc(1, sizeof(struct gss_channel_bindings_struct));
+
   if (cb == NULL) {
     gssThrowOutOfMemoryError(env, NULL);
     return NULL;
@@ -216,9 +219,6 @@ gss_channel_bindings_t newGSSCB(JNIEnv *env, jobject jcb) {
       cb->initiator_addrtype = GSS_C_AF_NULLADDR;
       cb->acceptor_addrtype = GSS_C_AF_NULLADDR;
   }
-  // addresses needs to be initialized to empty
-  memset(&cb->initiator_address, 0, sizeof(cb->initiator_address));
-  memset(&cb->acceptor_address, 0, sizeof(cb->acceptor_address));
 
   /* set up initiator address */
   jinetAddr = (*env)->CallObjectMethod(env, jcb,

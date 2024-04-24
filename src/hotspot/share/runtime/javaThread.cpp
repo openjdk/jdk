@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -189,12 +189,22 @@ void JavaThread::set_jvmti_vthread(oop p) {
   _jvmti_vthread.replace(p);
 }
 
+// If there is a virtual thread mounted then return vthread() oop.
+// Otherwise, return threadObj().
+oop JavaThread::vthread_or_thread() const {
+  oop result = vthread();
+  if (result == nullptr) {
+    result = threadObj();
+  }
+  return result;
+}
+
 oop JavaThread::scopedValueCache() const {
   return _scopedValueCache.resolve();
 }
 
 void JavaThread::set_scopedValueCache(oop p) {
-  if (_scopedValueCache.ptr_raw() != nullptr) { // i.e. if the OopHandle has been allocated
+  if (!_scopedValueCache.is_empty()) { // i.e. if the OopHandle has been allocated
     _scopedValueCache.replace(p);
   } else {
     assert(p == nullptr, "not yet initialized");
@@ -263,7 +273,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
 
 jlong* JavaThread::_jvmci_old_thread_counters;
 
-bool jvmci_counters_include(JavaThread* thread) {
+static bool jvmci_counters_include(JavaThread* thread) {
   return !JVMCICountersExcludeCompiler || !thread->is_Compiler_thread();
 }
 
@@ -282,7 +292,7 @@ void JavaThread::collect_counters(jlong* array, int length) {
 }
 
 // Attempt to enlarge the array for per thread counters.
-jlong* resize_counters_array(jlong* old_counters, int current_size, int new_size) {
+static jlong* resize_counters_array(jlong* old_counters, int current_size, int new_size) {
   jlong* new_counters = NEW_C_HEAP_ARRAY_RETURN_NULL(jlong, new_size, mtJVMCI);
   if (new_counters == nullptr) {
     return nullptr;
@@ -419,7 +429,6 @@ JavaThread::JavaThread() :
   _current_waiting_monitor(nullptr),
   _active_handles(nullptr),
   _free_handle_block(nullptr),
-  _Stalled(0),
 
   _monitor_chunks(nullptr),
 
@@ -458,6 +467,7 @@ JavaThread::JavaThread() :
   _jvmci_reserved0(0),
   _jvmci_reserved1(0),
   _jvmci_reserved_oop0(nullptr),
+  _live_nmethod(nullptr),
 #endif // INCLUDE_JVMCI
 
   _exception_oop(oop()),
@@ -544,7 +554,6 @@ void JavaThread::interrupt() {
   _ParkEvent->unpark();
 }
 
-
 bool JavaThread::is_interrupted(bool clear_interrupted) {
   debug_only(check_for_dangling_thread_pointer(this);)
 
@@ -579,7 +588,37 @@ bool JavaThread::is_interrupted(bool clear_interrupted) {
     java_lang_Thread::set_interrupted(threadObj(), false);
     WINDOWS_ONLY(osthread()->set_interrupted(false);)
   }
+  return interrupted;
+}
 
+// This is only for use by JVMTI RawMonitorWait. It emulates the actions of
+// the Java code in Object::wait which are not present in RawMonitorWait.
+bool JavaThread::get_and_clear_interrupted() {
+  if (!is_interrupted(false)) {
+    return false;
+  }
+  oop thread_oop = vthread_or_thread();
+  bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
+
+  if (!is_virtual) {
+    return is_interrupted(true);
+  }
+  // Virtual thread: clear interrupt status for both virtual and
+  // carrier threads under the interruptLock protection.
+  JavaThread* current = JavaThread::current();
+  HandleMark hm(current);
+  Handle thread_h(current, thread_oop);
+  ObjectLocker lock(Handle(current, java_lang_Thread::interrupt_lock(thread_h())), current);
+
+  // re-check the interrupt status under the interruptLock protection
+  bool interrupted = java_lang_Thread::interrupted(thread_h());
+
+  if (interrupted) {
+    assert(this == Thread::current(), "only the current thread can clear");
+    java_lang_Thread::set_interrupted(thread_h(), false);  // clear for virtual
+    java_lang_Thread::set_interrupted(threadObj(), false); // clear for carrier
+    WINDOWS_ONLY(osthread()->set_interrupted(false);)
+  }
   return interrupted;
 }
 
@@ -745,6 +784,7 @@ static void ensure_join(JavaThread* thread) {
   // Clear the native thread instance - this makes isAlive return false and allows the join()
   // to complete once we've done the notify_all below. Needs a release() to obey Java Memory Model
   // requirements.
+  assert(java_lang_Thread::thread(threadObj()) == thread, "must be alive");
   java_lang_Thread::release_set_thread(threadObj(), nullptr);
   lock.notify_all(thread);
   // Ignore pending exception, since we are exiting anyway
@@ -871,19 +911,27 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
            "should not have a Java frame when detaching or exiting");
     ObjectSynchronizer::release_monitors_owned_by_thread(this);
     assert(!this->has_pending_exception(), "release_monitors should have cleared");
+    // Check for monitor counts being out of sync.
+    assert(held_monitor_count() == jni_monitor_count(),
+           "held monitor count should be equal to jni: " INTX_FORMAT " != " INTX_FORMAT,
+           held_monitor_count(), jni_monitor_count());
+    // All in-use monitors, including JNI-locked ones, should have been released above.
+    assert(held_monitor_count() == 0, "Failed to unlock " INTX_FORMAT " object monitors",
+           held_monitor_count());
+  } else {
+    // Check for monitor counts being out of sync.
+    assert(held_monitor_count() == jni_monitor_count(),
+           "held monitor count should be equal to jni: " INTX_FORMAT " != " INTX_FORMAT,
+           held_monitor_count(), jni_monitor_count());
+    // It is possible that a terminating thread failed to unlock monitors it locked
+    // via JNI so we don't assert the count is zero.
   }
 
-  // Since above code may not release JNI monitors and if someone forgot to do an
-  // JNI monitorexit, held count should be equal jni count.
-  // Consider scan all object monitor for this owner if JNI count > 0 (at least on detach).
-  assert(held_monitor_count() == jni_monitor_count(),
-         "held monitor count should be equal to jni: " INTX_FORMAT " != " INTX_FORMAT,
-         held_monitor_count(), jni_monitor_count());
   if (CheckJNICalls && jni_monitor_count() > 0) {
     // We would like a fatal here, but due to we never checked this before there
     // is a lot of tests which breaks, even with an error log.
     log_debug(jni)("JavaThread %s (tid: " UINTX_FORMAT ") with Objects still locked by JNI MonitorEnter.",
-      exit_type == JavaThread::normal_exit ? "exiting" : "detaching", os::current_thread_id());
+                   exit_type == JavaThread::normal_exit ? "exiting" : "detaching", os::current_thread_id());
   }
 
   // These things needs to be done while we are still a Java Thread. Make sure that thread
@@ -921,9 +969,12 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     thread_name = os::strdup(name());
   }
 
-  log_info(os, thread)("JavaThread %s (tid: " UINTX_FORMAT ").",
-    exit_type == JavaThread::normal_exit ? "exiting" : "detaching",
-    os::current_thread_id());
+  if (log_is_enabled(Info, os, thread)) {
+    ResourceMark rm(this);
+    log_info(os, thread)("JavaThread %s (name: \"%s\", tid: " UINTX_FORMAT ").",
+                         exit_type == JavaThread::normal_exit ? "exiting" : "detaching",
+                         name(), os::current_thread_id());
+  }
 
   if (log_is_enabled(Debug, os, thread, timer)) {
     _timer_exit_phase3.stop();
@@ -1251,8 +1302,8 @@ void JavaThread::deoptimize() {
         // Deoptimize only at particular bcis.  DeoptimizeOnlyAt
         // consists of comma or carriage return separated numbers so
         // search for the current bci in that string.
-        address pc = fst.current()->pc();
-        nmethod* nm =  (nmethod*) fst.current()->cb();
+        address    pc = fst.current()->pc();
+        nmethod*   nm = fst.current()->cb()->as_nmethod();
         ScopeDesc* sd = nm->scope_desc_at(pc);
         char buffer[8];
         jio_snprintf(buffer, sizeof(buffer), "%d", sd->bci());
@@ -1294,6 +1345,7 @@ void JavaThread::make_zombies() {
     if (fst.current()->can_be_deoptimized()) {
       // it is a Java nmethod
       nmethod* nm = CodeCache::find_nmethod(fst.current()->pc());
+      assert(nm != nullptr, "did not find nmethod");
       nm->make_not_entrant();
     }
   }
@@ -1342,7 +1394,7 @@ void JavaThread::pop_jni_handle_block() {
   JNIHandleBlock::release_block(old_handles, this);
 }
 
-void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
+void JavaThread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
   // Verify that the deferred card marks have been flushed.
   assert(deferred_card_mark().is_empty(), "Should be empty during GC");
 
@@ -1378,6 +1430,10 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   f->do_oop((oop*) &_exception_oop);
 #if INCLUDE_JVMCI
   f->do_oop((oop*) &_jvmci_reserved_oop0);
+
+  if (_live_nmethod != nullptr && cf != nullptr) {
+    cf->do_nmethod(_live_nmethod);
+  }
 #endif
 
   if (jvmti_thread_state() != nullptr) {
@@ -1400,7 +1456,7 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   }
 }
 
-void JavaThread::oops_do_frames(OopClosure* f, CodeBlobClosure* cf) {
+void JavaThread::oops_do_frames(OopClosure* f, NMethodClosure* cf) {
   if (!has_last_Java_frame()) {
     return;
   }
@@ -1419,20 +1475,26 @@ void JavaThread::verify_states_for_handshake() {
 }
 #endif
 
-void JavaThread::nmethods_do(CodeBlobClosure* cf) {
+void JavaThread::nmethods_do(NMethodClosure* cf) {
   DEBUG_ONLY(verify_frame_info();)
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current());)
 
   if (has_last_Java_frame()) {
     // Traverse the execution stack
     for (StackFrameStream fst(this, true /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
-      fst.current()->nmethods_do(cf);
+      fst.current()->nmethod_do(cf);
     }
   }
 
   if (jvmti_thread_state() != nullptr) {
     jvmti_thread_state()->nmethods_do(cf);
   }
+
+#if INCLUDE_JVMCI
+  if (_live_nmethod != nullptr) {
+    cf->do_nmethod(_live_nmethod);
+  }
+#endif
 }
 
 void JavaThread::metadata_do(MetadataClosure* f) {
@@ -1455,7 +1517,7 @@ void JavaThread::metadata_do(MetadataClosure* f) {
 }
 
 // Printing
-const char* _get_thread_state_name(JavaThreadState _thread_state) {
+static const char* _get_thread_state_name(JavaThreadState _thread_state) {
   switch (_thread_state) {
   case _thread_uninitialized:     return "_thread_uninitialized";
   case _thread_new:               return "_thread_new";
@@ -1540,9 +1602,11 @@ void JavaThread::print_on_error(outputStream* st, char *buf, int buflen) const {
   if (osthread()) {
     st->print(", id=%d", osthread()->thread_id());
   }
+  // Use raw field members for stack base/size as this could be
+  // called before a thread has run enough to initialize them.
   st->print(", stack(" PTR_FORMAT "," PTR_FORMAT ") (" PROPERFMT ")",
-            p2i(stack_end()), p2i(stack_base()),
-            PROPERFMTARGS(stack_size()));
+            p2i(_stack_base - _stack_size), p2i(_stack_base),
+            PROPERFMTARGS(_stack_size));
   st->print("]");
 
   ThreadsSMRSupport::print_info_on(this, st);
@@ -1948,17 +2012,23 @@ void JavaThread::trace_stack() {
 
 #endif // PRODUCT
 
+// Slow-path increment of the held monitor counts. JNI locking is always
+// this slow-path.
 void JavaThread::inc_held_monitor_count(intx i, bool jni) {
 #ifdef SUPPORT_MONITOR_COUNT
-  assert(_held_monitor_count >= 0, "Must always be greater than 0: " INTX_FORMAT, _held_monitor_count);
+  assert(_held_monitor_count >= 0, "Must always be non-negative: " INTX_FORMAT, _held_monitor_count);
   _held_monitor_count += i;
   if (jni) {
-    assert(_jni_monitor_count >= 0, "Must always be greater than 0: " INTX_FORMAT, _jni_monitor_count);
+    assert(_jni_monitor_count >= 0, "Must always be non-negative: " INTX_FORMAT, _jni_monitor_count);
     _jni_monitor_count += i;
   }
+  assert(_held_monitor_count >= _jni_monitor_count, "Monitor count discrepancy detected - held count "
+         INTX_FORMAT " is less than JNI count " INTX_FORMAT, _held_monitor_count, _jni_monitor_count);
 #endif
 }
 
+// Slow-path decrement of the held monitor counts. JNI unlocking is always
+// this slow-path.
 void JavaThread::dec_held_monitor_count(intx i, bool jni) {
 #ifdef SUPPORT_MONITOR_COUNT
   _held_monitor_count -= i;
@@ -1967,6 +2037,12 @@ void JavaThread::dec_held_monitor_count(intx i, bool jni) {
     _jni_monitor_count -= i;
     assert(_jni_monitor_count >= 0, "Must always be greater than 0: " INTX_FORMAT, _jni_monitor_count);
   }
+  // When a thread is detaching with still owned JNI monitors, the logic that releases
+  // the monitors doesn't know to set the "jni" flag and so the counts can get out of sync.
+  // So we skip this assert if the thread is exiting. Once all monitors are unlocked the
+  // JNI count is directly set to zero.
+  assert(_held_monitor_count >= _jni_monitor_count || is_exiting(), "Monitor count discrepancy detected - held count "
+         INTX_FORMAT " is less than JNI count " INTX_FORMAT, _held_monitor_count, _jni_monitor_count);
 #endif
 }
 
@@ -2155,6 +2231,8 @@ void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
   // on a ThreadsList. We don't want to wait for the release when the
   // Theads_lock is dropped when the 'mu' destructor is run since the
   // JavaThread* is already visible to JVM/TI via the ThreadsList.
+
+  assert(java_lang_Thread::thread(thread_oop()) == nullptr, "must not be alive");
   java_lang_Thread::release_set_thread(thread_oop(), target); // isAlive == true now
   Thread::start(target);
 }

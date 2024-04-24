@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 // no precompiled headers
 #include "asm/assembler.inline.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
@@ -324,18 +323,23 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // here if the underlying file has been truncated.
         // Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
-        CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
-        if ((nm != nullptr && nm->has_unsafe_access()) || (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc))) {
+        nmethod* nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
+        if ((nm != nullptr && nm->has_unsafe_access()) ||
+            (thread->doing_unsafe_access() &&
+             UnsafeMemoryAccess::contains_pc(pc))) {
           unsafe_access = true;
         }
       } else if (sig == SIGSEGV &&
                  MacroAssembler::uses_implicit_null_check(info->si_addr)) {
-          // Determination of interpreter/vtable stub/compiled code null exception
-          CodeBlob* cb = CodeCache::find_blob(pc);
-          if (cb != nullptr) {
-            stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
-          }
-      } else if (sig == SIGILL && *(int *)pc == NativeInstruction::not_entrant_illegal_instruction) {
+        // Determination of interpreter/vtable stub/compiled code null exception
+        CodeBlob* cb = CodeCache::find_blob(pc);
+        if (cb != nullptr) {
+          stub = SharedRuntime::continuation_for_implicit_exception(
+              thread, pc, SharedRuntime::IMPLICIT_NULL);
+        }
+      } else if (sig == SIGILL &&
+                 *(int*)pc ==
+                     NativeInstruction::not_entrant_illegal_instruction) {
         // Not entrant
         stub = SharedRuntime::get_handle_wrong_method_stub();
       }
@@ -360,8 +364,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     // any other suitable exception reason,
     // so assume it is an unsafe access.
     address next_pc = pc + Assembler::InstructionSize;
-    if (UnsafeCopyMemory::contains_pc(pc)) {
-      next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+    if (UnsafeMemoryAccess::contains_pc(pc)) {
+      next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
     }
 #ifdef __thumb__
     if (uc->uc_mcontext.arm_cpsr & PSR_T_BIT) {

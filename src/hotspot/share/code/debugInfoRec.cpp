@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,7 @@ void DebugInformationRecorder::add_non_safepoint(int pc_offset) {
 
 void DebugInformationRecorder::add_new_pc_offset(int pc_offset) {
   assert(_pcs_length == 0 || last_pc()->pc_offset() < pc_offset,
-         "must specify a new, larger pc offset");
+         "must specify a new, larger pc offset: %d >= %d", last_pc()->pc_offset(), pc_offset);
 
   // add the pcdesc
   if (_pcs_length == _pcs_size) {
@@ -244,14 +244,11 @@ static
 struct dir_stats_struct {
   int chunks_queried;
   int chunks_shared;
-  int chunks_reshared;
   int chunks_elided;
 
   void print() {
-    tty->print_cr("Debug Data Chunks: %d, shared %d+%d, non-SP's elided %d",
-                  chunks_queried,
-                  chunks_shared, chunks_reshared,
-                  chunks_elided);
+    tty->print_cr("Debug Data Chunks: %d, shared %d, non-SP's elided %d",
+                  chunks_queried, chunks_shared, chunks_elided);
   }
 } dir_stats;
 #endif //PRODUCT

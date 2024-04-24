@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
-#include "opto/superword.hpp"
+#include "opto/vectorization.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -792,13 +792,14 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   }
 #endif
 
-  jlong stride_con = head->stride_con();
-  assert(stride_con != 0, "missed some peephole opt");
+  jlong stride_con_long = head->stride_con();
+  assert(stride_con_long != 0, "missed some peephole opt");
   // We can't iterate for more than max int at a time.
-  if (stride_con != (jint)stride_con) {
+  if (stride_con_long != (jint)stride_con_long || stride_con_long == min_jint) {
     assert(bt == T_LONG, "only for long loops");
     return false;
   }
+  jint stride_con = checked_cast<jint>(stride_con_long);
   // The number of iterations for the integer count loop: guarantee no
   // overflow: max_jint - stride_con max. -1 so there's no need for a
   // loop limit check if the exit test is <= or >=.
@@ -940,11 +941,19 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   // inner_iters_max may not fit in a signed integer (iterating from
   // Long.MIN_VALUE to Long.MAX_VALUE for instance). Use an unsigned
   // min.
-  Node* inner_iters_actual = MaxNode::unsigned_min(inner_iters_max, inner_iters_limit, TypeInteger::make(0, iters_limit, Type::WidenMin, bt), _igvn);
+  const TypeInteger* inner_iters_actual_range = TypeInteger::make(0, iters_limit, Type::WidenMin, bt);
+  Node* inner_iters_actual = MaxNode::unsigned_min(inner_iters_max, inner_iters_limit, inner_iters_actual_range, _igvn);
 
   Node* inner_iters_actual_int;
   if (bt == T_LONG) {
     inner_iters_actual_int = new ConvL2INode(inner_iters_actual);
+    _igvn.register_new_node_with_optimizer(inner_iters_actual_int);
+    // When the inner loop is transformed to a counted loop, a loop limit check is not expected to be needed because
+    // the loop limit is less or equal to max_jint - stride - 1 (if stride is positive but a similar argument exists for
+    // a negative stride). We add a CastII here to guarantee that, when the counted loop is created in a subsequent loop
+    // opts pass, an accurate range of values for the limits is found.
+    const TypeInt* inner_iters_actual_int_range = TypeInt::make(0, iters_limit, Type::WidenMin);
+    inner_iters_actual_int = new CastIINode(outer_head, inner_iters_actual_int, inner_iters_actual_int_range, ConstraintCastNode::UnconditionalDependency);
     _igvn.register_new_node_with_optimizer(inner_iters_actual_int);
   } else {
     inner_iters_actual_int = inner_iters_actual;
@@ -958,7 +967,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   }
 
   // Clone the iv data nodes as an integer iv
-  Node* int_stride = _igvn.intcon(checked_cast<int>(stride_con));
+  Node* int_stride = _igvn.intcon(stride_con);
   set_ctrl(int_stride, C->root());
   Node* inner_phi = new PhiNode(x->in(0), TypeInt::INT);
   Node* inner_incr = new AddINode(inner_phi, int_stride);
@@ -1053,7 +1062,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     register_new_node(outer_phi, outer_head);
   }
 
-  transform_long_range_checks(checked_cast<int>(stride_con), range_checks, outer_phi, inner_iters_actual_int,
+  transform_long_range_checks(stride_con, range_checks, outer_phi, inner_iters_actual_int,
                               inner_phi, iv_add, inner_head);
   // Peel one iteration of the loop and use the safepoint at the end
   // of the peeled iteration to insert Parse Predicates. If no well
@@ -1090,7 +1099,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   return true;
 }
 
-int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong stride_con, int iters_limit, PhiNode* phi,
+int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jint stride_con, int iters_limit, PhiNode* phi,
                                               Node_List& range_checks) {
   const jlong min_iters = 2;
   jlong reduced_iters_limit = iters_limit;
@@ -1106,7 +1115,9 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
         jlong scale = 0;
         if (loop->is_range_check_if(if_proj, this, T_LONG, phi, range, offset, scale) &&
             loop->is_invariant(range) && loop->is_invariant(offset) &&
-            original_iters_limit / ABS(scale * stride_con) >= min_iters) {
+            scale != min_jlong &&
+            original_iters_limit / ABS(scale) >= min_iters * ABS(stride_con)) {
+          assert(scale == (jint)scale, "scale should be an int");
           reduced_iters_limit = MIN2(reduced_iters_limit, original_iters_limit/ABS(scale));
           range_checks.push(c);
         }
@@ -4359,8 +4370,8 @@ void PhaseIdealLoop::collect_useful_template_assertion_predicates_for_loop(Ideal
 }
 
 void PhaseIdealLoop::eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates) {
-  for (int i = 0; i < C->template_assertion_predicate_count(); i++) {
-    Node* opaque4 = C->template_assertion_predicate_opaq_node(i);
+  for (int i = C->template_assertion_predicate_count(); i > 0; i--) {
+    Node* opaque4 = C->template_assertion_predicate_opaq_node(i - 1);
     assert(opaque4->Opcode() == Op_Opaque4, "must be");
     if (!useful_predicates.member(opaque4)) { // not in the useful list
       _igvn.replace_node(opaque4, opaque4->in(2));
@@ -4863,29 +4874,30 @@ void PhaseIdealLoop::build_and_optimize() {
      C->set_major_progress();
   }
 
-  // Convert scalar to superword operations at the end of all loop opts.
+  // Auto-vectorize main-loop
   if (C->do_superword() && C->has_loops() && !C->major_progress()) {
-    // SuperWord transform
-    SuperWord sw(this);
+    Compile::TracePhase tp("autoVectorize", &timers[_t_autoVectorize]);
+
+    // Shared data structures for all AutoVectorizations, to reduce allocations
+    // of large arrays.
+    VSharedData vshared;
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
-      if (lpt->is_counted()) {
-        CountedLoopNode *cl = lpt->_head->as_CountedLoop();
-        if (cl->is_main_loop()) {
-          if (!sw.transform_loop(lpt, true)) {
-            // Instigate more unrolling for optimization when vectorization fails.
-            if (cl->has_passed_slp()) {
-              C->set_major_progress();
-              cl->set_notpassed_slp();
-              cl->mark_do_unroll_only();
-            }
-          }
+      AutoVectorizeStatus status = auto_vectorize(lpt, vshared);
+
+      if (status == AutoVectorizeStatus::TriedAndFailed) {
+        // We tried vectorization, but failed. From now on only unroll the loop.
+        CountedLoopNode* cl = lpt->_head->as_CountedLoop();
+        if (cl->has_passed_slp()) {
+          C->set_major_progress();
+          cl->set_notpassed_slp();
+          cl->mark_do_unroll_only();
         }
       }
     }
   }
 
-  // Move UnorderedReduction out of counted loop. Can be introduced by SuperWord.
+  // Move UnorderedReduction out of counted loop. Can be introduced by AutoVectorization.
   if (C->has_loops() && !C->major_progress()) {
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
@@ -5070,7 +5082,7 @@ bool PhaseIdealLoop::verify_loop_ctrl(Node* n, const PhaseIdealLoop* phase_verif
   }
 }
 
-int compare_tree(IdealLoopTree* const& a, IdealLoopTree* const& b) {
+static int compare_tree(IdealLoopTree* const& a, IdealLoopTree* const& b) {
   assert(a != nullptr && b != nullptr, "must be");
   return a->_head->_idx - b->_head->_idx;
 }
@@ -5961,30 +5973,6 @@ CountedLoopEndNode* CountedLoopNode::find_pre_loop_end() {
   }
   return pre_end;
 }
-
-  CountedLoopNode* CountedLoopNode::pre_loop_head() const {
-    assert(is_main_loop(), "Only main loop has pre loop");
-    assert(_pre_loop_end != nullptr && _pre_loop_end->loopnode() != nullptr,
-           "should find head from pre loop end");
-    return _pre_loop_end->loopnode();
-  }
-
-  CountedLoopEndNode* CountedLoopNode::pre_loop_end() {
-#ifdef ASSERT
-    assert(is_main_loop(), "Only main loop has pre loop");
-    assert(_pre_loop_end != nullptr, "should be set when fetched");
-    Node* found_pre_end = find_pre_loop_end();
-    assert(_pre_loop_end == found_pre_end && _pre_loop_end == pre_loop_head()->loopexit(),
-           "should find the pre loop end and must be the same result");
-#endif
-    return _pre_loop_end;
-  }
-
-  void CountedLoopNode::set_pre_loop_end(CountedLoopEndNode* pre_loop_end) {
-    assert(is_main_loop(), "Only main loop has pre loop");
-    assert(pre_loop_end, "must be valid");
-    _pre_loop_end = pre_loop_end;
-  }
 
 //------------------------------get_late_ctrl----------------------------------
 // Compute latest legal control.

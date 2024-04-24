@@ -951,6 +951,92 @@ address StubGenerator::generate_fp_mask(const char *stub_name, int64_t mask) {
   return start;
 }
 
+address StubGenerator::generate_compress_perm_table(const char *stub_name, int32_t esize) {
+  __ align(CodeEntryAlignment);
+  StubCodeMark mark(this, "StubRoutines", stub_name);
+  address start = __ pc();
+  if (esize == 32) {
+    // Loop to generate 256 x 8 int compression permute index table. A row is
+    // accessed using 8 bit index computed using vector mask. An entry in
+    // a row holds either a valid permute index corresponding to set bit position
+    // or a -1 (default) value.
+    for (int mask = 0; mask < 256; mask++) {
+      int ctr = 0;
+      for (int j = 0; j < 8; j++) {
+        if (mask & (1 << j)) {
+          __ emit_data(j, relocInfo::none);
+          ctr++;
+        }
+      }
+      for (; ctr < 8; ctr++) {
+        __ emit_data(-1, relocInfo::none);
+      }
+    }
+  } else {
+    assert(esize == 64, "");
+    // Loop to generate 16 x 4 long compression permute index table. A row is
+    // accessed using 4 bit index computed using vector mask. An entry in
+    // a row holds either a valid permute index pair for a quadword corresponding
+    // to set bit position or a -1 (default) value.
+    for (int mask = 0; mask < 16; mask++) {
+      int ctr = 0;
+      for (int j = 0; j < 4; j++) {
+        if (mask & (1 << j)) {
+          __ emit_data(2 * j, relocInfo::none);
+          __ emit_data(2 * j + 1, relocInfo::none);
+          ctr++;
+        }
+      }
+      for (; ctr < 4; ctr++) {
+        __ emit_data64(-1L, relocInfo::none);
+      }
+    }
+  }
+  return start;
+}
+
+address StubGenerator::generate_expand_perm_table(const char *stub_name, int32_t esize) {
+  __ align(CodeEntryAlignment);
+  StubCodeMark mark(this, "StubRoutines", stub_name);
+  address start = __ pc();
+  if (esize == 32) {
+    // Loop to generate 256 x 8 int expand permute index table. A row is accessed
+    // using 8 bit index computed using vector mask. An entry in a row holds either
+    // a valid permute index (starting from least significant lane) placed at poisition
+    // corresponding to set bit position or a -1 (default) value.
+    for (int mask = 0; mask < 256; mask++) {
+      int ctr = 0;
+      for (int j = 0; j < 8; j++) {
+        if (mask & (1 << j)) {
+          __ emit_data(ctr++, relocInfo::none);
+        } else {
+          __ emit_data(-1, relocInfo::none);
+        }
+      }
+    }
+  } else {
+    assert(esize == 64, "");
+    // Loop to generate 16 x 4 long expand permute index table. A row is accessed
+    // using 4 bit index computed using vector mask. An entry in a row holds either
+    // a valid doubleword permute index pair representing a quadword index (starting
+    // from least significant lane) placed at poisition corresponding to set bit
+    // position or a -1 (default) value.
+    for (int mask = 0; mask < 16; mask++) {
+      int ctr = 0;
+      for (int j = 0; j < 4; j++) {
+        if (mask & (1 << j)) {
+          __ emit_data(2 * ctr, relocInfo::none);
+          __ emit_data(2 * ctr + 1, relocInfo::none);
+          ctr++;
+        } else {
+          __ emit_data64(-1L, relocInfo::none);
+        }
+      }
+    }
+  }
+  return start;
+}
+
 address StubGenerator::generate_vector_mask(const char *stub_name, int64_t mask) {
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, "StubRoutines", stub_name);
@@ -3908,6 +3994,54 @@ address StubGenerator::generate_upcall_stub_exception_handler() {
   return start;
 }
 
+address StubGenerator::generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
+  StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table");
+
+  address start = __ pc();
+
+  const Register
+      r_super_klass = rax,
+      r_sub_klass   = rsi,
+      result        = rdi;
+
+  __ lookup_secondary_supers_table(r_sub_klass, r_super_klass,
+                                   rdx, rcx, rbx, r11, // temps
+                                   result,
+                                   super_klass_index);
+  __ ret(0);
+
+  return start;
+}
+
+// Slow path implementation for UseSecondarySupersTable.
+address StubGenerator::generate_lookup_secondary_supers_table_slow_path_stub() {
+  StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table");
+
+  address start = __ pc();
+
+  const Register
+      r_super_klass  = rax,
+      r_array_base   = rbx,
+      r_array_index  = rdx,
+      r_sub_klass    = rsi,
+      r_bitmap       = r11,
+      result         = rdi;
+
+  Label L_success;
+  __ lookup_secondary_supers_table_slow_path(r_super_klass, r_array_base, r_array_index, r_bitmap,
+                                             rcx, rdi, // temps
+                                             &L_success);
+  // bind(L_failure);
+  __ movl(result, 1);
+  __ ret(0);
+
+  __ bind(L_success);
+  __ movl(result, 0);
+  __ ret(0);
+
+  return start;
+}
+
 void StubGenerator::create_control_words() {
   // Round to nearest, 64-bit mode, exceptions masked, flags specialized
   StubRoutines::x86::_mxcsr_std = EnableX86ECoreOpts ? 0x1FBF : 0x1F80;
@@ -3923,8 +4057,8 @@ void StubGenerator::generate_initial_stubs() {
   create_control_words();
 
   // Initialize table for unsafe copy memeory check.
-  if (UnsafeCopyMemory::_table == nullptr) {
-    UnsafeCopyMemory::create_table(16);
+  if (UnsafeMemoryAccess::_table == nullptr) {
+    UnsafeMemoryAccess::create_table(16 + 4); // 16 for copyMemory; 4 for setMemory
   }
 
   // entry points that exist in all platforms Note: This is code
@@ -4095,6 +4229,13 @@ void StubGenerator::generate_compiler_stubs() {
   StubRoutines::x86::_vector_reverse_byte_perm_mask_int = generate_vector_reverse_byte_perm_mask_int("perm_mask_int");
   StubRoutines::x86::_vector_reverse_byte_perm_mask_short = generate_vector_reverse_byte_perm_mask_short("perm_mask_short");
 
+  if (VM_Version::supports_avx2() && !VM_Version::supports_avx512vl()) {
+    StubRoutines::x86::_compress_perm_table32 = generate_compress_perm_table("compress_perm_table32", 32);
+    StubRoutines::x86::_compress_perm_table64 = generate_compress_perm_table("compress_perm_table64", 64);
+    StubRoutines::x86::_expand_perm_table32 = generate_expand_perm_table("expand_perm_table32", 32);
+    StubRoutines::x86::_expand_perm_table64 = generate_expand_perm_table("expand_perm_table64", 64);
+  }
+
   if (VM_Version::supports_avx2() && !VM_Version::supports_avx512_vpopcntdq()) {
     // lut implementation influenced by counting 1s algorithm from section 5-1 of Hackers' Delight.
     StubRoutines::x86::_vector_popcount_lut = generate_popcount_avx_lut("popcount_lut");
@@ -4185,6 +4326,14 @@ void StubGenerator::generate_compiler_stubs() {
   if (VM_Version::supports_avx512_vbmi2()) {
     StubRoutines::_bigIntegerRightShiftWorker = generate_bigIntegerRightShift();
     StubRoutines::_bigIntegerLeftShiftWorker = generate_bigIntegerLeftShift();
+  }
+  if (UseSecondarySupersTable) {
+    StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
+    if (! InlineSecondarySupersTest) {
+      for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
+        StubRoutines::_lookup_secondary_supers_table_stubs[slot] = generate_lookup_secondary_supers_table_stub(slot);
+      }
+    }
   }
   if (UseMontgomeryMultiplyIntrinsic) {
     StubRoutines::_montgomeryMultiply
@@ -4279,6 +4428,7 @@ void StubGenerator::generate_compiler_stubs() {
       StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_256][op] = (address)os::dll_lookup(libjsvml, ebuf);
     }
   }
+
 #endif // COMPILER2
 #endif // COMPILER2_OR_JVMCI
 }

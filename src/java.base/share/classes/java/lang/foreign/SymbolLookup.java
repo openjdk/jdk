@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import jdk.internal.reflect.Reflection;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -79,7 +80,7 @@ import java.util.function.BiFunction;
  * {@snippet lang = java:
  * try (Arena arena = Arena.ofConfined()) {
  *     SymbolLookup libGL = SymbolLookup.libraryLookup("libGL.so", arena); // libGL.so loaded here
- *     MemorySegment glGetString = libGL.find("glGetString").orElseThrow();
+ *     MemorySegment glGetString = libGL.findOrThrow("glGetString");
  *     ...
  * } //  libGL.so unloaded here
  *}
@@ -93,7 +94,7 @@ import java.util.function.BiFunction;
  * System.loadLibrary("GL"); // libGL.so loaded here
  * ...
  * SymbolLookup libGL = SymbolLookup.loaderLookup();
- * MemorySegment glGetString = libGL.find("glGetString").orElseThrow();
+ * MemorySegment glGetString = libGL.findOrThrow("glGetString");
  * }
  *
  * This symbol lookup, which is known as a <em>loader lookup</em>, is dynamic with
@@ -130,7 +131,7 @@ import java.util.function.BiFunction;
  * {@snippet lang = java:
  * Linker nativeLinker = Linker.nativeLinker();
  * SymbolLookup stdlib = nativeLinker.defaultLookup();
- * MemorySegment malloc = stdlib.find("malloc").orElseThrow();
+ * MemorySegment malloc = stdlib.findOrThrow("malloc");
  *}
  *
  * @since 22
@@ -144,8 +145,39 @@ public interface SymbolLookup {
      * @param name the symbol name
      * @return a zero-length memory segment whose address indicates the address of
      *         the symbol, if found
+     * @see #findOrThrow(String)
      */
     Optional<MemorySegment> find(String name);
+
+    /**
+     * Returns the address of the symbol with the given name or throws an exception.
+     *<p>
+     * This is equivalent to the following code, but is more efficient:
+     * to:
+     * {@snippet lang= java :
+     *    String name = ...
+     *    MemorySegment address = lookup.find(name)
+     *        .orElseThrow(() -> new NoSuchElementException("Symbol not found: " + name));
+     * }
+     *
+     * @param name the symbol name
+     * @return a zero-length memory segment whose address indicates the address of
+     *         the symbol
+     * @throws NoSuchElementException if no symbol address can be found for the
+     *         given name
+     * @see #find(String)
+     *
+     * @since 23
+     */
+    default MemorySegment findOrThrow(String name) {
+        Objects.requireNonNull(name);
+        Optional<MemorySegment> address = find(name);
+        // Avoid lambda capturing
+        if (address.isPresent()) {
+            return address.get();
+        }
+        throw new NoSuchElementException("Symbol not found: " + name);
+    }
 
     /**
      * {@return a composed symbol lookup that returns the result of finding the symbol
@@ -205,6 +237,7 @@ public interface SymbolLookup {
      * @see System#loadLibrary(String)
      */
     @CallerSensitive
+    @SuppressWarnings("restricted")
     static SymbolLookup loaderLookup() {
         Class<?> caller = Reflection.getCallerClass();
         // If there's no caller class, fallback to system loader
@@ -227,7 +260,7 @@ public interface SymbolLookup {
             return addr == 0L ?
                     Optional.empty() :
                     Optional.of(MemorySegment.ofAddress(addr)
-                                    .reinterpret(loaderArena, null));
+                                .reinterpret(loaderArena, null)); // restricted
         };
     }
 
@@ -300,6 +333,7 @@ public interface SymbolLookup {
         return libraryLookup(path, RawNativeLibraries::load, arena);
     }
 
+    @SuppressWarnings("restricted")
     private static <Z>
     SymbolLookup libraryLookup(Z libDesc,
                                BiFunction<RawNativeLibraries, Z, NativeLibrary> loadLibraryFunc,
@@ -327,7 +361,7 @@ public interface SymbolLookup {
             return addr == 0L ?
                     Optional.empty() :
                     Optional.of(MemorySegment.ofAddress(addr)
-                            .reinterpret(libArena, null));
+                                .reinterpret(libArena, null));  // restricted
         };
     }
 }

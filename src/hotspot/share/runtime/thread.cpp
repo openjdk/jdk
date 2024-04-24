@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -399,7 +399,7 @@ bool Thread::claim_par_threads_do(uintx claim_token) {
   return false;
 }
 
-void Thread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
+void Thread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
   // Do oop for ThreadShadow
   f->do_oop((oop*)&_pending_exception);
   handle_area()->oops_do(f);
@@ -429,7 +429,7 @@ public:
   }
 };
 
-void Thread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
+void Thread::oops_do(OopClosure* f, NMethodClosure* cf) {
   // Record JavaThread to GC thread
   RememberProcessedThread rpt(this);
   oops_do_no_frames(f, cf);
@@ -491,9 +491,11 @@ void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
   if (os_thr != nullptr) {
     st->fill_to(67);
     if (os_thr->get_state() != ZOMBIE) {
+      // Use raw field members for stack base/size as this could be
+      // called before a thread has run enough to initialize them.
       st->print(" [id=%d, stack(" PTR_FORMAT "," PTR_FORMAT ") (" PROPERFMT ")]",
-                osthread()->thread_id(), p2i(stack_end()), p2i(stack_base()),
-                PROPERFMTARGS(stack_size()));
+                osthread()->thread_id(), p2i(_stack_base - _stack_size), p2i(_stack_base),
+                PROPERFMTARGS(_stack_size));
     } else {
       st->print(" terminated");
     }

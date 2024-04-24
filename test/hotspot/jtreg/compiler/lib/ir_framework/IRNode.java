@@ -819,7 +819,12 @@ public class IRNode {
 
     public static final String MAX = PREFIX + "MAX" + POSTFIX;
     static {
-        beforeMatchingNameRegex(MAX, "Max(I|L)");
+        beforeMatchingNameRegex(MAX, "Max(I|L|F|D)");
+    }
+
+    public static final String MAX_D = PREFIX + "MAX_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MAX_D, "MaxD");
     }
 
     public static final String MAX_D_REDUCTION_REG = PREFIX + "MAX_D_REDUCTION_REG" + POSTFIX;
@@ -830,6 +835,11 @@ public class IRNode {
     public static final String MAX_D_REG = PREFIX + "MAX_D_REG" + POSTFIX;
     static {
         machOnlyNameRegex(MAX_D_REG, "maxD_reg");
+    }
+
+    public static final String MAX_F = PREFIX + "MAX_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MAX_F, "MaxF");
     }
 
     public static final String MAX_F_REDUCTION_REG = PREFIX + "MAX_F_REDUCTION_REG" + POSTFIX;
@@ -867,6 +877,11 @@ public class IRNode {
         vectorNode(MAX_VD, "MaxV", TYPE_DOUBLE);
     }
 
+    public static final String MAX_VL = VECTOR_PREFIX + "MAX_VL" + POSTFIX;
+    static {
+        vectorNode(MAX_VL, "MaxV", TYPE_LONG);
+    }
+
     public static final String MEMBAR = PREFIX + "MEMBAR" + POSTFIX;
     static {
         beforeMatchingNameRegex(MEMBAR, "MemBar");
@@ -882,6 +897,11 @@ public class IRNode {
         beforeMatchingNameRegex(MIN, "Min(I|L)");
     }
 
+    public static final String MIN_D = PREFIX + "MIN_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MIN_D, "MinD");
+    }
+
     public static final String MIN_D_REDUCTION_REG = PREFIX + "MIN_D_REDUCTION_REG" + POSTFIX;
     static {
         machOnlyNameRegex(MIN_D_REDUCTION_REG, "minD_reduction_reg");
@@ -890,6 +910,11 @@ public class IRNode {
     public static final String MIN_D_REG = PREFIX + "MIN_D_REG" + POSTFIX;
     static {
         machOnlyNameRegex(MIN_D_REG, "minD_reg");
+    }
+
+    public static final String MIN_F = PREFIX + "MIN_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MIN_F, "MinF");
     }
 
     public static final String MIN_F_REDUCTION_REG = PREFIX + "MIN_F_REDUCTION_REG" + POSTFIX;
@@ -925,6 +950,11 @@ public class IRNode {
     public static final String MIN_VD = VECTOR_PREFIX + "MIN_VD" + POSTFIX;
     static {
         vectorNode(MIN_VD, "MinV", TYPE_DOUBLE);
+    }
+
+    public static final String MIN_VL = VECTOR_PREFIX + "MIN_VL" + POSTFIX;
+    static {
+        vectorNode(MIN_VL, "MinV", TYPE_LONG);
     }
 
     public static final String MUL = PREFIX + "MUL" + POSTFIX;
@@ -2066,6 +2096,12 @@ public class IRNode {
         machOnly(Z_STORE_P_WITH_BARRIER_FLAG, regex);
     }
 
+    public static final String Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG" + POSTFIX;
+    static {
+        String regex = START + "zCompareAndSwapP" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        machOnly(Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, regex);
+    }
+
     public static final String Z_GET_AND_SET_P_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "Z_GET_AND_SET_P_WITH_BARRIER_FLAG" + POSTFIX;
     static {
         String regex = START + "(zXChgP)|(zGetAndSetP\\S*)" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
@@ -2233,7 +2269,7 @@ public class IRNode {
      */
     private static void fromMacroToBeforeMatching(String irNodePlaceholder, String regex) {
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new SinglePhaseRangeEntry(CompilePhase.PRINT_IDEAL, regex,
-                                                                          CompilePhase.MACRO_EXPANSION,
+                                                                          CompilePhase.AFTER_MACRO_EXPANSION,
                                                                           CompilePhase.BEFORE_MATCHING));
     }
 

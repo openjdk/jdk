@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ namespace {
    public:
     MemoryReleaser(char* ptr, size_t size) : _ptr(ptr), _size(size) { }
     ~MemoryReleaser() {
-      if (_ptr != NULL) {
+      if (_ptr != nullptr) {
         os::release_memory_special(_ptr, _size);
       }
     }
@@ -53,7 +53,7 @@ namespace {
 // This is of course only some dodgy assumption, there is no guarantee that the vicinity of
 // the previously allocated memory is available for allocation. The only actual failure
 // that is reported is when the test tries to allocate at a particular location but gets a
-// different valid one. A NULL return value at this point is not considered an error but may
+// different valid one. A nullptr return value at this point is not considered an error but may
 // be legitimate.
 void TestReserveMemorySpecial_test() {
   if (!UseLargePages) {
@@ -67,8 +67,8 @@ void TestReserveMemorySpecial_test() {
   FLAG_SET_CMDLINE(UseNUMAInterleaving, false);
 
   const size_t large_allocation_size = os::large_page_size() * 4;
-  char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), os::large_page_size(), NULL, false);
-  if (result == NULL) {
+  char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), os::large_page_size(), nullptr, false);
+  if (result == nullptr) {
       // failed to allocate memory, skipping the test
       return;
   }
@@ -78,20 +78,20 @@ void TestReserveMemorySpecial_test() {
   const size_t expected_allocation_size = os::large_page_size();
   char* expected_location = result + os::large_page_size();
   char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, false);
-  EXPECT_TRUE(actual_location == NULL) << "Should not be allowed to reserve within present reservation";
+  EXPECT_TRUE(actual_location == nullptr) << "Should not be allowed to reserve within present reservation";
 
   // Instead try reserving after the first reservation.
   expected_location = result + large_allocation_size;
   actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, false);
-  EXPECT_TRUE(actual_location != NULL) << "Unexpected reservation failure, can’t verify correct location";
+  EXPECT_TRUE(actual_location != nullptr) << "Unexpected reservation failure, can’t verify correct location";
   EXPECT_TRUE(actual_location == expected_location) << "Reservation must be at requested location";
   MemoryReleaser m2(actual_location, os::large_page_size());
 
   // Now try to do a reservation with a larger alignment.
   const size_t alignment = os::large_page_size() * 2;
   const size_t new_large_size = alignment * 4;
-  char* aligned_request = os::reserve_memory_special(new_large_size, alignment, os::large_page_size(), NULL, false);
-  EXPECT_TRUE(aligned_request != NULL) << "Unexpected reservation failure, can’t verify correct alignment";
+  char* aligned_request = os::reserve_memory_special(new_large_size, alignment, os::large_page_size(), nullptr, false);
+  EXPECT_TRUE(aligned_request != nullptr) << "Unexpected reservation failure, can’t verify correct alignment";
   EXPECT_TRUE(is_aligned(aligned_request, alignment)) << "Returned address must be aligned";
   MemoryReleaser m3(aligned_request, new_large_size);
 }
@@ -139,7 +139,7 @@ static bool file_exists_w(const wchar_t* path) {
 static void create_rel_directory_w(const wchar_t* path) {
   WITH_ABS_PATH(path);
   EXPECT_FALSE(file_exists_w(abs_path)) <<  "Can't create directory: \"" << path << "\" already exists";
-  BOOL result = CreateDirectoryW(abs_path, NULL);
+  BOOL result = CreateDirectoryW(abs_path, nullptr);
   EXPECT_TRUE(result) << "Failed to create directory \"" << path << "\" " << GetLastError();
 }
 
@@ -165,7 +165,7 @@ static void delete_empty_rel_directory_w(const wchar_t* path) {
 static void create_rel_file_w(const wchar_t* path) {
   WITH_ABS_PATH(path);
   EXPECT_FALSE(file_exists_w(abs_path)) << "Can't create file: \"" << path << "\" already exists";
-  HANDLE h = CreateFileW(abs_path, 0, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+  HANDLE h = CreateFileW(abs_path, 0, 0, nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);
   EXPECT_NE(h, INVALID_HANDLE_VALUE) << "Failed to create file \"" << path << "\": " << GetLastError();
   CloseHandle(h);
 }
@@ -218,7 +218,7 @@ static bool unnormalize_path(wchar_t* result, size_t size, bool is_dir, const wc
   } else if (wcsncmp(src, L"\\\\", 2) == 0) {
     path_start = wcschr(src + 2, L'?');
 
-    if (path_start == NULL) {
+    if (path_start == nullptr) {
       path_start = wcschr(src + 2, L'\\');
     } else {
       path_start = wcschr(path_start, L'\\');
@@ -245,7 +245,7 @@ static bool unnormalize_path(wchar_t* result, size_t size, bool is_dir, const wc
           const wchar_t* replacement = sep_replacements[i];
           dest = my_wcscpy_s(dest - 1, size,  result, replacement);
         }
-      } else if (path_start != NULL) {
+      } else if (path_start != nullptr) {
         if (allow_dotdot_change && (src > path_start + 1) && ((os::random() & 7) == 7)) {
           wchar_t const* last_sep = src - 2;
 
@@ -397,7 +397,7 @@ static void bench_path(wchar_t* path) {
         size_t buf_len = strlen(buf);
         wchar_t* w_path = (wchar_t*) os::malloc(sizeof(wchar_t) * (buf_len + 1), mtInternal);
 
-        if (w_path != NULL) {
+        if (w_path != nullptr) {
           size_t converted_chars;
           if (::mbstowcs_s(&converted_chars, w_path, buf_len + 1, buf, buf_len) == ERROR_SUCCESS) {
             if (t == 1) {
@@ -417,7 +417,7 @@ static void bench_path(wchar_t* path) {
               }
               succ = false;
             }
-            HANDLE h = ::CreateFileW(w_path, 0, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+            HANDLE h = ::CreateFileW(w_path, 0, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
 
             if (h != INVALID_HANDLE_VALUE) {
               ::CloseHandle(h);
@@ -439,7 +439,7 @@ static void bench_path(wchar_t* path) {
     jlong ctime = os::javaTimeNanos();
 
     for (int i = 0; i < reps; ++i) {
-      HANDLE h = ::CreateFileA(buf, 0, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+      HANDLE h = ::CreateFileA(buf, 0, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
 
       if (h == INVALID_HANDLE_VALUE) {
         return;

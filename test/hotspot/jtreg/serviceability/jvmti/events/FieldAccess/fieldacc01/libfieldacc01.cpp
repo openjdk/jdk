@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
@@ -65,45 +65,45 @@ static volatile jboolean isVirtualExpected = JNI_FALSE;
 static volatile int eventsExpected = 0;
 static volatile int eventsCount = 0;
 static watch_info watches[] = {
-    { NULL, "Lfieldacc01a;", "run", "()I", 2,
+    { nullptr, "Lfieldacc01a;", "run", "()I", 2,
         "Lfieldacc01a;", "staticBoolean", "Z", JNI_TRUE },
-    { NULL, "Lfieldacc01a;", "run", "()I", 6,
+    { nullptr, "Lfieldacc01a;", "run", "()I", 6,
         "Lfieldacc01a;", "instanceBoolean", "Z", JNI_FALSE },
-    { NULL, "Lfieldacc01a;",   "run", "()I", 15,
+    { nullptr, "Lfieldacc01a;",   "run", "()I", 15,
         "Lfieldacc01a;", "staticByte", "B", JNI_TRUE },
-    { NULL, "Lfieldacc01a;", "run", "()I", 19,
+    { nullptr, "Lfieldacc01a;", "run", "()I", 19,
         "Lfieldacc01a;", "instanceByte", "B", JNI_FALSE },
-    { NULL, "Lfieldacc01a;", "run", "()I", 28,
+    { nullptr, "Lfieldacc01a;", "run", "()I", 28,
         "Lfieldacc01a;", "staticShort", "S", JNI_TRUE },
-    { NULL, "Lfieldacc01a;", "run", "()I", 32,
+    { nullptr, "Lfieldacc01a;", "run", "()I", 32,
         "Lfieldacc01a;", "instanceShort", "S", JNI_FALSE },
-    { NULL, "Lfieldacc01a;", "run", "()I", 41,
+    { nullptr, "Lfieldacc01a;", "run", "()I", 41,
         "Lfieldacc01a;", "staticInt", "I", JNI_TRUE },
-    { NULL, "Lfieldacc01a;", "run", "()I", 45,
+    { nullptr, "Lfieldacc01a;", "run", "()I", 45,
         "Lfieldacc01a;", "instanceInt", "I", JNI_FALSE },
-    { NULL, "Lfieldacc01a;", "run", "()I", 54,
+    { nullptr, "Lfieldacc01a;", "run", "()I", 54,
         "Lfieldacc01a;", "staticLong", "J", JNI_TRUE },
-    { NULL, "Lfieldacc01a;", "run", "()I", 58,
+    { nullptr, "Lfieldacc01a;", "run", "()I", 58,
         "Lfieldacc01a;", "instanceLong", "J", JNI_FALSE },
-    { NULL, "Lfieldacc01a;", "run", "()I", 68,
+    { nullptr, "Lfieldacc01a;", "run", "()I", 68,
         "Lfieldacc01a;", "staticFloat", "F", JNI_TRUE },
-    { NULL, "Lfieldacc01a;", "run", "()I", 72,
+    { nullptr, "Lfieldacc01a;", "run", "()I", 72,
         "Lfieldacc01a;", "instanceFloat", "F", JNI_FALSE },
-    { NULL, "Lfieldacc01a;", "run", "()I", 82,
+    { nullptr, "Lfieldacc01a;", "run", "()I", 82,
         "Lfieldacc01a;", "staticDouble", "D", JNI_TRUE },
-    { NULL, "Lfieldacc01a;", "run", "()I", 86,
+    { nullptr, "Lfieldacc01a;", "run", "()I", 86,
         "Lfieldacc01a;", "instanceDouble", "D", JNI_FALSE },
-    { NULL, "Lfieldacc01a;", "run", "()I", 96,
+    { nullptr, "Lfieldacc01a;", "run", "()I", 96,
         "Lfieldacc01a;", "staticChar", "C", JNI_TRUE },
-    { NULL, "Lfieldacc01a;", "run", "()I", 100,
+    { nullptr, "Lfieldacc01a;", "run", "()I", 100,
         "Lfieldacc01a;", "instanceChar", "C", JNI_FALSE },
-    { NULL, "Lfieldacc01a;", "run", "()I", 109,
+    { nullptr, "Lfieldacc01a;", "run", "()I", 109,
         "Lfieldacc01a;", "staticObject", "Ljava/lang/Object;", JNI_TRUE },
-    { NULL, "Lfieldacc01a;", "run", "()I", 113,
+    { nullptr, "Lfieldacc01a;", "run", "()I", 113,
         "Lfieldacc01a;", "instanceObject", "Ljava/lang/Object;", JNI_FALSE },
-    { NULL, "Lfieldacc01a;", "run", "()I", 122,
+    { nullptr, "Lfieldacc01a;", "run", "()I", 122,
         "Lfieldacc01a;", "staticArrInt", "[I", JNI_TRUE },
-    { NULL, "Lfieldacc01a;", "run", "()I", 128,
+    { nullptr, "Lfieldacc01a;", "run", "()I", 128,
         "Lfieldacc01a;", "instanceArrInt", "[I", JNI_FALSE }
 };
 
@@ -121,7 +121,7 @@ void JNICALL FieldAccess(jvmtiEnv *jvmti, JNIEnv *jni,
 
   watch.fid = field;
   watch.loc = location;
-  watch.is_static = (obj == NULL) ? JNI_TRUE : JNI_FALSE;
+  watch.is_static = (obj == nullptr) ? JNI_TRUE : JNI_FALSE;
   err = jvmti->GetMethodDeclaringClass(method, &cls);
   if (err != JVMTI_ERROR_NONE) {
     LOG("(GetMethodDeclaringClass) unexpected error: %s (%d)\n", TranslateError(err), err);
@@ -163,16 +163,16 @@ void JNICALL FieldAccess(jvmtiEnv *jvmti, JNIEnv *jni,
 
   for (size_t i = 0; i < sizeof(watches)/sizeof(watch_info); i++) {
     if (watch.fid == watches[i].fid) {
-      if (watch.m_cls == NULL || strcmp(watch.m_cls, watches[i].m_cls) != 0) {
+      if (watch.m_cls == nullptr || strcmp(watch.m_cls, watches[i].m_cls) != 0) {
         LOG("(watch#%" PRIuPTR ") wrong class: \"%s\", expected: \"%s\"\n", i, watch.m_cls, watches[i].m_cls);
         result = STATUS_FAILED;
       }
-      if (watch.m_name == NULL || strcmp(watch.m_name, watches[i].m_name) != 0) {
+      if (watch.m_name == nullptr || strcmp(watch.m_name, watches[i].m_name) != 0) {
         LOG("(watch#%" PRIuPTR ") wrong method name: \"%s\"", i, watch.m_name);
         LOG(", expected: \"%s\"\n", watches[i].m_name);
         result = STATUS_FAILED;
       }
-      if (watch.m_sig == NULL || strcmp(watch.m_sig, watches[i].m_sig) != 0) {
+      if (watch.m_sig == nullptr || strcmp(watch.m_sig, watches[i].m_sig) != 0) {
         LOG("(watch#%" PRIuPTR ") wrong method sig: \"%s\"", i, watch.m_sig);
         LOG(", expected: \"%s\"\n", watches[i].m_sig);
         result = STATUS_FAILED;
@@ -182,12 +182,12 @@ void JNICALL FieldAccess(jvmtiEnv *jvmti, JNIEnv *jni,
         LOG(", expected: 0x%x%08x\n", (jint)(watches[i].loc >> 32), (jint)watches[i].loc);
         result = STATUS_FAILED;
       }
-      if (watch.f_name == NULL || strcmp(watch.f_name, watches[i].f_name) != 0) {
+      if (watch.f_name == nullptr || strcmp(watch.f_name, watches[i].f_name) != 0) {
         LOG("(watch#%" PRIuPTR ") wrong field name: \"%s\"", i, watch.f_name);
         LOG(", expected: \"%s\"\n", watches[i].f_name);
         result = STATUS_FAILED;
       }
-      if (watch.f_sig == NULL || strcmp(watch.f_sig, watches[i].f_sig) != 0) {
+      if (watch.f_sig == nullptr || strcmp(watch.f_sig, watches[i].f_sig) != 0) {
         LOG("(watch#%" PRIuPTR ") wrong field sig: \"%s\"", i, watch.f_sig);
         LOG(", expected: \"%s\"\n", watches[i].f_sig);
         result = STATUS_FAILED;
@@ -216,7 +216,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jint res;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -245,7 +245,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
       return JNI_ERR;
     }
 
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FIELD_ACCESS, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FIELD_ACCESS, nullptr);
     if (err != JVMTI_ERROR_NONE) {
       LOG("Failed to enable JVMTI_EVENT_FIELD_ACCESS: %s (%d)\n", TranslateError(err), err);
       return JNI_ERR;
@@ -267,7 +267,7 @@ Java_fieldacc01_getReady(JNIEnv *jni, jclass klass) {
   LOG(">>> setting field access watches ...\n");
 
   cls = jni->FindClass("fieldacc01a");
-  if (cls == NULL) {
+  if (cls == nullptr) {
     LOG("Cannot find fieldacc01a class!\n");
     result = STATUS_FAILED;
     return;
@@ -289,7 +289,7 @@ Java_fieldacc01_getReady(JNIEnv *jni, jclass klass) {
     } else {
       watches[i].fid = jni->GetFieldID(cls, watches[i].f_name, watches[i].f_sig);
     }
-    if (watches[i].fid == NULL) {
+    if (watches[i].fid == nullptr) {
       LOG("Cannot find field \"%s\"!\n", watches[i].f_name);
       result = STATUS_FAILED;
       return;
@@ -317,7 +317,7 @@ Java_fieldacc01_check(JNIEnv *jni, jclass klass) {
   }
 
   cls = jni->FindClass("fieldacc01a");
-  if (cls == NULL) {
+  if (cls == nullptr) {
     LOG("Cannot find fieldacc01a class!\n");
     result = STATUS_FAILED;
     return result;

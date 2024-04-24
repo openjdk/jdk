@@ -555,8 +555,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
         int indy_index;
         int cp_index;
         if (is_linked()) {
-          int i = get_native_index_u4();
-          indy_index = ConstantPool::decode_invokedynamic_index(i);
+          indy_index = get_native_index_u4();
           cp_index = constants()->resolved_indy_entry_at(indy_index)->constant_pool_index();
         } else {
           indy_index = -1;
@@ -592,6 +591,10 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
 void BytecodePrinter::bytecode_epilog(int bci, outputStream* st) {
   MethodData* mdo = method()->method_data();
   if (mdo != nullptr) {
+
+    // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+    MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
     ProfileData* data = mdo->bci_to_data(bci);
     if (data != nullptr) {
       st->print("  %d ", mdo->dp_to_di(data->dp()));

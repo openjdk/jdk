@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,16 +42,6 @@
 // correct as long as it is not implicitly used in lower layers (the
 // arm [macro]assembler) and used with care in the other C1 specific
 // files.
-
-void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
-  Label verified;
-  load_klass(Rtemp, receiver);
-  cmp(Rtemp, iCache);
-  b(verified, eq); // jump over alignment no-ops
-  jump(SharedRuntime::get_ic_miss_stub(), relocInfo::runtime_call_type);
-  align(CodeEntryAlignment);
-  bind(verified);
-}
 
 void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes) {
   assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
@@ -163,10 +153,9 @@ void C1_MacroAssembler::allocate_object(Register obj, Register tmp1, Register tm
 
 void C1_MacroAssembler::allocate_array(Register obj, Register len,
                                        Register tmp1, Register tmp2, Register tmp3,
-                                       int header_size, int element_size,
+                                       int header_size_in_bytes, int element_size,
                                        Register klass, Label& slow_case) {
   assert_different_registers(obj, len, tmp1, tmp2, tmp3, klass, Rtemp);
-  const int header_size_in_bytes = header_size * BytesPerWord;
   const int scale_shift = exact_log2(element_size);
   const Register obj_size = Rtemp; // Rtemp should be free at c1 LIR level
 

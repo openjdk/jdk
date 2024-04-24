@@ -35,7 +35,7 @@
 
 #if defined(__clang_major__)
 #define FULL_COMPILER_ATOMIC_SUPPORT
-#elif (__GNUC__ > 13) || ((__GNUC__ == 13) && (__GNUC_MINOR__ >= 2))
+#elif (__GNUC__ > 13) || ((__GNUC__ == 13) && (__GNUC_MINOR__ > 2))
 #define FULL_COMPILER_ATOMIC_SUPPORT
 #endif
 
@@ -114,6 +114,44 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest __attribute__((
 }
 #endif
 
+#ifndef FULL_COMPILER_ATOMIC_SUPPORT
+// The implementation of `__atomic_compare_exchange` lacks sign extensions
+// in GCC 13.2 and lower when using with 32-bit unsigned integers on RV64,
+// so we should implement it manually.
+// GCC bug: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=114130.
+// See also JDK-8326936.
+template<>
+template<typename T>
+inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest __attribute__((unused)),
+                                                T compare_value,
+                                                T exchange_value,
+                                                atomic_memory_order order) const {
+  STATIC_ASSERT(4 == sizeof(T));
+
+  int32_t old_value;
+  uint64_t rc_temp;
+
+  if (order != memory_order_relaxed) {
+    FULL_MEM_BARRIER;
+  }
+
+  __asm__ __volatile__ (
+    "1:  lr.w      %0, %2      \n\t"
+    "    bne       %0, %3, 2f  \n\t"
+    "    sc.w      %1, %4, %2  \n\t"
+    "    bnez      %1, 1b      \n\t"
+    "2:                        \n\t"
+    : /*%0*/"=&r" (old_value), /*%1*/"=&r" (rc_temp), /*%2*/"+A" (*dest)
+    : /*%3*/"r" ((int64_t)(int32_t)compare_value), /*%4*/"r" (exchange_value)
+    : "memory" );
+
+  if (order != memory_order_relaxed) {
+    FULL_MEM_BARRIER;
+  }
+  return (T)old_value;
+}
+#endif
+
 template<size_t byte_size>
 template<typename T>
 inline T Atomic::PlatformXchg<byte_size>::operator()(T volatile* dest,
@@ -148,7 +186,7 @@ inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T volatile* dest __attri
                                                         atomic_memory_order order) const {
 
 #ifndef FULL_COMPILER_ATOMIC_SUPPORT
-  STATIC_ASSERT(byte_size >= 4);
+  STATIC_ASSERT(byte_size > 4);
 #endif
 
   STATIC_ASSERT(byte_size == sizeof(T));

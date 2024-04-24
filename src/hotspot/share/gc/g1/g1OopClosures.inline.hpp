@@ -29,10 +29,10 @@
 
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/iterator.inline.hpp"
@@ -227,8 +227,8 @@ void G1ParCopyClosure<barrier, should_mark>::do_oop_work(T* p) {
   if (state.is_in_cset()) {
     oop forwardee;
     markWord m = obj->mark();
-    if (m.is_marked()) {
-      forwardee = cast_to_oop(m.decode_pointer());
+    if (m.is_forwarded()) {
+      forwardee = m.forwardee();
     } else {
       forwardee = _par_scan_state->copy_to_survivor_space(state, obj, m);
     }

@@ -41,7 +41,7 @@ public class TestOptimizeUnstableIf {
     }
 
     @Test
-    @Arguments({Argument.MAX}) // the argument needs to be big enough to fall out of cache.
+    @Arguments(values = {Argument.MAX}) // the argument needs to be big enough to fall out of cache.
     @IR(failOn = {IRNode.ALLOC_OF, "Integer"})
     public static int boxing_object(int value) {
         Integer ii = Integer.valueOf(value);

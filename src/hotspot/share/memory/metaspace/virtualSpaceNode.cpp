@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -48,6 +48,7 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 
 namespace metaspace {
@@ -56,12 +57,12 @@ namespace metaspace {
 #define LOGFMT_ARGS    p2i(this), p2i(_base)
 
 #ifdef ASSERT
-void check_pointer_is_aligned_to_commit_granule(const MetaWord* p) {
+static void check_pointer_is_aligned_to_commit_granule(const MetaWord* p) {
   assert(is_aligned(p, Settings::commit_granule_bytes()),
          "Pointer not aligned to commit granule size: " PTR_FORMAT ".",
          p2i(p));
 }
-void check_word_size_is_aligned_to_commit_granule(size_t word_size) {
+static void check_word_size_is_aligned_to_commit_granule(size_t word_size) {
   assert(is_aligned(word_size, Settings::commit_granule_words()),
          "Not aligned to commit granule size: " SIZE_FORMAT ".", word_size);
 }
@@ -433,6 +434,9 @@ void VirtualSpaceNode::verify_locked() const {
   _commit_mask.verify();
 
   // Verify memory against commit mask.
+  // Down here, from ASAN's view, this memory may be poisoned, since we only unpoison
+  // way up at the ChunkManager level.
+#if !INCLUDE_ASAN
   SOMETIMES(
     for (MetaWord* p = base(); p < base() + used_words(); p += os::vm_page_size()) {
       if (_commit_mask.is_committed_address(p)) {
@@ -440,6 +444,7 @@ void VirtualSpaceNode::verify_locked() const {
       }
     }
   )
+#endif // !INCLUDE_ASAN
 
   assert(committed_words() <= word_size(), "Sanity");
   assert_is_aligned(committed_words(), Settings::commit_granule_words());

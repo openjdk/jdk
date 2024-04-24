@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/compiledIC.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "frame_ppc.hpp"
 #include "compiler/oopMap.hpp"
@@ -35,7 +34,6 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/continuation.hpp"
@@ -1174,8 +1172,8 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   BLOCK_COMMENT("c2i unverified entry");
   c2i_unverified_entry = __ pc();
 
-  // inline_cache contains a compiledICHolder
-  const Register ic             = R19_method;
+  // inline_cache contains a CompiledICData
+  const Register ic             = R19_inline_cache_reg;
   const Register ic_klass       = R11_scratch1;
   const Register receiver_klass = R12_scratch2;
   const Register code           = R21_tmp1;
@@ -1186,44 +1184,9 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   Label call_interpreter;
 
-  assert(!MacroAssembler::needs_explicit_null_check(oopDesc::klass_offset_in_bytes()),
-         "klass offset should reach into any page");
-  // Check for null argument if we don't have implicit null checks.
-  if (!ImplicitNullChecks || !os::zero_page_read_protected()) {
-    if (TrapBasedNullChecks) {
-      __ trap_null_check(R3_ARG1);
-    } else {
-      Label valid;
-      __ cmpdi(CCR0, R3_ARG1, 0);
-      __ bne_predict_taken(CCR0, valid);
-      // We have a null argument, branch to ic_miss_stub.
-      __ b64_patchable((address)SharedRuntime::get_ic_miss_stub(),
-                       relocInfo::runtime_call_type);
-      __ BIND(valid);
-    }
-  }
-  // Assume argument is not null, load klass from receiver.
-  __ load_klass(receiver_klass, R3_ARG1);
-
-  __ ld(ic_klass, CompiledICHolder::holder_klass_offset(), ic);
-
-  if (TrapBasedICMissChecks) {
-    __ trap_ic_miss_check(receiver_klass, ic_klass);
-  } else {
-    Label valid;
-    __ cmpd(CCR0, receiver_klass, ic_klass);
-    __ beq_predict_taken(CCR0, valid);
-    // We have an unexpected klass, branch to ic_miss_stub.
-    __ b64_patchable((address)SharedRuntime::get_ic_miss_stub(),
-                     relocInfo::runtime_call_type);
-    __ BIND(valid);
-  }
-
+  __ ic_check(4 /* end_alignment */);
+  __ ld(R19_method, CompiledICData::speculated_method_offset(), ic);
   // Argument is valid and klass is as expected, continue.
-
-  // Extract method from inline cache, verified entry point needs it.
-  __ ld(R19_method, CompiledICHolder::holder_metadata_offset(), ic);
-  assert(R19_method == ic, "the inline cache register is dead here");
 
   __ ld(code, method_(code));
   __ cmpdi(CCR0, code, 0);
@@ -1674,7 +1637,7 @@ static void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj,
 //   None.
 //
 // Kills:
-//   R8_ARG6, R9_ARG7, R10_ARG8
+//   R8_ARG6, R9_ARG7, R10_ARG8, R15_esp
 //
 static void continuation_enter_cleanup(MacroAssembler* masm) {
   Register tmp1 = R8_ARG6;
@@ -1689,9 +1652,56 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
 #endif
 
   __ ld_ptr(tmp1, ContinuationEntry::parent_cont_fastpath_offset(), R1_SP);
+  __ st_ptr(tmp1, JavaThread::cont_fastpath_offset(), R16_thread);
+
+  if (CheckJNICalls) {
+    // Check if this is a virtual thread continuation
+    Label L_skip_vthread_code;
+    __ lwz(R0, in_bytes(ContinuationEntry::flags_offset()), R1_SP);
+    __ cmpwi(CCR0, R0, 0);
+    __ beq(CCR0, L_skip_vthread_code);
+
+    // If the held monitor count is > 0 and this vthread is terminating then
+    // it failed to release a JNI monitor. So we issue the same log message
+    // that JavaThread::exit does.
+    __ ld(R0, in_bytes(JavaThread::jni_monitor_count_offset()), R16_thread);
+    __ cmpdi(CCR0, R0, 0);
+    __ beq(CCR0, L_skip_vthread_code);
+
+    // Save return value potentially containing the exception oop
+    Register ex_oop = R15_esp;   // nonvolatile register
+    __ mr(ex_oop, R3_RET);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::log_jni_monitor_still_held));
+    // Restore potental return value
+    __ mr(R3_RET, ex_oop);
+
+    // For vthreads we have to explicitly zero the JNI monitor count of the carrier
+    // on termination. The held count is implicitly zeroed below when we restore from
+    // the parent held count (which has to be zero).
+    __ li(tmp1, 0);
+    __ std(tmp1, in_bytes(JavaThread::jni_monitor_count_offset()), R16_thread);
+
+    __ bind(L_skip_vthread_code);
+  }
+#ifdef ASSERT
+  else {
+    // Check if this is a virtual thread continuation
+    Label L_skip_vthread_code;
+    __ lwz(R0, in_bytes(ContinuationEntry::flags_offset()), R1_SP);
+    __ cmpwi(CCR0, R0, 0);
+    __ beq(CCR0, L_skip_vthread_code);
+
+    // See comment just above. If not checking JNI calls the JNI count is only
+    // needed for assertion checking.
+    __ li(tmp1, 0);
+    __ std(tmp1, in_bytes(JavaThread::jni_monitor_count_offset()), R16_thread);
+
+    __ bind(L_skip_vthread_code);
+  }
+#endif
+
   __ ld(tmp2, in_bytes(ContinuationEntry::parent_held_monitor_count_offset()), R1_SP);
   __ ld_ptr(tmp3, ContinuationEntry::parent_offset(), R1_SP);
-  __ st_ptr(tmp1, JavaThread::cont_fastpath_offset(), R16_thread);
   __ std(tmp2, in_bytes(JavaThread::held_monitor_count_offset()), R16_thread);
   __ st_ptr(tmp3, JavaThread::cont_entry_offset(), R16_thread);
   DEBUG_ONLY(__ block_comment("} clean"));
@@ -1797,8 +1807,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ b(L_exit);
 
     // static stub for the call above
-    CodeBuffer* cbuf = masm->code_section()->outer();
-    stub = CompiledStaticCall::emit_to_interp_stub(*cbuf, c2i_call_pc);
+    stub = CompiledDirectCall::emit_to_interp_stub(masm, c2i_call_pc);
     guarantee(stub != nullptr, "no space for static stub");
   }
 
@@ -1890,8 +1899,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
   __ blr();
 
   // static stub for the call above
-  CodeBuffer* cbuf = masm->code_section()->outer();
-  stub = CompiledStaticCall::emit_to_interp_stub(*cbuf, call_pc);
+  stub = CompiledDirectCall::emit_to_interp_stub(masm, call_pc);
   guarantee(stub != nullptr, "no space for static stub");
 }
 
@@ -2039,6 +2047,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                               in_ByteSize(-1),
                                               oop_maps,
                                               exception_offset);
+    if (nm == nullptr) return nm;
     if (method->is_continuation_enter_intrinsic()) {
       ContinuationEntry::set_enter_code(nm, interpreted_entry_offset);
     } else if (method->is_continuation_yield_intrinsic()) {
@@ -2187,7 +2196,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   intptr_t frame_done_pc;
   intptr_t oopmap_pc;
 
-  Label    ic_miss;
   Label    handle_pending_exception;
 
   Register r_callers_sp = R21;
@@ -2211,18 +2219,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   // Check ic: object class == cached class?
   if (!method_is_static) {
-  Register ic = R19_inline_cache_reg;
-  Register receiver_klass = r_temp_1;
-
-  __ cmpdi(CCR0, R3_ARG1, 0);
-  __ beq(CCR0, ic_miss);
-  __ verify_oop(R3_ARG1, FILE_AND_LINE);
-  __ load_klass(receiver_klass, R3_ARG1);
-
-  __ cmpd(CCR0, receiver_klass, ic);
-  __ bne(CCR0, ic_miss);
+    __ ic_check(4 /* end_alignment */);
   }
-
 
   // Generate the Verified Entry Point (VEP).
   // --------------------------------------------------------------------------
@@ -2403,8 +2401,13 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ addi(r_box, R1_SP, lock_offset);
 
     // Try fastpath for locking.
-    // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
-    __ compiler_fast_lock_object(CCR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
+      __ compiler_fast_lock_lightweight_object(CCR0, r_oop, r_temp_1, r_temp_2, r_temp_3);
+    } else {
+      // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
+      __ compiler_fast_lock_object(CCR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
+    }
     __ beq(CCR0, locked);
 
     // None of the above fast optimizations worked so we have to get into the
@@ -2614,7 +2617,11 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ addi(r_box, R1_SP, lock_offset);
 
     // Try fastpath for unlocking.
-    __ compiler_fast_unlock_object(CCR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      __ compiler_fast_unlock_lightweight_object(CCR0, r_oop, r_temp_1, r_temp_2, r_temp_3);
+    } else {
+      __ compiler_fast_unlock_object(CCR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
+    }
     __ beq(CCR0, done);
 
     // Save and restore any potential method result value around the unlocking operation.
@@ -2702,16 +2709,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ restore_LR_CR(R11);
   __ b64_patchable((address)StubRoutines::forward_exception_entry(),
                        relocInfo::runtime_call_type);
-
-  // Handler for a cache miss (out-of-line).
-  // --------------------------------------------------------------------------
-
-  if (!method_is_static) {
-  __ bind(ic_miss);
-
-  __ b64_patchable((address)SharedRuntime::get_ic_miss_stub(),
-                       relocInfo::runtime_call_type);
-  }
 
   // Done.
   // --------------------------------------------------------------------------

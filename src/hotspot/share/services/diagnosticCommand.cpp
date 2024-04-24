@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,6 +144,7 @@ void DCmd::register_dcmds(){
 
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesPrintDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesAddDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesReplaceDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesRemoveDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesClearDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilationMemoryStatisticDCmd>(full_export, true, false));
@@ -308,7 +309,7 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
 
   if (is_java_agent) {
     if (_option.value() == nullptr) {
-      JvmtiAgentList::load_agent("instrument", "false", _libpath.value(), output());
+      JvmtiAgentList::load_agent("instrument", false, _libpath.value(), output());
     } else {
       size_t opt_len = strlen(_libpath.value()) + strlen(_option.value()) + 2;
       if (opt_len > 4096) {
@@ -325,12 +326,12 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
       }
 
       jio_snprintf(opt, opt_len, "%s=%s", _libpath.value(), _option.value());
-      JvmtiAgentList::load_agent("instrument", "false", opt, output());
+      JvmtiAgentList::load_agent("instrument", false, opt, output());
 
       os::free(opt);
     }
   } else {
-    JvmtiAgentList::load_agent(_libpath.value(), "true", _option.value(), output());
+    JvmtiAgentList::load_agent(_libpath.value(), true, _option.value(), output());
   }
 }
 
@@ -851,15 +852,20 @@ void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 #ifdef LINUX
+#define DEFAULT_PERFMAP_FILENAME "/tmp/perf-<pid>.map"
+
 PerfMapDCmd::PerfMapDCmd(outputStream* output, bool heap) :
              DCmdWithParser(output, heap),
-  _filename("filename", "Name of the map file", "STRING", false)
+  _filename("filename", "Name of the map file", "STRING", false, DEFAULT_PERFMAP_FILENAME)
 {
   _dcmdparser.add_dcmd_argument(&_filename);
 }
 
 void PerfMapDCmd::execute(DCmdSource source, TRAPS) {
-  CodeCache::write_perf_map(_filename.value());
+  // The check for _filename.is_set() is because we don't want to use
+  // DEFAULT_PERFMAP_FILENAME, since it is meant as a description
+  // of the default, not the actual default.
+  CodeCache::write_perf_map(_filename.is_set() ? _filename.value() : nullptr);
 }
 #endif // LINUX
 
@@ -918,21 +924,81 @@ void CompilerDirectivesPrintDCmd::execute(DCmdSource source, TRAPS) {
 
 CompilerDirectivesAddDCmd::CompilerDirectivesAddDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
-  _filename("filename","Name of the directives file", "STRING",true) {
+  _filename("filename", "Name of the directives file", "STRING", true),
+  _refresh("-r", "Refresh affected methods", "BOOLEAN", false, "false") {
+
   _dcmdparser.add_dcmd_argument(&_filename);
+  _dcmdparser.add_dcmd_option(&_refresh);
 }
 
 void CompilerDirectivesAddDCmd::execute(DCmdSource source, TRAPS) {
   DirectivesParser::parse_from_file(_filename.value(), output(), true);
+  if (_refresh.value()) {
+    CodeCache::mark_directives_matches(true);
+    CodeCache::recompile_marked_directives_matches();
+  }
+}
+
+CompilerDirectivesReplaceDCmd::CompilerDirectivesReplaceDCmd(outputStream* output, bool heap) :
+                           DCmdWithParser(output, heap),
+  _filename("filename", "Name of the directives file", "STRING", true),
+  _refresh("-r", "Refresh affected methods", "BOOLEAN", false, "false") {
+
+  _dcmdparser.add_dcmd_argument(&_filename);
+  _dcmdparser.add_dcmd_option(&_refresh);
+}
+
+void CompilerDirectivesReplaceDCmd::execute(DCmdSource source, TRAPS) {
+  // Need to mark the methods twice, to account for the method that doesn't match
+  // the directives anymore
+  if (_refresh.value()) {
+    CodeCache::mark_directives_matches();
+
+    DirectivesStack::clear();
+    DirectivesParser::parse_from_file(_filename.value(), output(), true);
+
+    CodeCache::mark_directives_matches();
+    CodeCache::recompile_marked_directives_matches();
+  } else {
+    DirectivesStack::clear();
+    DirectivesParser::parse_from_file(_filename.value(), output(), true);
+  }
+}
+
+CompilerDirectivesRemoveDCmd::CompilerDirectivesRemoveDCmd(outputStream* output, bool heap) :
+                           DCmdWithParser(output, heap),
+  _refresh("-r", "Refresh affected methods", "BOOLEAN", false, "false") {
+
+  _dcmdparser.add_dcmd_option(&_refresh);
 }
 
 void CompilerDirectivesRemoveDCmd::execute(DCmdSource source, TRAPS) {
-  DirectivesStack::pop(1);
+  if (_refresh.value()) {
+    CodeCache::mark_directives_matches(true);
+    DirectivesStack::pop(1);
+    CodeCache::recompile_marked_directives_matches();
+  } else {
+    DirectivesStack::pop(1);
+  }
+}
+
+CompilerDirectivesClearDCmd::CompilerDirectivesClearDCmd(outputStream* output, bool heap) :
+                           DCmdWithParser(output, heap),
+  _refresh("-r", "Refresh affected methods", "BOOLEAN", false, "false") {
+
+  _dcmdparser.add_dcmd_option(&_refresh);
 }
 
 void CompilerDirectivesClearDCmd::execute(DCmdSource source, TRAPS) {
-  DirectivesStack::clear();
+  if (_refresh.value()) {
+    CodeCache::mark_directives_matches();
+    DirectivesStack::clear();
+    CodeCache::recompile_marked_directives_matches();
+  } else {
+    DirectivesStack::clear();
+  }
 }
+
 #if INCLUDE_SERVICES
 ClassHierarchyDCmd::ClassHierarchyDCmd(outputStream* output, bool heap) :
                                        DCmdWithParser(output, heap),
@@ -991,10 +1057,13 @@ void ClassesDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 #if INCLUDE_CDS
+#define DEFAULT_CDS_ARCHIVE_FILENAME "java_pid<pid>_<subcmd>.jsa"
+
 DumpSharedArchiveDCmd::DumpSharedArchiveDCmd(outputStream* output, bool heap) :
                                      DCmdWithParser(output, heap),
   _suboption("subcmd", "static_dump | dynamic_dump", "STRING", true),
-  _filename("filename", "Name of shared archive to be dumped", "STRING", false)
+  _filename("filename", "Name of shared archive to be dumped", "STRING", false,
+            DEFAULT_CDS_ARCHIVE_FILENAME)
 {
   _dcmdparser.add_dcmd_argument(&_suboption);
   _dcmdparser.add_dcmd_argument(&_filename);
@@ -1003,7 +1072,11 @@ DumpSharedArchiveDCmd::DumpSharedArchiveDCmd(outputStream* output, bool heap) :
 void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
   jboolean is_static;
   const char* scmd = _suboption.value();
-  const char* file = _filename.value();
+
+  // The check for _filename.is_set() is because we don't want to use
+  // DEFAULT_CDS_ARCHIVE_FILENAME, since it is meant as a description
+  // of the default, not the actual default.
+  const char* file = _filename.is_set() ? _filename.value() : nullptr;
 
   if (strcmp(scmd, "static_dump") == 0) {
     is_static = JNI_TRUE;
