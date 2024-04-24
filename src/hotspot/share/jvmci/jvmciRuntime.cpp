@@ -1856,9 +1856,8 @@ Method* JVMCIRuntime::get_method_by_index_impl(const constantPoolHandle& cpool,
                                                int index, Bytecodes::Code bc,
                                                InstanceKlass* accessor) {
   if (bc == Bytecodes::_invokedynamic) {
-    int indy_index = cpool->decode_invokedynamic_index(index);
-    if (cpool->resolved_indy_entry_at(indy_index)->is_resolved()) {
-      return cpool->resolved_indy_entry_at(indy_index)->method();
+    if (cpool->resolved_indy_entry_at(index)->is_resolved()) {
+      return cpool->resolved_indy_entry_at(index)->method();
     }
 
     return nullptr;

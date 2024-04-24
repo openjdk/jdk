@@ -444,8 +444,6 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register Rdst, int bcp_of
     } else {
       lwa(Rdst, bcp_offset, R14_bcp);
     }
-    assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
-    nand(Rdst, Rdst, Rdst); // convert to plain index
   } else if (index_size == sizeof(u1)) {
     lbz(Rdst, bcp_offset, R14_bcp);
   } else {

@@ -1273,10 +1273,6 @@ bool PSParallelCompact::invoke(bool maximum_heap_compaction) {
 
   IsGCActiveMark mark;
 
-  if (ScavengeBeforeFullGC) {
-    PSScavenge::invoke_no_policy();
-  }
-
   const bool clear_all_soft_refs =
     heap->soft_ref_policy()->should_clear_all_soft_refs();
 

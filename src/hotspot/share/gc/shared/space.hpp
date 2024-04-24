@@ -161,25 +161,4 @@ public:
   void verify() const;
 };
 
-#if INCLUDE_SERIALGC
-
-// Class TenuredSpace is used by TenuredGeneration; it supports an efficient
-// "block_start" operation via a SerialBlockOffsetTable.
-
-class TenuredSpace: public ContiguousSpace {
-  friend class VMStructs;
- protected:
-  SerialBlockOffsetTable* _offsets;
-
- public:
-  // Constructor
-  TenuredSpace(SerialBlockOffsetTable* offsets,
-               MemRegion mr);
-
-  // Add offset table update.
-  inline HeapWord* allocate(size_t word_size) override;
-  inline HeapWord* par_allocate(size_t word_size) override;
-};
-#endif //INCLUDE_SERIALGC
-
 #endif // SHARE_GC_SHARED_SPACE_HPP

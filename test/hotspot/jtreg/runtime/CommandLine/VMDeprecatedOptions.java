@@ -56,6 +56,7 @@ public class VMDeprecatedOptions {
         ArrayList<String[]> deprecated = new ArrayList(
           Arrays.asList(new String[][] {
             // deprecated non-alias flags:
+            {"UseNotificationThread", "true"},
             {"PreserveAllAnnotations", "true"},
             {"AllowRedefinitionToAddDeleteMethods", "true"},
             {"UseEmptySlotsInSupers", "true"},
