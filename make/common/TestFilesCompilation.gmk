@@ -101,7 +101,7 @@ define SetupTestFilesCompilationBody
     $$(eval $$(call SetupJdkNativeCompilation, BUILD_TEST_$$(name), \
         NAME := $$(unprefixed_name), \
         TYPE := $$($1_COMPILATION_TYPE), \
-        LINK_TYPE := $(if $$(filter %.cpp, $$(file)), C++, C), \
+        LANG := $(if $$(filter %.cpp, $$(file)), C++, C), \
         EXTRA_HEADER_DIRS := \
             java.base:libjava \
             java.base:libjvm, \
