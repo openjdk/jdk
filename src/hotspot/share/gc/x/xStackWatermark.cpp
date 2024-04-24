@@ -33,15 +33,12 @@
 #include "runtime/frame.inline.hpp"
 #include "utilities/preserveException.hpp"
 
-XOnStackCodeBlobClosure::XOnStackCodeBlobClosure() :
+XOnStackNMethodClosure::XOnStackNMethodClosure() :
     _bs_nm(BarrierSet::barrier_set()->barrier_set_nmethod()) {}
 
-void XOnStackCodeBlobClosure::do_code_blob(CodeBlob* cb) {
-  nmethod* const nm = cb->as_nmethod_or_null();
-  if (nm != nullptr) {
-    const bool result = _bs_nm->nmethod_entry_barrier(nm);
-    assert(result, "NMethod on-stack must be alive");
-  }
+void XOnStackNMethodClosure::do_nmethod(nmethod* nm) {
+  const bool result = _bs_nm->nmethod_entry_barrier(nm);
+  assert(result, "NMethod on-stack must be alive");
 }
 
 ThreadLocalAllocStats& XStackWatermark::stats() {
@@ -55,7 +52,7 @@ uint32_t XStackWatermark::epoch_id() const {
 XStackWatermark::XStackWatermark(JavaThread* jt) :
     StackWatermark(jt, StackWatermarkKind::gc, *XAddressBadMaskHighOrderBitsAddr),
     _jt_cl(),
-    _cb_cl(),
+    _nm_cl(),
     _stats() {}
 
 OopClosure* XStackWatermark::closure_from_context(void* context) {
@@ -72,7 +69,7 @@ void XStackWatermark::start_processing_impl(void* context) {
   XVerify::verify_thread_head_bad(_jt);
 
   // Process the non-frame part of the thread
-  _jt->oops_do_no_frames(closure_from_context(context), &_cb_cl);
+  _jt->oops_do_no_frames(closure_from_context(context), &_nm_cl);
   XThreadLocalData::do_invisible_root(_jt, XBarrier::load_barrier_on_invisible_root_oop_field);
 
   // Verification of frames is done after processing of the "head" (no_frames).
@@ -95,5 +92,5 @@ void XStackWatermark::start_processing_impl(void* context) {
 
 void XStackWatermark::process(const frame& fr, RegisterMap& register_map, void* context) {
   XVerify::verify_frame_bad(fr, register_map);
-  fr.oops_do(closure_from_context(context), &_cb_cl, &register_map, DerivedPointerIterationMode::_directly);
+  fr.oops_do(closure_from_context(context), &_nm_cl, &register_map, DerivedPointerIterationMode::_directly);
 }

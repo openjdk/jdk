@@ -947,6 +947,7 @@ void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool quer
   InterpreterFrameClosure blk(this, max_locals, m->max_stack(), f);
 
   // process locals & expression stack
+  ResourceMark rm(thread);
   InterpreterOopMap mask;
   if (query_oop_map_cache) {
     m->mask_for(bci, &mask);
@@ -962,7 +963,7 @@ void frame::oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, 
   finder.oops_do();
 }
 
-void frame::oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf, DerivedOopClosure* df, DerivedPointerIterationMode derived_mode, const RegisterMap* reg_map) const {
+void frame::oops_nmethod_do(OopClosure* f, NMethodClosure* cf, DerivedOopClosure* df, DerivedPointerIterationMode derived_mode, const RegisterMap* reg_map) const {
   assert(_cb != nullptr, "sanity check");
   assert((oop_map() == nullptr) == (_cb->oop_maps() == nullptr), "frame and _cb must agree that oopmap is set or not");
   if (oop_map() != nullptr) {
@@ -974,8 +975,9 @@ void frame::oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf, DerivedOopClos
 
     // Preserve potential arguments for a callee. We handle this by dispatching
     // on the codeblob. For c2i, we do
-    if (reg_map->include_argument_oops()) {
-      _cb->preserve_callee_argument_oops(*this, reg_map, f);
+    if (reg_map->include_argument_oops() && _cb->is_nmethod()) {
+      // Only nmethod preserves outgoing arguments at call.
+      _cb->as_nmethod()->preserve_callee_argument_oops(*this, reg_map, f);
     }
   }
   // In cases where perm gen is collected, GC will want to mark
@@ -983,8 +985,8 @@ void frame::oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf, DerivedOopClos
   // prevent them from being collected. However, this visit should be
   // restricted to certain phases of the collection only. The
   // closure decides how it wants nmethods to be traced.
-  if (cf != nullptr)
-    cf->do_code_blob(_cb);
+  if (cf != nullptr && _cb->is_nmethod())
+    cf->do_nmethod(_cb->as_nmethod());
 }
 
 class CompiledArgumentOopFinder: public SignatureIterator {
@@ -1131,7 +1133,7 @@ bool frame::is_deoptimized_frame() const {
   return false;
 }
 
-void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf,
+void frame::oops_do_internal(OopClosure* f, NMethodClosure* cf,
                              DerivedOopClosure* df, DerivedPointerIterationMode derived_mode,
                              const RegisterMap* map, bool use_interpreter_oop_map_cache) const {
 #ifndef PRODUCT
@@ -1148,15 +1150,15 @@ void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf,
   } else if (is_upcall_stub_frame()) {
     _cb->as_upcall_stub()->oops_do(f, *this);
   } else if (CodeCache::contains(pc())) {
-    oops_code_blob_do(f, cf, df, derived_mode, map);
+    oops_nmethod_do(f, cf, df, derived_mode, map);
   } else {
     ShouldNotReachHere();
   }
 }
 
-void frame::nmethods_do(CodeBlobClosure* cf) const {
+void frame::nmethod_do(NMethodClosure* cf) const {
   if (_cb != nullptr && _cb->is_nmethod()) {
-    cf->do_code_blob(_cb);
+    cf->do_nmethod(_cb->as_nmethod());
   }
 }
 
@@ -1434,7 +1436,7 @@ void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_m
         assert(sig_index == sizeargs, "");
       }
       int stack_arg_slots = SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs);
-      assert(stack_arg_slots ==  m->num_stack_arg_slots(false /* rounded */), "");
+      assert(stack_arg_slots ==  nm->as_nmethod()->num_stack_arg_slots(false /* rounded */) || nm->is_osr_method(), "");
       int out_preserve = SharedRuntime::out_preserve_stack_slots();
       int sig_index = 0;
       int arg_index = (m->is_static() ? 0 : -1);

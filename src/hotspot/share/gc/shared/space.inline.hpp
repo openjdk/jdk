@@ -51,28 +51,6 @@ inline HeapWord* TenuredSpace::par_allocate(size_t size) {
   return res;
 }
 
-inline void TenuredSpace::update_for_block(HeapWord* start, HeapWord* end) {
-  _offsets->update_for_block(start, end);
-}
 #endif // INCLUDE_SERIALGC
-
-template <typename OopClosureType>
-void ContiguousSpace::oop_since_save_marks_iterate(OopClosureType* blk) {
-  HeapWord* t;
-  HeapWord* p = saved_mark_word();
-  assert(p != nullptr, "expected saved mark");
-
-  const intx interval = PrefetchScanIntervalInBytes;
-  do {
-    t = top();
-    while (p < t) {
-      Prefetch::write(p, interval);
-      oop m = cast_to_oop(p);
-      p += m->oop_iterate_size(blk);
-    }
-  } while (t < top());
-
-  set_saved_mark();
-}
 
 #endif // SHARE_GC_SHARED_SPACE_INLINE_HPP
