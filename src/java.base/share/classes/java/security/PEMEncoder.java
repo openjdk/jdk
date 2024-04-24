@@ -61,7 +61,7 @@ import java.util.Objects;
  * PKCS8 v2.0 allows OneAsymmetric encoding, which is a private and public
  * key in the same PEM.  This is supported by using the {@link KeyPair} class
  * with the encode methods.
- * <p>
+ * <br>
  * @apiNote
  * Here is an example of encoding a PrivateKey object:
  * <pre>{@code

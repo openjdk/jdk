@@ -209,7 +209,6 @@ final public class PEMDecoder {
      *
      * @param str PEM data in a String.
      * @return an DEREncodable generated from the PEM data.
-     * @throws IOException on an error in decoding or if the PEM is unsupported.
      */
     public DEREncodable decode(String str) {
         Objects.requireNonNull(str);
@@ -234,12 +233,7 @@ final public class PEMDecoder {
      */
     public DEREncodable decode(InputStream is) throws IOException {
         Objects.requireNonNull(is);
-        Pem pem;
-        try {
-            pem = Pem.readPEM(is);
-        } catch (IOException e) {
-            throw new IllegalArgumentException(e);
-        }
+        Pem pem = Pem.readPEM(is);
         if (pem == null) {
             throw new IllegalArgumentException("No PEM data found.");
         }
@@ -266,8 +260,6 @@ final public class PEMDecoder {
      * @param tClass  the returned object class that implementing
      * {@link DEREncodable}.
      * @return The DEREncodable typecast to tClass.
-     * @throws IOException on an error in decoding, unsupported PEM, or
-     * error casting to tClass.
      */
     public <S extends DEREncodable> S decode(String string, Class<S> tClass) {
         Objects.requireNonNull(string);
@@ -301,8 +293,7 @@ final public class PEMDecoder {
         throws IOException {
         Objects.requireNonNull(is);
         Objects.requireNonNull(tClass);
-        Pem pem;
-        pem = Pem.readPEM(is);
+        Pem pem = Pem.readPEM(is);
         if (pem == null) {
             throw new IllegalArgumentException("No PEM data found.");
         }

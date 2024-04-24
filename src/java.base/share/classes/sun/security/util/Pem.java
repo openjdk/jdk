@@ -127,12 +127,13 @@ public class Pem {
     }
 
 
-    // Sorta hack to get the right OID for PBEKS2
+    // Extract the OID from the PBE algorithm.  PBEKS2, which are all AES-based,
+    // has uses one OID for all the standard algorithm, while PBEKS1 uses
+    // individual ones.
     public static ObjectIdentifier getPBEID(String algorithm) {
         try {
             if (algorithm.contains("AES")) {
                 return AlgorithmId.get("PBES2").getOID();
-                //return KnownOIDs.PBES2.value();
             } else {
                 return AlgorithmId.get(algorithm).getOID();
             }
