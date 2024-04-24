@@ -236,10 +236,6 @@ public:
 
   void print_heap_change(const PreGenGCValues& pre_gc_values) const;
 
-  // The functions below are helper functions that a subclass of
-  // "CollectedHeap" can use in the implementation of its virtual
-  // functions.
-
   // Return "true" if all generations have reached the
   // maximal committed limit that they can reach, without a garbage
   // collection.
