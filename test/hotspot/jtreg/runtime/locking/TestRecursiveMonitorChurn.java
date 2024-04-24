@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
  */
 public class TestRecursiveMonitorChurn {
     static class Monitor {
-        public static int i, j;
+        public static volatile int i, j;
         synchronized void doSomething() {
             i++;
             doSomethingElse();
@@ -46,7 +46,7 @@ public class TestRecursiveMonitorChurn {
         }
     }
 
-    public static Monitor monitor;
+    public static volatile Monitor monitor;
     public static void main(String[] args) throws IOException {
         if (args.length == 1 && args[0].equals("test")) {
             // The actual test, in a forked JVM.
@@ -58,7 +58,7 @@ public class TestRecursiveMonitorChurn {
         } else {
             ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                     "-XX:+UnlockDiagnosticVMOptions",
-                    "-Xmx100M", "-XX:AsyncDeflationInterval=0",
+                    "-Xmx100M", "-XX:AsyncDeflationInterval=0", "-XX:GuaranteedAsyncDeflationInterval=0",
                     "-XX:NativeMemoryTracking=summary", "-XX:+PrintNMTStatistics",
                     "TestRecursiveMonitorChurn",
                     "test");
