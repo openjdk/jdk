@@ -37,16 +37,16 @@ JPACKAGE_CXXFLAGS_windows := -EHsc $(JPACKAGE_CFLAGS_windows)
 ################################################################################
 
 ifeq ($(call isTargetOs, linux), true)
-  JPACKAGEAPPLAUNCHER_LINK_TYPE := C
+  JPACKAGEAPPLAUNCHER_LANG := C
   JPACKAGEAPPLAUNCHER_INCLUDE_FILES := %.c
 else
-  JPACKAGEAPPLAUNCHER_LINK_TYPE := C++
+  JPACKAGEAPPLAUNCHER_LANG := C++
 endif
 
 # Output app launcher executable in resources dir, and symbols in the object dir
 $(eval $(call SetupJdkExecutable, BUILD_JPACKAGEAPPLAUNCHER, \
     NAME := jpackageapplauncher, \
-    LINK_TYPE := $(JPACKAGEAPPLAUNCHER_LINK_TYPE), \
+    LANG := $(JPACKAGEAPPLAUNCHER_LANG), \
     OUTPUT_DIR := $(JPACKAGE_OUTPUT_DIR), \
     SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jpackageapplauncher, \
     SRC := applauncher, \
@@ -87,7 +87,7 @@ ifeq ($(call isTargetOs, linux), true)
           applauncher \
           common, \
       EXCLUDE_FILES := LinuxLauncher.c LinuxPackage.c, \
-      LINK_TYPE := C++, \
+      LANG := C++, \
       OPTIMIZATION := LOW, \
       DISABLED_WARNINGS_clang_JvmLauncherLib.c := format-nonliteral, \
       DISABLED_WARNINGS_clang_tstrings.cpp := format-nonliteral, \
@@ -105,6 +105,7 @@ ifeq ($(call isTargetOs, windows), true)
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBJPACKAGE, \
       NAME := jpackage, \
+      LANG := C++, \
       OPTIMIZATION := LOW, \
       EXTRA_SRC := common, \
       CXXFLAGS_windows := $(JPACKAGE_CXXFLAGS_windows), \
@@ -123,6 +124,7 @@ ifeq ($(call isTargetOs, windows), true)
   # Output library in resources dir, and symbols in the object dir
   $(eval $(call SetupJdkLibrary, BUILD_LIBWIXHELPER, \
       NAME := wixhelper, \
+      LANG := C++, \
       OUTPUT_DIR := $(JPACKAGE_OUTPUT_DIR), \
       SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libwixhelper, \
       OPTIMIZATION := LOW, \
@@ -142,6 +144,7 @@ ifeq ($(call isTargetOs, windows), true)
   # Build exe installer wrapper for msi installer
   $(eval $(call SetupJdkExecutable, BUILD_MSIWRAPPER, \
       NAME := msiwrapper, \
+      LANG := C++, \
       OUTPUT_DIR := $(JPACKAGE_OUTPUT_DIR), \
       SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/msiwrapper, \
       EXTRA_SRC := common, \
@@ -159,6 +162,7 @@ ifeq ($(call isTargetOs, windows), true)
   # Build non-console version of launcher
   $(eval $(call SetupJdkExecutable, BUILD_JPACKAGEAPPLAUNCHERW, \
       NAME := jpackageapplauncherw, \
+      LANG := $(JPACKAGEAPPLAUNCHER_LANG), \
       OUTPUT_DIR := $(JPACKAGE_OUTPUT_DIR), \
       SYMBOLS_DIR := \
           $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jpackageapplauncherw, \
