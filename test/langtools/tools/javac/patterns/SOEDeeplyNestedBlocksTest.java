@@ -25,7 +25,6 @@
  * @test
  * @bug 8322992 8331030
  * @summary Javac fails with StackOverflowError when compiling deeply nested synchronized blocks
- * @compile SOEDeeplyNestedBlocksTest.java
  * @run main SOEDeeplyNestedBlocksTest
  */
 
