@@ -202,23 +202,17 @@ public class ECOperations {
      * @return the product
      */
     public MutablePoint multiply(AffinePoint affineP, byte[] s) {
-        // Route to Basepoint and/or Montgomery pointMultiply as appropriate
-
-        ECPoint ecPoint = affineP.toECPoint();
-        PointMultiplier multiplier = null;
-        if (!(b.getField() instanceof IntegerMontgomeryFieldModuloP)) {
-            multiplier = new DefaultMultiplier(this, affineP);
-        } else if (ecPoint.equals(Secp256R1GeneratorMontgomeryMultiplier.generator)) {
-            // Lazy class loading upon function call (large static constant table)
-            multiplier = Secp256R1GeneratorMontgomeryMultiplier.multiplier;
-        } else {
-            // affineP is in residue domain, use ecPoint to get domain conversion
-            multiplier = new DefaultMontgomeryMultiplier(this, ecPoint);
-        }
-
-        return multiplier.pointMultiply(s);
+        return multiply(affineP.toECPoint(), s);
     }
 
+    /**
+     * Multiply an affine ecpoint point by a scalar and return the result as a mutable
+     * point.
+     *
+     * @param affineP the point
+     * @param s the scalar as a little-endian array
+     * @return the product
+     */
     public MutablePoint multiply(ECPoint ecPoint, byte[] s) {
         // Route to Basepoint and/or Montgomery pointMultiply as appropriate
 
@@ -285,8 +279,15 @@ public class ECOperations {
 
     }
 
-    /*
-     * public Point addition. Used by ECDSAOperations
+    /**
+     * Adds second Mutable (Projective) point to first.
+     * 
+     * Used by ECDSAOperations. This method constructs new temporaries each time
+     * it is called. For better efficiency, the (private) method that reuses temporaries
+     * should be used if more than one sum will be computed.
+     * 
+     * @param p first point and result
+     * @param p2 second point to add
      */
     public void setSum(MutablePoint p, MutablePoint p2) {
         IntegerModuloP zero = p.getField().get0();
@@ -464,13 +465,11 @@ public class ECOperations {
 
     sealed static abstract class SmallWindowMultiplier implements PointMultiplier
         permits DefaultMultiplier, DefaultMontgomeryMultiplier {
-        private final AffinePoint affineP;
         private final ECOperations ecOps;
         private final ProjectivePoint.Immutable[] pointMultiples;
 
         protected SmallWindowMultiplier(ECOperations ecOps, AffinePoint affineP) {
             this.ecOps = ecOps;
-            this.affineP = affineP;
 
             // Precompute and cache point multiples
             this.pointMultiples = new ProjectivePoint.Immutable[16];
@@ -555,6 +554,8 @@ public class ECOperations {
         private final ImmutableIntegerModuloP zero;
         private final ImmutableIntegerModuloP one;
         private final ECOperations secp256r1Ops;
+        private final ProjectivePoint.Immutable[][] points;
+        private final BigInteger[] base;
 
         public ProjectivePoint.Mutable pointMultiply(byte[] s) {
             MutableIntegerModuloP t0 = zero.mutable();
@@ -588,8 +589,6 @@ public class ECOperations {
         private static int bit(byte[] k, int i) {
             return (k[i >> 3] >> (i & 0x07)) & 0x01;
         }
-
-        private final ProjectivePoint.Immutable[][] points;
 
         protected P256LargeTableMultiplier(ECOperations secp256r1Ops, IntegerFieldModuloP field, PointMultiplier smallTableMultiplier) {
             zero = field.get0();
@@ -665,7 +664,6 @@ public class ECOperations {
             }
         }
 
-        private final BigInteger[] base;
         protected void verifyTables(PointMultiplier multiplier) {
             for (int d = 0; d < 4; d++) {
                 for (int w = 0; w < 16; w++) {

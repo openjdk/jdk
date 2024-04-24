@@ -369,7 +369,7 @@ address StubGenerator::generate_intpoly_assign() {
   __ negq(set);
   __ kmovql(select, set);
 
-  // NOTE!! Allowed to branch on number of limbs;
+  // NOTE! Crypto code cannot branch on user input. However; allowed to branch on number of limbs; 
   // Number of limbs is a constant in each IntegerPolynomial (i.e. this side-channel branch leaks
   //   number of limbs which is not a secret)
   __ cmpl(length, 5);
@@ -383,15 +383,17 @@ address StubGenerator::generate_intpoly_assign() {
   __ cmpl(length, 19);
   __ jcc(Assembler::equal, L_Length19);
 
-  // Default copy loop
-  __ bind(L_DefaultLoop);
+  // Default copy loop (UNLIKELY)
   __ cmpl(length, 0);
-  __ jcc(Assembler::less, L_Done);
+  __ jcc(Assembler::lessEqual, L_Done);
+  __ bind(L_DefaultLoop);
   assign_scalar(Address(aLimbs, 0), Address(bLimbs, 0), set, tmp, _masm);
-  __ subl(length, 16);
+  __ subl(length, 1);
   __ lea(aLimbs, Address(aLimbs,8));
   __ lea(bLimbs, Address(bLimbs,8));
-  __ jmp(L_DefaultLoop);
+  __ cmpl(length, 0);
+  __ jcc(Assembler::greater, L_DefaultLoop);
+  __ jmp(L_Done);
 
   __ bind(L_Length5); // 1 + 4
   assign_scalar(Address(aLimbs, 0), Address(bLimbs, 0), set, tmp, _masm);
