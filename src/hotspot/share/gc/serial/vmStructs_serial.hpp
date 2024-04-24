@@ -47,7 +47,7 @@
   nonstatic_field(TenuredGeneration,                 _capacity_at_prologue,  size_t)                        \
   nonstatic_field(TenuredGeneration,                 _used_at_prologue,      size_t)                        \
   nonstatic_field(TenuredGeneration,                 _min_heap_delta_bytes,  size_t)                        \
-  nonstatic_field(TenuredGeneration,                 _the_space,             TenuredSpace*)                 \
+  nonstatic_field(TenuredGeneration,                 _the_space,             ContiguousSpace*)              \
                                                                                                             \
   nonstatic_field(DefNewGeneration,                  _old_gen,               TenuredGeneration*)            \
   nonstatic_field(DefNewGeneration,                  _tenuring_threshold,    uint)                          \
@@ -60,8 +60,6 @@
   nonstatic_field(SerialBlockOffsetTable,            _vs,                    VirtualSpace)                  \
   nonstatic_field(SerialBlockOffsetTable,            _offset_base,           u_char*)                       \
                                                                                                             \
-  nonstatic_field(TenuredSpace,                      _offsets,               SerialBlockOffsetTable*)       \
-                                                                                                            \
   nonstatic_field(SerialHeap,                        _young_gen,             DefNewGeneration*)             \
   nonstatic_field(SerialHeap,                        _old_gen,               TenuredGeneration*)            \
 
@@ -72,7 +70,6 @@
   declare_toplevel_type(Generation::StatRecord)                               \
   declare_type(SerialHeap,                   CollectedHeap)                   \
   declare_type(TenuredGeneration,            Generation)                      \
-  declare_type(TenuredSpace,                 ContiguousSpace)                 \
                                                                               \
   declare_type(DefNewGeneration,             Generation)                      \
   declare_type(CardTableRS, CardTable)                                        \
