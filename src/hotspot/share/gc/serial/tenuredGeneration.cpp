@@ -480,7 +480,7 @@ HeapWord*
 TenuredGeneration::expand_and_allocate(size_t word_size, bool is_tlab) {
   assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
   expand(word_size*HeapWordSize, _min_heap_delta_bytes);
-  return _the_space->allocate(word_size);
+  return allocate(word_size, is_tlab);
 }
 
 size_t TenuredGeneration::contiguous_available() const {
