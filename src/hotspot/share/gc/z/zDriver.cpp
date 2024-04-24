@@ -310,8 +310,7 @@ static bool should_preclean_young(GCCause::Cause cause) {
   // catch that above and perform young gen pre-cleaning.
   assert(!should_clear_soft_references(cause), "Clearing soft references without pre-cleaning young gen");
 
-  // Preclean young if implied by configuration
-  return ScavengeBeforeFullGC;
+  return false;
 }
 
 ZDriverMajor::ZDriverMajor()
