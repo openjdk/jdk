@@ -349,6 +349,9 @@ class SharedRuntime: AllStatic {
 
   static void monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThread* current);
 
+  // Issue UL warning for unlocked JNI monitor on virtual thread termination
+  static void log_jni_monitor_still_held();
+
  private:
   static Handle find_callee_info(Bytecodes::Code& bc, CallInfo& callinfo, TRAPS);
   static Handle find_callee_info_helper(vframeStream& vfst, Bytecodes::Code& bc, CallInfo& callinfo, TRAPS);
@@ -496,6 +499,7 @@ class SharedRuntime: AllStatic {
   static void complete_monitor_unlocking_C(oopDesc* obj, BasicLock* lock, JavaThread* current);
 
   // Resolving of calls
+  static address get_resolved_entry        (JavaThread* current, methodHandle callee_method);
   static address resolve_static_call_C     (JavaThread* current);
   static address resolve_virtual_call_C    (JavaThread* current);
   static address resolve_opt_virtual_call_C(JavaThread* current);
@@ -541,6 +545,8 @@ class SharedRuntime: AllStatic {
   static uint _unsafe_array_copy_ctr;      // Slow-path includes alignment checks
   static uint _generic_array_copy_ctr;     // Slow-path includes type decoding
   static uint _slow_array_copy_ctr;        // Slow-path failed out to a method call
+
+  static uint _unsafe_set_memory_ctr;      // Slow-path includes alignment checks
 
   static uint _new_instance_ctr;           // 'new' object requires GC
   static uint _new_array_ctr;              // 'new' array requires GC

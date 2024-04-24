@@ -39,6 +39,7 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/abstractInterpreter.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allStatic.hpp"
@@ -76,6 +77,7 @@ ArchiveBuilder::SourceObjList::~SourceObjList() {
 
 void ArchiveBuilder::SourceObjList::append(SourceObjInfo* src_info) {
   // Save this source object for copying
+  src_info->set_id(_objs->length());
   _objs->append(src_info);
 
   // Prepare for marking the pointers in this source object
@@ -93,6 +95,7 @@ void ArchiveBuilder::SourceObjList::append(SourceObjInfo* src_info) {
 void ArchiveBuilder::SourceObjList::remember_embedded_pointer(SourceObjInfo* src_info, MetaspaceClosure::Ref* ref) {
   // src_obj contains a pointer. Remember the location of this pointer in _ptrmap,
   // so that we can copy/relocate it later.
+  src_info->set_has_embedded_pointer();
   address src_obj = src_info->source_addr();
   address* field_addr = ref->addr();
   assert(src_info->ptrmap_start() < _total_bytes, "sanity");
@@ -158,6 +161,8 @@ ArchiveBuilder::ArchiveBuilder() :
   _rw_region("rw", MAX_SHARED_DELTA),
   _ro_region("ro", MAX_SHARED_DELTA),
   _ptrmap(mtClassShared),
+  _rw_ptrmap(mtClassShared),
+  _ro_ptrmap(mtClassShared),
   _rw_src_objs(),
   _ro_src_objs(),
   _src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
@@ -168,7 +173,7 @@ ArchiveBuilder::ArchiveBuilder() :
 {
   _klasses = new (mtClassShared) GrowableArray<Klass*>(4 * K, mtClassShared);
   _symbols = new (mtClassShared) GrowableArray<Symbol*>(256 * K, mtClassShared);
-
+  _entropy_seed = 0x12345678;
   assert(_current == nullptr, "must be");
   _current = this;
 }
@@ -186,6 +191,16 @@ ArchiveBuilder::~ArchiveBuilder() {
   if (_shared_rs.is_reserved()) {
     _shared_rs.release();
   }
+}
+
+// Returns a deterministic sequence of pseudo random numbers. The main purpose is NOT
+// for randomness but to get good entropy for the identity_hash() of archived Symbols,
+// while keeping the contents of static CDS archives deterministic to ensure
+// reproducibility of JDK builds.
+int ArchiveBuilder::entropy() {
+  assert(SafepointSynchronize::is_at_safepoint(), "needed to ensure deterministic sequence");
+  _entropy_seed = os::next_random(_entropy_seed);
+  return static_cast<int>(_entropy_seed);
 }
 
 class GatherKlassesAndSymbols : public UniqueMetaspaceClosure {
@@ -574,6 +589,26 @@ char* ArchiveBuilder::ro_strdup(const char* s) {
   char* archived_str = ro_region_alloc((int)strlen(s) + 1);
   strcpy(archived_str, s);
   return archived_str;
+}
+
+// The objects that have embedded pointers will sink
+// towards the end of the list. This ensures we have a maximum
+// number of leading zero bits in the relocation bitmap.
+int ArchiveBuilder::compare_src_objs(SourceObjInfo** a, SourceObjInfo** b) {
+  if ((*a)->has_embedded_pointer() && !(*b)->has_embedded_pointer()) {
+    return 1;
+  } else if (!(*a)->has_embedded_pointer() && (*b)->has_embedded_pointer()) {
+    return -1;
+  } else {
+    // This is necessary to keep the sorting order stable. Otherwise the
+    // archive's contents may not be deterministic.
+    return (*a)->id() - (*b)->id();
+  }
+}
+
+void ArchiveBuilder::sort_metadata_objs() {
+  _rw_src_objs.objs()->sort(compare_src_objs);
+  _ro_src_objs.objs()->sort(compare_src_objs);
 }
 
 void ArchiveBuilder::dump_rw_metadata() {
@@ -1275,8 +1310,11 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_i
   write_region(mapinfo, MetaspaceShared::rw, &_rw_region, /*read_only=*/false,/*allow_exec=*/false);
   write_region(mapinfo, MetaspaceShared::ro, &_ro_region, /*read_only=*/true, /*allow_exec=*/false);
 
+  // Split pointer map into read-write and read-only bitmaps
+  ArchivePtrMarker::initialize_rw_ro_maps(&_rw_ptrmap, &_ro_ptrmap);
+
   size_t bitmap_size_in_bytes;
-  char* bitmap = mapinfo->write_bitmap_region(ArchivePtrMarker::ptrmap(), heap_info,
+  char* bitmap = mapinfo->write_bitmap_region(ArchivePtrMarker::rw_ptrmap(), ArchivePtrMarker::ro_ptrmap(), heap_info,
                                               bitmap_size_in_bytes);
 
   if (heap_info->is_used()) {

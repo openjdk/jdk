@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,16 @@ $(eval $(call IncludeCustomExtension, SourceRevision-pre.gmk))
 # creating the tracker file.
 
 STORED_SOURCE_REVISION := $(TOPDIR)/.src-rev
+
+# Locate all sourcecode repositories included in the forest, as absolute paths
+FindAllReposAbs = \
+    $(strip $(sort $(dir $(filter-out $(TOPDIR)/build/%, $(wildcard \
+        $(addprefix $(TOPDIR)/, .git */.git */*/.git */*/*/.git */*/*/*/.git) \
+    )))))
+
+# Locate all sourcecode repositories included in the forest, as relative paths
+FindAllReposRel = \
+    $(strip $(subst $(TOPDIR)/,.,$(patsubst $(TOPDIR)/%/, %, $(FindAllReposAbs))))
 
 USE_SCM := false
 ifneq ($(and $(GIT), $(wildcard $(TOPDIR)/.git)), )
