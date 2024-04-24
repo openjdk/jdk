@@ -501,6 +501,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RegisterFinalizersAtInit",     JDK_Version::jdk(22), JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "DontYieldALot",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
   { "PreserveAllAnnotations",       JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
   { "UseNotificationThread",        JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
   { "UseEmptySlotsInSupers",        JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },

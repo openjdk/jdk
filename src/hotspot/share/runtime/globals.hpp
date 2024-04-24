@@ -698,7 +698,7 @@ const int ObjectAlignmentInBytes = 8;
           "registering as parallel capable")                                \
                                                                             \
   product_pd(bool, DontYieldALot,                                           \
-          "Throw away obvious excess yield calls")                          \
+             "(Deprecated) Throw away obvious excess yield calls")          \
                                                                             \
   product(bool, DisablePrimordialThreadGuardPages, false, EXPERIMENTAL,     \
                "Disable the use of stack guard pages if the JVM is loaded " \
