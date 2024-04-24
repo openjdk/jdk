@@ -50,7 +50,7 @@ endif
 $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBGTEST, \
     NAME := gtest, \
     TYPE := STATIC_LIBRARY, \
-    LINK_TYPE := C++, \
+    LANG := C++, \
     OUTPUT_DIR := $(JVM_OUTPUTDIR)/libgtest, \
     OBJECT_DIR := $(JVM_OUTPUTDIR)/libgtest/objs, \
     SRC := \
@@ -65,7 +65,7 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBGTEST, \
         -I$(GTEST_FRAMEWORK_SRC)/googletest/include \
         -I$(GTEST_FRAMEWORK_SRC)/googlemock \
         -I$(GTEST_FRAMEWORK_SRC)/googlemock/include, \
-    CFLAGS_windows := -EHsc, \
+    CFLAGS_microsoft := -EHsc, \
     CFLAGS_macosx := -DGTEST_OS_MAC=1, \
     OPTIMIZATION := $(JVM_OPTIMIZATION), \
     COPY_DEBUG_SYMBOLS := $(GTEST_COPY_DEBUG_SYMBOLS), \
@@ -82,7 +82,7 @@ TARGETS += $(BUILD_GTEST_LIBGTEST)
 # Additional disabled warnings are due to code in the test source.
 $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
     NAME := jvm, \
-    LINK_TYPE := C++, \
+    LANG := C++, \
     OUTPUT_DIR := $(JVM_OUTPUTDIR)/gtest, \
     OBJECT_DIR := $(JVM_OUTPUTDIR)/gtest/objs, \
     SRC := $(GTEST_TEST_SRC), \
@@ -95,7 +95,7 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
         -I$(GTEST_FRAMEWORK_SRC)/googletest/include \
         -I$(GTEST_FRAMEWORK_SRC)/googlemock/include \
         $(addprefix -I,$(GTEST_TEST_SRC)), \
-    CFLAGS_windows := -EHsc, \
+    CFLAGS_microsoft := -EHsc, \
     CFLAGS_macosx := -DGTEST_OS_MAC=1, \
     DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc) \
         undef stringop-overflow, \
@@ -135,7 +135,7 @@ TARGETS += $(BUILD_GTEST_LIBJVM)
 $(eval $(call SetupJdkExecutable, BUILD_GTEST_LAUNCHER, \
     NAME := gtestLauncher, \
     TYPE := EXECUTABLE, \
-    LINK_TYPE := C++, \
+    LANG := C++, \
     OUTPUT_DIR := $(JVM_OUTPUTDIR)/gtest, \
     SRC := $(TOPDIR)/test/hotspot/gtest, \
     INCLUDE_FILES := gtestLauncher.cpp, \
