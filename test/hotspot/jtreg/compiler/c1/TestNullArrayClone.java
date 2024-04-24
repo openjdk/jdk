@@ -27,8 +27,7 @@
  * @summary Tests that an array clone call that has been compiled with C1
  *          handles null values correctly.
  * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:TieredStopAtLevel=1
- *                   -XX:CompileOnly=compiler.c1.TestNullArrayClone::test -XX:+UnlockExperimentalVMOptions
- *                   -XX:CompileCommand=blackhole,compiler.c1.TestNullArrayClone::blackhole
+ *                   -XX:CompileOnly=compiler.c1.TestNullArrayClone::testClone* -XX:+UnlockExperimentalVMOptions
  *                   compiler.c1.TestNullArrayClone
  */
 package compiler.c1;
@@ -36,28 +35,99 @@ package compiler.c1;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class TestNullArrayClone {
+    static final int ITER = 2000; // ~ Tier3CompileThreshold
+    static final int ARRAY_SIZE = 999;
+
     public static void main(String[] args) {
-        final int size = 10;
-        final int[] ints = new int[size];
-        for (int i = 0; i < ints.length; i++) {
-            ints[i] = ThreadLocalRandom.current().nextInt();
+        testInts();
+        testLongs();
+        testBytes();
+    }
+
+    private static void testInts() {
+        final int[] arr = new int[ARRAY_SIZE];
+        for (int i = 0; i < arr.length; i++) {
+            arr[i] = ThreadLocalRandom.current().nextInt();
         }
 
-        for (int i = 0; i < 1_000; i++) {
-            int[] result = test(ints);
-            blackhole(result);
+        for (int i = 0; i < ITER; i++) {
+            int[] result = testClonePrimitiveInt(arr);
+            if (result.length != arr.length) {
+                throw new RuntimeException("Unexpected clone length: source array length " + arr.length + " != clone array length " + result.length);
+            }
+            for (int j = 0; j < arr.length; j++) {
+                if (result[j] != arr[j]) {
+                    throw new RuntimeException("Unexpected result: " + result[j] + " != " + j);
+                }
+            }
         }
 
         try {
-            test(null);
+            testClonePrimitiveInt(null);
             throw new RuntimeException("Expected NullPointerException to be thrown");
         } catch (NullPointerException e) {
         }
     }
 
-    static int[] test(int[] ints) {
+    private static void testLongs() {
+        final long[] arr = new long[ARRAY_SIZE];
+        for (int i = 0; i < arr.length; i++) {
+            arr[i] = ThreadLocalRandom.current().nextLong();
+        }
+
+        for (int i = 0; i < ITER; i++) {
+            long[] result = testClonePrimitiveLong(arr);
+            if (result.length != arr.length) {
+                throw new RuntimeException("Unexpected clone length: source array length " + arr.length + " != clone array length " + result.length);
+            }
+            for (int j = 0; j < arr.length; j++) {
+                if (result[j] != arr[j]) {
+                    throw new RuntimeException("Unexpected result: " + result[j] + " != " + j);
+                }
+            }
+        }
+
+        try {
+            testClonePrimitiveLong(null);
+            throw new RuntimeException("Expected NullPointerException to be thrown");
+        } catch (NullPointerException e) {
+        }
+    }
+
+    private static void testBytes() {
+        final byte[] arr = new byte[ARRAY_SIZE];
+        for (int i = 0; i < arr.length; i++) {
+            arr[i] = (byte) ThreadLocalRandom.current().nextInt();
+        }
+
+        for (int i = 0; i < ITER; i++) {
+            byte[] result = testClonePrimitiveBytes(arr);
+            if (result.length != arr.length) {
+                throw new RuntimeException("Unexpected clone length: source array length " + arr.length + " != clone array length " + result.length);
+            }
+            for (int j = 0; j < arr.length; j++) {
+                if (result[j] != arr[j]) {
+                    throw new RuntimeException("Unexpected result: " + result[j] + " != " + j);
+                }
+            }
+        }
+
+        try {
+            testClonePrimitiveBytes(null);
+            throw new RuntimeException("Expected NullPointerException to be thrown");
+        } catch (NullPointerException e) {
+        }
+    }
+
+    static int[] testClonePrimitiveInt(int[] ints) {
         return ints.clone();
     }
 
-    static void blackhole(Object obj) {}
+    static long[] testClonePrimitiveLong(long[] longs) {
+        return longs.clone();
+    }
+
+    static byte[] testClonePrimitiveBytes(byte[] bytes) {
+        return bytes.clone();
+    }
 }
