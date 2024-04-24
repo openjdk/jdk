@@ -53,10 +53,6 @@ class SerialBlockOffsetTable: public CHeapObj<mtGC> {
   // Biased array-start of BOT array for fast BOT entry translation
   uint8_t* _offset_base;
 
-  void fill_range(uint8_t* const start, size_t num_cards, uint8_t offset) {
-    memset(start, offset, num_cards);
-  }
-
   // Return the number of slots needed for an offset array
   // that covers mem_region_words words.
   static size_t compute_size(size_t mem_region_words) {
@@ -65,6 +61,12 @@ class SerialBlockOffsetTable: public CHeapObj<mtGC> {
     size_t number_of_slots = mem_region_words / CardTable::card_size_in_words();
     return ReservedSpace::allocation_align_size_up(number_of_slots);
   }
+
+  // Mapping from address to object start array entry.
+  uint8_t* entry_for_addr(const void* const p) const;
+
+  // Mapping from object start array entry to address of first word.
+  HeapWord* addr_for_entry(const uint8_t* const p) const;
 
   void update_for_block_work(HeapWord* blk_start, HeapWord* blk_end);
 
@@ -105,27 +107,6 @@ public:
   // table.  The "new_word_size" may not be larger than the size of the
   // reserved region this table covers.
   void resize(size_t new_word_size);
-
-  // Mapping from address to object start array entry
-  uint8_t* entry_for_addr(const void* const p) const;
-
-  // Mapping from object start array entry to address of first word
-  HeapWord* addr_for_entry(const uint8_t* const p) const;
-
-  void set_offset_array(uint8_t* const addr, HeapWord* high, HeapWord* low) {
-    assert(_vs.contains(addr), "Block offset address out of range");
-    assert(high >= low, "addresses out of order");
-    assert(pointer_delta(high, low) < CardTable::card_size_in_words(), "offset too large");
-    *addr = checked_cast<uint8_t>(pointer_delta(high, low));
-  }
-
-  void set_offset_array(uint8_t* const left, uint8_t* const right, uint8_t offset) {
-    assert(_vs.contains(right), "right address out of range");
-    assert(left <= right, "precondition");
-    size_t num_cards = right - left + 1;
-
-    fill_range(left, num_cards, offset);
-  }
 };
 
 #endif // SHARE_GC_SERIAL_SERIALBLOCKOFFSETTABLE_HPP

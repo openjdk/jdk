@@ -83,7 +83,7 @@
 //  To force FullGCALot inside a runtime function, add the following two lines
 //
 //  Universe::release_fullgc_alot_dummy();
-//  MarkSweep::invoke(0, "Debugging");
+//  Universe::heap()->collect();
 //
 // At command line specify the parameters: -XX:+FullGCALot -XX:FullGCALotStart=100000000
 
@@ -770,6 +770,29 @@ const TypeFunc* OptoRuntime::void_void_Type() {
    return TypeFunc::make(domain, range);
  }
 
+
+// Takes as parameters:
+// void *dest
+// long size
+// uchar byte
+const TypeFunc* OptoRuntime::make_setmemory_Type() {
+  // create input type (domain)
+  int argcnt = NOT_LP64(3) LP64_ONLY(4);
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;        // dest
+  fields[argp++] = TypeX_X;                 // size
+  LP64_ONLY(fields[argp++] = Type::HALF);   // size
+  fields[argp++] = TypeInt::UBYTE;          // bytevalue
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // no result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = nullptr; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
 
 // arraycopy stub variations:
 enum ArrayCopyType {

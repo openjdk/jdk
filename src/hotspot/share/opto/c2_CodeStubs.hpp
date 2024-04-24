@@ -68,7 +68,7 @@ public:
   C2CodeStubList();
 
   void add_stub(C2CodeStub* stub) { _stubs.append(stub); }
-  void emit(CodeBuffer& cb);
+  void emit(C2_MacroAssembler& masm);
 };
 
 class C2SafepointPollStub : public C2CodeStub {

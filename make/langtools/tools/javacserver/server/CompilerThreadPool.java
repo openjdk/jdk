@@ -43,14 +43,8 @@ public class CompilerThreadPool {
         this.pool = Executors.newFixedThreadPool(POOLSIZE);
     }
 
-    public int dispatchCompilation(String[] args) {
-        Log log = Log.get();
-        try {
-            return pool.submit(() -> Server.runCompiler(log, args)).get();
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error during compile", e);
-        }
+    public void execute(Runnable runnable) {
+        this.pool.execute(runnable);
     }
 
     public void shutdown() {
