@@ -598,12 +598,14 @@ class java_lang_Throwable: AllStatic {
   static void set_backtrace(oop throwable, oop value);
   static int depth(oop throwable);
   static void set_depth(oop throwable, int value);
-  static int get_detailMessage_offset() { CHECK_INIT(_detailMessage_offset); }
   // Message
+  static int get_detailMessage_offset() { CHECK_INIT(_detailMessage_offset); }
   static oop message(oop throwable);
-  static oop cause(oop throwable);
+  static const char* message_as_utf8(oop throwable);
   static void set_message(oop throwable, oop value);
-  static Symbol* detail_message(oop throwable);
+
+  static oop cause(oop throwable);
+
   static void print_stack_element(outputStream *st, Method* method, int bci);
 
   static void compute_offsets();

@@ -50,24 +50,6 @@ inline bool nmethod::is_deopt_mh_entry(address pc) {
     ;
 }
 
-// -----------------------------------------------------------------------------
-// nmethod::get_deopt_original_pc
-//
-// Return the original PC for the given PC if:
-// (a) the given PC belongs to an nmethod and
-// (b) it is a deopt PC
-
-inline address nmethod::get_deopt_original_pc(const frame* fr) {
-  if (fr->cb() == nullptr)  return nullptr;
-
-  nmethod* nm = fr->cb()->as_nmethod_or_null();
-  if (nm != nullptr && nm->is_deopt_pc(fr->pc())) {
-    return nm->get_original_pc(fr);
-  }
-  return nullptr;
-}
-
-
 // class ExceptionCache methods
 
 inline int ExceptionCache::count() { return Atomic::load_acquire(&_count); }

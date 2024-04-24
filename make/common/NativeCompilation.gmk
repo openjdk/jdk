@@ -36,6 +36,7 @@ ifeq ($(_MAKEBASE_GMK), )
   $(error You must include MakeBase.gmk prior to including NativeCompilation.gmk)
 endif
 
+include MakeIO.gmk
 include native/CompileFile.gmk
 include native/DebugSymbols.gmk
 include native/Flags.gmk
@@ -84,6 +85,7 @@ include native/Paths.gmk
 #   EXTRA_FILES List of extra files not in any of the SRC dirs
 #   EXTRA_OBJECT_FILES List of extra object files to include when linking
 #   EXTRA_DEPS List of extra dependencies to be added to each compiled file
+#   EXTRA_LINK_DEPS List of extra dependencies to be added to the link stage
 #   VERSIONINFO_RESOURCE Input file for RC. Setting this implies that RC will be run
 #   RCFLAGS flags for RC.
 #   EMBED_MANIFEST if true, embed manifest on Windows.
@@ -227,6 +229,9 @@ endef
 ################################################################################
 # Verify that user passed arguments are valid
 define VerifyArguments
+  ifeq ($$($1_NAME), )
+    $$(error NAME must not be empty in $1)
+  endif
   ifneq ($$($1_NAME), $(basename $$($1_NAME)))
     $$(error NAME must not contain any directory path in $1)
   endif

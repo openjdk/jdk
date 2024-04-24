@@ -39,6 +39,14 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+// In stdlib.h on AIX malloc is defined as a macro causing
+// compiler errors when resolving them in different depths as it
+// happens in the log tags. This avoids the macro.
+#if (defined(__VEC__) || defined(__AIXVEC)) && defined(AIX) \
+    && defined(__open_xl_version__) && __open_xl_version__ >= 17
+  #undef malloc
+  extern void *malloc(size_t) asm("vec_malloc");
+#endif
 #include <wchar.h>
 
 #include <math.h>
@@ -50,7 +58,7 @@
 #include <limits.h>
 #include <errno.h>
 
-#if defined(LINUX) || defined(_ALLBSD_SOURCE)
+#if defined(LINUX) || defined(_ALLBSD_SOURCE) || defined(_AIX)
 #include <signal.h>
 #ifndef __OpenBSD__
 #include <ucontext.h>
@@ -83,7 +91,7 @@
 // checking for nanness
 #if defined(__APPLE__)
 inline int g_isnan(double f) { return isnan(f); }
-#elif defined(LINUX) || defined(_ALLBSD_SOURCE)
+#elif defined(LINUX) || defined(_ALLBSD_SOURCE) || defined(_AIX)
 inline int g_isnan(float  f) { return isnan(f); }
 inline int g_isnan(double f) { return isnan(f); }
 #else

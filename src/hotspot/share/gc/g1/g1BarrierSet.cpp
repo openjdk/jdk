@@ -102,7 +102,7 @@ void G1BarrierSet::write_ref_field_post_slow(volatile CardValue* byte) {
   }
 }
 
-void G1BarrierSet::invalidate(JavaThread* thread, MemRegion mr) {
+void G1BarrierSet::write_region(JavaThread* thread, MemRegion mr) {
   if (mr.is_empty()) {
     return;
   }
