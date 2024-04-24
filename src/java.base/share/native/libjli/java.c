@@ -617,14 +617,11 @@ JavaMain(void* _args)
 
 
     helperClass = GetLauncherHelperClass(env);
-    isStaticMainField =
-        (*env)->GetStaticFieldID(env, helperClass, "isStaticMain", "Z");
+    isStaticMainField = (*env)->GetStaticFieldID(env, helperClass, "isStaticMain", "Z");
     CHECK_EXCEPTION_NULL_LEAVE(isStaticMainField);
-    isStaticMain =
-        (*env)->GetStaticBooleanField(env, helperClass, isStaticMainField);
+    isStaticMain = (*env)->GetStaticBooleanField(env, helperClass, isStaticMainField);
 
-    noArgMainField =
-        (*env)->GetStaticFieldID(env, helperClass, "noArgMain", "Z");
+    noArgMainField = (*env)->GetStaticFieldID(env, helperClass, "noArgMain", "Z");
     CHECK_EXCEPTION_NULL_LEAVE(noArgMainField);
     noArgMain = (*env)->GetStaticBooleanField(env, helperClass, noArgMainField);
 
