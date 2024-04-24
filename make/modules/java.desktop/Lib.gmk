@@ -52,14 +52,14 @@ ifeq ($(call isTargetOs, aix), false)
       -DUSE_PLATFORM_MIDI_IN=TRUE \
       #
 
-  LIBJSOUND_LINK_TYPE := C
-  ifeq ($(call isTargetOs, macosx), true)
-    LIBJSOUND_LINK_TYPE := C++
+  LIBJSOUND_LANG := C
+  ifeq ($(call isTargetOs, macosx windows), true)
+    LIBJSOUND_LANG := C++
   endif
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBJSOUND, \
       NAME := jsound, \
-      LINK_TYPE := $(LIBJSOUND_LINK_TYPE), \
+      LANG := $(LIBJSOUND_LANG), \
       OPTIMIZATION := LOW, \
       EXTRA_HEADER_DIRS := java.base:libjava, \
       CFLAGS := $(LIBJSOUND_CFLAGS), \
