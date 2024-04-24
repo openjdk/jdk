@@ -33,64 +33,35 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 /**
- * Benchmark measuring StableValue performance
+ * Benchmark measuring StableValue performance in instance contexts
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Benchmark) // Share the same state instance (for contention)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
-@Fork(value = 2, jvmArgsAppend = {"--add-exports=java.base/jdk.internal.lang=ALL-UNNAMED", "--enable-preview"})
+@Fork(value = 2, jvmArgsAppend = {"--add-exports=java.base/jdk.internal.lang=ALL-UNNAMED", "--enable-preview",
+"-XX:CompileCommand=dontinline,jdk.internal.lang.stable.StableValueImpl::orThrow",
+"-XX:CompileCommand=dontinline,org.openjdk.bench.java.lang.stable.StableBenchmark$Dcl::get",
+"-XX:CompileCommand=dontinline,java.util.concurrent.atomic.AtomicReference::get",
+"-XX:-BackgroundCompilation",
+"-XX:CompileCommand=print,jdk.internal.lang.stable.StableValueImpl::orThrow",
+"-XX:CompileCommand=print,org.openjdk.bench.java.lang.stable.StableBenchmark$Dcl::get",
+"-XX:CompileCommand=print,java.util.concurrent.atomic.AtomicReference::get",
+"-XX:-TieredCompilation"})
 @Threads(Threads.MAX)   // Benchmark under contention
 public class StableBenchmark {
 
     private static final int VALUE = 42;
-
-    private static final StableValue<Integer> STABLE = init(StableValue.of());
-    private static final Supplier<Integer> DCL = new Dcl<>(() -> VALUE);
-    private static final List<StableValue<Integer>> LIST = StableValue.ofList(1);
-    private static final AtomicReference<Integer> ATOMIC = new AtomicReference<>(VALUE);
 
     private final StableValue<Integer> stable = init(StableValue.of());
     private final Supplier<Integer> dcl = new Dcl<>(() -> VALUE);
     private final List<StableValue<Integer>> list = StableValue.ofList(1);
     private final AtomicReference<Integer> atomic = new AtomicReference<>(VALUE);
 
-    static {
-        LIST.getFirst().setOrThrow(VALUE);
-    }
-
     @Setup
     public void setup() {
         list.getFirst().setOrThrow(VALUE);
-    }
-
-    @Benchmark
-    public void staticAtomic(Blackhole bh) {
-        bh.consume((int)ATOMIC.get());
-    }
-
-    @Benchmark
-    public void staticStable(Blackhole bh) {
-        bh.consume((int)STABLE.orThrow());
-    }
-
-    @Benchmark
-    public void staticList(Blackhole bh) {
-        bh.consume((int)LIST.get(0).orThrow());
-    }
-
-    @Benchmark
-    public void staticCHI(Blackhole bh) {
-        class Holder {
-            static final int VALUE = 42;
-        }
-        bh.consume((int)Holder.VALUE);
-    }
-
-    @Benchmark
-    public void staticDCL(Blackhole bh) {
-        bh.consume((int)DCL.get());
     }
 
     @Benchmark

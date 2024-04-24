@@ -21,10 +21,20 @@
  * questions.
  */
 
-package org.openjdk.bench.java.lang.stable;
+package lang.stable;
 
 import jdk.internal.lang.StableValue;
-import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Threads;
+import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.List;
@@ -33,22 +43,16 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 /**
- * Benchmark measuring StableValue performance
+ * Benchmark measuring StableValue performance in a static context
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Benchmark) // Share the same state instance (for contention)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
-@Fork(value = 2, jvmArgsAppend = {"--add-exports=java.base/jdk.internal.lang=ALL-UNNAMED", "--enable-preview",
-"-XX:CompileCommand=dontinline,jdk.internal.lang.stable.StableValueImpl::orThrow",
-"-XX:-BackgroundCompilation",
-"-XX:CompileCommand=print,jdk.internal.lang.stable.StableValueImpl::orThrow",
-"-XX:-TieredCompilation"
-
-})
+@Fork(value = 2, jvmArgsAppend = {"--add-exports=java.base/jdk.internal.lang=ALL-UNNAMED", "--enable-preview"})
 @Threads(Threads.MAX)   // Benchmark under contention
-public class StableBenchmark {
+public class StableStaticBenchmark {
 
     private static final int VALUE = 42;
 
@@ -57,18 +61,8 @@ public class StableBenchmark {
     private static final List<StableValue<Integer>> LIST = StableValue.ofList(1);
     private static final AtomicReference<Integer> ATOMIC = new AtomicReference<>(VALUE);
 
-    private final StableValue<Integer> stable = init(StableValue.of());
-    private final Supplier<Integer> dcl = new Dcl<>(() -> VALUE);
-    private final List<StableValue<Integer>> list = StableValue.ofList(1);
-    private final AtomicReference<Integer> atomic = new AtomicReference<>(VALUE);
-
     static {
         LIST.getFirst().setOrThrow(VALUE);
-    }
-
-    @Setup
-    public void setup() {
-        list.getFirst().setOrThrow(VALUE);
     }
 
     @Benchmark
@@ -91,32 +85,7 @@ public class StableBenchmark {
         class Holder {
             static final int VALUE = 42;
         }
-        bh.consume((int)Holder.VALUE);
-    }
-
-    @Benchmark
-    public void staticDCL(Blackhole bh) {
-        bh.consume((int)DCL.get());
-    }
-
-    @Benchmark
-    public void instanceAtomic(Blackhole bh) {
-        bh.consume((int)atomic.get());
-    }
-
-    @Benchmark
-    public void instanceDCL(Blackhole bh) {
-        bh.consume((int)dcl.get());
-    }
-
-/*    @Benchmark
-    public void instanceList(Blackhole bh) {
-        bh.consume((int)list.get(0).orThrow());
-    }*/
-
-    @Benchmark
-    public void instanceStable(Blackhole bh) {
-        bh.consume((int)stable.orThrow());
+        bh.consume((int) Holder.VALUE);
     }
 
     private static StableValue<Integer> init(StableValue<Integer> m) {
