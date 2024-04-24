@@ -37,6 +37,7 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.concurrent.ConcurrentHashMap;
 import static sun.awt.SunHints.*;
+import sun.java2d.pipe.OutlineTextRenderer;
 
 
 public class FileFontStrike extends PhysicalStrike {
@@ -107,6 +108,7 @@ public class FileFontStrike extends PhysicalStrike {
     boolean useNatives;
     NativeStrike[] nativeStrikes;
 
+    static final int MAX_IMAGE_SIZE = OutlineTextRenderer.THRESHHOLD;
     /* Used only for communication to native layer */
     private int intPtSize;
 
@@ -696,6 +698,20 @@ public class FileFontStrike extends PhysicalStrike {
      */
     void getGlyphImageBounds(int glyphCode, Point2D.Float pt,
                              Rectangle result) {
+
+        if (intPtSize > MAX_IMAGE_SIZE) {
+            Rectangle.Float obds = getGlyphOutlineBounds(glyphCode);
+            if (obds.isEmpty()) {
+                Rectangle bds = getGlyphOutline(glyphCode, pt.x, pt.y).getBounds();
+                result.setBounds(bds);
+            } else {
+                result.x = (int)Math.floor(pt.x + obds.getX() + 0.5f);
+                result.y = (int)Math.floor(pt.y + obds.getY() + 0.5f);
+                result.width = (int)Math.floor(obds.getWidth() + 0.5f);
+                result.height = (int)Math.floor(obds.getHeight() + 0.5f);
+            }
+            return;
+        }
 
         long ptr = getGlyphImagePtr(glyphCode);
         float topLeftX, topLeftY;

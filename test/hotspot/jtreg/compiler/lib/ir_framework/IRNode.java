@@ -887,9 +887,24 @@ public class IRNode {
         beforeMatchingNameRegex(MEMBAR, "MemBar");
     }
 
+    public static final String MEMBAR_ACQUIRE = PREFIX + "MEMBAR_ACQUIRE" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MEMBAR_ACQUIRE, "MemBarAcquire");
+    }
+
+    public static final String MEMBAR_RELEASE = PREFIX + "MEMBAR_RELEASE" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MEMBAR_RELEASE, "MemBarRelease");
+    }
+
     public static final String MEMBAR_STORESTORE = PREFIX + "MEMBAR_STORESTORE" + POSTFIX;
     static {
         beforeMatchingNameRegex(MEMBAR_STORESTORE, "MemBarStoreStore");
+    }
+
+    public static final String MEMBAR_VOLATILE = PREFIX + "MEMBAR_VOLATILE" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MEMBAR_VOLATILE, "MemBarVolatile");
     }
 
     public static final String MIN = PREFIX + "MIN" + POSTFIX;
