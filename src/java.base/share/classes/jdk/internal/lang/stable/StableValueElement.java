@@ -1,10 +1,10 @@
 package jdk.internal.lang.stable;
 
 import jdk.internal.lang.StableValue;
+import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.util.NoSuchElementException;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -19,11 +19,13 @@ public record StableValueElement<V>(
         int index
 ) implements StableValue<V> {
 
+    @ForceInline
     @Override
     public boolean isSet() {
-        return state() != UNSET || stateVolatile() != UNSET;
+        return states[index] != UNSET || stateVolatile() != UNSET;
     }
 
+    @ForceInline
     @Override
     public V orThrow() {
         // Optimistically try plain semantics first
@@ -33,7 +35,7 @@ public record StableValueElement<V>(
             // plain semantics, we know a value is set.
             return e;
         }
-        if (state() == NULL) {
+        if (states[index] == NULL) {
             // If we happen to see a status value of NULL under
             // plain semantics, we know a value is set to `null`.
             return null;
@@ -42,7 +44,7 @@ public record StableValueElement<V>(
         return orThrowVolatile();
     }
 
-    @ForceInline
+    @DontInline
     private V orThrowVolatile() {
         V v = elementVolatile();
         if (v != null) {
@@ -103,19 +105,23 @@ public record StableValueElement<V>(
         return StableUtil.toString(this);
     }
 
+    @ForceInline
     @Override
     public V computeIfUnset(Supplier<? extends V> supplier) {
         return computeIfUnsetShared(supplier, null);
     }
 
+    @ForceInline
     public V computeIfUnset(int index, IntFunction<? extends V> mapper) {
         return computeIfUnsetShared(mapper, index);
     }
 
+    @ForceInline
     public <K> V computeIfUnset(K key, Function<? super K, ? extends V> mapper) {
         return computeIfUnsetShared(mapper, key);
     }
 
+    @ForceInline
     private <K> V computeIfUnsetShared(Object provider, K key) {
         // Optimistically try plain semantics first
         V e = elements[index];
@@ -124,13 +130,14 @@ public record StableValueElement<V>(
             // plain semantics, we know a value is set.
             return e;
         }
-        if (state() == NULL) {
+        if (states[index] == NULL) {
             return null;
         }
         // Now, fall back to volatile semantics.
         return computeIfUnsetVolatile(provider, key);
     }
 
+    @DontInline
     private <K> V computeIfUnsetVolatile(Object provider, K key) {
         V e = elementVolatile();
         if (e != null) {
@@ -177,7 +184,7 @@ public record StableValueElement<V>(
     }
 
     private void setValue(V value) {
-        if (state() != UNSET) {
+        if (states[index] != UNSET) {
             throw StableUtil.alreadySet(this);
         }
         if (value != null) {
@@ -191,10 +198,6 @@ public record StableValueElement<V>(
         // Make sure no reordering of store operations
         freeze();
         UNSAFE.putReferenceVolatile(elements, objectOffset(index), created);
-    }
-
-    int state() {
-        return states[index];
     }
 
     byte stateVolatile() {
@@ -211,15 +214,15 @@ public record StableValueElement<V>(
     private Object acquireMutex() {
         Object mutex = UNSAFE.getReferenceVolatile(mutexes, StableUtil.objectOffset(index));
         if (mutex == null) {
-            mutex = casMutex();
+            mutex = caeMutex();
         }
         return mutex;
     }
 
-    private Object casMutex() {
+    private Object caeMutex() {
         Object created = new Object();
-        Object mutex = UNSAFE.compareAndExchangeReference(mutexes, objectOffset(index), null, created);
-        return mutex == null ? created : mutex;
+        Object witness = UNSAFE.compareAndExchangeReference(mutexes, objectOffset(index), null, created);
+        return witness == null ? created : witness;
     }
 
     private void clearMutex() {
