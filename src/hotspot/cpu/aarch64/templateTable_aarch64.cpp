@@ -3611,7 +3611,7 @@ void TemplateTable::_new() {
   __ ldrw(r3,
           Address(r4,
                   Klass::layout_helper_offset()));
-  // test to see if it has a finalizer or is malformed in some way
+  // test to see if it is malformed in some way
   __ tbnz(r3, exact_log2(Klass::_lh_instance_slow_path_bit), slow_case);
 
   // Allocate the instance:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package java.io;
 
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
-import jdk.internal.misc.Blocker;
 import jdk.internal.util.ArraysSupport;
 import sun.nio.ch.FileChannelImpl;
 
@@ -210,12 +209,7 @@ public class FileInputStream extends InputStream
      * @param name the name of the file
      */
     private void open(String name) throws FileNotFoundException {
-        long comp = Blocker.begin();
-        try {
-            open0(name);
-        } finally {
-            Blocker.end(comp);
-        }
+        open0(name);
     }
 
     /**
@@ -228,12 +222,7 @@ public class FileInputStream extends InputStream
      */
     @Override
     public int read() throws IOException {
-        long comp = Blocker.begin();
-        try {
-            return read0();
-        } finally {
-            Blocker.end(comp);
-        }
+        return read0();
     }
 
     private native int read0() throws IOException;
@@ -260,12 +249,7 @@ public class FileInputStream extends InputStream
      */
     @Override
     public int read(byte[] b) throws IOException {
-        long comp = Blocker.begin();
-        try {
-            return readBytes(b, 0, b.length);
-        } finally {
-            Blocker.end(comp);
-        }
+        return readBytes(b, 0, b.length);
     }
 
     /**
@@ -284,12 +268,7 @@ public class FileInputStream extends InputStream
      */
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
-        long comp = Blocker.begin();
-        try {
-            return readBytes(b, off, len);
-        } finally {
-            Blocker.end(comp);
-        }
+        return readBytes(b, off, len);
     }
 
     @Override
@@ -396,22 +375,12 @@ public class FileInputStream extends InputStream
     }
 
     private long length() throws IOException {
-        long comp = Blocker.begin();
-        try {
-            return length0();
-        } finally {
-            Blocker.end(comp);
-        }
+        return length0();
     }
     private native long length0() throws IOException;
 
     private long position() throws IOException {
-        long comp = Blocker.begin();
-        try {
-            return position0();
-        } finally {
-            Blocker.end(comp);
-        }
+        return position0();
     }
     private native long position0() throws IOException;
 
@@ -441,12 +410,7 @@ public class FileInputStream extends InputStream
      */
     @Override
     public long skip(long n) throws IOException {
-        long comp = Blocker.begin();
-        try {
-            return skip0(n);
-        } finally {
-            Blocker.end(comp);
-        }
+        return skip0(n);
     }
 
     private native long skip0(long n) throws IOException;
@@ -470,12 +434,7 @@ public class FileInputStream extends InputStream
      */
     @Override
     public int available() throws IOException {
-        long comp = Blocker.begin();
-        try {
-            return available0();
-        } finally {
-            Blocker.end(comp);
-        }
+        return available0();
     }
 
     private native int available0() throws IOException;
@@ -566,8 +525,8 @@ public class FileInputStream extends InputStream
             synchronized (this) {
                 fc = this.channel;
                 if (fc == null) {
-                    this.channel = fc = FileChannelImpl.open(fd, path, true,
-                        false, false, this);
+                    fc = FileChannelImpl.open(fd, path, true, false, false, false, this);
+                    this.channel = fc;
                     if (closed) {
                         try {
                             // possible race with close(), benign since

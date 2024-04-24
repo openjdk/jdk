@@ -1280,7 +1280,15 @@ void  os::dll_unload(void *lib) {
 }
 
 void* os::dll_lookup(void *lib, const char *name) {
-  return (void*)::GetProcAddress((HMODULE)lib, name);
+  ::SetLastError(0); // Clear old pending errors
+  void* ret = ::GetProcAddress((HMODULE)lib, name);
+  if (ret == nullptr) {
+    char buf[512];
+    if (os::lasterror(buf, sizeof(buf)) > 0) {
+      log_debug(os)("Symbol %s not found in dll: %s", name, buf);
+    }
+  }
+  return ret;
 }
 
 // Directory routines copied from src/win32/native/java/io/dirent_md.c
@@ -2787,12 +2795,12 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
       }
 
-      bool is_unsafe_arraycopy = (in_native || in_java) && UnsafeCopyMemory::contains_pc(pc);
-      if (((in_vm || in_native || is_unsafe_arraycopy) && thread->doing_unsafe_access()) ||
+      bool is_unsafe_memory_access = (in_native || in_java) && UnsafeMemoryAccess::contains_pc(pc);
+      if (((in_vm || in_native || is_unsafe_memory_access) && thread->doing_unsafe_access()) ||
           (nm != nullptr && nm->has_unsafe_access())) {
         address next_pc =  Assembler::locate_next_instruction(pc);
-        if (is_unsafe_arraycopy) {
-          next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+        if (is_unsafe_memory_access) {
+          next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
         }
         return Handle_Exception(exceptionInfo, SharedRuntime::handle_unsafe_access(thread, next_pc));
       }

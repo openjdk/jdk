@@ -141,9 +141,6 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         return SystemLookup.getInstance();
     }
 
-    /** {@return byte order used by this linker} */
-    protected abstract ByteOrder linkerByteOrder();
-
     // C spec mandates that variadic arguments smaller than int are promoted to int,
     // and float is promoted to double
     // See: https://en.cppreference.com/w/c/language/conversion#Default_argument_promotions
