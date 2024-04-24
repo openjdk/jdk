@@ -27,12 +27,11 @@
 
 #include "gc/serial/cSpaceCounters.hpp"
 #include "gc/serial/generation.hpp"
-#include "gc/shared/gcStats.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/space.hpp"
 #include "utilities/macros.hpp"
 
-class SerialBlockOffsetSharedArray;
+class SerialBlockOffsetTable;
 class CardTableRS;
 class ContiguousSpace;
 
@@ -51,7 +50,7 @@ class TenuredGeneration: public Generation {
   // This is shared with other generations.
   CardTableRS* _rs;
   // This is local to this generation.
-  SerialBlockOffsetSharedArray* _bts;
+  SerialBlockOffsetTable* _bts;
 
   // Current shrinking effect: this damps shrinking when the heap gets empty.
   size_t _shrink_factor;
@@ -67,9 +66,14 @@ class TenuredGeneration: public Generation {
   void assert_correct_size_change_locking();
 
   TenuredSpace*       _the_space;       // Actual space holding objects
+  HeapWord*           _saved_mark_word;
 
   GenerationCounters* _gen_counters;
   CSpaceCounters*     _space_counters;
+
+  // Avg amount promoted; used for avoiding promotion undo
+  // This class does not update deviations if the sample is zero.
+  AdaptivePaddedNoZeroDevAverage*   _avg_promoted;
 
   // Attempt to expand the generation by "bytes".  Expand by at a
   // minimum "expand_bytes".  Return true if some amount (not
@@ -80,10 +84,12 @@ class TenuredGeneration: public Generation {
   void shrink(size_t bytes);
 
   void compute_new_size_inner();
- public:
+
+public:
   void compute_new_size();
 
   TenuredSpace* space() const { return _the_space; }
+  HeapWord* saved_mark_word() const { return _saved_mark_word; }
 
   // Grow generation with specified size (returns false if unable to grow)
   bool grow_by(size_t bytes);
@@ -104,9 +110,9 @@ class TenuredGeneration: public Generation {
     return _virtual_space.uncommitted_size() == 0;
   }
 
-  HeapWord* block_start(const void* p) const;
+  HeapWord* block_start(const void* addr) const;
 
-  void scan_old_to_young_refs();
+  void scan_old_to_young_refs(HeapWord* saved_top_in_old_gen);
 
   bool is_in(const void* p) const;
 
@@ -126,16 +132,10 @@ class TenuredGeneration: public Generation {
   void object_iterate(ObjectClosure* blk);
 
   void complete_loaded_archive_space(MemRegion archive_space);
+  inline void update_for_block(HeapWord* start, HeapWord* end);
 
   virtual inline HeapWord* allocate(size_t word_size, bool is_tlab);
   virtual inline HeapWord* par_allocate(size_t word_size, bool is_tlab);
-
-  template <typename OopClosureType>
-  void oop_since_save_marks_iterate(OopClosureType* cl);
-
-  void save_marks();
-
-  bool no_allocs_since_save_marks();
 
   virtual void collect(bool full,
                        bool clear_all_soft_refs,
@@ -154,11 +154,11 @@ class TenuredGeneration: public Generation {
   // Performance Counter support
   void update_counters();
 
-  virtual void record_spaces_top();
+  void record_spaces_top();
 
   // Statistics
 
-  virtual void update_gc_stats(Generation* current_generation, bool full);
+  void update_gc_stats(Generation* current_generation, bool full);
 
   // Returns true if promotions of the specified amount are
   // likely to succeed without a promotion failure.

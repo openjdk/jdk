@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,29 +25,30 @@
 
 package sun.util.locale.provider;
 
-import java.util.Collections;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.text.spi.BreakIteratorProvider;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Stream;
 
-/**
- * FallbackProviderAdapter implementation.
+/*
+ * FallbackProviderAdapter implementation. Fallback provider serves the
+ * following purposes:
  *
- * @author Naoto Sato
+ * - Locale data for ROOT, in case CLDR provider is absent.
+ * - Locale data for BreakIterator/Collator resources for all locales.
+ * - "Gan-nen" support for SimpleDateFormat (provides "FirstYear" for
+ *   Japanese locales).
  */
 public class FallbackLocaleProviderAdapter extends JRELocaleProviderAdapter {
+    // Required locales/langtags
+    private static final Locale[] AVAILABLE_LOCS = {Locale.US, Locale.ENGLISH, Locale.ROOT};
+    private static final Set<String> AVAILABLE_LANGTAGS = Set.of("en-US", "en", "und");
 
-    /**
-     * Supported language tag set.
-     */
-    private static final Set<String> rootTagSet =
-        Collections.singleton(Locale.ROOT.toLanguageTag());
-
-    /**
-     * Fallback provider only provides the ROOT locale data.
-     */
-    @SuppressWarnings("this-escape")
-    private final LocaleResources rootLocaleResources =
-        new LocaleResources(this, Locale.ROOT);
+    private volatile BreakIteratorProvider breakIteratorProvider;
 
     /**
      * Returns the type of this LocaleProviderAdapter
@@ -58,17 +59,45 @@ public class FallbackLocaleProviderAdapter extends JRELocaleProviderAdapter {
     }
 
     @Override
-    public LocaleResources getLocaleResources(Locale locale) {
-        return rootLocaleResources;
+    public Locale[] getAvailableLocales() {
+        return Stream.concat(Arrays.stream(super.getAvailableLocales()), Stream.of(AVAILABLE_LOCS))
+                .distinct().toArray(Locale[]::new);
     }
 
     @Override
     protected Set<String> createLanguageTagSet(String category) {
-        return rootTagSet;
+        var s = new HashSet<>(super.createLanguageTagSet(category));
+        s.addAll(AVAILABLE_LANGTAGS);
+        return s;
     }
 
     @Override
-    public boolean isSupportedProviderLocale(Locale locale, Set<String>langtags) {
-        return Locale.ROOT.equals(locale);
+    public boolean isSupportedProviderLocale(Locale locale, Set<String> langtags) {
+        if (Locale.ROOT.equals(locale)) {
+            return true;
+        }
+
+        locale = locale.stripExtensions();
+        return langtags.contains(locale.toLanguageTag());
+    }
+
+    @Override
+    // In order to correctly report supported locales
+    public BreakIteratorProvider getBreakIteratorProvider() {
+        if (breakIteratorProvider == null) {
+            @SuppressWarnings("removal")
+            BreakIteratorProvider provider = AccessController.doPrivileged(
+                    (PrivilegedAction<BreakIteratorProvider>) () ->
+                            new BreakIteratorProviderImpl(
+                                    getAdapterType(),
+                                    getLanguageTagSet("BreakIteratorRules")));
+
+            synchronized (this) {
+                if (breakIteratorProvider == null) {
+                    breakIteratorProvider = provider;
+                }
+            }
+        }
+        return breakIteratorProvider;
     }
 }

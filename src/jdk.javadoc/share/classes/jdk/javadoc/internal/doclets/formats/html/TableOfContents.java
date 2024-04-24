@@ -95,8 +95,7 @@ public class TableOfContents {
                     .add(HtmlTree.INPUT(HtmlAttr.InputType.TEXT, HtmlStyle.filterInput)
                             .put(HtmlAttr.PLACEHOLDER, writer.resources.getText("doclet.filter_label"))
                             .put(HtmlAttr.ARIA_LABEL, writer.resources.getText("doclet.filter_table_of_contents"))
-                            .put(HtmlAttr.AUTOCOMPLETE, "off")
-                            .put(HtmlAttr.AUTOCAPITALIZE, "off"))
+                            .put(HtmlAttr.AUTOCOMPLETE, "off"))
                     .add(HtmlTree.INPUT(HtmlAttr.InputType.RESET, HtmlStyle.resetFilter)
                             .put(HtmlAttr.VALUE, writer.resources.getText("doclet.filter_reset")));
         }

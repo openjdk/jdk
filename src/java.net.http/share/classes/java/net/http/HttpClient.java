@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.net.http.HttpResponse.BodySubscriber;
+import java.net.http.HttpResponse.BodySubscribers;
 import java.nio.channels.Selector;
 import java.net.Authenticator;
 import java.net.CookieHandler;
@@ -132,21 +134,47 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * reclaimed early by {@linkplain #close() closing} the client.
  *
  * @implNote
- *  <p id="closing">
- *  The JDK built-in implementation of the {@code HttpClient} overrides
+ *  <p id="streaming">
+ *  The {@link BodyHandlers} and {@link BodySubscribers}
+ *  classes provide some {@linkplain BodySubscribers##streaming-body streaming
+ *  or publishing {@code BodyHandler} and {@code BodySubscriber}
+ *  implementations} which allow to stream body data back to the caller.
+ *  In order for the resources associated with these streams to be
+ *  reclaimed, and for the HTTP request to be considered completed,
+ *  a caller must eventually {@linkplain  HttpResponse#body()
+ *  obtain the streaming response body} and close, cancel, or
+ *  read the returned streams to exhaustion. Likewise, a custom
+ *  {@link BodySubscriber} implementation should either {@linkplain
+ *  Subscription#request(long) request} all data until {@link
+ *  BodySubscriber#onComplete() onComplete} or {@link
+ *  BodySubscriber#onError(Throwable) onError} is signalled, or eventually
+ *  {@linkplain Subscription#cancel() cancel} its subscription.
+ *
+ * <p id="closing">
+ * The JDK built-in implementation of the {@code HttpClient} overrides
  * {@link #close()}, {@link #shutdown()}, {@link #shutdownNow()},
  * {@link #awaitTermination(Duration)}, and {@link #isTerminated()} to
  * provide a best effort implementation. Failing to close, cancel, or
- * read returned streams to exhaustion, such as streams provided when using
- * {@link BodyHandlers#ofInputStream()}, {@link BodyHandlers#ofLines()}, or
- * {@link BodyHandlers#ofPublisher()}, may prevent requests submitted
- * before an {@linkplain #shutdown() orderly shutdown}
- * to run to completion. Likewise, failing to
- * {@linkplain Subscription#request(long) request data} or {@linkplain
- * Subscription#cancel() cancel subscriptions} from a custom {@linkplain
- * java.net.http.HttpResponse.BodySubscriber BodySubscriber} may stop
- * delivery of data and {@linkplain #awaitTermination(Duration) stall an
- * orderly shutdown}.
+ * read {@link ##streaming streaming or publishing bodies} to exhaustion
+ * may stop delivery of data while leaving the request open, and
+ * {@linkplain #awaitTermination(Duration) stall an
+ * orderly shutdown}. The {@link #shutdownNow()} method, if called, will
+ * attempt to cancel any such non-completed requests, but may cause
+ * abrupt termination of any on going operation.
+ *
+ * <p id="gc">
+ * If not {@linkplain ##closing explicitly closed}, the JDK
+ * built-in implementation of the {@code HttpClient} releases
+ * its resources when an {@code HttpClient} instance is no longer
+ * strongly reachable, and all operations started on that instance have
+ * eventually completed. This relies both on the garbage collector
+ * to notice that the instance is no longer reachable, and on all
+ * requests started on the client to eventually complete. Failure
+ * to properly close {@linkplain ##streaming streaming or publishing bodies}
+ * may prevent the associated requests from running to completion, and
+ * prevent the resources allocated by the associated client from
+ * being reclaimed by the garbage collector.
+ *
  *
  * <p>
  * If an explicit {@linkplain HttpClient.Builder#executor(Executor)
@@ -155,7 +183,7 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * dependent tasks in a context that is granted no permissions. Custom
  * {@linkplain HttpRequest.BodyPublisher request body publishers}, {@linkplain
  * HttpResponse.BodyHandler response body handlers}, {@linkplain
- * HttpResponse.BodySubscriber response body subscribers}, and {@linkplain
+ * BodySubscriber response body subscribers}, and {@linkplain
  * WebSocket.Listener WebSocket Listeners}, if executing operations that require
  * privileges, should do so within an appropriate {@linkplain
  * AccessController#doPrivileged(PrivilegedAction) privileged context}.
@@ -686,7 +714,7 @@ public abstract class HttpClient implements AutoCloseable {
      *          information.</li>
      * </ul>
      *
-     * <p> The default {@code HttpClient} implementation returns
+     * <p id="cancel"> The default {@code HttpClient} implementation returns
      * {@code CompletableFuture} objects that are <em>cancelable</em>.
      * {@code CompletableFuture} objects {@linkplain CompletableFuture#newIncompleteFuture()
      * derived} from cancelable futures are themselves <em>cancelable</em>.

@@ -27,10 +27,10 @@
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1CardTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1RegionPinCache.inline.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
-#include "gc/g1/heapRegion.hpp"
 #include "gc/shared/satbMarkQueue.hpp"
 #include "logging/log.hpp"
 #include "oops/access.inline.hpp"
@@ -102,7 +102,7 @@ void G1BarrierSet::write_ref_field_post_slow(volatile CardValue* byte) {
   }
 }
 
-void G1BarrierSet::invalidate(JavaThread* thread, MemRegion mr) {
+void G1BarrierSet::write_region(JavaThread* thread, MemRegion mr) {
   if (mr.is_empty()) {
     return;
   }

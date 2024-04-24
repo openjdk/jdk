@@ -114,7 +114,8 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
      */
 
     @SupportedSourceVersion(RELEASE_23)
-    public static abstract class AbstractAnnotationValueVisitor<R, P> extends AbstractAnnotationValueVisitor14<R, P> {
+    @SuppressWarnings("preview")
+    public static abstract class AbstractAnnotationValueVisitor<R, P> extends AbstractAnnotationValueVisitorPreview<R, P> {
 
         /**
          * Constructor for concrete subclasses to call.
@@ -125,7 +126,8 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
     }
 
     @SupportedSourceVersion(RELEASE_23)
-    public static abstract class AbstractElementVisitor<R, P> extends AbstractElementVisitor14<R, P> {
+    @SuppressWarnings("preview")
+    public static abstract class AbstractElementVisitor<R, P> extends AbstractElementVisitorPreview<R, P> {
         /**
          * Constructor for concrete subclasses to call.
          */
@@ -135,7 +137,8 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
     }
 
     @SupportedSourceVersion(RELEASE_23)
-    public static abstract class AbstractTypeVisitor<R, P> extends AbstractTypeVisitor14<R, P> {
+    @SuppressWarnings("preview")
+    public static abstract class AbstractTypeVisitor<R, P> extends AbstractTypeVisitorPreview<R, P> {
         /**
          * Constructor for concrete subclasses to call.
          */
@@ -145,7 +148,8 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
     }
 
     @SupportedSourceVersion(RELEASE_23)
-    public static class ElementKindVisitor<R, P> extends ElementKindVisitor14<R, P> {
+    @SuppressWarnings("preview")
+    public static class ElementKindVisitor<R, P> extends ElementKindVisitorPreview<R, P> {
         /**
          * Constructor for concrete subclasses; uses {@code null} for the
          * default value.
@@ -166,7 +170,8 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
     }
 
     @SupportedSourceVersion(RELEASE_23)
-    public static class ElementScanner<R, P> extends ElementScanner14<R, P> {
+    @SuppressWarnings("preview")
+    public static class ElementScanner<R, P> extends ElementScannerPreview<R, P> {
         /**
          * Constructor for concrete subclasses; uses {@code null} for the
          * default value.
@@ -185,7 +190,8 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
     }
 
     @SupportedSourceVersion(RELEASE_23)
-    public static class SimpleAnnotationValueVisitor<R, P> extends SimpleAnnotationValueVisitor14<R, P> {
+    @SuppressWarnings("preview")
+    public static class SimpleAnnotationValueVisitor<R, P> extends SimpleAnnotationValueVisitorPreview<R, P> {
         /**
          * Constructor for concrete subclasses; uses {@code null} for the
          * default value.
@@ -206,7 +212,8 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
     }
 
     @SupportedSourceVersion(RELEASE_23)
-    public static class SimpleElementVisitor<R, P> extends SimpleElementVisitor14<R, P> {
+    @SuppressWarnings("preview")
+    public static class SimpleElementVisitor<R, P> extends SimpleElementVisitorPreview<R, P> {
         /**
          * Constructor for concrete subclasses; uses {@code null} for the
          * default value.
@@ -227,7 +234,8 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
     }
 
     @SupportedSourceVersion(RELEASE_23)
-    public static class SimpleTypeVisitor<R, P> extends SimpleTypeVisitor14<R, P> {
+    @SuppressWarnings("preview")
+    public static class SimpleTypeVisitor<R, P> extends SimpleTypeVisitorPreview<R, P> {
         /**
          * Constructor for concrete subclasses; uses {@code null} for the
          * default value.
@@ -248,7 +256,8 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
     }
 
     @SupportedSourceVersion(RELEASE_23)
-    public static class TypeKindVisitor<R, P> extends TypeKindVisitor14<R, P> {
+    @SuppressWarnings("preview")
+    public static class TypeKindVisitor<R, P> extends TypeKindVisitorPreview<R, P> {
         /**
          * Constructor for concrete subclasses to call; uses {@code null}
          * for the default value.

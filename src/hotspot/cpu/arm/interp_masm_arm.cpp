@@ -211,11 +211,6 @@ void InterpreterMacroAssembler::get_index_at_bcp(Register index, int bcp_offset,
     orr(index, tmp_reg, AsmOperand(index, lsl, BitsPerByte));
     ldrb(tmp_reg, Address(Rbcp, bcp_offset));
     orr(index, tmp_reg, AsmOperand(index, lsl, BitsPerByte));
-    // Check if the secondary index definition is still ~x, otherwise
-    // we have to change the following assembler code to calculate the
-    // plain index.
-    assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
-    mvn_32(index, index);  // convert to plain index
   } else if (index_size == sizeof(u1)) {
     ldrb(index, Address(Rbcp, bcp_offset));
   } else {

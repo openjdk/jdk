@@ -47,80 +47,113 @@ import java.util.stream.Collectors;
 /**
  * <p>
  * {@code CompactNumberFormat} is a concrete subclass of {@code NumberFormat}
- * that formats a decimal number in its compact form.
- *
- * The compact number formatting is designed for the environment where the space
- * is limited, and the formatted string can be displayed in that limited space.
- * It is defined by LDML's specification for
+ * that formats a decimal number in a localized compact form.
+ * Compact number formatting is designed for an environment with limited space.
+ * For example, displaying the formatted number {@code 7M} instead of {@code
+ * 7,000,000.00} in the {@link java.util.Locale#US US locale}. The {@code
+ * CompactNumberFormat} class is defined by LDML's specification for
  * <a href = "http://unicode.org/reports/tr35/tr35-numbers.html#Compact_Number_Formats">
- * Compact Number Formats</a>. A compact number formatting refers
- * to the representation of a number in a shorter form, based on the patterns
- * provided for a given locale.
+ * Compact Number Formats</a>.
  *
- * <p>
- * For example:
- * <br>In the {@link java.util.Locale#US US locale}, {@code 1000} can be formatted
- * as {@code "1K"}, and {@code 1000000} as {@code "1M"}, depending upon the
- * {@linkplain ##compact_number_style style} used.
- * <br>In the {@code "hi_IN"} locale, {@code 1000} can be formatted as
- * "1 \u0939\u091C\u093C\u093E\u0930", and {@code 50000000} as "5 \u0915.",
- * depending upon the {@linkplain ##compact_number_style style} used.
- *
- * <p>
- * To obtain a {@code CompactNumberFormat} for a locale, use one
- * of the factory methods given by {@code NumberFormat} for compact number
- * formatting. For example,
- * {@link NumberFormat#getCompactNumberInstance(Locale, Style)}.
- *
- * <blockquote>{@snippet lang=java :
- * NumberFormat fmt = NumberFormat.getCompactNumberInstance(
- *                             Locale.forLanguageTag("hi-IN"), NumberFormat.Style.SHORT);
- * String result = fmt.format(1000);
- * }</blockquote>
+ * <h2>Getting a CompactNumberFormat</h2>
+ * To get a compact number format, use one of the ways listed below.
+ * <ul>
+ * <li> Use the factory method {@link NumberFormat#getCompactNumberInstance()}
+ * to obtain a format for the default locale with
+ * {@link NumberFormat.Style#SHORT SHORT} style.
+ * <li> Use the factory methood {@link NumberFormat#getCompactNumberInstance(Locale, Style)}
+ * to obtain a format for a different locale
+ * and to control the {@linkplain ##compact_number_style Style}.
+ * <li> Use one of the {@code CompactNumberFormat} constructors, for example, {@link
+ * CompactNumberFormat#CompactNumberFormat(String, DecimalFormatSymbols, String[])
+ * CompactNumberFormat(decimalPattern, symbols, compactPatterns)}, to obtain a
+ * {@code CompactNumberFormat} with further customization.
+ * </ul>
+ * <p>If a standard compact format for a given locale and {@link
+ * ##compact_number_style style} is desired, it is recommended to use one of the
+ * NumberFormat factory methods listed above. To use an instance method
+ * defined by {@code CompactNumberFormat}, the {@code NumberFormat} returned by
+ * these factory methods should be type checked before converted to {@code CompactNumberFormat}.
+ * If the installed locale-sensitive service implementation does not support
+ * the given {@code Locale}, the parent locale chain will be looked up, and
+ * a {@code Locale} used that is supported.
  *
  * <h2><a id="compact_number_style">Style</a></h2>
- * <p>
- * A number can be formatted in the compact forms with two different
- * styles, {@link NumberFormat.Style#SHORT SHORT}
- * and {@link NumberFormat.Style#LONG LONG}. Use
- * {@link NumberFormat#getCompactNumberInstance(Locale, Style)} for formatting and
- * parsing a number in {@link NumberFormat.Style#SHORT SHORT} or
- * {@link NumberFormat.Style#LONG LONG} compact form,
- * where the given {@code Style} parameter requests the desired
- * format. A {@link NumberFormat.Style#SHORT SHORT} style
- * compact number instance in the {@link java.util.Locale#US US locale} formats
- * {@code 10000} as {@code "10K"}. However, a
- * {@link NumberFormat.Style#LONG LONG} style instance in same locale
- * formats {@code 10000} as {@code "10 thousand"}.
+ * When using {@link NumberFormat#getCompactNumberInstance(Locale, Style)}, a
+ * compact form can be retrieved with either a {@link NumberFormat.Style#SHORT
+ * SHORT} or {@link NumberFormat.Style#LONG LONG} style.
+ * For example, a {@link NumberFormat.Style#SHORT SHORT} style compact number instance in
+ * the {@link java.util.Locale#US US locale} formats {@code 10000} as {@code
+ * "10K"}. However, a {@link NumberFormat.Style#LONG LONG} style instance in
+ * the same locale formats {@code 10000} as {@code "10 thousand"}.
+ *
+ * <h2>Using CompactNumberFormat</h2>
+ * The following is an example of formatting and parsing in a localized manner,
+ *
+ * {@snippet lang=java :
+ * NumberFormat compactFormat = NumberFormat.getCompactNumberInstance(Locale.US, NumberFormat.Style.SHORT);
+ * compactFormat.format(1000); // returns "1K"
+ * compactFormat.parse("1K"); // returns 1000
+ * }
+ *
+ * <h2 id="formatting">Formatting</h2>
+ * The default formatting behavior returns a formatted string with no fractional
+ * digits, however users can use the {@link #setMinimumFractionDigits(int)}
+ * method to include the fractional part.
+ * The number {@code 1000.0} or {@code 1000} is formatted as {@code "1K"}
+ * not {@code "1.00K"} (in the {@link java.util.Locale#US US locale}). For this
+ * reason, the patterns provided for formatting contain only the minimum
+ * integer digits, prefix and/or suffix, but no fractional part.
+ * For example, patterns used are {@code {"", "", "", 0K, 00K, ...}}. If the pattern
+ * selected for formatting a number is {@code "0"} (special pattern),
+ * either explicit or defaulted, then the general number formatting provided by
+ * {@link java.text.DecimalFormat DecimalFormat}
+ * for the specified locale is used.
+ *
+ * <h3>Rounding</h3>
+ * {@code CompactNumberFormat} provides rounding modes defined in
+ * {@link java.math.RoundingMode} for formatting.  By default, it uses
+ * {@link java.math.RoundingMode#HALF_EVEN RoundingMode.HALF_EVEN}.
+ *
+ * <h2>Parsing</h2>
+ * The default parsing behavior does not allow a grouping separator until
+ * grouping used is set to {@code true} by using
+ * {@link #setGroupingUsed(boolean)}. The parsing of the fractional part
+ * depends on the {@link #isParseIntegerOnly()}. For example, if the
+ * parse integer only is set to true, then the fractional part is skipped.
  *
  * <h2><a id="compact_number_patterns">Compact Number Patterns</a></h2>
  * <p>
- * The compact number patterns are represented in a series of patterns where each
- * pattern is used to format a range of numbers. An example of
- * {@link NumberFormat.Style#SHORT SHORT} styled compact number patterns
+ * The {@code compactPatterns} in {@link
+ * CompactNumberFormat#CompactNumberFormat(String, DecimalFormatSymbols, String[])
+ * CompactNumberFormat(decimalPattern, symbols, compactPatterns)} are represented
+ * as a series of strings, where each string is a {@link ##compact_number_syntax
+ * pattern} that is used to format a range of numbers.
+ *
+ * <p> An example of the {@link NumberFormat.Style#SHORT SHORT} styled compact number patterns
  * for the {@link java.util.Locale#US US locale} is {@code {"", "", "", "0K",
  * "00K", "000K", "0M", "00M", "000M", "0B", "00B", "000B", "0T", "00T", "000T"}},
  * ranging from {@code 10}<sup>{@code 0}</sup> to {@code 10}<sup>{@code 14}</sup>.
  * There can be any number of patterns and they are
  * strictly index based starting from the range {@code 10}<sup>{@code 0}</sup>.
- * For example, in the above patterns, pattern at index 3
- * ({@code "0K"}) is used for formatting {@code number >= 1000 and number < 10000},
- * pattern at index 4 ({@code "00K"}) is used for formatting
- * {@code number >= 10000 and number < 100000} and so on. In most of the locales,
- * patterns with the range
+ * For example, in the above patterns, the pattern at index 3
+ * ({@code "0K"}) is used for formatting a number in the range: {@code 1000 <= number < 10000},
+ * index 4 ({@code "00K"}) for formatting a number the range: {@code 10000 <=
+ * number < 100000}, and so forth.
+ * <p>In most locales, patterns with the range
  * {@code 10}<sup>{@code 0}</sup>-{@code 10}<sup>{@code 2}</sup> are empty
  * strings, which implicitly means a special pattern {@code "0"}.
  * A special pattern {@code "0"} is used for any range which does not contain
  * a compact pattern. This special pattern can appear explicitly for any specific
  * range, or considered as a default pattern for an empty string.
  *
- * <p>
+ * <h3>Negative Subpatterns</h3>
  * A compact pattern contains a positive and negative subpattern
- * separated by a subpattern boundary character {@code ';' (U+003B)},
+ * separated by a subpattern boundary character {@code ';'},
  * for example, {@code "0K;-0K"}. Each subpattern has a prefix,
  * minimum integer digits, and suffix. The negative subpattern
  * is optional, if absent, then the positive subpattern prefixed with the
- * minus sign ({@code '-' U+002D HYPHEN-MINUS}) is used as the negative
+ * minus sign {@code '-' (U+002D HYPHEN-MINUS)} is used as the negative
  * subpattern. That is, {@code "0K"} alone is equivalent to {@code "0K;-0K"}.
  * If there is an explicit negative subpattern, it serves only to specify
  * the negative prefix and suffix. The number of minimum integer digits,
@@ -128,31 +161,35 @@ import java.util.stream.Collectors;
  * That means that {@code "0K;-00K"} produces precisely the same behavior
  * as {@code "0K;-0K"}.
  *
- * <p>
+ * <h4>Escaping Special Characters</h4>
  * Many characters in a compact pattern are taken literally, they are matched
  * during parsing and output unchanged during formatting.
  * {@linkplain DecimalFormat##special_pattern_character Special characters},
  * on the other hand, stand for other characters, strings, or classes of
- * characters. They must be quoted, using single quote {@code ' (U+0027)}
+ * characters. These characters must be quoted using single quotes {@code ' (U+0027)}
  * unless noted otherwise, if they are to appear in the prefix or suffix
  * as literals. For example, 0\u0915'.'.
  *
  * <h3>Plurals</h3>
+ * <p> {@code CompactNumberFormat} support patterns for both singular and plural
+ * compact forms. For the plural form, the {@code Pattern} should consist
+ * of {@code PluralPattern}(s) separated by a space ' ' (U+0020) that are enumerated
+ * within a pair of curly brackets '{' (U+007B) and '}' (U+007D).
+ * In this format, each {@code PluralPattern} consists of its {@code count},
+ * followed by a single colon {@code ':' (U+003A)} and a {@code SimplePattern}.
+ * As a space is reserved for separating subsequent {@code PluralPattern}s, it must
+ * be quoted to be used literally in either the {@code prefix} or {@code suffix}.
  * <p>
- * In case some localization requires compact number patterns to be different for
- * plurals, each singular and plural pattern can be enumerated within a pair of
- * curly brackets <code>'{' (U+007B)</code> and <code>'}' (U+007D)</code>, separated
- * by a space {@code ' ' (U+0020)}. If this format is used, each pattern needs to be
- * prepended by its {@code count}, followed by a single colon {@code ':' (U+003A)}.
- * If the pattern includes spaces literally, they must be quoted.
+ * For example, while the pattern representing millions ({@code 10}<sup>{@code 6}
+ * </sup>) in the US locale can be specified as the SimplePattern: {@code "0 Million"}, for the
+ * German locale it can be specified as the PluralPattern:
+ * {@code "{one:0' 'Million other:0' 'Millionen}"}.
+ *
  * <p>
- * For example, the compact number pattern representing millions in German locale can be
- * specified as {@code "{one:0' 'Million other:0' 'Millionen}"}. The {@code count}
- * follows LDML's
+ * <a id="compact_number_syntax">A compact pattern has the following syntax, with {@code count}</a>
+ * following LDML's
  * <a href="https://unicode.org/reports/tr35/tr35-numbers.html#Language_Plural_Rules">
- * Language Plural Rules</a>.
- * <p>
- * A compact pattern has the following syntax:
+ * Language Plural Rules</a>:
  * <blockquote><pre>
  * <i>Pattern:</i>
  *         <i>SimplePattern</i>
@@ -179,37 +216,12 @@ import java.util.stream.Collectors;
  *      0 <i>MinimumInteger</i>
  * </pre></blockquote>
  *
- * <h2>Formatting</h2>
- * The default formatting behavior returns a formatted string with no fractional
- * digits, however users can use the {@link #setMinimumFractionDigits(int)}
- * method to include the fractional part.
- * The number {@code 1000.0} or {@code 1000} is formatted as {@code "1K"}
- * not {@code "1.00K"} (in the {@link java.util.Locale#US US locale}). For this
- * reason, the patterns provided for formatting contain only the minimum
- * integer digits, prefix and/or suffix, but no fractional part.
- * For example, patterns used are {@code {"", "", "", 0K, 00K, ...}}. If the pattern
- * selected for formatting a number is {@code "0"} (special pattern),
- * either explicit or defaulted, then the general number formatting provided by
- * {@link java.text.DecimalFormat DecimalFormat}
- * for the specified locale is used.
- *
- * <h2>Parsing</h2>
- * The default parsing behavior does not allow a grouping separator until
- * grouping used is set to {@code true} by using
- * {@link #setGroupingUsed(boolean)}. The parsing of the fractional part
- * depends on the {@link #isParseIntegerOnly()}. For example, if the
- * parse integer only is set to true, then the fractional part is skipped.
- *
- * <h2>Rounding</h2>
- * {@code CompactNumberFormat} provides rounding modes defined in
- * {@link java.math.RoundingMode} for formatting.  By default, it uses
- * {@link java.math.RoundingMode#HALF_EVEN RoundingMode.HALF_EVEN}.
- *
  * @spec https://www.unicode.org/reports/tr35
  *      Unicode Locale Data Markup Language (LDML)
  * @see NumberFormat.Style
  * @see NumberFormat
  * @see DecimalFormat
+ * @see Locale
  * @since 12
  */
 public final class CompactNumberFormat extends NumberFormat {
@@ -349,6 +361,15 @@ public final class CompactNumberFormat extends NumberFormat {
     private String pluralRules = "";
 
     /**
+     * True if this {@code CompactNumberFormat} will parse numbers with strict
+     * leniency.
+     *
+     * @serial
+     * @since 23
+     */
+    private boolean parseStrict = false;
+
+    /**
      * The map for plural rules that maps LDML defined tags (e.g. "one") to
      * its rule.
      */
@@ -380,10 +401,19 @@ public final class CompactNumberFormat extends NumberFormat {
      * To obtain the instance of {@code CompactNumberFormat} with the standard
      * compact patterns for a {@code Locale} and {@code Style},
      * it is recommended to use the factory methods given by
-     * {@code NumberFormat} for compact number formatting. For example,
-     * {@link NumberFormat#getCompactNumberInstance(Locale, Style)}.
+     * {@code NumberFormat} for compact number formatting.
      *
-     * @param decimalPattern a decimal pattern for general number formatting
+     * <p>Below is an example of using the constructor,
+     *
+     * {@snippet lang=java :
+     * String[] compactPatterns = {"", "", "", "a lot"};
+     * NumberFormat fmt = new CompactNumberFormat("00", DecimalFormatSymbols.getInstance(Locale.US), compactPatterns);
+     * fmt.format(1); // returns "01"
+     * fmt.format(1000); // returns "a lot"
+     * }
+     *
+     * @param decimalPattern a {@linkplain DecimalFormat##patterns decimal pattern}
+     *                       for general number formatting
      * @param symbols the set of symbols to be used
      * @param compactPatterns an array of
      *        {@linkplain ##compact_number_patterns compact number patterns}
@@ -410,7 +440,8 @@ public final class CompactNumberFormat extends NumberFormat {
      * {@code NumberFormat} for compact number formatting. For example,
      * {@link NumberFormat#getCompactNumberInstance(Locale, Style)}.
      *
-     * @param decimalPattern a decimal pattern for general number formatting
+     * @param decimalPattern a {@linkplain DecimalFormat##patterns decimal pattern}
+     *                      for general number formatting
      * @param symbols the set of symbols to be used
      * @param compactPatterns an array of
      *        {@linkplain ##compact_number_patterns compact number patterns}
@@ -1498,22 +1529,40 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Parses a compact number from a string to produce a {@code Number}.
+     * {@inheritDoc NumberFormat}
      * <p>
-     * The method attempts to parse text starting at the index given by
-     * {@code pos}.
-     * If parsing succeeds, then the index of {@code pos} is updated
-     * to the index after the last character used (parsing does not necessarily
-     * use all characters up to the end of the string), and the parsed
-     * number is returned. The updated {@code pos} can be used to
-     * indicate the starting point for the next call to this method.
-     * If an error occurs, then the index of {@code pos} is not
-     * changed, the error index of {@code pos} is set to the index of
-     * the character where the error occurred, and {@code null} is returned.
-     * <p>
-     * The value is the numeric part in the given text multiplied
+     * The returned value is the numeric part in the given text multiplied
      * by the numeric equivalent of the affix attached
      * (For example, "K" = 1000 in {@link java.util.Locale#US US locale}).
+     * <p>
+     * A {@code CompactNumberFormat} can match
+     * the default prefix/suffix to a compact prefix/suffix interchangeably.
+     * <p>
+     * Parsing can be done in either a strict or lenient manner, by default it is lenient.
+     * <p>
+     * Parsing fails when <b>lenient</b>, if the prefix and/or suffix are non-empty
+     * and cannot be found due to parsing ending early, or the first character
+     * after the prefix cannot be parsed.
+     * <p>
+     * Parsing fails when <b>strict</b>, if in {@code text},
+     * <ul>
+     *   <li> The default or a compact prefix is not found. For example, the {@code
+     *   Locale.US} currency format prefix: "{@code $}"
+     *   <li> The default or a compact suffix is not found. For example, a {@code Locale.US}
+     *   {@link NumberFormat.Style#SHORT} compact suffix: "{@code K}"
+     *   <li> {@link #isGroupingUsed()} returns {@code false}, and the grouping
+     *   symbol is found
+     *   <li> {@link #isGroupingUsed()} returns {@code true}, and {@link
+     *   #getGroupingSize()} is not adhered to
+     *   <li> {@link #isParseIntegerOnly()} returns {@code true}, and the decimal
+     *   separator is found
+     *   <li> {@link #isGroupingUsed()} returns {@code true} and {@link
+     *   #isParseIntegerOnly()} returns {@code false}, and the grouping
+     *   symbol occurs after the decimal separator
+     *   <li> Any other characters are found, that are not the expected symbols,
+     *   and are not digits that occur within the numerical portion
+     * </ul>
+     * <p>
      * The subclass returned depends on the value of
      * {@link #isParseBigDecimal}.
      * <ul>
@@ -1553,7 +1602,6 @@ public final class CompactNumberFormat extends NumberFormat {
      * @return the parsed value, or {@code null} if the parse fails
      * @throws     NullPointerException if {@code text} or
      *             {@code pos} is null
-     *
      */
     @Override
     public Number parse(String text, ParsePosition pos) {
@@ -1661,6 +1709,13 @@ public final class CompactNumberFormat extends NumberFormat {
                     return cnfMultiplier;
                 }
             }
+        } else {
+            // Neither prefix match, should fail now (strict or lenient), before
+            // position is incremented by subparseNumber(). Otherwise, an empty
+            // prefix could pass through here, position gets incremented by the
+            // numerical portion, and return a faulty errorIndex and index later.
+            pos.errorIndex = position;
+            return null;
         }
 
         digitList.setRoundingMode(getRoundingMode());
@@ -1705,6 +1760,11 @@ public final class CompactNumberFormat extends NumberFormat {
                 status, gotPositive, gotNegative, num);
 
         if (multiplier.longValue() == -1L) {
+            if (parseStrict) {
+                // When strict, if -1L was returned, index should be
+                // reset to the original index to ensure failure
+                pos.index = oldStart;
+            }
             return null;
         } else if (multiplier.longValue() != 1L) {
             cnfMultiplier = multiplier;
@@ -1886,7 +1946,10 @@ public final class CompactNumberFormat extends NumberFormat {
 
         if (prefix.equals(matchedPrefix)
                 || matchedPrefix.equals(defaultPrefix)) {
-            return matchAffix(text, position, suffix, defaultSuffix, matchedSuffix);
+            // Suffix must match exactly when strict
+            return parseStrict ? matchAffix(text, position, suffix, defaultSuffix, matchedSuffix)
+                    && text.length() == position + suffix.length()
+                    : matchAffix(text, position, suffix, defaultSuffix, matchedSuffix);
         }
         return false;
     }
@@ -1924,10 +1987,11 @@ public final class CompactNumberFormat extends NumberFormat {
             String positiveSuffix = getAffix(true, false, false, compactIndex, num);
             String negativeSuffix = getAffix(true, false, true, compactIndex, num);
 
-            // Do not break if a match occur; there is a possibility that the
+            // When lenient, do not break if a match occurs; there is a possibility that the
             // subsequent affixes may match the longer subsequence in the given
-            // string.
-            // For example, matching "3Mdx" with "M", "Md" should match with "Md"
+            // string. For example, matching "3Mdx" with "M", "Md" should match
+            // with "Md". However, when strict, break as the match should be exact,
+            // and thus no need to check for a longer suffix.
             boolean match = matchPrefixAndSuffix(text, position, positivePrefix, matchedPrefix,
                     defaultDecimalFormat.getPositivePrefix(), positiveSuffix,
                     matchedPosSuffix, defaultDecimalFormat.getPositiveSuffix());
@@ -1935,6 +1999,10 @@ public final class CompactNumberFormat extends NumberFormat {
                 matchedPosIndex = compactIndex;
                 matchedPosSuffix = positiveSuffix;
                 gotPos = true;
+                if (parseStrict) {
+                    // when strict, exit early with exact match, same for negative
+                    break;
+                }
             }
 
             match = matchPrefixAndSuffix(text, position, negativePrefix, matchedPrefix,
@@ -1944,29 +2012,39 @@ public final class CompactNumberFormat extends NumberFormat {
                 matchedNegIndex = compactIndex;
                 matchedNegSuffix = negativeSuffix;
                 gotNeg = true;
+                if (parseStrict) {
+                    break;
+                }
             }
         }
 
         // Suffix in the given text does not match with the compact
         // patterns suffixes; match with the default suffix
+        // When strict, text must end with the default suffix
         if (!gotPos && !gotNeg) {
             String positiveSuffix = defaultDecimalFormat.getPositiveSuffix();
             String negativeSuffix = defaultDecimalFormat.getNegativeSuffix();
-            if (text.regionMatches(position, positiveSuffix, 0,
-                    positiveSuffix.length())) {
+            boolean containsPosSuffix = text.regionMatches(position,
+                    positiveSuffix, 0, positiveSuffix.length());
+            boolean endsWithPosSuffix = containsPosSuffix && text.length() ==
+                    position + positiveSuffix.length();
+            if (parseStrict ? endsWithPosSuffix : containsPosSuffix) {
                 // Matches the default positive prefix
                 matchedPosSuffix = positiveSuffix;
                 gotPos = true;
             }
-            if (text.regionMatches(position, negativeSuffix, 0,
-                    negativeSuffix.length())) {
+            boolean containsNegSuffix = text.regionMatches(position,
+                    negativeSuffix, 0, negativeSuffix.length());
+            boolean endsWithNegSuffix = containsNegSuffix && text.length() ==
+                    position + negativeSuffix.length();
+            if (parseStrict ? endsWithNegSuffix : containsNegSuffix) {
                 // Matches the default negative suffix
                 matchedNegSuffix = negativeSuffix;
                 gotNeg = true;
             }
         }
 
-        // If both matches, take the longest one
+        // If both match, take the longest one
         if (gotPos && gotNeg) {
             if (matchedPosSuffix.length() > matchedNegSuffix.length()) {
                 gotNeg = false;
@@ -2077,6 +2155,7 @@ public final class CompactNumberFormat extends NumberFormat {
         decimalFormat.setGroupingSize(getGroupingSize());
         decimalFormat.setGroupingUsed(isGroupingUsed());
         decimalFormat.setParseIntegerOnly(isParseIntegerOnly());
+        decimalFormat.setStrict(parseStrict);
 
         try {
             defaultDecimalFormat = new DecimalFormat(decimalPattern, symbols);
@@ -2317,6 +2396,31 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
+     * {@inheritDoc NumberFormat}
+     *
+     * @see #setStrict(boolean)
+     * @see #parse(String, ParsePosition)
+     * @since 23
+     */
+    @Override
+    public boolean isStrict() {
+        return parseStrict;
+    }
+
+    /**
+     * {@inheritDoc NumberFormat}
+     *
+     * @see #isStrict()
+     * @see #parse(String, ParsePosition)
+     * @since 23
+     */
+    @Override
+    public void setStrict(boolean strict) {
+        decimalFormat.setStrict(strict);
+        parseStrict = strict; // don't call super, default is UOE
+    }
+
+    /**
      * Returns whether the {@link #parse(String, ParsePosition)}
      * method returns {@code BigDecimal}. The default value is false.
      *
@@ -2373,7 +2477,8 @@ public final class CompactNumberFormat extends NumberFormat {
                 && roundingMode.equals(other.roundingMode)
                 && pluralRules.equals(other.pluralRules)
                 && groupingSize == other.groupingSize
-                && parseBigDecimal == other.parseBigDecimal;
+                && parseBigDecimal == other.parseBigDecimal
+                && parseStrict == other.parseStrict;
     }
 
     /**
