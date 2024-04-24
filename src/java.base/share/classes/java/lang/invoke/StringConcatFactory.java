@@ -37,10 +37,8 @@ import sun.invoke.util.Wrapper;
 
 import java.lang.classfile.ClassFile;
 import java.lang.invoke.MethodHandles.Lookup;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
 import static java.lang.invoke.MethodType.methodType;
@@ -109,7 +107,7 @@ public final class StringConcatFactory {
 
     static {
         String highArity = VM.getSavedProperty("java.lang.invoke.StringConcat.highArityThreshold");
-        HIGH_ARITY_THRESHOLD = Integer.parseInt(highArity != null ? highArity : "10");
+        HIGH_ARITY_THRESHOLD = Integer.parseInt(highArity != null ? highArity : "20");
     }
 
     /**
@@ -1060,10 +1058,17 @@ public final class StringConcatFactory {
     private static final class SimpleStringBuilderStrategy {
         static final int CLASSFILE_VERSION = ClassFile.latestMajorVersion();
         static final String METHOD_NAME = "concat";
-        static final ClassFileDumper DUMPER;
-        static {
-            DUMPER = ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
-        }
+        static final ClassFileDumper DUMPER =
+                ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
+
+        /**
+         * Ensure a capacity in the initial StringBuilder to accommodate all
+         * constants plus this factor times the number of arguments.
+         */
+        static final int ARGUMENT_SIZE_FACTOR = 4;
+
+        static final Set<Lookup.ClassOption> SET_OF_STRONG = Set.of(STRONG);
+
         private SimpleStringBuilderStrategy() {
             // no instantiation
         }
@@ -1087,7 +1092,6 @@ public final class StringConcatFactory {
                     null,
                     null);
 
-            //mv.visitAnnotation("Ljdk/internal/vm/annotation/ForceInline;", true);
             mv.visitCode();
 
 
@@ -1095,11 +1099,19 @@ public final class StringConcatFactory {
             mv.visitTypeInsn(NEW, "java/lang/StringBuilder");
             mv.visitInsn(DUP);
 
+            int len = 0;
+            for (int c = 0; c < constants.length; c++) {
+                if (constants[c] != null)
+                    len += constants[c].length();
+            }
+            len += args.parameterCount() * ARGUMENT_SIZE_FACTOR;
+
+            mv.visitLdcInsn(len);
             mv.visitMethodInsn(
                     INVOKESPECIAL,
                     "java/lang/StringBuilder",
                     "<init>",
-                    "()V",
+                    "(I)V",
                     false
             );
 
@@ -1140,12 +1152,11 @@ public final class StringConcatFactory {
 
             byte[] classBytes = cw.toByteArray();
             try {
-                Class<?> innerClass = lookup.defineHiddenClass(classBytes, true, STRONG).lookupClass();
-                DUMPER.dumpClass(className, innerClass, classBytes);
-                MethodHandle mh = lookup.findStatic(innerClass, METHOD_NAME, args);
-                return mh;
+                Lookup hiddenLookup = lookup.makeHiddenClassDefiner(className, classBytes, SET_OF_STRONG, DUMPER)
+                                            .defineClassAsLookup(true);
+                Class<?> innerClass = hiddenLookup.lookupClass();
+                return hiddenLookup.findStatic(innerClass, METHOD_NAME, args);
             } catch (Exception e) {
-                DUMPER.dumpFailedClass(className, classBytes);
                 throw new StringConcatException("Exception while spinning the class", e);
             }
         }
