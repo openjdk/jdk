@@ -47,15 +47,15 @@ else ifeq ($(call isTargetOs, windows), true)
   endif
 endif
 
-ifeq ($(call isTargetOs, linux), true)
-  LIBSAPROC_LINK_TYPE := C++
+ifeq ($(call isTargetOs, linux windows), true)
+  LIBSAPROC_LANG := C++
 else
-  LIBSAPROC_LINK_TYPE := C
+  LIBSAPROC_LANG := C
 endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBSAPROC, \
     NAME := saproc, \
-    LINK_TYPE := $(LIBSAPROC_LINK_TYPE), \
+    LANG := $(LIBSAPROC_LANG), \
     OPTIMIZATION := HIGH, \
     EXTRA_HEADER_DIRS := java.base:libjvm, \
     DISABLED_WARNINGS_gcc := sign-compare, \
