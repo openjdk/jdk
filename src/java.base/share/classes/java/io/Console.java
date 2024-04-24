@@ -156,7 +156,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * }
      *
      * @param  obj
-     *         An object whose string representation is to write.
+     *         An object whose string representation is to be written.
      *
      * @return  This console
      *
@@ -177,7 +177,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * }
      *
      * @param  obj
-     *         An object whose string representation is to write.
+     *         An object whose string representation is to be written.
      *
      * @return  This console
      *
