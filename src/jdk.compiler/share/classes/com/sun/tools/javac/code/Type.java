@@ -518,7 +518,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         if (tsym == null || tsym.name == null) {
             sb.append("<none>");
         } else {
-            sb.append(tsym.getQualifiedName().toString());
+            sb.append(tsym.name.toString());
         }
         if (moreInfo && hasTag(TYPEVAR)) {
             sb.append(hashCode());
@@ -1120,6 +1120,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
                         s += String.valueOf(sym.hashCode());
                     return s;
                 } else if (longform) {
+                    sym.apiComplete();
                     return sym.getQualifiedName().toString();
                 } else {
                     return sym.name.toString();
