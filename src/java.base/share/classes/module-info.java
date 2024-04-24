@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,8 +268,6 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.util.xml.impl to
         jdk.jfr;
-    exports jdk.internal.util.random to
-        jdk.random;
     exports jdk.internal.util to
         java.desktop,
         java.prefs,
@@ -425,6 +423,17 @@ module java.base {
     provides java.util.random.RandomGenerator with
         java.security.SecureRandom,
         java.util.Random,
-        java.util.SplittableRandom;
+        java.util.SplittableRandom,
+
+        jdk.random.L32X64MixRandom,
+        jdk.random.L64X128MixRandom,
+        jdk.random.L64X128StarStarRandom,
+        jdk.random.L64X256MixRandom,
+        jdk.random.L64X1024MixRandom,
+        jdk.random.L128X128MixRandom,
+        jdk.random.L128X256MixRandom,
+        jdk.random.L128X1024MixRandom,
+        jdk.random.Xoroshiro128PlusPlus,
+        jdk.random.Xoshiro256PlusPlus;
 
 }
