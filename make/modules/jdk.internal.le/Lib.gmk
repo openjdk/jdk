@@ -32,7 +32,7 @@ ifeq ($(call isTargetOs, aix), false)
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBLE, \
       NAME := le, \
-      LINK_TYPE := C++, \
+      LANG := C++, \
       OPTIMIZATION := LOW, \
       EXTRA_HEADER_DIRS := \
           java.base:libjava \
