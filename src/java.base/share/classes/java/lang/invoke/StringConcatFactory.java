@@ -42,6 +42,7 @@ import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.AccessFlag;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
@@ -1052,7 +1053,7 @@ public final class StringConcatFactory {
         // no instantiation
     }
 
-   /**
+    /**
      * Bytecode StringBuilder strategy.
      *
      * <p>This strategy emits StringBuilder chains as similar as possible
@@ -1078,6 +1079,8 @@ public final class StringConcatFactory {
          */
         static final int ARGUMENT_SIZE_FACTOR = 4;
 
+        public static final Set<Lookup.ClassOption> SET_OF_STRONG = Set.of(STRONG);
+
         static {
             DUMPER = ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
         }
@@ -1101,7 +1104,7 @@ public final class StringConcatFactory {
                     }});
 
             try {
-                Lookup hiddenLookup = lookup.makeHiddenClassDefiner(className, classBytes, Set.of(STRONG), DUMPER)
+                Lookup hiddenLookup = lookup.makeHiddenClassDefiner(className, classBytes, SET_OF_STRONG, DUMPER)
                                             .defineClassAsLookup(true);
                 Class<?> innerClass = hiddenLookup.lookupClass();
                 return hiddenLookup.findStatic(innerClass, METHOD_NAME, args);
@@ -1119,9 +1122,10 @@ public final class StringConcatFactory {
                     cb.dup();
 
                     int len = 0;
-                    for (int c = 0; c < constants.length; c++) {
-                        if (constants[c] != null)
-                            len += constants[c].length();
+                    for (String constant : constants) {
+                        if (constant != null) {
+                            len += constant.length();
+                        }
                     }
                     len += args.parameterCount() * ARGUMENT_SIZE_FACTOR;
                     cb.constantInstruction(len);
