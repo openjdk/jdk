@@ -2849,7 +2849,7 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       const Node* mask_store = stv->in(StoreVectorScatterMaskedNode::Mask);
       const LoadVectorGatherMaskedNode* lvgm = val->as_LoadVectorGatherMasked();
       const Node* offsets_load = lvgm->in(LoadVectorGatherMaskedNode::Offsets);
-      const Node* mask_load = lvgm->in(LoadVectorGatherMaskedNode::Mask)
+      const Node* mask_load = lvgm->in(LoadVectorGatherMaskedNode::Mask);
       if (offsets_store->eqv_uncast(offsets_load) &&
         mask_store->eqv_uncast(mask_load)) {
         result = mem;
