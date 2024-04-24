@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,11 +48,10 @@
 
 int vframeArrayElement:: bci(void) const { return (_bci == SynchronizationEntryBCI ? 0 : _bci); }
 
-void vframeArrayElement::free_monitors(JavaThread* jt) {
+void vframeArrayElement::free_monitors() {
   if (_monitors != nullptr) {
      MonitorChunk* chunk = _monitors;
      _monitors = nullptr;
-     jt->remove_monitor_chunk(chunk);
      delete chunk;
   }
 }
@@ -85,7 +84,6 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
 
       // Allocate monitor chunk
       _monitors = new MonitorChunk(list->length());
-      vf->thread()->add_monitor_chunk(_monitors);
 
       // Migrate the BasicLocks from the stack to the monitor chunk
       for (index = 0; index < list->length(); index++) {
@@ -649,9 +647,8 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
 }
 
 void vframeArray::deallocate_monitor_chunks() {
-  JavaThread* jt = JavaThread::current();
   for (int index = 0; index < frames(); index++ ) {
-     element(index)->free_monitors(jt);
+     element(index)->free_monitors();
   }
 }
 
