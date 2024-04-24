@@ -32,6 +32,3 @@
  *          jdk.compiler/com.sun.tools.javac.code
  * @run main SinceChecker java.base
  */
-
-public class CheckSince_javaBase {
-}
