@@ -326,7 +326,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         nmethod* nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
         if ((nm != nullptr && nm->has_unsafe_access()) ||
             (thread->doing_unsafe_access() &&
-             UnsafeCopyMemory::contains_pc(pc))) {
+             UnsafeMemoryAccess::contains_pc(pc))) {
           unsafe_access = true;
         }
       } else if (sig == SIGSEGV &&
@@ -364,8 +364,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     // any other suitable exception reason,
     // so assume it is an unsafe access.
     address next_pc = pc + Assembler::InstructionSize;
-    if (UnsafeCopyMemory::contains_pc(pc)) {
-      next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+    if (UnsafeMemoryAccess::contains_pc(pc)) {
+      next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
     }
 #ifdef __thumb__
     if (uc->uc_mcontext.arm_cpsr & PSR_T_BIT) {

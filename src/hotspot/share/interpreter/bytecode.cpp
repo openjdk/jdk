@@ -179,7 +179,7 @@ int Bytecode_member_ref::pool_index() const {
 ResolvedIndyEntry* Bytecode_member_ref::resolved_indy_entry() const {
   int index = this->index();
   assert(invoke_code() == Bytecodes::_invokedynamic, "should not call this");
-  return cpcache()->resolved_indy_entry_at(ConstantPool::decode_invokedynamic_index(index));
+  return cpcache()->resolved_indy_entry_at(index);
 }
 
 ResolvedMethodEntry* Bytecode_member_ref::resolved_method_entry() const {

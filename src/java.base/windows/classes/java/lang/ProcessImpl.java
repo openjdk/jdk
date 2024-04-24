@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -515,7 +515,7 @@ final class ProcessImpl extends Process {
                 fdAccess.setHandle(stdin_fd, stdHandles[0]);
                 fdAccess.registerCleanup(stdin_fd);
                 stdin_stream = new BufferedOutputStream(
-                    new FileOutputStream(stdin_fd));
+                    new PipeOutputStream(stdin_fd));
             }
 
             if (stdHandles[1] == -1L || forceNullOutputStream)
@@ -564,11 +564,11 @@ final class ProcessImpl extends Process {
     private static native int getExitCodeProcess(long handle);
 
     public int waitFor() throws InterruptedException {
-        long comp = Blocker.begin();
+        boolean attempted = Blocker.begin();
         try {
             waitForInterruptibly(handle);
         } finally {
-            Blocker.end(comp);
+            Blocker.end(attempted);
         }
         if (Thread.interrupted())
             throw new InterruptedException();
@@ -593,11 +593,11 @@ final class ProcessImpl extends Process {
                 // if wraps around then wait a long while
                 msTimeout = Integer.MAX_VALUE;
             }
-            long comp = Blocker.begin();
+            boolean attempted = Blocker.begin();
             try {
                 waitForTimeoutInterruptibly(handle, msTimeout);
             } finally {
-                Blocker.end(comp);
+                Blocker.end(attempted);
             }
             if (Thread.interrupted())
                 throw new InterruptedException();
