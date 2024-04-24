@@ -214,9 +214,6 @@ JvmtiThreadState::periodic_clean_up() {
 // Virtual Threads Mount State transition (VTMS transition) mechanism
 //
 
-// VTMS transitions cannot be disabled while this counter is positive.
-volatile int JvmtiVTMSTransitionDisabler::_VTMS_transition_count = 0;
-
 // VTMS transitions for one virtual thread are disabled while it is positive
 volatile int JvmtiVTMSTransitionDisabler::_VTMS_transition_disable_for_one_count = 0;
 
@@ -238,11 +235,14 @@ volatile bool JvmtiVTMSTransitionDisabler::_sync_protocol_enabled_permanently = 
 #ifdef ASSERT
 void
 JvmtiVTMSTransitionDisabler::print_info() {
-  log_error(jvmti)("_VTMS_transition_count: %d\n", _VTMS_transition_count);
   log_error(jvmti)("_VTMS_transition_disable_for_one_count: %d\n", _VTMS_transition_disable_for_one_count);
   log_error(jvmti)("_VTMS_transition_disable_for_all_count: %d\n\n", _VTMS_transition_disable_for_all_count);
   int attempts = 10000;
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *java_thread = jtiwh.next(); ) {
+    if (java_thread->VTMS_transition_mark()) {
+      log_error(jvmti)("jt: %p VTMS_transition_mark: %d\n",
+                       (void*)java_thread, java_thread->VTMS_transition_mark());
+    }
     ResourceMark rm;
     // Handshake with target.
     PrintStackTraceClosure pstc;
@@ -358,11 +358,13 @@ JvmtiVTMSTransitionDisabler::VTMS_transition_disable_for_all() {
 
     // Block while some mount/unmount transitions are in progress.
     // Debug version fails and prints diagnostic information.
-    while (_VTMS_transition_count > 0) {
-      if (ml.wait(10)) {
-        attempts--;
+    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
+      while (jt->VTMS_transition_mark()) {
+        if (ml.wait(10)) {
+          attempts--;
+        }
+        DEBUG_ONLY(if (attempts == 0) break;)
       }
-      DEBUG_ONLY(if (attempts == 0) break;)
     }
     assert(!thread->is_VTMS_transition_disabler(), "VTMS_transition sanity check");
 #ifdef ASSERT
@@ -428,7 +430,8 @@ JvmtiVTMSTransitionDisabler::start_VTMS_transition(jthread vthread, bool is_moun
 
   // Avoid using MonitorLocker on performance critical path, use
   // two-level synchronization with lock-free operations on counters.
-  Atomic::inc(&_VTMS_transition_count); // Try to enter VTMS transition section optmistically.
+  assert(!thread->VTMS_transition_mark(), "sanity check");
+  thread->set_VTMS_transition_mark(true); // Try to enter VTMS transition section optmistically.
   java_lang_Thread::set_is_in_VTMS_transition(vt, true);
 
   if (!sync_protocol_enabled()) {
@@ -450,7 +453,7 @@ JvmtiVTMSTransitionDisabler::start_VTMS_transition(jthread vthread, bool is_moun
   ) {
     // Slow path: undo unsuccessful optimistic counter incrementation.
     // It can cause an extra waiting cycle for VTMS transition disablers.
-    Atomic::dec(&_VTMS_transition_count);
+    thread->set_VTMS_transition_mark(false);
     java_lang_Thread::set_is_in_VTMS_transition(vth(), false);
 
     while (true) {
@@ -470,7 +473,7 @@ JvmtiVTMSTransitionDisabler::start_VTMS_transition(jthread vthread, bool is_moun
         DEBUG_ONLY(if (attempts == 0) break;)
         continue;  // ~ThreadBlockInVM has handshake-based suspend point.
       }
-      Atomic::inc(&_VTMS_transition_count);
+      thread->set_VTMS_transition_mark(true);
       java_lang_Thread::set_is_in_VTMS_transition(vth(), true);
       break;
     }
@@ -495,7 +498,8 @@ JvmtiVTMSTransitionDisabler::finish_VTMS_transition(jthread vthread, bool is_mou
   thread->set_is_in_VTMS_transition(false);
   oop vt = JNIHandles::resolve_external_guard(vthread);
   java_lang_Thread::set_is_in_VTMS_transition(vt, false);
-  Atomic::dec(&_VTMS_transition_count);
+  assert(thread->VTMS_transition_mark(), "sanity ed_heck");
+  thread->set_VTMS_transition_mark(false);
 
   if (!sync_protocol_enabled()) {
     return;
