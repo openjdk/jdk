@@ -23,12 +23,6 @@
  * questions.
  */
 
-/**
- * Open an file input stream given a URL.
- * @author      James Gosling
- * @author      Steven B. Byrne
- */
-
 package sun.net.www.protocol.file;
 
 import java.net.URL;
@@ -40,6 +34,11 @@ import sun.net.www.*;
 import java.util.*;
 import java.text.SimpleDateFormat;
 
+/**
+ * Open a file input stream given a URL.
+ * @author      James Gosling
+ * @author      Steven B. Byrne
+ */
 public class FileURLConnection extends URLConnection {
 
     private static final String CONTENT_LENGTH = "content-length";

@@ -353,6 +353,12 @@
   develop(bool, TraceNewVectors, false,                                     \
           "Trace creation of Vector nodes")                                 \
                                                                             \
+  product(bool, MergeStores, true, DIAGNOSTIC,                              \
+          "Optimize stores by combining values into larger store")          \
+                                                                            \
+  develop(bool, TraceMergeStores, false,                                    \
+          "Trace creation of merged stores")                                \
+                                                                            \
   product_pd(bool, OptoBundling,                                            \
           "Generate nops to fill i-cache lines")                            \
                                                                             \
