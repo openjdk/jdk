@@ -911,7 +911,10 @@ class LoadVectorGatherNode : public LoadVectorNode {
             ((is_subword_type(vect_type()->element_basic_type())) &&
               idx == MemNode::ValueIn + 1);
   }
-  virtual int store_Opcode() const { return Op_StoreVectorScatter; }
+  virtual int store_Opcode() const {
+    // Ensure it is different from any store opcode
+    return Op_LoadVectorGather;
+  }
 };
 
 //------------------------------StoreVectorNode--------------------------------
@@ -1012,7 +1015,10 @@ class LoadVectorMaskedNode : public LoadVectorNode {
     return idx > 1;
   }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  virtual int store_Opcode() const { return Op_StoreVectorMasked; }
+  virtual int store_Opcode() const {
+    // Ensure it is different from any store opcode
+    return Op_LoadVectorMasked;
+  }
 };
 
 //-------------------------------LoadVectorGatherMaskedNode---------------------------------
@@ -1039,7 +1045,10 @@ class LoadVectorGatherMaskedNode : public LoadVectorNode {
                                                    idx == MemNode::ValueIn + 1 ||
                                                    (is_subword_type(vect_type()->is_vect()->element_basic_type()) &&
                                                    idx == MemNode::ValueIn + 2); }
-  virtual int store_Opcode() const { return Op_StoreVectorScatterMasked; }
+  virtual int store_Opcode() const {
+    // Ensure it is different from any store opcode
+    return Op_LoadVectorGatherMasked;
+  }
 };
 
 //------------------------------StoreVectorScatterMaskedNode--------------------------------

@@ -1164,12 +1164,6 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
       if (store_Opcode() != st->Opcode()) {
         return nullptr;
       }
-      // Ensure that no masks or offsets are used
-      if (st->is_StoreVectorScatter() ||
-          st->is_StoreVectorMasked() ||
-          st->is_StoreVectorScatterMasked()) {
-        return nullptr;
-      }
       // LoadVector/StoreVector need additional checks
       if (st->is_StoreVector()) {
         // Ensure that types match
@@ -3508,11 +3502,7 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
   if (val->is_Load() &&
       val->in(MemNode::Address)->eqv_uncast(adr) &&
       val->in(MemNode::Memory )->eqv_uncast(mem) &&
-      val->as_Load()->store_Opcode() == Opcode() &&
-      // Ensure no offsets or mask are used
-      !is_StoreVectorScatter() &&
-      !is_StoreVectorMasked() &&
-      !is_StoreVectorScatterMasked()) {
+      val->as_Load()->store_Opcode() == Opcode()) {
     result = mem;
   }
 
