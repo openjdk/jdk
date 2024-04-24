@@ -106,10 +106,11 @@ import java.util.concurrent.TimeUnit;
  * special event is the trigger to re-examine the state of the object, e.g.
  * scan a watched directory to get an updated list of the files in the
  * directory. The limit for the pending events can be changed from its default
- * with the system property {@systemProperty
- * jdk.nio.file.WatchService.maxEventsPerPoll} set to a value that parses as a
- * positive integer. This may be useful in environments where there is a high
- * volume of changes and where the impact of discarded events is high.
+ * with the system property
+ * {@systemProperty jdk.nio.file.WatchService.maxEventsPerPoll}
+ * set to a value that parses as a positive integer. This may be useful in
+ * environments where there is a high volume of changes and where the impact
+ * of discarded events is high.
  *
  * @since 1.7
  *
