@@ -1062,7 +1062,8 @@ public final class StringConcatFactory {
     private static final class SimpleStringBuilderStrategy {
         static final String METHOD_NAME = "concat";
         static final ClassDesc STRING_BUILDER = ClassDesc.ofDescriptor("Ljava/lang/StringBuilder;");
-        static final ClassFileDumper DUMPER;
+        static final ClassFileDumper DUMPER =
+                ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
         static final MethodTypeDesc APPEND_BOOLEAN_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_boolean);
         static final MethodTypeDesc APPEND_CHAR_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_char);
         static final MethodTypeDesc APPEND_DOUBLE_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_double);
@@ -1071,19 +1072,16 @@ public final class StringConcatFactory {
         static final MethodTypeDesc APPEND_LONG_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_long);
         static final MethodTypeDesc APPEND_OBJECT_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_Object);
         static final MethodTypeDesc APPEND_STRING_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_String);
-        static final MethodTypeDesc INT_VOID_TYPE = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_int);
+        static final MethodTypeDesc INT_CONSTRUCTOR_TYPE = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_int);
+        static final MethodTypeDesc TO_STRING_TYPE = MethodTypeDesc.of(ConstantDescs.CD_String);
 
         /**
-         * Ensure a capacity in the initial StringBuilder to accommodate all constants plus this factor times the number
-         * of arguments.
+         * Ensure a capacity in the initial StringBuilder to accommodate all
+         * constants plus this factor times the number of arguments.
          */
         static final int ARGUMENT_SIZE_FACTOR = 4;
 
         public static final Set<Lookup.ClassOption> SET_OF_STRONG = Set.of(STRONG);
-
-        static {
-            DUMPER = ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
-        }
 
         private SimpleStringBuilderStrategy() {
             // no instantiation
@@ -1109,7 +1107,6 @@ public final class StringConcatFactory {
                 Class<?> innerClass = hiddenLookup.lookupClass();
                 return hiddenLookup.findStatic(innerClass, METHOD_NAME, args);
             } catch (Exception e) {
-                DUMPER.dumpFailedClass(className, classBytes);
                 throw new StringConcatException("Exception while spinning the class", e);
             }
         }
@@ -1129,7 +1126,7 @@ public final class StringConcatFactory {
                     }
                     len += args.parameterCount() * ARGUMENT_SIZE_FACTOR;
                     cb.constantInstruction(len);
-                    cb.invokespecial(STRING_BUILDER, "<init>", INT_VOID_TYPE);
+                    cb.invokespecial(STRING_BUILDER, "<init>", INT_CONSTRUCTOR_TYPE);
 
                     // At this point, we have a blank StringBuilder on stack, fill it in with .append calls.
                     {
@@ -1152,7 +1149,7 @@ public final class StringConcatFactory {
                         }
                     }
 
-                    cb.invokevirtual(STRING_BUILDER, "toString", MethodTypeDesc.ofDescriptor("()Ljava/lang/String;"));
+                    cb.invokevirtual(STRING_BUILDER, "toString", TO_STRING_TYPE);
                     cb.areturn();
                 }
             };
