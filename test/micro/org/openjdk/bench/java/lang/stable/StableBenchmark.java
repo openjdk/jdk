@@ -65,23 +65,23 @@ public class StableBenchmark {
     }
 
     @Benchmark
-    public int instanceAtomic() {
+    public int atomic() {
         return (int)atomic.get();
     }
 
     @Benchmark
-    public int instanceDCL() {
+    public int dcl() {
         return (int)dcl.get();
     }
 
     @Benchmark
-    public int instanceList() {
-        return (int)list.get(0).orThrow();
+    public int stable() {
+        return (int)stable.orThrow();
     }
 
     @Benchmark
-    public int instanceStable() {
-        return (int)stable.orThrow();
+    public int stableList() {
+        return (int)list.get(0).orThrow();
     }
 
     private static StableValue<Integer> init(StableValue<Integer> m) {

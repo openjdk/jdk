@@ -58,23 +58,46 @@ public class StableStaticBenchmark {
     private static final Supplier<Integer> DCL = new Dcl<>(() -> VALUE);
     private static final List<StableValue<Integer>> LIST = StableValue.ofList(1);
     private static final AtomicReference<Integer> ATOMIC = new AtomicReference<>(VALUE);
+    private static final DclHolder DCL_HOLDER = new DclHolder();
+    private static final StableHolder STABLE_HOLDER = new StableHolder();
+    private static final StableRecordHolder STABLE_RECORD_HOLDER = new StableRecordHolder();
 
     static {
         LIST.getFirst().setOrThrow(VALUE);
     }
 
     @Benchmark
-    public int staticAtomic() {
+    public int atomic() {
         return (int)ATOMIC.get();
     }
 
     @Benchmark
-    public int staticStable() {
+    public int dcl() {
+        return (int)DCL.get();
+    }
+
+    @Benchmark
+    public int dclHolder() {
+        return (int)DCL_HOLDER.get();
+    }
+
+    @Benchmark
+    public int stable() {
         return (int)STABLE.orThrow();
     }
 
     @Benchmark
-    public int staticList() {
+    public int stableHolder() {
+        return (int)STABLE_HOLDER.get();
+    }
+
+    @Benchmark
+    public int stableRecordHolder() {
+        return (int)STABLE_RECORD_HOLDER.get();
+    }
+
+    @Benchmark
+    public int stableList() {
         return (int)LIST.get(0).orThrow();
     }
 
@@ -120,6 +143,39 @@ public class StableStaticBenchmark {
                 }
             }
             return v;
+        }
+    }
+
+    private static final class DclHolder {
+        private final Dcl<Integer> delegate = new Dcl<>(() -> VALUE);
+
+        public Integer get() {
+            return delegate.get();
+        }
+    }
+
+    private static final class StableHolder {
+        private final StableValue<Integer> delegate;
+
+        public StableHolder() {
+            delegate = StableValue.of();
+            delegate.setOrThrow(VALUE);
+        }
+
+        public Integer get() {
+            return delegate.orThrow();
+        }
+    }
+
+    private record StableRecordHolder(StableValue<Integer> delegate) {
+
+        public StableRecordHolder() {
+            this(StableValue.of());
+            delegate.setOrThrow(VALUE);
+        }
+
+        public Integer get() {
+            return delegate.orThrow();
         }
     }
 
