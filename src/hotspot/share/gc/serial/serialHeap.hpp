@@ -85,7 +85,8 @@ public:
 private:
   DefNewGeneration* _young_gen;
   TenuredGeneration* _old_gen;
-
+  HeapWord* _young_gen_saved_top;
+  HeapWord* _old_gen_saved_top;
 private:
   // The singleton CardTable Remembered Set.
   CardTableRS* _rem_set;
@@ -235,15 +236,6 @@ public:
 
   void print_heap_change(const PreGenGCValues& pre_gc_values) const;
 
-  // The functions below are helper functions that a subclass of
-  // "CollectedHeap" can use in the implementation of its virtual
-  // functions.
-
-  class GenClosure : public StackObj {
-   public:
-    virtual void do_generation(Generation* gen) = 0;
-  };
-
   // Return "true" if all generations have reached the
   // maximal committed limit that they can reach, without a garbage
   // collection.
@@ -278,10 +270,6 @@ public:
   // In particular, if any generation might iterate over the oops
   // in other generations, it should call this method.
   void save_marks();
-
-  // Returns "true" iff no allocations have occurred since the last
-  // call to "save_marks".
-  bool no_allocs_since_save_marks();
 
   // Returns true if an incremental collection is likely to fail.
   // We optionally consult the young gen, if asked to do so;

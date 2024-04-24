@@ -726,7 +726,6 @@ void Klass::metaspace_pointers_do(MetaspaceClosure* it) {
   }
 
   it->push(&_name);
-  it->push(&_secondary_super_cache);
   it->push(&_secondary_supers);
   for (int i = 0; i < _primary_super_limit; i++) {
     it->push(&_primary_supers[i]);
@@ -756,6 +755,11 @@ void Klass::remove_unshareable_info() {
     ResourceMark rm;
     log_trace(cds, unshareable)("remove: %s", external_name());
   }
+
+  // _secondary_super_cache may be updated by an is_subtype_of() call
+  // while ArchiveBuilder is copying metaspace objects. Let's reset it to
+  // null and let it be repopulated at runtime.
+  set_secondary_super_cache(nullptr);
 
   set_subklass(nullptr);
   set_next_sibling(nullptr);
