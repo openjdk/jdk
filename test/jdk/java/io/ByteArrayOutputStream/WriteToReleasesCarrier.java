@@ -76,6 +76,7 @@ public class WriteToReleasesCarrier {
                 }
             } finally {
                 LockSupport.unpark(vthread1);
+                vthread1.join();
             }
         }
 
