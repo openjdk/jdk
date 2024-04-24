@@ -21,7 +21,7 @@
  * questions.
  */
 
-package lang.stable;
+package org.openjdk.bench.java.lang.stable;
 
 import jdk.internal.lang.StableValue;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -31,11 +31,9 @@ import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -45,8 +43,8 @@ import java.util.function.Supplier;
 /**
  * Benchmark measuring StableValue performance in a static context
  */
-@BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@BenchmarkMode(Mode.Throughput)
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark) // Share the same state instance (for contention)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
@@ -66,26 +64,26 @@ public class StableStaticBenchmark {
     }
 
     @Benchmark
-    public void staticAtomic(Blackhole bh) {
-        bh.consume((int)ATOMIC.get());
+    public int staticAtomic() {
+        return (int)ATOMIC.get();
     }
 
     @Benchmark
-    public void staticStable(Blackhole bh) {
-        bh.consume((int)STABLE.orThrow());
+    public int staticStable() {
+        return (int)STABLE.orThrow();
     }
 
     @Benchmark
-    public void staticList(Blackhole bh) {
-        bh.consume((int)LIST.get(0).orThrow());
+    public int staticList() {
+        return (int)LIST.get(0).orThrow();
     }
 
     @Benchmark
-    public void staticCHI(Blackhole bh) {
+    public int staticCHI() {
         class Holder {
             static final int VALUE = 42;
         }
-        bh.consume((int) Holder.VALUE);
+        return (int) Holder.VALUE;
     }
 
     private static StableValue<Integer> init(StableValue<Integer> m) {

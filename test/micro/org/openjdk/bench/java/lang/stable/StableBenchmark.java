@@ -25,7 +25,6 @@ package org.openjdk.bench.java.lang.stable;
 
 import jdk.internal.lang.StableValue;
 import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -35,20 +34,21 @@ import java.util.function.Supplier;
 /**
  * Benchmark measuring StableValue performance in instance contexts
  */
-@BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@BenchmarkMode(Mode.Throughput)
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark) // Share the same state instance (for contention)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 2, jvmArgsAppend = {"--add-exports=java.base/jdk.internal.lang=ALL-UNNAMED", "--enable-preview",
-"-XX:CompileCommand=dontinline,jdk.internal.lang.stable.StableValueImpl::orThrow",
+/*"-XX:CompileCommand=dontinline,jdk.internal.lang.stable.StableValueImpl::orThrow",
 "-XX:CompileCommand=dontinline,org.openjdk.bench.java.lang.stable.StableBenchmark$Dcl::get",
 "-XX:CompileCommand=dontinline,java.util.concurrent.atomic.AtomicReference::get",
 "-XX:-BackgroundCompilation",
 "-XX:CompileCommand=print,jdk.internal.lang.stable.StableValueImpl::orThrow",
 "-XX:CompileCommand=print,org.openjdk.bench.java.lang.stable.StableBenchmark$Dcl::get",
 "-XX:CompileCommand=print,java.util.concurrent.atomic.AtomicReference::get",
-"-XX:-TieredCompilation"})
+"-XX:-TieredCompilation"*/
+})
 @Threads(Threads.MAX)   // Benchmark under contention
 public class StableBenchmark {
 
@@ -65,23 +65,23 @@ public class StableBenchmark {
     }
 
     @Benchmark
-    public void instanceAtomic(Blackhole bh) {
-        bh.consume((int)atomic.get());
+    public int instanceAtomic() {
+        return (int)atomic.get();
     }
 
     @Benchmark
-    public void instanceDCL(Blackhole bh) {
-        bh.consume((int)dcl.get());
+    public int instanceDCL() {
+        return (int)dcl.get();
     }
 
     @Benchmark
-    public void instanceList(Blackhole bh) {
-        bh.consume((int)list.get(0).orThrow());
+    public int instanceList() {
+        return (int)list.get(0).orThrow();
     }
 
     @Benchmark
-    public void instanceStable(Blackhole bh) {
-        bh.consume((int)stable.orThrow());
+    public int instanceStable() {
+        return (int)stable.orThrow();
     }
 
     private static StableValue<Integer> init(StableValue<Integer> m) {
