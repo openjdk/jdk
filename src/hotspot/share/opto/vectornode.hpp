@@ -901,6 +901,7 @@ class LoadVectorGatherNode : public LoadVectorNode {
 
   virtual int Opcode() const;
   virtual uint match_edge(uint idx) const { return idx == MemNode::Address || idx == MemNode::ValueIn; }
+  virtual int store_Opcode() const { return Op_StoreVectorScatter; }
 };
 
 //------------------------------StoreVectorNode--------------------------------
@@ -1001,6 +1002,7 @@ class LoadVectorMaskedNode : public LoadVectorNode {
     return idx > 1;
   }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual int store_Opcode() const { return Op_StoreVectorMasked; }
 };
 
 //-------------------------------LoadVectorGatherMaskedNode---------------------------------
@@ -1024,6 +1026,7 @@ class LoadVectorGatherMaskedNode : public LoadVectorNode {
   virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
                                                    idx == MemNode::ValueIn ||
                                                    idx == MemNode::ValueIn + 1; }
+  virtual int store_Opcode() const { return Op_StoreVectorScatterMasked; }
 };
 
 //------------------------------StoreVectorScatterMaskedNode--------------------------------

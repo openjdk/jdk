@@ -2827,35 +2827,37 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       val->in(MemNode::Address)->eqv_uncast(adr) &&
       val->in(MemNode::Memory )->eqv_uncast(mem) &&
       val->as_Load()->store_Opcode() == Opcode()) {
-        // Handle StoreVector with offsets and masks
-        // Ensure offsets match
-        if (is_StoreVectorScatter()) {
-          const Node* offsets = as_StoreVectorScatter()->in(StoreVectorScatterNode::Offsets);
-          if (val->is_LoadVectorGather() && offsets->eqv_uncast(val->as_LoadVectorGather()->in(LoadVectorGatherNode::Offsets))) {
-            result = mem;
-          }
-        // Ensure masks match
-        } else if (is_StoreVectorMasked()) {
-          const Node* mask = as_StoreVectorMasked()->in(StoreVectorMaskedNode::Mask);
-          if (val->is_LoadVectorMasked() && mask->eqv_uncast(val->as_LoadVectorMasked()->in(LoadVectorMaskedNode::Mask))) {
-            result = mem;
-          }
-        // Ensure offsets and masks match
-        } else if (is_StoreVectorScatterMasked()) {
-          const StoreVectorScatterMaskedNode* stv = as_StoreVectorScatterMasked();
-          const Node* offsets = stv->in(StoreVectorScatterMaskedNode::Offsets);
-          const Node* mask = stv->in(StoreVectorScatterMaskedNode::Mask);
-          if (val->is_LoadVectorGatherMasked()) {
-            const LoadVectorGatherMaskedNode* lvgm = val->as_LoadVectorGatherMasked();
-            if (offsets->eqv_uncast(lvgm->in(LoadVectorGatherMaskedNode::Offsets)) &&
-              mask->eqv_uncast(lvgm->in(LoadVectorGatherMaskedNode::Mask))) {
-              result = mem;
-            }
-          }
-        // Regular store (no offsets or mask)
-        } else {
-          result = mem;
-        }
+    // Handle StoreVector with offsets and masks
+    // Ensure offsets match
+    if (is_StoreVectorScatter()) {
+      const Node* offsets_store = as_StoreVectorScatter()->in(StoreVectorScatterNode::Offsets);
+      const Node* offsets_load = val->as_LoadVectorGather()->in(LoadVectorGatherNode::Offsets);
+      if (offsets_store->eqv_uncast(offsets_load)) {
+        result = mem;
+      }
+    // Ensure masks match
+    } else if (is_StoreVectorMasked()) {
+      const Node* mask_store = as_StoreVectorMasked()->in(StoreVectorMaskedNode::Mask);
+      const Node* mask_load = val->as_LoadVectorMasked()->in(LoadVectorMaskedNode::Mask);
+      if (mask_store->eqv_uncast(mask_load)) {
+        result = mem;
+      }
+    // Ensure offsets and masks match
+    } else if (is_StoreVectorScatterMasked()) {
+      const StoreVectorScatterMaskedNode* stv = as_StoreVectorScatterMasked();
+      const Node* offsets_store = stv->in(StoreVectorScatterMaskedNode::Offsets);
+      const Node* mask_store = stv->in(StoreVectorScatterMaskedNode::Mask);
+      const LoadVectorGatherMaskedNode* lvgm = val->as_LoadVectorGatherMasked();
+      const Node* offsets_load = lvgm->in(LoadVectorGatherMaskedNode::Offsets);
+      const Node* mask_load = lvgm->in(LoadVectorGatherMaskedNode::Mask)
+      if (offsets_store->eqv_uncast(offsets_load) &&
+        mask_store->eqv_uncast(mask_load)) {
+        result = mem;
+      }
+    // Regular store (no offsets or mask)
+    } else {
+      result = mem;
+    }
   }
 
   // Two stores in a row of the same value?
