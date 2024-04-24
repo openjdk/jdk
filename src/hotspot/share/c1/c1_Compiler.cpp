@@ -62,10 +62,9 @@ void Compiler::init_c1_runtime() {
 
 
 void Compiler::initialize() {
-  // Buffer blob must be allocated per C1 compiler thread at startup
-  BufferBlob* buffer_blob = init_buffer_blob();
-
+  // MonitorLocker only_one(CompileThread_lock);
   if (should_perform_init()) {
+    BufferBlob* buffer_blob = init_buffer_blob(); // c1 needs scratch buffer to generate stubs
     if (buffer_blob == nullptr) {
       // When we come here we are in state 'initializing'; entire C1 compilation
       // can be shut down.
@@ -74,6 +73,7 @@ void Compiler::initialize() {
       init_c1_runtime();
       set_state(initialized);
     }
+    release_buffer_blob();
   }
 }
 
@@ -82,8 +82,6 @@ uint Compiler::code_buffer_size() {
 }
 
 BufferBlob* Compiler::init_buffer_blob() {
-  // Allocate buffer blob once at startup since allocation for each
-  // compilation seems to be too expensive (at least on Intel win32).
   assert (CompilerThread::current()->get_buffer_blob() == nullptr, "Should initialize only once");
 
   // setup CodeBuffer.  Preallocate a BufferBlob of size
@@ -94,6 +92,14 @@ BufferBlob* Compiler::init_buffer_blob() {
   }
 
   return buffer_blob;
+}
+
+void Compiler::release_buffer_blob() {
+  BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
+  if (buffer_blob != nullptr) {
+    CompilerThread::current()->set_buffer_blob(nullptr);
+    BufferBlob::free(buffer_blob);
+  }
 }
 
 bool Compiler::is_intrinsic_supported(const methodHandle& method) {
@@ -246,8 +252,13 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
 }
 
 void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci, bool install_code, DirectiveSet* directive) {
-  BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
-  assert(buffer_blob != nullptr, "Must exist");
+  assert(CompilerThread::current()->get_buffer_blob() == nullptr, "buffer is released each time");
+  BufferBlob* buffer_blob = init_buffer_blob();
+  if (buffer_blob == nullptr) {
+    warning("no space to run C1 compiler");
+    return;
+  }
+
   // invoke compilation
   {
     // We are nested here because we need for the destructor
@@ -256,6 +267,8 @@ void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci, bool 
     ResourceMark rm;
     Compilation c(this, env, method, entry_bci, buffer_blob, install_code, directive);
   }
+
+  release_buffer_blob();
 }
 
 

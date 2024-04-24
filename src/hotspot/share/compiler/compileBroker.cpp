@@ -1787,12 +1787,6 @@ bool CompileBroker::init_compiler_runtime() {
     return false;
   }
 
-  // C1 specific check
-  if (comp->is_c1() && (thread->get_buffer_blob() == nullptr)) {
-    warning("Initialization of %s thread failed (no space to run compilers)", thread->name());
-    return false;
-  }
-
   return true;
 }
 
