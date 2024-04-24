@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,18 +205,18 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
     @DataProvider(name = "all")
     public Object[][] allcases() {
         List<Object[]> result = new ArrayList<>();
-        for (var client : List.of(authClient, noAuthClient)) {
+        for (boolean useAuth : List.of(true, false)) {
             for (boolean async : List.of(true, false)) {
                 for (int code : List.of(UNAUTHORIZED, PROXY_UNAUTHORIZED)) {
                     var srv = code == PROXY_UNAUTHORIZED ? "/proxy" : "/server";
                     for (var auth : List.of("/auth", "/noauth")) {
                         var pcode = code;
                         if (auth.equals("/noauth")) {
-                            if (client == authClient) continue;
+                            if (useAuth) continue;
                             pcode = FORBIDDEN;
                         }
                         for (var uri : List.of(httpURI, httpsURI, http2URI, https2URI)) {
-                            result.add(new Object[]{uri + srv + auth, pcode, async, client});
+                            result.add(new Object[]{uri + srv + auth, pcode, async, useAuth});
                         }
                     }
                 }
@@ -237,12 +237,13 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
     static final AtomicLong sleepCount = new AtomicLong();
 
     @Test(dataProvider = "all")
-    void test(String uriString, int code, boolean async, HttpClient client) throws Throwable {
+    void test(String uriString, int code, boolean async, boolean useAuth) throws Throwable {
         checkSkip();
+        HttpClient client = useAuth ? authClient : noAuthClient;
         var name = String.format("test(%s, %d, %s, %s)", uriString, code, async ? "async" : "sync",
                 client.authenticator().isPresent() ? "authClient" : "noAuthClient");
         out.printf("%n---- starting %s ----%n", name);
-        assert client.authenticator().isPresent() ? client == authClient : client == noAuthClient;
+        assert client.authenticator().isPresent() == useAuth;
         uriString = uriString + "/ForbiddenTest";
         for (int i=0; i<ITERATIONS; i++) {
             if (ITERATIONS > 1) out.printf("---- ITERATION %d%n",i);
@@ -381,13 +382,16 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
         authClient = noAuthClient = null;
         Thread.sleep(100);
         AssertionError fail = TRACKER.check(500);
-
-        proxy.stop();
-        authproxy.stop();
-        httpTestServer.stop();
-        httpsTestServer.stop();
-        http2TestServer.stop();
-        https2TestServer.stop();
+        try {
+            proxy.stop();
+            authproxy.stop();
+            httpTestServer.stop();
+            httpsTestServer.stop();
+            http2TestServer.stop();
+            https2TestServer.stop();
+        } finally {
+            if (fail != null) throw fail;
+        }
     }
 
     static class TestProxySelector extends ProxySelector {

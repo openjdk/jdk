@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -377,15 +377,18 @@ public class ProxySelectorTest implements HttpServerAdapters {
         client = null;
         Thread.sleep(100);
         AssertionError fail = TRACKER.check(500);
-
-        proxy.stop();
-        authproxy.stop();
-        httpTestServer.stop();
-        proxyHttpTestServer.stop();
-        authProxyHttpTestServer.stop();
-        httpsTestServer.stop();
-        http2TestServer.stop();
-        https2TestServer.stop();
+        try {
+            proxy.stop();
+            authproxy.stop();
+            httpTestServer.stop();
+            proxyHttpTestServer.stop();
+            authProxyHttpTestServer.stop();
+            httpsTestServer.stop();
+            http2TestServer.stop();
+            https2TestServer.stop();
+        } finally {
+            if (fail != null) throw fail;
+        }
     }
 
     class TestProxySelector extends ProxySelector {
