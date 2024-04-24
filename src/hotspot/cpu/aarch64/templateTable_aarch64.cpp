@@ -3603,17 +3603,15 @@ void TemplateTable::_new() {
   // get InstanceKlass
   __ load_resolved_klass_at_offset(r4, r3, r4, rscratch1);
 
-  // make sure klass is initialized & doesn't have finalizer
-  // make sure klass is fully initialized
-  __ ldrb(rscratch1, Address(r4, InstanceKlass::init_state_offset()));
-  __ cmp(rscratch1, (u1)InstanceKlass::fully_initialized);
-  __ br(Assembler::NE, slow_case);
+  // make sure klass is initialized
+  assert(VM_Version::supports_fast_class_init_checks(), "Optimization requires support for fast class initialization checks");
+  __ clinit_barrier(r4, rscratch1, nullptr /*L_fast_path*/, &slow_case);
 
   // get instance_size in InstanceKlass (scaled to a count of bytes)
   __ ldrw(r3,
           Address(r4,
                   Klass::layout_helper_offset()));
-  // test to see if it has a finalizer or is malformed in some way
+  // test to see if it is malformed in some way
   __ tbnz(r3, exact_log2(Klass::_lh_instance_slow_path_bit), slow_case);
 
   // Allocate the instance:

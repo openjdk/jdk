@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,6 +205,15 @@ static bool stack_trace_precondition(const ObjectSample* sample) {
   return sample->has_stack_trace_id() && !sample->is_dead();
 }
 
+static void add_to_leakp_set(const ObjectSample* sample) {
+  assert(sample != nullptr, "invariant");
+  oop object = sample->object();
+  if (object == nullptr) {
+    return;
+  }
+  JfrTraceId::load_leakp(object->klass());
+}
+
 class StackTraceBlobInstaller {
  private:
   BlobCache _cache;
@@ -214,11 +223,9 @@ class StackTraceBlobInstaller {
   StackTraceBlobInstaller() : _cache(JfrOptionSet::old_object_queue_size()) {
     prepare_for_resolution();
   }
-  ~StackTraceBlobInstaller() {
-    JfrStackTraceRepository::clear_leak_profiler();
-  }
   void sample_do(ObjectSample* sample) {
     if (stack_trace_precondition(sample)) {
+      add_to_leakp_set(sample);
       install(sample);
     }
   }
@@ -257,12 +264,12 @@ void StackTraceBlobInstaller::install(ObjectSample* sample) {
 static void install_stack_traces(const ObjectSampler* sampler) {
   assert(sampler != nullptr, "invariant");
   const ObjectSample* const last = sampler->last();
-  if (last != sampler->last_resolved()) {
-    ResourceMark rm;
-    JfrKlassUnloading::sort();
-    StackTraceBlobInstaller installer;
-    iterate_samples(installer);
-  }
+  assert(last != nullptr, "invariant");
+  assert(last != sampler->last_resolved(), "invariant");
+  ResourceMark rm;
+  JfrKlassUnloading::sort();
+  StackTraceBlobInstaller installer;
+  iterate_samples(installer);
 }
 
 void ObjectSampleCheckpoint::on_rotation(const ObjectSampler* sampler) {
@@ -270,11 +277,17 @@ void ObjectSampleCheckpoint::on_rotation(const ObjectSampler* sampler) {
   assert(LeakProfiler::is_running(), "invariant");
   JavaThread* const thread = JavaThread::current();
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(thread);)
-  // can safepoint here
-  ThreadInVMfromNative transition(thread);
-  MutexLocker lock(ClassLoaderDataGraph_lock);
-  // the lock is needed to ensure the unload lists do not grow in the middle of inspection.
-  install_stack_traces(sampler);
+  if (!ObjectSampler::has_unresolved_entry()) {
+    return;
+  }
+  {
+    // can safepoint here
+    ThreadInVMfromNative transition(thread);
+    MutexLocker lock(ClassLoaderDataGraph_lock);
+    // the lock is needed to ensure the unload lists do not grow in the middle of inspection.
+    install_stack_traces(sampler);
+  }
+  JfrStackTraceRepository::clear_leak_profiler();
 }
 
 static bool is_klass_unloaded(traceid klass_id) {
@@ -412,8 +425,10 @@ class BlobInstaller {
 };
 
 static void install_type_set_blobs() {
-  BlobInstaller installer;
-  iterate_samples(installer);
+  if (saved_type_set_blobs.valid()) {
+    BlobInstaller installer;
+    iterate_samples(installer);
+  }
 }
 
 static void save_type_set_blob(JfrCheckpointWriter& writer) {
@@ -426,20 +441,29 @@ static void save_type_set_blob(JfrCheckpointWriter& writer) {
   }
 }
 
+// This routine has exclusive access to the sampler instance on entry.
 void ObjectSampleCheckpoint::on_type_set(JfrCheckpointWriter& writer) {
   assert(LeakProfiler::is_running(), "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(JavaThread::current());)
-  const ObjectSample* last = ObjectSampler::sampler()->last();
-  if (writer.has_data() && last != nullptr) {
-    save_type_set_blob(writer);
-    install_type_set_blobs();
-    ObjectSampler::sampler()->set_last_resolved(last);
+  assert(ClassLoaderDataGraph_lock->owned_by_self(), "invariant");
+  if (!ObjectSampler::has_unresolved_entry()) {
+    return;
   }
+  const ObjectSample* const last = ObjectSampler::sampler()->last();
+  assert(last != nullptr, "invariant");
+  assert(last != ObjectSampler::sampler()->last_resolved(), "invariant");
+  if (writer.has_data()) {
+    save_type_set_blob(writer);
+  }
+  install_type_set_blobs();
+  ObjectSampler::sampler()->set_last_resolved(last);
 }
 
+// This routine does NOT have exclusive access to the sampler instance on entry.
 void ObjectSampleCheckpoint::on_type_set_unload(JfrCheckpointWriter& writer) {
   assert(LeakProfiler::is_running(), "invariant");
-  if (writer.has_data() && ObjectSampler::sampler()->last() != nullptr) {
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  if (writer.has_data() && ObjectSampler::has_unresolved_entry()) {
     save_type_set_blob(writer);
   }
 }

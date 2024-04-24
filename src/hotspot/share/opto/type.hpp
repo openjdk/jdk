@@ -1413,7 +1413,7 @@ class TypeAryPtr : public TypeOopPtr {
   const TypeAry *_ary;          // Array we point into
   const bool     _is_autobox_cache;
 
-  ciKlass* compute_klass(DEBUG_ONLY(bool verify = false)) const;
+  ciKlass* compute_klass() const;
 
   // A pointer to delay allocation to Type::Initialize_shared()
 

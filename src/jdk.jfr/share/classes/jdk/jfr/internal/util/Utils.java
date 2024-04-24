@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -174,6 +176,19 @@ public final class Utils {
             map.put(key, value);
         }
         return map;
+    }
+
+    public static <T> boolean compareLists(List<T> a, List<T> b, Comparator<T> c) {
+        int size = a.size();
+        if (size != b.size()) {
+            return false;
+        }
+        for (int i = 0; i < size; i++) {
+            if (c.compare(a.get(i), b.get(i)) != 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static <T> List<T> sanitizeNullFreeList(List<T> elements, Class<T> clazz) {
@@ -430,5 +445,27 @@ public final class Utils {
 
     public static String makeSimpleName(String qualified) {
         return qualified.substring(qualified.lastIndexOf(".") + 1);
+    }
+
+    public static String format(String template, Map<String, String> parameters) {
+        StringBuilder sb = new StringBuilder(3 * template.length() / 2);
+        List<String> keys = new ArrayList<>(parameters.keySet());
+        // Sort so longest keys are checked first in case keys overlap.
+        keys.sort((a, b) -> b.length() - a.length());
+        for (int i = 0; i < template.length(); i++) {
+            int index = i;
+            for (int j = 0; j < keys.size(); j++) {
+                String key = keys.get(j);
+                if (template.startsWith(key, i)) {
+                    sb.append(parameters.get(key));
+                    i += key.length() - 1;
+                    break;
+                }
+            }
+            if (i == index) {
+                sb.append(template.charAt(i));
+            }
+        }
+        return sb.toString();
     }
 }

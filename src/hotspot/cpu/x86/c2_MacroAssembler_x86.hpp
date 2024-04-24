@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,10 @@ public:
                  Metadata* method_data,
                  bool use_rtm, bool profile_rtm);
   void fast_unlock(Register obj, Register box, Register tmp, bool use_rtm);
+
+  void fast_lock_lightweight(Register obj, Register box, Register rax_reg,
+                             Register t, Register thread);
+  void fast_unlock_lightweight(Register obj, Register reg_rax, Register t, Register thread);
 
 #if INCLUDE_RTM_OPT
   void rtm_counters_update(Register abort_status, Register rtm_counters);
@@ -390,6 +394,10 @@ public:
 
   void vector_round_float_avx(XMMRegister dst, XMMRegister src, AddressLiteral float_sign_flip, AddressLiteral new_mxcsr, int vec_enc,
                               Register tmp, XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4);
+
+  void vector_compress_expand_avx2(int opcode, XMMRegister dst, XMMRegister src, XMMRegister mask,
+                                   Register rtmp, Register rscratch, XMMRegister permv, XMMRegister xtmp,
+                                   BasicType bt, int vec_enc);
 #endif // _LP64
 
   void udivI(Register rax, Register divisor, Register rdx);
@@ -491,5 +499,17 @@ public:
 
   void vector_rearrange_int_float(BasicType bt, XMMRegister dst, XMMRegister shuffle,
                                   XMMRegister src, int vlen_enc);
+
+
+  void vgather_subword(BasicType elem_ty, XMMRegister dst,  Register base, Register idx_base, Register offset,
+                       Register mask, XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
+                       Register midx, Register length, int vector_len, int vlen_enc);
+
+#ifdef _LP64
+  void vgather8b_masked_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
+                               Register offset, Register mask, Register midx, Register rtmp, int vlen_enc);
+#endif
+  void vgather8b_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
+                              Register offset, Register rtmp, int vlen_enc);
 
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

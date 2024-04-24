@@ -370,16 +370,15 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   if (index_size == sizeof(u4)) {
     __ load_resolved_indy_entry(Rcache, Rindex);
     __ ldrh(Rcache, Address(Rcache, in_bytes(ResolvedIndyEntry::num_parameters_offset())));
-    __ check_stack_top();
-    __ add(Rstack_top, Rstack_top, AsmOperand(Rcache, lsl, Interpreter::logStackElementSize));
   } else {
     // Pop N words from the stack
     assert(index_size == sizeof(u2), "Can only be u2");
     __ load_method_entry(Rcache, Rindex);
-    __ ldrh(Rcache, Address(Rcache, in_bytes(ResolvedIndyEntry::num_parameters_offset())));
-    __ check_stack_top();
-    __ add(Rstack_top, Rstack_top, AsmOperand(Rcache, lsl, Interpreter::logStackElementSize));
+    __ ldrh(Rcache, Address(Rcache, in_bytes(ResolvedMethodEntry::num_parameters_offset())));
   }
+
+  __ check_stack_top();
+  __ add(Rstack_top, Rstack_top, AsmOperand(Rcache, lsl, Interpreter::logStackElementSize));
 
   __ convert_retval_to_tos(state);
 

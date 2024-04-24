@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,12 +41,16 @@ import java.security.cert.X509CertSelector;
 import java.util.*;
 import javax.security.auth.x500.X500Principal;
 
+import jdk.internal.misc.ThreadTracker;
 import sun.security.provider.certpath.PKIX.BuilderParams;
 import sun.security.util.Debug;
+import sun.security.util.ObjectIdentifier;
 import sun.security.x509.AccessDescription;
 import sun.security.x509.AuthorityInfoAccessExtension;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
+import sun.security.x509.AVA;
 import static sun.security.x509.PKIXExtensions.*;
+import sun.security.x509.RDN;
 import sun.security.x509.X500Name;
 import sun.security.x509.X509CertImpl;
 
@@ -59,7 +63,7 @@ import sun.security.x509.X509CertImpl;
  * @author      Yassir Elley
  * @author      Sean Mullan
  */
-final class ForwardBuilder extends Builder {
+public final class ForwardBuilder extends Builder {
 
     private static final Debug debug = Debug.getInstance("certpath");
     private final Set<X509Certificate> trustedCerts;
@@ -70,6 +74,10 @@ final class ForwardBuilder extends Builder {
     private X509CertSelector caTargetSelector;
     TrustAnchor trustAnchor;
     private final boolean searchAllCertStores;
+
+    private static class ThreadTrackerHolder {
+        static final ThreadTracker AIA_TRACKER = new ThreadTracker();
+    }
 
     /**
      * Initialize the builder with the input parameters.
@@ -279,7 +287,7 @@ final class ForwardBuilder extends Builder {
                     debug.println("ForwardBuilder.getMatchingCACerts: " +
                         "found matching trust anchor." +
                         "\n  SN: " +
-                            Debug.toHexString(trustedCert.getSerialNumber()) +
+                            Debug.toString(trustedCert.getSerialNumber()) +
                         "\n  Subject: " +
                             trustedCert.getSubjectX500Principal() +
                         "\n  Issuer: " +
@@ -336,7 +344,7 @@ final class ForwardBuilder extends Builder {
     }
 
     /**
-     * Download Certificates from the given AIA and add them to the
+     * Download certificates from the given AIA and add them to the
      * specified Collection.
      */
     // cs.getCertificates(caSelector) returns a collection of X509Certificate's
@@ -348,32 +356,47 @@ final class ForwardBuilder extends Builder {
         if (!Builder.USE_AIA) {
             return false;
         }
+
         List<AccessDescription> adList = aiaExt.getAccessDescriptions();
         if (adList == null || adList.isEmpty()) {
             return false;
         }
 
-        boolean add = false;
-        for (AccessDescription ad : adList) {
-            CertStore cs = URICertStore.getInstance(ad);
-            if (cs != null) {
-                try {
-                    if (certs.addAll((Collection<X509Certificate>)
-                        cs.getCertificates(caSelector))) {
-                        add = true;
-                        if (!searchAllCertStores) {
-                            return true;
+        Object key = ThreadTrackerHolder.AIA_TRACKER.tryBegin();
+        if (key == null) {
+            // Avoid recursive fetching of certificates
+            if (debug != null) {
+                debug.println("Recursive fetching of certs via the AIA " +
+                    "extension detected");
+            }
+            return false;
+        }
+
+        try {
+            boolean add = false;
+            for (AccessDescription ad : adList) {
+                CertStore cs = URICertStore.getInstance(ad);
+                if (cs != null) {
+                    try {
+                        if (certs.addAll((Collection<X509Certificate>)
+                            cs.getCertificates(caSelector))) {
+                            add = true;
+                            if (!searchAllCertStores) {
+                                return true;
+                            }
                         }
-                    }
-                } catch (CertStoreException cse) {
-                    if (debug != null) {
-                        debug.println("exception getting certs from CertStore:");
-                        cse.printStackTrace();
+                    } catch (CertStoreException cse) {
+                        if (debug != null) {
+                            debug.println("exception getting certs from CertStore:");
+                            cse.printStackTrace();
+                        }
                     }
                 }
             }
+            return add;
+        } finally {
+            ThreadTrackerHolder.AIA_TRACKER.end(key);
         }
-        return add;
     }
 
     /**
@@ -392,29 +415,15 @@ final class ForwardBuilder extends Builder {
      * 2) Issuer matches a trusted subject
      *    Issuer: ou=D,ou=C,o=B,c=A
      *
-     * 3) Issuer is a descendant of a trusted subject (in order of
-     *    number of links to the trusted subject)
-     *    a) Issuer: ou=E,ou=D,ou=C,o=B,c=A        [links=1]
-     *    b) Issuer: ou=F,ou=E,ou=D,ou=C,ou=B,c=A  [links=2]
-     *
-     * 4) Issuer is an ancestor of a trusted subject (in order of number of
-     *    links to the trusted subject)
-     *    a) Issuer: ou=C,o=B,c=A [links=1]
-     *    b) Issuer: o=B,c=A      [links=2]
-     *
-     * 5) Issuer is in the same namespace as a trusted subject (in order of
-     *    number of links to the trusted subject)
+     * 3) Issuer is in the same namespace as a trusted subject (in order of
+     *    number of links to the trusted subject). If the last RDN of the
+     *    common ancestor is geographical, then it is skipped and the next
+     *    trusted certificate is checked.
      *    a) Issuer: ou=G,ou=C,o=B,c=A  [links=2]
      *    b) Issuer: ou=H,o=B,c=A       [links=3]
+     *    c) Issuer: ou=H,o=D,c=A       [skipped, only geographical c=A is same]
      *
-     * 6) Issuer is an ancestor of certificate subject (in order of number
-     *    of links to the certificate subject)
-     *    a) Issuer:  ou=K,o=J,c=A
-     *       Subject: ou=L,ou=K,o=J,c=A
-     *    b) Issuer:  o=J,c=A
-     *       Subject: ou=L,ou=K,0=J,c=A
-     *
-     * 7) Any other certificates
+     * 4) Any other certificates
      */
     static class PKIXCertComparator implements Comparator<X509Certificate> {
 
@@ -451,8 +460,8 @@ final class ForwardBuilder extends Builder {
         }
 
         /**
-         * @param oCert1 First X509Certificate to be compared
-         * @param oCert2 Second X509Certificate to be compared
+         * @param oCert1 first X509Certificate to be compared
+         * @param oCert2 second X509Certificate to be compared
          * @return -1 if oCert1 is preferable to oCert2, or
          *            if oCert1 and oCert2 are equally preferable (in this
          *            case it doesn't matter which is preferable, but we don't
@@ -462,8 +471,6 @@ final class ForwardBuilder extends Builder {
          *          0 if oCert1.equals(oCert2). We only return 0 if the
          *          certs are equal so that this comparator behaves
          *          correctly when used in a SortedSet.
-         * @throws ClassCastException if either argument is not of type
-         * X509Certificate
          */
         @Override
         public int compare(X509Certificate oCert1, X509Certificate oCert2) {
@@ -483,168 +490,126 @@ final class ForwardBuilder extends Builder {
 
             X500Principal cIssuer1 = oCert1.getIssuerX500Principal();
             X500Principal cIssuer2 = oCert2.getIssuerX500Principal();
-            X500Name cIssuer1Name = X500Name.asX500Name(cIssuer1);
-            X500Name cIssuer2Name = X500Name.asX500Name(cIssuer2);
-
-            if (debug != null) {
-                debug.println(METHOD_NME + " o1 Issuer:  " + cIssuer1);
-                debug.println(METHOD_NME + " o2 Issuer:  " + cIssuer2);
-            }
 
             /* If one cert's issuer matches a trusted subject, then it is
              * preferable.
              */
             if (debug != null) {
+                debug.println(METHOD_NME + " cert1 Issuer:  " + cIssuer1);
+                debug.println(METHOD_NME + " cert2 Issuer:  " + cIssuer2);
                 debug.println(METHOD_NME + " MATCH TRUSTED SUBJECT TEST...");
             }
 
-            boolean m1 = trustedSubjectDNs.contains(cIssuer1);
-            boolean m2 = trustedSubjectDNs.contains(cIssuer2);
-            if (debug != null) {
-                debug.println(METHOD_NME + " m1: " + m1);
-                debug.println(METHOD_NME + " m2: " + m2);
+            if (trustedSubjectDNs.contains(cIssuer1)) {
+                return -1;
             }
-            if (m1 && m2) {
-                return -1;
-            } else if (m1) {
-                return -1;
-            } else if (m2) {
+            if (trustedSubjectDNs.contains(cIssuer2)) {
                 return 1;
-            }
-
-            /* If one cert's issuer is a naming descendant of a trusted subject,
-             * then it is preferable, in order of increasing naming distance.
-             */
-            if (debug != null) {
-                debug.println(METHOD_NME + " NAMING DESCENDANT TEST...");
-            }
-            for (X500Principal tSubject : trustedSubjectDNs) {
-                X500Name tSubjectName = X500Name.asX500Name(tSubject);
-                int distanceTto1 =
-                    Builder.distance(tSubjectName, cIssuer1Name, -1);
-                int distanceTto2 =
-                    Builder.distance(tSubjectName, cIssuer2Name, -1);
-                if (debug != null) {
-                    debug.println(METHOD_NME +" distanceTto1: " + distanceTto1);
-                    debug.println(METHOD_NME +" distanceTto2: " + distanceTto2);
-                }
-                if (distanceTto1 > 0 || distanceTto2 > 0) {
-                    // at least one is positive
-                    if (distanceTto2 <= 0) {        // only d1 is positive
-                        return -1;
-                    } else if (distanceTto1 <= 0) { // only d2 is positive
-                        return 1;
-                    } else {                        // all positive
-                        return distanceTto1 > distanceTto2 ? 1 : -1;
-                    }
-                }
-            }
-
-            /* If one cert's issuer is a naming ancestor of a trusted subject,
-             * then it is preferable, in order of increasing naming distance.
-             */
-            if (debug != null) {
-                debug.println(METHOD_NME + " NAMING ANCESTOR TEST...");
-            }
-            for (X500Principal tSubject : trustedSubjectDNs) {
-                X500Name tSubjectName = X500Name.asX500Name(tSubject);
-
-                int distanceTto1 = Builder.distance
-                    (tSubjectName, cIssuer1Name, Integer.MAX_VALUE);
-                int distanceTto2 = Builder.distance
-                    (tSubjectName, cIssuer2Name, Integer.MAX_VALUE);
-                if (debug != null) {
-                    debug.println(METHOD_NME +" distanceTto1: " + distanceTto1);
-                    debug.println(METHOD_NME +" distanceTto2: " + distanceTto2);
-                }
-                if (distanceTto1 < 0 || distanceTto2 < 0) {
-                    // at least one is negative
-                    if (distanceTto2 >= 0) {        // only d1 is negative
-                        return -1;
-                    } else if (distanceTto1 >= 0) { // only d2 is negative
-                        return 1;
-                    } else {                        // all negative
-                        return distanceTto1 < distanceTto2 ? 1 : -1;
-                    }
-                }
             }
 
             /* If one cert's issuer is in the same namespace as a trusted
              * subject, then it is preferable, in order of increasing naming
              * distance.
              */
+            String debugMsg = null;
             if (debug != null) {
-                debug.println(METHOD_NME +" SAME NAMESPACE AS TRUSTED TEST...");
+                debug.println(METHOD_NME + " SAME NAMESPACE AS TRUSTED TEST...");
+                debugMsg = METHOD_NME + " distance (number of " +
+                    "RDNs) from cert%1$s issuer to trusted subject %2$s: %3$d";
             }
+
+            X500Name cIssuer1Name = X500Name.asX500Name(cIssuer1);
+            X500Name cIssuer2Name = X500Name.asX500Name(cIssuer2);
+            // Note that we stop searching if we find a trust anchor that
+            // has a common non-geographical ancestor on the basis that there
+            // is a good chance that this path is the one we want.
             for (X500Principal tSubject : trustedSubjectDNs) {
                 X500Name tSubjectName = X500Name.asX500Name(tSubject);
-                X500Name tAo1 = tSubjectName.commonAncestor(cIssuer1Name);
-                X500Name tAo2 = tSubjectName.commonAncestor(cIssuer2Name);
+                int d1 = distanceToCommonAncestor(tSubjectName, cIssuer1Name);
+                int d2 = distanceToCommonAncestor(tSubjectName, cIssuer2Name);
                 if (debug != null) {
-                    debug.println(METHOD_NME +" tAo1: " + tAo1);
-                    debug.println(METHOD_NME +" tAo2: " + tAo2);
-                }
-                if (tAo1 != null || tAo2 != null) {
-                    if (tAo1 != null && tAo2 != null) {
-                        int hopsTto1 = Builder.hops
-                            (tSubjectName, cIssuer1Name, Integer.MAX_VALUE);
-                        int hopsTto2 = Builder.hops
-                            (tSubjectName, cIssuer2Name, Integer.MAX_VALUE);
-                        if (debug != null) {
-                            debug.println(METHOD_NME +" hopsTto1: " + hopsTto1);
-                            debug.println(METHOD_NME +" hopsTto2: " + hopsTto2);
-                        }
-                        if (hopsTto1 == hopsTto2) {
-                        } else if (hopsTto1 > hopsTto2) {
-                            return 1;
-                        } else {  // hopsTto1 < hopsTto2
-                            return -1;
-                        }
-                    } else if (tAo1 == null) {
-                        return 1;
-                    } else {
-                        return -1;
+                    if (d1 != -1) {
+                        debug.println(String.format(debugMsg, "1", tSubject, d1));
+                    }
+                    if (d2 != -1) {
+                        debug.println(String.format(debugMsg, "2", tSubject, d2));
                     }
                 }
-            }
-
-
-            /* If one cert's issuer is an ancestor of that cert's subject,
-             * then it is preferable, in order of increasing naming distance.
-             */
-            if (debug != null) {
-                debug.println(METHOD_NME+" CERT ISSUER/SUBJECT COMPARISON TEST...");
-            }
-            X500Principal cSubject1 = oCert1.getSubjectX500Principal();
-            X500Principal cSubject2 = oCert2.getSubjectX500Principal();
-            X500Name cSubject1Name = X500Name.asX500Name(cSubject1);
-            X500Name cSubject2Name = X500Name.asX500Name(cSubject2);
-
-            if (debug != null) {
-                debug.println(METHOD_NME + " o1 Subject: " + cSubject1);
-                debug.println(METHOD_NME + " o2 Subject: " + cSubject2);
-            }
-            int distanceStoI1 = Builder.distance
-                (cSubject1Name, cIssuer1Name, Integer.MAX_VALUE);
-            int distanceStoI2 = Builder.distance
-                (cSubject2Name, cIssuer2Name, Integer.MAX_VALUE);
-            if (debug != null) {
-                debug.println(METHOD_NME + " distanceStoI1: " + distanceStoI1);
-                debug.println(METHOD_NME + " distanceStoI2: " + distanceStoI2);
-            }
-            if (distanceStoI2 > distanceStoI1) {
-                return -1;
-            } else if (distanceStoI2 < distanceStoI1) {
-                return 1;
+                if (d1 == -1 && d2 == -1) {
+                    // neither cert has a common non-geographical ancestor with
+                    // trust anchor, so continue checking other trust anchors
+                    continue;
+                }
+                if (d1 != -1) {
+                    if (d2 != -1) {
+                        // both certs share a common non-geographical ancestor
+                        // with trust anchor. Prefer the one that is closer
+                        // to the trust anchor.
+                        return (d1 > d2) ? 1 : -1;
+                    } else {
+                        // cert1 shares a common non-geographical ancestor with
+                        // trust anchor, so it is preferred.
+                        return -1;
+                    }
+                } else if (d2 != -1) {
+                    // cert2 shares a common non-geographical ancestor with
+                    // trust anchor, so it is preferred.
+                    return 1;
+                }
             }
 
             /* Otherwise, certs are equally preferable.
              */
             if (debug != null) {
-                debug.println(METHOD_NME + " no tests matched; RETURN 0");
+                debug.println(METHOD_NME + " no tests matched; RETURN -1");
             }
             return -1;
         }
+    }
+
+    /**
+     * Returns the distance (number of RDNs) from the issuer's DN to the
+     * common non-geographical ancestor of the trust anchor and issuer's DN.
+     *
+     * @param anchor the anchor's DN
+     * @param issuer the issuer's DN
+     * @return the distance or -1 if no common ancestor or an attribute of the
+     *    last RDN of the common ancestor is geographical
+     */
+    private static int distanceToCommonAncestor(X500Name anchor, X500Name issuer) {
+        List<RDN> anchorRdns = anchor.rdns();
+        List<RDN> issuerRdns = issuer.rdns();
+        int minLen = Math.min(anchorRdns.size(), issuerRdns.size());
+        if (minLen == 0) {
+            return -1;
+        }
+
+        // Compare names from highest RDN down the naming tree.
+        int i = 0;
+        for (; i < minLen; i++) {
+            RDN rdn = anchorRdns.get(i);
+            if (!rdn.equals(issuerRdns.get(i))) {
+                if (i == 0) {
+                    return -1;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        // check if last RDN is geographical
+        RDN lastRDN = anchorRdns.get(i - 1);
+        for (AVA ava : lastRDN.avas()) {
+            ObjectIdentifier oid = ava.getObjectIdentifier();
+            if (oid.equals(X500Name.countryName_oid) ||
+                oid.equals(X500Name.stateName_oid) ||
+                oid.equals(X500Name.localityName_oid) ||
+                oid.equals(X500Name.streetAddress_oid)) {
+                return -1;
+           }
+        }
+
+        return issuer.size() - i;
     }
 
     /**
@@ -678,7 +643,7 @@ final class ForwardBuilder extends Builder {
     {
         if (debug != null) {
             debug.println("ForwardBuilder.verifyCert(SN: "
-                + Debug.toHexString(cert.getSerialNumber())
+                + Debug.toString(cert.getSerialNumber())
                 + "\n  Issuer: " + cert.getIssuerX500Principal() + ")"
                 + "\n  Subject: " + cert.getSubjectX500Principal() + ")");
         }

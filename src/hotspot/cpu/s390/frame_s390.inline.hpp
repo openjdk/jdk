@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -56,11 +56,11 @@ inline void frame::setup() {
   assert(_on_heap || (is_aligned(_sp, alignment_in_bytes) && is_aligned(_fp, alignment_in_bytes)),
          "invalid alignment sp:" PTR_FORMAT " unextended_sp:" PTR_FORMAT " fp:" PTR_FORMAT, p2i(_sp), p2i(_unextended_sp), p2i(_fp));
 
-  address original_pc = CompiledMethod::get_deopt_original_pc(this);
+  address original_pc = get_deopt_original_pc();
   if (original_pc != nullptr) {
     _pc = original_pc;
     _deopt_state = is_deoptimized;
-    assert(_cb == nullptr || _cb->as_compiled_method()->insts_contains_inclusive(_pc),
+    assert(_cb == nullptr || _cb->as_nmethod()->insts_contains_inclusive(_pc),
            "original PC must be in the main code section of the compiled method (or must be immediately following it)");
   } else {
     if (_cb == SharedRuntime::deopt_blob()) {
@@ -290,20 +290,6 @@ inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
 
 inline intptr_t* frame::real_fp() const {
   return fp();
-}
-
-inline const ImmutableOopMap* frame::get_oop_map() const {
-  if (_cb == nullptr) return nullptr;
-  if (_cb->oop_maps() != nullptr) {
-    NativePostCallNop* nop = nativePostCallNop_at(_pc);
-    if (nop != nullptr && nop->displacement() != 0) {
-      int slot = ((nop->displacement() >> 24) & 0xff);
-      return _cb->oop_map_for_slot(slot, _pc);
-    }
-    const ImmutableOopMap* oop_map = OopMapSet::find_map(this);
-    return oop_map;
-  }
-  return nullptr;
 }
 
 inline int frame::compiled_frame_stack_argsize() const {

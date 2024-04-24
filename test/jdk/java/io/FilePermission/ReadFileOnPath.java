@@ -87,7 +87,7 @@ public class ReadFileOnPath {
         cmds.addAll(List.of(
                 "x", "modules/m", "modules/m/base", "modules/m/p/child",
                 "-", "child", "/base", "../base"));
-        ProcessTools.executeTestJvm(cmds.toArray(new String[cmds.size()]))
+        ProcessTools.executeTestJava(cmds.toArray(new String[cmds.size()]))
                 .shouldHaveExitValue(0);
     }
 }

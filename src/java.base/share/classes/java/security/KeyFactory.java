@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,8 +131,7 @@ public class KeyFactory {
 
     private KeyFactory(String algorithm) throws NoSuchAlgorithmException {
         this.algorithm = algorithm;
-        List<Service> list = GetInstance.getServices("KeyFactory", algorithm);
-        serviceIterator = list.iterator();
+        serviceIterator = GetInstance.getServices("KeyFactory", algorithm);
         // fetch and instantiate initial spi
         if (nextSpi(null) == null) {
             throw new NoSuchAlgorithmException

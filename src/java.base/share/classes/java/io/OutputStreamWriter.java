@@ -101,6 +101,7 @@ public class OutputStreamWriter extends Writer {
      * @throws     UnsupportedEncodingException
      *             If the named encoding is not supported
      */
+    @SuppressWarnings("this-escape")
     public OutputStreamWriter(OutputStream out, String charsetName)
         throws UnsupportedEncodingException
     {
@@ -118,6 +119,7 @@ public class OutputStreamWriter extends Writer {
      * @param  out  An OutputStream
      * @see Charset#defaultCharset()
      */
+    @SuppressWarnings("this-escape")
     public OutputStreamWriter(OutputStream out) {
         super(out);
         se = StreamEncoder.forOutputStreamWriter(out, lockFor(this),
@@ -135,6 +137,7 @@ public class OutputStreamWriter extends Writer {
      *
      * @since 1.4
      */
+    @SuppressWarnings("this-escape")
     public OutputStreamWriter(OutputStream out, Charset cs) {
         super(out);
         if (cs == null)
@@ -153,6 +156,7 @@ public class OutputStreamWriter extends Writer {
      *
      * @since 1.4
      */
+    @SuppressWarnings("this-escape")
     public OutputStreamWriter(OutputStream out, CharsetEncoder enc) {
         super(out);
         if (enc == null)

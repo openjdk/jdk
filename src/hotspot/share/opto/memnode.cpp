@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,7 +227,7 @@ Node *MemNode::optimize_memory_chain(Node *mchain, const TypePtr *t_adr, Node *l
         t->is_oopptr()->cast_to_exactness(true)
         ->is_oopptr()->cast_to_ptr_type(t_oop->ptr())
         ->is_oopptr()->cast_to_instance_id(t_oop->instance_id());
-      if (t_oop->is_aryptr()) {
+      if (t_oop->isa_aryptr()) {
         mem_t = mem_t->is_aryptr()
                      ->cast_to_stable(t_oop->is_aryptr()->is_stable())
                      ->cast_to_size(t_oop->is_aryptr()->size())
@@ -839,14 +839,27 @@ const TypePtr* MemNode::calculate_adr_type(const Type* t, const TypePtr* cross_c
   }
 }
 
+uint8_t MemNode::barrier_data(const Node* n) {
+  if (n->is_LoadStore()) {
+    return n->as_LoadStore()->barrier_data();
+  } else if (n->is_Mem()) {
+    return n->as_Mem()->barrier_data();
+  }
+  return 0;
+}
+
 //=============================================================================
 // Should LoadNode::Ideal() attempt to remove control edges?
 bool LoadNode::can_remove_control() const {
   return !has_pinned_control_dependency();
 }
 uint LoadNode::size_of() const { return sizeof(*this); }
-bool LoadNode::cmp( const Node &n ) const
-{ return !Type::cmp( _type, ((LoadNode&)n)._type ); }
+bool LoadNode::cmp(const Node &n) const {
+  LoadNode& load = (LoadNode &)n;
+  return !Type::cmp(_type, load._type) &&
+         _control_dependency == load._control_dependency &&
+         _mo == load._mo;
+}
 const Type *LoadNode::bottom_type() const { return _type; }
 uint LoadNode::ideal_reg() const {
   return _type->ideal_reg();
@@ -931,6 +944,7 @@ Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypeP
   case T_DOUBLE:  load = new LoadDNode (ctl, mem, adr, adr_type, rt,            mo, control_dependency, require_atomic_access); break;
   case T_ADDRESS: load = new LoadPNode (ctl, mem, adr, adr_type, rt->is_ptr(),  mo, control_dependency); break;
   case T_OBJECT:
+  case T_NARROWOOP:
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
       load = new LoadNNode(ctl, mem, adr, adr_type, rt->make_narrowoop(), mo, control_dependency);
@@ -983,6 +997,14 @@ static bool skip_through_membars(Compile::AliasType* atp, const TypeInstPtr* tp,
   return false;
 }
 
+LoadNode* LoadNode::pin_array_access_node() const {
+  const TypePtr* adr_type = this->adr_type();
+  if (adr_type != nullptr && adr_type->isa_aryptr()) {
+    return clone_pinned();
+  }
+  return nullptr;
+}
+
 // Is the value loaded previously stored by an arraycopy? If so return
 // a load node that reads from the source array so we may be able to
 // optimize out the ArrayCopy node later.
@@ -1002,7 +1024,8 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseGVN* phase) const {
       return nullptr;
     }
 
-    LoadNode* ld = clone()->as_Load();
+    // load depends on the tests that validate the arraycopy
+    LoadNode* ld = clone_pinned();
     Node* addp = in(MemNode::Address)->clone();
     if (ac->as_ArrayCopy()->is_clonebasic()) {
       assert(ld_alloc != nullptr, "need an alloc");
@@ -1044,8 +1067,6 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseGVN* phase) const {
     ld->set_req(MemNode::Address, addp);
     ld->set_req(0, ctl);
     ld->set_req(MemNode::Memory, mem);
-    // load depends on the tests that validate the arraycopy
-    ld->_control_dependency = UnknownControl;
     return ld;
   }
   return nullptr;
@@ -1528,14 +1549,19 @@ static bool stable_phi(PhiNode* phi, PhaseGVN *phase) {
 // Phi *base*. This method is essentially a copy of the validations performed
 // by 'split_through_phi'. The first use of this method was in EA code as part
 // of simplification of allocation merges.
+// Some differences from original method (split_through_phi):
+//  - If base->is_CastPP(): base = base->in(1)
 bool LoadNode::can_split_through_phi_base(PhaseGVN* phase) {
   Node* mem        = in(Memory);
   Node* address    = in(Address);
   intptr_t ignore  = 0;
   Node*    base    = AddPNode::Ideal_base_and_offset(address, phase, ignore);
-  bool base_is_phi = (base != nullptr) && base->is_Phi();
 
-  if (req() > 3 || !base_is_phi) {
+  if (base->is_CastPP()) {
+    base = base->in(1);
+  }
+
+  if (req() > 3 || base == nullptr || !base->is_Phi()) {
     return false;
   }
 
@@ -2428,6 +2454,12 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
     }
   }
 
+  if (tkls != nullptr && !UseSecondarySupersCache
+      && tkls->offset() == in_bytes(Klass::secondary_super_cache_offset()))  {
+    // Treat Klass::_secondary_super_cache as a constant when the cache is disabled.
+    return TypePtr::NULL_PTR;
+  }
+
   // Bailout case
   return LoadNode::Value(phase);
 }
@@ -2497,6 +2529,12 @@ Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
   }
 
   return this;
+}
+
+LoadNode* LoadNode::clone_pinned() const {
+  LoadNode* ld = clone()->as_Load();
+  ld->_control_dependency = UnknownControl;
+  return ld;
 }
 
 
@@ -3382,6 +3420,7 @@ Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           my_mem = load_node;
         } else {
           assert(my_mem->unique_out() == this, "sanity");
+          assert(!trailing_load_store(), "load store node can't be eliminated");
           del_req(Precedent);
           phase->is_IterGVN()->_worklist.push(my_mem); // remove dead node later
           my_mem = nullptr;
@@ -4955,7 +4994,7 @@ static void verify_memory_slice(const MergeMemNode* m, int alias_idx, Node* n) {
 //-----------------------------memory_at---------------------------------------
 Node* MergeMemNode::memory_at(uint alias_idx) const {
   assert(alias_idx >= Compile::AliasIdxRaw ||
-         alias_idx == Compile::AliasIdxBot && !Compile::current()->do_aliasing(),
+         (alias_idx == Compile::AliasIdxBot && !Compile::current()->do_aliasing()),
          "must avoid base_memory and AliasIdxTop");
 
   // Otherwise, it is a narrow slice.

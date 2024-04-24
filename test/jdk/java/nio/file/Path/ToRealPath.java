@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,13 +58,13 @@ public class ToRealPath {
             SUBDIR = Files.createDirectory(DIR.resolve("subdir"));
             FILE = Files.createFile(DIR.resolve("foo"));
             LINK = DIR.resolve("link");
-            SUPPORTS_LINKS = TestUtil.supportsLinks(DIR);
+            SUPPORTS_LINKS = TestUtil.supportsSymbolicLinks(DIR);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     };
 
-    public boolean supportsLinks() {
+    public boolean supportsSymbolicLinks() {
         return SUPPORTS_LINKS;
     }
 
@@ -87,7 +87,7 @@ public class ToRealPath {
                      () -> doesNotExist.toRealPath(NOFOLLOW_LINKS));
     }
 
-    @EnabledIf("supportsLinks")
+    @EnabledIf("supportsSymbolicLinks")
     @Test
     public void shouldResolveLinks() throws IOException {
         Path resolvedFile = FILE;
@@ -110,7 +110,7 @@ public class ToRealPath {
     }
 
     @Test
-    @EnabledIf("supportsLinks")
+    @EnabledIf("supportsSymbolicLinks")
     public void shouldNotResolveLinks() throws IOException {
         Files.createSymbolicLink(LINK, FILE.toAbsolutePath());
         assertEquals(LINK.toRealPath(NOFOLLOW_LINKS).getFileName(),
@@ -143,7 +143,7 @@ public class ToRealPath {
     }
 
     @Test
-    @EnabledIf("supportsLinks")
+    @EnabledIf("supportsSymbolicLinks")
     public void noCollapseDots1() throws IOException {
         Path subPath = DIR.resolve(Path.of("dir", "subdir"));
         Path sub = Files.createDirectories(subPath);
@@ -163,7 +163,7 @@ public class ToRealPath {
     }
 
     @Test
-    @EnabledIf("supportsLinks")
+    @EnabledIf("supportsSymbolicLinks")
     public void noCollapseDots2() throws IOException {
         Path subPath = DIR.resolve(Path.of("dir", "subdir"));
         Path sub = Files.createDirectories(subPath);

@@ -23,7 +23,6 @@
 package jdk.vm.ci.hotspot;
 
 import static jdk.vm.ci.common.InitTimer.timer;
-import static jdk.vm.ci.hotspot.HotSpotJVMCICompilerFactory.CompilationLevelAdjustment.None;
 import static jdk.vm.ci.services.Services.IS_BUILDING_NATIVE_IMAGE;
 import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 
@@ -35,6 +34,7 @@ import java.io.Serializable;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
@@ -222,34 +222,59 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     static final Map<String, Object> options = new HashMap<>();
 
     /**
+     * Sentinel help value to denote options that are not printed by -XX:+JVMCIPrintProperties.
+     * Javadoc is used instead to document these options.
+     */
+    private static final String[] NO_HELP = null;
+
+    /**
      * A list of all supported JVMCI options.
      */
     public enum Option {
         // @formatter:off
-        Compiler(String.class, null, "Selects the system compiler. This must match the getCompilerName() value returned " +
-                "by a jdk.vm.ci.runtime.JVMCICompilerFactory provider. " +
-                "An empty string or the value \"null\" selects a compiler " +
-                "that will raise an exception upon receiving a compilation request."),
-        // Note: The following one is not used (see InitTimer.ENABLED). It is added here
-        // so that -XX:+JVMCIPrintProperties shows the option.
-        InitTimer(Boolean.class, false, "Specifies if initialization timing is enabled."),
-        CodeSerializationTypeInfo(Boolean.class, false, "Prepend the size and label of each element to the stream when " +
-                "serializing HotSpotCompiledCode to verify both ends of the protocol agree on the format. " +
-                "Defaults to true in non-product builds."),
-        DumpSerializedCode(String.class, null, "Dump serialized code during code installation for code whose simple " +
-                "name (a stub) or fully qualified name (an nmethod) contains this option's value as a substring."),
-        ForceTranslateFailure(String.class, null, "Forces HotSpotJVMCIRuntime.translate to throw an exception in the context " +
-                "of the peer runtime. The value is a filter that can restrict the forced failure to matching translated " +
-                "objects. See HotSpotJVMCIRuntime.postTranslation for more details. This option exists soley to test " +
-                "correct handling of translation failure."),
-        PrintConfig(Boolean.class, false, "Prints VM configuration available via JVMCI."),
-        AuditHandles(Boolean.class, false, "Record stack trace along with scoped foreign object reference wrappers " +
-                "to debug issue with a wrapper being used after its scope has closed."),
-        TraceMethodDataFilter(String.class, null,
-                "Enables tracing of profiling info when read by JVMCI.",
-                "Empty value: trace all methods",
-                        "Non-empty value: trace methods whose fully qualified name contains the value."),
-        UseProfilingInformation(Boolean.class, true, "");
+        Compiler(String.class, null,
+                "Selects the system compiler. This must match the getCompilerName() value",
+                "returned by a jdk.vm.ci.runtime.JVMCICompilerFactory provider. ",
+                "An empty string or the value \"null\" selects a compiler ",
+                "that raises an exception upon receiving a compilation request."),
+
+        PrintConfig(Boolean.class, false, "Prints VM values (e.g. flags, constants, field offsets etc) exposed to JVMCI."),
+
+        InitTimer(Boolean.class, false, NO_HELP),
+
+        /**
+         * Prepends the size and label of each element to the stream when serializing {@link HotSpotCompiledCode}
+         * to verify both ends of the protocol agree on the format. Defaults to true in non-product builds.
+         */
+        CodeSerializationTypeInfo(Boolean.class, false, NO_HELP),
+
+        /**
+         * Dumps serialized code during code installation for code whose qualified form (e.g.
+         * {@code java.lang.String.hashCode()}) contains this option's value as a substring.
+         */
+        DumpSerializedCode(String.class, null, NO_HELP),
+
+        /**
+         * Forces {@link #translate} to throw an exception in the context of the peer runtime for
+         * translated objects that match this value. See {@link #postTranslation} for more details.
+         * This option exists solely to test correct handling of translation failures.
+         */
+        ForceTranslateFailure(String.class, null, NO_HELP),
+
+        /**
+         * Captures a stack trace along with scoped foreign object reference wrappers
+         * to debug an issue with a wrapper being used after its scope has closed.
+         */
+        AuditHandles(Boolean.class, false, NO_HELP),
+
+        /**
+         * Enables tracing of profiling info when read by JVMCI.
+         *     Empty value: trace all methods
+         * Non-empty value: trace methods whose fully qualified name contains the value
+         */
+        TraceMethodDataFilter(String.class, null, NO_HELP),
+
+        UseProfilingInformation(Boolean.class, true, NO_HELP);
         // @formatter:on
 
         /**
@@ -343,6 +368,9 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
             out.println("[JVMCI properties]");
             Option[] values = values();
             for (Option option : values) {
+                if (option.helpLines == null) {
+                    continue;
+                }
                 Object value = option.getValue();
                 if (value instanceof String) {
                     value = '"' + String.valueOf(value) + '"';
@@ -362,6 +390,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
                 for (String line : option.helpLines) {
                     out.printf("%" + PROPERTY_HELP_INDENT + "s%s%n", "", line);
                 }
+                out.println();
             }
         }
 
@@ -467,7 +496,6 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     private final JVMCIBackend hostBackend;
 
     private final JVMCICompilerFactory compilerFactory;
-    private final HotSpotJVMCICompilerFactory hsCompilerFactory;
     private volatile JVMCICompiler compiler;
     protected final HotSpotJVMCIReflection reflection;
 
@@ -499,7 +527,32 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         }
     }
 
-    @NativeImageReinitialize private HashMap<Long, WeakReference<ResolvedJavaType>> resolvedJavaTypes;
+
+    /**
+     * A weak reference that also tracks the key used to insert the value into {@link #resolvedJavaTypes} so that
+     * it can be removed when the referent is cleared.
+     */
+    static class KlassWeakReference extends WeakReference<HotSpotResolvedObjectTypeImpl> {
+
+        private final Long klassPointer;
+
+        public KlassWeakReference(Long klassPointer, HotSpotResolvedObjectTypeImpl referent, ReferenceQueue<HotSpotResolvedObjectTypeImpl> q) {
+            super(referent, q);
+            this.klassPointer = klassPointer;
+        }
+    }
+
+    /**
+     * A mapping from the {@code Klass*} to the corresponding {@link HotSpotResolvedObjectTypeImpl}.  The value is
+     * held weakly through a {@link KlassWeakReference} so that unused types can be unloaded when the compiler no longer needs them.
+     */
+    @NativeImageReinitialize private HashMap<Long, KlassWeakReference> resolvedJavaTypes;
+
+    /**
+     * A {@link ReferenceQueue} to track when {@link KlassWeakReference}s have been freed so that the corresponding
+     * entry in {@link #resolvedJavaTypes} can be cleared.
+     */
+    @NativeImageReinitialize private ReferenceQueue<HotSpotResolvedObjectTypeImpl> resolvedJavaTypesQueue;
 
     /**
      * Stores the value set by {@link #excludeFromJVMCICompilation(Module...)} so that it can be
@@ -546,18 +599,6 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         }
 
         compilerFactory = HotSpotJVMCICompilerConfig.getCompilerFactory(this);
-        if (compilerFactory instanceof HotSpotJVMCICompilerFactory) {
-            hsCompilerFactory = (HotSpotJVMCICompilerFactory) compilerFactory;
-            if (hsCompilerFactory.getCompilationLevelAdjustment() != None) {
-                String name = HotSpotJVMCICompilerFactory.class.getName();
-                String msg = String.format("%s.getCompilationLevelAdjustment() is no longer supported. " +
-                                "Use %s.excludeFromJVMCICompilation() instead.", name, name);
-                throw new UnsupportedOperationException(msg);
-            }
-        } else {
-            hsCompilerFactory = null;
-        }
-
         if (config.getFlag("JVMCIPrintProperties", Boolean.class)) {
             if (vmLogStream == null) {
                 vmLogStream = new PrintStream(getLogStream());
@@ -662,22 +703,39 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return fromClass0(javaClass);
     }
 
-    synchronized HotSpotResolvedObjectTypeImpl fromMetaspace(long klassPointer) {
+    synchronized HotSpotResolvedObjectTypeImpl fromMetaspace(Long klassPointer) {
         if (resolvedJavaTypes == null) {
             resolvedJavaTypes = new HashMap<>();
+            resolvedJavaTypesQueue = new ReferenceQueue<>();
         }
         assert klassPointer != 0;
-        WeakReference<ResolvedJavaType> klassReference = resolvedJavaTypes.get(klassPointer);
+        KlassWeakReference klassReference = resolvedJavaTypes.get(klassPointer);
         HotSpotResolvedObjectTypeImpl javaType = null;
         if (klassReference != null) {
-            javaType = (HotSpotResolvedObjectTypeImpl) klassReference.get();
+            javaType = klassReference.get();
         }
         if (javaType == null) {
             String name = compilerToVm.getSignatureName(klassPointer);
             javaType = new HotSpotResolvedObjectTypeImpl(klassPointer, name);
-            resolvedJavaTypes.put(klassPointer, new WeakReference<>(javaType));
+            resolvedJavaTypes.put(klassPointer, new KlassWeakReference(klassPointer, javaType, resolvedJavaTypesQueue));
         }
+        expungeStaleKlassEntries();
         return javaType;
+    }
+
+
+    /**
+     * Clean up WeakReferences whose referents have been cleared.  This should be called from a synchronized context.
+     */
+    private void expungeStaleKlassEntries() {
+        KlassWeakReference current = (KlassWeakReference) resolvedJavaTypesQueue.poll();
+        while (current != null) {
+            // Make sure the entry is still mapped to the weak reference
+            if (resolvedJavaTypes.get(current.klassPointer) == current) {
+                resolvedJavaTypes.remove(current.klassPointer);
+            }
+            current = (KlassWeakReference) resolvedJavaTypesQueue.poll();
+        }
     }
 
     private JVMCIBackend registerBackend(JVMCIBackend backend) {

@@ -32,6 +32,7 @@ import java.util.Objects;
 /**
  * Provides security-checked access to a {@code MethodHandles.Lookup} object.
  * See {@link #getLookup()} for details.
+ * @since 9
  */
 public class SecureLookupSupplier {
     /**

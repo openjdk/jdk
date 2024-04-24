@@ -73,11 +73,7 @@ uint WorkerPolicy::calc_parallel_worker_threads() {
 
 uint WorkerPolicy::parallel_worker_threads() {
   if (!_parallel_worker_threads_initialized) {
-    if (FLAG_IS_DEFAULT(ParallelGCThreads)) {
-      _parallel_worker_threads = WorkerPolicy::calc_parallel_worker_threads();
-    } else {
-      _parallel_worker_threads = ParallelGCThreads;
-    }
+    _parallel_worker_threads = WorkerPolicy::calc_parallel_worker_threads();
     _parallel_worker_threads_initialized = true;
   }
   return _parallel_worker_threads;

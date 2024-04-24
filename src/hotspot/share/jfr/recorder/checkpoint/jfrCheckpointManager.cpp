@@ -117,16 +117,16 @@ bool JfrCheckpointManager::initialize_early() {
   assert(_thread_local_mspace == nullptr, "invariant");
   _thread_local_mspace = new JfrThreadLocalCheckpointMspace();
   if (_thread_local_mspace == nullptr || !_thread_local_mspace->initialize(thread_local_buffer_size,
-                                                                        thread_local_buffer_prealloc_count,
-                                                                        thread_local_buffer_prealloc_count)) {
+                                                                           thread_local_buffer_prealloc_count,
+                                                                           thread_local_buffer_prealloc_count)) {
     return false;
   }
 
   assert(_virtual_thread_local_mspace == nullptr, "invariant");
   _virtual_thread_local_mspace = new JfrThreadLocalCheckpointMspace();
   if (_virtual_thread_local_mspace == nullptr || !_virtual_thread_local_mspace->initialize(virtual_thread_local_buffer_size,
-                                                                                        JFR_MSPACE_UNLIMITED_CACHE_SIZE,
-                                                                                        virtual_thread_local_buffer_prealloc_count)) {
+                                                                                           JFR_MSPACE_UNLIMITED_CACHE_SIZE,
+                                                                                           virtual_thread_local_buffer_prealloc_count)) {
     return false;
   }
   return true;

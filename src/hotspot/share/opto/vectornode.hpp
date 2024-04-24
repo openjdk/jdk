@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ class VectorNode : public TypeNode {
   static bool is_vshift_cnt(Node* n);
   static bool is_type_transition_short_to_int(Node* n);
   static bool is_type_transition_to_int(Node* n);
-  static bool is_muladds2i(Node* n);
+  static bool is_muladds2i(const Node* n);
   static bool is_roundopD(Node* n);
   static bool is_scalar_rotate(Node* n);
   static bool is_vector_rotate_supported(int opc, uint vlen, BasicType bt);
@@ -847,6 +847,8 @@ class ExpandVNode: public VectorNode {
 //------------------------------LoadVectorNode---------------------------------
 // Load Vector from memory
 class LoadVectorNode : public LoadNode {
+ private:
+  DEBUG_ONLY( bool _must_verify_alignment = false; );
  public:
   LoadVectorNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, ControlDependency control_dependency = LoadNode::DependsOnlyOnTest)
     : LoadNode(c, mem, adr, at, vt, MemNode::unordered, control_dependency) {
@@ -871,22 +873,43 @@ class LoadVectorNode : public LoadNode {
                               uint vlen, BasicType bt,
                               ControlDependency control_dependency = LoadNode::DependsOnlyOnTest);
   uint element_size(void) { return type2aelembytes(vect_type()->element_basic_type()); }
+
+  // Needed for proper cloning.
+  virtual uint size_of() const { return sizeof(*this); }
+
+#ifdef ASSERT
+  // When AlignVector is enabled, SuperWord only creates aligned vector loads and stores.
+  // VerifyAlignVector verifies this. We need to mark the nodes created in SuperWord,
+  // because nodes created elsewhere (i.e. VectorAPI) may still be misaligned.
+  bool must_verify_alignment() const { return _must_verify_alignment; }
+  void set_must_verify_alignment() { _must_verify_alignment = true; }
+#endif
 };
 
 //------------------------------LoadVectorGatherNode------------------------------
 // Load Vector from memory via index map
 class LoadVectorGatherNode : public LoadVectorNode {
  public:
-  LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices)
+  LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* offset = nullptr)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGather);
-    assert(indices->bottom_type()->is_vect(), "indices must be in vector");
     add_req(indices);
-    assert(req() == MemNode::ValueIn + 1, "match_edge expects that last input is in MemNode::ValueIn");
+    DEBUG_ONLY(bool is_subword = is_subword_type(vt->element_basic_type()));
+    assert(is_subword || indices->bottom_type()->is_vect(), "indices must be in vector");
+    assert(is_subword || !offset, "");
+    assert(req() == MemNode::ValueIn + 1, "match_edge expects that index input is in MemNode::ValueIn");
+    if (offset) {
+      add_req(offset);
+    }
   }
 
   virtual int Opcode() const;
-  virtual uint match_edge(uint idx) const { return idx == MemNode::Address || idx == MemNode::ValueIn; }
+  virtual uint match_edge(uint idx) const {
+     return idx == MemNode::Address ||
+            idx == MemNode::ValueIn ||
+            ((is_subword_type(vect_type()->element_basic_type())) &&
+              idx == MemNode::ValueIn + 1);
+  }
 };
 
 //------------------------------StoreVectorNode--------------------------------
@@ -894,6 +917,7 @@ class LoadVectorGatherNode : public LoadVectorNode {
 class StoreVectorNode : public StoreNode {
  private:
   const TypeVect* _vect_type;
+  DEBUG_ONLY( bool _must_verify_alignment = false; );
  public:
   StoreVectorNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val)
     : StoreNode(c, mem, adr, at, val, MemNode::unordered), _vect_type(val->bottom_type()->is_vect()) {
@@ -918,6 +942,14 @@ class StoreVectorNode : public StoreNode {
 
   // Needed for proper cloning.
   virtual uint size_of() const { return sizeof(*this); }
+
+#ifdef ASSERT
+  // When AlignVector is enabled, SuperWord only creates aligned vector loads and stores.
+  // VerifyAlignVector verifies this. We need to mark the nodes created in SuperWord,
+  // because nodes created elsewhere (i.e. VectorAPI) may still be misaligned.
+  bool must_verify_alignment() const { return _must_verify_alignment; }
+  void set_must_verify_alignment() { _must_verify_alignment = true; }
+#endif
 };
 
 //------------------------------StoreVectorScatterNode------------------------------
@@ -981,20 +1013,23 @@ class LoadVectorMaskedNode : public LoadVectorNode {
 // Load Vector from memory via index map under the influence of a predicate register(mask).
 class LoadVectorGatherMaskedNode : public LoadVectorNode {
  public:
-  LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask)
+  LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask, Node* offset = nullptr)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGatherMasked);
-    assert(indices->bottom_type()->is_vect(), "indices must be in vector");
-    assert(mask->bottom_type()->isa_vectmask(), "sanity");
     add_req(indices);
     add_req(mask);
     assert(req() == MemNode::ValueIn + 2, "match_edge expects that last input is in MemNode::ValueIn+1");
+    if (is_subword_type(vt->element_basic_type())) {
+      add_req(offset);
+    }
   }
 
   virtual int Opcode() const;
   virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
                                                    idx == MemNode::ValueIn ||
-                                                   idx == MemNode::ValueIn + 1; }
+                                                   idx == MemNode::ValueIn + 1 ||
+                                                   (is_subword_type(vect_type()->is_vect()->element_basic_type()) &&
+                                                   idx == MemNode::ValueIn + 2); }
 };
 
 //------------------------------StoreVectorScatterMaskedNode--------------------------------
@@ -1015,6 +1050,25 @@ class StoreVectorScatterMaskedNode : public StoreVectorNode {
                                                     idx == MemNode::ValueIn ||
                                                     idx == MemNode::ValueIn + 1 ||
                                                     idx == MemNode::ValueIn + 2; }
+};
+
+// Verify that memory address (adr) is aligned. The mask specifies the
+// least significant bits which have to be zero in the address.
+//
+// if (adr & mask == 0) {
+//   return adr
+// } else {
+//   stop("verify_vector_alignment found a misaligned vector memory access")
+// }
+//
+// This node is used just before a vector load/store with -XX:+VerifyAlignVector
+class VerifyVectorAlignmentNode : public Node {
+  virtual uint hash() const { return NO_HASH; };
+public:
+  VerifyVectorAlignmentNode(Node* adr, Node* mask) : Node(nullptr, adr, mask) {}
+  virtual int Opcode() const;
+  virtual uint size_of() const { return sizeof(*this); }
+  virtual const Type *bottom_type() const { return in(1)->bottom_type(); }
 };
 
 //------------------------------VectorCmpMaskedNode--------------------------------
@@ -1647,7 +1701,7 @@ class VectorInsertNode : public VectorNode {
   virtual int Opcode() const;
   uint pos() const { return in(3)->get_int(); }
 
-  static Node* make(Node* vec, Node* new_val, int position);
+  static Node* make(Node* vec, Node* new_val, int position, PhaseGVN& gvn);
 };
 
 class VectorBoxNode : public Node {

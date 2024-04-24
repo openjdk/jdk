@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ public class Atan2Tests {
     public static void main(String... args) {
         int failures = 0;
 
+        failures += testAtan2();
         failures += testAgainstTranslit();
 
         if (failures > 0) {
@@ -60,6 +61,24 @@ public class Atan2Tests {
                                + failures + " failures.");
             throw new RuntimeException();
         }
+    }
+
+    private static int testAtan2() {
+        int failures = 0;
+
+        // Empirical worst-case points in other libraries with larger
+        // worst-case errors than FDLIBM
+        double[][] testCases = {
+            {-0x0.00000000039a2p-1022, 0x0.000fdf02p-1022,     -0x1.d0ce6fac85de9p-27},
+            { 0x1.9173ea8221453p+842,  0x1.8c6f1b4b72f3ap+842,  0x1.9558272cbbdf9p-1},
+            { 0x1.9cde4ff190e45p+931,  0x1.37d91467e558bp+931,  0x1.d909432d6f9c8p-1},
+            { 0x1.401ec07d65549p+888,  0x1.3c3976605bb0cp+888,  0x1.95421cda9c65bp-1},
+        };
+
+        for (double[] testCase : testCases) {
+            failures += testAtan2Case(testCase[0], testCase[1], testCase[2]);
+        }
+        return failures;
     }
 
     // Initialize shared random number generator

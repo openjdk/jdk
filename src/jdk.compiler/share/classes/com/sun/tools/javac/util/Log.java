@@ -27,6 +27,7 @@ package com.sun.tools.javac.util;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -169,6 +170,16 @@ public class Log extends AbstractLog {
             while ((d = deferred.poll()) != null) {
                 if (accepter.test(d))
                     prev.report(d);
+            }
+            deferred = null; // prevent accidental ongoing use
+        }
+
+        /** Report selected deferred diagnostics. */
+        public void reportDeferredDiagnostics(Comparator<JCDiagnostic> order) {
+            JCDiagnostic[] diags = deferred.toArray(s -> new JCDiagnostic[s]);
+            Arrays.sort(diags, order);
+            for (JCDiagnostic d : diags) {
+                prev.report(d);
             }
             deferred = null; // prevent accidental ongoing use
         }
@@ -808,7 +819,7 @@ public class Log extends AbstractLog {
         // backdoor hook for testing, should transition to use -XDrawDiagnostics
         private static boolean useRawMessages = false;
 
-/***************************************************************************
+/* *************************************************************************
  * raw error messages without internationalization; used for experimentation
  * and quick prototyping
  ***************************************************************************/

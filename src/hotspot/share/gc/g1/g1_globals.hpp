@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@
                                        develop_pd,                          \
                                        product,                             \
                                        product_pd,                          \
-                                       notproduct,                          \
                                        range,                               \
                                        constraint)                          \
                                                                             \
@@ -85,7 +84,6 @@
                                        develop_pd,                          \
                                        product,                             \
                                        product_pd,                          \
-                                       notproduct,                          \
                                        range,                               \
                                        constraint)
 #endif
@@ -97,7 +95,6 @@
                     develop_pd,                                             \
                     product,                                                \
                     product_pd,                                             \
-                    notproduct,                                             \
                     range,                                                  \
                     constraint)                                             \
                                                                             \
@@ -113,11 +110,11 @@
           "of the optimal occupancy to start marking.")                     \
           range(1, max_intx)                                                \
                                                                             \
-  product(uint, G1ConfidencePercent, 50,                                   \
+  product(uint, G1ConfidencePercent, 50,                                    \
           "Confidence level for MMU/pause predictions")                     \
           range(0, 100)                                                     \
                                                                             \
-  product(intx, G1SummarizeRSetStatsPeriod, 0, DIAGNOSTIC,                  \
+  product(uintx, G1SummarizeRSetStatsPeriod, 0, DIAGNOSTIC,                 \
           "The period (in number of GCs) at which we will generate "        \
           "update buffer processing info "                                  \
           "(0 means do not periodically generate this info); "              \
@@ -148,7 +145,7 @@
           "Number of entries in an SATB log buffer.")                       \
           constraint(G1SATBBufferSizeConstraintFunc, AtParse)               \
                                                                             \
-  develop(intx, G1SATBProcessCompletedThreshold, 20,                        \
+  develop(uintx, G1SATBProcessCompletedThreshold, 20,                       \
           "Number of completed buffers that triggers log processing.")      \
           range(0, max_jint)                                                \
                                                                             \
@@ -342,7 +339,6 @@
                     develop_pd,                                             \
                     product,                                                \
                     product_pd,                                             \
-                    notproduct,                                             \
                     range,                                                  \
                     constraint)
 

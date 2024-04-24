@@ -65,7 +65,7 @@ import java.util.concurrent.ConcurrentMap;
  * @since 1.5
  */
 
-public sealed abstract class CalendarSystem permits AbstractCalendar {
+public abstract sealed class CalendarSystem permits AbstractCalendar {
 
     /////////////////////// Calendar Factory Methods /////////////////////////
 

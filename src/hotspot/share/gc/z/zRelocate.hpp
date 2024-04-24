@@ -41,6 +41,7 @@ private:
   uint                 _nworkers;
   uint                 _nsynchronized;
   bool                 _synchronize;
+  volatile bool        _is_active;
   volatile int         _needs_attention;
 
   bool needs_attention() const;
@@ -52,6 +53,10 @@ private:
 
 public:
   ZRelocateQueue();
+
+  void activate(uint nworkers);
+  void deactivate();
+  bool is_active() const;
 
   void join(uint nworkers);
   void resize_workers(uint nworkers);
@@ -99,6 +104,8 @@ public:
   void desynchronize();
 
   ZRelocateQueue* queue();
+
+  bool is_queue_active() const;
 };
 
 #endif // SHARE_GC_Z_ZRELOCATE_HPP
