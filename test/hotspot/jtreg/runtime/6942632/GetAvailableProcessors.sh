@@ -23,6 +23,7 @@
 
 # @test
 # @bug 6942632
+# @requires os.family == "windows"
 # @summary This test ensures that OpenJDK respects the process affinity
 #          masks set when launched from the Windows command prompt using
 #          "start /affinity HEXAFFINITY java.exe" when the
@@ -78,6 +79,14 @@ GETPROCINFOLOG="${TESTCLASSES}/$GETPROCINFONAME.output.log"
 ${TESTNATIVEPATH}/$GETPROCINFONAME > $GETPROCINFOLOG 2>&1
 
 # Validate output from GetProcessorInfo.exe
+unsupported_os_regex="Unsupported OS\\."
+grep -Po "$unsupported_os_regex" $GETPROCINFOLOG
+status=$?
+if [ $status -eq "0" ]; then
+  echo "Test skipped: Unsupported Windows version.";
+  exit 0
+fi
+
 processor_info_regex="Active processors per group: (\\d+,)+"
 grep -Po "$processor_info_regex" $GETPROCINFOLOG
 status=$?
@@ -134,7 +143,8 @@ if [ ! $status -eq "0" ]; then
 fi
 
 # Validate output from GetAvailableProcessors.java
-grep -Po "Runtime\\.availableProcessors: \\d+" $LOGFILE
+available_processors_regex="Runtime\\.availableProcessors: \\d+"
+grep -Po "$available_processors_regex" $LOGFILE
 status=$?
 if [ ! $status -eq "0" ]; then
   echo "TESTBUG: $SRCFILE did not output a processor count.";
@@ -143,7 +153,7 @@ fi
 
 # Write the processor count to a file
 JAVAPROCS="${TESTCLASSES}/processor_count_java.log"
-grep -Po "Runtime\\.availableProcessors: \\d+" $LOGFILE | sed -e 's/[a-zA-Z: \.]//g' > $JAVAPROCS 2>&1
+grep -Po "$available_processors_regex" $LOGFILE | sed -e 's/[a-zA-Z: \.]//g' > $JAVAPROCS 2>&1
 runtimeAvailableProcessors=$(<$JAVAPROCS)
 
 # Ensure the processor counts are identical
