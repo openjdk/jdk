@@ -307,53 +307,45 @@ class ResourceBundleGenerator implements BundleGenerator {
                 import sun.util.locale.provider.LocaleProviderAdapter;
 
                 public class %s implements LocaleDataMetaInfo {
-                    private static final Map<String, String> resourceNameToLocales = HashMap.newHashMap(%d);
-                %s
-                    static {
                 """,
                     CLDRConverter.isBaseModule ? "cldr" : "resources.cldr.provider",
-                    className, metaInfo.keySet().stream().filter(k -> k.equals("AvailableLocales")).count(),
-                    CLDRConverter.isBaseModule ?
-                        """
-                            private static final Map<Locale, String[]> parentLocalesMap = HashMap.newHashMap(%d);
-                            private static final Map<String, String> languageAliasMap = HashMap.newHashMap(%d);
-                            static final boolean nonlikelyScript = %s; // package access from CLDRLocaleProviderAdapter
-                        """.formatted(
-                            metaInfo.keySet().stream().filter(k -> k.startsWith(CLDRConverter.PARENT_LOCALE_PREFIX)).count(),
-                            CLDRConverter.handlerSupplMeta.getLanguageAliasData().size(),
-                            Boolean.valueOf(CLDRConverter.nonlikelyScript)) :
-                        "");
+                    className);
 
-
-            for (String key : metaInfo.keySet()) {
-                if (key.startsWith(CLDRConverter.PARENT_LOCALE_PREFIX)) {
-                    String parentTag = key.substring(CLDRConverter.PARENT_LOCALE_PREFIX.length());
-                    if ("root".equals(parentTag)) {
-                        out.printf("        parentLocalesMap.put(Locale.ROOT,\n");
-                    } else {
-                        out.printf("        parentLocalesMap.put(Locale.forLanguageTag(\"%s\"),\n",
-                                parentTag);
-                    }
-                    generateStringArray(metaInfo.get(key), out);
-                } else if ("AvailableLocales".equals(key)) {
-                    out.printf("        resourceNameToLocales.put(\"%s\",\n", key);
-                    out.printf("            \"%s\");\n", toLocaleList(applyLanguageAliases(metaInfo.get(key)), false));
-                }
-            }
-            out.println();
-
-            // for languageAliasMap
             if (CLDRConverter.isBaseModule) {
+                out.printf("""
+                        private static final Map<Locale, String[]> parentLocalesMap = HashMap.newHashMap(%d);
+                        private static final Map<String, String> languageAliasMap = HashMap.newHashMap(%d);
+                        static final boolean nonlikelyScript = %s; // package access from CLDRLocaleProviderAdapter
+
+                        static {
+                    """.formatted(
+                        metaInfo.keySet().stream().filter(k -> k.startsWith(CLDRConverter.PARENT_LOCALE_PREFIX)).count(),
+                        CLDRConverter.handlerSupplMeta.getLanguageAliasData().size(),
+                        Boolean.valueOf(CLDRConverter.nonlikelyScript)));
+
+                for (String key : metaInfo.keySet()) {
+                    if (key.startsWith(CLDRConverter.PARENT_LOCALE_PREFIX)) {
+                        String parentTag = key.substring(CLDRConverter.PARENT_LOCALE_PREFIX.length());
+                        if ("root".equals(parentTag)) {
+                            out.printf("        parentLocalesMap.put(Locale.ROOT,\n");
+                        } else {
+                            out.printf("        parentLocalesMap.put(Locale.forLanguageTag(\"%s\"),\n",
+                                    parentTag);
+                        }
+                        generateStringArray(metaInfo.get(key), out);
+                    }
+                }
+                out.println();
+
+                // for languageAliasMap
                 CLDRConverter.handlerSupplMeta.getLanguageAliasData().forEach((key, value) -> {
                     out.printf("        languageAliasMap.put(\"%s\", \"%s\");\n", key, value);
                 });
-            }
-            out.printf("    }\n\n");
+                out.printf("    }\n\n");
 
-            // end of static initializer block.
+                // end of static initializer block.
 
-            // Delayed initialization section
-            if (CLDRConverter.isBaseModule) {
+                // Delayed initialization section
                 out.printf("""
                                private static class CLDRMapHolder {
                                    private static final Map<String, String> tzCanonicalIDMap = HashMap.newHashMap(%d);
@@ -383,8 +375,9 @@ class ResourceBundleGenerator implements BundleGenerator {
                                 " " + metaInfo.get(key).stream().collect(Collectors.joining(" ")) + " ");
                     }
                 }
-                out.printf("        }\n    }\n\n");
+                out.printf("        }\n    }\n");
             }
+            out.println();
 
             out.printf("""
                     @Override
@@ -394,12 +387,13 @@ class ResourceBundleGenerator implements BundleGenerator {
 
                     @Override
                     public String availableLanguageTags(String category) {
-                        return resourceNameToLocales.getOrDefault(category, "");
+                        return " %s";
                     }
-                    %s
-                }
                 """,
-                CLDRConverter.isBaseModule ? """
+                toLocaleList(applyLanguageAliases(metaInfo.get("AvailableLocales")), false));
+
+            if(CLDRConverter.isBaseModule) {
+                out.printf("""
 
                     @Override
                     public Map<String, String> getLanguageAliasMap() {
@@ -419,7 +413,9 @@ class ResourceBundleGenerator implements BundleGenerator {
                     Map<String, String> likelyScriptMap() {
                         return CLDRMapHolder.likelyScriptMap;
                     }
-                """ : "");
+                """);
+            }
+            out.printf("}\n");
         }
     }
 

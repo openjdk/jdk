@@ -1172,7 +1172,7 @@ public class CLDRConverter {
 
         // check non-likely script for root
         if (nonlikelyScript && parent == null && child.getCountry().isEmpty()) {
-            var lang = child.getLanguage();
+            var lang = " " + child.getLanguage() + " ";
             var script = child.getScript();
 
             if (!script.isEmpty()) {
