@@ -161,7 +161,11 @@ public class ByteArrayOutputStream extends OutputStream {
      */
     public void writeTo(OutputStream out) throws IOException {
         if (Thread.currentThread().isVirtual()) {
-            out.write(toByteArray());
+            byte[] bytes;
+            synchronized (this) {
+                bytes = Arrays.copyOf(buf, count);
+            }
+            out.write(bytes);
         } else synchronized (this) {
             out.write(buf, 0, count);
         }
