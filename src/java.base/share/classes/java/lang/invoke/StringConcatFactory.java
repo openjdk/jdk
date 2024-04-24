@@ -1101,11 +1101,10 @@ public final class StringConcatFactory {
                     }});
 
             try {
-                Lookup hiddenLookup = lookup.defineHiddenClass(classBytes, true, STRONG);
+                Lookup hiddenLookup = lookup.makeHiddenClassDefiner(className, classBytes, Set.of(STRONG), DUMPER)
+                                            .defineClassAsLookup(true);
                 Class<?> innerClass = hiddenLookup.lookupClass();
-                DUMPER.dumpClass(innerClass.getName(), innerClass, classBytes);
-                MethodHandle mh = hiddenLookup.findStatic(innerClass, METHOD_NAME, args);
-                return mh;
+                return hiddenLookup.findStatic(innerClass, METHOD_NAME, args);
             } catch (Exception e) {
                 DUMPER.dumpFailedClass(className, classBytes);
                 throw new StringConcatException("Exception while spinning the class", e);
