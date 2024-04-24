@@ -2830,8 +2830,9 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
         // Handle StoreVector with offsets and masks
         // Ensure offsets match
         if (is_StoreVectorScatter()) {
-          const Node* offsets = as_StoreVectorScatter()->in(StoreVectorScatterNode::Offsets);
-          if (val->is_LoadVectorGather() && offsets->eqv_uncast(val->as_LoadVectorGather()->in(LoadVectorGatherNode::Offsets))) {
+          const Node* offsets_store = as_StoreVectorScatter()->in(StoreVectorScatterNode::Offsets);
+          const Node* offsets_load = val->as_LoadVectorGather()->in(LoadVectorGatherNode::Offsets);
+          if (offsets_store->eqv_uncast(offsets_load)) {
             result = mem;
           }
         // Ensure masks match
