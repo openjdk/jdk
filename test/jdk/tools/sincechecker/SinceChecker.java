@@ -50,19 +50,24 @@ import java.util.stream.Collectors;
 
 /*
 The `@since` checker works as a two-step process:
-- in the first step, we process JDKs 9-current, only classfiles, producing a map ``<unique-Element-ID``> => ``<version(s)-where-it-was-introduced>``.
- ("version(s)", because there's versioning of Preview API, so there may be two versions (we use a class with two fields for preview and stable) - one when it was introduced as a preview, and one when it went out of preview. More on that below)
- For each Element, compute the unique ID, look into the map, and if there's nothing, record the current version as the originating version.
+- In the first step, we process JDKs 9-current, only classfiles, producing a map `<unique-Element-ID`> => `<version(s)-where-it-was-introduced>`.
+ ("version(s)", because we handle versioning of Preview API, so there may be two versions (we use a class with two fields for preview and stable) -
+  one when it was introduced as a preview, and one when it went out of preview. More on that below)
 
-At the end of this step we have a map of the Real since values
+ -- For each Element, we compute the unique ID, look into the map, and if there's nothing, record the current version as the originating version.
+ -- At the end of this step we have a map of the Real since values
 
- Real since value of an API element is computed as the oldest release in which the given API element was introduced. That is:
+- In the second step, we would look at "effective" `@since` tags in the mainline sources, which we get from the `src.zip` file (if the test run doesn't have it, we throw a `jtreg.SkippedException`)
+ and the `@since` checker verifies that for every API element, the real since value and the effective since value are the same,and reports an error if they are not.
+
+ --In this step we limit the tool to only check the specific MODULE whose name was passed as an argument in the test. In that module, we look for unqualified exports and test those packages.
+
+note on real vs effective `@since`:
+
+Real since value of an API element is computed as the oldest release in which the given API element was introduced. That is:
 - for modules, classes and interfaces, the release in which the element with the given qualified name was introduced
 - for constructors, the release in which the constructor with the given VM descriptor was introduced
 - for methods and fields, the release in which the given method or field with the given VM descriptor became a member of its enclosing class or interface, whether direct or inherited
-
-- in the second step, we would look at "effective" `@since` tags in the mainline sources, and the `@since` checker verifies that for every API element,
-    the real since value and the effective since value are the same,and reports an error if they are not.
 
 Effective since value of an API element is computed as follows:
 - if the given element has a `@since` tag in its javadoc, it is used
@@ -72,8 +77,8 @@ Special Handling for preview method:
 - When an element is still marked as preview, the `@since` should be the first JDK release where the element was added.
 - If the element is no longer marked as preview, the `@since` should be the first JDK release where it was no longer preview.
 
-note: The `<unique-Element-ID>` for methods looks like `method: <return-descriptor> <binary-name-of-enclosing-class>.<method-name>(<ParameterDescriptor>)`.
-it is somewhat inspired from the VM Method Descriptors
+note: The `<unique-Element-ID>` for methods looks like `method: <erased-return-descriptor> <binary-name-of-enclosing-class>.<method-name>(<ParameterDescriptor>)`.
+it is somewhat inspired from the VM Method Descriptors. But we use the erased return so that methods that were later generified remain the same.
 */
 
 
