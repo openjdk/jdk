@@ -1799,8 +1799,8 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
 // Add entry to resolution error table to record the error when the first
 // attempt to resolve a reference to a class has failed.
 void SystemDictionary::add_resolution_error(const constantPoolHandle& pool, int which,
-                                            Symbol* error, Symbol* message,
-                                            Symbol* cause, Symbol* cause_msg) {
+                                            Symbol* error, const char* message,
+                                            Symbol* cause, const char* cause_msg) {
   {
     MutexLocker ml(Thread::current(), SystemDictionary_lock);
     ResolutionErrorEntry* entry = ResolutionErrorTable::find_entry(pool, which);
@@ -1817,7 +1817,8 @@ void SystemDictionary::delete_resolution_error(ConstantPool* pool) {
 
 // Lookup resolution error table. Returns error if found, otherwise null.
 Symbol* SystemDictionary::find_resolution_error(const constantPoolHandle& pool, int which,
-                                                Symbol** message, Symbol** cause, Symbol** cause_msg) {
+                                                const char** message,
+                                                Symbol** cause, const char** cause_msg) {
 
   {
     MutexLocker ml(Thread::current(), SystemDictionary_lock);
@@ -2008,9 +2009,9 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
     }
   }
 
-  // Throw VirtualMachineError or the pending exception in the JavaThread
+  // Throw OOM or the pending exception in the JavaThread
   if (throw_error && !HAS_PENDING_EXCEPTION) {
-    THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(),
+    THROW_MSG_NULL(vmSymbols::java_lang_OutOfMemoryError(),
                    "Out of space in CodeCache for method handle intrinsic");
   }
   return nullptr;

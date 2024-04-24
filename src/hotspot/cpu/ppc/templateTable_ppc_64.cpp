@@ -3809,7 +3809,7 @@ void TemplateTable::_new() {
 
     __ lwz(Rinstance_size, in_bytes(Klass::layout_helper_offset()), RinstanceKlass);
 
-    // Make sure klass does not have has_finalizer, or is abstract, or interface or java/lang/Class.
+    // Make sure klass is not abstract, or interface or java/lang/Class.
     __ andi_(R0, Rinstance_size, Klass::_lh_instance_slow_path_bit); // slow path bit equals 0?
     __ bne(CCR0, Lslow_case);
 

@@ -179,8 +179,6 @@ class TenuredSpace: public ContiguousSpace {
   // Add offset table update.
   inline HeapWord* allocate(size_t word_size) override;
   inline HeapWord* par_allocate(size_t word_size) override;
-
-  inline void update_for_block(HeapWord* start, HeapWord* end);
 };
 #endif //INCLUDE_SERIALGC
 

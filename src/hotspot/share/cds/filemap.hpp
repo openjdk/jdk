@@ -191,6 +191,7 @@ private:
   CompressedOops::Mode _narrow_oop_mode;          // compressed oop encoding mode
   bool    _compressed_oops;                       // save the flag UseCompressedOops
   bool    _compressed_class_ptrs;                 // save the flag UseCompressedClassPointers
+  bool    _use_secondary_supers_table;            // save the flag UseSecondarySupersTable
   size_t  _cloned_vtables_offset;                 // The address of the first cloned vtable
   size_t  _serialized_data_offset;                // Data accessed using {ReadClosure,WriteClosure}::serialize()
   bool _has_non_jar_in_classpath;                 // non-jar file entry exists in classpath
@@ -228,6 +229,8 @@ private:
                                         // of the archived heap objects, in bytes.
   size_t _heap_oopmap_start_pos;        // The first bit in the oopmap corresponds to this position in the heap.
   size_t _heap_ptrmap_start_pos;        // The first bit in the ptrmap corresponds to this position in the heap.
+  size_t _rw_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the rw region
+  size_t _ro_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the ro region
   char* from_mapped_offset(size_t offset) const {
     return mapped_base_address() + offset;
   }
@@ -268,8 +271,10 @@ public:
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
   size_t heap_roots_offset()               const { return _heap_roots_offset; }
-  size_t heap_oopmap_start_pos()           const { return _heap_oopmap_start_pos;}
-  size_t heap_ptrmap_start_pos()           const { return _heap_ptrmap_start_pos;}
+  size_t heap_oopmap_start_pos()           const { return _heap_oopmap_start_pos; }
+  size_t heap_ptrmap_start_pos()           const { return _heap_ptrmap_start_pos; }
+  size_t rw_ptrmap_start_pos()             const { return _rw_ptrmap_start_pos; }
+  size_t ro_ptrmap_start_pos()             const { return _ro_ptrmap_start_pos; }
   // FIXME: These should really return int
   jshort max_used_path_index()             const { return _max_used_path_index; }
   jshort app_module_paths_start_index()    const { return _app_module_paths_start_index; }
@@ -283,6 +288,8 @@ public:
   void set_heap_roots_offset(size_t n)           { _heap_roots_offset = n; }
   void set_heap_oopmap_start_pos(size_t n)       { _heap_oopmap_start_pos = n; }
   void set_heap_ptrmap_start_pos(size_t n)       { _heap_ptrmap_start_pos = n; }
+  void set_rw_ptrmap_start_pos(size_t n)         { _rw_ptrmap_start_pos = n; }
+  void set_ro_ptrmap_start_pos(size_t n)         { _ro_ptrmap_start_pos = n; }
   void copy_base_archive_name(const char* name);
 
   void set_shared_path_table(SharedPathTable table) {
@@ -439,7 +446,7 @@ public:
   void  write_region(int region, char* base, size_t size,
                      bool read_only, bool allow_exec);
   size_t remove_bitmap_leading_zeros(CHeapBitMap* map);
-  char* write_bitmap_region(const CHeapBitMap* rw_ptrmap, const CHeapBitMap* ro_ptrmap, ArchiveHeapInfo* heap_info,
+  char* write_bitmap_region(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap, ArchiveHeapInfo* heap_info,
                             size_t &size_in_bytes);
   size_t write_heap_region(ArchiveHeapInfo* heap_info);
   void  write_bytes(const void* buffer, size_t count);

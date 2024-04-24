@@ -467,6 +467,7 @@ JavaThread::JavaThread() :
   _jvmci_reserved0(0),
   _jvmci_reserved1(0),
   _jvmci_reserved_oop0(nullptr),
+  _live_nmethod(nullptr),
 #endif // INCLUDE_JVMCI
 
   _exception_oop(oop()),
@@ -910,19 +911,27 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
            "should not have a Java frame when detaching or exiting");
     ObjectSynchronizer::release_monitors_owned_by_thread(this);
     assert(!this->has_pending_exception(), "release_monitors should have cleared");
+    // Check for monitor counts being out of sync.
+    assert(held_monitor_count() == jni_monitor_count(),
+           "held monitor count should be equal to jni: " INTX_FORMAT " != " INTX_FORMAT,
+           held_monitor_count(), jni_monitor_count());
+    // All in-use monitors, including JNI-locked ones, should have been released above.
+    assert(held_monitor_count() == 0, "Failed to unlock " INTX_FORMAT " object monitors",
+           held_monitor_count());
+  } else {
+    // Check for monitor counts being out of sync.
+    assert(held_monitor_count() == jni_monitor_count(),
+           "held monitor count should be equal to jni: " INTX_FORMAT " != " INTX_FORMAT,
+           held_monitor_count(), jni_monitor_count());
+    // It is possible that a terminating thread failed to unlock monitors it locked
+    // via JNI so we don't assert the count is zero.
   }
 
-  // Since above code may not release JNI monitors and if someone forgot to do an
-  // JNI monitorexit, held count should be equal jni count.
-  // Consider scan all object monitor for this owner if JNI count > 0 (at least on detach).
-  assert(held_monitor_count() == jni_monitor_count(),
-         "held monitor count should be equal to jni: " INTX_FORMAT " != " INTX_FORMAT,
-         held_monitor_count(), jni_monitor_count());
   if (CheckJNICalls && jni_monitor_count() > 0) {
     // We would like a fatal here, but due to we never checked this before there
     // is a lot of tests which breaks, even with an error log.
     log_debug(jni)("JavaThread %s (tid: " UINTX_FORMAT ") with Objects still locked by JNI MonitorEnter.",
-      exit_type == JavaThread::normal_exit ? "exiting" : "detaching", os::current_thread_id());
+                   exit_type == JavaThread::normal_exit ? "exiting" : "detaching", os::current_thread_id());
   }
 
   // These things needs to be done while we are still a Java Thread. Make sure that thread
@@ -960,9 +969,12 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     thread_name = os::strdup(name());
   }
 
-  log_info(os, thread)("JavaThread %s (tid: " UINTX_FORMAT ").",
-    exit_type == JavaThread::normal_exit ? "exiting" : "detaching",
-    os::current_thread_id());
+  if (log_is_enabled(Info, os, thread)) {
+    ResourceMark rm(this);
+    log_info(os, thread)("JavaThread %s (name: \"%s\", tid: " UINTX_FORMAT ").",
+                         exit_type == JavaThread::normal_exit ? "exiting" : "detaching",
+                         name(), os::current_thread_id());
+  }
 
   if (log_is_enabled(Debug, os, thread, timer)) {
     _timer_exit_phase3.stop();
@@ -1418,6 +1430,10 @@ void JavaThread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
   f->do_oop((oop*) &_exception_oop);
 #if INCLUDE_JVMCI
   f->do_oop((oop*) &_jvmci_reserved_oop0);
+
+  if (_live_nmethod != nullptr && cf != nullptr) {
+    cf->do_nmethod(_live_nmethod);
+  }
 #endif
 
   if (jvmti_thread_state() != nullptr) {
@@ -1473,6 +1489,12 @@ void JavaThread::nmethods_do(NMethodClosure* cf) {
   if (jvmti_thread_state() != nullptr) {
     jvmti_thread_state()->nmethods_do(cf);
   }
+
+#if INCLUDE_JVMCI
+  if (_live_nmethod != nullptr) {
+    cf->do_nmethod(_live_nmethod);
+  }
+#endif
 }
 
 void JavaThread::metadata_do(MetadataClosure* f) {
@@ -1580,9 +1602,11 @@ void JavaThread::print_on_error(outputStream* st, char *buf, int buflen) const {
   if (osthread()) {
     st->print(", id=%d", osthread()->thread_id());
   }
+  // Use raw field members for stack base/size as this could be
+  // called before a thread has run enough to initialize them.
   st->print(", stack(" PTR_FORMAT "," PTR_FORMAT ") (" PROPERFMT ")",
-            p2i(stack_end()), p2i(stack_base()),
-            PROPERFMTARGS(stack_size()));
+            p2i(_stack_base - _stack_size), p2i(_stack_base),
+            PROPERFMTARGS(_stack_size));
   st->print("]");
 
   ThreadsSMRSupport::print_info_on(this, st);
@@ -1988,17 +2012,23 @@ void JavaThread::trace_stack() {
 
 #endif // PRODUCT
 
+// Slow-path increment of the held monitor counts. JNI locking is always
+// this slow-path.
 void JavaThread::inc_held_monitor_count(intx i, bool jni) {
 #ifdef SUPPORT_MONITOR_COUNT
-  assert(_held_monitor_count >= 0, "Must always be greater than 0: " INTX_FORMAT, _held_monitor_count);
+  assert(_held_monitor_count >= 0, "Must always be non-negative: " INTX_FORMAT, _held_monitor_count);
   _held_monitor_count += i;
   if (jni) {
-    assert(_jni_monitor_count >= 0, "Must always be greater than 0: " INTX_FORMAT, _jni_monitor_count);
+    assert(_jni_monitor_count >= 0, "Must always be non-negative: " INTX_FORMAT, _jni_monitor_count);
     _jni_monitor_count += i;
   }
+  assert(_held_monitor_count >= _jni_monitor_count, "Monitor count discrepancy detected - held count "
+         INTX_FORMAT " is less than JNI count " INTX_FORMAT, _held_monitor_count, _jni_monitor_count);
 #endif
 }
 
+// Slow-path decrement of the held monitor counts. JNI unlocking is always
+// this slow-path.
 void JavaThread::dec_held_monitor_count(intx i, bool jni) {
 #ifdef SUPPORT_MONITOR_COUNT
   _held_monitor_count -= i;
@@ -2007,6 +2037,12 @@ void JavaThread::dec_held_monitor_count(intx i, bool jni) {
     _jni_monitor_count -= i;
     assert(_jni_monitor_count >= 0, "Must always be greater than 0: " INTX_FORMAT, _jni_monitor_count);
   }
+  // When a thread is detaching with still owned JNI monitors, the logic that releases
+  // the monitors doesn't know to set the "jni" flag and so the counts can get out of sync.
+  // So we skip this assert if the thread is exiting. Once all monitors are unlocked the
+  // JNI count is directly set to zero.
+  assert(_held_monitor_count >= _jni_monitor_count || is_exiting(), "Monitor count discrepancy detected - held count "
+         INTX_FORMAT " is less than JNI count " INTX_FORMAT, _held_monitor_count, _jni_monitor_count);
 #endif
 }
 
