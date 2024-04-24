@@ -27,7 +27,6 @@
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/space.hpp"
-#include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
@@ -168,12 +167,3 @@ HeapWord* ContiguousSpace::allocate(size_t size) {
 HeapWord* ContiguousSpace::par_allocate(size_t size) {
   return par_allocate_impl(size);
 }
-
-#if INCLUDE_SERIALGC
-TenuredSpace::TenuredSpace(SerialBlockOffsetTable* offsets,
-                           MemRegion mr) :
-  _offsets(offsets)
-{
-  initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);
-}
-#endif // INCLUDE_SERIALGC
