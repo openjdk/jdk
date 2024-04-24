@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,38 @@
  * questions.
  */
 
-import javax.naming.Context;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.SequenceInputStream;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.lang.String.format;
+import javax.naming.Context;
+
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 /*
  * @test
@@ -45,6 +60,9 @@ import static java.util.Collections.singletonMap;
  * @summary Examines different ways JNDI providers can hook up themselves and
  *          become available. Each case mimics the most straightforward way of
  *          executing scenarios.
+ * @library /test/lib
+ * @build jdk.test.lib.process.ProcessTools
+ * @run main InitialContextTest
  */
 public class InitialContextTest {
 
@@ -243,9 +261,13 @@ public class InitialContextTest {
 
     private static void jar(Path jarName, Path jarRoot) {
         String jar = getJDKTool("jar");
-        ProcessBuilder p = new ProcessBuilder(jar, "cf", jarName.toString(),
-                "-C", jarRoot.toString(), ".");
-        quickFail(run(p));
+        String [] commands = {jar, "cf", jarName.toString(),"-C", jarRoot.toString(), "."};
+        try {
+            OutputAnalyzer outputAnalyzer = ProcessTools.executeCommand(commands);
+            outputAnalyzer.shouldHaveExitValue(0);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     private static void javac(Path compilationOutput, Path... sourceFiles) {
@@ -256,22 +278,18 @@ public class InitialContextTest {
         commands.addAll(paths.stream()
                 .map(Path::toString)
                 .collect(Collectors.toList()));
-        quickFail(run(new ProcessBuilder(commands)));
-    }
-
-    private static void quickFail(Result r) {
-        if (r.exitValue != 0)
-            throw new RuntimeException(r.output);
+        try {
+            OutputAnalyzer outputAnalyzer = ProcessTools.executeCommand(commands.toArray(new String[commands.size()]));
+            outputAnalyzer.shouldHaveExitValue(0);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     private static Result java(Map<String, String> properties,
                                Collection<Path> classpath,
                                String classname) {
-
-        String java = getJDKTool("java");
-
         List<String> commands = new ArrayList<>();
-        commands.add(java);
         commands.addAll(properties.entrySet()
                 .stream()
                 .map(e -> "-D" + e.getKey() + "=" + e.getValue())
@@ -283,35 +301,14 @@ public class InitialContextTest {
         commands.add("-cp");
         commands.add(cp);
         commands.add(classname);
-
-        return run(new ProcessBuilder(commands));
-    }
-
-    private static Result run(ProcessBuilder b) {
-        Process p = null;
-        try {
-            p = b.start();
-        } catch (IOException e) {
-            throw new RuntimeException(
-                    format("Couldn't start process '%s'", b.command()), e);
-        }
-
-        String output;
-        try {
-            output = toString(p.getInputStream(), p.getErrorStream());
-        } catch (IOException e) {
-            throw new RuntimeException(
-                    format("Couldn't read process output '%s'", b.command()), e);
-        }
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(commands);
 
         try {
-            p.waitFor();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(
-                    format("Process hasn't finished '%s'", b.command()), e);
+            OutputAnalyzer outputAnalyzer = ProcessTools.executeProcess(pb);
+            return new Result(outputAnalyzer.getExitValue(), outputAnalyzer.getOutput());
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
         }
-
-        return new Result(p.exitValue(), output);
     }
 
     private static String getJDKTool(String name) {

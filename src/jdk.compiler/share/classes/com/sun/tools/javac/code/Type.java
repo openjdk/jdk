@@ -600,7 +600,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
     public Type              getUpperBound()     { return null; }
     public Type              getLowerBound()     { return null; }
 
-    /** Navigation methods, these will work for classes, type variables,
+    /* Navigation methods, these will work for classes, type variables,
      *  foralls, but will return null for arrays and methods.
      */
 

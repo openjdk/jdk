@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.awt.TextField;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import javax.swing.SwingUtilities;
 
 /*
  * @test
@@ -76,25 +75,15 @@ public class AddRemoveMenuBarTest_3  {
             Upon test completion, click Pass or Fail appropriately.
             """;
     public static void main(String[] args) throws Exception {
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame.builder()
                 .title("AddRemoveMenuBarTest_3 Instructions")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(5)
                 .rows(30)
                 .columns(38)
-                .build();
-
-        SwingUtilities.invokeAndWait(() -> {
-            AddRemoveMenuBar_3 frame = new AddRemoveMenuBar_3();
-
-            PassFailJFrame.addTestWindow(frame);
-            PassFailJFrame.positionTestWindow(null,
-                    PassFailJFrame.Position.HORIZONTAL);
-
-            frame.setVisible(true);
-        });
-
-        passFailJFrame.awaitAndCheck();
+                .testUI(AddRemoveMenuBar_3::new)
+                .build()
+                .awaitAndCheck();
     }
 }
 
