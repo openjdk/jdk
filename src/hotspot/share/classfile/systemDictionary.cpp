@@ -2009,9 +2009,9 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
     }
   }
 
-  // Throw VirtualMachineError or the pending exception in the JavaThread
+  // Throw OOM or the pending exception in the JavaThread
   if (throw_error && !HAS_PENDING_EXCEPTION) {
-    THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(),
+    THROW_MSG_NULL(vmSymbols::java_lang_OutOfMemoryError(),
                    "Out of space in CodeCache for method handle intrinsic");
   }
   return nullptr;

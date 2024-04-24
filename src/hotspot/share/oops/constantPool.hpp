@@ -248,14 +248,6 @@ class ConstantPool : public Metadata {
   void allocate_resolved_klasses(ClassLoaderData* loader_data, int num_klasses, TRAPS);
   void initialize_unresolved_klasses(ClassLoaderData* loader_data, TRAPS);
 
-  // Invokedynamic indexes.
-  // They must look completely different from normal indexes.
-  // The main reason is that byte swapping is sometimes done on normal indexes.
-  // Finally, it is helpful for debugging to tell the two apart.
-  static bool is_invokedynamic_index(int i) { return (i < 0); }
-  static int  decode_invokedynamic_index(int i) { assert(is_invokedynamic_index(i),  ""); return ~i; }
-  static int  encode_invokedynamic_index(int i) { assert(!is_invokedynamic_index(i), ""); return ~i; }
-
   // Given the per-instruction index of an indy instruction, report the
   // main constant pool entry for its bootstrap specifier.
   // From there, uncached_name/signature_ref_at will get the name/type.
@@ -761,9 +753,9 @@ class ConstantPool : public Metadata {
 
   // Used by compiler to prevent classloading.
   static Method*          method_at_if_loaded      (const constantPoolHandle& this_cp, int which);
-  static bool       has_appendix_at_if_loaded      (const constantPoolHandle& this_cp, int which);
-  static oop            appendix_at_if_loaded      (const constantPoolHandle& this_cp, int which);
-  static bool has_local_signature_at_if_loaded     (const constantPoolHandle& this_cp, int which);
+  static bool       has_appendix_at_if_loaded      (const constantPoolHandle& this_cp, int which, Bytecodes::Code code);
+  static oop            appendix_at_if_loaded      (const constantPoolHandle& this_cp, int which, Bytecodes::Code code);
+  static bool has_local_signature_at_if_loaded     (const constantPoolHandle& this_cp, int which, Bytecodes::Code code);
   static Klass*            klass_at_if_loaded      (const constantPoolHandle& this_cp, int which);
 
   // Routines currently used for annotations (only called by jvm.cpp) but which might be used in the

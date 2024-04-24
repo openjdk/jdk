@@ -3570,8 +3570,18 @@ void MacroAssembler::vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src,
   Assembler::vpcmpeqb(dst, nds, src, vector_len);
 }
 
+void MacroAssembler::vpcmpeqb(XMMRegister dst, XMMRegister src1, Address src2, int vector_len) {
+  assert(((dst->encoding() < 16 && src1->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpcmpeqb(dst, src1, src2, vector_len);
+}
+
 void MacroAssembler::vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
   assert(((dst->encoding() < 16 && src->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpcmpeqw(dst, nds, src, vector_len);
+}
+
+void MacroAssembler::vpcmpeqw(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
+  assert(((dst->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
   Assembler::vpcmpeqw(dst, nds, src, vector_len);
 }
 
