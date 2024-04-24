@@ -2181,7 +2181,7 @@ void StubGenerator::aesctr_encrypt(Register src_addr, Register dest_addr, Regist
 
   const Register rounds = rax;
   const Register pos = r12;
-  const Register tail = r13;
+  const Register tail = r15;
 
   Label PRELOOP_START, EXIT_PRELOOP, REMAINDER, REMAINDER_16, LOOP, END, EXIT, END_LOOP,
   AES192, AES256, AES192_REMAINDER16, REMAINDER16_END_LOOP, AES256_REMAINDER16,
