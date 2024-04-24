@@ -64,6 +64,38 @@ static bool is_in_scoped_access(JavaThread* jt, oop session) {
   return false;
 }
 
+class CloseScopedMemoryFindOopClosure : public OopClosure {
+  oop _deopt;
+  bool _found;
+
+public:
+  CloseScopedMemoryFindOopClosure(jobject deopt) :
+    _deopt(JNIHandles::resolve(deopt)),
+    _found(false) {}
+
+  template <typename T>
+  void do_oop_work(T* p) {
+    if (_found) {
+      return;
+    }
+    if (RawAccess<>::oop_load(p) == _deopt) {
+      _found = true;
+    }
+  }
+
+  virtual void do_oop(oop* p) {
+    do_oop_work(p);
+  }
+
+  virtual void do_oop(narrowOop* p) {
+    do_oop_work(p);
+  }
+
+  bool found() {
+    return _found;
+  }
+};
+
 class ScopedAsyncExceptionHandshake : public AsyncExceptionHandshake {
   OopHandle _session;
 
@@ -116,10 +148,13 @@ public:
 
     ResourceMark rm;
     if (last_frame.is_compiled_frame() && last_frame.can_be_deoptimized()) {
-      // FIXME: we would like to conditionally deoptimize only if the corresponding
-      // _session is reachable from the frame, but reachabilityFence doesn't currently
-      // work the way it should. Therefore we deopt unconditionally for now.
-      Deoptimization::deoptimize(jt, last_frame);
+      CloseScopedMemoryFindOopClosure cl(_session);
+      last_frame.oops_do(&cl, nullptr, &register_map);
+      if (cl.found()) {
+           //Found the deopt oop in a compiled method; deoptimize.
+           Deoptimization::deoptimize(jt, last_frame);
+      }
+      // Deoptimization::deoptimize(jt, last_frame);
     }
 
     if (jt->has_async_exception_condition()) {
