@@ -35,12 +35,14 @@ import javax.tools.*;
 
 public class SOEDeeplyNestedBlocksTest {
 
+    static final int NESTING_DEPTH = 1000;
+
     public static void main(String... args) {
         var lines = new ArrayList<String>();
         lines.add("class Test {");
         lines.add("  static { ");
-        for (int i = 0; i < 1000; i++) lines.add("    synchronized (Test.class) {");
-        for (int i = 0; i < 1000; i++) lines.add("    }");
+        for (int i = 0; i < NESTING_DEPTH; i++) lines.add("    synchronized (Test.class) {");
+        for (int i = 0; i < NESTING_DEPTH; i++) lines.add("    }");
         lines.add("  }");
         lines.add("}");
 
