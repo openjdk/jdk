@@ -925,6 +925,12 @@ final class Byte256Vector extends ByteVector {
         return super.fromArray0Template(Byte256Mask.class, a, offset, (Byte256Mask) m, offsetInRange);  // specialize
     }
 
+    @ForceInline
+    @Override
+    final
+    ByteVector fromArray0(byte[] a, int offset, int[] indexMap, int mapOffset, VectorMask<Byte> m) {
+        return super.fromArray0Template(Byte256Mask.class, a, offset, indexMap, mapOffset, (Byte256Mask) m);
+    }
 
 
     @ForceInline

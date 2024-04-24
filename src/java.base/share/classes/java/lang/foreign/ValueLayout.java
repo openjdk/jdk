@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,6 @@ import jdk.internal.foreign.layout.ValueLayouts;
  *          For instance, the byte order of these constants is set to the
  *          {@linkplain ByteOrder#nativeOrder() native byte order}, thus making it easy
  *          to work with other APIs, such as arrays and {@link java.nio.ByteBuffer}.
- *          Moreover, the alignment constraint of {@link ValueLayout#JAVA_LONG} and
- *          {@link ValueLayout#JAVA_DOUBLE} is set to 8 bytes on 64-bit platforms,
- *          but only to 4 bytes on 32-bit platforms.
  *
  * @implSpec implementing classes and subclasses are immutable, thread-safe and
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
@@ -449,8 +446,7 @@ public sealed interface ValueLayout extends MemoryLayout
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code long},
-     * (platform-dependent) byte alignment set to {@code ADDRESS.byteSize()},
-     * and byte order set to {@link ByteOrder#nativeOrder()}.
+     * byte alignment set to 8, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
     OfLong JAVA_LONG = ValueLayouts.OfLongImpl.of(ByteOrder.nativeOrder());
 
@@ -462,8 +458,7 @@ public sealed interface ValueLayout extends MemoryLayout
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code double},
-     * (platform-dependent) byte alignment set to {@code ADDRESS.byteSize()},
-     * and byte order set to {@link ByteOrder#nativeOrder()}.
+     * byte alignment set to 8, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
     OfDouble JAVA_DOUBLE = ValueLayouts.OfDoubleImpl.of(ByteOrder.nativeOrder());
 

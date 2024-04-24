@@ -27,12 +27,14 @@
 
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/referenceProcessor.hpp"
+#include "gc/shared/space.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/perfData.hpp"
+#include "runtime/prefetch.inline.hpp"
 
 // A Generation models a heap area for similarly-aged objects.
 // It will contain one ore more spaces holding the actual objects.
@@ -41,7 +43,7 @@
 //
 // Generation                      - abstract base class
 // - DefNewGeneration              - allocation area (copy collected)
-// - TenuredGeneration             - tenured (old object) space (markSweepCompact)
+// - TenuredGeneration             - tenured (old object) space (mark-compact)
 //
 // The system configuration currently allowed is:
 //
@@ -51,9 +53,7 @@
 class DefNewGeneration;
 class GCMemoryManager;
 class ContiguousSpace;
-
 class OopClosure;
-class GCStats;
 
 class Generation: public CHeapObj<mtGC> {
   friend class VMStructs;
@@ -72,9 +72,6 @@ class Generation: public CHeapObj<mtGC> {
 
   // Performance Counters
   CollectorCounters* _gc_counters;
-
-  // Statistics for garbage collection
-  GCStats* _gc_stats;
 
   // Initialize the generation.
   Generation(ReservedSpace rs, size_t initial_byte_size);
@@ -168,18 +165,6 @@ class Generation: public CHeapObj<mtGC> {
   // still unsuccessful, return "null".
   virtual HeapWord* expand_and_allocate(size_t word_size, bool is_tlab) = 0;
 
-  // Save the high water marks for the used space in a generation.
-  virtual void record_spaces_top() {}
-
-  // Generations may keep statistics about collection. This method
-  // updates those statistics. current_generation is the generation
-  // that was most recently collected. This allows the generation to
-  // decide what statistics are valid to collect. For example, the
-  // generation can decide to gather the amount of promoted data if
-  // the collection of the young generation has completed.
-  GCStats* gc_stats() const { return _gc_stats; }
-  virtual void update_gc_stats(Generation* current_generation, bool full) {}
-
   // Printing
   virtual const char* name() const = 0;
   virtual const char* short_name() const = 0;
@@ -215,7 +200,6 @@ public:
   void set_gc_manager(GCMemoryManager* gc_manager) {
     _gc_manager = gc_manager;
   }
-
 };
 
 #endif // SHARE_GC_SERIAL_GENERATION_HPP

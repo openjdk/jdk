@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,19 @@
 /* @test
  * @bug 4359123
  * @summary  Test loading of classes with # in the path
+ * @library /test/lib
+ * @build jdk.test.lib.process.ProcessTools
+ * @run main EscapePath
  */
-import java.io.*;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.util.ArrayList;
+import java.util.List;
+
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class EscapePath {
 
@@ -75,14 +86,19 @@ public class EscapePath {
         fos.close();
     }
 
-    private static void invokeJava() throws Exception {
-        String command = System.getProperty("java.home") +
-                         File.separator + "bin" + File.separator +
-                         "java -classpath " + "a#b/ Hello";
-        Process p = Runtime.getRuntime().exec(command);
-        p.waitFor();
-        int result = p.exitValue();
-        if (result != 0)
-            throw new RuntimeException("Path encoding failure.");
+    private static void invokeJava() {
+        List<String> commands = new ArrayList<>();
+
+        commands.add("-classpath");
+        commands.add("a#b");
+        commands.add("Hello");
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(commands);
+
+        try {
+            OutputAnalyzer outputAnalyzer = ProcessTools.executeProcess(pb);
+            outputAnalyzer.shouldHaveExitValue(0);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
     }
 }

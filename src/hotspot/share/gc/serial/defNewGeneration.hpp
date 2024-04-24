@@ -139,6 +139,9 @@ class DefNewGeneration: public Generation {
   ContiguousSpace* _from_space;
   ContiguousSpace* _to_space;
 
+  // Saved mark word, for to-space
+  HeapWord* _saved_mark_word;
+
   STWGCTimer* _gc_timer;
 
   DefNewTracer* _gc_tracer;
@@ -234,18 +237,7 @@ class DefNewGeneration: public Generation {
   void gc_epilogue(bool full);
 
   // Save the tops for eden, from, and to
-  virtual void record_spaces_top();
-
-  // Accessing marks
-  void save_marks();
-
-  bool no_allocs_since_save_marks();
-
-  // Need to declare the full complement of closures, whether we'll
-  // override them or not, or get message from the compiler:
-  //   oop_since_save_marks_iterate_nv hides virtual function...
-  template <typename OopClosureType>
-  void oop_since_save_marks_iterate(OopClosureType* cl);
+  void record_spaces_top();
 
   // For Old collection (part of running Full GC), the DefNewGeneration can
   // contribute the free part of "to-space" as the scratch space.

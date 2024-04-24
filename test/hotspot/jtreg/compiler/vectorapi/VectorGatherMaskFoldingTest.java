@@ -36,7 +36,7 @@ import java.util.Arrays;
  * @summary Don't allow folding of Load/Store vectors when using incompatible indices or masks
  * @modules jdk.incubator.vector
  *
- * @run main compiler.vectorapi.VectorGatherMaskFoldingTest
+ * @run driver compiler.vectorapi.VectorGatherMaskFoldingTest
  */
 
 public class VectorGatherMaskFoldingTest {

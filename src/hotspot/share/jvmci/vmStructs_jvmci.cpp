@@ -47,11 +47,6 @@
 #include "gc/g1/g1ThreadLocalData.hpp"
 #endif
 
-#if defined(TARGET_COMPILER_gcc)
-#undef JNIEXPORT
-#define JNIEXPORT
-#endif
-
 #define VM_STRUCTS(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field) \
   static_field(CompilerToVM::Data,             Klass_vtable_start_offset,              int)                                          \
   static_field(CompilerToVM::Data,             Klass_vtable_length_offset,             int)                                          \
@@ -271,7 +266,7 @@
   nonstatic_field(Method,                      _vtable_index,                                 int)                                   \
   nonstatic_field(Method,                      _intrinsic_id,                                 u2)                                    \
   nonstatic_field(Method,                      _flags._status,                                u4)                                    \
-  volatile_nonstatic_field(Method,             _code,                                         CompiledMethod*)                       \
+  volatile_nonstatic_field(Method,             _code,                                         nmethod*)                              \
   volatile_nonstatic_field(Method,             _from_compiled_entry,                          address)                               \
                                                                                                                                      \
   nonstatic_field(MethodCounters,              _invoke_mask,                                  int)                                   \
@@ -299,7 +294,7 @@
   nonstatic_field(MethodData,                  _backedge_mask,                                int)                                   \
   nonstatic_field(MethodData,                  _jvmci_ir_size,                                int)                                   \
                                                                                                                                      \
-  nonstatic_field(nmethod,                     _verified_entry_point,                         address)                               \
+  nonstatic_field(nmethod,                     _verified_entry_offset,                        u2)                                    \
   nonstatic_field(nmethod,                     _comp_level,                                   CompLevel)                             \
                                                                                                                                      \
   nonstatic_field(ObjArrayKlass,               _element_klass,                                Klass*)                                \
@@ -347,6 +342,7 @@
   static_field(StubRoutines,                _generic_arraycopy,                               address)                               \
   static_field(StubRoutines,                _array_sort,                                      address)                               \
   static_field(StubRoutines,                _array_partition,                                 address)                               \
+  static_field(StubRoutines,                _unsafe_setmemory,                                address)                               \
                                                                                                                                      \
   static_field(StubRoutines,                _aescrypt_encryptBlock,                           address)                               \
   static_field(StubRoutines,                _aescrypt_decryptBlock,                           address)                               \
@@ -1026,14 +1022,6 @@ int JVMCIVMStructs::localHotSpotVMLongConstants_count() {
 int JVMCIVMStructs::localHotSpotVMAddresses_count() {
   // Ignore sentinel entry at the end
   return (sizeof(localHotSpotVMAddresses) / sizeof(VMAddressEntry)) - 1;
-}
-
-extern "C" {
-JNIEXPORT VMStructEntry* jvmciHotSpotVMStructs = JVMCIVMStructs::localHotSpotVMStructs;
-JNIEXPORT VMTypeEntry* jvmciHotSpotVMTypes = JVMCIVMStructs::localHotSpotVMTypes;
-JNIEXPORT VMIntConstantEntry* jvmciHotSpotVMIntConstants = JVMCIVMStructs::localHotSpotVMIntConstants;
-JNIEXPORT VMLongConstantEntry* jvmciHotSpotVMLongConstants = JVMCIVMStructs::localHotSpotVMLongConstants;
-JNIEXPORT VMAddressEntry* jvmciHotSpotVMAddresses = JVMCIVMStructs::localHotSpotVMAddresses;
 }
 
 #ifdef ASSERT
