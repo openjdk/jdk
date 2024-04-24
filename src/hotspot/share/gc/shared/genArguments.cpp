@@ -308,7 +308,7 @@ void GenArguments::initialize_size_info() {
       initial_old_size = MaxOldSize;
     } else if (initial_old_size < MinOldSize) {
       log_warning(gc, ergo)("Inconsistency between initial old size and minimum old size");
-      initial_old_size = MinOldSize;
+      MinOldSize = initial_old_size;
     }
   }
 
