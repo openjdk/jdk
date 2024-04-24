@@ -44,7 +44,7 @@
  * implementing canonicalizing mappings that do not prevent their keys
  * (or values) from being reclaimed, and phantom references are for
  * scheduling post-mortem cleanup actions.
- * Post-mortem cleanup actions can be registered and managed by a
+ * Post-mortem cleanup actions can also be registered and managed by a
  * {@link java.lang.ref.Cleaner}.
  *
  * <p> Each reference-object type is implemented by a subclass of the
@@ -59,7 +59,7 @@
  * may use these subclasses without change.
  *
  * <a id="reachability"></a>
- * <h3>Reachability</h3>
+ * <h2>Reachability</h2>
  *
  * A <em>reachable</em> object is any object that can be accessed in any potential
  * continuing computation from any live thread (as stated in {@jls 12.6.1}).
@@ -91,27 +91,25 @@
  *
  * </ul>
  *
- * <h3>Notification</h3>
+ * <h2>Notification</h2>
  *
  * A program may request to be notified of changes in an object's
  * reachability by <em>registering</em> an appropriate reference
- * object with a <em>reference queue</em>.
+ * object with a {@link java.lang.ref.ReferenceQueue}.
  * This is done by providing the reference queue as
  * a constructor argument when creating the reference object.
  * Some time after the garbage collector
- * determines that the reachability of the referent has changed to the
- * value corresponding to the type of the reference, it will clear the
+ * determines that the reachability of the referent has changed to correspond
+ * with the type of the reference, it will clear the
  * reference and add it to the associated queue.  At this point, the
  * reference is considered to be <em>enqueued</em>.  The program learns of the
- * object's change in reachability when the associated reference becomes
- * available on the queue. The program may remove
- * references from a queue either by polling or by blocking until a
- * reference becomes available. Additional state needed to respond to a
+ * referent's change in reachability when the associated reference becomes
+ * available on the queue. The program may remove references from a queue
+ * (that is, <em>"dequeue"</em> them) using the {@link ReferenceQueue#poll()} or
+ * {@link ReferenceQueue#remove()} methods. Additional state needed to respond to a
  * referent's change in reachability can be stored in the fields of a custom
  * reference subclass, and accessed when the reference is returned from the
  * queue.
- * Reference queues are implemented by the {@link java.lang.ref.ReferenceQueue}
- * class.
  *
  * <p> The relationship between a registered reference object and its
  * queue is one-sided.  That is, a queue does not keep track of the
@@ -135,7 +133,7 @@
  * access methods.
  *
  * <a id="MemoryConsistency"></a>
- * <h3>Memory Consistency Properties</h3>
+ * <h2>Memory Consistency Properties</h2>
  * Certain interactions between the garbage collector, references, and reference
  * queues form
  * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
@@ -152,8 +150,7 @@
  *
  * <li> The enqueueing of a reference (by the garbage collector, or
  * by a successful call to {@link Reference#enqueue}) <i>happens-before</i>
- * the reference is removed from the queue ("dequeued") by {@link ReferenceQueue#poll} or
- * {@link ReferenceQueue#remove}.</li>
+ * the reference is removed from the queue (<em>dequeued</em>).</li>
  *
  * <li>The dequeuing of a reference to a
  * {@linkplain Cleaner#register(Object object, Runnable action) registered}
