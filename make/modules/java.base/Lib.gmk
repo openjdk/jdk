@@ -212,7 +212,7 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2)
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBSIMD_SORT, \
       NAME := simdsort, \
-      LINK_TYPE := C++, \
+      LANG := C++, \
       OPTIMIZATION := HIGH, \
       CXXFLAGS := -std=c++17, \
       LIBS_linux := $(LIBDL) $(LIBM), \
