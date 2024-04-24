@@ -77,6 +77,7 @@ ArchiveBuilder::SourceObjList::~SourceObjList() {
 
 void ArchiveBuilder::SourceObjList::append(SourceObjInfo* src_info) {
   // Save this source object for copying
+  src_info->set_id(_objs->length());
   _objs->append(src_info);
 
   // Prepare for marking the pointers in this source object
@@ -94,6 +95,7 @@ void ArchiveBuilder::SourceObjList::append(SourceObjInfo* src_info) {
 void ArchiveBuilder::SourceObjList::remember_embedded_pointer(SourceObjInfo* src_info, MetaspaceClosure::Ref* ref) {
   // src_obj contains a pointer. Remember the location of this pointer in _ptrmap,
   // so that we can copy/relocate it later.
+  src_info->set_has_embedded_pointer();
   address src_obj = src_info->source_addr();
   address* field_addr = ref->addr();
   assert(src_info->ptrmap_start() < _total_bytes, "sanity");
@@ -587,6 +589,26 @@ char* ArchiveBuilder::ro_strdup(const char* s) {
   char* archived_str = ro_region_alloc((int)strlen(s) + 1);
   strcpy(archived_str, s);
   return archived_str;
+}
+
+// The objects that have embedded pointers will sink
+// towards the end of the list. This ensures we have a maximum
+// number of leading zero bits in the relocation bitmap.
+int ArchiveBuilder::compare_src_objs(SourceObjInfo** a, SourceObjInfo** b) {
+  if ((*a)->has_embedded_pointer() && !(*b)->has_embedded_pointer()) {
+    return 1;
+  } else if (!(*a)->has_embedded_pointer() && (*b)->has_embedded_pointer()) {
+    return -1;
+  } else {
+    // This is necessary to keep the sorting order stable. Otherwise the
+    // archive's contents may not be deterministic.
+    return (*a)->id() - (*b)->id();
+  }
+}
+
+void ArchiveBuilder::sort_metadata_objs() {
+  _rw_src_objs.objs()->sort(compare_src_objs);
+  _ro_src_objs.objs()->sort(compare_src_objs);
 }
 
 void ArchiveBuilder::dump_rw_metadata() {

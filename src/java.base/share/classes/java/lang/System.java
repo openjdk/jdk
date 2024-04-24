@@ -71,6 +71,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import jdk.internal.logger.LoggerFinderLoader.TemporaryLoggerFinder;
+import jdk.internal.misc.Blocker;
 import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.StaticProperty;
@@ -2190,9 +2191,9 @@ public final class System {
 
         lineSeparator = props.getProperty("line.separator");
 
-        FileInputStream fdIn = new FileInputStream(FileDescriptor.in);
-        FileOutputStream fdOut = new FileOutputStream(FileDescriptor.out);
-        FileOutputStream fdErr = new FileOutputStream(FileDescriptor.err);
+        FileInputStream fdIn = new In(FileDescriptor.in);
+        FileOutputStream fdOut = new Out(FileDescriptor.out);
+        FileOutputStream fdErr = new Out(FileDescriptor.err);
         initialIn = new BufferedInputStream(fdIn);
         setIn0(initialIn);
         // stdout/err.encoding are set when the VM is associated with the terminal,
@@ -2215,6 +2216,83 @@ public final class System {
 
         // system properties, java.lang and other core classes are now initialized
         VM.initLevel(1);
+    }
+
+    /**
+     * System.in.
+     */
+    private static class In extends FileInputStream {
+        In(FileDescriptor fd) {
+            super(fd);
+        }
+
+        @Override
+        public int read() throws IOException {
+            boolean attempted = Blocker.begin();
+            try {
+                return super.read();
+            } finally {
+                Blocker.end(attempted);
+            }
+        }
+
+        @Override
+        public int read(byte[] b) throws IOException {
+            boolean attempted = Blocker.begin();
+            try {
+                return super.read(b);
+            } finally {
+                Blocker.end(attempted);
+            }
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            boolean attempted = Blocker.begin();
+            try {
+                return super.read(b, off, len);
+            } finally {
+                Blocker.end(attempted);
+            }
+        }
+    }
+
+    /**
+     * System.out/System.err wrap this output stream.
+     */
+    private static class Out extends FileOutputStream {
+        Out(FileDescriptor fd) {
+            super(fd);
+        }
+
+        public void write(int b) throws IOException {
+            boolean attempted = Blocker.begin();
+            try {
+                super.write(b);
+            } finally {
+                Blocker.end(attempted);
+            }
+        }
+
+        @Override
+        public void write(byte[] b) throws IOException {
+            boolean attempted = Blocker.begin();
+            try {
+                super.write(b);
+            } finally {
+                Blocker.end(attempted);
+            }
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            boolean attempted = Blocker.begin();
+            try {
+                super.write(b, off, len);
+            } finally {
+                Blocker.end(attempted);
+            }
+        }
     }
 
     // @see #initPhase2()
