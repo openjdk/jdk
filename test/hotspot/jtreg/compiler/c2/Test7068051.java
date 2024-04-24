@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ package compiler.c2;
 
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -133,11 +134,10 @@ public class Test7068051 {
         for (String p : params) {
             jar.addToolArg(p);
         }
-        ProcessBuilder pb = new ProcessBuilder(jar.getCommand());
         try {
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
+            OutputAnalyzer output = ProcessTools.executeProcess(jar.getCommand());
             output.shouldHaveExitValue(0);
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             throw new AssertionError("TESTBUG: jar failed.", ex);
         }
     }

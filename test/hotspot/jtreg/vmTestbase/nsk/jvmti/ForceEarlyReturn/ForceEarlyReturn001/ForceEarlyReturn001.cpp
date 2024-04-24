@@ -23,8 +23,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include <jvmti_tools.h>
-#include "JVMTITools.h"
+#include <jvmti_tools.hpp>
+#include "JVMTITools.hpp"
 #include "agent_common.hpp"
 
 extern "C" {

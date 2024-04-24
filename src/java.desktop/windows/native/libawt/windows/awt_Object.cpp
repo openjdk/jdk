@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,53 +172,6 @@ void AwtObject::SendEvent(jobject event)
         }
     }
     DASSERT(!safe_ExceptionOccurred(env));
-}
-
-//
-// (static)
-// Switches to Windows thread via SendMessage and synchronously
-// calls AwtObject::WinThreadExecProc with the given command id
-// and parameters.
-//
-// Useful for writing code that needs to be synchronized with
-// what's happening on the Windows thread.
-//
-LRESULT AwtObject::WinThreadExec(
-    jobject                             peerObject,
-    UINT                                cmdId,
-    LPARAM                              param1,
-    LPARAM                              param2,
-    LPARAM                              param3,
-    LPARAM                              param4 )
-{
-    DASSERT( peerObject != NULL);
-
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-    // since we pass peerObject to another thread we must
-    //   make a global ref
-    jobject peerObjectGlobalRef = env->NewGlobalRef(peerObject);
-
-    ExecuteArgs         args;
-    LRESULT         retVal;
-
-    // setup arguments
-    args.cmdId = cmdId;
-    args.param1 = param1;
-    args.param2 = param2;
-    args.param3 = param3;
-    args.param4 = param4;
-
-    // call WinThreadExecProc on the toolkit thread
-    retVal = AwtToolkit::GetInstance().SendMessage(WM_AWT_EXECUTE_SYNC,
-                                                   (WPARAM)peerObjectGlobalRef,
-                                                   (LPARAM)&args);
-    return retVal;
-}
-
-LRESULT AwtObject::WinThreadExecProc(ExecuteArgs * args)
-{
-    DASSERT(FALSE); // no default handler
-    return 0L;
 }
 
 /************************************************************************

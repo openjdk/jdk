@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,16 +257,16 @@ public class KdcPolicy {
     static void test(String... expected) throws Exception {
 
         System.out.println("------------------TEST----------------------");
-        PrintStream oldOut = System.out;
+        PrintStream oldErr = System.err;
         boolean failed = false;
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(bo));
+        System.setErr(new PrintStream(bo));
         try {
             Context.fromUserPass(OneKDC.USER, OneKDC.PASS, false);
         } catch (Exception e) {
             failed = true;
         } finally {
-            System.setOut(oldOut);
+            System.setErr(oldErr);
         }
 
         String[] lines = new String(bo.toByteArray()).split("\n");

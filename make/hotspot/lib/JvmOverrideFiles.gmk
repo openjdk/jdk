@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ ifeq ($(call isTargetOs, linux), true)
     NONPIC_SRC := $(filter $(NONPIC_FILTER), $(ALL_SRC)) globals.cpp location.cpp
     # Declare variables for each source file that needs the pic flag like this:
     # BUILD_JVM_<srcfile>_CXXFLAGS := -fno-PIC
-    # This will get implicitly picked up by SetupNativeCompilation below.
+    # This will get implicitly picked up by SetupJdkLibrary below.
     $(foreach s, $(NONPIC_SRC), $(eval BUILD_LIBJVM_$(notdir $s)_CXXFLAGS := -fno-PIC))
   endif
 

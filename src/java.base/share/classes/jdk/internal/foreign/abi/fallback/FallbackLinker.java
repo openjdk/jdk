@@ -123,11 +123,6 @@ public final class FallbackLinker extends AbstractLinker {
         };
     }
 
-    @Override
-    protected ByteOrder linkerByteOrder() {
-        return ByteOrder.nativeOrder();
-    }
-
     private static MemorySegment makeCif(MethodType methodType, FunctionDescriptor function, LinkerOptions options, Arena scope) {
         FFIABI abi = FFIABI.DEFAULT;
 
@@ -307,8 +302,8 @@ public final class FallbackLinker extends AbstractLinker {
                     Map.entry("bool", JAVA_BOOLEAN),
                     Map.entry("char", JAVA_BYTE),
                     Map.entry("float", JAVA_FLOAT),
-                    Map.entry("long long", JAVA_LONG),
-                    Map.entry("double", JAVA_DOUBLE),
+                    Map.entry("long long", JAVA_LONG.withByteAlignment(LibFallback.longLongAlign())),
+                    Map.entry("double", JAVA_DOUBLE.withByteAlignment(LibFallback.doubleAlign())),
                     Map.entry("void*", ADDRESS),
                     // platform-dependent sizes
                     Map.entry("size_t", FFIType.SIZE_T),

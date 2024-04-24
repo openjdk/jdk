@@ -23,6 +23,7 @@
 # questions.
 #
 
+include CopyFiles.gmk
 include JarArchive.gmk
 include JavaCompilation.gmk
 include Modules.gmk
@@ -65,7 +66,7 @@ $(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
     SRC := $(TOPDIR)/make/langtools/src/classes, \
     INCLUDES := build/tools/symbolgenerator com/sun/tools/classfile, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/create_symbols_javac, \
-    DISABLED_WARNINGS := options this-escape, \
+    DISABLED_WARNINGS := options, \
     JAVAC_FLAGS := \
         $(COMPILECREATESYMBOLS_ADD_EXPORTS), \
 ))
