@@ -666,4 +666,4 @@ jdk_core_no_security = \
 
 # Set of tests for `@since` checks in source code documentation
 jdk_since_check = \
-   tools/sincechecker/testjavabase/SinceChecker.java
+   tools/sincechecker/testjavabase/CheckSince_javaBase.java

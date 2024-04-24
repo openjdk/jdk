@@ -30,8 +30,8 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.util
  *          jdk.compiler/com.sun.tools.javac.code
- * @run main SinceValidator java.base
+ * @run main SinceChecker java.base
  */
 
-public class SinceChecker {
+public class CheckSince_javaBase {
 }

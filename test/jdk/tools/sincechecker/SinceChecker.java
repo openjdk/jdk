@@ -49,12 +49,20 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /*
-The `@since` checker verifies that for every API element, the real since value and the effective since value are the same, and reports an error if they are not.
+The `@since` checker works as a two-step process:
+- in the first step, we process JDKs 9-current, only classfiles, producing a map ``<unique-Element-ID``> => ``<version(s)-where-it-was-introduced>``.
+ ("version(s)", because there's versioning of Preview API, so there may be two versions (we use a class with two fields for preview and stable) - one when it was introduced as a preview, and one when it went out of preview. More on that below)
+ For each Element, compute the unique ID, look into the map, and if there's nothing, record the current version as the originating version.
+
+At the end of this step we have a map of the Real since values
 
  Real since value of an API element is computed as the oldest release in which the given API element was introduced. That is:
 - for modules, classes and interfaces, the release in which the element with the given qualified name was introduced
 - for constructors, the release in which the constructor with the given VM descriptor was introduced
 - for methods and fields, the release in which the given method or field with the given VM descriptor became a member of its enclosing class or interface, whether direct or inherited
+
+- in the second step, we would look at "effective" `@since` tags in the mainline sources, and the `@since` checker verifies that for every API element,
+    the real since value and the effective since value are the same,and reports an error if they are not.
 
 Effective since value of an API element is computed as follows:
 - if the given element has a `@since` tag in its javadoc, it is used
@@ -63,10 +71,13 @@ Effective since value of an API element is computed as follows:
 Special Handling for preview method:
 - When an element is still marked as preview, the `@since` should be the first JDK release where the element was added.
 - If the element is no longer marked as preview, the `@since` should be the first JDK release where it was no longer preview.
+
+note: The `<unique-Element-ID>` for methods looks like `method: <return-descriptor> <binary-name-of-enclosing-class>.<method-name>(<ParameterDescriptor>)`.
+it is somewhat inspired from the VM Method Descriptors
 */
 
 
-public class SinceValidator {
+public class SinceChecker {
     private final Map<String, Set<String>> LEGACY_PREVIEW_METHODS = new HashMap<>();
     private final Map<String, IntroducedIn> classDictionary = new HashMap<>();
     private final JavaCompiler tool;
@@ -76,11 +87,11 @@ public class SinceValidator {
         if (args.length == 0) {
             throw new SkippedException("Test module not specified");
         }
-        SinceValidator sinceCheckerTestHelper = new SinceValidator();
+        SinceChecker sinceCheckerTestHelper = new SinceChecker();
         sinceCheckerTestHelper.testThisModule(args[0]);
     }
 
-    private SinceValidator() throws IOException {
+    private SinceChecker() throws IOException {
         tool = ToolProvider.getSystemJavaCompiler();
         for (int i = 9; i <= Runtime.version().feature(); i++) {
             JavacTask ct = (JavacTask) tool.getTask(null, null, null,
@@ -531,7 +542,7 @@ public class SinceValidator {
         private final Set<String> seenLookupElements = new HashSet<>();
         private final Map<String, Version> signature2Source = new HashMap<>();
 
-        public static EffectiveSourceSinceHelper create(JavacTask mainTask, Collection<? extends Path> sourceLocations, SinceValidator validator) {
+        public static EffectiveSourceSinceHelper create(JavacTask mainTask, Collection<? extends Path> sourceLocations, SinceChecker validator) {
             StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null);
             try {
                 fm.setLocationFromPaths(StandardLocation.MODULE_SOURCE_PATH, sourceLocations);
