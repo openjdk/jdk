@@ -1313,9 +1313,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(intx, MethodHistogramCutoff, 100,                                 \
           "The cutoff value for method invocation histogram (+CountCalls)") \
                                                                             \
-  develop(intx, DontYieldALotInterval,    10,                               \
-          "Interval between which yields will be dropped (milliseconds)")   \
-                                                                            \
   develop(intx, DeoptimizeALotInterval,     5,                              \
           "Number of exits until DeoptimizeALot kicks in")                  \
                                                                             \
