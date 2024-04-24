@@ -1255,11 +1255,11 @@ public class TestMergeStores {
         Object a = null;
         long base = 0;
         if (i % 2 == 0) {
-          a = aB;
-          base = UNSAFE.ARRAY_BYTE_BASE_OFFSET;
+            a = aB;
+            base = UNSAFE.ARRAY_BYTE_BASE_OFFSET;
         } else {
-          a = aI;
-          base = UNSAFE.ARRAY_INT_BASE_OFFSET;
+            a = aI;
+            base = UNSAFE.ARRAY_INT_BASE_OFFSET;
         }
         UNSAFE.putByte(a, base + 0, (byte)0xbe);
         UNSAFE.putByte(a, base + 1, (byte)0xba);
@@ -1278,11 +1278,11 @@ public class TestMergeStores {
         Object a = null;
         long base = 0;
         if (i % 2 == 0) {
-          a = aB;
-          base = UNSAFE.ARRAY_BYTE_BASE_OFFSET;
+            a = aB;
+            base = UNSAFE.ARRAY_BYTE_BASE_OFFSET;
         } else {
-          a = aI;
-          base = UNSAFE.ARRAY_INT_BASE_OFFSET;
+            a = aI;
+            base = UNSAFE.ARRAY_INT_BASE_OFFSET;
         }
         // array a is an aryptr, but its element type is unknown, i.e. bottom.
         UNSAFE.putByte(a, base + 0, (byte)0xbe);
