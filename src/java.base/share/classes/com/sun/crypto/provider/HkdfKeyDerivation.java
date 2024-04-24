@@ -118,25 +118,46 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         throws InvalidParameterSpecException {
         // A switch would be nicer, but we may need to backport this before JDK 17
         // Also, JEP 305 came out in JDK 14, so we can't declare a variable in instanceof either
-
         if (kdfParameterSpec instanceof HKDFParameterSpec.Extract) {
             HKDFParameterSpec.Extract anExtract = (HKDFParameterSpec.Extract) kdfParameterSpec;
-            ikms = anExtract.ikms();
-            salts = anExtract.salts();
+            // set these values in the "if"
+            if ((ikms = anExtract.ikms()) == null && (salts = anExtract.salts()) == null) {
+                throw new InvalidParameterSpecException(
+                    "IKM and salt cannot both be null for HKDFParameterSpec.Extract");
+            }
             HKDFTYPE = HKDFTYPES.EXTRACT;
         } else if (kdfParameterSpec instanceof HKDFParameterSpec.Expand) {
             HKDFParameterSpec.Expand anExpand = (HKDFParameterSpec.Expand) kdfParameterSpec;
-            prk = anExpand.prk();
-            info = anExpand.info();
-            length = anExpand.length();
+            // set this value in the "if"
+            if ((prk = anExpand.prk()) == null) {
+                throw new InvalidParameterSpecException(
+                    "PRK is required for HKDFParameterSpec.Expand");
+            }
+            // set this value in the "if"
+            if ((info = anExpand.info()) == null) {
+                info = new byte[0];
+            }
+            // set this value in the "if"
+            if ((length = anExpand.length()) <= 0) {
+                throw new InvalidParameterSpecException("length cannot be <= 0");
+            }
             HKDFTYPE = HKDFTYPES.EXPAND;
         } else if (kdfParameterSpec instanceof HKDFParameterSpec.ExtractExpand) {
             HKDFParameterSpec.ExtractExpand anExtractExpand =
                 (HKDFParameterSpec.ExtractExpand) kdfParameterSpec;
-            ikms = anExtractExpand.ikms();
-            salts = anExtractExpand.salts();
-            info = anExtractExpand.info();
-            length = anExtractExpand.length();
+            // set these values in the "if"
+            if ((ikms = anExtractExpand.ikms()) == null
+                && (salts = anExtractExpand.salts()) == null) {
+                throw new InvalidParameterSpecException(
+                    "IKM and salt cannot both be null for HKDFParameterSpec.Extract");
+            }// set this value in the "if"
+            if ((info = anExtractExpand.info()) == null) {
+                info = new byte[0];
+            }
+            // set this value in the "if"
+            if ((length = anExtractExpand.length()) <= 0) {
+                throw new InvalidParameterSpecException("length cannot be <= 0");
+            }
             HKDFTYPE = HKDFTYPES.EXTRACTEXPAND;
         } else {
             throw new InvalidParameterSpecException(
