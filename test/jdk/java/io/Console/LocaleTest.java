@@ -75,12 +75,13 @@ public class LocaleTest {
         } else {
             var con = System.console();
             if (con != null) {
+                // tests these additional methods that take a Locale
                 con.format(Locale.UK, FORMAT, TODAY);
-                System.err.println();
+                con.printf("\n");
                 con.printf(Locale.FRANCE, FORMAT, TODAY);
-                System.err.println();
+                con.printf("\n");
                 con.readLine(Locale.GERMANY, FORMAT, TODAY);
-                System.err.println();
+                con.printf("\n");
                 con.readPassword(Locale.of("es"), FORMAT, TODAY);
             } else {
                 // Exit with -1
