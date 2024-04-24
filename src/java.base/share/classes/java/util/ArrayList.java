@@ -321,7 +321,7 @@ public class ArrayList<E> extends AbstractList<E>
         return findIndexInRange(filter, 0, size);
     }
 
-    int findIndexInRange(Predicate<? super E> filter, int start, int end) {
+    private int findIndexInRange(Predicate<? super E> filter, int start, int end) {
         Objects.requireNonNull(filter);
         Object[] es = elementData;
         for (int i = start; i < end; i++) {
