@@ -425,15 +425,15 @@ module java.base {
         java.util.Random,
         java.util.SplittableRandom,
 
-        jdk.random.L32X64MixRandom,
-        jdk.random.L64X128MixRandom,
-        jdk.random.L64X128StarStarRandom,
-        jdk.random.L64X256MixRandom,
-        jdk.random.L64X1024MixRandom,
-        jdk.random.L128X128MixRandom,
-        jdk.random.L128X256MixRandom,
-        jdk.random.L128X1024MixRandom,
-        jdk.random.Xoroshiro128PlusPlus,
-        jdk.random.Xoshiro256PlusPlus;
+        jdk.internal.random.L32X64MixRandom,
+        jdk.internal.random.L64X128MixRandom,
+        jdk.internal.random.L64X128StarStarRandom,
+        jdk.internal.random.L64X256MixRandom,
+        jdk.internal.random.L64X1024MixRandom,
+        jdk.internal.random.L128X128MixRandom,
+        jdk.internal.random.L128X256MixRandom,
+        jdk.internal.random.L128X1024MixRandom,
+        jdk.internal.random.Xoroshiro128PlusPlus,
+        jdk.internal.random.Xoshiro256PlusPlus;
 
 }

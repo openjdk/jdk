@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.random;
+package jdk.internal.random;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.random.RandomGenerator;
@@ -33,51 +33,36 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 
 /**
  * A "jumpable and leapable" pseudorandom number generator (PRNG) whose period
- * is roughly 2<sup>256</sup>.  Class {@link Xoshiro256PlusPlus} implements
+ * is roughly 2<sup>128</sup>.  Class {@link Xoroshiro128PlusPlus} implements
  * interfaces {@link RandomGenerator} and {@link LeapableGenerator},
  * and therefore supports methods for producing pseudorandomly chosen
- * values of type {@code int}, {@code long}, {@code float}, {@code double},
- * and {@code boolean} (and for producing streams of pseudorandomly chosen
- * numbers of type {@code int}, {@code long}, and {@code double}),
- * as well as methods for creating new {@link Xoshiro256PlusPlus} objects
- * by moving forward either a large distance (2<sup>128</sup>) or a very large
- * distance (2<sup>192</sup>) around the state cycle.
+ * numbers of type {@code int}, {@code long}, {@code float}, and {@code double}
+ * as well as creating new {@link Xoroshiro128PlusPlus} objects
+ * by "jumping" or "leaping".
  * <p>
- * Series of generated values pass the TestU01 BigCrush and PractRand test suites
- * that measure independence and uniformity properties of random number generators.
- * (Most recently validated with
- * <a href="http://simul.iro.umontreal.ca/testu01/tu01.html">version 1.2.3 of TestU01</a>
- * and <a href="http://pracrand.sourceforge.net">version 0.90 of PractRand</a>.
- * Note that TestU01 BigCrush was used to test not only values produced by the {@code nextLong()}
- * method but also the result of bit-reversing each value produced by {@code nextLong()}.)
- * These tests validate only the methods for certain
- * types and ranges, but similar properties are expected to hold, at
- * least approximately, for others as well.
- * <p>
- * The class {@link Xoshiro256PlusPlus} uses the {@code xoshiro256} algorithm,
- * version 1.0 (parameters 17, 45), with the "++" scrambler that computes
- * {@code Long.rotateLeft(s0 + s3, 23) + s0}.
+ * The class {@link Xoroshiro128PlusPlus} uses the {@code xoroshiro128} algorithm
+ * (parameters 49, 21, 28) with the "++" scrambler that computes
+ * {@code Long.rotateLeft(s0 + s1, 17) + s0}.
  * (See David Blackman and Sebastiano Vigna, "Scrambled Linear Pseudorandom
  * Number Generators," ACM Transactions on Mathematical Software, 2021.)
- * Its state consists of four {@code long} fields {@code x0}, {@code x1}, {@code x2},
- * and {@code x3}, which can take on any values provided that they are not all zero.
- * The period of this generator is 2<sup>256</sup>-1.
+ * Its state consists of two {@code long} fields {@code x0} and {@code x1},
+ * which can take on any values provided that they are not both zero.
+ * The period of this generator is 2<sup>128</sup>-1.
  * <p>
  * The 64-bit values produced by the {@code nextLong()} method are equidistributed.
- * To be precise, over the course of the cycle of length 2<sup>256</sup>-1,
- * each nonzero {@code long} value is generated 2<sup>192</sup> times,
- * but the value 0 is generated only 2<sup>192</sup>-1 times.
+ * To be precise, over the course of the cycle of length 2<sup>128</sup>-1,
+ * each nonzero {@code long} value is generated 2<sup>64</sup> times,
+ * but the value 0 is generated only 2<sup>64</sup>-1 times.
  * The values produced by the {@code nextInt()}, {@code nextFloat()}, and {@code nextDouble()}
  * methods are likewise equidistributed.
- * Moreover, the 64-bit values produced by the {@code nextLong()} method are 3-equidistributed.
  * <p>
- * Instances {@link Xoshiro256PlusPlus} are <em>not</em> thread-safe.
+ * Instances {@link Xoroshiro128PlusPlus} are <em>not</em> thread-safe.
  * They are designed to be used so that each thread as its own instance.
  * The methods {@link #jump} and {@link #leap} and {@link #jumps} and {@link #leaps}
- * can be used to construct new instances of {@link Xoshiro256PlusPlus} that traverse
+ * can be used to construct new instances of {@link Xoroshiro128PlusPlus} that traverse
  * other parts of the state cycle.
  * <p>
- * Instances of {@link Xoshiro256PlusPlus} are not cryptographically
+ * Instances of {@link Xoroshiro128PlusPlus} are not cryptographically
  * secure.  Consider instead using {@link java.security.SecureRandom}
  * in security-sensitive applications. Additionally,
  * default-constructed instances do not use a cryptographically random
@@ -88,24 +73,24 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
  *
  */
 @RandomGeneratorProperties(
-        name = "Xoshiro256PlusPlus",
-        group = "Xoshiro",
-        i = 256, j = 1, k = 0,
-        equidistribution = 3
+        name = "Xoroshiro128PlusPlus",
+        group = "Xoroshiro",
+        i = 128, j = 1, k = 0,
+        equidistribution = 1
 )
-public final class Xoshiro256PlusPlus implements LeapableGenerator {
+public final class Xoroshiro128PlusPlus implements LeapableGenerator {
 
     /*
      * Implementation Overview.
      *
-     * This is an implementation of the xoshiro256++ algorithm version 1.0,
+     * This is an implementation of the xoroshiro128++ algorithm version 1.0,
      * written in 2019 by David Blackman and Sebastiano Vigna (vigna@acm.org).
      *
-     * The jump operation moves the current generator forward by 2*128
-     * steps; this has the same effect as calling nextLong() 2**128
+     * The jump operation moves the current generator forward by 2*64
+     * steps; this has the same effect as calling nextLong() 2**64
      * times, but is much faster.  Similarly, the leap operation moves
-     * the current generator forward by 2*192 steps; this has the same
-     * effect as calling nextLong() 2**192 times, but is much faster.
+     * the current generator forward by 2*96 steps; this has the same
+     * effect as calling nextLong() 2**96 times, but is much faster.
      * The copy method may be used to make a copy of the current
      * generator.  Thus one may repeatedly and cumulatively copy and
      * jump to produce a sequence of generators whose states are well
@@ -113,24 +98,30 @@ public final class Xoshiro256PlusPlus implements LeapableGenerator {
      * and leaps() methods each produce a stream of such generators).
      * The generators can then be parceled out to other threads.
      *
-     * File organization: First static fields, then instance
-     * fields, then constructors, then instance methods.
+     * File organization: First the non-public methods that constitute the
+     * main algorithm, then the public methods.  Note that many methods are
+     * defined by classes {@link AbstractJumpableGenerator} and {@link AbstractGenerator}.
      */
 
     /* ---------------- static fields ---------------- */
 
     /**
+     * Group name.
+     */
+    private static final String GROUP = "Xoroshiro";
+
+    /**
      * The seed generator for default constructors.
      */
-    private static final AtomicLong DEFAULT_GEN = new AtomicLong(RandomSupport.initialSeed());
+    private static final AtomicLong defaultGen = new AtomicLong(RandomSupport.initialSeed());
 
     /* ---------------- instance fields ---------------- */
 
     /**
      * The per-instance state.
-     * At least one of the four fields x0, x1, x2, and x3 must be nonzero.
+     * At least one of the two fields x0 and x1 must be nonzero.
      */
-    private long x0, x1, x2, x3;
+    private long x0, x1;
 
     /* ---------------- constructors ---------------- */
 
@@ -141,33 +132,26 @@ public final class Xoshiro256PlusPlus implements LeapableGenerator {
      *
      * @param x0 first word of the initial state
      * @param x1 second word of the initial state
-     * @param x2 third word of the initial state
-     * @param x3 fourth word of the initial state
      */
-    public Xoshiro256PlusPlus(long x0, long x1, long x2, long x3) {
+    public Xoroshiro128PlusPlus(long x0, long x1) {
         this.x0 = x0;
         this.x1 = x1;
-        this.x2 = x2;
-        this.x3 = x3;
-        // If x0, x1, x2, and x3 are all zero, we must choose nonzero values.
-        if ((x0 | x1 | x2 | x3) == 0) {
-            // At least three of the four values generated here will be nonzero.
-            this.x0 = RandomSupport.mixStafford13(x0 += RandomSupport.GOLDEN_RATIO_64);
-            this.x1 = (x0 += RandomSupport.GOLDEN_RATIO_64);
-            this.x2 = (x0 += RandomSupport.GOLDEN_RATIO_64);
-            this.x3 = (x0 += RandomSupport.GOLDEN_RATIO_64);
+        // If x0 and x1 are both zero, we must choose nonzero values.
+        if ((x0 | x1) == 0) {
+            this.x0 = RandomSupport.GOLDEN_RATIO_64;
+            this.x1 = RandomSupport.SILVER_RATIO_64;
         }
     }
 
     /**
-     * Creates a new instance of {@link Xoshiro256PlusPlus} using the
+     * Creates a new instance of {@link Xoroshiro128PlusPlus} using the
      * specified {@code long} value as the initial seed. Instances of
-     * {@link Xoshiro256PlusPlus} created with the same seed in the same
+     * {@link Xoroshiro128PlusPlus} created with the same seed in the same
      * program generate identical sequences of values.
      *
      * @param seed the initial seed
      */
-    public Xoshiro256PlusPlus(long seed) {
+    public Xoroshiro128PlusPlus(long seed) {
         // Using a value with irregularly spaced 1-bits to xor the seed
         // argument tends to improve "pedestrian" seeds such as 0 or
         // other small integers.  We may as well use SILVER_RATIO_64.
@@ -175,47 +159,43 @@ public final class Xoshiro256PlusPlus implements LeapableGenerator {
         // The x values are then filled in as if by a SplitMix PRNG with
         // GOLDEN_RATIO_64 as the gamma value and Stafford13 as the mixer.
         this(RandomSupport.mixStafford13(seed ^= RandomSupport.SILVER_RATIO_64),
-             RandomSupport.mixStafford13(seed += RandomSupport.GOLDEN_RATIO_64),
-             RandomSupport.mixStafford13(seed += RandomSupport.GOLDEN_RATIO_64),
              RandomSupport.mixStafford13(seed + RandomSupport.GOLDEN_RATIO_64));
     }
 
     /**
-     * Creates a new instance of {@link Xoshiro256PlusPlus} that is likely to
+     * Creates a new instance of {@link Xoroshiro128PlusPlus} that is likely to
      * generate sequences of values that are statistically independent
      * of those of any other instances in the current program execution,
      * but may, and typically does, vary across program invocations.
      */
-    public Xoshiro256PlusPlus() {
+    public Xoroshiro128PlusPlus() {
         // Using GOLDEN_RATIO_64 here gives us a good Weyl sequence of values.
-        this(DEFAULT_GEN.getAndAdd(RandomSupport.GOLDEN_RATIO_64));
+        this(defaultGen.getAndAdd(RandomSupport.GOLDEN_RATIO_64));
     }
 
     /**
-     * Creates a new instance of {@link Xoshiro256PlusPlus} using the specified array of
-     * initial seed bytes. Instances of {@link Xoshiro256PlusPlus} created with the same
+     * Creates a new instance of {@link Xoroshiro128PlusPlus} using the specified array of
+     * initial seed bytes. Instances of {@link Xoroshiro128PlusPlus} created with the same
      * seed array in the same program execution generate identical sequences of values.
      *
      * @param seed the initial seed
      */
-    public Xoshiro256PlusPlus(byte[] seed) {
-        // Convert the seed to 4 long values, which are not all zero.
-        long[] data = RandomSupport.convertSeedBytesToLongs(seed, 4, 4);
-        long x0 = data[0], x1 = data[1], x2 = data[2], x3 = data[3];
+    public Xoroshiro128PlusPlus(byte[] seed) {
+        // Convert the seed to 2 long values, which are not both zero.
+        long[] data = RandomSupport.convertSeedBytesToLongs(seed, 2, 2);
+        long x0 = data[0], x1 = data[1];
         this.x0 = x0;
         this.x1 = x1;
-        this.x2 = x2;
-        this.x3 = x3;
     }
 
     /* ---------------- public methods ---------------- */
 
-    public Xoshiro256PlusPlus copy() {
-        return new Xoshiro256PlusPlus(x0, x1, x2, x3);
+    public Xoroshiro128PlusPlus copy() {
+        return new Xoroshiro128PlusPlus(x0, x1);
     }
 
     /*
-     * The following two comments are quoted from http://prng.di.unimi.it/xoshiro256plusplus.c
+     * The following two comments are quoted from http://prng.di.unimi.it/xoroshiro128plusplus.c
      */
 
     /*
@@ -227,13 +207,14 @@ public final class Xoshiro256PlusPlus implements LeapableGenerator {
      */
 
     /*
-     * This is xoshiro256++ 1.0, one of our all-purpose, rock-solid generators.
-     * It has excellent (sub-ns) speed, a state (256 bits) that is large
-     * enough for any parallel application, and it passes all tests we are
-     * aware of.
-     *
-     * For generating just floating-point numbers, xoshiro256+ is even faster.
-     *
+     * This is xoroshiro128++ 1.0, one of our all-purpose, rock-solid,
+     * small-state generators. It is extremely (sub-ns) fast and it passes all
+     * tests we are aware of, but its state space is large enough only for
+     * mild parallelism.
+     * <p>
+     * For generating just floating-point numbers, xoroshiro128+ is even
+     * faster (but it has a very mild bias, see notes in the comments).
+     * <p>
      * The state must be seeded so that it is not everywhere zero. If you have
      * a 64-bit seed, we suggest to seed a splitmix64 generator and use its
      * output to fill s.
@@ -241,39 +222,32 @@ public final class Xoshiro256PlusPlus implements LeapableGenerator {
 
     @Override
     public long nextLong() {
-        // Compute the result based on current state information
-        // (this allows the computation to be overlapped with state update).
-        final long result = Long.rotateLeft(x0 + x3, 23) + x0;  // "plusplus" scrambler
+        final long s0 = x0;
+        long s1 = x1;
+   // Compute the result based on current state information
+   // (this allows the computation to be overlapped with state update).
+   final long result = Long.rotateLeft(s0 + s1, 17) + s0;  // "plusplus" scrambler
 
-        long q0 = x0, q1 = x1, q2 = x2, q3 = x3;
-        {   // xoshiro256 1.0
-            long t = q1 << 17;
-            q2 ^= q0;
-            q3 ^= q1;
-            q1 ^= q2;
-            q0 ^= q3;
-            q2 ^= t;
-            q3 = Long.rotateLeft(q3, 45);
-        }
-        x0 = q0; x1 = q1; x2 = q2; x3 = q3;
+        s1 ^= s0;
+        x0 = Long.rotateLeft(s0, 49) ^ s1 ^ (s1 << 21); // a, b
+        x1 = Long.rotateLeft(s1, 28); // c
+
         return result;
     }
 
     @Override
     public double jumpDistance() {
-        return 0x1.0p128;
+        return 0x1.0p64;
     }
 
     @Override
     public double leapDistance() {
-        return 0x1.0p192;
+        return 0x1.0p96;
     }
 
-    private static final long[] JUMP_TABLE = {
-        0x180ec6d33cfd0abaL, 0xd5a61266f0c9392cL, 0xa9582618e03fc9aaL, 0x39abdc4529b1661cL };
+    private static final long[] JUMP_TABLE = { 0x2bd7a6a6e99c2ddcL, 0x0992ccaf6a6fca05L };
 
-    private static final long[] LEAP_TABLE = {
-        0x76e15d3efefdcbbfL, 0xc5004e441c522fb3L, 0x77710069854ee241L, 0x39109bb02acbe635L };
+    private static final long[] LEAP_TABLE = { 0x360fd5f2cf8d5d99L, 0x9c6e6877736c46e3L };
 
     @Override
     public void jump() {
@@ -286,22 +260,17 @@ public final class Xoshiro256PlusPlus implements LeapableGenerator {
     }
 
     private void jumpAlgorithm(long[] table) {
-        long s0 = 0, s1 = 0, s2 = 0, s3 = 0;
+        long s0 = 0, s1 = 0;
         for (int i = 0; i < table.length; i++) {
             for (int b = 0; b < 64; b++) {
                 if ((table[i] & (1L << b)) != 0) {
                     s0 ^= x0;
                     s1 ^= x1;
-                    s2 ^= x2;
-                    s3 ^= x3;
                 }
                 nextLong();
             }
         }
-   x0 = s0;
-   x1 = s1;
-   x2 = s2;
-   x3 = s3;
+       x0 = s0;
+       x1 = s1;
     }
-
 }
