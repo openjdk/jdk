@@ -200,9 +200,8 @@ CMoveNode *CMoveNode::make(Node *c, Node *bol, Node *left, Node *right, const Ty
 
 // Try to identify min/max patterns in CMoves
 Node* CMoveNode::Ideal_minmax(PhaseGVN* phase, CMoveNode* cmove) {
-  // If we're post loop opts then don't attempt to match the min/max pattern, as this node might have been a
-  // MinL or MaxL that was already expanded during macro expansion.
-  if (phase->C->post_loop_opts_phase()) {
+  // Only create MinL/MaxL if we are allowed to create macro nodes.
+  if (!phase->C->allow_macro_nodes()) {
     return nullptr;
   }
 
