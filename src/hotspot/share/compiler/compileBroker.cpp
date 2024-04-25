@@ -1787,6 +1787,12 @@ bool CompileBroker::init_compiler_runtime() {
     return false;
   }
 
+  // C1 specific check
+  if (comp->is_c1() && (thread->get_buffer_blob() == nullptr)) {
+    warning("Initialization of %s thread failed (no space to run compilers)", thread->name());
+    return false;
+  }
+
   return true;
 }
 
@@ -1795,7 +1801,7 @@ void CompileBroker::free_buffer_blob_if_allocated(CompilerThread* thread) {
   if (blob != nullptr) {
     blob->purge(true /* free_code_cache_data */, true /* unregister_nmethod */);
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    if (!CodeCache::contains((void*)blob)) { free(blob); } else
+    if (!CodeCache::contains((void*)blob)) { std::free((char*)blob - 16); } else
     CodeCache::free(blob);
   }
 }

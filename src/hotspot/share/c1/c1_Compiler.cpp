@@ -49,20 +49,31 @@ Compiler::Compiler() : AbstractCompiler(compiler_c1) {
 }
 
 void Compiler::init_c1_runtime() {
-  if (Runtime1::blob_for((Runtime1::StubID)0) == nullptr) // check if Runtime1 is initialized
-  Runtime1::initialize(CompilerThread::current()->get_buffer_blob());
+  BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
+  Runtime1::initialize(buffer_blob);
+  FrameMap::initialize();
+  // initialize data structures
+  ValueType::initialize();
+  GraphBuilder::initialize();
+  // note: to use more than one instance of LinearScan at a time this function call has to
+  //       be moved somewhere outside of this constructor:
+  Interval::initialize();
 }
 
+
 void Compiler::initialize() {
+  // Buffer blob must be allocated per C1 compiler thread at startup
+  BufferBlob* buffer_blob = init_buffer_blob();
+
   if (should_perform_init()) {
-    FrameMap::initialize();
-    // initialize data structures
-    ValueType::initialize();
-    GraphBuilder::initialize();
-    // note: to use more than one instance of LinearScan at a time this function call has to
-    //       be moved somewhere outside of this constructor:
-    Interval::initialize();
-    set_state(initialized);
+    if (buffer_blob == nullptr) {
+      // When we come here we are in state 'initializing'; entire C1 compilation
+      // can be shut down.
+      set_state(failed);
+    } else {
+      init_c1_runtime();
+      set_state(initialized);
+    }
   }
 }
 
@@ -84,14 +95,7 @@ BufferBlob* Compiler::init_buffer_blob() {
     CompilerThread::current()->set_buffer_blob(buffer_blob);
   }
 
-  init_c1_runtime();
   return buffer_blob;
-}
-
-void Compiler::release_buffer_blob() {
-  BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
-  CompilerThread::current()->set_buffer_blob(nullptr);
-  BufferBlob::free(buffer_blob);
 }
 
 bool Compiler::is_intrinsic_supported(const methodHandle& method) {
@@ -245,13 +249,7 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
 
 void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci, bool install_code, DirectiveSet* directive) {
   BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
-  if (buffer_blob == nullptr) { buffer_blob = init_buffer_blob(); }
-
-  if (buffer_blob == nullptr) {
-    warning("no space to run C1 compiler");
-    return;
-  }
-
+  assert(buffer_blob != nullptr, "Must exist");
   // invoke compilation
   {
     // We are nested here because we need for the destructor
@@ -260,8 +258,6 @@ void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci, bool 
     ResourceMark rm;
     Compilation c(this, env, method, entry_bci, buffer_blob, install_code, directive);
   }
-
-  release_buffer_blob();
 }
 
 
