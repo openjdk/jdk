@@ -3005,7 +3005,6 @@ final class FdLibm {
 
             hx  = __HI(x);  // high word of x
             xsb = hx & SIGN_BIT;                 // sign bit of x
-            y = Math.abs(x);
             hx &= EXP_SIGNIF_BITS;               // high word of |x|
 
             // filter out huge and non-finite argument
