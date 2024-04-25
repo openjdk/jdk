@@ -35,8 +35,12 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsServer;
+import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -65,29 +69,44 @@ public class TcpNoDelayNotRequired {
 
         InetAddress loopback = InetAddress.getLoopbackAddress();
         InetSocketAddress addr = new InetSocketAddress (loopback, 0);
-        HttpServer server = HttpServer.create (addr, 0);
+
+        SSLContext sslContext = new SimpleSSLContext().get();
+
+        HttpServer httpServer = HttpServer.create (addr, 0);
+        testHttpServer("http",httpServer,sslContext);
+
+        HttpsServer httpsServer = HttpsServer.create (addr, 0);
+        httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
+
+        testHttpServer("https",httpsServer,sslContext);
+    }
+
+    private static void testHttpServer(String scheme,HttpServer server,SSLContext sslContext) throws Exception {
         HttpContext ctx = server.createContext ("/test", new Handler());
         HttpContext ctx2 = server.createContext ("/chunked", new ChunkedHandler());
         ExecutorService executor = Executors.newCachedThreadPool();
         server.setExecutor (executor);
         server.start ();
-
-        HttpClient client = HttpClient.newBuilder().build();
-
-        long start = System.currentTimeMillis();
-        for(int i=0;i<1000;i++) {
-            var uri = URIBuilder.newBuilder().scheme("http").loopback().port(server.getAddress().getPort()).path("/test").build();
-            var response = client.send(HttpRequest.newBuilder(uri).build(), HttpResponse.BodyHandlers.ofString());
-            if(!response.body().equals("hello")) throw new IllegalStateException("incorrect body");
+        try {
+            HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
+            long start = System.currentTimeMillis();
+            for (int i = 0; i < 1000; i++) {
+                var uri = URIBuilder.newBuilder().scheme(scheme).loopback().port(server.getAddress().getPort()).path("/test").build();
+                var response = client.send(HttpRequest.newBuilder(uri).build(), HttpResponse.BodyHandlers.ofString());
+                if (!response.body().equals("hello"))
+                    throw new IllegalStateException("incorrect body " + response.body());
+            }
+            for (int i = 0; i < 1000; i++) {
+                var uri = URIBuilder.newBuilder().scheme(scheme).loopback().port(server.getAddress().getPort()).path("/chunked").build();
+                var response = client.send(HttpRequest.newBuilder(uri).build(), HttpResponse.BodyHandlers.ofString());
+                if (!response.body().equals("hello"))
+                    throw new IllegalStateException("incorrect body " + response.body());
+            }
+            long time = System.currentTimeMillis() - start;
+            System.out.println("time " + time);
+        } finally {
+            server.stop(0);
         }
-        for(int i=0;i<1000;i++) {
-            var uri = URIBuilder.newBuilder().scheme("http").loopback().port(server.getAddress().getPort()).path("/chunked").build();
-            var response = client.send(HttpRequest.newBuilder(uri).build(), HttpResponse.BodyHandlers.ofString());
-            if(!response.body().equals("hello")) throw new IllegalStateException("incorrect body");
-        }
-        long time = System.currentTimeMillis()-start;
-        System.out.println("time "+time);
-        server.stop(0);
         executor.shutdown();
     }
 
