@@ -324,17 +324,22 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
         nmethod* nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
-        if ((nm != nullptr && nm->has_unsafe_access()) || (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc))) {
+        if ((nm != nullptr && nm->has_unsafe_access()) ||
+            (thread->doing_unsafe_access() &&
+             UnsafeCopyMemory::contains_pc(pc))) {
           unsafe_access = true;
         }
       } else if (sig == SIGSEGV &&
                  MacroAssembler::uses_implicit_null_check(info->si_addr)) {
-          // Determination of interpreter/vtable stub/compiled code null exception
-          CodeBlob* cb = CodeCache::find_blob(pc);
-          if (cb != nullptr) {
-            stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
-          }
-      } else if (sig == SIGILL && *(int *)pc == NativeInstruction::not_entrant_illegal_instruction) {
+        // Determination of interpreter/vtable stub/compiled code null exception
+        CodeBlob* cb = CodeCache::find_blob(pc);
+        if (cb != nullptr) {
+          stub = SharedRuntime::continuation_for_implicit_exception(
+              thread, pc, SharedRuntime::IMPLICIT_NULL);
+        }
+      } else if (sig == SIGILL &&
+                 *(int*)pc ==
+                     NativeInstruction::not_entrant_illegal_instruction) {
         // Not entrant
         stub = SharedRuntime::get_handle_wrong_method_stub();
       }

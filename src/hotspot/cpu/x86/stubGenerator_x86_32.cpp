@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4122,7 +4122,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Initialize table for copy memory (arraycopy) check.
     if (UnsafeCopyMemory::_table == nullptr) {
-      UnsafeCopyMemory::create_table(16);
+      UnsafeCopyMemory::create_table(16 + 4); // 16 for copyMemory; 4 for setMemory
     }
 
     StubRoutines::x86::_verify_mxcsr_entry         = generate_verify_mxcsr();
