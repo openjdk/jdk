@@ -81,13 +81,3 @@ void Generation::print_summary_info_on(outputStream* st) {
                sr->invocations,
                sr->invocations > 0 ? time / sr->invocations : 0.0);
 }
-
-size_t Generation::max_contiguous_available() const {
-  // The largest number of contiguous free words in this or any higher generation.
-  size_t avail = contiguous_available();
-  size_t old_avail = 0;
-  if (SerialHeap::heap()->is_young_gen(this)) {
-    old_avail = SerialHeap::heap()->old_gen()->contiguous_available();
-  }
-  return MAX2(avail, old_avail);
-}
