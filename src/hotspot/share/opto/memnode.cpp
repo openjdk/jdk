@@ -856,7 +856,7 @@ bool LoadNode::can_remove_control() const {
 uint LoadNode::size_of() const { return sizeof(*this); }
 bool LoadNode::cmp(const Node &n) const {
   LoadNode& load = (LoadNode &)n;
-  return !Type::cmp(_type, load._type) &&
+  return Type::equals(_type, load._type) &&
          _control_dependency == load._control_dependency &&
          _mo == load._mo;
 }
