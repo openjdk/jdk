@@ -32,7 +32,6 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/x/xAbort.inline.hpp"
 #include "gc/x/xBarrier.inline.hpp"
-#include "gc/x/xGlobals.hpp"
 #include "gc/x/xHeap.inline.hpp"
 #include "gc/x/xLock.inline.hpp"
 #include "gc/x/xMark.inline.hpp"

@@ -150,9 +150,8 @@ const size_t      XMarkStripesMax               = 16; // Must be a power of two
 const size_t      XMarkCacheSize                = 1024; // Must be a power of two
 
 // Partial array minimum size
-const size_t      XMarkPartialArrayDefaultMinSizeShift = 12;
-extern size_t     XMarkPartialArrayMinSizeShift;
-extern size_t     XMarkPartialArrayMinSize;
+const size_t      XMarkPartialArrayMinSizeShift = 12; // 4K
+const size_t      XMarkPartialArrayMinSize      = (size_t)1 << XMarkPartialArrayMinSizeShift;
 
 // Max number of proactive/terminate flush attempts
 const size_t      XMarkProactiveFlushMax        = 10;
