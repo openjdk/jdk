@@ -169,10 +169,14 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
         var desc = this.cachedDescriptorString;
         if (desc != null)
             return desc;
-        int count = parameterCount();
-        StringBuilder sb = new StringBuilder(24).append('(');
-        for (int i = 0; i < count; i++) {
-            sb.append(parameterType(i).descriptorString());
+
+        int len = 2 + returnType.descriptorString().length();
+        for (ClassDesc argType : argTypes) {
+            len += argType.descriptorString().length();
+        }
+        StringBuilder sb = new StringBuilder(len).append('(');
+        for (ClassDesc argType : argTypes) {
+            sb.append(argType.descriptorString());
         }
         desc = sb.append(')').append(returnType().descriptorString()).toString();
         cachedDescriptorString = desc;
