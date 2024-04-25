@@ -61,7 +61,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Phaser;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -77,6 +77,7 @@ public class KeepAliveTest {
     /*
      * This test covers a matrix of 10 server scenarios and 16 client scenarios.
      */
+    private static final Logger logger = Logger.getLogger("sun.net.www.protocol.http.HttpURLConnection");
 
     private static final String NEW_LINE = "\r\n";
 
@@ -109,8 +110,7 @@ public class KeepAliveTest {
     private volatile int serverPort;
     private volatile boolean isProxySet;
 
-    private CountDownLatch serverLatch = new CountDownLatch(1);
-    private Thread server;
+    private static final Phaser serverGate = new Phaser(2);
 
     private void readAll(Socket s) throws IOException {
         byte[] buf = new byte[128];
@@ -128,7 +128,7 @@ public class KeepAliveTest {
         }
     }
 
-    private void executeServer(int scenarioNumber) throws IOException {
+    private void executeServer(int scenarioNumber) {
         String scenarioHeaders = serverHeaders[scenarioNumber];
         if (scenarioHeaders != null) {
             // isProxySet should be set before Server is moved to Listen State.
@@ -137,7 +137,7 @@ public class KeepAliveTest {
         try (ServerSocket serverSocket = new ServerSocket()) {
             serverSocket.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
             serverPort = serverSocket.getLocalPort();
-            serverLatch.countDown();
+            serverGate.arrive();
 
             // Server will be waiting for clients to connect.
             try (Socket socket = serverSocket.accept()) {
@@ -161,21 +161,9 @@ public class KeepAliveTest {
                     out.write(BODY);
                 }
             }
+        } catch (IOException ioe) {
+            throw new RuntimeException("IOException in server thread", ioe);
         }
-    }
-
-    private void startServer(int scenarioNumber) {
-        server = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                   executeServer(scenarioNumber);
-                } catch (IOException e) {
-                   e.printStackTrace();
-                }
-            }
-        }, "SERVER");
-        server.start();
     }
 
     private void fetchInfo(int expectedValue, HttpURLConnection httpUrlConnection) throws Exception {
@@ -211,7 +199,7 @@ public class KeepAliveTest {
 
     private void connectToServerURL(int expectedValue) throws Exception {
         // wait until ServerSocket moves to listening state.
-        serverLatch.await();
+        serverGate.arriveAndAwaitAdvance();
         URL url = URIBuilder.newBuilder().scheme("http").loopback().port(serverPort).toURL();
         System.out.println("connecting to server URL: " + url + ", isProxySet: " + isProxySet);
         HttpURLConnection httpUrlConnection = null;
@@ -294,7 +282,7 @@ public class KeepAliveTest {
         } else {
             System.out.print(serverHeaders[scenarioNumber]);
         }
-        startServer(scenarioNumber);
+        Thread server = Thread.ofVirtual().start(() -> executeServer(scenarioNumber));
         connectToServerURL(expectedValue);
         server.join();
         System.out.println();
@@ -312,7 +300,6 @@ public class KeepAliveTest {
         keepAliveKeyClassconstructor = Class.forName("sun.net.www.http.KeepAliveKey").getDeclaredConstructors()[0];
         keepAliveKeyClassconstructor.setAccessible(true);
 
-        Logger logger = Logger.getLogger("sun.net.www.protocol.http.HttpURLConnection");
         logger.setLevel(Level.FINEST);
         ConsoleHandler h = new ConsoleHandler();
         h.setLevel(Level.FINEST);
