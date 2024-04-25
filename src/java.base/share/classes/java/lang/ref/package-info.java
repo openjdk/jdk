@@ -105,7 +105,7 @@
  * reference is considered to be <em>enqueued</em>.  The program learns of the
  * referent's change in reachability when the associated reference becomes
  * available on the queue. The program may remove references from a queue
- * (that is, <em>"dequeue"</em> them) using the {@link ReferenceQueue#poll()} or
+ * (that is, <em>dequeue</em> them) using the {@link ReferenceQueue#poll()} or
  * {@link ReferenceQueue#remove()} methods. Additional state needed to respond to a
  * referent's change in reachability can be stored in the fields of a custom
  * reference subclass, and accessed when the reference is returned from the
