@@ -147,14 +147,7 @@ public record StableValueElement<V>(
 
             // A value is not set
             if (supplying()) {
-                String typeText = switch (provider) {
-                    case Supplier<?> _    -> "Supplier.get()";
-                    case IntFunction<?> _ -> "IntFunction.apply(" + key + ")";
-                    case Function<?, ?> _ -> "Function.apply(" + key + ")";
-                    default               -> throw shouldNotReachHere();
-                };
-                throw new StackOverflowError(
-                        "Recursive invocation of " + typeText + ": " + provider);
+                throw stackOverflow(provider, key);
             }
             try {
                 supplying(true);

@@ -28,6 +28,10 @@ package jdk.internal.lang.stable;
 import jdk.internal.lang.StableValue;
 import jdk.internal.misc.Unsafe;
 
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.Supplier;
+
 import static jdk.internal.misc.Unsafe.*;
 
 /**
@@ -48,6 +52,17 @@ final class StableUtil {
 
     static IllegalStateException alreadySet(StableValue<?> stable) {
         return new IllegalStateException("A value is already set: " + stable.orThrow());
+    }
+
+    static StackOverflowError stackOverflow(Object provider, Object key) {
+        String typeText = switch (provider) {
+            case Supplier<?> _    -> "Supplier.get()";
+            case IntFunction<?> _ -> "IntFunction.apply(" + key + ")";
+            case Function<?, ?> _ -> "Function.apply(" + key + ")";
+            default               -> throw shouldNotReachHere();
+        };
+        return new StackOverflowError(
+                "Recursive invocation of " + typeText + ": " + provider);
     }
 
     /**

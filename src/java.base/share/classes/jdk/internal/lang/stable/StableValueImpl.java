@@ -48,7 +48,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
             UNSAFE.objectFieldOffset(StableValueImpl.class, "state");
 
     /**
-     * A private mutex for this instance used rather than synchronizing on `this`
+     * An internal mutex used rather than synchronizing on `this`. Lazily created.
      */
     private Object mutex;
 
@@ -188,7 +188,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
             }
             // A value is not set
             if (supplying) {
-                throw new StackOverflowError("Recursive invocation of supplier: " + supplier);
+                throw stackOverflow(supplier, null);
             }
             try {
                 supplying = true;

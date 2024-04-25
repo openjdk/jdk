@@ -141,7 +141,7 @@ public sealed interface StableValue<V>
      * @param  supplier to be used for computing a value
      * @return the current (pre-existing or computed) value
      * @throws StackOverflowError if the provided {@code supplier} recursively
-     *         invokes itself.
+     *         invokes this method upon being invoked.
      */
     V computeIfUnset(Supplier<? extends V> supplier);
 
@@ -287,7 +287,7 @@ public sealed interface StableValue<V>
      * @throws IndexOutOfBoundsException if the provided {@code index} is less than
      *         zero or {@code index >= list.size()}
      * @throws StackOverflowError if the provided {@code mapper} recursively invoke
-     *         itself for the same {@code index}
+     *         this method for the same {@code index}
      */
     static <V> V computeIfUnset(List<StableValue<V>> list,
                                 int index,
@@ -329,7 +329,7 @@ public sealed interface StableValue<V>
      * @throws NoSuchElementException if the provided {@code map} does not
      *         {@linkplain Map#containsKey(Object) contain} the provided {@code key}
      * @throws StackOverflowError if the provided {@code mapper} recursively invoke
-     *         itself for the same {@code key}
+     *         this method for the same {@code key}
      */
     static <K, V> V computeIfUnset(Map<K, StableValue<V>> map,
                                    K key,
@@ -347,9 +347,9 @@ public sealed interface StableValue<V>
      * stable value where the provided {@code original} supplier will only be invoked
      * at most once}
      * <p>
-     * If the {@code original} suppler invokes itself recursively, a StackOverflowError
-     * will be thrown when the returned supplier's {@linkplain Supplier#get()} method
-     * is invoked.
+     * If the {@code original} suppler invokes the returned supplier recursively,
+     * a StackOverflowError will be thrown when the returned supplier's
+     * {@linkplain Supplier#get()} method is invoked.
      *
      * @param original the original Suppler to convert to a memoized Supplier
      * @param <T>      the memoized type
@@ -365,9 +365,9 @@ public sealed interface StableValue<V>
      * stable list of the provided {@code size} where the provided {@code original}
      * IntFunction will only be invoked at most once per distinct {@code int} value}
      * <p>
-     * If the {@code original} IntFunction invokes itself recursively for a specific
-     * input value, a StackOverflowError will be thrown when the returned IntFunction's
-     * {@linkplain IntFunction#apply(int)} ()} method is invoked.
+     * If the {@code original} IntFunction invokes the returned IntFunction recursively
+     * for a specific input value, a StackOverflowError will be thrown when the returned
+     * IntFunction's {@linkplain IntFunction#apply(int)} ()} method is invoked.
      *
      * @param size     the number of elements in the backing list
      * @param original the original IntFunction to convert to a memoized IntFunction
@@ -388,9 +388,9 @@ public sealed interface StableValue<V>
      * stable map with the provided {@code inputs} keys where the provided
      * {@code original} Function will only be invoked at most once per distinct input}
      * <p>
-     * If the {@code original} Function invokes itself recursively for a specific
-     * input value, a StackOverflowError will be thrown when the returned Function's
-     * {@linkplain Function#apply(Object)}} method is invoked.
+     * If the {@code original} Function invokes the returned Function recursively
+     * for a specific input value, a StackOverflowError will be thrown when the returned
+     * Function's {@linkplain Function#apply(Object)}} method is invoked.
      *
      * @param original the original Function to convert to a memoized Function
      * @param inputs   the potential input values to the Function

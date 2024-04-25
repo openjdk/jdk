@@ -120,14 +120,25 @@ final class BasicStableTest {
     }
 
     @Test
-    void memoized() {
-        Util.CountingSupplier<Integer> cSup = new Util.CountingSupplier<>(() -> FIRST);
-        StableValue<Integer> m3 = StableValue.of();
-        Supplier<Integer> memoized = () -> m3.computeIfUnset(cSup);
-        assertEquals(FIRST, memoized.get());
-        // Make sure the original supplier is not invoked more than once
-        assertEquals(FIRST, memoized.get());
-        assertEquals(1, cSup.cnt());
+    void computeIfUnsetRetry() {
+        Supplier<Integer> failingSupplier = () -> {
+            throw new UnsupportedOperationException();
+        };
+        assertThrows(UnsupportedOperationException.class,
+                () -> stable.computeIfUnset(failingSupplier));
+        assertFalse(stable.isSet());
+        stable.computeIfUnset(() -> FIRST);
+        assertEquals(FIRST, stable.orThrow());
+    }
+
+    @Test
+    void computeIfUnsetRecursive() {
+        Supplier<Integer> initial = () -> FIRST;
+        Supplier<Integer> recursive = () -> stable.computeIfUnset(initial);
+        var e = assertThrows(StackOverflowError.class,
+                () -> stable.computeIfUnset(recursive));
+        var msg = e.getMessage();
+        assertEquals("Recursive invocation of Supplier.get(): " + initial, msg);
     }
 
     @Test
