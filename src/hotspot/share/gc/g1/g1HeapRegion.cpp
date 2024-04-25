@@ -150,7 +150,9 @@ double HeapRegion::calc_gc_efficiency() {
 }
 
 void HeapRegion::set_free() {
-  report_region_type_change(G1HeapRegionTraceType::Free);
+  if (!is_free()) {
+    report_region_type_change(G1HeapRegionTraceType::Free);
+  }
   _type.set_free();
 }
 
