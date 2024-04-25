@@ -32,6 +32,7 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
@@ -53,6 +54,9 @@ import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder.SummaryEl
  * @param <B> a builder, to determine the elements to be included in the summary
  */
 public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends SubWriterHolderWriter {
+
+    final protected String ID_OTHER = "other";
+    final protected String ID_ALL   = "all";
 
     protected String getHeadingKey(SummaryElementKind kind) {
         return switch (kind) {
@@ -292,6 +296,25 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
                 throw new UnsupportedOperationException("Unsupported element kind: " + e.getKind());
         };
         return writer.getSummaryLink(e);
+    }
+
+    /**
+     * Create a checkbox input element and associated label for selecting content on
+     * a summary page.
+     *
+     * @param label The label
+     * @param id the id of the selected content
+     * @param htmlPrefix the prefix for the HTML id
+     * @return a content object containing the checkbox input
+     */
+    protected Content getCheckbox(Content label, String id, String htmlPrefix) {
+        String htmlId = htmlPrefix + id;
+        return HtmlTree.LABEL(htmlId,
+                        HtmlTree.INPUT(HtmlAttr.InputType.CHECKBOX, HtmlId.of(htmlId))
+                                .put(HtmlAttr.CHECKED, "")
+                                .put(HtmlAttr.ONCLICK,
+                                        "toggleGlobal(this, '" + id + "', 3)"))
+                .add(HtmlTree.SPAN(label));
     }
 
     /**

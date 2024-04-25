@@ -389,7 +389,7 @@ void G1BarrierSetC2::post_barrier(GraphKit* kit,
 
   if (use_ReduceInitialCardMarks() && obj == kit->just_allocated_object(kit->control())) {
     // We can skip marks on a freshly-allocated object in Eden.
-    // Keep this code in sync with new_deferred_store_barrier() in runtime.cpp.
+    // Keep this code in sync with CardTableBarrierSet::on_slowpath_allocation_exit.
     // That routine informs GC to take appropriate compensating steps,
     // upon a slow-path allocation, so as to make this card-mark
     // elision safe.

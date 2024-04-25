@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,10 @@ void BasicLock::print_on(outputStream* st, oop owner) const {
 void BasicLock::move_to(oop obj, BasicLock* dest) {
   // Check to see if we need to inflate the lock. This is only needed
   // if an object is locked using "this" lightweight monitor. In that
-  // case, the displaced_header() is unlocked/is_neutral, because the
+  // case, the displaced_header() is unlocked/neutral, because the
   // displaced_header() contains the header for the originally unlocked
   // object. However the lock could have already been inflated. But it
-  // does not matter, this inflation will just a no-op. For other cases,
+  // does not matter, this inflation will just be a no-op. For other cases,
   // the displaced header will be either 0x0 or 0x3, which are location
   // independent, therefore the BasicLock is free to move.
   //
@@ -63,7 +63,7 @@ void BasicLock::move_to(oop obj, BasicLock* dest) {
   // one stack location to another.  This avoids inflation.  Obviously,
   // we need to ensure that both locations refer to the current thread's stack.
   // There are some subtle concurrency issues, however, and since the benefit is
-  // is small (given the support for inflated fast-path locking in the fast_lock, etc)
+  // small (given the support for inflated fast-path locking in the fast_lock, etc)
   // we'll leave that optimization for another time.
 
   if (LockingMode == LM_LEGACY) {

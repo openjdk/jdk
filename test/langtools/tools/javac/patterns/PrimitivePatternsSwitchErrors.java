@@ -241,4 +241,24 @@ public class PrimitivePatternsSwitchErrors {
             case int b -> -2 ;
         };
     }
+
+    public static int disallowedUnboxingAndNarrowing1() {
+        Long n = 42l;
+        return switch (n) { // Error - not exhaustive and not allowed
+            case char c -> -1 ;
+        };
+    }
+
+    public static int disallowedUnboxingAndNarrowing2() {
+        Long n = 42l;
+        return switch (n) { // Error - not exhaustive and not allowed
+            case int c -> -1 ;
+        };
+    }
+
+    public static char disallowedUnboxingAndWidening(Short test) {
+        return switch (test) {
+            case char c -> c; // Error - not exhaustive and not allowed
+        };
+    }
 }

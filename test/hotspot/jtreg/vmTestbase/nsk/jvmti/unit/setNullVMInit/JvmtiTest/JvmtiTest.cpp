@@ -33,7 +33,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include "jvmti.h"
-#include "jni_tools.h"
+#include "jni_tools.hpp"
 #include "agent_common.hpp"
 
 extern "C" {

@@ -675,7 +675,7 @@ public abstract class HttpURLConnection extends URLConnection {
         return null;
     }
 
-    /**
+    /*
      * The response codes for HTTP, as of version 1.1.
      */
 

@@ -14,8 +14,6 @@ Africa/Ndjamena WAT
 Africa/Sao_Tome GMT
 Africa/Tripoli EET
 Africa/Tunis CET CEST
-Africa/Windhoek CAT WAT
-America/Adak HST HDT
 America/Anchorage AKST AKDT
 America/Bahia_Banderas CST CDT
 America/Barbados AST ADT
@@ -108,8 +106,6 @@ Asia/Makassar WITA
 Asia/Manila PST PDT
 Asia/Nicosia EET EEST
 Asia/Pontianak WIB
-Asia/Pyongyang KST
-Asia/Seoul KST KDT
 Asia/Shanghai CST CDT
 Asia/Taipei CST CDT
 Asia/Tokyo JST JDT

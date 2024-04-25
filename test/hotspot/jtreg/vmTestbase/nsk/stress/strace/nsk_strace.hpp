@@ -22,7 +22,7 @@
  */
 
 #include <stdlib.h>
-#include "jni_tools.h"
+#include "jni_tools.hpp"
 
 #ifndef _IS_NSK_STRACE_DEFINED_
 #define _IS_NSK_STRACE_DEFINED_

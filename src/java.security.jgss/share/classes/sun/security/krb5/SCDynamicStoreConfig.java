@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
+import static sun.security.krb5.internal.Krb5.DEBUG;
 
 public class SCDynamicStoreConfig {
     private static native void installNotificationCallback();
@@ -42,7 +43,6 @@ public class SCDynamicStoreConfig {
      * (realm kdc* null) null (mapping-domain mapping-realm)*
      */
     private static native List<String> getKerberosConfig();
-    private static boolean DEBUG = sun.security.krb5.internal.Krb5.DEBUG;
 
     static {
         @SuppressWarnings("removal")
@@ -72,7 +72,7 @@ public class SCDynamicStoreConfig {
             throw new IOException(
                     "Could not load configuration from SCDynamicStore");
         }
-        if (DEBUG) System.out.println("Raw map from JNI: " + list);
+        if (DEBUG != null) DEBUG.println("Raw map from JNI: " + list);
 
         Hashtable<String,Object> v = new Hashtable<>();
         Hashtable<String,Object> realms = new Hashtable<>();

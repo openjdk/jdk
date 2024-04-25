@@ -384,6 +384,25 @@ struct NTarjan {
 #endif
 };
 
+void remove_single_entry_region(NTarjan* t, NTarjan*& tdom, Node*& dom, PhaseIterGVN& igvn) {
+  // remove phis:
+  for (DUIterator_Fast jmax, j = dom->fast_outs(jmax); j < jmax; j++) {
+    Node* use = dom->fast_out(j);
+    if (use->is_Phi()) {
+      igvn.replace_node(use, use->in(1));
+      --j; --jmax;
+    }
+  }
+  // Disconnect region from dominator tree
+  assert(dom->unique_ctrl_out() == t->_control, "expect a single dominated node");
+  tdom = tdom->_dom;
+  t->_dom = tdom;
+  assert(tdom->_control == dom->in(1), "dominator of region with single input should be that input");
+  // and remove it
+  igvn.replace_node(dom, dom->in(1));
+  dom = tdom->_control;
+}
+
 // Compute the dominator tree of the sea of nodes.  This version walks all CFG
 // nodes (using the is_CFG() call) and places them in a dominator tree.  Thus,
 // it needs a count of the CFG nodes for the mapping table. This is the
@@ -486,7 +505,14 @@ void PhaseIdealLoop::Dominators() {
     assert(t->_control != nullptr,"Bad DFS walk");
     NTarjan *tdom = t->_dom;           // Handy access to immediate dominator
     if( tdom )  {                      // Root has no immediate dominator
-      _idom[t->_control->_idx] = tdom->_control; // Set immediate dominator
+      Node* dom = tdom->_control;
+      // The code that removes unreachable loops above could have left a region with a single input. Remove it. Do it
+      // now that we iterate over cfg nodes for the last time (doing it earlier would have left a dead cfg node behind
+      // that code that goes over the dfs list would have had to handle).
+      if (dom != C->root() && dom->is_Region() && dom->req() == 2) {
+        remove_single_entry_region(t, tdom, dom, _igvn);
+      }
+      _idom[t->_control->_idx] = dom; // Set immediate dominator
       t->_dom_next = tdom->_dom_child; // Make me a sibling of parent's child
       tdom->_dom_child = t;            // Make me a child of my parent
     } else
