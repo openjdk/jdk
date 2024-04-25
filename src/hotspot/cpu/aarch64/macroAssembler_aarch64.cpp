@@ -5586,17 +5586,17 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     //      return false;
     bind(A_IS_NOT_NULL);
     ldrw(cnt1, Address(a1, length_offset));
-    ldrw(cnt2, Address(a2, length_offset));
     if (extra_length != 0) {
       // Increase loop counter by size of length field.
       addw(cnt1, cnt1, extra_length);
-      addw(cnt2, cnt2, extra_length);
+      // We don't need cnt2 on that path. 
     }
     if (is_8aligned) {
       // Check if lenghts are equal. When bases are
       // not aligned, we compare the lengths in the
       // main loop and don't need to compare it
       // explicitely ahead of the loop.
+      ldrw(cnt2, Address(a2, length_offset));
       eorw(tmp5, cnt1, cnt2);
       cbnzw(tmp5, DONE);
     }
@@ -5664,11 +5664,14 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     cbz(a1, DONE);
     ldrw(cnt1, Address(a1, length_offset));
     cbz(a2, DONE);
-    ldrw(cnt2, Address(a2, length_offset));
+    if (is_8aligned) {
+      // cnt2 only needed when doing explicit length-compares.
+      ldrw(cnt2, Address(a2, length_offset));
+    }
     if (extra_length != 0) {
       // Increase loop counter by size of length field.
       addw(cnt1, cnt1, extra_length);
-      addw(cnt2, cnt2, extra_length);
+      // We don't need cnt2 on that path. 
     }
     // on most CPUs a2 is still "locked"(surprisingly) in ldrw and it's
     // faster to perform another branch before comparing a1 and a2
