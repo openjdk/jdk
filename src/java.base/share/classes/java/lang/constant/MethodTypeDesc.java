@@ -207,6 +207,9 @@ public sealed interface MethodTypeDesc
         int count = parameterCount();
         StringBuilder sb = new StringBuilder(24).append('(');
         for (int i = 0; i < count; i++) {
+            if (i > 0) {
+                sb.append(',');
+            }
             sb.append(parameterType(i).displayName());
         }
         return sb.append(')').append(returnType().displayName()).toString();
