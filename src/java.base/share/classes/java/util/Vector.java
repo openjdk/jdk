@@ -443,7 +443,6 @@ public class Vector<E>
                 return i;
             }
         }
-        
         return -1;
     }
 
