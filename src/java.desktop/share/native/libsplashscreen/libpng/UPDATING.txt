@@ -51,7 +51,7 @@ First cd into the libpng folder and run the following script.
             # remove trailing spaces
             sed -e 's/[ ]* $//g' ${f} > ${f}.tmp
             mv ${f}.tmp $f
-    done
+         done
 
 6) As with all native code, run it through the official build systems, in case
 the updated code trigger any fatal warnings with the official compilers.
