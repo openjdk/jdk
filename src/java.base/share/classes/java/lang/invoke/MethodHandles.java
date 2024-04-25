@@ -7919,6 +7919,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      *                                  handles is not {@code int}, or if the types of
      *                                  the fallback handle and all of target handles are
      *                                  not the same.
+     *
      * @since 17
      */
     public static MethodHandle tableSwitch(MethodHandle fallback, MethodHandle... targets) {

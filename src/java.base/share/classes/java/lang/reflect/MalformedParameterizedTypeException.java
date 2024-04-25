@@ -50,6 +50,7 @@ public class MalformedParameterizedTypeException extends RuntimeException {
      * Constructs a {@code MalformedParameterizedTypeException} with
      * the given detail message.
      * @param message the detail message; may be {@code null}
+     *
      * @since 10
      */
     public MalformedParameterizedTypeException(String message) {
