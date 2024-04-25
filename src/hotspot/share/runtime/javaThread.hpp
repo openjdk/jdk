@@ -335,8 +335,8 @@ class JavaThread: public Thread {
   // of _attaching_via_jni and transitions to _attached_via_jni.
   volatile JNIAttachStates _jni_attach_state;
 
-  // Currently active SandboxedOOMEMark, if any.
-  SandboxedOOMEMark* _sandboxed_oome_mark;
+  // In scope of a SandboxedOOMEMark?
+  bool _in_sandboxed_oome_mark;
 
 #if INCLUDE_JVMCI
   // The _pending_* fields below are used to communicate extra information
@@ -713,8 +713,8 @@ private:
   MemRegion deferred_card_mark() const           { return _deferred_card_mark; }
   void set_deferred_card_mark(MemRegion mr)      { _deferred_card_mark = mr;   }
 
-  SandboxedOOMEMark* sandboxed_oome_mark() const         { return _sandboxed_oome_mark; }
-  void set_sandboxed_oome_mark(SandboxedOOMEMark* som)   { _sandboxed_oome_mark = som;  }
+  bool in_sandboxed_oome_mark() const            { return _in_sandboxed_oome_mark; }
+  void set_in_sandboxed_oome_mark(bool b)        { _in_sandboxed_oome_mark = b;    }
 
 #if INCLUDE_JVMCI
   jlong pending_failed_speculation() const        { return _pending_failed_speculation; }

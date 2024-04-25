@@ -102,7 +102,7 @@ class RetryableAllocationMark {
  private:
    SandboxedOOMEMark _som;
  public:
-  RetryableAllocationMark(JavaThread* thread, bool activate) : _som(activate ? thread : nullptr, true) {}
+  RetryableAllocationMark(JavaThread* thread, bool activate) : _som(activate ? thread : nullptr) {}
   ~RetryableAllocationMark() {
     JavaThread* THREAD = _som.thread();
     if (THREAD != nullptr) {

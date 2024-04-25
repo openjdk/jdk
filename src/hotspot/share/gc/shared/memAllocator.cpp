@@ -126,15 +126,13 @@ bool MemAllocator::Allocation::check_out_of_memory() {
   // -XX:+HeapDumpOnOutOfMemoryError and -XX:OnOutOfMemoryError support
   report_java_out_of_memory(message);
 
-  SandboxedOOMEMark* som = _thread->sandboxed_oome_mark();
-  if (som == nullptr || !som->disable_events()) {
+  if (!_thread->in_sandboxed_oome_mark()) {
     if (JvmtiExport::should_post_resource_exhausted()) {
       JvmtiExport::post_resource_exhausted(
         JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR | JVMTI_RESOURCE_EXHAUSTED_JAVA_HEAP,
         message);
     }
-  }
-  if (som == nullptr) {
+
     oop exception = _overhead_limit_exceeded ?
         Universe::out_of_memory_error_gc_overhead_limit() :
         Universe::out_of_memory_error_java_heap();

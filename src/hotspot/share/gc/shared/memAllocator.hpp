@@ -119,40 +119,37 @@ public:
 };
 
 // Manages a scope where a failed heap allocation results in
-// a shared, backtrace-less OOME instance being thrown.
-// Useful for OOMEs that will not be propagated to user code.
+// suppression of JVMTI "resource exhausted" events and
+// throwing a shared, backtrace-less OOME instance.
+// Used for OOMEs that will not be propagated to user code.
 class SandboxedOOMEMark: public StackObj {
  private:
-  SandboxedOOMEMark* _outer;
+  bool _outer;
   JavaThread* _thread;
-  bool _disable_events;
 
  public:
-  SandboxedOOMEMark(JavaThread* thread, bool disable_events=false) {
+  SandboxedOOMEMark(JavaThread* thread) {
     if (thread != nullptr) {
-      _outer = thread->sandboxed_oome_mark();
-      thread->set_sandboxed_oome_mark(this);
+      _outer = thread->in_sandboxed_oome_mark();
+      thread->set_in_sandboxed_oome_mark(true);
       _thread = thread;
-      _disable_events = disable_events;
     } else {
-      _outer = nullptr;
+      _outer = false;
       _thread = nullptr;
-      _disable_events = false;
     }
   }
 
   ~SandboxedOOMEMark() {
     if (_thread != nullptr) {
-      _thread->set_sandboxed_oome_mark(_outer);
+      // Check that only SandboxedOOMEMark sets
+      // JavaThread::_in_sandboxed_oome_mark
+      assert(_thread->in_sandboxed_oome_mark(), "must be");
+      _thread->set_in_sandboxed_oome_mark(_outer);
     }
   }
 
   // Returns nullptr iff `activate` was false in the constructor.
   JavaThread* thread() const  { return _thread; }
-
-  // Does this scope disable JVMTI resource exhausted events
-  // when an OOME is thrown?
-  bool disable_events() const { return _disable_events; }
 };
 
 #endif // SHARE_GC_SHARED_MEMALLOCATOR_HPP
