@@ -29,6 +29,7 @@
 JMH_VERSION=1.37
 COMMONS_MATH3_VERSION=3.6.1
 JOPT_SIMPLE_VERSION=5.0.4
+MAVEN_MIRROR=${MAVEN_MIRROR:-https://repo.maven.apache.org/maven2}
 
 BUNDLE_NAME=jmh-$JMH_VERSION.tar.gz
 
@@ -41,7 +42,7 @@ cd $JAR_DIR
 rm -f *
 
 fetchJar() {
-  url="https://repo.maven.apache.org/maven2/$1/$2/$3/$2-$3.jar"
+  url="${MAVEN_MIRROR}/$1/$2/$3/$2-$3.jar"
   if command -v curl > /dev/null; then
       curl -O --fail $url
   elif command -v wget > /dev/null; then
