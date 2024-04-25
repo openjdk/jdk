@@ -1201,11 +1201,12 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional, 
 
       // Comparing trip+off vs limit
       Node *bol = iff->in(1);
-      if (bol->req() != 2) {
+      if (bol->req() < 2) {
         continue; // dead constant test
       }
       if (!bol->is_Bool()) {
-        assert(bol->is_OpaqueInitializedAssertionPredicate(), "Initialized Assertion Predicate check only");
+        assert(bol->is_Opaque4() || bol->is_OpaqueInitializedAssertionPredicate(),
+               "Opaque node of non-null-check or of Initialized Assertion Predicate");
         continue;
       }
       if (bol->as_Bool()->_test._test == BoolTest::ne) {

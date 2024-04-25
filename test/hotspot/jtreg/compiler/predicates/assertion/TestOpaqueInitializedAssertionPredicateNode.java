@@ -91,8 +91,8 @@ public class TestOpaqueInitializedAssertionPredicateNode {
             testCloneDown();
             testOnlyCloneDownCmp();
             testCloneDownInsideLoop();
-            testPolicyRangeCheck();
             maybeNull(null); // Make sure return value is sometimes null.
+            testPolicyRangeCheck(a);
             testUnsafeAccess(a);
             testOpaqueOutsideLoop();
             testOpaqueInsideIfOutsideLoop();
@@ -260,7 +260,7 @@ public class TestOpaqueInitializedAssertionPredicateNode {
         }
     }
 
-    static void testPolicyRangeCheck() {
+    static void testPolicyRangeCheck(Object o) {
         int two = 100;
         int limit = 2;
         for (; limit < 4; limit *= 2);
@@ -269,11 +269,16 @@ public class TestOpaqueInitializedAssertionPredicateNode {
         }
 
         // 4) We call IdealLoopTree::policy_range_check() for this loop:
-        //    Initialized Assertion Predicate is now part of loop body and we also check
-        //    if it could be eliminated with Range Check Elimination. We thus need to
-        //    exclude Ifs with OpaqueInitializedAssertionPredicate in policy_range_check().
+        //    - Initialized Assertion Predicate is now part of loop body.
+        //    - Opaque4 node for null-check is also part of loop body.
+         //   We also check the If nodes for these Opaque nodes could be eliminated with
+         //   Range Check Elimination. We thus need to exclude Ifs with
+         //   Opaque4 and OpaqueInitializedAssertionPredicate nodes in policy_range_check().
         for (int i = 0; i < 100; i++) {
-            // 1) Apply Loop Predication: Loop Predicate + Temlate Assertion Predicate
+            A a = maybeNull(o); // Profiling tells us that return value *might* be null.
+            iFld = UNSAFE.getInt(a, OFFSET); // Emits If with Opaque4Node for null check.
+
+            // 1) Apply Loop Predication: Loop Predicate + Template Assertion Predicate
             // 2) Apply Loop Peeling: Create Initialized Assertion Predicate with
             //                        OpaqueInitializedAssertionPredicate
             // 3) After CCP: C2 knows that two == 2. CountedLoopEnd found to be true
