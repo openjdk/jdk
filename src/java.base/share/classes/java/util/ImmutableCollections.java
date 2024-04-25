@@ -1456,6 +1456,7 @@ class ImmutableCollections {
         @Stable
         private final int[] states;
         private final Object[] mutexes;
+        private final boolean[] supplyings;
 
         @SuppressWarnings("unchecked")
         private StableList(int size) {
@@ -1464,12 +1465,13 @@ class ImmutableCollections {
             this.size = size;
             this.states = new int[size];
             this.mutexes = new Object[size];
+            this.supplyings = new boolean[size];
         }
 
         @Override
         public StableValue<V> get(int index) {
             Objects.checkIndex(index, size);
-            return new StableValueElement<>(elements, states, mutexes, index);
+            return new StableValueElement<>(elements, states, mutexes, supplyings, index);
         }
 
         @Override
@@ -1502,7 +1504,7 @@ class ImmutableCollections {
         }
 
         V computeIfUnset(int index, IntFunction<? extends V> mapper) {
-            StableValueElement<V> element = new StableValueElement<>(elements, states, mutexes, index);
+            StableValueElement<V> element = new StableValueElement<>(elements, states, mutexes, supplyings, index);
             return element.computeIfUnset(index, mapper);
         }
 
@@ -1531,6 +1533,7 @@ class ImmutableCollections {
         @Stable
         private final int[] states;
         private final Object[] mutexes;
+        private final boolean[] supplyings;
 
         // keys array not trusted
         @SuppressWarnings("unchecked")
@@ -1559,6 +1562,7 @@ class ImmutableCollections {
             this.values = (V[]) new Object[len];
             this.states = new int[len];
             this.mutexes = new Object[len];
+            this.supplyings = new boolean[len];
         }
 
         // returns index at which the probe key is present; or if absent,
@@ -1585,7 +1589,7 @@ class ImmutableCollections {
         }
 
         private StableValue<V> value(int keyIndex) {
-            return new StableValueElement<>(values, states, mutexes, keyIndex);
+            return new StableValueElement<>(values, states, mutexes, supplyings, keyIndex);
         }
 
         @Override
@@ -1699,13 +1703,15 @@ class ImmutableCollections {
         private final V[] elements;
         @Stable
         private final int[] states;
-        private final Object[] mutexes;
         @Stable
         private final Class<K> enumType;
         @Stable
         private final int min;
         @Stable
         private final IntPredicate isPresent;
+
+        private final Object[] mutexes;
+        private final boolean[] supplyings;
 
         @SuppressWarnings("unchecked")
         private StableEnumMap(Object[] keys) {
@@ -1737,6 +1743,7 @@ class ImmutableCollections {
             this.size = keys.length;
             this.states = new int[elementCount];
             this.mutexes = new Object[elementCount];
+            this.supplyings = new boolean[elementCount];
             this.enumType = (Class<K>) keys[0].getClass();
         }
 
@@ -1767,7 +1774,7 @@ class ImmutableCollections {
         }
 
         private StableValue<V> value(int index) {
-            return new StableValueElement<>(elements, states, mutexes, index);
+            return new StableValueElement<>(elements, states, mutexes, supplyings, index);
         }
 
         private K key(int arrayIndex) {

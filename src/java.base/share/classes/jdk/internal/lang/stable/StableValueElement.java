@@ -16,6 +16,7 @@ public record StableValueElement<V>(
         V[] elements,
         int[] states,
         Object[] mutexes,
+        boolean[] supplyings, // Todo: make this array more dense
         int index
 ) implements StableValue<V> {
 
@@ -65,17 +66,10 @@ public record StableValueElement<V>(
             throw StableUtil.alreadySet(this);
         }
         synchronized (acquireMutex()) {
-            try {
-                if (isSet()) {
-                    throw StableUtil.alreadySet(this);
-                }
-                setValue(value);
-            } finally {
-                // There might be a new mutex created even though
-                // the value was previously set so, we need to always
-                // clear the mutex.
-                clearMutex();
+            if (isSet()) {
+                throw StableUtil.alreadySet(this);
             }
+            setValue(value);
         }
     }
 
@@ -85,19 +79,12 @@ public record StableValueElement<V>(
             return orThrow();
         }
         synchronized (acquireMutex()) {
-            try {
-                if (isSet()) {
-                    return orThrow();
-                }
-                setValue(value);
-            } finally {
-                // There might be a new mutex created even though
-                // the value was previously set so, we need to always
-                // clear the mutex.
-                clearMutex();
+            if (isSet()) {
+                return orThrow();
             }
+            setValue(value);
+            return value;
         }
-        return orThrow();
     }
 
     @Override
@@ -152,30 +139,38 @@ public record StableValueElement<V>(
         };
     }
 
-    private synchronized <K> V computeIfUnsetVolatile0(Object provider, K key) {
+    private <K> V computeIfUnsetVolatile0(Object provider, K key) {
         synchronized (acquireMutex()) {
             if (isSet()) {
-                clearMutex();
                 return orThrow();
             }
 
-            @SuppressWarnings("unchecked")
-            V newValue = switch (provider) {
-                case Supplier<?>    sup  -> (V) sup.get();
-                case IntFunction<?> iFun -> (V) iFun.apply((int) key);
-                case Function<?, ?> func -> ((Function<K, V>) func).apply(key);
-                default                  -> throw shouldNotReachHere();
-            };
-            // If the extractor throws an exception
-            // the mutex is retained
-
+            // A value is not set
+            if (supplying()) {
+                String typeText = switch (provider) {
+                    case Supplier<?> _    -> "Supplier.get()";
+                    case IntFunction<?> _ -> "IntFunction.apply(" + key + ")";
+                    case Function<?, ?> _ -> "Function.apply(" + key + ")";
+                    default               -> throw shouldNotReachHere();
+                };
+                throw new StackOverflowError(
+                        "Recursive invocation of " + typeText + ": " + provider);
+            }
             try {
+                supplying(true);
+                @SuppressWarnings("unchecked")
+                V newValue = switch (provider) {
+                    case Supplier<?> sup     -> (V) sup.get();
+                    case IntFunction<?> iFun -> (V) iFun.apply((int) key);
+                    case Function<?, ?> func -> ((Function<K, V>) func).apply(key);
+                    default                  -> throw shouldNotReachHere();
+                };
                 setValue(newValue);
+                return newValue;
             } finally {
-                clearMutex();
+                supplying(false);
             }
         }
-        return orThrow();
     }
 
     @SuppressWarnings("unchecked")
@@ -200,8 +195,16 @@ public record StableValueElement<V>(
         UNSAFE.putReferenceVolatile(elements, objectOffset(index), created);
     }
 
-    byte stateVolatile() {
+    private byte stateVolatile() {
         return UNSAFE.getByteVolatile(states, StableUtil.intOffset(index));
+    }
+
+    private boolean supplying() {
+        return supplyings[index];
+    }
+
+    private void supplying(boolean supplying) {
+        supplyings[index] = supplying;
     }
 
     private void putState(int newValue) {
@@ -225,7 +228,4 @@ public record StableValueElement<V>(
         return witness == null ? created : witness;
     }
 
-    private void clearMutex() {
-        UNSAFE.putReferenceVolatile(mutexes, objectOffset(index), null);
-    }
 }

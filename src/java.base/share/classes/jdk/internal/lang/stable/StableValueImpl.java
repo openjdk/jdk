@@ -38,13 +38,19 @@ import static jdk.internal.lang.stable.StableUtil.*;
 
 public final class StableValueImpl<V> implements StableValue<V> {
 
+    private static final long MUTEX_OFFSET =
+            UNSAFE.objectFieldOffset(StableValueImpl.class, "mutex");
+
     private static final long VALUE_OFFSET =
             UNSAFE.objectFieldOffset(StableValueImpl.class, "value");
 
     private static final long STATE_OFFSET =
             UNSAFE.objectFieldOffset(StableValueImpl.class, "state");
 
-    private final Object mutex = new Object();
+    /**
+     * A private mutex for this instance used rather than synchronizing on `this`
+     */
+    private Object mutex;
 
     /**
      * If non-null, holds a set value
@@ -61,12 +67,18 @@ public final class StableValueImpl<V> implements StableValue<V> {
     @Stable
     private int state;
 
-    StableValueImpl() {}
+    /**
+     * Indicates if a supplier is currently being invoked. Used to
+     * detect circular supplier invocations.
+     */
+    private boolean supplying;
+
+    private StableValueImpl() {}
 
     @ForceInline
     @Override
     public boolean isSet() {
-        return state() != UNSET || stateVolatile() != UNSET;
+        return state != UNSET || stateVolatile() != UNSET;
     }
 
     @ForceInline
@@ -88,7 +100,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
         return orThrowVolatile();
     }
 
-    @DontInline
+    @DontInline // Slow-path taken at most once per thread if set
     private V orThrowVolatile() {
         V v = valueVolatile();
         if (v != null) {
@@ -107,7 +119,10 @@ public final class StableValueImpl<V> implements StableValue<V> {
     @ForceInline
     @Override
     public void setOrThrow(V value) {
-        synchronized (mutex) {
+        if (isSet()) {
+            throw StableUtil.alreadySet(this);
+        }
+        synchronized (acquireMutex()) {
             if (isSet()) {
                 throw StableUtil.alreadySet(this);
             }
@@ -121,7 +136,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
         if (isSet()) {
            return orThrow();
         }
-        synchronized (mutex) {
+        synchronized (acquireMutex()) {
             if (isSet()) {
                 return orThrow();
             }
@@ -140,7 +155,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
             // plain semantics, we know a value is set.
             return v;
         }
-        if (state() == NULL) {
+        if (state == NULL) {
             // If we happen to see a state value of NULL under
             // plain semantics, we know a value is set to `null`.
             return null;
@@ -149,7 +164,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
         return computeIfUnsetVolatile(supplier);
     }
 
-    //@ForceInline
+    @DontInline // Slow-path taken at most once per thread if set
     private V computeIfUnsetVolatile(Supplier<? extends V> supplier) {
         // Now, fall back to volatile semantics.
         V v = valueVolatile();
@@ -166,15 +181,23 @@ public final class StableValueImpl<V> implements StableValue<V> {
     }
 
     private V computeIfUnsetVolatile0(Supplier<? extends V> supplier) {
-        synchronized (mutex) {
+        synchronized (acquireMutex()) {
             // A value is already set
-            if (state() != UNSET) {
+            if (state != UNSET) {
                 return orThrow();
             }
             // A value is not set
-            V newValue = supplier.get();
-            setValue(newValue);
-            return newValue;
+            if (supplying) {
+                throw new StackOverflowError("Recursive invocation of supplier: " + supplier);
+            }
+            try {
+                supplying = true;
+                V newValue = supplier.get();
+                setValue(newValue);
+                return newValue;
+            } finally {
+                supplying = false;
+            }
         }
     }
 
@@ -189,7 +212,7 @@ public final class StableValueImpl<V> implements StableValue<V> {
     }
 
     private void setValue(V value) {
-        if (state() != UNSET) {
+        if (state != UNSET) {
             throw StableUtil.alreadySet(this);
         }
         if (value != null) {
@@ -206,10 +229,6 @@ public final class StableValueImpl<V> implements StableValue<V> {
         UNSAFE.putReferenceVolatile(this, VALUE_OFFSET, value);
     }
 
-    private int state() {
-        return state;
-    }
-
     private int stateVolatile() {
         return UNSAFE.getIntVolatile(this, STATE_OFFSET);
     }
@@ -218,6 +237,20 @@ public final class StableValueImpl<V> implements StableValue<V> {
         // This prevents `this.value` to be seen before `this.state` is seen
         freeze();
         UNSAFE.putIntVolatile(this, STATE_OFFSET, newValue);
+    }
+
+    private Object acquireMutex() {
+        Object mutex = UNSAFE.getReferenceVolatile(this, MUTEX_OFFSET);
+        if (mutex == null) {
+            mutex = caeMutex();
+        }
+        return mutex;
+    }
+
+    private Object caeMutex() {
+        Object created = new Object();
+        Object witness = UNSAFE.compareAndExchangeReference(this, MUTEX_OFFSET, null, created);
+        return witness == null ? created : witness;
     }
 
     // Factories
