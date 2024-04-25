@@ -156,8 +156,8 @@ public sealed interface StableValue<V>
 
     /**
      * {@return a fresh stable value with an unset value where the returned stable's
-     * value is computed in a separate fresh background thread using the provided
-     * {@code supplier}}
+     * value is computed in a separate background thread (created via the provided
+     * {@code threadFactory}) using the provided {@code supplier}}
      * <p>
      * If the supplier throws an (unchecked) exception, the exception is ignored, and no
      * value is set.
