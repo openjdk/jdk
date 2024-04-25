@@ -491,8 +491,6 @@ public abstract sealed class Reference<T>
      *
      * @return never returns normally
      * @throws  CloneNotSupportedException always
-     *
-     * @since 11
      */
     @Override
     protected Object clone() throws CloneNotSupportedException {

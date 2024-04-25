@@ -618,6 +618,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *     // Take action (e.g. throw an Exception)
      * }
      * }
+     *
+     * @since 23
      */
     long maxByteAlignment();
 
