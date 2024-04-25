@@ -4442,7 +4442,7 @@ void GraphBuilder::append_alloc_array_copy(ciMethod* callee) {
   ciType* receiver_type = state()->stack_at(args_base)->exact_type();
   if (receiver_type == nullptr) {
     inline_bailout("must have a receiver");
-    return;    
+    return;
   }
   if (!receiver_type->is_type_array_klass()) {
     inline_bailout("clone array not primitive");
