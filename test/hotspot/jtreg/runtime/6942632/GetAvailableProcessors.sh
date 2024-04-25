@@ -29,16 +29,6 @@
 #          "start /affinity HEXAFFINITY java.exe" when the
 #          UseAllWindowsProcessorGroups flag is enabled.
 
-OS=`uname -s`
-case "$OS" in
-  Windows* | CYGWIN* )
-    ;;
-  * )
-    echo "Cannot run a Windows-specific test on $OS"
-    exit 1
-    ;;
-esac
-
 if [ "${TESTSRC}" = "" ]
 then
   echo "TESTSRC not set. Test cannot execute."
