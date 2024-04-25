@@ -150,10 +150,8 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * Writes a string representation of the specified object to this console's
      * output stream, terminates the line and then flushes the console.
      *
-     * <p> The effects of {@code con.println(obj)} are as if by calling
-     * {@snippet lang = java:
-     *     con.format("%s%n", obj)
-     * }
+     * <p> The string representation of the specified object is obtained as if
+     * by calling {@link String#valueOf(Object)}.
      *
      * @param  obj
      *         An object whose string representation is to be written.
@@ -171,10 +169,8 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * Writes a string representation of the specified object to this console's
      * output stream and then flushes the console.
      *
-     * <p> The effects of {@code con.print(obj)} are as if by calling
-     * {@snippet lang = java:
-     *     con.format("%s", obj)
-     * }
+     * <p> The string representation of the specified object is obtained as if
+     * by calling {@link String#valueOf(Object)}.
      *
      * @param  obj
      *         An object whose string representation is to be written.
@@ -210,7 +206,12 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     /**
-     * Provides access to console for Implicitly Declared Classes.
+     * A collection of static convenience methods that provide access to
+     * {@link System#console()} for implicitly declared classes.
+     *
+     * <p> Each of this class' methods calls a similarly-named method on
+     * {@code Console} returned by {@code System.console()}, or throws
+     * {@link IOError} if {@code System.console()} returns {@code null}.
      *
      * @since 23
      */
@@ -222,31 +223,31 @@ public sealed class Console implements Flushable permits ProxyingConsole {
         }
 
         /**
-         * Calls {@link Console#println(Object)} on {@link System#console()},
-         * or throws {@link IOError} if {@code System.console()} returns
-         * {@code null}.
+         * Calls {@link Console#println(Object) Console.println(obj)} on
+         * {@link System#console()}, or throws {@link IOError} if
+         * {@code System.console()} returns {@code null}.
          *
-         * @param obj the obj to print
+         * @param obj the object to print
          */
         public static void println(Object obj) {
             con().println(obj);
         }
 
         /**
-         * Calls {@link Console#print(Object)} on {@link System#console()},
-         * or throws {@link IOError} if {@code System.console()} returns
-         * {@code null}.
+         * Calls {@link Console#print(Object) Console.print(obj)} on
+         * {@link System#console()}, or throws {@link IOError} if
+         * {@code System.console()} returns {@code null}.
          *
-         * @param obj the obj to print
+         * @param obj the object to print
          */
         public static void print(Object obj) {
             con().print(obj);
         }
 
         /**
-         * {@return the result of a call to {@link Console#input(String)} on
-         * {@link System#console()}, or throws {@link IOError} if
-         * {@code System.console()} returns {@code null}}
+         * {@return the result of a call to {@link Console#input(String)
+         * Console.input(prompt)} on {@link System#console()}, or throws
+         * {@link IOError} if {@code System.console()} returns {@code null}}
          *
          * @param prompt the prompt string
          */
