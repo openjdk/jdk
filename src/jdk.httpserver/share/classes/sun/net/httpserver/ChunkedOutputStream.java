@@ -142,7 +142,7 @@ class ChunkedOutputStream extends FilterOutputStream
             * write any pending chunk data. manually write chunk rather than
             * calling flush to avoid sending small packets
             */
-            if(count>0) {
+            if (count > 0) {
                 writeChunk();
             }
             /* write an empty chunk */
