@@ -89,8 +89,7 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
     EXCLUDES := $(JVM_EXCLUDES), \
     EXCLUDE_FILES := gtestLauncher.cpp, \
     EXCLUDE_PATTERNS := $(JVM_EXCLUDE_PATTERNS), \
-    EXTRA_OBJECT_FILES := $(filter-out %/operator_new$(OBJ_SUFFIX), \
-        $(BUILD_LIBJVM_ALL_OBJS)), \
+    EXTRA_OBJECT_FILES := $(BUILD_LIBJVM_ALL_OBJS), \
     DEFAULT_CFLAGS := false, \
     CFLAGS := $(JVM_CFLAGS) \
         -I$(GTEST_FRAMEWORK_SRC)/googletest/include \

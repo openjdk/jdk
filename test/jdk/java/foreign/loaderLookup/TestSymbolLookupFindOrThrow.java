@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,17 +19,38 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package sun.jvm.hotspot.gc.shared;
+/*
+ * @test
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED TestSymbolLookupFindOrThrow
+ */
 
-import sun.jvm.hotspot.debugger.*;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
+import java.util.NoSuchElementException;
 
-/** No additional functionality for now */
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-public class TenuredSpace extends ContiguousSpace {
-  public TenuredSpace(Address addr) {
-    super(addr);
-  }
+import static org.junit.Assert.*;
+
+final class TestSymbolLookupFindOrThrow {
+
+    static {
+        System.loadLibrary("Foo");
+    }
+
+    @Test
+    void findOrThrow() {
+        MemorySegment symbol = SymbolLookup.loaderLookup().findOrThrow("foo");
+        Assertions.assertNotEquals(0, symbol.address());
+    }
+
+    @Test
+    void findOrThrowNotFound() {
+        assertThrows(NoSuchElementException.class, () ->
+                SymbolLookup.loaderLookup().findOrThrow("bar"));
+    }
+
 }

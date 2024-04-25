@@ -461,7 +461,10 @@ VPointer::VPointer(const MemNode* mem, const VLoop& vloop,
       break; // stop looking at addp's
     }
   }
-  if (is_loop_member(adr)) {
+  if (!invariant(adr)) {
+    // The address must be invariant for the current loop. But if we are in a main-loop,
+    // it must also be invariant of the pre-loop, otherwise we cannot use this address
+    // for the pre-loop limit adjustment required for main-loop alignment.
     assert(!valid(), "adr is loop variant");
     return;
   }

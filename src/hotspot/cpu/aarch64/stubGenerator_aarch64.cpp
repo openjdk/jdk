@@ -1519,9 +1519,9 @@ class StubGenerator: public StubCodeGenerator {
       __ push(RegSet::of(d, count), sp);
     }
     {
-      // UnsafeCopyMemory page error: continue after ucm
+      // UnsafeMemoryAccess page error: continue after unsafe access
       bool add_entry = !is_oop && (!aligned || sizeof(jlong) == size);
-      UnsafeCopyMemoryMark ucmm(this, add_entry, true);
+      UnsafeMemoryAccessMark umam(this, add_entry, true);
       copy_memory(decorators, is_oop ? T_OBJECT : T_BYTE, aligned, s, d, count, size);
     }
 
@@ -1590,9 +1590,9 @@ class StubGenerator: public StubCodeGenerator {
       __ push(RegSet::of(d, count), sp);
     }
     {
-      // UnsafeCopyMemory page error: continue after ucm
+      // UnsafeMemoryAccess page error: continue after unsafe access
       bool add_entry = !is_oop && (!aligned || sizeof(jlong) == size);
-      UnsafeCopyMemoryMark ucmm(this, add_entry, true);
+      UnsafeMemoryAccessMark umam(this, add_entry, true);
       copy_memory(decorators, is_oop ? T_OBJECT : T_BYTE, aligned, s, d, count, -size);
     }
     if (is_oop) {
@@ -8378,8 +8378,8 @@ class StubGenerator: public StubCodeGenerator {
                                                 SharedRuntime::throw_delayed_StackOverflowError));
 
     // Initialize table for copy memory (arraycopy) check.
-    if (UnsafeCopyMemory::_table == nullptr) {
-      UnsafeCopyMemory::create_table(8 + 4); // 8 for copyMemory; 4 for setMemory
+    if (UnsafeMemoryAccess::_table == nullptr) {
+      UnsafeMemoryAccess::create_table(8 + 4); // 8 for copyMemory; 4 for setMemory
     }
 
     if (UseCRC32Intrinsics) {
