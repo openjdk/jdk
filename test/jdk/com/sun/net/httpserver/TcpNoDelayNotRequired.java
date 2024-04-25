@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,19 +29,27 @@
  * @run main/othervm/timeout=5 -Dsun.net.httpserver.nodelay=false  TcpNoDelayNotRequired
  */
 
-import com.sun.net.httpserver.*;
+import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpContext;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+
 import jdk.test.lib.net.URIBuilder;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.StreamHandler;
 
 public class TcpNoDelayNotRequired {
 
@@ -58,9 +66,8 @@ public class TcpNoDelayNotRequired {
         InetAddress loopback = InetAddress.getLoopbackAddress();
         InetSocketAddress addr = new InetSocketAddress (loopback, 0);
         HttpServer server = HttpServer.create (addr, 0);
-        HttpHandler handler = new Handler();
-        HttpContext ctx = server.createContext ("/test", handler);
-        HttpContext ctx2 = server.createContext ("/chunked", handler);
+        HttpContext ctx = server.createContext ("/test", new Handler());
+        HttpContext ctx2 = server.createContext ("/chunked", new ChunkedHandler());
         ExecutorService executor = Executors.newCachedThreadPool();
         server.setExecutor (executor);
         server.start ();
@@ -88,30 +95,30 @@ public class TcpNoDelayNotRequired {
         public void handle (HttpExchange t)
                 throws IOException
         {
-            InputStream is = t.getRequestBody();
-            Headers map = t.getRequestHeaders();
             Headers rmap = t.getResponseHeaders();
-            while (is.read () != -1) ;
-            is.close();
+            try (var is = t.getRequestBody()) {
+                is.readAllBytes();
+            }
             rmap.add("content-type","text/plain");
             t.sendResponseHeaders(200,5);
-            t.getResponseBody().write("hello".getBytes(StandardCharsets.ISO_8859_1));
-            t.getResponseBody().close();
+            try (var os = t.getResponseBody()) {
+                os.write("hello".getBytes(StandardCharsets.ISO_8859_1));
+            }
         }
     }
     static class ChunkedHandler implements HttpHandler {
         public void handle (HttpExchange t)
                 throws IOException
         {
-            InputStream is = t.getRequestBody();
-            Headers map = t.getRequestHeaders();
             Headers rmap = t.getResponseHeaders();
-            while (is.read () != -1) ;
-            is.close();
+            try (var is = t.getRequestBody()) {
+                is.readAllBytes();
+            }
             rmap.add("content-type","text/plain");
             t.sendResponseHeaders(200,0);
-            t.getResponseBody().write("hello".getBytes(StandardCharsets.ISO_8859_1));
-            t.getResponseBody().close();
+            try (var os = t.getResponseBody()) {
+                os.write("hello".getBytes(StandardCharsets.ISO_8859_1));
+            }
         }
     }
 }
