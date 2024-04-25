@@ -1066,7 +1066,7 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
       if ((p_handletable + i)->handle &&
           (p_handletable + i)->inode == libstat.st_ino &&
           (p_handletable + i)->devid == libstat.st_dev &&
-          (((p_handletable + i)->member == member) ||
+          (((p_handletable + i)->member == nullptr && member == nullptr) ||
            ((p_handletable + i)->member != nullptr && member != nullptr &&
            strcmp((p_handletable + i)->member, member) == 0))) {
         (p_handletable + i)->refcount++;
