@@ -27,7 +27,7 @@
 
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/referenceProcessor.hpp"
-#include "gc/shared/space.inline.hpp"
+#include "gc/shared/space.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
@@ -99,8 +99,6 @@ class Generation: public CHeapObj<mtGC> {
   // The largest number of contiguous free bytes in the generation,
   // including expansion  (Assumes called at a safepoint.)
   virtual size_t contiguous_available() const = 0;
-  // The largest number of contiguous free bytes in this or any higher generation.
-  virtual size_t max_contiguous_available() const;
 
   MemRegion reserved() const { return _reserved; }
 

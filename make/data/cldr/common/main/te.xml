@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1110,7 +1110,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">ఫోన్‌బుక్ క్రమబద్ధీకరణ క్రమం</type>
 			<type key="collation" type="phonetic">ధ్వని ఉచ్ఛారిత క్రమబద్ధీకరణ క్రమం</type>
 			<type key="collation" type="pinyin">పిన్‌యిన్ క్రమబద్ధీకరణ క్రమం</type>
-			<type key="collation" type="reformed">మళ్ళీ ఆకృతీకరించబడిన క్రమబద్ధీకరణ క్రమం</type>
 			<type key="collation" type="search">సాధారణ-ప్రయోజన శోధన</type>
 			<type key="collation" type="searchjl">హాంగుల్ ప్రారంభ హల్లు ద్వారా శోధించు</type>
 			<type key="collation" type="standard">ప్రామాణిక క్రమబద్ధీకరణ క్రమం</type>
@@ -2298,9 +2297,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0} సమయం</regionFormat>
 			<regionFormat type="daylight">{0} పగటి వెలుతురు సమయం</regionFormat>
 			<regionFormat type="standard">{0} ప్రామాణిక సమయం</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>శాంటా ఇసబెల్</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>సమన్వయ సార్వజనీన సమయం</standard>
@@ -2422,9 +2418,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>మెల్బోర్న్</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>కర్రీ</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>హోబర్ట్</exemplarCity>
@@ -2579,9 +2572,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>క్రెస్టన్</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>ఎల్లోనైఫ్</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>ఎడ్మోంటన్</exemplarCity>
 			</zone>
@@ -2600,29 +2590,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>రిజల్యూట్</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>రెయినీ రివర్</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>రన్‌కిన్ ఇన్‌లెట్</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>అటికోకన్</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>థండర్ బే</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>నిపిగోన్</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>టొరంటో</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>ఇక్వాలిట్</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>పాంగ్‌నీర్‌టుంగ్</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>మోన్‌క్టోన్</exemplarCity>
@@ -3437,17 +3415,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>దార్ ఎస్ సలామ్</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>ఉజ్‌హోరోడ్</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>కీవ్</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>సిమ్‌ఫెరోపోల్</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>జపరోజై</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>కంపాలా</exemplarCity>
@@ -3466,9 +3438,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>హోనోలులు</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>జాన్సటన్</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>యాంకరేజ్</exemplarCity>
@@ -4167,11 +4136,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>మకావ్ వేసవి సమయం</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>మాక్క్వారీ దీవి సమయం</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>మగడాన్ సమయం</generic>
@@ -4209,13 +4173,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>మాసన్ సమయం</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>వాయువ్య మెక్సికో సమయం</generic>
-					<standard>వాయువ్య మెక్సికో ప్రామాణిక సమయం</standard>
-					<daylight>వాయువ్య మెక్సికో పగటి వెలుతురు సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
