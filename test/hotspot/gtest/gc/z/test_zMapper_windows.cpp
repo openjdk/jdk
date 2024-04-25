@@ -84,8 +84,7 @@ public:
 
     // Reserve address space for the test
     if (!reserve_for_test()) {
-      // Failed to reserve address space
-      GTEST_SKIP() << "Failed to reserved address space";
+      GTEST_SKIP() << "Failed to reserve address space";
       return;
     }
 
