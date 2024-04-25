@@ -33,7 +33,7 @@ import java.util.Random;
 
 /*
  * @test
- * @bug 8318446
+ * @bug 8318446 8331054
  * @summary Test merging of consecutive stores
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
@@ -42,7 +42,7 @@ import java.util.Random;
 
 /*
  * @test
- * @bug 8318446
+ * @bug 8318446 8331054
  * @summary Test merging of consecutive stores
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
@@ -183,6 +183,10 @@ public class TestMergeStores {
         //                                                                                   +-----+   +-------------------+
         // First use something in range, and after warmup randomize going outside the range.
         // Consequence: all RangeChecks stay in the final compilation.
+
+        testGroups.put("test600", new HashMap<String,TestFunction>());
+        testGroups.get("test600").put("test600R", (_,i) -> { return test600R(aB.clone(), aI.clone(), i); });
+        testGroups.get("test600").put("test600a", (_,i) -> { return test600a(aB.clone(), aI.clone(), i); });
     }
 
     @Warmup(100)
@@ -215,7 +219,8 @@ public class TestMergeStores {
                  "test400a",
                  "test500a",
                  "test501a",
-                 "test502a"})
+                 "test502a",
+                 "test600a"})
     public void runTests(RunInfo info) {
         // Repeat many times, so that we also have multiple iterations for post-warmup to potentially recompile
         int iters = info.isWarmUp() ? 1_000 : 50_000;
@@ -1244,4 +1249,51 @@ public class TestMergeStores {
         } catch (ArrayIndexOutOfBoundsException _) {}
         return new Object[]{ a, new int[]{ idx } };
     }
+
+    @DontCompile
+    static Object[] test600R(byte[] aB, int[] aI, int i) {
+        Object a = null;
+        long base = 0;
+        if (i % 2 == 0) {
+            a = aB;
+            base = UNSAFE.ARRAY_BYTE_BASE_OFFSET;
+        } else {
+            a = aI;
+            base = UNSAFE.ARRAY_INT_BASE_OFFSET;
+        }
+        UNSAFE.putByte(a, base + 0, (byte)0xbe);
+        UNSAFE.putByte(a, base + 1, (byte)0xba);
+        UNSAFE.putByte(a, base + 2, (byte)0xad);
+        UNSAFE.putByte(a, base + 3, (byte)0xba);
+        UNSAFE.putByte(a, base + 4, (byte)0xef);
+        UNSAFE.putByte(a, base + 5, (byte)0xbe);
+        UNSAFE.putByte(a, base + 6, (byte)0xad);
+        UNSAFE.putByte(a, base + 7, (byte)0xde);
+        return new Object[]{ aB, aI };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "bottom\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8"}) // note: bottom type
+    static Object[] test600a(byte[] aB, int[] aI, int i) {
+        Object a = null;
+        long base = 0;
+        if (i % 2 == 0) {
+            a = aB;
+            base = UNSAFE.ARRAY_BYTE_BASE_OFFSET;
+        } else {
+            a = aI;
+            base = UNSAFE.ARRAY_INT_BASE_OFFSET;
+        }
+        // array a is an aryptr, but its element type is unknown, i.e. bottom.
+        UNSAFE.putByte(a, base + 0, (byte)0xbe);
+        UNSAFE.putByte(a, base + 1, (byte)0xba);
+        UNSAFE.putByte(a, base + 2, (byte)0xad);
+        UNSAFE.putByte(a, base + 3, (byte)0xba);
+        UNSAFE.putByte(a, base + 4, (byte)0xef);
+        UNSAFE.putByte(a, base + 5, (byte)0xbe);
+        UNSAFE.putByte(a, base + 6, (byte)0xad);
+        UNSAFE.putByte(a, base + 7, (byte)0xde);
+        return new Object[]{ aB, aI };
+    }
+
 }

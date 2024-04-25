@@ -199,7 +199,7 @@ public final class CStrike extends PhysicalStrike {
         getGlyphImageBounds(glyphCode, pt.x, pt.y, floatRect);
 
         if (floatRect.width == 0 && floatRect.height == 0) {
-            result.setRect(0, 0, -1, -1);
+            result.setRect(0, 0, 0, 0);
             return;
         }
 
