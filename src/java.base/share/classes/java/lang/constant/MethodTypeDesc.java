@@ -204,11 +204,12 @@ public sealed interface MethodTypeDesc
      * @return the human-readable descriptor for this method type
      */
     default String displayDescriptor() {
-        return String.format("(%s)%s",
-                             Stream.of(parameterArray())
-                                   .map(ClassDesc::displayName)
-                                   .collect(Collectors.joining(",")),
-                             returnType().displayName());
+        int count = parameterCount();
+        StringBuilder sb = new StringBuilder(24).append('(');
+        for (int i = 0; i < count; i++) {
+            sb.append(parameterType(i).displayName());
+        }
+        return sb.append(')').append(returnType().displayName()).toString();
     }
 
     /**
