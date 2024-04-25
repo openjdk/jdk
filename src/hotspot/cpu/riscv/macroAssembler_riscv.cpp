@@ -896,7 +896,7 @@ void MacroAssembler::j(const address dest, Register temp) {
   }
 }
 
-void MacroAssembler::j(const Address &adr, Register temp) { 
+void MacroAssembler::j(const Address &adr, Register temp) {
   switch (adr.getMode()) {
     case Address::literal: {
       relocate(adr.rspec(), [&] {
