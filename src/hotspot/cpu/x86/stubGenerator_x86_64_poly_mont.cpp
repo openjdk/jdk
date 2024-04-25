@@ -369,7 +369,7 @@ address StubGenerator::generate_intpoly_assign() {
   __ negq(set);
   __ kmovql(select, set);
 
-  // NOTE! Crypto code cannot branch on user input. However; allowed to branch on number of limbs; 
+  // NOTE! Crypto code cannot branch on user input. However; allowed to branch on number of limbs;
   // Number of limbs is a constant in each IntegerPolynomial (i.e. this side-channel branch leaks
   //   number of limbs which is not a secret)
   __ cmpl(length, 5);

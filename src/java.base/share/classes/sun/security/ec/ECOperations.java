@@ -281,11 +281,11 @@ public class ECOperations {
 
     /**
      * Adds second Mutable (Projective) point to first.
-     * 
+     *
      * Used by ECDSAOperations. This method constructs new temporaries each time
      * it is called. For better efficiency, the (private) method that reuses temporaries
      * should be used if more than one sum will be computed.
-     * 
+     *
      * @param p first point and result
      * @param p2 second point to add
      */
