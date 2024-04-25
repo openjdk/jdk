@@ -57,17 +57,14 @@ public:
     NativeCallStackStorage::StackIndex stack_idx;
     MEMFLAGS flag;
 
-    Metadata()
-      : stack_idx(),
-        flag(mtNone) {
-    }
+    Metadata() : stack_idx(), flag(mtNone) {}
+
     Metadata(NativeCallStackStorage::StackIndex stack_idx, MEMFLAGS flag)
-      : stack_idx(stack_idx),
-        flag(flag) {
-    }
+    : stack_idx(stack_idx), flag(flag) {}
+
     static bool equals(const Metadata& a, const Metadata& b) {
-      return NativeCallStackStorage::StackIndex::equals(a.stack_idx, b.stack_idx) &&
-             a.flag == b.flag;
+      return a.flag == b.flag &&
+             NativeCallStackStorage::StackIndex::equals(a.stack_idx, b.stack_idx);
     }
   };
 
@@ -96,6 +93,10 @@ public:
     Metadata metadata() const {
       return Metadata{sidx, flag()};
     }
+
+   const NativeCallStack& stack() const {
+      return sidx.stack();
+    }
   };
 
   // An IntervalChange indicates a change in state between two intervals. The incoming state
@@ -110,13 +111,11 @@ public:
     }
   };
 
-  using VTreapTree = TreapCHeap<size_t, IntervalChange, AddressComparator>;
-  using VTreap = VTreapTree::TreapNode;
-  VTreapTree tree;
+  using VMATreap = TreapCHeap<size_t, IntervalChange, AddressComparator>;
+  using TreapNode = VMATreap::TreapNode;
+  VMATreap tree;
 
-  VMATree()
-    : tree() {
-  }
+  VMATree() : tree() {}
 
   struct SingleDiff {
     int64_t reserve;
@@ -151,9 +150,9 @@ public:
   void visit(size_t from, size_t to, F f) {
     ResourceArea area(mtNMT);
     ResourceMark rm(&area);
-    GrowableArray<VTreap*> to_visit(&area, 16, 0, nullptr);
+    GrowableArray<TreapNode*> to_visit(&area, 16, 0, nullptr);
     to_visit.push(tree._root);
-    VTreap* head = nullptr;
+    TreapNode* head = nullptr;
     while (!to_visit.is_empty()) {
       head = to_visit.pop();
       if (head == nullptr) continue;
@@ -176,7 +175,7 @@ public:
 
 private:
   template<typename F>
-  void in_order_traversal_doer(F f, VTreap* node) const {
+  void in_order_traversal_doer(F f, TreapNode* node) const {
     if (node == nullptr) return;
     in_order_traversal_doer(f, node->left());
     f(node);

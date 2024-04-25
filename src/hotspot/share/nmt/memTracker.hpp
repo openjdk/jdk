@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,6 +175,7 @@ class MemTracker : AllStatic {
   }
 
   static inline void remove_device(MemoryFileTracker::MemoryFile* device) {
+    assert(device != nullptr, "must be");
     assert_post_init();
     if (!enabled()) return;
     MemoryFileTracker::Instance::Locker lock;
@@ -183,6 +184,7 @@ class MemTracker : AllStatic {
 
   static inline void allocate_memory_in(MemoryFileTracker::MemoryFile* device, size_t offset, size_t size,
                                         MEMFLAGS flag, const NativeCallStack& stack) {
+    assert(device != nullptr, "must be");
     assert_post_init();
     if (!enabled()) return;
     MemoryFileTracker::Instance::Locker lock;
@@ -191,6 +193,7 @@ class MemTracker : AllStatic {
 
   static inline void free_memory_in(MemoryFileTracker::MemoryFile* device,
                                         size_t offset, size_t size) {
+    assert(device != nullptr, "must be");
     assert_post_init();
     if (!enabled()) return;
     MemoryFileTracker::Instance::Locker lock;

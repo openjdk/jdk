@@ -41,11 +41,11 @@ MemoryFileTracker::MemoryFileTracker(bool is_detailed_mode)
 }
 
 void MemoryFileTracker::allocate_memory(MemoryFile* device, size_t offset,
-                                            size_t size, MEMFLAGS flag,
-                                            const NativeCallStack& stack) {
+                                        size_t size, MEMFLAGS flag,
+                                        const NativeCallStack& stack) {
   NativeCallStackStorage::StackIndex sidx = _stack_storage.push(stack);
-  DeviceSpace::Metadata metadata(sidx, flag);
-  DeviceSpace::SummaryDiff diff = device->_tree.reserve_mapping(offset, size, metadata);
+  VMATree::Metadata metadata(sidx, flag);
+  VMATree::SummaryDiff diff = device->_tree.reserve_mapping(offset, size, metadata);
   for (int i = 0; i < mt_number_of_types; i++) {
     const VMATree::SingleDiff& rescom = diff.flag[i];
     VirtualMemory* summary = device->_summary.by_type(NMTUtil::index_to_flag(i));
@@ -54,7 +54,7 @@ void MemoryFileTracker::allocate_memory(MemoryFile* device, size_t offset,
 }
 
 void MemoryFileTracker::free_memory(MemoryFile* device, size_t offset, size_t size) {
-  DeviceSpace::SummaryDiff diff = device->_tree.release_mapping(offset, size);
+  VMATree::SummaryDiff diff = device->_tree.release_mapping(offset, size);
   for (int i = 0; i < mt_number_of_types; i++) {
     const VMATree::SingleDiff& rescom = diff.flag[i];
     VirtualMemory* summary = device->_summary.by_type(NMTUtil::index_to_flag(i));
@@ -65,8 +65,8 @@ void MemoryFileTracker::free_memory(MemoryFile* device, size_t offset, size_t si
 void MemoryFileTracker::print_report_on(const MemoryFile* device, outputStream* stream, size_t scale) {
   stream->print_cr("Memory map of %s", device->_descriptive_name);
   stream->cr();
-  VMATree::VTreap* prev = nullptr;
-  device->_tree.in_order_traversal([&](VMATree::VTreap* current) {
+  VMATree::TreapNode* prev = nullptr;
+  device->_tree.in_order_traversal([&](VMATree::TreapNode* current) {
     if (prev == nullptr) {
       // Must be first node.
       prev = current;
@@ -81,8 +81,8 @@ void MemoryFileTracker::print_report_on(const MemoryFile* device, outputStream* 
       stream->print_cr("[" PTR_FORMAT " - " PTR_FORMAT "] allocated " SIZE_FORMAT "%s" " for %s", start_addr, end_addr,
                        NMTUtil::amount_in_scale(end_addr - start_addr, scale),
                        NMTUtil::scale_name(scale),
-                       NMTUtil::flag_to_name(pval.out.metadata().flag));
-      pval.out.metadata().stack_idx.stack().print_on(stream, 4);
+                       NMTUtil::flag_to_name(pval.out.flag()));
+      pval.out.stack().print_on(stream, 4);
       stream->cr();
     }
     prev = current;
@@ -119,13 +119,13 @@ bool MemoryFileTracker::Instance::initialize(NMT_TrackingLevel tracking_level) {
 }
 
 void MemoryFileTracker::Instance::allocate_memory(MemoryFile* device, size_t offset,
-                                                      size_t size, MEMFLAGS flag,
-                                                      const NativeCallStack& stack) {
+                                                  size_t size, MEMFLAGS flag,
+                                                  const NativeCallStack& stack) {
   _tracker->allocate_memory(device, offset, size, flag, stack);
 }
 
 void MemoryFileTracker::Instance::free_memory(MemoryFile* device, size_t offset,
-                                                  size_t size) {
+                                              size_t size) {
   _tracker->free_memory(device, offset, size);
 }
 
@@ -135,7 +135,7 @@ MemoryFileTracker::Instance::make_device(const char* descriptive_name) {
 }
 
 void MemoryFileTracker::Instance::print_report_on(const MemoryFile* device,
-                                                      outputStream* stream, size_t scale) {
+                                                  outputStream* stream, size_t scale) {
   _tracker->print_report_on(device, stream, scale);
 }
 
@@ -149,7 +149,7 @@ void MemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const 
     for (int i = 0; i < mt_number_of_types; i++) {
       auto snap = snapshot->by_type(NMTUtil::index_to_flag(i));
       auto current = device->_summary.by_type(NMTUtil::index_to_flag(i));
-      // PDT stores the memory as reserved but it's accounted as committed.
+      // The MemoryFileTracker stores the memory as reserved but it's accounted as committed.
       snap->commit_memory(current->reserved());
     }
   }

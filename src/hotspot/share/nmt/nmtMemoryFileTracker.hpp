@@ -45,21 +45,17 @@ class MemoryFileTracker {
   // Provide caching of stacks.
   NativeCallStackStorage _stack_storage;
 
-  // Each device has its own memory space.
-  using DeviceSpace = VMATree;
-
 public:
   class MemoryFile : public CHeapObj<mtNMT> {
     friend MemoryFileTracker;
     friend class MemoryFileTrackerTest;
     const char* _descriptive_name;
     VirtualMemorySnapshot _summary;
-    DeviceSpace _tree;
+    VMATree _tree;
   public:
     NONCOPYABLE(MemoryFile);
     MemoryFile(const char* descriptive_name)
-      : _descriptive_name(descriptive_name) {
-    }
+      : _descriptive_name(descriptive_name) {}
   };
 
 private:

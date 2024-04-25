@@ -28,12 +28,18 @@
 
 VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType state,
                                                Metadata& metadata) {
+
   // AddressState saves the necessary information for performing online summary accounting.
   struct AddressState {
     size_t address;
     IntervalChange state;
-    MEMFLAGS flag_out() const {
-      return state.out.metadata().flag;
+
+    const IntervalState& out() const {
+      return state.out;
+    }
+
+    const IntervalState& in() const {
+      return state.in;
     }
   };
 
@@ -45,7 +51,7 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
   AddressState LEQ_A;
   bool GEQ_B_found = false;
   AddressState GEQ_B;
-  VTreap* geqB_n = tree.closest_geq(B);
+  TreapNode* geqB_n = tree.closest_geq(B);
   if (geqB_n != nullptr) {
     GEQ_B = {geqB_n->key(), geqB_n->val()};
     GEQ_B_found = true;
@@ -62,7 +68,7 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
   };
   // First handle A.
   // Find closest node that is LEQ A
-  VTreap* leqA_n = tree.closest_leq(A);
+  TreapNode* leqA_n = tree.closest_leq(A);
   if (leqA_n == nullptr) {
     // No match.
     if (stA.is_noop()) {
@@ -127,9 +133,9 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
   // Find all nodes between (A, B] and record their addresses. Also update B's
   // outgoing state.
   { // Iterate over each node which is larger than A
-    GrowableArrayCHeap<VTreap*, mtNMT> to_visit;
+    GrowableArrayCHeap<TreapNode*, mtNMT> to_visit;
     to_visit.push(tree._root);
-    VTreap* head = nullptr;
+    TreapNode* head = nullptr;
     while (!to_visit.is_empty()) {
       head = to_visit.pop();
       if (head == nullptr) continue;
@@ -184,10 +190,10 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
   if (to_be_deleted_inbetween_a_b.length() == 0 && LEQ_A_found && GEQ_B_found) {
     // We have smashed a hole in an existing region (or replaced it entirely).
     // LEQ_A - A - B - GEQ_B
-    auto& rescom = diff.flag[NMTUtil::flag_to_index(LEQ_A.flag_out())];
-    if (LEQ_A.state.out.type() == StateType::Reserved) {
+    auto& rescom = diff.flag[NMTUtil::flag_to_index(LEQ_A.out().flag())];
+    if (LEQ_A.out().type() == StateType::Reserved) {
       rescom.reserve -= B - A;
-    } else if (LEQ_A.state.out.type() == StateType::Committed) {
+    } else if (LEQ_A.out().type() == StateType::Committed) {
       rescom.commit -= B - A;
       rescom.reserve -= B - A;
     }
@@ -199,33 +205,33 @@ VMATree::SummaryDiff VMATree::register_mapping(size_t A, size_t B, StateType sta
   });
 
   // Track the previous node.
-  AddressState prev = {A, stA};
+  AddressState prev{A, stA};
   while (to_be_deleted_inbetween_a_b.length() > 0) {
     const AddressState delete_me = to_be_deleted_inbetween_a_b.top();
     to_be_deleted_inbetween_a_b.pop();
     // Delete node in (A, B]
     tree.remove(delete_me.address);
     // Perform summary accounting
-    auto& rescom = diff.flag[NMTUtil::flag_to_index(delete_me.state.in.flag())];
-    if (delete_me.state.in.type() == StateType::Reserved) {
+    auto& rescom = diff.flag[NMTUtil::flag_to_index(delete_me.in().flag())];
+    if (delete_me.in().type() == StateType::Reserved) {
       rescom.reserve -= delete_me.address - prev.address;
-    } else if (delete_me.state.in.type() == StateType::Committed) {
+    } else if (delete_me.in().type() == StateType::Committed) {
       rescom.commit -= delete_me.address - prev.address;
       rescom.reserve -= delete_me.address - prev.address;
     }
     prev = delete_me;
   }
 
-  if (prev.address != A && prev.state.out.type() != StateType::Released &&
-      GEQ_B.state.in.type() != StateType::Released) {
+  if (prev.address != A && prev.out().type() != StateType::Released &&
+      GEQ_B.in().type() != StateType::Released) {
     // There was some node inside of (A, B) and it is connected to GEQ_B
     // A - prev - B - GEQ_B
     // It might be that prev.address == B == GEQ_B.address, this is fine.
-    if (prev.state.out.type() == StateType::Reserved) {
-      auto& rescom = diff.flag[NMTUtil::flag_to_index(prev.flag_out())];
+    if (prev.out().type() == StateType::Reserved) {
+      auto& rescom = diff.flag[NMTUtil::flag_to_index(prev.out().flag())];
       rescom.reserve -= B - prev.address;
-    } else if (prev.state.out.type() == StateType::Committed) {
-      auto& rescom = diff.flag[NMTUtil::flag_to_index(prev.flag_out())];
+    } else if (prev.out().type() == StateType::Committed) {
+      auto& rescom = diff.flag[NMTUtil::flag_to_index(prev.out().flag())];
       rescom.commit -= B - prev.address;
       rescom.reserve -= B - prev.address;
     }

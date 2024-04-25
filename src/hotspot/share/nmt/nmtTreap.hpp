@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_NMT_TREAP_HPP
-#define SHARE_NMT_TREAP_HPP
+#ifndef SHARE_NMT_NMTTREAP_HPP
+#define SHARE_NMT_NMTTREAP_HPP
 
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
@@ -278,4 +278,4 @@ public:
 template<typename K, typename V, typename COMPARATOR>
 using TreapCHeap = Treap<K, V, COMPARATOR, TreapCHeapAllocator>;
 
-#endif //SHARE_NMT_TREAP_HPP
+#endif //SHARE_NMT_NMTTREAP_HPP

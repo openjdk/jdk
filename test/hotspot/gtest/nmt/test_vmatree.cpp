@@ -30,7 +30,7 @@
 
 class VMATreeTest : public testing::Test {
 public:
-  VMATree::VTreap* treap_of(VMATree& tree) {
+  VMATree::TreapNode* treap_of(VMATree& tree) {
     return tree.tree._root;
   }
 
@@ -53,7 +53,7 @@ public:
 // Low-level tests inspecting the state of the tree.
 TEST_VM_F(VMATreeTest, LowLevel) {
   using Tree = VMATree;
-  using Node = Tree::VTreap;
+  using Node = Tree::TreapNode;
   using NCS = NativeCallStackStorage;
   NativeCallStackStorage ncs(true);
   NativeCallStackStorage::StackIndex si1 = ncs.push(stack1);
@@ -252,7 +252,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
 // Tests for summary accounting
 TEST_VM_F(VMATreeTest, SummaryAccounting) {
   using Tree = VMATree;
-  using Node = Tree::VTreap;
+  using Node = Tree::TreapNode;
   using NCS = NativeCallStackStorage;
   { // Fully enclosed re-reserving works correctly.
     Tree::Metadata md(NCS::StackIndex(), mtTest);
