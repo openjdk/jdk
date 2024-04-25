@@ -1066,7 +1066,7 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
       if ((p_handletable + i)->handle &&
           (p_handletable + i)->inode == libstat.st_ino &&
           (p_handletable + i)->devid == libstat.st_dev &&
-          (((p_handletable + i)->member == nullptr && member == nullptr) ||
+          (((p_handletable + i)->member == member) ||
            ((p_handletable + i)->member != nullptr && member != nullptr &&
            strcmp((p_handletable + i)->member, member) == 0))) {
         (p_handletable + i)->refcount++;
@@ -1159,8 +1159,8 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
       if (res) {
         // First case: libhandle was found (with refcount == 0) and ::dlclose successful,
         // so delete entry from array (do not forget to free member-string space if member exists)
-		if ((p_handletable + i)->member) {
-		  os::free((p_handletable + i)->member);
+        if ((p_handletable + i)->member) {
+          os::free((p_handletable + i)->member);
         }
         g_handletable_used--;
         // If the entry was the last one of the array, the previous g_handletable_used--
