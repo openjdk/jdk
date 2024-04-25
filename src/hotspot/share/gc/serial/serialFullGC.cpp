@@ -52,7 +52,7 @@
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
-#include "gc/shared/space.inline.hpp"
+#include "gc/shared/space.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "memory/iterator.inline.hpp"
@@ -747,10 +747,6 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
   }
 
   restore_marks();
-
-  // Set saved marks for allocation profiler (and other things? -- dld)
-  // (Should this be in general part?)
-  gch->save_marks();
 
   deallocate_stacks();
 

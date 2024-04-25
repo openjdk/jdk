@@ -50,7 +50,7 @@ public class TypeDeclSnippet extends DeclarationSnippet {
                 declareReferences, bodyReferences, syntheticDiags);
     }
 
-    /**** internal access ****/
+    //**** internal access ****
 
     @Override
     TypeDeclKey key() {

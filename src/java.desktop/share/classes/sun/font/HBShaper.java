@@ -168,22 +168,22 @@ public class HBShaper {
         SYM_LOOKUP = SymbolLookup.loaderLookup().or(LINKER.defaultLookup());
         FunctionDescriptor mallocDescriptor =
             FunctionDescriptor.of(ADDRESS, JAVA_LONG);
-        Optional<MemorySegment> malloc_symbol = SYM_LOOKUP.find("malloc");
+        MemorySegment malloc_symbol = SYM_LOOKUP.findOrThrow("malloc");
         @SuppressWarnings("restricted")
-        MethodHandle tmp1 = LINKER.downcallHandle(malloc_symbol.get(), mallocDescriptor);
+        MethodHandle tmp1 = LINKER.downcallHandle(malloc_symbol, mallocDescriptor);
         malloc_handle = tmp1;
 
         FunctionDescriptor createFaceDescriptor =
             FunctionDescriptor.of(ADDRESS, ADDRESS);
-        Optional<MemorySegment> create_face_symbol = SYM_LOOKUP.find("HBCreateFace");
+        MemorySegment create_face_symbol = SYM_LOOKUP.findOrThrow("HBCreateFace");
         @SuppressWarnings("restricted")
-        MethodHandle tmp2 = LINKER.downcallHandle(create_face_symbol.get(), createFaceDescriptor);
+        MethodHandle tmp2 = LINKER.downcallHandle(create_face_symbol, createFaceDescriptor);
         create_face_handle = tmp2;
 
         FunctionDescriptor disposeFaceDescriptor = FunctionDescriptor.ofVoid(ADDRESS);
-        Optional<MemorySegment> dispose_face_symbol = SYM_LOOKUP.find("HBDisposeFace");
+        MemorySegment dispose_face_symbol = SYM_LOOKUP.findOrThrow("HBDisposeFace");
         @SuppressWarnings("restricted")
-        MethodHandle tmp3 = LINKER.downcallHandle(dispose_face_symbol.get(), disposeFaceDescriptor);
+        MethodHandle tmp3 = LINKER.downcallHandle(dispose_face_symbol, disposeFaceDescriptor);
         dispose_face_handle = tmp3;
 
         FunctionDescriptor shapeDesc = FunctionDescriptor.ofVoid(
@@ -204,9 +204,9 @@ public class HBShaper {
             ADDRESS,     // ptr to harfbuzz font_funcs object.
             ADDRESS);    // store_results_fn
 
-        Optional<MemorySegment> shape_sym = SYM_LOOKUP.find("jdk_hb_shape");
+        MemorySegment shape_sym = SYM_LOOKUP.findOrThrow("jdk_hb_shape");
         @SuppressWarnings("restricted")
-        MethodHandle tmp4 = LINKER.downcallHandle(shape_sym.get(), shapeDesc);
+        MethodHandle tmp4 = LINKER.downcallHandle(shape_sym, shapeDesc);
         jdk_hb_shape_handle = tmp4;
 
         Arena garena = Arena.global(); // creating stubs that exist until VM exit.
@@ -260,10 +260,10 @@ public class HBShaper {
             ADDRESS,     // h_advance_fn upcall stub
             ADDRESS,     // v_advance_fn upcall stub
             ADDRESS);     // contour_pt_fn upcall stub
-        Optional<MemorySegment> create_font_funcs_symbol = SYM_LOOKUP.find("HBCreateFontFuncs");
+        MemorySegment create_font_funcs_symbol = SYM_LOOKUP.findOrThrow("HBCreateFontFuncs");
         @SuppressWarnings("restricted")
         MethodHandle create_font_funcs_handle =
-            LINKER.downcallHandle(create_font_funcs_symbol.get(), createFontFuncsDescriptor);
+            LINKER.downcallHandle(create_font_funcs_symbol, createFontFuncsDescriptor);
 
         MemorySegment s = null;
         try {
