@@ -41,7 +41,7 @@ import javax.swing.table.DefaultTableModel;
 /*
  * @test
  * @key headful
- * @bug 8210807 8322140
+ * @bug 8210807 8322140 8322135
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Test to check if JTable can be printed when JScrollPane added to it.
