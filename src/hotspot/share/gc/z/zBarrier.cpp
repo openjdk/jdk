@@ -141,18 +141,6 @@ zaddress ZBarrier::blocking_load_barrier_on_phantom_slow_path(volatile zpointer*
   return addr;
 }
 
-//
-// Clean barrier
-//
-
-zaddress ZBarrier::verify_old_object_live_slow_path(zaddress addr) {
-  // Verify that the object was indeed alive
-  assert(ZHeap::heap()->is_young(addr) || ZHeap::heap()->is_object_live(addr), "Should be live");
-
-  return addr;
-}
-
-//
 // Mark barrier
 //
 

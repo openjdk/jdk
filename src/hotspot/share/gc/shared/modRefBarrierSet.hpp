@@ -52,7 +52,7 @@ public:
   inline void write_ref_field_post(T *addr) {}
 
   // Causes all refs in "mr" to be assumed to be modified (by this JavaThread).
-  virtual void invalidate(MemRegion mr) = 0;
+  virtual void write_region(MemRegion mr) = 0;
   // Causes all refs in "mr" to be assumed to be modified by the given JavaThread.
   virtual void write_region(JavaThread* thread, MemRegion mr) = 0;
 
@@ -68,10 +68,6 @@ public:
   // at the address "start", which may not necessarily be HeapWord-aligned
   inline void write_ref_array(HeapWord* start, size_t count);
 
- protected:
-  virtual void write_ref_array_work(MemRegion mr) = 0;
-
- public:
   // The ModRef abstraction introduces pre and post barriers
   template <DecoratorSet decorators, typename BarrierSetT>
   class AccessBarrier: public BarrierSet::AccessBarrier<decorators, BarrierSetT> {
