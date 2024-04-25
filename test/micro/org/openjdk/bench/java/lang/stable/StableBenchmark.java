@@ -52,7 +52,9 @@ import java.util.function.Supplier;
 @Threads(Threads.MAX)   // Benchmark under contention
 public class StableBenchmark {
 
+    private static final int ITERATIONS = 1_000;
     private static final int VALUE = 42;
+    private static final int OTHER_VALUE = 13;
 
     private final StableValue<Integer> stable = init(StableValue.of());
     private final Supplier<Integer> dcl = new Dcl<>(() -> VALUE);
@@ -66,22 +68,38 @@ public class StableBenchmark {
 
     @Benchmark
     public int atomic() {
-        return (int)atomic.get();
+        int sum = 0;
+        for (int i = 0; i < ITERATIONS; i++) {
+            sum += atomic.get();
+        }
+        return sum;
     }
 
     @Benchmark
     public int dcl() {
-        return (int)dcl.get();
+        int sum = 0;
+        for (int i = 0; i < ITERATIONS; i++) {
+            sum += dcl.get();
+        }
+        return sum;
     }
 
     @Benchmark
     public int stable() {
-        return (int)stable.orThrow();
+        int sum = 0;
+        for (int i = 0; i < ITERATIONS; i++) {
+            sum += stable.orThrow();
+        }
+        return sum;
     }
 
     @Benchmark
     public int stableList() {
-        return (int)list.get(0).orThrow();
+        int sum = 0;
+        for (int i = 0; i < ITERATIONS; i++) {
+            sum += list.get(0).orThrow();
+        }
+        return sum;
     }
 
     private static StableValue<Integer> init(StableValue<Integer> m) {
