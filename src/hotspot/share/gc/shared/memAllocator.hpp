@@ -150,8 +150,7 @@ class SandboxedOOMEMark: public StackObj {
   // Returns nullptr iff `activate` was false in the constructor.
   JavaThread* thread() const  { return _thread; }
 
-  // Does this scope disable JVMTI resource exhausted events and
-  // -XX:+HeapDumpOnOutOfMemoryError and -XX:OnOutOfMemoryError
+  // Does this scope disable JVMTI resource exhausted events
   // when an OOME is thrown?
   bool disable_events() const { return _disable_events; }
 };
