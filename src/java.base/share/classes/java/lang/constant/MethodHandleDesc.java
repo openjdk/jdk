@@ -207,7 +207,7 @@ public sealed interface MethodHandleDesc
 
     /**
      * @since 21
-     * */
+     */
     @Override
     MethodHandle resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException;
 

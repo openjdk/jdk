@@ -44,7 +44,7 @@ public sealed interface ClassSignature
     /** {@return the instantiation of the superclass in this signature}
      *
      * @since 23
-     * */
+     */
     Signature.ClassTypeSig superclassSignature();
 
     /** {@return the instantiation of the interfaces in this signature} */
