@@ -26,16 +26,35 @@
  * @bug 8327012
  * @summary Test that initializing store gets captured, i.e. moved before the InitializeNode
  *          and made into a raw-store.
- *
+ * @library /test/lib /
  * @run driver compiler.macronodes.TestInitializingStoreCapturing
  */
 
 package compiler.macronodes;
 
+import compiler.lib.ir_framework.*;
+
 public class TestInitializingStoreCapturing {
 
+    static class A {
+        float value;
+        A(float v) { value = v; }
+    };
+
     static public void main(String[] args) {
+        TestFramework.run();
     }
 
+    @Test
+    @IR(counts = {IRNode.STE, "= 0"})
+    static A testInitializeField() {
+        return new A(4.2f);
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE, "= 0"})
+    static float[] testInitializeArray() {
+        return new float[] {4.2f};
+    }
 }
  
