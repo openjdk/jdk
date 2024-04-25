@@ -282,8 +282,7 @@ public class KeepAliveTest {
         } else {
             System.out.print(serverHeaders[scenarioNumber]);
         }
-        Thread server = new Thread(() -> executeServer(scenarioNumber));
-        server.start();
+        Thread server = Thread.ofPlatform().start(() -> executeServer(scenarioNumber));
         connectToServerURL(expectedValue);
         server.join();
         System.out.println();
