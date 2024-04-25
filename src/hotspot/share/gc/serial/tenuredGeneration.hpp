@@ -66,7 +66,6 @@ class TenuredGeneration: public Generation {
   void assert_correct_size_change_locking();
 
   ContiguousSpace*    _the_space;       // Actual space holding objects
-  HeapWord*           _saved_mark_word;
 
   GenerationCounters* _gen_counters;
   CSpaceCounters*     _space_counters;
@@ -89,7 +88,6 @@ public:
   void compute_new_size();
 
   ContiguousSpace* space() const { return _the_space; }
-  HeapWord* saved_mark_word() const { return _saved_mark_word; }
 
   // Grow generation with specified size (returns false if unable to grow)
   bool grow_by(size_t bytes);
