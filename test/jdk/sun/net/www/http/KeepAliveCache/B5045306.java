@@ -52,7 +52,7 @@ import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
 
 /* Part 1:
- * The http client makes a connection to a URL who's content contains a lot of
+ * The http client makes a connection to a URL whose content contains a lot of
  * data, more than can fit in the socket buffer. The client only reads
  * 1 byte of the data from the InputStream leaving behind more data than can
  * fit in the socket buffer. The client then makes a second call to the http
@@ -70,12 +70,13 @@ public class B5045306 {
 
     public static void startHttpServer() {
         try {
-            server = HttpServer.create(new InetSocketAddress(InetAddress.getLocalHost(), 0), 10, "/", new SimpleHttpTransactionHandler());
+            server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 10, "/", new SimpleHttpTransactionHandler());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
         server.setExecutor(executor);
         server.start();
+        System.out.println("http server listens on: " + server.getAddress());
     }
 
     public static void stopHttpServer() {
@@ -88,11 +89,10 @@ public class B5045306 {
         Thread.setDefaultUncaughtExceptionHandler((t, ex) -> {
             uncaught.add(ex);
         });
-        System.out.println("http server listens on: " + server.getAddress().getPort());
 
         URL bigDataURL = URIBuilder.newBuilder()
                 .scheme("http")
-                .host(InetAddress.getLocalHost())
+                .loopback()
                 .port(server.getAddress().getPort())
                 .path("/firstCall")
                 .toURL();
@@ -139,7 +139,7 @@ public class B5045306 {
         if (threadMXBean.isThreadCpuTimeSupported()) {
             long[] threads = threadMXBean.getAllThreadIds();
             ThreadInfo[] threadInfo = threadMXBean.getThreadInfo(threads);
-            for (int i=0; i<threadInfo.length; i++) {
+            for (int i = 0; i < threadInfo.length; i++) {
                 if (threadInfo[i].getThreadName().equals("Keep-Alive-SocketCleaner")) {
                     System.out.println("Found Keep-Alive-SocketCleaner thread");
                     long threadID = threadInfo[i].getThreadId();

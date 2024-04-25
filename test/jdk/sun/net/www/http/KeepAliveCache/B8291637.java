@@ -138,15 +138,15 @@ public class B8291637 {
                 .scheme("http")
                 .loopback()
                 .port(port)
-                .path("/firstCall")
+                .path("/")
                 .toURL();
         HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
         int count=0;
         try (InputStream i = urlc.getInputStream()) {
             int c;
             byte[] buf = new byte[256];
-            while ((c=i.read(buf)) != -1) {
-                count+=c;
+            while ((c = i.read(buf)) != -1) {
+                count += c;
             }
         }
         System.out.println("Read " + count);
