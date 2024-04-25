@@ -50,27 +50,27 @@ echo "TESTCLASSES:    $TESTCLASSES"
 echo "TESTJAVACOPTS:  $TESTJAVACOPTS"
 echo "TESTTOOLVMOPTS: $TESTTOOLVMOPTS"
 
-JAVAC="${TESTJAVA}/bin/javac"
+javac="${TESTJAVA}/bin/javac"
 
-SRCFILEBASE=GetAvailableProcessors
-SRCFILE="${TESTSRC}/$SRCFILEBASE.java"
-LOGFILE="${TESTCLASSES}/$SRCFILEBASE.output.log"
-$JAVAC ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d ${TESTCLASSES} $SRCFILE
+src_file_base=GetAvailableProcessors
+src_file="${TESTSRC}/$src_file_base.java"
+log_file="${TESTCLASSES}/$src_file_base.output.log"
+$javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d ${TESTCLASSES} $src_file
 
 status=$?
 if [ ! $status -eq "0" ]; then
-  echo "Compilation failed: $SRCFILE";
+  echo "Compilation failed: $src_file";
   exit 1
 fi
 
-# Write SYSTEM_INFO.dwNumberOfProcessors to a log file
-GETPROCINFONAME=GetProcessorInfo
-GETPROCINFOLOG="${TESTCLASSES}/$GETPROCINFONAME.output.log"
-${TESTNATIVEPATH}/$GETPROCINFONAME > $GETPROCINFOLOG 2>&1
+# Write processor information from Windows APIs to a log file
+get_proc_info_name=GetProcessorInfo
+get_proc_info_log="${TESTCLASSES}/$get_proc_info_name.output.log"
+${TESTNATIVEPATH}/$get_proc_info_name > $get_proc_info_log 2>&1
 
 # Validate output from GetProcessorInfo.exe
 unsupported_os_regex="Unsupported OS\\."
-grep -Po "$unsupported_os_regex" $GETPROCINFOLOG
+grep -Po "$unsupported_os_regex" $get_proc_info_log
 status=$?
 if [ $status -eq "0" ]; then
   echo "Test skipped: Unsupported Windows version.";
@@ -78,81 +78,78 @@ if [ $status -eq "0" ]; then
 fi
 
 processor_info_regex="Active processors per group: (\\d+,)+"
-grep -Po "$processor_info_regex" $GETPROCINFOLOG
+grep -Po "$processor_info_regex" $get_proc_info_log
 status=$?
 if [ ! $status -eq "0" ]; then
-  echo "TESTBUG: $GETPROCINFONAME did not output a processor count.";
+  echo "TESTBUG: $get_proc_info_name did not output a processor count.";
   exit 1
 fi
 
 # Write the processor counts to a file
-NATIVEPROCS="${TESTCLASSES}/processor_count_native.log"
-grep -Po "$processor_info_regex" $GETPROCINFOLOG   | sed -e 's/[a-zA-Z: \.]//g' > $NATIVEPROCS 2>&1
-group_processor_counts_str=$(<$NATIVEPROCS)
+native_procs="${TESTCLASSES}/processor_count_native.log"
+grep -Po "$processor_info_regex" $get_proc_info_log   | sed -e 's/[a-zA-Z: \.]//g' > $native_procs 2>&1
+group_processor_counts_str=$(<$native_procs)
 IFS=, read -a group_processor_counts <<<"$group_processor_counts_str"
 
 # Find the smallest processor group because on systems with different processor
 # group sizes, "start /affinity" can still launch a process in a smaller
 # processor group than the affinity provided via the /affinity parameter
-let dwNumberOfProcessors=64
+let num_processors=64
 for i in "${group_processor_counts[@]}"; do
   let group_processor_count=i
   echo "Active processors in group: $group_processor_count"
-  if [ $group_processor_count -lt $dwNumberOfProcessors ]; then
-    dwNumberOfProcessors=$group_processor_count
+  if [ $group_processor_count -lt $num_processors ]; then
+    num_processors=$group_processor_count
   fi
 done
 
-if [ $dwNumberOfProcessors -le 0 ]; then
-  echo "Test failed: $GETPROCINFONAME did not output a valid processor count.";
+if [ $num_processors -le 0 ]; then
+  echo "Test failed: $get_proc_info_name did not output a valid processor count.";
   exit 1
 fi
 
-if [ $dwNumberOfProcessors -gt 64 ]; then
-  echo "Test failed: $GETPROCINFONAME returned an invalid processor count.";
+if [ $num_processors -gt 64 ]; then
+  echo "Test failed: $get_proc_info_name returned an invalid processor count.";
   exit 1
 fi
 
-if [ $dwNumberOfProcessors -lt 64 ]; then
-  let affinity=$((1 << dwNumberOfProcessors))-1
+if [ $num_processors -lt 64 ]; then
+  let affinity=$((1 << num_processors))-1
   affinity=$(printf "%x" "$affinity")
 else
   affinity=0xffffffffffffffff
 fi
 
 # Write Runtime.availableProcessors to a log file
-javaCmdLine="${TESTJAVA}/bin/java -XX:+UseAllWindowsProcessorGroups ${TESTVMOPTS} -cp ${TESTCLASSES} $SRCFILEBASE"
-commandLine="start /wait /b /affinity $affinity $javaCmdLine > $LOGFILE"
+java_cmd_line="${TESTJAVA}/bin/java -XX:+UseAllWindowsProcessorGroups ${TESTVMOPTS} -cp ${TESTCLASSES} $src_file_base"
+cmd_line="start /wait /b /affinity $affinity $java_cmd_line > $log_file"
 
-echo "Executing: $commandLine"
-cmd /c $commandLine
+echo "Executing: $cmd_line"
+cmd /c $cmd_line
 status=$?
 if [ ! $status -eq "0" ]; then
-  echo "Test FAILED: $SRCFILE";
+  echo "Test FAILED: $src_file";
   exit 1
 fi
 
 # Validate output from GetAvailableProcessors.java
 available_processors_regex="Runtime\\.availableProcessors: \\d+"
-grep -Po "$available_processors_regex" $LOGFILE
+grep -Po "$available_processors_regex" $log_file
 status=$?
 if [ ! $status -eq "0" ]; then
-  echo "TESTBUG: $SRCFILE did not output a processor count.";
+  echo "TESTBUG: $src_file did not output a processor count.";
   exit 1
 fi
 
 # Write the processor count to a file
-JAVAPROCS="${TESTCLASSES}/processor_count_java.log"
-grep -Po "$available_processors_regex" $LOGFILE | sed -e 's/[a-zA-Z: \.]//g' > $JAVAPROCS 2>&1
-runtimeAvailableProcessors=$(<$JAVAPROCS)
+java_procs_log="${TESTCLASSES}/processor_count_java.log"
+grep -Po "$available_processors_regex" $log_file | sed -e 's/[a-zA-Z: \.]//g' > $java_procs_log 2>&1
+java_runtime_processors=$(<$java_procs_log)
 
 # Ensure the processor counts are identical
 
-echo "java.lang.Runtime.availableProcessors: $runtimeAvailableProcessors"
-echo "SYSTEM_INFO.dwNumberOfProcessors:      $dwNumberOfProcessors"
-
-if [ "$runtimeAvailableProcessors" != "$dwNumberOfProcessors" ]; then
-  echo "Test failed: Runtime.availableProcessors ($runtimeAvailableProcessors) != dwNumberOfProcessors ($dwNumberOfProcessors)"
+if [ "$java_runtime_processors" != "$num_processors" ]; then
+  echo "Test failed: Runtime.availableProcessors ($java_runtime_processors) != Processor count in smallest group ($num_processors)"
   exit 1
 else
   echo "Test passed."
