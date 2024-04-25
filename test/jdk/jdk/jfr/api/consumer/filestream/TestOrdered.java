@@ -91,6 +91,7 @@ public class TestOrdered {
             System.out.println();
             System.out.println("Testing: testSetOrderedTrue reuse = " + reuse);
             AtomicReference<Instant> timestamp = new AtomicReference<>(Instant.MIN);
+            AtomicBoolean unordered = new AtomicBoolean(false);
             try (EventStream es = EventStream.openFile(p)) {
                 es.setReuse(reuse);
                 es.setOrdered(true);
@@ -98,11 +99,14 @@ public class TestOrdered {
                     Instant endTime = e.getEndTime();
                     printTimestamp(endTime);
                     if (endTime.isBefore(timestamp.get())) {
-                        throw new Error("Events are not ordered! Reuse = " + reuse);
+                        unordered.set(true);
                     }
                     timestamp.set(endTime);
                 });
                 es.start();
+            }
+            if (unordered.get()) {
+                throw new Exception("Events are not ordered! Reuse = " + reuse);
             }
         }
     }
@@ -112,7 +116,7 @@ public class TestOrdered {
             System.out.println();
             System.out.println("Testing: testSetOrderedFalse reuse = " + reuse);
             AtomicReference<Instant> timestamp = new AtomicReference<>(Instant.MIN);
-            AtomicBoolean unoreded = new AtomicBoolean(false);
+            AtomicBoolean unordered = new AtomicBoolean(false);
             try (EventStream es = EventStream.openFile(p)) {
                 es.setReuse(reuse);
                 es.setOrdered(false);
@@ -120,12 +124,12 @@ public class TestOrdered {
                     Instant endTime = e.getEndTime();
                     printTimestamp(endTime);
                     if (endTime.isBefore(timestamp.get())) {
-                        unoreded.set(true);
+                        unordered.set(true);
                     }
                     timestamp.set(endTime);
                 });
                 es.start();
-                if (!unoreded.get()) {
+                if (!unordered.get()) {
                     throw new Exception("Expected at least some events to be out of order! Reuse = " + reuse);
                 }
             }
