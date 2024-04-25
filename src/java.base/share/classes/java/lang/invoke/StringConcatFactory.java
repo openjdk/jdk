@@ -27,7 +27,6 @@ package java.lang.invoke;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.misc.VM;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -35,7 +34,6 @@ import jdk.internal.util.ClassFileDumper;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
-import java.lang.classfile.ClassFile;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.util.Objects;
 import java.util.Set;
@@ -1056,7 +1054,7 @@ public final class StringConcatFactory {
      * to what javac would. No exact sizing of parameters or estimates.
      */
     private static final class SimpleStringBuilderStrategy {
-        static final int CLASSFILE_VERSION = ClassFile.latestMajorVersion();
+        static final int CLASSFILE_VERSION = 52; // JDK 8
         static final String METHOD_NAME = "concat";
         static final ClassFileDumper DUMPER =
                 ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
