@@ -1161,6 +1161,7 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
         // so delete entry from array (do not forget to free member-string space if member exists)
         if ((p_handletable + i)->member) {
           os::free((p_handletable + i)->member);
+          (p_handletable + i)->member = nullptr;
         }
         g_handletable_used--;
         // If the entry was the last one of the array, the previous g_handletable_used--
