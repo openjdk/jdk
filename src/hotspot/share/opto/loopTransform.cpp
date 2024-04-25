@@ -1987,7 +1987,7 @@ void PhaseIdealLoop::update_main_loop_assertion_predicates(Node* ctrl, CountedLo
                                                              prev_proj);
         assert(!assertion_predicate_has_loop_opaque_node(prev_proj->in(0)->as_If()), "unexpected");
       } else {
-        // Ignore Opaque4 from a null-check for an intrinsic or unsafe access. This could happen when we maximally
+        // Ignore Opaque4 from a non-null-check for an intrinsic or unsafe access. This could happen when we maximally
         // unroll a non-main loop with such an If with an Opaque4 node directly above the loop entry.
         assert(!loop_head->is_main_loop(), "Opaque4 node from a non-null check - should not be at main loop");
       }
@@ -2023,6 +2023,7 @@ void PhaseIdealLoop::copy_assertion_predicates_to_post_loop(LoopNode* main_loop_
       break;
     }
     if (iff->in(1)->is_Opaque4()) {
+      // Initialize from Template Assertion Predicate.
       assert(assertion_predicate_has_loop_opaque_node(iff), "must find OpaqueLoop* nodes");
       prev_proj = clone_assertion_predicate_and_initialize(iff, init, stride, ctrl, proj, post_loop_entry,
                                                            post_loop, prev_proj);
@@ -2060,6 +2061,7 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_peeled_loop(const Predi
     Node* bol = iff->in(1);
     assert(!bol->is_OpaqueInitializedAssertionPredicate(), "should not find an Initialized Assertion Predicate");
     if (bol->is_Opaque4()) {
+      // Initialize from Template Assertion Predicate.
       assert(assertion_predicate_has_loop_opaque_node(iff), "must find OpaqueLoop* nodes");
       input_proj = clone_assertion_predicate_and_initialize(iff, init, stride, next_regular_predicate_proj, uncommon_proj, control,
                                                             outer_loop, input_proj);

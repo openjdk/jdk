@@ -778,9 +778,11 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
     }
   }//for
   Node* bol = iff->in(1);
-  assert(!bol->is_OpaqueInitializedAssertionPredicate(), "Initialized Assertion Predicates cannot form a diamond");
+  assert(!bol->is_OpaqueInitializedAssertionPredicate(), "Initialized Assertion Predicates cannot form a diamond with Halt");
   if (bol->is_Opaque4()) {
     // Ignore Template Assertion Predicates with Opaque4 nodes.
+    assert(assertion_predicate_has_loop_opaque_node(iff),
+           "must be Template Assertion Predicate, non-null-check with Opaque4 cannot form a diamond with Halt");
     return nullptr;
   }
   assert(bol->Opcode() == Op_Bool, "Unexpected node");
