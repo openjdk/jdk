@@ -52,7 +52,7 @@ import java.util.function.Supplier;
 @Threads(Threads.MAX)   // Benchmark under contention
 public class StableBenchmark {
 
-    private static final int ITERATIONS = 1_000;
+    private static final int ITERATIONS = 20;
     private static final int VALUE = 42;
 
     private final StableValue<Integer> stable = init(StableValue.of());
@@ -60,8 +60,6 @@ public class StableBenchmark {
     private final Supplier<Integer> dcl = new Dcl<>(() -> VALUE);
     private final List<StableValue<Integer>> list = StableValue.ofList(1);
     private final AtomicReference<Integer> atomic = new AtomicReference<>(VALUE);
-
-
 
     @Setup
     public void setup() {
@@ -97,19 +95,19 @@ public class StableBenchmark {
     }
 
     @Benchmark
-    public int stableList() {
+    public int stableHoldingList() {
         int sum = 0;
         for (int i = 0; i < ITERATIONS; i++) {
-            sum += list.get(0).orThrow();
+            sum += stableHoldingList.orThrow().get(0);
         }
         return sum;
     }
 
     @Benchmark
-    public int stableHoldingList() {
+    public int stableList() {
         int sum = 0;
         for (int i = 0; i < ITERATIONS; i++) {
-            sum += stableHoldingList.orThrow().get(0);
+            sum += list.get(0).orThrow();
         }
         return sum;
     }
