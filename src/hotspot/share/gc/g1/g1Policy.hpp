@@ -184,9 +184,10 @@ public:
     return _mmu_tracker->max_gc_time() * 1000.0;
   }
 
+  G1CollectionSetCandidates* candidates() const;
+
 private:
   G1CollectionSet* _collection_set;
-  G1CollectionSetCandidates* candidates() const;
 
   double average_time_ms(G1GCPhaseTimes::GCParPhases phase) const;
   double other_time_ms(double pause_time_ms) const;
@@ -327,8 +328,6 @@ public:
   // Record start, end, and completion of cleanup.
   void record_concurrent_mark_cleanup_start();
   void record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets);
-
-  void build_collectionset();
 
   bool next_gc_should_be_mixed() const;
 
