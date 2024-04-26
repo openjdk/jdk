@@ -233,7 +233,17 @@ public abstract class PKCS11Test {
                 throw new RuntimeException("Test root directory not found");
             }
         }
-        PKCS11_BASE = new File(cwd, PKCS11_REL_PATH.replace('/', SEP)).getAbsolutePath();
+        File pkcs11 = new File(cwd, PKCS11_REL_PATH.replace('/', SEP));
+        if (!new File(pkcs11, "nss/p11-nss.txt").exists()) {
+            // this test might be in the closed
+            pkcs11 = new File(new File(cwd, "../../../open/test/jdk"),
+                    PKCS11_REL_PATH.replace('/', SEP));
+            if (!new File(pkcs11, "nss/p11-nss.txt").exists()) {
+                throw new RuntimeException("Not a PKCS11 directory"
+                        + pkcs11.getAbsolutePath());
+            }
+        }
+        PKCS11_BASE = pkcs11.getAbsolutePath();
         return PKCS11_BASE;
     }
 

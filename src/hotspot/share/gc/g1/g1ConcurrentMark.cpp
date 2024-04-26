@@ -869,7 +869,7 @@ public:
   NoteStartOfMarkHRClosure() : HeapRegionClosure(), _cm(G1CollectedHeap::heap()->concurrent_mark()) { }
 
   bool do_heap_region(HeapRegion* r) override {
-    if (r->is_old_or_humongous() && !r->is_collection_set_candidate()) {
+    if (r->is_old_or_humongous() && !r->is_collection_set_candidate() && !r->in_collection_set()) {
       _cm->update_top_at_mark_start(r);
     }
     return false;

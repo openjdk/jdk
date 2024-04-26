@@ -27,23 +27,22 @@
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/generation.hpp"
 #include "gc/serial/serialHeap.inline.hpp"
-#include "gc/shared/space.inline.hpp"
+#include "gc/shared/space.hpp"
 #include "memory/iterator.inline.hpp"
 #include "utilities/align.hpp"
 
-void CardTableRS::scan_old_to_young_refs(TenuredSpace* sp, HeapWord* saved_mark_word) {
-  const MemRegion ur    = sp->used_region();
-  const MemRegion urasm = MemRegion(sp->bottom(), saved_mark_word);
+void CardTableRS::scan_old_to_young_refs(TenuredGeneration* tg, HeapWord* saved_top) {
+  const MemRegion ur    = tg->used_region();
+  const MemRegion urasm = MemRegion(tg->space()->bottom(), saved_top);
 
   assert(ur.contains(urasm),
-         "Did you forget to call save_marks()? "
          "[" PTR_FORMAT ", " PTR_FORMAT ") is not contained in "
          "[" PTR_FORMAT ", " PTR_FORMAT ")",
          p2i(urasm.start()), p2i(urasm.end()), p2i(ur.start()), p2i(ur.end()));
 
   if (!urasm.is_empty()) {
     OldGenScanClosure cl(SerialHeap::heap()->young_gen());
-    non_clean_card_iterate(sp, urasm, &cl);
+    non_clean_card_iterate(tg, urasm, &cl);
   }
 }
 
@@ -225,7 +224,7 @@ static void scan_obj_with_limit(oop obj,
   }
 }
 
-void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
+void CardTableRS::non_clean_card_iterate(TenuredGeneration* tg,
                                          MemRegion mr,
                                          OldGenScanClosure* cl) {
   struct {
@@ -238,7 +237,7 @@ void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
       assert(cached_obj.start_addr != nullptr, "inv");
       return cached_obj.start_addr;
     }
-    HeapWord* result = sp->block_start_const(addr);
+    HeapWord* result = tg->block_start(addr);
 
     cached_obj.start_addr = result;
     cached_obj.end_addr = result + cast_to_oop(result)->size();
