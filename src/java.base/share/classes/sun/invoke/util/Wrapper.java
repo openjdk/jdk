@@ -62,7 +62,16 @@ public enum Wrapper {
     private final String   primitiveSimpleName;
     private final ClassDesc classDesc;
 
-    private Wrapper(Class<?> wtype, String wtypeName, Class<?> ptype, String ptypeName, char tchar, Object emptyArray, int format, int numericClass, int superClasses, ClassDesc primitiveTypeDesc) {
+    private Wrapper(Class<?> wtype,
+                    String wtypeName,
+                    Class<?> ptype,
+                    String ptypeName,
+                    char tchar,
+                    Object emptyArray,
+                    int format,
+                    int numericClass,
+                    int superClasses,
+                    ClassDesc classDesc) {
         this.wrapperType = wtype;
         this.primitiveType = ptype;
         this.basicTypeChar = tchar;
@@ -73,7 +82,7 @@ public enum Wrapper {
         this.superClasses = superClasses;
         this.wrapperSimpleName = wtypeName;
         this.primitiveSimpleName = ptypeName;
-        this.classDesc = primitiveTypeDesc;
+        this.classDesc = classDesc;
     }
 
     /** For debugging, give the details of this wrapper. */
