@@ -71,7 +71,7 @@ import java.net.URI;
 
 public abstract class HttpExchange implements AutoCloseable, Request {
     /**
-     * use in sendResponseHeaders() to signify no content in the response.
+     * Use in sendResponseHeaders() to signify no content in the response.
      * @see #sendResponseHeaders(int, long)
      *  */
     public static final long NO_CONTENT = -1L;
