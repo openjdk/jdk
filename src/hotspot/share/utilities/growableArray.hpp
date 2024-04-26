@@ -153,17 +153,17 @@ public:
     return &_data[i];
   }
 
-  E first() const {
+  E& first() const {
     assert(_len > 0, "empty");
     return _data[0];
   }
 
-  E top() const {
+  E& top() const {
     assert(_len > 0, "empty");
     return _data[_len-1];
   }
 
-  E last() const {
+  E& last() const {
     return top();
   }
 
@@ -301,7 +301,7 @@ public:
 
     while (max >= min) {
       int mid = (int)(((uint)max + min) / 2);
-      E value = at(mid);
+      E& value = at(mid);
       int diff = compare(key, value);
       if (diff > 0) {
         min = mid + 1;
@@ -323,7 +323,7 @@ public:
 
     while (max >= min) {
       int mid = (int)(((uint)max + min) / 2);
-      E value = at(mid);
+      E& value = at(mid);
       int diff = cc->do_compare(key, value);
       if (diff > 0) {
         min = mid + 1;
@@ -408,7 +408,7 @@ public:
 
   void push(const E& elem) { append(elem); }
 
-  E at_grow(int i, const E& fill = E()) {
+  E& at_grow(int i, const E& fill = E()) {
     assert(0 <= i, "negative index %d", i);
     if (i >= this->_len) {
       if (i >= this->_capacity) grow(i);
