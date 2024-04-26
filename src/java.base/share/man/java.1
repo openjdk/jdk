@@ -1095,6 +1095,7 @@ Do not attempt to use shared class data.
 .TP
 \f[V]-XshowSettings\f[R]
 Shows all settings and then continues.
+This is the default value.
 .TP
 \f[V]-XshowSettings:\f[R]\f[I]category\f[R]
 Shows settings and continues.
@@ -1103,14 +1104,22 @@ following:
 .RS
 .TP
 \f[V]all\f[R]
-Shows all categories of settings.
-This is the default value.
+Shows all categories of settings in verbose detail and then continues.
 .TP
 \f[V]locale\f[R]
 Shows settings related to locale.
 .TP
 \f[V]properties\f[R]
 Shows settings related to system properties.
+.TP
+\f[V]security\f[R]
+Shows all security settings.
+sub-category arguments for \f[V]security\f[R] include the following: *
+\f[V]security:all\f[R] : show all security settings and continue *
+\f[V]security:properties\f[R] : show security properties and continue *
+\f[V]security:providers\f[R] : show static security provider settings
+and continue * \f[V]security:tls\f[R] : show TLS related security
+settings and continue
 .TP
 \f[V]vm\f[R]
 Shows the settings of the JVM.
