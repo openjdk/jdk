@@ -141,14 +141,14 @@
  *
  * <ul>
  *
- * <li> Actions in a thread prior to calling
+ * <li>Actions in a thread prior to calling
  * {@link Reference#reachabilityFence Reference.reachabilityFence(x)}
  * <i>happen-before</i> the garbage collector clears any reference to {@code x}.</li>
  *
  * <li>The clearing of a reference by the garbage collector <i>happens-before</i>
  * the garbage collector enqueues the reference.</li>
  *
- * <li> The enqueueing of a reference (by the garbage collector, or
+ * <li>The enqueueing of a reference (by the garbage collector, or
  * by a successful call to {@link Reference#enqueue}) <i>happens-before</i>
  * the reference is removed from the queue (<em>dequeued</em>).</li>
  *
@@ -157,14 +157,17 @@
  * object, by the Cleaner thread, <i>happens-before</i> the Cleaner thread runs
  * the cleaning action for that object.</li>
  *
+ * <li>For finalizers: actions in a thread prior to calling
+ * {@link Reference#reachabilityFence Reference.reachabilityFence(x)}
+ * <i>happen-before</i> the finalizer for x is run by a finalizer thread.</li>
  * </ul>
  *
  * The above chain of <i>happens-before</i> edges ensures that actions in a
  * thread prior to a {@link Reference#reachabilityFence Reference.reachabilityFence(x)}
- * <i>happen-before</i> cleanup code for {@code x} runs on the cleaner thread.
+ * <i>happen-before</i> cleanup code for {@code x} runs on a cleaner/finalizer thread.
  * In particular, changes to the state of {@code x} made before
  * {@code reachabilityFence(x)} will be visible to the cleanup code running on
- * the cleaner thread without additional synchronization.
+ * a cleaner/finalizer thread without additional synchronization.
  * See {@jls 17.4.5}.
  *
  * @author        Mark Reinhold
