@@ -105,7 +105,7 @@ public final class StringConcatFactory {
 
     static {
         String highArity = VM.getSavedProperty("java.lang.invoke.StringConcat.highArityThreshold");
-        HIGH_ARITY_THRESHOLD = Integer.parseInt(highArity != null ? highArity : "20");
+        HIGH_ARITY_THRESHOLD = highArity != null ? Integer.parseInt(highArity) : 20;
     }
 
     /**
@@ -1100,13 +1100,13 @@ public final class StringConcatFactory {
             mv.visitInsn(DUP);
 
             int len = 0;
-            for (int c = 0; c < constants.length; c++) {
-                if (constants[c] != null)
-                    len += constants[c].length();
+            for (String constant : constants) {
+                if (constant != null) {
+                    len += constant.length();
+                }
             }
             len += args.parameterCount() * ARGUMENT_SIZE_FACTOR;
-
-            mv.visitLdcInsn(len);
+            iconst(mv, len);
             mv.visitMethodInsn(
                     INVOKESPECIAL,
                     "java/lang/StringBuilder",
@@ -1114,7 +1114,6 @@ public final class StringConcatFactory {
                     "(I)V",
                     false
             );
-
 
             // At this point, we have a blank StringBuilder on stack, fill it in with .append calls.
             {
@@ -1160,7 +1159,6 @@ public final class StringConcatFactory {
                 throw new StringConcatException("Exception while spinning the class", e);
             }
         }
-
 
         private static void sbAppend(MethodVisitor mv, String desc) {
             mv.visitMethodInsn(
