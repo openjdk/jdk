@@ -350,17 +350,10 @@ public abstract sealed class Executable extends AccessibleObject
                      * its parameters are mandated but we should be able to retrieve
                      * its generic information if present
                      */
-                    int fromidx = genericParamTypes.length - 1;
-                    for (int i = out.length - 1; i >= 0; i--) {
-                        if (fromidx < 0) {
-                            // If we hit a synthetic parameter or if we have already read all the elements from `genericParamTypes`,
-                            // use the non generic parameter info.
-                            out[i] = nonGenericParamTypes[i];
-                        } else {
-                            // Otherwise, use the generic parameter info.
-                            out[i] = genericParamTypes[fromidx];
-                            fromidx--;
-                        }
+                    if (genericParamTypes.length == nonGenericParamTypes.length) {
+                        return genericParamTypes;
+                    } else {
+                        return nonGenericParamTypes.clone();
                     }
                 } else {
                     int fromidx = 0;
