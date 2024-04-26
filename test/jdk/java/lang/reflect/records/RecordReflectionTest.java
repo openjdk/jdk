@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,20 @@ public class RecordReflectionTest {
         R9 {} // compact constructor, will contain a mandated parameter
     }
 
+    // record R10 is defined in an accompaning jcod file
+
+    record R11(int i, List<String> ls) {
+        R11 {} // compact constructor, will contain mandated parameters
+    }
+
+    record R12(List<String> ls, int i) {
+        R12 {} // compact constructor, will contain mandated parameters
+    }
+
+    record R13(List<String> ls1, int i, List<String> ls2) {
+        R13 {} // compact constructor, will contain mandated parameters
+    }
+
     @DataProvider(name = "recordClasses")
     public Object[][] recordClassData() {
         return List.of(R1.class,
@@ -73,8 +87,11 @@ public class RecordReflectionTest {
                        R7.class,
                        R8.class,
                        R9.class,
-                       R10.class)
-                   .stream().map(c -> new Object[] {c}).toArray(Object[][]::new);
+                       R10.class,
+                       R11.class,
+                       R12.class,
+                       R13.class
+        ).stream().map(c -> new Object[] {c}).toArray(Object[][]::new);
     }
 
     @Test(dataProvider = "recordClasses")
@@ -144,6 +161,21 @@ public class RecordReflectionTest {
                         new Object[]{ List.of("1") },
                         new String[]{ "ls" },
                         new String[]{ "java.util.List<java.lang.String>"} },
+            new Object[] { new R11(1, List.of("1")),
+                        2,
+                        new Object[]{ 1, List.of("1") },
+                        new String[]{ "i", "ls" },
+                        new String[]{ "int", "java.util.List<java.lang.String>"} },
+            new Object[] { new R12(List.of("1"), 1),
+                        2,
+                        new Object[]{ List.of("1"), 1 },
+                        new String[]{ "ls", "i" },
+                        new String[]{ "java.util.List<java.lang.String>", "int"} },
+            new Object[] { new R13(List.of("1"), 1, List.of("2")),
+                        3,
+                        new Object[]{ List.of("1"), 1, List.of("2") },
+                        new String[]{ "ls1", "i", "ls2" },
+                        new String[]{ "java.util.List<java.lang.String>", "int", "java.util.List<java.lang.String>"} },
         };
     }
 
@@ -238,5 +270,4 @@ public class RecordReflectionTest {
         } catch (IllegalAccessException e) {
         }
     }
-
 }
