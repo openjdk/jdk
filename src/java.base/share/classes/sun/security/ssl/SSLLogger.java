@@ -107,7 +107,7 @@ public final class SSLLogger {
         System.err.println("\ttrustmanager print trust manager tracing");
         System.err.println();
         System.err.println("\thandshake debugging can be widened with:");
-        System.err.println("\tverbose      verbose handshake message printing");
+        System.err.println("\tverbose   verbose handshake message printing");
         System.err.println();
         System.err.println("\trecord debugging can be widened with:");
         System.err.println("\tplaintext    hex dump of record plaintext");
