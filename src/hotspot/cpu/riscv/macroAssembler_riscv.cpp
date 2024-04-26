@@ -725,7 +725,7 @@ void MacroAssembler::la(Register Rd, const address addr) {
 
 void MacroAssembler::la(Register Rd, const address addr, int32_t &offset) {
   int64_t distance = addr - pc();
-  if (is_32bit_offset_from_codeache((int64_t)addr)) {
+  if (is_32bit_offset_from_codecache((int64_t)addr)) {
     assert(is_valid_32bit_offset(distance), "Must be");
     auipc(Rd, (int32_t)distance + 0x800);
     offset = ((int32_t)distance << 20) >> 20;

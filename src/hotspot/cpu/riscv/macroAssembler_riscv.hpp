@@ -715,7 +715,7 @@ private:
     return x < (twoG - twoK) && x >= (-twoG - twoK);
   }
 
-  bool is_32bit_offset_from_codeache(int64_t x) {
+  bool is_32bit_offset_from_codecache(int64_t x) {
     int64_t low  = (int64_t)CodeCache::low_bound();
     int64_t high = (int64_t)CodeCache::high_bound();
     return is_valid_32bit_offset(x - low) && is_valid_32bit_offset(x - high);
