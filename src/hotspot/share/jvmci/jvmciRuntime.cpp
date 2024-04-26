@@ -2175,6 +2175,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                                                         nmethod_entry_patch_offset,
                                                         nmethod_mirror_name,
                                                         failed_speculations);
+      nmethod::ResultStatus result_status;
       nm =  nmethod::new_nmethod(method,
                                  compile_id,
                                  entry_bci,
@@ -2183,7 +2184,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                                  debug_info, dependencies, code_buffer,
                                  frame_words, oop_map_set,
                                  handler_table, implicit_exception_table,
-                                 compiler, comp_level,
+                                 compiler, comp_level, result_status,
                                  speculations, speculations_len, data);
 
 
