@@ -223,7 +223,8 @@ public abstract class HttpExchange implements AutoCloseable, Request {
      * @see HttpExchange#sendResponseHeaders(int, long)
      */
     public final void sendResponseHeadersNoContent(int code) throws IOException {
-        sendResponseHeaders(code,NO_CONTENT);
+        sendResponseHeaders(code, NO_CONTENT);
+        close();
     }
     /**
      * convenience method to send a chunked response. the caller must close the returned output stream.
