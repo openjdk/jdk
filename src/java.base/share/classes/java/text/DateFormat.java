@@ -407,7 +407,8 @@ public abstract class DateFormat extends Format {
 
     /**
      * Parse a date/time string according to the given parse position.  For
-     * example, a time text {@code "07/10/96 4:5 PM, PDT"} will be parsed into a {@code Date}
+     * example, if {@code this} has the pattern "M/d/yy, h:mm&#160;a",
+     * then a time text "7/10/96, 4:05&#160;PM" will be parsed into a {@code Date}
      * that is equivalent to {@code Date(837039900000L)}.
      *
      * <p> By default, parsing is lenient: If the input is not in the form used
