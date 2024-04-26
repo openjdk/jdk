@@ -76,8 +76,7 @@ public abstract class HttpExchange implements AutoCloseable, Request {
      *  */
     public static final long NO_CONTENT = -1L;
     /**
-     * use in sendResponseHeaders() to signify an indeterminate response length. The caller must
-     * close the getResponseBody() or this exchange.
+     * Use in sendResponseHeaders() to signify an indeterminate response length.
      * @see #sendResponseHeaders(int, long)
      *  */
     public static final long CHUNKED_CONTENT = 0L;
