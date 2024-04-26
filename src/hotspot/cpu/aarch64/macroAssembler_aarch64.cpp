@@ -5551,6 +5551,8 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
   bool is_8aligned = is_aligned(base_offset, BytesPerWord);
   assert(is_aligned(base_offset, BytesPerWord) || is_aligned(length_offset, BytesPerWord),
          "base_offset or length_offset must be 8-byte aligned");
+  assert(is_aligned(base_offset, BytesPerWord) || base_offset == length_offset + BytesPerInt,
+         "base_offset must be 8-byte aligned or no padding between base and length");
   int start_offset = is_8aligned ? base_offset : length_offset;
   int extra_length = is_8aligned ? 0 : BytesPerInt / elem_size;
   int stubBytesThreshold = 3 * 64 + (UseSIMDForArrayEquals ? 0 : 16);
