@@ -1888,7 +1888,7 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
   ld(cache, Address(xcpool, ConstantPoolCache::field_entries_offset()));
   add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
   add(cache, cache, index);
-  // Must prevent reordering of the following cp cache loads with bytecode load
+  // Prevents stale data from being read after the bytecode is patched to the fast bytecode
   membar(MacroAssembler::LoadLoad);
 }
 
