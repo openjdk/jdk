@@ -593,7 +593,7 @@ public abstract class Snippet {
         setSequenceNumber(0);
     }
 
-    /**** public access ****/
+    //**** public access ****
 
     /**
      * The unique identifier for the snippet. No two active snippets will have
