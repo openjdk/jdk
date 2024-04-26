@@ -227,7 +227,8 @@ public abstract class HttpExchange implements AutoCloseable, Request {
         close();
     }
     /**
-     * convenience method to send a chunked response. the caller must close the returned output stream.
+     * Convenience method to send a chunked response. The caller must write the response
+     * body to the returned output stream and then close it.
      * @param code the response code to send
      * @throws IOException if the response headers have already been sent or an I/O error occurs
      * @return the stream to write the response to. the caller must close the stream.
