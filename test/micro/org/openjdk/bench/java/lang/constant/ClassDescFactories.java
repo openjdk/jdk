@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.java.lang;
+package org.openjdk.bench.java.lang.constant;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -28,41 +28,36 @@ import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.infra.Blackhole;
 
-import java.util.concurrent.TimeUnit;
 import java.lang.constant.ClassDesc;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Tests java.lang.Class.descriptorString() with various inputs.
+ * Performance of conversion from and to method type descriptor symbols with
+ * descriptor strings and class descriptor symbols
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
+@Warmup(iterations = 3, time = 2)
+@Measurement(iterations = 6, time = 1)
+@Fork(1)
 @State(Scope.Thread)
-@Warmup(iterations = 5, time = 1)
-@Measurement(iterations = 5, time = 1)
-@Fork(3)
-public class ClassDescriptor {
+public class ClassDescFactories {
+
+    @Param({
+            "Ljava/lang/Object;",
+            "V",
+            "I"
+    })
+    public String descString;
 
     @Benchmark
-    public void descriptorStringMix(Blackhole bh) throws ClassNotFoundException {
-        bh.consume(A.class.descriptorString());
-        bh.consume(B.class.descriptorString());
-        bh.consume(C.class.descriptorString());
-        bh.consume(String.class.descriptorString());
-        bh.consume(Object.class.descriptorString());
+    public ClassDesc ofDescriptor() {
+        return ClassDesc.ofDescriptor(descString);
     }
-
-    @Benchmark
-    public ClassDesc ofDescriptorPrimitive() {
-        return ClassDesc.ofDescriptor("I");
-    }
-
-    static class A {}
-    static class B {}
-    static class C {}
 }
