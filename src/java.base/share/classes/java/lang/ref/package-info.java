@@ -134,8 +134,8 @@
  *
  * <a id="MemoryConsistency"></a>
  * <h2>Memory Consistency Properties</h2>
- * Certain interactions between the garbage collector, references, and reference
- * queues form
+ * Certain interactions between references, references queues, and the garbage
+ * collector form
  * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
  * relationships:
  *
@@ -154,20 +154,34 @@
  *
  * <li>The dequeuing of a reference to a
  * {@linkplain Cleaner#register(Object object, Runnable action) registered}
- * object, by the Cleaner thread, <i>happens-before</i> the Cleaner thread runs
+ * object, by a Cleaner thread, <i>happens-before</i> that Cleaner thread runs
  * the cleaning action for that object.</li>
  *
- * <li>For finalizers: actions in a thread prior to calling
+ * </ul>
+ * The above chain of <i>happens-before</i> edges ensures that actions in a
+ * thread prior to a {@link Reference#reachabilityFence Reference.reachabilityFence(x)}
+ * <i>happen-before</i> cleanup code for {@code x} runs on a Cleaner thread.
+ * In particular, changes to the state of {@code x} made before
+ * {@code reachabilityFence(x)} will be visible to the cleanup code running on
+ * a Cleaner thread without additional synchronization.
+ * See {@jls 17.4.5}.
+ *
+ * <p>
+ * The interaction between references, finalizers, and the garbage collector
+ * also forms a <em>happens-before</em> relationship:
+ *
+ * <ul>
+ * <li>Actions in a thread prior to calling
  * {@link Reference#reachabilityFence Reference.reachabilityFence(x)}
  * <i>happen-before</i> the finalizer for x is run by a finalizer thread.</li>
  * </ul>
  *
- * The above chain of <i>happens-before</i> edges ensures that actions in a
- * thread prior to a {@link Reference#reachabilityFence Reference.reachabilityFence(x)}
- * <i>happen-before</i> cleanup code for {@code x} runs on a cleaner/finalizer thread.
+ * This ensures that actions in a thread prior to a
+ * {@link Reference#reachabilityFence Reference.reachabilityFence(x)}
+ * <i>happen-before</i> cleanup code for {@code x} runs on a finalizer thread.
  * In particular, changes to the state of {@code x} made before
  * {@code reachabilityFence(x)} will be visible to the cleanup code running on
- * a cleaner/finalizer thread without additional synchronization.
+ * a finalizer thread without additional synchronization.
  * See {@jls 17.4.5}.
  *
  * @author        Mark Reinhold
