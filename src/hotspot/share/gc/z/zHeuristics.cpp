@@ -101,9 +101,9 @@ uint ZHeuristics::nconcurrent_workers() {
 }
 
 size_t ZHeuristics::significant_heap_overhead() {
-  return MaxHeapSize * ZFragmentationLimit;
+  return MaxHeapSize * (ZFragmentationLimit / 100);
 }
 
 size_t ZHeuristics::significant_young_overhead() {
-  return MaxHeapSize * ZYoungCompactionLimit;
+  return MaxHeapSize * (ZYoungCompactionLimit / 100);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ Java_gc_gctests_nativeGC03_nativeGC03_nativeMethod03
         /*Trash all the linked lists */
         while (count < 10) {
                 while (i < len) {
-                        env->SetObjectArrayElement(listHolder, i, NULL);
+                        env->SetObjectArrayElement(listHolder, i, nullptr);
                         i++;
                 }
 

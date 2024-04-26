@@ -29,10 +29,10 @@
 #include "gc/g1/g1CardSet.hpp"
 #include "gc/g1/g1CardSetContainers.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
+#include "gc/g1/g1HeapRegionBounds.inline.hpp"
+#include "gc/g1/g1HeapRegionRemSet.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
-#include "gc/g1/heapRegion.hpp"
-#include "gc/g1/heapRegionBounds.inline.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/workerPolicy.hpp"
@@ -142,11 +142,6 @@ void G1Arguments::initialize_card_set_configuration() {
     FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries, MAX2(max_cards_in_inline_ptr * 2,
                                                     G1RemSetArrayOfCardsEntriesBase << region_size_log_mb));
   }
-
-  // Round to next 8 byte boundary for array to maximize space usage.
-  size_t const cur_size = G1CardSetArray::size_in_bytes(G1RemSetArrayOfCardsEntries);
-  FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries,
-                G1RemSetArrayOfCardsEntries + (uint)(align_up(cur_size, G1CardSetAllocOptions::SlotAlignment) - cur_size) / sizeof(G1CardSetArray::EntryDataType));
 
   // Howl card set container globals.
   if (FLAG_IS_DEFAULT(G1RemSetHowlNumBuckets)) {

@@ -208,4 +208,3 @@ public final class ConstantDynamic {
                 + Arrays.toString(bootstrapMethodArguments);
     }
 }
-

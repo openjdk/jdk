@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8013852 8031744 8225377
+ * @bug 8013852 8031744 8225377 8323684
  * @summary Annotations on types
  * @library /tools/javac/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -42,10 +42,13 @@ import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Target;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 
+import java.util.AbstractMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
@@ -86,6 +89,23 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
     DPrinter dprinter;
     PrintWriter out;
     boolean verbose = true;
+    // Use a compile-time mapping to avoid repeated runtime reflective lookups.
+    private static final Map<String, Class<? extends Annotation>> nameToAnnotation =
+        Map.ofEntries(new NameToAnnotationEntry("java.lang.Override", Override.class),
+                      new NameToAnnotationEntry("java.lang.annotation.Repeatable", Repeatable.class),
+                      new NameToAnnotationEntry("java.lang.annotation.Target", Target.class),
+                      new NameToAnnotationEntry("BasicAnnoTests.Test", BasicAnnoTests.Test.class),
+                      new NameToAnnotationEntry("BasicAnnoTests.Tests",BasicAnnoTests.Tests.class),
+                      new NameToAnnotationEntry("BasicAnnoTests.TA",   BasicAnnoTests.TA.class),
+                      new NameToAnnotationEntry("BasicAnnoTests.TB",   BasicAnnoTests.TB.class),
+                      new NameToAnnotationEntry("BasicAnnoTests.TC",   BasicAnnoTests.TC.class),
+                      new NameToAnnotationEntry("BasicAnnoTests.TCs",  BasicAnnoTests.TCs.class));
+
+    static class NameToAnnotationEntry extends  AbstractMap.SimpleEntry<String, Class<? extends Annotation>> {
+        public NameToAnnotationEntry(String key, Class<? extends Annotation> entry) {
+            super(key, entry);
+        }
+    }
 
     @Override
     public void init(ProcessingEnvironment pEnv) {
@@ -104,7 +124,7 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
     }
 
     void error(Element e, String msg) {
-        messager.printMessage(Kind.ERROR, msg, e);
+        messager.printError(msg, e);
         errors++;
     }
 
@@ -263,6 +283,7 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
      */
     static AnnotationMirror getAnnotation(AnnotatedConstruct e, String name) {
         for (AnnotationMirror m: e.getAnnotationMirrors()) {
+            checkAnnotatedConstructConsistency(e, m);
             TypeElement te = (TypeElement) m.getAnnotationType().asElement();
             if (te.getQualifiedName().contentEquals(name)) {
                 return m;
@@ -276,6 +297,7 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
         List<AnnotationMirror> res = new ArrayList<>();
 
         for (AnnotationMirror m : e.getAnnotationMirrors()) {
+            checkAnnotatedConstructConsistency(e, m);
             TypeElement te = (TypeElement) m.getAnnotationType().asElement();
             if (te.getQualifiedName().contentEquals(name)) {
                 Compound theAnno = (Compound)m;
@@ -288,6 +310,85 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
             }
         }
         return res;
+    }
+
+    /**
+     * Verify that an annotation mirror returned by
+     * getAnnotationMirrors() has a matching annotation from
+     * getAnnotation and appropriate values are returned by
+     * getAnnotationsByType.
+     */
+    static void checkAnnotatedConstructConsistency(AnnotatedConstruct ac, AnnotationMirror m) {
+        // For each annotation mirror present, an annotation of the
+        // same annotation type should be directly present as well.
+        String annotationTypeName = ((TypeElement)m.getAnnotationType().asElement()).getQualifiedName().toString();
+        var annotationClass = Objects.requireNonNull(nameToAnnotation.get(annotationTypeName));
+        Annotation a = ac.getAnnotation(annotationClass);
+        Objects.requireNonNull(a, "Annotation " + m + " not found from getAnnotation(" + annotationTypeName + ")");
+
+        // For non-repeating annotation types, getAnnotationsByType should
+        // wrap a single annotation in an one-element array.
+        Annotation[] aArray = ac.getAnnotationsByType(annotationClass);
+        if (aArray.length != 1) {
+            throw new RuntimeException("Annotation " + m +
+                                       " not found from getAnnotationsByType(" + annotationTypeName + ")");
+        }
+
+        // For a container annotation, getAnnotationsByType should
+        // "look through" and return the contained annotations by
+        // their annotation class.
+        var containedAnnotationClass = containerFor(annotationClass);
+        if (containedAnnotationClass != null) {
+            Object wrappedAnnotationValue = extractAnnotationValue(a);
+            int wrappedCount = -1;
+            if (wrappedAnnotationValue instanceof Annotation[] wrapped) {
+                wrappedCount = wrapped.length;
+            }
+
+            Annotation[] containedAnnotations = ac.getAnnotationsByType(containedAnnotationClass);
+            // Check number of contained annotations for consistency
+            // Given annotation type A and container annotation type As, the result of
+            // annotatedConstruct.getAnnotaton(As.class).value().length ==
+            // annotatedConstruct.getAnnotationsByType(A.class).length
+            // More thorough checking could be done as well, checking
+            // the types or value of the constituent annotations/AnnotationMirrors.
+            Object annotationValue = extractAnnotationValue(a);
+            if (annotationValue instanceof Annotation[] objects
+                && objects.length != wrappedCount) {
+                throw new RuntimeException("\t\t\tmismatched array length : " + objects.length +
+                                           "\twrapped count" + wrappedCount);
+            }
+        }
+    }
+
+    static Object extractAnnotationValue(Annotation annotation) {
+        var annotationClass = annotation.annotationType();
+        try {
+            // Call value method of the annotation; expected to return
+            // an array of the contained annotation type.
+            Method valueMethod = annotationClass.getMethod("value", null);
+            return valueMethod.invoke(annotation);
+        } catch (ReflectiveOperationException roe) {
+            throw new RuntimeException(roe);
+        }
+    }
+
+    static int wrappedAnnotationCount(Annotation a) {
+        Object value = extractAnnotationValue(a);
+        if (value instanceof Annotation[] annotationValueArray) {
+            return annotationValueArray.length;
+        } else {
+            return -1;
+        }
+    }
+
+    static Class<? extends Annotation> containerFor(Class<? extends Annotation> possibleContainer) {
+        // Could write this more generally; for now, hard-code particular cases
+        if (possibleContainer == TCs.class)
+            return TC.class;
+        if (possibleContainer == Tests.class)
+            return Tests.class;
+        return null;
     }
 
     /**
@@ -402,9 +503,21 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
     public @interface TA {
         int value();
     }
+
     @Target(ElementType.TYPE_USE)
     public @interface TB {
         int value();
+    }
+
+    @Target(ElementType.TYPE_USE)
+    @Repeatable(TCs.class)
+    public @interface TC {
+        int value();
+    }
+
+    @Target(ElementType.TYPE_USE)
+    @interface TCs {
+        TC[] value();
     }
 
     // Test cases
@@ -472,6 +585,21 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
     @Test(posn=0, annoType=TB.class, expect="33")
     @Test(posn=1, annoType=TA.class, expect="3")
     public @TA(3) int @TB(33) [] f3;
+
+    @Test(posn=0, annoType=TC.class, expect="1")
+    public @TC(1) int f1_repeat0;
+
+    // Containter annotation @TCs({@TC(2), @TC(3)}) created by the compiler
+    @Test(posn=0, annoType=TCs.class, expect="{@BasicAnnoTests.TC(2), @BasicAnnoTests.TC(3)}")
+    public @TC(2) @TC(3) int f1_repeat1;
+
+    // Use container explicitly
+    @Test(posn=0, annoType=TCs.class, expect="{@BasicAnnoTests.TC(4)}")
+    public @TCs(@TC(4)) int f1_repeat2;
+
+    // Explicit empty container
+    @Test(posn=0, annoType=TCs.class, expect="{}")
+    public @TCs({}) int f1_repeat3;
 
     @Test(posn=3, annoType=TA.class, expect="4")
     public int m1(@TA(4) float a) throws Exception { return 0; }

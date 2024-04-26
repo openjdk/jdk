@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,14 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/compiledMethod.inline.hpp"
 #include "code/compiledIC.hpp"
-#include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
 #include "code/scopeDesc.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/oopMap.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.hpp"
@@ -85,7 +83,7 @@
 //  To force FullGCALot inside a runtime function, add the following two lines
 //
 //  Universe::release_fullgc_alot_dummy();
-//  MarkSweep::invoke(0, "Debugging");
+//  Universe::heap()->collect();
 //
 // At command line specify the parameters: -XX:+FullGCALot -XX:FullGCALotStart=100000000
 
@@ -320,14 +318,17 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(Klass* array_type, int len
     // Zero array here if the caller is deoptimized.
     const size_t size = TypeArrayKlass::cast(array_type)->oop_size(result);
     BasicType elem_type = TypeArrayKlass::cast(array_type)->element_type();
-    const size_t hs = arrayOopDesc::header_size(elem_type);
-    // Align to next 8 bytes to avoid trashing arrays's length.
-    const size_t aligned_hs = align_object_offset(hs);
+    size_t hs_bytes = arrayOopDesc::base_offset_in_bytes(elem_type);
+    assert(is_aligned(hs_bytes, BytesPerInt), "must be 4 byte aligned");
     HeapWord* obj = cast_from_oop<HeapWord*>(result);
-    if (aligned_hs > hs) {
-      Copy::zero_to_words(obj+hs, aligned_hs-hs);
+    if (!is_aligned(hs_bytes, BytesPerLong)) {
+      *reinterpret_cast<jint*>(reinterpret_cast<char*>(obj) + hs_bytes) = 0;
+      hs_bytes += BytesPerInt;
     }
+
     // Optimized zeroing.
+    assert(is_aligned(hs_bytes, BytesPerLong), "must be 8-byte aligned");
+    const size_t aligned_hs = hs_bytes / BytesPerLong;
     Copy::fill_to_aligned_words(obj+aligned_hs, size-aligned_hs);
   }
 
@@ -769,6 +770,29 @@ const TypeFunc* OptoRuntime::void_void_Type() {
    return TypeFunc::make(domain, range);
  }
 
+
+// Takes as parameters:
+// void *dest
+// long size
+// uchar byte
+const TypeFunc* OptoRuntime::make_setmemory_Type() {
+  // create input type (domain)
+  int argcnt = NOT_LP64(3) LP64_ONLY(4);
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;        // dest
+  fields[argp++] = TypeX_X;                 // size
+  LP64_ONLY(fields[argp++] = Type::HALF);   // size
+  fields[argp++] = TypeInt::UBYTE;          // bytevalue
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // no result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = nullptr; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
 
 // arraycopy stub variations:
 enum ArrayCopyType {
@@ -1849,9 +1873,8 @@ static void trace_exception(outputStream* st, oop exception_oop, address excepti
   exception_oop->print_value_on(&tempst);
   tempst.print(" in ");
   CodeBlob* blob = CodeCache::find_blob(exception_pc);
-  if (blob->is_compiled()) {
-    CompiledMethod* cm = blob->as_compiled_method_or_null();
-    cm->method()->print_value_on(&tempst);
+  if (blob->is_nmethod()) {
+    blob->as_nmethod()->method()->print_value_on(&tempst);
   } else if (blob->is_runtime_stub()) {
     tempst.print("<runtime-stub>");
   } else {

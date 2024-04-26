@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@ package java.security;
 
 import jdk.internal.event.SecurityProviderServiceEvent;
 
+import javax.security.auth.login.Configuration;
 import java.io.*;
+import java.security.cert.CertStoreParameters;
 import java.util.*;
 import static java.util.Locale.ENGLISH;
 import java.lang.ref.*;
@@ -187,6 +189,7 @@ public abstract class Provider extends Properties {
      * @deprecated use {@link #Provider(String, String, String)} instead.
      */
     @Deprecated(since="9")
+    @SuppressWarnings("this-escape")
     protected Provider(String name, double version, String info) {
         this.name = name;
         this.version = version;
@@ -227,6 +230,7 @@ public abstract class Provider extends Properties {
      *
      * @since 9
      */
+    @SuppressWarnings("this-escape")
     protected Provider(String name, String versionStr, String info) {
         this.name = name;
         this.versionStr = versionStr;
@@ -1556,20 +1560,20 @@ public abstract class Provider extends Properties {
     private static class EngineDescription {
         final String name;
         final boolean supportsParameter;
-        final String constructorParameterClassName;
+        final Class<?> constructorParameterClass;
 
-        EngineDescription(String name, boolean sp, String paramName) {
+        EngineDescription(String name, boolean sp, Class<?> constructorParameterClass) {
             this.name = name;
             this.supportsParameter = sp;
-            this.constructorParameterClassName = paramName;
+            this.constructorParameterClass = constructorParameterClass;
         }
     }
 
     // built in knowledge of the engine types shipped as part of the JDK
     private static final Map<String,EngineDescription> knownEngines;
 
-    private static void addEngine(String name, boolean sp, String paramName) {
-        EngineDescription ed = new EngineDescription(name, sp, paramName);
+    private static void addEngine(String name, boolean sp, Class<?> constructorParameterClass) {
+        EngineDescription ed = new EngineDescription(name, sp, constructorParameterClass);
         // also index by canonical name to avoid toLowerCase() for some lookups
         knownEngines.put(name.toLowerCase(ENGLISH), ed);
         knownEngines.put(name, ed);
@@ -1585,13 +1589,13 @@ public abstract class Provider extends Properties {
         addEngine("KeyStore",                           false, null);
         addEngine("MessageDigest",                      false, null);
         addEngine("SecureRandom",                       false,
-                "java.security.SecureRandomParameters");
+                SecureRandomParameters.class);
         addEngine("Signature",                          true,  null);
         addEngine("CertificateFactory",                 false, null);
         addEngine("CertPathBuilder",                    false, null);
         addEngine("CertPathValidator",                  false, null);
         addEngine("CertStore",                          false,
-                            "java.security.cert.CertStoreParameters");
+                CertStoreParameters.class);
         // JCE
         addEngine("Cipher",                             true,  null);
         addEngine("ExemptionMechanism",                 false, null);
@@ -1610,18 +1614,20 @@ public abstract class Provider extends Properties {
         addEngine("SaslClientFactory",                  false, null);
         addEngine("SaslServerFactory",                  false, null);
         // POLICY
+        @SuppressWarnings("removal")
+        Class<Policy.Parameters> policyParams = Policy.Parameters.class;
         addEngine("Policy",                             false,
-                            "java.security.Policy$Parameters");
+                policyParams);
         // CONFIGURATION
         addEngine("Configuration",                      false,
-                            "javax.security.auth.login.Configuration$Parameters");
+                Configuration.Parameters.class);
         // XML DSig
         addEngine("XMLSignatureFactory",                false, null);
         addEngine("KeyInfoFactory",                     false, null);
         addEngine("TransformService",                   false, null);
         // Smart Card I/O
         addEngine("TerminalFactory",                    false,
-                            "java.lang.Object");
+                            Object.class);
     }
 
     // get the "standard" (mixed-case) engine name for arbitrary case engine name
@@ -1895,8 +1901,7 @@ public abstract class Provider extends Properties {
                     ctrParamClz = constructorParameter == null?
                         null : constructorParameter.getClass();
                 } else {
-                    ctrParamClz = cap.constructorParameterClassName == null?
-                        null : Class.forName(cap.constructorParameterClassName);
+                    ctrParamClz = cap.constructorParameterClass;
                     if (constructorParameter != null) {
                         if (ctrParamClz == null) {
                             throw new InvalidParameterException
@@ -1907,7 +1912,7 @@ public abstract class Provider extends Properties {
                             if (!ctrParamClz.isAssignableFrom(argClass)) {
                                 throw new InvalidParameterException
                                     ("constructorParameter must be instanceof "
-                                    + cap.constructorParameterClassName.replace('$', '.')
+                                    + cap.constructorParameterClass.getName().replace('$', '.')
                                     + " for engine type " + type);
                             }
                         }

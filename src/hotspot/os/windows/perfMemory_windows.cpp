@@ -1803,9 +1803,9 @@ void PerfMemory::detach(char* addr, size_t bytes) {
 
   if (MemTracker::enabled()) {
     // it does not go through os api, the operation has to record from here
-    Tracker tkr(Tracker::release);
+    ThreadCritical tc;
     remove_file_mapping(addr);
-    tkr.record((address)addr, bytes);
+    MemTracker::record_virtual_memory_release((address)addr, bytes);
   } else {
     remove_file_mapping(addr);
   }

@@ -27,7 +27,6 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "code/compiledIC.hpp"
-#include "memory/resourceArea.hpp"
 #include "nativeInst_riscv.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.hpp"
@@ -157,7 +156,6 @@ void NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
          CompiledICLocker::is_safe(addr_at(0)),
          "concurrent code patching");
 
-  ResourceMark rm;
   address addr_call = addr_at(0);
   assert(NativeCall::is_call_at(addr_call), "unexpected code at call site");
 

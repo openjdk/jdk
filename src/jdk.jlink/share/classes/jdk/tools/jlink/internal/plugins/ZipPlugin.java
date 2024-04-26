@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,7 @@ public final class ZipPlugin extends AbstractPlugin {
                 byte[] compressed;
                 compressed = compress(resource.contentBytes(), this.compressionLevel);
                 res = ResourcePoolManager.newCompressedResource(resource,
-                        ByteBuffer.wrap(compressed), getName(), null,
+                        ByteBuffer.wrap(compressed), getName(),
                         ((ResourcePoolImpl)in).getStringTable(), in.byteOrder());
             }
             return res;

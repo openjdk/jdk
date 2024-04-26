@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -34,7 +34,7 @@ extern "C" {
 #define STATUS_FAILED 2
 #define WAIT_TIME (jlong)100
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
@@ -92,7 +92,7 @@ sys_thread_1(jvmtiEnv* jvmti, JNIEnv* jni, void *p) {
     }
     count |= 0x01;
 
-    err = jvmti->RunAgentThread(jthr(jni), sys_thread_4, NULL,
+    err = jvmti->RunAgentThread(jthr(jni), sys_thread_4, nullptr,
         JVMTI_THREAD_MAX_PRIORITY);
     if (err != JVMTI_ERROR_NONE) {
         printf("(RunAgentThread#4) unexpected error: %s (%d)\n",
@@ -178,7 +178,7 @@ void JNICALL VMInit(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thr) {
     }
 
     err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE,
-            JVMTI_EVENT_THREAD_START, NULL);
+            JVMTI_EVENT_THREAD_START, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable JVMTI_EVENT_THREAD_START: %s (%d)\n",
                TranslateError(err), err);
@@ -206,21 +206,21 @@ ThreadStart(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread) {
     if (strcmp(thrInfo.name, "thr1") == 0 && !thr1_was_started) {
         thr1_was_started = 1;
         err = jvmti_env->RunAgentThread(jthr((JNIEnv *)env),
-            sys_thread_1, NULL, JVMTI_THREAD_MAX_PRIORITY);
+            sys_thread_1, nullptr, JVMTI_THREAD_MAX_PRIORITY);
         if (err != JVMTI_ERROR_NONE) {
             printf("(RunAgentThread#1) unexpected error: %s (%d)\n",
                    TranslateError(err), err);
             result = STATUS_FAILED;
         }
         err = jvmti_env->RunAgentThread(jthr((JNIEnv *)env),
-            sys_thread_2, NULL, JVMTI_THREAD_NORM_PRIORITY);
+            sys_thread_2, nullptr, JVMTI_THREAD_NORM_PRIORITY);
         if (err != JVMTI_ERROR_NONE) {
             printf("(RunAgentThread#2) unexpected error: %s (%d)\n",
                    TranslateError(err), err);
             result = STATUS_FAILED;
         }
         err = jvmti_env->RunAgentThread(jthr((JNIEnv *)env),
-            sys_thread_3, NULL, JVMTI_THREAD_MIN_PRIORITY);
+            sys_thread_3, nullptr, JVMTI_THREAD_MIN_PRIORITY);
         if (err != JVMTI_ERROR_NONE) {
             printf("(RunAgentThread#3) unexpected error: %s (%d)\n",
                    TranslateError(err), err);
@@ -244,12 +244,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError err;
     jint res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -271,7 +271,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     }
 
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-            JVMTI_EVENT_VM_INIT, NULL);
+            JVMTI_EVENT_VM_INIT, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable JVMTI_EVENT_VM_INIT: %s (%d)\n",
                TranslateError(err), err);
@@ -285,7 +285,7 @@ JNIEXPORT void JNICALL
 Java_nsk_jvmti_RunAgentThread_agentthr001_startSysThr(JNIEnv *env, jclass cls) {
     jvmtiError err;
 
-    err = jvmti->RunAgentThread(jthr(env), sys_thread_5, NULL,
+    err = jvmti->RunAgentThread(jthr(env), sys_thread_5, nullptr,
         JVMTI_THREAD_MAX_PRIORITY);
     if (err != JVMTI_ERROR_NONE) {
         printf("(RunAgentThread#5) unexpected error: %s (%d)\n",
@@ -308,7 +308,7 @@ Java_nsk_jvmti_RunAgentThread_agentthr001_getRes(JNIEnv *env, jclass cls) {
     }
 
     err = jvmti->SetEventNotificationMode(JVMTI_DISABLE,
-            JVMTI_EVENT_THREAD_START, NULL);
+            JVMTI_EVENT_THREAD_START, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to disable JVMTI_EVENT_THREAD_START: %s (%d)\n",
                TranslateError(err), err);

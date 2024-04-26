@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,20 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
 /* ============================================================================= */
 
 /* scaffold objects */
-static JNIEnv* jni = NULL;
-static jvmtiEnv *jvmti = NULL;
+static JNIEnv* jni = nullptr;
+static jvmtiEnv *jvmti = nullptr;
 static jlong timeout = 0;
-static jrawMonitorID syncLock = NULL;
+static jrawMonitorID syncLock = nullptr;
 
 /* constant names */
 #define JVMTI_EVENT_COUNT   (int)(JVMTI_MAX_EVENT_TYPE_VAL - JVMTI_MIN_EVENT_TYPE_VAL + 1)
@@ -60,13 +60,13 @@ handler(jvmtiEvent event, jvmtiEnv* jvmti, JNIEnv* jni_env,
     jstring jclassName;
     const char *className;
 
-    if (!NSK_JNI_VERIFY(jni_env, (classObject = jni_env->GetObjectClass(klass)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni_env, (classObject = jni_env->GetObjectClass(klass)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
     if (!NSK_JNI_VERIFY(jni_env, (methodID =
-            jni_env->GetMethodID(classObject, "getName", "()Ljava/lang/String;")) != NULL)) {
+            jni_env->GetMethodID(classObject, "getName", "()Ljava/lang/String;")) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -75,7 +75,7 @@ handler(jvmtiEvent event, jvmtiEnv* jvmti, JNIEnv* jni_env,
 
     className = jni_env->GetStringUTFChars(jclassName, 0);
 
-    if (className != NULL && (strcmp(className, EXPECTED_CLASS_NAME) == 0)) {
+    if (className != nullptr && (strcmp(className, EXPECTED_CLASS_NAME) == 0)) {
 
         if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(syncLock)))
             nsk_jvmti_setFailStatus();
@@ -114,7 +114,7 @@ cbClassPrepare(jvmtiEnv* jvmti, JNIEnv* jni_env, jthread thread, jclass klass) {
 
 static int
 enableEvent(jvmtiEventMode enable, jvmtiEvent event) {
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(enable, event, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(enable, event, nullptr))) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -249,10 +249,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
     classLoaderCount = nsk_jvmti_findOptionIntValue(CLASS_LOADER_COUNT_PARAM, 100);
 
-    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

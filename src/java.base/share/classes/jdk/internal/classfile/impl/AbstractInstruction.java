@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,7 @@ public abstract sealed class AbstractInstruction
     @Override
     public abstract void writeTo(DirectCodeBuilder writer);
 
-    public static abstract sealed class BoundInstruction extends AbstractInstruction {
+    public abstract static sealed class BoundInstruction extends AbstractInstruction {
         final CodeImpl code;
         final int pos;
 
@@ -760,7 +760,7 @@ public abstract sealed class AbstractInstruction
 
     }
 
-    public static abstract sealed class UnboundInstruction extends AbstractInstruction {
+    public abstract static sealed class UnboundInstruction extends AbstractInstruction {
 
         UnboundInstruction(Opcode op) {
             super(op, op.sizeIfFixed());
@@ -860,7 +860,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public int constant() {
-            return 0;
+            return constant;
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@
 import javax.management.*;
 import java.io.Serializable;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.EnumSet;
-import javax.management.loading.MLet;
 
 public class PostExceptionTest {
 
@@ -95,7 +95,7 @@ public class PostExceptionTest {
 
         // We're going to test each cases, using each of the 4 createMBean
         // forms + registerMBean in turn to create the MBean.
-        // Wich method is used to create the MBean is indicated by "how"
+        // Which method is used to create the MBean is indicated by "how"
         //
         for (Case caze:cases) {
             for (CREATE how : CREATE.values()) {
@@ -375,7 +375,7 @@ public class PostExceptionTest {
                     MBeanServer server, ObjectName name) throws Exception {
                 ExceptionallyHackyWombat.t = t;
                 ExceptionallyHackyWombat.w = where;
-                final ObjectName loaderName = registerMLet(server);
+                final ObjectName loaderName = registerMB(server);
                 return server.createMBean(
                         ExceptionallyHackyWombat.class.getName(),
                         name, loaderName);
@@ -404,7 +404,7 @@ public class PostExceptionTest {
                 };
                 return server.createMBean(
                         ExceptionalWombat.class.getName(), name,
-                        registerMLet(server), params, signature);
+                        registerMB(server), params, signature);
             }
         },
         REGISTER() {
@@ -422,25 +422,23 @@ public class PostExceptionTest {
         public abstract ObjectInstance create(Throwable t, EnumSet<WHERE> where,
                 MBeanServer server, ObjectName name) throws Exception;
 
-        // This is a bit of a hack - we use an MLet that delegates to the
+        // Create an MBean that delegates to the
         // System ClassLoader so that we can use createMBean form #2 and #3
         // while still using the same class loader (system).
         // This is necessary to make the ExceptionallyHackyWombatMBean work ;-)
         //
-        public ObjectName registerMLet(MBeanServer server) throws Exception {
-            final ObjectName name = new ObjectName("test:type=MLet");
+        public ObjectName registerMB(MBeanServer server) throws Exception {
+            final ObjectName name = new ObjectName("test:type=TestMBean");
             if (server.isRegistered(name)) {
                 return name;
             }
-            @SuppressWarnings("removal")
-            final MLet mlet = new MLet(new URL[0],
-                    ClassLoader.getSystemClassLoader());
-            return server.registerMBean(mlet, name).getObjectName();
+            final TestMBean mbean = new Test();
+            return server.registerMBean(mbean, name).getObjectName();
         }
     }
 
     /**
-     *A Wombat MBean that can throw exceptions or errors in any of the
+     * A Wombat MBean that can throw exceptions or errors in any of the
      * MBeanRegistration methods.
      */
     public static interface ExceptionalWombatMBean {
@@ -511,6 +509,15 @@ public class PostExceptionTest {
         public static volatile EnumSet<WHERE> w;
         public ExceptionallyHackyWombat() {
             super(t,w);
+        }
+    }
+
+    public static interface TestMBean {
+    }
+
+    public static class Test extends URLClassLoader implements TestMBean {
+        public Test() {
+            super(new URL[0], ClassLoader.getSystemClassLoader());
         }
     }
 

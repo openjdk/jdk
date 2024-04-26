@@ -815,6 +815,8 @@ enum operand_size { int8, int16, int32, uint32, int64 };
 
   INSN(fsqrt_s,  0b1010011, 0b00000, 0b0101100);
   INSN(fsqrt_d,  0b1010011, 0b00000, 0b0101101);
+  INSN(fcvt_s_h, 0b1010011, 0b00010, 0b0100000);
+  INSN(fcvt_h_s, 0b1010011, 0b00000, 0b0100010);
   INSN(fcvt_s_d, 0b1010011, 0b00001, 0b0100000);
   INSN(fcvt_d_s, 0b1010011, 0b00000, 0b0100001);
 #undef INSN
@@ -1071,6 +1073,7 @@ enum operand_size { int8, int16, int32, uint32, int64 };
     emit(insn);                                      \
   }
 
+  INSN(fmv_h_x,  0b1010011, 0b000, 0b00000, 0b1111010);
   INSN(fmv_w_x,  0b1010011, 0b000, 0b00000, 0b1111000);
   INSN(fmv_d_x,  0b1010011, 0b000, 0b00000, 0b1111001);
 
@@ -1108,8 +1111,10 @@ enum fclass_mask {
     emit(insn);                                           \
   }
 
+  INSN(fclass_h, 0b1010011, 0b001, 0b00000, 0b1110010);
   INSN(fclass_s, 0b1010011, 0b001, 0b00000, 0b1110000);
   INSN(fclass_d, 0b1010011, 0b001, 0b00000, 0b1110001);
+  INSN(fmv_x_h,  0b1010011, 0b000, 0b00000, 0b1110010);
   INSN(fmv_x_w,  0b1010011, 0b000, 0b00000, 0b1110000);
   INSN(fmv_x_d,  0b1010011, 0b000, 0b00000, 0b1110001);
 
@@ -1186,7 +1191,7 @@ static Assembler::SEW elemtype_to_sew(BasicType etype) {
   void NAME(Register Rd, uint32_t imm, SEW sew, LMUL lmul = m1,           \
             VMA vma = mu, VTA vta = tu, bool vill = false) {              \
     unsigned insn = 0;                                                    \
-    guarantee(is_uimm5(imm), "imm is invalid");                           \
+    guarantee(is_uimm5(imm), "uimm is invalid");                           \
     patch((address)&insn, 6, 0, op);                                      \
     patch((address)&insn, 14, 12, funct3);                                \
     patch((address)&insn, 19, 15, imm);                                   \
@@ -1322,7 +1327,7 @@ enum VectorMask {
 // r_vm
 #define INSN(NAME, op, funct3, funct6)                                                             \
   void NAME(VectorRegister Vd, VectorRegister Vs2, uint32_t imm, VectorMask vm = unmasked) {       \
-    guarantee(is_uimm5(imm), "imm is invalid");                                                    \
+    guarantee(is_uimm5(imm), "uimm is invalid");                                                    \
     patch_VArith(op, Vd, funct3, (uint32_t)(imm & 0x1f), Vs2, vm, funct6);                         \
   }
 
@@ -1334,6 +1339,9 @@ enum VectorMask {
   // Vector Slide Instructions
   INSN(vslideup_vi,   0b1010111, 0b011, 0b001110);
   INSN(vslidedown_vi, 0b1010111, 0b011, 0b001111);
+
+  // Vector Narrowing Integer Right Shift Instructions
+  INSN(vnsra_wi, 0b1010111, 0b011, 0b101101);
 
 #undef INSN
 
@@ -1500,6 +1508,9 @@ enum VectorMask {
   INSN(vmulh_vx,   0b1010111, 0b110, 0b100111);
   INSN(vmul_vx,    0b1010111, 0b110, 0b100101);
 
+  // Vector Widening Integer Add/Subtract
+  INSN(vwadd_vx, 0b1010111, 0b110, 0b110001);
+
   // Vector Integer Min/Max Instructions
   INSN(vmax_vx,  0b1010111, 0b100, 0b000111);
   INSN(vmaxu_vx, 0b1010111, 0b100, 0b000110);
@@ -1533,6 +1544,8 @@ enum VectorMask {
   // Vector Single-Width Integer Add and Subtract
   INSN(vsub_vx,  0b1010111, 0b100, 0b000010);
   INSN(vadd_vx,  0b1010111, 0b100, 0b000000);
+
+  // Vector Integer reverse subtract
   INSN(vrsub_vx, 0b1010111, 0b100, 0b000011);
 
   // Vector Slide Instructions
@@ -1595,16 +1608,23 @@ enum VectorMask {
     patch_VArith(op, Vd, funct3, (uint32_t)(imm & 0x1f), Vs2, vm, funct6);                         \
   }
 
+  // Vector Integer Comparison Instructions
   INSN(vmsgt_vi,  0b1010111, 0b011, 0b011111);
   INSN(vmsgtu_vi, 0b1010111, 0b011, 0b011110);
   INSN(vmsle_vi,  0b1010111, 0b011, 0b011101);
   INSN(vmsleu_vi, 0b1010111, 0b011, 0b011100);
   INSN(vmsne_vi,  0b1010111, 0b011, 0b011001);
   INSN(vmseq_vi,  0b1010111, 0b011, 0b011000);
+
+  // Vector Bitwise Logical Instructions
   INSN(vxor_vi,   0b1010111, 0b011, 0b001011);
   INSN(vor_vi,    0b1010111, 0b011, 0b001010);
   INSN(vand_vi,   0b1010111, 0b011, 0b001001);
+
+  // Vector Single-Width Integer Add and Subtract
   INSN(vadd_vi,   0b1010111, 0b011, 0b000000);
+
+  // Vector Integer reverse subtract
   INSN(vrsub_vi,  0b1010111, 0b011, 0b000011);
 
 #undef INSN
@@ -1850,7 +1870,6 @@ enum Nf {
   // Vector Bit-manipulation used in Cryptography (Zvkb) Extension
   INSN(vandn_vv,   0b1010111, 0b000, 0b000001);
   INSN(vandn_vx,   0b1010111, 0b100, 0b000001);
-  INSN(vandn_vi,   0b1010111, 0b011, 0b000001);
   INSN(vclmul_vv,  0b1010111, 0b010, 0b001100);
   INSN(vclmul_vx,  0b1010111, 0b110, 0b001100);
   INSN(vclmulh_vv, 0b1010111, 0b010, 0b001101);
@@ -2651,7 +2670,7 @@ public:
   }
 
   bool do_compress_zcb(Register reg1 = noreg, Register reg2 = noreg) const {
-    return do_compress() && VM_Version::ext_Zcb.enabled() &&
+    return do_compress() && UseZcb &&
            (reg1 == noreg || reg1->is_compressed_valid()) && (reg2 == noreg || reg2->is_compressed_valid());
   }
 

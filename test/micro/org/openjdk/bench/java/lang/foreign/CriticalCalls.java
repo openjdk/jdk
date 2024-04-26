@@ -51,7 +51,7 @@ import static java.lang.foreign.ValueLayout.*;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED" })
+@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "-Djava.library.path=micro/native" })
 public class CriticalCalls {
 
     static final MethodHandle PINNED;
@@ -61,7 +61,7 @@ public class CriticalCalls {
         System.loadLibrary("CriticalCalls");
         SymbolLookup lookup = SymbolLookup.loaderLookup();
 
-        MemorySegment sumIntsSym = lookup.find("sum_ints").get();
+        MemorySegment sumIntsSym = lookup.findOrThrow("sum_ints");
         FunctionDescriptor sumIntsDesc = FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT);
 
         PINNED = Linker.nativeLinker().downcallHandle(

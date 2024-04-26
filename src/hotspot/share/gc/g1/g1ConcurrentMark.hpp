@@ -27,9 +27,9 @@
 
 #include "gc/g1/g1ConcurrentMarkBitMap.hpp"
 #include "gc/g1/g1ConcurrentMarkObjArrayProcessor.hpp"
+#include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
-#include "gc/g1/heapRegionSet.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -41,11 +41,11 @@
 #include "utilities/numberSeq.hpp"
 
 class ConcurrentGCTimer;
-class G1ConcurrentMarkThread;
 class G1CollectedHeap;
+class G1ConcurrentMark;
+class G1ConcurrentMarkThread;
 class G1CMOopClosure;
 class G1CMTask;
-class G1ConcurrentMark;
 class G1OldTracer;
 class G1RegionToSpaceMapper;
 class G1SurvivorRegions;
@@ -96,9 +96,13 @@ typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
 // are alive. An instance is also embedded into the
 // reference processor as the _is_alive_non_header field
 class G1CMIsAliveClosure : public BoolObjectClosure {
-  G1CollectedHeap* _g1h;
+  G1ConcurrentMark* _cm;
+
 public:
-  G1CMIsAliveClosure(G1CollectedHeap* g1h) : _g1h(g1h) { }
+  G1CMIsAliveClosure();
+  G1CMIsAliveClosure(G1ConcurrentMark* cm);
+  void initialize(G1ConcurrentMark* cm);
+
   bool do_object_b(oop obj);
 };
 
@@ -145,7 +149,7 @@ private:
     // within the bucket. Additionally, each new bucket added to the growable array doubles the capacity of
     // the growable array.
     //
-    // Illustration of the Growable Array data structure.
+    // Illustration of the growable array data structure.
     //
     //        +----+        +----+----+
     //        |    |------->|    |    |
@@ -174,7 +178,7 @@ private:
     size_t bucket_size(size_t bucket) {
       return (bucket == 0) ?
               _min_capacity :
-              _min_capacity * ( 1ULL << (bucket -1));
+              _min_capacity * ( 1ULL << (bucket - 1));
     }
 
     static unsigned int find_highest_bit(uintptr_t mask) {
@@ -225,7 +229,9 @@ private:
 
     size_t capacity() const { return _capacity; }
 
-    bool expand();
+    // Expand the mark stack doubling its size.
+    bool try_expand();
+    bool try_expand_to(size_t desired_capacity);
 
     TaskQueueEntryChunk* allocate_new_chunk();
   };
@@ -435,12 +441,10 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   G1OldTracer*            _gc_tracer_cm;
 
   // Timing statistics. All of them are in ms
-  NumberSeq _init_times;
   NumberSeq _remark_times;
   NumberSeq _remark_mark_times;
   NumberSeq _remark_weak_ref_times;
   NumberSeq _cleanup_times;
-  double    _total_cleanup_time;
 
   double*   _accum_task_vtime;   // Accumulated task vtime
 
@@ -462,8 +466,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   void finalize_marking();
 
   void weak_refs_work();
-
-  void reclaim_empty_regions();
 
   // After reclaiming empty regions, update heap sizes.
   void compute_new_sizes();
@@ -539,6 +541,9 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   // Region statistics gathered during marking.
   G1RegionMarkStats* _region_mark_stats;
+  // Top pointer for each region at the start of marking. Must be valid for all committed
+  // regions.
+  HeapWord* volatile* _top_at_mark_starts;
   // Top pointer for each region at the start of the rebuild remembered set process
   // for regions which remembered sets need to be rebuilt. A null for a given region
   // means that this region does not be scanned during the rebuilding remembered
@@ -558,10 +563,20 @@ public:
   // Set live bytes for concurrent marking.
   void set_live_bytes(uint region, size_t live_bytes) { _region_mark_stats[region]._live_words = live_bytes / HeapWordSize; }
 
+  // Update the TAMS for the given region to the current top.
+  inline void update_top_at_mark_start(HeapRegion* r);
+  // Reset the TAMS for the given region to bottom of that region.
+  inline void reset_top_at_mark_start(HeapRegion* r);
+
+  inline HeapWord* top_at_mark_start(const HeapRegion* r) const;
+  inline HeapWord* top_at_mark_start(uint region) const;
+  // Returns whether the given object been allocated since marking start (i.e. >= TAMS in that region).
+  inline bool obj_allocated_since_mark_start(oop obj) const;
+
   // Sets the internal top_at_region_start for the given region to current top of the region.
   inline void update_top_at_rebuild_start(HeapRegion* r);
   // TARS for the given region during remembered set rebuilding.
-  inline HeapWord* top_at_rebuild_start(uint region) const;
+  inline HeapWord* top_at_rebuild_start(HeapRegion* r) const;
 
   // Clear statistics gathered during the concurrent cycle for the given region after
   // it has been reclaimed.

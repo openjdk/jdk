@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ protected:
 Log(logging) LogMessageTest::_log;
 
 const char* LogMessageTest::_level_filename[] = {
-  NULL, // LogLevel::Off
+  nullptr, // LogLevel::Off
 #define LOG_LEVEL(name, printname) "multiline-" #printname ".log",
   LOG_LEVEL_LIST
 #undef LOG_LEVEL
@@ -132,7 +132,7 @@ TEST_VM_F(LogMessageTest, line_order) {
   _log.write(msg);
 
   const char* expected[] = { "info line", "error line", "trace line",
-                             "another error", "warning line", "debug line", NULL };
+                             "another error", "warning line", "debug line", nullptr };
   EXPECT_TRUE(file_contains_substrings_in_order(_level_filename[LogLevel::Trace], expected))
     << "output missing or in incorrect order";
 }
@@ -156,7 +156,7 @@ TEST_VM_F(LogMessageTest, long_message) {
   msg.trace("%s", data); // Adds a newline, making the message exactly 10K in length.
   _log.write(msg);
 
-  const char* expected[] = { start_marker, "0123456789", end_marker, NULL };
+  const char* expected[] = { start_marker, "0123456789", end_marker, nullptr };
   EXPECT_TRUE(file_contains_substrings_in_order(_level_filename[LogLevel::Trace], expected))
     << "unable to print long line";
   FREE_C_HEAP_ARRAY(char, data);
@@ -178,7 +178,7 @@ TEST_VM_F(LogMessageTest, message_with_many_lines) {
     jio_snprintf(&expected_lines_data[i][0], line_length, "Line #" SIZE_FORMAT, i);
     expected_lines[i] = expected_lines_data[i];
   }
-  expected_lines[lines] = NULL;
+  expected_lines[lines] = nullptr;
 
   EXPECT_TRUE(file_contains_substrings_in_order(_level_filename[LogLevel::Trace], expected_lines))
     << "couldn't find all lines in multiline message";
@@ -201,7 +201,7 @@ TEST_VM_F(LogMessageTest, prefixing) {
   for (int i = 0; i < 3; i++) {
     msg.info("test %d", i);
   }
-  msg.set_prefix(NULL);
+  msg.set_prefix(nullptr);
   msg.info("test 3");
   _log.write(msg);
 
@@ -210,7 +210,7 @@ TEST_VM_F(LogMessageTest, prefixing) {
     "] some prefix: test 1",
     "] some prefix: test 2",
     "] test 3",
-    NULL
+    nullptr
   };
   EXPECT_TRUE(file_contains_substrings_in_order(_level_filename[LogLevel::Trace], expected))
     << "error in prefixed output";
@@ -238,7 +238,7 @@ TEST_VM_F(LogMessageTest, scoped_flushing) {
     EXPECT_TRUE(file_contains_substring(_level_filename[LogLevel::Info], "manual flush info"))
       << "missing output from manually flushed scoped log message";
   }
-  const char* tmp[] = {"manual flush info", "manual flush info", NULL};
+  const char* tmp[] = {"manual flush info", "manual flush info", nullptr};
   EXPECT_FALSE(file_contains_substrings_in_order(_level_filename[LogLevel::Info], tmp))
     << "log file contains duplicate lines from single scoped log message";
 }

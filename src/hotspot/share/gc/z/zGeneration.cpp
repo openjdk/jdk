@@ -286,6 +286,10 @@ void ZGeneration::desynchronize_relocation() {
   _relocate.desynchronize();
 }
 
+bool ZGeneration::is_relocate_queue_active() const {
+  return _relocate.is_queue_active();
+}
+
 void ZGeneration::reset_statistics() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
   _freed = 0;
@@ -1319,7 +1323,7 @@ void ZGenerationOld::process_non_strong_references() {
 
   ClassUnloadingContext ctx(_workers.active_workers(),
                             true /* unregister_nmethods_during_purge */,
-                            true /* lock_codeblob_free_separately */);
+                            true /* lock_nmethod_free_separately */);
 
   // Unlink stale metadata and nmethods
   _unload.unlink();
@@ -1497,7 +1501,7 @@ void ZGenerationOld::remap_young_roots() {
   uint remap_nworkers = clamp(ZGeneration::young()->workers()->active_workers() + prev_nworkers, 1u, ZOldGCThreads);
   _workers.set_active_workers(remap_nworkers);
 
-  // TODO: The STS joiner is only needed to satisfy z_assert_is_barrier_safe that doesn't
+  // TODO: The STS joiner is only needed to satisfy ZBarrier::assert_is_state_barrier_safe that doesn't
   // understand the driver locker. Consider making the assert aware of the driver locker.
   SuspendibleThreadSetJoiner sts_joiner;
 

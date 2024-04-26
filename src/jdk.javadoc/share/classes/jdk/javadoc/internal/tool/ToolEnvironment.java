@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.*;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
+import javax.lang.model.type.TypeKind;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
@@ -181,6 +182,8 @@ public class ToolEnvironment {
     }
 
     public Kind getFileKind(TypeElement te) {
+        if (te.asType().getKind() == TypeKind.ERROR)
+            return Kind.OTHER;
         JavaFileObject jfo = ((ClassSymbol)te).outermostClass().classfile;
         return jfo == null ? Kind.SOURCE : jfo.getKind();
     }

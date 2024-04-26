@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,11 +78,12 @@ public interface DropTargetContextPeer {
     Transferable getTransferable() throws InvalidDnDOperationException;
 
     /**
-     * Return whether or not the DragSource Transferable is in the
-     * same JVM as the Target.
-     * @return if the DragSource Transferable is in the same JVM as the Target
+     * Return whether or not the DragSource Transferable is in the same JVM as
+     * the Target.
+     *
+     * @return {@code true} if the DragSource Transferable is in the same JVM as
+     *         the Target, otherwise {@code false}
      */
-
     boolean isTransferableJVMLocal();
 
     /**

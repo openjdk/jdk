@@ -58,10 +58,7 @@ public class TestVectorizeTypeConversion {
     // Mixing types of different sizes has the effect that some vectors are shorter than the type allows.
     @IR(counts = {IRNode.LOAD_VECTOR_I,   IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
                   IRNode.VECTOR_CAST_I2D, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        // The vectorization of some conversions may fail when `+AlignVector`.
-        // We can remove the condition after JDK-8303827.
-        applyIf = {"AlignVector", "false"})
+                  IRNode.STORE_VECTOR, ">0"})
     private static void testConvI2D(double[] d, int[] a) {
         for(int i = 0; i < d.length; i++) {
             d[i] = (double) (a[i]);

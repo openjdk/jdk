@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1724,9 +1724,10 @@ class Stream<T> extends ExchangeImpl<T> {
     private static final VarHandle DEREGISTERED;
     static {
         try {
-            STREAM_STATE = MethodHandles.lookup()
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            STREAM_STATE = lookup
                     .findVarHandle(Stream.class, "streamState", int.class);
-            DEREGISTERED = MethodHandles.lookup()
+            DEREGISTERED = lookup
                     .findVarHandle(Stream.class, "deRegistered", boolean.class);
         } catch (Exception x) {
             throw new ExceptionInInitializerError(x);

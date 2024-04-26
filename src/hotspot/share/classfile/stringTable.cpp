@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/trimNativeHeap.hpp"
+#include "runtime/vmOperations.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
@@ -122,7 +123,7 @@ volatile bool _alt_hash = false;
 static bool _rehashed = false;
 static uint64_t _alt_hash_seed = 0;
 
-unsigned int hash_string(const jchar* s, int len, bool useAlt) {
+static unsigned int hash_string(const jchar* s, int len, bool useAlt) {
   return  useAlt ?
     AltHashing::halfsiphash_32(_alt_hash_seed, s, len) :
     java_lang_String::hash_code(s, len);
@@ -267,10 +268,17 @@ size_t StringTable::table_size() {
   return ((size_t)1) << _local_table->get_size_log2(Thread::current());
 }
 
+bool StringTable::has_work() {
+  return Atomic::load_acquire(&_has_work);
+}
+
 void StringTable::trigger_concurrent_work() {
-  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-  Atomic::store(&_has_work, true);
-  Service_lock->notify_all();
+  // Avoid churn on ServiceThread
+  if (!has_work()) {
+    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    Atomic::store(&_has_work, true);
+    Service_lock->notify_all();
+  }
 }
 
 // Probing
@@ -307,6 +315,13 @@ class StringTableGet : public StackObj {
     return _return();
   }
 };
+
+void StringTable::update_needs_rehash(bool rehash) {
+  if (rehash) {
+    _needs_rehashing = true;
+    trigger_concurrent_work();
+  }
+}
 
 oop StringTable::do_lookup(const jchar* name, int len, uintx hash) {
   Thread* thread = Thread::current();
@@ -499,15 +514,20 @@ void StringTable::gc_notification(size_t num_dead) {
   }
 }
 
-bool StringTable::has_work() {
-  return Atomic::load_acquire(&_has_work);
+bool StringTable::should_grow() {
+  return get_load_factor() > PREF_AVG_LIST_LEN && !_local_table->is_max_size_reached();
 }
 
 void StringTable::do_concurrent_work(JavaThread* jt) {
-  double load_factor = get_load_factor();
-  log_debug(stringtable, perf)("Concurrent work, live factor: %g", load_factor);
+  // Rehash if needed.  Rehashing goes to a safepoint but the rest of this
+  // work is concurrent.
+  if (needs_rehashing() && maybe_rehash_table()) {
+    Atomic::release_store(&_has_work, false);
+    return; // done, else grow
+  }
+  log_debug(stringtable, perf)("Concurrent work, live factor: %g", get_load_factor());
   // We prefer growing, since that also removes dead items
-  if (load_factor > PREF_AVG_LIST_LEN && !_local_table->is_max_size_reached()) {
+  if (should_grow()) {
     grow(jt);
   } else {
     clean_dead_entries(jt);
@@ -515,85 +535,48 @@ void StringTable::do_concurrent_work(JavaThread* jt) {
   Atomic::release_store(&_has_work, false);
 }
 
-// Rehash
-bool StringTable::do_rehash() {
-  if (!_local_table->is_safepoint_safe()) {
-    return false;
-  }
+// Called at VM_Operation safepoint
+void StringTable::rehash_table() {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be called at safepoint");
+  // The ServiceThread initiates the rehashing so it is not resizing.
+  assert (_local_table->is_safepoint_safe(), "Should not be resizing now");
+
+  _alt_hash_seed = AltHashing::compute_seed();
 
   // We use current size, not max size.
   size_t new_size = _local_table->get_size_log2(Thread::current());
   StringTableHash* new_table = new StringTableHash(new_size, END_SIZE, REHASH_LEN, true);
   // Use alt hash from now on
   _alt_hash = true;
-  if (!_local_table->try_move_nodes_to(Thread::current(), new_table)) {
-    _alt_hash = false;
-    delete new_table;
-    return false;
-  }
+  _local_table->rehash_nodes_to(Thread::current(), new_table);
 
   // free old table
   delete _local_table;
   _local_table = new_table;
 
-  return true;
+  _rehashed = true;
+  _needs_rehashing = false;
 }
 
-bool StringTable::should_grow() {
-  return get_load_factor() > PREF_AVG_LIST_LEN && !_local_table->is_max_size_reached();
-}
-
-bool StringTable::rehash_table_expects_safepoint_rehashing() {
-  // No rehashing required
-  if (!needs_rehashing()) {
-    return false;
-  }
-
-  // Grow instead of rehash
-  if (should_grow()) {
-    return false;
-  }
-
-  // Already rehashed
-  if (_rehashed) {
-    return false;
-  }
-
-  // Resizing in progress
-  if (!_local_table->is_safepoint_safe()) {
-    return false;
-  }
-
-  return true;
-}
-
-void StringTable::rehash_table() {
+bool StringTable::maybe_rehash_table() {
   log_debug(stringtable)("Table imbalanced, rehashing called.");
 
   // Grow instead of rehash.
   if (should_grow()) {
     log_debug(stringtable)("Choosing growing over rehashing.");
-    trigger_concurrent_work();
     _needs_rehashing = false;
-    return;
+    return false;
   }
   // Already rehashed.
   if (_rehashed) {
     log_warning(stringtable)("Rehashing already done, still long lists.");
-    trigger_concurrent_work();
     _needs_rehashing = false;
-    return;
+    return false;
   }
 
-  _alt_hash_seed = AltHashing::compute_seed();
-  {
-    if (do_rehash()) {
-      _rehashed = true;
-    } else {
-      log_info(stringtable)("Resizes in progress rehashing skipped.");
-    }
-  }
-  _needs_rehashing = false;
+  VM_RehashStringTable op;
+  VMThread::execute(&op);
+  return true;  // return true because we tried.
 }
 
 // Statistics

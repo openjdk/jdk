@@ -71,7 +71,7 @@
 #include "utilities/ostream.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #endif
 
 # include <sys/stat.h>
@@ -211,8 +211,9 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   }
   _compressed_oops = UseCompressedOops;
   _compressed_class_ptrs = UseCompressedClassPointers;
+  _use_secondary_supers_table = UseSecondarySupersTable;
   _max_heap_size = MaxHeapSize;
-  _use_optimized_module_handling = MetaspaceShared::use_optimized_module_handling();
+  _use_optimized_module_handling = CDSConfig::is_using_optimized_module_handling();
   _has_full_module_graph = CDSConfig::is_dumping_full_module_graph();
 
   // The following fields are for sanity checks for whether this archive
@@ -274,6 +275,7 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- narrow_oop_mode:                %d", _narrow_oop_mode);
   st->print_cr("- compressed_oops:                %d", _compressed_oops);
   st->print_cr("- compressed_class_ptrs:          %d", _compressed_class_ptrs);
+  st->print_cr("- use_secondary_supers_table:     %d", _use_secondary_supers_table);
   st->print_cr("- cloned_vtables_offset:          " SIZE_FORMAT_X, _cloned_vtables_offset);
   st->print_cr("- serialized_data_offset:         " SIZE_FORMAT_X, _serialized_data_offset);
   st->print_cr("- jvm_ident:                      %s", _jvm_ident);
@@ -289,10 +291,13 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- requested_base_address:         " INTPTR_FORMAT, p2i(_requested_base_address));
   st->print_cr("- mapped_base_address:            " INTPTR_FORMAT, p2i(_mapped_base_address));
   st->print_cr("- heap_roots_offset:              " SIZE_FORMAT, _heap_roots_offset);
+  st->print_cr("- _heap_oopmap_start_pos:         " SIZE_FORMAT, _heap_oopmap_start_pos);
+  st->print_cr("- _heap_ptrmap_start_pos:         " SIZE_FORMAT, _heap_ptrmap_start_pos);
+  st->print_cr("- _rw_ptrmap_start_pos:           " SIZE_FORMAT, _rw_ptrmap_start_pos);
+  st->print_cr("- _ro_ptrmap_start_pos:           " SIZE_FORMAT, _ro_ptrmap_start_pos);
   st->print_cr("- allow_archiving_with_java_agent:%d", _allow_archiving_with_java_agent);
   st->print_cr("- use_optimized_module_handling:  %d", _use_optimized_module_handling);
   st->print_cr("- has_full_module_graph           %d", _has_full_module_graph);
-  st->print_cr("- ptrmap_size_in_bits:            " SIZE_FORMAT, _ptrmap_size_in_bits);
 }
 
 void SharedClassPathEntry::init_as_non_existent(const char* path, TRAPS) {
@@ -1451,22 +1456,6 @@ void FileMapRegion::init_ptrmap(size_t offset, size_t size_in_bits) {
   _ptrmap_size_in_bits = size_in_bits;
 }
 
-BitMapView FileMapRegion::bitmap_view(bool is_oopmap) {
-  char* bitmap_base = FileMapInfo::current_info()->map_bitmap_region();
-  bitmap_base += is_oopmap ? _oopmap_offset : _ptrmap_offset;
-  size_t size_in_bits = is_oopmap ? _oopmap_size_in_bits : _ptrmap_size_in_bits;
-  return BitMapView((BitMap::bm_word_t*)(bitmap_base), size_in_bits);
-}
-
-BitMapView FileMapRegion::oopmap_view() {
-  return bitmap_view(true);
-}
-
-BitMapView FileMapRegion::ptrmap_view() {
-  assert(has_ptrmap(), "must be");
-  return bitmap_view(false);
-}
-
 bool FileMapRegion::check_region_crc(char* base) const {
   // This function should be called after the region has been properly
   // loaded into memory via FileMapInfo::map_region() or FileMapInfo::read_region().
@@ -1495,6 +1484,27 @@ static const char* region_name(int region_index) {
   return names[region_index];
 }
 
+BitMapView FileMapInfo::bitmap_view(int region_index, bool is_oopmap) {
+  FileMapRegion* r = region_at(region_index);
+  char* bitmap_base = is_static() ? FileMapInfo::current_info()->map_bitmap_region() : FileMapInfo::dynamic_info()->map_bitmap_region();
+  bitmap_base += is_oopmap ? r->oopmap_offset() : r->ptrmap_offset();
+  size_t size_in_bits = is_oopmap ? r->oopmap_size_in_bits() : r->ptrmap_size_in_bits();
+
+  log_debug(cds, reloc)("mapped %s relocation %smap @ " INTPTR_FORMAT " (" SIZE_FORMAT " bits)",
+                        region_name(region_index), is_oopmap ? "oop" : "ptr",
+                        p2i(bitmap_base), size_in_bits);
+
+  return BitMapView((BitMap::bm_word_t*)(bitmap_base), size_in_bits);
+}
+
+BitMapView FileMapInfo::oopmap_view(int region_index) {
+    return bitmap_view(region_index, /*is_oopmap*/true);
+  }
+
+BitMapView FileMapInfo::ptrmap_view(int region_index) {
+  return bitmap_view(region_index, /*is_oopmap*/false);
+}
+
 void FileMapRegion::print(outputStream* st, int region_index) {
   st->print_cr("============ region ============= %d \"%s\"", region_index, region_name(region_index));
   st->print_cr("- crc:                            0x%08x", _crc);
@@ -1508,6 +1518,8 @@ void FileMapRegion::print(outputStream* st, int region_index) {
   st->print_cr("- used:                           " SIZE_FORMAT, _used);
   st->print_cr("- oopmap_offset:                  " SIZE_FORMAT_X, _oopmap_offset);
   st->print_cr("- oopmap_size_in_bits:            " SIZE_FORMAT, _oopmap_size_in_bits);
+  st->print_cr("- ptrmap_offset:                  " SIZE_FORMAT_X, _ptrmap_offset);
+  st->print_cr("- ptrmap_size_in_bits:            " SIZE_FORMAT, _ptrmap_size_in_bits);
   st->print_cr("- mapped_base:                    " INTPTR_FORMAT, p2i(_mapped_base));
 }
 
@@ -1565,23 +1577,57 @@ static size_t write_bitmap(const CHeapBitMap* map, char* output, size_t offset) 
   return offset + size_in_bytes;
 }
 
-char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap, ArchiveHeapInfo* heap_info,
+// The start of the archived heap has many primitive arrays (String
+// bodies) that are not marked by the oop/ptr maps. So we must have
+// lots of leading zeros.
+size_t FileMapInfo::remove_bitmap_leading_zeros(CHeapBitMap* map) {
+  size_t old_zeros = map->find_first_set_bit(0);
+  size_t old_size = map->size();
+
+  // Slice and resize bitmap
+  map->truncate(old_zeros, map->size());
+
+  DEBUG_ONLY(
+    size_t new_zeros = map->find_first_set_bit(0);
+    assert(new_zeros == 0, "Should have removed leading zeros");
+  )
+  assert(map->size() <= old_size, "sanity");
+  return old_zeros;
+}
+
+char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap, ArchiveHeapInfo* heap_info,
                                        size_t &size_in_bytes) {
-  size_in_bytes = ptrmap->size_in_bytes();
+  size_t removed_rw_zeros = remove_bitmap_leading_zeros(rw_ptrmap);
+  size_t removed_ro_zeros = remove_bitmap_leading_zeros(ro_ptrmap);
+  header()->set_rw_ptrmap_start_pos(removed_rw_zeros);
+  header()->set_ro_ptrmap_start_pos(removed_ro_zeros);
+  size_in_bytes = rw_ptrmap->size_in_bytes() + ro_ptrmap->size_in_bytes();
 
   if (heap_info->is_used()) {
+    // Remove leading zeros
+    size_t removed_oop_zeros = remove_bitmap_leading_zeros(heap_info->oopmap());
+    size_t removed_ptr_zeros = remove_bitmap_leading_zeros(heap_info->ptrmap());
+
+    header()->set_heap_oopmap_start_pos(removed_oop_zeros);
+    header()->set_heap_ptrmap_start_pos(removed_ptr_zeros);
+
     size_in_bytes += heap_info->oopmap()->size_in_bytes();
     size_in_bytes += heap_info->ptrmap()->size_in_bytes();
   }
 
-  // The bitmap region contains up to 3 parts:
-  // ptrmap:              metaspace pointers inside the ro/rw regions
+  // The bitmap region contains up to 4 parts:
+  // rw_ptrmap:           metaspace pointers inside the read-write region
+  // ro_ptrmap:           metaspace pointers inside the read-only region
   // heap_info->oopmap(): Java oop pointers in the heap region
   // heap_info->ptrmap(): metaspace pointers in the heap region
   char* buffer = NEW_C_HEAP_ARRAY(char, size_in_bytes, mtClassShared);
   size_t written = 0;
-  written = write_bitmap(ptrmap, buffer, written);
-  header()->set_ptrmap_size_in_bits(ptrmap->size());
+
+  region_at(MetaspaceShared::rw)->init_ptrmap(0, rw_ptrmap->size());
+  written = write_bitmap(rw_ptrmap, buffer, written);
+
+  region_at(MetaspaceShared::ro)->init_ptrmap(written, ro_ptrmap->size());
+  written = write_bitmap(ro_ptrmap, buffer, written);
 
   if (heap_info->is_used()) {
     FileMapRegion* r = region_at(MetaspaceShared::hp);
@@ -1664,9 +1710,9 @@ void FileMapInfo::close() {
 /*
  * Same as os::map_memory() but also pretouches if AlwaysPreTouch is enabled.
  */
-char* map_memory(int fd, const char* file_name, size_t file_offset,
-                 char *addr, size_t bytes, bool read_only,
-                 bool allow_exec, MEMFLAGS flags = mtNone) {
+static char* map_memory(int fd, const char* file_name, size_t file_offset,
+                        char *addr, size_t bytes, bool read_only,
+                        bool allow_exec, MEMFLAGS flags = mtNone) {
   char* mem = os::map_memory(fd, file_name, file_offset, addr, bytes,
                              AlwaysPreTouch ? false : read_only,
                              allow_exec, flags);
@@ -1690,9 +1736,12 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
     return false;
   }
   char *addr = r->mapped_base();
-  char *base = os::remap_memory(_fd, _full_path, r->file_offset(),
-                                addr, size, false /* !read_only */,
-                                r->allow_exec());
+  // This path should not be reached for Windows; see JDK-8222379.
+  assert(WINDOWS_ONLY(false) NOT_WINDOWS(true), "Don't call on Windows");
+  // Replace old mapping with new one that is writable.
+  char *base = os::map_memory(_fd, _full_path, r->file_offset(),
+                              addr, size, false /* !read_only */,
+                              r->allow_exec());
   close();
   // These have to be errors because the shared region is now unmapped.
   if (base == nullptr) {
@@ -1873,15 +1922,19 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
   if (bitmap_base == nullptr) {
     return false; // OOM, or CRC check failure
   } else {
-    size_t ptrmap_size_in_bits = header()->ptrmap_size_in_bits();
-    log_debug(cds, reloc)("mapped relocation bitmap @ " INTPTR_FORMAT " (" SIZE_FORMAT " bits)",
-                          p2i(bitmap_base), ptrmap_size_in_bits);
+    BitMapView rw_ptrmap = ptrmap_view(MetaspaceShared::rw);
+    BitMapView ro_ptrmap = ptrmap_view(MetaspaceShared::ro);
 
-    BitMapView ptrmap((BitMap::bm_word_t*)bitmap_base, ptrmap_size_in_bits);
+    FileMapRegion* rw_region = first_core_region();
+    FileMapRegion* ro_region = last_core_region();
 
-    // Patch all pointers in the mapped region that are marked by ptrmap.
-    address patch_base = (address)mapped_base();
-    address patch_end  = (address)mapped_end();
+    // Patch all pointers inside the RW region
+    address rw_patch_base = (address)rw_region->mapped_base();
+    address rw_patch_end  = (address)rw_region->mapped_end();
+
+    // Patch all pointers inside the RO region
+    address ro_patch_base = (address)ro_region->mapped_base();
+    address ro_patch_end  = (address)ro_region->mapped_end();
 
     // the current value of the pointers to be patched must be within this
     // range (i.e., must be between the requested base address and the address of the current archive).
@@ -1894,9 +1947,12 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
     address valid_new_base = (address)header()->mapped_base_address();
     address valid_new_end  = (address)mapped_end();
 
-    SharedDataRelocator patcher((address*)patch_base, (address*)patch_end, valid_old_base, valid_old_end,
+    SharedDataRelocator rw_patcher((address*)rw_patch_base + header()->rw_ptrmap_start_pos(), (address*)rw_patch_end, valid_old_base, valid_old_end,
                                 valid_new_base, valid_new_end, addr_delta);
-    ptrmap.iterate(&patcher);
+    SharedDataRelocator ro_patcher((address*)ro_patch_base + header()->ro_ptrmap_start_pos(), (address*)ro_patch_end, valid_old_base, valid_old_end,
+                                valid_new_base, valid_new_end, addr_delta);
+    rw_ptrmap.iterate(&rw_patcher);
+    ro_ptrmap.iterate(&ro_patcher);
 
     // The MetaspaceShared::bm region will be unmapped in MetaspaceShared::initialize_shared_spaces().
 
@@ -1974,7 +2030,7 @@ void FileMapInfo::map_or_load_heap_region() {
   }
 
   if (!success) {
-    CDSConfig::disable_loading_full_module_graph();
+    CDSConfig::stop_using_full_module_graph();
   }
 }
 
@@ -2156,7 +2212,7 @@ bool FileMapInfo::map_heap_region_impl() {
 
   if (_heap_pointers_need_patching) {
     char* bitmap_base = map_bitmap_region();
-    if (bitmap_base == NULL) {
+    if (bitmap_base == nullptr) {
       log_info(cds)("CDS heap cannot be used because bitmap region cannot be mapped");
       dealloc_heap_region();
       unmap_region(MetaspaceShared::hp);
@@ -2196,11 +2252,11 @@ void FileMapInfo::fixup_mapped_heap_region() {
   if (ArchiveHeapLoader::is_mapped()) {
     assert(!_mapped_heap_memregion.is_empty(), "sanity");
 
-    // Populate the archive regions' G1BlockOffsetTableParts. That ensures
-    // fast G1BlockOffsetTablePart::block_start operations for any given address
+    // Populate the archive regions' G1BlockOffsetTables. That ensures
+    // fast G1BlockOffsetTable::block_start operations for any given address
     // within the archive regions when trying to find start of an object
     // (e.g. during card table scanning).
-    G1CollectedHeap::heap()->populate_archive_regions_bot_part(_mapped_heap_memregion);
+    G1CollectedHeap::heap()->populate_archive_regions_bot(_mapped_heap_memregion);
   }
 }
 
@@ -2389,14 +2445,19 @@ bool FileMapHeader::validate() {
     return false;
   }
 
+  if (! _use_secondary_supers_table && UseSecondarySupersTable) {
+    log_warning(cds)("The shared archive was created without UseSecondarySupersTable.");
+    return false;
+  }
+
   if (!_use_optimized_module_handling) {
-    MetaspaceShared::disable_optimized_module_handling();
+    CDSConfig::stop_using_optimized_module_handling();
     log_info(cds)("optimized module handling: disabled because archive was created without optimized module handling");
   }
 
   if (is_static() && !_has_full_module_graph) {
     // Only the static archive can contain the full module graph.
-    CDSConfig::disable_loading_full_module_graph("archive was created without full module graph");
+    CDSConfig::stop_using_full_module_graph("archive was created without full module graph");
   }
 
   return true;
