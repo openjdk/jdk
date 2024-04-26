@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1160,6 +1160,36 @@ public final class Instant
             };
         }
         return unit.between(this, end);
+    }
+
+    /**
+     * Calculates the {@code Duration} between another {@code Instant}.
+     * <p>
+     * The start and end points are {@code this} and the specified instant.
+     * The result will be negative if the end is before the start.
+     * <p>
+     * There are two equivalent ways of using this method.
+     * The first is to invoke this method.
+     * The second is to use {@link Duration#between(Temporal, Temporal)}:
+     * <pre>
+     *   // these two lines are equivalent
+     *   duration = start.until(end);
+     *   duration = Duration.between(start, end);
+     * </pre>
+     * The choice should be made based on which makes the code more readable.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @param endExclusive  the end {@code Instant}, exclusive, not null
+     * @return the {@code Duration} between this {@code Instant} and the
+     *      end {@code Instant}
+     * @throws ArithmeticException if numeric overflow occurs
+     * @since 23
+     */
+    public Duration until(Instant endExclusive) {
+        long secsDiff = Math.subtractExact(endExclusive.seconds, seconds);
+        int nanosDiff = endExclusive.nanos - nanos;
+        return Duration.ofSeconds(secsDiff, nanosDiff);
     }
 
     private long nanosUntil(Instant end) {
