@@ -3064,12 +3064,10 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         }
 
         // Check indices are within array bounds.
-        for (int i = 0; i < vsp.length(); i += lsp.length()) {
-            IntVector vix = IntVector
-                .fromArray(lsp, indexMap, mapOffset + i)
-                .add(offset);
-            VectorIntrinsics.checkIndex(vix, a.length);
-        }
+        IntVector vix = IntVector
+            .fromArray(lsp, indexMap, mapOffset)
+            .add(offset);
+        VectorIntrinsics.checkIndex(vix, a.length);
 
         return VectorSupport.loadWithMap(
             vectorType, null, byte.class, vsp.laneCount(),
@@ -3821,12 +3819,10 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
         // Check indices are within array bounds.
         // FIXME: Check index under mask controlling.
-        for (int i = 0; i < vsp.length(); i += lsp.length()) {
-            IntVector vix = IntVector
-                .fromArray(lsp, indexMap, mapOffset + i)
-                .add(offset);
-            VectorIntrinsics.checkIndex(vix, a.length);
-        }
+        IntVector vix = IntVector
+            .fromArray(lsp, indexMap, mapOffset)
+            .add(offset);
+        VectorIntrinsics.checkIndex(vix, a.length);
 
         return VectorSupport.loadWithMap(
             vectorType, maskClass, byte.class, vsp.laneCount(),

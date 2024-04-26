@@ -3065,12 +3065,10 @@ public abstract class ShortVector extends AbstractVector<Short> {
         }
 
         // Check indices are within array bounds.
-        for (int i = 0; i < vsp.length(); i += lsp.length()) {
-            IntVector vix = IntVector
-                .fromArray(lsp, indexMap, mapOffset + i)
-                .add(offset);
-            VectorIntrinsics.checkIndex(vix, a.length);
-        }
+        IntVector vix = IntVector
+            .fromArray(lsp, indexMap, mapOffset)
+            .add(offset);
+        VectorIntrinsics.checkIndex(vix, a.length);
 
         return VectorSupport.loadWithMap(
             vectorType, null, short.class, vsp.laneCount(),
@@ -3807,12 +3805,10 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
         // Check indices are within array bounds.
         // FIXME: Check index under mask controlling.
-        for (int i = 0; i < vsp.length(); i += lsp.length()) {
-            IntVector vix = IntVector
-                .fromArray(lsp, indexMap, mapOffset + i)
-                .add(offset);
-            VectorIntrinsics.checkIndex(vix, a.length);
-        }
+        IntVector vix = IntVector
+            .fromArray(lsp, indexMap, mapOffset)
+            .add(offset);
+        VectorIntrinsics.checkIndex(vix, a.length);
 
         return VectorSupport.loadWithMap(
             vectorType, maskClass, short.class, vsp.laneCount(),
