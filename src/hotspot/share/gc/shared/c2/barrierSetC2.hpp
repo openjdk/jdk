@@ -208,14 +208,9 @@ public:
 class BarrierSetC2State : public ArenaObj {
 protected:
   Node_Array                      _live;
-  int                             _trampoline_stubs_count;
-  int                             _stubs_start_offset;
 
 public:
-  BarrierSetC2State(Arena* arena)
-    : _live(arena),
-      _trampoline_stubs_count(0),
-      _stubs_start_offset(0) {}
+  BarrierSetC2State(Arena* arena) : _live(arena) {}
 
   RegMask* live(const Node* node) {
     if (!node->is_Mach() || !needs_liveness_data(node->as_Mach())) {
@@ -229,23 +224,6 @@ public:
     }
 
     return live;
-  }
-
-  void inc_trampoline_stubs_count() {
-    assert(_trampoline_stubs_count != INT_MAX, "Overflow");
-    ++_trampoline_stubs_count;
-  }
-
-  int trampoline_stubs_count() {
-    return _trampoline_stubs_count;
-  }
-
-  void set_stubs_start_offset(int offset) {
-    _stubs_start_offset = offset;
-  }
-
-  int stubs_start_offset() {
-    return _stubs_start_offset;
   }
 
   virtual bool needs_liveness_data(const MachNode* mach) const = 0;

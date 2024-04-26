@@ -123,11 +123,15 @@ typedef ZArenaHashtable<intptr_t, bool, 4> ZOffsetTable;
 class ZBarrierSetC2State : public BarrierSetC2State {
 private:
   GrowableArray<ZBarrierStubC2*>* _stubs;
+  int                             _trampoline_stubs_count;
+  int                             _stubs_start_offset;
 
 public:
   ZBarrierSetC2State(Arena* arena)
     : BarrierSetC2State(arena),
-      _stubs(new (arena) GrowableArray<ZBarrierStubC2*>(arena, 8,  0, nullptr)) {}
+      _stubs(new (arena) GrowableArray<ZBarrierStubC2*>(arena, 8,  0, nullptr)),
+      _trampoline_stubs_count(0),
+      _stubs_start_offset(0) {}
 
   GrowableArray<ZBarrierStubC2*>* stubs() {
     return _stubs;
@@ -136,6 +140,23 @@ public:
   bool needs_liveness_data(const MachNode* mach) const {
     // Don't need liveness data for nodes without barriers
     return mach->barrier_data() != ZBarrierElided;
+  }
+
+  void inc_trampoline_stubs_count() {
+    assert(_trampoline_stubs_count != INT_MAX, "Overflow");
+    ++_trampoline_stubs_count;
+  }
+
+  int trampoline_stubs_count() {
+    return _trampoline_stubs_count;
+  }
+
+  void set_stubs_start_offset(int offset) {
+    _stubs_start_offset = offset;
+  }
+
+  int stubs_start_offset() {
+    return _stubs_start_offset;
   }
 };
 
