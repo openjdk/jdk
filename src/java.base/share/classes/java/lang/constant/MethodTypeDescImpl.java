@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,11 @@
 package java.lang.constant;
 
 import jdk.internal.vm.annotation.Stable;
-import sun.invoke.util.Wrapper;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -94,7 +92,7 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
         List<ClassDesc> ptypes = ConstantUtils.parseMethodDescriptor(descriptor);
         int args = ptypes.size() - 1;
         ClassDesc[] paramTypes = args > 0
-                ? ptypes.subList(1, args + 1).toArray(new ClassDesc[0])
+                ? ptypes.subList(1, args + 1).toArray(ConstantUtils.EMPTY_CLASSDESC)
                 : ConstantUtils.EMPTY_CLASSDESC;
 
         MethodTypeDescImpl result = ofTrusted(ptypes.get(0), paramTypes);
