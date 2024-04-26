@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,8 @@ import java.util.concurrent.*;
 import javax.management.*;
 
 public class BroadcasterSupportDeadlockTest {
+
     public static void main(String[] args) throws Exception {
-        try {
-            Class.forName(ManagementFactory.class.getName());
-        } catch (Throwable t) {
-            System.out.println("TEST CANNOT RUN: needs JDK 5 at least");
-            return;
-        }
 
         final MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         final BroadcasterMBean mbean = new Broadcaster();
@@ -66,8 +61,7 @@ public class BroadcasterSupportDeadlockTest {
                 } catch (Exception e) {
                     e.printStackTrace(System.out);
                 } finally {
-                    System.out.println("TEST INCORRECT: block returned");
-                    System.exit(1);
+                    throw new RuntimeException("TEST INCORRECT: block returned");
                 }
             }
         };
@@ -85,8 +79,9 @@ public class BroadcasterSupportDeadlockTest {
            interested in.  */
         semaphore.acquire();
         Thread.sleep(100);
-        while (t1.getState() != Thread.State.WAITING)
-            Thread.sleep(1);
+        while (t1.getState() != Thread.State.WAITING) {
+            Thread.sleep(100);
+        }
 
         // Thread 2 - try to add a listener
         final NotificationListener listener = new NotificationListener() {
@@ -105,32 +100,26 @@ public class BroadcasterSupportDeadlockTest {
         t2.setDaemon(true);
         t2.start();
 
-        /* Wait for Thread 2 to be blocked on the monitor or to
-           succeed.  */
+        /* Wait for Thread 2 to be blocked on the monitor or to succeed. */
         Thread.sleep(100);
 
-        for (int i = 0; i < 1000/*ms*/; i++) {
-            t2.join(1/*ms*/);
-            switch (t2.getState()) {
-            case TERMINATED:
+        for (int i = 0; i < 1000; i++) {
+            t2.join(100 /*ms*/);
+            if (t2.getState() == Thread.State.TERMINATED) {
                 System.out.println("TEST PASSED");
                 return;
-            case BLOCKED:
-                java.util.Map<Thread,StackTraceElement[]> traces =
-                    Thread.getAllStackTraces();
-                showStackTrace("Thread 1", traces.get(t1));
-                showStackTrace("Thread 2", traces.get(t2));
-                System.out.println("TEST FAILED: deadlock");
-                System.exit(1);
-                break;
-            default:
-                break;
             }
         }
 
-        System.out.println("TEST FAILED BUT DID NOT NOTICE DEADLOCK");
-        Thread.sleep(10000);
-        System.exit(1);
+        if (t2.getState() == Thread.State.BLOCKED) {
+            System.out.println("TEST FAILED: deadlock");
+        } else {
+            System.out.println("TEST FAILED BUT DID NOT NOTICE DEADLOCK (state = " + t2.getState() + ")");
+        }
+        java.util.Map<Thread,StackTraceElement[]> traces = Thread.getAllStackTraces();
+        showStackTrace("Thread 1", traces.get(t1));
+        showStackTrace("Thread 2", traces.get(t2));
+        throw new RuntimeException("TEST FAILED");
     }
 
     private static void showStackTrace(String title,
@@ -152,6 +141,7 @@ public class BroadcasterSupportDeadlockTest {
     public static class Broadcaster
             extends NotificationBroadcasterSupport
             implements BroadcasterMBean {
+
         public synchronized void block(Semaphore semaphore) {
             Object lock = new Object();
             synchronized (lock) {
@@ -161,9 +151,7 @@ public class BroadcasterSupportDeadlockTest {
                     semaphore.release();
                     lock.wait(); // block forever
                 } catch (InterruptedException e) {
-                    System.out.println("TEST INCORRECT: lock interrupted:");
-                    e.printStackTrace(System.out);
-                    System.exit(1);
+                    throw new RuntimeException("TEST INCORRECT: lock interrupted");
                 }
             }
         }

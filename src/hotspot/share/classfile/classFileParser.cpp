@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3408,8 +3408,7 @@ u4 ClassFileParser::parse_classfile_record_attribute(const ClassFileStream* cons
                                                              CHECK_0);
 
     RecordComponent* record_component =
-      RecordComponent::allocate(_loader_data, name_index, descriptor_index,
-                                attributes_count, generic_sig_index,
+      RecordComponent::allocate(_loader_data, name_index, descriptor_index, generic_sig_index,
                                 annotations, type_annotations, CHECK_0);
     record_components->at_put(x, record_component);
   }  // End of component processing loop
@@ -4189,8 +4188,7 @@ void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
   // If it cannot be fast-path allocated, set a bit in the layout helper.
   // See documentation of InstanceKlass::can_be_fastpath_allocated().
   assert(ik->size_helper() > 0, "layout_helper is initialized");
-  if ((!RegisterFinalizersAtInit && ik->has_finalizer())
-      || ik->is_abstract() || ik->is_interface()
+  if (ik->is_abstract() || ik->is_interface()
       || (ik->name() == vmSymbols::java_lang_Class() && ik->class_loader() == nullptr)
       || ik->size_helper() >= FastAllocateSizeLimit) {
     // Forbid fast-path allocation.

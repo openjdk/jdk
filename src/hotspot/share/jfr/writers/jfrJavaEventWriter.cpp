@@ -123,6 +123,7 @@ void JfrJavaEventWriter::flush(jobject writer, jint used, jint requested, JavaTh
   u1* const new_current_position = is_valid ? buffer->pos() + used : buffer->pos();
   assert(start_pos_offset != invalid_offset, "invariant");
   // can safepoint here
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, jt));
   ThreadInVMfromNative transition(jt);
   oop const w = JNIHandles::resolve_non_null(writer);
   assert(w != nullptr, "invariant");

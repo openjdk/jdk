@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  * questions.
  */
 package java.lang.constant;
+
+import sun.invoke.util.Wrapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -195,10 +197,10 @@ class ConstantUtils {
      * @return the list of types
      * @throws IllegalArgumentException if the descriptor string is not valid
      */
-    static List<String> parseMethodDescriptor(String descriptor) {
+    static List<ClassDesc> parseMethodDescriptor(String descriptor) {
         int cur = 0, end = descriptor.length();
-        ArrayList<String> ptypes = new ArrayList<>();
-        ptypes.add(null); //placeholder for return type
+        ArrayList<ClassDesc> ptypes = new ArrayList<>();
+        ptypes.add(null); // placeholder for return type
 
         if (cur >= end || descriptor.charAt(cur) != '(')
             throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
@@ -208,7 +210,7 @@ class ConstantUtils {
             int len = skipOverFieldSignature(descriptor, cur, end, false);
             if (len == 0)
                 throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
-            ptypes.add(descriptor.substring(cur, cur + len));
+            ptypes.add(resolveClassDesc(descriptor, cur, len));
             cur += len;
         }
         if (cur >= end)
@@ -218,8 +220,15 @@ class ConstantUtils {
         int rLen = skipOverFieldSignature(descriptor, cur, end, true);
         if (rLen == 0 || cur + rLen != end)
             throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
-        ptypes.set(0, descriptor.substring(cur, cur + rLen));
+        ptypes.set(0, resolveClassDesc(descriptor, cur, rLen));
         return ptypes;
+    }
+
+    private static ClassDesc resolveClassDesc(String descriptor, int start, int len) {
+        if (len == 1) {
+            return Wrapper.forBasicType(descriptor.charAt(start)).primitiveClassDescriptor();
+        }
+        return ClassDesc.ofDescriptor(descriptor.substring(start, start + len));
     }
 
     private static final char JVM_SIGNATURE_ARRAY = '[';

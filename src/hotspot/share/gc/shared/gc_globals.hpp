@@ -50,7 +50,6 @@
                  develop_pd,                                                \
                  product,                                                   \
                  product_pd,                                                \
-                 notproduct,                                                \
                  range,                                                     \
                  constraint)                                                \
                                                                             \
@@ -59,7 +58,6 @@
     develop_pd,                                                             \
     product,                                                                \
     product_pd,                                                             \
-    notproduct,                                                             \
     range,                                                                  \
     constraint))                                                            \
                                                                             \
@@ -68,7 +66,6 @@
     develop_pd,                                                             \
     product,                                                                \
     product_pd,                                                             \
-    notproduct,                                                             \
     range,                                                                  \
     constraint))                                                            \
                                                                             \
@@ -77,7 +74,6 @@
     develop_pd,                                                             \
     product,                                                                \
     product_pd,                                                             \
-    notproduct,                                                             \
     range,                                                                  \
     constraint))                                                            \
                                                                             \
@@ -86,7 +82,6 @@
     develop_pd,                                                             \
     product,                                                                \
     product_pd,                                                             \
-    notproduct,                                                             \
     range,                                                                  \
     constraint))                                                            \
                                                                             \
@@ -95,7 +90,6 @@
     develop_pd,                                                             \
     product,                                                                \
     product_pd,                                                             \
-    notproduct,                                                             \
     range,                                                                  \
     constraint))                                                            \
                                                                             \
@@ -104,7 +98,6 @@
     develop_pd,                                                             \
     product,                                                                \
     product_pd,                                                             \
-    notproduct,                                                             \
     range,                                                                  \
     constraint))                                                            \
                                                                             \
@@ -160,9 +153,6 @@
   product(bool, NeverTenure, false,                                         \
           "Never tenure objects in eden, may tenure on overflow "           \
           "(ParallelGC only)")                                              \
-                                                                            \
-  product(bool, ScavengeBeforeFullGC, true,                                 \
-          "Scavenge youngest generation before each full GC.")              \
                                                                             \
   product(bool, ExplicitGCInvokesConcurrent, false,                         \
           "A System.gc() request invokes a concurrent collection; "         \
@@ -240,7 +230,7 @@
           "free space in this calculation. (G1 collector only)")            \
           range(0, 100)                                                     \
                                                                             \
-  notproduct(bool, ScavengeALot, false,                                     \
+  develop(bool, ScavengeALot, false,                                        \
           "Force scavenge at every Nth exit from the runtime system "       \
           "(N=ScavengeALotInterval)")                                       \
                                                                             \
@@ -248,10 +238,10 @@
           "Force full gc at every Nth exit from the runtime system "        \
           "(N=FullGCALotInterval)")                                         \
                                                                             \
-  notproduct(bool, GCALotAtAllSafepoints, false,                            \
+  develop(bool, GCALotAtAllSafepoints, false,                               \
           "Enforce ScavengeALot/GCALot at all potential safepoints")        \
                                                                             \
-  notproduct(bool, PromotionFailureALot, false,                             \
+  develop(bool, PromotionFailureALot, false,                                \
           "Use promotion failure handling on every youngest generation "    \
           "collection")                                                     \
                                                                             \
@@ -507,9 +497,6 @@
   product(bool, VerifyRememberedSets, false, DIAGNOSTIC,                    \
           "Verify GC remembered sets")                                      \
                                                                             \
-  product(bool, VerifyObjectStartArray, true, DIAGNOSTIC,                   \
-          "Verify GC object start array if verify before/after")            \
-                                                                            \
   product(bool, DisableExplicitGC, false,                                   \
           "Ignore calls to System.gc()")                                    \
                                                                             \
@@ -526,16 +513,16 @@
           "number of milliseconds")                                         \
           range(0, max_intx)                                                \
                                                                             \
-  notproduct(int, ScavengeALotInterval,     1,                              \
+  develop(int, ScavengeALotInterval,     1,                                 \
           "Interval between which scavenge will occur with +ScavengeALot")  \
                                                                             \
-  notproduct(int, FullGCALotInterval,     1,                                \
+  develop(int, FullGCALotInterval,     1,                                   \
           "Interval between which full gc will occur with +FullGCALot")     \
                                                                             \
-  notproduct(int, FullGCALotStart,     0,                                   \
+  develop(int, FullGCALotStart,     0,                                      \
           "For which invocation to start FullGCAlot")                       \
                                                                             \
-  notproduct(int, FullGCALotDummies,  32*K,                                 \
+  develop(int, FullGCALotDummies,  32*K,                                    \
           "Dummy object allocated with +FullGCALot, forcing all objects "   \
           "to move")                                                        \
                                                                             \
@@ -617,12 +604,11 @@
                                                                             \
   product(uint, MarkSweepDeadRatio,     5,                                  \
           "Percentage (0-100) of the old gen allowed as dead wood. "        \
-          "Serial mark sweep treats this as both the minimum and maximum "  \
+          "Serial full gc treats this as both the minimum and maximum "     \
           "value. "                                                         \
-          "Par compact uses a variable scale based on the density of the "  \
-          "generation and treats this as the maximum value when the heap "  \
-          "is either completely full or completely empty.  Par compact "    \
-          "also has a smaller default value; see arguments.cpp. "           \
+          "Parallel full gc treats this as maximum value, i.e. when "       \
+          "allowing dead wood, Parallel full gc wastes at most this amount "\
+          "of space."                                                       \
           "G1 full gc treats this as an allowed garbage threshold to skip " \
           "compaction of heap regions, i.e. if a heap region has less "     \
           "garbage than this value, then the region will not be compacted"  \

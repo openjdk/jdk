@@ -80,14 +80,11 @@ define_pd_global(intx, InlineSmallCode,          1000);
 
 #define ARCH_FLAGS(develop,                                             \
                    product,                                             \
-                   notproduct,                                          \
                    range,                                               \
                    constraint)                                          \
                                                                         \
   product(bool, NearCpool, true,                                        \
          "constant pool is close to instructions")                      \
-  product(bool, UseNeon, false,                                         \
-          "Use Neon for CRC32 computation")                             \
   product(bool, UseCRC32, false,                                        \
           "Use CRC32 instructions for CRC32 computation")               \
   product(bool, UseCryptoPmullForCRC32, false,                          \

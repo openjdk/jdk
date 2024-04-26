@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,33 +72,6 @@ class HotspotCompilation
     private StringCounter lastInvalidatedMethod;
     private LongCounter lastInvalidatedType;
 
-    private class CompilerThreadInfo {
-        String name;
-        StringCounter method;
-        LongCounter type;
-        LongCounter compiles;
-        LongCounter time;
-        CompilerThreadInfo(String bname, int index) {
-            String basename = bname + "." + index + ".";
-            this.name = bname + "-" + index;
-            this.method = (StringCounter) lookup(basename + "method");
-            this.type = (LongCounter) lookup(basename + "type");
-            this.compiles = (LongCounter) lookup(basename + "compiles");
-            this.time = (LongCounter) lookup(basename + "time");
-        }
-
-        @SuppressWarnings("deprecation")
-        CompilerThreadStat getCompilerThreadStat() {
-            MethodInfo minfo = new MethodInfo(method.stringValue(),
-                                              (int) type.longValue(),
-                                              -1);
-            return new CompilerThreadStat(name,
-                                          compiles.longValue(),
-                                          time.longValue(),
-                                          minfo);
-        }
-    }
-    private List<CompilerThreadInfo> threads;
     private int numActiveThreads; // number of active compiler threads
 
     private Map<String, Counter> counters;
@@ -145,15 +118,6 @@ class HotspotCompilation
         lastInvalidatedType = (LongCounter) lookup("lastInvalidatedType");
 
         numActiveThreads = (int) compilerThreads.longValue();
-
-        // Allocate CompilerThreadInfo for compilerThread and adaptorThread
-        threads = new ArrayList<>();
-
-        for (int i = 0; i < numActiveThreads; i++) {
-            if (counters.containsKey(SUN_CI + "compilerThread." + i + ".method")) {
-                threads.add(new CompilerThreadInfo("compilerThread", i));
-            }
-        }
     }
 
     public int getCompilerThreadCount() {
@@ -178,15 +142,6 @@ class HotspotCompilation
 
     public long getCompiledMethodSize() {
         return nmethodSize.longValue();
-    }
-
-    @Deprecated
-    public List<CompilerThreadStat> getCompilerThreadStats() {
-        List<CompilerThreadStat> list = new ArrayList<>(threads.size());
-        for (CompilerThreadInfo info : threads) {
-            list.add(info.getCompilerThreadStat());
-        }
-        return list;
     }
 
     public MethodInfo getLastCompile() {

@@ -35,7 +35,7 @@
  *     StackOverflowError, and then tries to make an invocation
  *     for the fixed invocations depth from within the "catch"
  *     block just caught the 1st stack overflow. The depth of new
- *     invocations is 10 times that depth seen at the 1st stack
+ *     invocations is 100 times that depth seen at the 1st stack
  *     overflow; so that another stack overflow occurs.
  *     The test is deemed passed, if VM have not crashed, and
  *     if there is no exception thrown other than due to stack
@@ -60,7 +60,7 @@ public class Stack009 {
                 System.out.println("Max. depth: " + depth);
 
                 try {
-                    recurse(10 * depth);
+                    recurse(100 * depth);
                     System.out.println("?");
                 } catch (StackOverflowError | OutOfMemoryError error2) {
                     // ignore

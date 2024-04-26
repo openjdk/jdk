@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,10 @@
 
 #include "utilities/globalDefinitions.hpp"
 
-class CodeBuffer;
 class Metadata;
 class MachConstantNode;
 class MachOper;
+class C2_MacroAssembler;
 
 class ConstantTable {
 public:
@@ -139,7 +139,7 @@ public:
   void set_table_base_offset(int x)  { assert(_table_base_offset == -1 || x == _table_base_offset, "can't change"); _table_base_offset = x; }
   int      table_base_offset() const { assert(_table_base_offset != -1, "not set yet");                      return _table_base_offset; }
 
-  bool emit(CodeBuffer& cb) const;
+  bool emit(C2_MacroAssembler* masm) const;
 
   // Returns the offset of the last entry (the top) of the constant table.
   int  top_offset() const { assert(_constants.top().offset() != -1, "not bound yet"); return _constants.top().offset(); }
@@ -172,7 +172,7 @@ public:
 
   // Jump-table
   Constant  add_jump_table(MachConstantNode* n);
-  void     fill_jump_table(CodeBuffer& cb, MachConstantNode* n, GrowableArray<Label*> labels) const;
+  void     fill_jump_table(C2_MacroAssembler* masm, MachConstantNode* n, GrowableArray<Label*> labels) const;
 };
 
 

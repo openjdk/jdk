@@ -83,7 +83,7 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
             target.add(HtmlTree.P(contents.getContent("doclet.Preview_API_Checkbox_Label")));
             Content list = HtmlTree.UL(HtmlStyle.previewFeatureList).addStyle(HtmlStyle.checkboxes);
             for (var jep : jeps) {
-                String jepUrl = resources.getText("doclet.Preview_JEP_URL", jep.number());
+                String jepUrl = resources.getText("doclet.Preview_JEP_URL", String.valueOf(jep.number()));
                 Content label = new ContentBuilder(Text.of(jep.number() + ": "))
                         .add(HtmlTree.A(jepUrl, Text.of(jep.title() + " (" + jep.status() + ")")));
                 list.add(HtmlTree.LI(getCheckbox(label, String.valueOf(index++), "feature-")));
