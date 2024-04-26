@@ -61,6 +61,7 @@
  * @uses java.time.chrono.AbstractChronology
  * @uses java.time.chrono.Chronology
  * @uses java.time.zone.ZoneRulesProvider
+ * @uses java.util.random.RandomGenerator
  * @uses java.util.spi.CalendarDataProvider
  * @uses java.util.spi.CalendarNameProvider
  * @uses java.util.spi.CurrencyNameProvider
