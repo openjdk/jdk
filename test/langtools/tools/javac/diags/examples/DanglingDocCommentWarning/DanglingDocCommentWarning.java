@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,9 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 7096014
- * @summary Javac tokens should retain state
- * @compile -Xlint:-dangling-doc-comments -Werror DeprecatedDocComment3.java
- */
+// key: compiler.warn.dangling.doc.comment
+// options: -Xlint:dangling-doc-comments
 
-class DeprecatedDocComment3 {
-    static class Foo { }
-
-    ; /** @deprecated */ ;
-
-    static class A {}
-
-    static class B {
-       A a; //not deprecated!
-    }
-}
+/** Comment 1. */
+/** Comment 2. */
+class DanglingDocCommentWarning { }
