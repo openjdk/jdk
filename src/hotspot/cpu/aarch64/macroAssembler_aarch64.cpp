@@ -5591,7 +5591,7 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     if (extra_length != 0) {
       // Increase loop counter by size of length field.
       addw(cnt1, cnt1, extra_length);
-      // We don't need cnt2 on that path. 
+      // We don't need cnt2 on that path.
     }
     if (is_8aligned) {
       // Check if lenghts are equal. When bases are
