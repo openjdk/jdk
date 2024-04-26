@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1056,6 +1056,8 @@ public final class StringConcatFactory {
     private static final class SimpleStringBuilderStrategy {
         static final int CLASSFILE_VERSION = 52; // JDK 8
         static final String METHOD_NAME = "concat";
+        // ClassFileDumper replaced java.lang.invoke.ProxyClassDumper in JDK 21
+        // -- see JDK-8304846
         static final ClassFileDumper DUMPER =
                 ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
 
