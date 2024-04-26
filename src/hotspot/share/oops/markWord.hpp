@@ -143,6 +143,9 @@ class markWord {
   bool is_marked()   const {
     return (mask_bits(value(), lock_mask_in_place) == marked_value);
   }
+  bool is_forwarded()   const {
+    return (mask_bits(value(), lock_mask_in_place) == marked_value);
+  }
   bool is_neutral()  const {  // Not locked, or marked - a "clean" neutral state
     return (mask_bits(value(), lock_mask_in_place) == unlocked_value);
   }
@@ -225,7 +228,7 @@ class markWord {
   }
 
   // used to encode pointers during GC
-  markWord clear_lock_bits() { return markWord(value() & ~lock_mask_in_place); }
+  markWord clear_lock_bits() const { return markWord(value() & ~lock_mask_in_place); }
 
   // age operations
   markWord set_marked()   { return markWord((value() & ~lock_mask_in_place) | marked_value); }
@@ -259,7 +262,11 @@ class markWord {
   inline static markWord encode_pointer_as_mark(void* p) { return from_pointer(p).set_marked(); }
 
   // Recover address of oop from encoded form used in mark
-  inline void* decode_pointer() { return (void*)clear_lock_bits().value(); }
+  inline void* decode_pointer() const { return (void*)clear_lock_bits().value(); }
+
+  inline oop forwardee() const {
+    return cast_to_oop(decode_pointer());
+  }
 };
 
 // Support atomic operations.

@@ -47,10 +47,10 @@ import static com.sun.tools.javac.main.Option.*;
  *  deletion without notice.</b>
  */
 public enum Source {
-    /** 1.0 had no inner classes, and so could not pass the JCK. */
+    /* 1.0 had no inner classes, and so could not pass the JCK. */
     // public static final Source JDK1_0 =              new Source("1.0");
 
-    /** 1.1 did not have strictfp, and so could not pass the JCK. */
+    /* 1.1 did not have strictfp, and so could not pass the JCK. */
     // public static final Source JDK1_1 =              new Source("1.1");
 
     /** 1.2 introduced strictfp. */

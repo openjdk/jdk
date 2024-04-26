@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -408,14 +408,6 @@ void CompilationMemoryStatistic::on_end_compilation() {
   // Store memory used in task, for later processing by JFR
   task->set_arena_bytes(arena_stat->peak_since_start());
 
-  if (print) {
-    char buf[1024];
-    fmn.as_C_string(buf, sizeof(buf));
-    tty->print("%s Arena usage %s: ", compilertype2name(ct), buf);
-    arena_stat->print_on(tty);
-    tty->cr();
-  }
-
   // Store result
   // For this to work, we must call on_end_compilation() at a point where
   // Compile|Compilation already handed over the failure string to ciEnv,
@@ -439,6 +431,13 @@ void CompilationMemoryStatistic::on_end_compilation() {
                     arena_stat->ra_at_peak(),
                     arena_stat->live_nodes_at_peak(),
                     result);
+  }
+  if (print) {
+    char buf[1024];
+    fmn.as_C_string(buf, sizeof(buf));
+    tty->print("%s Arena usage %s: ", compilertype2name(ct), buf);
+    arena_stat->print_on(tty);
+    tty->cr();
   }
 
   arena_stat->end(); // reset things
@@ -543,6 +542,10 @@ static inline ssize_t diff_entries_by_size(const MemStatEntry* e1, const MemStat
 }
 
 void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool human_readable, size_t min_size) {
+
+  MutexLocker ml(NMTCompilationCostHistory_lock, Mutex::_no_safepoint_check_flag);
+
+  st->cr();
   st->print_cr("Compilation memory statistics");
 
   if (!enabled()) {
@@ -563,29 +566,27 @@ void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool human_
   MemStatEntry::print_header(st);
 
   MemStatEntry** filtered = nullptr;
-  {
-    MutexLocker ml(NMTCompilationCostHistory_lock, Mutex::_no_safepoint_check_flag);
 
-    if (_the_table != nullptr) {
-      // We sort with quicksort
-      int num = 0;
-      filtered = _the_table->calc_flat_array(num, min_size);
-      if (min_size > 0) {
-        st->print_cr("(%d/%d)", num, _the_table->number_of_entries());
-      }
-      if (num > 0) {
-        QuickSort::sort(filtered, num, diff_entries_by_size, false);
-        // Now print. Has to happen under lock protection too, since entries may be changed.
-        for (int i = 0; i < num; i ++) {
-          filtered[i]->print_on(st, human_readable);
-        }
-      } else {
-        st->print_cr("No entries.");
+  if (_the_table != nullptr) {
+    // We sort with quicksort
+    int num = 0;
+    filtered = _the_table->calc_flat_array(num, min_size);
+    if (min_size > 0) {
+      st->print_cr("(%d/%d)", num, _the_table->number_of_entries());
+    }
+    if (num > 0) {
+      QuickSort::sort(filtered, num, diff_entries_by_size, false);
+      // Now print. Has to happen under lock protection too, since entries may be changed.
+      for (int i = 0; i < num; i ++) {
+        filtered[i]->print_on(st, human_readable);
       }
     } else {
-      st->print_cr("Not initialized.");
+      st->print_cr("No entries.");
     }
-  } // locked
+  } else {
+    st->print_cr("Not initialized.");
+  }
+  st->cr();
 
   FREE_C_HEAP_ARRAY(Entry, filtered);
 }

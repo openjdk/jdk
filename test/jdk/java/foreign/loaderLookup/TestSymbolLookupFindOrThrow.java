@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,25 +19,38 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP
-#define SHARE_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP
+/*
+ * @test
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED TestSymbolLookupFindOrThrow
+ */
 
-#include "gc/serial/defNewGeneration.hpp"
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
+import java.util.NoSuchElementException;
 
-#include "gc/serial/cardTableRS.hpp"
-#include "gc/shared/space.inline.hpp"
-#include "oops/access.inline.hpp"
-#include "utilities/devirtualizer.inline.hpp"
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-// Methods of protected closure types
+import static org.junit.Assert.*;
 
-template <typename OopClosureType>
-void DefNewGeneration::oop_since_save_marks_iterate(OopClosureType* cl) {
-  Generation::oop_since_save_marks_iterate_impl(cl, to(), _saved_mark_word);
-  set_saved_mark_word();
+final class TestSymbolLookupFindOrThrow {
+
+    static {
+        System.loadLibrary("Foo");
+    }
+
+    @Test
+    void findOrThrow() {
+        MemorySegment symbol = SymbolLookup.loaderLookup().findOrThrow("foo");
+        Assertions.assertNotEquals(0, symbol.address());
+    }
+
+    @Test
+    void findOrThrowNotFound() {
+        assertThrows(NoSuchElementException.class, () ->
+                SymbolLookup.loaderLookup().findOrThrow("bar"));
+    }
+
 }
-
-#endif // SHARE_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP
