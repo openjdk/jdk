@@ -301,7 +301,7 @@ public:
 
     while (max >= min) {
       int mid = (int)(((uint)max + min) / 2);
-      E& value = at(mid);
+      E value = at(mid);
       int diff = compare(key, value);
       if (diff > 0) {
         min = mid + 1;
@@ -323,7 +323,7 @@ public:
 
     while (max >= min) {
       int mid = (int)(((uint)max + min) / 2);
-      E& value = at(mid);
+      E value = at(mid);
       int diff = cc->do_compare(key, value);
       if (diff > 0) {
         min = mid + 1;
