@@ -30,6 +30,7 @@
 #include "memory/allocation.hpp"
 #include "oops/access.hpp"
 #ifdef COMPILER2
+#include "code/vmreg.hpp"
 #include "opto/optoreg.hpp"
 
 class Node;
