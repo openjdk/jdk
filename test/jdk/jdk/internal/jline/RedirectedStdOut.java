@@ -26,35 +26,35 @@
  * @bug 8330998
  * @summary Verify that even if the stdout is redirected java.io.Console will
  *          use it for writing.
+ * @run main RedirectedStdOut runRedirectAllTest
+ * @run main RedirectedStdOut runRedirectOutOnly
  */
 
 import java.io.IOException;
+import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandle;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
-/* Note this test only tests the case where neither of stdin, stdout and stderr is
- * connected to a terminal. Automatically testing case where stdin and stderr are
- * connected to a terminal, and stdout is not is not done due to technical
- * difficulties.
- *
- * For manual test, create file `/tmp/ConsoleTest.java` with the following content:
-public class ConsoleTest {
-     public static void main(String... args) {
-         System.console().printf("Hello!");
-     }
-}
- * and run it manually from terminal while redirecting stdout only to a file, like:
- * $ java /tmp/ConsoleTest.java >/tmp/stdout
- *
- * This should print nothing to the console, and /tmp/stdout should contain "Hello!".
- */
 public class RedirectedStdOut {
-    public static void main(String... args) throws Exception {
-        new RedirectedStdOut().run();
+    private static final String OUTPUT = "Hello!";
+
+    public static void main(String... args) throws Throwable {
+        RedirectedStdOut.class.getDeclaredMethod(args[0])
+                              .invoke(new RedirectedStdOut());
     }
 
-    void run() throws Exception {
+    //verify the case where neither stdin/out/err is attached to a terminal,
+    //this test is weaker, but more reliable:
+    void runRedirectAllTest() throws Exception {
         String testJDK = System.getProperty("test.jdk");
         Path javaLauncher = Path.of(testJDK, "bin", "java");
         AtomicReference<byte[]> out = new AtomicReference<>();
@@ -89,7 +89,7 @@ public class RedirectedStdOut {
         outReader.join();
         errReader.join();
 
-        String expectedOut = "Hello!";
+        String expectedOut = OUTPUT;
         String actualOut = new String(out.get());
 
         if (!Objects.equals(expectedOut, actualOut)) {
@@ -108,9 +108,90 @@ public class RedirectedStdOut {
         }
     }
 
+    //verify the case where stdin is attached to a terminal,
+    //this test allocates pty, and it might be skipped, if the appropriate
+    //native functions cannot be found
+    //it also leaves the VM in a broken state (with a pty attached), and so
+    //should run in a separate VM instance
+    void runRedirectOutOnly() throws Throwable {
+        Path stdout = Path.of(".", "stdout.txt").toAbsolutePath();
+
+        Files.deleteIfExists(stdout);
+
+        Linker linker = Linker.nativeLinker();
+        SymbolLookup stdlib = linker.defaultLookup();
+        MemorySegment parent = Arena.global().allocate(ValueLayout.ADDRESS);
+        MemorySegment child = Arena.global().allocate(ValueLayout.ADDRESS);
+        Optional<MemorySegment> openptyAddress = stdlib.find("openpty");
+
+        if (openptyAddress.isEmpty()) {
+            System.out.println("Cannot lookup openpty.");
+            //does not have forkpty, ignore
+            return ;
+        }
+
+        Optional<MemorySegment> loginttyAddress = stdlib.find("login_tty");
+
+        if (loginttyAddress.isEmpty()) {
+            System.out.println("Cannot lookup login_tty.");
+            //does not have forkpty, ignore
+            return ;
+        }
+
+        FunctionDescriptor openttyDescriptor =
+                FunctionDescriptor.of(ValueLayout.JAVA_INT,
+                                      ValueLayout.ADDRESS,
+                                      ValueLayout.ADDRESS,
+                                      ValueLayout.ADDRESS,
+                                      ValueLayout.ADDRESS,
+                                      ValueLayout.ADDRESS);
+        MethodHandle forkpty = linker.downcallHandle(openptyAddress.get(),
+                                                     openttyDescriptor);
+        int res = (int) forkpty.invoke(parent,
+                                       child,
+                                       MemorySegment.NULL,
+                                       MemorySegment.NULL,
+                                       MemorySegment.NULL);
+
+        if (res != 0) {
+            throw new AssertionError();
+        }
+
+        //set the current VM's in/out to the terminal:
+        FunctionDescriptor loginttyDescriptor =
+                FunctionDescriptor.of(ValueLayout.JAVA_INT,
+                                      ValueLayout.JAVA_INT);
+        MethodHandle logintty = linker.downcallHandle(loginttyAddress.get(),
+                                                      loginttyDescriptor);
+        logintty.invoke(child.get(ValueLayout.JAVA_INT, 0));
+
+        String testJDK = System.getProperty("test.jdk");
+        Path javaLauncher = Path.of(testJDK, "bin", "java");
+
+        ProcessBuilder builder = new ProcessBuilder(javaLauncher.toString(),
+                                                    "RedirectedStdOut$ConsoleTest");
+
+        builder.inheritIO();
+        builder.redirectOutput(stdout.toFile());
+
+        Process launched = builder.start();
+
+        launched.waitFor();
+
+        String expectedOut = OUTPUT;
+        String actualOut = Files.readString(stdout);
+
+        if (!Objects.equals(expectedOut, actualOut)) {
+            throw new AssertionError("Unexpected stdout content. " +
+                                     "Expected: '" + expectedOut + "'" +
+                                     ", got: '" + actualOut + "'");
+        }
+    }
+
     public static class ConsoleTest {
         public static void main(String... args) {
-            System.console().printf("Hello!");
+            System.console().printf(OUTPUT);
+            System.exit(0);
         }
     }
 }
