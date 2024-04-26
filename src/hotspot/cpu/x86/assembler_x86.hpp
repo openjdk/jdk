@@ -753,10 +753,10 @@ private:
   // Some prefixq variants always emit exactly one prefix byte, so besides a
   // prefix-emitting method we provide a method to get the prefix byte to emit,
   // which can then be folded into a byte stream.
-  int get_prefixq(Address adr, bool isPage1 = false);
-  int get_prefixq_rex2(Address adr, bool isPage1 = false);
-  int get_prefixq(Address adr, Register reg, bool isPage1 = false);
-  int get_prefixq_rex2(Address adr, Register reg, bool isPage1 = false);
+  int get_prefixq(Address adr, bool is_map1 = false);
+  int get_prefixq_rex2(Address adr, bool is_map1 = false);
+  int get_prefixq(Address adr, Register reg, bool is_map1 = false);
+  int get_prefixq_rex2(Address adr, Register reg, bool ismap1 = false);
 
   void prefixq(Address adr);
   void prefixq(Address adr, Register reg, bool is_map1 = false);
