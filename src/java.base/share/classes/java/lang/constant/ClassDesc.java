@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,19 +158,10 @@ public sealed interface ClassDesc
      * @see ClassDesc#ofInternalName(String)
      */
     static ClassDesc ofDescriptor(String descriptor) {
-        requireNonNull(descriptor);
-        if (descriptor.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "not a valid reference type descriptor: " + descriptor);
-        }
-        int depth = ConstantUtils.arrayDepth(descriptor);
-        if (depth > ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
-            throw new IllegalArgumentException(
-                    "Cannot create an array type descriptor with more than " +
-                    ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS + " dimensions");
-        }
+        // implicit null-check
         return (descriptor.length() == 1)
-               ? new PrimitiveClassDescImpl(descriptor)
+               ? Wrapper.forPrimitiveType(descriptor.charAt(0)).primitiveClassDescriptor()
+               // will throw IAE on descriptor.length == 0 or if array dimensions too long
                : new ReferenceClassDescImpl(descriptor);
     }
 

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1098,7 +1098,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Terefonĩ Risita to ke</type>
 			<type key="collation" type="phonetic" draft="contributed">Fonẽtika to ke kuprãg</type>
 			<type key="collation" type="pinyin">Pin-yin to nỹtĩ</type>
-			<type key="collation" type="reformed">Hár tãg nỹtĩ</type>
 			<type key="collation" type="search">Jẽnfĩn to ke Kar</type>
 			<type key="collation" type="searchjl" draft="contributed">Hangul kãsonỹte ve jãnfĩn</type>
 			<type key="collation" type="standard">to ke pẽ</type>
@@ -2262,9 +2261,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>Óra kar {0}</regionFormat>
 			<regionFormat type="daylight">Prỹg kã óra kar {0}</regionFormat>
 			<regionFormat type="standard">Óra pẽ {0}</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Sỹta Isamé</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Ga-kar Óra Vẽnh-krén-ja</standard>
@@ -2380,9 +2376,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Mẽrmurnĩ</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Kurije</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>Homarti</exemplarCity>
@@ -2537,9 +2530,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>Krésitãn</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>Rógro Mỹrér</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>Enimãntã</exemplarCity>
 			</zone>
@@ -2558,29 +2548,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>Rijorute</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>Tamumã Goj</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>Rỹgkĩg Ĩrén</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>Atikokỹn</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>Tũnner Mej</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>Nĩpigãn</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>Torãto</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>Ikarujin</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>Pỹgnĩrtũg</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>Mãgtãn</exemplarCity>
@@ -3365,17 +3343,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>Nar Enh Sarỹm</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Ungoron</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kijévi</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>Sĩgfiripor</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Japorisija</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>Kãmpara</exemplarCity>
@@ -3394,9 +3366,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>Honãruru</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Nhionhtãn</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Ỹkoragi</exemplarCity>
@@ -4104,11 +4073,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Rỹ kã óra Mỹkav tá</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Óra Mỹkikuari Goj-vẽso tá</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Óra Mỹganan tá</generic>
@@ -4146,13 +4110,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>Óra Mỹusãn tá</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Óra Mẽsiku Nãrti-Rãpur tá</generic>
-					<standard>Óra Pã Mẽsiku Nãrti-Rãpur tá</standard>
-					<daylight>Rỹ Kã óra Mẽsiku Nãrti-Rãpur tá</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

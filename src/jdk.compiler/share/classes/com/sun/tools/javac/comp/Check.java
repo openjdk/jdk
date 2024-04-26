@@ -673,7 +673,7 @@ public class Check {
                 && types.isSameType(tree.expr.type, tree.clazz.type)
                 && !(ignoreAnnotatedCasts && TreeInfo.containsTypeAnnotation(tree.clazz))
                 && !is292targetTypeCast(tree)) {
-            deferredLintHandler.report(() -> {
+            deferredLintHandler.report(_l -> {
                 if (lint.isEnabled(LintCategory.CAST))
                     log.warning(LintCategory.CAST,
                             tree.pos(), Warnings.RedundantCast(tree.clazz.type));
@@ -1350,7 +1350,7 @@ public class Check {
     private void warnOnExplicitStrictfp(DiagnosticPosition pos) {
         DiagnosticPosition prevLintPos = deferredLintHandler.setPos(pos);
         try {
-            deferredLintHandler.report(() -> {
+            deferredLintHandler.report(_l -> {
                                            if (lint.isEnabled(LintCategory.STRICTFP)) {
                                                log.warning(LintCategory.STRICTFP,
                                                            pos, Warnings.Strictfp); }
@@ -3809,13 +3809,13 @@ public class Check {
                 || s.isDeprecated() && !other.isDeprecated())
                 && (s.outermostClass() != other.outermostClass() || s.outermostClass() == null)
                 && s.kind != Kind.PCK) {
-            deferredLintHandler.report(() -> warnDeprecated(pos.get(), s));
+            deferredLintHandler.report(_l -> warnDeprecated(pos.get(), s));
         }
     }
 
     void checkSunAPI(final DiagnosticPosition pos, final Symbol s) {
         if ((s.flags() & PROPRIETARY) != 0) {
-            deferredLintHandler.report(() -> {
+            deferredLintHandler.report(_l -> {
                 log.mandatoryWarning(pos, Warnings.SunProprietary(s));
             });
         }
@@ -3834,10 +3834,10 @@ public class Check {
                     log.error(pos, Errors.IsPreview(s));
                 } else {
                     preview.markUsesPreview(pos);
-                    deferredLintHandler.report(() -> warnPreviewAPI(pos, Warnings.IsPreview(s)));
+                    deferredLintHandler.report(_l -> warnPreviewAPI(pos, Warnings.IsPreview(s)));
                 }
             } else {
-                    deferredLintHandler.report(() -> warnPreviewAPI(pos, Warnings.IsPreviewReflective(s)));
+                    deferredLintHandler.report(_l -> warnPreviewAPI(pos, Warnings.IsPreviewReflective(s)));
             }
         }
         if (preview.declaredUsingPreviewFeature(s)) {
@@ -3846,14 +3846,14 @@ public class Check {
                 //If "s" is compiled from source, then there was an error for it already;
                 //if "s" is from classfile, there already was an error for the classfile.
                 preview.markUsesPreview(pos);
-                deferredLintHandler.report(() -> warnDeclaredUsingPreview(pos, s));
+                deferredLintHandler.report(_l -> warnDeclaredUsingPreview(pos, s));
             }
         }
     }
 
     void checkRestricted(DiagnosticPosition pos, Symbol s) {
         if (s.kind == MTH && (s.flags() & RESTRICTED) != 0) {
-            deferredLintHandler.report(() -> warnRestrictedAPI(pos, s));
+            deferredLintHandler.report(_l -> warnRestrictedAPI(pos, s));
         }
     }
 
@@ -4102,7 +4102,7 @@ public class Check {
             int opc = ((OperatorSymbol)operator).opcode;
             if (opc == ByteCodes.idiv || opc == ByteCodes.imod
                 || opc == ByteCodes.ldiv || opc == ByteCodes.lmod) {
-                deferredLintHandler.report(() -> warnDivZero(pos));
+                deferredLintHandler.report(_l -> warnDivZero(pos));
             }
         }
     }
@@ -4115,7 +4115,7 @@ public class Check {
      */
     void checkLossOfPrecision(final DiagnosticPosition pos, Type found, Type req) {
         if (found.isNumeric() && req.isNumeric() && !types.isAssignable(found, req)) {
-            deferredLintHandler.report(() -> {
+            deferredLintHandler.report(_l -> {
                 if (lint.isEnabled(LintCategory.LOSSY_CONVERSIONS))
                     log.warning(LintCategory.LOSSY_CONVERSIONS,
                             pos, Warnings.PossibleLossOfPrecision(found, req));
@@ -4319,7 +4319,7 @@ public class Check {
                             // Warning may be suppressed by
                             // annotations; check again for being
                             // enabled in the deferred context.
-                            deferredLintHandler.report(() -> {
+                            deferredLintHandler.report(_l -> {
                                 if (lint.isEnabled(LintCategory.MISSING_EXPLICIT_CTOR))
                                    log.warning(LintCategory.MISSING_EXPLICIT_CTOR,
                                                pos, Warnings.MissingExplicitCtor(c, pkg, modle));
@@ -4654,7 +4654,7 @@ public class Check {
 
     void checkModuleExists(final DiagnosticPosition pos, ModuleSymbol msym) {
         if (msym.kind != MDL) {
-            deferredLintHandler.report(() -> {
+            deferredLintHandler.report(_l -> {
                 if (lint.isEnabled(LintCategory.MODULE))
                     log.warning(LintCategory.MODULE, pos, Warnings.ModuleNotFound(msym));
             });
@@ -4664,7 +4664,7 @@ public class Check {
     void checkPackageExistsForOpens(final DiagnosticPosition pos, PackageSymbol packge) {
         if (packge.members().isEmpty() &&
             ((packge.flags() & Flags.HAS_RESOURCE) == 0)) {
-            deferredLintHandler.report(() -> {
+            deferredLintHandler.report(_l -> {
                 if (lint.isEnabled(LintCategory.OPENS))
                     log.warning(pos, Warnings.PackageEmptyOrNotFound(packge));
             });
@@ -4673,7 +4673,7 @@ public class Check {
 
     void checkModuleRequires(final DiagnosticPosition pos, final RequiresDirective rd) {
         if ((rd.module.flags() & Flags.AUTOMATIC_MODULE) != 0) {
-            deferredLintHandler.report(() -> {
+            deferredLintHandler.report(_l -> {
                 if (rd.isTransitive() && lint.isEnabled(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC)) {
                     log.warning(pos, Warnings.RequiresTransitiveAutomatic);
                 } else if (lint.isEnabled(LintCategory.REQUIRES_AUTOMATIC)) {
