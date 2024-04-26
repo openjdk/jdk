@@ -21,6 +21,21 @@
  * questions.
  */
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.lang.Runtime.Version;
+import java.net.URI;
+import java.nio.file.*;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import javax.lang.model.element.*;
+import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
+import javax.tools.*;
+import javax.tools.JavaFileManager.Location;
 import com.sun.source.tree.*;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePathScanner;
@@ -30,39 +45,28 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.util.Pair;
 import jtreg.SkippedException;
-import javax.lang.model.element.*;
-import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.Elements;
-import javax.lang.model.util.Types;
-import javax.tools.*;
-import javax.tools.JavaFileManager.Location;
-import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.lang.Runtime.Version;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+
 
 /*
+- This checker checks the values of the `@since` tag found in the documentation comment for an element against the release in which the element first appeared.
+- The source code containing the documentation comments is read from `src.zip` in the release of JDK used to run the test.
+- The releases used to determine the expected value of `@since` tags are taken from the historical data built into `javac`.
+
 The `@since` checker works as a two-step process:
 - In the first step, we process JDKs 9-current, only classfiles, producing a map `<unique-Element-ID`> => `<version(s)-where-it-was-introduced>`.
- ("version(s)", because we handle versioning of Preview API, so there may be two versions (we use a class with two fields for preview and stable) -
-  one when it was introduced as a preview, and one when it went out of preview. More on that below)
+    - "version(s)", because we handle versioning of Preview API, so there may be two versions (we use a class with two fields for preview and stable),
+    one when it was introduced as a preview, and one when it went out of preview. More on that below.
+    - For each Element, we compute the unique ID, look into the map, and if there's nothing, record the current version as the originating version.
+    - At the end of this step we have a map of the Real since values
 
- -- For each Element, we compute the unique ID, look into the map, and if there's nothing, record the current version as the originating version.
- -- At the end of this step we have a map of the Real since values
+- In the second step, we look at "effective" `@since` tags in the mainline sources, from `src.zip` (if the test run doesn't have it, we throw a `jtreg.SkippedException`)
+    - We only check the specific MODULE whose name was passed as an argument in the test. In that module, we look for unqualified exports and test those packages.
+    -The `@since` checker verifies that for every API element, the real since value and the effective since value are the same, and reports an error if they are not.
 
-- In the second step, we would look at "effective" `@since` tags in the mainline sources, which we get from the `src.zip` file (if the test run doesn't have it, we throw a `jtreg.SkippedException`)
- and the `@since` checker verifies that for every API element, the real since value and the effective since value are the same,and reports an error if they are not.
+Important note : We only check code written since JDK 9 as the releases used to determine the expected value of @since tags
+                 are taken from the historical data built into javac which only goes back that far
 
- --In this step we limit the tool to only check the specific MODULE whose name was passed as an argument in the test. In that module, we look for unqualified exports and test those packages.
-
-note on real vs effective `@since`:
+note on rules for Real and effective `@since:
 
 Real since value of an API element is computed as the oldest release in which the given API element was introduced. That is:
 - for modules, classes and interfaces, the release in which the element with the given qualified name was introduced
@@ -70,12 +74,16 @@ Real since value of an API element is computed as the oldest release in which th
 - for methods and fields, the release in which the given method or field with the given VM descriptor became a member of its enclosing class or interface, whether direct or inherited
 
 Effective since value of an API element is computed as follows:
-- if the given element has a `@since` tag in its javadoc, it is used
+- if the given element has a @since tag in its javadoc, it is used
 - in all other cases, return the effective since value of the enclosing element
 
-Special Handling for preview method:
+
+Special Handling for preview method, as per JEP 12:
 - When an element is still marked as preview, the `@since` should be the first JDK release where the element was added.
 - If the element is no longer marked as preview, the `@since` should be the first JDK release where it was no longer preview.
+
+note on legacy preview: Until JDK 14, the preview APIs were not marked in any machine-understandable way. It was deprecated, and had a comment in the javadoc.
+                        and the use of `@PreviewFeature` only became standard in JDK 17. So the checker has an explicit knowledge of these preview elements.
 
 note: The `<unique-Element-ID>` for methods looks like `method: <erased-return-descriptor> <binary-name-of-enclosing-class>.<method-name>(<ParameterDescriptor>)`.
 it is somewhat inspired from the VM Method Descriptors. But we use the erased return so that methods that were later generified remain the same.
@@ -86,14 +94,19 @@ public class SinceChecker {
     private final Map<String, Set<String>> LEGACY_PREVIEW_METHODS = new HashMap<>();
     private final Map<String, IntroducedIn> classDictionary = new HashMap<>();
     private final JavaCompiler tool;
-    private final List<String> wrongTagsList = new ArrayList<>();
+    private int errorCount = 0;
+
+    public static class IntroducedIn {
+        public String introducedPreview;
+        public String introducedStable;
+    }
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             throw new SkippedException("Test module not specified");
         }
         SinceChecker sinceCheckerTestHelper = new SinceChecker();
-        sinceCheckerTestHelper.testThisModule(args[0]);
+        sinceCheckerTestHelper.checkModule(args[0]);
     }
 
     private SinceChecker() throws IOException {
@@ -109,43 +122,54 @@ public class SinceChecker {
             Elements elements = ct.getElements();
             elements.getModuleElement("java.base"); // forces module graph to be instantiated
             elements.getAllModuleElements().forEach(me ->
-                    processModuleRecord(me, version, ct));
+                    processModuleElement(me, version, ct));
         }
     }
 
-    private void processModuleRecord(ModuleElement moduleElement, String releaseVersion, JavacTask ct) {
+    private void processModuleElement(ModuleElement moduleElement, String releaseVersion, JavacTask ct) {
         for (ModuleElement.ExportsDirective ed : ElementFilter.exportsIn(moduleElement.getDirectives())) {
             persistElement(moduleElement, moduleElement, ct.getTypes(), releaseVersion);
             if (ed.getTargetModules() == null) {
-                analyzePackageRecord(ed.getPackage(), releaseVersion, ct);
+                processPackageElement(ed.getPackage(), releaseVersion, ct);
             }
         }
     }
 
-    private void analyzePackageRecord(PackageElement pe, String releaseVersion, JavacTask ct) {
+    private void processPackageElement(PackageElement pe, String releaseVersion, JavacTask ct) {
         persistElement(pe, pe, ct.getTypes(), releaseVersion);
         List<TypeElement> typeElements = ElementFilter.typesIn(pe.getEnclosedElements());
         for (TypeElement te : typeElements) {
-            analyzeClassRecord(te, releaseVersion, ct.getTypes(), ct.getElements());
+            processClassElement(te, releaseVersion, ct.getTypes(), ct.getElements());
         }
     }
 
-    private void analyzeClassRecord(TypeElement te, String version, Types types, Elements elements) {
-        Set<Modifier> classModifiers = te.getModifiers();
-        if (!(classModifiers.contains(Modifier.PUBLIC) || classModifiers.contains(Modifier.PROTECTED))) {
+    /// JDK documentation only contains public and protected declarations
+    private boolean isDocumented(Element te) {
+        Set<Modifier> mod = te.getModifiers();
+        return mod.contains(Modifier.PUBLIC) || mod.contains(Modifier.PROTECTED);
+    }
+
+    private boolean isMember(Element e) {
+        var kind = e.getKind();
+        return kind.isField() || switch (kind) {
+            case METHOD, CONSTRUCTOR -> true;
+            default -> false;
+        };
+    }
+
+    private void processClassElement(TypeElement te, String version, Types types, Elements elements) {
+        if (!(isDocumented(te))) {
             return;
         }
         persistElement(te.getEnclosingElement(), te, types, version);
         elements.getAllMembers(te).stream()
-                .filter(element -> element.getModifiers().contains(Modifier.PUBLIC) || element.getModifiers().contains(Modifier.PROTECTED))
-                .filter(element -> element.getKind().isField()
-                        || element.getKind() == ElementKind.METHOD
-                        || element.getKind() == ElementKind.CONSTRUCTOR)
+                .filter(this::isDocumented)
+                .filter(this::isMember)
                 .forEach(element -> persistElement(te, element, types, version));
         te.getEnclosedElements().stream()
                 .filter(element -> element.getKind().isDeclaredType())
                 .map(TypeElement.class::cast)
-                .forEach(nestedClass -> analyzeClassRecord(nestedClass, version, types, elements));
+                .forEach(nestedClass -> processClassElement(nestedClass, version, types, elements));
     }
 
     public void persistElement(Element explicitOwner, Element element, Types types, String version) {
@@ -175,7 +199,12 @@ public class SinceChecker {
                 && LEGACY_PREVIEW_METHODS.get(currentVersion).contains(uniqueId);
     }
 
-    private void testThisModule(String moduleName) throws Exception {
+    void error(String message) {
+        System.err.println(message);
+        errorCount++;
+    }
+
+    private void checkModule(String moduleName) throws Exception {
         Path home = Paths.get(System.getProperty("java.home"));
         Path srcZip = home.resolve("lib").resolve("src.zip");
         if (Files.notExists(srcZip)) {
@@ -184,8 +213,7 @@ public class SinceChecker {
             Path testJdk = Paths.get(System.getProperty("test.jdk"));
             srcZip = testJdk.getParent().resolve("images").resolve("jdk").resolve("lib").resolve("src.zip");
         }
-        File f = new File(srcZip.toUri());
-        if (!f.exists() && !f.isDirectory()) {
+        if (!Files.exists(srcZip) && !Files.isDirectory(srcZip)) {
             throw new SkippedException("Skipping Test because src.zip wasn't found");
         }
         if (Files.isReadable(srcZip)) {
@@ -208,10 +236,10 @@ public class SinceChecker {
                         processModuleCheck(elements.getModuleElement(moduleName), ct, packagePath, javadocHelper);
                     } catch (Exception e) {
                         e.printStackTrace();
-                        wrongTagsList.add("Initiating javadocHelperFailed " + e.getMessage());
+                        error("Initiating javadocHelperFailed " + e.getMessage());
                     }
-                    if (!wrongTagsList.isEmpty()) {
-                        throw new Exception(wrongTagsList.toString());
+                    if (errorCount > 0) {
+                        throw new Exception("The `@since` checker found " + errorCount + " problems");
                     }
                 }
             }
@@ -220,7 +248,7 @@ public class SinceChecker {
 
     private void processModuleCheck(ModuleElement moduleElement, JavacTask ct, Path packagePath, EffectiveSourceSinceHelper javadocHelper) {
         if (moduleElement == null) {
-            wrongTagsList.add("Module element: was null because `elements.getModuleElement(moduleName)` returns null." +
+            error("Module element: was null because `elements.getModuleElement(moduleName)` returns null." +
                     "fixes are needed for this Module");
         }
         String moduleVersion = getModuleVersionFromFile(packagePath);
@@ -236,11 +264,16 @@ public class SinceChecker {
 
     private void checkModuleOrPackage(String moduleVersion, Element moduleElement, JavacTask ct, String elementCategory) {
         String id = getElementName(moduleElement, moduleElement, ct.getTypes());
-        String introducedVersion = classDictionary.get(id).introducedStable;
+        var elementInfo = classDictionary.get(id);
+        if (elementInfo == null) {
+            error("Element :" + id + " was not mapped");
+            return;
+        }
+        String version = elementInfo.introducedStable;
         if (moduleVersion == null) {
-            wrongTagsList.add("Unable to retrieve `@since` for " + elementCategory + ": " + id + "\n");
+            error("Unable to retrieve `@since` for " + elementCategory + id);
         } else {
-            checkEquals(moduleVersion, introducedVersion, id);
+            checkEquals(moduleVersion, version, id);
         }
     }
 
@@ -249,11 +282,12 @@ public class SinceChecker {
         String version = null;
         if (Files.exists(moduleInfoFile)) {
             try {
-                byte[] moduleInfoAsBytes = Files.readAllBytes(moduleInfoFile);
-                String moduleInfoContent = new String(moduleInfoAsBytes, StandardCharsets.UTF_8);
+                String moduleInfoContent = Files.readString(moduleInfoFile);
                 version = extractSinceVersionFromText(moduleInfoContent).toString();
-            } catch (IOException | NullPointerException e) {
-                wrongTagsList.add("module-info.java not found or couldn't be opened AND this module has no unqualified exports\n");
+            } catch (IOException e) {
+                error("module-info.java not found or couldn't be opened AND this module has no unqualified exports");
+            } catch (NullPointerException e) {
+                error("module-info.java does not contain an `@since`");
             }
         }
         return version;
@@ -270,11 +304,12 @@ public class SinceChecker {
         String packageTopVersion = null;
         if (Files.exists(pkgInfo)) {
             try {
-                byte[] packageAsBytes = Files.readAllBytes(pkgInfo);
-                String packageContent = new String(packageAsBytes, StandardCharsets.UTF_8);
+                String packageContent = Files.readString(pkgInfo);
                 packageTopVersion = extractSinceVersionFromText(packageContent).toString();
-            } catch (IOException | NullPointerException e) {
-                wrongTagsList.add("package-info.java not found or couldn't be opened\n");
+            } catch (IOException e) {
+                error(ed.getPackage().getQualifiedName() + ": package-info.java not found or couldn't be opened");
+            } catch (NullPointerException e) {
+                error(ed.getPackage().getQualifiedName() + ": package-info.java  does not contain an `@since`");
             }
         }
         return packageTopVersion;
@@ -291,16 +326,12 @@ public class SinceChecker {
     private void analyzeClassCheck(TypeElement te, String version, EffectiveSourceSinceHelper javadocHelper,
                                    Types types, Elements elementUtils) {
         String currentjdkVersion = String.valueOf(Runtime.version().feature());
-        Set<Modifier> classModifiers = te.getModifiers();
-        if (!(classModifiers.contains(Modifier.PUBLIC) || classModifiers.contains(Modifier.PROTECTED))) {
+        if (!(isDocumented(te))) {
             return;
         }
         checkElement(te.getEnclosingElement(), te, types, javadocHelper, version, elementUtils);
-        te.getEnclosedElements().stream().filter(element -> element.getModifiers().contains(Modifier.PUBLIC)
-                        || element.getModifiers().contains(Modifier.PROTECTED))
-                .filter(element -> element.getKind().isField()
-                        || element.getKind() == ElementKind.METHOD
-                        || element.getKind() == ElementKind.CONSTRUCTOR)
+        te.getEnclosedElements().stream().filter(this::isDocumented)
+                .filter(this::isMember)
                 .forEach(element -> checkElement(te, element, types, javadocHelper, version, elementUtils));
         te.getEnclosedElements().stream()
                 .filter(element -> element.getKind().isDeclaredType())
@@ -321,13 +352,17 @@ public class SinceChecker {
         }
         String sinceVersion = javadocHelper.effectiveSinceVersion(explicitOwner, element, types, elementUtils).toString();
         IntroducedIn mappedVersion = classDictionary.get(uniqueId);
+        if (mappedVersion == null) {
+            error("Element :" + uniqueId + " was not mapped");
+            return;
+        }
         String realMappedVersion = null;
         try {
             realMappedVersion = isPreview(element, uniqueId, currentVersion) ?
                     mappedVersion.introducedPreview :
                     mappedVersion.introducedStable;
         } catch (Exception e) {
-            wrongTagsList.add("For element " + element + "mappedVersion" + mappedVersion + " is null" + e + "\n");
+            error("For element " + element + "mappedVersion" + mappedVersion + " is null " + e);
         }
         checkEquals(sinceVersion, realMappedVersion, uniqueId);
     }
@@ -345,7 +380,7 @@ public class SinceChecker {
                 }
                 return Version.parse(versionString);
             } catch (NumberFormatException ex) {
-                wrongTagsList.add("`@since` value that cannot be parsed: " + versionString + "\n");
+                error("`@since` value that cannot be parsed: " + versionString);
                 return null;
             }
         } else {
@@ -353,9 +388,9 @@ public class SinceChecker {
         }
     }
 
-    private void checkEquals(String sinceVersion, String mappedVersion, String id) {
+    private void checkEquals(String sinceVersion, String mappedVersion, String name) {
         if (sinceVersion == null || mappedVersion == null) {
-            wrongTagsList.add("For " + id + " NULL value for either mapped or real `@since` . mapped version is="
+            error(name + ": NULL value for either real or effective `@since` . real/mapped version is="
                     + mappedVersion + " while the `@since` in the source code is= " + sinceVersion);
             return;
         }
@@ -363,19 +398,17 @@ public class SinceChecker {
             sinceVersion = "9";
         }
         if (!sinceVersion.equals(mappedVersion)) {
-            String message = getWrongSinceMessage(sinceVersion, mappedVersion, id);
-            wrongTagsList.add(message);
+            String message = getWrongSinceMessage(sinceVersion, mappedVersion, name);
+            error(message);
         }
     }
 
     private static String getWrongSinceMessage(String sinceVersion, String mappedVersion, String elementSimpleName) {
         String message;
         if (mappedVersion.equals("9")) {
-            message = "For " + elementSimpleName +
-                    " Wrong `@since` version " + sinceVersion + " But the element exists before JDK 10\n";
+            message = elementSimpleName + ": `@since` version is " + sinceVersion + " but the element exists before JDK 10";
         } else {
-            message = "For " + elementSimpleName +
-                    " Wrong `@since` version is " + sinceVersion + " instead of " + mappedVersion + "\n";
+            message = elementSimpleName + ": `@since` version is " + sinceVersion + " instead of " + mappedVersion;
         }
         return message;
     }
@@ -413,11 +446,6 @@ public class SinceChecker {
             suffix = ": " + ((ModuleElement) element).getQualifiedName();
         }
         return prefix + suffix;
-    }
-
-    public static class IntroducedIn {
-        public String introducedPreview;
-        public String introducedStable;
     }
 
     //these were preview in before the introduction of the @PreviewFeature
@@ -463,6 +491,7 @@ public class SinceChecker {
                 "method: java.lang.Object com.sun.source.util.TreeScanner.visitYield(com.sun.source.tree.YieldTree,java.lang.Object)",
                 "field: jdk.jshell.Snippet.SubKind:RECORD_SUBKIND",
                 "class: javax.lang.model.element.RecordComponentElement",
+                "method: javax.lang.model.type.TypeMirror javax.lang.model.element.RecordComponentElement.asType()",
                 "method: java.lang.Object javax.lang.model.element.ElementVisitor.visitRecordComponent(javax.lang.model.element.RecordComponentElement,java.lang.Object)",
                 "class: javax.lang.model.util.ElementScanner14",
                 "class: javax.lang.model.util.AbstractElementVisitor14",
@@ -483,12 +512,17 @@ public class SinceChecker {
                 "field: java.lang.annotation.ElementType:RECORD_COMPONENT",
                 "method: boolean java.lang.Class.isRecord()",
                 "method: java.lang.reflect.RecordComponent[] java.lang.Class.getRecordComponents()",
-                "class: java.lang.Record"
+                "class: java.lang.Record",
+                "interface: com.sun.source.tree.PatternTree",
+                "field: com.sun.source.tree.Tree.Kind:BINDING_PATTERN",
+                "method: com.sun.source.tree.PatternTree com.sun.source.tree.InstanceOfTree.getPattern()",
+                "interface: com.sun.source.tree.BindingPatternTree"
         ));
 
         LEGACY_PREVIEW_METHODS.put("15", Set.of(
                 "field: jdk.jshell.Snippet.SubKind:RECORD_SUBKIND",
                 "class: javax.lang.model.element.RecordComponentElement",
+                "method: javax.lang.model.type.TypeMirror javax.lang.model.element.RecordComponentElement.asType()",
                 "method: java.lang.Object javax.lang.model.element.ElementVisitor.visitRecordComponent(javax.lang.model.element.RecordComponentElement,java.lang.Object)",
                 "class: javax.lang.model.util.ElementScanner14",
                 "class: javax.lang.model.util.AbstractElementVisitor14",
@@ -515,7 +549,12 @@ public class SinceChecker {
                 "method: javax.lang.model.element.TypeElement:getPermittedSubclasses:()",
                 "method: java.util.List com.sun.source.tree.ClassTree.getPermitsClause()",
                 "method: boolean java.lang.Class.isSealed()",
-                "method: java.lang.constant.ClassDesc[] java.lang.Class.permittedSubclasses()"
+                "method: java.lang.constant.ClassDesc[] java.lang.Class.permittedSubclasses()",
+                "interface: com.sun.source.tree.PatternTree",
+                "field: com.sun.source.tree.Tree.Kind:BINDING_PATTERN",
+                "method: com.sun.source.tree.PatternTree com.sun.source.tree.InstanceOfTree.getPattern()",
+                "interface: com.sun.source.tree.BindingPatternTree",
+                "method: java.lang.Object com.sun.source.tree.TreeVisitor.visitBindingPattern(com.sun.source.tree.BindingPatternTree,java.lang.Object)"
         ));
 
         LEGACY_PREVIEW_METHODS.put("16", Set.of(
@@ -525,7 +564,8 @@ public class SinceChecker {
                 "method: javax.lang.model.element.TypeElement:getPermittedSubclasses:()",
                 "method: java.util.List com.sun.source.tree.ClassTree.getPermitsClause()",
                 "method: boolean java.lang.Class.isSealed()",
-                "method: java.lang.constant.ClassDesc[] java.lang.Class.permittedSubclasses()"
+                "method: java.lang.constant.ClassDesc[] java.lang.Class.permittedSubclasses()",
+                "method: java.lang.Object com.sun.source.tree.TreeVisitor.visitBindingPattern(com.sun.source.tree.BindingPatternTree,java.lang.Object)"
         ));
 
         // java.lang.foreign existed since JDK 19 and wasn't annotated - went out of preview in JDK 22
@@ -540,12 +580,25 @@ public class SinceChecker {
         ));
     }
 
+    /**
+     * Helper to find javadoc and resolve @inheritDoc and the effective since version.
+     */
+
     private final class EffectiveSourceSinceHelper implements AutoCloseable {
         private static final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         private final JavaFileManager baseFileManager;
         private final StandardJavaFileManager fm;
         private final Set<String> seenLookupElements = new HashSet<>();
         private final Map<String, Version> signature2Source = new HashMap<>();
+
+        /**
+         * Create the helper.
+         *
+         * @param mainTask JavacTask from which the further Elements originate
+         * @param sourceLocations paths where source files should be searched
+         * @param validator enclosing class of the helper, typically the object invoking this method
+         * @return a EffectiveSourceSinceHelper
+         */
 
         public static EffectiveSourceSinceHelper create(JavacTask mainTask, Collection<? extends Path> sourceLocations, SinceChecker validator) {
             StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null);
@@ -556,6 +609,7 @@ public class SinceChecker {
                 try {
                     fm.close();
                 } catch (IOException closeEx) {
+                    ex.addSuppressed(closeEx);
                 }
                 throw new UncheckedIOException(ex);
             }
@@ -598,7 +652,7 @@ public class SinceChecker {
 
 
                 } catch (IOException ex) {
-                    wrongTagsList.add("JavadocHelper failed for " + element + "\n");
+                    error("JavadocHelper failed for " + element);
                 }
             }
 
@@ -674,7 +728,6 @@ public class SinceChecker {
             }
             if (version == null) {
                 //may be null for private elements
-                //TODO: can we be more careful here?
             }
             return version;
 
@@ -713,6 +766,12 @@ public class SinceChecker {
             fm.close();
         }
 
+        /**
+         * Manages files within a patch module.
+         * Provides custom behavior for handling file locations within a patch module.
+         * Includes methods to specify module locations, infer module names and determine
+         * if a location belongs to the patch module path.
+         */
         private static final class PatchModuleFileManager
                 extends ForwardingJavaFileManager<JavaFileManager> {
 
