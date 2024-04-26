@@ -25,10 +25,12 @@ package sun.jvm.hotspot.code;
 import sun.jvm.hotspot.compiler.ImmutableOopMap;
 import sun.jvm.hotspot.compiler.ImmutableOopMapSet;
 import sun.jvm.hotspot.debugger.Address;
+import sun.jvm.hotspot.oops.CIntField;
 import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.runtime.VMObject;
 import sun.jvm.hotspot.types.AddressField;
 import sun.jvm.hotspot.types.CIntegerField;
+import sun.jvm.hotspot.types.JShortField;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
 import sun.jvm.hotspot.utilities.Assert;
@@ -41,11 +43,11 @@ import sun.jvm.hotspot.utilities.Observer;
 public class CodeBlob extends VMObject {
   private static AddressField nameField;
   private static CIntegerField sizeField;
-  private static CIntegerField headerSizeField;
   private static CIntegerField relocationSizeField;
+  private static CIntField     headerSizeField;
   private static CIntegerField contentOffsetField;
   private static CIntegerField codeOffsetField;
-  private static CIntegerField frameCompleteOffsetField;
+  private static CIntField     frameCompleteOffsetField;
   private static CIntegerField dataOffsetField;
   private static CIntegerField frameSizeField;
   private static AddressField  oopMapsField;
@@ -61,11 +63,11 @@ public class CodeBlob extends VMObject {
 
     nameField                = type.getAddressField("_name");
     sizeField                = type.getCIntegerField("_size");
-    headerSizeField          = type.getCIntegerField("_header_size");
     relocationSizeField      = type.getCIntegerField("_relocation_size");
+    headerSizeField          = new CIntField(type.getCIntegerField("_header_size"), 0);
     contentOffsetField       = type.getCIntegerField("_content_offset");
     codeOffsetField          = type.getCIntegerField("_code_offset");
-    frameCompleteOffsetField = type.getCIntegerField("_frame_complete_offset");
+    frameCompleteOffsetField = new CIntField(type.getCIntegerField("_frame_complete_offset"), 0);
     dataOffsetField          = type.getCIntegerField("_data_offset");
     frameSizeField           = type.getCIntegerField("_frame_size");
     oopMapsField             = type.getAddressField("_oop_maps");
@@ -103,7 +105,7 @@ public class CodeBlob extends VMObject {
   // Offsets
   public int getContentOffset()   { return (int) contentOffsetField.getValue(addr); }
 
-  public int getCodeOffset()      { return (int) codeOffsetField   .getValue(addr); }
+  public int getCodeOffset()      { return (int) codeOffsetField.getValue(addr); }
 
   public long getFrameCompleteOffset() { return frameCompleteOffsetField.getValue(addr); }
 

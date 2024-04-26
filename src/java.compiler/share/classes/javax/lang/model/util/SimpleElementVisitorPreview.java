@@ -53,8 +53,10 @@ import static javax.lang.model.SourceVersion.*;
  * @param <P> the type of the additional parameter to this visitor's methods.  Use {@code Void}
  *              for visitors that do not need an additional parameter.
  *
- * @see <a href="SimpleElementVisitor6.html#note_for_subclasses">
- * <strong>Compatibility note for subclasses</strong></a>
+ * @see javax.lang.model.util##expectedEvolution
+ * <strong>Expected visitor evolution</strong>
+ * @see AbstractAnnotationValueVisitor6##note_for_subclasses
+ * <strong>Compatibility note for subclasses</strong>
  * @see SimpleElementVisitor6
  * @see SimpleElementVisitor7
  * @see SimpleElementVisitor8

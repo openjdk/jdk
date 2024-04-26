@@ -294,7 +294,7 @@
   nonstatic_field(MethodData,                  _backedge_mask,                                int)                                   \
   nonstatic_field(MethodData,                  _jvmci_ir_size,                                int)                                   \
                                                                                                                                      \
-  nonstatic_field(nmethod,                     _verified_entry_point,                         address)                               \
+  nonstatic_field(nmethod,                     _verified_entry_offset,                        u2)                                    \
   nonstatic_field(nmethod,                     _comp_level,                                   CompLevel)                             \
                                                                                                                                      \
   nonstatic_field(ObjArrayKlass,               _element_klass,                                Klass*)                                \
@@ -342,6 +342,7 @@
   static_field(StubRoutines,                _generic_arraycopy,                               address)                               \
   static_field(StubRoutines,                _array_sort,                                      address)                               \
   static_field(StubRoutines,                _array_partition,                                 address)                               \
+  static_field(StubRoutines,                _unsafe_setmemory,                                address)                               \
                                                                                                                                      \
   static_field(StubRoutines,                _aescrypt_encryptBlock,                           address)                               \
   static_field(StubRoutines,                _aescrypt_decryptBlock,                           address)                               \

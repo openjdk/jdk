@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ public final class StringConcatFactory {
 
     static {
         String highArity = VM.getSavedProperty("java.lang.invoke.StringConcat.highArityThreshold");
-        HIGH_ARITY_THRESHOLD = Integer.parseInt(highArity != null ? highArity : "20");
+        HIGH_ARITY_THRESHOLD = highArity != null ? Integer.parseInt(highArity) : 20;
     }
 
     /**
@@ -1081,7 +1081,7 @@ public final class StringConcatFactory {
          */
         static final int ARGUMENT_SIZE_FACTOR = 4;
 
-        public static final Set<Lookup.ClassOption> SET_OF_STRONG = Set.of(STRONG);
+        static final Set<Lookup.ClassOption> SET_OF_STRONG = Set.of(STRONG);
 
         private SimpleStringBuilderStrategy() {
             // no instantiation
@@ -1100,7 +1100,6 @@ public final class StringConcatFactory {
                                         ClassFile.ACC_FINAL | ClassFile.ACC_PRIVATE | ClassFile.ACC_STATIC,
                                         generateMethod(constants, args));
                     }});
-
             try {
                 Lookup hiddenLookup = lookup.makeHiddenClassDefiner(className, classBytes, SET_OF_STRONG, DUMPER)
                                             .defineClassAsLookup(true);
