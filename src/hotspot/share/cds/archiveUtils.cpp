@@ -45,6 +45,8 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+#include "cds/cppVtables.hpp"
+
 CHeapBitMap* ArchivePtrMarker::_ptrmap = nullptr;
 CHeapBitMap* ArchivePtrMarker::_rw_ptrmap = nullptr;
 CHeapBitMap* ArchivePtrMarker::_ro_ptrmap = nullptr;
@@ -310,9 +312,9 @@ void WriteClosure::do_ptr(void** p) {
   if (ptr != nullptr && !ArchiveBuilder::current()->is_in_buffer_space(ptr)) {
     ptr = ArchiveBuilder::current()->get_buffered_addr(ptr);
   }
-  int offset = ptr - (address)ArchiveBuilder::current()->rw_region()->base();
-  _dump_region->append_intptr_t((intptr_t)ptr, true);
-  tty->print_cr("Writing offset: %lx", ptr - (address)ArchiveBuilder::current()->rw_region()->base());
+  size_t offset = ptr - (address)ArchiveBuilder::current()->rw_region()->base();
+  ptr = (address)offset;
+  _dump_region->append_intptr_t((intptr_t)ptr, false);
 }
 
 void WriteClosure::do_region(u_char* start, size_t size) {
@@ -331,7 +333,8 @@ void ReadClosure::do_ptr(void** p) {
   intptr_t obj = nextPtr();
   assert((intptr_t)obj >= 0 || (intptr_t)obj < -100,
          "hit tag while initializing ptrs.");
-  *p = (void*)obj;
+  *p = (void*)(SharedBaseAddress + obj);
+  tty->print_cr("Deserializing: %p", *p);
 }
 
 void ReadClosure::do_u4(u4* p) {
