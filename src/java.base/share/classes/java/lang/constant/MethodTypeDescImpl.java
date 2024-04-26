@@ -90,45 +90,18 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
      * @jvms 4.3.3 Method Descriptors
      */
     static MethodTypeDescImpl ofDescriptor(String descriptor) {
-        requireNonNull(descriptor);
+        // Implicit null-check of descriptor
+        List<ClassDesc> ptypes = ConstantUtils.parseMethodDescriptor(descriptor);
+        int args = ptypes.size() - 1;
+        ClassDesc[] paramTypes = args > 0
+                ? ptypes.subList(1, args + 1).toArray(new ClassDesc[0])
+                : ConstantUtils.EMPTY_CLASSDESC;
 
-        int cur = 0, end = descriptor.length();
-        ArrayList<ClassDesc> ptypes = new ArrayList<>();
-
-        if (cur >= end || descriptor.charAt(cur) != '(')
-            throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
-
-        ++cur;  // skip '('
-        while (cur < end && descriptor.charAt(cur) != ')') {
-            int len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end, false);
-            if (len == 0)
-                throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
-
-            ptypes.add(resolveClassDesc(descriptor, cur, len));
-            cur += len;
-        }
-        if (cur >= end)
-            throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
-        ++cur;  // skip ')'
-
-        int rLen = ConstantUtils.skipOverFieldSignature(descriptor, cur, end, true);
-        if (rLen == 0 || cur + rLen != end)
-            throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
-        ClassDesc returnType = resolveClassDesc(descriptor, cur, rLen);
-
-        var paramTypes = !ptypes.isEmpty() ? ptypes.toArray(new ClassDesc[0]) : ConstantUtils.EMPTY_CLASSDESC;
-
-        MethodTypeDescImpl result = ofTrusted(returnType, paramTypes);
+        MethodTypeDescImpl result = ofTrusted(ptypes.get(0), paramTypes);
         result.cachedDescriptorString = descriptor;
         return result;
     }
 
-    private static ClassDesc resolveClassDesc(String descriptor, int start, int len) {
-        if (len == 1) {
-            return Wrapper.forBasicType(descriptor.charAt(start)).primitiveClassDescriptor();
-        }
-        return ClassDesc.ofDescriptor(descriptor.substring(start, start + len));
-    }
 
     @Override
     public ClassDesc returnType() {
