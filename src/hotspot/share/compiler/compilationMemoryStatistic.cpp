@@ -183,6 +183,7 @@ class MemStatEntry : public CHeapObj<mtInternal> {
   const Thread* _thread;
   // active limit for this compilation, if any
   size_t _limit;
+  bool _limit_crash;
 
   // peak usage, bytes, over all arenas
   size_t _total;
@@ -535,8 +536,8 @@ void CompilationMemoryStatistic::on_arena_change(ssize_t diff, const Arena* aren
         if (ct != compiler_none && name[0] != '\0') {
           ss.print("%s %s: ", compilertype2name(ct), name);
         }
-        ss.print("Hit MemLimit %s (limit: %zu now: %zu)",
-                 (hit_limit_before ? "again" : ""),
+        ss.print("Hit MemLimit %s(limit: %zu now: %zu)",
+                 (hit_limit_before ? "again " : ""),
                  arena_stat->limit(), arena_stat->peak_since_start());
       }
 
