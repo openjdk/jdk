@@ -173,11 +173,11 @@ public:
     return  _data[_len - 1];
   }
 
-  E& last() const {
+  E& last() {
     return top();
   }
 
-  E const& last() {
+  E const& last() const {
     return top();
   }
 
