@@ -47,7 +47,6 @@ final class ReferenceClassDescImpl implements ClassDesc {
      * @jvms 4.3.2 Field Descriptors
      */
     ReferenceClassDescImpl(String descriptor) {
-        requireNonNull(descriptor);
         int len = ConstantUtils.skipOverFieldSignature(descriptor, 0, descriptor.length(), false);
         if (len == 0 || len == 1
             || len != descriptor.length())
