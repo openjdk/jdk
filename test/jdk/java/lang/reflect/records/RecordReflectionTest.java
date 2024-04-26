@@ -178,6 +178,14 @@ public class RecordReflectionTest {
                             p.getType().toString(), signatures[i]));
             i++;
         }
+        // similar as above but testing another API
+        i = 0;
+        for (var p : constructor.getGenericParameterTypes()) {
+            assertEquals(p.toString(), signatures[i],
+                    String.format("signature of method \"%s\" different from expected signature \"%s\"",
+                            p.toString(), signatures[i]));
+            i++;
+        }
     }
 
     @Retention(RetentionPolicy.RUNTIME)
