@@ -345,6 +345,7 @@ void CompiledDirectCall::set_to_clean() {
 void CompiledDirectCall::set(const methodHandle& callee_method) {
   nmethod* code = callee_method->code();
   nmethod* caller = CodeCache::find_nmethod(instruction_address());
+  assert(caller != nullptr, "did not find caller nmethod");
 
   bool to_interp_cont_enter = caller->method()->is_continuation_enter_intrinsic() &&
                               ContinuationEntry::is_interpreted_call(instruction_address());
@@ -378,11 +379,13 @@ bool CompiledDirectCall::is_call_to_interpreted() const {
   // It is a call to interpreted, if it calls to a stub. Hence, the destination
   // must be in the stub part of the nmethod that contains the call
   nmethod* nm = CodeCache::find_nmethod(instruction_address());
+  assert(nm != nullptr, "did not find nmethod");
   return nm->stub_contains(destination());
 }
 
 bool CompiledDirectCall::is_call_to_compiled() const {
   nmethod* caller = CodeCache::find_nmethod(instruction_address());
+  assert(caller != nullptr, "did not find caller nmethod");
   CodeBlob* dest_cb = CodeCache::find_blob(destination());
   return !caller->stub_contains(destination()) && dest_cb->is_nmethod();
 }

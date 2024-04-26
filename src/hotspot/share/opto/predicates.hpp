@@ -283,14 +283,41 @@ class TemplateAssertionPredicateExpression : public StackObj {
   Opaque4Node* clone(const TransformStrategyForOpaqueLoopNodes& transform_strategy, Node* new_ctrl, PhaseIdealLoop* phase);
 
  public:
-  // Is 'n' a node that could be part of a Template Assertion Predicate Expression (i.e. could be found on the input
-  // chain of a Template Assertion Predicate Opaque4Node up to and including the OpaqueLoop* nodes)?
-  static bool maybe_contains(const Node* n) {
-    const int opcode = n->Opcode();
-    return (opcode == Op_OpaqueLoopInit ||
-            opcode == Op_OpaqueLoopStride ||
-            n->is_Bool() ||
-            n->is_Cmp() ||
+  Opaque4Node* clone(Node* new_ctrl, PhaseIdealLoop* phase);
+  Opaque4Node* clone_and_replace_init(Node* new_init, Node* new_ctrl,PhaseIdealLoop* phase);
+  Opaque4Node* clone_and_replace_init_and_stride(Node* new_init, Node* new_stride, Node* new_ctrl, PhaseIdealLoop* phase);
+};
+
+// Class to represent a node being part of a Template Assertion Predicate Expression.
+//
+// The expression itself can belong to no, one, or two Template Assertion Predicates:
+// - None: This node is already dead (i.e. we replaced the Bool condition of the Template Assertion Predicate).
+// - Two: A OpaqueLoopInitNode could be part of two Template Assertion Predicates.
+// - One: In all other cases.
+class TemplateAssertionPredicateExpressionNode : public StackObj {
+  Node* const _node;
+
+ public:
+  explicit TemplateAssertionPredicateExpressionNode(Node* node) : _node(node) {
+    assert(is_in_expression(node), "must be valid");
+  }
+  NONCOPYABLE(TemplateAssertionPredicateExpressionNode);
+
+ private:
+  static bool is_template_assertion_predicate(Node* node);
+
+ public:
+  // Check whether the provided node is part of a Template Assertion Predicate Expression or not.
+  static bool is_in_expression(Node* node);
+
+  // Check if the opcode of node could be found in a Template Assertion Predicate Expression.
+  // This also provides a fast check whether a node is unrelated.
+  static bool is_maybe_in_expression(const Node* node) {
+    const int opcode = node->Opcode();
+    return (node->is_OpaqueLoopInit() ||
+            node->is_OpaqueLoopStride() ||
+            node->is_Bool() ||
+            node->is_Cmp() ||
             opcode == Op_AndL ||
             opcode == Op_OrL ||
             opcode == Op_RShiftL ||
@@ -306,9 +333,33 @@ class TemplateAssertionPredicateExpression : public StackObj {
             opcode == Op_CastII);
   }
 
-  Opaque4Node* clone(Node* new_ctrl, PhaseIdealLoop* phase);
-  Opaque4Node* clone_and_replace_init(Node* new_init, Node* new_ctrl,PhaseIdealLoop* phase);
-  Opaque4Node* clone_and_replace_init_and_stride(Node* new_init, Node* new_stride, Node* new_ctrl, PhaseIdealLoop* phase);
+  // Apply the given function to all Template Assertion Predicates (if any) to which this Template Assertion Predicate
+  // Expression Node belongs to.
+  template <class Callback>
+  void for_each_template_assertion_predicate(Callback callback) {
+    ResourceMark rm;
+    Unique_Node_List list;
+    list.push(_node);
+    DEBUG_ONLY(int template_counter = 0;)
+    for (uint i = 0; i < list.size(); i++) {
+      Node* next = list.at(i);
+      if (is_template_assertion_predicate(next)) {
+        callback(next->as_If());
+        DEBUG_ONLY(template_counter++;)
+      } else {
+        assert(!next->is_CFG(), "no CFG expected in Template Assertion Predicate Expression");
+        list.push_outputs_of(next);
+      }
+    }
+
+    // Each node inside a Template Assertion Predicate Expression is in between a Template Assertion Predicate and
+    // its OpaqueLoop* nodes (or an OpaqueLoop* node itself). The OpaqueLoop* nodes do not common up. Therefore, each
+    // Template Assertion Predicate Expression node belongs to a single expression - except for OpaqueLoopInitNodes.
+    // An OpaqueLoopInitNode is shared between the init and last value Template Assertion Predicate at creation.
+    // Later, when cloning the expressions, they are no longer shared.
+    assert(template_counter <= 2, "a node cannot be part of more than two templates");
+    assert(template_counter <= 1 || _node->is_OpaqueLoopInit(), "only OpaqueLoopInit nodes can be part of two templates");
+  }
 };
 
 // This class represents a Predicate Block (i.e. either a Loop Predicate Block, a Profiled Loop Predicate Block,

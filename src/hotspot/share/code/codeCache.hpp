@@ -110,8 +110,7 @@ class CodeCache : AllStatic {
 
   // CodeHeap management
   static void initialize_heaps();                             // Initializes the CodeHeaps
-  // Check the code heap sizes set by the user via command line
-  static void check_heap_sizes(size_t non_nmethod_size, size_t profiled_size, size_t non_profiled_size, size_t cache_size, bool all_set);
+
   // Creates a new heap with the given name and size, containing CodeBlobs of the given type
   static void add_heap(ReservedSpace rs, const char* name, CodeBlobType code_blob_type);
   static CodeHeap* get_code_heap_containing(void* p);         // Returns the CodeHeap containing the given pointer, or nullptr
@@ -153,8 +152,8 @@ class CodeCache : AllStatic {
   static bool contains(void *p);                           // returns whether p is included
   static bool contains(nmethod* nm);                       // returns whether nm is included
   static void blobs_do(void f(CodeBlob* cb));              // iterates over all CodeBlobs
-  static void blobs_do(CodeBlobClosure* f);                // iterates over all CodeBlobs
   static void nmethods_do(void f(nmethod* nm));            // iterates over all nmethods
+  static void nmethods_do(NMethodClosure* cl);             // iterates over all nmethods
   static void metadata_do(MetadataClosure* f);             // iterates over metadata in alive nmethods
 
   // Lookup
@@ -337,13 +336,13 @@ class CodeCache : AllStatic {
 // The relaxed iterators only hold the CodeCache_lock across next calls
 template <class T, class Filter, bool is_relaxed> class CodeBlobIterator : public StackObj {
  public:
-  enum LivenessFilter { all_blobs, only_not_unloading };
+  enum LivenessFilter { all, not_unloading };
 
  private:
   CodeBlob* _code_blob;   // Current CodeBlob
   GrowableArrayIterator<CodeHeap*> _heap;
   GrowableArrayIterator<CodeHeap*> _end;
-  bool _only_not_unloading;
+  bool _not_unloading;    // Those nmethods that are not unloading
 
   void initialize_iteration(T* nm) {
   }
@@ -360,7 +359,7 @@ template <class T, class Filter, bool is_relaxed> class CodeBlobIterator : publi
       }
 
       // Filter is_unloading as required
-      if (_only_not_unloading) {
+      if (_not_unloading) {
         nmethod* nm = _code_blob->as_nmethod_or_null();
         if (nm != nullptr && nm->is_unloading()) {
           continue;
@@ -373,7 +372,7 @@ template <class T, class Filter, bool is_relaxed> class CodeBlobIterator : publi
 
  public:
   CodeBlobIterator(LivenessFilter filter, T* nm = nullptr)
-    : _only_not_unloading(filter == only_not_unloading)
+    : _not_unloading(filter == not_unloading)
   {
     if (Filter::heaps() == nullptr) {
       // The iterator is supposed to shortcut since we have

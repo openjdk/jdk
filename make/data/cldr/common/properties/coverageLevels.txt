@@ -144,7 +144,6 @@ th ;	modern ;	Thai
 ti ;	basic ;	Tigrinya
 tk ;	modern ;	Turkmen
 to ;	basic ;	Tongan
-tok ;	basic ;	Toki Pona
 tr ;	modern ;	Turkish
 tt ;	basic ;	Tatar
 ug ;	basic ;	Uyghur
