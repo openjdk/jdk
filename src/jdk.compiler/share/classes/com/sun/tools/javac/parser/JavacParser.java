@@ -580,7 +580,7 @@ public class JavacParser implements Parser {
      *     is "attached", (in {@link #attach}) any related
      *     dangling comments are also attached to the tree node
      *     by registering them using the {@link #deferredLintHandler}.
-     *  5. (Later) Warnings may be genereated for the dangling
+     *  5. (Later) Warnings may be generated for the dangling
      *     comments, subject to the {@code -Xlint} and
      *     {@code @SuppressWarnings}.
      *
