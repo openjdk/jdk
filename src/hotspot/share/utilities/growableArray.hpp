@@ -158,12 +158,21 @@ public:
     return _data[0];
   }
 
-  E& top() const {
+  E& top() {
     assert(_len > 0, "empty");
     return _data[_len-1];
   }
 
+  E const& top() const {
+    assert(_len > 0, "empty");
+    return  _data[_len - 1];
+  }
+
   E& last() const {
+    return top();
+  }
+
+  E const& last() {
     return top();
   }
 
