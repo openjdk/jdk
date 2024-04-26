@@ -33,7 +33,7 @@
 import java.util.*;
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
-import javax.lang.model.util.Elements.CommentKind;
+import javax.lang.model.util.Elements.DocCommentKind;
 import javax.lang.model.util.*;
 import toolbox.ToolBox;
 
@@ -60,10 +60,10 @@ public class TestGetDocComments extends JavacTestingAbstractProcessor {
                                                        actualComment.lines().toList());
                         }
 
-                        CommentKind expectedCommentKind = CommentKind.TRADITIONAL;
-                        CommentKind actualCommentKind = elements.getDocCommentKind(element);
-                        if (expectedCommentKind != actualCommentKind) {
-                            messager.printError("Unexpected doc comment kind found: " + actualCommentKind, element);
+                        DocCommentKind expectedDocCommentKind = DocCommentKind.TRADITIONAL;
+                        DocCommentKind actualDocCommentKind = elements.getDocCommentKind(element);
+                        if (expectedDocCommentKind != actualDocCommentKind) {
+                            messager.printError("Unexpected doc comment kind found: " + actualDocCommentKind, element);
                         }
                     }
                 }

@@ -991,8 +991,8 @@ public class DocCommentTester {
             }
             boolean normalizeTags = !annos.contains("@NormalizeTags(false)");
 
-            Elements.CommentKind ck = trees.getDocCommentKind(path);
-            boolean isLineComment = ck == Elements.CommentKind.END_OF_LINE;
+            Elements.DocCommentKind ck = trees.getDocCommentKind(path);
+            boolean isLineComment = ck == Elements.DocCommentKind.END_OF_LINE;
             String raw = trees.getDocComment(path).stripTrailing();
             String normRaw = normalize(raw, isLineComment, normalizeTags);
 

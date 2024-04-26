@@ -277,7 +277,7 @@ public interface Elements {
             getElementValuesWithDefaults(AnnotationMirror a);
 
     /**
-     * Returns the text of the documentation (&quot;Javadoc&quot;)
+     * Returns the text of the documentation (&quot;JavaDoc&quot;)
      * comment of an element.
      *
      * <p>A documentation comment of an element is a particular kind
@@ -291,7 +291,7 @@ public interface Elements {
      * returned for the documentation comment is a processed form of
      * the comment as it appears in source code, as described below.
      *
-     * <p>A {@linkplain CommentKind#TRADITIONAL traditional
+     * <p>A {@linkplain DocCommentKind#TRADITIONAL traditional
      * documentation comment} is a traditional comment that begins
      * with "{@code /**}", and ends with a separate "<code>*&#47;</code>".
      * (Therefore, such a comment contains at least three "{@code *}"
@@ -318,7 +318,7 @@ public interface Elements {
      * separated by newline ("{@code \n}") characters, and returned.
      * </ul>
      *
-     * <p>An {@linkplain CommentKind#END_OF_LINE end-of-line
+     * <p>An {@linkplain DocCommentKind#END_OF_LINE end-of-line
      * documentation comment} is a series of adjacent end-of-line
      * comments, each on a line by itself, ignoring any whitespace
      * characters at the beginning of the line, and each beginning
@@ -345,7 +345,13 @@ public interface Elements {
      *          if there is none
      * @jls 3.6 White Space
      * @jls 3.7 Comments
+     *
+     * @apiNote
+     * Documentation comments are processed by the
+     * {@linkplain jdk.javadoc/jdk.javadoc.doclet.StandardDoclet standard doclet}
+     * used by the {@link jdk.javadoc/ javadoc} tool to generate API documentation.
      */
+    @SuppressWarnings("doclint:reference") // forward cross-module links
     String getDocComment(Element e);
 
     /**
@@ -358,7 +364,7 @@ public interface Elements {
      * @param e the element being examined
      * @since 23
      */
-    default CommentKind getDocCommentKind(Element e) {
+    default DocCommentKind getDocCommentKind(Element e) {
         return null;
     }
 
@@ -367,10 +373,30 @@ public interface Elements {
      *
      * @since 23
      */
-    enum CommentKind {
-        /** The kind of comments whose lines are prefixed by {@code ///}. */
+    @SuppressWarnings("doclint:reference") // forward cross-module links
+    enum DocCommentKind {
+        /**
+         * The kind of comments whose lines are prefixed by {@code ///}.
+         *
+         * @apiNote
+         * The {@linkplain jdk.javadoc/jdk.javadoc.doclet.StandardDoclet standard doclet}
+         * used by the {@link jdk.javadoc/ javadoc} tool treats these comments
+         * as containing Markdown and documentation comment tags.
+         *
+         *
+         * @see <a href="https://openjdk.org/jeps/467">
+         * JEP 467: Markdown Documentation Comments</a>
+         */
         END_OF_LINE,
-        /** The kind of comments that begin with {@code /**}. */
+
+        /**
+         * The kind of comments that begin with {@code /**}.
+         *
+         * @apiNote
+         * The {@linkplain jdk.javadoc/jdk.javadoc.doclet.StandardDoclet standard doclet}
+         * used by the {@link jdk.javadoc/ javadoc} tool treats these comments
+         * as containing HTML and documentation comment tags.
+         */
         TRADITIONAL
     }
 

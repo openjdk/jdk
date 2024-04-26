@@ -36,7 +36,7 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.Elements.CommentKind;
+import javax.lang.model.util.Elements.DocCommentKind;
 
 import toolbox.ToolBox;
 
@@ -65,10 +65,10 @@ public class TestGetDocCommentsLine extends JavacTestingAbstractProcessor {
                                                        actualComment.lines().toList());
                         }
 
-                        CommentKind expectedCommentKind = CommentKind.END_OF_LINE;
-                        CommentKind actualCommentKind = elements.getDocCommentKind(element);
-                        if (expectedCommentKind != actualCommentKind) {
-                            messager.printError("Unexpected doc comment kind found: " + actualCommentKind, element);
+                        DocCommentKind expectedDocCommentKind = DocCommentKind.END_OF_LINE;
+                        DocCommentKind actualDocCommentKind = elements.getDocCommentKind(element);
+                        if (expectedDocCommentKind != actualDocCommentKind) {
+                            messager.printError("Unexpected doc comment kind found: " + actualDocCommentKind, element);
                         }
                     }
                 }

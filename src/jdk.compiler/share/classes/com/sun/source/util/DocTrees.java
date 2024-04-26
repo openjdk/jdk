@@ -33,7 +33,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Elements.CommentKind;
+import javax.lang.model.util.Elements.DocCommentKind;
 import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.JavaCompiler.CompilationTask;
@@ -94,7 +94,7 @@ public abstract class DocTrees extends Trees {
      * @see Trees#getPath(Element)
      * @since 23
      */
-    public abstract CommentKind getDocCommentKind(TreePath path);
+    public abstract DocCommentKind getDocCommentKind(TreePath path);
 
     /**
      * Returns the doc comment tree, if any, for the Tree node identified by a given TreePath.

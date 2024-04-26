@@ -76,7 +76,6 @@ import static com.sun.tools.javac.code.TypeTag.CLASS;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.comp.Resolve;
-import com.sun.tools.javac.comp.Resolve.RecoveryLoadClass;
 import com.sun.tools.javac.resources.CompilerProperties.Notes;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
@@ -439,7 +438,7 @@ public class JavacElements implements Elements {
     }
 
     @DefinedBy(Api.LANGUAGE_MODEL)
-    public CommentKind getDocCommentKind(Element e) {
+    public DocCommentKind getDocCommentKind(Element e) {
         return getDocCommentItem(e, ((docCommentTable, tree) -> docCommentTable.getCommentKind(tree)));
     }
 
