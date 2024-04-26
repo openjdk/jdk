@@ -3036,7 +3036,6 @@ void TemplateTable::jvmti_post_fast_field_mod() {
     __ mov(c_rarg3, esp);             // points to jvalue on the stack
     // access constant pool cache entry
     __ load_field_entry(c_rarg2, r0);
-
     __ verify_oop(r19);
     // r19: object pointer copied above
     // c_rarg2: cache entry pointer
