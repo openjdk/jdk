@@ -27,7 +27,7 @@
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/generation.hpp"
 #include "gc/serial/serialHeap.inline.hpp"
-#include "gc/shared/space.inline.hpp"
+#include "gc/shared/space.hpp"
 #include "memory/iterator.inline.hpp"
 #include "utilities/align.hpp"
 
