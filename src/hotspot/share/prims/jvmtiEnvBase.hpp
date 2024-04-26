@@ -216,8 +216,6 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
 
   static jvmtiError get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread, JavaThread* cur_thread,
                                                  JavaThread** jt_pp, oop* thread_oop_p);
-  static jvmtiError get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
-                                                 JavaThread** jt_pp, oop* thread_oop_p);
 
   // Return true if java thread is a carrier thread with a mounted virtual thread.
   static bool is_cthread_with_mounted_vthread(JavaThread* jt);
