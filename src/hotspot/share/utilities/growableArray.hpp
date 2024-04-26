@@ -153,7 +153,12 @@ public:
     return &_data[i];
   }
 
-  E& first() const {
+  E& first() {
+    assert(_len > 0, "empty");
+    return _data[0];
+  }
+
+  E const& first() const {
     assert(_len > 0, "empty");
     return _data[0];
   }
