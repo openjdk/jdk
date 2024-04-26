@@ -498,7 +498,7 @@ JvmtiVTMSTransitionDisabler::finish_VTMS_transition(jthread vthread, bool is_mou
   thread->set_is_in_VTMS_transition(false);
   oop vt = JNIHandles::resolve_external_guard(vthread);
   java_lang_Thread::set_is_in_VTMS_transition(vt, false);
-  assert(thread->VTMS_transition_mark(), "sanity ed_heck");
+  assert(thread->VTMS_transition_mark(), "sanity check");
   thread->set_VTMS_transition_mark(false);
 
   if (!sync_protocol_enabled()) {

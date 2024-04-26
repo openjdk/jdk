@@ -665,7 +665,7 @@ private:
   bool is_disable_suspend() const                { return _is_disable_suspend; }
   void toggle_is_disable_suspend()               { _is_disable_suspend = !_is_disable_suspend; };
 
-  bool VTMS_transition_mark()                    { return Atomic::load(&_VTMS_transition_mark); }
+  bool VTMS_transition_mark() const              { return Atomic::load(&_VTMS_transition_mark); }
   void set_VTMS_transition_mark(bool val)        { Atomic::store(&_VTMS_transition_mark, val); }
 
 #ifdef ASSERT
