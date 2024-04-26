@@ -137,8 +137,10 @@ class Opaque4Node : public Node {
 // additional verification code (i.e. removing this node and use the BoolNode input instead).
 class OpaqueInitializedAssertionPredicateNode : public Node {
  public:
-  OpaqueInitializedAssertionPredicateNode(BoolNode* bol) : Node(nullptr, bol) {
+  OpaqueInitializedAssertionPredicateNode(BoolNode* bol, Compile* C) : Node(nullptr, bol) {
     init_class_id(Class_OpaqueInitializedAssertionPredicate);
+    init_flags(Flag_is_macro);
+    C->add_macro_node(this);
   }
 
   virtual int Opcode() const;

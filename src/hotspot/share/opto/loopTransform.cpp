@@ -1511,7 +1511,7 @@ Node* PhaseIdealLoop::clone_assertion_predicate_and_initialize(Node* iff, Node* 
     new_opaque_node = template_assertion_predicate_expression.clone_and_replace_init_and_stride(new_init, new_stride,
                                                                                                  control, this);
     // Since this is an Initialized Assertion Predicate, we use the dedicated opaque node.
-    new_opaque_node = new OpaqueInitializedAssertionPredicateNode(new_opaque_node->in(1)->as_Bool());
+    new_opaque_node = new OpaqueInitializedAssertionPredicateNode(new_opaque_node->in(1)->as_Bool(), C);
     register_new_node(new_opaque_node, control);
   }
   Node* proj = predicate->clone();
@@ -2796,7 +2796,7 @@ Node* PhaseIdealLoop::add_range_check_elimination_assertion_predicate(IdealLoopT
   if (is_template) {
     opaque_assertion_predicate = new Opaque4Node(C, bol, _igvn.intcon(1));
   } else {
-    opaque_assertion_predicate = new OpaqueInitializedAssertionPredicateNode(bol);
+    opaque_assertion_predicate = new OpaqueInitializedAssertionPredicateNode(bol, C);
   }
   register_new_node(opaque_assertion_predicate, ctrl);
   IfNode* new_iff = nullptr;

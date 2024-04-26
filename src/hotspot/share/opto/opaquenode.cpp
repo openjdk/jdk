@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "opto/connode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/phaseX.hpp"
@@ -105,21 +104,6 @@ const Type* Opaque4Node::Value(PhaseGVN* phase) const {
 
 const Type* OpaqueInitializedAssertionPredicateNode::Value(PhaseGVN* phase) const {
   return phase->type(in(1));
-}
-
-Node* OpaqueInitializedAssertionPredicateNode::Identity(PhaseGVN* phase) {
-  if (phase->C->post_loop_opts_phase()) {
-    // Initialized Assertion Predicates must always evaluate to true. Therefore, we get rid of them in product builds
-    // as they are useless. In debug builds we keep them as additional verification code.
-#ifdef ASSERT
-    return in(1);
-#else
-    return phase->intcon(1);
-#endif // ASSERT
-  } else {
-    phase->C->record_for_post_loop_opts_igvn(this);
-  }
-  return this;
 }
 
 //=============================================================================
