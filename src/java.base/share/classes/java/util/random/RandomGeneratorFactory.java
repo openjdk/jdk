@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -342,7 +342,8 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * <a href="package-summary.html#algorithms">algorithm</a>.
      *
      * @implSpec Availability is determined by RandomGeneratorFactory using the
-     * service provider API to locate implementations of the RandomGenerator interface.
+     * {@linkplain java.util.ServiceLoader service loader API} to locate
+     * implementations of the RandomGenerator interface.
      *
      * @param name  Name of random number generator
      * <a href="package-summary.html#algorithms">algorithm</a>
@@ -376,11 +377,12 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
 
     /**
      * Returns a non-empty stream of available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
-     *
+     * <p>
      * RandomGenerators that are marked as deprecated are not included in the result.
      *
-     * @implSpec Availability is determined by RandomGeneratorFactory using the service provider API
-     * to locate implementations of the RandomGenerator interface.
+     * @implSpec Availability is determined by RandomGeneratorFactory using the
+     * {@linkplain java.util.ServiceLoader service loader API} to locate
+     * implementations of the RandomGenerator interface.
      *
      * @return a non-empty stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      */
@@ -615,5 +617,3 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     }
 
 }
-
-
