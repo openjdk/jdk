@@ -512,6 +512,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   builder.reserve_buffer();
 
   char* cloned_vtables = CppVtables::dumptime_init(&builder);
+  cloned_vtables = nullptr;
 
   builder.sort_metadata_objs();
   builder.dump_rw_metadata();
@@ -542,7 +543,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   FileMapInfo* mapinfo = new FileMapInfo(static_archive, true);
   mapinfo->populate_header(MetaspaceShared::core_region_alignment());
   mapinfo->set_serialized_data(serialized_data);
-  mapinfo->set_cloned_vtables(cloned_vtables);
+  //mapinfo->set_cloned_vtables(cloned_vtables);
   mapinfo->open_for_write();
   builder.write_archive(mapinfo, &_heap_info);
 

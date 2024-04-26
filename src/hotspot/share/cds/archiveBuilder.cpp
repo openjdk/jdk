@@ -695,7 +695,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   intptr_t* archived_vtable = CppVtables::get_archived_vtable(src_info->msotype(), (address)dest);
   if (archived_vtable != nullptr) {
     *(address*)dest = (address)archived_vtable;
-    ArchivePtrMarker::mark_pointer((address*)dest);
+    //ArchivePtrMarker::mark_pointer((address*)dest);
   }
 
   log_trace(cds)("Copy: " PTR_FORMAT " ==> " PTR_FORMAT " %d", p2i(src), p2i(dest), bytes);

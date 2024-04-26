@@ -310,7 +310,9 @@ void WriteClosure::do_ptr(void** p) {
   if (ptr != nullptr && !ArchiveBuilder::current()->is_in_buffer_space(ptr)) {
     ptr = ArchiveBuilder::current()->get_buffered_addr(ptr);
   }
+  int offset = ptr - (address)ArchiveBuilder::current()->rw_region()->base();
   _dump_region->append_intptr_t((intptr_t)ptr, true);
+  tty->print_cr("Writing offset: %lx", ptr - (address)ArchiveBuilder::current()->rw_region()->base());
 }
 
 void WriteClosure::do_region(u_char* start, size_t size) {
