@@ -345,17 +345,36 @@ public abstract sealed class Executable extends AccessibleObject
             if (realParamData) {
                 final Type[] out = new Type[nonGenericParamTypes.length];
                 final Parameter[] params = getParameters();
-                int fromidx = genericParamTypes.length - 1;
-                for (int i = out.length - 1; i >= 0; i--) {
-                    final Parameter param = params[i];
-                    if (param.isSynthetic() || fromidx < 0) {
-                        // If we hit a synthetic parameter or if we have already read all the elements from `genericParamTypes`,
-                        // use the non generic parameter info.
-                        out[i] = nonGenericParamTypes[i];
-                    } else {
-                        // Otherwise, use the generic parameter info.
-                        out[i] = genericParamTypes[fromidx];
-                        fromidx--;
+                if (getDeclaringClass().isRecord() && this instanceof Constructor) {
+                    /* we could be seeing a compact constructor of a record class
+                     * its parameters are mandated but we should be able to retrieve
+                     * its generic information if present
+                     */
+                    int fromidx = genericParamTypes.length - 1;
+                    for (int i = out.length - 1; i >= 0; i--) {
+                        if (fromidx < 0) {
+                            // If we hit a synthetic parameter or if we have already read all the elements from `genericParamTypes`,
+                            // use the non generic parameter info.
+                            out[i] = nonGenericParamTypes[i];
+                        } else {
+                            // Otherwise, use the generic parameter info.
+                            out[i] = genericParamTypes[fromidx];
+                            fromidx--;
+                        }
+                    }
+                } else {
+                    int fromidx = 0;
+                    for (int i = 0; i < out.length; i++) {
+                        final Parameter param = params[i];
+                        if (param.isSynthetic() || param.isImplicit()) {
+                            // If we hit a synthetic or mandated parameter,
+                            // use the non generic parameter info.
+                            out[i] = nonGenericParamTypes[i];
+                        } else {
+                            // Otherwise, use the generic parameter info.
+                            out[i] = genericParamTypes[fromidx];
+                            fromidx++;
+                        }
                     }
                 }
                 return out;
