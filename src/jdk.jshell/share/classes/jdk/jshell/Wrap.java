@@ -113,9 +113,9 @@ abstract class Wrap implements GeneralWrap {
                     scratchName += "$";
                 }
                 Wrap waux = new CompoundWrap(
-                        "    private static <" + scratchName + "> " + scratchName +" ", DOIT_METHOD_NAME + "Aux", "() throws Throwable {\n",
+                        "    private static <" + scratchName + "> " + scratchName +" ", DOIT_METHOD_NAME + "Aux", "() throws java.lang.Throwable {\n",
                         wtype, brackets + " ", scratchName, "_ =\n        ", winit, semi(winit),
-                        "        @SuppressWarnings(\"unchecked\") ", scratchName, " ", scratchName, "__ = (", scratchName, ")", scratchName, "_;\n",
+                        "        @java.lang.SuppressWarnings(\"unchecked\") ", scratchName, " ", scratchName, "__ = (", scratchName, ")", scratchName, "_;\n",
                         "        return ", scratchName, "__;\n",
                         "}"
                 );
@@ -550,7 +550,7 @@ abstract class Wrap implements GeneralWrap {
     private static class DoitMethodWrap extends CompoundWrap {
 
         DoitMethodWrap(Wrap w) {
-            super("    public static Object " + DOIT_METHOD_NAME + "() throws Throwable {\n"
+            super("    public static java.lang.Object " + DOIT_METHOD_NAME + "() throws java.lang.Throwable {\n"
                     + "        ", w,
                     "    }\n");
         }
