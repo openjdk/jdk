@@ -46,7 +46,7 @@ SPDX-License-Identifier: MIT
 
 /* The 32 bits of the long are divided into two parts for the key & code:   */
 /* 1. The code is 12 bits as our compression algorithm is limited to 12bits */
-/* 2. The key is 12 bits Prefix code + 8 bit new char or 20 bits.	    */
+/* 2. The key is 12 bits Prefix code + 8 bit new char or 20 bits.        */
 /* The key is the upper 20 bits.  The code is the lower 12. */
 #define HT_GET_KEY(l) (l >> 12)
 #define HT_GET_CODE(l) (l & 0x0FFF)
@@ -54,7 +54,7 @@ SPDX-License-Identifier: MIT
 #define HT_PUT_CODE(l) (l & 0x0FFF)
 
 typedef struct GifHashTableType {
-	uint32_t HTable[HT_SIZE];
+    uint32_t HTable[HT_SIZE];
 } GifHashTableType;
 
 GifHashTableType *_InitHashTable(void);
