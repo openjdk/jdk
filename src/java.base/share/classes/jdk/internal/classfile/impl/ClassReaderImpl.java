@@ -434,6 +434,10 @@ public final class ClassReaderImpl
         return readEntry(pos, cls, 0, 0xff);
     }
 
+    private <T extends PoolEntry> T readEntry(int pos, Class<T> cls, int expectedTag) {
+        return readEntry(pos, cls, expectedTag, expectedTag);
+    }
+
     private <T extends PoolEntry> T readEntry(int pos, Class<T> cls, int lowerBoundTag, int upperBoundTag) {
         var e = entryByIndex(readU2(pos), lowerBoundTag, upperBoundTag);
         if (cls.isInstance(e)) return cls.cast(e);
@@ -466,27 +470,27 @@ public final class ClassReaderImpl
 
     @Override
     public ModuleEntry readModuleEntry(int pos) {
-        return readEntry(pos, ModuleEntry.class, TAG_MODULE, TAG_MODULE);
+        return readEntry(pos, ModuleEntry.class, TAG_MODULE);
     }
 
     @Override
     public PackageEntry readPackageEntry(int pos) {
-        return readEntry(pos, PackageEntry.class, TAG_PACKAGE, TAG_PACKAGE);
+        return readEntry(pos, PackageEntry.class, TAG_PACKAGE);
     }
 
     @Override
     public ClassEntry readClassEntry(int pos) {
-        return readEntry(pos, ClassEntry.class, TAG_CLASS, TAG_CLASS);
+        return readEntry(pos, ClassEntry.class, TAG_CLASS);
     }
 
     @Override
     public NameAndTypeEntry readNameAndTypeEntry(int pos) {
-        return readEntry(pos, NameAndTypeEntry.class, TAG_NAMEANDTYPE, TAG_NAMEANDTYPE);
+        return readEntry(pos, NameAndTypeEntry.class, TAG_NAMEANDTYPE);
     }
 
     @Override
     public MethodHandleEntry readMethodHandleEntry(int pos) {
-        return readEntry(pos, MethodHandleEntry.class, TAG_METHODHANDLE, TAG_METHODHANDLE);
+        return readEntry(pos, MethodHandleEntry.class, TAG_METHODHANDLE);
     }
 
     @Override
