@@ -48,7 +48,7 @@ public:
   static void finish(void);
   static void log(MEMFLAGS flags = mtNone, size_t requested = 0, address ptr = nullptr,
                   address old = nullptr, const NativeCallStack *stack = nullptr);
-  static void replay(const char* file);
+  static void replay(const char* path, const int pid);
   static void rememberThreadName(const char* name);
   static void printActualSizesFor(const char* list);
 };

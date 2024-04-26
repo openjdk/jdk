@@ -581,8 +581,11 @@ const int ObjectAlignmentInBytes = 8;
           " max_jint (0x7FFFFFFF): keep recording until the process exits") \
           range(0, max_jint)                                                \
                                                                             \
-  product(ccstr, NMTBenchmarkRecordedMemoryAllocations, nullptr, DIAGNOSTIC,\
-          "Benchmark memory allocations using provided log file name")      \
+  product(ccstr, NMTBenchmarkRecordedDir, nullptr, DIAGNOSTIC,              \
+          "Benchmark memory allocations using results found in folder")     \
+                                                                            \
+  product(int, NMTBenchmarkRecordedPID, 0, DIAGNOSTIC,                      \
+          "Benchmark memory allocations using results recorderd with PID")  \
                                                                             \
   product(ccstrlist, NMTPrintMemoryAllocationsSizesFor, nullptr, DIAGNOSTIC,\
           "Print the actual allocated memory sizes for given "              \

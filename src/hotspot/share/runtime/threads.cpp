@@ -454,12 +454,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   jint parse_result = Arguments::parse(args);
   if (parse_result != JNI_OK) return parse_result;
 
-  NMT_MemoryLogRecorder::initialize(NMTRecordMemoryAllocations);
-
   // Initialize NMT right after argument parsing to keep the pre-NMT-init window small.
   MemTracker::initialize();
-
-  NMT_MemoryLogRecorder::replay(NMTBenchmarkRecordedMemoryAllocations);
 
   os::init_before_ergo();
 
