@@ -216,7 +216,8 @@ public abstract class HttpExchange implements AutoCloseable, Request {
     public abstract void sendResponseHeaders(int rCode, long responseLength) throws IOException;
 
     /**
-     * convenience method to send a "no content response"
+     * Convenience method to send the response headers with no response body.
+     * The exchange is also closed.
      * @param code the response code to send
      * @throws IOException if the response headers have already been sent or an I/O error occurs
      * @see HttpExchange#sendResponseHeaders(int, long)
