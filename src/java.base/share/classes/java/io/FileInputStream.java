@@ -336,6 +336,8 @@ public class FileInputStream extends InputStream
     }
 
     /**
+     * {@inheritDoc}
+     *
      * @since 11
      */
     @Override

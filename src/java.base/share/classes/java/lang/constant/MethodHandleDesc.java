@@ -206,6 +206,8 @@ public sealed interface MethodHandleDesc
     MethodTypeDesc invocationType();
 
     /**
+     * {@inheritDoc}
+     *
      * @since 21
      */
     @Override

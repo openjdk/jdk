@@ -364,6 +364,8 @@ public sealed interface ClassDesc
     String descriptorString();
 
     /**
+     * {@inheritDoc}
+     *
      * @since 21
      */
     @Override

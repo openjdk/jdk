@@ -587,6 +587,8 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * @since 23
      */
     @Override
@@ -596,6 +598,8 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * @since 23
      */
     @Override

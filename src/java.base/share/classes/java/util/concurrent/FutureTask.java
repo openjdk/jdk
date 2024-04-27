@@ -206,6 +206,8 @@ public class FutureTask<V> implements RunnableFuture<V> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * @since 19
      */
     @Override
@@ -225,6 +227,8 @@ public class FutureTask<V> implements RunnableFuture<V> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * @since 19
      */
     @Override
