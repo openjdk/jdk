@@ -159,7 +159,7 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  *         rwl.writeLock().unlock(); // Unlock write, still hold read
  *       }
  *     }
- *     // Make sure that code which could throw is executed inside the try block
+ *     // Make sure that code that could throw is executed inside the try block
  *     try {
  *       use(data);
  *     } finally {
