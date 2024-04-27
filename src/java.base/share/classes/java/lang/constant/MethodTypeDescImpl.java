@@ -33,7 +33,6 @@ import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.StringJoiner;
 
 import static java.util.Objects.requireNonNull;
 
@@ -168,11 +167,17 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
         if (desc != null)
             return desc;
 
-        var sj = new StringJoiner("", "(", ")" + returnType().descriptorString());
-        for (int i = 0; i < parameterCount(); i++) {
-            sj.add(parameterType(i).descriptorString());
+        int len = 2 + returnType.descriptorString().length();
+        for (ClassDesc argType : argTypes) {
+            len += argType.descriptorString().length();
         }
-        return cachedDescriptorString = sj.toString();
+        StringBuilder sb = new StringBuilder(len).append('(');
+        for (ClassDesc argType : argTypes) {
+            sb.append(argType.descriptorString());
+        }
+        desc = sb.append(')').append(returnType.descriptorString()).toString();
+        cachedDescriptorString = desc;
+        return desc;
     }
 
     @Override

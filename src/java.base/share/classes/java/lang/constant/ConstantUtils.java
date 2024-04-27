@@ -226,7 +226,7 @@ class ConstantUtils {
 
     private static ClassDesc resolveClassDesc(String descriptor, int start, int len) {
         if (len == 1) {
-            return Wrapper.forBasicType(descriptor.charAt(start)).primitiveClassDescriptor();
+            return Wrapper.forPrimitiveType(descriptor.charAt(start)).classDescriptor();
         }
         return ClassDesc.ofDescriptor(descriptor.substring(start, start + len));
     }
