@@ -3194,7 +3194,7 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   Register displacedHeader = temp1;
   Register currentHeader = temp1;
   Register temp = temp2;
-  NearLabel done, object_has_monitor, success;
+  NearLabel object_has_monitor, success;
   Label failure;
 
   const int hdr_offset = oopDesc::mark_offset_in_bytes();
@@ -3207,9 +3207,17 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   z_lg(displacedHeader, hdr_offset, oop);
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
+    NearLabel set_cc, fall;
     load_klass(temp, oop);
     testbit(Address(temp, Klass::access_flags_offset()), exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
-    z_btrue(done);
+    z_btrue(set_cc);
+    z_bru(fall);
+
+    bind(set_cc);
+    z_ltgr(oop, oop); // oop is not 0 here
+    z_brne(failure);
+
+    bind(fall);
   }
 
   // Handle existing monitor.
@@ -3222,7 +3230,7 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
     // Set NE to indicate 'failure' -> take slow-path
     // From loading the markWord, we know that oop != nullptr
     z_ltgr(oop, oop);
-    z_bru(done);
+    z_bru(failure); // CC is NE here
   } else if (LockingMode == LM_LEGACY) {
     // Set mark to markWord | markWord::unlocked_value.
     z_oill(displacedHeader, markWord::unlocked_value);
@@ -3236,7 +3244,7 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
     // If the compare-and-swap succeeds, then we found an unlocked object and have now locked it.
     z_csg(displacedHeader, box, hdr_offset, oop);
     assert(currentHeader == displacedHeader, "must be same register"); // Identified two registers from z/Architecture.
-    z_bre(done);
+    z_bre(success);
 
     // We did not see an unlocked object
     // currentHeader contains what is currently stored in the oop's markWord.
@@ -3252,11 +3260,12 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
 
     z_stg(currentHeader/*==0 or not 0*/, BasicLock::displaced_header_offset_in_bytes(), box);
 
-    z_bru(done);
+    z_bre(success);
+    z_bru(failure);
   } else {
     assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-    lightweight_lock(oop, displacedHeader, temp, done);
-    z_bru(done);
+    lightweight_lock(oop, displacedHeader, temp, failure);
+    z_bru(success); // fall will happen with CC=EQ, so let's reach to success ;)
   }
 
   bind(object_has_monitor);
@@ -3276,18 +3285,33 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
     z_stg(box, BasicLock::displaced_header_offset_in_bytes(), box);
   }
 
-  z_bre(done); // acquired the lock for the first time.
+  z_bre(success); // acquired the lock for the first time.
 
   BLOCK_COMMENT("fast_path_recursive_lock {");
   // Check if we are already the owner (recursive lock)
   z_cgr(Z_thread, zero); // owner is stored in zero by "z_csg" above
-  z_brne(done); // not a recursive lock
+  z_brne(failure); // not a recursive lock
 
   // Current thread already owns the lock. Just increment recursion count.
   z_agsi(Address(monitor_tagged, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), 1ll);
   z_cgr(zero, zero); // set the CC to EQUAL
   BLOCK_COMMENT("} fast_path_recursive_lock");
-  bind(done);
+
+  bind(success);
+
+#ifdef ASSERT
+  NearLabel ok;
+  z_bre(ok);
+  stop("CC is not set to EQ; it should be");
+#endif // ASSERT
+
+  bind(failure);
+
+#ifdef ASSERT
+  z_brne(ok);
+  stop("CC is not set to NE; it should be");
+  bind(ok);
+#endif // ASSERT
 
   BLOCK_COMMENT("} compiler_fast_lock_object");
   // If locking was successful, CR should indicate 'EQ'.
@@ -3304,7 +3328,7 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
 
   assert_different_registers(temp1, temp2, oop, box);
 
-  Label done, object_has_monitor, not_recursive;
+  Label object_has_monitor, not_recursive, failure, success;
 
   BLOCK_COMMENT("compiler_fast_unlock_object {");
 
@@ -3312,7 +3336,7 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
     // Find the lock address and load the displaced header from the stack.
     // if the displaced header is zero, we have a recursive unlock.
     load_and_test_long(displacedHeader, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-    z_bre(done);
+    z_bre(success);
   }
 
   // Handle existing monitor.
@@ -3326,19 +3350,22 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   if (LockingMode == LM_MONITOR) {
     // Set NE to indicate 'failure' -> take slow-path
     z_ltgr(oop, oop);
-    z_bru(done);
+    z_bru(failure);
   } else if (LockingMode == LM_LEGACY) {
     // Check if it is still a lightweight lock, this is true if we see
     // the stack address of the basicLock in the markWord of the object
     // copy box to currentHeader such that csg does not kill it.
     z_lgr(currentHeader, box);
     z_csg(currentHeader, displacedHeader, hdr_offset, oop);
-    z_bru(done); // csg sets CR as desired.
+
+    // csg sets CR as desired.
+    z_bre(success);
+    z_bru(failure);
   } else {
     assert(LockingMode == LM_LIGHTWEIGHT, "must be");
 
-    lightweight_unlock(oop, currentHeader, displacedHeader, done);
-    z_bru(done);
+    lightweight_unlock(oop, currentHeader, displacedHeader, failure);
+    z_bru(success);
   }
 
   // In case of LM_LIGHTWEIGHT, we may reach here with (temp & ObjectMonitor::ANONYMOUS_OWNER) != 0.
@@ -3348,7 +3375,7 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   bind(object_has_monitor);
 
   z_cg(Z_thread, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-  z_brne(done);
+  z_brne(failure);
 
   BLOCK_COMMENT("fast_path_recursive_unlock {");
   load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
@@ -3358,18 +3385,34 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   z_agsi(Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), -1ll);
   z_cgr(currentHeader, currentHeader); // set the CC to EQUAL
   BLOCK_COMMENT("} fast_path_recursive_unlock");
-  z_bru(done);
+  z_bru(success);
 
   bind(not_recursive);
 
   load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
-  z_brne(done);
+  z_brne(failure);
   load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
-  z_brne(done);
+  z_brne(failure);
   z_release();
   z_stg(temp/*=0*/, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), currentHeader);
 
-  bind(done);
+  // CC is EQ here, falling on success
+
+  bind(success);
+
+#ifdef ASSERT
+  NearLabel ok;
+  z_bre(ok);
+  stop("CC is not set to EQ; it should be");
+#endif // ASSERT
+
+  bind(failure);
+
+#ifdef ASSERT
+  z_brne(ok);
+  stop("CC is not set to NE; it should be");
+  bind(ok);
+#endif // ASSERT
 
   BLOCK_COMMENT("} compiler_fast_unlock_object");
   // flag == EQ indicates success
