@@ -2448,6 +2448,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
 //------------------------------expand_macro_nodes----------------------
 //  Returns true if a failure occurred.
 bool PhaseMacroExpand::expand_macro_nodes() {
+  // Do not allow new macro nodes once we started to expand
+  C->reset_allow_macro_nodes();
   if (StressMacroExpansion) {
     C->shuffle_macro_nodes();
   }

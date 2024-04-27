@@ -51,6 +51,7 @@ import jdk.jfr.RecordingState;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
+import jdk.jfr.internal.MirrorEvent;
 import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.settings.PeriodSetting;
@@ -206,9 +207,8 @@ public final class Utils {
     }
 
     public static List<Field> getVisibleEventFields(Class<?> clazz) {
-        Utils.ensureValidEventSubclass(clazz);
         List<Field> fields = new ArrayList<>();
-        for (Class<?> c = clazz; c != jdk.internal.event.Event.class; c = c.getSuperclass()) {
+        for (Class<?> c = clazz; !Utils.isEventBaseClass(c); c = c.getSuperclass()) {
             for (Field field : c.getDeclaredFields()) {
                 // skip private field in base classes
                 if (c == clazz || !Modifier.isPrivate(field.getModifiers())) {
@@ -217,6 +217,16 @@ public final class Utils {
             }
         }
         return fields;
+    }
+
+    public static boolean isEventBaseClass(Class<?> clazz) {
+        if (jdk.internal.event.Event.class == clazz) {
+            return true;
+        }
+        if (jdk.jfr.internal.MirrorEvent.class == clazz) {
+            return true;
+        }
+        return false;
     }
 
     public static void ensureValidEventSubclass(Class<?> eventClass) {
@@ -338,7 +348,7 @@ public final class Utils {
         return eventName;
     }
 
-    public static void verifyMirror(Class<?> mirror, Class<?> real) {
+    public static void verifyMirror(Class<? extends MirrorEvent> mirror, Class<?> real) {
         Class<?> cMirror = Objects.requireNonNull(mirror);
         Class<?> cReal = Objects.requireNonNull(real);
 
@@ -353,7 +363,7 @@ public final class Utils {
         }
         while (cReal != null) {
             for (Field realField : cReal.getDeclaredFields()) {
-                if (isSupportedType(realField.getType())) {
+                if (isSupportedType(realField.getType()) && !realField.isSynthetic()) {
                     String fieldName = realField.getName();
                     Field mirrorField = mirrorFields.get(fieldName);
                     if (mirrorField == null) {
