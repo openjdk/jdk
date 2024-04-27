@@ -3194,7 +3194,8 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   Register displacedHeader = temp1;
   Register currentHeader = temp1;
   Register temp = temp2;
-  NearLabel done, object_has_monitor;
+  NearLabel done, object_has_monitor, success;
+  Label failure;
 
   const int hdr_offset = oopDesc::mark_offset_in_bytes();
 
