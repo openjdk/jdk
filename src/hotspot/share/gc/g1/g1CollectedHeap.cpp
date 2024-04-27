@@ -154,16 +154,16 @@ uint G1CollectedHeap::get_chunks_per_region() {
 }
 
 G1HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
-                                             MemRegion mr) {
+                                               MemRegion mr) {
   return new G1HeapRegion(hrs_index, bot(), mr, &_card_set_config);
 }
 
 // Private methods.
 
 G1HeapRegion* G1CollectedHeap::new_region(size_t word_size,
-                                        HeapRegionType type,
-                                        bool do_expand,
-                                        uint node_index) {
+                                          HeapRegionType type,
+                                          bool do_expand,
+                                          uint node_index) {
   assert(!is_humongous(word_size) || word_size <= G1HeapRegion::GrainWords,
          "the only time we use this to allocate a humongous region is "
          "when we are allocating a single humongous region");
@@ -995,8 +995,7 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
 
 bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_workers, double* expand_time_ms) {
   size_t aligned_expand_bytes = ReservedSpace::page_align_size_up(expand_bytes);
-  aligned_expand_bytes = align_up(aligned_expand_bytes,
-                                       G1HeapRegion::GrainBytes);
+  aligned_expand_bytes = align_up(aligned_expand_bytes, G1HeapRegion::GrainBytes);
 
   log_debug(gc, ergo, heap)("Expand the heap. requested expansion amount: " SIZE_FORMAT "B expansion amount: " SIZE_FORMAT "B",
                             expand_bytes, aligned_expand_bytes);
@@ -1040,8 +1039,7 @@ bool G1CollectedHeap::expand_single_region(uint node_index) {
 void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
   size_t aligned_shrink_bytes =
     ReservedSpace::page_align_size_down(shrink_bytes);
-  aligned_shrink_bytes = align_down(aligned_shrink_bytes,
-                                         G1HeapRegion::GrainBytes);
+  aligned_shrink_bytes = align_down(aligned_shrink_bytes, G1HeapRegion::GrainBytes);
   uint num_regions_to_remove = (uint)(shrink_bytes / G1HeapRegion::GrainBytes);
 
   uint num_regions_removed = _hrm.shrink_by(num_regions_to_remove);
@@ -2857,9 +2855,9 @@ G1HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
   bool should_allocate = policy()->should_allocate_mutator_region();
   if (force || should_allocate) {
     G1HeapRegion* new_alloc_region = new_region(word_size,
-                                              HeapRegionType::Eden,
-                                              false /* do_expand */,
-                                              node_index);
+                                                HeapRegionType::Eden,
+                                                false /* do_expand */,
+                                                node_index);
     if (new_alloc_region != nullptr) {
       set_region_short_lived_locked(new_alloc_region);
       _hr_printer.alloc(new_alloc_region, !should_allocate);
@@ -2911,9 +2909,9 @@ G1HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegio
   }
 
   G1HeapRegion* new_alloc_region = new_region(word_size,
-                                            type,
-                                            true /* do_expand */,
-                                            node_index);
+                                              type,
+                                              true /* do_expand */,
+                                              node_index);
 
   if (new_alloc_region != nullptr) {
     if (type.is_survivor()) {

@@ -198,11 +198,11 @@ class VerifyObjsInRegionClosure: public ObjectClosure {
 private:
   G1CollectedHeap* _g1h;
   size_t _live_bytes;
-  G1HeapRegion *_hr;
+  G1HeapRegion* _hr;
   VerifyOption _vo;
 
 public:
-  VerifyObjsInRegionClosure(G1HeapRegion *hr, VerifyOption vo)
+  VerifyObjsInRegionClosure(G1HeapRegion* hr, VerifyOption vo)
     : _live_bytes(0), _hr(hr), _vo(vo) {
     _g1h = G1CollectedHeap::heap();
   }

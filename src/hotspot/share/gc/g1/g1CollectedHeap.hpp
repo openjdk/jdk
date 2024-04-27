@@ -391,9 +391,9 @@ private:
   // request. 'type' takes the type of region to be allocated. (Use constants
   // Old, Eden, Humongous, Survivor defined in HeapRegionType.)
   G1HeapRegion* new_region(size_t word_size,
-                         HeapRegionType type,
-                         bool do_expand,
-                         uint node_index = G1NUMA::AnyNodeIndex);
+                           HeapRegionType type,
+                           bool do_expand,
+                           uint node_index = G1NUMA::AnyNodeIndex);
 
   // Initialize a contiguous set of free regions of length num_regions
   // and starting at index first so that they appear as a single

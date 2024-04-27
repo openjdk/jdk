@@ -245,7 +245,7 @@ public:
 class FreeRegionListIterator : public StackObj {
 private:
   FreeRegionList* _list;
-  G1HeapRegion*     _curr;
+  G1HeapRegion*   _curr;
 
 public:
   bool more_available() {

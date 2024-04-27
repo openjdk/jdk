@@ -534,7 +534,7 @@ uint HeapRegionManager::find_highest_free(bool* expanded) {
   // entry which is either free or not yet committed.  If not yet
   // committed, expand at that index.
   for (uint curr = reserved_length(); curr-- > 0;) {
-    G1HeapRegion *hr = _regions.get_by_index(curr);
+    G1HeapRegion* hr = _regions.get_by_index(curr);
     if (hr == nullptr || !is_available(curr)) {
       // Found uncommitted and free region, expand to make it available for use.
       expand_exact(curr, 1, nullptr);
@@ -800,9 +800,9 @@ public:
       return;
     }
 
-    FreeRegionList *free_list = worker_freelist(worker_id);
+    FreeRegionList* free_list = worker_freelist(worker_id);
     for (uint i = start; i < end; i++) {
-      G1HeapRegion *region = _hrm->at_or_null(i);
+      G1HeapRegion* region = _hrm->at_or_null(i);
       if (region != nullptr && region->is_free()) {
         // Need to clear old links to allow to be added to new freelist.
         region->unlink_from_list();
