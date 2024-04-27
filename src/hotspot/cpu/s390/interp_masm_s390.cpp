@@ -1001,7 +1001,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   const Register current_header   = Z_ARG5;
   const Register tmp              = Z_R1_scratch;
 
-  NearLabel done, slow_case;
+  NearLabel done, slow_case, success;
 
   // markWord header = obj->mark().set_unlocked();
 
@@ -1039,7 +1039,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     assert(current_header == header,
            "must be same register"); // Identified two registers from z/Architecture.
 
-    z_bre(done);
+    z_bre(success);
 
     // } else if (THREAD->is_lock_owned((address)displaced_header))
     //   // Simple recursive case.
@@ -1064,7 +1064,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     z_release();  // Member unnecessary on zarch AND because the above csg does a sync before and after.
     z_stg(Z_R0/*==0!*/, mark_offset, monitor);
   }
-  z_bru(done);
+  z_bru(success);
   // } else {
   //   // Slow path.
   //   InterpreterRuntime::monitorenter(THREAD, monitor);
@@ -1083,7 +1083,15 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
             monitor);
   }
   // }
+  z_bru(done);
 
+  bind(success);
+#ifdef ASSERT
+  NearLabel ok;
+  z_bre(ok);
+  stop("CC is expected be EQ");
+  bind(ok);
+#endif // ASSERT
   bind(done);
 }
 
@@ -1120,7 +1128,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
   const Register header         = Z_ARG4;
   const Register current_header = Z_R1_scratch;
   Address obj_entry(monitor, BasicObjectLock::obj_offset());
-  Label done, slow_case;
+  Label done, slow_case, success;
 
   if (object == noreg) {
     // In the template interpreter, we must assure that the object
@@ -1144,7 +1152,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
   if (LockingMode != LM_LIGHTWEIGHT) {
     // Test first if we are in the fast recursive case.
     MacroAssembler::load_and_test_long(header, Address(monitor, mark_offset));
-    z_bre(done); // header == 0 -> goto done
+    z_bre(success); // header == 0 -> goto done
   }
 
   // } else if (Atomic::cmpxchg(obj->mark_addr(), monitor, displaced_header) == monitor) {
@@ -1173,8 +1181,6 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
     z_brne(slow_case);
 
     lightweight_unlock(object, header, tmp, slow_case);
-
-    z_bru(done);
   } else {
     // The markword is expected to be at offset 0.
     // This is not required on s390, at least not here.
@@ -1185,8 +1191,8 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
     // displaced header back into the object's mark word.
     z_lgr(current_header, monitor);
     z_csg(current_header, header, hdr_offset, object);
-    z_bre(done);
   }
+  z_bre(success);
 
   // } else {
   //   // Slow path.
@@ -1197,8 +1203,16 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
   bind(slow_case);
   z_stg(object, obj_entry);   // Restore object entry, has been cleared above.
   call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
-
+  z_bru(done);
   // }
+
+  bind(success);
+#ifdef ASSERT
+  NearLabel ok;
+  z_bre(ok);
+  stop("CC is exptected to be EQ");
+  bind(ok);
+#endif // ASSERT
 
   bind(done);
 }

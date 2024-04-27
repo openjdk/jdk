@@ -74,9 +74,17 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   z_stg(Roop, Address(Rbox, BasicObjectLock::obj_offset()));
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
+    NearLabel set_cc, fall;
     load_klass(tmp, Roop);
     testbit(Address(tmp, Klass::access_flags_offset()), exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
-    branch_optimized(Assembler::bcondAllOne, slow_case);
+    z_btrue(set_cc);
+    z_bru(fall);
+
+    bind(set_cc);
+    z_ltgr(Roop, Roop);
+    branch_optimized(Assembler::bcondNotEqual, slow_case);
+
+    bind(fall);
   }
 
   assert(LockingMode != LM_MONITOR, "LM_MONITOR is already handled, by emit_lock()");
@@ -120,6 +128,12 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
     // done
     bind(done);
   }
+#ifdef ASSERT
+  NearLabel ok;
+  z_bre(ok);
+  stop("CC is not EQ, it should be");
+  bind(ok);
+#endif // ASSERT
 }
 
 void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rbox, Label& slow_case) {
@@ -158,6 +172,13 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
   }
   // done
   bind(done);
+
+#ifdef ASSERT
+  NearLabel ok;
+  z_bre(ok);
+  stop("CC is not set to EQ, it should be");
+  bind(ok);
+#endif // ASSERT
 }
 
 void C1_MacroAssembler::try_allocate(
