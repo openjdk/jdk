@@ -99,7 +99,7 @@ public class B5045306 {
 
         URL smallDataURL = URIBuilder.newBuilder()
                 .scheme("http")
-                .host(InetAddress.getLocalHost())
+                .loopback()
                 .port(server.getAddress().getPort())
                 .path("/secondCall")
                 .toURL();
@@ -124,7 +124,7 @@ public class B5045306 {
         // Part 2
         URL part2Url = URIBuilder.newBuilder()
                 .scheme("http")
-                .host(InetAddress.getLocalHost())
+                .loopback()
                 .port(server.getAddress().getPort())
                 .path("/part2")
                 .toURL();
