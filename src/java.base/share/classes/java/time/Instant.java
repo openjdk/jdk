@@ -1187,6 +1187,7 @@ public final class Instant
      * @since 23
      */
     public Duration until(Instant endExclusive) {
+        Objects.requireNonNull(endExclusive, "endExclusive");
         long secsDiff = Math.subtractExact(endExclusive.seconds, seconds);
         int nanosDiff = endExclusive.nanos - nanos;
         return Duration.ofSeconds(secsDiff, nanosDiff);

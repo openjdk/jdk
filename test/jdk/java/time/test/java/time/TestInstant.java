@@ -66,6 +66,7 @@ import java.time.temporal.ChronoUnit;
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertThrows;
 
 /**
  * Test Instant.
@@ -139,5 +140,12 @@ public class TestInstant extends AbstractTest {
         Duration expected = Duration.ofSeconds(end.getEpochSecond() - start.getEpochSecond(),
                 end.getNano() - start.getNano());
         assertEquals(start.until(end), expected);
+    }
+
+    @Test
+    public void test_until_1arg_NPE() {
+        assertThrows(NullPointerException.class, () -> {
+            Instant.now().until(null);
+        });
     }
 }
