@@ -118,7 +118,7 @@ public class Imports extends TestRunner {
 
                         String expectedImportToString = "import module java.base;\n";
                         String actualImportToString = it.toString()
-                                                        .replace("\\R", "\n");
+                                                        .replaceAll("\\R", "\n");
 
                         if (!expectedImportToString.equals(actualImportToString)) {
                             throw new AssertionError("Expected '" + expectedImportToString + "', " +
