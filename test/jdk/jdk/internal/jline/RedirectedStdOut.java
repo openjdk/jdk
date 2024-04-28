@@ -27,7 +27,7 @@
  * @summary Verify that even if the stdout is redirected java.io.Console will
  *          use it for writing.
  * @run main RedirectedStdOut runRedirectAllTest
- * @run main RedirectedStdOut runRedirectOutOnly
+ * @run main/othervm RedirectedStdOut runRedirectOutOnly
  */
 
 import java.io.IOException;
@@ -59,7 +59,9 @@ public class RedirectedStdOut {
         Path javaLauncher = Path.of(testJDK, "bin", "java");
         AtomicReference<byte[]> out = new AtomicReference<>();
         AtomicReference<byte[]> err = new AtomicReference<>();
-        Process launched = new ProcessBuilder(javaLauncher.toString(), "RedirectedStdOut$ConsoleTest").start();
+        Process launched = new ProcessBuilder(javaLauncher.toString(), "RedirectedStdOut$ConsoleTest")
+                .directory(Path.of(System.getProperty("test.classes")).toFile())
+                .start();
         Thread outReader = Thread.ofVirtual().unstarted(() -> {
             try {
                 out.set(launched.getInputStream().readAllBytes());
@@ -82,15 +84,19 @@ public class RedirectedStdOut {
 
         int r = launched.waitFor();
 
-        if (r != 0) {
-            throw new AssertionError("Unexpected return value: " + r);
-        }
-
         outReader.join();
         errReader.join();
 
-        String expectedOut = OUTPUT;
         String actualOut = new String(out.get());
+        String actualErr = new String(err.get());
+
+        if (r != 0) {
+            throw new AssertionError("Unexpected return value: " + r +
+                                     ", actualOut: " + actualOut +
+                                     ", actualErr: " + actualErr);
+        }
+
+        String expectedOut = OUTPUT;
 
         if (!Objects.equals(expectedOut, actualOut)) {
             throw new AssertionError("Unexpected stdout content. " +
@@ -99,7 +105,6 @@ public class RedirectedStdOut {
         }
 
         String expectedErr = "";
-        String actualErr = new String(err.get());
 
         if (!Objects.equals(expectedErr, actualErr)) {
             throw new AssertionError("Unexpected stderr content. " +
