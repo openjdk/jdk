@@ -234,8 +234,12 @@ class nmethod : public CodeBlob {
   uint16_t _num_stack_arg_slots;
   uint16_t _skipped_instructions_size;
 
+  // Offsets in mutable data section
   // _oops_offset == _data_offset,  offset where embedded oop table begins (inside data)
   uint16_t _metadata_offset; // embedded meta data table
+#if INCLUDE_JVMCI
+  uint16_t _jvmci_data_offset;
+#endif
 
   // Offset in immutable data section
   // _dependencies_offset == 0
@@ -245,7 +249,6 @@ class nmethod : public CodeBlob {
   int      _scopes_data_offset;
 #if INCLUDE_JVMCI
   int      _speculations_offset;
-  int      _jvmci_data_offset;
 #endif
 
   // location in frame (offset for sp) that deopt can store the original
@@ -470,12 +473,6 @@ class nmethod : public CodeBlob {
   void oops_do_set_strong_done(nmethod* old_head);
 
 public:
-  enum ResultStatus {
-    passed,
-    code_cache_full,
-    out_of_memory
-  };
-
   // create nmethod with entry_bci
   static nmethod* new_nmethod(const methodHandle& method,
                               int compile_id,
@@ -490,8 +487,7 @@ public:
                               ExceptionHandlerTable* handler_table,
                               ImplicitExceptionTable* nul_chk_table,
                               AbstractCompiler* compiler,
-                              CompLevel comp_level,
-                              ResultStatus& result_status
+                              CompLevel comp_level
 #if INCLUDE_JVMCI
                               , char* speculations = nullptr,
                               int speculations_len = 0,
@@ -540,13 +536,19 @@ public:
   address deopt_mh_handler_begin() const { return           header_begin() + _deopt_mh_handler_offset ; }
   address unwind_handler_begin  () const { return _unwind_handler_offset != -1 ? (insts_end() - _unwind_handler_offset) : nullptr; }
 
-  oop*    oops_begin            () const { return (oop*)    data_begin(); }
-  oop*    oops_end              () const { return (oop*)   (data_begin() + _metadata_offset)          ; }
-
+  // mutable data
+  oop*    oops_begin            () const { return (oop*)        data_begin(); }
+  oop*    oops_end              () const { return (oop*)       (data_begin() + _metadata_offset)      ; }
   Metadata** metadata_begin     () const { return (Metadata**) (data_begin() + _metadata_offset)      ; }
+#if INCLUDE_JVMCI
+  Metadata** metadata_end       () const { return (Metadata**) (data_begin() + _jvmci_data_offset)    ; }
+  address jvmci_data_begin      () const { return               data_begin() + _jvmci_data_offset     ; }
+  address jvmci_data_end        () const { return               data_end(); }
+#else
   Metadata** metadata_end       () const { return (Metadata**)  data_end(); }
+#endif
 
-  // read-only data
+  // immutable data
   address immutable_data_begin  () const { return           _immutable_data; }
   address immutable_data_end    () const { return           _immutable_data + _immutable_data_size ; }
   address dependencies_begin    () const { return           _immutable_data; }
@@ -562,9 +564,7 @@ public:
 #if INCLUDE_JVMCI
   address scopes_data_end       () const { return           _immutable_data + _speculations_offset ; }
   address speculations_begin    () const { return           _immutable_data + _speculations_offset ; }
-  address speculations_end      () const { return           _immutable_data + _jvmci_data_offset   ; }
-  address jvmci_data_begin      () const { return           _immutable_data + _jvmci_data_offset   ; }
-  address jvmci_data_end        () const { return            immutable_data_end(); }
+  address speculations_end      () const { return            immutable_data_end(); }
 #else
   address scopes_data_end       () const { return            immutable_data_end(); }
 #endif

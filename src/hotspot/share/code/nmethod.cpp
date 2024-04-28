@@ -194,6 +194,11 @@ struct java_nmethod_stats_struct {
     if (metadata_size != 0) {
       tty->print_cr("   metadata      = %u (%f%%)", metadata_size, (metadata_size * 100.0f)/total_nm_size);
     }
+#if INCLUDE_JVMCI
+    if (jvmci_data_size != 0) {
+      tty->print_cr("   JVMCI data    = %u (%f%%)", jvmci_data_size, (jvmci_data_size * 100.0f)/total_nm_size);
+    }
+#endif
     if (total_immut_size != 0) {
       tty->print_cr(" immutable data  = %u (%f%%)", total_immut_size, (total_immut_size * 100.0f)/total_size);
     }
@@ -215,9 +220,6 @@ struct java_nmethod_stats_struct {
 #if INCLUDE_JVMCI
     if (speculations_size != 0) {
       tty->print_cr("   speculations  = %u (%f%%)", speculations_size, (speculations_size * 100.0f)/total_immut_size);
-    }
-    if (jvmci_data_size != 0) {
-      tty->print_cr("   JVMCI data    = %u (%f%%)", jvmci_data_size, (jvmci_data_size * 100.0f)/total_immut_size);
     }
 #endif
   }
@@ -1131,8 +1133,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   ExceptionHandlerTable* handler_table,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
-  CompLevel comp_level,
-  ResultStatus& result_status
+  CompLevel comp_level
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -1144,10 +1145,12 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   code_buffer->finalize_oop_references(method);
   // create nmethod
   nmethod* nm = nullptr;
-#if INCLUDE_JVMCI
-  int jvmci_data_size = compiler->is_jvmci() ? jvmci_data->size() : 0;
-#endif
   int nmethod_size = CodeBlob::allocation_size(code_buffer, sizeof(nmethod));
+#if INCLUDE_JVMCI
+    if (compiler->is_jvmci()) {
+      nmethod_size += align_up(jvmci_data->size(), oopSize);
+    }
+#endif
 
   int immutable_data_size =
       adjust_pcs_size(debug_info->pcs_size())
@@ -1156,7 +1159,6 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
     + align_up(nul_chk_table->size_in_bytes()    , oopSize)
 #if INCLUDE_JVMCI
     + align_up(speculations_len                  , oopSize)
-    + align_up(jvmci_data_size                   , oopSize)
 #endif
     + align_up(debug_info->data_size()           , oopSize);
 
@@ -1165,8 +1167,8 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   if (immutable_data_size > 0) {
     immutable_data = (address)os::malloc(immutable_data_size, mtCode);
     if (immutable_data == nullptr) {
-      result_status = out_of_memory;
-      return nullptr; // OutOfMemory, bailout
+      vm_exit_out_of_memory(immutable_data_size, OOM_MALLOC_ERROR, "nmethod: no space for immutable data");
+      return nullptr;
     }
   }
   {
@@ -1215,9 +1217,6 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
     // Safepoints in nmethod::verify aren't allowed because nm hasn't been installed yet.
     DEBUG_ONLY(nm->verify();)
     nm->log_new_nmethod();
-    result_status = passed;
-  } else {
-    result_status = code_cache_full;
   }
   return nm;
 }
@@ -1317,19 +1316,23 @@ nmethod::nmethod(
     _unwind_handler_offset   = 0;
 
     CHECKED_CAST(_metadata_offset, uint16_t, (align_up(code_buffer->total_oop_size(), oopSize)));
-    DEBUG_ONLY( int data_end_offset = _metadata_offset + align_up(code_buffer->total_metadata_size(), wordSize); )
+    int data_end_offset = _metadata_offset + align_up(code_buffer->total_metadata_size(), wordSize);
+#if INCLUDE_JVMCI
+    // jvmci_data_size is 0 in native wrapper but we need to set offset
+    // to correctly calculate metadata_end address
+    CHECKED_CAST(_jvmci_data_offset, uint16_t, data_end_offset);
+#endif
     assert((data_offset() + data_end_offset) <= nmethod_size, "wrong nmethod's size: %d < %d", nmethod_size, (data_offset() + data_end_offset));
 
     // native wrapper does not have read-only data but we need unique not null address
     _immutable_data          = data_end();
     _immutable_data_size     = 0;
     _nul_chk_table_offset    = 0;
-    _handler_table_offset    = _nul_chk_table_offset;
-    _scopes_pcs_offset       = _handler_table_offset;
-    _scopes_data_offset      = _scopes_pcs_offset;
+    _handler_table_offset    = 0;
+    _scopes_pcs_offset       = 0;
+    _scopes_data_offset      = 0;
 #if INCLUDE_JVMCI
-    _speculations_offset     = _scopes_data_offset;
-    _jvmci_data_offset       = _speculations_offset;
+    _speculations_offset     = 0;
 #endif
 
     code_buffer->copy_code_and_locs_to(this);
@@ -1481,13 +1484,23 @@ nmethod::nmethod(
       // C1 generates UnwindHandler at the end of instructions section.
       // Calculate positive offset as distance between the start of stubs section
       // (which is also the end of instructions section) and the start of the handler.
-      CHECKED_CAST(_unwind_handler_offset, int16_t, (_stub_offset - code_offset() - offsets->value(CodeOffsets::UnwindHandler)));
+      int unwind_handler_offset = code_offset() + offsets->value(CodeOffsets::UnwindHandler);
+      CHECKED_CAST(_unwind_handler_offset, int16_t, (_stub_offset - unwind_handler_offset));
     } else {
       _unwind_handler_offset = -1;
     }
     CHECKED_CAST(_metadata_offset, uint16_t, (align_up(code_buffer->total_oop_size(), oopSize)));
-    DEBUG_ONLY( int data_end_offset = _metadata_offset + align_up(code_buffer->total_metadata_size(), wordSize); )
-    assert((data_offset() + data_end_offset) <= nmethod_size, "wrong nmethod's size: %d < %d", nmethod_size, (data_offset() + data_end_offset));
+    int metadata_end_offset = _metadata_offset + align_up(code_buffer->total_metadata_size(), wordSize);
+
+#if INCLUDE_JVMCI
+    CHECKED_CAST(_jvmci_data_offset, uint16_t, metadata_end_offset);
+    int jvmci_data_size   = compiler->is_jvmci() ? jvmci_data->size() : 0;
+    DEBUG_ONLY( int data_end_offset = _jvmci_data_offset  + align_up(jvmci_data_size, oopSize); )
+#else
+    DEBUG_ONLY( int data_end_offset = metadata_end_offset; )
+#endif
+    assert((data_offset() + data_end_offset) <= nmethod_size, "wrong nmethod's size: %d > %d",
+           (data_offset() + data_end_offset), nmethod_size);
 
     _immutable_data_size  = immutable_data_size;
     if (immutable_data_size > 0) {
@@ -1504,9 +1517,7 @@ nmethod::nmethod(
 
 #if INCLUDE_JVMCI
     _speculations_offset  = _scopes_data_offset   + align_up(debug_info->data_size(), oopSize);
-    _jvmci_data_offset    = _speculations_offset  + align_up(speculations_len, oopSize);
-    int jvmci_data_size   = compiler->is_jvmci() ? jvmci_data->size() : 0;
-    DEBUG_ONLY( int immutable_data_end_offset = _jvmci_data_offset  + align_up(jvmci_data_size, oopSize); )
+    DEBUG_ONLY( int immutable_data_end_offset = _speculations_offset  + align_up(speculations_len, oopSize); )
 #else
     DEBUG_ONLY( int immutable_data_end_offset = _scopes_data_offset + align_up(debug_info->data_size(), oopSize); )
 #endif
@@ -3078,6 +3089,12 @@ void nmethod::print(outputStream* st) const {
                                              p2i(metadata_begin()),
                                              p2i(metadata_end()),
                                              metadata_size());
+#if INCLUDE_JVMCI
+  if (jvmci_data_size   () > 0) st->print_cr(" JVMCI data     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(jvmci_data_begin()),
+                                             p2i(jvmci_data_end()),
+                                             jvmci_data_size());
+#endif
   if (immutable_data_size() > 0) st->print_cr(" immutable data [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
                                              p2i(immutable_data_begin()),
                                              p2i(immutable_data_end()),
@@ -3107,10 +3124,6 @@ void nmethod::print(outputStream* st) const {
                                              p2i(speculations_begin()),
                                              p2i(speculations_end()),
                                              speculations_size());
-  if (jvmci_data_size   () > 0) st->print_cr(" JVMCI data     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                             p2i(jvmci_data_begin()),
-                                             p2i(jvmci_data_end()),
-                                             jvmci_data_size());
 #endif
 }
 

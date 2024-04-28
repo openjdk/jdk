@@ -1036,7 +1036,6 @@ void ciEnv::register_method(ciMethod* target,
                             RTMState  rtm_state) {
   VM_ENTRY_MARK;
   nmethod* nm = nullptr;
-  nmethod::ResultStatus result_status = nmethod::passed;
   {
     methodHandle method(THREAD, target->get_Method());
 
@@ -1125,14 +1124,12 @@ void ciEnv::register_method(ciMethod* target,
                                debug_info(), dependencies(), code_buffer,
                                frame_words, oop_map_set,
                                handler_table, inc_table,
-                               compiler, CompLevel(task()->comp_level()),
-                               result_status);
+                               compiler, CompLevel(task()->comp_level()));
 
     // Free codeBlobs
     code_buffer->free_blob();
 
     if (nm != nullptr) {
-      assert(result_status == nmethod::passed, "sanity");
       nm->set_has_unsafe_access(has_unsafe_access);
       nm->set_has_wide_vectors(has_wide_vectors);
       nm->set_has_monitors(has_monitors);
@@ -1187,13 +1184,8 @@ void ciEnv::register_method(ciMethod* target,
     nm->post_compiled_method(task());
     task()->set_num_inlined_bytecodes(num_inlined_bytecodes());
   } else {
-    // The CodeCache is full or out of memeory.
-    if (result_status == nmethod::code_cache_full) {
-      record_failure("code cache is full");
-    } else {
-      assert(result_status == nmethod::out_of_memory, "sanity");
-      record_failure("out of memory to allocate immutable data");
-    }
+    // The CodeCache is full.
+    record_failure("code cache is full");
   }
 
   // safepoints are allowed again

@@ -525,7 +525,6 @@ public class NMethod extends CodeBlob {
   private int getMetadataOffset()     { return (int) metadataOffsetField    .getValue(addr); }
   private int getScopesDataOffset()   { return (int) scopesDataOffsetField  .getValue(addr); }
   private int getScopesPCsOffset()    { return (int) scopesPCsOffsetField   .getValue(addr); }
-  private int getDependenciesOffset() { return (int) 0; }
   private int getHandlerTableOffset() { return (int) handlerTableOffsetField.getValue(addr); }
   private int getNulChkTableOffset()  { return (int) nulChkTableOffsetField .getValue(addr); }
   private int getCompLevel()          { return (int) compLevelField         .getValue(addr); }
