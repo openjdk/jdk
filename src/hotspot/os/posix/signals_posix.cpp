@@ -614,7 +614,6 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
     if (NativeDeoptInstruction::is_deopt_at(pc)) {
       CodeBlob* cb = CodeCache::find_blob(pc);
       if (cb != nullptr && cb->is_nmethod()) {
-        MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, t);) // can call PcDescCache::add_pc_desc
         nmethod* nm = cb->as_nmethod();
         assert(nm->insts_contains_inclusive(pc), "");
         address deopt = nm->is_method_handle_return(pc) ?

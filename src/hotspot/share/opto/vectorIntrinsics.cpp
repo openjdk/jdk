@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2629,7 +2629,7 @@ bool LibraryCallKit::inline_vector_convert() {
         op = gvn().transform(VectorCastNode::make(cast_vopc, op, elem_bt_to, num_elem_to));
       }
     }
-  } else if (Type::cmp(src_type, dst_type) != 0) {
+  } else if (!Type::equals(src_type, dst_type)) {
     assert(!is_cast, "must be reinterpret");
     op = gvn().transform(new VectorReinterpretNode(op, src_type, dst_type));
   }

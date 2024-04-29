@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -719,11 +719,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Saa za Majira ya Joto za Krasnoyarsk</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Saa za Makwuarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Saa za Magadan</generic>
@@ -746,13 +741,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Saa za Morisi</generic>
 					<standard>Saa za Wastani za Morisi</standard>
 					<daylight>Saa za Majira ya Joto za Morisi</daylight>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Saa za Kaskazini Magharibi mwa Meksiko</generic>
-					<standard>Saa za Wastani za Kaskazini Magharibi mwa Meksiko</standard>
-					<daylight>Saa za Mchana za Kaskazini Magharibi mwa Meksiko</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mongolia">
